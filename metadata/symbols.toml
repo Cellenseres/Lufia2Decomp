@@ -12,3 +12,21 @@ address = "83:BBF3"
 name = "Lufia2PlayerSlotSpecialUpdate"
 kind = "function"
 status = "verified"
+
+[[symbol]]
+address = "83:C1B4"
+name = "Lufia2PlayerSlotStandardUpdate"
+kind = "function"
+status = "identified"
+
+[[symbol]]
+address = "83:C7F8"
+name = "Lufia2ActorPrimaryUpdate"
+kind = "function"
+status = "identified"
+
+[[symbol]]
+address = "83:D508"
+name = "Lufia2ActorSecondaryUpdate"
+kind = "function"
+status = "identified"

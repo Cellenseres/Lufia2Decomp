@@ -27,8 +27,9 @@ typedef struct Lufia2PlayerSlotSpecialResult {
     uint8_t zero;
 } Lufia2PlayerSlotSpecialResult;
 
-/* Draft semantic model of $83:BBF3. The abstract reader preserves original
- * early-exit read order without exposing a platform or emulator state type. */
+/* Verified semantic model of $83:BBF3. The abstract reader preserves
+ * original early-exit read order without exposing a platform or emulator
+ * state type. */
 Lufia2PlayerSlotSpecialResult Lufia2PlayerSlotSpecialUpdate(
     const Lufia2PlayerSlotSpecialMemory *memory);
 
