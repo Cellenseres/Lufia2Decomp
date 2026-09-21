@@ -1,0 +1,11 @@
+/build/
+/build-*/
+/out/
+/CMakeUserPresets.json
+/.cache/
+__pycache__/
+*.py[cod]
+*.sfc
+*.smc
+*.fig
+*.bin

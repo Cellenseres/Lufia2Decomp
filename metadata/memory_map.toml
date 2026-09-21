@@ -1,0 +1,8 @@
+format = 1
+rom = "lufia2-usa"
+
+[[region]]
+name = "wram"
+start = "7E:0000"
+end = "7F:FFFF"
+kind = "work_ram"
