@@ -11,4 +11,5 @@
 
 | Address | Symbol | Status | Notes |
 | --- | --- | --- | --- |
-| `$83:BBF3` | `Lufia2PlayerSlotSpecialUpdate` | `draft` | Five gates and two child branches modeled; full CPU/bus differential verification remains. |
+| `$83:BB93` | `Lufia2UpdateActorSlots` | `draft` | 40-slot actor traversal, WRAM bookkeeping and child-call decisions reconstructed; exact CPU/return ABI remains to be integrated. |
+| `$83:BBF3` | `Lufia2PlayerSlotSpecialUpdate` | `draft` | Five gates and two child branches reconstructed; the recomp integration branch can opt into this draft for owner runtime validation. |

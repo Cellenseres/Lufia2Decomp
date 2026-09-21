@@ -2,6 +2,14 @@ format = 1
 rom = "lufia2-usa"
 
 [[function]]
+address = "83:BB93"
+name = "Lufia2UpdateActorSlots"
+source = "src/actor_update.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "draft"
+
+[[function]]
 address = "83:BBF3"
 name = "Lufia2PlayerSlotSpecialUpdate"
 source = "src/player_update.c"

@@ -14,9 +14,11 @@ owner-run comparison against the original program.
 
 ## Current state
 
-Decompilation is incremental. The first function, `$83:BBF3`, has a readable
-semantic implementation, but remains `draft` until its complete CPU, stack,
-and bus contract is proven against the original routine.
+Decompilation is incremental. The first reconstructed area is the bank-$83
+actor update path. `$83:BBF3` models the player-slot gate/dispatch routine and
+`$83:BB93` models the surrounding 40-slot actor traversal. Both remain `draft`
+until their complete CPU, stack, bus and child-call contracts are validated by
+a consumer.
 
 The portable CMake target is:
 

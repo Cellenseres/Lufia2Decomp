@@ -2,6 +2,12 @@ format = 1
 rom = "lufia2-usa"
 
 [[symbol]]
+address = "83:BB93"
+name = "Lufia2UpdateActorSlots"
+kind = "function"
+status = "draft"
+
+[[symbol]]
 address = "83:BBF3"
 name = "Lufia2PlayerSlotSpecialUpdate"
 kind = "function"

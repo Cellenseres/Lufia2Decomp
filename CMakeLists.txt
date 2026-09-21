@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(Lufia2Decomp VERSION 0.1.0 LANGUAGES C)
 
 add_library(lufia2_decomp STATIC
+    src/actor_update.c
     src/player_update.c)
 add_library(Lufia2::Decomp ALIAS lufia2_decomp)
 
