@@ -134,3 +134,32 @@ gameplay samples rather than ordinary city movement.
 The common prefix, early return, common long tail and C1FC side path now have
 strong runtime evidence. The C1C5..C1E1 block remains the only major uncovered
 piece before a complete source reconstruction can be claimed.
+
+
+## $80:8E9D resource decompression candidate
+
+External LEdit research identifies the code beginning at $80:8EAF as the
+Lufia II resource-file decompressor. The generated recompilation groups that
+code inside the function beginning at $80:8E9D; the current program manifest
+marks its M0X0 and M1X0 variants AOT-eligible with 232 analyzed instructions.
+
+This identification lines up with the gameplay profile. Across the four
+current sampler-v3 sessions, hot PCs inside this function accumulated:
+
+- $80:8EFA: 61,761 hits.
+- $80:8EFC: 61,761 hits.
+- $80:8F66: 55,499 hits.
+
+LEdit's English-ROM implementation places the 3-byte resource pointer table at
+PC offset $138000 and uses 0x2A8 entries. Owner-side validation against the
+supported headerless US ROM found all 680 table entries in range and
+successfully decompressed all 680 streams to their declared output lengths
+using the documented algorithm.
+
+This validates the resource format and makes $80:8E9D a strong semantic
+decompilation target, but it does not yet prove a replacement ABI for the
+original routine. Because the function is already statically AOT-eligible,
+plain decompilation is primarily useful for readability and verification.
+A later, explicitly separate patch may have a larger performance payoff by
+using a host-side decoder and/or decompressed-resource cache instead of
+executing the original byte/backreference loops repeatedly.

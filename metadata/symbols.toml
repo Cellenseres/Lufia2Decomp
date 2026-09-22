@@ -2,6 +2,12 @@ format = 1
 rom = "lufia2-usa"
 
 [[symbol]]
+address = "80:8E9D"
+name = "Lufia2DecompressResourceFile"
+kind = "function"
+status = "identified"
+
+[[symbol]]
 address = "83:BB93"
 name = "Lufia2UpdateActorSlots"
 kind = "function"

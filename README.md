@@ -43,5 +43,7 @@ When consumed with `add_subdirectory`, the consumer links the same
 its pinned `lib/lufia2-decomp` submodule or a development checkout selected
 with `-DLUFIA2_DECOMP_ROOT=<path>`.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries and
-[docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) for status definitions.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries,
+[docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) for status definitions, and
+[docs/EXTERNAL_RESEARCH.md](docs/EXTERNAL_RESEARCH.md) for vetted external
+reverse-engineering references and the rules for using them.
