@@ -18,18 +18,22 @@ typedef struct Lufia2ActorFrontendMemory {
 } Lufia2ActorFrontendMemory;
 
 /*
- * CPU subset touched by the reconstructed prefixes. Both routines are only
- * modeled for M=1 (8-bit memory/accumulator), matching every captured entry.
- * Fields not present here are unchanged by the reconstructed prefix.
+ * Portable subset of the 65816 state touched by the reconstructed actor
+ * front-ends and script-dispatch prefixes. The dispatcher models native mode
+ * (E=0), which is the mode used by the captured game paths.
  */
 typedef struct Lufia2ActorFrontendCpu {
     uint16_t accumulator;
     uint16_t x;
+    uint16_t y;
+    uint16_t stack;
     uint16_t direct_page;
     uint8_t data_bank;
+    uint8_t program_bank;
     uint8_t carry;
     uint8_t negative;
     uint8_t zero;
+    uint8_t accumulator_is_8_bit;
     uint8_t index_is_8_bit;
 } Lufia2ActorFrontendCpu;
 
@@ -47,6 +51,11 @@ typedef enum Lufia2ActorSecondaryFlow {
     LUFIA2_ACTOR_SECONDARY_CONTINUE_D59A = 4,
 } Lufia2ActorSecondaryFlow;
 
+typedef struct Lufia2ActorScriptDispatchResult {
+    uint8_t opcode;
+    uint32_t handler_pc;
+} Lufia2ActorScriptDispatchResult;
+
 /*
  * Draft semantic front-end of $83:C7F8. Known instructions are executed until
  * the original routine either reaches its RTS at $83:C83B or crosses into an
@@ -62,6 +71,26 @@ Lufia2ActorPrimaryFlow Lufia2ActorPrimaryUpdateFrontend(
  * this routine additionally preserves the observed path-dependent X width.
  */
 Lufia2ActorSecondaryFlow Lufia2ActorSecondaryUpdateFrontend(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/*
+ * Reconstruct $83:C83C..$83:C866 through the indirect script-handler jump.
+ * The result is the exact 24-bit handler boundary selected by the original
+ * jump table. The table itself is read through the bus callback, so the
+ * standalone decomp does not embed proprietary ROM table bytes.
+ */
+Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/*
+ * Reconstruct $83:D59A through its first-level high-nibble dispatch and the
+ * D/E/F low-nibble subdispatchers. The returned PC is the leaf handler entered
+ * after those table jumps. The original DB is left on the emulated stack just
+ * as in the 65816 routine; handlers restore it with PLB before returning.
+ */
+Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 

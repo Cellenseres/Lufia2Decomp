@@ -66,10 +66,17 @@ The two v3 scenes expose two different dominant front-end shapes:
   path and three are the immediate flags-$80 return.
 
 The portable front-end now includes the $83:C829 actor-flag clear as well as
-the known gates and $83:C82E timer path. The remaining primary boundaries are
-the still-unobserved $83:C808 block and the much larger script dispatcher
-beginning at $83:C83C. Across the original and follow-up snapshot sets, 64
-C7F8 calls matched the reconstructed flow and bus prefix with zero deviations.
+the known gates and $83:C82E timer path. The $83:C83C dispatcher prefix has
+also been reconstructed through its indirect jump at $83:C864: it clears the
+per-actor flags, preserves the caller DB on the stack, loads the actor's
+24-bit script cursor from $7F:E506..E508, and dispatches the current bytecode
+through the ROM-backed table at $83:D467. The remaining primary boundary
+before that VM is the still-unobserved $83:C808 block; individual bytecode
+handler bodies remain incremental decompilation targets.
+
+Across the supplied dispatcher snapshots, every reconstructed C83C data,
+stack and jump-table bus access and every selected handler target matched the
+reference trace.
 
 ## $83:D508
 
@@ -99,9 +106,14 @@ Scene dependence remains substantial:
 - City/interiors v3: 5,195 / 8,254 (62.94%) returned at $83:D599.
 - Dungeon v3: 14,768 / 16,853 (87.63%) returned at $83:D599.
 
-The return-side path itself has several internal branches and occasional
-writes, but this top-level split is suitable for an incremental semantic
-reconstruction with a D59A continuation boundary.
+The $83:D59A continuation is now reconstructed through handler selection.
+It performs the slot-zero global-state preamble, preserves the caller DB,
+loads the actor's secondary script cursor from $7F:E3EE..E3F0, dispatches on
+the opcode high nibble through $83:DF17, and resolves the D/E/F families
+through the low-nibble tables at $83:DF77/$83:DF57/$83:DF37. The table words
+remain ROM-backed reads rather than copied data. Supplied D59A dispatcher
+snapshots matched data, stack and table bus effects and selected handler PCs
+exactly; the handler bodies remain the next reconstruction layer.
 
 ## $83:C1B4
 
@@ -115,7 +127,7 @@ The combined map corpus observed 618 entries:
   entry/exit registers, WRAM before/after and bus writes.
 - $83:C1C5..$83:C1E1 has still never executed in the available corpus.
 
-All 458 observed calls reached $83:C1C0 and then branched from $83:C1C3 to
+All 618 observed calls reached $83:C1C0 and then branched from $83:C1C3 to
 $83:C1E3, so the missing block is tied to a state not represented by current
 gameplay samples rather than ordinary city movement.
 
