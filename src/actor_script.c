@@ -748,7 +748,11 @@ static void PrimaryActionBoundaryHelper(
                 Read8(memory, LongIndexedAddress(0x7fe66eu, cpu->x)));
             DecrementA8(cpu);
             DecrementA8(cpu);
-            Compare8(cpu, A8(cpu), coordinate);
+            Compare8(
+                cpu, A8(cpu),
+                Read8(
+                    memory,
+                    AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x)));
         }
         break;
 
@@ -776,7 +780,11 @@ static void PrimaryActionBoundaryHelper(
                 Read8(memory, LongIndexedAddress(0x7fe646u, cpu->x)));
             DecrementA8(cpu);
             DecrementA8(cpu);
-            Compare8(cpu, A8(cpu), coordinate);
+            Compare8(
+                cpu, A8(cpu),
+                Read8(
+                    memory,
+                    AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x)));
         }
         break;
 
