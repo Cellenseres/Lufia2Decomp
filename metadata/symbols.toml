@@ -36,3 +36,9 @@ address = "83:D508"
 name = "Lufia2ActorSecondaryUpdate"
 kind = "function"
 status = "draft"
+
+[[symbol]]
+address = "83:D350"
+name = "Lufia2ActorPrimaryActionCore"
+kind = "function"
+status = "draft"

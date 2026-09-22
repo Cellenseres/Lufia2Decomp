@@ -69,6 +69,12 @@ typedef struct Lufia2ActorPrimaryScriptStepResult {
     uint32_t handler_pc;
 } Lufia2ActorPrimaryScriptStepResult;
 
+typedef enum Lufia2ActorPrimaryActionFlow {
+    LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE = 0,
+    LUFIA2_ACTOR_PRIMARY_ACTION_CONTINUE_D389 = 1,
+    LUFIA2_ACTOR_PRIMARY_ACTION_UNKNOWN_D370_TARGET = 2,
+} Lufia2ActorPrimaryActionFlow;
+
 /*
  * Draft semantic front-end of $83:C7F8. Known instructions are executed until
  * the original routine either reaches its RTS at $83:C83B or crosses into an
@@ -131,6 +137,19 @@ Lufia2ActorPrimaryScriptExecuteKnownHandler(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu,
     uint32_t handler_pc);
+
+/*
+ * Draft semantic reconstruction of the common actor action core at $83:D350.
+ * Local action paths, the four direction/boundary helpers at D3B7/D3C5/
+ * D3D7/D3E5, and the secondary-script installer at D3F7 are reconstructed.
+ *
+ * RETURN_D3AE means all semantics before the original RTL are committed.
+ * CONTINUE_D389 stops immediately before JSL $83:FB12 on the movement path;
+ * those larger collision/movement helpers remain a separate decomp target.
+ */
+Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
 
 #ifdef __cplusplus
 }
