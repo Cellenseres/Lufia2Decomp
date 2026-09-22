@@ -25,9 +25,10 @@ Across the three map captures:
 
 - 24,200 / 25,674 calls (94.26%) reached the RTS at $83:C83B.
 - 1,474 / 25,674 calls (5.74%) continued through $83:C83C.
-- In the dungeon capture, 13,627 / 14,922 calls (91.32%) traversed the exact
-  19-opcode write-free prefix already covered by the consumer's differential
-  fast-path contract.
+- In the dungeon capture, 13,627 calls reached the final $83:C827 branch.
+  756 of those continued through $83:C829, leaving 12,871 / 14,922 calls
+  (86.26%) on the exact taken-BEQ write-free path covered by the consumer's
+  differential fast-path contract.
 - Sampler v2 captured real BB93 slot indices across many actors: city/interior
   snapshots included slots 1,2,3,8,9,10,12 and the dungeon snapshots covered
   8..23. This confirms $00A7 is a slot index, not an 8-byte actor offset.
