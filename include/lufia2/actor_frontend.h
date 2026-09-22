@@ -56,6 +56,18 @@ typedef struct Lufia2ActorScriptDispatchResult {
     uint32_t handler_pc;
 } Lufia2ActorScriptDispatchResult;
 
+typedef enum Lufia2ActorPrimaryScriptStepFlow {
+    LUFIA2_ACTOR_PRIMARY_SCRIPT_UNKNOWN_HANDLER = 0,
+    LUFIA2_ACTOR_PRIMARY_SCRIPT_REDISPATCHED = 1,
+    LUFIA2_ACTOR_PRIMARY_SCRIPT_CONTINUE_C8D2 = 2,
+} Lufia2ActorPrimaryScriptStepFlow;
+
+typedef struct Lufia2ActorPrimaryScriptStepResult {
+    Lufia2ActorPrimaryScriptStepFlow flow;
+    uint8_t opcode;
+    uint32_t handler_pc;
+} Lufia2ActorPrimaryScriptStepResult;
+
 /*
  * Draft semantic front-end of $83:C7F8. Known instructions are executed until
  * the original routine either reaches its RTS at $83:C83B or crosses into an
@@ -93,6 +105,24 @@ Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
 Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
+
+/*
+ * Execute one currently reconstructed primary-VM handler and stop at the next
+ * semantic boundary. The initial supported cluster is:
+ *   $83:C8C7  commit the current script cursor through $83:C8D2
+ *   $83:D2B4  replace the script cursor with operand16 + $A1D4
+ *   $83:D2C4  OR operand8 into $7F:E57E+slot
+ *   $83:D2D5  AND operand8 into $7F:E57E+slot
+ *
+ * D2B4/D2C4/D2D5 include the original redispatch at C85A/C85C and therefore
+ * return the next selected opcode/handler. C8C7 stops immediately before the
+ * common PLB/RTS exit at C8D2. Unknown handlers are left untouched.
+ */
+Lufia2ActorPrimaryScriptStepResult
+Lufia2ActorPrimaryScriptExecuteKnownHandler(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint32_t handler_pc);
 
 #ifdef __cplusplus
 }
