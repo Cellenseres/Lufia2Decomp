@@ -42,3 +42,21 @@ address = "83:D350"
 name = "Lufia2ActorPrimaryActionCore"
 kind = "function"
 status = "draft"
+
+[[symbol]]
+address = "83:F9D4"
+name = "Lufia2ActorResolveMapCellOffset"
+kind = "function"
+status = "draft"
+
+[[symbol]]
+address = "83:FB12"
+name = "Lufia2ActorMovementStep"
+kind = "function"
+status = "draft"
+
+[[symbol]]
+address = "83:FB71"
+name = "Lufia2ActorReadMapCellValue"
+kind = "function"
+status = "draft"

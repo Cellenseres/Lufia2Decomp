@@ -173,6 +173,27 @@ static void SetAccumulatorWidth(
     cpu->accumulator_is_8_bit = narrow != 0;
 }
 
+
+static void ExchangeAccumulatorBytes(Lufia2ActorFrontendCpu *cpu) {
+    const uint16_t value = cpu->accumulator;
+    cpu->accumulator =
+        (uint16_t)((value << 8) | (value >> 8));
+    SetNz8(cpu, A8(cpu));
+}
+
+static void And16(Lufia2ActorFrontendCpu *cpu, uint16_t value) {
+    LoadA16(cpu, (uint16_t)(cpu->accumulator & value));
+}
+
+static void Add16Value(
+    Lufia2ActorFrontendCpu *cpu, uint16_t value) {
+    const uint32_t sum =
+        (uint32_t)cpu->accumulator + value + (cpu->carry ? 1u : 0u);
+    cpu->accumulator = (uint16_t)sum;
+    cpu->carry = sum > 0xffffu;
+    SetNz16(cpu, cpu->accumulator);
+}
+
 static void Push8(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu,
@@ -186,6 +207,26 @@ static uint8_t Pull8(
     Lufia2ActorFrontendCpu *cpu) {
     cpu->stack = (uint16_t)(cpu->stack + 1u);
     return Read8(memory, cpu->stack);
+}
+
+
+static void PushIndex(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    if (cpu->index_is_8_bit) {
+        Push8(memory, cpu, (uint8_t)cpu->x);
+    } else {
+        Push8(memory, cpu, (uint8_t)(cpu->x >> 8));
+        Push8(memory, cpu, (uint8_t)cpu->x);
+    }
+}
+
+static void PullAccumulator16(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    const uint8_t low = Pull8(memory, cpu);
+    const uint8_t high = Pull8(memory, cpu);
+    LoadA16(cpu, (uint16_t)(low | ((uint16_t)high << 8)));
 }
 
 static void PushDataBank(
@@ -473,6 +514,25 @@ static void SimulateRtsFrame(
     (void)Pull8(memory, cpu);
 }
 
+
+static void SimulateJslFrame(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint8_t return_bank,
+    uint16_t return_address) {
+    Push8(memory, cpu, return_bank);
+    Push8(memory, cpu, (uint8_t)(return_address >> 8));
+    Push8(memory, cpu, (uint8_t)return_address);
+}
+
+static void SimulateRtlFrame(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    (void)Pull8(memory, cpu);
+    (void)Pull8(memory, cpu);
+    (void)Pull8(memory, cpu);
+}
+
 static void PrimaryIntervalCheck(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu,
@@ -715,6 +775,113 @@ d14d_commit:
 }
 
 
+
+static void PrimaryMapCoordinateToCellOffset(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    Write8(memory, 0x004202u, A8(cpu));                  /* $83:F9F7 */
+    LoadA8(cpu, Read8(memory, 0x0005b9u));              /* $83:F9FB */
+    Write8(memory, 0x004203u, A8(cpu));                 /* $83:F9FF */
+    LoadA8(cpu, 0x00u);                                 /* $83:FA03 */
+    ExchangeAccumulatorBytes(cpu);                      /* $83:FA05 */
+    SetAccumulatorWidth(cpu, 0);                        /* $83:FA06 */
+    cpu->carry = 0;                                     /* $83:FA08 */
+    Add16Value(cpu, Read16Long(memory, 0x004216u));     /* $83:FA09 */
+    AslA16(cpu);                                        /* $83:FA0D */
+    TransferAToX(cpu);                                  /* $83:FA0E */
+    SetAccumulatorWidth(cpu, 1);                        /* $83:FA0F */
+}
+
+uint32_t Lufia2ActorMovementStep(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    uint16_t target;
+    uint32_t address;
+    uint8_t value;
+
+    ExchangeAccumulatorBytes(cpu);                      /* $83:FB12 */
+    LoadA8(cpu, 0x00u);                                 /* $83:FB13 */
+    ExchangeAccumulatorBytes(cpu);                      /* $83:FB15 */
+    TransferAToX(cpu);                                  /* $83:FB16 */
+    target = Read16ProgramIndexed(memory, cpu, 0xfb1au, cpu->x);
+                                                               /* $83:FB17 */
+
+    switch (target) {
+    case 0xfb22u:
+        address = DirectAddress(cpu, 0x91u);
+        value = (uint8_t)(Read8(memory, address) + 1u);
+        Write8(memory, address, value);
+        SetNz8(cpu, value);
+        return 0x83fb24u;
+    case 0xfb25u:
+        address = DirectAddress(cpu, 0x8fu);
+        value = (uint8_t)(Read8(memory, address) - 1u);
+        Write8(memory, address, value);
+        SetNz8(cpu, value);
+        return 0x83fb27u;
+    case 0xfb28u:
+        address = DirectAddress(cpu, 0x91u);
+        value = (uint8_t)(Read8(memory, address) - 1u);
+        Write8(memory, address, value);
+        SetNz8(cpu, value);
+        return 0x83fb2au;
+    case 0xfb2bu:
+        address = DirectAddress(cpu, 0x8fu);
+        value = (uint8_t)(Read8(memory, address) + 1u);
+        Write8(memory, address, value);
+        SetNz8(cpu, value);
+        return 0x83fb2du;
+    default:
+        return 0;
+    }
+}
+
+void Lufia2ActorResolveMapCellOffset(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x8fu)));     /* F9D4 */
+    ExchangeAccumulatorBytes(cpu);                             /* F9D6 */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x91u)));     /* F9D7 */
+
+    SimulateJsrFrame(memory, cpu, 0xf9dbu);                    /* F9D9 */
+    PrimaryMapCoordinateToCellOffset(memory, cpu);             /* F9F7 */
+    SimulateRtsFrame(memory, cpu);
+
+    SetAccumulatorWidth(cpu, 0);                               /* F9DC */
+    PushIndex(memory, cpu);                                    /* F9DE */
+    LoadA16(cpu, Read16Long(memory, 0x0005aau));               /* F9DF */
+    TransferAToX(cpu);                                         /* F9E3 */
+    PullAccumulator16(memory, cpu);                            /* F9E4 */
+    cpu->carry = 0;                                            /* F9E5 */
+    Add16Value(
+        cpu, Read16Long(
+            memory, LongIndexedAddress(0x7fd008u, cpu->x)));   /* F9E6 */
+    TransferAToX(cpu);                                         /* F9EA */
+    SetAccumulatorWidth(cpu, 1);                               /* F9EB */
+}
+
+void Lufia2ActorReadMapCellValue(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xfb73u);                    /* FB71 */
+    Lufia2ActorResolveMapCellOffset(memory, cpu);              /* F9D4 */
+    SimulateRtsFrame(memory, cpu);
+
+    SetAccumulatorWidth(cpu, 0);                               /* FB74 */
+    LoadA16(
+        cpu, Read16Long(
+            memory, LongIndexedAddress(0x7f0000u, cpu->x)));   /* FB76 */
+    And16(cpu, 0x03ffu);                                       /* FB7A */
+    cpu->carry = 0;                                            /* FB7D */
+    Add16Value(cpu, Read16Long(memory, 0x7fd03eu));            /* FB7E */
+    TransferAToX(cpu);                                         /* FB82 */
+    SetAccumulatorWidth(cpu, 1);                               /* FB83 */
+    TransferDirectToA(cpu);                                    /* FB85 */
+    LoadA8(
+        cpu, Read8(
+            memory, LongIndexedAddress(0x7f0000u, cpu->x)));   /* FB86 */
+}
+
 static void PrimaryActionBoundaryHelper(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu,
@@ -882,7 +1049,25 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
     LoadA8(
         cpu, Read8(memory, LongIndexedAddress(0x83c1b0u, cpu->x)));
                                                                /* D385 */
-    return LUFIA2_ACTOR_PRIMARY_ACTION_CONTINUE_D389;
+
+    SimulateJslFrame(memory, cpu, 0x83u, 0xd38cu);             /* D389 */
+    if (Lufia2ActorMovementStep(memory, cpu) == 0)
+        return LUFIA2_ACTOR_PRIMARY_ACTION_UNKNOWN_D370_TARGET;
+    SimulateRtlFrame(memory, cpu);
+
+    SimulateJslFrame(memory, cpu, 0x83u, 0xd390u);             /* D38D */
+    Lufia2ActorReadMapCellValue(memory, cpu);                   /* FB71 */
+    SimulateRtlFrame(memory, cpu);
+
+    Compare8(cpu, A8(cpu), 0x07u);                             /* D391 */
+    if (cpu->zero)
+        goto install_secondary_script;
+    Compare8(cpu, A8(cpu), 0x01u);                             /* D395 */
+    if (cpu->zero)
+        goto install_secondary_script;
+    Or8(cpu, 0x00u);                                          /* D399 */
+    if (!cpu->zero)
+        return LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE;         /* D39B */
 
 install_secondary_script:
     LoadXDirect(memory, cpu, 0xa7u);                           /* D39D */

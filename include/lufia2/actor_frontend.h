@@ -144,10 +144,31 @@ Lufia2ActorPrimaryScriptExecuteKnownHandler(
  * D3D7/D3E5, and the secondary-script installer at D3F7 are reconstructed.
  *
  * RETURN_D3AE means all semantics before the original RTL are committed.
- * CONTINUE_D389 stops immediately before JSL $83:FB12 on the movement path;
- * those larger collision/movement helpers remain a separate decomp target.
+ * The movement path now includes $83:FB12, $83:F9D4/$83:F9F7 and $83:FB71,
+ * so CONTINUE_D389 is retained only for source compatibility and is no longer
+ * emitted by the supported ROM paths.
  */
 Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/*
+ * $83:FB12 movement-coordinate step. The input A byte is the original
+ * direction-table offset (0,2,4,6). The return value is the exact RTL
+ * boundary PC ($83:FB24/$FB27/$FB2A/$FB2D), or zero for an unknown table
+ * target.
+ */
+uint32_t Lufia2ActorMovementStep(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:F9D4, including its $83:F9F7 coordinate-to-cell helper. */
+void Lufia2ActorResolveMapCellOffset(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:FB71 map-cell probe, including its call to $83:F9D4. */
+void Lufia2ActorReadMapCellValue(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
