@@ -36,7 +36,6 @@ typedef struct Lufia2ActorFrontendCpu {
 typedef enum Lufia2ActorPrimaryFlow {
     LUFIA2_ACTOR_PRIMARY_RETURN = 0,
     LUFIA2_ACTOR_PRIMARY_CONTINUE_C808 = 1,
-    LUFIA2_ACTOR_PRIMARY_CONTINUE_C829 = 2,
     LUFIA2_ACTOR_PRIMARY_CONTINUE_C83C = 3,
 } Lufia2ActorPrimaryFlow;
 

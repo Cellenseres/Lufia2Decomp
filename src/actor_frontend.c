@@ -187,7 +187,9 @@ Lufia2ActorPrimaryFlow Lufia2ActorPrimaryUpdateFrontend(
     BitImmediate8(cpu, 0x40u);                       /* $83:C825 */
     if (cpu->zero)                                   /* $83:C827 */
         return LUFIA2_ACTOR_PRIMARY_RETURN;
-    return LUFIA2_ACTOR_PRIMARY_CONTINUE_C829;
+    And8(cpu, 0xbfu);                                /* $83:C829 */
+    Write8(memory, AbsoluteIndexedAddress(cpu, 0x0622u), A8(cpu));
+                                                        /* $83:C82B */
 
 timer:
     LoadALongX(memory, cpu, 0x7fe3c6u);              /* $83:C82E */
