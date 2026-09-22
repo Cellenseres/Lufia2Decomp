@@ -23,10 +23,10 @@ status = "identified"
 address = "83:C7F8"
 name = "Lufia2ActorPrimaryUpdate"
 kind = "function"
-status = "identified"
+status = "draft"
 
 [[symbol]]
 address = "83:D508"
 name = "Lufia2ActorSecondaryUpdate"
 kind = "function"
-status = "identified"
+status = "draft"

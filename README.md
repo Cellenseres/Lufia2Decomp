@@ -18,7 +18,10 @@ Decompilation is incremental. The first reconstructed area is the bank-$83
 actor update path. `$83:BBF3` models the player-slot gate/dispatch routine and
 is verified against the original routine and consumer bridge. `$83:BB93`
 models the surrounding 40-slot actor traversal and remains `draft` while its
-full CPU, stack, bus and child-call contract is verified.
+full CPU, stack, bus and child-call contract is verified. `$83:C7F8` and
+`$83:D508` now also have `draft` portable front-ends for their reconstructed
+hot paths. They stop explicitly at still-unknown continuation blocks instead
+of pretending the complete functions are understood.
 
 The portable CMake target is:
 

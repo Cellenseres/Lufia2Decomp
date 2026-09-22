@@ -13,3 +13,8 @@ platform integration, and enhancements.
 Only functions whose metadata status is `verified` are eligible for native
 selection by a consumer. Consumers independently bind an address to a bridge;
 verification without a binding is informational and never activates code.
+
+Partial semantic front-ends may stop at named continuation boundaries when a
+whole routine is not reconstructed yet. They can be marked `draft` in symbol
+status, but stay out of `metadata/functions.toml` until they describe a whole
+replacement candidate with a representable entry/exit ABI.
