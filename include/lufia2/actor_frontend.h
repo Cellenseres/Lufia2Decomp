@@ -127,6 +127,13 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
  *   $83:D2BD  direct-entry cursor-low-byte alias and redispatch
  *   $83:D2C4  OR operand8 into $7F:E57E+slot
  *   $83:D2D5  AND operand8 into $7F:E57E+slot
+ *   $83:C891  install secondary script operand8 + $18
+ *   $83:C8EE  store operand8 to $7F:E4DE+slot
+ *   $83:C8FC/$83:C90A  set/clear actor $0736 bit 1
+ *   $83:CBB7  map-cell $30 test, flag $0736 bit 6 or skip
+ *   $83:CBE1  leader-within-radius test, jump or skip
+ *   $83:CC1B/$83:CC2E  leader X/Y equality, jump or skip
+ *   $83:CC41/$83:CC63  step toward leader on X/Y via D350
  *
  * Complete handlers include their original redispatch at C85A/C85C and
  * therefore return the next selected opcode/handler. C8C7 stops immediately
