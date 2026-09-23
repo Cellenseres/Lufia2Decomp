@@ -35,6 +35,9 @@ typedef struct Lufia2ActorFrontendCpu {
     uint8_t zero;
     uint8_t accumulator_is_8_bit;
     uint8_t index_is_8_bit;
+    uint8_t overflow;
+    uint8_t decimal;
+    uint8_t irq_disable;
 } Lufia2ActorFrontendCpu;
 
 typedef enum Lufia2ActorPrimaryFlow {
@@ -128,6 +131,8 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
  *   $83:D2C4  OR operand8 into $7F:E57E+slot
  *   $83:D2D5  AND operand8 into $7F:E57E+slot
  *   $83:C891  install secondary script operand8 + $18
+ *   $83:C8AF  timer = random(operand8) + operand8, via $80:8299
+ *   $83:C8D4  timer = (random(operand8) + operand8) * 8
  *   $83:C8EE  store operand8 to $7F:E4DE+slot
  *   $83:C8FC/$83:C90A  set/clear actor $0736 bit 1
  *   $83:CBB7  map-cell $30 test, flag $0736 bit 6 or skip
@@ -173,6 +178,15 @@ uint32_t Lufia2ActorMovementStep(
 
 /* $83:F9D4, including its $83:F9F7 coordinate-to-cell helper. */
 void Lufia2ActorResolveMapCellOffset(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/*
+ * $80:8299: A = (A.low * next random byte) >> 8. Advances $0559 through
+ * the 55-byte table at $0521 and refills it via $80:832D. Runs with the
+ * routine's own DB=$80; the caller models the JSL/RTL frame.
+ */
+void Lufia2RandomScale(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
