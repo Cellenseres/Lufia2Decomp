@@ -4073,6 +4073,54 @@ save_cursor:
     return SecondaryExit();
 }
 
+/* $83:D5F8: next byte. */
+static SecondaryStep SecondaryNextByte(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint8_t length) {
+    LoadXDirect(memory, cpu, 0x2au);
+    while (length--)
+        IncrementX16(cpu);
+    return SecondaryRedispatched(memory, cpu);
+}
+
+/* $83:D7A5: actor tile to $8F/$91. */
+static void SecondaryActorToProbe(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadXDirect(memory, cpu, 0xa7u);
+    LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);
+    Write8(memory, DirectAddress(cpu, 0x8fu), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+    Write8(memory, DirectAddress(cpu, 0x91u), A8(cpu));
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:D99F: signed operands onto $7F:DC8C/DD1C; M=0 exit. */
+static void SecondaryAddDisplayOffset(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadYDirect16(memory, cpu, 0x2au);
+    LoadXDirect(memory, cpu, 0xa9u);
+    PrimaryAddSignedPair(memory, cpu, 0x7fdc8cu, 0x0001u, 0xd9a9u);
+    SetAccumulatorWidth(cpu, 1);
+    PrimaryAddSignedPair(memory, cpu, 0x7fdd1cu, 0x0002u, 0xd9bbu);
+    SimulateRtsFrame(memory, cpu);
+}
+
+static void CopyLong16(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint32_t from,
+    uint32_t to) {
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(from, cpu->x)));
+    Write16Long(memory, LongIndexedAddress(to, cpu->x), cpu->accumulator);
+}
+
 static SecondaryStep SecondaryExecuteHandler(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu,
@@ -4159,6 +4207,343 @@ static SecondaryStep SecondaryExecuteHandler(
         IncrementX16(cpu);
         IncrementX16(cpu);
         return SecondaryRedispatched(memory, cpu);
+
+    case 0x83d833u:
+        LoadYDirect16(memory, cpu, 0x2au);                     /* D833 */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+        Write8(memory, LongIndexedAddress(0x7fe4deu, cpu->x), A8(cpu));
+        TransferYToX(cpu);
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        return SecondaryRedispatched(memory, cpu);
+
+    case 0x83d844u:
+        LoadXDirect(memory, cpu, 0x2au);                       /* D844 */
+        LoadAAbsolute8(memory, cpu, 0x0736u, cpu->y);
+        BitImmediate8(cpu, 0x02u);
+        if (cpu->zero) {
+            LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);      /* D84D */
+            StoreAAbsolute8(memory, cpu, 0x066au, cpu->y);
+        }
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        return SecondaryRedispatched(memory, cpu);
+
+    case 0x83da9au:
+        LoadYDirect16(memory, cpu, 0x2au);                     /* DA9A */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+        StoreAAbsolute8(memory, cpu, 0x0692u, cpu->x);
+        TransferDirectToA(cpu);                                /* DAA4 */
+        Write8(memory, LongIndexedAddress(0x7fe48eu, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(0x7fe4b6u, cpu->x), A8(cpu));
+        TransferYToX(cpu);
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        return SecondaryRedispatched(memory, cpu);
+
+    case 0x83dee9u: {
+        const uint32_t wait = 0x7fe48eu;
+
+        LoadYDirect16(memory, cpu, 0x2au);                     /* DEE9 */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(wait, cpu->x)));
+        if (!cpu->negative) {
+            LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);      /* DEF3 */
+            And8(cpu, 0x0fu);
+            Or8(cpu, 0x80u);
+            Write8(memory, LongIndexedAddress(wait, cpu->x), A8(cpu));
+        } else {
+            DecrementA8(cpu);                                  /* DF00 */
+            Write8(memory, LongIndexedAddress(wait, cpu->x), A8(cpu));
+            And8(cpu, 0x0fu);
+            if (cpu->zero) {
+                Write8(memory, LongIndexedAddress(wait, cpu->x), A8(cpu));
+                return SecondaryNextByte(memory, cpu, 1);      /* DF0D */
+            }
+        }
+        SetAccumulatorWidth(cpu, 0);                           /* DF10 */
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x2au));
+        return SecondarySaveCursorExit(memory, cpu);
+    }
+
+    case 0x83d7b2u:
+        LoadYDirect16(memory, cpu, 0x2au);                     /* D7B2 */
+        LoadXDirect(memory, cpu, 0xa9u);
+        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+        Write8(memory, LongIndexedAddress(0x7fdb4cu, cpu->x), A8(cpu));
+        SetAccumulatorWidth(cpu, 0);                           /* D7BD */
+        LoadA16(cpu, cpu->y);
+        IncrementA16(cpu);
+        IncrementA16(cpu);
+        Write16Long(
+            memory, LongIndexedAddress(0x7fdb9cu, cpu->x), cpu->accumulator);
+        TransferAToX(cpu);
+        SetAccumulatorWidth(cpu, 1);
+        return SecondaryRedispatched(memory, cpu);
+
+    case 0x83d7ccu:
+        LoadXDirect(memory, cpu, 0xa9u);                       /* D7CC */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb4cu, cpu->x)));
+        DecrementA8(cpu);
+        Write8(memory, LongIndexedAddress(0x7fdb4cu, cpu->x), A8(cpu));
+        if (cpu->zero)
+            return SecondaryNextByte(memory, cpu, 1);          /* D7D9 */
+        SetAccumulatorWidth(cpu, 0);                           /* D7DF */
+        LoadA16(
+            cpu, Read16Long(memory, LongIndexedAddress(0x7fdb9cu, cpu->x)));
+        TransferAToX(cpu);
+        SetAccumulatorWidth(cpu, 1);
+        return SecondaryRedispatched(memory, cpu);
+
+    case 0x83d80eu:
+        LoadXDirect(memory, cpu, 0xa9u);                       /* D80E */
+        TransferDirectToA(cpu);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(
+            cpu, Read16Long(memory, LongIndexedAddress(0x7fdbecu, cpu->x)));
+        cpu->carry = 0;
+        Add16Value(
+            cpu, Read16Long(memory, LongIndexedAddress(0x7fdc3cu, cpu->x)));
+        Write16Long(
+            memory, LongIndexedAddress(0x7fdbecu, cpu->x), cpu->accumulator);
+        LsrA16(cpu);                                           /* D820 */
+        LsrA16(cpu);
+        cpu->carry = 0;
+        Add16Value(
+            cpu, Read16Long(memory, LongIndexedAddress(0x7fdd1cu, cpu->x)));
+        Write16Long(
+            memory, LongIndexedAddress(0x7fdd1cu, cpu->x), cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        return SecondaryNextByte(memory, cpu, 1);
+
+    case 0x83d969u:
+        LoadYDirect16(memory, cpu, 0x2au);                     /* D969 */
+        LoadXDirect(memory, cpu, 0xa9u);
+        SetAccumulatorWidth(cpu, 0);
+        for (uint8_t i = 0; i < 2u; ++i) {
+            const uint32_t pair = i ? 0x7fdd1cu : 0x7fdc8cu;
+            LoadA16(
+                cpu, Read16AbsoluteIndexed(
+                    memory, cpu, i ? 0x0003u : 0x0001u, cpu->y));
+            cpu->carry = 0;
+            Add16Value(
+                cpu, Read16Long(memory, LongIndexedAddress(pair, cpu->x)));
+            Write16Long(
+                memory, LongIndexedAddress(pair, cpu->x), cpu->accumulator);
+        }
+        LoadA16(cpu, cpu->y);                                  /* D987 */
+        cpu->carry = 0;
+        Add16Immediate(cpu, 0x0005u);
+        TransferAToX(cpu);
+        SetAccumulatorWidth(cpu, 1);
+        return SecondaryRedispatched(memory, cpu);
+
+    case 0x83db77u:
+        LoadXDirect(memory, cpu, 0x2au);                       /* DB77 */
+        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+        {
+            const uint8_t clear = !cpu->zero;
+            LoadAAbsolute8(memory, cpu, 0x0736u, cpu->y);
+            if (clear)
+                And8(cpu, 0xfdu);                              /* DB81 */
+            else
+                Or8(cpu, 0x02u);                               /* DB8B */
+            StoreAAbsolute8(memory, cpu, 0x0736u, cpu->y);
+        }
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        return SecondaryRedispatched(memory, cpu);
+
+    case 0x83dbdcu:
+        LoadXDirect(memory, cpu, 0x2au);                       /* DBDC */
+        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+        LoadXDirect(memory, cpu, 0xa7u);
+        Write8(memory, LongIndexedAddress(0x7fe35eu, cpu->x), A8(cpu));
+        Or8(cpu, 0x00u);
+        {
+            const uint8_t blink = !cpu->zero;
+            LoadA8(
+                cpu, Read8(memory, LongIndexedAddress(0x000736u, cpu->x)));
+            if (blink)
+                Or8(cpu, 0x80u);                               /* DBF7 */
+            else
+                And8(cpu, 0x7fu);                              /* DBEF */
+            Write8(memory, LongIndexedAddress(0x000736u, cpu->x), A8(cpu));
+        }
+        return SecondaryNextByte(memory, cpu, 2);
+
+    case 0x83dab3u:
+        LoadXDirect(memory, cpu, 0xa7u);                       /* DAB3 */
+        LoadAAbsolute8(memory, cpu, 0x066au, cpu->x);
+        And8(cpu, 0x07u);
+        StoreAAbsolute8(memory, cpu, 0x0692u, cpu->x);
+        return SecondaryNextByte(memory, cpu, 1);
+
+    case 0x83dac3u:
+        return SecondaryNextByte(memory, cpu, 1);             /* DAC3 */
+
+    case 0x83dac9u:
+        LoadXDirect(memory, cpu, 0x2au);                       /* DAC9 */
+        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+        Compare8(cpu, A8(cpu), 0x01u);
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe316u, cpu->x)));
+        if (cpu->carry)
+            Or8(cpu, 0x80u);                                   /* DADC */
+        else
+            And8(cpu, 0x7fu);                                  /* DAD8 */
+        Write8(memory, LongIndexedAddress(0x7fe316u, cpu->x), A8(cpu));
+        return SecondaryNextByte(memory, cpu, 2);
+
+    case 0x83dd54u:
+        LoadXDirect(memory, cpu, 0x2au);                       /* DD54 */
+        cpu->y = cpu->x;                                       /* TXY */
+        SetNz16(cpu, cpu->y);
+        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+        LoadXDirect(memory, cpu, 0xa7u);
+        Write8(memory, LongIndexedAddress(0x7fe2eeu, cpu->x), A8(cpu));
+        LoadAAbsolute8(memory, cpu, 0x066au, cpu->x);
+        And8(cpu, 0x07u);
+        StoreAAbsolute8(memory, cpu, 0x066au, cpu->x);
+        TransferYToX(cpu);
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        return SecondaryRedispatched(memory, cpu);
+
+    case 0x83debdu:
+        LoadXDirect(memory, cpu, 0xa9u);                       /* DEBD */
+        SetAccumulatorWidth(cpu, 0);
+        CopyLong16(memory, cpu, 0x7fddaeu, 0x7fdb4cu);
+        CopyLong16(memory, cpu, 0x7fde3eu, 0x7fdb9cu);
+        CopyLong16(memory, cpu, 0x7fdc8cu, 0x7fdbecu);
+        CopyLong16(memory, cpu, 0x7fdd1cu, 0x7fdc3cu);
+        SetAccumulatorWidth(cpu, 1);
+        return SecondaryNextByte(memory, cpu, 1);
+
+    case 0x83db54u:
+    case 0x83db5au: {
+        const uint8_t save = (handler_pc & 0x00ffffffu) == 0x83db54u;
+
+        SimulateJsrFrame(memory, cpu, save ? 0xdb56u : 0xdb5cu);
+        Lufia2ActorMoveFinePosition(memory, cpu);              /* FA81 */
+        SimulateRtsFrame(memory, cpu);
+        if (save)
+            return SecondarySaveCursorExit(memory, cpu);       /* DB57 */
+        TransferAToX(cpu);                                     /* DB5D */
+        SetAccumulatorWidth(cpu, 1);
+        return SecondaryRedispatched(memory, cpu);
+    }
+
+    case 0x83db6du:
+        SimulateJslFrame(memory, cpu, 0x83u, 0xdb70u);         /* DB6D */
+        Lufia2ActorMarkMapOccupancy(memory, cpu);
+        SimulateRtlFrame(memory, cpu);
+        return SecondaryNextByte(memory, cpu, 1);
+
+    case 0x83d760u:
+        LoadXDirect(memory, cpu, 0x2au);                       /* D760 */
+        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+        SimulateJslFrame(memory, cpu, 0x83u, 0xd768u);
+        Lufia2QueueDeferredSound(memory, cpu);
+        SimulateRtlFrame(memory, cpu);
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        return SecondaryRedispatched(memory, cpu);
+
+    case 0x83d7ebu:
+        LoadYDirect16(memory, cpu, 0x2au);                     /* D7EB */
+        LoadXDirect(memory, cpu, 0xa9u);
+        for (uint8_t i = 0; i < 2u; ++i) {
+            LoadAAbsolute8(memory, cpu, i ? 0x0002u : 0x0001u, cpu->y);
+            PrimarySignExtend(memory, cpu, i ? 0xd800u : 0xd7f4u);
+            Write16Long(
+                memory, LongIndexedAddress(i ? 0x7fdc3cu : 0x7fdbecu, cpu->x),
+                cpu->accumulator);
+            SetAccumulatorWidth(cpu, 1);
+        }
+        IncrementY16(cpu);                                     /* D807 */
+        IncrementY16(cpu);
+        IncrementY16(cpu);
+        TransferYToX(cpu);
+        return SecondaryRedispatched(memory, cpu);
+
+    case 0x83dbc2u:
+        LoadXDirect(memory, cpu, 0xa9u);                       /* DBC2 */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb4cu, cpu->x)));
+        StoreAAbsolute8(memory, cpu, 0x06bau, cpu->y);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb4du, cpu->x)));
+        StoreAAbsolute8(memory, cpu, 0x06e2u, cpu->y);
+        SimulateJslFrame(memory, cpu, 0x83u, 0xdbd5u);
+        Lufia2ActorSyncFinePosition(memory, cpu);              /* A746 */
+        SimulateRtlFrame(memory, cpu);
+        return SecondaryNextByte(memory, cpu, 1);
+
+    case 0x83dc04u:
+        LoadXDirect(memory, cpu, 0x2au);                       /* DC04 */
+        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+        {
+            const uint8_t restore = !cpu->zero;
+            uint32_t flags;
+
+            LoadXDirect(memory, cpu, 0xa7u);                   /* DC0B */
+            flags = LongIndexedAddress(0x7fe316u, cpu->x);
+            LoadA8(cpu, Read8(memory, flags));
+            if (restore) {
+                And8(cpu, 0x7fu);                              /* DC11 */
+                Write8(memory, flags, A8(cpu));
+                LoadXDirect(memory, cpu, 0xa9u);
+                LoadA8(
+                    cpu, Read8(memory, LongIndexedAddress(0x7fdb4cu, cpu->x)));
+                ExchangeAccumulatorBytes(cpu);
+                LoadA8(
+                    cpu, Read8(memory, LongIndexedAddress(0x7fdb4du, cpu->x)));
+            } else {
+                Or8(cpu, 0x80u);                               /* DC2A */
+                Write8(memory, flags, A8(cpu));
+                TransferDirectToA(cpu);
+            }
+        }
+        LoadXDirect(memory, cpu, 0xa7u);                       /* DC31 */
+        StoreAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+        ExchangeAccumulatorBytes(cpu);
+        StoreAAbsolute8(memory, cpu, 0x06bau, cpu->x);
+        SimulateJslFrame(memory, cpu, 0x83u, 0xdc3du);
+        Lufia2ActorSyncFinePosition(memory, cpu);              /* A746 */
+        SimulateRtlFrame(memory, cpu);
+        return SecondaryNextByte(memory, cpu, 2);
+
+    case 0x83d78cu:
+    case 0x83d79cu: {
+        const uint8_t step = (handler_pc & 0x00ffffffu) == 0x83d78cu;
+
+        SecondaryActorToProbe(memory, cpu, step ? 0xd78eu : 0xd79eu);
+        if (step) {
+            LoadAAbsolute8(memory, cpu, 0x0692u, cpu->x);      /* D78F */
+            SimulateJslFrame(memory, cpu, 0x83u, 0xd795u);
+            if (Lufia2ActorMovementStep(memory, cpu) == 0)
+                return SecondaryBoundary(cpu);
+            SimulateRtlFrame(memory, cpu);
+        }
+        return SecondaryNextByte(memory, cpu, 1);
+    }
+
+    case 0x83d95eu:
+    case 0x83d992u: {
+        const uint8_t save = (handler_pc & 0x00ffffffu) == 0x83d95eu;
+
+        SecondaryAddDisplayOffset(memory, cpu, save ? 0xd960u : 0xd994u);
+        if (save) {
+            LoadA16(cpu, Read16Direct(memory, cpu, 0x2au));    /* D961 */
+            IncrementA16(cpu);
+            IncrementA16(cpu);
+            IncrementA16(cpu);
+            return SecondarySaveCursorExit(memory, cpu);
+        }
+        SetAccumulatorWidth(cpu, 1);                           /* D995 */
+        return SecondaryNextByte(memory, cpu, 3);
+    }
 
     case 0x83dc45u:
         return SecondaryWalk(memory, cpu);
