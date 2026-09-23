@@ -61,3 +61,14 @@ source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X0"
 status = "verified"
+
+# Whole D508 through its RTS. Handlers still in LLE (6x DAE9, the
+# F5B9/F795 tile-graphics family, D76E cell value 9) stop at their
+# exact ROM PC.
+[[function]]
+address = "83:D508"
+name = "Lufia2ActorSecondaryUpdate"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
