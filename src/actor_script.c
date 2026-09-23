@@ -5842,3 +5842,318 @@ Lufia2ActorPrimaryUpdateResult Lufia2UpdateActorSlots(
     }
     return result;
 }
+
+/* $80:CBAE: tick event timers $7F:D18C; 0 = handoff. */
+static uint8_t FieldEventTimers(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    cpu->program_bank = 0x80u;
+    PushDataBank(memory, cpu);                                 /* CBAE */
+    Push8(memory, cpu, PackStatus(cpu));
+    SetIndexWidth(cpu, 0);
+    Write8(memory, AbsoluteIndexedAddress(cpu, 0x1273u, 0), 0x00u);
+    LoadA8(cpu, 0x02u);
+    TestBitsAbsolute8(memory, cpu, 0x05b5u, 0);
+    LoadX16(cpu, 0x0000u);
+    do {
+        const uint32_t timer = LongIndexedAddress(0x7fd18cu, cpu->x);
+
+        LoadA8(cpu, Read8(memory, timer));                     /* CBBD */
+        if (cpu->negative) {
+            DecrementA8(cpu);
+            Write8(memory, timer, A8(cpu));
+            And8(cpu, 0x7fu);
+            if (cpu->zero) {
+                /* $80:CC35 runs the expired entry. */
+                cpu->resume_pc = 0x80cbccu;
+                return 0;
+            }
+        }
+        IncrementX16(cpu);                                     /* CBF0 */
+        Compare16(cpu, cpu->x, 0x0008u);
+    } while (!cpu->carry);
+    LoadX16(cpu, 0x0007u);                                     /* CBF6 */
+    for (;;) {
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd18cu, cpu->x)));
+        if (cpu->negative) {
+            LoadA8(cpu, 0x02u);                                /* CBFF */
+            TestBitsAbsolute8(memory, cpu, 0x05b5u, 1);
+            break;
+        }
+        LoadX16(cpu, (uint16_t)(cpu->x - 1u));                 /* CC06 */
+        if (cpu->negative)
+            break;
+    }
+    LoadAAbsolute8(memory, cpu, 0x1273u, 0);                   /* CC09 */
+    if (!cpu->zero) {
+        cpu->resume_pc = 0x80cc0eu;
+        return 0;
+    }
+    UnpackStatus(cpu, Pull8(memory, cpu));                     /* CC23 */
+    PullDataBank(memory, cpu);
+    return 1;
+}
+
+/* $83:80CD: field idle test; zero = no event running. */
+static void FieldIdle(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    static const uint16_t gates[5] = {0x09a8u, 0x0622u, 0x05b7u, 0x05b5u,
+                                      0x17aau};
+    static const uint8_t masks[5] = {0x08u, 0x88u, 0x07u, 0xa2u, 0x00u};
+    unsigned i;
+
+    SimulateJsrFrame(memory, cpu, return_address);
+    for (i = 0; i < 5u; ++i) {
+        LoadAAbsolute8(memory, cpu, gates[i], 0);              /* 80CD */
+        if (masks[i])
+            BitImmediate8(cpu, masks[i]);
+        if (!cpu->zero)
+            goto done;
+    }
+    LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 80EE */
+    BitImmediate8(cpu, 0x80u);
+    if (!cpu->zero)
+        goto done;
+    LoadX8(cpu, 0x00u);                                        /* 80F5 */
+    do {
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd057u, cpu->x)));
+        if (cpu->negative)
+            goto done;
+        LoadX8(cpu, (uint8_t)(cpu->x + 1u));                   /* 80FD */
+        Compare8(cpu, (uint8_t)cpu->x, 0x08u);
+    } while (!cpu->zero);
+done:
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:D927: edge bit of the cell next to $8F/$91. */
+static void FieldEdgeTest(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    static const uint16_t sites[4] = {0xd936u, 0xd940u, 0xd94au, 0xd956u};
+    const unsigned slot = (cpu->x >> 1) & 3u;
+
+    SimulateJsrFrame(memory, cpu, 0xb966u);                    /* B964 */
+    if (slot == 0)
+        IncrementDirect8(memory, cpu, 0x91u);                  /* D932 */
+    else if (slot == 3)
+        IncrementDirect8(memory, cpu, 0x8fu);                  /* D952 */
+    PrimaryCollisionIndex(memory, cpu, sites[slot], 1);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e4000u, cpu->x)));
+    BitImmediate8(cpu, (slot == 0 || slot == 2) ? 0x10u : 0x20u);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:B8BF: actor 8..39 touching the leader; 0 = handoff. */
+static uint8_t FieldTouchScan(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SimulateJsrFrame(memory, cpu, 0x81f8u);
+    LoadAAbsolute8(memory, cpu, 0x057cu, 0);                   /* B8BF */
+    if (!cpu->zero) {
+        LoadA8(cpu, 0x80u);
+        And8(cpu, Read8(memory, DirectAddress(cpu, 0x47u)));
+        if (!cpu->zero) {
+            SimulateRtsFrame(memory, cpu);                     /* B8CA */
+            return 1;
+        }
+    }
+    SetIndexWidth(cpu, 0);                                     /* B8CB */
+    LoadAAbsolute8(memory, cpu, 0x06bau, 0);
+    Write8(memory, DirectAddress(cpu, 0x8fu), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x06e2u, 0);
+    Write8(memory, DirectAddress(cpu, 0x91u), A8(cpu));
+    PrimaryTileHeight(memory, cpu, 0xb8d9u);
+    Write8(memory, DirectAddress(cpu, 0x56u), A8(cpu));
+    LoadX16(cpu, 0x0008u);
+    for (;;) {
+        uint8_t hit = 0;
+
+        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);          /* B8DF */
+        BitImmediate8(cpu, 0x04u);
+        if (!cpu->zero)
+            goto next;
+        BitImmediate8(cpu, 0x80u);
+        if (!cpu->zero)
+            goto next;
+        LoadAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+        BitImmediate8(cpu, 0x14u);
+        if (!cpu->zero)
+            goto next;
+        LoadAAbsolute8(memory, cpu, 0x05fau, cpu->x);
+        Compare8(cpu, A8(cpu), 0xfdu);
+        if (cpu->zero)
+            goto next;
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+        And8(cpu, 0x02u);
+        LsrA8(cpu);
+        Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
+        LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);          /* B901 */
+        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x91u)));
+        if (!cpu->zero) {
+            LoadA8(cpu, (uint8_t)(A8(cpu) - 2u));              /* B908 */
+            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x91u)));
+            if (cpu->carry)
+                goto next;
+            LoadA8(cpu, (uint8_t)(A8(cpu) + 3u));              /* B90E */
+            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x91u)));
+            if (!cpu->carry)
+                goto next;
+            LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);      /* B915 */
+            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x8fu)));
+            if (cpu->zero) {
+                hit = 1;
+            } else {
+                cpu->carry = 0;
+                Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));
+                Compare8(
+                    cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x8fu)));
+                hit = cpu->zero;
+            }
+        } else {
+            LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);      /* B925 */
+            LoadA8(cpu, (uint8_t)(A8(cpu) - 2u));
+            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x8fu)));
+            if (cpu->carry)
+                goto next;
+            LoadA8(cpu, (uint8_t)(A8(cpu) + 3u));              /* B92E */
+            cpu->carry = 0;
+            Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));
+            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x8fu)));
+            hit = cpu->carry;
+        }
+        if (hit) {
+            uint8_t side;
+
+            StoreXDirect16(memory, cpu, 0x65u);                /* B942 */
+            LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x91u)));
+            if (!cpu->zero) {
+                side = cpu->carry ? 0u : 4u;                   /* B94B */
+            } else {
+                LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);  /* B955 */
+                Compare8(
+                    cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x8fu)));
+                if (cpu->zero) {
+                    cpu->resume_pc = 0x83b96du;
+                    return 0;
+                }
+                side = cpu->carry ? 6u : 2u;
+            }
+            LoadX16(cpu, side);
+            FieldEdgeTest(memory, cpu);
+            if (cpu->zero) {
+                cpu->resume_pc = 0x83b96du;                    /* B967 */
+                return 0;
+            }
+            LoadXDirect16(memory, cpu, 0x65u);                 /* B969 */
+        }
+next:
+        IncrementX16(cpu);                                     /* B93A */
+        Compare16(cpu, cpu->x, 0x0028u);
+        if (cpu->zero)
+            break;
+    }
+    cpu->carry = 0;                                            /* B940 */
+    SimulateRtsFrame(memory, cpu);
+    return 1;
+}
+
+Lufia2ActorPrimaryUpdateResult Lufia2FieldTriggerUpdate(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    Lufia2ActorPrimaryUpdateResult result;
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.dispatches = 0;
+    Push8(memory, cpu, PackStatus(cpu));                       /* 81C6 */
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 0);
+    SimulateJslFrame(memory, cpu, 0x83u, 0x81ceu);
+    if (!FieldEventTimers(memory, cpu)) {
+        result.pc = cpu->resume_pc;
+        return result;
+    }
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x83u;
+    LoadAAbsolute8(memory, cpu, 0x09a7u, 0);                   /* 81CF */
+    BitImmediate8(cpu, 0x01u);
+    if (!cpu->zero) {
+        SetIndexWidth(cpu, 1);                                 /* 81D6 */
+        FieldIdle(memory, cpu, 0x81dau);
+        SetIndexWidth(cpu, 0);
+        if (cpu->zero) {
+            LoadA8(cpu, Read8(memory, 0x7fd0a1u));             /* 81DF */
+            BitImmediate8(cpu, 0x3cu);
+            if (cpu->zero) {
+                PushDataBank(memory, cpu);                     /* 81E7 */
+                LoadAAbsolute8(memory, cpu, 0x06bau, 0);
+                Write8(memory, DirectAddress(cpu, 0x8fu), A8(cpu));
+                LoadAAbsolute8(memory, cpu, 0x06e2u, 0);
+                Write8(memory, DirectAddress(cpu, 0x91u), A8(cpu));
+                LoadA8(cpu, 0x7eu);
+                PushAccumulator8(memory, cpu);
+                PullDataBank(memory, cpu);
+                if (!FieldTouchScan(memory, cpu)) {
+                    result.pc = cpu->resume_pc;
+                    return result;
+                }
+                PullDataBank(memory, cpu);                     /* 81F9 */
+            }
+        }
+    }
+    LoadAAbsolute8(memory, cpu, 0x0622u, 0);                   /* 81FA */
+    BitImmediate8(cpu, 0x40u);
+    if (!cpu->zero) {
+        BitImmediate8(cpu, 0x80u);
+        if (cpu->zero) {
+            uint8_t armed = 0;
+
+            LoadA8(cpu, Read8(memory, 0x7fd0a1u));             /* 8205 */
+            BitImmediate8(cpu, 0x04u);
+            if (!cpu->zero) {
+                armed = 1;
+            } else {
+                BitImmediate8(cpu, 0x38u);
+                if (cpu->zero) {
+                    LoadAAbsolute8(memory, cpu, 0x09a8u, 0);
+                    BitImmediate8(cpu, 0x08u);
+                    armed = cpu->zero;
+                }
+            }
+            if (armed) {
+                LoadAAbsolute8(memory, cpu, 0x05b5u, 0);       /* 8218 */
+                BitImmediate8(cpu, 0x02u);
+                if (cpu->zero) {
+                    LoadA8(cpu, Read8(memory, 0x7fd0a3u));
+                    if (!cpu->zero) {
+                        /* $80:E722 queues the event. */
+                        result.pc = cpu->resume_pc = 0x838225u;
+                        return result;
+                    }
+                }
+            }
+        }
+    }
+    LoadAAbsolute8(memory, cpu, 0x05b5u, 0);                   /* 823B */
+    BitImmediate8(cpu, 0x10u);
+    if (!cpu->zero) {
+        LoadAAbsolute8(memory, cpu, 0x0622u, 0);
+        BitImmediate8(cpu, 0x80u);
+        if (cpu->zero) {
+            LoadA8(cpu, Read8(memory, 0x7fd0a1u));
+            BitImmediate8(cpu, 0x08u);
+            if (cpu->zero) {
+                /* Door/warp handling stays in LLE. */
+                result.pc = cpu->resume_pc = 0x838251u;
+                return result;
+            }
+        }
+    }
+    UnpackStatus(cpu, Pull8(memory, cpu));                     /* 829E */
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.pc = 0x83829fu;
+    return result;
+}

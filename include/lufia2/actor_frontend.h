@@ -115,6 +115,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2UpdateActorSlots(
     Lufia2ActorSlotChild child,
     void *child_context);
 
+/* $83:81C6 field trigger checks; exact LLE boundaries. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldTriggerUpdate(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $83:C1B4 player controller; exact LLE boundaries. */
 Lufia2ActorPrimaryUpdateResult Lufia2PlayerSlotStandardUpdate(
     const Lufia2ActorFrontendMemory *memory,

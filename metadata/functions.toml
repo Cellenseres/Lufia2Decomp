@@ -85,3 +85,13 @@ source = "src/actor_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Per-frame field triggers. Expiring timers, touch events, the
+# trigger queue and door warps stop at their exact ROM PC.
+[[function]]
+address = "83:81C6"
+name = "Lufia2FieldTriggerUpdate"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
