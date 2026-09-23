@@ -590,6 +590,21 @@ static Lufia2ActorPrimaryScriptStepResult PrimaryStepRedispatched(
     return result;
 }
 
+
+static uint8_t PrimaryCallActionCore(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    Lufia2ActorPrimaryActionFlow flow;
+
+    SimulateJslFrame(memory, cpu, 0x83u, return_address);
+    flow = Lufia2ActorPrimaryActionCore(memory, cpu);
+    if (flow != LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE)
+        return 0;
+    SimulateRtlFrame(memory, cpu);
+    return 1;
+}
+
 Lufia2ActorPrimaryScriptStepResult
 Lufia2ActorPrimaryScriptExecuteKnownHandler(
     const Lufia2ActorFrontendMemory *memory,
@@ -603,6 +618,54 @@ Lufia2ActorPrimaryScriptExecuteKnownHandler(
     result.handler_pc = handler_pc & 0x00ffffffu;
 
     switch (handler_pc & 0x00ffffffu) {
+
+
+    case 0x83c867u:
+        LoadA8(cpu, 0x00u);                            /* $83:C867 */
+        goto primary_fixed_action;
+    case 0x83c86bu:
+        LoadA8(cpu, 0x01u);                            /* $83:C86B */
+        goto primary_fixed_action;
+    case 0x83c86fu:
+        LoadA8(cpu, 0x02u);                            /* $83:C86F */
+        goto primary_fixed_action;
+    case 0x83c873u:
+        LoadA8(cpu, 0x03u);                            /* $83:C873 */
+        goto primary_fixed_action;
+    case 0x83c87cu:
+        LoadA8(cpu, 0x81u);                            /* $83:C87C */
+        goto primary_fixed_action;
+    case 0x83c880u:
+        LoadA8(cpu, 0x82u);                            /* $83:C880 */
+        goto primary_fixed_action;
+    case 0x83c884u:
+        LoadA8(cpu, 0x83u);                            /* $83:C884 */
+        goto primary_fixed_action;
+    case 0x83c888u:
+        LoadA8(cpu, 0x84u);                            /* $83:C888 */
+        goto primary_fixed_action;
+
+primary_fixed_action:
+        if (!PrimaryCallActionCore(memory, cpu, 0xc88du)) {
+            result.handler_pc = 0x83d350u;
+            return result;
+        }
+        IncrementY16(cpu);                             /* $83:C8C6 */
+        return Lufia2ActorPrimaryScriptExecuteKnownHandler(
+            memory, cpu, 0x83c8c7u);
+
+    case 0x83c877u:
+        LoadA8(
+            cpu, Read8(
+                memory, AbsoluteIndexedAddress(cpu, 0x0001u, cpu->y)));
+                                                        /* $83:C877 */
+        if (!PrimaryCallActionCore(memory, cpu, 0xc88du)) {
+            result.handler_pc = 0x83d350u;
+            return result;
+        }
+        IncrementY16(cpu);                             /* $83:C8C6 */
+        return Lufia2ActorPrimaryScriptExecuteKnownHandler(
+            memory, cpu, 0x83c8c7u);
 
     case 0x83cc85u:
         IncrementY16(cpu);                             /* $83:CC85 */
@@ -690,9 +753,15 @@ Lufia2ActorPrimaryScriptExecuteKnownHandler(
                 memory, AbsoluteIndexedAddress(cpu, 0x09a1u, cpu->x)));
                                                         /* $83:D161 */
         if (!cpu->negative) {                         /* $83:D164 */
-            result.flow = LUFIA2_ACTOR_PRIMARY_SCRIPT_CONTINUE_D166;
-            result.handler_pc = 0x83d166u;
-            return result;
+            if (!PrimaryCallActionCore(memory, cpu, 0xd169u)) {
+                result.flow = LUFIA2_ACTOR_PRIMARY_SCRIPT_CONTINUE_D166;
+                result.handler_pc = 0x83d166u;
+                return result;
+            }
+            LoadA8(cpu, Read8(memory, 0x7fe4deu));     /* $83:D16A */
+            Write8(
+                memory, LongIndexedAddress(0x7fe4deu, cpu->x),
+                A8(cpu));                              /* $83:D16E */
         }
 
 d14d_commit:

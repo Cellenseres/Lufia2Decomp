@@ -119,8 +119,10 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
  *   $83:C8C7  commit the current script cursor through $83:C8D2
  *   $83:CC85  X-coordinate range test, jump or skip
  *   $83:CCA3  Y-coordinate range test, jump or skip
- *   $83:D14D  conditional action prefix; stops at child call $83:D166
- *              when the still-unreconstructed $83:D350 action is required
+ *   $83:C867/$83:C86B/$83:C86F/$83:C873 fixed actions 0..3
+ *   $83:C87C/$83:C880/$83:C884/$83:C888 fixed actions $81..$84
+ *   $83:C877  action byte from operand
+ *   $83:D14D  conditional action handler, including its D350 call
  *   $83:D2B4  replace the script cursor with operand16 + $A1D4
  *   $83:D2BD  direct-entry cursor-low-byte alias and redispatch
  *   $83:D2C4  OR operand8 into $7F:E57E+slot
@@ -128,9 +130,9 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
  *
  * Complete handlers include their original redispatch at C85A/C85C and
  * therefore return the next selected opcode/handler. C8C7 stops immediately
- * before the common PLB/RTS exit at C8D2. D14D's no-child paths also reach
- * C8D2; its child path stops before the JSL at D166. Unknown handlers are
- * left untouched.
+ * before the common PLB/RTS exit at C8D2. The reconstructed D14D and direct
+ * action handlers now include their D350 JSL/RTL stack semantics and also
+ * reach C8D2. Unknown handlers are left untouched.
  */
 Lufia2ActorPrimaryScriptStepResult
 Lufia2ActorPrimaryScriptExecuteKnownHandler(
