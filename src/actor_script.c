@@ -862,10 +862,7 @@ typedef enum PrimaryListSearch {
     PRIMARY_LIST_BOUNDARY = 2,
 } PrimaryListSearch;
 
-/*
- * $83:D0AA: walk the $7E:F000 point list (stride A) for a point in
- * the operand radius the actor can step toward.
- */
+/* $83:D0AA: first steppable listed point in radius. */
 static PrimaryListSearch PrimaryApproachListedPoint(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu,
@@ -1057,11 +1054,7 @@ static uint8_t PrimaryWideActor(
     return cpu->carry;
 }
 
-/*
- * $83:D89E: collision check for one step in direction A (0,2,4,6)
- * from $8F/$91. Nonzero A/Z clear means blocked. Zero return is an
- * unknown table target.
- */
+/* $83:D89E: step collision; Z clear = blocked, 0 = unknown. */
 static uint8_t PrimaryStepBlocked(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu,
@@ -1136,10 +1129,7 @@ static uint8_t PrimaryStepBlocked(
     return 1;
 }
 
-/*
- * $83:CDF6: count clear, same-height steps in direction $94 from
- * $8F/$91 inside box $9F..$A2 into $9D. Zero return is a boundary.
- */
+/* $83:CDF6: clear same-height run length into $9D. */
 static uint8_t PrimaryMeasureRun(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu,
@@ -1252,11 +1242,7 @@ static void PrimaryResetProbe(
     SimulateRtsFrame(memory, cpu);
 }
 
-/*
- * $83:CEA8: pick a random direction on one axis (A = 0 or 2), fall
- * back to the opposite one, and walk a random distance of at least
- * $66 and at most $65 steps from $63/$64.
- */
+/* $83:CEA8: random walk of $66..$65 steps on one axis. */
 static uint8_t PrimaryWanderAxis(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu,

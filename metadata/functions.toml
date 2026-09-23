@@ -16,3 +16,37 @@ source = "src/player_update.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# Whole replacements. Native ABI: M=1, D=0, native mode; other
+# entries run in LLE. D350/F9D4/FB71 need 16-bit X, D350 DP page 0.
+[[function]]
+address = "83:D350"
+name = "Lufia2ActorPrimaryActionCore"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F9D4"
+name = "Lufia2ActorResolveMapCellOffset"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FB12"
+name = "Lufia2ActorMovementStep"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FB71"
+name = "Lufia2ActorReadMapCellValue"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

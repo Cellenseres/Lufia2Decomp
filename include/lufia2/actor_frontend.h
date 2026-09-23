@@ -210,11 +210,7 @@ void Lufia2ActorResolveMapCellOffset(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
-/*
- * $80:8299: A = (A.low * next random byte) >> 8. Advances $0559 through
- * the 55-byte table at $0521 and refills it via $80:832D. Runs with the
- * routine's own DB=$80; the caller models the JSL/RTL frame.
- */
+/* $80:8299: A = (A.low * next random byte) >> 8. */
 void Lufia2RandomScale(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
