@@ -50,3 +50,14 @@ source = "src/actor_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Whole C7F8 through its RTS. Handlers without native semantics
+# (opcodes $49/$4E, BRK targets, bad table entries) stop at their
+# exact entry PC so the consumer can finish them in LLE.
+[[function]]
+address = "83:C7F8"
+name = "Lufia2ActorPrimaryUpdate"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X0"
+status = "verified"

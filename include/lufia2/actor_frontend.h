@@ -38,6 +38,8 @@ typedef struct Lufia2ActorFrontendCpu {
     uint8_t overflow;
     uint8_t decimal;
     uint8_t irq_disable;
+    /* Exact ROM PC when a run stops early. */
+    uint32_t resume_pc;
 } Lufia2ActorFrontendCpu;
 
 typedef enum Lufia2ActorPrimaryFlow {
@@ -77,6 +79,24 @@ typedef enum Lufia2ActorPrimaryActionFlow {
     LUFIA2_ACTOR_PRIMARY_ACTION_CONTINUE_D389 = 1,
     LUFIA2_ACTOR_PRIMARY_ACTION_UNKNOWN_D370_TARGET = 2,
 } Lufia2ActorPrimaryActionFlow;
+
+typedef enum Lufia2ActorPrimaryUpdateFlow {
+    /* State at the RTS ($83:C83B or $83:C8D3). */
+    LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED = 0,
+    /* State exact at resume_pc; finish in LLE. */
+    LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY = 1,
+} Lufia2ActorPrimaryUpdateFlow;
+
+typedef struct Lufia2ActorPrimaryUpdateResult {
+    Lufia2ActorPrimaryUpdateFlow flow;
+    uint32_t pc;
+    uint32_t dispatches;
+} Lufia2ActorPrimaryUpdateResult;
+
+/* $83:C7F8 through its RTS, or an exact boundary. */
+Lufia2ActorPrimaryUpdateResult Lufia2ActorPrimaryUpdate(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
 
 /*
  * Draft semantic front-end of $83:C7F8. Known instructions are executed until

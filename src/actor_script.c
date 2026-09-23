@@ -698,7 +698,7 @@ static Lufia2ActorScriptDispatchResult PrimaryJumpOperand(
 #define PRIMARY_ACTION_OR_BOUNDARY(return_address)                  \
     do {                                                             \
         if (!PrimaryCallActionCore(memory, cpu, (return_address))) { \
-            result.handler_pc = 0x83d350u;                           \
+            result.handler_pc = cpu->resume_pc;                      \
             return result;                                           \
         }                                                            \
     } while (0)
@@ -885,7 +885,11 @@ static PrimaryListSearch PrimaryApproachListedPoint(
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef000u, cpu->x)));
     TransferAToX(cpu);                                         /* D0C6 */
 
-    for (guard = 0; guard < 0x10000u; ++guard) {
+    for (guard = 0;; ++guard) {
+        if (guard >= 0x10000u) {
+            cpu->resume_pc = 0x83d0c7u;
+            return PRIMARY_LIST_BOUNDARY;
+        }
         LoadA8(
             cpu, Read8(memory, LongIndexedAddress(0x7ef000u, cpu->x)));
         Compare8(cpu, A8(cpu), 0xffu);                         /* D0CB */
@@ -939,8 +943,6 @@ next:
         TransferAToX(cpu);
         SetAccumulatorWidth(cpu, 1);
     }
-    /* Unterminated list; the ROM would spin forever. */
-    return PRIMARY_LIST_BOUNDARY;
 }
 
 static void PrimaryMapCoordinateToCellOffset(
@@ -1121,6 +1123,7 @@ static uint8_t PrimaryStepBlocked(
         break;
 
     default:
+        cpu->resume_pc = 0x830000u | target;
         return 0;
     }
 
@@ -1142,8 +1145,10 @@ static uint8_t PrimaryMeasureRun(
     Write8(memory, DirectAddress(cpu, 0x9du), 0x00u);          /* CDFB */
 
     for (guard = 0;; ++guard) {
-        if (guard >= 0x10000u)
+        if (guard >= 0x10000u) {
+            cpu->resume_pc = 0x83cdfdu;
             return 0;
+        }
         CopyDirect8(memory, cpu, 0x8fu, 0x95u);                /* CDFD */
         CopyDirect8(memory, cpu, 0x91u, 0x96u);
         TransferDirectToA(cpu);                                /* CE05 */
@@ -1198,8 +1203,10 @@ static uint8_t PrimaryWalkSteps(
     LoadA8(cpu, Pull8(memory, cpu));                           /* CE40 */
     target = Read16ProgramIndexed(memory, cpu, 0xce48u, cpu->x);
     if (target != 0xce50u && target != 0xce53u &&
-        target != 0xce56u && target != 0xce59u)
+        target != 0xce56u && target != 0xce59u) {
+        cpu->resume_pc = 0x83ce41u;
         return 0;
+    }
     do {
         SimulateJsrFrame(memory, cpu, 0xce43u);                /* CE41 */
         if (target == 0xce50u)
@@ -1648,7 +1655,7 @@ Lufia2ActorPrimaryScriptExecuteKnownHandler(
 
 primary_fixed_action:
         if (!PrimaryCallActionCore(memory, cpu, 0xc88du)) {
-            result.handler_pc = 0x83d350u;
+            result.handler_pc = cpu->resume_pc;
             return result;
         }
         IncrementY16(cpu);                             /* $83:C8C6 */
@@ -1661,7 +1668,7 @@ primary_fixed_action:
                 memory, AbsoluteIndexedAddress(cpu, 0x0001u, cpu->y)));
                                                         /* $83:C877 */
         if (!PrimaryCallActionCore(memory, cpu, 0xc88du)) {
-            result.handler_pc = 0x83d350u;
+            result.handler_pc = cpu->resume_pc;
             return result;
         }
         IncrementY16(cpu);                             /* $83:C8C6 */
@@ -1756,7 +1763,7 @@ primary_fixed_action:
         if (!cpu->negative) {                         /* $83:D164 */
             if (!PrimaryCallActionCore(memory, cpu, 0xd169u)) {
                 result.flow = LUFIA2_ACTOR_PRIMARY_SCRIPT_CONTINUE_D166;
-                result.handler_pc = 0x83d166u;
+                result.handler_pc = cpu->resume_pc;
                 return result;
             }
             LoadA8(cpu, Read8(memory, 0x7fe4deu));     /* $83:D16A */
@@ -2047,7 +2054,7 @@ d14d_commit:
         if (cpu->carry &&
             !PrimaryCallActionCore(
                 memory, cpu, x_axis ? 0xcc49u : 0xcc6bu)) {
-            result.handler_pc = 0x83d350u;             /* $83:CC46 */
+            result.handler_pc = cpu->resume_pc;        /* $83:CC46 */
             return result;
         }
         IncrementY16(cpu);                             /* $83:CC4A */
@@ -2176,7 +2183,8 @@ d14d_commit:
         helper_pc = Read16ProgramIndexed(memory, cpu, 0xcd66u, cpu->x);
         SimulateJsrFrame(memory, cpu, 0xcd58u);        /* $83:CD56 */
         if (!PrimaryFacingCompare(memory, cpu, helper_pc)) {
-            result.handler_pc = 0x830000u | helper_pc;
+            cpu->resume_pc = 0x830000u | helper_pc;
+            result.handler_pc = cpu->resume_pc;
             return result;
         }
         SimulateRtsFrame(memory, cpu);
@@ -2436,7 +2444,7 @@ cfb9_next:
         search = PrimaryApproachListedPoint(
             memory, cpu, d09a ? 0xd0a1u : 0xca20u);    /* JSR $D0AA */
         if (search == PRIMARY_LIST_BOUNDARY) {
-            result.handler_pc = 0x83d0aau;
+            result.handler_pc = cpu->resume_pc;
             return result;
         }
         if (search == PRIMARY_LIST_EXHAUSTED)
@@ -2486,13 +2494,13 @@ cfb9_next:
         LoadA8(cpu, 0x00u);
         if (!PrimaryWanderAxis(
                 memory, cpu, around_leader ? 0xcf3au : 0xce9bu)) {
-            result.handler_pc = 0x83cea8u;
+            result.handler_pc = cpu->resume_pc;
             return result;
         }
         LoadA8(cpu, 0x02u);
         if (!PrimaryWanderAxis(
                 memory, cpu, around_leader ? 0xcf3fu : 0xcea0u)) {
-            result.handler_pc = 0x83cea8u;
+            result.handler_pc = cpu->resume_pc;
             return result;
         }
         if (!around_leader) {
@@ -2563,7 +2571,7 @@ cfb9_next:
         Write8(memory, DirectAddress(cpu, 0xa1u), A8(cpu));
         Write8(memory, DirectAddress(cpu, 0xa2u), A8(cpu));
         if (!PrimaryMeasureRun(memory, cpu, 0xcdd4u)) {
-            result.handler_pc = 0x83cdf6u;
+            result.handler_pc = cpu->resume_pc;
             return result;
         }
         LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x9du)));
@@ -2577,7 +2585,7 @@ cfb9_next:
         Write8(memory, DirectAddress(cpu, 0x91u), A8(cpu));
         LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x93u)));
         if (!PrimaryWalkSteps(memory, cpu, 0xcde9u)) {
-            result.handler_pc = 0x83ce3bu;
+            result.handler_pc = cpu->resume_pc;
             return result;
         }
         PrimaryRecordProbe(memory, cpu, 0xcdecu);      /* $83:CDEA */
@@ -2601,7 +2609,7 @@ cfb9_next:
         LoadA8(
             cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x0000u, cpu->y)));
         if (!PrimaryStepBlocked(memory, cpu, 0xd051u)) {
-            result.handler_pc = 0x83d89eu;
+            result.handler_pc = cpu->resume_pc;
             return result;
         }
         if (cpu->zero) {
@@ -2719,7 +2727,7 @@ cfb9_next:
                 cpu, Read8(memory, LongIndexedAddress(0x83c1b0u, cpu->x)));
             SimulateJslFrame(memory, cpu, 0x83u, 0xca4au);
             if (Lufia2ActorMovementStep(memory, cpu) == 0) {
-                result.handler_pc = 0x83fb17u;
+                result.handler_pc = cpu->resume_pc;
                 return result;
             }
             SimulateRtlFrame(memory, cpu);
@@ -3007,6 +3015,7 @@ cfb9_next:
     }
 
     default:
+        cpu->resume_pc = result.handler_pc;
         return result;
     }
 }
@@ -3069,6 +3078,7 @@ uint32_t Lufia2ActorMovementStep(
         SetNz8(cpu, value);
         return 0x83fb2du;
     default:
+        cpu->resume_pc = 0x83fb17u;
         return 0;
     }
 }
@@ -3503,8 +3513,10 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
                                                                /* D370 */
 
     if (helper_pc != 0xd3b7u && helper_pc != 0xd3c5u &&
-        helper_pc != 0xd3d7u && helper_pc != 0xd3e5u)
+        helper_pc != 0xd3d7u && helper_pc != 0xd3e5u) {
+        cpu->resume_pc = 0x83d370u;
         return LUFIA2_ACTOR_PRIMARY_ACTION_UNKNOWN_D370_TARGET;
+    }
 
     SimulateJsrFrame(memory, cpu, 0xd372u);
     PrimaryActionBoundaryHelper(memory, cpu, helper_pc);
@@ -3566,4 +3578,56 @@ install_secondary_script:
         memory, AbsoluteIndexedAddress(cpu, 0x0622u, cpu->x),
         A8(cpu));                                              /* D3AB */
     return LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE;
+}
+
+Lufia2ActorPrimaryUpdateResult Lufia2ActorPrimaryUpdate(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    Lufia2ActorPrimaryUpdateResult result;
+    Lufia2ActorScriptDispatchResult dispatch;
+    Lufia2ActorPrimaryFlow flow;
+    uint32_t handler;
+    uint32_t steps;
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.pc = 0x83c83bu;
+    result.dispatches = 0;
+
+    flow = Lufia2ActorPrimaryUpdateFrontend(memory, cpu);      /* C7F8 */
+    if (flow == LUFIA2_ACTOR_PRIMARY_RETURN)
+        return result;
+    if (flow == LUFIA2_ACTOR_PRIMARY_CONTINUE_C808) {
+        DecrementA8(cpu);                                      /* C808 */
+        Write8(
+            memory, AbsoluteIndexedAddress(cpu, 0x1291u, cpu->x),
+            A8(cpu));
+    }
+
+    dispatch = Lufia2ActorPrimaryScriptDispatch(memory, cpu);  /* C83C */
+    handler = dispatch.handler_pc;
+    result.dispatches = 1;
+    /* A script that never yields spins the ROM forever. */
+    for (steps = 0; steps < 0x10000u; ++steps) {
+        const Lufia2ActorPrimaryScriptStepResult step =
+            Lufia2ActorPrimaryScriptExecuteKnownHandler(
+                memory, cpu, handler);
+
+        if (step.flow == LUFIA2_ACTOR_PRIMARY_SCRIPT_REDISPATCHED) {
+            handler = step.handler_pc;
+            ++result.dispatches;
+            continue;
+        }
+        if (step.flow == LUFIA2_ACTOR_PRIMARY_SCRIPT_CONTINUE_C8D2) {
+            PullDataBank(memory, cpu);                         /* C8D2 */
+            result.pc = 0x83c8d3u;
+            return result;
+        }
+        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.pc = step.handler_pc;
+        return result;
+    }
+    cpu->resume_pc = handler;
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.pc = handler;
+    return result;
 }
