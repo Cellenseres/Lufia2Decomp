@@ -646,6 +646,29 @@ static void PrimaryCallRandom(
     Lufia2ActorFrontendCpu *cpu,
     uint16_t return_address);
 
+static void PrimaryCallRandomByte(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address);
+
+static void PrimaryTargetDirection(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+static uint8_t PrimaryFacingCompare(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t helper_pc);
+
+/* D350 call; zero means unknown D350 path. */
+#define PRIMARY_ACTION_OR_BOUNDARY(return_address)                  \
+    do {                                                             \
+        if (!PrimaryCallActionCore(memory, cpu, (return_address))) { \
+            result.handler_pc = 0x83d350u;                           \
+            return result;                                           \
+        }                                                            \
+    } while (0)
+
 static uint8_t PrimaryCallActionCore(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu,
@@ -1109,6 +1132,187 @@ d14d_commit:
         return PrimaryStepRedispatched(dispatch);
     }
 
+    case 0x83d320u:
+        PrimaryCallRandomByte(memory, cpu, 0xd323u);   /* $83:D320 */
+        Compare8(
+            cpu, A8(cpu),
+            Read8(memory, AbsoluteIndexedAddress(cpu, 0x0001u, cpu->y)));
+                                                        /* $83:D324 */
+        if (!cpu->carry) {
+            IncrementY16(cpu);                         /* $83:D329 */
+            IncrementY16(cpu);
+            IncrementY16(cpu);
+            IncrementY16(cpu);
+            dispatch = PrimaryRedispatch(memory, cpu, 0);
+            return PrimaryStepRedispatched(dispatch);
+        }
+        SetAccumulatorWidth(cpu, 0);                   /* $83:D330 */
+        LoadA16(
+            cpu, Read16AbsoluteIndexed(
+                memory, cpu, 0x0002u, cpu->y));        /* $83:D332 */
+        cpu->carry = 0;                                /* $83:D335 */
+        Add16Immediate(cpu, 0xa1d4u);                  /* $83:D336 */
+        Write16Direct(memory, cpu, 0x2au, cpu->accumulator);
+                                                        /* $83:D339 */
+        SetAccumulatorWidth(cpu, 1);                   /* $83:D33B */
+        dispatch = PrimaryRedispatch(memory, cpu, 1);  /* $83:C85A */
+        return PrimaryStepRedispatched(dispatch);
+
+    case 0x83d340u:
+        SetAccumulatorWidth(cpu, 0);                   /* $83:D340 */
+        LoadA16(
+            cpu, Read16AbsoluteIndexed(
+                memory, cpu, 0x0001u, cpu->y));        /* $83:D342 */
+        cpu->carry = 0;                                /* $83:D345 */
+        Add16Immediate(cpu, 0xf000u);                  /* $83:D346 */
+        Write16Direct(memory, cpu, 0x2au, cpu->accumulator);
+                                                        /* $83:D349 */
+        SetAccumulatorWidth(cpu, 1);                   /* $83:D34B */
+        dispatch = PrimaryRedispatch(memory, cpu, 1);  /* $83:C85A */
+        return PrimaryStepRedispatched(dispatch);
+
+    case 0x83d125u:
+        LoadA8(cpu, 0x04u);                            /* $83:D125 */
+        PrimaryCallRandom(memory, cpu, 0xd12au);       /* $83:D127 */
+        PRIMARY_ACTION_OR_BOUNDARY(0xd12eu);           /* $83:D12B */
+        IncrementY16(cpu);                             /* $83:C8C6 */
+        return Lufia2ActorPrimaryScriptExecuteKnownHandler(
+            memory, cpu, 0x83c8c7u);
+
+    case 0x83d132u:
+        return Lufia2ActorPrimaryScriptExecuteKnownHandler(
+            memory, cpu, 0x83c8c7u);                  /* $83:D132 */
+
+    case 0x83ccf0u:
+    case 0x83cd0du: {
+        const uint8_t x_axis = (handler_pc & 0x00ffffffu) == 0x83ccf0u;
+
+        SimulateJsrFrame(
+            memory, cpu, x_axis ? 0xccf2u : 0xcd0fu); /* $83:CCF0 */
+        if (x_axis)
+            PrimaryLeaderDirection(memory, cpu, 0x06bau, 0x02u, 0x03u);
+        else
+            PrimaryLeaderDirection(memory, cpu, 0x06e2u, 0x00u, 0x01u);
+        SimulateRtsFrame(memory, cpu);
+        if (cpu->carry) {
+            TransferAToX(cpu);                         /* $83:CD00 */
+            LoadA8(
+                cpu, Read8(memory, LongIndexedAddress(0x83cd2au, cpu->x)));
+        } else {
+            LoadA8(cpu, 0x02u);                        /* $83:CCF5 */
+            PrimaryCallRandom(
+                memory, cpu, x_axis ? 0xccfau : 0xcd17u);
+            cpu->carry = 0;                            /* $83:CCFB */
+            Adc8(cpu, x_axis ? 0x02u : 0x00u);         /* $83:CCFC */
+        }
+        PRIMARY_ACTION_OR_BOUNDARY(x_axis ? 0xcd08u : 0xcd25u);
+        IncrementY16(cpu);                             /* $83:CD09 */
+        dispatch = PrimaryRedispatch(memory, cpu, 0);  /* $83:C85C */
+        return PrimaryStepRedispatched(dispatch);
+    }
+
+    case 0x83cd2eu:
+        IncrementY16(cpu);                             /* $83:CD2E */
+        return Lufia2ActorPrimaryScriptExecuteKnownHandler(
+            memory, cpu, 0x83c8c7u);
+
+    case 0x83cd32u:
+        LoadXDirect(memory, cpu, 0xa7u);               /* $83:CD32 */
+        TransferDirectToA(cpu);                        /* $83:CD34 */
+        LoadA8(
+            cpu, Read8(
+                memory, AbsoluteIndexedAddress(cpu, 0x0692u, cpu->x)));
+                                                        /* $83:CD35 */
+        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));          /* $83:CD38 */
+        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));          /* $83:CD39 */
+        And8(cpu, 0x07u);                              /* $83:CD3A */
+        Write8(
+            memory, AbsoluteIndexedAddress(cpu, 0x0692u, cpu->x),
+            A8(cpu));                                  /* $83:CD3C */
+        TransferAToX(cpu);                             /* $83:CD3F */
+        LoadA8(
+            cpu, Read8(memory, LongIndexedAddress(0x83c1a5u, cpu->x)));
+                                                        /* $83:CD40 */
+        cpu->carry = 0;                                /* $83:CD44 */
+        Adc8(cpu, 0x24u);                              /* $83:CD45 */
+        PRIMARY_ACTION_OR_BOUNDARY(0xcd4au);           /* $83:CD47 */
+        IncrementY16(cpu);                             /* $83:CD4B */
+        return Lufia2ActorPrimaryScriptExecuteKnownHandler(
+            memory, cpu, 0x83c8c7u);
+
+    case 0x83cd4fu: {
+        uint16_t helper_pc;
+
+        LoadXDirect(memory, cpu, 0xa7u);               /* $83:CD4F */
+        TransferDirectToA(cpu);                        /* $83:CD51 */
+        LoadA8(
+            cpu, Read8(
+                memory, AbsoluteIndexedAddress(cpu, 0x0692u, cpu->x)));
+                                                        /* $83:CD52 */
+        TransferAToX(cpu);                             /* $83:CD55 */
+        helper_pc = Read16ProgramIndexed(memory, cpu, 0xcd66u, cpu->x);
+        SimulateJsrFrame(memory, cpu, 0xcd58u);        /* $83:CD56 */
+        if (!PrimaryFacingCompare(memory, cpu, helper_pc)) {
+            result.handler_pc = 0x830000u | helper_pc;
+            return result;
+        }
+        SimulateRtsFrame(memory, cpu);
+        if (!cpu->zero && cpu->carry)                  /* $83:CD59 */
+            return Lufia2ActorPrimaryScriptExecuteKnownHandler(
+                memory, cpu, 0x83d2b4u);              /* $83:CD5D */
+        IncrementY16(cpu);                             /* $83:CD60 */
+        IncrementY16(cpu);
+        IncrementY16(cpu);
+        dispatch = PrimaryRedispatch(memory, cpu, 0);  /* $83:C85C */
+        return PrimaryStepRedispatched(dispatch);
+    }
+
+    case 0x83cd92u:
+        TransferDirectToA(cpu);                        /* $83:CD92 */
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x47u)));
+                                                        /* $83:CD93 */
+        And8(cpu, 0x0fu);                              /* $83:CD95 */
+        if (!cpu->zero) {
+            TransferAToX(cpu);                         /* $83:CD99 */
+            LoadA8(
+                cpu, Read8(
+                    memory, LongIndexedAddress(0x83d457u, cpu->x)));
+                                                        /* $83:CD9A */
+            PRIMARY_ACTION_OR_BOUNDARY(0xcda1u);       /* $83:CD9E */
+        }
+        IncrementY16(cpu);                             /* $83:C8C6 */
+        return Lufia2ActorPrimaryScriptExecuteKnownHandler(
+            memory, cpu, 0x83c8c7u);
+
+    case 0x83ce73u:
+        LoadA8(cpu, 0x60u);                            /* $83:CE73 */
+        PRIMARY_ACTION_OR_BOUNDARY(0xce78u);           /* $83:CE75 */
+        IncrementY16(cpu);                             /* $83:CE79 */
+        dispatch = PrimaryRedispatch(memory, cpu, 0);  /* $83:C85C */
+        return PrimaryStepRedispatched(dispatch);
+
+    case 0x83cab9u:
+        LoadXDirect(memory, cpu, 0xa7u);               /* $83:CAB9 */
+        LoadA8(
+            cpu, Read8(
+                memory, AbsoluteIndexedAddress(cpu, 0x0001u, cpu->y)));
+                                                        /* $83:CABB */
+        Write8(
+            memory, LongIndexedAddress(0x7fe3c6u, cpu->x), A8(cpu));
+                                                        /* $83:CABE */
+        SimulateJsrFrame(memory, cpu, 0xcac4u);        /* $83:CAC2 */
+        PrimaryTargetDirection(memory, cpu);           /* $83:CA93 */
+        SimulateRtsFrame(memory, cpu);
+        if (cpu->carry) {
+            IncrementY16(cpu);                         /* $83:CACE */
+            IncrementY16(cpu);
+            dispatch = PrimaryRedispatch(memory, cpu, 0);
+            return PrimaryStepRedispatched(dispatch);
+        }
+        PRIMARY_ACTION_OR_BOUNDARY(0xcacau);           /* $83:CAC7 */
+        return Lufia2ActorPrimaryScriptExecuteKnownHandler(
+            memory, cpu, 0x83c8c7u);                  /* $83:CACB */
+
     default:
         return result;
     }
@@ -1306,31 +1510,67 @@ static void RandomRefill(
     } while (!cpu->zero);
 }
 
-void Lufia2RandomScale(
+/* PHB/PHK/PLB/PHX/PHY/PHP/SEP #$30 */
+static void RandomEnter(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu) {
-    PushDataBank(memory, cpu);                                 /* 8299 */
-    Push8(memory, cpu, 0x80u);                                 /* 829A */
-    PullDataBank(memory, cpu);                                 /* 829B */
-    PushIndex(memory, cpu);                                    /* 829C */
-    PushY(memory, cpu);                                        /* 829D */
-    Push8(memory, cpu, PackStatus(cpu));                       /* 829E */
-    SetAccumulatorWidth(cpu, 1);                               /* 829F */
+    PushDataBank(memory, cpu);
+    Push8(memory, cpu, 0x80u);
+    PullDataBank(memory, cpu);
+    PushIndex(memory, cpu);
+    PushY(memory, cpu);
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 1);
-    ExchangeAccumulatorBytes(cpu);                             /* 82A1 */
+}
+
+/* Next table index in X, refilling past $36. */
+static void RandomAdvance(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t refill_return) {
     LoadX8(
         cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x0559u, 0)));
-    LoadX8(cpu, (uint8_t)(cpu->x + 1u));                       /* 82A5 */
-    Compare8(cpu, (uint8_t)cpu->x, 0x37u);                     /* 82A6 */
+    LoadX8(cpu, (uint8_t)(cpu->x + 1u));
+    Compare8(cpu, (uint8_t)cpu->x, 0x37u);
     if (cpu->carry) {
-        SimulateJsrFrame(memory, cpu, 0x82acu);                /* 82AA */
+        SimulateJsrFrame(memory, cpu, refill_return);
         RandomRefill(memory, cpu);
         SimulateRtsFrame(memory, cpu);
-        LoadX8(cpu, 0x00u);                                    /* 82AD */
+        LoadX8(cpu, 0x00u);
     }
     Write8(
         memory, AbsoluteIndexedAddress(cpu, 0x0559u, 0),
-        (uint8_t)cpu->x);                                      /* 82AF */
+        (uint8_t)cpu->x);
+}
+
+/* PLP/PLY/PLX/PLB */
+static void RandomLeave(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    cpu->y = PullIndexValue(memory, cpu);
+    cpu->x = PullIndexValue(memory, cpu);
+    PullDataBank(memory, cpu);
+}
+
+void Lufia2RandomByte(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    RandomEnter(memory, cpu);                                  /* 82C7 */
+    RandomAdvance(memory, cpu, 0x82d9u);                       /* 82CF */
+    LoadA8(
+        cpu, Read8(
+            memory, AbsoluteIndexedAddress(cpu, 0x0521u, cpu->x)));
+    RandomLeave(memory, cpu);                                  /* 82E2 */
+}
+
+void Lufia2RandomScale(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    RandomEnter(memory, cpu);                                  /* 8299 */
+    ExchangeAccumulatorBytes(cpu);                             /* 82A1 */
+    RandomAdvance(memory, cpu, 0x82acu);                       /* 82A2 */
     ExchangeAccumulatorBytes(cpu);                             /* 82B2 */
     Write8(
         memory, AbsoluteIndexedAddress(cpu, 0x4202u, 0), A8(cpu));
@@ -1343,10 +1583,7 @@ void Lufia2RandomScale(
     ExchangeAccumulatorBytes(cpu);                             /* 82BE */
     LoadA8(
         cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x4217u, 0)));
-    UnpackStatus(cpu, Pull8(memory, cpu));                     /* 82C2 */
-    cpu->y = PullIndexValue(memory, cpu);                      /* 82C3 */
-    cpu->x = PullIndexValue(memory, cpu);                      /* 82C4 */
-    PullDataBank(memory, cpu);                                 /* 82C5 */
+    RandomLeave(memory, cpu);                                  /* 82C2 */
 }
 
 static void PrimaryCallRandom(
@@ -1356,6 +1593,81 @@ static void PrimaryCallRandom(
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     Lufia2RandomScale(memory, cpu);
     SimulateRtlFrame(memory, cpu);
+}
+
+static void PrimaryCallRandomByte(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x83u, return_address);
+    Lufia2RandomByte(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $83:CA93: step toward $7F:E5A6/E5CE target. */
+static void PrimaryTargetDirection(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    LoadXDirect(memory, cpu, 0xa7u);                           /* CA93 */
+    LoadA8(
+        cpu, Read8(
+            memory, AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x)));
+    Compare8(
+        cpu, A8(cpu),
+        Read8(memory, LongIndexedAddress(0x7fe5a6u, cpu->x)));
+    if (!cpu->zero) {
+        const uint8_t ahead = cpu->carry;
+        LoadA8(cpu, ahead ? 0x02u : 0x03u);                    /* CA9E */
+        cpu->carry = 0;                                        /* CAB5 */
+        return;
+    }
+    LoadA8(
+        cpu, Read8(
+            memory, AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x)));
+    Compare8(
+        cpu, A8(cpu),
+        Read8(memory, LongIndexedAddress(0x7fe5ceu, cpu->x)));
+    if (!cpu->zero) {
+        const uint8_t ahead = cpu->carry;
+        LoadA8(cpu, ahead ? 0x00u : 0x01u);                    /* CAAF */
+        cpu->carry = 0;
+        return;
+    }
+    cpu->carry = 1;                                            /* CAB7 */
+}
+
+/* $83:CD6E..$83:CD91 facing comparators. */
+static uint8_t PrimaryFacingCompare(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t helper_pc) {
+    uint16_t base;
+    uint8_t leader_first;
+
+    switch (helper_pc) {
+    case 0xcd6eu: base = 0x06e2u; leader_first = 1; break;
+    case 0xcd77u: base = 0x06bau; leader_first = 0; break;
+    case 0xcd80u: base = 0x06e2u; leader_first = 0; break;
+    case 0xcd89u: base = 0x06bau; leader_first = 1; break;
+    default: return 0;
+    }
+
+    LoadXDirect(memory, cpu, 0xa7u);
+    if (leader_first) {
+        LoadA8(
+            cpu, Read8(memory, AbsoluteIndexedAddress(cpu, base, 0)));
+        Compare8(
+            cpu, A8(cpu),
+            Read8(memory, AbsoluteIndexedAddress(cpu, base, cpu->x)));
+    } else {
+        LoadA8(
+            cpu, Read8(
+                memory, AbsoluteIndexedAddress(cpu, base, cpu->x)));
+        Compare8(
+            cpu, A8(cpu),
+            Read8(memory, AbsoluteIndexedAddress(cpu, base, 0)));
+    }
+    return 1;
 }
 
 static void PrimaryActionBoundaryHelper(

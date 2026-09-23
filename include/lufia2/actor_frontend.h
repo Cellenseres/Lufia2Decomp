@@ -139,6 +139,16 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
  *   $83:CBE1  leader-within-radius test, jump or skip
  *   $83:CC1B/$83:CC2E  leader X/Y equality, jump or skip
  *   $83:CC41/$83:CC63  step toward leader on X/Y via D350
+ *   $83:CAB9  timer + step toward $7F:E5A6/E5CE target
+ *   $83:CCF0/$83:CD0D  step away from leader, random when level
+ *   $83:CD2E/$83:D132  commit cursor
+ *   $83:CD32  rotate facing, action via $83:C1A5
+ *   $83:CD4F  jump if leader ahead in facing direction
+ *   $83:CD92  action from $47 low nibble via $83:D457
+ *   $83:CE73  action $60
+ *   $83:D125  random direction 0..3
+ *   $83:D320  jump if random byte >= operand8
+ *   $83:D340  jump to operand16 + $F000
  *
  * Complete handlers include their original redispatch at C85A/C85C and
  * therefore return the next selected opcode/handler. C8C7 stops immediately
@@ -187,6 +197,11 @@ void Lufia2ActorResolveMapCellOffset(
  * routine's own DB=$80; the caller models the JSL/RTL frame.
  */
 void Lufia2RandomScale(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $80:82C7: A.low = next random byte, same table and index. */
+void Lufia2RandomByte(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
