@@ -9,10 +9,11 @@ static uint32_t AbsoluteAddress(
     return ((uint32_t)cpu->data_bank << 16) | address;
 }
 
+/* Indexing carries into the next bank. */
 static uint32_t AbsoluteIndexedAddress(
     const Lufia2ActorFrontendCpu *cpu, uint16_t address) {
-    return ((uint32_t)cpu->data_bank << 16) |
-           (uint16_t)(address + cpu->x);
+    return (((uint32_t)cpu->data_bank << 16) + address + cpu->x) &
+           0x00ffffffu;
 }
 
 static uint32_t LongIndexedAddress(uint32_t address, uint16_t x) {
@@ -146,6 +147,12 @@ static void TransferDirectToA(Lufia2ActorFrontendCpu *cpu) {
     SetNz16(cpu, cpu->accumulator);
 }
 
+static void LsrA8(Lufia2ActorFrontendCpu *cpu) {
+    const uint8_t old = A8(cpu);
+    cpu->carry = old & 1u;
+    LoadA8(cpu, (uint8_t)(old >> 1));
+}
+
 static void ExclusiveOr8(Lufia2ActorFrontendCpu *cpu, uint8_t value) {
     const uint8_t result = (uint8_t)(A8(cpu) ^ value);
     cpu->accumulator =
@@ -209,8 +216,28 @@ Lufia2ActorSecondaryFlow Lufia2ActorSecondaryUpdateFrontend(
     LoadXDirect(memory, cpu, 0xa7u);                 /* $83:D508 */
     LoadALongX(memory, cpu, 0x000736u);              /* $83:D50A */
     BitImmediate8(cpu, 0x80u);                       /* $83:D50E */
-    if (!cpu->zero)                                  /* $83:D510 */
-        return LUFIA2_ACTOR_SECONDARY_CONTINUE_D512;
+    if (!cpu->zero) {
+        const uint32_t timer = LongIndexedAddress(0x7fe35eu, cpu->x);
+        const uint32_t flags = LongIndexedAddress(0x7fe316u, cpu->x);
+
+        LoadA8(cpu, Read8(memory, timer));           /* $83:D512 */
+        DecrementA8(cpu);
+        Write8(memory, timer, A8(cpu));
+        And8(cpu, 0x0fu);                            /* $83:D51B */
+        if (cpu->zero) {
+            /* Reload the period from the high nibble. */
+            LoadA8(cpu, Read8(memory, timer));       /* $83:D51F */
+            LsrA8(cpu);
+            LsrA8(cpu);
+            LsrA8(cpu);
+            LsrA8(cpu);
+            LoadA8(cpu, (uint8_t)(A8(cpu) | Read8(memory, timer)));
+            Write8(memory, timer, A8(cpu));
+            LoadA8(cpu, Read8(memory, flags));       /* $83:D52F */
+            ExclusiveOr8(cpu, 0x80u);
+            Write8(memory, flags, A8(cpu));
+        }
+    }
 
     LoadAAbsoluteX(memory, cpu, 0x0622u);            /* $83:D539 */
     And8(cpu, 0x80u);                                /* $83:D53C */
@@ -229,7 +256,7 @@ Lufia2ActorSecondaryFlow Lufia2ActorSecondaryUpdateFrontend(
     LoadALong(memory, cpu, 0x7fd0feu);               /* $83:D54A */
     if (cpu->zero)                                   /* $83:D54E */
         goto final_gate;
-    return LUFIA2_ACTOR_SECONDARY_CONTINUE_D550;
+    goto walk_counter;                               /* $83:D550 */
 
 state_gate:
     LoadAAbsoluteX(memory, cpu, 0x0736u);            /* $83:D552 */
@@ -245,6 +272,7 @@ state_gate:
     if (cpu->zero)                                   /* $83:D562 */
         goto final_gate;
 
+walk_counter:
     LoadALongX(memory, cpu, 0x7fe48eu);              /* $83:D564 */
     IncrementA8(cpu);                                /* $83:D568 */
     Write8(memory, LongIndexedAddress(0x7fe48eu, cpu->x), A8(cpu));
@@ -264,7 +292,16 @@ state_gate:
 final_gate:
     LoadAAbsoluteX(memory, cpu, 0x0736u);            /* $83:D57E */
     BitImmediate8(cpu, 0x04u);                       /* $83:D581 */
-    if (!cpu->zero)                                  /* $83:D583 */
-        return LUFIA2_ACTOR_SECONDARY_CONTINUE_D585;
+    if (!cpu->zero) {
+        LoadALongX(memory, cpu, 0x7fe48eu);          /* $83:D585 */
+        BitImmediate8(cpu, 0x02u);
+        if (!cpu->zero) {
+            LoadXDirect(memory, cpu, 0xa9u);         /* $83:D58D */
+            LoadALongX(memory, cpu, 0x7fddaeu);
+            ExclusiveOr8(cpu, 0x01u);
+            Write8(
+                memory, LongIndexedAddress(0x7fddaeu, cpu->x), A8(cpu));
+        }
+    }
     return LUFIA2_ACTOR_SECONDARY_RETURN;            /* $83:D599 */
 }

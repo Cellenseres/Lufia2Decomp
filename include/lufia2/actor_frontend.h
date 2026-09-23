@@ -93,6 +93,11 @@ typedef struct Lufia2ActorPrimaryUpdateResult {
     uint32_t dispatches;
 } Lufia2ActorPrimaryUpdateResult;
 
+/* $83:D508 through its RTS, or an exact boundary. */
+Lufia2ActorPrimaryUpdateResult Lufia2ActorSecondaryUpdate(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $83:C7F8 through its RTS, or an exact boundary. */
 Lufia2ActorPrimaryUpdateResult Lufia2ActorPrimaryUpdate(
     const Lufia2ActorFrontendMemory *memory,
