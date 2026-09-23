@@ -165,6 +165,9 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
  *   $83:CFB9  find actor in radius, record slot at $7F:DB4C
  *   $83:D01E  step toward the recorded actor
  *   $83:D112  action from $47 low nibble via $83:D447
+ *   $83:CDA5  walk ahead of leader if the run is long enough
+ *   $83:CE7D/$83:CF1A  random wander, box-checked for CF1A
+ *   $83:D03F  jump if a step in operand direction is blocked
  *
  * Complete handlers include their original redispatch at C85A/C85C and
  * therefore return the next selected opcode/handler. C8C7 stops immediately
