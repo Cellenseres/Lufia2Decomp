@@ -168,6 +168,11 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
  *   $83:CDA5  walk ahead of leader if the run is long enough
  *   $83:CE7D/$83:CF1A  random wander, box-checked for CF1A
  *   $83:D03F  jump if a step in operand direction is blocked
+ *   $83:C918/$83:CAD3/$83:CBB1  reset via C947, exit C8D2
+ *   $83:CA29  step toward target, blocked event via CA68
+ *   $83:D135  set tile position, sync fine position
+ *   $83:D1B5  deferred APU command via $84:8766
+ *   $83:D1FE/$83:D207  signed offsets via FACB/FA81
  *
  * Complete handlers include their original redispatch at C85A/C85C and
  * therefore return the next selected opcode/handler. C8C7 stops immediately
@@ -212,6 +217,51 @@ void Lufia2ActorResolveMapCellOffset(
 
 /* $80:8299: A = (A.low * next random byte) >> 8. */
 void Lufia2RandomScale(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:FA3F: set occupancy bit 0 in $7E:4000 map. */
+void Lufia2ActorMarkMapOccupancy(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:D416: primary script from $91:A1D4[$070A]. */
+void Lufia2ActorLoadPrimaryScript(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:A746: 1/16 position from tile coordinates. */
+void Lufia2ActorSyncFinePosition(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $84:8766: defer APU command A to $17AC. */
+void Lufia2QueueDeferredSound(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:FACB: add signed operands to $7F:DC8C/DD1C; M=0 exit. */
+void Lufia2ActorAddDisplayOffset(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:FA81: move 1/16 position, update tiles; M=0 exit. */
+void Lufia2ActorMoveFinePosition(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:C947: occupancy, flag reset, reload primary script. */
+void Lufia2ActorPrimaryReset(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:CB65: $09A1..$09A5 = $FF. */
+void Lufia2ActorClearSlotLinks(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:CA68: blocked-step event record at $7F:DEEE. */
+void Lufia2ActorBlockedEvent(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
