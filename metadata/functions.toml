@@ -73,3 +73,13 @@ source = "src/actor_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Whole C1B4 through its RTS. Menu, dialog, vehicle boarding, door
+# transitions and $8E:C05F stop at their exact ROM PC.
+[[function]]
+address = "83:C1B4"
+name = "Lufia2PlayerSlotStandardUpdate"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

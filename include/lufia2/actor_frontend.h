@@ -96,6 +96,11 @@ typedef struct Lufia2ActorPrimaryUpdateResult {
 } Lufia2ActorPrimaryUpdateResult;
 
 /* $83:D508 through its RTS, or an exact boundary. */
+/* $83:C1B4 player controller; exact LLE boundaries. */
+Lufia2ActorPrimaryUpdateResult Lufia2PlayerSlotStandardUpdate(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 Lufia2ActorPrimaryUpdateResult Lufia2ActorSecondaryUpdate(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
