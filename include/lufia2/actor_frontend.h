@@ -115,6 +115,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2UpdateActorSlots(
     Lufia2ActorSlotChild child,
     void *child_context);
 
+/* $83:E03E object slot timers; E0FC stays LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2ObjectSlotsUpdate(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $83:81C6 field trigger checks; exact LLE boundaries. */
 Lufia2ActorPrimaryUpdateResult Lufia2FieldTriggerUpdate(
     const Lufia2ActorFrontendMemory *memory,
