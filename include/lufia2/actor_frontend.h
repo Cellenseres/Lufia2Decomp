@@ -158,6 +158,13 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
  *   $83:D210  compare target record, six modes
  *   $83:D293  jump unless operand8 & $7F:E57E+slot
  *   $83:D2E6/$83:D2F6/$83:D30B  set/add/sub target record
+ *   $83:C98A/$83:CCD7  step toward/away from leader via C9C5
+ *   $83:CA19/$83:D09A  step toward a listed point via D0AA
+ *   $83:CF6E  action $5F, record position at $7F:DB9C
+ *   $83:CF8C  step toward operand point or skip
+ *   $83:CFB9  find actor in radius, record slot at $7F:DB4C
+ *   $83:D01E  step toward the recorded actor
+ *   $83:D112  action from $47 low nibble via $83:D447
  *
  * Complete handlers include their original redispatch at C85A/C85C and
  * therefore return the next selected opcode/handler. C8C7 stops immediately
