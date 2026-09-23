@@ -149,6 +149,15 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
  *   $83:D125  random direction 0..3
  *   $83:D320  jump if random byte >= operand8
  *   $83:D340  jump to operand16 + $F000
+ *   $83:D176  merge operand8 into $1291+slot low bits
+ *   $83:D188  timer = operand8, commit
+ *   $83:D196  target + secondary script $1C
+ *   $83:D1C1  action operand8 if $09A1 negative
+ *   $83:D1D0  jump table indexed by leader facing
+ *   $83:D1E6  facing-relative action via $83:C1A5
+ *   $83:D210  compare target record, six modes
+ *   $83:D293  jump unless operand8 & $7F:E57E+slot
+ *   $83:D2E6/$83:D2F6/$83:D30B  set/add/sub target record
  *
  * Complete handlers include their original redispatch at C85A/C85C and
  * therefore return the next selected opcode/handler. C8C7 stops immediately
