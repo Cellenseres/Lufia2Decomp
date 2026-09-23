@@ -96,8 +96,8 @@ entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
 
-# Per-frame object slots. An expiring script wait stops at
-# $83:E0C0 before the object VM.
+# Per-frame object slots and the object script VM $83:E0FC.
+# Unported object opcodes stop at their handler entry.
 [[function]]
 address = "83:E03E"
 name = "Lufia2ObjectSlotsUpdate"

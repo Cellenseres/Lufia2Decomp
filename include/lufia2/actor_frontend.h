@@ -115,7 +115,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2UpdateActorSlots(
     Lufia2ActorSlotChild child,
     void *child_context);
 
-/* $83:E03E object slot timers; E0FC stays LLE. */
+/* $83:E03E object slots and their script VM ($83:E0FC). */
 Lufia2ActorPrimaryUpdateResult Lufia2ObjectSlotsUpdate(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);

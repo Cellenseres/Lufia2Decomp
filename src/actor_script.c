@@ -6217,6 +6217,263 @@ static void ToggleLong8(
     Write8(memory, address, A8(cpu));
 }
 
+typedef enum ObjectFlow {
+    OBJECT_FLOW_DISPATCH = 0,
+    OBJECT_FLOW_RETURN = 1,
+    OBJECT_FLOW_BOUNDARY = 2,
+} ObjectFlow;
+
+/* $83:E143: store the cursor, PLB, RTS. */
+static ObjectFlow ObjectSaveAndReturn(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    LoadXDirect(memory, cpu, 0xabu);                           /* E143 */
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, cpu->y);
+    Write16Long(memory, LongIndexedAddress(0x7fdeeeu, cpu->x), cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    PullDataBank(memory, cpu);
+    return OBJECT_FLOW_RETURN;
+}
+
+/* $83:E11C: advance by A; yield on $064A bit 4. */
+static ObjectFlow ObjectAdvance(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SetAccumulatorWidth(cpu, 0);                               /* E11C */
+    Write16Direct(memory, cpu, 0x54u, cpu->y);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+    LoadXDirect(memory, cpu, 0xabu);
+    Write16Long(memory, LongIndexedAddress(0x7fdeeeu, cpu->x), cpu->accumulator);
+    TransferAToY(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadXDirect(memory, cpu, 0xa7u);                           /* E12C */
+    LoadAAbsolute8(memory, cpu, 0x064au, cpu->x);
+    BitImmediate8(cpu, 0x10u);
+    if (cpu->zero)
+        return OBJECT_FLOW_DISPATCH;
+    LoadA8(cpu, 0x01u);                                        /* E135 */
+    Write8(memory, LongIndexedAddress(0x7fdfaeu, cpu->x), A8(cpu));
+    PullDataBank(memory, cpu);
+    return OBJECT_FLOW_RETURN;
+}
+
+/* $83:FB05: sign-extend nibble A; M=0 exit. */
+static void ObjectSignNibble(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    BitImmediate8(cpu, 0x08u);                                 /* FB05 */
+    if (!cpu->zero) {
+        Or8(cpu, 0xf0u);
+        ExchangeAccumulatorBytes(cpu);
+        LoadA8(cpu, 0xffu);
+        ExchangeAccumulatorBytes(cpu);
+    }
+    SetAccumulatorWidth(cpu, 0);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:E1AD / $83:E1B9: add A16 to a position word. */
+static void ObjectAddPosition(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint32_t base,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(base, cpu->x)));
+    Write16Long(memory, LongIndexedAddress(base, cpu->x), cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:EED8: random offset around 0 of width operand. */
+static void ObjectJitter(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);              /* EED8 */
+    LsrA8(cpu);
+    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+    PrimaryCallRandom(memory, cpu, 0xeee4u);                   /* $80:8299 */
+    cpu->carry = 1;
+    Sbc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    PrimarySignExtend(memory, cpu, 0xeeeau);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:ED63: low nibble into a handler table. */
+static uint16_t ObjectSubDispatch(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t table,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    TransferDirectToA(cpu);                                    /* ED63 */
+    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+    IncrementY16(cpu);
+    And8(cpu, 0x0fu);
+    AslA8(cpu);
+    TransferAToX(cpu);
+    SimulateRtsFrame(memory, cpu);
+    return Read16ProgramIndexed(memory, cpu, table, cpu->x);
+}
+
+static ObjectFlow ObjectExecute(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t handler) {
+    switch (handler) {
+    case 0xed45u:
+        handler = ObjectSubDispatch(memory, cpu, 0xf368u, 0xed47u);
+        break;
+    case 0xed4bu:
+        handler = ObjectSubDispatch(memory, cpu, 0xf348u, 0xed4du);
+        break;
+    case 0xed51u:
+        handler = ObjectSubDispatch(memory, cpu, 0xf328u, 0xed53u);
+        break;
+    case 0xed57u:
+        handler = ObjectSubDispatch(memory, cpu, 0xf308u, 0xed59u);
+        break;
+    case 0xed5du:
+        handler = ObjectSubDispatch(memory, cpu, 0xf2e8u, 0xed5fu);
+        break;
+    default:
+        break;
+    }
+
+    switch (handler) {
+    case 0xe831u:                                              /* 4x */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        And8(cpu, 0x0fu);
+        Write8(memory, LongIndexedAddress(0x7fdfaeu, cpu->x), A8(cpu));
+        IncrementY16(cpu);
+        return ObjectSaveAndReturn(memory, cpu);
+
+    case 0xe168u:                                              /* F6 */
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+        SimulateJsrFrame(memory, cpu, 0xe16fu);
+        LoadXDirect(memory, cpu, 0xa9u);                       /* E176 */
+        TransferDirectToA(cpu);
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+        LsrA8(cpu);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        ObjectSignNibble(memory, cpu, 0xe181u);
+        ObjectAddPosition(memory, cpu, 0x7fdcdcu, 0xe184u);
+        TransferDirectToA(cpu);                                /* E185 */
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+        And8(cpu, 0x0fu);
+        ObjectSignNibble(memory, cpu, 0xe18cu);
+        ObjectAddPosition(memory, cpu, 0x7fdd6cu, 0xe18fu);
+        SimulateRtsFrame(memory, cpu);
+        TransferDirectToA(cpu);                                /* E170 */
+        LoadA8(cpu, 0x01u);
+        return ObjectAdvance(memory, cpu);
+
+    case 0xeeb5u:                                              /* F2 */
+        LoadXDirect(memory, cpu, 0xa9u);
+        ObjectJitter(memory, cpu, 0xeeb9u);
+        IncrementY16(cpu);                                     /* EEBA */
+        cpu->carry = 0;
+        Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fdcdcu, cpu->x)));
+        Write16Long(memory, LongIndexedAddress(0x7fdcdcu, cpu->x), cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        ObjectJitter(memory, cpu, 0xeec8u);
+        IncrementY16(cpu);                                     /* EEC9 */
+        cpu->carry = 0;
+        Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fdd6cu, cpu->x)));
+        Write16Long(memory, LongIndexedAddress(0x7fdd6cu, cpu->x), cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xe589u:                                              /* 1A */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb0cu, cpu->x)));
+        BitImmediate8(cpu, 0x20u);
+        if (!cpu->zero) {
+            LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);      /* E593 */
+            Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+            ObjectSetFrame(memory, cpu, 0xe59au);
+        }
+        IncrementY16(cpu);                                     /* E59B */
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xead5u:                                              /* 80 */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe08eu, cpu->x)));
+        DecrementA8(cpu);
+        Write8(memory, LongIndexedAddress(0x7fe08eu, cpu->x), A8(cpu));
+        if (cpu->negative) {
+            LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));              /* EAE2 */
+            Write8(memory, LongIndexedAddress(0x7fe08eu, cpu->x), A8(cpu));
+            return OBJECT_FLOW_DISPATCH;
+        }
+        LoadXDirect(memory, cpu, 0xabu);                       /* EAEA */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdfcfu, cpu->x)));
+        ExchangeAccumulatorBytes(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdfceu, cpu->x)));
+        TransferAToY(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdfd0u, cpu->x)));
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        return OBJECT_FLOW_DISPATCH;
+
+    default:
+        cpu->resume_pc = 0x830000u | handler;
+        return OBJECT_FLOW_BOUNDARY;
+    }
+}
+
+/* $83:E0FC: run object $A7's script until it yields. */
+static uint8_t ObjectRunScript(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint32_t *dispatches) {
+    unsigned steps;
+
+    PushDataBank(memory, cpu);                                 /* E0FC */
+    LoadXDirect(memory, cpu, 0xabu);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdef0u, cpu->x)));
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdeefu, cpu->x)));
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdeeeu, cpu->x)));
+    TransferAToY(cpu);
+    /* A script that never yields spins the ROM forever. */
+    for (steps = 0; steps < 0x10000u; ++steps) {
+        uint16_t handler;
+        ObjectFlow flow;
+
+        ++*dispatches;
+        TransferDirectToA(cpu);                                /* E10F */
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        And8(cpu, 0x1eu);
+        TransferAToX(cpu);
+        handler = Read16ProgramIndexed(memory, cpu, 0xf2c8u, cpu->x);
+        flow = ObjectExecute(memory, cpu, handler);
+        if (flow == OBJECT_FLOW_RETURN)
+            return 1;
+        if (flow == OBJECT_FLOW_BOUNDARY)
+            return 0;
+    }
+    cpu->resume_pc = 0x83e10fu;
+    return 0;
+}
+
 Lufia2ActorPrimaryUpdateResult Lufia2ObjectSlotsUpdate(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu) {
@@ -6291,11 +6548,15 @@ Lufia2ActorPrimaryUpdateResult Lufia2ObjectSlotsUpdate(
                     SimulateJslFrame(memory, cpu, 0x83u, 0xe0bfu);
                     SecondaryRecordOffsets(memory, cpu);
                     SimulateRtlFrame(memory, cpu);
-                    /* $83:E0FC object script VM stays LLE. */
-                    cpu->resume_pc = 0x83e0c0u;
-                    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
-                    result.pc = cpu->resume_pc;
-                    return result;
+                    SimulateJsrFrame(memory, cpu, 0xe0c2u);    /* E0C0 */
+                    if (!ObjectRunScript(
+                            memory, cpu, &result.dispatches)) {
+                        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+                        result.pc = cpu->resume_pc;
+                        return result;
+                    }
+                    SimulateRtsFrame(memory, cpu);
+                    LoadXDirect16(memory, cpu, 0xa7u);         /* E0C3 */
                 }
             } else {
                 const uint32_t step = LongIndexedAddress(0x7fdaecu, cpu->x);
