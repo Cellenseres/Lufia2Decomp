@@ -78,6 +78,8 @@ typedef enum Lufia2ActorPrimaryActionFlow {
     LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE = 0,
     LUFIA2_ACTOR_PRIMARY_ACTION_CONTINUE_D389 = 1,
     LUFIA2_ACTOR_PRIMARY_ACTION_UNKNOWN_D370_TARGET = 2,
+    /* X8 at $83:D38D; F9D4 would unbalance the stack. */
+    LUFIA2_ACTOR_PRIMARY_ACTION_X8_BOUNDARY_D38D = 3,
 } Lufia2ActorPrimaryActionFlow;
 
 typedef enum Lufia2ActorPrimaryUpdateFlow {

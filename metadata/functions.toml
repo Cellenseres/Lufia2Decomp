@@ -19,6 +19,7 @@ status = "verified"
 
 # Whole replacements. Native ABI: M=1, D=0, native mode; other
 # entries run in LLE. D350/F9D4/FB71 need 16-bit X, D350 DP page 0.
+# Portable D350 also takes X8 (C1B4) and stops at $83:D38D.
 [[function]]
 address = "83:D350"
 name = "Lufia2ActorPrimaryActionCore"

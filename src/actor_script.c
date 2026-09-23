@@ -3557,6 +3557,11 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
         return LUFIA2_ACTOR_PRIMARY_ACTION_UNKNOWN_D370_TARGET;
     SimulateRtlFrame(memory, cpu);
 
+    /* X8: F9D4's PHX/PLA pair derails its RTS. */
+    if (cpu->index_is_8_bit) {
+        cpu->resume_pc = 0x83d38du;
+        return LUFIA2_ACTOR_PRIMARY_ACTION_X8_BOUNDARY_D38D;
+    }
     SimulateJslFrame(memory, cpu, 0x83u, 0xd390u);             /* D38D */
     Lufia2ActorReadMapCellValue(memory, cpu);                   /* FB71 */
     SimulateRtlFrame(memory, cpu);
