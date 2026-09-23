@@ -4,7 +4,6 @@ project(Lufia2Decomp VERSION 0.1.0 LANGUAGES C)
 add_library(lufia2_decomp STATIC
     src/actor_frontend.c
     src/actor_script.c
-    src/actor_update.c
     src/player_update.c)
 add_library(Lufia2::Decomp ALIAS lufia2_decomp)
 

@@ -11,7 +11,7 @@ status = "identified"
 address = "83:BB93"
 name = "Lufia2UpdateActorSlots"
 kind = "function"
-status = "draft"
+status = "verified"
 
 [[symbol]]
 address = "83:BBF3"

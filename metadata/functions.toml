@@ -1,13 +1,15 @@
 format = 1
 rom = "lufia2-usa"
 
+# 40-slot traversal; children go through a JSR callback. D set
+# on the way into AB4F stops at $83:BBA1.
 [[function]]
 address = "83:BB93"
 name = "Lufia2UpdateActorSlots"
-source = "src/actor_update.c"
+source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "83:BBF3"

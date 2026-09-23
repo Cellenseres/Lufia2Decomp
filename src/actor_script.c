@@ -5740,3 +5740,105 @@ done:
     SetIndexWidth(cpu, 1);                                     /* C243 */
     return PlayerReturned(0x83c245u);
 }
+
+/* TYA with M=1. */
+static void TransferYToA8(Lufia2ActorFrontendCpu *cpu) {
+    LoadA8(cpu, (uint8_t)cpu->y);
+}
+
+Lufia2ActorPrimaryUpdateResult Lufia2UpdateActorSlots(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    Lufia2ActorSlotChild child,
+    void *child_context) {
+    Lufia2ActorPrimaryUpdateResult result;
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.pc = 0x83bbf2u;
+    result.dispatches = 0;
+
+    LoadA8(cpu, Read8(memory, 0x7fd0feu));                     /* BB93 */
+    if (!cpu->zero) {
+        LoadA8(cpu, 0x01u);
+        Write8(memory, 0x7fe216u, A8(cpu));
+    }
+    Write8(memory, DirectAddress(cpu, 0xa7u), 0x00u);          /* BB9F */
+    for (;;) {
+        ++result.dispatches;
+        /* A child left D set: AB4F's ADC goes BCD. */
+        if (cpu->decimal) {
+            cpu->resume_pc = 0x83bba1u;
+            result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+            result.pc = cpu->resume_pc;
+            return result;
+        }
+        SimulateJslFrame(memory, cpu, 0x83u, 0xbba4u);         /* BBA1 */
+        SecondaryRecordOffsets(memory, cpu);
+        SimulateRtlFrame(memory, cpu);
+        if (cpu->index_is_8_bit) {                             /* BBA5 */
+            cpu->y = Read8(memory, DirectAddress(cpu, 0xa7u));
+            SetNz8(cpu, (uint8_t)cpu->y);
+        } else {
+            LoadYDirect16(memory, cpu, 0xa7u);
+        }
+        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->y);
+        BitImmediate8(cpu, 0x04u);
+        if (cpu->zero) {
+            uint32_t primary = 0;
+            uint8_t gate = 0;
+
+            BitImmediate8(cpu, 0x18u);                         /* BBAE */
+            if (!cpu->zero) {
+                gate = 1;
+            } else {
+                BitImmediate8(cpu, 0x01u);
+                if (cpu->zero) {
+                    TransferYToA8(cpu);                        /* BBB6 */
+                    if (cpu->zero)
+                        primary = 0x83bbf3u;
+                    else
+                        gate = 1;
+                }
+            }
+            if (gate) {
+                LoadA8(cpu, Read8(memory, 0x7fd0a1u));         /* BBBE */
+                BitImmediate8(cpu, 0x2cu);
+                if (!cpu->zero)
+                    TransferYToA8(cpu);
+                if (cpu->zero)
+                    primary = 0x83c7f8u;
+            }
+            if (primary != 0) {
+                if (!child(child_context, cpu, primary,
+                        primary == 0x83bbf3u ? 0x83bbb9u : 0x83bbc9u)) {
+                    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_CHILD_UNWOUND;
+                    return result;
+                }
+            }
+            if (!child(child_context, cpu, 0x83d508u, 0x83bbccu)) {
+                result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_CHILD_UNWOUND;
+                return result;
+            }
+            SetAccumulatorWidth(cpu, 1);                       /* BBCF */
+            SetIndexWidth(cpu, 1);
+        }
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0xa7u)));  /* BBD1 */
+        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+        Write8(memory, DirectAddress(cpu, 0xa7u), A8(cpu));
+        Compare8(cpu, A8(cpu), 0x28u);
+        if (cpu->zero)
+            break;
+    }
+    LoadA8(cpu, Read8(memory, 0x7fd0feu));                     /* BBDA */
+    if (!cpu->zero) {
+        LoadA8(cpu, 0x03u);
+        Write8(memory, 0x7fe216u, A8(cpu));
+    }
+    LoadAAbsolute8(memory, cpu, 0x09a1u, 0);                   /* BBE6 */
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (!cpu->zero) {
+        LoadA8(cpu, 0x80u);
+        TestBitsAbsolute8(memory, cpu, 0x09a1u, 0);
+    }
+    return result;
+}

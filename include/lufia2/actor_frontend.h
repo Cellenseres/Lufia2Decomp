@@ -87,6 +87,8 @@ typedef enum Lufia2ActorPrimaryUpdateFlow {
     LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED = 0,
     /* State exact at resume_pc; finish in LLE. */
     LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY = 1,
+    /* A child call did not return; propagate. */
+    LUFIA2_ACTOR_PRIMARY_UPDATE_CHILD_UNWOUND = 2,
 } Lufia2ActorPrimaryUpdateFlow;
 
 typedef struct Lufia2ActorPrimaryUpdateResult {
@@ -96,6 +98,23 @@ typedef struct Lufia2ActorPrimaryUpdateResult {
 } Lufia2ActorPrimaryUpdateResult;
 
 /* $83:D508 through its RTS, or an exact boundary. */
+/*
+ * JSR child at site: push the frame, run target to its RTS.
+ * Returns 0 when the child unwinds instead.
+ */
+typedef uint8_t (*Lufia2ActorSlotChild)(
+    void *context,
+    Lufia2ActorFrontendCpu *cpu,
+    uint32_t target,
+    uint32_t site);
+
+/* $83:BB93 40-slot traversal; children through the callback. */
+Lufia2ActorPrimaryUpdateResult Lufia2UpdateActorSlots(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    Lufia2ActorSlotChild child,
+    void *child_context);
+
 /* $83:C1B4 player controller; exact LLE boundaries. */
 Lufia2ActorPrimaryUpdateResult Lufia2PlayerSlotStandardUpdate(
     const Lufia2ActorFrontendMemory *memory,
