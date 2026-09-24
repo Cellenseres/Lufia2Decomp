@@ -12630,6 +12630,489 @@ Lufia2ActorPrimaryUpdateResult Lufia2IntroNmi(
     return FieldLoopResult(0x8092b6u);
 }
 
+/* $85:C168: battler byte A to its variable base in X. */
+static void BattleScriptSlot(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    StoreAAbsolute8(memory, cpu, 0x09fbu, 0);                  /* C168 */
+    BitImmediate8(cpu, 0x3fu);
+    if (!cpu->zero) {
+        And8(cpu, 0x80u);
+        if (!cpu->zero)
+            LoadA8(cpu, 0x05u);
+        StoreAAbsolute8(memory, cpu, 0x09fau, 0);
+        LoadA8(cpu, 0xffu);
+        do {
+            const uint32_t bits = AbsoluteIndexedAddress(cpu, 0x09fbu, 0);
+            const uint8_t value = Read8(memory, bits);
+
+            LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));              /* C17A */
+            cpu->carry = value & 1u;
+            Write8(memory, bits, (uint8_t)(value >> 1));
+            SetNz8(cpu, (uint8_t)(value >> 1));
+        } while (!cpu->carry);
+        cpu->carry = 0;
+        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x09fau, 0)));
+    }
+    SetAccumulatorWidth(cpu, 0);                               /* C184 */
+    And16(cpu, 0x00ffu);
+    AslA16(cpu);
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a13u, 0));
+    And16(cpu, 0x00ffu);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
+        cpu->zero ? 0x0a80u : 0x0a64u, cpu->x));
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $85:C4DE: variable bases $C1 and $BE. */
+static void BattleScriptBases(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xb462u);
+    LoadA8(cpu, Read8(memory, 0x7ff450u));                     /* C4DE */
+    BattleScriptSlot(memory, cpu, 0xc4e4u);
+    Write16Direct(memory, cpu, 0xc1u, cpu->x);
+    LoadA8(cpu, Read8(memory, 0x7ff44eu));
+    BattleScriptSlot(memory, cpu, 0xc4edu);
+    Write16Direct(memory, cpu, 0xbeu, cpu->x);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* INC $BB, 16-bit. */
+static void BattleScriptAdvance(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    const uint16_t pointer = (uint16_t)(Read16Direct(memory, cpu, 0xbbu) + 1u);
+
+    Write16Direct(memory, cpu, 0xbbu, pointer);
+    SetNz16(cpu, pointer);
+}
+
+/* $85:BFBF: next script byte into A; flags kept. */
+static void BattleScriptByte(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Push8(memory, cpu, PackStatus(cpu));                       /* BFBF */
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, Read8(memory, DirectLongPointer(memory, cpu, 0xbbu)));
+    SetAccumulatorWidth(cpu, 0);
+    BattleScriptAdvance(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $85:BFCA: next script word into X. */
+static void BattleScriptWord(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Push8(memory, cpu, PackStatus(cpu));                       /* BFCA */
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    PushAccumulator16(memory, cpu);
+    LoadA16(cpu, Read16Long(memory, DirectLongPointer(memory, cpu, 0xbbu)));
+    BattleScriptAdvance(memory, cpu);
+    BattleScriptAdvance(memory, cpu);
+    TransferAToX(cpu);
+    PullAccumulator16(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* Selector bit 7: local slot at base $C1 or $BE. */
+static uint16_t BattleScriptLocal(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a52u, 0));
+    And16(cpu, 0x00ffu);
+    {
+        const uint8_t base = cpu->zero ? 0xbeu : 0xc1u;
+
+        LoadA16(cpu, (uint16_t)(
+            Read8(memory, (uint16_t)(cpu->stack + 1u)) |
+            (Read8(memory, (uint16_t)(cpu->stack + 2u)) << 8)));
+        And16(cpu, 0x007fu);
+        AslA16(cpu);
+        Add16Value(cpu, Read16Direct(memory, cpu, base));
+    }
+    return cpu->accumulator;
+}
+
+/* $85:BFED: read variable A (bit 7 local) into X. */
+static void BattleScriptRead(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Push8(memory, cpu, PackStatus(cpu));                       /* BFED */
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    PushAccumulator16(memory, cpu);
+    cpu->zero = (cpu->accumulator & 0x0080u) == 0;
+    if (cpu->zero) {
+        And16(cpu, 0x00ffu);
+        AslA16(cpu);
+        TransferAToX(cpu);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ff40eu, cpu->x)));
+    } else {
+        BattleScriptLocal(memory, cpu);                        /* C001 */
+        TransferAToX(cpu);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0015u, cpu->x));
+    }
+    TransferAToX(cpu);                                         /* C01F */
+    PullAccumulator16(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $85:C023: write X to variable A. */
+static void BattleScriptWrite(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Push8(memory, cpu, PackStatus(cpu));                       /* C023 */
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    PushY(memory, cpu);
+    PushAccumulator16(memory, cpu);
+    cpu->zero = (cpu->accumulator & 0x0080u) == 0;
+    if (cpu->zero) {
+        And16(cpu, 0x00ffu);
+        AslA16(cpu);
+        LoadY16(cpu, cpu->accumulator);
+        LoadA16(cpu, cpu->x);
+        LoadX16(cpu, cpu->y);
+        Write16Long(memory, LongIndexedAddress(0x7ff40eu, cpu->x),
+            cpu->accumulator);
+    } else {
+        BattleScriptLocal(memory, cpu);                        /* C03A */
+        LoadY16(cpu, cpu->accumulator);
+        LoadA16(cpu, cpu->x);
+        LoadX16(cpu, cpu->y);
+        Write8(memory, AbsoluteIndexedAddress(cpu, 0x0015u, cpu->x),
+            (uint8_t)cpu->accumulator);
+        Write8(memory, AbsoluteIndexedAddress(cpu, 0x0016u, cpu->x),
+            (uint8_t)(cpu->accumulator >> 8));
+    }
+    TransferAToX(cpu);                                         /* C05A */
+    PullAccumulator16(memory, cpu);
+    cpu->y = PullIndexValue(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $85:BFD8: next word, bit 15 = variable, into X. */
+static void BattleScriptValue(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Push8(memory, cpu, PackStatus(cpu));                       /* BFD8 */
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    PushAccumulator16(memory, cpu);
+    LoadA16(cpu, Read16Long(memory, DirectLongPointer(memory, cpu, 0xbbu)));
+    if (cpu->negative)
+        BattleScriptRead(memory, cpu, 0xbfe2u);
+    else
+        TransferAToX(cpu);
+    BattleScriptAdvance(memory, cpu);                          /* BFE6 */
+    BattleScriptAdvance(memory, cpu);
+    PullAccumulator16(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $85:B551: $BB = $0A42 + next word. */
+static void BattleScriptJump(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SetAccumulatorWidth(cpu, 0);                               /* B551 */
+    BattleScriptWord(memory, cpu, 0xb555u);
+    LoadA16(cpu, cpu->x);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a42u, 0));
+    Write16Direct(memory, cpu, 0xbbu, cpu->accumulator);
+}
+
+/* Operand fetch shared by the compare and math opcodes. */
+static void BattleScriptOperands(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t opcode) {
+    BattleScriptByte(memory, cpu, (uint16_t)(opcode + 2u));
+    BattleScriptRead(memory, cpu, (uint16_t)(opcode + 5u));
+    Write16Direct(memory, cpu, 0x54u, cpu->x);
+    BattleScriptValue(memory, cpu, (uint16_t)(opcode + 10u));
+}
+
+/* Signed $54 - X, 16-bit, overflow kept. */
+static void BattleScriptCompare(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+    Write16Direct(memory, cpu, 0x54u, cpu->x);
+    cpu->carry = 1;
+    Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x54u));
+}
+
+/* Store binary result X into the destination variable. */
+static void BattleScriptStoreBinary(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t value,
+    uint16_t return_address) {
+    LoadA16(cpu, value);
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, Pull8(memory, cpu));
+    BattleScriptWrite(memory, cpu, return_address);
+}
+
+/* Unary opcodes: destination byte, source variable, result X. */
+static void BattleScriptUnary(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t opcode,
+    uint8_t kind) {
+    BattleScriptByte(memory, cpu, (uint16_t)(opcode + 2u));
+    PushAccumulator8(memory, cpu);
+    BattleScriptRead(memory, cpu, (uint16_t)(opcode + 6u));
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, cpu->x);
+    if (kind == 0) {                                           /* abs */
+        if (cpu->negative) {
+            LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
+            LoadA16(cpu, (uint16_t)(cpu->accumulator + 1u));
+        }
+        TransferAToX(cpu);
+    } else if (kind == 1) {                                    /* negate */
+        LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
+        LoadA16(cpu, (uint16_t)(cpu->accumulator + 1u));
+        TransferAToX(cpu);
+    } else if (!cpu->zero) {                                   /* sign */
+        LoadX16(cpu, cpu->negative ? 0xffffu : 0x0001u);
+    }
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, Pull8(memory, cpu));
+    BattleScriptWrite(memory, cpu,
+        (uint16_t)(opcode + (kind == 0 ? 22u : kind == 1 ? 20u : 27u)));
+}
+
+/* $85:B452: battle script VM; other opcodes run on LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2BattleScript(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    Lufia2ActorPrimaryUpdateResult result;
+    unsigned opcodes;
+
+    PushDataBank(memory, cpu);                                 /* B452 */
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    PushAccumulator16(memory, cpu);
+    PushIndex(memory, cpu);
+    PushY(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    StoreZeroAbsolute8(memory, cpu, 0x0a60u, 0);
+    for (opcodes = 0;; ++opcodes) {
+        uint16_t handler;
+
+        SetAccumulatorWidth(cpu, 1);                           /* B45E */
+        BattleScriptBases(memory, cpu);
+        TransferDirectToA(cpu);
+        LoadA8(cpu, Read8(memory, DirectLongPointer(memory, cpu, 0xbbu)));
+        SetAccumulatorWidth(cpu, 0);
+        AslA16(cpu);
+        TransferAToX(cpu);
+        BattleScriptAdvance(memory, cpu);
+        SetAccumulatorWidth(cpu, 1);
+        Push8(memory, cpu, 0x85u);
+        PullDataBank(memory, cpu);
+        handler = (uint16_t)(
+            Read8(memory, 0x850000u | (uint16_t)(0xb483u + cpu->x)) |
+            (Read8(memory, 0x850000u | (uint16_t)(0xb484u + cpu->x)) << 8));
+        switch (opcodes < 4096u ? handler : 0u) {
+        case 0xb473u:                                          /* end */
+        case 0xb476u:                                          /* end, $FF */
+            if (handler == 0xb473u)
+                TransferDirectToA(cpu);
+            else
+                LoadA8(cpu, 0xffu);
+            StoreAAbsolute8(memory, cpu, 0x0a5bu, 0);          /* B478 */
+            SetAccumulatorWidth(cpu, 0);
+            SetIndexWidth(cpu, 0);
+            cpu->y = PullIndexValue(memory, cpu);
+            cpu->x = PullIndexValue(memory, cpu);
+            PullAccumulator16(memory, cpu);
+            UnpackStatus(cpu, Pull8(memory, cpu));
+            PullDataBank(memory, cpu);
+            return FieldLoopResult(0x85b482u);
+        case 0xb551u:                                          /* jump */
+            BattleScriptJump(memory, cpu);
+            break;
+        case 0xb582u:                                          /* random */
+            BattleScriptByte(memory, cpu, 0xb584u);
+            StoreADirect8(memory, cpu, 0x54u);
+            LoadA8(cpu, 0xffu);
+            SimulateJslFrame(memory, cpu, 0x85u, 0xb58cu);
+            Lufia2RandomScale(memory, cpu);
+            SimulateRtlFrame(memory, cpu);
+            cpu->carry = 1;
+            Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
+            if (!cpu->carry)
+                BattleScriptJump(memory, cpu);
+            else
+                BattleScriptWord(memory, cpu, 0xb594u);
+            break;
+        case 0xb598u:                                          /* equal */
+        case 0xb5adu:                                          /* not equal */
+            BattleScriptOperands(memory, cpu, handler);
+            Compare16(cpu, cpu->x, Read16Direct(memory, cpu, 0x54u));
+            if (cpu->zero == (handler == 0xb598u))
+                BattleScriptJump(memory, cpu);
+            else
+                BattleScriptWord(memory, cpu, (uint16_t)(handler + 17u));
+            break;
+        case 0xb60au:                                          /* >= */
+            BattleScriptOperands(memory, cpu, handler);
+            BattleScriptCompare(memory, cpu);
+            if (cpu->negative == cpu->overflow)
+                BattleScriptJump(memory, cpu);
+            else
+                BattleScriptWord(memory, cpu, 0xb629u);
+            break;
+        case 0xb62du:                                          /* <= */
+            BattleScriptOperands(memory, cpu, handler);
+            BattleScriptCompare(memory, cpu);
+            if (cpu->zero || cpu->negative != cpu->overflow)
+                BattleScriptJump(memory, cpu);
+            else
+                BattleScriptWord(memory, cpu, 0xb64eu);
+            break;
+        case 0xb670u:                                          /* set */
+            BattleScriptByte(memory, cpu, 0xb672u);
+            BattleScriptValue(memory, cpu, 0xb675u);
+            BattleScriptWrite(memory, cpu, 0xb678u);
+            break;
+        case 0xb67cu:                                          /* add */
+        case 0xb698u:                                          /* subtract */
+            BattleScriptOperands(memory, cpu, handler);
+            PushAccumulator8(memory, cpu);
+            SetAccumulatorWidth(cpu, 0);
+            if (handler == 0xb67cu) {
+                LoadA16(cpu, cpu->x);
+                cpu->carry = 0;
+                Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+            } else {
+                LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+                Write16Direct(memory, cpu, 0x54u, cpu->x);
+                cpu->carry = 1;
+                Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x54u));
+            }
+            BattleScriptStoreBinary(memory, cpu, cpu->accumulator,
+                handler == 0xb67cu ? 0xb694u : 0xb6b3u);
+            break;
+        case 0xb849u:                                          /* and */
+        case 0xb864u:                                          /* or */
+        case 0xb87fu: {                                        /* xor */
+            uint16_t value;
+
+            BattleScriptByte(memory, cpu, (uint16_t)(handler + 2u));
+            PushAccumulator8(memory, cpu);
+            BattleScriptRead(memory, cpu, (uint16_t)(handler + 6u));
+            Write16Direct(memory, cpu, 0x54u, cpu->x);
+            BattleScriptValue(memory, cpu, (uint16_t)(handler + 11u));
+            SetAccumulatorWidth(cpu, 0);
+            value = Read16Direct(memory, cpu, 0x54u);
+            value = handler == 0xb849u ? (uint16_t)(cpu->x & value)
+                : handler == 0xb864u ? (uint16_t)(cpu->x | value)
+                : (uint16_t)(cpu->x ^ value);
+            BattleScriptStoreBinary(memory, cpu, value,
+                (uint16_t)(handler + 0x17u));
+            break;
+        }
+        case 0xb89au:
+            BattleScriptUnary(memory, cpu, handler, 0);
+            break;
+        case 0xb8b4u:
+            BattleScriptUnary(memory, cpu, handler, 1);
+            break;
+        case 0xb8ccu:
+            BattleScriptUnary(memory, cpu, handler, 2);
+            break;
+        case 0xb8ebu:                                          /* leader id */
+            LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11e8u, 0));
+            BattleScriptByte(memory, cpu, 0xb8f0u);
+            BattleScriptWrite(memory, cpu, 0xb8f3u);
+            break;
+        case 0xb91fu:                                          /* $7F:F45C */
+            BattleScriptWord(memory, cpu, 0xb921u);
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, cpu->x);
+            Write16Long(memory, 0x7ff45cu, cpu->accumulator);
+            break;
+        case 0xb92cu:                                          /* $7F:F45E */
+            BattleScriptByte(memory, cpu, 0xb92eu);
+            Write8(memory, 0x7ff45eu, A8(cpu));
+            BattleScriptByte(memory, cpu, 0xb935u);
+            Write8(memory, 0x7ff460u, A8(cpu));
+            break;
+        case 0xbd77u:                                          /* call */
+            BattleScriptWord(memory, cpu, 0xbd79u);
+            Write16Direct(memory, cpu, 0xcau, cpu->x);
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, cpu->x);
+            AslA16(cpu);
+            TransferAToX(cpu);
+            SetAccumulatorWidth(cpu, 1);
+            LoadY16(cpu, Read16Direct(memory, cpu, 0xbbu));
+            Write16Absolute(memory, cpu, 0x0a48u, cpu->y);
+            LoadA8(cpu, DirectByte(memory, cpu, 0xbdu));
+            StoreAAbsolute8(memory, cpu, 0x0a4au, 0);
+            LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a42u, 0));
+            Write16Absolute(memory, cpu, 0x0a45u, cpu->y);
+            LoadAAbsolute8(memory, cpu, 0x0a44u, 0);
+            StoreAAbsolute8(memory, cpu, 0x0a47u, 0);
+            LoadA8(cpu, 0x96u);
+            StoreADirect8(memory, cpu, 0xbdu);
+            StoreAAbsolute8(memory, cpu, 0x0a44u, 0);
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, Read16Long(memory,
+                LongIndexedAddress(0x96faddu, cpu->x)));
+            cpu->carry = 0;
+            Add16Value(cpu, 0xfaddu);
+            Write16Absolute(memory, cpu, 0x0a42u, cpu->accumulator);
+            Write16Direct(memory, cpu, 0xbbu, cpu->accumulator);
+            break;
+        case 0xbdb2u:                                          /* return */
+            LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a48u, 0));
+            Write16Direct(memory, cpu, 0xbbu, cpu->y);
+            LoadAAbsolute8(memory, cpu, 0x0a4au, 0);
+            StoreADirect8(memory, cpu, 0xbdu);
+            LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a45u, 0));
+            Write16Absolute(memory, cpu, 0x0a42u, cpu->y);
+            LoadAAbsolute8(memory, cpu, 0x0a47u, 0);
+            StoreAAbsolute8(memory, cpu, 0x0a44u, 0);
+            break;
+        default:                                               /* B470 */
+            result = FieldLoopHandoff(cpu, 0x85b470u);
+            result.dispatches = opcodes;
+            return result;
+        }
+    }
+}
+
 /* $82:8B4B: menu buttons into $14AB/$14AC; carry = none. */
 Lufia2ActorPrimaryUpdateResult Lufia2MenuButtons(
     const Lufia2ActorFrontendMemory *memory,

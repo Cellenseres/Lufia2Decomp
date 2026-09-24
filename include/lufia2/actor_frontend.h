@@ -245,6 +245,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2TextEngineStep(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $85:B452 battle script VM. */
+Lufia2ActorPrimaryUpdateResult Lufia2BattleScript(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $80:92A4 intro NMI, logo state machine. */
 Lufia2ActorPrimaryUpdateResult Lufia2IntroNmi(
     const Lufia2ActorFrontendMemory *memory,

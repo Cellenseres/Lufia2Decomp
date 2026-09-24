@@ -277,6 +277,15 @@ entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
 
+# $85:B452 battle script VM; other opcodes stay LLE.
+[[function]]
+address = "85:B452"
+name = "Lufia2BattleScript"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # $80:92A4 intro NMI; unknown states stay LLE.
 [[function]]
 address = "80:92A4"
