@@ -150,6 +150,16 @@ Lufia2ActorPrimaryUpdateResult Lufia2BattleNmiUploads(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $85:8A2F battle sprites and party tilemap. */
+Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $85:ECF0 per-frame battle upkeep. */
+Lufia2ActorPrimaryUpdateResult Lufia2BattleFrameUpkeep(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $8E:BD77 BG scroll targets for three layers. */
 Lufia2ActorPrimaryUpdateResult Lufia2FieldScrollUpdate(
     const Lufia2ActorFrontendMemory *memory,

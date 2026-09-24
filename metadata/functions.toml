@@ -168,3 +168,21 @@ source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# Battle sprites; also JSL'd from many battle menus.
+[[function]]
+address = "85:8A2F"
+name = "Lufia2BattleSprites"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Per-frame battle upkeep from the $81:8877 loop.
+[[function]]
+address = "85:ECF0"
+name = "Lufia2BattleFrameUpkeep"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
