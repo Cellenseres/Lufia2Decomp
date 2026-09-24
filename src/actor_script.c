@@ -9281,7 +9281,7 @@ static Lufia2ActorPrimaryUpdateResult TextPromptTick(
     Lufia2ActorFrontendCpu *cpu,
     Lufia2ActorPrimaryUpdateResult result);
 
-static uint8_t FieldScreenEffects(
+static void FieldScreenEffects(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
@@ -9295,8 +9295,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
     result.dispatches = 0;
     SimulateJslFrame(memory, cpu, 0x80u, 0x9c75u);             /* 9C72 */
     cpu->program_bank = 0x84u;
-    if (!FieldScreenEffects(memory, cpu))                      /* $84:8000 */
-        return FieldTickBoundary(result, cpu, 0x8480a2u);
+    FieldScreenEffects(memory, cpu);                           /* $84:8000 */
     SimulateRtlFrame(memory, cpu);
     cpu->program_bank = 0x80u;
     SimulateJsrFrame(memory, cpu, 0x9c78u);                    /* 9C76 */
@@ -14653,8 +14652,119 @@ static void ScreenColorStep(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $84:8000: screen effects of $1261; 0 when $84:8E07 must run. */
-static uint8_t FieldScreenEffects(
+/* $84:8E07: fade palette $9B:[$7F:D0F8] into $0320 by $58/$5A/$63. */
+static void ScreenPaletteFade(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    static const struct {
+        uint16_t level;
+        uint16_t step;
+        uint8_t out;
+    } channels[3] = {
+        {0x1274u, 0x127au, 0x58u},
+        {0x1276u, 0x127cu, 0x5au},
+        {0x1278u, 0x127eu, 0x63u}};
+    uint8_t darken;
+    unsigned i;
+
+    SimulateJslFrame(memory, cpu, 0x84u, 0x80a5u);
+    LoadAAbsolute8(memory, cpu, 0x1281u, 0);                   /* 8E07 */
+    StoreAAbsolute8(memory, cpu, 0x1280u, 0);
+    LoadAAbsolute8(memory, cpu, 0x1283u, 0);
+    BitImmediate8(cpu, 0x80u);
+    darken = !cpu->zero;
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    for (i = 0; i < 3u; ++i) {
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, channels[i].level, 0));
+        if (!darken) {
+            cpu->carry = 0;
+            Add16Value(cpu,
+                Read16AbsoluteIndexed(memory, cpu, channels[i].step, 0));
+        } else if (!cpu->zero) {
+            cpu->carry = 1;
+            Add16Value(cpu, (uint16_t)~Read16AbsoluteIndexed(
+                memory, cpu, channels[i].step, 0));
+        }
+        Write16Absolute(memory, cpu, channels[i].level, cpu->accumulator);
+        Write16Direct(memory, cpu, channels[i].out, cpu->accumulator);
+    }
+    LoadX16(cpu, Read16Long(memory, 0x7fd0f8u));               /* 8E66 */
+    LoadY16(cpu, Read16Long(memory, 0x7fd0fau));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1283u, 0));
+    cpu->zero = (cpu->accumulator & 0x0040u) == 0;
+    darken = !cpu->zero;
+    do {
+        const uint16_t color =
+            Read16Long(memory, LongIndexedAddress(0x9b0000u, cpu->x));
+
+        LoadA16(cpu, color);
+        Write16Direct(memory, cpu, 0x54u, color);
+        if (darken) {
+            LoadA16(cpu, (uint16_t)(color & 0x001fu));         /* 8E78 */
+            cpu->carry = 1;
+            Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x58u));
+            if (!cpu->carry)
+                TransferDirectToA(cpu);
+            Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+            LoadA16(cpu, (uint16_t)(color & 0x03e0u));
+            cpu->carry = 1;
+            Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x5au));
+            if (cpu->negative)
+                TransferDirectToA(cpu);
+            TestBitsDirect(memory, cpu, 0x56u, 1);
+            LoadA16(cpu, (uint16_t)(color & 0x7c00u));
+            cpu->carry = 1;
+            Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x63u));
+            if (cpu->negative)
+                TransferDirectToA(cpu);
+        } else {
+            LoadA16(cpu, (uint16_t)(color & 0x001fu));         /* 8EB1 */
+            cpu->carry = 0;
+            Add16Value(cpu, Read16Direct(memory, cpu, 0x58u));
+            if (cpu->accumulator & 0x0020u)
+                LoadA16(cpu, 0x001fu);
+            Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+            LoadA16(cpu, (uint16_t)(color & 0x03e0u));
+            cpu->carry = 0;
+            Add16Value(cpu, Read16Direct(memory, cpu, 0x5au));
+            if (cpu->accumulator & 0x0400u)
+                LoadA16(cpu, 0x03e0u);
+            TestBitsDirect(memory, cpu, 0x56u, 1);
+            LoadA16(cpu, (uint16_t)(color & 0x7c00u));
+            cpu->carry = 0;
+            Add16Value(cpu, Read16Direct(memory, cpu, 0x63u));
+            if (cpu->negative)
+                LoadA16(cpu, 0x7c00u);
+        }
+        LoadA16(cpu, (uint16_t)(cpu->accumulator |
+            Read16Direct(memory, cpu, 0x56u)));
+        Write8(memory, AbsoluteIndexedAddress(cpu, 0x0320u, cpu->y),
+            (uint8_t)cpu->accumulator);
+        Write8(memory, AbsoluteIndexedAddress(cpu, 0x0321u, cpu->y),
+            (uint8_t)(cpu->accumulator >> 8));
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        IncrementY16(cpu);
+        IncrementY16(cpu);
+        Compare16(cpu, cpu->y, 0x00e0u);
+    } while (!cpu->zero);
+    SetAccumulatorWidth(cpu, 1);                               /* 8EF4 */
+    LoadA8(cpu, 0x01u);
+    TestBitsDirect(memory, cpu, 0x73u, 1);
+    LoadAAbsolute8(memory, cpu, 0x1282u, 0);
+    DecrementA8(cpu);
+    StoreAAbsolute8(memory, cpu, 0x1282u, 0);
+    And8(cpu, 0x1fu);
+    if (cpu->zero) {
+        LoadA8(cpu, (uint8_t)(Read8(memory, 0x0009a9u) & 0xfdu));
+        Write8(memory, 0x0009a9u, A8(cpu));
+    }
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $84:8000: screen effects of $1261 and the $1262 palette fade. */
+static void FieldScreenEffects(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu) {
     LoadAAbsolute8(memory, cpu, 0x1261u, 0);                   /* 8000 */
@@ -14730,7 +14840,22 @@ static uint8_t FieldScreenEffects(
     }
     LoadAAbsolute8(memory, cpu, 0x1262u, 0);                   /* 809B */
     BitImmediate8(cpu, 0x01u);
-    return cpu->zero;
+    if (!cpu->zero) {
+        ScreenPaletteFade(memory, cpu);
+        LoadAAbsolute8(memory, cpu, 0x1288u, 0);               /* 80A6 */
+        cpu->carry = 0;
+        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x1289u, 0)));
+        StoreAAbsolute8(memory, cpu, 0x1288u, 0);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        Compare8(cpu, A8(cpu), 0x1fu);
+        if (cpu->zero) {
+            LoadA8(cpu, 0x01u);
+            TestBitsAbsolute8(memory, cpu, 0x1262u, 0);
+            LoadAAbsolute8(memory, cpu, 0x1262u, 0);
+        }
+    }
 }
 
 /* $80:C11C: clear bit 0 of the actor flags $0622-$0649. */
