@@ -13068,6 +13068,209 @@ Lufia2ActorPrimaryUpdateResult Lufia2BattleScript(
             BattleScriptByte(memory, cpu, 0xb935u);
             Write8(memory, 0x7ff460u, A8(cpu));
             break;
+        case 0xb560u:                                          /* jump if F42E */
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, Read16Long(memory, 0x7ff42eu));
+            if (!cpu->zero)
+                BattleScriptJump(memory, cpu);
+            else
+                BattleScriptWord(memory, cpu, 0xb56au);
+            break;
+        case 0xb5c2u:                                          /* > */
+            BattleScriptOperands(memory, cpu, handler);
+            BattleScriptCompare(memory, cpu);
+            if (!cpu->zero && cpu->negative == cpu->overflow)
+                BattleScriptJump(memory, cpu);
+            else
+                BattleScriptWord(memory, cpu, 0xb5e3u);
+            break;
+        case 0xb5e7u:                                          /* < */
+            BattleScriptOperands(memory, cpu, handler);
+            BattleScriptCompare(memory, cpu);
+            if (cpu->negative != cpu->overflow)
+                BattleScriptJump(memory, cpu);
+            else
+                BattleScriptWord(memory, cpu, 0xb606u);
+            break;
+        case 0xb93du:                                          /* move setup */
+            BattleScriptWord(memory, cpu, 0xb93fu);
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, cpu->x);
+            Write16Long(memory, 0x7ff45cu, cpu->accumulator);
+            LoadA16(cpu, 0x0020u);
+            Write16Long(memory, 0x7ff45au, cpu->accumulator);
+            LoadA16(cpu, 0x0005u);
+            Write16Long(memory, 0x7ff454u, cpu->accumulator);
+            BattleScriptValue(memory, cpu, 0xb957u);
+            LoadA16(cpu, (uint16_t)(0u - cpu->x));
+            Write16Long(memory, 0x7ff462u, cpu->accumulator);
+            LoadA16(cpu, 0x0020u);
+            Write16Long(memory, 0x7ff464u, cpu->accumulator);
+            BattleScriptByte(memory, cpu, 0xb96au);
+            break;
+        case 0xb9b8u:                                          /* step setup */
+            BattleScriptWord(memory, cpu, 0xb9bau);
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, (uint16_t)(0u - cpu->x));
+            Write16Long(memory, 0x7ff462u, cpu->accumulator);
+            LoadA16(cpu, 0x0020u);
+            Write16Long(memory, 0x7ff464u, cpu->accumulator);
+            Write16Long(memory, 0x7ff45au, cpu->accumulator);
+            LoadA16(cpu, 0x0005u);
+            break;
+        case 0xb9dau:                                          /* F44E word+byte */
+            BattleScriptByte(memory, cpu, 0xb9dcu);
+            SetAccumulatorWidth(cpu, 0);
+            And16(cpu, 0x00ffu);
+            TransferAToX(cpu);
+            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x859f04u, cpu->x)));
+            And16(cpu, 0x00ffu);
+            PushAccumulator16(memory, cpu);
+            BattleScriptValue(memory, cpu, 0xb9edu);
+            LoadA16(cpu, cpu->x);
+            cpu->x = PullIndexValue(memory, cpu);
+            Write16Long(memory, LongIndexedAddress(0x7ff44eu, cpu->x),
+                cpu->accumulator);
+            IncrementX16(cpu);
+            IncrementX16(cpu);
+            SetAccumulatorWidth(cpu, 1);
+            BattleScriptByte(memory, cpu, 0xb9fau);
+            Write8(memory, LongIndexedAddress(0x7ff44eu, cpu->x), A8(cpu));
+            break;
+        case 0xba02u:                                          /* F44E byte, clear */
+            BattleScriptByte(memory, cpu, 0xba04u);
+            SetAccumulatorWidth(cpu, 0);
+            And16(cpu, 0x00ffu);
+            TransferAToX(cpu);
+            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x859f04u, cpu->x)));
+            And16(cpu, 0x00ffu);
+            cpu->carry = 0;
+            Add16Value(cpu, 0x0004u);
+            TransferAToX(cpu);
+            BattleScriptByte(memory, cpu, 0xba19u);
+            Write16Long(memory, LongIndexedAddress(0x7ff44eu, cpu->x),
+                cpu->accumulator);
+            cpu->x = (uint16_t)(cpu->x - 2u);
+            SetNz16(cpu, cpu->x);
+            TransferDirectToA(cpu);
+            Write16Long(memory, LongIndexedAddress(0x7ff44eu, cpu->x),
+                cpu->accumulator);
+            break;
+        case 0xba28u:                                          /* F44E byte */
+        case 0xba47u:
+            BattleScriptByte(memory, cpu, (uint16_t)(handler + 2u));
+            SetAccumulatorWidth(cpu, 0);
+            And16(cpu, 0x00ffu);
+            TransferAToX(cpu);
+            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x859f0fu, cpu->x)));
+            And16(cpu, 0x00ffu);
+            if (handler == 0xba28u)
+                LoadA16(cpu, (uint16_t)(cpu->accumulator + 2u));
+            TransferAToX(cpu);
+            SetAccumulatorWidth(cpu, 1);
+            BattleScriptByte(memory, cpu,
+                handler == 0xba28u ? 0xba3fu : 0xba5cu);
+            Write8(memory, LongIndexedAddress(0x7ff44eu, cpu->x), A8(cpu));
+            break;
+        case 0xba64u:                                          /* action 1 */
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, 0x0001u);
+            Write16Long(memory, 0x7ff454u, cpu->accumulator);
+            LoadA16(cpu, 0x0000u);
+            Write16Long(memory, 0x7ff456u, cpu->accumulator);
+            SetAccumulatorWidth(cpu, 1);
+            StoreAImmediate8(memory, cpu, 0xffu, 0x1262u);
+            StoreZeroAbsolute8(memory, cpu, 0x1269u, 0);
+            break;
+        case 0xba81u:                                          /* action 4 */
+        case 0xba8au:                                          /* action 6 */
+        case 0xbb46u:                                          /* action 13 */
+        case 0xbd6eu:                                          /* action 12 */
+            LoadA8(cpu, handler == 0xba81u ? 0x04u : handler == 0xba8au
+                ? 0x06u : handler == 0xbb46u ? 0x0du : 0x0cu);
+            Write8(memory, 0x7ff454u, A8(cpu));
+            break;
+        case 0xba93u:                                          /* action 3 */
+            LoadA8(cpu, 0x03u);
+            Write8(memory, 0x7ff454u, A8(cpu));
+            BattleScriptWord(memory, cpu, 0xba9bu);
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, cpu->x);
+            Write16Long(memory, 0x7ff456u, cpu->accumulator);
+            break;
+        case 0xbd5eu:                                          /* action 11 */
+            LoadA8(cpu, 0x0bu);
+            Write8(memory, 0x7ff454u, A8(cpu));
+            BattleScriptByte(memory, cpu, 0xbd66u);
+            Write8(memory, 0x7ff456u, A8(cpu));
+            break;
+        case 0xbb4fu:                                          /* party flag count */
+            LoadA8(cpu, Read8(memory, 0x7ff450u));
+            if (cpu->negative) {
+                LoadX16(cpu, 0x0000u);
+            } else {
+                Write8(memory, DirectAddress(cpu, 0x54u), 0x00u);
+                LoadY16(cpu, 0x0008u);
+                do {
+                    LoadX16(cpu, Read16AbsoluteIndexed(
+                        memory, cpu, 0x0a64u, cpu->y));        /* BB5F */
+                    if (!cpu->zero) {
+                        LoadAAbsolute8(memory, cpu, 0x000fu, cpu->x);
+                        BitImmediate8(cpu, 0x04u);
+                        if (!cpu->zero)
+                            IncrementDirect8(memory, cpu, 0x54u);
+                    }
+                    cpu->y = (uint16_t)(cpu->y - 2u);
+                    SetNz16(cpu, cpu->y);
+                } while (!cpu->negative);
+                TransferDirectToA(cpu);
+                LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+                TransferAToX(cpu);
+            }
+            BattleScriptByte(memory, cpu, 0xbb77u);
+            BattleScriptWrite(memory, cpu, 0xbb7au);
+            break;
+        case 0xbb7eu:                                          /* side leader */
+            TransferDirectToA(cpu);
+            LoadA8(cpu, Read8(memory, 0x7ff44eu));
+            if (cpu->negative) {
+                LoadAAbsolute8(memory, cpu, 0x15feu, 0);
+            } else {
+                LoadAAbsolute8(memory, cpu, 0x0a13u, 0);
+                LoadAAbsolute8(memory, cpu,
+                    cpu->zero ? 0x0a7au : 0x153cu, 0);
+            }
+            TransferAToX(cpu);
+            BattleScriptByte(memory, cpu, 0xbb9au);
+            BattleScriptWrite(memory, cpu, 0xbb9du);
+            break;
+        case 0xbccfu:                                          /* $0A62 byte */
+            BattleScriptByte(memory, cpu, 0xbcd1u);
+            StoreAAbsolute8(memory, cpu, 0x0a62u, 0);
+            break;
+        case 0xbcd8u:                                          /* $0A62 if F42E */
+            BattleScriptByte(memory, cpu, 0xbcdau);
+            StoreADirect8(memory, cpu, 0x54u);
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, Read16Long(memory, 0x7ff42eu));
+            if (!cpu->zero) {
+                LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+                Write16Absolute(memory, cpu, 0x0a62u, cpu->accumulator);
+            }
+            break;
+        case 0xbe22u:                                          /* timer $1264 */
+            BattleScriptValue(memory, cpu, 0xbe24u);
+            Write16Absolute(memory, cpu, 0x1264u, cpu->x);
+            break;
+        case 0xbe68u:                                          /* F450 mask */
+            LoadAAbsolute8(memory, cpu, 0x0a5du, 0);
+            if (!cpu->negative) {
+                LoadA8(cpu, (uint8_t)(Read8(memory, 0x7ff450u) | 0xefu));
+                LoadA8(cpu, (uint8_t)(A8(cpu) & Read8(memory,
+                    AbsoluteIndexedAddress(cpu, 0x0a5du, 0))));
+                Write8(memory, 0x7ff450u, A8(cpu));
+            }
+            break;
         case 0xbd77u:                                          /* call */
             BattleScriptWord(memory, cpu, 0xbd79u);
             Write16Direct(memory, cpu, 0xcau, cpu->x);
