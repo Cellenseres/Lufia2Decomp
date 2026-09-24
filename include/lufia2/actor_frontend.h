@@ -125,6 +125,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldNmiUploads(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $8E:BD77 BG scroll targets for three layers. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldScrollUpdate(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $83:81C6 field trigger checks; exact LLE boundaries. */
 Lufia2ActorPrimaryUpdateResult Lufia2FieldTriggerUpdate(
     const Lufia2ActorFrontendMemory *memory,

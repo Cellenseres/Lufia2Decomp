@@ -7875,3 +7875,424 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldNmiUploads(
     result.dispatches = 0;
     return result;
 }
+
+/* $8E:BF88: shift count from $8E:BF93 into $4E. */
+static void ScrollShiftCount(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    TransferAToX(cpu);                                         /* BF88 */
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x8ebf93u, cpu->x)));
+    And16(cpu, 0x00ffu);
+    Write16Direct(memory, cpu, 0x4eu, cpu->accumulator);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $8E:BF70: signed shift right by $4E; C=1 skips. */
+static void ScrollShiftRight(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadY8(cpu, Read8(memory, DirectAddress(cpu, 0x4eu)));    /* BF70 */
+    if (cpu->zero) {
+        TransferDirectToA(cpu);                                /* BF85 */
+        cpu->carry = 0;
+    } else if (cpu->negative) {
+        cpu->carry = 1;                                        /* BF76 */
+    } else {
+        do {
+            const uint16_t old = cpu->accumulator;             /* BF78 */
+
+            SetNz16(cpu, old);
+            LoadA16(cpu, (uint16_t)((old >> 1) | (old & 0x8000u)));
+            cpu->carry = old & 1u;
+            LoadY8(cpu, (uint8_t)(cpu->y - 1u));
+        } while (!cpu->zero);
+        cpu->carry = 0;
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $8E:BFDE: shift left by $4E. */
+static void ScrollShiftLeft(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadY8(cpu, Read8(memory, DirectAddress(cpu, 0x4eu)));    /* BFDE */
+    while (!cpu->zero) {
+        /* ORA/CLC/SEC before ASL are dead. */
+        AslA16(cpu);                                           /* BFE9 */
+        LoadY8(cpu, (uint8_t)(cpu->y - 1u));
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* A = base - value, 16-bit SBC after SEC. */
+static void Subtract16(Lufia2ActorFrontendCpu *cpu, uint16_t value) {
+    cpu->carry = 1;
+    Add16Value(cpu, (uint16_t)~value);
+}
+
+/* Step current toward the target by the speed word. */
+static void ScrollStepToward(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint8_t current,
+    uint8_t out,
+    uint32_t speed) {
+    const uint8_t down = cpu->negative;
+
+    LoadA16(cpu, Read16Direct(memory, cpu, current));
+    if (down) {
+        Subtract16(cpu, Read16Long(memory, speed));
+    } else {
+        cpu->carry = 0;
+        Add16Value(cpu, Read16Long(memory, speed));
+    }
+    Write16Direct(memory, cpu, out, cpu->accumulator);
+}
+
+/* $8E:BE78: layer follows the camera target. */
+static void ScrollModeFollow(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1261u, 0)); /* BE78 */
+    cpu->zero = (cpu->accumulator & 0x0040u) == 0;
+    if (!cpu->zero) {
+        LoadXDirect(memory, cpu, 0x5du);                       /* BE80 */
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd0ceu, cpu->x)));
+        Write16Direct(memory, cpu, 0x58u, cpu->accumulator);
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+        if (!cpu->zero)
+            ScrollStepToward(memory, cpu, 0x54u, 0x58u,
+                LongIndexedAddress(0x7fd0deu, cpu->x));
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd0d6u, cpu->x)));
+        Write16Direct(memory, cpu, 0x5au, cpu->accumulator);   /* BEA2 */
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x56u));
+        if (!cpu->zero)
+            ScrollStepToward(memory, cpu, 0x56u, 0x5au,
+                LongIndexedAddress(0x7fd0e6u, cpu->x));
+        return;
+    }
+    LoadXDirect(memory, cpu, 0x5du);                           /* BEC4 */
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a8u, 0));
+    if (cpu->zero) {
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a4u, 0));
+        Write16Direct(memory, cpu, 0x58u, cpu->accumulator);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a6u, 0));
+        Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
+    } else {
+        const uint32_t speed = AbsoluteIndexedAddress(cpu, 0x05a8u, 0);
+
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a4u, 0));
+        Write16Direct(memory, cpu, 0x58u, cpu->accumulator);   /* BED7 */
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+        if (!cpu->zero) {
+            ScrollStepToward(memory, cpu, 0x54u, 0x58u, speed);
+        } else {
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a6u, 0));
+            Write16Direct(memory, cpu, 0x5au, cpu->accumulator); /* BEF6 */
+            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x56u));
+            if (!cpu->zero) {
+                const uint8_t down = cpu->negative;
+
+                ScrollStepToward(memory, cpu, 0x56u, 0x5au, speed);
+                if (down)
+                    return;                                    /* BF09 */
+            }
+        }
+    }
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a4u, 0)); /* BF12 */
+    Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+    if (!cpu->zero)
+        return;
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a6u, 0));
+    Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x56u));
+    if (!cpu->zero)
+        return;
+    Write16Absolute(memory, cpu, 0x05a8u, 0x0000u);
+}
+
+/* $8E:BF25/BF9B tail: camera + $80 unless equal. */
+static void ScrollOffsetTarget(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint8_t current,
+    uint8_t out) {
+    cpu->carry = 0;
+    Add16Value(cpu, 0x0080u);
+    Subtract16(cpu, Read16Direct(memory, cpu, current));
+    if (cpu->zero)
+        return;
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Direct(memory, cpu, current));
+    Write16Direct(memory, cpu, out, cpu->accumulator);
+}
+
+/* Layer nibble of $7F:D021,x. */
+static void ScrollLayerNibble(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint8_t high) {
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd021u, cpu->x)));
+    if (high) {
+        And16(cpu, 0x00f0u);
+        LsrA16(cpu);
+        LsrA16(cpu);
+        LsrA16(cpu);
+        LsrA16(cpu);
+    } else {
+        And16(cpu, 0x000fu);
+    }
+}
+
+/* $8E:BF25: parallax, camera shifted right. */
+static void ScrollModeParallax(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    LoadXDirect(memory, cpu, 0x5du);                           /* BF25 */
+    ScrollLayerNibble(memory, cpu, 1);
+    ScrollShiftCount(memory, cpu, 0xbf34u);
+    if (!cpu->zero) {
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a4u, 0));
+        ScrollShiftRight(memory, cpu, 0xbf3cu);
+        if (cpu->carry)
+            Write16Direct(memory, cpu, 0x58u, cpu->accumulator);
+        else
+            ScrollOffsetTarget(memory, cpu, 0x54u, 0x58u);
+    }
+    LoadXDirect(memory, cpu, 0x5du);                           /* BF4D */
+    ScrollLayerNibble(memory, cpu, 0);
+    ScrollShiftCount(memory, cpu, 0xbf58u);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a6u, 0));
+    ScrollShiftRight(memory, cpu, 0xbf5eu);
+    if (cpu->carry)
+        Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
+    else
+        ScrollOffsetTarget(memory, cpu, 0x56u, 0x5au);
+}
+
+/* $8E:BF9B: camera shifted left. */
+static void ScrollModeScaled(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    LoadXDirect(memory, cpu, 0x5du);                           /* BF9B */
+    ScrollLayerNibble(memory, cpu, 1);
+    ScrollShiftCount(memory, cpu, 0xbfaau);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a4u, 0));
+    ScrollShiftLeft(memory, cpu, 0xbfb0u);
+    ScrollOffsetTarget(memory, cpu, 0x54u, 0x58u);
+    /* X still holds the high nibble. */
+    ScrollLayerNibble(memory, cpu, 0);                         /* BFBF */
+    ScrollShiftCount(memory, cpu, 0xbfc8u);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a6u, 0));
+    ScrollShiftLeft(memory, cpu, 0xbfceu);
+    ScrollOffsetTarget(memory, cpu, 0x56u, 0x5au);
+}
+
+/* One axis of $8E:BFEE: offset, wrap at map size. */
+static void ScrollWrapAxis(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint8_t current,
+    uint8_t out,
+    uint32_t size) {
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x8ec04du, cpu->x)));
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Direct(memory, cpu, current));
+    And16(cpu, 0x7fffu);
+    Write16Direct(memory, cpu, out, cpu->accumulator);
+    LoadXDirect(memory, cpu, 0x5du);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(size, cpu->x)));
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, out));
+    if (cpu->carry)
+        return;
+    Subtract16(cpu, Read16Direct(memory, cpu, out));
+    LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
+    IncrementA16(cpu);
+    Write16Direct(memory, cpu, out, cpu->accumulator);
+}
+
+/* $8E:BFEE: fixed offsets, wrapped by map size. */
+static void ScrollModeWrap(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    LoadXDirect(memory, cpu, 0x5du);                           /* BFEE */
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd021u, cpu->x)));
+    And16(cpu, 0x00f0u);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    ScrollWrapAxis(memory, cpu, 0x54u, 0x58u, 0x7fd010u);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd021u, cpu->x)));
+    And16(cpu, 0x000fu);                                       /* C01F */
+    AslA16(cpu);
+    ScrollWrapAxis(memory, cpu, 0x56u, 0x5au, 0x7fd018u);
+}
+
+/* JSR ($BE6E,x); 0 for an unknown mode. */
+static uint8_t ScrollLayerMode(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    if (cpu->x > 8u)
+        return 0;
+    SimulateJsrFrame(memory, cpu, 0xbdd9u);
+    switch (cpu->x) {
+    case 0: ScrollModeFollow(memory, cpu); break;
+    case 2: break;                                             /* BF24 */
+    case 4: ScrollModeParallax(memory, cpu); break;
+    case 6: ScrollModeWrap(memory, cpu); break;
+    default: ScrollModeScaled(memory, cpu); break;
+    }
+    SimulateRtsFrame(memory, cpu);
+    return 1;
+}
+
+/* dispatches counts completed BDD7 layer calls. */
+static Lufia2ActorPrimaryUpdateResult ScrollBoundary(
+    Lufia2ActorPrimaryUpdateResult result,
+    Lufia2ActorFrontendCpu *cpu,
+    uint32_t pc) {
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.pc = cpu->resume_pc = pc;
+    return result;
+}
+
+Lufia2ActorPrimaryUpdateResult Lufia2FieldScrollUpdate(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    Lufia2ActorPrimaryUpdateResult result;
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.pc = 0x8ebe6du;
+    result.dispatches = 0;
+    /* The field loop always calls with X8. */
+    if (!cpu->index_is_8_bit)
+        return ScrollBoundary(result, cpu, 0x8ebd77u);
+    LoadAAbsolute8(memory, cpu, 0x1261u, 0);                   /* BD77 */
+    BitImmediate8(cpu, 0x08u);
+    SetAccumulatorWidth(cpu, 0);
+    if (!cpu->zero) {
+        LoadA16(cpu, Read16Long(memory, 0x7fd08bu));
+        Write16Absolute(memory, cpu, 0x05a4u, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, 0x7fd08du));
+        Write16Absolute(memory, cpu, 0x05a6u, cpu->accumulator);
+    } else {
+        LoadX8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x0734u, 0)));
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fddaeu, cpu->x)));
+        Subtract16(cpu, 0x0080u);
+        Write16Absolute(memory, cpu, 0x05a4u, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fde3eu, cpu->x)));
+        Subtract16(cpu, 0x0070u);
+        Write16Absolute(memory, cpu, 0x05a6u, cpu->accumulator);
+    }
+    SetAccumulatorWidth(cpu, 1);                               /* BDA9 */
+    LoadX8(cpu, 0x00u);
+    do {
+        TransferDirectToA(cpu);                                /* BDAD */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd020u, cpu->x)));
+        if (!cpu->negative) {
+            SetAccumulatorWidth(cpu, 0);                       /* BDB7 */
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x121eu, cpu->x));
+            Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+            Write16Direct(memory, cpu, 0x58u, cpu->accumulator);
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1226u, cpu->x));
+            Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+            Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
+            SetAccumulatorWidth(cpu, 1);
+            PushIndex(memory, cpu);
+            Write8(memory, DirectAddress(cpu, 0x5du), (uint8_t)cpu->x);
+            Write8(memory, DirectAddress(cpu, 0x5eu), 0x00u);
+            TransferDirectToA(cpu);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd020u, cpu->x)));
+            AslA8(cpu);
+            TransferAToX(cpu);
+            SetAccumulatorWidth(cpu, 0);
+            if (!ScrollLayerMode(memory, cpu))
+                return ScrollBoundary(result, cpu, 0x8ebdd7u);
+            ++result.dispatches;
+            LoadXDirect(memory, cpu, 0x5du);                   /* BDDA */
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x121eu, cpu->x));
+            And16(cpu, 0x000fu);
+            if (cpu->zero) {
+                LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
+                Subtract16(cpu, Read16Direct(memory, cpu, 0x54u));
+                if (!cpu->zero) {
+                    if (!cpu->negative)
+                        return ScrollBoundary(result, cpu, 0x8ebdfbu); /* $80:F4FD */
+                    LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
+                    Compare16(cpu, cpu->accumulator, 0x0100u);
+                    return ScrollBoundary(result,
+                        cpu, cpu->carry ? 0x8ebdfbu : 0x8ebdf5u);
+                }
+            }
+            LoadXDirect(memory, cpu, 0x5du);                   /* BDFF */
+            LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
+            Write16Absolute(memory, cpu,
+                (uint16_t)(0x121eu + cpu->x), cpu->accumulator);
+            cpu->carry = 0;
+            Add16Value(cpu, 0x0008u);
+            PushAccumulator16(memory, cpu);
+            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80f4edu, cpu->x)));
+            TransferAToY(cpu);
+            PullAccumulator16(memory, cpu);
+            cpu->carry = 0;
+            Add16Value(cpu, Read16Long(memory, 0x7fd081u));
+            Write16Absolute(memory, cpu,
+                (uint16_t)(0x0594u + cpu->y), cpu->accumulator);
+            LoadA16(cpu, Read16Direct(memory, cpu, 0x5au));    /* BE19 */
+            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x56u));
+            if (!cpu->zero) {
+                const uint16_t from = Read16Direct(memory, cpu, 0x56u);
+
+                if (cpu->negative) {
+                    LoadA16(cpu, from);                        /* BE21 */
+                    LoadA16(cpu, (uint16_t)(from ^ Read16Direct(memory, cpu, 0x5au)));
+                    And16(cpu, 0x0010u);
+                    if (!cpu->zero)
+                        return ScrollBoundary(result, cpu, 0x8ebe2au); /* $80:F589 */
+                } else {
+                    LoadA16(cpu, from);                        /* BE30 */
+                    And16(cpu, 0x000fu);
+                    if (cpu->zero)
+                        return ScrollBoundary(result, cpu, 0x8ebe47u); /* $80:F5A2 */
+                    LoadA16(cpu, from);
+                    LoadA16(cpu, (uint16_t)(from ^ Read16Direct(memory, cpu, 0x5au)));
+                    And16(cpu, 0x0010u);
+                    if (!cpu->zero) {
+                        LoadA16(cpu, from);
+                        And16(cpu, 0x0001u);
+                        if (!cpu->zero)
+                            return ScrollBoundary(result, cpu, 0x8ebe47u);
+                    }
+                }
+            }
+            LoadXDirect(memory, cpu, 0x5du);                   /* BE4B */
+            LoadA16(cpu, Read16Direct(memory, cpu, 0x5au));
+            Write16Absolute(memory, cpu,
+                (uint16_t)(0x1226u + cpu->x), cpu->accumulator);
+            PushAccumulator16(memory, cpu);
+            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80f4f5u, cpu->x)));
+            TransferAToY(cpu);
+            PullAccumulator16(memory, cpu);
+            cpu->carry = 0;
+            Add16Value(cpu, Read16Long(memory, 0x7fd083u));
+            Write16Absolute(memory, cpu,
+                (uint16_t)(0x0596u + cpu->y), cpu->accumulator);
+            SetAccumulatorWidth(cpu, 1);
+            cpu->x = PullIndexValue(memory, cpu);              /* BE63 */
+        }
+        LoadX8(cpu, (uint8_t)(cpu->x + 2u));                   /* BE64 */
+        Compare8(cpu, (uint8_t)cpu->x, 0x06u);
+    } while (!cpu->zero);
+    return result;
+}

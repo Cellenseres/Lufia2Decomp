@@ -114,3 +114,12 @@ source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# Field scroll targets; LLE at the tile-streaming JSLs.
+[[function]]
+address = "8E:BD77"
+name = "Lufia2FieldScrollUpdate"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
