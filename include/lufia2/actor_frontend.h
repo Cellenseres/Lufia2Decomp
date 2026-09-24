@@ -235,6 +235,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2ScreenFade(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $86:9EDD world map region search; carry clear on a hit. */
+Lufia2ActorPrimaryUpdateResult Lufia2WorldMapRegionSearch(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,

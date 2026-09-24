@@ -339,3 +339,12 @@ source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# World map region search; carry clear on a hit.
+[[function]]
+address = "86:9EDD"
+name = "Lufia2WorldMapRegionSearch"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

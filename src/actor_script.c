@@ -12363,3 +12363,67 @@ Lufia2ActorPrimaryUpdateResult Lufia2ScreenFade(
     }
     return FieldLoopResult(0x808702u);
 }
+
+/* $86:9EDD: world map region holding ($58, $5A); carry clear = hit. */
+Lufia2ActorPrimaryUpdateResult Lufia2WorldMapRegionSearch(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    static const uint8_t edges[4] = {0x01u, 0x03u, 0x02u, 0x04u};
+    uint32_t entries;
+
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return FieldLoopHandoff(cpu, 0x869eddu);
+    PushDataBank(memory, cpu);                                 /* 9EDD */
+    SimulateJsrFrame(memory, cpu, 0x9ee0u);
+    SetAccumulatorWidth(cpu, 0);                               /* 9F35 */
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09ebu, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xce36u, cpu->y));
+    AslA16(cpu);
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xce36u, cpu->y));
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0xcffcbeu, cpu->x)));
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    StoreADirect8(memory, cpu, 0x10u);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xcffcbcu, cpu->x)));
+    TransferAToX(cpu);
+    cpu->carry = 0;
+    SimulateRtsFrame(memory, cpu);
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0006u, cpu->x));
+    TransferAToX(cpu);                                         /* 9EE4 */
+    for (entries = 0;; ++entries) {
+        unsigned i;
+        uint8_t inside = 1;
+
+        /* A list without an end marker spins the ROM. */
+        if (entries == 0x10000u) {
+            SetAccumulatorWidth(cpu, 1);
+            return FieldLoopHandoff(cpu, 0x869ee7u);
+        }
+        SetAccumulatorWidth(cpu, 1);                           /* 9EE5 */
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->x);
+        if (cpu->negative) {
+            cpu->carry = 1;                                    /* 9F10 */
+            break;
+        }
+        for (i = 0; i < 4u && inside; ++i) {
+            if (i == 0)
+                LoadA8(cpu, DirectByte(memory, cpu, 0x58u));
+            else if (i == 2)
+                LoadA8(cpu, DirectByte(memory, cpu, 0x5au));
+            Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, edges[i], cpu->x));
+            inside = (i & 1u) ? !cpu->carry : cpu->carry;
+        }
+        if (inside)
+            break;
+        SetAccumulatorWidth(cpu, 0);                           /* 9F04 */
+        TransferXToA(cpu);
+        cpu->carry = 0;
+        Add16Value(cpu, 0x0009u);
+        TransferAToX(cpu);
+    }
+    PullDataBank(memory, cpu);                                 /* 9F11 */
+    return FieldLoopResult(0x869f12u);
+}
