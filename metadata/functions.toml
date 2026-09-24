@@ -105,3 +105,12 @@ source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# Field NMI uploads via the $00:0067 vector; no boundaries.
+[[function]]
+address = "83:9FA9"
+name = "Lufia2FieldNmiUploads"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"

@@ -120,6 +120,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2ObjectSlotsUpdate(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $83:9FA9 field NMI uploads (DMA, fade, windows). */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldNmiUploads(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $83:81C6 field trigger checks; exact LLE boundaries. */
 Lufia2ActorPrimaryUpdateResult Lufia2FieldTriggerUpdate(
     const Lufia2ActorFrontendMemory *memory,
