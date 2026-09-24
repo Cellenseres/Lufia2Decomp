@@ -348,3 +348,12 @@ source = "src/actor_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Text engine step; control codes and dictionary words stay on LLE.
+[[function]]
+address = "80:9CB8"
+name = "Lufia2TextEngineStep"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"

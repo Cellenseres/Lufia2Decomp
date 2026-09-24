@@ -9271,6 +9271,11 @@ static Lufia2ActorPrimaryUpdateResult FieldTickBoundary(
 }
 
 /* $80:9C72: per-frame screen effects, event timer, text gate. */
+static Lufia2ActorPrimaryUpdateResult TextEngineStep(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    Lufia2ActorPrimaryUpdateResult result);
+
 Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu) {
@@ -9308,7 +9313,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
         return FieldTickBoundary(result, cpu, 0x809c80u);
     LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 9CB2 */
     if (cpu->negative)
-        return FieldTickBoundary(result, cpu, 0x809cb8u);
+        return TextEngineStep(memory, cpu, result);
     return result;
 }
 
@@ -12426,4 +12431,230 @@ Lufia2ActorPrimaryUpdateResult Lufia2WorldMapRegionSearch(
     }
     PullDataBank(memory, cpu);                                 /* 9F11 */
     return FieldLoopResult(0x869f12u);
+}
+
+/* $80:C0B7: next text byte from DB:Y; Y past $FFFF moves the bank. */
+static void TextNextByte(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);              /* C0B7 */
+    IncrementY16(cpu);
+    if (!cpu->negative) {
+        PushAccumulator8(memory, cpu);                         /* C0BD */
+        Push8(memory, cpu, PackStatus(cpu));
+        SetAccumulatorWidth(cpu, 1);
+        LoadAAbsolute8(memory, cpu, 0x09b9u, 0);
+        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+        StoreAAbsolute8(memory, cpu, 0x09b9u, 0);
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        UnpackStatus(cpu, Pull8(memory, cpu));
+        LoadA8(cpu, Pull8(memory, cpu));
+        LoadY16(cpu, 0x8000u);
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:C7C2: glyph $09AF into $7E:[$09B1], attribute from $09AD. */
+static void TextDrawGlyph(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SimulateJslFrame(memory, cpu, 0x80u, 0xbd3bu);
+    Push8(memory, cpu, PackStatus(cpu));                       /* C7C2 */
+    PushDataBank(memory, cpu);
+    TransferDirectToA(cpu);
+    LoadAAbsolute8(memory, cpu, 0x09adu, 0);
+    TransferAToX(cpu);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80c815u, cpu->x)));
+    StoreADirect8(memory, cpu, 0x57u);
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09afu, 0));
+    Compare16(cpu, cpu->accumulator, 0x0010u);
+    if (cpu->zero)
+        LoadA16(cpu, 0x0020u);
+    Subtract16(cpu, 0x0020u);                                  /* C7DC */
+    if (cpu->carry) {
+        unsigned row;
+
+        AslA16(cpu);
+        AslA16(cpu);
+        AslA16(cpu);
+        AslA16(cpu);
+        cpu->carry = 0;
+        TransferAToX(cpu);
+        LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09b1u, 0));
+        Write16Absolute(memory, cpu, 0x09b5u, cpu->y);
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, 0x7eu);
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        LoadA8(cpu, 0x10u);
+        StoreADirect8(memory, cpu, 0x58u);
+        for (row = 0; row < 16u; ++row) {
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x9af970u, cpu->x)));
+            StoreAAbsolute8(memory, cpu, 0x0000u, cpu->y);     /* C7FC */
+            LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
+            StoreAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+            IncrementX16(cpu);
+            IncrementY16(cpu);
+            IncrementY16(cpu);
+            DecrementDirect8(memory, cpu, 0x58u);
+        }
+        SetAccumulatorWidth(cpu, 0);                           /* C80B */
+        LoadA16(cpu, cpu->y);
+        Write16Long(memory, 0x0009b1u, cpu->accumulator);
+    }
+    PullDataBank(memory, cpu);                                 /* C812 */
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $80:BD38: draw the glyph and queue its 32-byte VRAM upload. */
+static void TextGlyphUpload(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xbd07u);
+    TextDrawGlyph(memory, cpu);                                /* BD38 */
+    StoreAImmediate8(memory, cpu, 0x01u, 0x4300u);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09b5u, 0));
+    Write16Absolute(memory, cpu, 0x4302u, cpu->accumulator);
+    Subtract16(cpu, 0xd000u);
+    LsrA16(cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, 0x1800u);
+    Write16Absolute(memory, cpu, 0x0079u, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    StoreAImmediate8(memory, cpu, 0x7eu, 0x4304u);
+    LoadX16(cpu, 0x0020u);
+    Write16Absolute(memory, cpu, 0x4305u, cpu->x);
+    StoreAImmediate8(memory, cpu, 0x18u, 0x4301u);
+    LoadA8(cpu, 0x41u);
+    StoreADirect8(memory, cpu, 0x75u);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:9CB8 text step: plain characters native, the rest on LLE. */
+static Lufia2ActorPrimaryUpdateResult TextEngineStep(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    Lufia2ActorPrimaryUpdateResult result) {
+    LoadA8(cpu, Read8(memory, 0x7fd0ffu));                     /* 9CB8 */
+    if (!cpu->zero) {
+        Compare8(cpu, A8(cpu), 0x03u);
+        if (!cpu->carry) {
+            DecrementA8(cpu);
+            Write8(memory, 0x7fd0ffu, A8(cpu));
+            result.pc = 0x809cc7u;
+            return result;
+        }
+        TransferDirectToA(cpu);                                /* 9CC8 */
+        Write8(memory, 0x7fd0ffu, A8(cpu));
+    }
+    PushDataBank(memory, cpu);                                 /* 9CCD */
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 0);
+    StoreZeroAbsolute8(memory, cpu, 0x125du, 0);
+    StoreZeroAbsolute8(memory, cpu, 0x125eu, 0);
+    for (;;) {
+        LoadAAbsolute8(memory, cpu, 0x09b9u, 0);               /* 9CD9 */
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09b7u, 0));
+        LoadAAbsolute8(memory, cpu, 0x1259u, 0);
+        if (cpu->zero)
+            break;
+        {
+            const uint32_t count = AbsoluteIndexedAddress(cpu, 0x125au, 0);
+            const uint8_t left = (uint8_t)(Read8(memory, count) - 1u);
+
+            Write8(memory, count, left);
+            SetNz8(cpu, left);
+        }
+        if (!cpu->zero)
+            break;
+        SetAccumulatorWidth(cpu, 0);                           /* 9CEB */
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1257u, 0));
+        Write16Absolute(memory, cpu, 0x09b7u, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        LoadAAbsolute8(memory, cpu, 0x1259u, 0);
+        StoreAAbsolute8(memory, cpu, 0x09b9u, 0);
+        StoreZeroAbsolute8(memory, cpu, 0x1259u, 0);
+    }
+    Write16Absolute(memory, cpu, 0x09b7u, cpu->y);             /* 9D00 */
+    StoreZeroAbsolute8(memory, cpu, 0x0563u, 0);
+    TransferDirectToA(cpu);
+    LoadAAbsolute8(memory, cpu, 0x099bu, 0);
+    And8(cpu, 0x01u);
+    if (cpu->zero)
+        return FieldLoopHandoff(cpu, 0x809d2eu);               /* C1FD */
+    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);              /* 9D0E */
+    Compare8(cpu, A8(cpu), 0x10u);
+    if (!cpu->carry)
+        return FieldLoopHandoff(cpu, 0x809d31u);               /* codes */
+    StoreAAbsolute8(memory, cpu, 0x09afu, 0);
+    StoreZeroAbsolute8(memory, cpu, 0x09b0u, 0);
+    Compare8(cpu, A8(cpu), 0x80u);
+    if (cpu->carry)
+        return FieldLoopHandoff(cpu, 0x809d22u);               /* words */
+    LoadAAbsolute8(memory, cpu, 0x09a7u, 0);                   /* BCE4 */
+    BitImmediate8(cpu, 0x02u);
+    if (cpu->zero) {
+        LoadA8(cpu, 0x10u);
+        TestBitsAbsolute8(memory, cpu, 0x099cu, 0);
+        if (!cpu->zero)
+            return FieldLoopHandoff(cpu, 0x80bcf2u);           /* C56E */
+    }
+    LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* BCF5 */
+    And8(cpu, 0x10u);
+    if (!cpu->zero)
+        IncrementY16(cpu);
+    else
+        TextNextByte(memory, cpu, 0xbd01u);
+    Write16Absolute(memory, cpu, 0x09b7u, cpu->y);             /* BD02 */
+    TextGlyphUpload(memory, cpu);
+    LoadAAbsolute8(memory, cpu, 0x09a7u, 0);                   /* BD08 */
+    BitImmediate8(cpu, 0x02u);
+    if (cpu->zero) {
+        LoadAAbsolute8(memory, cpu, 0x0b52u, 0);
+        Write8(memory, 0x7fd0ffu, A8(cpu));
+        LoadAAbsolute8(memory, cpu, 0x1255u, 0);
+        Compare8(cpu, A8(cpu), 0x10u);
+        if (!cpu->zero) {
+            LoadAAbsolute8(memory, cpu, 0x1260u, 0);
+            if (!cpu->zero) {
+                LoadA8(cpu, (uint8_t)(Read8(memory, 0x7fd0c0u) ^ 0x01u));
+                Write8(memory, 0x7fd0c0u, A8(cpu));
+                if (!cpu->zero) {
+                    LoadAAbsolute8(memory, cpu, 0x1260u, 0);
+                    SimulateJslFrame(memory, cpu, 0x80u, 0xbd34u);
+                    ExchangeAccumulatorBytes(cpu);             /* $84:8766 */
+                    LoadA8(cpu, Read8(memory, 0x0005b6u));
+                    BitImmediate8(cpu, 0x02u);
+                    if (cpu->zero) {
+                        ExchangeAccumulatorBytes(cpu);
+                        Write8(memory, 0x0017acu, A8(cpu));
+                    }
+                    SimulateRtlFrame(memory, cpu);
+                }
+            }
+        }
+    }
+    UnpackStatus(cpu, Pull8(memory, cpu));                     /* 9DB0 */
+    PullDataBank(memory, cpu);
+    result.pc = 0x809db2u;
+    return result;
+}
+
+/* $80:9CB8: text engine step, JSL entry. */
+Lufia2ActorPrimaryUpdateResult Lufia2TextEngineStep(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    if (!cpu->accumulator_is_8_bit)
+        return FieldLoopHandoff(cpu, 0x809cb8u);
+    return TextEngineStep(memory, cpu, FieldLoopResult(0x809db2u));
 }

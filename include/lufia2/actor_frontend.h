@@ -240,6 +240,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2WorldMapRegionSearch(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $80:9CB8 text engine step; codes and words stay LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2TextEngineStep(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,
