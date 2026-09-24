@@ -303,3 +303,30 @@ source = "src/actor_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# $83:B66E stair rectangles at $7E:F000.
+[[function]]
+address = "83:B66E"
+name = "Lufia2FieldStairRects"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# $83:B711 event rectangles; hits run on LLE.
+[[function]]
+address = "83:B711"
+name = "Lufia2FieldEventRects"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# $83:B747 area rectangles; hits run on LLE.
+[[function]]
+address = "83:B747"
+name = "Lufia2FieldAreaRects"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

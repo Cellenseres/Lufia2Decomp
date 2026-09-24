@@ -215,6 +215,21 @@ Lufia2ActorPrimaryUpdateResult Lufia2MenuCursorBlink(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $83:B66E stair rectangles at $7E:F000. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldStairRects(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:B711 event rectangles; hits run on LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldEventRects(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:B747 area rectangles; hits run on LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldAreaRects(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,
