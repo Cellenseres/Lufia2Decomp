@@ -6700,6 +6700,196 @@ static ObjectFlow ObjectExecute(
         return OBJECT_FLOW_DISPATCH;
     }
 
+    case 0xe840u:                                              /* 5x */
+    case 0xeb38u:                                              /* 28 */
+    case 0xed32u: {                                            /* Dx */
+        if (handler == 0xe840u) {
+            LoadXDirect(memory, cpu, 0xa7u);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd9ccu, cpu->x)));
+            Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+            Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+            SetAccumulatorWidth(cpu, 0);                       /* E84A */
+            LoadA16(cpu, cpu->y);
+            cpu->carry = 0;
+            Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+            TransferAToY(cpu);
+        } else if (handler == 0xeb38u) {
+            LoadXDirect(memory, cpu, 0xa7u);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fda2cu, cpu->x)));
+            AslA8(cpu);
+            Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+            Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+            SetAccumulatorWidth(cpu, 0);                       /* EB43 */
+            LoadA16(cpu, cpu->y);
+            cpu->carry = 0;
+            Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+            LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
+            TransferAToY(cpu);
+            SetAccumulatorWidth(cpu, 1);
+        }
+        SimulateJsrFrame(memory, cpu, 0xed34u);                /* ED32 */
+        SetAccumulatorWidth(cpu, 0);                           /* ED38 */
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0001u, cpu->y));
+        cpu->carry = 0;
+        Add16Immediate(cpu, 0x8ec7u);
+        TransferAToY(cpu);
+        SetAccumulatorWidth(cpu, 1);
+        SimulateRtsFrame(memory, cpu);
+        return OBJECT_FLOW_DISPATCH;
+    }
+
+    case 0xee48u:                                              /* FB */
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+        SimulateJsrFrame(memory, cpu, 0xee4fu);
+        LoadXDirect(memory, cpu, 0xa9u);                       /* EE56 */
+        TransferDirectToA(cpu);
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+        LsrA8(cpu);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        ObjectSignNibble(memory, cpu, 0xee61u);
+        ObjectAddPosition(memory, cpu, 0x7fddfeu, 0xee64u);
+        TransferDirectToA(cpu);
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+        And8(cpu, 0x0fu);
+        ObjectSignNibble(memory, cpu, 0xee6cu);
+        ObjectAddPosition(memory, cpu, 0x7fde8eu, 0xee6fu);
+        SimulateRtsFrame(memory, cpu);
+        TransferDirectToA(cpu);                                /* EE50 */
+        LoadA8(cpu, 0x01u);
+        return ObjectAdvance(memory, cpu);
+
+    case 0xee71u:                                              /* FC */
+    case 0xf19fu: {                                            /* E3 */
+        const uint8_t fixed = handler == 0xf19fu;
+
+        if (fixed) {
+            LoadXDirect(memory, cpu, 0xa9u);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fda6cu, cpu->x)));
+            Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fda6du, cpu->x)));
+            Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
+        } else {
+            LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+            Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+            LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+            Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
+        }
+        SimulateJsrFrame(memory, cpu, fixed ? 0xf1afu : 0xee7du);
+        LoadXDirect(memory, cpu, 0xa9u);                       /* EE84 */
+        TransferDirectToA(cpu);
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+        PrimarySignExtend(memory, cpu, 0xee8bu);
+        ObjectAddPosition(memory, cpu, 0x7fddfeu, 0xee8eu);
+        TransferDirectToA(cpu);                                /* EE91 */
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));
+        PrimarySignExtend(memory, cpu, 0xee96u);
+        ObjectAddPosition(memory, cpu, 0x7fde8eu, 0xee99u);
+        SimulateRtsFrame(memory, cpu);
+        TransferDirectToA(cpu);                                /* EE7E/F1B0 */
+        if (!fixed)
+            LoadA8(cpu, 0x02u);
+        return ObjectAdvance(memory, cpu);
+    }
+
+    case 0xe191u:                                              /* F7 */
+        LoadXDirect(memory, cpu, 0xa9u);
+        TransferDirectToA(cpu);
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        PrimarySignExtend(memory, cpu, 0xe199u);
+        ObjectAddPosition(memory, cpu, 0x7fdcdcu, 0xe19cu);
+        TransferDirectToA(cpu);                                /* E19D */
+        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+        PrimarySignExtend(memory, cpu, 0xe1a3u);
+        ObjectAddPosition(memory, cpu, 0x7fdd6cu, 0xe1a6u);
+        TransferDirectToA(cpu);                                /* E1A7 */
+        LoadA8(cpu, 0x02u);
+        return ObjectAdvance(memory, cpu);
+
+    case 0xe99au: {                                            /* 20 */
+        unsigned i;
+
+        LoadXDirect(memory, cpu, 0xa9u);
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+        IncrementY16(cpu);
+        TransferDirectToA(cpu);                                /* E9A2 */
+        for (i = 0; i < 2u; ++i) {
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdaacu + i, cpu->x)));
+            if (cpu->zero)
+                continue;
+            if (cpu->negative) {
+                cpu->carry = 0;
+                Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+            } else {
+                cpu->carry = 1;
+                Sbc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+            }
+            LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0xffu));
+            LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+            Write8(memory, LongIndexedAddress(0x7fda6cu + i, cpu->x), A8(cpu));
+        }
+        return OBJECT_FLOW_DISPATCH;
+    }
+
+    case 0xede6u: {                                            /* F1 */
+        uint8_t found = 0;
+
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+        LoadX16(cpu, 0x0000u);
+        for (;;) {
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe1aeu, cpu->x)));
+            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x54u)));
+            if (cpu->zero) {
+                found = 1;
+                break;
+            }
+            IncrementX16(cpu);                                 /* EDF6 */
+            Compare16(cpu, cpu->x, 0x0020u);
+            if (cpu->zero)
+                break;
+        }
+        if (!found) {
+            /* No match: the ROM clears slot 32. */
+            TransferDirectToA(cpu);                            /* EDFC */
+            Write8(memory, LongIndexedAddress(0x7fe286u, cpu->x), A8(cpu));
+            Write8(memory, LongIndexedAddress(0x7fe2ceu, cpu->x), A8(cpu));
+        } else {
+            uint8_t anim;
+
+            SimulateJsrFrame(memory, cpu, 0xee09u);            /* EE0E */
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe286u, cpu->x)));
+            Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe2ceu, cpu->x)));
+            PushAccumulator8(memory, cpu);
+            TransferXToA(cpu);
+            PushAccumulator8(memory, cpu);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe1f6u, cpu->x)));
+            ExchangeAccumulatorBytes(cpu);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe23eu, cpu->x)));
+            LoadXDirect(memory, cpu, 0xa7u);
+            Write8(memory, LongIndexedAddress(0x7fe23eu, cpu->x), A8(cpu));
+            ExchangeAccumulatorBytes(cpu);
+            Write8(memory, LongIndexedAddress(0x7fe1f6u, cpu->x), A8(cpu));
+            LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+            Write8(memory, LongIndexedAddress(0x7fe286u, cpu->x), A8(cpu));
+            anim = Pull8(memory, cpu);
+            LoadA8(cpu, anim);
+            Write8(memory, LongIndexedAddress(0x7fe3a6u, cpu->x), A8(cpu));
+            LoadA8(cpu, Pull8(memory, cpu));
+            Write8(memory, LongIndexedAddress(0x7fe2ceu, cpu->x), A8(cpu));
+            LoadAAbsolute8(memory, cpu, 0x064au, cpu->x);
+            And8(cpu, 0xfbu);
+            StoreAAbsolute8(memory, cpu, 0x064au, cpu->x);
+            SimulateRtsFrame(memory, cpu);
+        }
+        IncrementY16(cpu);                                     /* EE0A */
+        return OBJECT_FLOW_DISPATCH;
+    }
+
     default:
         cpu->resume_pc = 0x830000u | handler;
         return OBJECT_FLOW_BOUNDARY;
