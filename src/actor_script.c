@@ -9281,27 +9281,24 @@ static Lufia2ActorPrimaryUpdateResult TextPromptTick(
     Lufia2ActorFrontendCpu *cpu,
     Lufia2ActorPrimaryUpdateResult result);
 
+static uint8_t FieldScreenEffects(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu) {
-    static const uint8_t effects[5] = {0x04u, 0x02u, 0x01u, 0x30u, 0x80u};
     Lufia2ActorPrimaryUpdateResult result;
-    unsigned i;
 
     result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
     result.pc = 0x809cb7u;
     result.dispatches = 0;
-    /* Active effects run $84:8000 on LLE. */
-    if ((Read8(memory, AbsoluteIndexedAddress(cpu, 0x1261u, 0)) & 0xb7u) ||
-        (Read8(memory, AbsoluteIndexedAddress(cpu, 0x1262u, 0)) & 0x01u))
-        return FieldTickBoundary(result, cpu, 0x809c72u);
     SimulateJslFrame(memory, cpu, 0x80u, 0x9c75u);             /* 9C72 */
-    LoadAAbsolute8(memory, cpu, 0x1261u, 0);                   /* $84:8000 */
-    for (i = 0; i < 5u; ++i)
-        BitImmediate8(cpu, effects[i]);
-    LoadAAbsolute8(memory, cpu, 0x1262u, 0);                   /* $84:809B */
-    BitImmediate8(cpu, 0x01u);
+    cpu->program_bank = 0x84u;
+    if (!FieldScreenEffects(memory, cpu))                      /* $84:8000 */
+        return FieldTickBoundary(result, cpu, 0x8480a2u);
     SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x80u;
     SimulateJsrFrame(memory, cpu, 0x9c78u);                    /* 9C76 */
     LoadA8(cpu, Read8(memory, 0x7fd0c1u));                     /* C21A */
     Compare8(cpu, A8(cpu), 0xffu);
@@ -14562,6 +14559,178 @@ reload:
         }
     }
     return TextEngineExit(memory, cpu, result);
+}
+
+/* $84:8145: random shake offsets into $7F:D081/D083. */
+static void ScreenShake(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SimulateJsrFrame(memory, cpu, 0x8009u);
+    LoadA8(cpu, 0xffu);                                        /* 8145 */
+    SimulateJslFrame(memory, cpu, 0x84u, 0x814au);
+    Lufia2RandomScale(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    Compare8(cpu, A8(cpu), Read8(memory, 0x7fd080u));
+    if (!cpu->carry) {
+        uint8_t first;
+
+        LoadA8(cpu, Read8(memory, 0x7fd07fu));                 /* 8151 */
+        SimulateJslFrame(memory, cpu, 0x84u, 0x8158u);
+        Lufia2RandomScale(memory, cpu);
+        SimulateRtlFrame(memory, cpu);
+        StoreADirect8(memory, cpu, 0x54u);
+        Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+        TransferDirectToA(cpu);
+        LoadA8(cpu, Read8(memory, 0x7fd07fu));
+        SetAccumulatorWidth(cpu, 0);
+        LsrA16(cpu);
+        cpu->carry = 1;
+        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x54u));
+        Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+        LoadA16(cpu, 0x0002u);
+        SimulateJslFrame(memory, cpu, 0x84u, 0x8170u);
+        Lufia2RandomScale(memory, cpu);
+        SimulateRtlFrame(memory, cpu);
+        LoadA16(cpu, cpu->accumulator);                        /* ORA #0 */
+        first = !cpu->zero;
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+        Write16Long(memory, first ? 0x7fd081u : 0x7fd083u, cpu->accumulator);
+        TransferDirectToA(cpu);
+        Write16Long(memory, first ? 0x7fd083u : 0x7fd081u, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $84:80E6/$84:8115: brightness step every $7F:D08F frames. */
+static void ScreenFade(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint8_t in) {
+    SimulateJsrFrame(memory, cpu, in ? 0x8013u : 0x801du);
+    LoadA8(cpu, (uint8_t)(Read8(memory, 0x7fd092u) + 1u));
+    Write8(memory, 0x7fd092u, A8(cpu));
+    Compare8(cpu, A8(cpu), Read8(memory, 0x7fd08fu));
+    if (cpu->carry) {
+        LoadA8(cpu, 0x00u);
+        Write8(memory, 0x7fd092u, A8(cpu));
+        LoadA8(cpu, Read8(memory, 0x7fd091u));
+        cpu->carry = in ? 0u : 1u;
+        if (in)
+            Adc8(cpu, Read8(memory, 0x7fd090u));
+        else
+            Sbc8(cpu, Read8(memory, 0x7fd090u));
+        Write8(memory, 0x7fd091u, A8(cpu));
+        StoreAAbsolute8(memory, cpu, 0x0583u, 0);
+        if (in) {
+            Compare8(cpu, A8(cpu), 0x0fu);
+            if (cpu->carry) {
+                LoadA8(cpu, 0x02u);
+                TestBitsAbsolute8(memory, cpu, 0x1261u, 0);
+            }
+        } else if (cpu->negative) {
+            StoreAImmediate8(memory, cpu, 0x80u, 0x0583u);
+            StoreZeroAbsolute8(memory, cpu, 0x1261u, 0);
+        }
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $84:80C0/$84:80D3: color math intensity $1271 down or up. */
+static void ScreenColorStep(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint8_t down) {
+    SimulateJsrFrame(memory, cpu, down ? 0x803fu : 0x8044u);
+    LoadAAbsolute8(memory, cpu, 0x1271u, 0);
+    LoadA8(cpu, (uint8_t)((A8(cpu) + (down ? 0xffu : 0x01u)) | 0xe0u));
+    StoreAAbsolute8(memory, cpu, 0x1271u, 0);
+    Compare8(cpu, A8(cpu), down ? 0xe0u : 0xffu);
+    if (cpu->zero) {
+        LoadA8(cpu, down ? 0x10u : 0x20u);
+        TestBitsAbsolute8(memory, cpu, 0x1261u, 0);
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $84:8000: screen effects of $1261; 0 when $84:8E07 must run. */
+static uint8_t FieldScreenEffects(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    LoadAAbsolute8(memory, cpu, 0x1261u, 0);                   /* 8000 */
+    BitImmediate8(cpu, 0x04u);
+    if (!cpu->zero) {
+        ScreenShake(memory, cpu);
+        LoadAAbsolute8(memory, cpu, 0x1261u, 0);
+    }
+    BitImmediate8(cpu, 0x02u);                                 /* 800D */
+    if (!cpu->zero) {
+        ScreenFade(memory, cpu, 1);
+        LoadAAbsolute8(memory, cpu, 0x1261u, 0);
+    }
+    BitImmediate8(cpu, 0x01u);                                 /* 8017 */
+    if (!cpu->zero) {
+        ScreenFade(memory, cpu, 0);
+        LoadAAbsolute8(memory, cpu, 0x1261u, 0);
+    }
+    BitImmediate8(cpu, 0x30u);                                 /* 8021 */
+    if (!cpu->zero) {
+        LoadA8(cpu, (uint8_t)(Read8(memory, 0x7fd094u) - 1u));
+        Write8(memory, 0x7fd094u, A8(cpu));
+        if (cpu->zero) {
+            LoadA8(cpu, 0x06u);
+            Write8(memory, 0x7fd094u, A8(cpu));
+            LoadAAbsolute8(memory, cpu, 0x1261u, 0);
+            BitImmediate8(cpu, 0x10u);
+            ScreenColorStep(memory, cpu, !cpu->zero);
+        }
+        LoadAAbsolute8(memory, cpu, 0x1261u, 0);               /* 8045 */
+    }
+    BitImmediate8(cpu, 0x80u);                                 /* 8048 */
+    if (!cpu->zero) {
+        LoadAAbsolute8(memory, cpu, 0x1289u, 0);               /* COLDATA fade */
+        LsrA8(cpu);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        StoreADirect8(memory, cpu, 0x55u);
+        LoadAAbsolute8(memory, cpu, 0x1288u, 0);
+        cpu->carry = 0;
+        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x1289u, 0)));
+        StoreAAbsolute8(memory, cpu, 0x1288u, 0);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        StoreADirect8(memory, cpu, 0x54u);
+        LoadAAbsolute8(memory, cpu, 0x1286u, 0);
+        And8(cpu, 0x1fu);
+        Compare8(cpu, A8(cpu),
+            Read8(memory, AbsoluteIndexedAddress(cpu, 0x1287u, 0)));
+        if (cpu->carry) {
+            LoadA8(cpu, 0x1fu);                                /* toward black */
+            Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
+            StoreADirect8(memory, cpu, 0x54u);
+            cpu->carry = 1;
+            Sbc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x1287u, 0)));
+        } else {
+            LoadAAbsolute8(memory, cpu, 0x1287u, 0);           /* 807D */
+            cpu->carry = 1;
+            Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
+        }
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x55u));
+        if (!cpu->carry) {
+            LoadAAbsolute8(memory, cpu, 0x1287u, 0);           /* 8087 */
+            StoreADirect8(memory, cpu, 0x54u);
+            LoadA8(cpu, 0x80u);
+            TestBitsAbsolute8(memory, cpu, 0x1261u, 0);
+        }
+        LoadAAbsolute8(memory, cpu, 0x1286u, 0);               /* 8091 */
+        And8(cpu, 0xe0u);
+        Or8(cpu, DirectByte(memory, cpu, 0x54u));
+        StoreAAbsolute8(memory, cpu, 0x2132u, 0);
+    }
+    LoadAAbsolute8(memory, cpu, 0x1262u, 0);                   /* 809B */
+    BitImmediate8(cpu, 0x01u);
+    return cpu->zero;
 }
 
 /* $80:C11C: clear bit 0 of the actor flags $0622-$0649. */
