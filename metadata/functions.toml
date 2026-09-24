@@ -204,3 +204,12 @@ source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# Battle VRAM queue slot; a full queue BRKs on LLE.
+[[function]]
+address = "85:ECDB"
+name = "Lufia2BattleVramQueueSlot"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -11523,3 +11523,34 @@ Lufia2ActorPrimaryUpdateResult Lufia2WorldMapNmiUploads(
     UnpackStatus(cpu, Pull8(memory, cpu));
     return result;
 }
+
+/* $85:ECDB: Y = first free slot in the $1A8F VRAM queue. */
+Lufia2ActorPrimaryUpdateResult Lufia2BattleVramQueueSlot(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    Lufia2ActorPrimaryUpdateResult result;
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.pc = 0x85ecefu;
+    result.dispatches = 0;
+    /* X=1 decodes LDY #imm as two bytes. */
+    if (cpu->index_is_8_bit) {
+        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.pc = cpu->resume_pc = 0x85ecdbu;
+        return result;
+    }
+    LoadY16(cpu, 0x0000u);                                     /* ECDB */
+    for (;;) {
+        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1a8fu, cpu->y));
+        if (cpu->zero)
+            return result;
+        LoadY16(cpu, (uint16_t)(cpu->y + 6u));
+        Compare16(cpu, cpu->y, 0x0060u);
+        if (cpu->zero)
+            break;
+    }
+    /* Queue full: BRK #$6B on LLE. */
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.pc = cpu->resume_pc = 0x85eceeu;
+    return result;
+}

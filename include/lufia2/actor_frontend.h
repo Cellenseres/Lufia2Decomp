@@ -160,6 +160,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2WorldMapNmiUploads(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $85:ECDB first free $1A8F VRAM queue slot in Y. */
+Lufia2ActorPrimaryUpdateResult Lufia2BattleVramQueueSlot(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,
