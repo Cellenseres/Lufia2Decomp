@@ -9276,6 +9276,11 @@ static Lufia2ActorPrimaryUpdateResult TextEngineStep(
     Lufia2ActorFrontendCpu *cpu,
     Lufia2ActorPrimaryUpdateResult result);
 
+static Lufia2ActorPrimaryUpdateResult TextPromptTick(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    Lufia2ActorPrimaryUpdateResult result);
+
 Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu) {
@@ -9310,7 +9315,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
     LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 9C79 */
     And8(cpu, 0x0au);
     if (!cpu->zero)
-        return FieldTickBoundary(result, cpu, 0x809c80u);
+        return TextPromptTick(memory, cpu, result);
     LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 9CB2 */
     if (cpu->negative)
         return TextEngineStep(memory, cpu, result);
@@ -11979,8 +11984,9 @@ Lufia2ActorPrimaryUpdateResult Lufia2TitleStateDispatch(
         Lufia2ActorPrimaryUpdateResult result =
             FieldLoopHandoff(cpu, 0x820000u | target);
 
-        /* The ROM passed E746/E748 at this S already. */
-        result.dispatches = target == 0xe746u || target == 0xe748u;
+        /* The ROM passed these at this S already. */
+        result.dispatches = target == 0xe746u || target == 0xe748u ||
+            (target >= 0x8031u && target <= 0x8041u && (target & 1u));
         return result;
     }
 }
@@ -14246,8 +14252,9 @@ static void TextPrevByte(
 /* $80:C1FD: close an open text window. */
 static void TextCloseWindow(
     const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    SimulateJsrFrame(memory, cpu, 0x9d30u);
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
     LoadAAbsolute8(memory, cpu, 0x099cu, 0);                   /* C1FD */
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero) {
@@ -14476,7 +14483,7 @@ reload:
         LoadAAbsolute8(memory, cpu, 0x099bu, 0);
         And8(cpu, 0x01u);
         if (cpu->zero) {
-            TextCloseWindow(memory, cpu);                      /* 9D2E */
+            TextCloseWindow(memory, cpu, 0x9d30u);             /* 9D2E */
         } else {
             LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);      /* 9D0E */
             Compare8(cpu, A8(cpu), 0x10u);
@@ -14555,6 +14562,64 @@ reload:
         }
     }
     return TextEngineExit(memory, cpu, result);
+}
+
+/* $80:C11C: clear bit 0 of the actor flags $0622-$0649. */
+static void TextReleaseActors(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SimulateJsrFrame(memory, cpu, 0x9ca5u);
+    Push8(memory, cpu, PackStatus(cpu));                       /* C11C */
+    SetIndexWidth(cpu, 1);
+    cpu->x = 0x27u;
+    do {
+        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        And8(cpu, 0xfeu);
+        StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        cpu->x = (uint8_t)(cpu->x - 1u);
+        SetNz8(cpu, (uint8_t)cpu->x);
+    } while (!cpu->negative);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:9C80: text box waits for its timer or the A/X buttons. */
+static Lufia2ActorPrimaryUpdateResult TextPromptTick(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    Lufia2ActorPrimaryUpdateResult result) {
+    LoadAAbsolute8(memory, cpu, 0x1265u, 0);                   /* 9C80 */
+    if (!cpu->zero) {
+        const uint32_t timer = AbsoluteIndexedAddress(cpu, 0x1266u, 0);
+        const uint8_t count = (uint8_t)(Read8(memory, timer) + 1u);
+
+        Write8(memory, timer, count);
+        SetNz8(cpu, count);
+        Compare8(cpu, A8(cpu), count);
+        if (cpu->carry)
+            return result;
+    } else {
+        LoadA8(cpu, 0xa0u);                                    /* 9C8F */
+        SimulateJsrFrame(memory, cpu, 0x9c93u);
+        And8(cpu, DirectByte(memory, cpu, 0x46u));             /* C81E */
+        if (!cpu->zero)
+            TestBitsDirect(memory, cpu, 0x4au, 0);
+        SimulateRtsFrame(memory, cpu);
+        if (cpu->zero)
+            return result;
+    }
+    LoadA8(cpu, 0x08u);                                        /* 9C96 */
+    TestBitsAbsolute8(memory, cpu, 0x099bu, 0);
+    if (!cpu->zero) {
+        StoreZeroAbsolute8(memory, cpu, 0x099bu, 0);
+        TextCloseWindow(memory, cpu, 0x9ca2u);
+        TextReleaseActors(memory, cpu);
+        return result;
+    }
+    LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 9CA8 */
+    And8(cpu, 0xfdu);
+    StoreAAbsolute8(memory, cpu, 0x099bu, 0);
+    return TextEngineStep(memory, cpu, result);
 }
 
 /* $80:9CB8: text engine step, JSL entry. */
