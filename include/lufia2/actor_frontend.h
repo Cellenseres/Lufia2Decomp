@@ -155,6 +155,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldActorSprites(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $86:CEF6 world map NMI uploads, palette cycles, Mode 7. */
+Lufia2ActorPrimaryUpdateResult Lufia2WorldMapNmiUploads(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,

@@ -195,3 +195,12 @@ source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# World map NMI via the $00:0067 vector.
+[[function]]
+address = "86:CEF6"
+name = "Lufia2WorldMapNmiUploads"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"

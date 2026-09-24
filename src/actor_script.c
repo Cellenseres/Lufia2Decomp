@@ -11066,3 +11066,460 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldActorSprites(
     PullDataBank(memory, cpu);                                 /* A488 */
     return result;
 }
+
+/* dp,X: wraps inside bank 0. */
+static uint32_t DirectIndexedAddress(
+    const Lufia2ActorFrontendCpu *cpu, uint8_t offset, uint16_t index) {
+    return (uint16_t)(cpu->direct_page + offset + index);
+}
+
+static uint16_t Read16DirectIndexed(
+    const Lufia2ActorFrontendMemory *memory,
+    const Lufia2ActorFrontendCpu *cpu,
+    uint8_t offset,
+    uint16_t index) {
+    const uint16_t address = (uint16_t)DirectIndexedAddress(cpu, offset, index);
+
+    return (uint16_t)(Read8(memory, address) |
+        ((uint16_t)Read8(memory, (uint16_t)(address + 1u)) << 8));
+}
+
+static void StoreAImmediate8(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint8_t value,
+    uint16_t address) {
+    LoadA8(cpu, value);
+    StoreAAbsolute8(memory, cpu, address, 0);
+}
+
+static void CopyAbsolute8(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t from,
+    uint16_t to) {
+    LoadAAbsolute8(memory, cpu, from, 0);
+    StoreAAbsolute8(memory, cpu, to, 0);
+}
+
+/* $86:D1E8: tile column upload, rows of $0100 words. */
+static void WorldMapColumnUpload(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xd1d8u);
+    SetAccumulatorWidth(cpu, 0);                               /* D1E8 */
+    And16(cpu, 0x00ffu);
+    AslA16(cpu);
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0003u, cpu->y));
+    Write16Absolute(memory, cpu, 0x4362u, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadAAbsolute8(memory, cpu, 0x0005u, cpu->y);
+    StoreAAbsolute8(memory, cpu, 0x4364u, 0);
+    LoadA8(cpu, 0x40u);
+    StoreADirect8(memory, cpu, 0x05u);
+    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+    StoreADirect8(memory, cpu, 0x33u);
+    LoadAAbsolute8(memory, cpu, 0xd26bu, cpu->x);
+    cpu->carry = 1;
+    Sbc8(cpu, DirectByte(memory, cpu, 0x33u));
+    StoreADirect8(memory, cpu, 0x35u);
+    if (!cpu->zero) {
+        LoadA8(cpu, 0xc0u);
+        StoreADirect8(memory, cpu, 0x05u);
+    }
+    LoadAAbsolute8(memory, cpu, 0x0002u, cpu->y);              /* D214 */
+    StoreADirect8(memory, cpu, 0x37u);
+    cpu->carry = 0;
+    do {
+        SetAccumulatorWidth(cpu, 0);                           /* D21A */
+        LoadADirect16(memory, cpu, 0x33u);
+        Write16Absolute(memory, cpu, 0x4365u, cpu->accumulator);
+        LoadADirect16(memory, cpu, 0x35u);
+        Write16Absolute(memory, cpu, 0x4375u, cpu->accumulator);
+        LoadADirect16(memory, cpu, 0x39u);
+        Write16Absolute(memory, cpu, 0x2116u, cpu->accumulator);
+        cpu->carry = 0;
+        Add16Value(cpu, 0x0100u);
+        StoreADirect16(memory, cpu, 0x39u);
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, DirectByte(memory, cpu, 0x05u));
+        StoreAAbsolute8(memory, cpu, 0x420bu, 0);
+        DecrementDirect8(memory, cpu, 0x37u);
+    } while (!cpu->zero);
+    LoadAAbsolute8(memory, cpu, 0xd26cu, cpu->x);              /* D23C */
+    cpu->carry = 1;
+    Sbc8(cpu, AbsoluteByte(memory, cpu, 0x0002u, cpu->y));
+    if (!cpu->zero) {
+        StoreADirect8(memory, cpu, 0x37u);
+        LoadAAbsolute8(memory, cpu, 0xd26bu, cpu->x);
+        StoreADirect8(memory, cpu, 0x35u);
+        cpu->carry = 0;
+        do {
+            SetAccumulatorWidth(cpu, 0);                       /* D24D */
+            LoadADirect16(memory, cpu, 0x35u);
+            Write16Absolute(memory, cpu, 0x4375u, cpu->accumulator);
+            LoadADirect16(memory, cpu, 0x39u);
+            Write16Absolute(memory, cpu, 0x2116u, cpu->accumulator);
+            cpu->carry = 0;
+            Add16Value(cpu, 0x0100u);
+            StoreADirect16(memory, cpu, 0x39u);
+            SetAccumulatorWidth(cpu, 1);
+            StoreAImmediate8(memory, cpu, 0x80u, 0x420bu);
+            DecrementDirect8(memory, cpu, 0x37u);
+        } while (!cpu->zero);
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $86:D271: block upload, two passes of rows $0200 apart. */
+static void WorldMapBlockUpload(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    unsigned pass;
+
+    SimulateJsrFrame(memory, cpu, 0xd1ddu);
+    SetAccumulatorWidth(cpu, 0);                               /* D271 */
+    And16(cpu, 0x007fu);
+    AslA16(cpu);
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0003u, cpu->y));
+    Write16Absolute(memory, cpu, 0x4362u, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadAAbsolute8(memory, cpu, 0x0005u, cpu->y);
+    StoreAAbsolute8(memory, cpu, 0x4364u, 0);
+    LoadAAbsolute8(memory, cpu, 0xd2d0u, cpu->x);
+    StoreADirect8(memory, cpu, 0x33u);
+    LoadAAbsolute8(memory, cpu, 0xd2d1u, cpu->x);
+    StoreADirect8(memory, cpu, 0x37u);
+    StoreADirect8(memory, cpu, 0x38u);
+    for (pass = 0; pass < 2u; ++pass) {
+        if (pass)
+            IncrementDirect8(memory, cpu, 0x3au);              /* D2B0 */
+        LoadXDirect16(memory, cpu, 0x39u);
+        cpu->carry = 0;
+        do {
+            SetAccumulatorWidth(cpu, 0);                       /* D295 */
+            LoadADirect16(memory, cpu, 0x33u);
+            Write16Absolute(memory, cpu, 0x4365u, cpu->accumulator);
+            TransferXToA(cpu);
+            Write16Absolute(memory, cpu, 0x2116u, cpu->accumulator);
+            cpu->carry = 0;
+            Add16Value(cpu, 0x0200u);
+            TransferAToX(cpu);
+            SetAccumulatorWidth(cpu, 1);
+            StoreAImmediate8(memory, cpu, 0x40u, 0x420bu);
+            DecrementDirect8(memory, cpu, pass ? 0x38u : 0x37u);
+        } while (!cpu->zero);
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $86:D1A1: pending map tile uploads, $1365 entries. */
+static void WorldMapTileUploads(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xcf14u);
+    LoadA8(cpu, 0x18u);                                        /* D1A1 */
+    StoreAAbsolute8(memory, cpu, 0x4361u, 0);
+    StoreAAbsolute8(memory, cpu, 0x4371u, 0);
+    StoreAImmediate8(memory, cpu, 0x01u, 0x4360u);
+    StoreAImmediate8(memory, cpu, 0x09u, 0x4370u);
+    LoadX16(cpu, 0xd1e7u);
+    Write16Absolute(memory, cpu, 0x4372u, cpu->x);
+    StoreAImmediate8(memory, cpu, 0x86u, 0x4374u);
+    Write8(memory, DirectAddress(cpu, 0x34u), 0x00u);
+    Write8(memory, DirectAddress(cpu, 0x36u), 0x00u);
+    LoadX16(cpu, 0x1367u);
+    do {
+        PushIndex(memory, cpu);                                /* D1C5 */
+        LoadY16(cpu, Read16DirectIndexed(memory, cpu, 0x40u, cpu->x));
+        if (!cpu->zero) {
+            StoreYDirect16(memory, cpu, 0x39u);
+            LoadY16(cpu, Read16DirectIndexed(memory, cpu, 0x00u, cpu->x));
+            LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+            if (!cpu->negative)
+                WorldMapColumnUpload(memory, cpu);
+            else
+                WorldMapBlockUpload(memory, cpu);
+        }
+        cpu->x = PullIndexValue(memory, cpu);                  /* D1DE */
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        {
+            const uint32_t count = AbsoluteIndexedAddress(cpu, 0x1365u, 0);
+            const uint8_t left = (uint8_t)(Read8(memory, count) - 1u);
+
+            Write8(memory, count, left);
+            SetNz8(cpu, left);
+        }
+    } while (!cpu->zero);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $86:CFC0: $16E7 palette cycles, five bytes each at $16E8. */
+static void WorldMapPaletteCycles(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    LoadX16(cpu, 0x16e8u);
+    do {
+        PushAccumulator8(memory, cpu);                         /* CFC8 */
+        {
+            const uint32_t tick = DirectIndexedAddress(cpu, 0x04u, cpu->x);
+            const uint8_t value = (uint8_t)(Read8(memory, tick) + 1u);
+
+            Write8(memory, tick, value);
+            SetNz8(cpu, value);
+            LoadA8(cpu, value);
+        }
+        Compare8(cpu, A8(cpu),
+            Read8(memory, DirectIndexedAddress(cpu, 0x02u, cpu->x)));
+        if (cpu->carry) {
+            uint32_t cycle;
+
+            Write8(memory, DirectIndexedAddress(cpu, 0x04u, cpu->x), 0x00u);
+            LoadA8(cpu, Read8(memory, DirectIndexedAddress(cpu, 0x00u, cpu->x)));
+            StoreAAbsolute8(memory, cpu, 0x2121u, 0);
+            cycle = DirectIndexedAddress(cpu, 0x03u, cpu->x);
+            LoadA8(cpu, (uint8_t)(Read8(memory, cycle) + 1u));
+            Compare8(cpu, A8(cpu),
+                Read8(memory, DirectIndexedAddress(cpu, 0x01u, cpu->x)));
+            if (cpu->carry)
+                LoadA8(cpu, 0x00u);
+            Write8(memory, cycle, A8(cpu));                    /* CFE1 */
+            StoreADirect8(memory, cpu, 0x38u);
+            AslA8(cpu);
+            StoreADirect8(memory, cpu, 0x33u);
+            LoadA8(cpu, Read8(memory, DirectIndexedAddress(cpu, 0x01u, cpu->x)));
+            cpu->carry = 1;
+            Sbc8(cpu, Read8(memory, cycle));
+            StoreADirect8(memory, cpu, 0x37u);
+            LoadA8(cpu, 0x00u);
+            ExchangeAccumulatorBytes(cpu);
+            LoadA8(cpu, Read8(memory, DirectIndexedAddress(cpu, 0x00u, cpu->x)));
+            AslA8(cpu);
+            Adc8(cpu, DirectByte(memory, cpu, 0x33u));
+            TransferAToY(cpu);
+            do {
+                LoadAAbsolute8(memory, cpu, 0x0320u, cpu->y);  /* CFF8 */
+                StoreAAbsolute8(memory, cpu, 0x2122u, 0);
+                IncrementY16(cpu);
+                LoadAAbsolute8(memory, cpu, 0x0320u, cpu->y);
+                StoreAAbsolute8(memory, cpu, 0x2122u, 0);
+                IncrementY16(cpu);
+                DecrementDirect8(memory, cpu, 0x37u);
+            } while (!cpu->zero);
+            LoadA8(cpu, DirectByte(memory, cpu, 0x38u));
+            if (!cpu->zero) {
+                LoadA8(cpu, Read8(memory,
+                    DirectIndexedAddress(cpu, 0x00u, cpu->x)));
+                AslA8(cpu);
+                TransferAToY(cpu);
+                do {
+                    LoadAAbsolute8(memory, cpu, 0x0320u, cpu->y);  /* D012 */
+                    StoreAAbsolute8(memory, cpu, 0x2122u, 0);
+                    IncrementY16(cpu);
+                    LoadAAbsolute8(memory, cpu, 0x0320u, cpu->y);
+                    StoreAAbsolute8(memory, cpu, 0x2122u, 0);
+                    IncrementY16(cpu);
+                    DecrementDirect8(memory, cpu, 0x38u);
+                } while (!cpu->zero);
+            }
+        }
+        SetAccumulatorWidth(cpu, 0);                           /* D024 */
+        TransferXToA(cpu);
+        cpu->carry = 0;
+        Add16Value(cpu, 0x0005u);
+        TransferAToX(cpu);
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, Pull8(memory, cpu));
+        DecrementA8(cpu);
+    } while (!cpu->zero);
+}
+
+/* $86:CEF6: world map NMI via the $00:0067 vector. */
+Lufia2ActorPrimaryUpdateResult Lufia2WorldMapNmiUploads(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    static const uint16_t mode7_regs[8] = {
+        0x211bu, 0x211bu, 0x211cu, 0x211cu, 0x211du, 0x211du, 0x211eu,
+        0x211eu};
+    static const uint16_t scroll_regs[6] = {
+        0x210du, 0x210eu, 0x210fu, 0x2110u, 0x2111u, 0x2112u};
+    Lufia2ActorPrimaryUpdateResult result;
+    unsigned i;
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.pc = 0x86d1a0u;
+    result.dispatches = 0;
+    Push8(memory, cpu, PackStatus(cpu));                       /* CEF6 */
+    PushDataBank(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 0);
+    LoadA8(cpu, 0x86u);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    StoreAImmediate8(memory, cpu, 0x8fu, 0x2100u);
+    StoreZeroAbsolute8(memory, cpu, 0x420cu, 0);
+    LoadAAbsolute8(memory, cpu, 0x11d9u, 0);
+    if (!cpu->zero) {
+        LoadAAbsolute8(memory, cpu, 0x1365u, 0);
+        if (!cpu->zero)
+            WorldMapTileUploads(memory, cpu);
+    }
+    StoreZeroAbsolute8(memory, cpu, 0x4370u, 0);               /* CF15 */
+    StoreAImmediate8(memory, cpu, 0x18u, 0x4371u);
+    LoadAAbsolute8(memory, cpu, 0x1710u, 0);
+    if (!cpu->zero) {
+        StoreZeroAbsolute8(memory, cpu, 0x2115u, 0);
+        StoreAImmediate8(memory, cpu, 0x7fu, 0x4374u);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1712u, 0));
+        Write16Absolute(memory, cpu, 0x4372u, cpu->accumulator);
+        And16(cpu, 0x3fffu);
+        Write16Absolute(memory, cpu, 0x2116u, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        LoadX16(cpu, 0x0100u);
+        Write16Absolute(memory, cpu, 0x4375u, cpu->x);
+        StoreAImmediate8(memory, cpu, 0x80u, 0x420bu);
+        StoreZeroAbsolute8(memory, cpu, 0x1710u, 0);
+    }
+    LoadAAbsolute8(memory, cpu, 0x1711u, 0);                   /* CF48 */
+    if (!cpu->zero) {
+        StoreAImmediate8(memory, cpu, 0x03u, 0x2115u);
+        StoreAImmediate8(memory, cpu, 0x7fu, 0x4374u);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1714u, 0));
+        And16(cpu, 0x3fffu);
+        Write16Absolute(memory, cpu, 0x2116u, cpu->accumulator);
+        IncrementA16(cpu);
+        PushAccumulator16(memory, cpu);
+        SetAccumulatorWidth(cpu, 1);
+        LoadX16(cpu, 0xdf00u);
+        Write16Absolute(memory, cpu, 0x4372u, cpu->x);
+        LoadX16(cpu, 0x0080u);
+        Write16Absolute(memory, cpu, 0x4375u, cpu->x);
+        StoreAImmediate8(memory, cpu, 0x80u, 0x420bu);
+        cpu->y = PullIndexValue(memory, cpu);
+        Write16Absolute(memory, cpu, 0x2116u, cpu->y);
+        Write16Absolute(memory, cpu, 0x4375u, cpu->x);
+        StoreAImmediate8(memory, cpu, 0x80u, 0x420bu);
+        StoreZeroAbsolute8(memory, cpu, 0x1711u, 0);
+    }
+    StoreAImmediate8(memory, cpu, 0x80u, 0x2115u);             /* CF86 */
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1702u, 0));
+    if (!cpu->zero) {
+        Write16Absolute(memory, cpu, 0x4375u, cpu->x);
+        CopyAbsolute8(memory, cpu, 0x1701u, 0x2121u);
+        SetAccumulatorWidth(cpu, 0);
+        And16(cpu, 0x00ffu);
+        AslA16(cpu);
+        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1704u, 0));
+        Write16Absolute(memory, cpu, 0x4372u, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        CopyAbsolute8(memory, cpu, 0x1706u, 0x4374u);
+        StoreZeroAbsolute8(memory, cpu, 0x4370u, 0);
+        StoreAImmediate8(memory, cpu, 0x22u, 0x4371u);
+        StoreAImmediate8(memory, cpu, 0x80u, 0x420bu);
+        LoadX16(cpu, 0x0000u);
+        Write16Absolute(memory, cpu, 0x1702u, cpu->x);
+    }
+    LoadAAbsolute8(memory, cpu, 0x16e7u, 0);                   /* CFC0 */
+    if (!cpu->zero)
+        WorldMapPaletteCycles(memory, cpu);
+    Write8(memory, DirectAddress(cpu, 0x33u), 0x00u);          /* D032 */
+    LoadAAbsolute8(memory, cpu, 0x11deu, 0);
+    if (cpu->zero) {
+        for (i = 0; i < 8u; ++i)
+            CopyAbsolute8(memory, cpu, (uint16_t)(0x1707u + i), mode7_regs[i]);
+    } else {
+        LoadAAbsolute8(memory, cpu, 0x11dau, 0);               /* D06B */
+        if (!cpu->negative) {
+            LoadA8(cpu, 0x03u);
+            StoreAAbsolute8(memory, cpu, 0x4300u, 0);
+            StoreAAbsolute8(memory, cpu, 0x4310u, 0);
+            StoreAImmediate8(memory, cpu, 0x1bu, 0x4301u);
+            StoreAImmediate8(memory, cpu, 0x1du, 0x4311u);
+            StoreAImmediate8(memory, cpu, 0x00u, 0x4304u);
+            StoreAImmediate8(memory, cpu, 0x00u, 0x4314u);
+            LoadX16(cpu, 0x1718u);
+            Write16Absolute(memory, cpu, 0x4302u, cpu->x);
+            LoadX16(cpu, 0x1a9bu);
+            Write16Absolute(memory, cpu, 0x4312u, cpu->x);
+            LoadA8(cpu, 0x03u);
+            TestBitsDirect(memory, cpu, 0x33u, 1);
+        }
+        LoadAAbsolute8(memory, cpu, 0x11ddu, 0);               /* D09C */
+        if (cpu->zero) {
+            StoreZeroAbsolute8(memory, cpu, 0x2130u, 0);
+            CopyAbsolute8(memory, cpu, 0x170fu, 0x2131u);
+            StoreZeroAbsolute8(memory, cpu, 0x4340u, 0);
+            StoreAImmediate8(memory, cpu, 0x32u, 0x4341u);
+            StoreZeroAbsolute8(memory, cpu, 0x4344u, 0);
+            LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1716u, 0));
+            Write16Absolute(memory, cpu, 0x4342u, cpu->x);
+            LoadA8(cpu, 0x10u);
+            TestBitsDirect(memory, cpu, 0x33u, 1);
+        }
+    }
+    LoadAAbsolute8(memory, cpu, 0x11dfu, 0);                   /* D0BF */
+    if (!cpu->zero) {
+        LoadA8(cpu, 0x43u);
+        StoreAAbsolute8(memory, cpu, 0x4340u, 0);
+        StoreAAbsolute8(memory, cpu, 0x4350u, 0);
+        LoadX16(cpu, 0xde00u);
+        Write16Absolute(memory, cpu, 0x4342u, cpu->x);
+        LoadX16(cpu, 0xe000u);
+        Write16Absolute(memory, cpu, 0x4352u, cpu->x);
+        LoadA8(cpu, 0x30u);
+        TestBitsDirect(memory, cpu, 0x33u, 1);
+    }
+    LoadAAbsolute8(memory, cpu, 0x11e1u, 0);                   /* D0DC */
+    if (!cpu->zero) {
+        LoadA8(cpu, 0x41u);
+        StoreAAbsolute8(memory, cpu, 0x4320u, 0);
+        StoreAAbsolute8(memory, cpu, 0x4330u, 0);
+        StoreAImmediate8(memory, cpu, 0x26u, 0x4321u);
+        StoreAImmediate8(memory, cpu, 0x28u, 0x4331u);
+        LoadA8(cpu, 0x7fu);
+        StoreAAbsolute8(memory, cpu, 0x4324u, 0);
+        StoreAAbsolute8(memory, cpu, 0x4327u, 0);
+        StoreAAbsolute8(memory, cpu, 0x4334u, 0);
+        StoreAAbsolute8(memory, cpu, 0x4337u, 0);
+        LoadY16(cpu, 0xd400u);
+        LoadAAbsolute8(memory, cpu, 0x11dbu, 0);
+        LsrA8(cpu);
+        if (cpu->carry)
+            LoadY16(cpu, 0xd600u);
+        Write16Absolute(memory, cpu, 0x4322u, cpu->y);
+        LoadY16(cpu, 0xd800u);
+        LoadAAbsolute8(memory, cpu, 0x11dcu, 0);
+        LsrA8(cpu);
+        if (cpu->carry)
+            LoadY16(cpu, 0xda00u);
+        Write16Absolute(memory, cpu, 0x4332u, cpu->y);
+        LoadA8(cpu, 0x0cu);
+        TestBitsDirect(memory, cpu, 0x33u, 1);
+        LoadY16(cpu, 0x00ffu);
+        Write16Absolute(memory, cpu, 0x2126u, cpu->y);
+        Write16Absolute(memory, cpu, 0x2128u, cpu->y);
+    }
+    LoadAAbsolute8(memory, cpu, 0x11d8u, 0);                   /* D12C */
+    if (!cpu->zero) {
+        LoadA8(cpu, DirectByte(memory, cpu, 0x33u));
+        StoreAAbsolute8(memory, cpu, 0x420cu, 0);
+    }
+    for (i = 0; i < 4u; ++i)                                   /* D136 */
+        CopyAbsolute8(memory, cpu, (uint16_t)(0x11f8u + i),
+            (uint16_t)(0x211fu + (i >> 1)));
+    LoadAAbsolute8(memory, cpu, 0x11d9u, 0);
+    if (cpu->zero) {
+        for (i = 0; i < 12u; ++i)
+            CopyAbsolute8(memory, cpu, (uint16_t)(0x0594u + i),
+                scroll_regs[i >> 1]);
+    }
+    StoreZeroAbsolute8(memory, cpu, 0x11d9u, 0);               /* D19B */
+    PullDataBank(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return result;
+}
