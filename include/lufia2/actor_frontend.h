@@ -165,6 +165,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2BattleVramQueueSlot(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $86:99BF world map edge streaming after a camera move. */
+Lufia2ActorPrimaryUpdateResult Lufia2WorldMapStreamEdges(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,

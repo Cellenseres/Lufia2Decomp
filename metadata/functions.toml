@@ -213,3 +213,12 @@ source = "src/actor_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# World map edge streaming from the $86:924C loop.
+[[function]]
+address = "86:99BF"
+name = "Lufia2WorldMapStreamEdges"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
