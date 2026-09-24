@@ -145,6 +145,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $85:8DC5 battle NMI uploads, timers, HDMA. */
+Lufia2ActorPrimaryUpdateResult Lufia2BattleNmiUploads(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $8E:BD77 BG scroll targets for three layers. */
 Lufia2ActorPrimaryUpdateResult Lufia2FieldScrollUpdate(
     const Lufia2ActorFrontendMemory *memory,
