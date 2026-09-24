@@ -6428,6 +6428,278 @@ static ObjectFlow ObjectExecute(
         PullDataBank(memory, cpu);
         return OBJECT_FLOW_DISPATCH;
 
+    case 0xe150u:                                              /* 2F */
+        LoadXDirect(memory, cpu, 0xa9u);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16Long(memory, 0x7fddaeu));
+        Write16Long(memory, LongIndexedAddress(0x7fddfeu, cpu->x), cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, 0x7fde3eu));
+        Write16Long(memory, LongIndexedAddress(0x7fde8eu, cpu->x), cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xe270u:                                              /* 2E */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        Write8(memory, LongIndexedAddress(0x7fe33eu, cpu->x), A8(cpu));
+        IncrementY16(cpu);
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xe5b5u:                                              /* 1D */
+        LoadXDirect(memory, cpu, 0xa9u);
+        Write8(memory, AbsoluteIndexedAddress(cpu, 0x1724u, 0), (uint8_t)cpu->x);
+        Write8(memory, AbsoluteIndexedAddress(cpu, 0x1725u, 0),
+            (uint8_t)(cpu->x >> 8));
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xe700u:                                              /* 12 */
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xe810u:                                              /* 13 */
+        LoadXDirect(memory, cpu, 0xa9u);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16Long(memory, 0x001220u));
+        cpu->carry = 0;
+        Add16Immediate(cpu, 0x0080u);
+        Write16Long(memory, LongIndexedAddress(0x7fda6cu, cpu->x), cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, 0x001228u));
+        cpu->carry = 0;
+        Add16Immediate(cpu, 0x0070u);
+        Write16Long(memory, LongIndexedAddress(0x7fdaacu, cpu->x), cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xea7du:                                              /* 22 */
+        LoadAAbsolute8(memory, cpu, 0x066au, 0);
+        And8(cpu, 0x06u);
+        Or8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x0000u, cpu->y)));
+        StoreAAbsolute8(memory, cpu, 0x066au, 0);
+        IncrementY16(cpu);
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xea8cu:                                              /* 23 */
+        TransferDirectToA(cpu);
+        Write8(memory, 0x7fd0a1u, A8(cpu));
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xea94u:                                              /* 8D */
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        Or8(cpu, Read8(memory, 0x7fd0a1u));
+        Write8(memory, 0x7fd0a1u, A8(cpu));
+        IncrementY16(cpu);
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xeab5u:                                              /* 7x */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+        DecrementA8(cpu);
+        Write8(memory, LongIndexedAddress(0x7fe08eu, cpu->x), A8(cpu));
+        IncrementY16(cpu);
+        IncrementY16(cpu);
+        LoadXDirect(memory, cpu, 0xabu);                       /* EAC1 */
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, cpu->y);
+        Write16Long(memory, LongIndexedAddress(0x7fdfceu, cpu->x), cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        PushDataBank(memory, cpu);                             /* EACC */
+        LoadA8(cpu, Pull8(memory, cpu));
+        Write8(memory, LongIndexedAddress(0x7fdfd0u, cpu->x), A8(cpu));
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xeb50u:                                              /* 29 */
+    case 0xec6du:                                              /* 2B */
+    case 0xed11u: {                                            /* Cx */
+        uint8_t set;
+        uint32_t target;
+        uint8_t bit;
+
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        if (handler == 0xeb50u) {
+            set = !cpu->zero;
+            target = AbsoluteIndexedAddress(cpu, 0x064au, cpu->x);
+            bit = 0x04u;
+        } else if (handler == 0xec6du) {
+            set = cpu->negative;
+            target = LongIndexedAddress(0x7fdb0cu, cpu->x);
+            bit = 0x40u;
+        } else {
+            And8(cpu, 0x0fu);
+            set = cpu->zero;
+            target = AbsoluteIndexedAddress(cpu, 0x064au, cpu->x);
+            bit = 0x08u;
+        }
+        LoadA8(cpu, Read8(memory, target));
+        if (set)
+            Or8(cpu, bit);
+        else
+            And8(cpu, (uint8_t)~bit);
+        Write8(memory, target, A8(cpu));
+        IncrementY16(cpu);
+        return OBJECT_FLOW_DISPATCH;
+    }
+
+    case 0xed9bu:                                              /* 84 */
+        LoadA8(cpu, Read8(memory, 0x7fd0a1u));
+        Or8(cpu, 0x10u);
+        Write8(memory, 0x7fd0a1u, A8(cpu));
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xedc2u:                                              /* 89 */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadA8(cpu, 0xffu);
+        Write8(memory, LongIndexedAddress(0x7fe23eu, cpu->x), A8(cpu));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe33eu, cpu->x)));
+        Or8(cpu, 0x80u);
+        Write8(memory, LongIndexedAddress(0x7fe33eu, cpu->x), A8(cpu));
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xedd7u:                                              /* EA */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb0cu, cpu->x)));
+        Or8(cpu, 0x80u);
+        Write8(memory, LongIndexedAddress(0x7fdb0cu, cpu->x), A8(cpu));
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xefd1u:                                              /* F8 */
+    case 0xefdeu:                                              /* F9 */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadAAbsolute8(memory, cpu, 0x064au, cpu->x);
+        if (handler == 0xefd1u)
+            Or8(cpu, 0x10u);
+        else
+            And8(cpu, 0xefu);
+        StoreAAbsolute8(memory, cpu, 0x064au, cpu->x);
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xf0e8u:                                              /* E2 */
+        LoadXDirect(memory, cpu, 0xa9u);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->y));
+        Write16Long(memory, LongIndexedAddress(0x7fda6cu, cpu->x), cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        IncrementY16(cpu);
+        IncrementY16(cpu);
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xf0fau:                                              /* 82 */
+    case 0xf10bu:                                              /* 83 */
+        LoadXDirect(memory, cpu, 0xa9u);
+        SetAccumulatorWidth(cpu, 0);
+        if (handler == 0xf0fau)
+            CopyLong16(memory, cpu, 0x7fda6cu, 0x7fdaacu);
+        else
+            CopyLong16(memory, cpu, 0x7fdaacu, 0x7fda6cu);
+        SetAccumulatorWidth(cpu, 1);
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xf11cu: {                                            /* EB */
+        unsigned i;
+
+        LoadXDirect(memory, cpu, 0xa9u);
+        /* Each byte negated on its own. */
+        for (i = 0; i < 2u; ++i) {
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdaacu + i, cpu->x)));
+            LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0xffu));
+            LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+            Write8(memory, LongIndexedAddress(0x7fda6cu + i, cpu->x), A8(cpu));
+        }
+        return OBJECT_FLOW_DISPATCH;
+    }
+
+    case 0xf137u:                                              /* EC */
+        LoadXDirect(memory, cpu, 0xa7u);
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        cpu->carry = 1;
+        Sbc8(cpu, Read8(memory, LongIndexedAddress(0x7fe08eu, cpu->x)));
+        DecrementA8(cpu);
+        Write8(memory, LongIndexedAddress(0x7fe08eu, cpu->x), A8(cpu));
+        IncrementY16(cpu);
+        SetAccumulatorWidth(cpu, 0);                           /* F147 */
+        LoadXDirect(memory, cpu, 0xabu);
+        LoadA16(cpu, cpu->y);
+        Write16Long(memory, LongIndexedAddress(0x7fdfceu, cpu->x), cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xf155u:                                              /* ED */
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->y));
+        cpu->carry = 0;
+        Add16Immediate(cpu, 0x8ec7u);
+        Write16Long(memory, 0x7fddacu, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        PushDataBank(memory, cpu);                             /* F164 */
+        PushY(memory, cpu);
+        LoadA8(cpu, 0x7fu);
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        LoadX16(cpu, 0x0000u);
+        do {
+            TransferDirectToA(cpu);                            /* F16D */
+            LoadAAbsolute8(memory, cpu, 0xd0a6u, cpu->x);
+            if (!cpu->negative) {
+                Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+                AslA8(cpu);
+                Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+                TransferAToY(cpu);
+                LoadAAbsolute8(memory, cpu, 0xddacu, 0);
+                StoreAAbsolute8(memory, cpu, 0xdeeeu, cpu->y);
+                LoadAAbsolute8(memory, cpu, 0xddadu, 0);
+                StoreAAbsolute8(memory, cpu, 0xdeefu, cpu->y);
+            }
+            IncrementX16(cpu);                                 /* F185 */
+            Compare16(cpu, cpu->x, 0x0008u);
+        } while (!cpu->zero);
+        cpu->y = PullIndexValue(memory, cpu);                  /* F18B */
+        PullDataBank(memory, cpu);
+        IncrementY16(cpu);
+        IncrementY16(cpu);
+        return OBJECT_FLOW_DISPATCH;
+
+    case 0xe1c5u:                                              /* 3x */
+    case 0xe1d3u:                                              /* 2C */
+    case 0xe1e6u:                                              /* 25 */
+    case 0xe1f4u:                                              /* FD */
+    case 0xe59fu: {                                            /* 8F */
+        uint16_t back;
+        uint8_t skip_cursor = 0;
+
+        if (handler == 0xe1c5u) {
+            LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+            And8(cpu, 0x0fu);
+            back = 0xe1ceu;
+        } else if (handler == 0xe1d3u) {
+            LoadXDirect(memory, cpu, 0xa7u);
+            LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+            cpu->carry = 0;
+            Adc8(cpu, Read8(memory, LongIndexedAddress(0x7fdb2cu, cpu->x)));
+            back = 0xe1e1u;
+        } else if (handler == 0xe1e6u) {
+            LoadXDirect(memory, cpu, 0xa7u);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fda2cu, cpu->x)));
+            back = 0xe1f0u;
+            skip_cursor = 1;
+        } else if (handler == 0xe1f4u) {
+            LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+            back = 0xe1fbu;
+        } else {
+            LoadXDirect(memory, cpu, 0xa7u);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb0cu, cpu->x)));
+            BitImmediate8(cpu, 0x20u);
+            if (cpu->zero)
+                return OBJECT_FLOW_DISPATCH;
+            LoadA8(cpu, Read8(memory, 0x7fd4f4u));
+            back = 0xe5b1u;
+            skip_cursor = 1;
+        }
+        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+        ObjectSetFrame(memory, cpu, back);
+        if (!skip_cursor)
+            IncrementY16(cpu);
+        return OBJECT_FLOW_DISPATCH;
+    }
+
     default:
         cpu->resume_pc = 0x830000u | handler;
         return OBJECT_FLOW_BOUNDARY;
