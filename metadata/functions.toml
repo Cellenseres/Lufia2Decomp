@@ -277,6 +277,15 @@ entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
 
+# $80:92A4 intro NMI; unknown states stay LLE.
+[[function]]
+address = "80:92A4"
+name = "Lufia2IntroNmi"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
 # $86:81A9 NMI installed by $86:8000.
 [[function]]
 address = "86:81A9"

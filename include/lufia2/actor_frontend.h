@@ -245,6 +245,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2TextEngineStep(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $80:92A4 intro NMI, logo state machine. */
+Lufia2ActorPrimaryUpdateResult Lufia2IntroNmi(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $86:81A9 NMI installed by $86:8000. */
 Lufia2ActorPrimaryUpdateResult Lufia2SelectScreenNmi(
     const Lufia2ActorFrontendMemory *memory,
