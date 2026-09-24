@@ -14432,6 +14432,118 @@ static void TextGoto(
     SetAccumulatorWidth(cpu, 1);                               /* A3DA */
 }
 
+/* Opcodes that store their argument byte. */
+static const struct {
+    uint16_t handler;
+    uint32_t address;
+} kTextByteStores[11] = {
+    {0xb7e6u, 0x1255u},                            /* $47 */
+    {0xb837u, 0x1265u},                            /* $49 prompt timer */
+    {0xb840u, 0x09adu},                            /* $4A glyph attribute */
+    {0xb900u, 0x1260u},                            /* $52 typing sound */
+    {0xbd6cu, 0x09dfu},                            /* $7C */
+    {0xbd75u, 0x09eeu},                            /* $7D */
+    {0xbd7eu, 0x09e0u},                            /* $7E */
+    {0xbd87u, 0x09e1u},                            /* $7F */
+    {0xbd90u, 0x09e2u},                            /* $80 */
+    {0xb696u, 0x0b52u},                            /* $CB print delay */
+    {0xb2a7u, 0x7ff8a0u}};                         /* $74 */
+
+/* $80:BF12/$80:BF43: gold $0A8A-$0A8C +/- A, capped/undone. */
+static void TextGold(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint8_t add,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 0);
+    if (add) {
+        cpu->carry = 0;                                        /* BF15 */
+        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a8au, 0));
+        Write16Absolute(memory, cpu, 0x0a8au, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        LoadAAbsolute8(memory, cpu, 0x0a8cu, 0);
+        Adc8(cpu, 0x00u);
+        StoreAAbsolute8(memory, cpu, 0x0a8cu, 0);
+        Compare8(cpu, A8(cpu), 0x98u);
+        if (cpu->carry) {
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a8au, 0));
+            Compare16(cpu, cpu->accumulator, 0x967fu);
+            if (cpu->carry) {
+                LoadA16(cpu, 0x967fu);                         /* 9,999,999 */
+                Write16Absolute(memory, cpu, 0x0a8au, cpu->accumulator);
+                SetAccumulatorWidth(cpu, 1);
+                StoreAImmediate8(memory, cpu, 0x98u, 0x0a8cu);
+            }
+        }
+    } else {
+        Write16Direct(memory, cpu, 0x54u, cpu->accumulator);   /* BF46 */
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a8au, 0));
+        cpu->carry = 1;
+        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x54u));
+        Write16Absolute(memory, cpu, 0x0a8au, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        LoadAAbsolute8(memory, cpu, 0x0a8cu, 0);
+        Sbc8(cpu, 0x00u);
+        StoreAAbsolute8(memory, cpu, 0x0a8cu, 0);
+        if (!cpu->carry) {
+            uint8_t high;
+
+            SetAccumulatorWidth(cpu, 0);                       /* undo */
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a8au, 0));
+            cpu->carry = 0;
+            Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+            Write16Absolute(memory, cpu, 0x0a8au, cpu->accumulator);
+            SetAccumulatorWidth(cpu, 1);
+            high = (uint8_t)(Read8(memory,
+                AbsoluteIndexedAddress(cpu, 0x0a8cu, 0)) + 1u);
+            Write8(memory, AbsoluteIndexedAddress(cpu, 0x0a8cu, 0), high);
+            SetNz8(cpu, high);
+        }
+    }
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:AF77: COLDATA fade setup, rate by $4204 division. */
+static void TextColorFade(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    StoreAAbsolute8(memory, cpu, 0x2131u, 0);                  /* AF77 */
+    StoreAImmediate8(memory, cpu, 0xe0u, 0x2132u);
+    TextNextByte(memory, cpu, 0xaf81u);
+    StoreAAbsolute8(memory, cpu, 0x1286u, 0);
+    StoreAAbsolute8(memory, cpu, 0x2132u, 0);
+    TextNextByte(memory, cpu, 0xaf8au);
+    StoreAAbsolute8(memory, cpu, 0x1287u, 0);
+    LoadAAbsolute8(memory, cpu, 0x1286u, 0);
+    And8(cpu, 0x1fu);
+    Compare8(cpu, A8(cpu),
+        Read8(memory, AbsoluteIndexedAddress(cpu, 0x1287u, 0)));
+    if (!cpu->carry) {
+        LoadAAbsolute8(memory, cpu, 0x1287u, 0);
+        And8(cpu, 0x1fu);
+    }
+    AslA8(cpu);                                                /* AF9D */
+    AslA8(cpu);
+    AslA8(cpu);
+    StoreZeroAbsolute8(memory, cpu, 0x4204u, 0);
+    StoreAAbsolute8(memory, cpu, 0x4205u, 0);
+    TextNextByte(memory, cpu, 0xafa8u);
+    StoreAAbsolute8(memory, cpu, 0x4206u, 0);
+    StoreAImmediate8(memory, cpu, 0x00u, 0x2130u);
+    LoadA8(cpu, 0x80u);
+    TestBitsAbsolute8(memory, cpu, 0x1261u, 1);
+    StoreZeroAbsolute8(memory, cpu, 0x1288u, 0);
+    LoadAAbsolute8(memory, cpu, 0x4215u, 0);
+    StoreAAbsolute8(memory, cpu, 0x1289u, 0);
+    SimulateRtsFrame(memory, cpu);
+}
+
 enum {
     TEXT_OPCODE_NEXT,
     TEXT_OPCODE_RELOAD,
@@ -14447,6 +14559,17 @@ static unsigned TextScriptOpcode(
     uint32_t *handoff) {
     unsigned i;
 
+    for (i = 0; i < 11u; ++i) {
+        if (handler != kTextByteStores[i].handler)
+            continue;
+        TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
+        if (kTextByteStores[i].address > 0xffffu)
+            Write8(memory, kTextByteStores[i].address, A8(cpu));
+        else
+            StoreAAbsolute8(memory, cpu,
+                (uint16_t)kTextByteStores[i].address, 0);
+        return TEXT_OPCODE_NEXT;
+    }
     switch (handler) {
     case 0xa80fu:                                  /* $33 wait for actor */
         LoadAAbsolute8(memory, cpu, 0x1269u, 0);
@@ -14558,8 +14681,12 @@ static unsigned TextScriptOpcode(
         LoadA8(cpu, handler == 0x9e45u ? 0x00u : 0x01u);
         TextSubScript(memory, cpu);
         return TEXT_OPCODE_NEXT;
-    case 0x9efcu:                                  /* $0F period, new line */
-        LoadA8(cpu, 0x2eu);
+    case 0x9ef0u:                                  /* $0C-$0F ?!,. new line */
+    case 0x9ef4u:
+    case 0x9ef8u:
+    case 0x9efcu:
+        LoadA8(cpu, handler == 0x9ef0u ? 0x3fu : handler == 0x9ef4u ? 0x21u
+            : handler == 0x9ef8u ? 0x2cu : 0x2eu);
         StoreAAbsolute8(memory, cpu, 0x09afu, 0);
         StoreZeroAbsolute8(memory, cpu, 0x09b0u, 0);
         Write16Absolute(memory, cpu, 0x09b7u, cpu->y);
@@ -14616,6 +14743,137 @@ static unsigned TextScriptOpcode(
         TransferAToX(cpu);
         TextNextByte(memory, cpu, 0xa3e6u);
         StoreAAbsolute8(memory, cpu, 0x079eu, cpu->x);
+        return TEXT_OPCODE_NEXT;
+    case 0xb484u:                                  /* $3E forced blank */
+    case 0xb48cu:                                  /* $3F full brightness */
+        StoreAImmediate8(memory, cpu,
+            handler == 0xb484u ? 0x80u : 0x0fu, 0x0583u);
+        return TEXT_OPCODE_NEXT;
+    case 0xb8edu:                                  /* $4F/$5F skip a byte */
+    case 0xbc05u:
+        TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
+        return TEXT_OPCODE_NEXT;
+    case 0xa4d4u:                                  /* $27 skip two */
+    case 0xa5bcu:                                  /* $2A skip three */
+        TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
+        TextNextByte(memory, cpu, (uint16_t)(handler + 5u));
+        if (handler == 0xa5bcu)
+            TextNextByte(memory, cpu, (uint16_t)(handler + 8u));
+        return TEXT_OPCODE_NEXT;
+    case 0xb8f3u:                                  /* $50 typing sound off */
+        StoreZeroAbsolute8(memory, cpu, 0x1260u, 0);
+        return TEXT_OPCODE_NEXT;
+    case 0xb117u:                                  /* $C1 two bytes */
+        TextNextByte(memory, cpu, 0xb119u);
+        Write8(memory, 0x7fd4f3u, A8(cpu));
+        TextNextByte(memory, cpu, 0xb120u);
+        Write8(memory, 0x7fd4f4u, A8(cpu));
+        return TEXT_OPCODE_NEXT;
+    case 0xba1cu:                                  /* $5A start shake */
+        LoadA8(cpu, 0x04u);
+        TestBitsAbsolute8(memory, cpu, 0x1261u, 1);
+        for (i = 0; i < 3u; ++i) {
+            TextNextByte(memory, cpu, (uint16_t)(0xba23u + 7u * i));
+            Write8(memory, 0x7fd07eu + i, A8(cpu));
+        }
+        return TEXT_OPCODE_NEXT;
+    case 0xb962u:                                  /* $8A stop shake */
+        TransferDirectToA(cpu);
+        for (i = 0; i < 4u; ++i)
+            Write8(memory, 0x7fd081u + i, A8(cpu));
+        LoadAAbsolute8(memory, cpu, 0x1261u, 0);
+        And8(cpu, 0xfbu);
+        StoreAAbsolute8(memory, cpu, 0x1261u, 0);
+        return TEXT_OPCODE_NEXT;
+    case 0xb955u:                                  /* $C5 stop color fades */
+        LoadA8(cpu, 0x80u);
+        TestBitsAbsolute8(memory, cpu, 0x1261u, 0);
+        LoadA8(cpu, 0x01u);
+        TestBitsAbsolute8(memory, cpu, 0x1262u, 0);
+        return TEXT_OPCODE_NEXT;
+    case 0xadd1u:                                  /* $B5 */
+        StoreZeroAbsolute8(memory, cpu, 0x089du, 0);
+        StoreAImmediate8(memory, cpu, 0xffu, 0x085du);
+        return TEXT_OPCODE_NEXT;
+    case 0xb98fu:                                  /* $57 wait for effects */
+        LoadAAbsolute8(memory, cpu, 0x1261u, 0);
+        if (!cpu->zero) {
+            TextPrevByte(memory, cpu, 0xb999u);
+            return TEXT_OPCODE_EXIT;
+        }
+        return TEXT_OPCODE_NEXT;
+    case 0xb89du:                                  /* $71 wait $7F:D0FC frames */
+        LoadA8(cpu, (uint8_t)(Read8(memory, 0x7fd0fcu) - 1u));
+        Write8(memory, 0x7fd0fcu, A8(cpu));
+        if (!cpu->zero) {
+            TextPrevByte(memory, cpu, 0xb8adu);
+            return TEXT_OPCODE_EXIT;
+        }
+        return TEXT_OPCODE_NEXT;
+    case 0xb99du:                                  /* $76 wait for fade */
+        LoadAAbsolute8(memory, cpu, 0x0581u, 0);
+        if (cpu->zero) {
+            LoadAAbsolute8(memory, cpu, 0x1261u, 0);
+            BitImmediate8(cpu, 0x03u);
+            if (cpu->zero)
+                return TEXT_OPCODE_NEXT;
+        }
+        TextPrevByte(memory, cpu, 0xb9aeu);
+        return TEXT_OPCODE_EXIT;
+    case 0xac18u:                                  /* $AA clear $7F:D100 */
+        SetAccumulatorWidth(cpu, 0);
+        TransferDirectToA(cpu);
+        Write16Long(memory, 0x7fd100u, cpu->accumulator);
+        Write16Long(memory, 0x7fd102u, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        return TEXT_OPCODE_NEXT;
+    case 0xb69fu:                                  /* $CC raise $0B62 */
+        LoadAAbsolute8(memory, cpu, 0x0b62u, 0);
+        if (cpu->zero) {
+            LoadA8(cpu, Read8(memory, 0x7fd4f7u));
+            Compare8(cpu, A8(cpu),
+                Read8(memory, AbsoluteIndexedAddress(cpu, 0x0b62u, 0)));
+            if (cpu->carry)
+                StoreAAbsolute8(memory, cpu, 0x0b62u, 0);
+        }
+        return TEXT_OPCODE_NEXT;
+    case 0xbc0bu:                                  /* $60 PPU register */
+        TransferDirectToA(cpu);
+        TextNextByte(memory, cpu, 0xbc0eu);
+        TransferAToX(cpu);
+        TextNextByte(memory, cpu, 0xbc12u);
+        StoreAAbsolute8(memory, cpu, 0x2100u, cpu->x);
+        return TEXT_OPCODE_NEXT;
+    case 0xa3edu:                                  /* $1E add into $079E */
+        TransferDirectToA(cpu);
+        TextNextByte(memory, cpu, 0xa3f0u);
+        TransferAToX(cpu);
+        TextNextByte(memory, cpu, 0xa3f4u);
+        cpu->carry = 0;
+        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x079eu, cpu->x)));
+        StoreAAbsolute8(memory, cpu, 0x079eu, cpu->x);
+        return TEXT_OPCODE_NEXT;
+    case 0x9ed6u:                                  /* $09 print name buffer */
+        Write16Absolute(memory, cpu, 0x1252u, cpu->y);
+        LoadAAbsolute8(memory, cpu, 0x09b9u, 0);
+        StoreAAbsolute8(memory, cpu, 0x1254u, 0);
+        LoadA8(cpu, 0x10u);
+        TestBitsAbsolute8(memory, cpu, 0x099bu, 1);
+        LoadY16(cpu, 0x0badu);
+        Write16Absolute(memory, cpu, 0x09b7u, cpu->y);
+        StoreZeroAbsolute8(memory, cpu, 0x09b9u, 0);
+        return TEXT_OPCODE_RELOAD;
+    case 0xa480u:                                  /* $22 gold + word */
+    case 0xa4cbu:                                  /* $26 gold - word */
+        TextNextWord(memory, cpu, (uint16_t)(handler + 2u));
+        TextGold(memory, cpu, handler == 0xa480u, (uint16_t)(handler + 5u));
+        return TEXT_OPCODE_NEXT;
+    case 0xaf53u:                                  /* $95/$94/$96 COLDATA */
+    case 0xaf5bu:
+    case 0xaf63u:
+        LoadA8(cpu, handler == 0xaf53u ? 0x53u
+            : handler == 0xaf5bu ? 0x93u : 0xd3u);
+        TextColorFade(memory, cpu, (uint16_t)(handler + 4u));
         return TEXT_OPCODE_NEXT;
     default:
         return TEXT_OPCODE_HANDOFF;
