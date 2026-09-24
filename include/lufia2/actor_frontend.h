@@ -170,6 +170,26 @@ Lufia2ActorPrimaryUpdateResult Lufia2WorldMapStreamEdges(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $83:83A0 field menu request check. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldMenuRequest(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:867B consume pressed buttons in A. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldTakeButtons(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:8103 field $05B7 requests. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldStatusRequests(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $82:E746 title state jump; handlers stay LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2TitleStateDispatch(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,

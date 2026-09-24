@@ -11856,3 +11856,126 @@ Lufia2ActorPrimaryUpdateResult Lufia2WorldMapStreamEdges(
     SimulateRtsFrame(memory, cpu);
     return result;
 }
+
+static Lufia2ActorPrimaryUpdateResult FieldLoopResult(uint32_t exit) {
+    Lufia2ActorPrimaryUpdateResult result;
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.pc = exit;
+    result.dispatches = 0;
+    return result;
+}
+
+static Lufia2ActorPrimaryUpdateResult FieldLoopHandoff(
+    Lufia2ActorFrontendCpu *cpu, uint32_t pc) {
+    Lufia2ActorPrimaryUpdateResult result = FieldLoopResult(pc);
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    cpu->resume_pc = pc;
+    return result;
+}
+
+/* $83:83A0: menu request; the menu itself runs on LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldMenuRequest(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    if (!cpu->accumulator_is_8_bit)
+        return FieldLoopHandoff(cpu, 0x8383a0u);
+    LoadA8(cpu, 0x40u);                                        /* 83A0 */
+    TestBitsAbsolute8(memory, cpu, 0x05b5u, 0);
+    if (!cpu->zero)
+        return FieldLoopHandoff(cpu, 0x8383bdu);
+    LoadAAbsolute8(memory, cpu, 0x09a7u, 0);
+    BitImmediate8(cpu, 0x02u);
+    if (!cpu->zero) {
+        SetAccumulatorWidth(cpu, 0);                           /* 83AE */
+        LoadA16(cpu, 0x9080u);
+        And16(cpu, Read16Direct(memory, cpu, 0x46u));
+        if (!cpu->zero) {
+            TestBitsDirect(memory, cpu, 0x4au, 0);
+            if (!cpu->zero) {
+                SetAccumulatorWidth(cpu, 1);
+                return FieldLoopHandoff(cpu, 0x8383bdu);
+            }
+        }
+        SetAccumulatorWidth(cpu, 1);                           /* 83DD */
+    }
+    return FieldLoopResult(0x8383dfu);
+}
+
+/* $83:867B: A & pressed buttons; consume them from $4A. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldTakeButtons(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    if (!cpu->accumulator_is_8_bit)
+        return FieldLoopHandoff(cpu, 0x83867bu);
+    And8(cpu, DirectByte(memory, cpu, 0x46u));                 /* 867B */
+    if (!cpu->zero)
+        TestBitsDirect(memory, cpu, 0x4au, 0);
+    return FieldLoopResult(0x838681u);
+}
+
+/* $83:8103: $05B7 requests; any set request runs on LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldStatusRequests(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    if (!cpu->accumulator_is_8_bit)
+        return FieldLoopHandoff(cpu, 0x838103u);
+    LoadAAbsolute8(memory, cpu, 0x09a8u, 0);                   /* 8103 */
+    BitImmediate8(cpu, 0x08u);
+    if (cpu->zero) {
+        SetIndexWidth(cpu, 0);
+        LoadAAbsolute8(memory, cpu, 0x05b7u, 0);               /* 810C */
+        BitImmediate8(cpu, 0x02u);
+        if (!cpu->zero)
+            return FieldLoopHandoff(cpu, 0x838113u);
+        BitImmediate8(cpu, 0x04u);                             /* 8119 */
+        if (!cpu->zero)
+            return FieldLoopHandoff(cpu, 0x83811du);
+        BitImmediate8(cpu, 0x01u);                             /* 8123 */
+        if (!cpu->zero)
+            return FieldLoopHandoff(cpu, 0x838127u);
+    }
+    SetIndexWidth(cpu, 1);                                     /* 812B */
+    return FieldLoopResult(0x83812du);
+}
+
+/* $82:E746: JSR $8028 inline table on $30; handlers on LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2TitleStateDispatch(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    uint32_t table;
+    uint16_t target;
+
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return FieldLoopHandoff(cpu, 0x82e746u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x30u));               /* E746 */
+    SimulateJsrFrame(memory, cpu, 0xe74au);
+    SetAccumulatorWidth(cpu, 0);                               /* 8028 */
+    And16(cpu, 0x00ffu);
+    AslA16(cpu);
+    IncrementA16(cpu);
+    TransferAToY(cpu);
+    PullAccumulator16(memory, cpu);
+    StoreADirect16(memory, cpu, 0x5du);
+    SetAccumulatorWidth(cpu, 1);
+    Push8(memory, cpu, 0x82u);                                 /* PHK */
+    LoadA8(cpu, Pull8(memory, cpu));
+    StoreADirect8(memory, cpu, 0x5fu);
+    SetAccumulatorWidth(cpu, 0);
+    table = Read16Direct(memory, cpu, 0x5du) |
+        ((uint32_t)DirectByte(memory, cpu, 0x5fu) << 16);
+    LoadA16(cpu, Read16Long(memory, (table + cpu->y) & 0x00ffffffu));
+    StoreADirect16(memory, cpu, 0x60u);
+    SetAccumulatorWidth(cpu, 1);
+    target = (uint16_t)(Read8(memory, 0x000060u) |
+        ((uint16_t)Read8(memory, 0x000061u) << 8));            /* JMP ($0060) */
+    {
+        Lufia2ActorPrimaryUpdateResult result =
+            FieldLoopHandoff(cpu, 0x820000u | target);
+
+        /* The ROM passed E746/E748 at this S already. */
+        result.dispatches = target == 0xe746u || target == 0xe748u;
+        return result;
+    }
+}

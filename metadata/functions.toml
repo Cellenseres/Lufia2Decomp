@@ -222,3 +222,30 @@ source = "src/actor_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Field loop menu request; the menu runs on LLE.
+[[function]]
+address = "83:83A0"
+name = "Lufia2FieldMenuRequest"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+# Field loop button consume.
+[[function]]
+address = "83:867B"
+name = "Lufia2FieldTakeButtons"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+# Field loop $05B7 requests; set requests run on LLE.
+[[function]]
+address = "83:8103"
+name = "Lufia2FieldStatusRequests"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
