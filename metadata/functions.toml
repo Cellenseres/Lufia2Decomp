@@ -268,10 +268,19 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
-# $82:939C menu NMI; redraws stay LLE.
+# $82:939C menu NMI with its three redraw requests.
 [[function]]
 address = "82:939C"
 name = "Lufia2MenuNmi"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+# $86:81A9 NMI installed by $86:8000.
+[[function]]
+address = "86:81A9"
+name = "Lufia2SelectScreenNmi"
 source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"

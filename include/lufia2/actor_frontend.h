@@ -245,6 +245,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2TextEngineStep(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $86:81A9 NMI installed by $86:8000. */
+Lufia2ActorPrimaryUpdateResult Lufia2SelectScreenNmi(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,
