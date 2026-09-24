@@ -249,3 +249,21 @@ source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# Inline jump on $30; handlers stay on LLE.
+[[function]]
+address = "82:E746"
+name = "Lufia2TitleStateDispatch"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Field reload setup; map loading stays on LLE.
+[[function]]
+address = "83:85DC"
+name = "Lufia2FieldReloadSetup"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

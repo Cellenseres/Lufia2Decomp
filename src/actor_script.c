@@ -11979,3 +11979,49 @@ Lufia2ActorPrimaryUpdateResult Lufia2TitleStateDispatch(
         return result;
     }
 }
+
+/* $83:85DC: field reload setup; loading runs on LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldReloadSetup(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    static const uint16_t cleared[7] = {
+        0x099bu, 0x099cu, 0x1261u, 0x1262u, 0x1254u, 0x09a6u, 0x09adu};
+    unsigned i;
+
+    Push8(memory, cpu, PackStatus(cpu));                       /* 85DC */
+    PushDataBank(memory, cpu);
+    Push8(memory, cpu, 0x83u);                                 /* PHK */
+    PullDataBank(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 0);
+    StoreZeroAbsolute8(memory, cpu, 0x4200u, 0);
+    TransferDirectToA(cpu);
+    Write8(memory, 0x7fd0ffu, A8(cpu));
+    StoreAAbsolute8(memory, cpu, 0x0562u, 0);
+    StoreAAbsolute8(memory, cpu, 0x0563u, 0);
+    LoadA8(cpu, 0x80u);
+    StoreAAbsolute8(memory, cpu, 0x0583u, 0);
+    StoreAAbsolute8(memory, cpu, 0x2100u, 0);
+    TransferDirectToA(cpu);                                    /* 85FA */
+    StoreADirect8(memory, cpu, 0x6au);
+    StoreADirect8(memory, cpu, 0x6fu);
+    Write8(memory, DirectAddress(cpu, 0x72u), 0x00u);
+    Write8(memory, DirectAddress(cpu, 0x74u), 0x00u);
+    Write8(memory, DirectAddress(cpu, 0x73u), 0x00u);
+    StoreAAbsolute8(memory, cpu, 0x1255u, 0);
+    StoreAAbsolute8(memory, cpu, 0x1256u, 0);
+    StoreADirect8(memory, cpu, 0x81u);
+    StoreAAbsolute8(memory, cpu, 0x420cu, 0);
+    LoadA8(cpu, 0xffu);                                        /* 8610 */
+    Write8(memory, 0x7fd0b0u, A8(cpu));
+    Write8(memory, 0x7fd4f5u, A8(cpu));
+    StoreAAbsolute8(memory, cpu, 0x17acu, 0);
+    for (i = 0; i < 4u; ++i)
+        StoreZeroAbsolute8(memory, cpu, cleared[i], 0);
+    LoadA8(cpu, 0xffu);
+    StoreAAbsolute8(memory, cpu, 0x1269u, 0);
+    for (i = 4; i < 7u; ++i)
+        StoreZeroAbsolute8(memory, cpu, cleared[i], 0);
+    /* Map loading from JSR $B062 on. */
+    return FieldLoopHandoff(cpu, 0x838637u);
+}

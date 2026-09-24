@@ -190,6 +190,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2TitleStateDispatch(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $83:85DC field reload setup; loading stays LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldReloadSetup(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,
