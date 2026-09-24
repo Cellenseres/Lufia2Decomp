@@ -14200,8 +14200,9 @@ static void TextDrawGlyph(
 /* $80:BD38: draw the glyph and queue its 32-byte VRAM upload. */
 static void TextGlyphUpload(
     const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    SimulateJsrFrame(memory, cpu, 0xbd07u);
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
     TextDrawGlyph(memory, cpu);                                /* BD38 */
     StoreAImmediate8(memory, cpu, 0x01u, 0x4300u);
     SetAccumulatorWidth(cpu, 0);
@@ -14314,6 +14315,121 @@ static void TextCloseWindow(
         }
     }
     SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:9E54: call sub-script $09B0:$09AF from the $8E:EA00 table. */
+static void TextSubScript(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    StoreAAbsolute8(memory, cpu, 0x09b0u, 0);                  /* 9E54 */
+    ExchangeAccumulatorBytes(cpu);
+    StoreAAbsolute8(memory, cpu, 0x09afu, 0);
+    Write16Absolute(memory, cpu, 0x1252u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x09b9u, 0);
+    StoreAAbsolute8(memory, cpu, 0x1254u, 0);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09afu, 0));
+    AslA16(cpu);
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x8eea00u, cpu->x)));
+    cpu->carry = 0;
+    Add16Value(cpu, 0xea00u);
+    Write16Absolute(memory, cpu, 0x09b7u, cpu->accumulator);
+    LoadY16(cpu, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, 0x8eu);
+    StoreAAbsolute8(memory, cpu, 0x09b9u, 0);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+}
+
+/* $80:9DDB: next text line, $1250 += $400. */
+static void TextNewLine(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    SetAccumulatorWidth(cpu, 0);                               /* 9DDB */
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1250u, 0));
+    cpu->carry = 0;
+    Add16Value(cpu, 0x0400u);
+    Write16Absolute(memory, cpu, 0x1250u, cpu->accumulator);
+    Write16Absolute(memory, cpu, 0x09b1u, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, 0x10u);
+    TestBitsAbsolute8(memory, cpu, 0x099cu, 1);
+    TransferDirectToA(cpu);
+    Write8(memory, 0x7fd0c0u, A8(cpu));
+    StoreZeroAbsolute8(memory, cpu, 0x09b3u, 0);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:BE30: flag A to byte $56 and mask $57; X 8-bit. */
+static void TextFlagBit(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    SetAccumulatorWidth(cpu, 1);                               /* BE30 */
+    SetIndexWidth(cpu, 1);
+    StoreADirect8(memory, cpu, 0x54u);
+    LsrA8(cpu);
+    LsrA8(cpu);
+    LsrA8(cpu);
+    StoreADirect8(memory, cpu, 0x56u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    And8(cpu, 0x07u);
+    TransferAToX(cpu);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80be45u, cpu->x)));
+    StoreADirect8(memory, cpu, 0x57u);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:C0D0: next two text bytes as a word in A. */
+static void TextNextWord(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    TextNextByte(memory, cpu, 0xc0d2u);                        /* C0D0 */
+    PushAccumulator8(memory, cpu);
+    TextNextByte(memory, cpu, 0xc0d6u);
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, Pull8(memory, cpu));
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:A3C6: goto script base $099E/$09A0 + next word. */
+static void TextGoto(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    TextNextWord(memory, cpu, 0xa3c8u);                        /* A3C6 */
+    SetAccumulatorWidth(cpu, 0);
+    PushAccumulator16(memory, cpu);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09a0u, 0));
+    Write16Absolute(memory, cpu, 0x09b9u, cpu->accumulator);
+    PullAccumulator16(memory, cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x099eu, 0));
+    SimulateJsrFrame(memory, cpu, 0xa3d9u);
+    LoadA16(cpu, cpu->accumulator);                            /* C102 */
+    if (cpu->negative) {
+        LoadY16(cpu, cpu->accumulator);
+    } else {
+        Push8(memory, cpu, PackStatus(cpu));                   /* C109 */
+        cpu->carry = 0;
+        Add16Value(cpu, 0x8000u);
+        LoadY16(cpu, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        LoadAAbsolute8(memory, cpu, 0x09b9u, 0);
+        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+        StoreAAbsolute8(memory, cpu, 0x09b9u, 0);
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        UnpackStatus(cpu, Pull8(memory, cpu));
+    }
+    SimulateRtsFrame(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);                               /* A3DA */
 }
 
 enum {
@@ -14432,6 +14548,75 @@ static unsigned TextScriptOpcode(
         TextNextByte(memory, cpu, 0xbc4eu);
         TextNextByte(memory, cpu, 0xbc51u);
         return TEXT_OPCODE_NEXT;
+    case 0x9dd5u:                                  /* $03 new line */
+        TextNewLine(memory, cpu, 0x9dd7u);
+        return TEXT_OPCODE_NEXT;
+    case 0x9e45u:                                  /* $05/$06 sub-script */
+    case 0x9e4eu:
+        TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
+        ExchangeAccumulatorBytes(cpu);
+        LoadA8(cpu, handler == 0x9e45u ? 0x00u : 0x01u);
+        TextSubScript(memory, cpu);
+        return TEXT_OPCODE_NEXT;
+    case 0x9efcu:                                  /* $0F period, new line */
+        LoadA8(cpu, 0x2eu);
+        StoreAAbsolute8(memory, cpu, 0x09afu, 0);
+        StoreZeroAbsolute8(memory, cpu, 0x09b0u, 0);
+        Write16Absolute(memory, cpu, 0x09b7u, cpu->y);
+        TextGlyphUpload(memory, cpu, 0x9f09u);
+        TextNewLine(memory, cpu, 0x9f0cu);
+        return TEXT_OPCODE_EXIT;
+    case 0xa288u:                                  /* $15 goto if flag */
+        TextNextByte(memory, cpu, 0xa28au);
+        SimulateJsrFrame(memory, cpu, 0xa28du);
+        PushY(memory, cpu);                                    /* BE1E */
+        Push8(memory, cpu, PackStatus(cpu));
+        TextFlagBit(memory, cpu, 0xbe22u);
+        cpu->x = DirectByte(memory, cpu, 0x56u);
+        SetNz8(cpu, (uint8_t)cpu->x);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x00077eu, cpu->x)));
+        And8(cpu, DirectByte(memory, cpu, 0x57u));
+        UnpackStatus(cpu, Pull8(memory, cpu));
+        cpu->y = PullIndexValue(memory, cpu);
+        LoadA8(cpu, A8(cpu));
+        SimulateRtsFrame(memory, cpu);
+        if (!cpu->zero) {
+            TextGoto(memory, cpu);
+            return TEXT_OPCODE_NEXT;
+        }
+        TextNextByte(memory, cpu, 0xa295u);                    /* A293 */
+        TextNextByte(memory, cpu, 0xa298u);
+        return TEXT_OPCODE_NEXT;
+    case 0xa392u:                                  /* $1A set flag */
+    case 0xa3acu:                                  /* $1B clear flag */
+        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        PushY(memory, cpu);
+        TextFlagBit(memory, cpu, (uint16_t)(handler + 6u));
+        cpu->x = DirectByte(memory, cpu, 0x56u);
+        SetNz8(cpu, (uint8_t)cpu->x);
+        if (handler == 0xa392u) {
+            LoadAAbsolute8(memory, cpu, 0x077eu, cpu->x);
+            Or8(cpu, DirectByte(memory, cpu, 0x57u));
+        } else {
+            LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0xffu));
+            LoadA8(cpu, (uint8_t)(A8(cpu) & Read8(memory,
+                AbsoluteIndexedAddress(cpu, 0x077eu, cpu->x))));
+        }
+        StoreAAbsolute8(memory, cpu, 0x077eu, cpu->x);
+        SetIndexWidth(cpu, 0);
+        cpu->y = PullIndexValue(memory, cpu);
+        TextNextByte(memory, cpu, (uint16_t)(handler + 0x16u));
+        return TEXT_OPCODE_NEXT;
+    case 0xa3c6u:                                  /* $1C goto */
+        TextGoto(memory, cpu);
+        return TEXT_OPCODE_NEXT;
+    case 0xa3dfu:                                  /* $1D byte into $079E */
+        TransferDirectToA(cpu);
+        TextNextByte(memory, cpu, 0xa3e2u);
+        TransferAToX(cpu);
+        TextNextByte(memory, cpu, 0xa3e6u);
+        StoreAAbsolute8(memory, cpu, 0x079eu, cpu->x);
+        return TEXT_OPCODE_NEXT;
     default:
         return TEXT_OPCODE_HANDOFF;
     }
@@ -14443,6 +14628,7 @@ static Lufia2ActorPrimaryUpdateResult TextEngineStep(
     Lufia2ActorFrontendCpu *cpu,
     Lufia2ActorPrimaryUpdateResult result) {
     unsigned opcodes;
+    unsigned words = 0;
 
     LoadA8(cpu, Read8(memory, 0x7fd0ffu));                     /* 9CB8 */
     if (!cpu->zero) {
@@ -14489,7 +14675,7 @@ reload:
         StoreAAbsolute8(memory, cpu, 0x09b9u, 0);
         StoreZeroAbsolute8(memory, cpu, 0x1259u, 0);
     }
-    for (;; ++opcodes) {
+    for (;;) {
         uint16_t handler;
         uint32_t handoff = 0x809d3bu;
 
@@ -14503,8 +14689,26 @@ reload:
         } else {
             LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);      /* 9D0E */
             Compare8(cpu, A8(cpu), 0x10u);
-            if (cpu->carry)
-                break;
+            if (cpu->carry) {
+                StoreAAbsolute8(memory, cpu, 0x09afu, 0);
+                StoreZeroAbsolute8(memory, cpu, 0x09b0u, 0);
+                Compare8(cpu, A8(cpu), 0x80u);
+                if (!cpu->carry)
+                    break;                                     /* BCE4 */
+                if (words >= 4096u) {
+                    result = FieldLoopHandoff(cpu, 0x809d22u);
+                    result.dispatches = words;
+                    return result;
+                }
+                ++words;
+                TextNextByte(memory, cpu, 0x9d24u);            /* 9D22 */
+                cpu->carry = 1;
+                Sbc8(cpu, 0x80u);
+                ExchangeAccumulatorBytes(cpu);
+                LoadA8(cpu, 0x02u);
+                TextSubScript(memory, cpu);
+                continue;
+            }
         }
         TransferDirectToA(cpu);                                /* 9D31 */
         TextNextByte(memory, cpu, 0x9d34u);
@@ -14515,8 +14719,10 @@ reload:
         handler = (uint16_t)(
             Read8(memory, 0x800000u | (uint16_t)(0xca14u + cpu->x)) |
             (Read8(memory, 0x800000u | (uint16_t)(0xca15u + cpu->x)) << 8));
-        switch (TextScriptOpcode(memory, cpu, handler, &handoff)) {
+        switch (TextScriptOpcode(memory, cpu,
+                    opcodes < 4096u ? handler : 0u, &handoff)) {
         case TEXT_OPCODE_NEXT:                                 /* 9D00 */
+            ++opcodes;
             continue;
         case TEXT_OPCODE_RELOAD:                               /* 9CD9 */
             ++opcodes;
@@ -14529,11 +14735,6 @@ reload:
             return result;
         }
     }
-    StoreAAbsolute8(memory, cpu, 0x09afu, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x09b0u, 0);
-    Compare8(cpu, A8(cpu), 0x80u);
-    if (cpu->carry)
-        return FieldLoopHandoff(cpu, 0x809d22u);               /* words */
     LoadAAbsolute8(memory, cpu, 0x09a7u, 0);                   /* BCE4 */
     BitImmediate8(cpu, 0x02u);
     if (cpu->zero) {
@@ -14549,7 +14750,7 @@ reload:
     else
         TextNextByte(memory, cpu, 0xbd01u);
     Write16Absolute(memory, cpu, 0x09b7u, cpu->y);             /* BD02 */
-    TextGlyphUpload(memory, cpu);
+    TextGlyphUpload(memory, cpu, 0xbd07u);
     LoadAAbsolute8(memory, cpu, 0x09a7u, 0);                   /* BD08 */
     BitImmediate8(cpu, 0x02u);
     if (cpu->zero) {
