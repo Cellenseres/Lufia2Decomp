@@ -186,3 +186,12 @@ source = "src/actor_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Field OAM; unbound, the hand HLE widens it for widescreen.
+[[function]]
+address = "83:A21A"
+name = "Lufia2FieldActorSprites"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"

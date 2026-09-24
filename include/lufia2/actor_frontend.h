@@ -150,6 +150,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2BattleNmiUploads(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $83:A21A field OAM from the Y-sorted visible actors. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldActorSprites(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,
