@@ -9285,6 +9285,11 @@ static void FieldScreenEffects(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+static void TextWindowClear(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address);
+
 Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu) {
@@ -9304,8 +9309,15 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
     if (!cpu->zero) {
         LoadA8(cpu, (uint8_t)(A8(cpu) - 1u));
         Write8(memory, 0x7fd0c1u, A8(cpu));
-        if (cpu->zero)
-            return FieldTickBoundary(result, cpu, 0x80c229u);
+        if (cpu->zero) {
+            LoadA8(cpu, 0xffu);                                /* C229 */
+            Write8(memory, 0x7fd0c1u, A8(cpu));
+            LoadA8(cpu, 0xa0u);
+            TestBitsAbsolute8(memory, cpu, 0x099cu, 0);
+            TextWindowClear(memory, cpu, 0xc237u);
+            LoadA8(cpu, 0x08u);
+            Write8(memory, DirectAddress(cpu, 0x74u), A8(cpu));
+        }
     }
     SimulateRtsFrame(memory, cpu);
     LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 9C79 */
@@ -14245,6 +14257,43 @@ static void TextPrevByte(
     SimulateRtsFrame(memory, cpu);
 }
 
+/* $84:8328: clear the window buffer $7E:3000-37FF and $099C bit 0. */
+static void TextWindowClear(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    Push8(memory, cpu, PackStatus(cpu));                       /* 8328 */
+    PushDataBank(memory, cpu);
+    LoadA8(cpu, 0x7eu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    LoadA16(cpu, 0x07f8u);
+    cpu->carry = 1;
+    do {
+        unsigned i;
+
+        TransferAToX(cpu);                                     /* 8334 */
+        for (i = 0; i < 8u; i += 2u)
+            Write16Absolute(
+                memory, cpu, (uint16_t)(0x3000u + cpu->x + i), 0);
+        Add16Value(cpu, (uint16_t)~0x0008u);
+    } while (!cpu->negative);
+    SetAccumulatorWidth(cpu, 1);                               /* 8346 */
+    LoadAAbsolute8(memory, cpu, 0x099cu, 0);
+    And8(cpu, 0xfeu);
+    StoreAAbsolute8(memory, cpu, 0x099cu, 0);
+    StoreZeroAbsolute8(memory, cpu, 0x059cu, 0);
+    StoreZeroAbsolute8(memory, cpu, 0x059du, 0);
+    StoreAImmediate8(memory, cpu, 0xfcu, 0x059eu);
+    StoreAImmediate8(memory, cpu, 0xffu, 0x059fu);
+    PullDataBank(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtlFrame(memory, cpu);
+}
+
 /* $80:C1FD: close an open text window. */
 static void TextCloseWindow(
     const Lufia2ActorFrontendMemory *memory,
@@ -14259,36 +14308,7 @@ static void TextCloseWindow(
         if (cpu->zero) {
             StoreZeroAbsolute8(memory, cpu, 0x125du, 0);
             StoreZeroAbsolute8(memory, cpu, 0x125eu, 0);
-            SimulateJslFrame(memory, cpu, 0x80u, 0xc214u);
-            Push8(memory, cpu, PackStatus(cpu));               /* $84:8328 */
-            PushDataBank(memory, cpu);
-            LoadA8(cpu, 0x7eu);
-            PushAccumulator8(memory, cpu);
-            PullDataBank(memory, cpu);
-            SetAccumulatorWidth(cpu, 0);
-            SetIndexWidth(cpu, 0);
-            LoadA16(cpu, 0x07f8u);
-            cpu->carry = 1;
-            do {
-                unsigned i;
-
-                TransferAToX(cpu);                             /* 8334 */
-                for (i = 0; i < 8u; i += 2u)
-                    Write16Absolute(
-                        memory, cpu, (uint16_t)(0x3000u + cpu->x + i), 0);
-                Add16Value(cpu, (uint16_t)~0x0008u);
-            } while (!cpu->negative);
-            SetAccumulatorWidth(cpu, 1);                       /* 8346 */
-            LoadAAbsolute8(memory, cpu, 0x099cu, 0);
-            And8(cpu, 0xfeu);
-            StoreAAbsolute8(memory, cpu, 0x099cu, 0);
-            StoreZeroAbsolute8(memory, cpu, 0x059cu, 0);
-            StoreZeroAbsolute8(memory, cpu, 0x059du, 0);
-            StoreAImmediate8(memory, cpu, 0xfcu, 0x059eu);
-            StoreAImmediate8(memory, cpu, 0xffu, 0x059fu);
-            PullDataBank(memory, cpu);
-            UnpackStatus(cpu, Pull8(memory, cpu));
-            SimulateRtlFrame(memory, cpu);
+            TextWindowClear(memory, cpu, 0xc214u);
             LoadA8(cpu, 0x08u);                                /* C215 */
             StoreADirect8(memory, cpu, 0x74u);
         }
