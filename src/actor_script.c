@@ -9053,3 +9053,210 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldAnimationTicks(
     UnpackStatus(cpu, Pull8(memory, cpu));                     /* 86E8 */
     return result;
 }
+
+/* $83:AEED: palette cycles from bank $A1; 0 = cap hit. */
+static uint8_t FieldPaletteCycles(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint32_t *visits) {
+
+    SimulateJsrFrame(memory, cpu, 0xaee6u);
+    LoadA8(cpu, Read8(memory, 0x0009a9u));                     /* AEED */
+    BitImmediate8(cpu, 0x06u);
+    if (!cpu->zero) {
+        SimulateRtsFrame(memory, cpu);
+        return 1;
+    }
+    LoadA8(cpu, Read8(memory, 0x7fd0f7u));
+    if (cpu->zero) {
+        SimulateRtsFrame(memory, cpu);
+        return 1;
+    }
+    Write8(memory, DirectAddress(cpu, 0x58u), A8(cpu));
+    LoadX16(cpu, 0x0000u);
+    do {
+        const uint32_t timer = AbsoluteIndexedAddress(cpu, 0xed01u, cpu->x);
+        const uint8_t left = (uint8_t)(Read8(memory, timer) - 1u);
+
+        Write8(memory, timer, left);                           /* AF00 */
+        SetNz8(cpu, left);
+        if (!cpu->zero)
+            goto next;
+        SetAccumulatorWidth(cpu, 0);                           /* AF05 */
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xec00u, cpu->x));
+        IncrementA16(cpu);
+        IncrementA16(cpu);
+        IncrementA16(cpu);
+        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xec00u, cpu->x),
+            cpu->accumulator);
+        cpu->y = cpu->x;                                       /* TXY */
+        SetNz16(cpu, cpu->y);
+        for (;;) {
+            if (*visits >= 0x10000u) {
+                /* Zero-length frames can chain forever. */
+                cpu->resume_pc = 0x83af11u;
+                return 0;
+            }
+            ++*visits;
+            TransferAToX(cpu);                                 /* AF11 */
+            SetAccumulatorWidth(cpu, 1);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0xa10000u, cpu->x)));
+            StoreAAbsolute8(memory, cpu, 0xed01u, cpu->y);
+            SetAccumulatorWidth(cpu, 0);
+            if (!cpu->zero)
+                break;
+            LoadA16(cpu, cpu->y);                              /* AF1F */
+            cpu->carry = 0;
+            Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd0f5u, 0));
+            TransferAToX(cpu);
+            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa10003u, cpu->x)));
+            cpu->carry = 1;
+            Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd0f5u, 0));
+            Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xec00u, cpu->y),
+                cpu->accumulator);
+        }
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa10001u, cpu->x)));
+        Write16Direct(memory, cpu, 0x54u, cpu->accumulator);   /* AF36 */
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xed00u, cpu->y));
+        And16(cpu, 0x00ffu);
+        AslA16(cpu);
+        TransferAToX(cpu);
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+        Write16Long(memory, LongIndexedAddress(0x000320u, cpu->x),
+            cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        cpu->x = cpu->y;                                       /* TYX */
+        SetNz16(cpu, cpu->x);
+        LoadA8(cpu, 0x01u);
+        {
+            const uint32_t flags = DirectAddress(cpu, 0x73u);  /* TSB $73 */
+            const uint8_t value = Read8(memory, flags);
+
+            cpu->zero = (value & 0x01u) == 0;
+            Write8(memory, flags, (uint8_t)(value | 0x01u));
+        }
+next:
+        IncrementX16(cpu);                                     /* AF4D */
+        IncrementX16(cpu);
+        DecrementDirect8(memory, cpu, 0x58u);
+    } while (!cpu->zero);
+    SimulateRtsFrame(memory, cpu);
+    return 1;
+}
+
+/* $83:AF54: step the HDMA wave table; set up channel 1. */
+static void FieldWaveTable(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xaee9u);
+    LoadAAbsolute8(memory, cpu, 0xd0cau, 0);                   /* AF54 */
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (cpu->zero)
+        goto done;
+    ExchangeAccumulatorBytes(cpu);
+    LoadAAbsolute8(memory, cpu, 0xd0c9u, 0);
+    TransferAToX(cpu);
+    LoadAAbsolute8(memory, cpu, 0xd0c8u, 0);
+    LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+    Write8(memory, 0x7fd0c8u, A8(cpu));
+    Compare8(cpu, A8(cpu), Read8(memory, LongIndexedAddress(0x7e0001u, cpu->x)));
+    if (!cpu->zero)
+        goto done;
+    TransferDirectToA(cpu);                                    /* AF6E */
+    StoreAAbsolute8(memory, cpu, 0xd0c8u, 0);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e0000u, cpu->x)));
+    AslA8(cpu);
+    Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, 0x54u), 0x00u);
+    TransferDirectToA(cpu);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e0000u, cpu->x)));
+    SetAccumulatorWidth(cpu, 0);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
+    IncrementA16(cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, 0x7fd0c6u));
+    Write16Long(memory, 0x004312u, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    IncrementX16(cpu);                                         /* AF99 */
+    IncrementX16(cpu);
+    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xd0c9u, 0), cpu->x);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e0000u, cpu->x)));
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (cpu->zero) {
+        LoadX16(cpu, 0xc002u);                                 /* AFA6 */
+        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xd0c9u, 0), cpu->x);
+    }
+    Push8(memory, cpu, 0x83u);                                 /* AFAC */
+    PullDataBank(memory, cpu);
+    LoadA8(cpu, 0x01u);
+    StoreAAbsolute8(memory, cpu, 0x4310u, 0);
+    LoadA8(cpu, 0x7eu);
+    StoreAAbsolute8(memory, cpu, 0x4314u, 0);
+    LoadX16(cpu, 0x01e0u);
+    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x4315u, 0), cpu->x);
+    LoadA8(cpu, 0x18u);
+    StoreAAbsolute8(memory, cpu, 0x4311u, 0);
+    LoadX16(cpu, 0x4010u);
+    StoreXDirect16(memory, cpu, 0x7bu);
+    LoadA8(cpu, 0x42u);
+    Write8(memory, DirectAddress(cpu, 0x76u), A8(cpu));
+done:
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:AEB5: per-frame field palette and wave effects. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldColourEffects(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    Lufia2ActorPrimaryUpdateResult result;
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.pc = 0x83aeecu;
+    result.dispatches = 0;
+    Push8(memory, cpu, PackStatus(cpu));                       /* AEB5 */
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 0);
+    LoadA8(cpu, Read8(memory, 0x0009a9u));
+    BitImmediate8(cpu, 0x02u);
+    if (!cpu->zero) {
+        const uint32_t timer = AbsoluteIndexedAddress(cpu, 0x1280u, 0);
+        const uint8_t left = (uint8_t)(Read8(memory, timer) - 1u);
+
+        Write8(memory, timer, left);                           /* AEC2 */
+        SetNz8(cpu, left);
+        if (cpu->zero) {
+            /* $84:8E07 stays LLE. */
+            result.pc = cpu->resume_pc = 0x83aec7u;
+            return result;
+        }
+    }
+    BitImmediate8(cpu, 0x04u);                                 /* AECF */
+    if (!cpu->zero) {
+        /* $84:8D54 stays LLE. */
+        result.pc = cpu->resume_pc = 0x83aed3u;
+        return result;
+    }
+    BitImmediate8(cpu, 0x01u);                                 /* AEDB */
+    if (!cpu->zero) {
+        PushDataBank(memory, cpu);
+        LoadA8(cpu, 0x7fu);
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        if (!FieldPaletteCycles(memory, cpu, &result.dispatches)) {
+            result.pc = cpu->resume_pc;
+            return result;
+        }
+        FieldWaveTable(memory, cpu);
+        PullDataBank(memory, cpu);                             /* AEEA */
+    }
+    UnpackStatus(cpu, Pull8(memory, cpu));                     /* AEEB */
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    return result;
+}

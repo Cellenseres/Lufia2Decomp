@@ -135,6 +135,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldAnimationTicks(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $83:AEB5 palette cycles and HDMA wave table. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldColourEffects(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $8E:BD77 BG scroll targets for three layers. */
 Lufia2ActorPrimaryUpdateResult Lufia2FieldScrollUpdate(
     const Lufia2ActorFrontendMemory *memory,
