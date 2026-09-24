@@ -14293,6 +14293,127 @@ static void TextCloseWindow(
     SimulateRtsFrame(memory, cpu);
 }
 
+enum {
+    TEXT_OPCODE_NEXT,
+    TEXT_OPCODE_RELOAD,
+    TEXT_OPCODE_EXIT,
+    TEXT_OPCODE_HANDOFF
+};
+
+/* Script opcodes behind JMP ($CA14,x); others hand off. */
+static unsigned TextScriptOpcode(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    unsigned i;
+
+    switch (handler) {
+    case 0xa80fu:                                  /* $33 wait for actor */
+        LoadAAbsolute8(memory, cpu, 0x1269u, 0);
+        if (cpu->negative) {
+            *handoff = 0x80a834u;
+            return TEXT_OPCODE_HANDOFF;
+        }
+        TransferDirectToA(cpu);
+        LoadAAbsolute8(memory, cpu, 0x1269u, 0);
+        TransferAToX(cpu);
+        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        And8(cpu, 0x88u);
+        if (!cpu->zero) {
+            TextPrevByte(memory, cpu, 0xa822u);
+            return TEXT_OPCODE_EXIT;
+        }
+        LoadA8(cpu, 0xffu);                                    /* A826 */
+        StoreAAbsolute8(memory, cpu, 0x1269u, 0);
+        TextNextByte(memory, cpu, 0xa82du);
+        TextNextByte(memory, cpu, 0xa830u);
+        return TEXT_OPCODE_NEXT;
+    case 0xb2ebu:                                  /* $37 wait frames */
+        LoadA8(cpu, 0x20u);
+        TestBitsAbsolute8(memory, cpu, 0x099bu, 1);
+        if (cpu->zero)
+            Write8(memory, DirectAddress(cpu, 0x42u), 0x00u);
+        LoadA8(cpu, DirectByte(memory, cpu, 0x42u));           /* B2F4 */
+        Compare8(cpu, A8(cpu),
+            Read8(memory, AbsoluteIndexedAddress(cpu, 0x0000u, cpu->y)));
+        if (!cpu->carry) {
+            TextPrevByte(memory, cpu, 0xb2fdu);
+            return TEXT_OPCODE_EXIT;
+        }
+        TextNextByte(memory, cpu, 0xb303u);                    /* B301 */
+        LoadA8(cpu, 0x20u);
+        TestBitsAbsolute8(memory, cpu, 0x099bu, 0);
+        return TEXT_OPCODE_NEXT;
+    case 0xb397u:                                  /* $3C wait for party */
+        LoadAAbsolute8(memory, cpu, 0x1269u, 0);
+        if (cpu->negative) {
+            *handoff = 0x80b3dfu;
+            return TEXT_OPCODE_HANDOFF;
+        }
+        LoadAAbsolute8(memory, cpu, 0x0622u, 0);
+        for (i = 1; i < 5u; ++i)
+            Or8(cpu, Read8(memory,
+                AbsoluteIndexedAddress(cpu, (uint16_t)(0x0622u + i), 0)));
+        BitImmediate8(cpu, 0x08u);
+        if (!cpu->zero) {
+            TextPrevByte(memory, cpu, 0xb400u);                /* B3FE */
+            return TEXT_OPCODE_EXIT;
+        }
+        LoadAAbsolute8(memory, cpu, 0x09a7u, 0);               /* B3B2 */
+        BitImmediate8(cpu, 0x01u);
+        if (!cpu->zero) {
+            LoadX16(cpu, 0x0004u);
+            do {
+                LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+                Or8(cpu, 0x04u);
+                StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+                cpu->x = (uint16_t)(cpu->x - 1u);
+                SetNz16(cpu, cpu->x);
+            } while (!cpu->zero);
+        } else {
+            LoadX16(cpu, 0x0004u);                             /* B3C9 */
+            LoadA8(cpu, 0xffu);
+            StoreAAbsolute8(memory, cpu, 0x1269u, 0);
+            do {
+                StoreAAbsolute8(memory, cpu, 0x09a1u, cpu->x);
+                cpu->x = (uint16_t)(cpu->x - 1u);
+                SetNz16(cpu, cpu->x);
+            } while (!cpu->negative);
+        }
+        LoadA8(cpu, 0xffu);                                    /* B3D7 */
+        StoreAAbsolute8(memory, cpu, 0x1269u, 0);
+        return TEXT_OPCODE_NEXT;
+    case 0x9d4cu:                                  /* $00/$42 end */
+        LoadAAbsolute8(memory, cpu, 0x1254u, 0);
+        if (cpu->zero) {
+            *handoff = 0x809d69u;
+            return TEXT_OPCODE_HANDOFF;
+        }
+        StoreAAbsolute8(memory, cpu, 0x09b9u, 0);      /* back to caller */
+        LoadA8(cpu, 0x10u);
+        TestBitsAbsolute8(memory, cpu, 0x099bu, 0);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1252u, 0));
+        Write16Absolute(memory, cpu, 0x09b7u, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        StoreZeroAbsolute8(memory, cpu, 0x1254u, 0);
+        return TEXT_OPCODE_RELOAD;
+    case 0xbc3du:                                  /* $68 skip branch */
+        LoadAAbsolute8(memory, cpu, 0x05b3u, 0);
+        BitImmediate8(cpu, 0x10u);
+        if (cpu->zero) {
+            *handoff = 0x80bc44u;
+            return TEXT_OPCODE_HANDOFF;
+        }
+        TextNextByte(memory, cpu, 0xbc4eu);
+        TextNextByte(memory, cpu, 0xbc51u);
+        return TEXT_OPCODE_NEXT;
+    default:
+        return TEXT_OPCODE_HANDOFF;
+    }
+}
+
 /* $80:9CB8 text step: plain characters native, the rest on LLE. */
 static Lufia2ActorPrimaryUpdateResult TextEngineStep(
     const Lufia2ActorFrontendMemory *memory,
@@ -14318,6 +14439,8 @@ static Lufia2ActorPrimaryUpdateResult TextEngineStep(
     SetIndexWidth(cpu, 0);
     StoreZeroAbsolute8(memory, cpu, 0x125du, 0);
     StoreZeroAbsolute8(memory, cpu, 0x125eu, 0);
+    opcodes = 0;
+reload:
     for (;;) {
         LoadAAbsolute8(memory, cpu, 0x09b9u, 0);               /* 9CD9 */
         PushAccumulator8(memory, cpu);
@@ -14343,8 +14466,9 @@ static Lufia2ActorPrimaryUpdateResult TextEngineStep(
         StoreAAbsolute8(memory, cpu, 0x09b9u, 0);
         StoreZeroAbsolute8(memory, cpu, 0x1259u, 0);
     }
-    for (opcodes = 0;; ++opcodes) {
+    for (;; ++opcodes) {
         uint16_t handler;
+        uint32_t handoff = 0x809d3bu;
 
         Write16Absolute(memory, cpu, 0x09b7u, cpu->y);         /* 9D00 */
         StoreZeroAbsolute8(memory, cpu, 0x0563u, 0);
@@ -14368,27 +14492,19 @@ static Lufia2ActorPrimaryUpdateResult TextEngineStep(
         handler = (uint16_t)(
             Read8(memory, 0x800000u | (uint16_t)(0xca14u + cpu->x)) |
             (Read8(memory, 0x800000u | (uint16_t)(0xca15u + cpu->x)) << 8));
-        if (handler != 0xa80fu) {                              /* 9D3B */
-            result = FieldLoopHandoff(cpu, 0x809d3bu);
-            result.dispatches = opcodes;
+        switch (TextScriptOpcode(memory, cpu, handler, &handoff)) {
+        case TEXT_OPCODE_NEXT:                                 /* 9D00 */
+            continue;
+        case TEXT_OPCODE_RELOAD:                               /* 9CD9 */
+            ++opcodes;
+            goto reload;
+        case TEXT_OPCODE_EXIT:                                 /* 9DB0 */
+            return TextEngineExit(memory, cpu, result);
+        default:                                               /* 9D3B */
+            result = FieldLoopHandoff(cpu, handoff);
+            result.dispatches = handoff == 0x809d3bu ? opcodes : 0;
             return result;
         }
-        LoadAAbsolute8(memory, cpu, 0x1269u, 0);               /* A80F */
-        if (cpu->negative)
-            return FieldLoopHandoff(cpu, 0x80a834u);
-        TransferDirectToA(cpu);
-        LoadAAbsolute8(memory, cpu, 0x1269u, 0);
-        TransferAToX(cpu);
-        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
-        And8(cpu, 0x88u);
-        if (!cpu->zero) {
-            TextPrevByte(memory, cpu, 0xa822u);                /* still moving */
-            return TextEngineExit(memory, cpu, result);
-        }
-        LoadA8(cpu, 0xffu);                                    /* A826 */
-        StoreAAbsolute8(memory, cpu, 0x1269u, 0);
-        TextNextByte(memory, cpu, 0xa82du);
-        TextNextByte(memory, cpu, 0xa830u);
     }
     StoreAAbsolute8(memory, cpu, 0x09afu, 0);
     StoreZeroAbsolute8(memory, cpu, 0x09b0u, 0);
