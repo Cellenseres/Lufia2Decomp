@@ -125,6 +125,16 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldNmiUploads(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $83:80CD field idle test (X8); zero = idle. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldIdleTest(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $83:8682 animation slot ticks at $7F:D057. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldAnimationTicks(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $8E:BD77 BG scroll targets for three layers. */
 Lufia2ActorPrimaryUpdateResult Lufia2FieldScrollUpdate(
     const Lufia2ActorFrontendMemory *memory,

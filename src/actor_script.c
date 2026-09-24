@@ -5900,36 +5900,41 @@ static uint8_t FieldEventTimers(
 }
 
 /* $83:80CD: field idle test; zero = no event running. */
-static void FieldIdle(
+static void FieldIdleBody(
     const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
-    uint16_t return_address) {
+    Lufia2ActorFrontendCpu *cpu) {
     static const uint16_t gates[5] = {0x09a8u, 0x0622u, 0x05b7u, 0x05b5u,
                                       0x17aau};
     static const uint8_t masks[5] = {0x08u, 0x88u, 0x07u, 0xa2u, 0x00u};
     unsigned i;
 
-    SimulateJsrFrame(memory, cpu, return_address);
     for (i = 0; i < 5u; ++i) {
         LoadAAbsolute8(memory, cpu, gates[i], 0);              /* 80CD */
         if (masks[i])
             BitImmediate8(cpu, masks[i]);
         if (!cpu->zero)
-            goto done;
+            return;
     }
     LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 80EE */
     BitImmediate8(cpu, 0x80u);
     if (!cpu->zero)
-        goto done;
+        return;
     LoadX8(cpu, 0x00u);                                        /* 80F5 */
     do {
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd057u, cpu->x)));
         if (cpu->negative)
-            goto done;
+            return;
         LoadX8(cpu, (uint8_t)(cpu->x + 1u));                   /* 80FD */
         Compare8(cpu, (uint8_t)cpu->x, 0x08u);
     } while (!cpu->zero);
-done:
+}
+
+static void FieldIdle(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    FieldIdleBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -8697,5 +8702,81 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldScrollUpdate(
         LoadX8(cpu, (uint8_t)(cpu->x + 2u));                   /* BE64 */
         Compare8(cpu, (uint8_t)cpu->x, 0x06u);
     } while (!cpu->zero);
+    return result;
+}
+
+/* $83:80CD from the field loop's JSR (X8 only). */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldIdleTest(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    Lufia2ActorPrimaryUpdateResult result;
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.pc = 0x838102u;
+    result.dispatches = 0;
+    if (!cpu->index_is_8_bit) {
+        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.pc = cpu->resume_pc = 0x8380cdu;
+        return result;
+    }
+    FieldIdleBody(memory, cpu);
+    return result;
+}
+
+/* $83:8682: tick the eight animation slots at $7F:D057. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldAnimationTicks(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    const uint32_t slots = 0x7fd057u;
+    Lufia2ActorPrimaryUpdateResult result;
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.pc = 0x8386e9u;
+    result.dispatches = 0;
+    Push8(memory, cpu, PackStatus(cpu));                       /* 8682 */
+    SetIndexWidth(cpu, 0);
+    Write8(memory, AbsoluteIndexedAddress(cpu, 0x17aau, 0), 0x00u);
+    LoadA8(cpu, 0x01u);
+    StoreAAbsolute8(memory, cpu, 0x17abu, 0);
+    LoadX16(cpu, 0x0000u);
+    do {
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(slots, cpu->x)));
+        if (cpu->negative) {
+            ExchangeAccumulatorBytes(cpu);                     /* 8696 */
+            LoadAAbsolute8(memory, cpu, 0x17abu, 0);
+            TestBitsAbsolute8(memory, cpu, 0x17aau, 1);
+            AslA8(cpu);
+            StoreAAbsolute8(memory, cpu, 0x17abu, 0);
+            ExchangeAccumulatorBytes(cpu);
+            cpu->carry = 0;
+            Adc8(cpu, 0x08u);
+            Write8(memory, LongIndexedAddress(slots, cpu->x), A8(cpu));
+            And8(cpu, 0x18u);
+            Compare8(cpu, A8(cpu), 0x18u);
+            if (cpu->zero) {
+                LoadA8(cpu, Read8(memory, LongIndexedAddress(slots, cpu->x)));
+                And8(cpu, 0xe7u);                              /* 86B3 */
+                Write8(memory, LongIndexedAddress(slots, cpu->x), A8(cpu));
+                PushIndex(memory, cpu);
+                Write8(memory, 0x7fd049u, A8(cpu));
+                LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+                BitImmediate8(cpu, 0x02u);
+                if (!cpu->zero)
+                    TransferDirectToA(cpu);                    /* 86C3 */
+                Write8(memory, LongIndexedAddress(slots, cpu->x), A8(cpu));
+                LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd04fu, cpu->x)));
+                Write8(memory, 0x7fd04eu, A8(cpu));
+                LoadA8(cpu, Read8(memory, 0x7fd04eu));
+                /* The slot handlers $83:8783/87CC stay LLE. */
+                result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+                result.pc = cpu->resume_pc =
+                    cpu->negative ? 0x8386d6u : 0x8386dbu;
+                return result;
+            }
+        }
+        IncrementX16(cpu);                                     /* 86DF */
+        Compare16(cpu, cpu->x, 0x0008u);
+    } while (!cpu->zero);
+    UnpackStatus(cpu, Pull8(memory, cpu));                     /* 86E8 */
     return result;
 }

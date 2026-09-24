@@ -123,3 +123,21 @@ source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# Field idle test from the field loop; X16 callers hand off at entry.
+[[function]]
+address = "83:80CD"
+name = "Lufia2FieldIdleTest"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+# Animation slot ticks; slot handlers 8783/87CC stay LLE.
+[[function]]
+address = "83:8682"
+name = "Lufia2FieldAnimationTicks"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
