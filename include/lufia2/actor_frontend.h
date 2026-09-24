@@ -230,6 +230,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldAreaRects(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $80:86C1 screen fade into the $0583 brightness. */
+Lufia2ActorPrimaryUpdateResult Lufia2ScreenFade(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,
