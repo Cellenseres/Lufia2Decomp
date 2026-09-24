@@ -9260,3 +9260,54 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldColourEffects(
     result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
     return result;
 }
+
+static Lufia2ActorPrimaryUpdateResult FieldTickBoundary(
+    Lufia2ActorPrimaryUpdateResult result,
+    Lufia2ActorFrontendCpu *cpu,
+    uint32_t pc) {
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.pc = cpu->resume_pc = pc;
+    return result;
+}
+
+/* $80:9C72: per-frame screen effects, event timer, text gate. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    static const uint8_t effects[5] = {0x04u, 0x02u, 0x01u, 0x30u, 0x80u};
+    Lufia2ActorPrimaryUpdateResult result;
+    unsigned i;
+
+    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.pc = 0x809cb7u;
+    result.dispatches = 0;
+    /* Active effects run $84:8000 on LLE. */
+    if ((Read8(memory, AbsoluteIndexedAddress(cpu, 0x1261u, 0)) & 0xb7u) ||
+        (Read8(memory, AbsoluteIndexedAddress(cpu, 0x1262u, 0)) & 0x01u))
+        return FieldTickBoundary(result, cpu, 0x809c72u);
+    SimulateJslFrame(memory, cpu, 0x80u, 0x9c75u);             /* 9C72 */
+    LoadAAbsolute8(memory, cpu, 0x1261u, 0);                   /* $84:8000 */
+    for (i = 0; i < 5u; ++i)
+        BitImmediate8(cpu, effects[i]);
+    LoadAAbsolute8(memory, cpu, 0x1262u, 0);                   /* $84:809B */
+    BitImmediate8(cpu, 0x01u);
+    SimulateRtlFrame(memory, cpu);
+    SimulateJsrFrame(memory, cpu, 0x9c78u);                    /* 9C76 */
+    LoadA8(cpu, Read8(memory, 0x7fd0c1u));                     /* C21A */
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (!cpu->zero) {
+        LoadA8(cpu, (uint8_t)(A8(cpu) - 1u));
+        Write8(memory, 0x7fd0c1u, A8(cpu));
+        if (cpu->zero)
+            return FieldTickBoundary(result, cpu, 0x80c229u);
+    }
+    SimulateRtsFrame(memory, cpu);
+    LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 9C79 */
+    And8(cpu, 0x0au);
+    if (!cpu->zero)
+        return FieldTickBoundary(result, cpu, 0x809c80u);
+    LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 9CB2 */
+    if (cpu->negative)
+        return FieldTickBoundary(result, cpu, 0x809cb8u);
+    return result;
+}

@@ -150,3 +150,12 @@ source = "src/actor_script.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# Field event tick, idle frames only; not bound (see DECOMP_STATUS).
+[[function]]
+address = "80:9C72"
+name = "Lufia2FieldEventTick"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"

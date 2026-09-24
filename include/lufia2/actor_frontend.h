@@ -140,6 +140,11 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldColourEffects(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $80:9C72 idle frame: effects, event timer, text gate. */
+Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $8E:BD77 BG scroll targets for three layers. */
 Lufia2ActorPrimaryUpdateResult Lufia2FieldScrollUpdate(
     const Lufia2ActorFrontendMemory *memory,
