@@ -195,6 +195,26 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldReloadSetup(
     const Lufia2ActorFrontendMemory *memory,
     Lufia2ActorFrontendCpu *cpu);
 
+/* $82:939C menu NMI; redraws stay LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2MenuNmi(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $82:8B4B menu buttons; carry set when none. */
+Lufia2ActorPrimaryUpdateResult Lufia2MenuButtons(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $82:9313 menu window refresh request. */
+Lufia2ActorPrimaryUpdateResult Lufia2MenuWindowRequest(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
+/* $82:C627 menu cursor blink timer. */
+Lufia2ActorPrimaryUpdateResult Lufia2MenuCursorBlink(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu);
+
 /* $85:8A2F battle sprites and party tilemap. */
 Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
     const Lufia2ActorFrontendMemory *memory,

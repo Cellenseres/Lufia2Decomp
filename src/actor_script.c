@@ -12025,3 +12025,116 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldReloadSetup(
     /* Map loading from JSR $B062 on. */
     return FieldLoopHandoff(cpu, 0x838637u);
 }
+
+/* $82:939C: menu NMI; set redraw flags run on LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2MenuNmi(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    static const struct {
+        uint16_t flag;
+        uint32_t call;
+    } redraws[3] = {
+        {0x1565u, 0x8293a9u}, {0x1566u, 0x8293b2u}, {0x1567u, 0x8293bau}};
+    unsigned i;
+
+    if (cpu->accumulator_is_8_bit)                             /* 939C */
+        PushAccumulator8(memory, cpu);
+    else
+        PushAccumulator16(memory, cpu);
+    PushIndex(memory, cpu);
+    PushY(memory, cpu);
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 0);
+    for (i = 0; i < 3u; ++i) {
+        LoadAAbsolute8(memory, cpu, redraws[i].flag, 0);
+        if (!cpu->zero)
+            return FieldLoopHandoff(cpu, redraws[i].call);
+    }
+    UnpackStatus(cpu, Pull8(memory, cpu));                     /* 93BD */
+    cpu->y = PullIndexValue(memory, cpu);
+    cpu->x = PullIndexValue(memory, cpu);
+    if (cpu->accumulator_is_8_bit)
+        LoadA8(cpu, Pull8(memory, cpu));
+    else
+        PullAccumulator16(memory, cpu);
+    return FieldLoopResult(0x8293c1u);
+}
+
+/* $82:8B4B: menu buttons into $14AB/$14AC; carry = none. */
+Lufia2ActorPrimaryUpdateResult Lufia2MenuButtons(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    static const uint8_t bits[12] = {
+        0x80u, 0x40u, 0x20u, 0x10u,
+        0x80u, 0x40u, 0x20u, 0x10u, 0x08u, 0x04u, 0x02u, 0x01u};
+    unsigned i;
+
+    if (!cpu->accumulator_is_8_bit)
+        return FieldLoopHandoff(cpu, 0x828b4bu);
+    StoreZeroAbsolute8(memory, cpu, 0x14abu, 0);               /* 8B4B */
+    StoreZeroAbsolute8(memory, cpu, 0x14acu, 0);
+    for (i = 0; i < 12u; ++i) {
+        const uint8_t latch = i < 4u ? 0x4au : 0x4bu;
+
+        LoadA8(cpu, bits[i]);
+        And8(cpu, DirectByte(memory, cpu, latch));
+        if (cpu->zero)
+            continue;
+        LoadA8(cpu, bits[i]);
+        And8(cpu, DirectByte(memory, cpu, (uint8_t)(latch - 4u)));
+        if (cpu->zero)
+            continue;
+        TestBitsDirect(memory, cpu, latch, 0);
+        LoadA8(cpu, bits[i]);
+        TestBitsAbsolute8(memory, cpu, i < 4u ? 0x14abu : 0x14acu, 1);
+    }
+    LoadAAbsolute8(memory, cpu, 0x14abu, 0);                   /* 8C35 */
+    if (cpu->zero)
+        LoadAAbsolute8(memory, cpu, 0x14acu, 0);
+    cpu->carry = cpu->zero;
+    return FieldLoopResult(cpu->zero ? 0x828c40u : 0x828c42u);
+}
+
+/* $82:9313: menu window refresh request; the upload runs on LLE. */
+Lufia2ActorPrimaryUpdateResult Lufia2MenuWindowRequest(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return FieldLoopHandoff(cpu, 0x829313u);
+    LoadAAbsolute8(memory, cpu, 0x156au, 0);                   /* 9313 */
+    if (cpu->zero)
+        return FieldLoopResult(0x82932fu);
+    StoreAImmediate8(memory, cpu, 0x20u, 0x0564u);
+    LoadA8(cpu, 0x8eu);
+    StoreADirect8(memory, cpu, 0x5fu);
+    LoadY16(cpu, 0xd4deu);
+    LoadX16(cpu, 0x35e0u);
+    return FieldLoopHandoff(cpu, 0x829327u);
+}
+
+/* $82:C627: menu cursor blink, toggles $1552 every $20 frames. */
+Lufia2ActorPrimaryUpdateResult Lufia2MenuCursorBlink(
+    const Lufia2ActorFrontendMemory *memory,
+    Lufia2ActorFrontendCpu *cpu) {
+    if (!cpu->accumulator_is_8_bit)
+        return FieldLoopHandoff(cpu, 0x82c627u);
+    LoadAAbsolute8(memory, cpu, 0x09c8u, 0);                   /* C627 */
+    if (!cpu->zero)
+        LoadAAbsolute8(memory, cpu, 0x1553u, 0);
+    if (!cpu->zero) {
+        const uint32_t timer = AbsoluteIndexedAddress(cpu, 0x1554u, 0);
+        const uint8_t count = (uint8_t)(Read8(memory, timer) + 1u);
+
+        Write8(memory, timer, count);
+        LoadAAbsolute8(memory, cpu, 0x1554u, 0);
+        Compare8(cpu, A8(cpu), 0x20u);
+        if (cpu->zero) {
+            StoreZeroAbsolute8(memory, cpu, 0x1554u, 0);
+            LoadAAbsolute8(memory, cpu, 0x1552u, 0);
+            LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0x01u));
+            StoreAAbsolute8(memory, cpu, 0x1552u, 0);
+        }
+    }
+    return FieldLoopResult(0x82c646u);
+}

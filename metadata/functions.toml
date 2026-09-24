@@ -267,3 +267,39 @@ source = "src/actor_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# $82:939C menu NMI; redraws stay LLE.
+[[function]]
+address = "82:939C"
+name = "Lufia2MenuNmi"
+source = "src/actor_script.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+# $82:8B4B menu buttons; carry set when none.
+[[function]]
+address = "82:8B4B"
+name = "Lufia2MenuButtons"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# $82:9313 menu window refresh request.
+[[function]]
+address = "82:9313"
+name = "Lufia2MenuWindowRequest"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# $82:C627 menu cursor blink timer.
+[[function]]
+address = "82:C627"
+name = "Lufia2MenuCursorBlink"
+source = "src/actor_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
