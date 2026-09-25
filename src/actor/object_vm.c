@@ -1,13 +1,14 @@
 /* Field object slots and script VM ($83:E03E). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/actor.h"
 #include "actor/actor_internal.h"
 #include "system/system_internal.h"
 
 /* $83:E200: sprite frame $54 for object $A7. */
 static void ObjectSetFrame(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     PushY(memory, cpu);                                        /* E200 */
@@ -61,8 +62,8 @@ typedef enum ObjectFlow {
 
 /* $83:E143: store the cursor, PLB, RTS. */
 static ObjectFlow ObjectSaveAndReturn(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0xabu);                           /* E143 */
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->y);
@@ -74,8 +75,8 @@ static ObjectFlow ObjectSaveAndReturn(
 
 /* $83:E11C: advance by A; yield on $064A bit 4. */
 static ObjectFlow ObjectAdvance(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);                               /* E11C */
     Write16Direct(memory, cpu, 0x54u, cpu->y);
     cpu->carry = 0;
@@ -97,8 +98,8 @@ static ObjectFlow ObjectAdvance(
 
 /* $83:FB05: sign-extend nibble A; M=0 exit. */
 static void ObjectSignNibble(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     BitImmediate8(cpu, 0x08u);                                 /* FB05 */
@@ -114,8 +115,8 @@ static void ObjectSignNibble(
 
 /* $83:E1AD / $83:E1B9: add A16 to a position word. */
 static void ObjectAddPosition(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint32_t base,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
@@ -128,8 +129,8 @@ static void ObjectAddPosition(
 
 /* $83:EED8: random offset around 0 of width operand. */
 static void ObjectJitter(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);              /* EED8 */
@@ -145,8 +146,8 @@ static void ObjectJitter(
 
 /* $83:ED63: low nibble into a handler table. */
 static uint16_t ObjectSubDispatch(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t table,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
@@ -162,8 +163,8 @@ static uint16_t ObjectSubDispatch(
 
 /* $83:EE0E: copy animation state of slot X to $A7. */
 static void ObjectTakeAnimation(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe286u, cpu->x)));
@@ -193,8 +194,8 @@ static void ObjectTakeAnimation(
 
 /* $83:ECDE: sprite slots and VRAM base for object $A7. */
 static void ObjectSpriteSetup(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xecdbu);
     SetAccumulatorWidth(cpu, 1);                               /* ECDE */
     SetIndexWidth(cpu, 1);
@@ -220,8 +221,8 @@ static void ObjectSpriteSetup(
 
 /* $83:EC9C: animation A for object X. */
 static void ObjectAnimationSetup(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     PushY(memory, cpu);                                        /* EC9C */
@@ -261,8 +262,8 @@ static void ObjectAnimationSetup(
 
 /* $83:E8A6: spawn child object from the operand block at Y. */
 static void ObjectSpawnChild(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     TransferDirectToA(cpu);                                    /* E8A6 */
@@ -339,8 +340,8 @@ static void ObjectSpawnChild(
 
 /* Size-0 sprites can spin $83:AB7C forever. */
 static uint8_t ObjectSpriteSizeZero(
-    const Lufia2ActorFrontendMemory *memory,
-    const Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    const Lufia2CpuState *cpu,
     uint8_t animation) {
     const uint16_t index =
         (uint16_t)(((cpu->direct_page & 0xff00u) | animation) << 2);
@@ -351,8 +352,8 @@ static uint8_t ObjectSpriteSizeZero(
 
 /* $83:F205: despawn object $A7, free its sprite. */
 static void ObjectDespawn(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJslFrame(memory, cpu, 0x83u, 0xe140u);
     LoadXDirect(memory, cpu, 0xa7u);                           /* F205 */
     LoadA8(cpu, 0x04u);
@@ -390,8 +391,8 @@ static void ObjectDespawn(
 }
 
 static ObjectFlow ObjectExecute(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t handler) {
     switch (handler) {
     case 0xed45u:
@@ -1100,8 +1101,8 @@ static ObjectFlow ObjectExecute(
 
 /* $83:E0FC: run object $A7's script until it yields. */
 static uint8_t ObjectRunScript(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint32_t *dispatches) {
     unsigned steps;
 
@@ -1138,12 +1139,12 @@ static uint8_t ObjectRunScript(
     return 0;
 }
 
-Lufia2ActorPrimaryUpdateResult Lufia2ObjectSlotsUpdate(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x83e0fbu;
     result.dispatches = 0;
     SetIndexWidth(cpu, 0);                                     /* E03E */
@@ -1215,7 +1216,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2ObjectSlotsUpdate(
                     SimulateJsrFrame(memory, cpu, 0xe0c2u);    /* E0C0 */
                     if (!ObjectRunScript(
                             memory, cpu, &result.dispatches)) {
-                        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+                        result.flow = LUFIA2_EXECUTION_BOUNDARY;
                         result.pc = cpu->resume_pc;
                         return result;
                     }

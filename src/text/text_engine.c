@@ -1,12 +1,13 @@
 /* Text and cutscene script engine ($80:9CB8). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/text.h"
 #include "text/text_internal.h"
 
 /* $80:C0B7: next text byte from DB:Y; Y past $FFFF moves the bank. */
 static void TextNextByte(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);              /* C0B7 */
@@ -29,8 +30,8 @@ static void TextNextByte(
 
 /* $80:C7C2: glyph $09AF into $7E:[$09B1], attribute from $09AD. */
 static void TextDrawGlyph(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJslFrame(memory, cpu, 0x80u, 0xbd3bu);
     Push8(memory, cpu, PackStatus(cpu));                       /* C7C2 */
     PushDataBank(memory, cpu);
@@ -84,8 +85,8 @@ static void TextDrawGlyph(
 
 /* $80:BD38: draw the glyph and queue its 32-byte VRAM upload. */
 static void TextGlyphUpload(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     TextDrawGlyph(memory, cpu);                                /* BD38 */
@@ -109,10 +110,10 @@ static void TextGlyphUpload(
 }
 
 /* $80:9DB0: PLP, PLB, RTL. */
-static Lufia2ActorPrimaryUpdateResult TextEngineExit(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
-    Lufia2ActorPrimaryUpdateResult result) {
+static Lufia2ExecutionResult TextEngineExit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2ExecutionResult result) {
     UnpackStatus(cpu, Pull8(memory, cpu));                     /* 9DB0 */
     PullDataBank(memory, cpu);
     result.pc = 0x809db2u;
@@ -121,8 +122,8 @@ static Lufia2ActorPrimaryUpdateResult TextEngineExit(
 
 /* $80:C0EC: previous text byte; Y below $8000 moves the bank back. */
 static void TextPrevByte(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     cpu->y = (uint16_t)(cpu->y - 1u);                          /* C0EC */
@@ -145,8 +146,8 @@ static void TextPrevByte(
 
 /* $84:8328: clear the window buffer $7E:3000-37FF and $099C bit 0. */
 void Lufia2TextWindowClear(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x80u, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* 8328 */
@@ -182,8 +183,8 @@ void Lufia2TextWindowClear(
 
 /* $80:C1FD: close an open text window. */
 static void TextCloseWindow(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadAAbsolute8(memory, cpu, 0x099cu, 0);                   /* C1FD */
@@ -204,8 +205,8 @@ static void TextCloseWindow(
 
 /* $80:9E54: call sub-script $09B0:$09AF from the $8E:EA00 table. */
 static void TextSubScript(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     StoreAAbsolute8(memory, cpu, 0x09b0u, 0);                  /* 9E54 */
     ExchangeAccumulatorBytes(cpu);
     StoreAAbsolute8(memory, cpu, 0x09afu, 0);
@@ -230,8 +231,8 @@ static void TextSubScript(
 
 /* $80:9DDB: next text line, $1250 += $400. */
 static void TextNewLine(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     SetAccumulatorWidth(cpu, 0);                               /* 9DDB */
@@ -251,8 +252,8 @@ static void TextNewLine(
 
 /* $80:BE30: flag A to byte $56 and mask $57; X 8-bit. */
 static void TextFlagBit(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     SetAccumulatorWidth(cpu, 1);                               /* BE30 */
@@ -272,8 +273,8 @@ static void TextFlagBit(
 
 /* $80:C0D0: next two text bytes as a word in A. */
 static void TextNextWord(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     TextNextByte(memory, cpu, 0xc0d2u);                        /* C0D0 */
@@ -286,8 +287,8 @@ static void TextNextWord(
 
 /* $80:A3C6: goto script base $099E/$09A0 + next word. */
 static void TextGoto(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     TextNextWord(memory, cpu, 0xa3c8u);                        /* A3C6 */
     SetAccumulatorWidth(cpu, 0);
     PushAccumulator16(memory, cpu);
@@ -336,8 +337,8 @@ static const struct {
 
 /* $80:BF12/$80:BF43: gold $0A8A-$0A8C +/- A, capped/undone. */
 static void TextGold(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t add,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
@@ -394,8 +395,8 @@ static void TextGold(
 
 /* $80:AF77: COLDATA fade setup, rate by $4204 division. */
 static void TextColorFade(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     StoreAAbsolute8(memory, cpu, 0x2131u, 0);                  /* AF77 */
@@ -438,8 +439,8 @@ enum {
 
 /* Script opcodes behind JMP ($CA14,x); others hand off. */
 static unsigned TextScriptOpcode(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t handler,
     uint32_t *handoff) {
     unsigned i;
@@ -766,10 +767,10 @@ static unsigned TextScriptOpcode(
 }
 
 /* $80:9CB8 text step: plain characters native, the rest on LLE. */
-Lufia2ActorPrimaryUpdateResult Lufia2TextEngineStepBody(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
-    Lufia2ActorPrimaryUpdateResult result) {
+Lufia2ExecutionResult Lufia2TextEngineStepBody(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2ExecutionResult result) {
     unsigned opcodes;
     unsigned words = 0;
 
@@ -839,7 +840,7 @@ reload:
                 if (!cpu->carry)
                     break;                                     /* BCE4 */
                 if (words >= 4096u) {
-                    result = FieldLoopHandoff(cpu, 0x809d22u);
+                    result = ExecutionHandoff(cpu, 0x809d22u);
                     result.dispatches = words;
                     return result;
                 }
@@ -873,7 +874,7 @@ reload:
         case TEXT_OPCODE_EXIT:                                 /* 9DB0 */
             return TextEngineExit(memory, cpu, result);
         default:                                               /* 9D3B */
-            result = FieldLoopHandoff(cpu, handoff);
+            result = ExecutionHandoff(cpu, handoff);
             result.dispatches = handoff == 0x809d3bu ? opcodes : 0;
             return result;
         }
@@ -884,7 +885,7 @@ reload:
         LoadA8(cpu, 0x10u);
         TestBitsAbsolute8(memory, cpu, 0x099cu, 0);
         if (!cpu->zero)
-            return FieldLoopHandoff(cpu, 0x80bcf2u);           /* C56E */
+            return ExecutionHandoff(cpu, 0x80bcf2u);           /* C56E */
     }
     LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* BCF5 */
     And8(cpu, 0x10u);
@@ -926,8 +927,8 @@ reload:
 
 /* $80:C11C: clear bit 0 of the actor flags $0622-$0649. */
 static void TextReleaseActors(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x9ca5u);
     Push8(memory, cpu, PackStatus(cpu));                       /* C11C */
     SetIndexWidth(cpu, 1);
@@ -944,10 +945,10 @@ static void TextReleaseActors(
 }
 
 /* $80:9C80: text box waits for its timer or the A/X buttons. */
-Lufia2ActorPrimaryUpdateResult Lufia2TextPromptTick(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
-    Lufia2ActorPrimaryUpdateResult result) {
+Lufia2ExecutionResult Lufia2TextPromptTick(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2ExecutionResult result) {
     LoadAAbsolute8(memory, cpu, 0x1265u, 0);                   /* 9C80 */
     if (!cpu->zero) {
         const uint32_t timer = AbsoluteIndexedAddress(cpu, 0x1266u, 0);
@@ -983,10 +984,10 @@ Lufia2ActorPrimaryUpdateResult Lufia2TextPromptTick(
 }
 
 /* $80:9CB8: text engine step, JSL entry. */
-Lufia2ActorPrimaryUpdateResult Lufia2TextEngineStep(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2TextEngineStep(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x809cb8u);
-    return Lufia2TextEngineStepBody(memory, cpu, FieldLoopResult(0x809db2u));
+        return ExecutionHandoff(cpu, 0x809cb8u);
+    return Lufia2TextEngineStepBody(memory, cpu, ExecutionReturned(0x809db2u));
 }

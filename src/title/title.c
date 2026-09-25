@@ -1,16 +1,17 @@
 /* Intro logos and title state flow. */
 
 #include "core/cpu_internal.h"
+#include "lufia2/title.h"
 
 /* $82:E746: JSR $8028 inline table on $30; handlers on LLE. */
-Lufia2ActorPrimaryUpdateResult Lufia2TitleStateDispatch(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2TitleStateDispatch(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     uint32_t table;
     uint16_t target;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x82e746u);
+        return ExecutionHandoff(cpu, 0x82e746u);
     LoadA8(cpu, DirectByte(memory, cpu, 0x30u));               /* E746 */
     SimulateJsrFrame(memory, cpu, 0xe74au);
     SetAccumulatorWidth(cpu, 0);                               /* 8028 */
@@ -33,8 +34,8 @@ Lufia2ActorPrimaryUpdateResult Lufia2TitleStateDispatch(
     target = (uint16_t)(Read8(memory, 0x000060u) |
         ((uint16_t)Read8(memory, 0x000061u) << 8));            /* JMP ($0060) */
     {
-        Lufia2ActorPrimaryUpdateResult result =
-            FieldLoopHandoff(cpu, 0x820000u | target);
+        Lufia2ExecutionResult result =
+            ExecutionHandoff(cpu, 0x820000u | target);
 
         /* The ROM passed these at this S already. */
         result.dispatches = target == 0xe746u || target == 0xe748u ||
@@ -45,8 +46,8 @@ Lufia2ActorPrimaryUpdateResult Lufia2TitleStateDispatch(
 
 /* $80:9357: DMA channel 6, $700 bytes from $7E:X to VRAM Y. */
 static void IntroVramDma(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     StoreWordAbsolute(memory, cpu, 0x4362u, cpu->x);           /* 9357 */
@@ -62,8 +63,8 @@ static void IntroVramDma(
 
 /* $80:92FE/$80:9346: logo tiles from $7E:X, then the next state. */
 static void IntroLogoUpload(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t source,
     uint16_t return_address) {
     LoadX16(cpu, source);
@@ -74,9 +75,9 @@ static void IntroLogoUpload(
 }
 
 /* $80:92A4: intro NMI, state $50 through the table $80:92B7. */
-Lufia2ActorPrimaryUpdateResult Lufia2IntroNmi(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2IntroNmi(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     uint16_t handler;
 
     Push8(memory, cpu, PackStatus(cpu));                       /* 92A4 */
@@ -96,7 +97,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2IntroNmi(
     if (handler != 0x92cbu && handler != 0x92feu && handler != 0x930cu &&
         handler != 0x9320u && handler != 0x9330u && handler != 0x9346u &&
         handler != 0x9354u)
-        return FieldLoopHandoff(cpu, 0x8092b1u);
+        return ExecutionHandoff(cpu, 0x8092b1u);
     SimulateJsrFrame(memory, cpu, 0x92b3u);
     switch (handler) {
     case 0x92cbu:                                  /* scroll row upload */
@@ -163,5 +164,5 @@ Lufia2ActorPrimaryUpdateResult Lufia2IntroNmi(
     SimulateRtsFrame(memory, cpu);
     PullDataBank(memory, cpu);                                 /* 92B4 */
     UnpackStatus(cpu, Pull8(memory, cpu));
-    return FieldLoopResult(0x8092b6u);
+    return ExecutionReturned(0x8092b6u);
 }

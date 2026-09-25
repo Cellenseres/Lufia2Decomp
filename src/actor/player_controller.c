@@ -1,12 +1,13 @@
 /* Player controller ($83:C1B4). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/actor.h"
 #include "actor/actor_internal.h"
 
 /* $83:867B / $83:8674: pressed-bit test, clear latch on hit. */
 static void PlayerPressedClear(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t pressed,
     uint8_t latch,
     uint16_t return_address) {
@@ -19,8 +20,8 @@ static void PlayerPressedClear(
 
 /* $83:F9AD cell under $8F/$91. */
 static void PlayerProbeCell(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     Lufia2MapCellIndex(memory, cpu, return_address, 1);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e4000u, cpu->x)));
@@ -28,16 +29,16 @@ static void PlayerProbeCell(
 
 /* $83:BA76: solid bit of the probed cell. */
 static void PlayerProbeSolid(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     PlayerProbeCell(memory, cpu, 0xba78u);
     And8(cpu, 0x01u);
 }
 
 /* $83:BA5C..BAAC: step the probe past ledges. */
 static void PlayerProbeAhead(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t target) {
     switch (target) {
     case 0xba5cu:
@@ -94,8 +95,8 @@ static void PlayerProbeAhead(
 
 /* $83:BAC2: actor 8..39 on $8F/$91; X and $56. */
 static void PlayerFindActorAt(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadX16(cpu, 0x0008u);
     for (;;) {
         LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);          /* BAC5 */
@@ -146,8 +147,8 @@ static void PlayerFindActorAt(
 
 /* $83:BA06: talkable actor ahead; carry = found. */
 static uint8_t PlayerFindTalkTarget(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     uint16_t target;
 
     SimulateJsrFrame(memory, cpu, 0xc1d2u);
@@ -208,8 +209,8 @@ static uint8_t PlayerFindTalkTarget(
 
 /* $83:C161: D-pad to $22/$23; carry = held. */
 static void PlayerReadDirection(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xc1e5u);
     TransferDirectToA(cpu);                                    /* C161 */
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x47u)));
@@ -231,8 +232,8 @@ static void PlayerReadDirection(
 
 /* $83:FC56: $057C set, B held, slot 0. */
 static void PlayerSkipProbe(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xc1eau);
     LoadAAbsolute8(memory, cpu, 0x057cu, 0);                   /* FC56 */
     cpu->carry = 0;
@@ -250,8 +251,8 @@ static void PlayerSkipProbe(
 
 /* $83:C246: $83:C1B0 entry for direction $22. */
 static void PlayerFacingCode(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     TransferDirectToA(cpu);                                    /* C246 */
@@ -263,8 +264,8 @@ static void PlayerFacingCode(
 
 /* $83:FBBD: edge bit toward facing A; carry = set. */
 static uint8_t PlayerEdgeAhead(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     uint16_t target;
     uint8_t mask;
 
@@ -304,8 +305,8 @@ static uint8_t PlayerEdgeAhead(
 
 /* $8E:BBAF: vehicle tile pair; boundary past $8E:BBD1. */
 static uint8_t PlayerVehicleTile(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     cpu->program_bank = 0x8eu;
     LoadAAbsolute8(memory, cpu, 0x06bau, 0);                   /* BBAF */
     Write8(memory, DirectAddress(cpu, 0x8fu), A8(cpu));
@@ -340,8 +341,8 @@ static uint8_t PlayerVehicleTile(
 
 /* $8E:B65A: leader tile inside rectangle at base. */
 static uint8_t PlayerInsideRect(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t base) {
     unsigned axis;
 
@@ -363,8 +364,8 @@ static uint8_t PlayerInsideRect(
 
 /* $8E:B63B: door rectangles at $7E:F000; boundary $8E:B6D4. */
 static uint8_t PlayerDoorRegion(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     uint32_t entries;
 
     cpu->program_bank = 0x8eu;
@@ -438,8 +439,8 @@ static uint8_t PlayerDoorRegion(
 
 /* $83:FC69: $057C and B pick walk speed $10/$08. */
 static void PlayerWalkSpeed(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xc234u);
     LoadAAbsolute8(memory, cpu, 0x057cu, 0);                   /* FC69 */
     if (!cpu->zero) {
@@ -460,20 +461,20 @@ static void PlayerWalkSpeed(
     SimulateRtsFrame(memory, cpu);
 }
 
-static Lufia2ActorPrimaryUpdateResult PlayerReturned(uint32_t rts_pc) {
-    Lufia2ActorPrimaryUpdateResult result;
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+static Lufia2ExecutionResult PlayerReturned(uint32_t rts_pc) {
+    Lufia2ExecutionResult result;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = rts_pc;
     result.dispatches = 0;
     return result;
 }
 
-static Lufia2ActorPrimaryUpdateResult PlayerBoundary(
-    Lufia2ActorFrontendCpu *cpu, uint32_t pc) {
-    Lufia2ActorPrimaryUpdateResult result;
+static Lufia2ExecutionResult PlayerBoundary(
+    Lufia2CpuState *cpu, uint32_t pc) {
+    Lufia2ExecutionResult result;
     if (pc)
         cpu->resume_pc = pc;
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.pc = cpu->resume_pc;
     result.dispatches = 0;
     return result;
@@ -481,8 +482,8 @@ static Lufia2ActorPrimaryUpdateResult PlayerBoundary(
 
 /* D350 via JSL; 0 on its exact boundary. */
 static uint8_t PlayerCallActionCore(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     if (Lufia2ActorPrimaryActionCore(memory, cpu) !=
@@ -492,9 +493,9 @@ static uint8_t PlayerCallActionCore(
     return 1;
 }
 
-Lufia2ActorPrimaryUpdateResult Lufia2PlayerSlotStandardUpdate(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* C1B4 */
     if (cpu->negative)
         return PlayerReturned(0x83c1e2u);

@@ -1,12 +1,13 @@
 /* Actor slot traversal and spawning. */
 
 #include "core/cpu_internal.h"
+#include "lufia2/actor.h"
 #include "actor/actor_internal.h"
 
 /* $83:AB4F: record offsets for actor $A7. */
 void Lufia2ActorRecordOffsets(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     Write8(memory, DirectAddress(cpu, 0xa8u), 0x00u);          /* AB4F */
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0xa7u)));
     AslA8(cpu);
@@ -20,8 +21,8 @@ void Lufia2ActorRecordOffsets(
 
 /* $83:DFFD: script pointer from table $91:8EC7. */
 static void SecondarySpawnScript(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);                               /* DFFD */
     AslA16(cpu);
     TransferAToX(cpu);
@@ -37,8 +38,8 @@ static void SecondarySpawnScript(
 
 /* $83:DFA5: initialise actor X with spawn id $54. */
 static void SecondarySpawnInit(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     static const uint32_t zeroed[4] = {
         0x7fdaecu, 0x7fdb0cu, 0x7fe286u, 0x7fe2ceu};
     static const uint32_t filled[3] = {0x7fe1aeu, 0x7fdb2cu, 0x7fe3a6u};
@@ -77,8 +78,8 @@ static void SecondarySpawnInit(
 
 /* $83:DF87: spawn id A into the first free slot. */
 void Lufia2ActorSpawn(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);                                 /* DF87 */
     Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
     Push8(memory, cpu, 0x83u);
@@ -102,14 +103,14 @@ void Lufia2ActorSpawn(
     PullDataBank(memory, cpu);                                 /* DFA3 */
 }
 
-Lufia2ActorPrimaryUpdateResult Lufia2UpdateActorSlots(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+Lufia2ExecutionResult Lufia2UpdateActorSlots(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     Lufia2ActorSlotChild child,
     void *child_context) {
-    Lufia2ActorPrimaryUpdateResult result;
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x83bbf2u;
     result.dispatches = 0;
 
@@ -124,7 +125,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2UpdateActorSlots(
         /* A child left D set: AB4F's ADC goes BCD. */
         if (cpu->decimal) {
             cpu->resume_pc = 0x83bba1u;
-            result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+            result.flow = LUFIA2_EXECUTION_BOUNDARY;
             result.pc = cpu->resume_pc;
             return result;
         }
@@ -167,12 +168,12 @@ Lufia2ActorPrimaryUpdateResult Lufia2UpdateActorSlots(
             if (primary != 0) {
                 if (!child(child_context, cpu, primary,
                         primary == 0x83bbf3u ? 0x83bbb9u : 0x83bbc9u)) {
-                    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_CHILD_UNWOUND;
+                    result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
                     return result;
                 }
             }
             if (!child(child_context, cpu, 0x83d508u, 0x83bbccu)) {
-                result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_CHILD_UNWOUND;
+                result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
                 return result;
             }
             SetAccumulatorWidth(cpu, 1);                       /* BBCF */

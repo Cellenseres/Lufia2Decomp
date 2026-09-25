@@ -1,13 +1,14 @@
 /* Field actor OAM ($83:A21A). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/field.h"
 #include "actor/actor_internal.h"
 #include "field/field_internal.h"
 
 /* $83:A669: set the size bit for OAM entry $58, then $58++. */
 static void FieldOamHighBit(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     TransferDirectToA(cpu);                                    /* A669 */
@@ -30,8 +31,8 @@ static void FieldOamHighBit(
 
 /* $83:A591-$83:A633: four 16x16 tiles; bit 1 flips Y, bit 0 X. */
 static void FieldOamQuad(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t layout) {
     static const uint8_t tiles[2][4] = {
         {0x02u, 0x06u, 0x0au, 0x0eu}, {0x06u, 0x02u, 0x0eu, 0x0au}};
@@ -64,8 +65,8 @@ static void FieldOamQuad(
 
 /* $83:A48A handlers: OAM entries by sprite size. */
 static void FieldOamEntries(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t size) {
     SimulateJsrFrame(memory, cpu, 0xa463u);
     LoadX16(cpu, cpu->y);                                      /* TYX */
@@ -179,8 +180,8 @@ static void FieldOamEntries(
 
 /* $83:FCD1: queue a sprite upload from the object tables. */
 static void FieldObjectSpriteUpload(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xa4a0u);
     LoadY8(cpu, AbsoluteByte(memory, cpu, 0x0732u, 0));        /* FCD1 */
     TransferDirectToA(cpu);
@@ -210,8 +211,8 @@ static void FieldObjectSpriteUpload(
 
 /* $83:A492: pending reload flag $20 in $0622,x. */
 static void FieldObjectReload(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);              /* A492 */
@@ -226,8 +227,8 @@ static void FieldObjectReload(
 
 /* $83:AAE5: queue the actor's new animation frame upload. */
 static void FieldActorFrameUpload(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     uint32_t pointer;
 
     SimulateJsrFrame(memory, cpu, 0xa3d2u);
@@ -286,8 +287,8 @@ static void FieldActorFrameUpload(
 
 /* $83:A29B: sort visible actors by Y into $E200/$E300. */
 static void FieldSortVisible(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);                                    /* A295 */
     TransferAToY(cpu);
     LoadX8(cpu, 0x00u);
@@ -377,8 +378,8 @@ static void FieldSortVisible(
 
 /* $83:A33A: OAM entries for one sorted actor. */
 static uint8_t FieldActorOam(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ee300u, cpu->x)));
     StoreADirect8(memory, cpu, 0xa7u);
     TransferAToX(cpu);
@@ -532,21 +533,21 @@ static uint8_t FieldActorOam(
 }
 
 /* $83:A21A: field OAM from the visible, Y-sorted actors. */
-Lufia2ActorPrimaryUpdateResult Lufia2FieldActorSprites(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2FieldActorSprites(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x83a489u;
     result.dispatches = 0;
     /* X is set before any index use; M=1 only. */
     if (!cpu->accumulator_is_8_bit) {
-        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = cpu->resume_pc = 0x83a21au;
         return result;
     }
-    BattleSetDataBank(memory, cpu, 0x7eu);                     /* A21A */
+    PushAndSetDataBank(memory, cpu, 0x7eu);                     /* A21A */
     TransferDirectToA(cpu);
     LoadA8(cpu, Read8(memory, 0x7fd0b0u));
     Compare8(cpu, A8(cpu), 0xffu);
@@ -611,7 +612,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldActorSprites(
         Write8(memory, DirectAddress(cpu, 0x5du), 0x00u);
         do {
             if (!FieldActorOam(memory, cpu)) {
-                result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+                result.flow = LUFIA2_EXECUTION_BOUNDARY;
                 result.pc = cpu->resume_pc;
                 return result;
             }

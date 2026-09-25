@@ -1,17 +1,17 @@
-#include "lufia2/actor_frontend.h"
+#include "lufia2/actor.h"
 
-static uint32_t DirectAddress(const Lufia2ActorFrontendCpu *cpu, uint8_t offset) {
+static uint32_t DirectAddress(const Lufia2CpuState *cpu, uint8_t offset) {
     return (uint16_t)(cpu->direct_page + offset);
 }
 
 static uint32_t AbsoluteAddress(
-    const Lufia2ActorFrontendCpu *cpu, uint16_t address) {
+    const Lufia2CpuState *cpu, uint16_t address) {
     return ((uint32_t)cpu->data_bank << 16) | address;
 }
 
 /* Indexing carries into the next bank. */
 static uint32_t AbsoluteIndexedAddress(
-    const Lufia2ActorFrontendCpu *cpu, uint16_t address) {
+    const Lufia2CpuState *cpu, uint16_t address) {
     return (((uint32_t)cpu->data_bank << 16) + address + cpu->x) &
            0x00ffffffu;
 }
@@ -21,40 +21,40 @@ static uint32_t LongIndexedAddress(uint32_t address, uint16_t x) {
 }
 
 static uint8_t Read8(
-    const Lufia2ActorFrontendMemory *memory, uint32_t address) {
+    const Lufia2Memory *memory, uint32_t address) {
     return memory->read_byte(memory->context, address & 0x00ffffffu);
 }
 
 static void Write8(
-    const Lufia2ActorFrontendMemory *memory,
+    const Lufia2Memory *memory,
     uint32_t address,
     uint8_t value) {
     memory->write_byte(memory->context, address & 0x00ffffffu, value);
 }
 
-static void SetNz8(Lufia2ActorFrontendCpu *cpu, uint8_t value) {
+static void SetNz8(Lufia2CpuState *cpu, uint8_t value) {
     cpu->negative = (value & 0x80u) != 0;
     cpu->zero = value == 0;
 }
 
-static void SetNz16(Lufia2ActorFrontendCpu *cpu, uint16_t value) {
+static void SetNz16(Lufia2CpuState *cpu, uint16_t value) {
     cpu->negative = (value & 0x8000u) != 0;
     cpu->zero = value == 0;
 }
 
-static uint8_t A8(const Lufia2ActorFrontendCpu *cpu) {
+static uint8_t A8(const Lufia2CpuState *cpu) {
     return (uint8_t)cpu->accumulator;
 }
 
-static void LoadA8(Lufia2ActorFrontendCpu *cpu, uint8_t value) {
+static void LoadA8(Lufia2CpuState *cpu, uint8_t value) {
     cpu->accumulator =
         (uint16_t)((cpu->accumulator & 0xff00u) | value);
     SetNz8(cpu, value);
 }
 
 static void LoadXDirect(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t offset) {
     const uint32_t address = DirectAddress(cpu, offset);
 
@@ -72,88 +72,88 @@ static void LoadXDirect(
 }
 
 static void LoadAAbsolute(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t address) {
     LoadA8(cpu, Read8(memory, AbsoluteAddress(cpu, address)));
 }
 
 static void LoadAAbsoluteX(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t address) {
     LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, address)));
 }
 
 static void LoadALong(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint32_t address) {
     LoadA8(cpu, Read8(memory, address));
 }
 
 static void LoadALongX(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint32_t address) {
     LoadA8(cpu, Read8(memory, LongIndexedAddress(address, cpu->x)));
 }
 
 static void LoadADirect(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t offset) {
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, offset)));
 }
 
-static void And8(Lufia2ActorFrontendCpu *cpu, uint8_t value) {
+static void And8(Lufia2CpuState *cpu, uint8_t value) {
     const uint8_t result = (uint8_t)(A8(cpu) & value);
     cpu->accumulator =
         (uint16_t)((cpu->accumulator & 0xff00u) | result);
     SetNz8(cpu, result);
 }
 
-static void BitImmediate8(Lufia2ActorFrontendCpu *cpu, uint8_t value) {
+static void BitImmediate8(Lufia2CpuState *cpu, uint8_t value) {
     cpu->zero = (A8(cpu) & value) == 0;
 }
 
-static void Compare8(Lufia2ActorFrontendCpu *cpu, uint8_t value) {
+static void Compare8(Lufia2CpuState *cpu, uint8_t value) {
     const uint8_t a = A8(cpu);
     const uint8_t result = (uint8_t)(a - value);
     cpu->carry = a >= value;
     SetNz8(cpu, result);
 }
 
-static void IncrementA8(Lufia2ActorFrontendCpu *cpu) {
+static void IncrementA8(Lufia2CpuState *cpu) {
     const uint8_t result = (uint8_t)(A8(cpu) + 1u);
     cpu->accumulator =
         (uint16_t)((cpu->accumulator & 0xff00u) | result);
     SetNz8(cpu, result);
 }
 
-static void DecrementA8(Lufia2ActorFrontendCpu *cpu) {
+static void DecrementA8(Lufia2CpuState *cpu) {
     const uint8_t result = (uint8_t)(A8(cpu) - 1u);
     cpu->accumulator =
         (uint16_t)((cpu->accumulator & 0xff00u) | result);
     SetNz8(cpu, result);
 }
 
-static void TransferXToA8(Lufia2ActorFrontendCpu *cpu) {
+static void TransferXToA8(Lufia2CpuState *cpu) {
     LoadA8(cpu, (uint8_t)cpu->x);
 }
 
-static void TransferDirectToA(Lufia2ActorFrontendCpu *cpu) {
+static void TransferDirectToA(Lufia2CpuState *cpu) {
     cpu->accumulator = cpu->direct_page;
     SetNz16(cpu, cpu->accumulator);
 }
 
-static void LsrA8(Lufia2ActorFrontendCpu *cpu) {
+static void LsrA8(Lufia2CpuState *cpu) {
     const uint8_t old = A8(cpu);
     cpu->carry = old & 1u;
     LoadA8(cpu, (uint8_t)(old >> 1));
 }
 
-static void ExclusiveOr8(Lufia2ActorFrontendCpu *cpu, uint8_t value) {
+static void ExclusiveOr8(Lufia2CpuState *cpu, uint8_t value) {
     const uint8_t result = (uint8_t)(A8(cpu) ^ value);
     cpu->accumulator =
         (uint16_t)((cpu->accumulator & 0xff00u) | result);
@@ -161,8 +161,8 @@ static void ExclusiveOr8(Lufia2ActorFrontendCpu *cpu, uint8_t value) {
 }
 
 Lufia2ActorPrimaryFlow Lufia2ActorPrimaryUpdateFrontend(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0xa7u);                 /* $83:C7F8 */
     LoadAAbsoluteX(memory, cpu, 0x0622u);            /* $83:C7FA */
     And8(cpu, 0x80u);                                /* $83:C7FD */
@@ -211,8 +211,8 @@ timer:
 }
 
 Lufia2ActorSecondaryFlow Lufia2ActorSecondaryUpdateFrontend(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0xa7u);                 /* $83:D508 */
     LoadALongX(memory, cpu, 0x000736u);              /* $83:D50A */
     BitImmediate8(cpu, 0x80u);                       /* $83:D50E */

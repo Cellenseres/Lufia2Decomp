@@ -1,12 +1,13 @@
 /* Random number generator ($80:8299). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/system.h"
 #include "system/system_internal.h"
 
 /* $80:832D: lagged XOR refill, lags 24 and 31. */
 static void RandomRefill(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadX8(cpu, 0x00u);                                        /* 832D */
     do {
         LoadA8(
@@ -38,8 +39,8 @@ static void RandomRefill(
 
 /* PHB/PHK/PLB/PHX/PHY/PHP/SEP #$30 */
 static void RandomEnter(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     Push8(memory, cpu, 0x80u);
     PullDataBank(memory, cpu);
@@ -52,8 +53,8 @@ static void RandomEnter(
 
 /* Next table index in X, refilling past $36. */
 static void RandomAdvance(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t refill_return) {
     LoadX8(
         cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x0559u, 0)));
@@ -72,8 +73,8 @@ static void RandomAdvance(
 
 /* PLP/PLY/PLX/PLB */
 static void RandomLeave(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     UnpackStatus(cpu, Pull8(memory, cpu));
     cpu->y = PullIndexValue(memory, cpu);
     cpu->x = PullIndexValue(memory, cpu);
@@ -81,8 +82,8 @@ static void RandomLeave(
 }
 
 void Lufia2RandomByte(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     RandomEnter(memory, cpu);                                  /* 82C7 */
     RandomAdvance(memory, cpu, 0x82d9u);                       /* 82CF */
     LoadA8(
@@ -92,8 +93,8 @@ void Lufia2RandomByte(
 }
 
 void Lufia2RandomScale(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     RandomEnter(memory, cpu);                                  /* 8299 */
     ExchangeAccumulatorBytes(cpu);                             /* 82A1 */
     RandomAdvance(memory, cpu, 0x82acu);                       /* 82A2 */
@@ -113,8 +114,8 @@ void Lufia2RandomScale(
 }
 
 void Lufia2CallRandomScale(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     Lufia2RandomScale(memory, cpu);
@@ -122,8 +123,8 @@ void Lufia2CallRandomScale(
 }
 
 void Lufia2CallRandomByte(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     Lufia2RandomByte(memory, cpu);

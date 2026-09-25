@@ -1,11 +1,12 @@
 /* Menu NMI, input and window animation. */
 
 #include "core/cpu_internal.h"
+#include "lufia2/menu.h"
 
 /* $82:8DA6: HDMA table [$F4] to [$F7], channel $F3 setup. */
 static void MenuHdmaUpdate(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t return_bank,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, return_bank, return_address);
@@ -72,8 +73,8 @@ static void MenuHdmaUpdate(
 
 /* A += delta on the $7E:80C0 table entry at X. */
 static void MenuTableStep8(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     int delta) {
     const uint32_t address = LongIndexedAddress(0x7e80c0u, cpu->x);
 
@@ -82,8 +83,8 @@ static void MenuTableStep8(
 }
 
 static void MenuTableStep16(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     int delta) {
     const uint32_t address = LongIndexedAddress(0x7e80c0u, cpu->x);
 
@@ -92,7 +93,7 @@ static void MenuTableStep16(
 }
 
 /* X += 3, 16-bit index. */
-static void MenuTableNext(Lufia2ActorFrontendCpu *cpu) {
+static void MenuTableNext(Lufia2CpuState *cpu) {
     IncrementX16(cpu);
     IncrementX16(cpu);
     IncrementX16(cpu);
@@ -100,8 +101,8 @@ static void MenuTableNext(Lufia2ActorFrontendCpu *cpu) {
 
 /* $82:8F14: grow the window rows by three lines. */
 static void MenuWindowGrow(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1538u, 0));  /* 8F14 */
     MenuTableStep8(memory, cpu, -3);
     SetAccumulatorWidth(cpu, 0);
@@ -124,15 +125,15 @@ static void MenuWindowGrow(
 }
 
 /* BIT #mask; true when set. */
-static uint8_t MenuBit(Lufia2ActorFrontendCpu *cpu, uint8_t mask) {
+static uint8_t MenuBit(Lufia2CpuState *cpu, uint8_t mask) {
     BitImmediate8(cpu, mask);
     return !cpu->zero;
 }
 
 /* $82:8E12: window HDMA line table in $7E:80C0 by $1566 bit. */
 static void MenuWindowLines(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x93b4u);
     LoadAAbsolute8(memory, cpu, 0x1566u, 0);                   /* 8E12 */
     BitImmediate8(cpu, 0x01u);
@@ -244,11 +245,11 @@ static void MenuWindowLines(
 
 /* $82:97A6: step menu sprites along the $8E:E4D8 offset lists. */
 static void MenuSpriteSteps(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x93bcu);
     SetIndexWidth(cpu, 1);                                     /* 97A6 */
-    BattleSetDataBank(memory, cpu, 0x8eu);
+    PushAndSetDataBank(memory, cpu, 0x8eu);
     Write8(memory, DirectAddress(cpu, 0x33u), 0x00u);
     LoadX16(cpu, 0x0010u);
     do {
@@ -290,8 +291,8 @@ static void MenuSpriteSteps(
 
 /* $86:8809: patch count/value pairs into a $7E:[$3B] HDMA table. */
 static void SelectHdmaPatch(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t table,
     uint16_t return_address) {
     LoadY16(cpu, table);
@@ -317,8 +318,8 @@ static void SelectHdmaPatch(
 
 /* DMA channel 6: $7E:X to VRAM Y, count bytes. */
 static void SelectVramDma(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t count) {
     StoreWordAbsolute(memory, cpu, 0x2116u, cpu->y);
     StoreWordAbsolute(memory, cpu, 0x4362u, cpu->x);
@@ -332,8 +333,8 @@ static void SelectVramDma(
 
 /* $86:87E0: HDMA table patches and the $15B8 row upload. */
 static void SelectNmiRedraw(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x81c1u);
     SetAccumulatorWidth(cpu, 1);                               /* 87E0 */
     SetIndexWidth(cpu, 0);
@@ -368,8 +369,8 @@ static void SelectNmiRedraw(
 
 /* $82:8D44: tilemap uploads by $1568 bits. */
 static void SelectTilemapUploads(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     static const struct {
         uint8_t mask;
         uint16_t source;
@@ -404,9 +405,9 @@ static void SelectTilemapUploads(
 }
 
 /* $82:939C: menu NMI with its three redraw requests. */
-Lufia2ActorPrimaryUpdateResult Lufia2MenuNmi(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2MenuNmi(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (cpu->accumulator_is_8_bit)                             /* 939C */
         PushAccumulator8(memory, cpu);
     else
@@ -432,13 +433,13 @@ Lufia2ActorPrimaryUpdateResult Lufia2MenuNmi(
         LoadA8(cpu, Pull8(memory, cpu));
     else
         PullAccumulator16(memory, cpu);
-    return FieldLoopResult(0x8293c1u);
+    return ExecutionReturned(0x8293c1u);
 }
 
 /* $86:81A9: NMI installed by $86:8000. */
-Lufia2ActorPrimaryUpdateResult Lufia2SelectScreenNmi(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2SelectScreenNmi(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (cpu->accumulator_is_8_bit)                             /* 81A9 */
         PushAccumulator8(memory, cpu);
     else
@@ -464,20 +465,20 @@ Lufia2ActorPrimaryUpdateResult Lufia2SelectScreenNmi(
         LoadA8(cpu, Pull8(memory, cpu));
     else
         PullAccumulator16(memory, cpu);
-    return FieldLoopResult(0x8681cfu);
+    return ExecutionReturned(0x8681cfu);
 }
 
 /* $82:8B4B: menu buttons into $14AB/$14AC; carry = none. */
-Lufia2ActorPrimaryUpdateResult Lufia2MenuButtons(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2MenuButtons(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     static const uint8_t bits[12] = {
         0x80u, 0x40u, 0x20u, 0x10u,
         0x80u, 0x40u, 0x20u, 0x10u, 0x08u, 0x04u, 0x02u, 0x01u};
     unsigned i;
 
     if (!cpu->accumulator_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x828b4bu);
+        return ExecutionHandoff(cpu, 0x828b4bu);
     StoreZeroAbsolute8(memory, cpu, 0x14abu, 0);               /* 8B4B */
     StoreZeroAbsolute8(memory, cpu, 0x14acu, 0);
     for (i = 0; i < 12u; ++i) {
@@ -499,32 +500,32 @@ Lufia2ActorPrimaryUpdateResult Lufia2MenuButtons(
     if (cpu->zero)
         LoadAAbsolute8(memory, cpu, 0x14acu, 0);
     cpu->carry = cpu->zero;
-    return FieldLoopResult(cpu->zero ? 0x828c40u : 0x828c42u);
+    return ExecutionReturned(cpu->zero ? 0x828c40u : 0x828c42u);
 }
 
 /* $82:9313: menu window refresh request; the upload runs on LLE. */
-Lufia2ActorPrimaryUpdateResult Lufia2MenuWindowRequest(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2MenuWindowRequest(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x829313u);
+        return ExecutionHandoff(cpu, 0x829313u);
     LoadAAbsolute8(memory, cpu, 0x156au, 0);                   /* 9313 */
     if (cpu->zero)
-        return FieldLoopResult(0x82932fu);
+        return ExecutionReturned(0x82932fu);
     StoreAImmediate8(memory, cpu, 0x20u, 0x0564u);
     LoadA8(cpu, 0x8eu);
     StoreADirect8(memory, cpu, 0x5fu);
     LoadY16(cpu, 0xd4deu);
     LoadX16(cpu, 0x35e0u);
-    return FieldLoopHandoff(cpu, 0x829327u);
+    return ExecutionHandoff(cpu, 0x829327u);
 }
 
 /* $82:C627: menu cursor blink, toggles $1552 every $20 frames. */
-Lufia2ActorPrimaryUpdateResult Lufia2MenuCursorBlink(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2MenuCursorBlink(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x82c627u);
+        return ExecutionHandoff(cpu, 0x82c627u);
     LoadAAbsolute8(memory, cpu, 0x09c8u, 0);                   /* C627 */
     if (!cpu->zero)
         LoadAAbsolute8(memory, cpu, 0x1553u, 0);
@@ -542,5 +543,5 @@ Lufia2ActorPrimaryUpdateResult Lufia2MenuCursorBlink(
             StoreAAbsolute8(memory, cpu, 0x1552u, 0);
         }
     }
-    return FieldLoopResult(0x82c646u);
+    return ExecutionReturned(0x82c646u);
 }

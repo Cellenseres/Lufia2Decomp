@@ -1,12 +1,14 @@
 /* Secondary actor script VM ($83:D508). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/actor.h"
+#include "lufia2/system.h"
 #include "actor/actor_internal.h"
 #include "system/system_internal.h"
 
 Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     Lufia2ActorScriptDispatchResult result;
     uint16_t actor_record;
     uint32_t first_handler;
@@ -73,8 +75,8 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
 
 /* $83:D5C3: STX $2A, then two-level table dispatch. */
 static Lufia2ActorScriptDispatchResult SecondaryRedispatch(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     Lufia2ActorScriptDispatchResult result;
     uint32_t first;
 
@@ -105,8 +107,8 @@ static Lufia2ActorScriptDispatchResult SecondaryRedispatch(
 
 /* $83:DA8A: clear $0622 bit 7 and the walk counter. */
 static void SecondaryStopScript(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect(memory, cpu, 0xa7u);
@@ -120,8 +122,8 @@ static void SecondaryStopScript(
 
 /* $83:DA71: leader stop sets $05B5 bit 4. */
 static void SecondaryLeaderStopFlag(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadYDirect16(memory, cpu, 0xa7u);                         /* DA71 */
@@ -146,8 +148,8 @@ static void SecondaryLeaderStopFlag(
 
 /* $83:DA5B: probe = actor tile moved one step by facing. */
 static uint8_t SecondaryAdvanceProbe(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect(memory, cpu, 0xa7u);                           /* DA5B */
@@ -167,8 +169,8 @@ static uint8_t SecondaryAdvanceProbe(
 
 /* $83:D87D: probe the step in direction A from the actor tile. */
 static uint8_t SecondaryStepBlocked(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     PushAccumulator8(memory, cpu);                             /* D87D */
@@ -197,8 +199,8 @@ static uint8_t SecondaryStepBlocked(
 
 /* Occupancy bit 0 at the probe tile, both columns if wide. */
 static void SecondaryOccupancy(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address,
     uint8_t set) {
     Lufia2MapCellIndex(memory, cpu, return_address, 1);
@@ -223,8 +225,8 @@ static void SecondaryOccupancy(
 
 /* $83:D9C6: move occupancy and the actor one step by facing. */
 static uint8_t SecondaryCommitStep(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadAAbsolute8(memory, cpu, 0x06bau, cpu->y);              /* D9C6 */
@@ -282,8 +284,8 @@ static uint8_t SecondaryCommitStep(
 
 /* $83:DD18 targets: signed step along facing, M=1 on exit. */
 static uint8_t SecondaryFineStep(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     uint16_t target;
     uint32_t pair;
 
@@ -326,8 +328,8 @@ typedef struct SecondaryStep {
 } SecondaryStep;
 
 static SecondaryStep SecondaryRedispatched(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SecondaryStep step;
     step.flow = SECONDARY_STEP_REDISPATCHED;
     step.handler_pc = SecondaryRedispatch(memory, cpu).handler_pc;
@@ -341,7 +343,7 @@ static SecondaryStep SecondaryExit(void) {
     return step;
 }
 
-static SecondaryStep SecondaryBoundary(const Lufia2ActorFrontendCpu *cpu) {
+static SecondaryStep SecondaryBoundary(const Lufia2CpuState *cpu) {
     SecondaryStep step;
     step.flow = SECONDARY_STEP_UNKNOWN;
     step.handler_pc = cpu->resume_pc;
@@ -350,8 +352,8 @@ static SecondaryStep SecondaryBoundary(const Lufia2ActorFrontendCpu *cpu) {
 
 /* A16 cursor to $7F:E3EE+record, exit ($83:D605/$83:DD09). */
 static SecondaryStep SecondarySaveCursorExit(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0xabu);
     Write16Long(
         memory, LongIndexedAddress(0x7fe3eeu, cpu->x), cpu->accumulator);
@@ -361,8 +363,8 @@ static SecondaryStep SecondarySaveCursorExit(
 
 /* $83:DC45: walk one tile over 16 sub-steps. */
 static SecondaryStep SecondaryWalk(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0xa7u);                           /* DC45 */
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe48eu, cpu->x)));
     if (cpu->zero) {
@@ -479,8 +481,8 @@ save_cursor:
 
 /* $83:D5F8: next byte. */
 static SecondaryStep SecondaryNextByte(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t length) {
     LoadXDirect(memory, cpu, 0x2au);
     while (length--)
@@ -490,8 +492,8 @@ static SecondaryStep SecondaryNextByte(
 
 /* $83:D7A5: actor tile to $8F/$91. */
 static void SecondaryActorToProbe(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect(memory, cpu, 0xa7u);
@@ -504,8 +506,8 @@ static void SecondaryActorToProbe(
 
 /* $83:D99F: signed operands onto $7F:DC8C/DD1C; M=0 exit. */
 static void SecondaryAddDisplayOffset(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadYDirect16(memory, cpu, 0x2au);
@@ -518,8 +520,8 @@ static void SecondaryAddDisplayOffset(
 
 /* $80:8450 sine, $80:8486 cosine; sign in bit 7. */
 static void SecondaryWave(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t cosine,
     uint16_t return_address) {
     const uint8_t angle = A8(cpu);
@@ -570,8 +572,8 @@ static void SecondaryWave(
 
 /* $83:DE9F: radius times magnitude via Mode 7. */
 static void SecondaryScaleRadius(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     And8(cpu, 0x7fu);                                          /* DE9F */
@@ -605,8 +607,8 @@ static void SecondaryScaleRadius(
 
 /* $83:DE76: orbit offsets into $54/$56; M=0 exit. */
 static void SecondaryOrbitOffsets(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect(memory, cpu, 0x2au);                           /* DE76 */
@@ -631,8 +633,8 @@ static void SecondaryOrbitOffsets(
 
 /* $83:FAF4: signed operand at X+1; M=0 exit. */
 static void SecondarySignedOperand(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     SetAccumulatorWidth(cpu, 1);                               /* FAF4 */
@@ -650,8 +652,8 @@ static void SecondarySignedOperand(
 
 /* A16 = $2A + length, save cursor, exit. */
 static SecondaryStep SecondarySaveCursorPlus(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t length) {
     LoadA16(cpu, Read16Direct(memory, cpu, 0x2au));
     while (length--)
@@ -661,8 +663,8 @@ static SecondaryStep SecondarySaveCursorPlus(
 
 /* $83:D6A6: skip a one-byte operand. */
 static void SecondarySkipOperand(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);
     LoadXDirect(memory, cpu, 0x2au);
     IncrementX16(cpu);
@@ -671,8 +673,8 @@ static void SecondarySkipOperand(
 
 /* $83:D67A: spawn child at $8F/$91 facing $94. */
 static void SecondarySpawnChild(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0xa7u)));    /* D67A */
     PushAccumulator8(memory, cpu);
     LoadXDirect(memory, cpu, 0x2au);
@@ -700,8 +702,8 @@ static void SecondarySpawnChild(
 
 /* $83:D661: spawn child at the actor's position. */
 static void SecondarySpawnAtActor(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0xa9u);                           /* D661 */
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fddaeu, cpu->x)));
@@ -716,8 +718,8 @@ static void SecondarySpawnAtActor(
 }
 
 static SecondaryStep SecondaryExecuteHandler(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint32_t handler_pc) {
     switch (handler_pc & 0x00ffffffu) {
     case 0x83d5fdu:
@@ -1374,14 +1376,14 @@ static SecondaryStep SecondaryExecuteHandler(
     }
 }
 
-Lufia2ActorPrimaryUpdateResult Lufia2ActorSecondaryUpdate(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2ActorSecondaryUpdate(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
     uint32_t handler;
     uint32_t steps;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x83d599u;
     result.dispatches = 0;
 
@@ -1406,12 +1408,12 @@ Lufia2ActorPrimaryUpdateResult Lufia2ActorSecondaryUpdate(
             result.pc = 0x83d60eu;
             return result;
         }
-        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = step.handler_pc;
         return result;
     }
     cpu->resume_pc = handler;
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.pc = handler;
     return result;
 }

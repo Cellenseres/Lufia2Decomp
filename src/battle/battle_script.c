@@ -1,12 +1,14 @@
 /* Battle script VM ($85:B452). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/battle.h"
+#include "lufia2/system.h"
 #include "system/system_internal.h"
 
 /* $85:C168: battler byte A to its variable base in X. */
 static void BattleScriptSlot(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     StoreAAbsolute8(memory, cpu, 0x09fbu, 0);                  /* C168 */
@@ -44,8 +46,8 @@ static void BattleScriptSlot(
 
 /* $85:C4DE: variable bases $C1 and $BE. */
 static void BattleScriptBases(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xb462u);
     LoadA8(cpu, Read8(memory, 0x7ff450u));                     /* C4DE */
     BattleScriptSlot(memory, cpu, 0xc4e4u);
@@ -58,8 +60,8 @@ static void BattleScriptBases(
 
 /* INC $BB, 16-bit. */
 static void BattleScriptAdvance(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     const uint16_t pointer = (uint16_t)(Read16Direct(memory, cpu, 0xbbu) + 1u);
 
     Write16Direct(memory, cpu, 0xbbu, pointer);
@@ -68,8 +70,8 @@ static void BattleScriptAdvance(
 
 /* $85:BFBF: next script byte into A; flags kept. */
 static void BattleScriptByte(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* BFBF */
@@ -83,8 +85,8 @@ static void BattleScriptByte(
 
 /* $85:BFCA: next script word into X. */
 static void BattleScriptWord(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* BFCA */
@@ -102,8 +104,8 @@ static void BattleScriptWord(
 
 /* Selector bit 7: local slot at base $C1 or $BE. */
 static uint16_t BattleScriptLocal(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a52u, 0));
     And16(cpu, 0x00ffu);
     {
@@ -121,8 +123,8 @@ static uint16_t BattleScriptLocal(
 
 /* $85:BFED: read variable A (bit 7 local) into X. */
 static void BattleScriptRead(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* BFED */
@@ -148,8 +150,8 @@ static void BattleScriptRead(
 
 /* $85:C023: write X to variable A. */
 static void BattleScriptWrite(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* C023 */
@@ -185,8 +187,8 @@ static void BattleScriptWrite(
 
 /* $85:BFD8: next word, bit 15 = variable, into X. */
 static void BattleScriptValue(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* BFD8 */
@@ -207,8 +209,8 @@ static void BattleScriptValue(
 
 /* $85:B551: $BB = $0A42 + next word. */
 static void BattleScriptJump(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);                               /* B551 */
     BattleScriptWord(memory, cpu, 0xb555u);
     LoadA16(cpu, cpu->x);
@@ -219,8 +221,8 @@ static void BattleScriptJump(
 
 /* Operand fetch shared by the compare and math opcodes. */
 static void BattleScriptOperands(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t opcode) {
     BattleScriptByte(memory, cpu, (uint16_t)(opcode + 2u));
     BattleScriptRead(memory, cpu, (uint16_t)(opcode + 5u));
@@ -230,8 +232,8 @@ static void BattleScriptOperands(
 
 /* Signed $54 - X, 16-bit, overflow kept. */
 static void BattleScriptCompare(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
     Write16Direct(memory, cpu, 0x54u, cpu->x);
@@ -241,8 +243,8 @@ static void BattleScriptCompare(
 
 /* Store binary result X into the destination variable. */
 static void BattleScriptStoreBinary(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t value,
     uint16_t return_address) {
     LoadA16(cpu, value);
@@ -254,8 +256,8 @@ static void BattleScriptStoreBinary(
 
 /* Unary opcodes: destination byte, source variable, result X. */
 static void BattleScriptUnary(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t opcode,
     uint8_t kind) {
     BattleScriptByte(memory, cpu, (uint16_t)(opcode + 2u));
@@ -284,8 +286,8 @@ static void BattleScriptUnary(
 
 /* INC $66, 16-bit. */
 static void BattleIncrement66(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     const uint16_t value = (uint16_t)(Read16Direct(memory, cpu, 0x66u) + 1u);
 
     Write16Direct(memory, cpu, 0x66u, value);
@@ -294,8 +296,8 @@ static void BattleIncrement66(
 
 /* $85:DCA3: $63-$66 = $54 * $56, 16x16 via $4202. */
 static void BattleMultiply(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x85u, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* DCA3 */
@@ -337,8 +339,8 @@ static void BattleMultiply(
 
 /* $85:DC6F: $5D-$5F /= $54, 24/8 via $4204. */
 static void BattleDivide(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x85u, return_address);
     PushDataBank(memory, cpu);                                 /* DC6F */
@@ -374,8 +376,8 @@ static void BattleDivide(
 
 /* $85:DCEA: A times a random 16-bit fraction. */
 static void BattleRandomScale(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     static const struct {
         uint8_t limit;
@@ -421,8 +423,8 @@ static void BattleRandomScale(
 
 /* $85:DB6D: 32/16 shift-subtract divide of $63-$66 by $58. */
 static void BattleLongDivide(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     unsigned i;
 
@@ -462,8 +464,8 @@ static void BattleLongDivide(
 
 /* $85:C099: X = $85:9E47 word for index A. */
 static void BattleStatOffset(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* C099 */
@@ -481,8 +483,8 @@ static void BattleStatOffset(
 
 /* $85:C05F: X = stat A of battler ($BE); bytes at $0E/$BC. */
 static void BattleStat(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* C05F */
@@ -507,8 +509,8 @@ static void BattleStat(
 
 /* $85:C117: mask of battlers without status bit 2. */
 static void BattleActiveMask(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     const uint8_t enemies = (uint8_t)(A8(cpu) & 0x80u);
 
@@ -553,10 +555,10 @@ static void BattleActiveMask(
 }
 
 /* $85:B452: battle script VM; other opcodes run on LLE. */
-Lufia2ActorPrimaryUpdateResult Lufia2BattleScript(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2BattleScript(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
     unsigned opcodes;
 
     PushDataBank(memory, cpu);                                 /* B452 */
@@ -600,7 +602,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2BattleScript(
             PullAccumulator16(memory, cpu);
             UnpackStatus(cpu, Pull8(memory, cpu));
             PullDataBank(memory, cpu);
-            return FieldLoopResult(0x85b482u);
+            return ExecutionReturned(0x85b482u);
         case 0xb551u:                                          /* jump */
             BattleScriptJump(memory, cpu);
             break;
@@ -1103,7 +1105,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2BattleScript(
             StoreAAbsolute8(memory, cpu, 0x0a44u, 0);
             break;
         default:                                               /* B470 */
-            result = FieldLoopHandoff(cpu, 0x85b470u);
+            result = ExecutionHandoff(cpu, 0x85b470u);
             result.dispatches = opcodes;
             return result;
         }

@@ -1,17 +1,18 @@
 /* NMI brightness fade ($80:86C1). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/system.h"
 #include "system/system_internal.h"
 
 /* $80:86C1: screen fade from $0581 into the $0583 brightness. */
-Lufia2ActorPrimaryUpdateResult Lufia2ScreenFade(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2ScreenFade(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x8086c1u);
+        return ExecutionHandoff(cpu, 0x8086c1u);
     LoadAAbsolute8(memory, cpu, 0x0581u, 0);                   /* 86C1 */
     if (!cpu->negative)
-        return FieldLoopResult(0x808702u);
+        return ExecutionReturned(0x808702u);
     ExchangeAccumulatorBytes(cpu);
     LoadAAbsolute8(memory, cpu, 0x0581u, 0);
     And8(cpu, 0x3fu);
@@ -32,7 +33,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2ScreenFade(
         StoreAAbsolute8(memory, cpu, 0x0583u, 0);
         DecrementA8(cpu);
         if (!cpu->negative)
-            return FieldLoopResult(0x808702u);
+            return ExecutionReturned(0x808702u);
         StoreZeroAbsolute8(memory, cpu, 0x0581u, 0);
         StoreAImmediate8(memory, cpu, 0x80u, 0x0583u);
     } else {
@@ -40,9 +41,9 @@ Lufia2ActorPrimaryUpdateResult Lufia2ScreenFade(
         StoreAAbsolute8(memory, cpu, 0x0583u, 0);
         Compare8(cpu, A8(cpu), 0x0fu);
         if (!cpu->carry)
-            return FieldLoopResult(0x808702u);
+            return ExecutionReturned(0x808702u);
         StoreZeroAbsolute8(memory, cpu, 0x0581u, 0);
         StoreAImmediate8(memory, cpu, 0x0fu, 0x0583u);
     }
-    return FieldLoopResult(0x808702u);
+    return ExecutionReturned(0x808702u);
 }

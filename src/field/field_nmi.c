@@ -1,12 +1,13 @@
 /* Field NMI uploads ($83:9FA9). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/field.h"
 #include "field/field_internal.h"
 
 /* $83:A052: CGRAM upload on DMA channel 6. */
 static void NmiCgramUpload(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     StoreYIndex(memory, cpu, 0x4365u);                         /* A052 */
     StoreAAbsolute8(memory, cpu, 0x2121u, 0);
     Write16Absolute(memory, cpu, 0x4362u, cpu->x);
@@ -18,8 +19,8 @@ static void NmiCgramUpload(
 
 /* $83:A033: queued palette uploads, $73 bits 0-1. */
 static void NmiPaletteUploads(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x9fb3u);
     LoadA8(cpu, 0x01u);                                        /* A033 */
     TrbDirect8(memory, cpu, 0x73u);
@@ -44,8 +45,8 @@ static void NmiPaletteUploads(
 
 /* One two-part VRAM tile upload of $A0E1. */
 static void NmiTileBlock(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t list,
     uint16_t source,
     uint8_t vmain,
@@ -99,8 +100,8 @@ static void NmiTileBlock(
 
 /* $83:A0E1: queued VRAM tile uploads, four slots each list. */
 static void NmiTileUploads(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x9fb6u);
     SetAccumulatorWidth(cpu, 0);                               /* A0E1 */
     SetIndexWidth(cpu, 1);
@@ -128,8 +129,8 @@ static void NmiTileUploads(
 
 /* $83:A1A2: column uploads listed at $7F:D4F8. */
 static void NmiColumnUploads(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x9fbfu);
     TransferDirectToA(cpu);                                    /* A1A2 */
     LoadA8(cpu, Read8(memory, 0x7fd4f8u));
@@ -188,8 +189,8 @@ static void NmiColumnUploads(
 
 /* $83:A070: eight queued VRAM block uploads at $05C2. */
 static void NmiBlockUploads(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x9fc2u);
     SetAccumulatorWidth(cpu, 1);                               /* A070 */
     SetIndexWidth(cpu, 0);
@@ -238,8 +239,8 @@ static void NmiBlockUploads(
 
 /* $83:9FE1: colour window fade via $7F:D0F2/D0F3. */
 static void NmiFade(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x9fc5u);
     LoadAAbsolute8(memory, cpu, 0x09aau, 0);                   /* 9FE1 */
     BitImmediate8(cpu, 0x01u);
@@ -282,10 +283,10 @@ static void NmiFade(
     SimulateRtsFrame(memory, cpu);
 }
 
-Lufia2ActorPrimaryUpdateResult Lufia2FieldNmiUploads(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2FieldNmiUploads(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
 
     Push8(memory, cpu, PackStatus(cpu));                       /* 9FA9 */
     PushDataBank(memory, cpu);
@@ -313,7 +314,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldNmiUploads(
     StoreAAbsolute8(memory, cpu, 0x2127u, 0);
     PullDataBank(memory, cpu);                                 /* 9FDE */
     UnpackStatus(cpu, Pull8(memory, cpu));
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x839fe0u;
     result.dispatches = 0;
     return result;

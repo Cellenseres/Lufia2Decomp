@@ -1,12 +1,13 @@
 /* Field BG scrolling and tile streaming ($8E:BD77). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/field.h"
 #include "field/field_internal.h"
 
 /* $8E:BF88: shift count from $8E:BF93 into $4E. */
 static void ScrollShiftCount(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     TransferAToX(cpu);                                         /* BF88 */
@@ -18,8 +19,8 @@ static void ScrollShiftCount(
 
 /* $8E:BF70: signed shift right by $4E; C=1 skips. */
 static void ScrollShiftRight(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadY8(cpu, Read8(memory, DirectAddress(cpu, 0x4eu)));    /* BF70 */
@@ -44,8 +45,8 @@ static void ScrollShiftRight(
 
 /* $8E:BFDE: shift left by $4E. */
 static void ScrollShiftLeft(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadY8(cpu, Read8(memory, DirectAddress(cpu, 0x4eu)));    /* BFDE */
@@ -59,8 +60,8 @@ static void ScrollShiftLeft(
 
 /* Step current toward the target by the speed word. */
 static void ScrollStepToward(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t current,
     uint8_t out,
     uint32_t speed) {
@@ -78,8 +79,8 @@ static void ScrollStepToward(
 
 /* $8E:BE78: layer follows the camera target. */
 static void ScrollModeFollow(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1261u, 0)); /* BE78 */
     cpu->zero = (cpu->accumulator & 0x0040u) == 0;
     if (!cpu->zero) {
@@ -139,8 +140,8 @@ static void ScrollModeFollow(
 
 /* $8E:BF25/BF9B tail: camera + $80 unless equal. */
 static void ScrollOffsetTarget(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t current,
     uint8_t out) {
     cpu->carry = 0;
@@ -155,8 +156,8 @@ static void ScrollOffsetTarget(
 
 /* Layer nibble of $7F:D021,x. */
 static void ScrollLayerNibble(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t high) {
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd021u, cpu->x)));
     if (high) {
@@ -172,8 +173,8 @@ static void ScrollLayerNibble(
 
 /* $8E:BF25: parallax, camera shifted right. */
 static void ScrollModeParallax(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x5du);                           /* BF25 */
     ScrollLayerNibble(memory, cpu, 1);
     ScrollShiftCount(memory, cpu, 0xbf34u);
@@ -198,8 +199,8 @@ static void ScrollModeParallax(
 
 /* $8E:BF9B: camera shifted left. */
 static void ScrollModeScaled(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x5du);                           /* BF9B */
     ScrollLayerNibble(memory, cpu, 1);
     ScrollShiftCount(memory, cpu, 0xbfaau);
@@ -216,8 +217,8 @@ static void ScrollModeScaled(
 
 /* One axis of $8E:BFEE: offset, wrap at map size. */
 static void ScrollWrapAxis(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t current,
     uint8_t out,
     uint32_t size) {
@@ -245,8 +246,8 @@ static void ScrollWrapAxis(
 
 /* $8E:BFEE: fixed offsets, wrapped by map size. */
 static void ScrollModeWrap(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x5du);                           /* BFEE */
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd021u, cpu->x)));
     And16(cpu, 0x00f0u);
@@ -262,8 +263,8 @@ static void ScrollModeWrap(
 
 /* $80:F81C: divider settle delay; leaves M=0. */
 static void StreamDelay(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x00u)));    /* F81C */
@@ -273,8 +274,8 @@ static void StreamDelay(
 
 /* A mod divisor via $4204/$4206; negative A wraps. */
 static void StreamWrap(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t divisor,
     uint16_t negative_return,
     uint16_t positive_return,
@@ -308,8 +309,8 @@ static void StreamWrap(
 
 /* $80:F734: map cell and buffer offsets for A=x, Y=y. */
 static void StreamLocate(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LsrA16(cpu);                                               /* F734 */
@@ -380,8 +381,8 @@ static void StreamLocate(
 
 /* $80:F6AA: X = map cell for ($87, $89). */
 static void StreamCellIndex(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     SetAccumulatorWidth(cpu, 1);                               /* F6AA */
@@ -401,8 +402,8 @@ static void StreamCellIndex(
 
 /* One 16x16 metatile from cell X into [$2A],y. */
 static void StreamMetatile(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
     And16(cpu, 0x3000u);
     Compare16(cpu, cpu->accumulator, 0x3000u);
@@ -435,8 +436,8 @@ static void StreamMetatile(
 
 /* Advance a wrapped map coordinate; refresh X on wrap. */
 static void StreamStep(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t coordinate,
     uint8_t limit,
     uint16_t return_address) {
@@ -454,8 +455,8 @@ static void StreamStep(
 
 /* $80:F5ED: 16 metatiles down a column. */
 static void StreamColumnTiles(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadA16(cpu, 0x0010u);                                     /* F5ED */
@@ -480,8 +481,8 @@ static void StreamColumnTiles(
 
 /* $80:F64E: A metatiles along a row. */
 static void StreamRowTiles(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     Write16Direct(memory, cpu, 0x26u, cpu->accumulator);       /* F64E */
@@ -503,8 +504,8 @@ static void StreamRowTiles(
 
 /* PHP; PHB; DB=$7F; REP #$30. */
 static void StreamEnter(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     Push8(memory, cpu, PackStatus(cpu));
     PushDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
@@ -518,8 +519,8 @@ static void StreamEnter(
 
 /* $80:F4FD/F518: stream a column at the right/left edge. */
 static void StreamColumn(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t right) {
     StreamEnter(memory, cpu);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x001226u, cpu->x)));
@@ -577,8 +578,8 @@ static void StreamColumn(
 
 /* $80:F589/F5A2: stream a row at the top/bottom edge. */
 static void StreamRow(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t down) {
     StreamEnter(memory, cpu);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x001226u, cpu->x)));
@@ -619,8 +620,8 @@ static void StreamRow(
 
 /* JSL from $8E:BD77 into a $80 tile streamer. */
 static void ScrollStream(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address,
     uint16_t entry) {
     SimulateJslFrame(memory, cpu, 0x8eu, return_address);
@@ -635,8 +636,8 @@ static void ScrollStream(
 
 /* JSR ($BE6E,x); 0 for an unknown mode. */
 static uint8_t ScrollLayerMode(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (cpu->x > 8u)
         return 0;
     SimulateJsrFrame(memory, cpu, 0xbdd9u);
@@ -652,21 +653,21 @@ static uint8_t ScrollLayerMode(
 }
 
 /* dispatches counts completed BDD7 layer calls. */
-static Lufia2ActorPrimaryUpdateResult ScrollBoundary(
-    Lufia2ActorPrimaryUpdateResult result,
-    Lufia2ActorFrontendCpu *cpu,
+static Lufia2ExecutionResult ScrollBoundary(
+    Lufia2ExecutionResult result,
+    Lufia2CpuState *cpu,
     uint32_t pc) {
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.pc = cpu->resume_pc = pc;
     return result;
 }
 
-Lufia2ActorPrimaryUpdateResult Lufia2FieldScrollUpdate(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2FieldScrollUpdate(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x8ebe6du;
     result.dispatches = 0;
     /* The field loop always calls with X8. */

@@ -1,11 +1,12 @@
 /* Battle NMI uploads ($85:8DC5). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/battle.h"
 
 /* $85:8E98: sixteen queued VRAM DMA uploads on channel 6. */
 static void BattleVramQueue(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x8dccu);
     LoadX16(cpu, 0x005au);                                     /* 8E98 */
     do {
@@ -34,8 +35,8 @@ static void BattleVramQueue(
 
 /* $85:8ED2: latch HDMA channels from $1AEF, enable $420C. */
 static void BattleHdmaChannels(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x8e24u);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0xdau)));    /* 8ED2 */
     Write8(memory, DirectAddress(cpu, 0xdau), 0x00u);
@@ -92,8 +93,8 @@ static void BattleHdmaChannels(
 
 /* $85:A8E7: timer 1, battle HDMA wave table at $7E:40CC. */
 static void BattleWaveTable(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x1b23u, 0);                   /* A8E7 */
     if (cpu->zero) {
         LoadAAbsolute8(memory, cpu, 0x1b22u, 0);
@@ -171,8 +172,8 @@ static void BattleWaveTable(
 
 /* $85:8F1B: eight battle timers; 0 = handler left to LLE. */
 static uint8_t BattleTimers(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x8e78u);
     SetIndexWidth(cpu, 1);                                     /* 8F1B */
     LoadX8(cpu, 0x00u);
@@ -223,23 +224,23 @@ static uint8_t BattleTimers(
 }
 
 /* $85:8DC5: battle NMI work via the $00:0067 vector. */
-Lufia2ActorPrimaryUpdateResult Lufia2BattleNmiUploads(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2BattleNmiUploads(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     static const uint16_t scroll_regs[6] = {
         0x210du, 0x210eu, 0x210fu, 0x2110u, 0x2111u, 0x2112u};
     static const uint16_t window_regs[8] = {
         0x2123u, 0x2125u, 0x2127u, 0x2129u, 0x212bu, 0x212du, 0x212fu,
         0x2131u};
-    Lufia2ActorPrimaryUpdateResult result;
+    Lufia2ExecutionResult result;
     unsigned i;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x858e97u;
     result.dispatches = 0;
     /* The NMI handler always enters with M=1. */
     if (!cpu->accumulator_is_8_bit) {
-        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = cpu->resume_pc = 0x858dc5u;
         return result;
     }
@@ -277,7 +278,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2BattleNmiUploads(
     StoreAAbsolute8(memory, cpu, 0x2100u, 0);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0xdbu)));
     if (!cpu->zero && !BattleTimers(memory, cpu)) {
-        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = cpu->resume_pc;
         return result;
     }
@@ -285,7 +286,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2BattleNmiUploads(
     LoadAAbsolute8(memory, cpu, 0x12e3u, cpu->y);
     if (!cpu->negative) {
         /* Queued tasks run through JSR ($9E37,x) on LLE. */
-        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = cpu->resume_pc = 0x858e7fu;
         return result;
     }

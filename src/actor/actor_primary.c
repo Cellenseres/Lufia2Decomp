@@ -1,12 +1,14 @@
 /* Primary actor script VM ($83:C7F8). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/actor.h"
+#include "lufia2/system.h"
 #include "actor/actor_internal.h"
 #include "system/system_internal.h"
 
 Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     Lufia2ActorScriptDispatchResult result;
     uint16_t actor_record;
 
@@ -37,8 +39,8 @@ Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
 }
 
 static void PrimaryIntervalCheck(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
 
@@ -67,8 +69,8 @@ static void PrimaryIntervalCheck(
 }
 
 static Lufia2ActorScriptDispatchResult PrimaryRedispatch(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t reload_y) {
     Lufia2ActorScriptDispatchResult result;
 
@@ -95,8 +97,8 @@ static Lufia2ActorPrimaryScriptStepResult PrimaryStepRedispatched(
 
 /* $83:CBEC/$83:CBFF: leader within radius on one axis. */
 static uint8_t PrimaryLeaderWithinRadius(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t coordinate_base) {
     const uint32_t leader = AbsoluteIndexedAddress(cpu, coordinate_base, 0);
 
@@ -117,8 +119,8 @@ static uint8_t PrimaryLeaderWithinRadius(
 
 /* $83:CC4E/$83:CC70: direction toward the leader. */
 static void PrimaryLeaderDirection(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t coordinate_base,
     uint8_t action_if_ahead,
     uint8_t action_if_behind) {
@@ -146,8 +148,8 @@ static void PrimaryLeaderDirection(
 
 /* $83:D27F: X = operand8 * $28 + $A7 via the multiplier. */
 static void PrimaryTargetRecordIndex(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadA8(
@@ -165,8 +167,8 @@ static void PrimaryTargetRecordIndex(
 
 /* 16-bit operand + $A1D4 into $2A, then C85A. */
 static Lufia2ActorScriptDispatchResult PrimaryJumpOperand(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t operand_offset) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(
@@ -188,8 +190,8 @@ static Lufia2ActorScriptDispatchResult PrimaryJumpOperand(
     } while (0)
 
 static uint8_t PrimaryCallActionCore(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     Lufia2ActorPrimaryActionFlow flow;
 
@@ -203,8 +205,8 @@ static uint8_t PrimaryCallActionCore(
 
 /* $83:C0EF: leader position to $8F/$91. */
 void Lufia2ActorLeaderToProbe(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x06bau, 0)));
@@ -216,8 +218,8 @@ void Lufia2ActorLeaderToProbe(
 
 /* $83:C99A: actor position to $8F/$91. */
 static void PrimaryActorToProbe(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect(memory, cpu, 0xa7u);
@@ -232,8 +234,8 @@ static void PrimaryActorToProbe(
 
 /* Probe +/- $54 on both axes into $9F..$A2. */
 static void PrimaryProbeBox(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t x_offset,
     uint8_t y_offset) {
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, x_offset)));
@@ -254,8 +256,8 @@ static void PrimaryProbeBox(
 
 /* $83:C9A7: radius box around $8F/$91. */
 static void PrimaryRadiusBox(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
@@ -267,8 +269,8 @@ static void PrimaryRadiusBox(
 
 /* $83:C9F9/$83:CA08: step toward probe on one axis. */
 static void PrimaryProbeAxisDirection(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t coordinate_base,
     uint8_t probe_offset,
     uint8_t action_if_ahead,
@@ -291,8 +293,8 @@ static void PrimaryProbeAxisDirection(
 
 /* $83:C9C5: step toward $8F/$91; $7F:E5A6 picks axis order. */
 static void PrimaryApproachProbe(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect(memory, cpu, 0xa7u);                           /* C9C5 */
@@ -338,8 +340,8 @@ typedef enum PrimaryListSearch {
 
 /* $83:D0AA: first steppable listed point in radius. */
 static PrimaryListSearch PrimaryApproachListedPoint(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     uint32_t guard;
 
@@ -421,8 +423,8 @@ next:
 
 /* JSR $D89E. */
 static uint8_t PrimaryStepBlocked(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     if (!Lufia2ActorStepBlockedBody(memory, cpu))
@@ -433,8 +435,8 @@ static uint8_t PrimaryStepBlocked(
 
 /* $83:CDF6: clear same-height run length into $9D. */
 static uint8_t PrimaryMeasureRun(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     uint32_t guard;
 
@@ -489,8 +491,8 @@ static uint8_t PrimaryMeasureRun(
 
 /* $83:CE3B: walk A steps (0 = 256) in direction $94. */
 static uint8_t PrimaryWalkSteps(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     uint16_t target;
 
@@ -525,8 +527,8 @@ static uint8_t PrimaryWalkSteps(
 
 /* $83:CE5C: $8F/$91 to $7F:DB4C/$7F:DB4D + $A9. */
 static void PrimaryRecordProbe(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect(memory, cpu, 0xa9u);
@@ -539,8 +541,8 @@ static void PrimaryRecordProbe(
 
 /* $83:CF11: origin $63/$64 back to $8F/$91. */
 static void PrimaryResetProbe(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     CopyDirect8(memory, cpu, 0x63u, 0x8fu);
@@ -550,8 +552,8 @@ static void PrimaryResetProbe(
 
 /* $83:CEA8: random walk of $66..$65 steps on one axis. */
 static uint8_t PrimaryWanderAxis(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));        /* CEA8 */
@@ -610,8 +612,8 @@ static uint8_t PrimaryWanderAxis(
 }
 
 void Lufia2ActorLoadPrimaryScript(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0xa7u);                           /* D416 */
     TransferDirectToA(cpu);
     LoadAAbsolute8(memory, cpu, 0x070au, cpu->x);
@@ -631,8 +633,8 @@ void Lufia2ActorLoadPrimaryScript(
 }
 
 void Lufia2ActorPrimaryReset(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJslFrame(memory, cpu, 0x83u, 0xc94au);             /* C947 */
     Lufia2ActorMarkMapOccupancy(memory, cpu);
     SimulateRtlFrame(memory, cpu);
@@ -668,8 +670,8 @@ void Lufia2ActorPrimaryReset(
 }
 
 void Lufia2ActorClearSlotLinks(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadX16(cpu, 0x0004u);                                     /* CB65 */
     LoadA8(cpu, 0xffu);
     do {
@@ -679,8 +681,8 @@ void Lufia2ActorClearSlotLinks(
 }
 
 void Lufia2ActorBlockedEvent(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, 0x7fd0a1u));                     /* CA68 */
     BitImmediate8(cpu, 0x40u);
     if (!cpu->zero)
@@ -704,8 +706,8 @@ void Lufia2ActorBlockedEvent(
 
 Lufia2ActorPrimaryScriptStepResult
 Lufia2ActorPrimaryScriptExecuteKnownHandler(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint32_t handler_pc) {
     Lufia2ActorPrimaryScriptStepResult result;
     Lufia2ActorScriptDispatchResult dispatch;
@@ -2109,16 +2111,16 @@ cfb9_next:
     }
 }
 
-Lufia2ActorPrimaryUpdateResult Lufia2ActorPrimaryUpdate(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2ActorPrimaryUpdate(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
     Lufia2ActorScriptDispatchResult dispatch;
     Lufia2ActorPrimaryFlow flow;
     uint32_t handler;
     uint32_t steps;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x83c83bu;
     result.dispatches = 0;
 
@@ -2151,12 +2153,12 @@ Lufia2ActorPrimaryUpdateResult Lufia2ActorPrimaryUpdate(
             result.pc = 0x83c8d3u;
             return result;
         }
-        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = step.handler_pc;
         return result;
     }
     cpu->resume_pc = handler;
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.pc = handler;
     return result;
 }

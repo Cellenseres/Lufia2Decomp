@@ -1,11 +1,12 @@
 /* World map NMI, streaming and regions. */
 
 #include "core/cpu_internal.h"
+#include "lufia2/world_map.h"
 
 /* $86:D1E8: tile column upload, rows of $0100 words. */
 static void WorldMapColumnUpload(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xd1d8u);
     SetAccumulatorWidth(cpu, 0);                               /* D1E8 */
     And16(cpu, 0x00ffu);
@@ -74,8 +75,8 @@ static void WorldMapColumnUpload(
 
 /* $86:D271: block upload, two passes of rows $0200 apart. */
 static void WorldMapBlockUpload(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     unsigned pass;
 
     SimulateJsrFrame(memory, cpu, 0xd1ddu);
@@ -117,8 +118,8 @@ static void WorldMapBlockUpload(
 
 /* $86:D1A1: pending map tile uploads, $1365 entries. */
 static void WorldMapTileUploads(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xcf14u);
     LoadA8(cpu, 0x18u);                                        /* D1A1 */
     StoreAAbsolute8(memory, cpu, 0x4361u, 0);
@@ -159,8 +160,8 @@ static void WorldMapTileUploads(
 
 /* $86:CFC0: $16E7 palette cycles, five bytes each at $16E8. */
 static void WorldMapPaletteCycles(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadX16(cpu, 0x16e8u);
     do {
         PushAccumulator8(memory, cpu);                         /* CFC8 */
@@ -238,18 +239,18 @@ static void WorldMapPaletteCycles(
 }
 
 /* $86:CEF6: world map NMI via the $00:0067 vector. */
-Lufia2ActorPrimaryUpdateResult Lufia2WorldMapNmiUploads(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2WorldMapNmiUploads(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     static const uint16_t mode7_regs[8] = {
         0x211bu, 0x211bu, 0x211cu, 0x211cu, 0x211du, 0x211du, 0x211eu,
         0x211eu};
     static const uint16_t scroll_regs[6] = {
         0x210du, 0x210eu, 0x210fu, 0x2110u, 0x2111u, 0x2112u};
-    Lufia2ActorPrimaryUpdateResult result;
+    Lufia2ExecutionResult result;
     unsigned i;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x86d1a0u;
     result.dispatches = 0;
     Push8(memory, cpu, PackStatus(cpu));                       /* CEF6 */
@@ -426,8 +427,8 @@ Lufia2ActorPrimaryUpdateResult Lufia2WorldMapNmiUploads(
 
 /* $86:ADEE: $0B = map cell offset of ($58, $5A). */
 static void WorldMapCellOffset(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadADirect16(memory, cpu, 0x5au);                         /* ADEE */
@@ -446,8 +447,8 @@ static void WorldMapCellOffset(
 
 /* $86:AE05: $08 = map block pointer for ($58, $5A). */
 static void WorldMapBlockPointer(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadADirect16(memory, cpu, 0x58u);                         /* AE05 */
@@ -468,8 +469,8 @@ static void WorldMapBlockPointer(
 
 /* Metatile index for the current cell: [$DF] or [$E3] table. */
 static void WorldMapMetatile(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadA16(cpu, Read16Long(memory, ((uint32_t)cpu->data_bank << 16) +
         Read16Direct(memory, cpu, 0x08u)));                    /* LDA ($08) */
     AslA16(cpu);
@@ -489,10 +490,10 @@ static void WorldMapMetatile(
 
 /* $86:ACFE: stream one map column into $7F:DF00/$7F:DF80. */
 static void WorldMapStreamColumn(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x99eeu);
-    BattleSetDataBank(memory, cpu, 0x7fu);                     /* ACFE */
+    PushAndSetDataBank(memory, cpu, 0x7fu);                     /* ACFE */
     SetAccumulatorWidth(cpu, 0);
     WorldMapCellOffset(memory, cpu, 0xad07u);
     WorldMapBlockPointer(memory, cpu, 0xad0au);
@@ -556,10 +557,10 @@ static void WorldMapStreamColumn(
 
 /* $86:AC6C: stream one map row into the $7F buffer at $0B. */
 static void WorldMapStreamRow(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x9a1fu);
-    BattleSetDataBank(memory, cpu, 0x7fu);                     /* AC6C */
+    PushAndSetDataBank(memory, cpu, 0x7fu);                     /* AC6C */
     SetAccumulatorWidth(cpu, 0);
     WorldMapCellOffset(memory, cpu, 0xac75u);
     WorldMapBlockPointer(memory, cpu, 0xac78u);
@@ -632,8 +633,8 @@ static void WorldMapStreamRow(
 
 /* Edge ahead of the move: position +$1F or -$1F. */
 static void WorldMapEdge(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t position) {
     Compare8(cpu, A8(cpu), 0x80u);
     LoadAAbsolute8(memory, cpu, position, 0);
@@ -644,16 +645,16 @@ static void WorldMapEdge(
 }
 
 /* $86:99BF: stream the map edges the camera moved across. */
-Lufia2ActorPrimaryUpdateResult Lufia2WorldMapStreamEdges(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2WorldMapStreamEdges(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x869a43u;
     result.dispatches = 0;
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit) {
-        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = cpu->resume_pc = 0x8699bfu;
         return result;
     }
@@ -706,14 +707,14 @@ Lufia2ActorPrimaryUpdateResult Lufia2WorldMapStreamEdges(
 }
 
 /* $86:9EDD: world map region holding ($58, $5A); carry clear = hit. */
-Lufia2ActorPrimaryUpdateResult Lufia2WorldMapRegionSearch(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2WorldMapRegionSearch(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     static const uint8_t edges[4] = {0x01u, 0x03u, 0x02u, 0x04u};
     uint32_t entries;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x869eddu);
+        return ExecutionHandoff(cpu, 0x869eddu);
     PushDataBank(memory, cpu);                                 /* 9EDD */
     SimulateJsrFrame(memory, cpu, 0x9ee0u);
     SetAccumulatorWidth(cpu, 0);                               /* 9F35 */
@@ -741,7 +742,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2WorldMapRegionSearch(
         /* A list without an end marker spins the ROM. */
         if (entries == 0x10000u) {
             SetAccumulatorWidth(cpu, 1);
-            return FieldLoopHandoff(cpu, 0x869ee7u);
+            return ExecutionHandoff(cpu, 0x869ee7u);
         }
         SetAccumulatorWidth(cpu, 1);                           /* 9EE5 */
         LoadAAbsolute8(memory, cpu, 0x0000u, cpu->x);
@@ -766,5 +767,5 @@ Lufia2ActorPrimaryUpdateResult Lufia2WorldMapRegionSearch(
         TransferAToX(cpu);
     }
     PullDataBank(memory, cpu);                                 /* 9F11 */
-    return FieldLoopResult(0x869f12u);
+    return ExecutionReturned(0x869f12u);
 }

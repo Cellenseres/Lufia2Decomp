@@ -1,13 +1,14 @@
 /* Field loop steps and event tick. */
 
 #include "core/cpu_internal.h"
+#include "lufia2/field.h"
 #include "field/field_internal.h"
 #include "text/text_internal.h"
 
 /* $83:80CD: field idle test; zero = no event running. */
 void Lufia2FieldIdleBody(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     static const uint16_t gates[5] = {0x09a8u, 0x0622u, 0x05b7u, 0x05b5u,
                                       0x17aau};
     static const uint8_t masks[5] = {0x08u, 0x88u, 0x07u, 0xa2u, 0x00u};
@@ -35,16 +36,16 @@ void Lufia2FieldIdleBody(
 }
 
 /* $83:80CD from the field loop's JSR (X8 only). */
-Lufia2ActorPrimaryUpdateResult Lufia2FieldIdleTest(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2FieldIdleTest(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x838102u;
     result.dispatches = 0;
     if (!cpu->index_is_8_bit) {
-        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = cpu->resume_pc = 0x8380cdu;
         return result;
     }
@@ -53,13 +54,13 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldIdleTest(
 }
 
 /* $83:8682: tick the eight animation slots at $7F:D057. */
-Lufia2ActorPrimaryUpdateResult Lufia2FieldAnimationTicks(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2FieldAnimationTicks(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     const uint32_t slots = 0x7fd057u;
-    Lufia2ActorPrimaryUpdateResult result;
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x8386e9u;
     result.dispatches = 0;
     Push8(memory, cpu, PackStatus(cpu));                       /* 8682 */
@@ -97,7 +98,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldAnimationTicks(
                 Write8(memory, 0x7fd04eu, A8(cpu));
                 LoadA8(cpu, Read8(memory, 0x7fd04eu));
                 /* The slot handlers $83:8783/87CC stay LLE. */
-                result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+                result.flow = LUFIA2_EXECUTION_BOUNDARY;
                 result.pc = cpu->resume_pc =
                     cpu->negative ? 0x8386d6u : 0x8386dbu;
                 return result;
@@ -110,21 +111,21 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldAnimationTicks(
     return result;
 }
 
-static Lufia2ActorPrimaryUpdateResult FieldTickBoundary(
-    Lufia2ActorPrimaryUpdateResult result,
-    Lufia2ActorFrontendCpu *cpu,
+static Lufia2ExecutionResult FieldTickBoundary(
+    Lufia2ExecutionResult result,
+    Lufia2CpuState *cpu,
     uint32_t pc) {
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.pc = cpu->resume_pc = pc;
     return result;
 }
 
-Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2FieldEventTick(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x809cb7u;
     result.dispatches = 0;
     SimulateJslFrame(memory, cpu, 0x80u, 0x9c75u);             /* 9C72 */
@@ -160,15 +161,15 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldEventTick(
 }
 
 /* $83:83A0: menu request; the menu itself runs on LLE. */
-Lufia2ActorPrimaryUpdateResult Lufia2FieldMenuRequest(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2FieldMenuRequest(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x8383a0u);
+        return ExecutionHandoff(cpu, 0x8383a0u);
     LoadA8(cpu, 0x40u);                                        /* 83A0 */
     TestBitsAbsolute8(memory, cpu, 0x05b5u, 0);
     if (!cpu->zero)
-        return FieldLoopHandoff(cpu, 0x8383bdu);
+        return ExecutionHandoff(cpu, 0x8383bdu);
     LoadAAbsolute8(memory, cpu, 0x09a7u, 0);
     BitImmediate8(cpu, 0x02u);
     if (!cpu->zero) {
@@ -179,32 +180,32 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldMenuRequest(
             TestBitsDirect(memory, cpu, 0x4au, 0);
             if (!cpu->zero) {
                 SetAccumulatorWidth(cpu, 1);
-                return FieldLoopHandoff(cpu, 0x8383bdu);
+                return ExecutionHandoff(cpu, 0x8383bdu);
             }
         }
         SetAccumulatorWidth(cpu, 1);                           /* 83DD */
     }
-    return FieldLoopResult(0x8383dfu);
+    return ExecutionReturned(0x8383dfu);
 }
 
 /* $83:867B: A & pressed buttons; consume them from $4A. */
-Lufia2ActorPrimaryUpdateResult Lufia2FieldTakeButtons(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2FieldTakeButtons(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x83867bu);
+        return ExecutionHandoff(cpu, 0x83867bu);
     And8(cpu, DirectByte(memory, cpu, 0x46u));                 /* 867B */
     if (!cpu->zero)
         TestBitsDirect(memory, cpu, 0x4au, 0);
-    return FieldLoopResult(0x838681u);
+    return ExecutionReturned(0x838681u);
 }
 
 /* $83:8103: $05B7 requests; any set request runs on LLE. */
-Lufia2ActorPrimaryUpdateResult Lufia2FieldStatusRequests(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2FieldStatusRequests(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x838103u);
+        return ExecutionHandoff(cpu, 0x838103u);
     LoadAAbsolute8(memory, cpu, 0x09a8u, 0);                   /* 8103 */
     BitImmediate8(cpu, 0x08u);
     if (cpu->zero) {
@@ -212,22 +213,22 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldStatusRequests(
         LoadAAbsolute8(memory, cpu, 0x05b7u, 0);               /* 810C */
         BitImmediate8(cpu, 0x02u);
         if (!cpu->zero)
-            return FieldLoopHandoff(cpu, 0x838113u);
+            return ExecutionHandoff(cpu, 0x838113u);
         BitImmediate8(cpu, 0x04u);                             /* 8119 */
         if (!cpu->zero)
-            return FieldLoopHandoff(cpu, 0x83811du);
+            return ExecutionHandoff(cpu, 0x83811du);
         BitImmediate8(cpu, 0x01u);                             /* 8123 */
         if (!cpu->zero)
-            return FieldLoopHandoff(cpu, 0x838127u);
+            return ExecutionHandoff(cpu, 0x838127u);
     }
     SetIndexWidth(cpu, 1);                                     /* 812B */
-    return FieldLoopResult(0x83812du);
+    return ExecutionReturned(0x83812du);
 }
 
 /* $83:85DC: field reload setup; loading runs on LLE. */
-Lufia2ActorPrimaryUpdateResult Lufia2FieldReloadSetup(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2FieldReloadSetup(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     static const uint16_t cleared[7] = {
         0x099bu, 0x099cu, 0x1261u, 0x1262u, 0x1254u, 0x09a6u, 0x09adu};
     unsigned i;
@@ -267,5 +268,5 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldReloadSetup(
     for (i = 4; i < 7u; ++i)
         StoreZeroAbsolute8(memory, cpu, cleared[i], 0);
     /* Map loading from JSR $B062 on. */
-    return FieldLoopHandoff(cpu, 0x838637u);
+    return ExecutionHandoff(cpu, 0x838637u);
 }

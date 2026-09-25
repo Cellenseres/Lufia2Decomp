@@ -3,16 +3,16 @@
 
 /* Field subsystem internals shared across modules. */
 
-#include "lufia2/actor_frontend.h"
+#include "lufia2/execution.h"
 
 /* $83:80CD: field idle test; zero = no event running. */
 void Lufia2FieldIdleBody(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu);
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
 
 /* $84:8000: screen effects of $1261 and the $1262 palette fade. */
 void Lufia2FieldScreenEffects(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu);
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
 
 #endif

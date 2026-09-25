@@ -1,12 +1,13 @@
 /* Actor action and movement core ($83:D350). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/actor.h"
 #include "actor/actor_internal.h"
 
 /* $83:CA93: step toward $7F:E5A6/E5CE target. */
 void Lufia2ActorTargetDirection(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0xa7u);                           /* CA93 */
     LoadA8(
         cpu, Read8(
@@ -37,8 +38,8 @@ void Lufia2ActorTargetDirection(
 
 /* $83:CD6E..$83:CD91 facing comparators. */
 uint8_t Lufia2ActorFacingCompare(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t helper_pc) {
     uint16_t base;
     uint8_t leader_first;
@@ -70,8 +71,8 @@ uint8_t Lufia2ActorFacingCompare(
 }
 
 static void PrimaryActionBoundaryHelper(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t helper_pc) {
     uint8_t coordinate;
 
@@ -148,8 +149,8 @@ static void PrimaryActionBoundaryHelper(
 }
 
 void Lufia2ActorInstallSecondaryScript(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     const uint8_t action = A8(cpu);
 
     SetAccumulatorWidth(cpu, 0);
@@ -172,8 +173,8 @@ void Lufia2ActorInstallSecondaryScript(
 }
 
 Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     uint16_t helper_pc;
 
     Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));       /* D350 */

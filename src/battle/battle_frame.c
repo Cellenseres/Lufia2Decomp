@@ -1,9 +1,10 @@
 /* Battle sprites, tilemap and frame upkeep. */
 
 #include "core/cpu_internal.h"
+#include "lufia2/battle.h"
 
 /* Y += step with M=0, back to M=1. */
-static void BattleNextRecord(Lufia2ActorFrontendCpu *cpu, uint16_t step) {
+static void BattleNextRecord(Lufia2CpuState *cpu, uint16_t step) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->y);
     cpu->carry = 0;
@@ -14,10 +15,10 @@ static void BattleNextRecord(Lufia2ActorFrontendCpu *cpu, uint16_t step) {
 
 /* $81:BD4B, $81:BDCC: OAM strips, five bytes per sprite. */
 static void BattleOamStrips(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t mirrored) {
-    BattleSetDataBank(memory, cpu, 0x7eu);
+    PushAndSetDataBank(memory, cpu, 0x7eu);
     if (mirrored) {
         LoadA8(cpu, DirectByte(memory, cpu, 0x02u));           /* BDD1 */
         DecrementA8(cpu);
@@ -98,8 +99,8 @@ static void BattleOamStrips(
 
 /* JSL $81:BD47 or $81:BDC8 from bank 85. */
 static void BattleCallOamStrips(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t mirrored,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x85u, return_address);
@@ -111,9 +112,9 @@ static void BattleCallOamStrips(
 
 /* $81:BE58: 16x16 tilemap block, rows of $02 cells. */
 static void BattleTileBlock(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    BattleSetDataBank(memory, cpu, 0x7eu);
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    PushAndSetDataBank(memory, cpu, 0x7eu);
     LoadA8(cpu, DirectByte(memory, cpu, 0x00u));               /* BE5D */
     AslA8(cpu);
     StoreADirect8(memory, cpu, 0x11u);
@@ -175,9 +176,9 @@ static void BattleTileBlock(
 
 /* $85:8B4B: $153C sprites from 13-byte records at $139A. */
 static void BattleSpriteRecords(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    BattleSetDataBank(memory, cpu, 0x00u);
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    PushAndSetDataBank(memory, cpu, 0x00u);
     LoadA8(cpu, 0xffu);                                        /* 8B50 */
     StoreAAbsolute8(memory, cpu, 0x15c7u, 0);
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x15c8u, 0));
@@ -232,9 +233,9 @@ static void BattleSpriteRecords(
 
 /* $85:8BC0: the single 3x3 sprite at $13CE. */
 static void BattleSpriteSingle(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    BattleSetDataBank(memory, cpu, 0x00u);
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    PushAndSetDataBank(memory, cpu, 0x00u);
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x15ccu, 0));
     StoreXDirect16(memory, cpu, 0x08u);
     StoreZeroAbsolute8(memory, cpu, 0x15cbu, 0);
@@ -282,9 +283,9 @@ static void BattleSpriteSingle(
 
 /* $85:8C27: five 1x1 sprites from $1435, same records as $139A. */
 static void BattleSpriteMarkers(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    BattleSetDataBank(memory, cpu, 0x00u);
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    PushAndSetDataBank(memory, cpu, 0x00u);
     LoadX16(cpu, 0x493du);                                     /* 8C2C */
     StoreXDirect16(memory, cpu, 0x08u);
     StoreZeroAbsolute8(memory, cpu, 0x15d2u, 0);
@@ -336,9 +337,9 @@ static void BattleSpriteMarkers(
 
 /* $85:8C98: six sprites from 15-byte records at $13DB. */
 static void BattleSpriteParty(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    BattleSetDataBank(memory, cpu, 0x00u);
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    PushAndSetDataBank(memory, cpu, 0x00u);
     LoadA8(cpu, 0xffu);                                        /* 8C9D */
     StoreAAbsolute8(memory, cpu, 0x15d3u, 0);
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x15d4u, 0));
@@ -408,8 +409,8 @@ static void BattleSpriteParty(
 
 /* $85:8D2E: party tilemap at $7E:2800 instead of sprites. */
 static void BattlePartyTilemap(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     Push8(memory, cpu, 0x85u);                                 /* PHK */
     PullDataBank(memory, cpu);
@@ -490,8 +491,8 @@ static void BattlePartyTilemap(
 
 /* $85:972E: 15 rows of 16 tile ids from $3710. */
 static void BattleTileGrid(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     unsigned row;
 
     SetAccumulatorWidth(cpu, 0);
@@ -513,8 +514,8 @@ static void BattleTileGrid(
 
 /* $85:8A2F body; returns the RTL taken. */
 static uint16_t BattleSprites(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x15abu, 0);
     DecrementA8(cpu);
     if (cpu->zero) {
@@ -538,7 +539,7 @@ static uint16_t BattleSprites(
         if (!cpu->zero)
             return 0x8a95u;
         StoreZeroAbsolute8(memory, cpu, 0x15d3u, 0);
-        BattleSetDataBank(memory, cpu, 0x7eu);
+        PushAndSetDataBank(memory, cpu, 0x7eu);
         SimulateJslFrame(memory, cpu, 0x85u, 0x8a93u);
         BattleTileGrid(memory, cpu);
         SimulateRtlFrame(memory, cpu);
@@ -565,8 +566,8 @@ static uint16_t BattleSprites(
 
 /* $85:91A1: refresh the five $147A state bytes. */
 static void BattleSlotStates(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     Push8(memory, cpu, 0x85u);                                 /* PHK */
     PullDataBank(memory, cpu);
@@ -608,43 +609,43 @@ static void BattleSlotStates(
     PullDataBank(memory, cpu);
 }
 
-static Lufia2ActorPrimaryUpdateResult BattleFrameEntry(
-    Lufia2ActorFrontendCpu *cpu, uint32_t entry, uint32_t exit) {
-    Lufia2ActorPrimaryUpdateResult result;
+static Lufia2ExecutionResult BattleFrameEntry(
+    Lufia2CpuState *cpu, uint32_t entry, uint32_t exit) {
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = exit;
     result.dispatches = 0;
     /* Only the M=1 X=0 entry is native. */
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit) {
-        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = cpu->resume_pc = entry;
     }
     return result;
 }
 
 /* $85:8A2F: battle sprites, JSL entry. */
-Lufia2ActorPrimaryUpdateResult Lufia2BattleSprites(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result =
+Lufia2ExecutionResult Lufia2BattleSprites(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result =
         BattleFrameEntry(cpu, 0x858a2fu, 0x858a38u);
 
-    if (result.flow == LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED)
+    if (result.flow == LUFIA2_EXECUTION_RETURNED)
         result.pc = 0x850000u | BattleSprites(memory, cpu);
     return result;
 }
 
 /* $85:ECF0: per-frame battle upkeep from the $81:8877 loop. */
-Lufia2ActorPrimaryUpdateResult Lufia2BattleFrameUpkeep(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    const Lufia2ActorPrimaryUpdateResult result =
+Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    const Lufia2ExecutionResult result =
         BattleFrameEntry(cpu, 0x85ecf0u, 0x85ed50u);
     static const uint16_t lists[2][2] = {{0x0a64u, 8u}, {0x0a6eu, 10u}};
     unsigned list;
 
-    if (result.flow != LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED)
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
     SimulateJslFrame(memory, cpu, 0x85u, 0xecf3u);
     BattleSlotStates(memory, cpu);
@@ -655,7 +656,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2BattleFrameUpkeep(
     LoadA8(cpu, 0xffu);                                        /* ECF8 */
     Write8(memory, 0x0012f3u, A8(cpu));
     SimulateJslFrame(memory, cpu, 0x85u, 0xed01u);             /* $85:9265 */
-    BattleSetDataBank(memory, cpu, 0x7fu);
+    PushAndSetDataBank(memory, cpu, 0x7fu);
     LoadX16(cpu, 0x02fbu);
     do {
         StoreZeroAbsolute8(memory, cpu, 0xf44eu, cpu->x);
@@ -705,17 +706,17 @@ Lufia2ActorPrimaryUpdateResult Lufia2BattleFrameUpkeep(
 }
 
 /* $85:ECDB: Y = first free slot in the $1A8F VRAM queue. */
-Lufia2ActorPrimaryUpdateResult Lufia2BattleVramQueueSlot(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x85ecefu;
     result.dispatches = 0;
     /* X=1 decodes LDY #imm as two bytes. */
     if (cpu->index_is_8_bit) {
-        result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+        result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = cpu->resume_pc = 0x85ecdbu;
         return result;
     }
@@ -730,7 +731,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2BattleVramQueueSlot(
             break;
     }
     /* Queue full: BRK #$6B on LLE. */
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.pc = cpu->resume_pc = 0x85eceeu;
     return result;
 }

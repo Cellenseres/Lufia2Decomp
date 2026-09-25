@@ -1,13 +1,15 @@
 /* Field colour and screen effects. */
 
 #include "core/cpu_internal.h"
+#include "lufia2/field.h"
+#include "lufia2/system.h"
 #include "field/field_internal.h"
 #include "system/system_internal.h"
 
 /* $83:AEED: palette cycles from bank $A1; 0 = cap hit. */
 static uint8_t FieldPaletteCycles(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint32_t *visits) {
 
     SimulateJsrFrame(memory, cpu, 0xaee6u);
@@ -96,8 +98,8 @@ next:
 
 /* $83:AF54: step the HDMA wave table; set up channel 1. */
 static void FieldWaveTable(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xaee9u);
     LoadAAbsolute8(memory, cpu, 0xd0cau, 0);                   /* AF54 */
     Compare8(cpu, A8(cpu), 0xffu);
@@ -162,12 +164,12 @@ done:
 }
 
 /* $83:AEB5: per-frame field palette and wave effects. */
-Lufia2ActorPrimaryUpdateResult Lufia2FieldColourEffects(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2FieldColourEffects(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.pc = 0x83aeecu;
     result.dispatches = 0;
     Push8(memory, cpu, PackStatus(cpu));                       /* AEB5 */
@@ -207,14 +209,14 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldColourEffects(
         PullDataBank(memory, cpu);                             /* AEEA */
     }
     UnpackStatus(cpu, Pull8(memory, cpu));                     /* AEEB */
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     return result;
 }
 
 /* $84:8145: random shake offsets into $7F:D081/D083. */
 static void ScreenShake(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x8009u);
     LoadA8(cpu, 0xffu);                                        /* 8145 */
     SimulateJslFrame(memory, cpu, 0x84u, 0x814au);
@@ -254,8 +256,8 @@ static void ScreenShake(
 
 /* $84:80E6/$84:8115: brightness step every $7F:D08F frames. */
 static void ScreenFade(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t in) {
     SimulateJsrFrame(memory, cpu, in ? 0x8013u : 0x801du);
     LoadA8(cpu, (uint8_t)(Read8(memory, 0x7fd092u) + 1u));
@@ -288,8 +290,8 @@ static void ScreenFade(
 
 /* $84:80C0/$84:80D3: color math intensity $1271 down or up. */
 static void ScreenColorStep(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t down) {
     SimulateJsrFrame(memory, cpu, down ? 0x803fu : 0x8044u);
     LoadAAbsolute8(memory, cpu, 0x1271u, 0);
@@ -305,8 +307,8 @@ static void ScreenColorStep(
 
 /* $84:8E07: fade palette $9B:[$7F:D0F8] into $0320 by $58/$5A/$63. */
 static void ScreenPaletteFade(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     static const struct {
         uint16_t level;
         uint16_t step;
@@ -416,8 +418,8 @@ static void ScreenPaletteFade(
 
 /* $84:8000: screen effects of $1261 and the $1262 palette fade. */
 void Lufia2FieldScreenEffects(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x1261u, 0);                   /* 8000 */
     BitImmediate8(cpu, 0x04u);
     if (!cpu->zero) {

@@ -3,16 +3,16 @@
 
 /* Shared game services. */
 
-#include "lufia2/actor_frontend.h"
+#include "lufia2/execution.h"
 
 void Lufia2CallRandomScale(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address);
 
 void Lufia2CallRandomByte(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address);
 
 #endif

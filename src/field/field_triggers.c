@@ -1,13 +1,14 @@
 /* Field triggers, touch scans and rectangles. */
 
 #include "core/cpu_internal.h"
+#include "lufia2/field.h"
 #include "actor/actor_internal.h"
 #include "field/field_internal.h"
 
 /* $80:CBAE: tick event timers $7F:D18C; 0 = handoff. */
 static uint8_t FieldEventTimers(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     cpu->program_bank = 0x80u;
     PushDataBank(memory, cpu);                                 /* CBAE */
     Push8(memory, cpu, PackStatus(cpu));
@@ -56,8 +57,8 @@ static uint8_t FieldEventTimers(
 }
 
 static void FieldIdle(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     Lufia2FieldIdleBody(memory, cpu);
@@ -66,8 +67,8 @@ static void FieldIdle(
 
 /* $83:D927: edge bit of the cell next to $8F/$91. */
 static void FieldEdgeTest(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     static const uint16_t sites[4] = {0xd936u, 0xd940u, 0xd94au, 0xd956u};
     const unsigned slot = (cpu->x >> 1) & 3u;
 
@@ -84,8 +85,8 @@ static void FieldEdgeTest(
 
 /* $83:B8BF: actor 8..39 touching the leader; 0 = handoff. */
 static uint8_t FieldTouchScan(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x81f8u);
     LoadAAbsolute8(memory, cpu, 0x057cu, 0);                   /* B8BF */
     if (!cpu->zero) {
@@ -197,12 +198,12 @@ next:
     return 1;
 }
 
-Lufia2ActorPrimaryUpdateResult Lufia2FieldTriggerUpdate(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
-    Lufia2ActorPrimaryUpdateResult result;
+Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
 
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_BOUNDARY;
+    result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.dispatches = 0;
     Push8(memory, cpu, PackStatus(cpu));                       /* 81C6 */
     SetAccumulatorWidth(cpu, 1);
@@ -289,15 +290,15 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldTriggerUpdate(
         }
     }
     UnpackStatus(cpu, Pull8(memory, cpu));                     /* 829E */
-    result.flow = LUFIA2_ACTOR_PRIMARY_UPDATE_RETURNED;
+    result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x83829fu;
     return result;
 }
 
 /* $83:B882: first $7E:F000 rectangle holding ($8F, $91); 0 = handoff. */
 static uint8_t FieldRectSearch(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     static const uint8_t edges[4] = {0x01u, 0x03u, 0x02u, 0x04u};
     uint32_t entries;
@@ -346,17 +347,17 @@ static uint8_t FieldRectSearch(
     return 1;
 }
 
-static Lufia2ActorPrimaryUpdateResult FieldRectHandoff(
-    Lufia2ActorFrontendCpu *cpu) {
-    return FieldLoopHandoff(cpu, cpu->resume_pc);
+static Lufia2ExecutionResult FieldRectHandoff(
+    Lufia2CpuState *cpu) {
+    return ExecutionHandoff(cpu, cpu->resume_pc);
 }
 
 /* $83:B66E: stair and slope rectangles; sets $05B5 bit 5. */
-Lufia2ActorPrimaryUpdateResult Lufia2FieldStairRects(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2FieldStairRects(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x83b66eu);
+        return ExecutionHandoff(cpu, 0x83b66eu);
     LoadX16(cpu, 0x0002u);                                     /* B66E */
     LoadY16(cpu, 0x000fu);
     if (!FieldRectSearch(memory, cpu, 0xb676u))
@@ -364,14 +365,14 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldStairRects(
     if (cpu->carry) {
         LoadAAbsolute8(memory, cpu, 0xf00eu, cpu->x);          /* B685 */
         if (cpu->zero)
-            return FieldLoopResult(0x83b710u);
+            return ExecutionReturned(0x83b710u);
     } else {
         LoadX16(cpu, 0x000au);                                 /* B679 */
         LoadY16(cpu, 0x0005u);
         if (!FieldRectSearch(memory, cpu, 0xb681u))
             return FieldRectHandoff(cpu);
         if (!cpu->carry)
-            return FieldLoopResult(0x83b684u);
+            return ExecutionReturned(0x83b684u);
     }
     LoadAAbsolute8(memory, cpu, 0xf000u, cpu->x);              /* B68D */
     StoreADirect8(memory, cpu, 0x54u);
@@ -389,7 +390,7 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldStairRects(
         DecrementA8(cpu);
         Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x91u));
         if (!cpu->zero)
-            return FieldLoopResult(0x83b710u);
+            return ExecutionReturned(0x83b710u);
         LoadA8(cpu, Read8(memory, 0x7fd0bfu));
         StoreADirect8(memory, cpu, 0x55u);
         Compare8(cpu, A8(cpu), 0xffu);
@@ -428,39 +429,39 @@ store:
     And8(cpu, 0x80u);
     Or8(cpu, DirectByte(memory, cpu, 0x54u));
     Write8(memory, 0x7fd0bfu, A8(cpu));
-    return FieldLoopResult(0x83b710u);
+    return ExecutionReturned(0x83b710u);
 }
 
 /* $83:B711: event rectangles; a hit runs $83:B727 on LLE. */
-Lufia2ActorPrimaryUpdateResult Lufia2FieldEventRects(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2FieldEventRects(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x83b711u);
+        return ExecutionHandoff(cpu, 0x83b711u);
     LoadX16(cpu, 0x000cu);                                     /* B711 */
     LoadY16(cpu, 0x0005u);
     if (!FieldRectSearch(memory, cpu, 0xb719u))
         return FieldRectHandoff(cpu);
     if (!cpu->carry)
-        return FieldLoopResult(0x83b726u);
+        return ExecutionReturned(0x83b726u);
     LoadAAbsolute8(memory, cpu, 0xf000u, cpu->x);
     LoadX16(cpu, 0x0008u);
-    return FieldLoopHandoff(cpu, 0x83b722u);
+    return ExecutionHandoff(cpu, 0x83b722u);
 }
 
 /* $83:B747: area rectangles; a hit runs $83:B76E on LLE. */
-Lufia2ActorPrimaryUpdateResult Lufia2FieldAreaRects(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+Lufia2ExecutionResult Lufia2FieldAreaRects(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit)
-        return FieldLoopHandoff(cpu, 0x83b747u);
+        return ExecutionHandoff(cpu, 0x83b747u);
     SetIndexWidth(cpu, 0);                                     /* B747 */
     LoadX16(cpu, 0x0006u);
     LoadY16(cpu, 0x0009u);
     if (!FieldRectSearch(memory, cpu, 0xb751u))
         return FieldRectHandoff(cpu);
     if (!cpu->carry)
-        return FieldLoopResult(0x83b76du);
+        return ExecutionReturned(0x83b76du);
     LoadAAbsolute8(memory, cpu, 0xf005u, cpu->x);              /* B754 */
     And8(cpu, 0x0fu);
     Compare8(cpu, A8(cpu), 0x02u);
@@ -468,9 +469,9 @@ Lufia2ActorPrimaryUpdateResult Lufia2FieldAreaRects(
         LoadAAbsolute8(memory, cpu, 0x0692u, 0);
         Compare8(cpu, A8(cpu), 0x04u);
         if (!cpu->zero)
-            return FieldLoopResult(0x83b76du);
+            return ExecutionReturned(0x83b76du);
         LoadA8(cpu, 0x08u);
         TestBitsAbsolute8(memory, cpu, 0x05b5u, 1);
     }
-    return FieldLoopHandoff(cpu, 0x83b769u);
+    return ExecutionHandoff(cpu, 0x83b769u);
 }

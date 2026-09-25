@@ -1,12 +1,13 @@
 /* Actor sprite slot allocation. */
 
 #include "core/cpu_internal.h"
+#include "lufia2/actor.h"
 #include "actor/actor_internal.h"
 
 /* $83:ABE9: sprite VRAM base (A.high << 4) + $2000; M=0. */
 void Lufia2SpriteVramBase(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     ExchangeAccumulatorBytes(cpu);                             /* ABE9 */
@@ -21,8 +22,8 @@ void Lufia2SpriteVramBase(
 
 /* $83:AAAF: free the actor's sprite, clear occupancy. */
 static void ActorReleaseSprite(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     SetAccumulatorWidth(cpu, 1);                               /* AAAF */
@@ -51,8 +52,8 @@ static void ActorReleaseSprite(
 
 /* $83:A9E5: sprite descriptor A from $CF:F000. */
 static void ActorSpriteDescriptor(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     uint32_t pointer;
 
@@ -104,8 +105,8 @@ static void ActorSpriteDescriptor(
 
 /* $83:AA7D: animation tables for the actor's sprite type. */
 static void ActorSpriteTables(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* AA7D */
@@ -138,8 +139,8 @@ static void ActorSpriteTables(
 
 /* $83:AA50: allocate sprite slots for the actor. */
 static void ActorAllocSprite(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* AA50 */
@@ -166,8 +167,8 @@ static void ActorAllocSprite(
 
 /* $83:A9BA: load sprite A for actor $A7. */
 static void ActorLoadSprite(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     const uint8_t wide = !cpu->accumulator_is_8_bit;
 
@@ -199,8 +200,8 @@ static void ActorLoadSprite(
 
 /* $83:AA30: sprite height offset, -16 for odd types. */
 static void ActorSpriteOffset(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* AA30 */
@@ -224,8 +225,8 @@ static void ActorSpriteOffset(
 
 /* $83:DAE9: reload the actor's sprite, keep its frame. */
 void Lufia2ActorSpriteReload(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu) {
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0xabu);                           /* DAE9 */
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fe506u, cpu->x)));
@@ -259,8 +260,8 @@ void Lufia2ActorSpriteReload(
 
 /* $83:AB7C: claim A free sprite slots in $7E:E100. */
 void Lufia2SpriteAllocSlots(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     PushDataBank(memory, cpu);                                 /* AB7C */
@@ -330,8 +331,8 @@ void Lufia2SpriteAllocSlots(
 
 /* $83:ABCC: clear A sprite slots from $54/$55. */
 void Lufia2SpriteFreeSlots(
-    const Lufia2ActorFrontendMemory *memory,
-    Lufia2ActorFrontendCpu *cpu,
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     ExchangeAccumulatorBytes(cpu);                             /* ABCC */
