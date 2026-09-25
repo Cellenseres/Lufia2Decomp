@@ -13,6 +13,8 @@
 #define EVENT_SLOT_POINTERS 0x7fd134u
 /* Per-slot bits; $19/$1E/$2B test bits 7 and 0. */
 #define EVENT_SLOT_BITS 0x7fd14cu
+/* Script variables; operands $A0-$BF also read them. */
+#define EVENT_VARIABLES 0x7fd074u
 /* Script flags, bit n & 7 of byte n >> 3. */
 #define EVENT_SCRIPT_FLAGS 0x7fd100u
 /* Goto targets are relative to this 24-bit base. */
@@ -146,6 +148,48 @@ static void EventVariable(
     SimulateRtsFrame(memory, cpu);
 }
 
+/* $80:E9ED: value operand; $A0-$BF read variable n, $FB stays. */
+static void EventValue(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Compare8(cpu, A8(cpu), 0xfbu);                             /* E9ED */
+    if (!cpu->zero) {
+        EventVariable(memory, cpu, 0xe9f3u);
+        Compare8(cpu, A8(cpu), 0xc0u);
+        if (!cpu->carry) {
+            Compare8(cpu, A8(cpu), 0xa0u);
+            if (cpu->carry) {
+                PushIndex(memory, cpu);                        /* E9FC */
+                ExchangeAccumulatorBytes(cpu);
+                LoadA8(cpu, 0x00u);
+                ExchangeAccumulatorBytes(cpu);
+                TransferAToX(cpu);
+                TransferDirectToA(cpu);
+                LoadA8(cpu, Read8(memory,
+                    LongIndexedAddress(EVENT_VARIABLES, cpu->x)));
+                cpu->x = PullIndexValue(memory, cpu);
+            }
+        }
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:D9F0: X = variable operand, A = next byte. */
+static void EventVariableOperands(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    TransferDirectToA(cpu);                                    /* D9F0 */
+    EventNextByte(memory, cpu, 0xd9f3u);
+    EventVariable(memory, cpu, 0xd9f6u);
+    TransferAToX(cpu);
+    EventNextByte(memory, cpu, 0xd9fau);
+    SimulateRtsFrame(memory, cpu);
+}
+
 /* $80:E898: X = flag byte of n, A = its bit from $80:BE45. */
 static void EventFlagBit(
     const Lufia2Memory *memory,
@@ -191,7 +235,25 @@ enum EventOpcodeHandler {
     EVENT_OP_2B = 0xe4f9,                                      /* $2B */
     EVENT_OP_WRITE_PPU = 0xe52a,                               /* $1B */
     EVENT_OP_START_SHAKE = 0xe538,                             /* $1C */
-    EVENT_OP_NOP = 0xdb1e                                      /* $57 */
+    EVENT_OP_NOP = 0xdb1e,                                     /* $57 */
+    EVENT_OP_SET_VARIABLE_VALUE = 0xd924,                      /* $2F */
+    EVENT_OP_ADD_VARIABLE = 0xd8d1,                            /* $30 */
+    EVENT_OP_SUBTRACT_VARIABLE = 0xd8e0,                       /* $31 */
+    EVENT_OP_INCREMENT_VARIABLE = 0xd8f2,                      /* $32 */
+    EVENT_OP_DECREMENT_VARIABLE = 0xd906,                      /* $33 */
+    EVENT_OP_SET_VARIABLE = 0xd91a,                            /* $34 */
+    EVENT_OP_GOTO_IF_EQUAL = 0xd93b,                           /* $35 */
+    EVENT_OP_GOTO_IF_NOT_EQUAL = 0xd94a,                       /* $36 */
+    EVENT_OP_GOTO_IF_ABOVE = 0xd959,                           /* $37 */
+    EVENT_OP_GOTO_IF_BELOW = 0xd968,                           /* $38 */
+    EVENT_OP_GOTO_IF_AT_LEAST = 0xd975,                        /* $39 */
+    EVENT_OP_GOTO_IF_AT_MOST = 0xd982,                         /* $3A */
+    EVENT_OP_GOTO_IF_EQUAL_VALUE = 0xd98e,                     /* $3B */
+    EVENT_OP_GOTO_IF_NOT_EQUAL_VALUE = 0xd99d,                 /* $3C */
+    EVENT_OP_GOTO_IF_ABOVE_VALUE = 0xd9ac,                     /* $3D */
+    EVENT_OP_GOTO_IF_BELOW_VALUE = 0xd9bb,                     /* $3E */
+    EVENT_OP_GOTO_IF_AT_LEAST_VALUE = 0xd9cb,                  /* $3F */
+    EVENT_OP_GOTO_IF_AT_MOST_VALUE = 0xd9db                    /* $40 */
 };
 
 /* $00 and aliases: disarm the slot (stores the DP low byte). */
@@ -352,11 +414,126 @@ static unsigned EventOpStartShake(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $30-$34: variable n plus, minus or set to a byte; $32/$33 +-1. */
+static unsigned EventOpChangeVariable(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler) {
+    uint32_t variable;
+
+    if (handler == EVENT_OP_INCREMENT_VARIABLE ||
+        handler == EVENT_OP_DECREMENT_VARIABLE) {
+        TransferDirectToA(cpu);
+        EventNextByte(memory, cpu, (uint16_t)(handler + 3u));
+        EventVariable(memory, cpu, (uint16_t)(handler + 6u));
+        TransferAToX(cpu);
+        variable = LongIndexedAddress(EVENT_VARIABLES, cpu->x);
+        LoadA8(cpu, (uint8_t)(Read8(memory, variable) +
+            (handler == EVENT_OP_INCREMENT_VARIABLE ? 1u : 0xffu)));
+        Write8(memory, variable, A8(cpu));
+        return EVENT_OPCODE_NEXT;
+    }
+    EventVariableOperands(memory, cpu, (uint16_t)(handler + 2u));
+    variable = LongIndexedAddress(EVENT_VARIABLES, cpu->x);
+    if (handler == EVENT_OP_SUBTRACT_VARIABLE)
+        LoadA8(cpu, (uint8_t)((A8(cpu) ^ 0xffu) + 1u));        /* EOR; INC */
+    if (handler != EVENT_OP_SET_VARIABLE) {
+        cpu->carry = 0;
+        Adc8(cpu, Read8(memory, variable));
+    }
+    Write8(memory, variable, A8(cpu));
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $2F: variable n = value operand. */
+static unsigned EventOpSetVariableValue(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    TransferDirectToA(cpu);                                    /* D924 */
+    EventNextByte(memory, cpu, 0xd927u);
+    EventVariable(memory, cpu, 0xd92au);
+    TransferAToX(cpu);
+    PushIndex(memory, cpu);
+    EventNextByte(memory, cpu, 0xd92fu);
+    EventValue(memory, cpu, 0xd932u);
+    cpu->x = PullIndexValue(memory, cpu);
+    Write8(memory, LongIndexedAddress(EVENT_VARIABLES, cpu->x), A8(cpu));
+    return EVENT_OPCODE_NEXT;
+}
+
+enum {
+    EVENT_GOTO_IF_EQUAL,
+    EVENT_GOTO_IF_NOT_EQUAL,
+    EVENT_GOTO_IF_CARRY_CLEAR,
+    EVENT_GOTO_IF_CARRY_SET
+};
+
+/* $35-$40: CMP operand (minus 1) with variable n, goto or skip. */
+static const struct {
+    uint16_t handler;
+    uint8_t value;                  /* operand through $80:E9ED */
+    uint8_t decrement;
+    uint8_t condition;
+} kEventCompares[12] = {
+    {EVENT_OP_GOTO_IF_EQUAL, 0, 0, EVENT_GOTO_IF_EQUAL},
+    {EVENT_OP_GOTO_IF_NOT_EQUAL, 0, 0, EVENT_GOTO_IF_NOT_EQUAL},
+    {EVENT_OP_GOTO_IF_ABOVE, 0, 0, EVENT_GOTO_IF_CARRY_CLEAR},
+    {EVENT_OP_GOTO_IF_BELOW, 0, 1, EVENT_GOTO_IF_CARRY_SET},
+    {EVENT_OP_GOTO_IF_AT_LEAST, 0, 1, EVENT_GOTO_IF_CARRY_CLEAR},
+    {EVENT_OP_GOTO_IF_AT_MOST, 0, 0, EVENT_GOTO_IF_CARRY_SET},
+    {EVENT_OP_GOTO_IF_EQUAL_VALUE, 1, 0, EVENT_GOTO_IF_EQUAL},
+    {EVENT_OP_GOTO_IF_NOT_EQUAL_VALUE, 1, 0, EVENT_GOTO_IF_NOT_EQUAL},
+    {EVENT_OP_GOTO_IF_ABOVE_VALUE, 1, 0, EVENT_GOTO_IF_CARRY_CLEAR},
+    {EVENT_OP_GOTO_IF_BELOW_VALUE, 1, 1, EVENT_GOTO_IF_CARRY_SET},
+    {EVENT_OP_GOTO_IF_AT_LEAST_VALUE, 1, 1, EVENT_GOTO_IF_CARRY_CLEAR},
+    {EVENT_OP_GOTO_IF_AT_MOST_VALUE, 1, 0, EVENT_GOTO_IF_CARRY_SET},
+};
+
+static unsigned EventOpCompareVariable(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    unsigned index) {
+    const uint16_t handler = kEventCompares[index].handler;
+    uint8_t taken;
+
+    EventVariableOperands(memory, cpu, (uint16_t)(handler + 2u));
+    if (kEventCompares[index].value)
+        EventValue(memory, cpu, (uint16_t)(handler + 5u));
+    if (kEventCompares[index].decrement)
+        DecrementA8(cpu);
+    Compare8(cpu, A8(cpu),
+        Read8(memory, LongIndexedAddress(EVENT_VARIABLES, cpu->x)));
+    switch (kEventCompares[index].condition) {
+    case EVENT_GOTO_IF_EQUAL:
+        taken = cpu->zero;
+        break;
+    case EVENT_GOTO_IF_NOT_EQUAL:
+        taken = !cpu->zero;
+        break;
+    case EVENT_GOTO_IF_CARRY_CLEAR:
+        taken = !cpu->carry;
+        break;
+    default:
+        taken = cpu->carry;
+        break;
+    }
+    if (taken)
+        EventGoto(memory, cpu);
+    else
+        EventSkipWord(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Handlers behind JMP ($E5A4,x); others hand off. */
 static unsigned EventScriptOpcode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler) {
+    unsigned i;
+
+    for (i = 0; i < 12u; ++i)
+        if (handler == kEventCompares[i].handler)
+            return EventOpCompareVariable(memory, cpu, i);
     switch (handler) {
     case EVENT_OP_END:
         return EventOpEnd(memory, cpu);
@@ -386,6 +563,14 @@ static unsigned EventScriptOpcode(
         return EventOpStartShake(memory, cpu);
     case EVENT_OP_NOP:
         return EVENT_OPCODE_NEXT;
+    case EVENT_OP_ADD_VARIABLE:
+    case EVENT_OP_SUBTRACT_VARIABLE:
+    case EVENT_OP_INCREMENT_VARIABLE:
+    case EVENT_OP_DECREMENT_VARIABLE:
+    case EVENT_OP_SET_VARIABLE:
+        return EventOpChangeVariable(memory, cpu, handler);
+    case EVENT_OP_SET_VARIABLE_VALUE:
+        return EventOpSetVariableValue(memory, cpu);
     default:
         return EVENT_OPCODE_HANDOFF;
     }
