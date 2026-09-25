@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/battle.h"
+#include "system/wram.h"
 
 /* $85:8E98: sixteen queued VRAM DMA uploads on channel 6. */
 static void BattleVramQueue(
@@ -12,19 +13,19 @@ static void BattleVramQueue(
     do {
         LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1a8fu, cpu->x));
         if (!cpu->zero) {
-            Write16Absolute(memory, cpu, 0x4365u, cpu->y);
+            Write16Absolute(memory, cpu, SNES_DASL(6), cpu->y);
             LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1a91u, cpu->x));
-            Write16Absolute(memory, cpu, 0x4362u, cpu->y);
+            Write16Absolute(memory, cpu, SNES_A1TL(6), cpu->y);
             LoadA8(cpu, 0x01u);
-            StoreAAbsolute8(memory, cpu, 0x4360u, 0);
+            StoreAAbsolute8(memory, cpu, SNES_DMAP(6), 0);
             LoadA8(cpu, 0x7eu);
-            StoreAAbsolute8(memory, cpu, 0x4364u, 0);
+            StoreAAbsolute8(memory, cpu, SNES_A1B(6), 0);
             LoadA8(cpu, 0x18u);
-            StoreAAbsolute8(memory, cpu, 0x4361u, 0);
+            StoreAAbsolute8(memory, cpu, SNES_BBAD(6), 0);
             LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1a93u, cpu->x));
-            Write16Absolute(memory, cpu, 0x2116u, cpu->y);
+            Write16Absolute(memory, cpu, SNES_VMADDL, cpu->y);
             LoadA8(cpu, 0x40u);
-            StoreAAbsolute8(memory, cpu, 0x420bu, 0);
+            StoreAAbsolute8(memory, cpu, SNES_MDMAEN, 0);
             Write8(memory, AbsoluteIndexedAddress(cpu, 0x1a8fu, cpu->x), 0x00u);
             Write8(memory, AbsoluteIndexedAddress(cpu, 0x1a90u, cpu->x), 0x00u);
         }
@@ -52,7 +53,7 @@ static void BattleHdmaChannels(
     And8(cpu, Read8(memory, DirectAddress(cpu, 0xd9u)));
     Write8(memory, DirectAddress(cpu, 0xd8u), A8(cpu));
     if (!cpu->zero) {
-        LoadY16(cpu, 0x4300u);
+        LoadY16(cpu, SNES_DMAP(0));
         LoadX16(cpu, 0x1aefu);
         for (;;) {
             const uint32_t d8 = DirectAddress(cpu, 0xd8u);     /* 8EE8 */
@@ -87,7 +88,7 @@ static void BattleHdmaChannels(
         }
     }
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0xd9u)));    /* 8F15 */
-    StoreAAbsolute8(memory, cpu, 0x420cu, 0);
+    StoreAAbsolute8(memory, cpu, SNES_HDMAEN, 0);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -228,10 +229,10 @@ Lufia2ExecutionResult Lufia2BattleNmiUploads(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     static const uint16_t scroll_regs[6] = {
-        0x210du, 0x210eu, 0x210fu, 0x2110u, 0x2111u, 0x2112u};
+        SNES_BG1HOFS, SNES_BG1VOFS, SNES_BG2HOFS, SNES_BG2VOFS, SNES_BG3HOFS, SNES_BG3VOFS};
     static const uint16_t window_regs[8] = {
-        0x2123u, 0x2125u, 0x2127u, 0x2129u, 0x212bu, 0x212du, 0x212fu,
-        0x2131u};
+        SNES_W12SEL, SNES_WOBJSEL, SNES_WH1, SNES_WH3, SNES_WOBJLOG, SNES_TS, SNES_TSW,
+        SNES_CGADSUB};
     Lufia2ExecutionResult result;
     unsigned i;
 
@@ -274,8 +275,8 @@ Lufia2ExecutionResult Lufia2BattleNmiUploads(
     }
     LoadAAbsolute8(memory, cpu, 0x1254u, 0);                   /* 8E66 */
     StoreAAbsolute8(memory, cpu, 0x1255u, 0);
-    LoadAAbsolute8(memory, cpu, 0x0583u, 0);
-    StoreAAbsolute8(memory, cpu, 0x2100u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
+    StoreAAbsolute8(memory, cpu, SNES_INIDISP, 0);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0xdbu)));
     if (!cpu->zero && !BattleTimers(memory, cpu)) {
         result.flow = LUFIA2_EXECUTION_BOUNDARY;

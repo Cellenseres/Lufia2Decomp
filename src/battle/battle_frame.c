@@ -417,12 +417,12 @@ static void BattlePartyTilemap(
     StoreZeroAbsolute8(memory, cpu, 0x15d3u, 0);               /* 8D31 */
     LoadX16(cpu, 0x2800u);
     LoadY16(cpu, 0x0200u);
-    Write16Absolute(memory, cpu, 0x2181u, cpu->x);
-    StoreZeroAbsolute8(memory, cpu, 0x2183u, 0);
+    Write16Absolute(memory, cpu, SNES_WMADDL, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, SNES_WMADDH, 0);
     LoadA8(cpu, 0x01u);
     do {
-        StoreZeroAbsolute8(memory, cpu, 0x2180u, 0);           /* 8D42 */
-        StoreAAbsolute8(memory, cpu, 0x2180u, 0);
+        StoreZeroAbsolute8(memory, cpu, SNES_WMDATA, 0);       /* 8D42 */
+        StoreAAbsolute8(memory, cpu, SNES_WMDATA, 0);
         LoadY16(cpu, (uint16_t)(cpu->y - 1u));
     } while (!cpu->zero);
     LoadAAbsolute8(memory, cpu, 0x154eu, 0);                   /* 8D4B */
@@ -453,15 +453,15 @@ static void BattlePartyTilemap(
                 And16(cpu, 0x1f1fu);
                 SetAccumulatorWidth(cpu, 1);
                 ExchangeAccumulatorBytes(cpu);                 /* 8D7F */
-                Write8(memory, 0x004202u, A8(cpu));
+                Write8(memory, SNES_WRMPYA, A8(cpu));
                 LoadA8(cpu, 0x40u);
-                Write8(memory, 0x004203u, A8(cpu));
+                Write8(memory, SNES_WRMPYB, A8(cpu));
                 LoadA8(cpu, 0x00u);
                 ExchangeAccumulatorBytes(cpu);
                 AslA8(cpu);
                 SetAccumulatorWidth(cpu, 0);
                 cpu->carry = 0;
-                Add16Value(cpu, Read16Long(memory, 0x004216u));
+                Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));
                 Add16Value(cpu, 0x2800u);
                 Write16Direct(memory, cpu, 0x08u, cpu->accumulator);
                 SetAccumulatorWidth(cpu, 1);
