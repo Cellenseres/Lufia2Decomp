@@ -151,7 +151,7 @@ entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
 
-# Field event tick, idle frames only; not bound (see DECOMP_STATUS).
+# Field event tick: screen effects, event timer, text step.
 [[function]]
 address = "80:9C72"
 name = "Lufia2FieldEventTick"
@@ -376,7 +376,7 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
-# Text/script engine step; opcodes other than $33 stay on LLE.
+# Text/script engine step; unported opcodes stay on LLE.
 [[function]]
 address = "80:9CB8"
 name = "Lufia2TextEngineStep"
