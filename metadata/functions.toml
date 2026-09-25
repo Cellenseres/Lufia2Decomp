@@ -380,7 +380,7 @@ status = "verified"
 [[function]]
 address = "80:9CB8"
 name = "Lufia2TextEngineStep"
-source = "src/actor_script.c"
+source = "src/text/text_engine.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"

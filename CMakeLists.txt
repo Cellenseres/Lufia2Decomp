@@ -18,7 +18,8 @@ add_library(lufia2_decomp STATIC
     src/field/field_scroll.c
     src/field/field_sprites.c
     src/field/field_triggers.c
-    src/field/field_update.c)
+    src/field/field_update.c
+    src/text/text_engine.c)
 add_library(Lufia2::Decomp ALIAS lufia2_decomp)
 
 target_include_directories(lufia2_decomp
