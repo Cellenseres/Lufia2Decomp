@@ -11,6 +11,11 @@ void Lufia2ActorLeaderToProbe(
     Lufia2CpuState *cpu,
     uint16_t return_address);
 
+/* $83:F9F7: X = 2 * (B + A * width); no frame. */
+void Lufia2MapCellOffset(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $83:F9AD / $83:F9B6: X = $8F + $91 * width. */
 void Lufia2MapCellIndex(
     const Lufia2Memory *memory,

@@ -27,6 +27,28 @@ void Lufia2EventNextByte(
     SimulateRtsFrame(memory, cpu);
 }
 
+/* Read-only: a $FF within limit script bytes from Y. */
+uint8_t Lufia2EventListEnds(
+    const Lufia2Memory *memory,
+    const Lufia2CpuState *cpu,
+    unsigned limit) {
+    uint8_t bank = cpu->data_bank;
+    uint8_t script_bank = Read8(memory, EVENT_SCRIPT_BANK);
+    uint16_t y = cpu->y;
+
+    while (limit--) {
+        const uint8_t value = Read8(memory, ((uint32_t)bank << 16) | y);
+
+        if (++y < 0x8000u) {
+            bank = ++script_bank;
+            y = 0x8000u;
+        }
+        if (value == 0xffu)
+            return 1;
+    }
+    return 0;
+}
+
 /* $80:E8D0: step back one byte; below $8000 the bank steps down. */
 void Lufia2EventPrevByte(
     const Lufia2Memory *memory,

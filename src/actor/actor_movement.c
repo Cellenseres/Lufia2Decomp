@@ -5,10 +5,6 @@
 #include "actor/actor_internal.h"
 #include "system/wram.h"
 
-static void PrimaryMapCoordinateToCellOffset(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
-
 /* $83:F9AD / $83:F9B6: X = $8F + $91 * width. */
 void Lufia2MapCellIndex(
     const Lufia2Memory *memory,
@@ -46,7 +42,7 @@ void Lufia2MapTileHeight(
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X))); /* F9F2 */
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
-    PrimaryMapCoordinateToCellOffset(memory, cpu);             /* F9F7 */
+    Lufia2MapCellOffset(memory, cpu);             /* F9F7 */
     SimulateRtsFrame(memory, cpu);
     SetAccumulatorWidth(cpu, 0);                               /* F98B */
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05aau, 0));
@@ -311,7 +307,7 @@ void Lufia2ActorMoveFinePosition(
 
 
 
-static void PrimaryMapCoordinateToCellOffset(
+void Lufia2MapCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Write8(memory, SNES_WRMPYA, A8(cpu));                      /* $83:F9F7 */
@@ -380,7 +376,7 @@ void Lufia2ActorResolveMapCellOffset(
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y))); /* F9D7 */
 
     SimulateJsrFrame(memory, cpu, 0xf9dbu);                    /* F9D9 */
-    PrimaryMapCoordinateToCellOffset(memory, cpu);             /* F9F7 */
+    Lufia2MapCellOffset(memory, cpu);             /* F9F7 */
     SimulateRtsFrame(memory, cpu);
 
     SetAccumulatorWidth(cpu, 0);                               /* F9DC */

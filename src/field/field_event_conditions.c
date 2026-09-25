@@ -673,6 +673,172 @@ static const struct {
     {EVENT_OP_GOTO_UNLESS_CELLS_01, 0x01u, 1, EVENT_THEN_GOTO_IF_TRUE},
 };
 
+/* $80:E203: result $FF when two positions hold the same tile in
+   any layer of mask n ($7F:D008 layer bases). 0 = handoff. */
+static uint8_t EventSameTiles(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff) {
+    static const uint16_t kReturns[2][4] = {
+        {0xe20cu, 0xe20fu, 0xe212u, 0xe217u},
+        {0xe21cu, 0xe21fu, 0xe222u, 0xe227u}};
+    unsigned i;
+
+    SimulateJsrFrame(memory, cpu, return_address);
+    Lufia2EventNextByte(memory, cpu, 0xe205u);                 /* E203 */
+    StoreADirect8(memory, cpu, 0x60u);
+    Write8(memory, DirectAddress(cpu, 0x61u), 0x00u);
+    for (i = 0; i < 2u; ++i) {
+        Lufia2EventNextByte(memory, cpu, kReturns[i][0]);
+        Lufia2EventValue(memory, cpu, kReturns[i][1]);
+        if (!Lufia2EventPosition(memory, cpu, kReturns[i][2], handoff))
+            return 0;
+        ExchangeAccumulatorBytes(cpu);
+        SimulateJslFrame(memory, cpu, 0x80u, kReturns[i][3]);  /* $83:F9EE */
+        SimulateJsrFrame(memory, cpu, 0xf9f0u);
+        Lufia2MapCellOffset(memory, cpu);
+        SimulateRtsFrame(memory, cpu);
+        SimulateRtlFrame(memory, cpu);
+        Write16Direct(memory, cpu, i ? 0x56u : 0x58u, cpu->x);
+    }
+    SetAccumulatorWidth(cpu, 0);                               /* E22A */
+    Write16Direct(memory, cpu, 0x5du, 0x0000u);
+    Write16Direct(memory, cpu, 0x5au, 0x0000u);
+    do {
+        uint16_t mask = Read16Direct(memory, cpu, 0x60u);
+
+        cpu->carry = mask & 1u;                                /* E230 */
+        mask >>= 1;
+        Write16Direct(memory, cpu, 0x60u, mask);
+        SetNz16(cpu, mask);
+        if (cpu->carry) {
+            LoadXDirect16(memory, cpu, 0x5au);
+            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd008u, cpu->x)));
+            StoreADirect16(memory, cpu, 0x63u);
+            cpu->carry = 0;
+            Add16Value(cpu, Read16Direct(memory, cpu, 0x58u));
+            TransferAToX(cpu);
+            LoadA16(cpu, (uint16_t)(Read16Long(memory,
+                LongIndexedAddress(0x7f0000u, cpu->x)) & 0x03ffu));
+            StoreADirect16(memory, cpu, 0x65u);
+            LoadA16(cpu, Read16Direct(memory, cpu, 0x63u));    /* E249 */
+            cpu->carry = 0;
+            Add16Value(cpu, Read16Direct(memory, cpu, 0x56u));
+            TransferAToX(cpu);
+            LoadA16(cpu, (uint16_t)(Read16Long(memory,
+                LongIndexedAddress(0x7f0000u, cpu->x)) & 0x03ffu));
+            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x65u));
+            if (cpu->zero) {
+                LoadA16(cpu, Read16Direct(memory, cpu, 0x5du));
+                Compare16(cpu, cpu->accumulator, 0xffffu);
+                if (!cpu->zero) {
+                    LoadA16(cpu, 0xffffu);
+                    StoreADirect16(memory, cpu, 0x5du);
+                }
+            }
+        }
+        Write16Direct(memory, cpu, 0x5au,                      /* E266 */
+            (uint16_t)(Read16Direct(memory, cpu, 0x5au) + 1u));
+        Write16Direct(memory, cpu, 0x5au,
+            (uint16_t)(Read16Direct(memory, cpu, 0x5au) + 1u));
+        SetNz16(cpu, Read16Direct(memory, cpu, 0x5au));
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x60u));
+    } while (!cpu->zero);
+    SetAccumulatorWidth(cpu, 1);                               /* E26E */
+    LoadA8(cpu, DirectByte(memory, cpu, 0x5du));
+    Write8(memory, EVENT_CONDITION, A8(cpu));
+    SimulateRtsFrame(memory, cpu);
+    return 1;
+}
+
+/* $87 keeps, $88 gotos on, $89 gotos unless the same tiles. */
+static unsigned EventOpSameTiles(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    if (!EventSameTiles(memory, cpu, (uint16_t)(handler + 2u), handoff))
+        return EVENT_OPCODE_HANDOFF;
+    if (handler == EVENT_OP_KEEP_SAME_TILES)
+        return EventKeepResult(memory, cpu);
+    if (handler == EVENT_OP_GOTO_UNLESS_SAME_TILES)
+        EventNegate(memory, cpu, 0xe1ffu);
+    return EventGotoIfTrue(memory, cpu);
+}
+
+/* $80:BF92: slot of actor id A in $05FA (DB-relative) into $A7;
+   carry set and X = $28 when missing. */
+static void EventFindActorId(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    for (LoadX16(cpu, 0x0000u);;) {                            /* BF92 */
+        Compare8(cpu, A8(cpu),
+            Read8(memory, AbsoluteIndexedAddress(cpu, 0x05fau, cpu->x)));
+        if (cpu->zero) {
+            StoreXDirect16(memory, cpu, DP_ACTOR_SLOT);        /* BFA2 */
+            SimulateJslFrame(memory, cpu, 0x80u, 0xbfa7u);
+            Lufia2ActorRecordOffsets(memory, cpu);             /* $84:82D5 */
+            SimulateRtlFrame(memory, cpu);
+            cpu->carry = 0;
+            break;
+        }
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x0028u);
+        if (cpu->zero) {
+            cpu->carry = 1;
+            break;
+        }
+    }
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $20: goto unless every listed actor id (+$4F, to $FF) has $0736
+   bit 5; a missing id tests entry $28. */
+static unsigned EventOpGotoUnlessActorsBit5(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    unsigned listed = 0;
+
+    /* Over 64 ids (the table has 40) hands off before the opcode. */
+    if (!Lufia2EventListEnds(memory, cpu, 65u))
+        return EVENT_OPCODE_HANDOFF;
+    LoadA8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));       /* E09D */
+    PushAccumulator8(memory, cpu);
+    LoadA8(cpu, 0xffu);
+    Write8(memory, EVENT_CONDITION, A8(cpu));
+    for (;;) {
+        /* No $FF in any bank loops forever. */
+        if (listed++ >= 0x01000000u) {
+            *handoff = 0x80e0a6u;
+            return EVENT_OPCODE_HANDOFF;
+        }
+        TransferDirectToA(cpu);                                /* E0A6 */
+        Lufia2EventNextByte(memory, cpu, 0xe0a9u);
+        Compare8(cpu, A8(cpu), 0xffu);
+        if (cpu->zero)
+            break;
+        cpu->carry = 0;
+        Adc8(cpu, 0x4fu);
+        EventFindActorId(memory, cpu, 0xe0b4u);
+        LoadAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+        BitImmediate8(cpu, 0x20u);
+        if (cpu->zero) {
+            TransferDirectToA(cpu);                            /* E0BC */
+            Write8(memory, EVENT_CONDITION, A8(cpu));
+        }
+    }
+    LoadA8(cpu, Pull8(memory, cpu));                           /* E0C3 */
+    StoreADirect8(memory, cpu, DP_ACTOR_SLOT);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xe0c9u);
+    Lufia2ActorRecordOffsets(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    return EventGotoIfFalse(memory, cpu);
+}
+
 /* $15-$18, $6E, $6F, $72-$74: map cell conditions. */
 static unsigned EventOpCells(
     const Lufia2Memory *memory,
@@ -789,6 +955,12 @@ unsigned Lufia2EventConditionOpcode(
     case EVENT_OP_GOTO_IF_D0F4:
     case EVENT_OP_GOTO_UNLESS_D0F4:
         return EventOpD0F4(memory, cpu, handler);
+    case EVENT_OP_KEEP_SAME_TILES:
+    case EVENT_OP_GOTO_IF_SAME_TILES:
+    case EVENT_OP_GOTO_UNLESS_SAME_TILES:
+        return EventOpSameTiles(memory, cpu, handler, handoff);
+    case EVENT_OP_GOTO_UNLESS_ACTORS_BIT_5:
+        return EventOpGotoUnlessActorsBit5(memory, cpu, handoff);
     default:
         return EVENT_OPCODE_HANDOFF;
     }
