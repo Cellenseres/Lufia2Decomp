@@ -4,13 +4,14 @@
 #include "lufia2/field.h"
 #include "field/field_internal.h"
 #include "text/text_internal.h"
+#include "system/wram.h"
 
 /* $83:80CD: field idle test; zero = no event running. */
 void Lufia2FieldIdleBody(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    static const uint16_t gates[5] = {0x09a8u, 0x0622u, 0x05b7u, 0x05b5u,
-                                      0x17aau};
+    static const uint16_t gates[5] = {0x09a8u, WRAM_ACTOR_STATE, WRAM_FIELD_REQUESTS, WRAM_FIELD_FLAGS,
+                                      WRAM_ANIMATION_MASK};
     static const uint8_t masks[5] = {0x08u, 0x88u, 0x07u, 0xa2u, 0x00u};
     unsigned i;
 
@@ -21,7 +22,7 @@ void Lufia2FieldIdleBody(
         if (!cpu->zero)
             return;
     }
-    LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 80EE */
+    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* 80EE */
     BitImmediate8(cpu, 0x80u);
     if (!cpu->zero)
         return;
@@ -65,7 +66,7 @@ Lufia2ExecutionResult Lufia2FieldAnimationTicks(
     result.dispatches = 0;
     Push8(memory, cpu, PackStatus(cpu));                       /* 8682 */
     SetIndexWidth(cpu, 0);
-    Write8(memory, AbsoluteIndexedAddress(cpu, 0x17aau, 0), 0x00u);
+    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_ANIMATION_MASK, 0), 0x00u);
     LoadA8(cpu, 0x01u);
     StoreAAbsolute8(memory, cpu, 0x17abu, 0);
     LoadX16(cpu, 0x0000u);
@@ -74,7 +75,7 @@ Lufia2ExecutionResult Lufia2FieldAnimationTicks(
         if (cpu->negative) {
             ExchangeAccumulatorBytes(cpu);                     /* 8696 */
             LoadAAbsolute8(memory, cpu, 0x17abu, 0);
-            TestBitsAbsolute8(memory, cpu, 0x17aau, 1);
+            TestBitsAbsolute8(memory, cpu, WRAM_ANIMATION_MASK, 1);
             AslA8(cpu);
             StoreAAbsolute8(memory, cpu, 0x17abu, 0);
             ExchangeAccumulatorBytes(cpu);
@@ -111,15 +112,6 @@ Lufia2ExecutionResult Lufia2FieldAnimationTicks(
     return result;
 }
 
-static Lufia2ExecutionResult FieldTickBoundary(
-    Lufia2ExecutionResult result,
-    Lufia2CpuState *cpu,
-    uint32_t pc) {
-    result.flow = LUFIA2_EXECUTION_BOUNDARY;
-    result.pc = cpu->resume_pc = pc;
-    return result;
-}
-
 Lufia2ExecutionResult Lufia2FieldEventTick(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -130,7 +122,7 @@ Lufia2ExecutionResult Lufia2FieldEventTick(
     result.dispatches = 0;
     SimulateJslFrame(memory, cpu, 0x80u, 0x9c75u);             /* 9C72 */
     cpu->program_bank = 0x84u;
-    Lufia2FieldScreenEffects(memory, cpu);                           /* $84:8000 */
+    Lufia2FieldScreenEffects(memory, cpu);                     /* $84:8000 */
     SimulateRtlFrame(memory, cpu);
     cpu->program_bank = 0x80u;
     SimulateJsrFrame(memory, cpu, 0x9c78u);                    /* 9C76 */
@@ -150,11 +142,11 @@ Lufia2ExecutionResult Lufia2FieldEventTick(
         }
     }
     SimulateRtsFrame(memory, cpu);
-    LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 9C79 */
+    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* 9C79 */
     And8(cpu, 0x0au);
     if (!cpu->zero)
         return Lufia2TextPromptTick(memory, cpu, result);
-    LoadAAbsolute8(memory, cpu, 0x099bu, 0);                   /* 9CB2 */
+    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* 9CB2 */
     if (cpu->negative)
         return Lufia2TextEngineStepBody(memory, cpu, result);
     return result;
@@ -167,7 +159,7 @@ Lufia2ExecutionResult Lufia2FieldMenuRequest(
     if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x8383a0u);
     LoadA8(cpu, 0x40u);                                        /* 83A0 */
-    TestBitsAbsolute8(memory, cpu, 0x05b5u, 0);
+    TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 0);
     if (!cpu->zero)
         return ExecutionHandoff(cpu, 0x8383bdu);
     LoadAAbsolute8(memory, cpu, 0x09a7u, 0);
@@ -175,9 +167,9 @@ Lufia2ExecutionResult Lufia2FieldMenuRequest(
     if (!cpu->zero) {
         SetAccumulatorWidth(cpu, 0);                           /* 83AE */
         LoadA16(cpu, 0x9080u);
-        And16(cpu, Read16Direct(memory, cpu, 0x46u));
+        And16(cpu, Read16Direct(memory, cpu, DP_BUTTONS_HELD));
         if (!cpu->zero) {
-            TestBitsDirect(memory, cpu, 0x4au, 0);
+            TestBitsDirect(memory, cpu, DP_BUTTONS_PRESSED, 0);
             if (!cpu->zero) {
                 SetAccumulatorWidth(cpu, 1);
                 return ExecutionHandoff(cpu, 0x8383bdu);
@@ -194,9 +186,9 @@ Lufia2ExecutionResult Lufia2FieldTakeButtons(
     Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x83867bu);
-    And8(cpu, DirectByte(memory, cpu, 0x46u));                 /* 867B */
+    And8(cpu, DirectByte(memory, cpu, DP_BUTTONS_HELD));       /* 867B */
     if (!cpu->zero)
-        TestBitsDirect(memory, cpu, 0x4au, 0);
+        TestBitsDirect(memory, cpu, DP_BUTTONS_PRESSED, 0);
     return ExecutionReturned(0x838681u);
 }
 
@@ -210,7 +202,7 @@ Lufia2ExecutionResult Lufia2FieldStatusRequests(
     BitImmediate8(cpu, 0x08u);
     if (cpu->zero) {
         SetIndexWidth(cpu, 0);
-        LoadAAbsolute8(memory, cpu, 0x05b7u, 0);               /* 810C */
+        LoadAAbsolute8(memory, cpu, WRAM_FIELD_REQUESTS, 0);   /* 810C */
         BitImmediate8(cpu, 0x02u);
         if (!cpu->zero)
             return ExecutionHandoff(cpu, 0x838113u);
@@ -230,7 +222,7 @@ Lufia2ExecutionResult Lufia2FieldReloadSetup(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     static const uint16_t cleared[7] = {
-        0x099bu, 0x099cu, 0x1261u, 0x1262u, 0x1254u, 0x09a6u, 0x09adu};
+        WRAM_TEXT_STATE, 0x099cu, WRAM_SCREEN_EFFECTS, WRAM_PALETTE_FADE, 0x1254u, 0x09a6u, 0x09adu};
     unsigned i;
 
     Push8(memory, cpu, PackStatus(cpu));                       /* 85DC */
@@ -239,28 +231,28 @@ Lufia2ExecutionResult Lufia2FieldReloadSetup(
     PullDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x4200u, 0);
+    StoreZeroAbsolute8(memory, cpu, SNES_NMITIMEN, 0);
     TransferDirectToA(cpu);
     Write8(memory, 0x7fd0ffu, A8(cpu));
     StoreAAbsolute8(memory, cpu, 0x0562u, 0);
     StoreAAbsolute8(memory, cpu, 0x0563u, 0);
     LoadA8(cpu, 0x80u);
-    StoreAAbsolute8(memory, cpu, 0x0583u, 0);
-    StoreAAbsolute8(memory, cpu, 0x2100u, 0);
+    StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
+    StoreAAbsolute8(memory, cpu, SNES_INIDISP, 0);
     TransferDirectToA(cpu);                                    /* 85FA */
     StoreADirect8(memory, cpu, 0x6au);
     StoreADirect8(memory, cpu, 0x6fu);
     Write8(memory, DirectAddress(cpu, 0x72u), 0x00u);
     Write8(memory, DirectAddress(cpu, 0x74u), 0x00u);
-    Write8(memory, DirectAddress(cpu, 0x73u), 0x00u);
+    Write8(memory, DirectAddress(cpu, DP_NMI_UPLOAD_FLAGS), 0x00u);
     StoreAAbsolute8(memory, cpu, 0x1255u, 0);
     StoreAAbsolute8(memory, cpu, 0x1256u, 0);
     StoreADirect8(memory, cpu, 0x81u);
-    StoreAAbsolute8(memory, cpu, 0x420cu, 0);
+    StoreAAbsolute8(memory, cpu, SNES_HDMAEN, 0);
     LoadA8(cpu, 0xffu);                                        /* 8610 */
     Write8(memory, 0x7fd0b0u, A8(cpu));
     Write8(memory, 0x7fd4f5u, A8(cpu));
-    StoreAAbsolute8(memory, cpu, 0x17acu, 0);
+    StoreAAbsolute8(memory, cpu, WRAM_SOUND_COMMAND, 0);
     for (i = 0; i < 4u; ++i)
         StoreZeroAbsolute8(memory, cpu, cleared[i], 0);
     LoadA8(cpu, 0xffu);

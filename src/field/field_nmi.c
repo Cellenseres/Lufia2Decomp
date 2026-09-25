@@ -3,18 +3,19 @@
 #include "core/cpu_internal.h"
 #include "lufia2/field.h"
 #include "field/field_internal.h"
+#include "system/wram.h"
 
 /* $83:A052: CGRAM upload on DMA channel 6. */
 static void NmiCgramUpload(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    StoreYIndex(memory, cpu, 0x4365u);                         /* A052 */
-    StoreAAbsolute8(memory, cpu, 0x2121u, 0);
-    Write16Absolute(memory, cpu, 0x4362u, cpu->x);
-    StoreA8Absolute(memory, cpu, 0x4360u, 0x00u);
-    StoreA8Absolute(memory, cpu, 0x4364u, 0x00u);
-    StoreA8Absolute(memory, cpu, 0x4361u, 0x22u);
-    StoreA8Absolute(memory, cpu, 0x420bu, 0x40u);
+    StoreYIndex(memory, cpu, SNES_DASL(6));                    /* A052 */
+    StoreAAbsolute8(memory, cpu, SNES_CGADD, 0);
+    Write16Absolute(memory, cpu, SNES_A1TL(6), cpu->x);
+    StoreA8Absolute(memory, cpu, SNES_DMAP(6), 0x00u);
+    StoreA8Absolute(memory, cpu, SNES_A1B(6), 0x00u);
+    StoreA8Absolute(memory, cpu, SNES_BBAD(6), 0x22u);
+    StoreA8Absolute(memory, cpu, SNES_MDMAEN, 0x40u);
 }
 
 /* $83:A033: queued palette uploads, $73 bits 0-1. */
@@ -23,7 +24,7 @@ static void NmiPaletteUploads(
     Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x9fb3u);
     LoadA8(cpu, 0x01u);                                        /* A033 */
-    TrbDirect8(memory, cpu, 0x73u);
+    TrbDirect8(memory, cpu, DP_NMI_UPLOAD_FLAGS);
     if (!cpu->zero) {
         LoadA8(cpu, 0x10u);
         LoadX16(cpu, 0x0340u);
@@ -33,7 +34,7 @@ static void NmiPaletteUploads(
         SimulateRtsFrame(memory, cpu);
     }
     LoadA8(cpu, 0x02u);                                        /* A044 */
-    TrbDirect8(memory, cpu, 0x73u);
+    TrbDirect8(memory, cpu, DP_NMI_UPLOAD_FLAGS);
     if (!cpu->zero) {
         LoadA8(cpu, 0xf0u);
         LoadX16(cpu, 0x0500u);
@@ -60,30 +61,30 @@ static void NmiTileBlock(
         return;
     Write16Absolute(memory, cpu, (uint16_t)(list + cpu->x), 0x0000u);
     LoadY8(cpu, vmain);
-    StoreYIndex(memory, cpu, 0x2115u);
+    StoreYIndex(memory, cpu, SNES_VMAIN);
     And16(cpu, 0x1fffu);
     LsrA16(cpu);
-    Write16Absolute(memory, cpu, 0x2116u, cpu->accumulator);
+    Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
     Write16Direct(memory, cpu, 0x33u, cpu->accumulator);
     LoadY8(cpu, bank);
-    StoreYIndex(memory, cpu, 0x4364u);
+    StoreYIndex(memory, cpu, SNES_A1B(6));
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, source, cpu->x));
-    Write16Absolute(memory, cpu, 0x4362u, cpu->accumulator);
+    Write16Absolute(memory, cpu, SNES_A1TL(6), cpu->accumulator);
     Write16Direct(memory, cpu, 0x35u, cpu->accumulator);
     if (setup) {
         LoadY8(cpu, 0x01u);
-        StoreYIndex(memory, cpu, 0x4360u);
+        StoreYIndex(memory, cpu, SNES_DMAP(6));
         LoadY8(cpu, 0x18u);
-        StoreYIndex(memory, cpu, 0x4361u);
+        StoreYIndex(memory, cpu, SNES_BBAD(6));
     }
     LoadA16(cpu, 0x0040u);
-    Write16Absolute(memory, cpu, 0x4365u, cpu->accumulator);
+    Write16Absolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
     LoadY8(cpu, 0x40u);
-    StoreYIndex(memory, cpu, 0x420bu);
+    StoreYIndex(memory, cpu, SNES_MDMAEN);
     LoadA16(cpu, Read16Direct(memory, cpu, 0x35u));
     cpu->carry = 0;
     Add16Immediate(cpu, 0x0040u);
-    Write16Absolute(memory, cpu, 0x4362u, cpu->accumulator);
+    Write16Absolute(memory, cpu, SNES_A1TL(6), cpu->accumulator);
     LoadA16(cpu, Read16Direct(memory, cpu, 0x33u));
     if (second_step == 1u) {
         IncrementA16(cpu);
@@ -91,11 +92,11 @@ static void NmiTileBlock(
         cpu->carry = 0;
         Add16Immediate(cpu, second_step);
     }
-    Write16Absolute(memory, cpu, 0x2116u, cpu->accumulator);
+    Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
     LoadA16(cpu, 0x0040u);
-    Write16Absolute(memory, cpu, 0x4365u, cpu->accumulator);
+    Write16Absolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
     LoadY8(cpu, 0x40u);
-    StoreYIndex(memory, cpu, 0x420bu);
+    StoreYIndex(memory, cpu, SNES_MDMAEN);
 }
 
 /* $83:A0E1: queued VRAM tile uploads, four slots each list. */
@@ -106,11 +107,11 @@ static void NmiTileUploads(
     SetAccumulatorWidth(cpu, 0);                               /* A0E1 */
     SetIndexWidth(cpu, 1);
     LoadY8(cpu, 0x80u);
-    StoreYIndex(memory, cpu, 0x2115u);
+    StoreYIndex(memory, cpu, SNES_VMAIN);
     LoadY8(cpu, 0x01u);
-    StoreYIndex(memory, cpu, 0x4360u);
+    StoreYIndex(memory, cpu, SNES_DMAP(6));
     LoadY8(cpu, 0x18u);
-    StoreYIndex(memory, cpu, 0x4361u);
+    StoreYIndex(memory, cpu, SNES_BBAD(6));
     LoadX8(cpu, 0x06u);
     for (;;) {
         NmiTileBlock(memory, cpu, 0x1246u, 0x1236u, 0x81u, 0x7fu, 0, 1u);
@@ -121,7 +122,7 @@ static void NmiTileUploads(
             break;
     }
     LoadY8(cpu, 0x80u);                                        /* A19A */
-    StoreYIndex(memory, cpu, 0x2115u);
+    StoreYIndex(memory, cpu, SNES_VMAIN);
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
@@ -145,13 +146,13 @@ static void NmiColumnUploads(
         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd538u, cpu->x)));
         Write16Direct(memory, cpu, 0x37u, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
-        StoreA8Absolute(memory, cpu, 0x4364u, 0x7eu);
-        StoreA8Absolute(memory, cpu, 0x4360u, 0x01u);
-        StoreA8Absolute(memory, cpu, 0x4361u, 0x18u);
+        StoreA8Absolute(memory, cpu, SNES_A1B(6), 0x7eu);
+        StoreA8Absolute(memory, cpu, SNES_DMAP(6), 0x01u);
+        StoreA8Absolute(memory, cpu, SNES_BBAD(6), 0x18u);
         do {
             SetAccumulatorWidth(cpu, 0);                       /* A1CD */
             LoadA16(cpu, Read16Direct(memory, cpu, 0x33u));
-            Write16Absolute(memory, cpu, 0x4362u, cpu->accumulator);
+            Write16Absolute(memory, cpu, SNES_A1TL(6), cpu->accumulator);
             cpu->carry = 0;
             Add16Immediate(cpu, 0x0080u);
             And16(cpu, 0x07ffu);
@@ -162,7 +163,7 @@ static void NmiColumnUploads(
                 Read16Direct(memory, cpu, 0x39u)));
             Write16Direct(memory, cpu, 0x33u, cpu->accumulator);
             LoadA16(cpu, Read16Direct(memory, cpu, 0x35u));    /* A1E6 */
-            Write16Absolute(memory, cpu, 0x2116u, cpu->accumulator);
+            Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
             cpu->carry = 0;
             Add16Immediate(cpu, 0x0040u);
             And16(cpu, 0x03ffu);
@@ -173,9 +174,9 @@ static void NmiColumnUploads(
                 Read16Direct(memory, cpu, 0x39u)));
             Write16Direct(memory, cpu, 0x35u, cpu->accumulator);
             LoadA16(cpu, 0x0080u);
-            Write16Absolute(memory, cpu, 0x4365u, cpu->accumulator);
+            Write16Absolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
             SetAccumulatorWidth(cpu, 1);
-            StoreA8Absolute(memory, cpu, 0x420bu, 0x40u);
+            StoreA8Absolute(memory, cpu, SNES_MDMAEN, 0x40u);
             DecrementDirect8(memory, cpu, 0x37u);              /* A20A */
         } while (!cpu->zero);
         LoadX16(cpu, (uint16_t)(cpu->x - 2u));                 /* A20E */
@@ -198,35 +199,35 @@ static void NmiBlockUploads(
     do {
         LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05c2u, cpu->x));
         if (!cpu->zero) {
-            Write16Absolute(memory, cpu, 0x4362u, cpu->y);     /* A07C */
+            Write16Absolute(memory, cpu, SNES_A1TL(6), cpu->y); /* A07C */
             Write16Direct(memory, cpu, 0x33u, cpu->y);
             Write8(memory, AbsoluteIndexedAddress(cpu, 0x05c2u, cpu->x), 0x00u);
             Write8(memory, AbsoluteIndexedAddress(cpu, 0x05c3u, cpu->x), 0x00u);
             LoadAAbsolute8(memory, cpu, 0x11d9u, cpu->x);
-            StoreAAbsolute8(memory, cpu, 0x4364u, 0);
+            StoreAAbsolute8(memory, cpu, SNES_A1B(6), 0);
             LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11e9u, cpu->x));
             Write16Direct(memory, cpu, 0x35u, cpu->y);
-            Write16Absolute(memory, cpu, 0x2116u, cpu->y);
+            Write16Absolute(memory, cpu, SNES_VMADDL, cpu->y);
             LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11f9u, cpu->x));
             Write16Direct(memory, cpu, 0x37u, cpu->y);
-            Write16Absolute(memory, cpu, 0x4365u, cpu->y);
-            StoreA8Absolute(memory, cpu, 0x4360u, 0x01u);
-            StoreA8Absolute(memory, cpu, 0x4361u, 0x18u);
-            StoreA8Absolute(memory, cpu, 0x420bu, 0x40u);
+            Write16Absolute(memory, cpu, SNES_DASL(6), cpu->y);
+            StoreA8Absolute(memory, cpu, SNES_DMAP(6), 0x01u);
+            StoreA8Absolute(memory, cpu, SNES_BBAD(6), 0x18u);
+            StoreA8Absolute(memory, cpu, SNES_MDMAEN, 0x40u);
             SetAccumulatorWidth(cpu, 0);                       /* A0AC */
             LoadA16(cpu, Read16Direct(memory, cpu, 0x35u));
             cpu->carry = 0;
             Add16Immediate(cpu, 0x0100u);
-            Write16Absolute(memory, cpu, 0x2116u, cpu->accumulator);
+            Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
             LoadA16(cpu, Read16Direct(memory, cpu, 0x37u));
-            Write16Absolute(memory, cpu, 0x4365u, cpu->accumulator);
+            Write16Absolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
             cpu->carry = 0;
             Add16Value(cpu, Read16Direct(memory, cpu, 0x33u));
-            Write16Absolute(memory, cpu, 0x4362u, cpu->accumulator);
+            Write16Absolute(memory, cpu, SNES_A1TL(6), cpu->accumulator);
             SetAccumulatorWidth(cpu, 1);
-            StoreA8Absolute(memory, cpu, 0x4360u, 0x01u);
-            StoreA8Absolute(memory, cpu, 0x4361u, 0x18u);
-            StoreA8Absolute(memory, cpu, 0x420bu, 0x40u);
+            StoreA8Absolute(memory, cpu, SNES_DMAP(6), 0x01u);
+            StoreA8Absolute(memory, cpu, SNES_BBAD(6), 0x18u);
+            StoreA8Absolute(memory, cpu, SNES_MDMAEN, 0x40u);
         }
         IncrementX16(cpu);                                     /* A0D3 */
         IncrementX16(cpu);
@@ -248,7 +249,7 @@ static void NmiFade(
         LoadA8(cpu, Read8(memory, 0x7fd0f2u));
         And8(cpu, 0xf0u);
         Or8(cpu, 0x0fu);
-        StoreAAbsolute8(memory, cpu, 0x2106u, 0);
+        StoreAAbsolute8(memory, cpu, SNES_MOSAIC, 0);
         LoadA8(cpu, Read8(memory, 0x7fd0f2u));
         And8(cpu, 0x0fu);
         cpu->carry = 0;
@@ -307,11 +308,11 @@ Lufia2ExecutionResult Lufia2FieldNmiUploads(
     Adc8(cpu, 0x08u);
     if (cpu->negative)
         TransferDirectToA(cpu);                                /* 9FD1 */
-    StoreAAbsolute8(memory, cpu, 0x2126u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WH0, 0);
     Adc8(cpu, 0xeeu);
     if (!cpu->negative)
         LoadA8(cpu, 0xffu);                                    /* 9FD9 */
-    StoreAAbsolute8(memory, cpu, 0x2127u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WH1, 0);
     PullDataBank(memory, cpu);                                 /* 9FDE */
     UnpackStatus(cpu, Pull8(memory, cpu));
     result.flow = LUFIA2_EXECUTION_RETURNED;

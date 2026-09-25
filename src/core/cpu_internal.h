@@ -4,6 +4,7 @@
 /* 65816 register, flag and stack semantics. */
 
 #include "core/memory_internal.h"
+#include "core/snes_registers.h"
 
 static inline void SetNz8(Lufia2CpuState *cpu, uint8_t value) {
     cpu->negative = (value & 0x80u) != 0;

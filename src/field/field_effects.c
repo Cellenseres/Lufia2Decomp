@@ -5,6 +5,7 @@
 #include "lufia2/system.h"
 #include "field/field_internal.h"
 #include "system/system_internal.h"
+#include "system/wram.h"
 
 /* $83:AEED: palette cycles from bank $A1; 0 = cap hit. */
 static uint8_t FieldPaletteCycles(
@@ -81,7 +82,7 @@ static uint8_t FieldPaletteCycles(
         SetNz16(cpu, cpu->x);
         LoadA8(cpu, 0x01u);
         {
-            const uint32_t flags = DirectAddress(cpu, 0x73u);  /* TSB $73 */
+            const uint32_t flags = DirectAddress(cpu, DP_NMI_UPLOAD_FLAGS); /* TSB $73 */
             const uint8_t value = Read8(memory, flags);
 
             cpu->zero = (value & 0x01u) == 0;
@@ -134,7 +135,7 @@ static void FieldWaveTable(
     Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
     cpu->carry = 0;
     Add16Value(cpu, Read16Long(memory, 0x7fd0c6u));
-    Write16Long(memory, 0x004312u, cpu->accumulator);
+    Write16Long(memory, SNES_A1TL(1), cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     IncrementX16(cpu);                                         /* AF99 */
     IncrementX16(cpu);
@@ -148,13 +149,13 @@ static void FieldWaveTable(
     Push8(memory, cpu, 0x83u);                                 /* AFAC */
     PullDataBank(memory, cpu);
     LoadA8(cpu, 0x01u);
-    StoreAAbsolute8(memory, cpu, 0x4310u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_DMAP(1), 0);
     LoadA8(cpu, 0x7eu);
-    StoreAAbsolute8(memory, cpu, 0x4314u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_A1B(1), 0);
     LoadX16(cpu, 0x01e0u);
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x4315u, 0), cpu->x);
+    Write16Long(memory, AbsoluteIndexedAddress(cpu, SNES_DASL(1), 0), cpu->x);
     LoadA8(cpu, 0x18u);
-    StoreAAbsolute8(memory, cpu, 0x4311u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_BBAD(1), 0);
     LoadX16(cpu, 0x4010u);
     StoreXDirect16(memory, cpu, 0x7bu);
     LoadA8(cpu, 0x42u);
@@ -273,16 +274,16 @@ static void ScreenFade(
         else
             Sbc8(cpu, Read8(memory, 0x7fd090u));
         Write8(memory, 0x7fd091u, A8(cpu));
-        StoreAAbsolute8(memory, cpu, 0x0583u, 0);
+        StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
         if (in) {
             Compare8(cpu, A8(cpu), 0x0fu);
             if (cpu->carry) {
                 LoadA8(cpu, 0x02u);
-                TestBitsAbsolute8(memory, cpu, 0x1261u, 0);
+                TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
             }
         } else if (cpu->negative) {
-            StoreAImmediate8(memory, cpu, 0x80u, 0x0583u);
-            StoreZeroAbsolute8(memory, cpu, 0x1261u, 0);
+            StoreAImmediate8(memory, cpu, BRIGHTNESS_FORCED_BLANK, WRAM_BRIGHTNESS);
+            StoreZeroAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
         }
     }
     SimulateRtsFrame(memory, cpu);
@@ -300,7 +301,7 @@ static void ScreenColorStep(
     Compare8(cpu, A8(cpu), down ? 0xe0u : 0xffu);
     if (cpu->zero) {
         LoadA8(cpu, down ? 0x10u : 0x20u);
-        TestBitsAbsolute8(memory, cpu, 0x1261u, 0);
+        TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
     }
     SimulateRtsFrame(memory, cpu);
 }
@@ -392,7 +393,7 @@ static void ScreenPaletteFade(
         }
         LoadA16(cpu, (uint16_t)(cpu->accumulator |
             Read16Direct(memory, cpu, 0x56u)));
-        Write8(memory, AbsoluteIndexedAddress(cpu, 0x0320u, cpu->y),
+        Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_CGRAM_BUFFER, cpu->y),
             (uint8_t)cpu->accumulator);
         Write8(memory, AbsoluteIndexedAddress(cpu, 0x0321u, cpu->y),
             (uint8_t)(cpu->accumulator >> 8));
@@ -404,7 +405,7 @@ static void ScreenPaletteFade(
     } while (!cpu->zero);
     SetAccumulatorWidth(cpu, 1);                               /* 8EF4 */
     LoadA8(cpu, 0x01u);
-    TestBitsDirect(memory, cpu, 0x73u, 1);
+    TestBitsDirect(memory, cpu, DP_NMI_UPLOAD_FLAGS, 1);
     LoadAAbsolute8(memory, cpu, 0x1282u, 0);
     DecrementA8(cpu);
     StoreAAbsolute8(memory, cpu, 0x1282u, 0);
@@ -420,21 +421,21 @@ static void ScreenPaletteFade(
 void Lufia2FieldScreenEffects(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, 0x1261u, 0);                   /* 8000 */
+    LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);       /* 8000 */
     BitImmediate8(cpu, 0x04u);
     if (!cpu->zero) {
         ScreenShake(memory, cpu);
-        LoadAAbsolute8(memory, cpu, 0x1261u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
     }
     BitImmediate8(cpu, 0x02u);                                 /* 800D */
     if (!cpu->zero) {
         ScreenFade(memory, cpu, 1);
-        LoadAAbsolute8(memory, cpu, 0x1261u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
     }
     BitImmediate8(cpu, 0x01u);                                 /* 8017 */
     if (!cpu->zero) {
         ScreenFade(memory, cpu, 0);
-        LoadAAbsolute8(memory, cpu, 0x1261u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
     }
     BitImmediate8(cpu, 0x30u);                                 /* 8021 */
     if (!cpu->zero) {
@@ -443,11 +444,11 @@ void Lufia2FieldScreenEffects(
         if (cpu->zero) {
             LoadA8(cpu, 0x06u);
             Write8(memory, 0x7fd094u, A8(cpu));
-            LoadAAbsolute8(memory, cpu, 0x1261u, 0);
+            LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
             BitImmediate8(cpu, 0x10u);
             ScreenColorStep(memory, cpu, !cpu->zero);
         }
-        LoadAAbsolute8(memory, cpu, 0x1261u, 0);               /* 8045 */
+        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);   /* 8045 */
     }
     BitImmediate8(cpu, 0x80u);                                 /* 8048 */
     if (!cpu->zero) {
@@ -484,14 +485,14 @@ void Lufia2FieldScreenEffects(
             LoadAAbsolute8(memory, cpu, 0x1287u, 0);           /* 8087 */
             StoreADirect8(memory, cpu, 0x54u);
             LoadA8(cpu, 0x80u);
-            TestBitsAbsolute8(memory, cpu, 0x1261u, 0);
+            TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
         }
         LoadAAbsolute8(memory, cpu, 0x1286u, 0);               /* 8091 */
         And8(cpu, 0xe0u);
         Or8(cpu, DirectByte(memory, cpu, 0x54u));
-        StoreAAbsolute8(memory, cpu, 0x2132u, 0);
+        StoreAAbsolute8(memory, cpu, SNES_COLDATA, 0);
     }
-    LoadAAbsolute8(memory, cpu, 0x1262u, 0);                   /* 809B */
+    LoadAAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0);         /* 809B */
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero) {
         ScreenPaletteFade(memory, cpu);
@@ -505,8 +506,8 @@ void Lufia2FieldScreenEffects(
         Compare8(cpu, A8(cpu), 0x1fu);
         if (cpu->zero) {
             LoadA8(cpu, 0x01u);
-            TestBitsAbsolute8(memory, cpu, 0x1262u, 0);
-            LoadAAbsolute8(memory, cpu, 0x1262u, 0);
+            TestBitsAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0);
+            LoadAAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0);
         }
     }
 }

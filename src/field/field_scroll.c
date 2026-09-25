@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "lufia2/field.h"
 #include "field/field_internal.h"
+#include "system/wram.h"
 
 /* $8E:BF88: shift count from $8E:BF93 into $4E. */
 static void ScrollShiftCount(
@@ -81,7 +82,7 @@ static void ScrollStepToward(
 static void ScrollModeFollow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1261u, 0)); /* BE78 */
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_SCREEN_EFFECTS, 0)); /* BE78 */
     cpu->zero = (cpu->accumulator & 0x0040u) == 0;
     if (!cpu->zero) {
         LoadXDirect(memory, cpu, 0x5du);                       /* BE80 */
@@ -285,13 +286,13 @@ static void StreamWrap(
         LoadA16(cpu, (uint16_t)(cpu->accumulator | 0xf000u));
         LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
         IncrementA16(cpu);
-        Write16Long(memory, 0x004204u, cpu->accumulator);
+        Write16Long(memory, SNES_WRDIVL, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
         LoadA8(cpu, Read8(memory, DirectAddress(cpu, divisor)));
-        Write8(memory, 0x004206u, A8(cpu));
+        Write8(memory, SNES_WRDIVB, A8(cpu));
         StreamDelay(memory, cpu, negative_return);
         LoadA16(cpu, Read16Direct(memory, cpu, divisor));
-        Subtract16(cpu, Read16Long(memory, 0x004216u));
+        Subtract16(cpu, Read16Long(memory, SNES_RDMPYL));
         return;
     }
     if (short_cut) {
@@ -299,12 +300,12 @@ static void StreamWrap(
         if (!cpu->carry)
             return;
     }
-    Write16Long(memory, 0x004204u, cpu->accumulator);
+    Write16Long(memory, SNES_WRDIVL, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, divisor)));
-    Write8(memory, 0x004206u, A8(cpu));
+    Write8(memory, SNES_WRDIVB, A8(cpu));
     StreamDelay(memory, cpu, positive_return);
-    LoadA16(cpu, Read16Long(memory, 0x004216u));
+    LoadA16(cpu, Read16Long(memory, SNES_RDMPYL));
 }
 
 /* $80:F734: map cell and buffer offsets for A=x, Y=y. */
@@ -354,15 +355,15 @@ static void StreamLocate(
     Write16Direct(memory, cpu, 0x2au, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x28u)));
-    Write8(memory, 0x004202u, A8(cpu));
+    Write8(memory, SNES_WRMPYA, A8(cpu));
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x83u)));
-    Write8(memory, 0x004203u, A8(cpu));
+    Write8(memory, SNES_WRMPYB, A8(cpu));
     LoadA8(cpu, 0x7eu);
     Write8(memory, DirectAddress(cpu, 0x2cu), A8(cpu));
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd008u, cpu->x));
     Write16Direct(memory, cpu, 0x8du, cpu->accumulator);
-    LoadA16(cpu, Read16Long(memory, 0x004216u));
+    LoadA16(cpu, Read16Long(memory, SNES_RDMPYL));
     cpu->carry = 0;
     Add16Value(cpu, Read16Direct(memory, cpu, 0x26u));
     AslA16(cpu);
@@ -387,13 +388,13 @@ static void StreamCellIndex(
     SimulateJsrFrame(memory, cpu, return_address);
     SetAccumulatorWidth(cpu, 1);                               /* F6AA */
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x89u)));
-    Write8(memory, 0x004202u, A8(cpu));
+    Write8(memory, SNES_WRMPYA, A8(cpu));
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x83u)));
-    Write8(memory, 0x004203u, A8(cpu));
+    Write8(memory, SNES_WRMPYB, A8(cpu));
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Direct(memory, cpu, 0x87u));
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, 0x004216u));
+    Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));
     AslA16(cpu);
     Add16Value(cpu, Read16Direct(memory, cpu, 0x8du));
     TransferAToX(cpu);
@@ -673,7 +674,7 @@ Lufia2ExecutionResult Lufia2FieldScrollUpdate(
     /* The field loop always calls with X8. */
     if (!cpu->index_is_8_bit)
         return ScrollBoundary(result, cpu, 0x8ebd77u);
-    LoadAAbsolute8(memory, cpu, 0x1261u, 0);                   /* BD77 */
+    LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);       /* BD77 */
     BitImmediate8(cpu, 0x08u);
     SetAccumulatorWidth(cpu, 0);
     if (!cpu->zero) {

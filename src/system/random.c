@@ -100,16 +100,16 @@ void Lufia2RandomScale(
     RandomAdvance(memory, cpu, 0x82acu);                       /* 82A2 */
     ExchangeAccumulatorBytes(cpu);                             /* 82B2 */
     Write8(
-        memory, AbsoluteIndexedAddress(cpu, 0x4202u, 0), A8(cpu));
+        memory, AbsoluteIndexedAddress(cpu, SNES_WRMPYA, 0), A8(cpu));
     LoadA8(
         cpu, Read8(
             memory, AbsoluteIndexedAddress(cpu, 0x0521u, cpu->x)));
     Write8(
-        memory, AbsoluteIndexedAddress(cpu, 0x4203u, 0), A8(cpu));
+        memory, AbsoluteIndexedAddress(cpu, SNES_WRMPYB, 0), A8(cpu));
     LoadA8(cpu, 0x00u);                                        /* 82BC */
     ExchangeAccumulatorBytes(cpu);                             /* 82BE */
     LoadA8(
-        cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x4217u, 0)));
+        cpu, Read8(memory, AbsoluteIndexedAddress(cpu, SNES_RDMPYH, 0)));
     RandomLeave(memory, cpu);                                  /* 82C2 */
 }
 

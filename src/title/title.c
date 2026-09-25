@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/title.h"
+#include "system/wram.h"
 
 /* $82:E746: JSR $8028 inline table on $30; handlers on LLE. */
 Lufia2ExecutionResult Lufia2TitleStateDispatch(
@@ -50,14 +51,14 @@ static void IntroVramDma(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    StoreWordAbsolute(memory, cpu, 0x4362u, cpu->x);           /* 9357 */
-    StoreWordAbsolute(memory, cpu, 0x2116u, cpu->y);
-    StoreAImmediate8(memory, cpu, 0x7eu, 0x4364u);
+    StoreWordAbsolute(memory, cpu, SNES_A1TL(6), cpu->x);      /* 9357 */
+    StoreWordAbsolute(memory, cpu, SNES_VMADDL, cpu->y);
+    StoreAImmediate8(memory, cpu, 0x7eu, SNES_A1B(6));
     LoadX16(cpu, 0x0700u);
-    StoreWordAbsolute(memory, cpu, 0x4365u, cpu->x);
-    StoreAImmediate8(memory, cpu, 0x01u, 0x4360u);
-    StoreAImmediate8(memory, cpu, 0x18u, 0x4361u);
-    StoreAImmediate8(memory, cpu, 0x40u, 0x420bu);
+    StoreWordAbsolute(memory, cpu, SNES_DASL(6), cpu->x);
+    StoreAImmediate8(memory, cpu, 0x01u, SNES_DMAP(6));
+    StoreAImmediate8(memory, cpu, 0x18u, SNES_BBAD(6));
+    StoreAImmediate8(memory, cpu, 0x40u, SNES_MDMAEN);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -105,16 +106,16 @@ Lufia2ExecutionResult Lufia2IntroNmi(
         LoadA16(cpu, Read16Long(memory, 0x7e4004u));
         cpu->carry = 0;
         Add16Value(cpu, 0x4000u);
-        StoreWordAbsolute(memory, cpu, 0x4362u, cpu->accumulator);
+        StoreWordAbsolute(memory, cpu, SNES_A1TL(6), cpu->accumulator);
         LoadA16(cpu, Read16Long(memory, 0x7e4006u));
-        StoreWordAbsolute(memory, cpu, 0x4365u, cpu->accumulator);
+        StoreWordAbsolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
         LoadX16(cpu, 0x4000u);
-        StoreWordAbsolute(memory, cpu, 0x2116u, cpu->x);
-        StoreAImmediate8(memory, cpu, 0x7eu, 0x4364u);
-        StoreAImmediate8(memory, cpu, 0x01u, 0x4360u);
-        StoreAImmediate8(memory, cpu, 0x18u, 0x4361u);
-        StoreAImmediate8(memory, cpu, 0x40u, 0x420bu);
+        StoreWordAbsolute(memory, cpu, SNES_VMADDL, cpu->x);
+        StoreAImmediate8(memory, cpu, 0x7eu, SNES_A1B(6));
+        StoreAImmediate8(memory, cpu, 0x01u, SNES_DMAP(6));
+        StoreAImmediate8(memory, cpu, 0x18u, SNES_BBAD(6));
+        StoreAImmediate8(memory, cpu, 0x40u, SNES_MDMAEN);
         IncrementDirect8(memory, cpu, 0x50u);
         break;
     case 0x92feu:
@@ -123,7 +124,7 @@ Lufia2ExecutionResult Lufia2IntroNmi(
     case 0x930cu:                                  /* fade in over 32 */
         LoadA8(cpu, DirectByte(memory, cpu, 0x4eu));
         LsrA8(cpu);
-        StoreAAbsolute8(memory, cpu, 0x0583u, 0);
+        StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
         LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x4eu) + 1u));
         StoreADirect8(memory, cpu, 0x4eu);
         Compare8(cpu, A8(cpu), 0x20u);
@@ -148,10 +149,10 @@ Lufia2ExecutionResult Lufia2IntroNmi(
         if (cpu->negative) {
             Write8(memory, DirectAddress(cpu, 0x4eu), 0x00u);
             IncrementDirect8(memory, cpu, 0x50u);
-            StoreAImmediate8(memory, cpu, 0x80u, 0x0583u);
+            StoreAImmediate8(memory, cpu, BRIGHTNESS_FORCED_BLANK, WRAM_BRIGHTNESS);
         } else {
             LsrA8(cpu);
-            StoreAAbsolute8(memory, cpu, 0x0583u, 0);
+            StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
         }
         break;
     case 0x9346u:

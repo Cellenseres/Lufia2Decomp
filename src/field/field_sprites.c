@@ -4,6 +4,7 @@
 #include "lufia2/field.h"
 #include "actor/actor_internal.h"
 #include "field/field_internal.h"
+#include "system/wram.h"
 
 /* $83:A669: set the size bit for OAM entry $58, then $58++. */
 static void FieldOamHighBit(
@@ -215,11 +216,11 @@ static void FieldObjectReload(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);              /* A492 */
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);     /* A492 */
     BitImmediate8(cpu, 0x20u);
     if (!cpu->zero) {
         And8(cpu, 0xdfu);
-        StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
         FieldObjectSpriteUpload(memory, cpu);
     }
     SimulateRtsFrame(memory, cpu);
@@ -252,16 +253,16 @@ static void FieldActorFrameUpload(
         ((uint32_t)DirectByte(memory, cpu, 0x56u) << 16);
     LoadA8(cpu, Read8(memory, pointer));                       /* LDA [$54] */
     And8(cpu, 0x7fu);
-    StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
     TransferDirectToA(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
     TransferAToX(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83abf8u, cpu->x)));
-    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
     LoadYDirect8(memory, cpu, 0xabu);
     LoadAAbsolute8(memory, cpu, 0x12bbu, cpu->y);
     StoreADirect8(memory, cpu, 0x54u);
-    LoadAAbsolute8(memory, cpu, 0x4216u, 0);
+    LoadAAbsolute8(memory, cpu, SNES_RDMPYL, 0);
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, 0x00u);
     SetAccumulatorWidth(cpu, 0);
@@ -294,7 +295,7 @@ static void FieldSortVisible(
     LoadX8(cpu, 0x00u);
     SetAccumulatorWidth(cpu, 1);
     do {
-        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);          /* A29B */
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x); /* A29B */
         BitImmediate8(cpu, 0x04u);
         if (cpu->zero) {
             LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe316u, cpu->x)));
@@ -436,7 +437,7 @@ static uint8_t FieldActorOam(
         AslA8(cpu);
         TestBitsDirect(memory, cpu, 0x97u, 1);
         TransferDirectToA(cpu);
-        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
         And8(cpu, 0x03u);
         LsrA8(cpu);
         ExchangeAccumulatorBytes(cpu);
@@ -547,7 +548,7 @@ Lufia2ExecutionResult Lufia2FieldActorSprites(
         result.pc = cpu->resume_pc = 0x83a21au;
         return result;
     }
-    PushAndSetDataBank(memory, cpu, 0x7eu);                     /* A21A */
+    PushAndSetDataBank(memory, cpu, 0x7eu);                    /* A21A */
     TransferDirectToA(cpu);
     LoadA8(cpu, Read8(memory, 0x7fd0b0u));
     Compare8(cpu, A8(cpu), 0xffu);
@@ -572,7 +573,7 @@ Lufia2ExecutionResult Lufia2FieldActorSprites(
     SetAccumulatorWidth(cpu, 0);                               /* A253 */
     SetIndexWidth(cpu, 1);
     LoadA16(cpu, 0x0040u);
-    BitAbsolute16(memory, cpu, 0x1261u);
+    BitAbsolute16(memory, cpu, WRAM_SCREEN_EFFECTS);
     if (!cpu->zero) {
         LoadA16(cpu, Read16Long(memory, 0x7fd0eeu));
         StoreADirect16(memory, cpu, 0x9fu);
