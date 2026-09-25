@@ -13,7 +13,8 @@ void Lufia2FieldIdleBody(
 /* $80:CBAE: event slot timers; 0 = LLE at resume_pc. */
 uint8_t Lufia2FieldEventTimerBody(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    Lufia2CpuState *cpu,
+    unsigned *passes);
 
 /* $84:8000: screen effects of $1261 and the $1262 palette fade. */
 void Lufia2FieldScreenEffects(

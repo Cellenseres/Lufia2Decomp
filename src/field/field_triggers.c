@@ -152,6 +152,7 @@ Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2ExecutionResult result;
+    unsigned passes;
 
     result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.dispatches = 0;
@@ -159,8 +160,10 @@ Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
     SimulateJslFrame(memory, cpu, 0x83u, 0x81ceu);
-    if (!Lufia2FieldEventTimerBody(memory, cpu)) {
+    if (!Lufia2FieldEventTimerBody(memory, cpu, &passes)) {
         result.pc = cpu->resume_pc;
+        if (result.pc == 0x80cc3fu)
+            result.dispatches = passes;
         return result;
     }
     SimulateRtlFrame(memory, cpu);
