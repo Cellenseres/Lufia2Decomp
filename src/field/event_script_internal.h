@@ -131,7 +131,26 @@ enum EventOpcodeHandler {
     EVENT_OP_B6 = 0xdbdd,                                      /* $B6 */
     EVENT_OP_B7 = 0xdbf5,                                      /* $B7 */
     EVENT_OP_FILL_E33E = 0xcecf,                               /* $BD */
-    EVENT_OP_POINT_FROM_OBJECT = 0xe038                        /* $82 */
+    EVENT_OP_POINT_FROM_OBJECT = 0xe038,                       /* $82 */
+    EVENT_OP_GOTO_IF_LEADER_AT = 0xe0cd,                       /* $12 */
+    EVENT_OP_GOTO_UNLESS_LEADER_AT = 0xe0d3,                   /* $6D */
+    EVENT_OP_FLAG_LEADER_AT = 0xe105,                          /* $13 */
+    EVENT_OP_14 = 0xe3a0,                                      /* $14 */
+    EVENT_OP_FLAG_CELLS_09 = 0xe344,                           /* $15 */
+    EVENT_OP_GOTO_IF_CELLS_09 = 0xe34e,                        /* $16 */
+    EVENT_OP_GOTO_UNLESS_CELLS_09 = 0xe358,                    /* $6E */
+    EVENT_OP_FLAG_CELLS_08 = 0xe177,                           /* $17 */
+    EVENT_OP_GOTO_IF_CELLS_08 = 0xe181,                        /* $18 */
+    EVENT_OP_GOTO_UNLESS_CELLS_08 = 0xe18b,                    /* $6F */
+    EVENT_OP_FLAG_CELLS_01 = 0xe198,                           /* $72 */
+    EVENT_OP_GOTO_IF_CELLS_01 = 0xe1a2,                        /* $73 */
+    EVENT_OP_GOTO_UNLESS_CELLS_01 = 0xe1ac,                    /* $74 */
+    EVENT_OP_KEEP_D0F4 = 0xe1b9,                               /* $75 */
+    EVENT_OP_GOTO_IF_D0F4 = 0xe1bf,                            /* $76 */
+    EVENT_OP_GOTO_UNLESS_D0F4 = 0xe1c5,                        /* $77 */
+    EVENT_OP_FLAG_OBJECTS = 0xcd1d,                            /* $05 */
+    EVENT_OP_GOTO_IF_OBJECTS = 0xcd23,                         /* $04 */
+    EVENT_OP_GOTO_UNLESS_OBJECTS = 0xcd32                      /* $70 */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */
@@ -165,6 +184,55 @@ unsigned Lufia2EventSleep(
 
 /* Actor, position and point opcodes; others hand off. */
 unsigned Lufia2EventActorOpcode(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff);
+
+/* $80:E8AD: word operand, low byte first; leaves M=0. */
+void Lufia2EventNextWord(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address);
+
+/* $80:E8F4: Y = A in the base bank; below $8000 steps a bank. */
+void Lufia2EventSetPointer(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address);
+
+/* $80:D2A2: goto base + word. */
+void Lufia2EventGoto(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $80:D2B2: skip an untaken goto target. */
+void Lufia2EventSkipWord(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $80:E898: X = flag byte of n, A = its bit from $80:BE45. */
+void Lufia2EventFlagBit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address);
+
+/* $80:EA09: position operand in A (x) and B (y); 0 = handoff. */
+uint8_t Lufia2EventPosition(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff);
+
+/* $80:E92A: box $9F-$A2 of an operand; 0 = handoff. */
+uint8_t Lufia2EventArea(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff);
+
+/* Condition opcodes; others hand off. */
+unsigned Lufia2EventConditionOpcode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler,

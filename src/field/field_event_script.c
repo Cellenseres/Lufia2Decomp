@@ -46,7 +46,7 @@ void Lufia2EventPrevByte(
 }
 
 /* $80:E8AD: word operand, low byte first; leaves M=0. */
-static void EventNextWord(
+void Lufia2EventNextWord(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -61,7 +61,7 @@ static void EventNextWord(
 }
 
 /* $80:E8F4: Y = A in the base bank; below $8000 steps a bank. */
-static void EventSetPointer(
+void Lufia2EventSetPointer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -87,18 +87,18 @@ static void EventSetPointer(
 }
 
 /* $80:D2A2: goto base + word. */
-static void EventGoto(
+void Lufia2EventGoto(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    EventNextWord(memory, cpu, 0xd2a4u);                       /* D2A2 */
+    Lufia2EventNextWord(memory, cpu, 0xd2a4u);                       /* D2A2 */
     cpu->carry = 0;
     Add16Value(cpu, Read16Long(memory, EVENT_SCRIPT_BASE));
-    EventSetPointer(memory, cpu, 0xd2acu);
+    Lufia2EventSetPointer(memory, cpu, 0xd2acu);
     SetAccumulatorWidth(cpu, 1);
 }
 
 /* $80:D2B2: skip an untaken goto target. */
-static void EventSkipWord(
+void Lufia2EventSkipWord(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2EventNextByte(memory, cpu, 0xd2b4u);                       /* D2B2 */
@@ -184,7 +184,7 @@ static void EventVariableOperands(
 }
 
 /* $80:E898: X = flag byte of n, A = its bit from $80:BE45. */
-static void EventFlagBit(
+void Lufia2EventFlagBit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -251,12 +251,12 @@ static unsigned EventOpGotoIfFlag(
     TransferDirectToA(cpu);
     Lufia2EventNextByte(memory, cpu, (uint16_t)(handler + 3u));
     Lufia2EventVariable(memory, cpu, (uint16_t)(handler + 6u));
-    EventFlagBit(memory, cpu, (uint16_t)(handler + 10u));
+    Lufia2EventFlagBit(memory, cpu, (uint16_t)(handler + 10u));
     And8(cpu, Read8(memory, LongIndexedAddress(EVENT_SCRIPT_FLAGS, cpu->x)));
     if (cpu->zero == (handler == EVENT_OP_GOTO_IF_FLAG))
-        EventSkipWord(memory, cpu);
+        Lufia2EventSkipWord(memory, cpu);
     else
-        EventGoto(memory, cpu);
+        Lufia2EventGoto(memory, cpu);
     return EVENT_OPCODE_NEXT;
 }
 
@@ -270,7 +270,7 @@ static unsigned EventOpChangeFlag(
     TransferDirectToA(cpu);
     Lufia2EventNextByte(memory, cpu, (uint16_t)(handler + 3u));
     Lufia2EventVariable(memory, cpu, (uint16_t)(handler + 6u));
-    EventFlagBit(memory, cpu, (uint16_t)(handler + 10u));
+    Lufia2EventFlagBit(memory, cpu, (uint16_t)(handler + 10u));
     address = LongIndexedAddress(EVENT_SCRIPT_FLAGS, cpu->x);
     if (handler == EVENT_OP_SET_FLAG) {
         Or8(cpu, Read8(memory, address));
@@ -290,9 +290,9 @@ static unsigned EventOpGotoIf0692(
     Lufia2EventNextByte(memory, cpu, (uint16_t)(handler + 2u));
     Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, WRAM_EVENT_MAP_0692, 0));
     if (cpu->zero == (handler == EVENT_OP_GOTO_IF_0692))
-        EventGoto(memory, cpu);
+        Lufia2EventGoto(memory, cpu);
     else
-        EventSkipWord(memory, cpu);
+        Lufia2EventSkipWord(memory, cpu);
     return EVENT_OPCODE_NEXT;
 }
 
@@ -309,9 +309,9 @@ static unsigned EventOp19(
     Lufia2CpuState *cpu) {
     EventLoadSlotBits(memory, cpu);                            /* E4EB */
     if (cpu->negative)
-        EventSkipWord(memory, cpu);
+        Lufia2EventSkipWord(memory, cpu);
     else
-        EventGoto(memory, cpu);
+        Lufia2EventGoto(memory, cpu);
     return EVENT_OPCODE_NEXT;
 }
 
@@ -322,7 +322,7 @@ static unsigned EventOp1E(
     EventLoadSlotBits(memory, cpu);                            /* E4D8 */
     BitImmediate8(cpu, 0x01u);
     if (cpu->zero) {
-        EventGoto(memory, cpu);
+        Lufia2EventGoto(memory, cpu);
         return EVENT_OPCODE_NEXT;
     }
     Lufia2EventNextByte(memory, cpu, 0xe4e7u);                       /* E4E5 */
@@ -337,9 +337,9 @@ static unsigned EventOp2B(
     EventLoadSlotBits(memory, cpu);                            /* E4F9 */
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero && !cpu->negative)
-        EventSkipWord(memory, cpu);
+        Lufia2EventSkipWord(memory, cpu);
     else
-        EventGoto(memory, cpu);
+        Lufia2EventGoto(memory, cpu);
     return EVENT_OPCODE_NEXT;
 }
 
@@ -474,9 +474,9 @@ static unsigned EventOpCompareVariable(
         break;
     }
     if (taken)
-        EventGoto(memory, cpu);
+        Lufia2EventGoto(memory, cpu);
     else
-        EventSkipWord(memory, cpu);
+        Lufia2EventSkipWord(memory, cpu);
     return EVENT_OPCODE_NEXT;
 }
 
@@ -584,7 +584,7 @@ static unsigned EventOpStoreCondition(
     Write8(memory, EVENT_CONDITION, A8(cpu));
     TransferDirectToA(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd15cu, cpu->x)));
-    EventFlagBit(memory, cpu, 0xe433u);
+    Lufia2EventFlagBit(memory, cpu, 0xe433u);
     StoreADirect8(memory, cpu, 0x54u);
     LoadA8(cpu, Read8(memory, EVENT_CONDITION));
     flags = LongIndexedAddress(EVENT_SCRIPT_FLAGS, cpu->x);
@@ -756,7 +756,7 @@ static unsigned EventOpCall(
     cpu->y = PullIndexValue(memory, cpu);
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* D80D */
     EventArguments(memory, cpu, 0xd811u);
-    EventNextWord(memory, cpu, 0xd814u);
+    Lufia2EventNextWord(memory, cpu, 0xd814u);
     PushAccumulator16(memory, cpu);                            /* M=0 */
     LoadXDirect16(memory, cpu, 0x56u);
     LoadA16(cpu, cpu->y);
@@ -770,7 +770,7 @@ static unsigned EventOpCall(
     PullAccumulator16(memory, cpu);
     cpu->carry = 0;
     Add16Value(cpu, Read16Long(memory, EVENT_SCRIPT_BASE));
-    EventSetPointer(memory, cpu, 0xd82fu);
+    Lufia2EventSetPointer(memory, cpu, 0xd82fu);
     SetAccumulatorWidth(cpu, 1);
     return EVENT_OPCODE_NEXT;
 }
@@ -867,7 +867,7 @@ static unsigned EventScriptOpcode(
     case EVENT_OP_WAIT:
         return EventOpWait(memory, cpu);
     case EVENT_OP_GOTO:
-        EventGoto(memory, cpu);
+        Lufia2EventGoto(memory, cpu);
         return EVENT_OPCODE_NEXT;
     case EVENT_OP_GOTO_IF_FLAG:
     case EVENT_OP_GOTO_IF_NOT_FLAG:

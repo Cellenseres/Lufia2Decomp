@@ -206,7 +206,7 @@ static uint8_t EventFindActor(
 }
 
 /* $80:EA09: position operand in A (x) and B (y); 0 = handoff. */
-static uint8_t EventPosition(
+uint8_t Lufia2EventPosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address,
@@ -263,7 +263,7 @@ static unsigned EventOpSpawn(
         StoreADirect8(memory, cpu, DP_PROBE_Y);
     } else {
         Lufia2EventNextByte(memory, cpu, 0xd4eeu);                   /* D4EC */
-        if (!EventPosition(memory, cpu, 0xd4f1u, handoff))
+        if (!Lufia2EventPosition(memory, cpu, 0xd4f1u, handoff))
             return EVENT_OPCODE_HANDOFF;
         StoreADirect8(memory, cpu, DP_PROBE_X);
         ExchangeAccumulatorBytes(cpu);
@@ -308,7 +308,7 @@ static unsigned EventOpSpawn(
 
 /* $80:E92A: box $9F-$A2 of an operand: own slot, point, map
    entity $60-$DF, else a position operand. 0 = handoff. */
-static uint8_t EventArea(
+uint8_t Lufia2EventArea(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address,
@@ -372,7 +372,7 @@ static uint8_t EventArea(
         SimulateRtsFrame(memory, cpu);
         return 1;
     }
-    if (!EventPosition(memory, cpu, 0xe996u, handoff))        /* E994 */
+    if (!Lufia2EventPosition(memory, cpu, 0xe996u, handoff))        /* E994 */
         return 0;
     StoreADirect8(memory, cpu, 0x9fu);
     ExchangeAccumulatorBytes(cpu);
@@ -402,7 +402,7 @@ static unsigned EventOpSetPoint(
     PushIndex(memory, cpu);
     Lufia2EventNextByte(memory, cpu, value ? 0xdaa6u : 0xda8du);
     Lufia2EventValue(memory, cpu, value ? 0xdaa9u : 0xda90u);
-    if (!EventArea(memory, cpu, value ? 0xdaacu : 0xda93u, handoff))
+    if (!Lufia2EventArea(memory, cpu, value ? 0xdaacu : 0xda93u, handoff))
         return EVENT_OPCODE_HANDOFF;
     cpu->x = PullIndexValue(memory, cpu);
     for (i = 0; i < 4u; ++i) {                                 /* DAAE */
@@ -419,7 +419,7 @@ static unsigned EventOp85(
     uint32_t *handoff) {
     Lufia2EventNextByte(memory, cpu, 0xdaf4u);                       /* DAF2 */
     Lufia2EventValue(memory, cpu, 0xdaf7u);
-    if (!EventPosition(memory, cpu, 0xdafau, handoff))
+    if (!Lufia2EventPosition(memory, cpu, 0xdafau, handoff))
         return EVENT_OPCODE_HANDOFF;
     StoreAAbsolute8(memory, cpu, 0x05bdu, 0);
     ExchangeAccumulatorBytes(cpu);
@@ -491,7 +491,7 @@ static uint8_t EventActorTarget(
     Lufia2EventNextByte(memory, cpu, 0xe00bu);
     Lufia2EventValue(memory, cpu, 0xe00eu);
     StoreADirect8(memory, cpu, 0x25u);
-    if (!EventArea(memory, cpu, 0xe013u, handoff))
+    if (!Lufia2EventArea(memory, cpu, 0xe013u, handoff))
         return 0;
     CopyDirect8(memory, cpu, 0x9fu, DP_PROBE_X);
     CopyDirect8(memory, cpu, 0xa0u, DP_PROBE_Y);
@@ -890,7 +890,7 @@ static unsigned EventOpPointFromObject(
     return EVENT_OPCODE_NEXT;
 }
 
-/* Actor, position and point opcodes; others hand off. */
+/* Actor, position and point opcodes; the rest go to the conditions. */
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -944,6 +944,6 @@ unsigned Lufia2EventActorOpcode(
     case EVENT_OP_POINT_FROM_OBJECT:
         return EventOpPointFromObject(memory, cpu);
     default:
-        return EVENT_OPCODE_HANDOFF;
+        return Lufia2EventConditionOpcode(memory, cpu, handler, handoff);
     }
 }

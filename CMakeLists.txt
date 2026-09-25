@@ -17,6 +17,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_script.c
     src/field/field_effects.c
     src/field/field_event_actors.c
+    src/field/field_event_conditions.c
     src/field/field_event_script.c
     src/field/field_nmi.c
     src/field/field_scroll.c
