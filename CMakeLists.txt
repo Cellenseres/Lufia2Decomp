@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.20)
 project(Lufia2Decomp VERSION 0.1.0 LANGUAGES C)
 
 add_library(lufia2_decomp STATIC
-    src/actor_script.c
     src/actor/actor_action.c
     src/actor/actor_frontend.c
     src/actor/actor_movement.c
@@ -22,7 +21,13 @@ add_library(lufia2_decomp STATIC
     src/field/field_sprites.c
     src/field/field_triggers.c
     src/field/field_update.c
-    src/text/text_engine.c)
+    src/menu/menu.c
+    src/system/random.c
+    src/system/screen.c
+    src/system/sound.c
+    src/text/text_engine.c
+    src/title/title.c
+    src/world/world_map.c)
 add_library(Lufia2::Decomp ALIAS lufia2_decomp)
 
 target_include_directories(lufia2_decomp
