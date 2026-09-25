@@ -15,6 +15,11 @@
 #define EVENT_SLOT_BITS 0x7fd14cu
 /* Script variables; operands $A0-$BF also read them. */
 #define EVENT_VARIABLES 0x7fd074u
+/* 64 script points; $E0-$FF operands name them. */
+#define EVENT_POINT_X 0x7fd1a3u
+#define EVENT_POINT_Y 0x7fd1e3u
+#define EVENT_POINT_D223 0x7fd223u
+#define EVENT_POINT_D263 0x7fd263u
 /* Script flags, bit n & 7 of byte n >> 3. */
 #define EVENT_SCRIPT_FLAGS 0x7fd100u
 /* Goto targets are relative to this 24-bit base. */
@@ -253,7 +258,17 @@ enum EventOpcodeHandler {
     EVENT_OP_GOTO_IF_ABOVE_VALUE = 0xd9ac,                     /* $3D */
     EVENT_OP_GOTO_IF_BELOW_VALUE = 0xd9bb,                     /* $3E */
     EVENT_OP_GOTO_IF_AT_LEAST_VALUE = 0xd9cb,                  /* $3F */
-    EVENT_OP_GOTO_IF_AT_MOST_VALUE = 0xd9db                    /* $40 */
+    EVENT_OP_GOTO_IF_AT_MOST_VALUE = 0xd9db,                   /* $40 */
+    EVENT_OP_STORE_E316 = 0xd5a5,                              /* $79 */
+    EVENT_OP_OFFSET_POINT_X = 0xdac9,                          /* $83 */
+    EVENT_OP_OFFSET_POINT_Y = 0xdad7,                          /* $84 */
+    EVENT_OP_86 = 0xdb11,                                      /* $86 */
+    EVENT_OP_POINT_X_TO_VARIABLE = 0xcfd8,                     /* $9D */
+    EVENT_OP_VARIABLE_TO_POINT_X = 0xcfea,                     /* $9E */
+    EVENT_OP_A2 = 0xcfb7,                                      /* $A2 */
+    EVENT_OP_RESET_STAIRS = 0xd8c8,                            /* $AB */
+    EVENT_OP_B5 = 0xdbca,                                      /* $B5 */
+    EVENT_OP_B8 = 0xd5e4                                       /* $B8 */
 };
 
 /* $00 and aliases: disarm the slot (stores the DP low byte). */
@@ -524,6 +539,115 @@ static unsigned EventOpCompareVariable(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $80:DAE5: X = point operand - $E0, A = next byte, carry clear. */
+static void EventPointOperands(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    TransferDirectToA(cpu);                                    /* DAE5 */
+    EventNextByte(memory, cpu, 0xdae8u);
+    cpu->carry = 1;
+    Sbc8(cpu, 0xe0u);
+    TransferAToX(cpu);
+    EventNextByte(memory, cpu, 0xdaefu);
+    cpu->carry = 0;
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83/$84: point copy $7F:D223/D263 = point X/Y + n. */
+static unsigned EventOpOffsetPoint(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler) {
+    const uint8_t y = handler == EVENT_OP_OFFSET_POINT_Y;
+
+    EventPointOperands(memory, cpu, (uint16_t)(handler + 2u));
+    Adc8(cpu, Read8(memory, LongIndexedAddress(
+        y ? EVENT_POINT_Y : EVENT_POINT_X, cpu->x)));
+    Write8(memory, LongIndexedAddress(
+        y ? EVENT_POINT_D263 : EVENT_POINT_D223, cpu->x), A8(cpu));
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $80:CFFC: $56 = variable, $54 = point operand - $E0 + next byte. */
+static void EventPointVariableOperands(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    EventNextByte(memory, cpu, 0xcffeu);                       /* CFFC */
+    EventVariable(memory, cpu, 0xd001u);
+    StoreADirect8(memory, cpu, 0x56u);
+    Write8(memory, DirectAddress(cpu, 0x57u), 0x00u);
+    EventNextByte(memory, cpu, 0xd008u);
+    EventValue(memory, cpu, 0xd00bu);
+    cpu->carry = 1;
+    Sbc8(cpu, 0xe0u);
+    StoreADirect8(memory, cpu, 0x54u);
+    Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+    TransferDirectToA(cpu);
+    EventNextByte(memory, cpu, 0xd016u);
+    cpu->carry = 0;
+    Adc8(cpu, DirectByte(memory, cpu, 0x54u));
+    StoreADirect8(memory, cpu, 0x54u);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $9D/$9E: copy between point X ($54) and variable ($56). */
+static unsigned EventOpCopyPointX(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler) {
+    const uint8_t to_variable = handler == EVENT_OP_POINT_X_TO_VARIABLE;
+
+    EventPointVariableOperands(memory, cpu, (uint16_t)(handler + 2u));
+    LoadXDirect16(memory, cpu, to_variable ? 0x54u : 0x56u);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(
+        to_variable ? EVENT_POINT_X : EVENT_VARIABLES, cpu->x)));
+    LoadXDirect16(memory, cpu, to_variable ? 0x56u : 0x54u);
+    Write8(memory, LongIndexedAddress(
+        to_variable ? EVENT_VARIABLES : EVENT_POINT_X, cpu->x), A8(cpu));
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $79, $86, $A2, $AB, $B5, $B8: single stores and bit changes. */
+static unsigned EventOpSmall(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler) {
+    switch (handler) {
+    case EVENT_OP_STORE_E316:
+        EventNextByte(memory, cpu, 0xd5a7u);                   /* D5A5 */
+        Write8(memory, 0x7fe316u, A8(cpu));
+        break;
+    case EVENT_OP_86:
+        LoadA8(cpu, 0x80u);                                    /* DB11 */
+        TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
+        LoadA8(cpu, 0x08u);
+        TestBitsAbsolute8(memory, cpu, 0x05b3u, 1);
+        break;
+    case EVENT_OP_A2:
+        LoadA8(cpu, 0x20u);                                    /* CFB7 */
+        TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
+        break;
+    case EVENT_OP_RESET_STAIRS:
+        LoadA8(cpu, 0xffu);                                    /* D8C8 */
+        Write8(memory, 0x7fd0bfu, A8(cpu));
+        break;
+    case EVENT_OP_B5:
+        /* $1261 bit 3: camera from $7F:D08B. */
+        LoadA8(cpu, 0x08u);                                    /* DBCA */
+        TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+        break;
+    default:
+        LoadA8(cpu, 0x01u);                                    /* D5E4 */
+        TestBitsDirect(memory, cpu, 0x72u, 1);
+        break;
+    }
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Handlers behind JMP ($E5A4,x); others hand off. */
 static unsigned EventScriptOpcode(
     const Lufia2Memory *memory,
@@ -571,6 +695,19 @@ static unsigned EventScriptOpcode(
         return EventOpChangeVariable(memory, cpu, handler);
     case EVENT_OP_SET_VARIABLE_VALUE:
         return EventOpSetVariableValue(memory, cpu);
+    case EVENT_OP_OFFSET_POINT_X:
+    case EVENT_OP_OFFSET_POINT_Y:
+        return EventOpOffsetPoint(memory, cpu, handler);
+    case EVENT_OP_POINT_X_TO_VARIABLE:
+    case EVENT_OP_VARIABLE_TO_POINT_X:
+        return EventOpCopyPointX(memory, cpu, handler);
+    case EVENT_OP_STORE_E316:
+    case EVENT_OP_86:
+    case EVENT_OP_A2:
+    case EVENT_OP_RESET_STAIRS:
+    case EVENT_OP_B5:
+    case EVENT_OP_B8:
+        return EventOpSmall(memory, cpu, handler);
     default:
         return EVENT_OPCODE_HANDOFF;
     }
