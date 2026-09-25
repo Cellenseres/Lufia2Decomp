@@ -504,7 +504,7 @@ static unsigned EventOpSmall(
         LoadA8(cpu, 0xffu);                                    /* D8C8 */
         Write8(memory, 0x7fd0bfu, A8(cpu));
         break;
-    case EVENT_OP_B5:
+    case EVENT_OP_RELEASE_CAMERA:
         /* $1261 bit 3: camera from $7F:D08B. */
         LoadA8(cpu, 0x08u);                                    /* DBCA */
         TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
@@ -816,6 +816,40 @@ static unsigned EventOpReturn(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $B4: camera target = scroll of layer $05AA + (dx, dy), speed n;
+   $1261 bit 3 hands the camera to $7F:D08B/D08D. */
+static unsigned EventOpMoveCamera(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    static const struct {
+        uint16_t scroll;
+        uint32_t target;
+        uint16_t fetch;
+        uint16_t widen;
+    } kAxes[2] = {
+        {0x121eu, 0x7fd08bu, 0xdb70u, 0xdb73u},
+        {0x1226u, 0x7fd08du, 0xdb81u, 0xdb84u},
+    };
+    unsigned i;
+
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05aau, 0)); /* DB6A */
+    for (i = 0; i < 2u; ++i) {
+        TransferDirectToA(cpu);
+        Lufia2EventNextByte(memory, cpu, kAxes[i].fetch);
+        EventSignedByte(memory, cpu, kAxes[i].widen);
+        cpu->carry = 0;
+        Add16Value(cpu, Read16AbsoluteIndexed(
+            memory, cpu, kAxes[i].scroll, cpu->x));
+        Write16Long(memory, kAxes[i].target, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+    }
+    Lufia2EventNextByte(memory, cpu, 0xdb91u);                 /* DB8F */
+    StoreAAbsolute8(memory, cpu, 0x05a8u, 0);
+    LoadA8(cpu, 0x08u);
+    TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 1);
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Handlers behind JMP ($E5A4,x); others hand off. */
 static unsigned EventScriptOpcode(
     const Lufia2Memory *memory,
@@ -866,6 +900,8 @@ static unsigned EventScriptOpcode(
         return EventOpSetVariableValue(memory, cpu);
     case EVENT_OP_SCROLL_LAYER:
         return EventOpScrollLayer(memory, cpu);
+    case EVENT_OP_MOVE_CAMERA:
+        return EventOpMoveCamera(memory, cpu);
     case EVENT_OP_STORE_CONDITION:
         return EventOpStoreCondition(memory, cpu);
     case EVENT_OP_CALL:
@@ -876,7 +912,7 @@ static unsigned EventScriptOpcode(
     case EVENT_OP_86:
     case EVENT_OP_A2:
     case EVENT_OP_RESET_STAIRS:
-    case EVENT_OP_B5:
+    case EVENT_OP_RELEASE_CAMERA:
     case EVENT_OP_B8:
         return EventOpSmall(memory, cpu, handler);
     default:

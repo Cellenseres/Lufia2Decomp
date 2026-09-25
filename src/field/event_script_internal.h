@@ -95,7 +95,7 @@ enum EventOpcodeHandler {
     EVENT_OP_VARIABLE_TO_POINT_X = 0xcfea,                     /* $9E */
     EVENT_OP_A2 = 0xcfb7,                                      /* $A2 */
     EVENT_OP_RESET_STAIRS = 0xd8c8,                            /* $AB */
-    EVENT_OP_B5 = 0xdbca,                                      /* $B5 */
+    EVENT_OP_RELEASE_CAMERA = 0xdbca,                          /* $B5 */
     EVENT_OP_B8 = 0xd5e4,                                      /* $B8 */
     EVENT_OP_WAIT_FOR_LISTED_ACTOR = 0xdd8f,                   /* $5F */
     EVENT_OP_WAIT_FOR_ACTOR = 0xdd86,                          /* $68 */
@@ -126,7 +126,12 @@ enum EventOpcodeHandler {
     EVENT_OP_MOVE_ACTOR_AF = 0xdf69,                           /* $AF */
     EVENT_OP_MOVE_ACTOR_B0 = 0xdf70,                           /* $B0 */
     EVENT_OP_MOVE_ACTOR_B1 = 0xdf77,                           /* $B1 */
-    EVENT_OP_MOVE_ACTOR_B2 = 0xdf7e                            /* $B2 */
+    EVENT_OP_MOVE_ACTOR_B2 = 0xdf7e,                           /* $B2 */
+    EVENT_OP_MOVE_CAMERA = 0xdb6a,                             /* $B4 */
+    EVENT_OP_B6 = 0xdbdd,                                      /* $B6 */
+    EVENT_OP_B7 = 0xdbf5,                                      /* $B7 */
+    EVENT_OP_FILL_E33E = 0xcecf,                               /* $BD */
+    EVENT_OP_POINT_FROM_OBJECT = 0xe038                        /* $82 */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */
