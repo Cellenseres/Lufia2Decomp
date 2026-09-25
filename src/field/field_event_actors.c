@@ -890,6 +890,273 @@ static unsigned EventOpPointFromObject(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $80:D49B: when $7F:D0A1 bit 2, clear leader $0622 bit 3 and
+   record the blocked step ($83:CA68). */
+static void EventLeaderUnblock(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadA8(cpu, Read8(memory, 0x7fd0a1u));                     /* D49B */
+    BitImmediate8(cpu, 0x04u);
+    if (!cpu->zero) {
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, 0);
+        And8(cpu, 0xf7u);
+        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, 0);
+        SimulateJslFrame(memory, cpu, 0x80u, 0xd4aeu);
+        cpu->program_bank = 0x83u;
+        Lufia2ActorBlockedEvent(memory, cpu);                  /* $83:CA68 */
+        cpu->program_bank = 0x80u;
+        SimulateRtlFrame(memory, cpu);
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $AB for actor A, as JSL $83:AB4F. */
+static void EventSelectActor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    StoreADirect8(memory, cpu, DP_ACTOR_SLOT);
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    Lufia2ActorRecordOffsets(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $23 ($80:D439): leader action n + facing offset ($83:C1A5 by
+   $0692); $6A ($80:D47E): leader action n. */
+static unsigned EventOpLeaderAction(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    const uint8_t facing = handler == EVENT_OP_LEADER_FACING_ACTION;
+
+    LoadA8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));
+    PushAccumulator8(memory, cpu);
+    Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), 0x00u);
+    SimulateJslFrame(memory, cpu, 0x80u, facing ? 0xd441u : 0xd486u);
+    Lufia2ActorRecordOffsets(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    Lufia2EventNextByte(memory, cpu, facing ? 0xd444u : 0xd489u);
+    if (facing) {
+        StoreADirect8(memory, cpu, 0x54u);                     /* D445 */
+        TransferDirectToA(cpu);
+        LoadAAbsolute8(memory, cpu, WRAM_EVENT_MAP_0692, 0);
+        TransferAToX(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83c1a5u, cpu->x)));
+        cpu->carry = 0;
+        Adc8(cpu, DirectByte(memory, cpu, 0x54u));
+    }
+    if (!EventActorAction(memory, cpu, facing ? 0xd456u : 0xd48du, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    EventLeaderUnblock(memory, cpu, facing ? 0xd459u : 0xd490u);
+    if (facing) {
+        LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);             /* D45A */
+        LoadA8(cpu, 0x08u);
+        Write8(memory, LongIndexedAddress(0x7fe4deu, cpu->x), A8(cpu));
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
+        And8(cpu, 0x87u);
+        Or8(cpu, 0x20u);
+        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
+        LoadAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+        And8(cpu, 0xfdu);
+        StoreAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+    }
+    LoadA8(cpu, Pull8(memory, cpu));
+    EventSelectActor(memory, cpu, facing ? 0xd47au : 0xd497u);
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $AE: action n for the last claimed actor ($7F:D0A2). */
+static unsigned EventOpClaimedAction(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    EventSaveSlot(memory, cpu, 0xd4b2u);                       /* D4B0 */
+    LoadA8(cpu, Read8(memory, 0x7fd0a2u));
+    EventSelectActor(memory, cpu, 0xd4bcu);
+    Lufia2EventNextByte(memory, cpu, 0xd4bfu);
+    if (!EventActorAction(memory, cpu, 0xd4c3u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    EventRestoreSlot(memory, cpu, 0xd4c6u);
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $8F/$91 = a position operand ($80:EA09); 0 = handoff. */
+static uint8_t EventProbePosition(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff) {
+    if (!Lufia2EventPosition(memory, cpu, return_address, handoff))
+        return 0;
+    StoreADirect8(memory, cpu, DP_PROBE_X);
+    ExchangeAccumulatorBytes(cpu);
+    StoreADirect8(memory, cpu, DP_PROBE_Y);
+    return 1;
+}
+
+/* $83:FB71 map cell value at $8F/$91, from bank 80. */
+static void EventCellValue(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t return_bank,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, return_bank, return_address);
+    cpu->program_bank = 0x83u;
+    Lufia2ActorReadMapCellValue(memory, cpu);
+    cpu->program_bank = 0x80u;
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $0F/$6C: goto when bit 0 of the cell type ($83:FB51: $7F:D296 by
+   the cell's high nibble, 0 when it is clear) is set / clear. */
+static unsigned EventOpCellType(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    SimulateJsrFrame(memory, cpu, (uint16_t)(handler + 2u));  /* JSR D2FB */
+    Lufia2EventNextByte(memory, cpu, 0xd2fdu);
+    if (!EventProbePosition(memory, cpu, 0xd300u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    PushY(memory, cpu);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xd30au);
+    EventCellValue(memory, cpu, 0x83u, 0xfb54u);               /* $83:FB51 */
+    BitImmediate8(cpu, 0xf0u);
+    if (cpu->zero) {
+        TransferDirectToA(cpu);
+    } else {
+        TransferAToX(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd296u, cpu->x)));
+    }
+    SimulateRtlFrame(memory, cpu);
+    cpu->y = PullIndexValue(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    BitImmediate8(cpu, 0x01u);
+    if (cpu->zero == (handler == EVENT_OP_GOTO_IF_CELL_TYPE_BIT0))
+        Lufia2EventSkipWord(memory, cpu);
+    else
+        Lufia2EventGoto(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $A7: $7F:D133 = map cell value at a position. */
+static unsigned EventOpCellValue(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    Lufia2EventNextByte(memory, cpu, 0xcfc1u);                 /* CFBF */
+    Lufia2EventValue(memory, cpu, 0xcfc4u);
+    if (!EventProbePosition(memory, cpu, 0xcfc7u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    EventCellValue(memory, cpu, 0x80u, 0xcfd0u);
+    Write8(memory, 0x7fd133u, A8(cpu));
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $9C: variable n = height bits of the cell at a position. */
+static unsigned EventOpCellHeight(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    Lufia2EventNextByte(memory, cpu, 0xcf3cu);                 /* CF3A */
+    Lufia2EventVariable(memory, cpu, 0xcf3fu);
+    StoreADirect8(memory, cpu, 0x56u);
+    Lufia2EventNextByte(memory, cpu, 0xcf44u);
+    Lufia2EventValue(memory, cpu, 0xcf47u);
+    if (!EventProbePosition(memory, cpu, 0xcf4au, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    SimulateJslFrame(memory, cpu, 0x80u, 0xcf53u);
+    cpu->program_bank = 0x83u;
+    Lufia2MapTileHeight(memory, cpu, 0xf986u);                 /* $83:F984 */
+    cpu->program_bank = 0x80u;
+    SimulateRtlFrame(memory, cpu);
+    StoreADirect8(memory, cpu, 0x57u);
+    TransferDirectToA(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
+    TransferAToX(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
+    Write8(memory, LongIndexedAddress(EVENT_VARIABLES, cpu->x), A8(cpu));
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $9F: $7F:D10B bit 7 = the two positions are equal. */
+static unsigned EventOpSamePosition(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    uint8_t same = 0;
+
+    Lufia2EventNextByte(memory, cpu, 0xcf65u);                 /* CF63 */
+    Lufia2EventValue(memory, cpu, 0xcf68u);
+    if (!EventProbePosition(memory, cpu, 0xcf6bu, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    Lufia2EventNextByte(memory, cpu, 0xcf73u);
+    Lufia2EventValue(memory, cpu, 0xcf76u);
+    if (!Lufia2EventPosition(memory, cpu, 0xcf79u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_PROBE_X));
+    if (cpu->zero) {
+        ExchangeAccumulatorBytes(cpu);
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_PROBE_Y));
+        same = cpu->zero;
+    }
+    LoadA8(cpu, Read8(memory, 0x7fd10bu));
+    if (same)
+        Or8(cpu, 0x80u);                                       /* CF83 */
+    else
+        And8(cpu, 0x7fu);                                      /* CF90 */
+    Write8(memory, 0x7fd10bu, A8(cpu));
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $5E: variable n = placed object at a position ($83:FB9F), $FF
+   when none. */
+static unsigned EventOpObjectAt(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    TransferDirectToA(cpu);                                    /* E078 */
+    Lufia2EventNextByte(memory, cpu, 0xe07bu);
+    StoreADirect8(memory, cpu, 0x5du);
+    Write8(memory, DirectAddress(cpu, 0x5eu), 0x00u);
+    Lufia2EventNextByte(memory, cpu, 0xe082u);
+    if (!EventProbePosition(memory, cpu, 0xe085u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    SimulateJslFrame(memory, cpu, 0x80u, 0xe08eu);
+    SimulateJsrFrame(memory, cpu, 0xfb9du);
+    LoadX16(cpu, 0x0000u);                                     /* $83:FB9F */
+    for (;;) {
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd69cu, cpu->x)));
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_PROBE_X));
+        if (cpu->zero) {
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd6ccu, cpu->x)));
+            Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_PROBE_Y));
+            if (cpu->zero) {
+                cpu->carry = 0;
+                break;
+            }
+        }
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x0030u);
+        if (cpu->zero) {
+            TransferDirectToA(cpu);
+            cpu->carry = 1;
+            break;
+        }
+    }
+    SimulateRtsFrame(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    LoadA8(cpu, (uint8_t)cpu->x);                              /* E08F */
+    LoadXDirect16(memory, cpu, 0x5du);
+    if (cpu->carry)
+        LoadA8(cpu, 0xffu);
+    Write8(memory, LongIndexedAddress(EVENT_VARIABLES, cpu->x), A8(cpu));
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Actor, position and point opcodes; the rest go to the conditions. */
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
@@ -941,6 +1208,22 @@ unsigned Lufia2EventActorOpcode(
         return EventOpLeaderOccupancy(memory, cpu, handler);
     case EVENT_OP_FILL_E33E:
         return EventOpFillE33E(memory, cpu);
+    case EVENT_OP_LEADER_FACING_ACTION:
+    case EVENT_OP_LEADER_ACTION:
+        return EventOpLeaderAction(memory, cpu, handler, handoff);
+    case EVENT_OP_CLAIMED_ACTION:
+        return EventOpClaimedAction(memory, cpu, handoff);
+    case EVENT_OP_GOTO_IF_CELL_TYPE_BIT0:
+    case EVENT_OP_GOTO_UNLESS_CELL_TYPE_BIT0:
+        return EventOpCellType(memory, cpu, handler, handoff);
+    case EVENT_OP_CELL_VALUE:
+        return EventOpCellValue(memory, cpu, handoff);
+    case EVENT_OP_CELL_HEIGHT:
+        return EventOpCellHeight(memory, cpu, handoff);
+    case EVENT_OP_SAME_POSITION:
+        return EventOpSamePosition(memory, cpu, handoff);
+    case EVENT_OP_OBJECT_AT:
+        return EventOpObjectAt(memory, cpu, handoff);
     case EVENT_OP_POINT_FROM_OBJECT:
         return EventOpPointFromObject(memory, cpu);
     default:

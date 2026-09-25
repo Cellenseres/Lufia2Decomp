@@ -150,7 +150,16 @@ enum EventOpcodeHandler {
     EVENT_OP_GOTO_UNLESS_D0F4 = 0xe1c5,                        /* $77 */
     EVENT_OP_FLAG_OBJECTS = 0xcd1d,                            /* $05 */
     EVENT_OP_GOTO_IF_OBJECTS = 0xcd23,                         /* $04 */
-    EVENT_OP_GOTO_UNLESS_OBJECTS = 0xcd32                      /* $70 */
+    EVENT_OP_GOTO_UNLESS_OBJECTS = 0xcd32,                     /* $70 */
+    EVENT_OP_LEADER_FACING_ACTION = 0xd439,                    /* $23 */
+    EVENT_OP_LEADER_ACTION = 0xd47e,                           /* $6A */
+    EVENT_OP_CLAIMED_ACTION = 0xd4b0,                          /* $AE */
+    EVENT_OP_GOTO_IF_CELL_TYPE_BIT0 = 0xd2e1,                  /* $0F */
+    EVENT_OP_GOTO_UNLESS_CELL_TYPE_BIT0 = 0xd2ee,              /* $6C */
+    EVENT_OP_CELL_VALUE = 0xcfbf,                              /* $A7 */
+    EVENT_OP_CELL_HEIGHT = 0xcf3a,                             /* $9C */
+    EVENT_OP_SAME_POSITION = 0xcf63,                           /* $9F */
+    EVENT_OP_OBJECT_AT = 0xe078                                /* $5E */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */
