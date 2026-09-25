@@ -962,6 +962,99 @@ static unsigned EventOpFork(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $1D ($80:B97E): clear $1261 (DB-relative) and $7F:D081/D083. */
+static unsigned EventOpClearD081(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    SimulateJslFrame(memory, cpu, 0x80u, 0xe557u);
+    Write8(memory, AbsoluteIndexedAddress(cpu, 0x1261u, 0), 0x00u);  /* B97E */
+    SetAccumulatorWidth(cpu, 0);
+    TransferDirectToA(cpu);
+    Write16Long(memory, 0x7fd081u, cpu->accumulator);
+    Write16Long(memory, 0x7fd083u, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    SimulateRtlFrame(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $80:E722: start list entry Y/2 at [base + X] in the first free
+   slot (slot 0 when none), due, at $8F/$91. 0 = handoff. */
+static uint8_t EventStart(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    LoadA8(cpu, Read8(memory, EVENT_SCRIPT_BASE_BANK));        /* E722 */
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (cpu->zero) {
+        SimulateRtlFrame(memory, cpu);
+        return 1;
+    }
+    Write16Direct(memory, cpu, 0x5du, cpu->x);
+    if (!Lufia2EventFindList(memory, cpu, 0xe730u))
+        return 0;
+    if (!cpu->carry) {
+        for (LoadX16(cpu, 0x0000u);;) {                        /* E733 */
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x)));
+            if (!cpu->negative)
+                break;
+            IncrementX16(cpu);
+            Compare16(cpu, cpu->x, EVENT_SLOT_COUNT);
+            if (cpu->zero) {
+                LoadX16(cpu, 0x0000u);
+                break;
+            }
+        }
+        LoadA8(cpu, 0x81u);                                    /* E745 */
+        Write8(memory, LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x), A8(cpu));
+        TransferDirectToA(cpu);
+        Write8(memory, LongIndexedAddress(0x7fd4e6u, cpu->x), A8(cpu));
+        Write16Direct(memory, cpu, 0x54u, cpu->x);
+        LoadA8(cpu, DirectByte(memory, cpu, 0x5du));
+        Write8(memory, LongIndexedAddress(0x7fd154u, cpu->x), A8(cpu));
+        LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
+        Write8(memory, LongIndexedAddress(0x7fd15cu, cpu->x), A8(cpu));
+        TransferDirectToA(cpu);
+        Write8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x), A8(cpu));
+        SetAccumulatorWidth(cpu, 0);                           /* E763 */
+        LoadA16(cpu, cpu->x);
+        AslA16(cpu);
+        Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+        TransferAToX(cpu);
+        LoadA16(cpu, Read16Long(memory, EVENT_SCRIPT_POINTER));
+        Write16Long(memory, LongIndexedAddress(EVENT_SLOT_POINTERS, cpu->x),
+            cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, Read8(memory, EVENT_SCRIPT_BANK));
+        Write8(memory, LongIndexedAddress(EVENT_SLOT_POINTERS + 2u, cpu->x),
+            A8(cpu));
+        LoadXDirect16(memory, cpu, 0x54u);
+        LoadA8(cpu, DirectByte(memory, cpu, 0x8fu));
+        Write8(memory, LongIndexedAddress(0x7fd17cu, cpu->x), A8(cpu));
+        LoadA8(cpu, DirectByte(memory, cpu, 0x91u));
+        Write8(memory, LongIndexedAddress(0x7fd184u, cpu->x), A8(cpu));
+    }
+    SetAccumulatorWidth(cpu, 1);                               /* E78A */
+    SimulateRtlFrame(memory, cpu);
+    return 1;
+}
+
+/* $63: start event 0 of the header list, then end the slot. */
+static unsigned EventOpStartEventAndEnd(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    PushY(memory, cpu);                                        /* DDE3 */
+    LoadX16(cpu, 0x0000u);
+    LoadY16(cpu, 0x0000u);
+    if (!EventStart(memory, cpu, 0xddedu)) {
+        *handoff = cpu->resume_pc;
+        return EVENT_OPCODE_HANDOFF;
+    }
+    cpu->y = PullIndexValue(memory, cpu);
+    return EventOpEnd(memory, cpu);
+}
+
 /* Handlers behind JMP ($E5A4,x); others hand off. */
 static unsigned EventScriptOpcode(
     const Lufia2Memory *memory,
@@ -973,6 +1066,10 @@ static unsigned EventScriptOpcode(
 
     if (handler == EVENT_OP_FORK || handler == EVENT_OP_FORK_IF)
         return EventOpFork(memory, cpu, handler, run, handoff);
+    if (handler == EVENT_OP_CLEAR_D081)
+        return EventOpClearD081(memory, cpu);
+    if (handler == EVENT_OP_START_EVENT_AND_END)
+        return EventOpStartEventAndEnd(memory, cpu, handoff);
     for (i = 0; i < 12u; ++i)
         if (handler == kEventCompares[i].handler)
             return EventOpCompareVariable(memory, cpu, i);

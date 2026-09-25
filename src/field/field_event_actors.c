@@ -1506,6 +1506,33 @@ static unsigned EventOpObjectBit(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $BA: set entry n of the $7E:F026 list (stride 4) to a position;
+   a missing key writes over the $FF end. */
+static unsigned EventOpSetListedPosition(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    Lufia2EventNextByte(memory, cpu, 0xd688u);                 /* D686 */
+    StoreADirect8(memory, cpu, 0x56u);
+    Lufia2EventNextByte(memory, cpu, 0xd68du);
+    Lufia2EventValue(memory, cpu, 0xd690u);
+    if (!EventProbePosition(memory, cpu, 0xd693u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    LoadA8(cpu, 0x04u);                                        /* D699 */
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
+    LoadX16(cpu, 0x0026u);
+    if (!EventListSearch(memory, cpu, 0x80u, 0xd6a4u)) {
+        *handoff = 0x80bfbcu;
+        return EVENT_OPCODE_HANDOFF;
+    }
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
+    Write8(memory, LongIndexedAddress(0x7ef001u, cpu->x), A8(cpu));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
+    Write8(memory, LongIndexedAddress(0x7ef002u, cpu->x), A8(cpu));
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Actor, position and point opcodes; the rest go to the conditions. */
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
@@ -1579,6 +1606,8 @@ unsigned Lufia2EventActorOpcode(
     case EVENT_OP_OBJECT_BIT_ON:
     case EVENT_OP_OBJECT_BIT_OFF:
         return EventOpObjectBit(memory, cpu, handler, handoff);
+    case EVENT_OP_SET_LISTED_POSITION:
+        return EventOpSetListedPosition(memory, cpu, handoff);
     case EVENT_OP_POINT_ARITHMETIC:
         return EventOpPointArithmetic(memory, cpu, handoff);
     case EVENT_OP_POINT_FROM_OBJECT:

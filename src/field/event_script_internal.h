@@ -167,7 +167,10 @@ enum EventOpcodeHandler {
     EVENT_OP_OBJECT_BIT_CLEAR = 0xcca7,                        /* $03 */
     EVENT_OP_OBJECT_BIT_BY_RESULT = 0xe4a1,                    /* $28 */
     EVENT_OP_OBJECT_BIT_ON = 0xcf9d,                           /* $A0 */
-    EVENT_OP_OBJECT_BIT_OFF = 0xcfaa                           /* $A1 */
+    EVENT_OP_OBJECT_BIT_OFF = 0xcfaa,                          /* $A1 */
+    EVENT_OP_SET_LISTED_POSITION = 0xd686,                     /* $BA */
+    EVENT_OP_CLEAR_D081 = 0xe554,                              /* $1D */
+    EVENT_OP_START_EVENT_AND_END = 0xdde3                      /* $63 */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */
@@ -230,6 +233,13 @@ void Lufia2EventSkipWord(
 
 /* $80:E898: X = flag byte of n, A = its bit from $80:BE45. */
 void Lufia2EventFlagBit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address);
+
+/* $80:E78D: find list entry Y/2 at [base + X]; carry set when
+   missing. 0 = handoff at cpu->resume_pc. */
+uint8_t Lufia2EventFindList(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address);

@@ -290,7 +290,7 @@ static void EventStorePointer(
 
 /* $80:E78D: Y = entry Y/2 of the (key, word) table at [base + X];
    carry set when missing. 0 = handoff at $80:E7B8. */
-static uint8_t EventFindList(
+uint8_t Lufia2EventFindList(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -372,7 +372,7 @@ static uint8_t EventConditionList(
     AslA8(cpu);
     TransferAToY(cpu);
     LoadX16(cpu, 0x000au);
-    if (!EventFindList(memory, cpu, 0xe57eu)) {
+    if (!Lufia2EventFindList(memory, cpu, 0xe57eu)) {
         *handoff = cpu->resume_pc;
         return 0;
     }
