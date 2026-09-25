@@ -162,7 +162,12 @@ enum EventOpcodeHandler {
     EVENT_OP_OBJECT_AT = 0xe078,                               /* $5E */
     EVENT_OP_POINT_ARITHMETIC = 0xd9fc,                        /* $41-$54 */
     EVENT_OP_FORK_IF = 0xd6ca,                                 /* $26 */
-    EVENT_OP_FORK = 0xd6e9                                     /* $27 */
+    EVENT_OP_FORK = 0xd6e9,                                    /* $27 */
+    EVENT_OP_OBJECT_BIT_SET = 0xcc78,                          /* $02 */
+    EVENT_OP_OBJECT_BIT_CLEAR = 0xcca7,                        /* $03 */
+    EVENT_OP_OBJECT_BIT_BY_RESULT = 0xe4a1,                    /* $28 */
+    EVENT_OP_OBJECT_BIT_ON = 0xcf9d,                           /* $A0 */
+    EVENT_OP_OBJECT_BIT_OFF = 0xcfaa                           /* $A1 */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */

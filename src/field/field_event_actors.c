@@ -1260,6 +1260,252 @@ static unsigned EventOpPointArithmetic(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $80:E9B0: bit operand; $C0-$FA as 0-$3A, $FB-$FF variables. */
+static void EventBitOperand(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    Compare8(cpu, A8(cpu), 0xfbu);                             /* E9B0 */
+    if (cpu->carry) {
+        Lufia2EventVariable(memory, cpu, return_address);
+        return;
+    }
+    SimulateJsrFrame(memory, cpu, return_address);
+    Compare8(cpu, A8(cpu), 0xc0u);
+    if (cpu->carry) {
+        cpu->carry = 1;
+        Sbc8(cpu, 0xc0u);
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:8AF7: object bit A: byte index in X, mask in $54. */
+static void EventObjectBitIndex(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    StoreADirect8(memory, cpu, 0x55u);                         /* 8AF7 */
+    TransferDirectToA(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+    LsrA8(cpu);
+    LsrA8(cpu);
+    LsrA8(cpu);
+    TransferAToX(cpu);
+    PushIndex(memory, cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+    And8(cpu, 0x07u);
+    TransferAToX(cpu);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80be45u, cpu->x)));
+    StoreADirect8(memory, cpu, 0x54u);
+    cpu->x = PullIndexValue(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+}
+
+enum EventObjectBitAccess {
+    EVENT_OBJECT_BIT_TEST,                                     /* $83:8AC9 */
+    EVENT_OBJECT_BIT_SET,                                      /* $83:8AD5 */
+    EVENT_OBJECT_BIT_CLEAR                                     /* $83:8AE5 */
+};
+
+/* Object state bits at $7F:D095; the test leaves Z. */
+static void EventObjectBit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    enum EventObjectBitAccess access,
+    uint16_t return_address) {
+    static const uint16_t kReturns[3] = {0x8accu, 0x8ad8u, 0x8ae8u};
+    uint32_t bits;
+
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    PushIndex(memory, cpu);
+    EventObjectBitIndex(memory, cpu, kReturns[access]);
+    bits = LongIndexedAddress(0x7fd095u, cpu->x);
+    switch (access) {
+    case EVENT_OBJECT_BIT_TEST:
+        LoadA8(cpu, Read8(memory, bits));
+        cpu->x = PullIndexValue(memory, cpu);
+        And8(cpu, DirectByte(memory, cpu, 0x54u));
+        break;
+    case EVENT_OBJECT_BIT_SET:
+        LoadA8(cpu, (uint8_t)(Read8(memory, bits) |
+            DirectByte(memory, cpu, 0x54u)));
+        Write8(memory, bits, A8(cpu));
+        cpu->x = PullIndexValue(memory, cpu);
+        break;
+    default:
+        LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x54u) ^ 0xffu));
+        And8(cpu, Read8(memory, bits));
+        Write8(memory, bits, A8(cpu));
+        cpu->x = PullIndexValue(memory, cpu);
+        break;
+    }
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $83:F559: queue object B's animation A|$90 in the $7F:D057 slots
+   unless queued; the $0583 bit 7 path hands off at $83:F564. */
+static unsigned EventQueueObjectAnimation(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    StoreADirect8(memory, cpu, 0x56u);                         /* F559 */
+    ExchangeAccumulatorBytes(cpu);
+    StoreADirect8(memory, cpu, 0x57u);
+    LoadA8(cpu, Read8(memory, 0x000583u));
+    if (cpu->negative) {
+        cpu->program_bank = 0x83u;
+        *handoff = 0x83f564u;
+        return EVENT_OPCODE_HANDOFF;
+    }
+    for (LoadX16(cpu, 0x0000u);;) {                            /* F581 */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd057u, cpu->x)));
+        if (cpu->negative) {
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd04fu, cpu->x)));
+            Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x57u));
+            if (cpu->zero) {
+                SimulateRtlFrame(memory, cpu);
+                return EVENT_OPCODE_NEXT;
+            }
+        }
+        IncrementX16(cpu);                                     /* F592 */
+        Compare16(cpu, cpu->x, 0x0008u);
+        if (cpu->carry)
+            break;
+    }
+    for (LoadX16(cpu, 0x0000u);;) {                            /* F598 */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd057u, cpu->x)));
+        if (!cpu->negative)
+            break;
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x0008u);
+        if (cpu->zero) {
+            LoadX16(cpu, 0x0000u);
+            break;
+        }
+    }
+    LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x56u) | 0x90u));  /* F5AA */
+    Write8(memory, LongIndexedAddress(0x7fd057u, cpu->x), A8(cpu));
+    LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
+    Write8(memory, LongIndexedAddress(0x7fd04fu, cpu->x), A8(cpu));
+    SimulateRtlFrame(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $80:CCDB: carry set when object $7F:D04E's rows cover $06E2. */
+static unsigned EventObjectCoversRow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    SimulateJsrFrame(memory, cpu, 0xccc8u);
+    LoadA8(cpu, 0x0fu);                                        /* CCDB */
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, Read8(memory, 0x7fd04eu));
+    LoadX16(cpu, 0x0002u);
+    if (!EventListSearch(memory, cpu, 0x80u, 0xcce8u)) {
+        *handoff = 0x80bfbcu;
+        return EVENT_OPCODE_HANDOFF;
+    }
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef001u, cpu->x)));
+    Compare8(cpu, A8(cpu),
+        Read8(memory, AbsoluteIndexedAddress(cpu, 0x06bau, 0)));
+    cpu->carry = 0;
+    if (cpu->zero) {
+        LoadA8(cpu, (uint8_t)(Read8(memory,
+            LongIndexedAddress(0x7ef002u, cpu->x)) - 1u));     /* CCF3 */
+        Compare8(cpu, A8(cpu),
+            Read8(memory, AbsoluteIndexedAddress(cpu, 0x06e2u, 0)));
+        if (!cpu->carry) {
+            StoreADirect8(memory, cpu, 0x56u);
+            LoadA8(cpu, 0x0au);
+            ExchangeAccumulatorBytes(cpu);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef00du, cpu->x)));
+            LoadX16(cpu, 0x0004u);
+            if (!EventListSearch(memory, cpu, 0x80u, 0xcd0cu)) {
+                *handoff = 0x80bfbcu;
+                return EVENT_OPCODE_HANDOFF;
+            }
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef005u, cpu->x)));
+            cpu->carry = 0;
+            Adc8(cpu, DirectByte(memory, cpu, 0x56u));
+            Compare8(cpu, A8(cpu),
+                Read8(memory, AbsoluteIndexedAddress(cpu, 0x06e2u, 0)));
+            if (cpu->carry) {
+                cpu->carry = 1;                                /* CD19 */
+                SimulateRtsFrame(memory, cpu);
+                return EVENT_OPCODE_NEXT;
+            }
+        }
+    }
+    cpu->carry = 0;                                            /* CD1B */
+    SimulateRtsFrame(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $02 sets, $03 clears object bit n through the animation queue
+   ($03 only when the object covers row $06E2), directly when $0583
+   bit 7 is set. $28 is $02 on a set result, else $03; $A0/$A1 set
+   and clear directly. */
+static unsigned EventOpObjectBit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    static const uint16_t kReturns[4][3] = {
+        {0xcc7au, 0xcc7du, 0xcc85u},                           /* $02 */
+        {0xcca9u, 0xccacu, 0xccb4u},                           /* $03 */
+        {0xcf9fu, 0xcfa2u, 0xcfa6u},                           /* $A0 */
+        {0xcfacu, 0xcfafu, 0xcfb3u}};                          /* $A1 */
+    unsigned kind;
+
+    if (handler == EVENT_OP_OBJECT_BIT_BY_RESULT) {
+        LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);             /* E4A1 */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x)));
+        handler = cpu->negative ? EVENT_OP_OBJECT_BIT_SET
+                                : EVENT_OP_OBJECT_BIT_CLEAR;
+    }
+    kind = handler == EVENT_OP_OBJECT_BIT_SET ? 0u
+         : handler == EVENT_OP_OBJECT_BIT_CLEAR ? 1u
+         : handler == EVENT_OP_OBJECT_BIT_ON ? 2u : 3u;
+    Lufia2EventNextByte(memory, cpu, kReturns[kind][0]);
+    EventBitOperand(memory, cpu, kReturns[kind][1]);
+    if (kind >= 2u) {
+        EventObjectBit(memory, cpu,
+            kind == 2u ? EVENT_OBJECT_BIT_SET : EVENT_OBJECT_BIT_CLEAR,
+            kReturns[kind][2]);
+        return EVENT_OPCODE_NEXT;
+    }
+    Write8(memory, 0x7fd04eu, A8(cpu));
+    EventObjectBit(memory, cpu, EVENT_OBJECT_BIT_TEST, kReturns[kind][2]);
+    if (cpu->zero != (kind == 0u))
+        return EVENT_OPCODE_NEXT;
+    LoadAAbsolute8(memory, cpu, 0x0583u, 0);
+    if (cpu->negative) {
+        LoadA8(cpu, Read8(memory, 0x7fd04eu));
+        EventObjectBit(memory, cpu,
+            kind == 0u ? EVENT_OBJECT_BIT_SET : EVENT_OBJECT_BIT_CLEAR,
+            kind == 0u ? 0xcc94u : 0xccc3u);
+        return EVENT_OPCODE_NEXT;
+    }
+    if (kind == 1u) {
+        if (EventObjectCoversRow(memory, cpu, handoff) != EVENT_OPCODE_NEXT)
+            return EVENT_OPCODE_HANDOFF;
+        if (cpu->carry)
+            return EVENT_OPCODE_NEXT;
+    }
+    LoadA8(cpu, Read8(memory, 0x7fd04eu));
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, kind == 0u ? 0x00u : 0x40u);
+    PushY(memory, cpu);
+    if (EventQueueObjectAnimation(memory, cpu,
+            kind == 0u ? 0xcca2u : 0xccd6u, handoff) != EVENT_OPCODE_NEXT)
+        return EVENT_OPCODE_HANDOFF;
+    cpu->y = PullIndexValue(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Actor, position and point opcodes; the rest go to the conditions. */
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
@@ -1327,6 +1573,12 @@ unsigned Lufia2EventActorOpcode(
         return EventOpSamePosition(memory, cpu, handoff);
     case EVENT_OP_OBJECT_AT:
         return EventOpObjectAt(memory, cpu, handoff);
+    case EVENT_OP_OBJECT_BIT_SET:
+    case EVENT_OP_OBJECT_BIT_CLEAR:
+    case EVENT_OP_OBJECT_BIT_BY_RESULT:
+    case EVENT_OP_OBJECT_BIT_ON:
+    case EVENT_OP_OBJECT_BIT_OFF:
+        return EventOpObjectBit(memory, cpu, handler, handoff);
     case EVENT_OP_POINT_ARITHMETIC:
         return EventOpPointArithmetic(memory, cpu, handoff);
     case EVENT_OP_POINT_FROM_OBJECT:
