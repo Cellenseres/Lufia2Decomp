@@ -28,6 +28,8 @@
 /* Script start and bank of the running slot. */
 #define EVENT_SCRIPT_POINTER 0x7fd197u
 #define EVENT_SCRIPT_BANK 0x7fd199u
+/* Condition result: bit 7 true. */
+#define EVENT_CONDITION 0x7fd19au
 /* Layer redraw requests from the scripts, become $74 bits. */
 #define WRAM_EVENT_REDRAW 0x1273u
 #define WRAM_EVENT_MAP_0692 0x0692u
@@ -290,7 +292,10 @@ enum EventOpcodeHandler {
     EVENT_OP_WAIT_FOR_LISTED_ACTOR = 0xdd8f,                   /* $5F */
     EVENT_OP_WAIT_FOR_ACTOR = 0xdd86,                          /* $68 */
     EVENT_OP_WAIT_FOR_LEADER = 0xd4ca,                         /* $6B */
-    EVENT_OP_SCROLL_LAYER = 0xdb21                             /* $58 */
+    EVENT_OP_SCROLL_LAYER = 0xdb21,                            /* $58 */
+    EVENT_OP_SPAWN_AT = 0xd4e0,                                /* $24 */
+    EVENT_OP_SPAWN_AT_POSITION = 0xd4ec,                       /* $25 */
+    EVENT_OP_STORE_CONDITION = 0xe421                          /* $29 */
 };
 
 /* $00 and aliases: disarm the slot (stores the DP low byte). */
@@ -781,11 +786,136 @@ static unsigned EventOpScrollLayer(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $80:EA09: position operand in A (x) and B (y); 0 = handoff. */
+static uint8_t EventPosition(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    StoreADirect8(memory, cpu, 0x54u);                         /* EA09 */
+    EventVariable(memory, cpu, 0xea0du);
+    StoreADirect8(memory, cpu, 0x55u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    Compare8(cpu, A8(cpu), 0xfbu);
+    if (cpu->zero) {
+        /* $FB: this slot's own position. */
+        LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd184u, cpu->x)));
+        ExchangeAccumulatorBytes(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd17cu, cpu->x)));
+    } else {
+        TransferDirectToA(cpu);                                /* EA22 */
+        LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+        Compare8(cpu, A8(cpu), 0xe0u);
+        if (!cpu->carry) {
+            /* Other operands name an actor via $80:E912. */
+            cpu->carry = 1;
+            Sbc8(cpu, 0x20u);
+            *handoff = 0x80ea3au;
+            return 0;
+        }
+        cpu->carry = 1;
+        Sbc8(cpu, 0xe0u);
+        TransferAToX(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_POINT_Y, cpu->x)));
+        ExchangeAccumulatorBytes(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_POINT_X, cpu->x)));
+    }
+    SimulateRtsFrame(memory, cpu);
+    return 1;
+}
+
+/* $24/$25: spawn a secondary actor at a tile position. */
+static unsigned EventOpSpawn(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    if (handler == EVENT_OP_SPAWN_AT) {
+        EventNextByte(memory, cpu, 0xd4e2u);                   /* D4E0 */
+        StoreADirect8(memory, cpu, DP_PROBE_X);
+        EventNextByte(memory, cpu, 0xd4e7u);
+        StoreADirect8(memory, cpu, DP_PROBE_Y);
+    } else {
+        EventNextByte(memory, cpu, 0xd4eeu);                   /* D4EC */
+        if (!EventPosition(memory, cpu, 0xd4f1u, handoff))
+            return EVENT_OPCODE_HANDOFF;
+        StoreADirect8(memory, cpu, DP_PROBE_X);
+        ExchangeAccumulatorBytes(cpu);
+        StoreADirect8(memory, cpu, DP_PROBE_Y);
+    }
+    Write8(memory, DirectAddress(cpu, 0x90u), 0x00u);          /* D4F7 */
+    Write8(memory, DirectAddress(cpu, 0x92u), 0x00u);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));
+    PushAccumulator8(memory, cpu);
+    EventNextByte(memory, cpu, 0xd500u);
+    EventValue(memory, cpu, 0xd503u);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xd507u);
+    Lufia2ActorSpawn(memory, cpu);                             /* $83:DF87 */
+    SimulateRtlFrame(memory, cpu);
+    /* $83:E018: fine position of actor $A9 from $8F/$91. */
+    SimulateJslFrame(memory, cpu, 0x80u, 0xd50bu);
+    LoadXDirect16(memory, cpu, 0xa9u);
+    SetAccumulatorWidth(cpu, 0);
+    LoadADirect16(memory, cpu, DP_PROBE_X);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    Write16Long(memory, LongIndexedAddress(0x7fddfeu, cpu->x),
+        cpu->accumulator);
+    LoadADirect16(memory, cpu, DP_PROBE_Y);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    Write16Long(memory, LongIndexedAddress(0x7fde8eu, cpu->x),
+        cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    SimulateRtlFrame(memory, cpu);
+    LoadA8(cpu, Pull8(memory, cpu));                           /* D50C */
+    StoreADirect8(memory, cpu, DP_ACTOR_SLOT);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xd512u);
+    Lufia2ActorRecordOffsets(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $29: script flag (slot variable) = slot bit 7 (last condition). */
+static unsigned EventOpStoreCondition(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    uint32_t flags;
+    uint8_t bit;
+
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* E421 */
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x)));
+    Write8(memory, EVENT_CONDITION, A8(cpu));
+    TransferDirectToA(cpu);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd15cu, cpu->x)));
+    EventFlagBit(memory, cpu, 0xe433u);
+    StoreADirect8(memory, cpu, 0x54u);
+    LoadA8(cpu, Read8(memory, EVENT_CONDITION));
+    flags = LongIndexedAddress(EVENT_SCRIPT_FLAGS, cpu->x);
+    bit = DirectByte(memory, cpu, 0x54u);
+    if (!cpu->negative) {
+        LoadA8(cpu, (uint8_t)(bit ^ 0xffu));
+        And8(cpu, Read8(memory, flags));
+    } else {
+        LoadA8(cpu, bit);                                      /* E44B */
+        Or8(cpu, Read8(memory, flags));
+    }
+    Write8(memory, flags, A8(cpu));
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Handlers behind JMP ($E5A4,x); others hand off. */
 static unsigned EventScriptOpcode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
-    uint16_t handler) {
+    uint16_t handler,
+    uint32_t *handoff) {
     unsigned i;
 
     for (i = 0; i < 12u; ++i)
@@ -840,6 +970,11 @@ static unsigned EventScriptOpcode(
         return EventOpWaitForActor(memory, cpu, handler);
     case EVENT_OP_SCROLL_LAYER:
         return EventOpScrollLayer(memory, cpu);
+    case EVENT_OP_SPAWN_AT:
+    case EVENT_OP_SPAWN_AT_POSITION:
+        return EventOpSpawn(memory, cpu, handler, handoff);
+    case EVENT_OP_STORE_CONDITION:
+        return EventOpStoreCondition(memory, cpu);
     case EVENT_OP_STORE_E316:
     case EVENT_OP_86:
     case EVENT_OP_A2:
@@ -868,8 +1003,10 @@ static uint8_t EventRunScript(
         ExchangeAccumulatorBytes(cpu);
         TransferAToX(cpu);
         handler = Read16Bank(memory, 0x80u, (uint16_t)(0xe5a4u + cpu->x));
+        uint32_t handoff = 0x80cc3fu;
+
         switch (EventScriptOpcode(memory, cpu,
-                    *passes < EVENT_OPCODE_LIMIT ? handler : 0u)) {
+                    *passes < EVENT_OPCODE_LIMIT ? handler : 0u, &handoff)) {
         case EVENT_OPCODE_NEXT:
             ++*passes;
             continue;
@@ -877,7 +1014,7 @@ static uint8_t EventRunScript(
             ++*passes;
             return 1;
         default:                                               /* CC3F */
-            cpu->resume_pc = 0x80cc3fu;
+            cpu->resume_pc = handoff;
             return 0;
         }
     }
