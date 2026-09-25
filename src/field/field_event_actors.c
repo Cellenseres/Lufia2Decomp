@@ -1157,6 +1157,88 @@ static unsigned EventOpObjectAt(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $41-$54: (opcode - $41) / 5 picks the point coordinate (x, y, x2,
+   y2), the remainder the operation: set, add, subtract, +1, -1. The
+   divider is addressed DB-relative. */
+static unsigned EventOpPointArithmetic(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    uint16_t operation;
+
+    SetAccumulatorWidth(cpu, 0);                               /* D9FC */
+    TransferXToA(cpu);
+    Subtract16(cpu, 0x0082u);
+    LsrA16(cpu);
+    Write16Absolute(memory, cpu, SNES_WRDIVL, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    StoreAImmediate8(memory, cpu, 0x05u, SNES_WRDIVB);
+    TransferDirectToA(cpu);                                    /* DA0E */
+    Lufia2EventNextByte(memory, cpu, 0xda11u);
+    ExchangeAccumulatorBytes(cpu);
+    LoadAAbsolute8(memory, cpu, SNES_RDDIVL, 0);
+    StoreADirect8(memory, cpu, 0x56u);                         /* coordinate */
+    LoadAAbsolute8(memory, cpu, SNES_RDMPYL, 0);
+    StoreADirect8(memory, cpu, 0x57u);                         /* operation */
+    ExchangeAccumulatorBytes(cpu);
+    Lufia2EventValue(memory, cpu, 0xda20u);
+    cpu->carry = 1;
+    Sbc8(cpu, 0xe0u);
+    StoreADirect8(memory, cpu, 0x54u);
+    Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+    TransferDirectToA(cpu);                                    /* DA28 */
+    LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
+    AslA8(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80da4bu, cpu->x)));
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+    StoreADirect16(memory, cpu, 0x5du);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, 0x7fu);                                        /* DA3A */
+    StoreADirect8(memory, cpu, 0x5fu);
+    TransferDirectToA(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
+    AslA8(cpu);
+    TransferAToX(cpu);
+    operation = Read16Bank(memory, 0x80u, (uint16_t)(0xda53u + cpu->x));
+    if (operation != 0xda5du && operation != 0xda63u &&
+        operation != 0xda6bu && operation != 0xda76u &&
+        operation != 0xda7cu) {
+        *handoff = 0x80da43u;                                  /* JSR ($DA53,x) */
+        return EVENT_OPCODE_HANDOFF;
+    }
+    SimulateJsrFrame(memory, cpu, 0xda45u);
+    {
+        const uint32_t coordinate = DirectLongPointer(memory, cpu, 0x5du);
+
+        switch (operation) {
+        case 0xda5du:                                          /* set */
+            Lufia2EventNextByte(memory, cpu, 0xda5fu);
+            break;
+        case 0xda63u:                                          /* add */
+            Lufia2EventNextByte(memory, cpu, 0xda65u);
+            Adc8(cpu, Read8(memory, coordinate));
+            break;
+        case 0xda6bu:                                          /* subtract */
+            Lufia2EventNextByte(memory, cpu, 0xda6du);
+            LoadA8(cpu, (uint8_t)((A8(cpu) ^ 0xffu) + 1u));
+            Adc8(cpu, Read8(memory, coordinate));
+            break;
+        case 0xda76u:                                          /* +1 */
+            LoadA8(cpu, (uint8_t)(Read8(memory, coordinate) + 1u));
+            break;
+        default:                                               /* -1 */
+            LoadA8(cpu, (uint8_t)(Read8(memory, coordinate) - 1u));
+            break;
+        }
+        Write8(memory, coordinate, A8(cpu));
+    }
+    SimulateRtsFrame(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Actor, position and point opcodes; the rest go to the conditions. */
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
@@ -1224,6 +1306,8 @@ unsigned Lufia2EventActorOpcode(
         return EventOpSamePosition(memory, cpu, handoff);
     case EVENT_OP_OBJECT_AT:
         return EventOpObjectAt(memory, cpu, handoff);
+    case EVENT_OP_POINT_ARITHMETIC:
+        return EventOpPointArithmetic(memory, cpu, handoff);
     case EVENT_OP_POINT_FROM_OBJECT:
         return EventOpPointFromObject(memory, cpu);
     default:
