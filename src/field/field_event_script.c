@@ -57,6 +57,24 @@ static void EventNextByte(
     SimulateRtsFrame(memory, cpu);
 }
 
+/* $80:E8D0: step back one byte; below $8000 the bank steps down. */
+static void EventPrevByte(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    cpu->y = (uint16_t)(cpu->y - 1u);                          /* E8D0 */
+    SetNz16(cpu, cpu->y);
+    if (!cpu->negative) {
+        LoadA8(cpu, (uint8_t)(Read8(memory, EVENT_SCRIPT_BANK) - 1u));
+        Write8(memory, EVENT_SCRIPT_BANK, A8(cpu));
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        LoadY16(cpu, 0xffffu);
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
 /* $80:E8AD: word operand, low byte first; leaves M=0. */
 static void EventNextWord(
     const Lufia2Memory *memory,
@@ -268,7 +286,11 @@ enum EventOpcodeHandler {
     EVENT_OP_A2 = 0xcfb7,                                      /* $A2 */
     EVENT_OP_RESET_STAIRS = 0xd8c8,                            /* $AB */
     EVENT_OP_B5 = 0xdbca,                                      /* $B5 */
-    EVENT_OP_B8 = 0xd5e4                                       /* $B8 */
+    EVENT_OP_B8 = 0xd5e4,                                      /* $B8 */
+    EVENT_OP_WAIT_FOR_LISTED_ACTOR = 0xdd8f,                   /* $5F */
+    EVENT_OP_WAIT_FOR_ACTOR = 0xdd86,                          /* $68 */
+    EVENT_OP_WAIT_FOR_LEADER = 0xd4ca,                         /* $6B */
+    EVENT_OP_SCROLL_LAYER = 0xdb21                             /* $58 */
 };
 
 /* $00 and aliases: disarm the slot (stores the DP low byte). */
@@ -281,12 +303,11 @@ static unsigned EventOpEnd(
     return EVENT_OPCODE_YIELD;
 }
 
-/* $11: sleep n frames, resume after the operand. */
-static unsigned EventOpWait(
+/* $80:D31C: sleep A frames, the slot resumes at Y. */
+static unsigned EventSleep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    EventNextByte(memory, cpu, 0xd31bu);                       /* D319 */
-    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* D31C */
     Or8(cpu, 0x80u);
     Write8(memory, LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x), A8(cpu));
     SetAccumulatorWidth(cpu, 0);
@@ -300,6 +321,63 @@ static unsigned EventOpWait(
     Write8(memory, LongIndexedAddress(EVENT_SLOT_POINTERS + 2u, cpu->x),
         A8(cpu));
     return EVENT_OPCODE_YIELD;
+}
+
+/* $11: sleep n frames, resume after the operand. */
+static unsigned EventOpWait(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    EventNextByte(memory, cpu, 0xd31bu);                       /* D319 */
+    return EventSleep(memory, cpu);
+}
+
+/* $80:DD9B: actor X still moving (bit 7, not bit 2)? */
+static uint8_t EventActorBusy(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    TransferAToX(cpu);                                         /* DD9B */
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
+    BitImmediate8(cpu, 0x04u);
+    if (!cpu->zero)
+        return 0;
+    BitImmediate8(cpu, 0x80u);
+    return !cpu->zero;
+}
+
+/* $5F/$68/$6B: wait one frame at a time while the actor moves. */
+static unsigned EventOpWaitForActor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler) {
+    if (handler == EVENT_OP_WAIT_FOR_LEADER) {
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, 0);      /* D4CA */
+        BitImmediate8(cpu, 0x04u);
+        if (!cpu->zero)
+            return EVENT_OPCODE_NEXT;
+        BitImmediate8(cpu, 0x80u);
+        if (cpu->zero)
+            return EVENT_OPCODE_NEXT;
+        EventPrevByte(memory, cpu, 0xd4d7u);
+    } else {
+        if (handler == EVENT_OP_WAIT_FOR_ACTOR)
+            TransferDirectToA(cpu);                            /* DD86 */
+        EventNextByte(memory, cpu, (uint16_t)(handler +
+            (handler == EVENT_OP_WAIT_FOR_ACTOR ? 3u : 2u)));
+        EventValue(memory, cpu, (uint16_t)(handler +
+            (handler == EVENT_OP_WAIT_FOR_ACTOR ? 6u : 5u)));
+        if (handler == EVENT_OP_WAIT_FOR_LISTED_ACTOR) {
+            /* $7F:D72C maps the operand to an actor slot. */
+            TransferAToX(cpu);                                 /* DD95 */
+            TransferDirectToA(cpu);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd72cu, cpu->x)));
+        }
+        if (!EventActorBusy(memory, cpu))
+            return EVENT_OPCODE_NEXT;
+        EventPrevByte(memory, cpu, 0xdda9u);                   /* DDA7 */
+        EventPrevByte(memory, cpu, 0xddacu);
+    }
+    LoadA8(cpu, 0x01u);
+    return EventSleep(memory, cpu);
 }
 
 /* $01/$0C: goto when script flag n is set / clear. */
@@ -648,6 +726,61 @@ static unsigned EventOpSmall(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $80:DBD2: widen A to 16 bits; only negative bytes get $FF. */
+static void EventSignedByte(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Or8(cpu, 0x00u);                                           /* DBD2 */
+    if (cpu->negative) {
+        ExchangeAccumulatorBytes(cpu);
+        LoadA8(cpu, 0xffu);
+        ExchangeAccumulatorBytes(cpu);
+    }
+    SetAccumulatorWidth(cpu, 0);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $58: move scroll target of layer n by (dx, dy) at two speeds. */
+static unsigned EventOpScrollLayer(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    uint32_t target;
+
+    TransferDirectToA(cpu);                                    /* DB21 */
+    EventNextByte(memory, cpu, 0xdb24u);
+    AslA8(cpu);
+    TransferAToX(cpu);
+    TransferDirectToA(cpu);
+    EventNextByte(memory, cpu, 0xdb2au);
+    EventSignedByte(memory, cpu, 0xdb2du);
+    target = LongIndexedAddress(0x7fd0ceu, cpu->x);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, target));
+    Write16Long(memory, target, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    TransferDirectToA(cpu);                                    /* DB39 */
+    EventNextByte(memory, cpu, 0xdb3cu);
+    EventSignedByte(memory, cpu, 0xdb3fu);
+    target = LongIndexedAddress(0x7fd0d6u, cpu->x);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, target));
+    Write16Long(memory, target, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    EventNextByte(memory, cpu, 0xdb4du);                       /* DB4B */
+    Write8(memory, LongIndexedAddress(0x7fd0deu, cpu->x), A8(cpu));
+    EventNextByte(memory, cpu, 0xdb54u);
+    Write8(memory, LongIndexedAddress(0x7fd0e6u, cpu->x), A8(cpu));
+    /* TDC: the speed high bytes get the DP low byte. */
+    TransferDirectToA(cpu);
+    Write8(memory, LongIndexedAddress(0x7fd0dfu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(0x7fd0e7u, cpu->x), A8(cpu));
+    LoadA8(cpu, 0x40u);
+    TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 1);
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Handlers behind JMP ($E5A4,x); others hand off. */
 static unsigned EventScriptOpcode(
     const Lufia2Memory *memory,
@@ -701,6 +834,12 @@ static unsigned EventScriptOpcode(
     case EVENT_OP_POINT_X_TO_VARIABLE:
     case EVENT_OP_VARIABLE_TO_POINT_X:
         return EventOpCopyPointX(memory, cpu, handler);
+    case EVENT_OP_WAIT_FOR_LISTED_ACTOR:
+    case EVENT_OP_WAIT_FOR_ACTOR:
+    case EVENT_OP_WAIT_FOR_LEADER:
+        return EventOpWaitForActor(memory, cpu, handler);
+    case EVENT_OP_SCROLL_LAYER:
+        return EventOpScrollLayer(memory, cpu);
     case EVENT_OP_STORE_E316:
     case EVENT_OP_86:
     case EVENT_OP_A2:
