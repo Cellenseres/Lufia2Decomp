@@ -28,6 +28,11 @@
 /* Script start and bank of the running slot. */
 #define EVENT_SCRIPT_POINTER 0x7fd197u
 #define EVENT_SCRIPT_BANK 0x7fd199u
+/* Script call frames: 13 x 10 bytes, tag = depth << 4 | slot. */
+#define EVENT_CALL_FRAMES 0x7fd466u
+#define EVENT_CALL_DEPTH 0x7fd4e6u
+/* Slot variables saved for $FB-$FE call arguments. */
+#define EVENT_SAVED_VARIABLES 0x7fd19cu
 /* Condition result: bit 7 true. */
 #define EVENT_CONDITION 0x7fd19au
 /* Layer redraw requests from the scripts, become $74 bits. */
@@ -295,7 +300,9 @@ enum EventOpcodeHandler {
     EVENT_OP_SCROLL_LAYER = 0xdb21,                            /* $58 */
     EVENT_OP_SPAWN_AT = 0xd4e0,                                /* $24 */
     EVENT_OP_SPAWN_AT_POSITION = 0xd4ec,                       /* $25 */
-    EVENT_OP_STORE_CONDITION = 0xe421                          /* $29 */
+    EVENT_OP_STORE_CONDITION = 0xe421,                         /* $29 */
+    EVENT_OP_CALL = 0xd79b,                                    /* $A9 */
+    EVENT_OP_RETURN = 0xd849                                   /* $AA */
 };
 
 /* $00 and aliases: disarm the slot (stores the DP low byte). */
@@ -910,6 +917,222 @@ static unsigned EventOpStoreCondition(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $80:D73A: slot X takes the argument list (to $FF) as variables. */
+static void EventArguments(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    static const uint32_t kVariables[4] = {
+        0x7fd15cu, 0x7fd164u, 0x7fd16cu, 0x7fd174u};
+    unsigned i;
+
+    SimulateJsrFrame(memory, cpu, return_address);
+    PushIndex(memory, cpu);                                    /* D73A */
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
+    for (i = 0; i < 4u; ++i) {
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(kVariables[i], cpu->x)));
+        Write8(memory, EVENT_SAVED_VARIABLES + i, A8(cpu));
+    }
+    cpu->x = PullIndexValue(memory, cpu);
+    StoreXDirect16(memory, cpu, DP_ACTOR_SLOT);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xd763u);
+    Lufia2ActorRecordOffsets(memory, cpu);                     /* $83:AB4F */
+    SimulateRtlFrame(memory, cpu);
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* D764 */
+    LoadA8(cpu, Read8(memory, EVENT_CONDITION));
+    Write8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x), A8(cpu));
+    LoadA8(cpu, 0x7fu);
+    Write8(memory, LongIndexedAddress(0x7fd154u, cpu->x), A8(cpu));
+    for (;;) {
+        TransferDirectToA(cpu);                                /* D774 */
+        EventNextByte(memory, cpu, 0xd777u);
+        Compare8(cpu, A8(cpu), 0xffu);
+        if (cpu->zero)
+            break;
+        Compare8(cpu, A8(cpu), 0xfbu);
+        if (cpu->carry) {
+            /* $FB-$FF: the caller's own variables. */
+            PushIndex(memory, cpu);                            /* D780 */
+            cpu->carry = 1;
+            Sbc8(cpu, 0xfbu);
+            TransferAToX(cpu);
+            LoadA8(cpu, Read8(memory,
+                LongIndexedAddress(EVENT_SAVED_VARIABLES, cpu->x)));
+            cpu->x = PullIndexValue(memory, cpu);
+        }
+        Write8(memory, LongIndexedAddress(0x7fd164u, cpu->x), A8(cpu));
+        SetAccumulatorWidth(cpu, 0);                           /* D78E */
+        TransferXToA(cpu);
+        cpu->carry = 0;
+        Add16Value(cpu, 0x0008u);
+        TransferAToX(cpu);
+        SetAccumulatorWidth(cpu, 1);
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* Call-frame tag of this slot at its current depth, into $54. */
+static void EventCallTag(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    AslA8(cpu);
+    AslA8(cpu);
+    AslA8(cpu);
+    AslA8(cpu);
+    Or8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));
+    StoreADirect8(memory, cpu, 0x54u);
+}
+
+/* Next call frame: X += 10 while below $80. */
+static uint8_t EventNextFrame(Lufia2CpuState *cpu) {
+    SetAccumulatorWidth(cpu, 0);
+    TransferXToA(cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, 0x000au);
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    Compare16(cpu, cpu->x, 0x0080u);
+    return !cpu->carry;
+}
+
+/* Copy the four slot variables to (1) or from (0) frame X. */
+static void EventFrameVariables(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t save) {
+    do {
+        const uint32_t variable = DirectLongIndirectY(memory, cpu, 0x5du);
+        const uint32_t saved = LongIndexedAddress(0x7fd46au, cpu->x);
+
+        if (save) {
+            LoadA8(cpu, Read8(memory, variable));              /* D7F6 */
+            Write8(memory, saved, A8(cpu));
+        } else {
+            LoadA8(cpu, Read8(memory, saved));                 /* D8AE */
+            Write8(memory, variable, A8(cpu));
+        }
+        IncrementX16(cpu);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, cpu->y);
+        cpu->carry = 0;
+        Add16Value(cpu, 0x0008u);
+        TransferAToY(cpu);
+        Compare16(cpu, cpu->accumulator, 0x0020u);
+        SetAccumulatorWidth(cpu, 1);
+    } while (!cpu->carry);
+}
+
+/* $5D/$5F: long pointer to this slot's variables. */
+static void EventSlotVariablePointer(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    LoadA8(cpu, 0x7fu);
+    StoreADirect8(memory, cpu, 0x5fu);
+    SetAccumulatorWidth(cpu, 0);
+    LoadADirect16(memory, cpu, DP_ACTOR_SLOT);
+    cpu->carry = 0;
+    Add16Value(cpu, 0xd15cu);
+    StoreADirect16(memory, cpu, 0x5du);
+}
+
+/* $A9: call base + word with arguments; saves the caller's state. */
+static unsigned EventOpCall(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    uint32_t depth;
+
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* D79B */
+    depth = LongIndexedAddress(EVENT_CALL_DEPTH, cpu->x);
+    LoadA8(cpu, (uint8_t)(Read8(memory, depth) + 1u));
+    Write8(memory, depth, A8(cpu));
+    EventCallTag(memory, cpu);
+    LoadX16(cpu, 0x0000u);
+    for (;;) {
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_CALL_FRAMES, cpu->x)));
+        if (cpu->zero)
+            break;
+        if (!EventNextFrame(cpu)) {
+            /* No free frame: frame 0 is overwritten. */
+            TransferDirectToA(cpu);                            /* D7C6 */
+            LoadX16(cpu, 0x0000u);
+            break;
+        }
+    }
+    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));               /* D7CA */
+    Write8(memory, LongIndexedAddress(EVENT_CALL_FRAMES, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, EVENT_CONDITION));
+    Write8(memory, LongIndexedAddress(0x7fd46fu, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, EVENT_CONDITION + 1u));
+    Write8(memory, LongIndexedAddress(0x7fd46eu, cpu->x), A8(cpu));
+    StoreXDirect16(memory, cpu, 0x56u);
+    EventSlotVariablePointer(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    PushY(memory, cpu);                                        /* D7F2 */
+    LoadY16(cpu, 0x0000u);
+    EventFrameVariables(memory, cpu, 1);
+    cpu->y = PullIndexValue(memory, cpu);
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* D80D */
+    EventArguments(memory, cpu, 0xd811u);
+    EventNextWord(memory, cpu, 0xd814u);
+    PushAccumulator16(memory, cpu);                            /* M=0 */
+    LoadXDirect16(memory, cpu, 0x56u);
+    LoadA16(cpu, cpu->y);
+    Write16Long(memory, LongIndexedAddress(0x7fd467u, cpu->x),
+        cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    PushDataBank(memory, cpu);
+    LoadA8(cpu, Pull8(memory, cpu));
+    Write8(memory, LongIndexedAddress(0x7fd469u, cpu->x), A8(cpu));
+    SetAccumulatorWidth(cpu, 0);
+    PullAccumulator16(memory, cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, EVENT_SCRIPT_BASE));
+    EventSetPointer(memory, cpu, 0xd82fu);
+    SetAccumulatorWidth(cpu, 1);
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $AA: return to the caller's frame and variables. */
+static unsigned EventOpReturn(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    uint32_t depth;
+
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* D849 */
+    depth = LongIndexedAddress(EVENT_CALL_DEPTH, cpu->x);
+    LoadA8(cpu, Read8(memory, depth));
+    EventCallTag(memory, cpu);
+    LoadA8(cpu, (uint8_t)(Read8(memory, depth) - 1u));
+    Write8(memory, depth, A8(cpu));
+    LoadX16(cpu, 0x0000u);
+    for (;;) {
+        /* Without a match X ends at $80, past the frames. */
+        LoadA8(cpu, Read8(memory,
+            LongIndexedAddress(EVENT_CALL_FRAMES, cpu->x)));   /* D863 */
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x54u));
+        if (cpu->zero || !EventNextFrame(cpu))
+            break;
+    }
+    TransferDirectToA(cpu);                                    /* D87A */
+    Write8(memory, LongIndexedAddress(EVENT_CALL_FRAMES, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd46fu, cpu->x)));
+    Write8(memory, EVENT_CONDITION, A8(cpu));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd46eu, cpu->x)));
+    Write8(memory, EVENT_CONDITION + 1u, A8(cpu));
+    EventSlotVariablePointer(memory, cpu);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd467u, cpu->x)));
+    TransferAToY(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    PushY(memory, cpu);                                        /* D8A4 */
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd469u, cpu->x)));
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    LoadY16(cpu, 0x0000u);
+    EventFrameVariables(memory, cpu, 0);
+    cpu->y = PullIndexValue(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Handlers behind JMP ($E5A4,x); others hand off. */
 static unsigned EventScriptOpcode(
     const Lufia2Memory *memory,
@@ -975,6 +1198,10 @@ static unsigned EventScriptOpcode(
         return EventOpSpawn(memory, cpu, handler, handoff);
     case EVENT_OP_STORE_CONDITION:
         return EventOpStoreCondition(memory, cpu);
+    case EVENT_OP_CALL:
+        return EventOpCall(memory, cpu);
+    case EVENT_OP_RETURN:
+        return EventOpReturn(memory, cpu);
     case EVENT_OP_STORE_E316:
     case EVENT_OP_86:
     case EVENT_OP_A2:
