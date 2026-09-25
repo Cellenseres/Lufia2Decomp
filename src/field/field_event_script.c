@@ -41,6 +41,8 @@
 /* $05B5 bit 1: a slot is still armed. */
 #define FIELD_FLAG_EVENT_ARMED 0x02u
 #define DP_EVENT_SLOT_RECORD 0xabu
+/* List entries per $80:BFAA search before a handoff at $80:BFBC. */
+#define EVENT_SEARCH_LIMIT 65536u
 /* Opcodes per tick before an exact handoff at $80:CC3F. */
 #define EVENT_OPCODE_LIMIT 4096u
 
@@ -302,7 +304,10 @@ enum EventOpcodeHandler {
     EVENT_OP_SPAWN_AT_POSITION = 0xd4ec,                       /* $25 */
     EVENT_OP_STORE_CONDITION = 0xe421,                         /* $29 */
     EVENT_OP_CALL = 0xd79b,                                    /* $A9 */
-    EVENT_OP_RETURN = 0xd849                                   /* $AA */
+    EVENT_OP_RETURN = 0xd849,                                  /* $AA */
+    EVENT_OP_SET_POINT = 0xda82,                               /* $55 */
+    EVENT_OP_SET_POINT_VALUE = 0xda98,                         /* $69 */
+    EVENT_OP_85 = 0xdaf2                                       /* $85 */
 };
 
 /* $00 and aliases: disarm the slot (stores the DP low byte). */
@@ -793,6 +798,84 @@ static unsigned EventOpScrollLayer(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $80:BFAA: find key A in the $7E:F000 list at [X], stride B;
+   carry clear = found. 0 = handoff at $80:BFBC. */
+static uint8_t EventListSearch(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t return_bank,
+    uint16_t return_address) {
+    unsigned steps;
+
+    SimulateJslFrame(memory, cpu, return_bank, return_address);
+    PushDataBank(memory, cpu);                                 /* BFAA */
+    StoreADirect8(memory, cpu, 0x54u);
+    ExchangeAccumulatorBytes(cpu);
+    StoreADirect8(memory, cpu, 0x5au);
+    LoadA8(cpu, 0x7eu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xf000u, cpu->x));
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    for (steps = 0; steps < EVENT_SEARCH_LIMIT; ++steps) {
+        LoadAAbsolute8(memory, cpu, 0xf000u, cpu->x);          /* BFBC */
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x54u));
+        if (cpu->zero) {
+            PullDataBank(memory, cpu);                         /* BFD3 */
+            cpu->carry = 0;
+            SimulateRtlFrame(memory, cpu);
+            return 1;
+        }
+        Compare8(cpu, A8(cpu), 0xffu);
+        if (cpu->zero) {
+            PullDataBank(memory, cpu);                         /* BFD6 */
+            cpu->carry = 1;
+            SimulateRtlFrame(memory, cpu);
+            return 1;
+        }
+        /* TXA with M=1 keeps B, which carries the high byte. */
+        LoadA8(cpu, (uint8_t)cpu->x);                          /* BFC7 */
+        cpu->carry = 0;
+        Adc8(cpu, DirectByte(memory, cpu, 0x5au));
+        if (cpu->carry) {
+            ExchangeAccumulatorBytes(cpu);
+            LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+            ExchangeAccumulatorBytes(cpu);
+        }
+        TransferAToX(cpu);
+    }
+    return 0;
+}
+
+/* $80:E912: actor A in the map's actor list [$7E:F022], stride 3;
+   not found gives the first entry. 0 = handoff. */
+static uint8_t EventFindActor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    ExchangeAccumulatorBytes(cpu);                             /* E912 */
+    LoadA8(cpu, 0x03u);
+    ExchangeAccumulatorBytes(cpu);
+    LoadX16(cpu, 0x0022u);
+    if (!EventListSearch(memory, cpu, 0x80u, 0xe91cu)) {
+        *handoff = 0x80bfbcu;
+        return 0;
+    }
+    if (cpu->carry) {
+        SetAccumulatorWidth(cpu, 0);                           /* E91F */
+        LoadA16(cpu, Read16Long(memory, 0x7ef022u));
+        TransferAToX(cpu);
+        SetAccumulatorWidth(cpu, 1);
+        cpu->carry = 0;
+    }
+    SimulateRtsFrame(memory, cpu);
+    return 1;
+}
+
 /* $80:EA09: position operand in A (x) and B (y); 0 = handoff. */
 static uint8_t EventPosition(
     const Lufia2Memory *memory,
@@ -816,11 +899,16 @@ static uint8_t EventPosition(
         LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
         Compare8(cpu, A8(cpu), 0xe0u);
         if (!cpu->carry) {
-            /* Other operands name an actor via $80:E912. */
-            cpu->carry = 1;
+            /* Other operands name map actor n - $20. */
+            cpu->carry = 1;                                    /* EA37 */
             Sbc8(cpu, 0x20u);
-            *handoff = 0x80ea3au;
-            return 0;
+            if (!EventFindActor(memory, cpu, 0xea3cu, handoff))
+                return 0;
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef002u, cpu->x)));
+            ExchangeAccumulatorBytes(cpu);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef001u, cpu->x)));
+            SimulateRtsFrame(memory, cpu);
+            return 1;
         }
         cpu->carry = 1;
         Sbc8(cpu, 0xe0u);
@@ -1133,6 +1221,131 @@ static unsigned EventOpReturn(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $80:E92A: box $9F-$A2 of an operand: own slot, point, map
+   entity $60-$DF, else a position operand. 0 = handoff. */
+static uint8_t EventArea(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Compare8(cpu, A8(cpu), 0xfbu);                             /* E92A */
+    if (cpu->zero) {
+        LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd17cu, cpu->x)));
+        StoreADirect8(memory, cpu, 0x9fu);
+        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+        StoreADirect8(memory, cpu, 0xa1u);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd184u, cpu->x)));
+        StoreADirect8(memory, cpu, 0xa0u);
+        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+        StoreADirect8(memory, cpu, 0xa2u);
+        SimulateRtsFrame(memory, cpu);
+        return 1;
+    }
+    Compare8(cpu, A8(cpu), 0xe0u);                             /* E945 */
+    if (cpu->carry) {
+        static const uint32_t kBox[4] = {
+            EVENT_POINT_X, EVENT_POINT_Y, EVENT_POINT_D223, EVENT_POINT_D263};
+        unsigned i;
+
+        cpu->carry = 1;
+        Sbc8(cpu, 0xe0u);
+        ExchangeAccumulatorBytes(cpu);
+        LoadA8(cpu, 0x00u);
+        ExchangeAccumulatorBytes(cpu);
+        TransferAToX(cpu);
+        for (i = 0; i < 4u; ++i) {
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(kBox[i], cpu->x)));
+            StoreADirect8(memory, cpu, (uint8_t)(0x9fu + i));
+        }
+        SimulateRtsFrame(memory, cpu);
+        return 1;
+    }
+    Compare8(cpu, A8(cpu), 0x60u);                             /* E96B */
+    if (cpu->carry) {
+        cpu->carry = 1;
+        Sbc8(cpu, 0x60u);
+        ExchangeAccumulatorBytes(cpu);
+        LoadA8(cpu, 0x05u);
+        ExchangeAccumulatorBytes(cpu);
+        LoadX16(cpu, 0x0024u);
+        if (!EventListSearch(memory, cpu, 0x80u, 0xe97cu)) {
+            *handoff = 0x80bfbcu;
+            return 0;
+        }
+        if (!cpu->carry) {
+            SetAccumulatorWidth(cpu, 0);                       /* E982 */
+            LoadA16(cpu, Read16Long(memory,
+                LongIndexedAddress(0x7ef001u, cpu->x)));
+            StoreADirect16(memory, cpu, 0x9fu);
+            LoadA16(cpu, Read16Long(memory,
+                LongIndexedAddress(0x7ef003u, cpu->x)));
+            StoreADirect16(memory, cpu, 0xa1u);
+            SetAccumulatorWidth(cpu, 1);
+        }
+        SimulateRtsFrame(memory, cpu);
+        return 1;
+    }
+    if (!EventPosition(memory, cpu, 0xe996u, handoff))        /* E994 */
+        return 0;
+    StoreADirect8(memory, cpu, 0x9fu);
+    ExchangeAccumulatorBytes(cpu);
+    StoreADirect8(memory, cpu, 0xa0u);
+    SimulateRtsFrame(memory, cpu);
+    return 1;
+}
+
+/* $55/$69: script point n = box of an operand ($80:E92A). */
+static unsigned EventOpSetPoint(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    static const uint32_t kBox[4] = {
+        EVENT_POINT_X, EVENT_POINT_Y, EVENT_POINT_D223, EVENT_POINT_D263};
+    const uint8_t value = handler == EVENT_OP_SET_POINT_VALUE;
+    unsigned i;
+
+    TransferDirectToA(cpu);
+    EventNextByte(memory, cpu, (uint16_t)(handler + 3u));
+    if (value)
+        EventValue(memory, cpu, 0xda9eu);
+    cpu->carry = 1;
+    Sbc8(cpu, 0xe0u);
+    TransferAToX(cpu);
+    PushIndex(memory, cpu);
+    EventNextByte(memory, cpu, value ? 0xdaa6u : 0xda8du);
+    EventValue(memory, cpu, value ? 0xdaa9u : 0xda90u);
+    if (!EventArea(memory, cpu, value ? 0xdaacu : 0xda93u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    cpu->x = PullIndexValue(memory, cpu);
+    for (i = 0; i < 4u; ++i) {                                 /* DAAE */
+        LoadA8(cpu, DirectByte(memory, cpu, (uint8_t)(0x9fu + i)));
+        Write8(memory, LongIndexedAddress(kBox[i], cpu->x), A8(cpu));
+    }
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $85: $05BD/$05BE = position, $05BF = byte, stair state reset. */
+static unsigned EventOp85(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    EventNextByte(memory, cpu, 0xdaf4u);                       /* DAF2 */
+    EventValue(memory, cpu, 0xdaf7u);
+    if (!EventPosition(memory, cpu, 0xdafau, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    StoreAAbsolute8(memory, cpu, 0x05bdu, 0);
+    ExchangeAccumulatorBytes(cpu);
+    StoreAAbsolute8(memory, cpu, 0x05beu, 0);
+    EventNextByte(memory, cpu, 0xdb04u);
+    StoreAAbsolute8(memory, cpu, 0x05bfu, 0);
+    LoadA8(cpu, 0xffu);
+    Write8(memory, 0x7fd0bfu, A8(cpu));
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Handlers behind JMP ($E5A4,x); others hand off. */
 static unsigned EventScriptOpcode(
     const Lufia2Memory *memory,
@@ -1200,6 +1413,11 @@ static unsigned EventScriptOpcode(
         return EventOpStoreCondition(memory, cpu);
     case EVENT_OP_CALL:
         return EventOpCall(memory, cpu);
+    case EVENT_OP_SET_POINT:
+    case EVENT_OP_SET_POINT_VALUE:
+        return EventOpSetPoint(memory, cpu, handler, handoff);
+    case EVENT_OP_85:
+        return EventOp85(memory, cpu, handoff);
     case EVENT_OP_RETURN:
         return EventOpReturn(memory, cpu);
     case EVENT_OP_STORE_E316:
