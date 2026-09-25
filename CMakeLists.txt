@@ -9,5 +9,7 @@ add_library(Lufia2::Decomp ALIAS lufia2_decomp)
 
 target_include_directories(lufia2_decomp
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_features(lufia2_decomp PUBLIC c_std_11)
