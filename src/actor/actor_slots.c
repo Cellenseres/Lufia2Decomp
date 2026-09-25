@@ -3,17 +3,18 @@
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
 #include "actor/actor_internal.h"
+#include "system/wram.h"
 
 /* $83:AB4F: record offsets for actor $A7. */
 void Lufia2ActorRecordOffsets(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Write8(memory, DirectAddress(cpu, 0xa8u), 0x00u);          /* AB4F */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0xa7u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
     AslA8(cpu);
     Write8(memory, DirectAddress(cpu, 0xa9u), A8(cpu));
     Write8(memory, DirectAddress(cpu, 0xaau), 0x00u);
-    Adc8(cpu, Read8(memory, DirectAddress(cpu, 0xa7u)));
+    Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
     Write8(memory, DirectAddress(cpu, 0xabu), A8(cpu));
     Write8(memory, DirectAddress(cpu, 0xacu), 0x00u);
     Write8(memory, DirectAddress(cpu, 0xadu), 0x00u);
@@ -47,7 +48,7 @@ static void SecondarySpawnInit(
         0x7fdcdcu, 0x7fdcddu, 0x7fdd6cu, 0x7fdd6du};
     unsigned i;
 
-    StoreXDirect16(memory, cpu, 0xa7u);                        /* DFA5 */
+    StoreXDirect16(memory, cpu, DP_ACTOR_SLOT);                /* DFA5 */
     SimulateJslFrame(memory, cpu, 0x83u, 0xdfaau);
     Lufia2ActorRecordOffsets(memory, cpu);
     SimulateRtlFrame(memory, cpu);
@@ -119,7 +120,7 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
         LoadA8(cpu, 0x01u);
         Write8(memory, 0x7fe216u, A8(cpu));
     }
-    Write8(memory, DirectAddress(cpu, 0xa7u), 0x00u);          /* BB9F */
+    Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), 0x00u);  /* BB9F */
     for (;;) {
         ++result.dispatches;
         /* A child left D set: AB4F's ADC goes BCD. */
@@ -133,12 +134,12 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
         Lufia2ActorRecordOffsets(memory, cpu);
         SimulateRtlFrame(memory, cpu);
         if (cpu->index_is_8_bit) {                             /* BBA5 */
-            cpu->y = Read8(memory, DirectAddress(cpu, 0xa7u));
+            cpu->y = Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT));
             SetNz8(cpu, (uint8_t)cpu->y);
         } else {
-            LoadYDirect16(memory, cpu, 0xa7u);
+            LoadYDirect16(memory, cpu, DP_ACTOR_SLOT);
         }
-        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->y);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->y);
         BitImmediate8(cpu, 0x04u);
         if (cpu->zero) {
             uint32_t primary = 0;
@@ -179,9 +180,9 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
             SetAccumulatorWidth(cpu, 1);                       /* BBCF */
             SetIndexWidth(cpu, 1);
         }
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0xa7u)));  /* BBD1 */
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT))); /* BBD1 */
         LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        Write8(memory, DirectAddress(cpu, 0xa7u), A8(cpu));
+        Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), A8(cpu));
         Compare8(cpu, A8(cpu), 0x28u);
         if (cpu->zero)
             break;

@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
 #include "actor/actor_internal.h"
+#include "system/wram.h"
 
 /* $83:ABE9: sprite VRAM base (A.high << 4) + $2000; M=0. */
 void Lufia2SpriteVramBase(
@@ -28,10 +29,10 @@ static void ActorReleaseSprite(
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     SetAccumulatorWidth(cpu, 1);                               /* AAAF */
     SetIndexWidth(cpu, 1);
-    LoadXDirect(memory, cpu, 0xa7u);
-    LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     Or8(cpu, 0x04u);
-    StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     LoadA8(cpu, 0xffu);
     StoreAAbsolute8(memory, cpu, 0x05d2u, cpu->x);
     TransferDirectToA(cpu);
@@ -61,7 +62,7 @@ static void ActorSpriteDescriptor(
     PushDataBank(memory, cpu);                                 /* A9E5 */
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 1);
-    LoadXDirect(memory, cpu, 0xa7u);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     StoreAAbsolute8(memory, cpu, 0x05d2u, cpu->x);
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, 0x00u);
@@ -76,7 +77,7 @@ static void ActorSpriteDescriptor(
     SetIndexWidth(cpu, 1);
     LoadA8(cpu, 0xcfu);
     Write8(memory, DirectAddress(cpu, 0x5fu), A8(cpu));
-    LoadXDirect(memory, cpu, 0xa7u);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     pointer = DirectLongPointer(memory, cpu, 0x5du);
     LoadA8(cpu, Read8(memory, pointer));
     And8(cpu, 0x07u);
@@ -111,7 +112,7 @@ static void ActorSpriteTables(
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* AA7D */
     SetAccumulatorWidth(cpu, 1);
-    LoadXDirect(memory, cpu, 0xa7u);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
     AslA8(cpu);
     TransferAToX(cpu);
@@ -120,7 +121,7 @@ static void ActorSpriteTables(
     Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x1381u, cpu->y),
         cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);                               /* AA91 */
-    LoadY8(cpu, Read8(memory, DirectAddress(cpu, 0xa7u)));
+    LoadY8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
     LoadA8(cpu, 0xffu);
     StoreAAbsolute8(memory, cpu, 0x1471u, cpu->y);
     LoadAAbsolute8(memory, cpu, 0x1291u, cpu->y);
@@ -146,13 +147,13 @@ static void ActorAllocSprite(
     Push8(memory, cpu, PackStatus(cpu));                       /* AA50 */
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 1);
-    LoadXDirect(memory, cpu, 0xa7u);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     TransferDirectToA(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
     TransferAToX(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83abf4u, cpu->x)));
     Lufia2SpriteAllocSlots(memory, cpu, 0xaa62u);
-    LoadXDirect(memory, cpu, 0xa7u);                           /* AA63 */
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* AA63 */
     Write8(memory, LongIndexedAddress(0x7fe25eu, cpu->x), A8(cpu));
     ExchangeAccumulatorBytes(cpu);
     Write8(memory, LongIndexedAddress(0x7fe2a6u, cpu->x), A8(cpu));
@@ -207,7 +208,7 @@ static void ActorSpriteOffset(
     Push8(memory, cpu, PackStatus(cpu));                       /* AA30 */
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
-    LoadXDirect(memory, cpu, 0xa7u);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     TransferDirectToA(cpu);
     LoadA8(cpu, 0xf0u);
     ExchangeAccumulatorBytes(cpu);
@@ -234,21 +235,21 @@ void Lufia2ActorSpriteReload(
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe508u, cpu->x)));
     PushAccumulator8(memory, cpu);
-    LoadXDirect(memory, cpu, 0xa7u);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe3c6u, cpu->x)));
     PushAccumulator8(memory, cpu);
     ActorReleaseSprite(memory, cpu, 0xdb03u);
-    LoadXDirect(memory, cpu, 0xa7u);                           /* DB04 */
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* DB04 */
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe5a6u, cpu->x)));
     StoreAAbsolute8(memory, cpu, 0x05d2u, cpu->x);
     ActorLoadSprite(memory, cpu, 0xdb10u);
     ActorSpriteOffset(memory, cpu, 0xdb14u);
     LoadA8(cpu, Pull8(memory, cpu));                           /* DB15 */
-    LoadXDirect(memory, cpu, 0xa7u);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     Write8(memory, LongIndexedAddress(0x7fe3c6u, cpu->x), A8(cpu));
-    LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     And8(cpu, 0xfbu);
-    StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     LoadA8(cpu, Pull8(memory, cpu));
     LoadXDirect(memory, cpu, 0xabu);
     Write8(memory, LongIndexedAddress(0x7fe508u, cpu->x), A8(cpu));
@@ -300,7 +301,7 @@ void Lufia2SpriteAllocSlots(
         }
     }
     LoadX8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));     /* ABA8 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0xa7u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
     Or8(cpu, 0x80u);
     do {
         StoreAAbsolute8(memory, cpu, 0xe100u, cpu->x);

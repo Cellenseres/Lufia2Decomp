@@ -3,6 +3,18 @@
 #include "core/cpu_internal.h"
 #include "lufia2/menu.h"
 
+/* Menu WRAM. */
+#define MENU_PRESSED_4A 0x14abu       /* buttons from $4A */
+#define MENU_PRESSED_4B 0x14acu       /* buttons from $4B */
+#define MENU_CURSOR_VISIBLE 0x1552u
+#define MENU_CURSOR_ENABLED 0x1553u
+#define MENU_CURSOR_TIMER 0x1554u
+#define MENU_HDMA_REQUEST 0x1565u
+#define MENU_WINDOW_REQUEST 0x1566u
+#define MENU_SPRITE_REQUEST 0x1567u
+#define SELECT_TILEMAP_REQUEST 0x1568u
+#define MENU_WINDOW_REFRESH 0x156au
+
 /* $82:8DA6: HDMA table [$F4] to [$F7], channel $F3 setup. */
 static void MenuHdmaUpdate(
     const Lufia2Memory *memory,
@@ -10,10 +22,10 @@ static void MenuHdmaUpdate(
     uint8_t return_bank,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, return_bank, return_address);
-    LoadAAbsolute8(memory, cpu, 0x1565u, 0);                   /* 8DA6 */
+    LoadAAbsolute8(memory, cpu, MENU_HDMA_REQUEST, 0);         /* 8DA6 */
     And8(cpu, 0x01u);
     if (!cpu->zero) {
-        TestBitsAbsolute8(memory, cpu, 0x1565u, 0);
+        TestBitsAbsolute8(memory, cpu, MENU_HDMA_REQUEST, 0);
         LoadY16(cpu, 0x0000u);
         for (;;) {
             LoadA8(cpu, Read8(memory,                          /* 8DB3 */
@@ -41,32 +53,32 @@ static void MenuHdmaUpdate(
         LsrA16(cpu);
         TransferAToX(cpu);
         LoadA16(cpu, Read16Direct(memory, cpu, 0xf7u));
-        Write8(memory, AbsoluteIndexedAddress(cpu, 0x4302u, cpu->y),
+        Write8(memory, AbsoluteIndexedAddress(cpu, SNES_A1TL(0), cpu->y),
             (uint8_t)cpu->accumulator);
-        Write8(memory, AbsoluteIndexedAddress(cpu, 0x4303u, cpu->y),
+        Write8(memory, AbsoluteIndexedAddress(cpu, SNES_A1TH(0), cpu->y),
             (uint8_t)(cpu->accumulator >> 8));
         SetAccumulatorWidth(cpu, 1);
         LoadA8(cpu, DirectByte(memory, cpu, 0xf9u));
-        StoreAAbsolute8(memory, cpu, 0x4304u, cpu->y);
+        StoreAAbsolute8(memory, cpu, SNES_A1B(0), cpu->y);
         LoadA8(cpu, DirectByte(memory, cpu, 0xfau));
-        StoreAAbsolute8(memory, cpu, 0x4301u, cpu->y);
+        StoreAAbsolute8(memory, cpu, SNES_BBAD(0), cpu->y);
         LoadA8(cpu, DirectByte(memory, cpu, 0xfbu));
-        StoreAAbsolute8(memory, cpu, 0x4300u, cpu->y);
+        StoreAAbsolute8(memory, cpu, SNES_DMAP(0), cpu->y);
     }
-    LoadAAbsolute8(memory, cpu, 0x1565u, 0);                   /* 8DE9 */
+    LoadAAbsolute8(memory, cpu, MENU_HDMA_REQUEST, 0);         /* 8DE9 */
     And8(cpu, 0x02u);
     if (!cpu->zero) {
-        TestBitsAbsolute8(memory, cpu, 0x1565u, 0);
+        TestBitsAbsolute8(memory, cpu, MENU_HDMA_REQUEST, 0);
         LoadA8(cpu, DirectByte(memory, cpu, 0xf2u));
-        StoreAAbsolute8(memory, cpu, 0x420cu, 0);
+        StoreAAbsolute8(memory, cpu, SNES_HDMAEN, 0);
     }
-    LoadAAbsolute8(memory, cpu, 0x1565u, 0);                   /* 8DF8 */
+    LoadAAbsolute8(memory, cpu, MENU_HDMA_REQUEST, 0);         /* 8DF8 */
     And8(cpu, 0x04u);
     if (!cpu->zero) {
-        TestBitsAbsolute8(memory, cpu, 0x1565u, 0);
-        StoreAImmediate8(memory, cpu, 0x04u, 0x212du);
-        StoreAImmediate8(memory, cpu, 0x02u, 0x2130u);
-        StoreAImmediate8(memory, cpu, 0x10u, 0x2131u);
+        TestBitsAbsolute8(memory, cpu, MENU_HDMA_REQUEST, 0);
+        StoreAImmediate8(memory, cpu, 0x04u, SNES_TS);
+        StoreAImmediate8(memory, cpu, 0x02u, SNES_CGWSEL);
+        StoreAImmediate8(memory, cpu, 0x10u, SNES_CGADSUB);
     }
     SimulateRtlFrame(memory, cpu);
 }
@@ -135,10 +147,10 @@ static void MenuWindowLines(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x93b4u);
-    LoadAAbsolute8(memory, cpu, 0x1566u, 0);                   /* 8E12 */
+    LoadAAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);       /* 8E12 */
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero) {
-        StoreZeroAbsolute8(memory, cpu, 0x1566u, 0);
+        StoreZeroAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);
         LoadY16(cpu, 0x0000u);
         for (;;) {
             LoadA8(cpu, Read8(memory,                          /* 8E1F */
@@ -157,7 +169,7 @@ static void MenuWindowLines(
             IncrementY16(cpu);
         }
     } else if (MenuBit(cpu, 0x02u)) {                      /* 8E33 */
-        StoreZeroAbsolute8(memory, cpu, 0x1566u, 0);
+        StoreZeroAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1532u, 0));
         Write16Direct(memory, cpu, 0x33u, cpu->accumulator);
@@ -206,7 +218,7 @@ static void MenuWindowLines(
         LoadA8(cpu, 0x09u);
         Write8(memory, LongIndexedAddress(0x7e80c0u, cpu->x), A8(cpu));
     } else if (MenuBit(cpu, 0x04u)) {                      /* 8E98 */
-        StoreZeroAbsolute8(memory, cpu, 0x1566u, 0);
+        StoreZeroAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);
         LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1538u, 0));
         MenuTableStep8(memory, cpu, 3);
         SetAccumulatorWidth(cpu, 0);
@@ -228,7 +240,7 @@ static void MenuWindowLines(
         MenuTableStep16(memory, cpu, -3);
         SetAccumulatorWidth(cpu, 1);
     } else if (MenuBit(cpu, 0x08u)) {                      /* 8EE8 */
-        StoreZeroAbsolute8(memory, cpu, 0x1566u, 0);
+        StoreZeroAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);
         LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x153au, 0));
         MenuTableStep8(memory, cpu, -1);
         IncrementX16(cpu);
@@ -237,7 +249,7 @@ static void MenuWindowLines(
         SetAccumulatorWidth(cpu, 1);
         MenuWindowGrow(memory, cpu);
     } else if (MenuBit(cpu, 0x10u)) {                      /* 8F0D */
-        StoreZeroAbsolute8(memory, cpu, 0x1566u, 0);
+        StoreZeroAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);
         MenuWindowGrow(memory, cpu);
     }
     SimulateRtsFrame(memory, cpu);
@@ -283,7 +295,7 @@ static void MenuSpriteSteps(
     } while (!cpu->zero);
     LoadA8(cpu, DirectByte(memory, cpu, 0x33u));
     if (cpu->zero)
-        StoreZeroAbsolute8(memory, cpu, 0x1567u, 0);
+        StoreZeroAbsolute8(memory, cpu, MENU_SPRITE_REQUEST, 0);
     SetIndexWidth(cpu, 0);                                     /* 97DF */
     PullDataBank(memory, cpu);
     SimulateRtsFrame(memory, cpu);
@@ -321,14 +333,14 @@ static void SelectVramDma(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t count) {
-    StoreWordAbsolute(memory, cpu, 0x2116u, cpu->y);
-    StoreWordAbsolute(memory, cpu, 0x4362u, cpu->x);
-    StoreAImmediate8(memory, cpu, 0x01u, 0x4360u);
-    StoreAImmediate8(memory, cpu, 0x7eu, 0x4364u);
-    StoreAImmediate8(memory, cpu, 0x18u, 0x4361u);
+    StoreWordAbsolute(memory, cpu, SNES_VMADDL, cpu->y);
+    StoreWordAbsolute(memory, cpu, SNES_A1TL(6), cpu->x);
+    StoreAImmediate8(memory, cpu, 0x01u, SNES_DMAP(6));
+    StoreAImmediate8(memory, cpu, 0x7eu, SNES_A1B(6));
+    StoreAImmediate8(memory, cpu, 0x18u, SNES_BBAD(6));
     LoadX16(cpu, count);
-    StoreWordAbsolute(memory, cpu, 0x4365u, cpu->x);
-    StoreAImmediate8(memory, cpu, 0x40u, 0x420bu);
+    StoreWordAbsolute(memory, cpu, SNES_DASL(6), cpu->x);
+    StoreAImmediate8(memory, cpu, 0x40u, SNES_MDMAEN);
 }
 
 /* $86:87E0: HDMA table patches and the $15B8 row upload. */
@@ -338,10 +350,10 @@ static void SelectNmiRedraw(
     SimulateJsrFrame(memory, cpu, 0x81c1u);
     SetAccumulatorWidth(cpu, 1);                               /* 87E0 */
     SetIndexWidth(cpu, 0);
-    LoadAAbsolute8(memory, cpu, 0x1566u, 0);
+    LoadAAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);
     And8(cpu, 0x01u);
     if (!cpu->zero) {
-        TestBitsAbsolute8(memory, cpu, 0x1566u, 0);
+        TestBitsAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);
         LoadX16(cpu, 0x0000u);
         LoadA8(cpu, 0x7eu);
         StoreADirect8(memory, cpu, 0x3du);
@@ -349,11 +361,11 @@ static void SelectNmiRedraw(
         SelectHdmaPatch(memory, cpu, 0x81c0u, 0x8800u);
         SelectHdmaPatch(memory, cpu, 0x82c0u, 0x8806u);
     }
-    LoadAAbsolute8(memory, cpu, 0x1566u, 0);                   /* 8823 */
+    LoadAAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);       /* 8823 */
     And8(cpu, 0x02u);
     if (!cpu->zero) {
-        TestBitsAbsolute8(memory, cpu, 0x1566u, 0);
-        StoreAImmediate8(memory, cpu, 0x81u, 0x2115u);
+        TestBitsAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);
+        StoreAImmediate8(memory, cpu, 0x81u, SNES_VMAIN);
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x15b8u, 0));
         And16(cpu, 0x00ffu);
@@ -385,9 +397,9 @@ static void SelectTilemapUploads(
     SimulateJslFrame(memory, cpu, 0x86u, 0x81cau);
     SetAccumulatorWidth(cpu, 1);                               /* 8D44 */
     SetIndexWidth(cpu, 0);
-    StoreAImmediate8(memory, cpu, 0x80u, 0x2115u);
+    StoreAImmediate8(memory, cpu, 0x80u, SNES_VMAIN);
     for (i = 0; i < 3u; ++i) {
-        LoadAAbsolute8(memory, cpu, 0x1568u, 0);
+        LoadAAbsolute8(memory, cpu, SELECT_TILEMAP_REQUEST, 0);
         And8(cpu, uploads[i].mask);
         if (cpu->zero)
             continue;
@@ -400,15 +412,15 @@ static void SelectTilemapUploads(
         SimulateRtsFrame(memory, cpu);
     }
     LoadA8(cpu, 0xaau);                                        /* 8D7D */
-    TestBitsAbsolute8(memory, cpu, 0x1568u, 0);
+    TestBitsAbsolute8(memory, cpu, SELECT_TILEMAP_REQUEST, 0);
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $82:939C: menu NMI with its three redraw requests. */
-Lufia2ExecutionResult Lufia2MenuNmi(
+/* PHA/PHX/PHY/PHP at entry widths, then M8 X16. */
+static void MenuNmiEnter(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    if (cpu->accumulator_is_8_bit)                             /* 939C */
+    if (cpu->accumulator_is_8_bit)
         PushAccumulator8(memory, cpu);
     else
         PushAccumulator16(memory, cpu);
@@ -417,22 +429,36 @@ Lufia2ExecutionResult Lufia2MenuNmi(
     Push8(memory, cpu, PackStatus(cpu));
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
-    LoadAAbsolute8(memory, cpu, 0x1565u, 0);
-    if (!cpu->zero)
-        MenuHdmaUpdate(memory, cpu, 0x82u, 0x93acu);
-    LoadAAbsolute8(memory, cpu, 0x1566u, 0);                   /* 93AD */
-    if (!cpu->zero)
-        MenuWindowLines(memory, cpu);
-    LoadAAbsolute8(memory, cpu, 0x1567u, 0);                   /* 93B5 */
-    if (!cpu->zero)
-        MenuSpriteSteps(memory, cpu);
-    UnpackStatus(cpu, Pull8(memory, cpu));                     /* 93BD */
+}
+
+/* PLP/PLY/PLX/PLA, restoring the entry widths. */
+static void MenuNmiLeave(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    UnpackStatus(cpu, Pull8(memory, cpu));
     cpu->y = PullIndexValue(memory, cpu);
     cpu->x = PullIndexValue(memory, cpu);
     if (cpu->accumulator_is_8_bit)
         LoadA8(cpu, Pull8(memory, cpu));
     else
         PullAccumulator16(memory, cpu);
+}
+
+/* $82:939C: menu NMI with its three redraw requests. */
+Lufia2ExecutionResult Lufia2MenuNmi(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    MenuNmiEnter(memory, cpu);                                 /* 939C */
+    LoadAAbsolute8(memory, cpu, MENU_HDMA_REQUEST, 0);
+    if (!cpu->zero)
+        MenuHdmaUpdate(memory, cpu, 0x82u, 0x93acu);
+    LoadAAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);       /* 93AD */
+    if (!cpu->zero)
+        MenuWindowLines(memory, cpu);
+    LoadAAbsolute8(memory, cpu, MENU_SPRITE_REQUEST, 0);       /* 93B5 */
+    if (!cpu->zero)
+        MenuSpriteSteps(memory, cpu);
+    MenuNmiLeave(memory, cpu);                                 /* 93BD */
     return ExecutionReturned(0x8293c1u);
 }
 
@@ -440,31 +466,17 @@ Lufia2ExecutionResult Lufia2MenuNmi(
 Lufia2ExecutionResult Lufia2SelectScreenNmi(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    if (cpu->accumulator_is_8_bit)                             /* 81A9 */
-        PushAccumulator8(memory, cpu);
-    else
-        PushAccumulator16(memory, cpu);
-    PushIndex(memory, cpu);
-    PushY(memory, cpu);
-    Push8(memory, cpu, PackStatus(cpu));
-    SetAccumulatorWidth(cpu, 1);
-    SetIndexWidth(cpu, 0);
-    LoadAAbsolute8(memory, cpu, 0x1565u, 0);
+    MenuNmiEnter(memory, cpu);                                 /* 81A9 */
+    LoadAAbsolute8(memory, cpu, MENU_HDMA_REQUEST, 0);
     if (!cpu->zero)
         MenuHdmaUpdate(memory, cpu, 0x86u, 0x81b9u);
-    LoadAAbsolute8(memory, cpu, 0x1566u, 0);                   /* 81BA */
+    LoadAAbsolute8(memory, cpu, MENU_WINDOW_REQUEST, 0);       /* 81BA */
     if (!cpu->zero)
         SelectNmiRedraw(memory, cpu);
-    LoadAAbsolute8(memory, cpu, 0x1568u, 0);                   /* 81C2 */
+    LoadAAbsolute8(memory, cpu, SELECT_TILEMAP_REQUEST, 0);    /* 81C2 */
     if (!cpu->zero)
         SelectTilemapUploads(memory, cpu);
-    UnpackStatus(cpu, Pull8(memory, cpu));                     /* 81CB */
-    cpu->y = PullIndexValue(memory, cpu);
-    cpu->x = PullIndexValue(memory, cpu);
-    if (cpu->accumulator_is_8_bit)
-        LoadA8(cpu, Pull8(memory, cpu));
-    else
-        PullAccumulator16(memory, cpu);
+    MenuNmiLeave(memory, cpu);                                 /* 81CB */
     return ExecutionReturned(0x8681cfu);
 }
 
@@ -479,8 +491,8 @@ Lufia2ExecutionResult Lufia2MenuButtons(
 
     if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x828b4bu);
-    StoreZeroAbsolute8(memory, cpu, 0x14abu, 0);               /* 8B4B */
-    StoreZeroAbsolute8(memory, cpu, 0x14acu, 0);
+    StoreZeroAbsolute8(memory, cpu, MENU_PRESSED_4A, 0);       /* 8B4B */
+    StoreZeroAbsolute8(memory, cpu, MENU_PRESSED_4B, 0);
     for (i = 0; i < 12u; ++i) {
         const uint8_t latch = i < 4u ? 0x4au : 0x4bu;
 
@@ -494,11 +506,11 @@ Lufia2ExecutionResult Lufia2MenuButtons(
             continue;
         TestBitsDirect(memory, cpu, latch, 0);
         LoadA8(cpu, bits[i]);
-        TestBitsAbsolute8(memory, cpu, i < 4u ? 0x14abu : 0x14acu, 1);
+        TestBitsAbsolute8(memory, cpu, i < 4u ? MENU_PRESSED_4A : MENU_PRESSED_4B, 1);
     }
-    LoadAAbsolute8(memory, cpu, 0x14abu, 0);                   /* 8C35 */
+    LoadAAbsolute8(memory, cpu, MENU_PRESSED_4A, 0);           /* 8C35 */
     if (cpu->zero)
-        LoadAAbsolute8(memory, cpu, 0x14acu, 0);
+        LoadAAbsolute8(memory, cpu, MENU_PRESSED_4B, 0);
     cpu->carry = cpu->zero;
     return ExecutionReturned(cpu->zero ? 0x828c40u : 0x828c42u);
 }
@@ -509,7 +521,7 @@ Lufia2ExecutionResult Lufia2MenuWindowRequest(
     Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x829313u);
-    LoadAAbsolute8(memory, cpu, 0x156au, 0);                   /* 9313 */
+    LoadAAbsolute8(memory, cpu, MENU_WINDOW_REFRESH, 0);       /* 9313 */
     if (cpu->zero)
         return ExecutionReturned(0x82932fu);
     StoreAImmediate8(memory, cpu, 0x20u, 0x0564u);
@@ -528,19 +540,19 @@ Lufia2ExecutionResult Lufia2MenuCursorBlink(
         return ExecutionHandoff(cpu, 0x82c627u);
     LoadAAbsolute8(memory, cpu, 0x09c8u, 0);                   /* C627 */
     if (!cpu->zero)
-        LoadAAbsolute8(memory, cpu, 0x1553u, 0);
+        LoadAAbsolute8(memory, cpu, MENU_CURSOR_ENABLED, 0);
     if (!cpu->zero) {
-        const uint32_t timer = AbsoluteIndexedAddress(cpu, 0x1554u, 0);
+        const uint32_t timer = AbsoluteIndexedAddress(cpu, MENU_CURSOR_TIMER, 0);
         const uint8_t count = (uint8_t)(Read8(memory, timer) + 1u);
 
         Write8(memory, timer, count);
-        LoadAAbsolute8(memory, cpu, 0x1554u, 0);
+        LoadAAbsolute8(memory, cpu, MENU_CURSOR_TIMER, 0);
         Compare8(cpu, A8(cpu), 0x20u);
         if (cpu->zero) {
-            StoreZeroAbsolute8(memory, cpu, 0x1554u, 0);
-            LoadAAbsolute8(memory, cpu, 0x1552u, 0);
+            StoreZeroAbsolute8(memory, cpu, MENU_CURSOR_TIMER, 0);
+            LoadAAbsolute8(memory, cpu, MENU_CURSOR_VISIBLE, 0);
             LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0x01u));
-            StoreAAbsolute8(memory, cpu, 0x1552u, 0);
+            StoreAAbsolute8(memory, cpu, MENU_CURSOR_VISIBLE, 0);
         }
     }
     return ExecutionReturned(0x82c646u);

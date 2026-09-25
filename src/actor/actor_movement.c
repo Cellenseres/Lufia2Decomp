@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
 #include "actor/actor_internal.h"
+#include "system/wram.h"
 
 static void PrimaryMapCoordinateToCellOffset(
     const Lufia2Memory *memory,
@@ -18,18 +19,18 @@ void Lufia2MapCellIndex(
     if (from_probe) {
         Write8(memory, DirectAddress(cpu, 0x90u), 0x00u);      /* F9AD */
         Write8(memory, DirectAddress(cpu, 0x92u), 0x00u);
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x8fu)));
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
         ExchangeAccumulatorBytes(cpu);
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x91u)));
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
     }
-    Write8(memory, 0x004202u, A8(cpu));                        /* F9B6 */
+    Write8(memory, SNES_WRMPYA, A8(cpu));                      /* F9B6 */
     LoadA8(cpu, Read8(memory, 0x0005b9u));
-    Write8(memory, 0x004203u, A8(cpu));
+    Write8(memory, SNES_WRMPYB, A8(cpu));
     LoadA8(cpu, 0x00u);
     ExchangeAccumulatorBytes(cpu);
     SetAccumulatorWidth(cpu, 0);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, 0x004216u));
+    Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
@@ -42,9 +43,9 @@ void Lufia2MapTileHeight(
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     SimulateJsrFrame(memory, cpu, 0xf98au);                    /* F988 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x8fu)));     /* F9F2 */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X))); /* F9F2 */
     ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x91u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
     PrimaryMapCoordinateToCellOffset(memory, cpu);             /* F9F7 */
     SimulateRtsFrame(memory, cpu);
     SetAccumulatorWidth(cpu, 0);                               /* F98B */
@@ -98,7 +99,7 @@ uint8_t Lufia2ActorStepBlockedBody(
 
     switch (target) {
     case 0xd8abu:
-        IncrementDirect8(memory, cpu, 0x91u);                  /* D8AB */
+        IncrementDirect8(memory, cpu, DP_PROBE_Y);             /* D8AB */
         Lufia2MapCellIndex(memory, cpu, 0xd8afu, 1);
         PrimaryCollisionTest(memory, cpu, 0x9bu, 0);
         if (!cpu->zero)
@@ -111,17 +112,17 @@ uint8_t Lufia2ActorStepBlockedBody(
         break;
 
     case 0xd8c7u:
-        Lufia2MapCellIndex(memory, cpu, 0xd8c9u, 1);        /* D8C7 */
+        Lufia2MapCellIndex(memory, cpu, 0xd8c9u, 1);           /* D8C7 */
         PrimaryCollisionTest(memory, cpu, 0x20u, 0);
         if (!cpu->zero)
             break;
-        DecrementDirect8(memory, cpu, 0x8fu);                  /* D8D2 */
+        DecrementDirect8(memory, cpu, DP_PROBE_X);             /* D8D2 */
         Lufia2MapCellIndex(memory, cpu, 0xd8d6u, 1);
         PrimaryCollisionTest(memory, cpu, 0x8bu, 0);
         break;
 
     case 0xd8deu:
-        Lufia2MapCellIndex(memory, cpu, 0xd8e0u, 1);        /* D8DE */
+        Lufia2MapCellIndex(memory, cpu, 0xd8e0u, 1);           /* D8DE */
         PrimaryCollisionTest(memory, cpu, 0x10u, 0);
         if (!cpu->zero)
             break;
@@ -130,7 +131,7 @@ uint8_t Lufia2ActorStepBlockedBody(
             if (!cpu->zero)
                 break;
         }
-        DecrementDirect8(memory, cpu, 0x91u);                  /* D8F7 */
+        DecrementDirect8(memory, cpu, DP_PROBE_Y);             /* D8F7 */
         Lufia2MapCellIndex(memory, cpu, 0xd8fbu, 1);
         PrimaryCollisionTest(memory, cpu, 0x8bu, 0);
         if (!cpu->zero)
@@ -144,8 +145,8 @@ uint8_t Lufia2ActorStepBlockedBody(
 
     case 0xd913u:
         if (PrimaryWideActor(memory, cpu))                     /* D913 */
-            IncrementDirect8(memory, cpu, 0x8fu);
-        IncrementDirect8(memory, cpu, 0x8fu);                  /* D91B */
+            IncrementDirect8(memory, cpu, DP_PROBE_X);
+        IncrementDirect8(memory, cpu, DP_PROBE_X);             /* D91B */
         Lufia2MapCellIndex(memory, cpu, 0xd91fu, 1);
         PrimaryCollisionTest(memory, cpu, 0xabu, 0);
         break;
@@ -162,7 +163,7 @@ uint8_t Lufia2ActorStepBlockedBody(
 void Lufia2ActorMarkMapOccupancy(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadXDirect(memory, cpu, 0xa7u);                           /* FA3F */
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* FA3F */
     Write8(memory, DirectAddress(cpu, 0x9eu), 0x00u);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
     Compare8(cpu, A8(cpu), 0x02u);                             /* FA47 */
@@ -183,7 +184,7 @@ void Lufia2ActorMarkMapOccupancy(
     LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);              /* FA5E */
     ExchangeAccumulatorBytes(cpu);
     LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
-    Lufia2MapCellIndex(memory, cpu, 0xfa67u, 0);            /* FA65 */
+    Lufia2MapCellIndex(memory, cpu, 0xfa67u, 0);               /* FA65 */
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e4000u, cpu->x)));
     Or8(cpu, 0x01u);
     Write8(memory, LongIndexedAddress(0x7e4000u, cpu->x), A8(cpu));
@@ -199,7 +200,7 @@ void Lufia2ActorMarkMapOccupancy(
 void Lufia2ActorSyncFinePosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadXDirect(memory, cpu, 0xa7u);                           /* A746 */
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* A746 */
     TransferDirectToA(cpu);
     LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);
     SetAccumulatorWidth(cpu, 0);                               /* A74C */
@@ -297,7 +298,7 @@ void Lufia2ActorMoveFinePosition(
     Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
     Lufia2ActorAddSignedPair(memory, cpu, 0x7fde3eu, 0x0002u, 0xfaa6u);
     PrimaryFineToTile(cpu);                                    /* FAB0 */
-    LoadYDirect16(memory, cpu, 0xa7u);                         /* FAB9 */
+    LoadYDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* FAB9 */
     StoreAAbsolute8(memory, cpu, 0x06e2u, cpu->y);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
     StoreAAbsolute8(memory, cpu, 0x06bau, cpu->y);
@@ -313,14 +314,14 @@ void Lufia2ActorMoveFinePosition(
 static void PrimaryMapCoordinateToCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Write8(memory, 0x004202u, A8(cpu));                  /* $83:F9F7 */
+    Write8(memory, SNES_WRMPYA, A8(cpu));                      /* $83:F9F7 */
     LoadA8(cpu, Read8(memory, 0x0005b9u));              /* $83:F9FB */
-    Write8(memory, 0x004203u, A8(cpu));                 /* $83:F9FF */
+    Write8(memory, SNES_WRMPYB, A8(cpu));                      /* $83:F9FF */
     LoadA8(cpu, 0x00u);                                 /* $83:FA03 */
     ExchangeAccumulatorBytes(cpu);                      /* $83:FA05 */
     SetAccumulatorWidth(cpu, 0);                        /* $83:FA06 */
     cpu->carry = 0;                                     /* $83:FA08 */
-    Add16Value(cpu, Read16Long(memory, 0x004216u));     /* $83:FA09 */
+    Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));          /* $83:FA09 */
     AslA16(cpu);                                        /* $83:FA0D */
     TransferAToX(cpu);                                  /* $83:FA0E */
     SetAccumulatorWidth(cpu, 1);                        /* $83:FA0F */
@@ -342,25 +343,25 @@ uint32_t Lufia2ActorMovementStep(
 
     switch (target) {
     case 0xfb22u:
-        address = DirectAddress(cpu, 0x91u);
+        address = DirectAddress(cpu, DP_PROBE_Y);
         value = (uint8_t)(Read8(memory, address) + 1u);
         Write8(memory, address, value);
         SetNz8(cpu, value);
         return 0x83fb24u;
     case 0xfb25u:
-        address = DirectAddress(cpu, 0x8fu);
+        address = DirectAddress(cpu, DP_PROBE_X);
         value = (uint8_t)(Read8(memory, address) - 1u);
         Write8(memory, address, value);
         SetNz8(cpu, value);
         return 0x83fb27u;
     case 0xfb28u:
-        address = DirectAddress(cpu, 0x91u);
+        address = DirectAddress(cpu, DP_PROBE_Y);
         value = (uint8_t)(Read8(memory, address) - 1u);
         Write8(memory, address, value);
         SetNz8(cpu, value);
         return 0x83fb2au;
     case 0xfb2bu:
-        address = DirectAddress(cpu, 0x8fu);
+        address = DirectAddress(cpu, DP_PROBE_X);
         value = (uint8_t)(Read8(memory, address) + 1u);
         Write8(memory, address, value);
         SetNz8(cpu, value);
@@ -374,9 +375,9 @@ uint32_t Lufia2ActorMovementStep(
 void Lufia2ActorResolveMapCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x8fu)));     /* F9D4 */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X))); /* F9D4 */
     ExchangeAccumulatorBytes(cpu);                             /* F9D6 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x91u)));     /* F9D7 */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y))); /* F9D7 */
 
     SimulateJsrFrame(memory, cpu, 0xf9dbu);                    /* F9D9 */
     PrimaryMapCoordinateToCellOffset(memory, cpu);             /* F9F7 */
@@ -431,14 +432,14 @@ static void ClearCellBit0(
 void Lufia2ActorClearMapOccupancy(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadXDirect(memory, cpu, 0xa7u);                           /* FA12 */
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* FA12 */
     LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);
     ExchangeAccumulatorBytes(cpu);
     LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
-    Lufia2MapCellIndex(memory, cpu, 0xfa1du, 0);            /* F9B6 */
+    Lufia2MapCellIndex(memory, cpu, 0xfa1du, 0);               /* F9B6 */
     ClearCellBit0(memory, cpu, 0x7e4000u);                     /* FA1E */
     PushIndex(memory, cpu);
-    LoadXDirect(memory, cpu, 0xa7u);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
     Compare8(cpu, A8(cpu), 0x02u);
     cpu->x = PullIndexValue(memory, cpu);                      /* FA31 */
