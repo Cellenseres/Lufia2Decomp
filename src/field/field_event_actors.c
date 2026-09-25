@@ -1157,6 +1157,12 @@ static unsigned EventOpObjectAt(
     return EVENT_OPCODE_NEXT;
 }
 
+static int EventPointOperation(uint16_t operation) {
+    return operation == 0xda5du || operation == 0xda63u ||
+           operation == 0xda6bu || operation == 0xda76u ||
+           operation == 0xda7cu;
+}
+
 /* $41-$54: (opcode - $41) / 5 picks the point coordinate (x, y, x2,
    y2), the remainder the operation: set, add, subtract, +1, -1. The
    divider is addressed DB-relative. */
@@ -1166,6 +1172,23 @@ static unsigned EventOpPointArithmetic(
     uint32_t *handoff) {
     uint16_t operation;
 
+    /* Outside the MMIO banks the remainder is memory; an unused
+       operation hands off before the opcode starts. */
+    {
+        uint8_t bank = cpu->data_bank;
+
+        if ((uint16_t)(cpu->y + 1u) < 0x8000u)
+            bank = (uint8_t)(Read8(memory, EVENT_SCRIPT_BANK) + 1u);
+        if (bank & 0x40u) {
+            const uint8_t remainder =
+                Read8(memory, ((uint32_t)bank << 16) | SNES_RDMPYL);
+
+            operation = Read16Bank(memory, 0x80u, (uint16_t)(0xda53u +
+                ((cpu->direct_page & 0xff00u) | (uint8_t)(remainder << 1))));
+            if (!EventPointOperation(operation))
+                return EVENT_OPCODE_HANDOFF;
+        }
+    }
     SetAccumulatorWidth(cpu, 0);                               /* D9FC */
     TransferXToA(cpu);
     Subtract16(cpu, 0x0082u);
@@ -1203,9 +1226,7 @@ static unsigned EventOpPointArithmetic(
     AslA8(cpu);
     TransferAToX(cpu);
     operation = Read16Bank(memory, 0x80u, (uint16_t)(0xda53u + cpu->x));
-    if (operation != 0xda5du && operation != 0xda63u &&
-        operation != 0xda6bu && operation != 0xda76u &&
-        operation != 0xda7cu) {
+    if (!EventPointOperation(operation)) {
         *handoff = 0x80da43u;                                  /* JSR ($DA53,x) */
         return EVENT_OPCODE_HANDOFF;
     }
