@@ -657,19 +657,11 @@ Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     Write8(memory, 0x0012f3u, A8(cpu));
     SimulateJslFrame(memory, cpu, 0x85u, 0xed01u);             /* $85:9265 */
     PushAndSetDataBank(memory, cpu, 0x7fu);
-    LoadX16(cpu, 0x02fbu);
-    do {
-        StoreZeroAbsolute8(memory, cpu, 0xf44eu, cpu->x);
-        LoadX16(cpu, (uint16_t)(cpu->x - 1u));
-    } while (!cpu->negative);
+    ClearDescendingX16(memory, cpu, 0xf44eu, 0x02fbu);
     PullDataBank(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     StoreZeroAbsolute8(memory, cpu, 0x1b8bu, 0);               /* ED02 */
-    LoadX16(cpu, 0x0023u);
-    do {
-        StoreZeroAbsolute8(memory, cpu, 0x1b8cu, cpu->x);
-        LoadX16(cpu, (uint16_t)(cpu->x - 1u));
-    } while (!cpu->negative);
+    ClearDescendingX16(memory, cpu, 0x1b8cu, 0x0023u);
     LoadAAbsolute8(memory, cpu, 0x11e8u, 0);                   /* ED0E */
     LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
     if (!cpu->zero)

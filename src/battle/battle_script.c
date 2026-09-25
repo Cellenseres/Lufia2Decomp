@@ -1300,9 +1300,7 @@ Lufia2ExecutionResult Lufia2BattleScript(
         SetAccumulatorWidth(cpu, 1);
         Push8(memory, cpu, 0x85u);
         PullDataBank(memory, cpu);
-        handler = (uint16_t)(
-            Read8(memory, 0x850000u | (uint16_t)(0xb483u + cpu->x)) |
-            (Read8(memory, 0x850000u | (uint16_t)(0xb484u + cpu->x)) << 8));
+        handler = Read16Bank(memory, 0x85u, (uint16_t)(0xb483u + cpu->x));
         switch (opcodes < 4096u ? handler : 0u) {
         case BATTLE_OP_END:
         case BATTLE_OP_END_FF:

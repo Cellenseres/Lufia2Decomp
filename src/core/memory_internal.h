@@ -194,4 +194,14 @@ static inline void StoreWordAbsolute(
         (uint8_t)(value >> 8));
 }
 
+/* Word at bank:address; the high byte wraps within the bank. */
+static inline uint16_t Read16Bank(
+    const Lufia2Memory *memory, uint8_t bank, uint16_t address) {
+    const uint32_t base = (uint32_t)bank << 16;
+    const uint8_t low = Read8(memory, base | address);
+    const uint8_t high = Read8(memory, base | (uint16_t)(address + 1u));
+
+    return (uint16_t)(low | (high << 8));
+}
+
 #endif

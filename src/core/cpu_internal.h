@@ -726,4 +726,17 @@ static inline Lufia2ExecutionResult ExecutionHandoff(
     return result;
 }
 
+/* LDX #last; loop: STZ address,X; DEX; BPL loop (X16). */
+static inline void ClearDescendingX16(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t address,
+    uint16_t last) {
+    LoadX16(cpu, last);
+    do {
+        StoreZeroAbsolute8(memory, cpu, address, cpu->x);
+        LoadX16(cpu, (uint16_t)(cpu->x - 1u));
+    } while (!cpu->negative);
+}
+
 #endif

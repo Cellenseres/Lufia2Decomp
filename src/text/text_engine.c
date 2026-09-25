@@ -1168,9 +1168,7 @@ reload:
         AslA16(cpu);
         TransferAToX(cpu);
         SetAccumulatorWidth(cpu, 1);
-        handler = (uint16_t)(
-            Read8(memory, 0x800000u | (uint16_t)(0xca14u + cpu->x)) |
-            (Read8(memory, 0x800000u | (uint16_t)(0xca15u + cpu->x)) << 8));
+        handler = Read16Bank(memory, 0x80u, (uint16_t)(0xca14u + cpu->x));
         switch (TextScriptOpcode(memory, cpu,
                     opcodes < 4096u ? handler : 0u, &handoff)) {
         case TEXT_OPCODE_NEXT:                                 /* 9D00 */
