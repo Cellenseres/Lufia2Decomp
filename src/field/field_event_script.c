@@ -850,14 +850,129 @@ static unsigned EventOpMoveCamera(
     return EVENT_OPCODE_NEXT;
 }
 
+/* Passes through $80:CC3F per nesting level: $26/$27 run a second
+   slot inside the first, and the verifier counts visits per stack
+   depth. */
+#define EVENT_NEST_LIMIT 8u
+
+typedef struct EventRun {
+    unsigned total;
+    unsigned depth;
+    unsigned passes[EVENT_NEST_LIMIT];
+} EventRun;
+
+static uint8_t EventRunScript(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    EventRun *run);
+
+/* $27: fork a free slot ($80:E99D, slot 0 when none) with arguments
+   and a target, run it until it yields, then go on; $26 only forks
+   when slot bit 0 is set and else skips the arguments and target. */
+static unsigned EventOpFork(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    EventRun *run,
+    uint32_t *handoff) {
+    if (handler == EVENT_OP_FORK_IF) {
+        unsigned skipped = 0;
+
+        LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);             /* D6CA */
+        TransferDirectToA(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x)));
+        Write8(memory, EVENT_CONDITION, A8(cpu));
+        BitImmediate8(cpu, 0x01u);
+        if (cpu->zero) {
+            do {
+                /* No $FF in any bank loops forever. */
+                if (skipped++ >= 0x01000000u) {
+                    *handoff = 0x80d6d9u;
+                    return EVENT_OPCODE_HANDOFF;
+                }
+                Lufia2EventNextByte(memory, cpu, 0xd6dbu);     /* D6D9 */
+                Compare8(cpu, A8(cpu), 0xffu);
+            } while (!cpu->zero);
+            Lufia2EventNextByte(memory, cpu, 0xd6e2u);         /* D6E0 */
+            Lufia2EventNextByte(memory, cpu, 0xd6e5u);
+            return EVENT_OPCODE_NEXT;
+        }
+    }
+    LoadA8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));       /* D6E9 */
+    PushAccumulator8(memory, cpu);
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x)));
+    Write8(memory, EVENT_CONDITION, A8(cpu));
+    SimulateJsrFrame(memory, cpu, 0xd6f8u);
+    LoadX16(cpu, 0x0000u);                                     /* E99D */
+    for (;;) {
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x)));
+        if (!cpu->negative)
+            break;
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, EVENT_SLOT_COUNT);
+        if (cpu->zero) {
+            LoadX16(cpu, 0x0000u);
+            break;
+        }
+    }
+    SimulateRtsFrame(memory, cpu);
+    EventArguments(memory, cpu, 0xd6fbu);
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* D6FC */
+    LoadA8(cpu, 0x80u);
+    Write8(memory, LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x), A8(cpu));
+    Lufia2EventNextWord(memory, cpu, 0xd706u);
+    PushDataBank(memory, cpu);
+    PushY(memory, cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, EVENT_SCRIPT_BASE));
+    Lufia2EventSetPointer(memory, cpu, 0xd710u);
+    LoadXDirect16(memory, cpu, DP_EVENT_SLOT_RECORD);
+    LoadA16(cpu, cpu->y);
+    Write16Long(memory, LongIndexedAddress(EVENT_SLOT_POINTERS, cpu->x),
+        cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    PushDataBank(memory, cpu);
+    LoadA8(cpu, Pull8(memory, cpu));
+    Write8(memory, LongIndexedAddress(EVENT_SLOT_POINTERS + 2u, cpu->x),
+        A8(cpu));
+    if (run->depth + 1u >= EVENT_NEST_LIMIT) {
+        *handoff = 0x80d720u;
+        return EVENT_OPCODE_HANDOFF;
+    }
+    SimulateJsrFrame(memory, cpu, 0xd722u);                    /* D720 */
+    ++run->depth;
+    if (!EventRunScript(memory, cpu, run)) {
+        *handoff = cpu->resume_pc;
+        return EVENT_OPCODE_HANDOFF;
+    }
+    --run->depth;
+    SimulateRtsFrame(memory, cpu);
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* D723 */
+    LoadA8(cpu, (uint8_t)(Read8(memory,
+        LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x)) + 1u));
+    Write8(memory, LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x), A8(cpu));
+    cpu->y = PullIndexValue(memory, cpu);
+    PullDataBank(memory, cpu);
+    LoadA8(cpu, Pull8(memory, cpu));
+    StoreADirect8(memory, cpu, DP_ACTOR_SLOT);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xd736u);
+    Lufia2ActorRecordOffsets(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Handlers behind JMP ($E5A4,x); others hand off. */
 static unsigned EventScriptOpcode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler,
+    EventRun *run,
     uint32_t *handoff) {
     unsigned i;
 
+    if (handler == EVENT_OP_FORK || handler == EVENT_OP_FORK_IF)
+        return EventOpFork(memory, cpu, handler, run, handoff);
     for (i = 0; i < 12u; ++i)
         if (handler == kEventCompares[i].handler)
             return EventOpCompareVariable(memory, cpu, i);
@@ -924,9 +1039,10 @@ static unsigned EventScriptOpcode(
 static uint8_t EventRunScript(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
-    unsigned *passes) {
+    EventRun *run) {
     for (;;) {
         uint16_t handler;
+        uint32_t handoff = 0x80cc3fu;
 
         Lufia2EventNextByte(memory, cpu, 0xcc37u);                   /* CC35 */
         AslA8(cpu);
@@ -936,15 +1052,16 @@ static uint8_t EventRunScript(
         ExchangeAccumulatorBytes(cpu);
         TransferAToX(cpu);
         handler = Read16Bank(memory, 0x80u, (uint16_t)(0xe5a4u + cpu->x));
-        uint32_t handoff = 0x80cc3fu;
-
         switch (EventScriptOpcode(memory, cpu,
-                    *passes < EVENT_OPCODE_LIMIT ? handler : 0u, &handoff)) {
+                    run->total < EVENT_OPCODE_LIMIT ? handler : 0u, run,
+                    &handoff)) {
         case EVENT_OPCODE_NEXT:
-            ++*passes;
+            ++run->total;
+            ++run->passes[run->depth];
             continue;
         case EVENT_OPCODE_YIELD:
-            ++*passes;
+            ++run->total;
+            ++run->passes[run->depth];
             return 1;
         default:                                               /* CC3F */
             cpu->resume_pc = handoff;
@@ -957,7 +1074,7 @@ static uint8_t EventRunScript(
 static uint8_t EventResumeSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
-    unsigned *passes) {
+    EventRun *run) {
     PushIndex(memory, cpu);                                    /* CBCC */
     StoreXDirect16(memory, cpu, DP_ACTOR_SLOT);
     SimulateJslFrame(memory, cpu, 0x80u, 0xcbd2u);
@@ -976,7 +1093,7 @@ static uint8_t EventResumeSlot(
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     SimulateJsrFrame(memory, cpu, 0xcbeeu);                    /* CBEC */
-    if (!EventRunScript(memory, cpu, passes))
+    if (!EventRunScript(memory, cpu, run))
         return 0;
     SimulateRtsFrame(memory, cpu);
     cpu->x = PullIndexValue(memory, cpu);                      /* CBEF */
@@ -988,6 +1105,8 @@ uint8_t Lufia2FieldEventTimerBody(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     unsigned *passes) {
+    EventRun run = {0, 0, {0}};
+
     *passes = 0;
     cpu->program_bank = 0x80u;
     PushDataBank(memory, cpu);                                 /* CBAE */
@@ -1012,8 +1131,10 @@ uint8_t Lufia2FieldEventTimerBody(
                     cpu->resume_pc = 0x80cbccu;
                     return 0;
                 }
-                if (!EventResumeSlot(memory, cpu, passes))
+                if (!EventResumeSlot(memory, cpu, &run)) {
+                    *passes = run.passes[run.depth];
                     return 0;
+                }
             }
         }
         IncrementX16(cpu);                                     /* CBF0 */

@@ -160,7 +160,9 @@ enum EventOpcodeHandler {
     EVENT_OP_CELL_HEIGHT = 0xcf3a,                             /* $9C */
     EVENT_OP_SAME_POSITION = 0xcf63,                           /* $9F */
     EVENT_OP_OBJECT_AT = 0xe078,                               /* $5E */
-    EVENT_OP_POINT_ARITHMETIC = 0xd9fc                         /* $41-$54 */
+    EVENT_OP_POINT_ARITHMETIC = 0xd9fc,                        /* $41-$54 */
+    EVENT_OP_FORK_IF = 0xd6ca,                                 /* $26 */
+    EVENT_OP_FORK = 0xd6e9                                     /* $27 */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */
