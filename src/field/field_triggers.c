@@ -6,57 +6,6 @@
 #include "field/field_internal.h"
 #include "system/wram.h"
 
-/* $80:CBAE: tick event timers $7F:D18C; 0 = handoff. */
-static uint8_t FieldEventTimers(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    cpu->program_bank = 0x80u;
-    PushDataBank(memory, cpu);                                 /* CBAE */
-    Push8(memory, cpu, PackStatus(cpu));
-    SetIndexWidth(cpu, 0);
-    Write8(memory, AbsoluteIndexedAddress(cpu, 0x1273u, 0), 0x00u);
-    LoadA8(cpu, 0x02u);
-    TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 0);
-    LoadX16(cpu, 0x0000u);
-    do {
-        const uint32_t timer = LongIndexedAddress(0x7fd18cu, cpu->x);
-
-        LoadA8(cpu, Read8(memory, timer));                     /* CBBD */
-        if (cpu->negative) {
-            DecrementA8(cpu);
-            Write8(memory, timer, A8(cpu));
-            And8(cpu, 0x7fu);
-            if (cpu->zero) {
-                /* $80:CC35 runs the expired entry. */
-                cpu->resume_pc = 0x80cbccu;
-                return 0;
-            }
-        }
-        IncrementX16(cpu);                                     /* CBF0 */
-        Compare16(cpu, cpu->x, 0x0008u);
-    } while (!cpu->carry);
-    LoadX16(cpu, 0x0007u);                                     /* CBF6 */
-    for (;;) {
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd18cu, cpu->x)));
-        if (cpu->negative) {
-            LoadA8(cpu, 0x02u);                                /* CBFF */
-            TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
-            break;
-        }
-        LoadX16(cpu, (uint16_t)(cpu->x - 1u));                 /* CC06 */
-        if (cpu->negative)
-            break;
-    }
-    LoadAAbsolute8(memory, cpu, 0x1273u, 0);                   /* CC09 */
-    if (!cpu->zero) {
-        cpu->resume_pc = 0x80cc0eu;
-        return 0;
-    }
-    UnpackStatus(cpu, Pull8(memory, cpu));                     /* CC23 */
-    PullDataBank(memory, cpu);
-    return 1;
-}
-
 static void FieldIdle(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -210,7 +159,7 @@ Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
     SimulateJslFrame(memory, cpu, 0x83u, 0x81ceu);
-    if (!FieldEventTimers(memory, cpu)) {
+    if (!Lufia2FieldEventTimerBody(memory, cpu)) {
         result.pc = cpu->resume_pc;
         return result;
     }
