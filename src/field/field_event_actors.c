@@ -562,8 +562,9 @@ uint8_t Lufia2EventMapObject(
    slot $28) at the leader's tile. */
 static void EventClaimActor(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJslFrame(memory, cpu, 0x80u, 0xdfcbu);
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
     TransferDirectToA(cpu);                                    /* $83:C108 */
     Write8(memory, 0x7fd0a3u, A8(cpu));
     SimulateJsrFrame(memory, cpu, 0xc10fu);
@@ -631,7 +632,7 @@ static uint8_t EventPlaceActorAt(
     StoreADirect8(memory, cpu, 0x24u);                         /* DFC2 */
     if (!Lufia2EventMapObject(memory, cpu, 0xdfc7u, handoff))
         return 0;
-    EventClaimActor(memory, cpu);
+    EventClaimActor(memory, cpu, 0xdfcbu);
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* DFCC */
     LoadA8(cpu, (uint8_t)cpu->x);
     Write8(memory, 0x7fd133u, A8(cpu));
@@ -2765,6 +2766,304 @@ static unsigned EventOpSpawnObjectActor(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $83:F49A / $83:F4A7: save or restore $8F/$91 at $7F:D2A4. */
+static void EventProbeSave(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint8_t restore) {
+    unsigned i;
+
+    SimulateJsrFrame(memory, cpu, return_address);
+    for (i = 0; i < 2u; ++i) {
+        const uint8_t probe = i ? DP_PROBE_Y : DP_PROBE_X;
+        const uint32_t saved = 0x7fd2a4u + i;
+
+        if (restore) {
+            LoadA8(cpu, Read8(memory, saved));                 /* F4A7 */
+            StoreADirect8(memory, cpu, probe);
+        } else {
+            LoadA8(cpu, DirectByte(memory, cpu, probe));       /* F49A */
+            Write8(memory, saved, A8(cpu));
+        }
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:FB12 from bank A's code: step $8F/$91 by direction A.
+   0 = handoff. */
+static uint8_t EventProbeStep(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t return_bank,
+    uint16_t return_address,
+    uint32_t *handoff) {
+    const uint8_t bank = cpu->program_bank;
+
+    SimulateJslFrame(memory, cpu, return_bank, return_address);
+    cpu->program_bank = 0x83u;
+    if (!Lufia2ActorMovementStep(memory, cpu)) {
+        *handoff = cpu->resume_pc;
+        return 0;
+    }
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = bank;
+    return 1;
+}
+
+/* $83:C33D: carry set when a secondary actor ($064A bit 7) stands
+   on cell $8F/$91. */
+static void EventSecondaryAtProbe(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Write8(memory, DirectAddress(cpu, 0x90u), 0x00u);          /* C33D */
+    Write8(memory, DirectAddress(cpu, 0x92u), 0x00u);
+    LoadY16(cpu, 0x001fu);
+    LoadX16(cpu, 0x003eu);
+    SetAccumulatorWidth(cpu, 0);
+    cpu->carry = 0;
+    do {
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x064au, cpu->y));
+        if (cpu->accumulator & 0x0080u) {                      /* BIT #$80 */
+            LoadA16(cpu, (uint16_t)(Read16Long(memory,
+                LongIndexedAddress(0x7fddfeu, cpu->x)) >> 4));
+            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_PROBE_X));
+            if (cpu->zero) {
+                LoadA16(cpu, (uint16_t)(Read16Long(memory,
+                    LongIndexedAddress(0x7fde8eu, cpu->x)) >> 4));
+                Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_PROBE_Y));
+                if (cpu->zero) {
+                    cpu->carry = 1;
+                    break;
+                }
+            }
+        }
+        LoadY16(cpu, (uint16_t)(cpu->y - 1u));                 /* C36C */
+        LoadX16(cpu, (uint16_t)(cpu->x - 2u));
+        if (cpu->negative)
+            cpu->carry = 0;
+    } while (!cpu->negative);
+    SetAccumulatorWidth(cpu, 1);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:C079: carry set when a pushed object may move from $8F/$91 in
+   direction A: the step's cell must hold no secondary actor and
+   either be marked (bit 7) or be free, not blocked ($83:D89E) and
+   of the same height, with a cell value of 0, 1 or 9 (a pending
+   type-1 object counts by its saved tile). 0 = handoff. */
+static uint8_t EventPushAllowed(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    cpu->program_bank = 0x83u;
+    StoreADirect8(memory, cpu, 0x94u);                         /* C079 */
+    EventProbeSave(memory, cpu, 0xc07du, 0);
+    Lufia2MapTileHeight(memory, cpu, 0xc080u);                 /* $83:F988 */
+    StoreADirect8(memory, cpu, 0x56u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x94u));
+    if (!EventProbeStep(memory, cpu, 0x83u, 0xc088u, handoff))
+        return 0;
+    EventSecondaryAtProbe(memory, cpu, 0xc08bu);
+    if (cpu->carry)
+        goto blocked;
+    Lufia2MapCellIndex(memory, cpu, 0xc090u, 1);               /* $83:F9AD */
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e4000u, cpu->x)));
+    And8(cpu, 0x80u);
+    if (!cpu->zero)
+        goto allowed;
+    EventProbeSave(memory, cpu, 0xc09bu, 1);
+    TransferDirectToA(cpu);                                    /* C09C */
+    LoadA8(cpu, DirectByte(memory, cpu, 0x94u));
+    TransferAToX(cpu);
+    Write8(memory, DirectAddress(cpu, 0x9au), 0x00u);
+    SimulateJsrFrame(memory, cpu, 0xc0a4u);
+    if (!Lufia2ActorStepBlockedBody(memory, cpu)) {            /* $83:D89E */
+        *handoff = cpu->resume_pc;
+        return 0;
+    }
+    SimulateRtsFrame(memory, cpu);
+    if (!cpu->zero)
+        goto blocked;
+    EventProbeSave(memory, cpu, 0xc0a9u, 1);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x94u));
+    if (!EventProbeStep(memory, cpu, 0x83u, 0xc0afu, handoff))
+        return 0;
+    SimulateJslFrame(memory, cpu, 0x83u, 0xc0b3u);
+    Lufia2ActorReadMapCellValue(memory, cpu);                  /* $83:FB71 */
+    SimulateRtlFrame(memory, cpu);
+    SetNz8(cpu, A8(cpu));                                      /* ORA #0 */
+    if (cpu->zero) {
+        EventProbeSave(memory, cpu, 0xc0bau, 1);               /* C0B8 */
+        LoadA8(cpu, DirectByte(memory, cpu, 0x94u));
+        Compare8(cpu, A8(cpu), 0x04u);
+        if (!cpu->zero)
+            goto same_height;
+        SimulateJsrFrame(memory, cpu, 0xc0c3u);
+        EventFindPending(memory, cpu, 0xf412u);                /* F410 */
+        if (!cpu->carry) {
+            LoadY16(cpu, cpu->x);
+            TransferDirectToA(cpu);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd6fcu, cpu->x)));
+            TransferAToX(cpu);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd7fcu, cpu->x)));
+            cpu->carry = 0;
+        }
+        SimulateRtsFrame(memory, cpu);
+        if (cpu->carry)
+            goto same_height;
+        Compare8(cpu, A8(cpu), 0x01u);
+        if (!cpu->zero)
+            goto same_height;
+        SetAccumulatorWidth(cpu, 0);                           /* C0CA */
+        LoadA16(cpu, cpu->y);
+        AslA16(cpu);
+        AslA16(cpu);
+        TransferAToX(cpu);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd5dcu, cpu->x)));
+        SimulateJslFrame(memory, cpu, 0x83u, 0xc0d7u);
+        And16(cpu, 0x03ffu);                                   /* FB7A */
+        cpu->carry = 0;
+        Add16Value(cpu, Read16Long(memory, 0x7fd03eu));
+        TransferAToX(cpu);
+        SetAccumulatorWidth(cpu, 1);
+        TransferDirectToA(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7f0000u, cpu->x)));
+        SimulateRtlFrame(memory, cpu);
+        SetNz8(cpu, A8(cpu));                                  /* C0D8 */
+    }
+    if (!cpu->zero) {
+        Compare8(cpu, A8(cpu), 0x09u);
+        if (!cpu->zero) {
+            Compare8(cpu, A8(cpu), 0x01u);
+            if (!cpu->zero)
+                goto blocked;
+        }
+    }
+same_height:
+    Lufia2MapTileHeight(memory, cpu, 0xc0e6u);                 /* C0E4 */
+    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x56u));
+    if (!cpu->zero)
+        goto blocked;
+allowed:
+    cpu->carry = 1;                                            /* C0EB */
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x80u;
+    return 1;
+blocked:
+    cpu->carry = 0;                                            /* C0ED */
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x80u;
+    return 1;
+}
+
+/* $5A-$5D: push pending map object n (the $7F:D69C table) one cell
+   down, up, right or left ($80:DCDA): when $83:C079 allows it, a
+   claimed actor (action 9) takes its place and walks the step
+   ($83:D350, action $48 + facing), its cell occupancy moving along. */
+static unsigned EventOpPushObject(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    static const uint8_t kDirections[4] = {0x04u, 0x00u, 0x02u, 0x06u};
+    uint8_t allowed;
+
+    LoadA8(cpu, kDirections[(handler - EVENT_OP_PUSH_OBJECT_DOWN) / 5u]);
+    StoreADirect8(memory, cpu, 0x23u);                         /* DCC0 */
+    Lufia2EventNextByte(memory, cpu, 0xdcc4u);
+    Lufia2EventValue(memory, cpu, 0xdcc7u);
+    Write8(memory, 0x7fd0beu, A8(cpu));
+    Lufia2EventNextByte(memory, cpu, 0xdcceu);
+    StoreADirect8(memory, cpu, 0x22u);
+    PushY(memory, cpu);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xdcd5u);
+    TransferDirectToA(cpu);                                    /* DCDA */
+    LoadA8(cpu, Read8(memory, 0x7fd0beu));
+    TransferAToX(cpu);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd69cu, cpu->x)));
+    StoreADirect8(memory, cpu, 0x9fu);
+    StoreADirect8(memory, cpu, DP_PROBE_X);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd6ccu, cpu->x)));
+    StoreADirect8(memory, cpu, 0xa0u);
+    StoreADirect8(memory, cpu, DP_PROBE_Y);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd6fcu, cpu->x)));
+    cpu->carry = 1;
+    Sbc8(cpu, 0x10u);
+    Write8(memory, 0x7fd09fu, A8(cpu));
+    PushY(memory, cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x23u));
+    if (!EventPushAllowed(memory, cpu, 0xdd01u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    allowed = cpu->carry;
+    cpu->y = PullIndexValue(memory, cpu);
+    if (allowed) {
+        EventClaimActor(memory, cpu, 0xdd09u);                 /* DD06 */
+        TransferDirectToA(cpu);
+        LoadA8(cpu, Read8(memory, 0x7fd0beu));
+        TransferAToX(cpu);
+        LoadA8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));
+        Write8(memory, LongIndexedAddress(0x7fd72cu, cpu->x), A8(cpu));
+        LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
+        LoadA8(cpu, 0x01u);
+        Write8(memory, LongIndexedAddress(0x7fe216u, cpu->x), A8(cpu));
+        LoadA8(cpu, DirectByte(memory, cpu, 0x9fu));
+        StoreAAbsolute8(memory, cpu, 0x06bau, cpu->x);
+        StoreADirect8(memory, cpu, DP_PROBE_X);
+        LoadA8(cpu, DirectByte(memory, cpu, 0xa0u));
+        StoreAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+        StoreADirect8(memory, cpu, DP_PROBE_Y);
+        SimulateJslFrame(memory, cpu, 0x80u, 0xdd2fu);
+        Lufia2ActorSyncFinePosition(memory, cpu);              /* $83:A746 */
+        SimulateRtlFrame(memory, cpu);
+        LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);             /* DD30 */
+        LoadA8(cpu, DirectByte(memory, cpu, 0x23u));
+        StoreAAbsolute8(memory, cpu, WRAM_EVENT_MAP_0692, cpu->x);
+        LoadA8(cpu, DirectByte(memory, cpu, 0x22u));
+        Write8(memory, LongIndexedAddress(0x7fe4deu, cpu->x), A8(cpu));
+        LoadA8(cpu, 0x01u);
+        Write8(memory, LongIndexedAddress(0x7fe3c6u, cpu->x), A8(cpu));
+        LoadAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+        And8(cpu, 0xf7u);
+        StoreAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+        LoadA8(cpu, 0x09u);
+        StoreAAbsolute8(memory, cpu, 0x070au, cpu->x);
+        SimulateJslFrame(memory, cpu, 0x80u, 0xdd53u);
+        Lufia2ActorLoadPrimaryScript(memory, cpu);             /* $83:D416 */
+        SimulateRtlFrame(memory, cpu);
+        SimulateJslFrame(memory, cpu, 0x80u, 0xdd57u);         /* $83:F9A5 */
+        Lufia2MapCellIndex(memory, cpu, 0xf9a7u, 1);
+        SimulateRtlFrame(memory, cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e4000u, cpu->x)));
+        And8(cpu, 0xf7u);
+        Write8(memory, LongIndexedAddress(0x7e4000u, cpu->x), A8(cpu));
+        LoadA8(cpu, DirectByte(memory, cpu, 0x23u));
+        if (!EventProbeStep(memory, cpu, 0x80u, 0xdd67u, handoff))
+            return EVENT_OPCODE_HANDOFF;
+        SimulateJslFrame(memory, cpu, 0x80u, 0xdd6bu);
+        Lufia2MapCellIndex(memory, cpu, 0xf9a7u, 1);
+        SimulateRtlFrame(memory, cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e4000u, cpu->x)));
+        Or8(cpu, 0x08u);
+        Write8(memory, LongIndexedAddress(0x7e4000u, cpu->x), A8(cpu));
+        TransferDirectToA(cpu);                                /* DD76 */
+        LoadA8(cpu, DirectByte(memory, cpu, 0x23u));
+        TransferAToX(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83c1a5u, cpu->x)));
+        cpu->carry = 0;
+        Adc8(cpu, 0x48u);
+        if (!EventActorAction(memory, cpu, 0xdd84u, handoff))
+            return EVENT_OPCODE_HANDOFF;
+    }
+    SimulateRtlFrame(memory, cpu);                             /* DD05 / DD85 */
+    cpu->y = PullIndexValue(memory, cpu);                      /* DCD6 */
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Actor, position and point opcodes; the rest go to the conditions. */
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
@@ -2863,6 +3162,11 @@ unsigned Lufia2EventActorOpcode(
         return EventOpMoveActorTo(memory, cpu, handoff);
     case EVENT_OP_SPAWN_OBJECT_ACTOR:
         return EventOpSpawnObjectActor(memory, cpu, handoff);
+    case EVENT_OP_PUSH_OBJECT_DOWN:
+    case EVENT_OP_PUSH_OBJECT_UP:
+    case EVENT_OP_PUSH_OBJECT_RIGHT:
+    case EVENT_OP_PUSH_OBJECT_LEFT:
+        return EventOpPushObject(memory, cpu, handler, handoff);
     case EVENT_OP_POINT_ARITHMETIC:
         return EventOpPointArithmetic(memory, cpu, handoff);
     case EVENT_OP_POINT_FROM_OBJECT:
