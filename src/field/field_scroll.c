@@ -619,6 +619,161 @@ static void StreamRow(
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
+/* $80:F6C6: 16 metatiles from cell X into the row buffers [$5D]
+   and [$60] at Y, wrapping in 64 bytes. */
+static void StreamRowBuffers(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadA16(cpu, 0x0010u);                                     /* F6C6 */
+    Write16Direct(memory, cpu, 0x26u, cpu->accumulator);
+    LoadA16(cpu, cpu->y);
+    And16(cpu, 0xffc0u);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Direct(memory, cpu, 0x2au));
+    Write16Direct(memory, cpu, 0x5du, cpu->accumulator);
+    cpu->carry = 0;
+    Add16Value(cpu, 0x0040u);
+    Write16Direct(memory, cpu, 0x60u, cpu->accumulator);
+    LoadA16(cpu, cpu->y);
+    And16(cpu, 0x003fu);
+    TransferAToY(cpu);
+    do {
+        PushIndex(memory, cpu);                                /* F6DF */
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
+        And16(cpu, 0x3000u);
+        Compare16(cpu, cpu->accumulator, 0x3000u);
+        if (cpu->zero)
+            LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd008u, 0));
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
+        And16(cpu, 0x03ffu);
+        AslA16(cpu);
+        AslA16(cpu);
+        AslA16(cpu);
+        Add16Value(cpu, Read16Direct(memory, cpu, 0x65u));
+        TransferAToX(cpu);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
+        Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x5du), cpu->accumulator);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0002u, cpu->x));
+        Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x60u), cpu->accumulator);
+        LoadA16(cpu, (uint16_t)(cpu->y + 2u));
+        And16(cpu, 0x003fu);
+        TransferAToY(cpu);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0004u, cpu->x));
+        Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x5du), cpu->accumulator);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0006u, cpu->x));
+        Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x60u), cpu->accumulator);
+        cpu->x = PullIndexValue(memory, cpu);                  /* F715 */
+        LoadA16(cpu, (uint16_t)(cpu->y + 2u));
+        And16(cpu, 0x003fu);
+        TransferAToY(cpu);
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        LoadA16(cpu, (uint16_t)(Read16Direct(memory, cpu, 0x87u) + 1u));
+        Write16Direct(memory, cpu, 0x87u, cpu->accumulator);
+        if (cpu->zero) {
+            StreamCellIndex(memory, cpu, 0xf72eu);
+        } else {
+            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x83u));
+            if (cpu->carry) {
+                Write16Direct(memory, cpu, 0x87u, 0x0000u);
+                StreamCellIndex(memory, cpu, 0xf72eu);         /* F72C */
+            }
+        }
+        Decrement16Direct(memory, cpu, 0x26u);                 /* F72F */
+    } while (!cpu->zero);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:F47A: redraw layer X in 16 rows unless $7F:D020,x is $FF;
+   registers and flags are restored. */
+static void RedrawLayer(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    SimulateJslFrame(memory, cpu, 0x83u, 0x8e6fu);
+    PushAccumulator8(memory, cpu);                             /* F47A */
+    PushIndex(memory, cpu);
+    PushY(memory, cpu);
+    PushDataBank(memory, cpu);
+    Push8(memory, cpu, PackStatus(cpu));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd020u, cpu->x)));
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (!cpu->zero) {
+        SetAccumulatorWidth(cpu, 0);                           /* F487 */
+        SetIndexWidth(cpu, 0);
+        StoreXDirect16(memory, cpu, 0x15u);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80f4edu, cpu->x)));
+        TransferAToY(cpu);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x121eu, cpu->x));
+        cpu->carry = 0;
+        Add16Value(cpu, 0x0008u);
+        Write16Absolute(memory, cpu, (uint16_t)(0x0594u + cpu->y), cpu->accumulator);
+        And16(cpu, 0xfff0u);
+        Write16Direct(memory, cpu, 0x11u, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80f4f5u, cpu->x)));
+        TransferAToY(cpu);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1226u, cpu->x));
+        Write16Absolute(memory, cpu, (uint16_t)(0x0596u + cpu->y), cpu->accumulator);
+        And16(cpu, 0xfff0u);
+        Write16Direct(memory, cpu, 0x13u, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);                           /* F4AF */
+        LoadA8(cpu, 0x7eu);
+        Write8(memory, DirectAddress(cpu, 0x5fu), A8(cpu));
+        Write8(memory, DirectAddress(cpu, 0x62u), A8(cpu));
+        LoadA8(cpu, 0x7fu);
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd010u, cpu->x));
+        AslA16(cpu);
+        Subtract16(cpu, 0x0020u);
+        Write16Direct(memory, cpu, 0x28u, cpu->accumulator);
+        LoadA16(cpu, 0x0010u);
+        Write16Direct(memory, cpu, 0x17u, cpu->accumulator);
+        do {
+            LoadA16(cpu, Read16Direct(memory, cpu, 0x13u));    /* F4CC */
+            TransferAToY(cpu);
+            cpu->carry = 0;
+            Add16Value(cpu, 0x0010u);
+            Write16Direct(memory, cpu, 0x13u, cpu->accumulator);
+            LoadXDirect(memory, cpu, 0x15u);
+            LoadA16(cpu, Read16Direct(memory, cpu, 0x11u));
+            StreamLocate(memory, cpu, 0xf4dbu);
+            LoadXDirect(memory, cpu, 0x30u);
+            LoadY16(cpu, Read16Direct(memory, cpu, 0x2du));
+            StreamRowBuffers(memory, cpu, 0xf4e2u);
+            Decrement16Direct(memory, cpu, 0x17u);
+        } while (!cpu->zero);
+    }
+    UnpackStatus(cpu, Pull8(memory, cpu));                     /* F4E7 */
+    PullDataBank(memory, cpu);
+    cpu->y = PullIndexValue(memory, cpu);
+    cpu->x = PullIndexValue(memory, cpu);
+    if (cpu->accumulator_is_8_bit)
+        LoadA8(cpu, Pull8(memory, cpu));
+    else
+        PullAccumulator16(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $83:8E66: redraw layers 3 to 0; X ends at $FFFE. */
+void Lufia2FieldRedrawLayers(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    Push8(memory, cpu, PackStatus(cpu));                       /* 8E66 */
+    SetIndexWidth(cpu, 0);
+    LoadX16(cpu, 0x0006u);
+    do {
+        RedrawLayer(memory, cpu);
+        LoadX16(cpu, (uint16_t)(cpu->x - 2u));                 /* 8E70 */
+    } while (!cpu->negative);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtlFrame(memory, cpu);
+}
+
 /* JSL from $8E:BD77 into a $80 tile streamer. */
 static void ScrollStream(
     const Lufia2Memory *memory,

@@ -881,6 +881,10 @@ typedef struct EventRun {
     unsigned total;
     unsigned depth;
     unsigned passes[EVENT_NEST_LIMIT];
+    /* $8E:BDD7 layer calls per depth; visits at a handoff. */
+    unsigned scroll_layers[EVENT_NEST_LIMIT];
+    unsigned visits;
+    uint8_t has_visits;
 } EventRun;
 
 static uint8_t EventRunScript(
@@ -981,6 +985,51 @@ static unsigned EventOpFork(
     SimulateJslFrame(memory, cpu, 0x80u, 0xd736u);
     Lufia2ActorRecordOffsets(memory, cpu);
     SimulateRtlFrame(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $10: redraw all layers ($83:8E66), then set redraw bits 0-1. */
+static unsigned EventOpRedrawLayers(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    uint32_t redraw;
+    uint8_t value;
+
+    Lufia2FieldRedrawLayers(memory, cpu, 0xd310u);             /* D30D */
+    LoadA8(cpu, 0x03u);
+    redraw = AbsoluteIndexedAddress(cpu, WRAM_EVENT_REDRAW, 0);  /* TSB */
+    value = Read8(memory, redraw);
+    cpu->zero = (value & A8(cpu)) == 0;
+    Write8(memory, redraw, (uint8_t)(value | A8(cpu)));
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $7B: the field scroll step $8E:BD77 with X8; a handoff inside
+   reports its $8E:BDD7 visits at this depth. */
+static unsigned EventOpScroll(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    EventRun *run,
+    uint32_t *handoff) {
+    Lufia2ExecutionResult result;
+
+    PushY(memory, cpu);                                        /* D5AF */
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 1);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xd5b5u);
+    cpu->program_bank = 0x8eu;
+    result = Lufia2FieldScrollUpdate(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        run->visits = run->scroll_layers[run->depth] + result.dispatches;
+        run->has_visits = 1;
+        *handoff = result.pc;
+        return EVENT_OPCODE_HANDOFF;
+    }
+    run->scroll_layers[run->depth] += result.dispatches;
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x80u;
+    SetIndexWidth(cpu, 0);                                     /* D5B6 */
+    cpu->y = PullIndexValue(memory, cpu);
     return EVENT_OPCODE_NEXT;
 }
 
@@ -1088,6 +1137,15 @@ static unsigned EventScriptOpcode(
 
     if (handler == EVENT_OP_FORK || handler == EVENT_OP_FORK_IF)
         return EventOpFork(memory, cpu, handler, run, handoff);
+    /* Heavy opcodes count more toward the per-tick cap. */
+    if (handler == EVENT_OP_REDRAW_LAYERS) {
+        run->total += 255u;
+        return EventOpRedrawLayers(memory, cpu);
+    }
+    if (handler == EVENT_OP_SCROLL) {
+        run->total += 63u;
+        return EventOpScroll(memory, cpu, run, handoff);
+    }
     if (handler == EVENT_OP_CLEAR_D081)
         return EventOpClearD081(memory, cpu);
     if (handler == EVENT_OP_START_EVENT_AND_END)
@@ -1224,7 +1282,7 @@ uint8_t Lufia2FieldEventTimerBody(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     unsigned *passes) {
-    EventRun run = {0, 0, {0}};
+    EventRun run = {0, 0, {0}, {0}, 0, 0};
 
     *passes = 0;
     cpu->program_bank = 0x80u;
@@ -1251,7 +1309,8 @@ uint8_t Lufia2FieldEventTimerBody(
                     return 0;
                 }
                 if (!EventResumeSlot(memory, cpu, &run)) {
-                    *passes = run.passes[run.depth];
+                    *passes = run.has_visits ? run.visits
+                                             : run.passes[run.depth];
                     return 0;
                 }
             }
@@ -1301,7 +1360,7 @@ Lufia2ExecutionResult Lufia2FieldEventTimerTick(
     if (!Lufia2FieldEventTimerBody(memory, cpu, &passes)) {
         result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = cpu->resume_pc;
-        if (result.pc == 0x80cc3fu)
+        if (result.pc == 0x80cc3fu || result.pc == 0x8ebdd7u)
             result.dispatches = passes;
     }
     return result;

@@ -174,7 +174,9 @@ enum EventOpcodeHandler {
     EVENT_OP_KEEP_SAME_TILES = 0xe1ee,                         /* $87 */
     EVENT_OP_GOTO_IF_SAME_TILES = 0xe1f4,                      /* $88 */
     EVENT_OP_GOTO_UNLESS_SAME_TILES = 0xe1fa,                  /* $89 */
-    EVENT_OP_GOTO_UNLESS_ACTORS_BIT_5 = 0xe09d                 /* $20 */
+    EVENT_OP_GOTO_UNLESS_ACTORS_BIT_5 = 0xe09d,                /* $20 */
+    EVENT_OP_REDRAW_LAYERS = 0xd30d,                           /* $10 */
+    EVENT_OP_SCROLL = 0xd5af                                   /* $7B */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */
