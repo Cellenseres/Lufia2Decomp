@@ -84,6 +84,12 @@ void Lufia2SpriteVramBase(
     Lufia2CpuState *cpu,
     uint16_t return_address);
 
+/* $83:AA7D from bank 83: animation tables for the sprite type. */
+void Lufia2ActorSpriteTables(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address);
+
 /* $83:DAE9: reload the actor's sprite, keep its frame. */
 void Lufia2ActorSpriteReload(
     const Lufia2Memory *memory,

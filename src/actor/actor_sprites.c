@@ -105,7 +105,7 @@ static void ActorSpriteDescriptor(
 }
 
 /* $83:AA7D: animation tables for the actor's sprite type. */
-static void ActorSpriteTables(
+void Lufia2ActorSpriteTables(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -121,7 +121,7 @@ static void ActorSpriteTables(
     Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x1381u, cpu->y),
         cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);                               /* AA91 */
-    LoadY8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
+    LoadYDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadA8(cpu, 0xffu);
     StoreAAbsolute8(memory, cpu, 0x1471u, cpu->y);
     LoadAAbsolute8(memory, cpu, 0x1291u, cpu->y);
@@ -131,7 +131,7 @@ static void ActorSpriteTables(
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x83ac14u, cpu->x)));
-    LoadY8(cpu, Read8(memory, DirectAddress(cpu, 0xa9u)));
+    LoadYDirect(memory, cpu, 0xa9u);
     Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x13d1u, cpu->y),
         cpu->accumulator);
     UnpackStatus(cpu, Pull8(memory, cpu));
@@ -161,7 +161,7 @@ static void ActorAllocSprite(
     LoadY8(cpu, Read8(memory, DirectAddress(cpu, 0xa9u)));    /* AA72 */
     Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x1331u, cpu->y),
         cpu->accumulator);
-    ActorSpriteTables(memory, cpu, 0xaa7au);
+    Lufia2ActorSpriteTables(memory, cpu, 0xaa7au);
     UnpackStatus(cpu, Pull8(memory, cpu));                     /* AA7B */
     SimulateRtsFrame(memory, cpu);
 }

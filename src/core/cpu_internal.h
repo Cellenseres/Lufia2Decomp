@@ -209,6 +209,26 @@ static inline void LoadXDirect(
 static inline void LoadYDirect16(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
+    uint8_t offset);
+
+/* LDY dp at the current index width. */
+static inline void LoadYDirect(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t offset) {
+    if (cpu->index_is_8_bit) {
+        const uint8_t value = Read8(memory, DirectAddress(cpu, offset));
+
+        cpu->y = value;
+        SetNz8(cpu, value);
+    } else {
+        LoadYDirect16(memory, cpu, offset);
+    }
+}
+
+static inline void LoadYDirect16(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
     uint8_t offset) {
     LoadY16(cpu, Read16Direct(memory, cpu, offset));
 }
