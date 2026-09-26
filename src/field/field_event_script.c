@@ -1228,7 +1228,9 @@ static unsigned EventScriptOpcode(
     }
     if (handler == EVENT_OP_SPAWN_IN_AREA)
         run->total += 63u;
-    if (handler == EVENT_OP_PLACE_OBJECT)
+    if (handler == EVENT_OP_PLACE_OBJECT ||
+        handler == EVENT_OP_OBJECT_TILES_AT ||
+        handler == EVENT_OP_OBJECT_TILES_AT_POSITION)
         run->total += 255u;
     if (handler == EVENT_OP_CAMERA_LAYERS)
         return EventOpCameraLayers(memory, cpu);

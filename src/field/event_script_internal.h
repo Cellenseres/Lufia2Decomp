@@ -192,7 +192,8 @@ enum EventOpcodeHandler {
     EVENT_OP_CAMERA_LAYERS = 0xdc0d,                           /* $59 */
     EVENT_OP_OBJECT_TILES_AT = 0xd336,                         /* $21 */
     EVENT_OP_OBJECT_TILES_AT_POSITION = 0xd346,                /* $22 */
-    EVENT_OP_PLACE_OBJECT = 0xd3d6                             /* $2A */
+    EVENT_OP_PLACE_OBJECT = 0xd3d6,                            /* $2A */
+    EVENT_OP_MOVE_ACTOR_TO = 0xcea0                            /* $BC */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */

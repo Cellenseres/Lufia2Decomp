@@ -2490,6 +2490,112 @@ static unsigned EventOpPlaceObject(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $83:A71C: fine position A (x), Y (y) of actor $A9 into
+   $7F:DDAE/DE3E, the rounded cell into $06BA/$06E2 of slot $A7. */
+static void EventSetActorPosition(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    SetAccumulatorWidth(cpu, 0);                               /* A71C */
+    LoadXDirect(memory, cpu, 0xa9u);
+    Write16Long(memory, LongIndexedAddress(0x7fddaeu, cpu->x), cpu->accumulator);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    Add16Value(cpu, 0x0000u);
+    StoreADirect16(memory, cpu, 0x54u);
+    LoadA16(cpu, cpu->y);
+    Write16Long(memory, LongIndexedAddress(0x7fde3eu, cpu->x), cpu->accumulator);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    Add16Value(cpu, 0x0000u);
+    SetAccumulatorWidth(cpu, 1);
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* A73B */
+    StoreAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    StoreAAbsolute8(memory, cpu, 0x06bau, cpu->x);
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $BC: move listed actor id n (+$4F) to the cell of a position
+   ($80:A74D): occupancy moves along, slots from 8 on restart their
+   script with action 9. */
+static unsigned EventOpMoveActorTo(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    EventSaveSlot(memory, cpu, 0xcea2u);                       /* CEA0 */
+    Lufia2EventNextByte(memory, cpu, 0xcea5u);
+    cpu->carry = 0;
+    Adc8(cpu, 0x4fu);
+    Lufia2EventFindActorId(memory, cpu, 0xceacu);
+    Lufia2EventNextByte(memory, cpu, 0xceafu);
+    Lufia2EventValue(memory, cpu, 0xceb2u);
+    if (!Lufia2EventPosition(memory, cpu, 0xceb5u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    StoreADirect8(memory, cpu, 0x54u);                         /* CEB6 */
+    ExchangeAccumulatorBytes(cpu);
+    StoreADirect8(memory, cpu, 0x56u);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xcebeu);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xa750u);             /* A74D */
+    cpu->program_bank = 0x83u;
+    Lufia2ActorClearMapOccupancy(memory, cpu);                 /* $83:FA12 */
+    cpu->program_bank = 0x80u;
+    SimulateRtlFrame(memory, cpu);
+    PushY(memory, cpu);                                        /* A751 */
+    TransferDirectToA(cpu);
+    Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
+    SetAccumulatorWidth(cpu, 0);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    TransferAToY(cpu);
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    EventSetActorPosition(memory, cpu, 0xa769u);
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* A76A */
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe316u, cpu->x)));
+    And8(cpu, 0x7fu);
+    Write8(memory, LongIndexedAddress(0x7fe316u, cpu->x), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    Or8(cpu, 0x01u);
+    And8(cpu, 0x7fu);
+    StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    Compare16(cpu, cpu->x, 0x0008u);
+    if (cpu->carry) {
+        LoadA8(cpu, 0x09u);                                    /* A785 */
+        StoreAAbsolute8(memory, cpu, 0x070au, cpu->x);
+        SimulateJslFrame(memory, cpu, 0x80u, 0xa78du);
+        cpu->program_bank = 0x83u;
+        Lufia2ActorLoadPrimaryScript(memory, cpu);             /* $83:D416 */
+        cpu->program_bank = 0x80u;
+        SimulateRtlFrame(memory, cpu);
+    }
+    cpu->y = PullIndexValue(memory, cpu);                      /* A78E */
+    SimulateJslFrame(memory, cpu, 0x80u, 0xa792u);
+    cpu->program_bank = 0x83u;
+    Lufia2ActorMarkMapOccupancy(memory, cpu);                  /* $83:FA3F */
+    cpu->program_bank = 0x80u;
+    SimulateRtlFrame(memory, cpu);
+    SimulateRtlFrame(memory, cpu);                             /* A793 */
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* CEBF */
+    LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    And8(cpu, 0xfeu);
+    StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    EventRestoreSlot(memory, cpu, 0xcecbu);
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Actor, position and point opcodes; the rest go to the conditions. */
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
@@ -2584,6 +2690,8 @@ unsigned Lufia2EventActorOpcode(
         return EventOpObjectTilesAt(memory, cpu, handler, run, handoff);
     case EVENT_OP_PLACE_OBJECT:
         return EventOpPlaceObject(memory, cpu, run, handoff);
+    case EVENT_OP_MOVE_ACTOR_TO:
+        return EventOpMoveActorTo(memory, cpu, handoff);
     case EVENT_OP_POINT_ARITHMETIC:
         return EventOpPointArithmetic(memory, cpu, handoff);
     case EVENT_OP_POINT_FROM_OBJECT:
