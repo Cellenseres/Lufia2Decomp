@@ -381,3 +381,66 @@ void Lufia2SpriteFreeSlots(
     } while (!cpu->zero);
     SimulateRtlFrame(memory, cpu);
 }
+
+/* $84:8193: VRAM DMA of the queued sprite graphics: each of the 8
+   queue entries with a source ($05C2) sends $11F9 bytes from bank
+   $11D9 to VRAM $11E9 and the next row to $11E9 + $100 (channel 0,
+   mode 1 to $2118); queue and $0732 are cleared. All stores are
+   DB-relative. */
+Lufia2ExecutionResult Lufia2SpriteGraphicsUpload(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
+    unsigned i;
+
+    result.flow = LUFIA2_EXECUTION_RETURNED;
+    result.pc = 0x848203u;                                     /* RTL */
+    result.dispatches = 0;
+    SetAccumulatorWidth(cpu, 1);                               /* 8193 */
+    SetIndexWidth(cpu, 0);
+    LoadX16(cpu, 0x0000u);
+    do {
+        LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05c2u, cpu->x));
+        if (!cpu->zero) {
+            Write16Absolute(memory, cpu, 0x4302u, cpu->y);     /* 819F */
+            Write16Direct(memory, cpu, 0x54u, cpu->y);
+            Write8(memory, AbsoluteIndexedAddress(cpu, 0x05c2u, cpu->x), 0x00u);
+            Write8(memory, AbsoluteIndexedAddress(cpu, 0x05c3u, cpu->x), 0x00u);
+            LoadAAbsolute8(memory, cpu, 0x11d9u, cpu->x);
+            StoreAAbsolute8(memory, cpu, 0x4304u, 0);
+            LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11e9u, cpu->x));
+            Write16Direct(memory, cpu, 0x56u, cpu->y);
+            Write16Absolute(memory, cpu, 0x2116u, cpu->y);
+            LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11f9u, cpu->x));
+            Write16Direct(memory, cpu, 0x58u, cpu->y);
+            Write16Absolute(memory, cpu, 0x4305u, cpu->y);
+            for (i = 0; i < 2u; ++i) {
+                if (i) {
+                    SetAccumulatorWidth(cpu, 0);               /* 81CF */
+                    LoadA16(cpu, Read16Direct(memory, cpu, 0x56u));
+                    cpu->carry = 0;
+                    Add16Value(cpu, 0x0100u);
+                    Write16Absolute(memory, cpu, 0x2116u, cpu->accumulator);
+                    LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
+                    Write16Absolute(memory, cpu, 0x4305u, cpu->accumulator);
+                    cpu->carry = 0;
+                    Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+                    Write16Absolute(memory, cpu, 0x4302u, cpu->accumulator);
+                    SetAccumulatorWidth(cpu, 1);
+                }
+                LoadA8(cpu, 0x01u);                            /* 81C0 */
+                StoreAAbsolute8(memory, cpu, 0x4300u, 0);
+                LoadA8(cpu, 0x18u);
+                StoreAAbsolute8(memory, cpu, 0x4301u, 0);
+                LoadA8(cpu, 0x01u);
+                StoreAAbsolute8(memory, cpu, 0x420bu, 0);
+            }
+        }
+        IncrementX16(cpu);                                     /* 81F6 */
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x0010u);
+    } while (!cpu->zero);
+    Write8(memory, AbsoluteIndexedAddress(cpu, 0x0732u, 0), 0x00u);
+    Write8(memory, AbsoluteIndexedAddress(cpu, 0x0733u, 0), 0x00u);
+    return result;
+}

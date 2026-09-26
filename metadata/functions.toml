@@ -402,3 +402,12 @@ source = "src/actor/actor_sprites.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# Queued sprite graphics DMA, JSL'd from the sprite reload loop.
+[[function]]
+address = "84:8193"
+name = "Lufia2SpriteGraphicsUpload"
+source = "src/actor/actor_sprites.c"
+entry_mx = "M1X1"
+exit_mx = "M1X0"
+status = "verified"
