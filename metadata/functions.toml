@@ -393,3 +393,12 @@ source = "src/text/text_engine.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+# Sprite load for an actor; the bridge takes M=1 entries.
+[[function]]
+address = "83:A9BA"
+name = "Lufia2ActorLoadSprite"
+source = "src/actor/actor_sprites.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"

@@ -166,14 +166,12 @@ static void ActorAllocSprite(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:A9BA: load sprite A for actor $A7. */
-static void ActorLoadSprite(
+/* $83:A9BA after the JSL: load sprite A for actor $A7. */
+static void ActorLoadSpriteBody(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
+    Lufia2CpuState *cpu) {
     const uint8_t wide = !cpu->accumulator_is_8_bit;
 
-    SimulateJslFrame(memory, cpu, 0x83u, return_address);
     if (wide)                                                  /* A9BA */
         PushAccumulator16(memory, cpu);
     else
@@ -196,7 +194,28 @@ static void ActorLoadSprite(
         PullAccumulator16(memory, cpu);
     else
         LoadA8(cpu, Pull8(memory, cpu));
+}
+
+/* $83:A9BA: load sprite A for actor $A7. */
+static void ActorLoadSprite(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x83u, return_address);
+    ActorLoadSpriteBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2ActorLoadSprite(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
+
+    result.flow = LUFIA2_EXECUTION_RETURNED;
+    result.pc = 0x83a9cfu;                                     /* RTL */
+    result.dispatches = 0;
+    ActorLoadSpriteBody(memory, cpu);
+    return result;
 }
 
 /* $83:AA30: sprite height offset, -16 for odd types. */

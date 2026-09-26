@@ -82,6 +82,11 @@ Lufia2ExecutionResult Lufia2ActorSecondaryUpdate(
     Lufia2CpuState *cpu);
 
 /* $83:C7F8 through its RTS, or an exact boundary. */
+/* $83:A9BA: load sprite A for actor $A7; any M/X width. */
+Lufia2ExecutionResult Lufia2ActorLoadSprite(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2ActorPrimaryUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
