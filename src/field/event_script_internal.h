@@ -183,7 +183,9 @@ enum EventOpcodeHandler {
     EVENT_OP_STEP_ACTOR_DOWN = 0xced9,                         /* $97 */
     EVENT_OP_STEP_ACTOR_LEFT = 0xcee0,                         /* $98 */
     EVENT_OP_STEP_ACTOR_UP = 0xcee7,                           /* $99 */
-    EVENT_OP_STEP_ACTOR_RIGHT = 0xceee                         /* $9A */
+    EVENT_OP_STEP_ACTOR_RIGHT = 0xceee,                        /* $9A */
+    EVENT_OP_ACTOR_ACTION_5D = 0xde32,                         /* $8A */
+    EVENT_OP_RELEASE_ACTOR = 0xde52                            /* $8B */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */

@@ -1583,6 +1583,63 @@ static unsigned EventOpStepActor(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $83:F7D4: no claimed actors ($7F:D0A2/D0A3 = $FF). */
+static void EventClearClaimed(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    LoadA8(cpu, 0xffu);                                        /* F7D4 */
+    Write8(memory, 0x7fd0a2u, A8(cpu));
+    Write8(memory, 0x7fd0a3u, A8(cpu));
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $8A runs action $5D ($83:D350) for actor slot n; $8B clears its
+   occupancy ($83:FA12) and frees it ($0622 bit 2 set, bit 7 clear,
+   $05D2 = $FF, $7F:E48E = 0). Both then clear the claimed actors. */
+static unsigned EventOpActorSlot(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    const uint8_t action = handler == EVENT_OP_ACTOR_ACTION_5D;
+
+    TransferDirectToA(cpu);                                    /* DE32 */
+    EventSaveSlot(memory, cpu, (uint16_t)(handler + 3u));
+    Lufia2EventNextByte(memory, cpu, (uint16_t)(handler + 6u));
+    Lufia2EventValue(memory, cpu, (uint16_t)(handler + 9u));
+    StoreADirect8(memory, cpu, DP_ACTOR_SLOT);
+    SimulateJslFrame(memory, cpu, 0x80u, (uint16_t)(handler + 0x0fu));
+    Lufia2ActorRecordOffsets(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    if (action) {
+        LoadA8(cpu, 0x5du);                                    /* DE42 */
+        if (!EventActorAction(memory, cpu, 0xde47u, handoff))
+            return EVENT_OPCODE_HANDOFF;
+    } else {
+        SimulateJslFrame(memory, cpu, 0x80u, 0xde65u);         /* DE62 */
+        cpu->program_bank = 0x83u;
+        Lufia2ActorClearMapOccupancy(memory, cpu);             /* $83:FA12 */
+        cpu->program_bank = 0x80u;
+        SimulateRtlFrame(memory, cpu);
+        LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);             /* DE66 */
+        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        Or8(cpu, 0x04u);
+        StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        LoadA8(cpu, 0xffu);
+        StoreAAbsolute8(memory, cpu, 0x05d2u, cpu->x);
+        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        And8(cpu, 0x7fu);
+        StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        TransferDirectToA(cpu);
+        Write8(memory, LongIndexedAddress(0x7fe48eu, cpu->x), A8(cpu));
+    }
+    EventRestoreSlot(memory, cpu, action ? 0xde4au : 0xde84u);
+    EventClearClaimed(memory, cpu, action ? 0xde4eu : 0xde88u);
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Actor, position and point opcodes; the rest go to the conditions. */
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
@@ -1663,6 +1720,9 @@ unsigned Lufia2EventActorOpcode(
     case EVENT_OP_STEP_ACTOR_UP:
     case EVENT_OP_STEP_ACTOR_RIGHT:
         return EventOpStepActor(memory, cpu, handler);
+    case EVENT_OP_ACTOR_ACTION_5D:
+    case EVENT_OP_RELEASE_ACTOR:
+        return EventOpActorSlot(memory, cpu, handler, handoff);
     case EVENT_OP_POINT_ARITHMETIC:
         return EventOpPointArithmetic(memory, cpu, handoff);
     case EVENT_OP_POINT_FROM_OBJECT:
