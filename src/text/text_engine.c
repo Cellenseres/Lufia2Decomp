@@ -3,6 +3,8 @@
 #include "core/cpu_internal.h"
 #include "lufia2/text.h"
 #include "text/text_internal.h"
+#include "actor/actor_internal.h"
+#include "field/field_internal.h"
 #include "system/wram.h"
 
 /* Text engine WRAM. */
@@ -621,7 +623,81 @@ static unsigned TextOpEnd(
     return TEXT_OPCODE_RELOAD;
 }
 
-/* $68: skip the branch when $05B3 bit 4 is set. */
+/* $80:C01D: map entity A ($7E:F010 list, stride 8) position into
+   $120A-$1212 (DB-relative, $1212 long); none zeroes $120A-$120C and
+   sets carry. 0 = handoff. */
+static uint8_t TextEntityPosition(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    LoadX16(cpu, 0x0010u);                                     /* C01D */
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, 0x08u);
+    ExchangeAccumulatorBytes(cpu);
+    if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xc027u))
+        return 0;
+    if (cpu->carry) {
+        Write8(memory, AbsoluteIndexedAddress(cpu, 0x120au, 0), 0x00u);
+        Write8(memory, AbsoluteIndexedAddress(cpu, 0x120bu, 0), 0x00u);
+        Write8(memory, AbsoluteIndexedAddress(cpu, 0x120bu, 0), 0x00u);
+        Write8(memory, AbsoluteIndexedAddress(cpu, 0x120cu, 0), 0x00u);
+        cpu->carry = 1;
+    } else {
+        SetAccumulatorWidth(cpu, 0);                           /* C039 */
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ef001u, cpu->x)));
+        Write16Absolute(memory, cpu, 0x120au, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ef003u, cpu->x)));
+        Write16Absolute(memory, cpu, 0x120eu, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ef005u, cpu->x)));
+        Write16Absolute(memory, cpu, 0x1210u, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef007u, cpu->x)));
+        Write8(memory, 0x001212u, A8(cpu));
+        cpu->carry = 0;
+    }
+    SimulateRtlFrame(memory, cpu);
+    return 1;
+}
+
+/* $80:BC98: actor $A7 gets id and state bytes, then the position of
+   map entity id - $4F ($80:C01D, $80:C1A7). 0 = handoff. */
+static uint8_t TextPlaceActor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xbc9bu);             /* BC98 */
+    Lufia2ActorRecordOffsets(memory, cpu);                     /* $84:82D5 */
+    SimulateRtlFrame(memory, cpu);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    TextNextByte(memory, cpu, 0xbca0u);
+    Write8(memory, LongIndexedAddress(0x0005fau, cpu->x), A8(cpu));
+    TextNextByte(memory, cpu, 0xbca7u);
+    Write8(memory, LongIndexedAddress(0x0005d2u, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x0005fau, cpu->x)));
+    cpu->carry = 1;
+    Sbc8(cpu, 0x4fu);
+    if (!TextEntityPosition(memory, cpu, 0xbcb6u))
+        return 0;
+    SimulateJslFrame(memory, cpu, 0x80u, 0xbcbau);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* C1A7 */
+    Write8(memory, AbsoluteIndexedAddress(cpu, 0x0736u, cpu->x), 0x00u);
+    LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    And8(cpu, 0xfbu);
+    StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    LoadAAbsolute8(memory, cpu, 0x120au, 0);
+    StoreAAbsolute8(memory, cpu, 0x06bau, cpu->x);
+    LoadAAbsolute8(memory, cpu, 0x120bu, 0);
+    StoreAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+    SimulateRtlFrame(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    return 1;
+}
+
+/* $68: skip two bytes when $05B3 bit 4 is set, else place actor
+   $A7 ($80:BC98) and step $A7. */
 static unsigned TextOpSkipBranch(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -629,8 +705,12 @@ static unsigned TextOpSkipBranch(
     LoadAAbsolute8(memory, cpu, 0x05b3u, 0);
     BitImmediate8(cpu, 0x10u);
     if (cpu->zero) {
-        *handoff = 0x80bc44u;
-        return TEXT_OPCODE_HANDOFF;
+        if (!TextPlaceActor(memory, cpu, 0xbc46u)) {           /* BC44 */
+            *handoff = 0x80bfbcu;
+            return TEXT_OPCODE_HANDOFF;
+        }
+        IncrementDirect8(memory, cpu, DP_ACTOR_SLOT);          /* BC47 */
+        return TEXT_OPCODE_NEXT;
     }
     TextNextByte(memory, cpu, 0xbc4eu);
     TextNextByte(memory, cpu, 0xbc51u);

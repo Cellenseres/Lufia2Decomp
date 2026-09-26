@@ -131,7 +131,7 @@ static unsigned EventOpCopyPointX(
 
 /* $80:BFAA: find key A in the $7E:F000 list at [X], stride B;
    carry clear = found. 0 = handoff at $80:BFBC. */
-static uint8_t EventListSearch(
+uint8_t Lufia2FieldListSearch(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint8_t return_bank,
@@ -192,7 +192,7 @@ static uint8_t EventFindActor(
     LoadA8(cpu, 0x03u);
     ExchangeAccumulatorBytes(cpu);
     LoadX16(cpu, 0x0022u);
-    if (!EventListSearch(memory, cpu, 0x80u, 0xe91cu)) {
+    if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xe91cu)) {
         *handoff = 0x80bfbcu;
         return 0;
     }
@@ -357,7 +357,7 @@ uint8_t Lufia2EventArea(
         LoadA8(cpu, 0x05u);
         ExchangeAccumulatorBytes(cpu);
         LoadX16(cpu, 0x0024u);
-        if (!EventListSearch(memory, cpu, 0x80u, 0xe97cu)) {
+        if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xe97cu)) {
             *handoff = 0x80bfbcu;
             return 0;
         }
@@ -534,7 +534,7 @@ static uint8_t EventMapObjectFrom(
     LoadA8(cpu, 0x0au);
     ExchangeAccumulatorBytes(cpu);
     LoadX16(cpu, 0x0016u);
-    if (!EventListSearch(memory, cpu, 0x83u, 0x8b4au)) {
+    if (!Lufia2FieldListSearch(memory, cpu, 0x83u, 0x8b4au)) {
         *handoff = 0x80bfbcu;
         return 0;
     }
@@ -1427,7 +1427,7 @@ static unsigned EventObjectCoversRow(
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, Read8(memory, 0x7fd04eu));
     LoadX16(cpu, 0x0002u);
-    if (!EventListSearch(memory, cpu, 0x80u, 0xcce8u)) {
+    if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xcce8u)) {
         *handoff = 0x80bfbcu;
         return EVENT_OPCODE_HANDOFF;
     }
@@ -1446,7 +1446,7 @@ static unsigned EventObjectCoversRow(
             ExchangeAccumulatorBytes(cpu);
             LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef00du, cpu->x)));
             LoadX16(cpu, 0x0004u);
-            if (!EventListSearch(memory, cpu, 0x80u, 0xcd0cu)) {
+            if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xcd0cu)) {
                 *handoff = 0x80bfbcu;
                 return EVENT_OPCODE_HANDOFF;
             }
@@ -1545,7 +1545,7 @@ static unsigned EventOpSetListedPosition(
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
     LoadX16(cpu, 0x0026u);
-    if (!EventListSearch(memory, cpu, 0x80u, 0xd6a4u)) {
+    if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xd6a4u)) {
         *handoff = 0x80bfbcu;
         return EVENT_OPCODE_HANDOFF;
     }

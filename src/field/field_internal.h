@@ -11,6 +11,14 @@ void Lufia2FieldIdleBody(
     Lufia2CpuState *cpu);
 
 /* $80:CBAE: event slot timers; 0 = LLE at resume_pc. */
+/* $80:BFAA: find key A in the $7E:F000 list at [X], stride B;
+   carry clear = found. 0 = handoff at $80:BFBC. */
+uint8_t Lufia2FieldListSearch(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t return_bank,
+    uint16_t return_address);
+
 /* Read-only: cells $83:8E85 draws for layer X; ~0 for no layer. */
 uint32_t Lufia2FieldRegionCells(
     const Lufia2Memory *memory,
