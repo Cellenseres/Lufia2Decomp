@@ -1533,6 +1533,56 @@ static unsigned EventOpSetListedPosition(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $97-$9A: step listed actor id n (+$4F; missing keeps the running
+   slot) one cell down, left, up or right and restart its script. */
+static unsigned EventOpStepActor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler) {
+    const uint8_t axis = handler == EVENT_OP_STEP_ACTOR_DOWN ||
+                         handler == EVENT_OP_STEP_ACTOR_UP ? DP_PROBE_Y
+                                                           : DP_PROBE_X;
+    const uint8_t forward = handler == EVENT_OP_STEP_ACTOR_DOWN ||
+                            handler == EVENT_OP_STEP_ACTOR_RIGHT;
+
+    SimulateJsrFrame(memory, cpu, (uint16_t)(handler + 2u));
+    EventSaveSlot(memory, cpu, 0xcf22u);                       /* CF20 */
+    Lufia2EventNextByte(memory, cpu, 0xcf25u);
+    cpu->carry = 0;
+    Adc8(cpu, 0x4fu);
+    Lufia2EventFindActorId(memory, cpu, 0xcf2cu);
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* CF2D */
+    LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);
+    StoreADirect8(memory, cpu, DP_PROBE_X);
+    LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+    StoreADirect8(memory, cpu, DP_PROBE_Y);
+    SimulateRtsFrame(memory, cpu);
+    {
+        const uint8_t value = (uint8_t)(DirectByte(memory, cpu, axis) +
+                                        (forward ? 1u : 0xffu));
+
+        Write8(memory, DirectAddress(cpu, axis), value);        /* INC/DEC */
+        SetNz8(cpu, value);
+    }
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* CEF5 */
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
+    Write8(memory, LongIndexedAddress(0x7fe5a6u, cpu->x), A8(cpu));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
+    Write8(memory, LongIndexedAddress(0x7fe5ceu, cpu->x), A8(cpu));
+    LoadA8(cpu, 0x20u);
+    StoreAAbsolute8(memory, cpu, 0x070au, cpu->x);
+    LoadA8(cpu, 0x00u);
+    Write8(memory, LongIndexedAddress(0x7fe3c6u, cpu->x), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    And8(cpu, 0xfeu);
+    StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xcf19u);
+    Lufia2ActorLoadPrimaryScript(memory, cpu);                 /* $83:D416 */
+    SimulateRtlFrame(memory, cpu);
+    EventRestoreSlot(memory, cpu, 0xcf1cu);
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Actor, position and point opcodes; the rest go to the conditions. */
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
@@ -1608,6 +1658,11 @@ unsigned Lufia2EventActorOpcode(
         return EventOpObjectBit(memory, cpu, handler, handoff);
     case EVENT_OP_SET_LISTED_POSITION:
         return EventOpSetListedPosition(memory, cpu, handoff);
+    case EVENT_OP_STEP_ACTOR_DOWN:
+    case EVENT_OP_STEP_ACTOR_LEFT:
+    case EVENT_OP_STEP_ACTOR_UP:
+    case EVENT_OP_STEP_ACTOR_RIGHT:
+        return EventOpStepActor(memory, cpu, handler);
     case EVENT_OP_POINT_ARITHMETIC:
         return EventOpPointArithmetic(memory, cpu, handoff);
     case EVENT_OP_POINT_FROM_OBJECT:

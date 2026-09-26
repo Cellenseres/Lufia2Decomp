@@ -179,7 +179,11 @@ enum EventOpcodeHandler {
     EVENT_OP_SCROLL = 0xd5af,                                  /* $7B */
     EVENT_OP_KEEP_BLOCK_MATCH = 0xe277,                        /* $94 */
     EVENT_OP_GOTO_IF_BLOCK_MATCH = 0xe27d,                     /* $95 */
-    EVENT_OP_GOTO_UNLESS_BLOCK_MATCH = 0xe283                  /* $96 */
+    EVENT_OP_GOTO_UNLESS_BLOCK_MATCH = 0xe283,                 /* $96 */
+    EVENT_OP_STEP_ACTOR_DOWN = 0xced9,                         /* $97 */
+    EVENT_OP_STEP_ACTOR_LEFT = 0xcee0,                         /* $98 */
+    EVENT_OP_STEP_ACTOR_UP = 0xcee7,                           /* $99 */
+    EVENT_OP_STEP_ACTOR_RIGHT = 0xceee                         /* $9A */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */
@@ -257,6 +261,12 @@ uint8_t Lufia2EventListEnds(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu,
     unsigned limit);
+
+/* $80:BF92: slot of actor id A in $05FA into $A7; carry = missing. */
+void Lufia2EventFindActorId(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address);
 
 /* $83:8B40: map object A into $7F:D04A/D04C/D05F; 0 = handoff. */
 uint8_t Lufia2EventMapObject(

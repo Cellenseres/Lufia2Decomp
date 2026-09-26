@@ -944,7 +944,7 @@ static unsigned EventOpBlockMatches(
 
 /* $80:BF92: slot of actor id A in $05FA (DB-relative) into $A7;
    carry set and X = $28 when missing. */
-static void EventFindActorId(
+void Lufia2EventFindActorId(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -998,7 +998,7 @@ static unsigned EventOpGotoUnlessActorsBit5(
             break;
         cpu->carry = 0;
         Adc8(cpu, 0x4fu);
-        EventFindActorId(memory, cpu, 0xe0b4u);
+        Lufia2EventFindActorId(memory, cpu, 0xe0b4u);
         LoadAAbsolute8(memory, cpu, 0x0736u, cpu->x);
         BitImmediate8(cpu, 0x20u);
         if (cpu->zero) {
