@@ -641,6 +641,20 @@ static inline void StepAbsolute16(
     SetNz16(cpu, value);
 }
 
+/* ASL abs, 8-bit (read, then write back). */
+static inline void AslAbsolute8(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t address) {
+    const uint32_t at = AbsoluteIndexedAddress(cpu, address, 0);
+    const uint8_t old = Read8(memory, at);
+    const uint8_t value = (uint8_t)(old << 1);
+
+    cpu->carry = (old & 0x80u) != 0;
+    Write8(memory, at, value);
+    SetNz8(cpu, value);
+}
+
 /* ROL abs, 8-bit. */
 static inline void RolAbsolute8(
     const Lufia2Memory *memory,

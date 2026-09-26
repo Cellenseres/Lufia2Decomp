@@ -409,6 +409,7 @@ enum ObjectOpcodeHandler {
     OBJECT_OP_1D = 0xe5b5,                /* $1D */
     OBJECT_OP_12 = 0xe700,                /* $12 */
     OBJECT_OP_13 = 0xe810,                /* $13 */
+    OBJECT_OP_14_SPIN_ZOOM = 0xe27d,      /* $14 */
     OBJECT_OP_4X_WAIT = 0xe831,           /* $4x */
     OBJECT_OP_5X = 0xe840,                /* $5x */
     OBJECT_OP_6X = 0xe854,                /* $6x */
@@ -1267,6 +1268,341 @@ static ObjectFlow ObjectOp0X(
     return OBJECT_FLOW_RETURN;
 }
 
+/* $83:E42D: high nibble of A as a signed step. */
+static void ObjectHighNibbleStep(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LsrA8(cpu);                                                /* E42D */
+    LsrA8(cpu);
+    LsrA8(cpu);
+    LsrA8(cpu);
+    ObjectSignNibble(memory, cpu, 0xe433u);
+    SetAccumulatorWidth(cpu, 1);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:E2E0/$83:E331: every (rate & 15) ticks add the rate's high
+   nibble to an angle; a limit with bit 7 stops it within one step. */
+static void ObjectAngleStep(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t rate,
+    uint16_t counter,
+    uint16_t angle,
+    uint16_t limit,
+    uint16_t return_address) {
+    LoadAAbsolute8(memory, cpu, rate, cpu->x);
+    if (cpu->zero)
+        return;
+    StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, counter, cpu->x), 1);
+    And8(cpu, 0x0fu);
+    Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, counter, cpu->x));
+    if (!cpu->zero)
+        return;
+    StoreZeroAbsolute8(memory, cpu, counter, cpu->x);
+    LoadAAbsolute8(memory, cpu, rate, cpu->x);
+    ObjectHighNibbleStep(memory, cpu, return_address);
+    StoreADirect8(memory, cpu, 0x55u);
+    cpu->carry = 0;
+    Adc8(cpu, AbsoluteByte(memory, cpu, angle, cpu->x));
+    StoreAAbsolute8(memory, cpu, angle, cpu->x);
+    LoadAAbsolute8(memory, cpu, limit, cpu->x);
+    if (cpu->negative) {
+        AslA8(cpu);
+        StoreADirect8(memory, cpu, 0x54u);
+        LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+        if (cpu->negative) {
+            LoadA8(cpu, (uint8_t)~A8(cpu));
+            LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+            StoreADirect8(memory, cpu, 0x55u);
+        }
+        LoadAAbsolute8(memory, cpu, angle, cpu->x);            /* distance */
+        cpu->carry = 1;
+        Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
+        if (cpu->negative) {
+            LoadA8(cpu, (uint8_t)~A8(cpu));
+            LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+        }
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x55u));
+        if (!cpu->carry) {
+            LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+            StoreAAbsolute8(memory, cpu, angle, cpu->x);
+            StoreZeroAbsolute8(memory, cpu, rate, cpu->x);
+        }
+    }
+    LoadA8(cpu, 0x01u);
+    Or8(cpu, AbsoluteByte(memory, cpu, 0x15b9u, cpu->x));
+    StoreAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
+}
+
+/* STA $211B twice: A sign-extended into the multiplicand. */
+static void ObjectMultiplicand(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t value) {
+    LoadA8(cpu, value);
+    StoreAAbsolute8(memory, cpu, 0x211bu, 0);
+    if (cpu->negative) {
+        LoadA8(cpu, 0xffu);
+        StoreAAbsolute8(memory, cpu, 0x211bu, 0);
+    } else {
+        StoreZeroAbsolute8(memory, cpu, 0x211bu, 0);
+    }
+}
+
+/* $83:E73A: product * 2 >> 8, rounded, from $2134/$2135. */
+static void ObjectProduct(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x2134u, 0));
+    AslA16(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    RolA8(cpu);
+    ExchangeAccumulatorBytes(cpu);
+    Adc8(cpu, 0x00u);
+}
+
+/* $83:E7C2: (|v| << 8) >> 1 in A16, v a signed byte. */
+static void ObjectHalfMagnitude(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t offset) {
+    TransferDirectToA(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, offset));
+    if (cpu->negative) {
+        LoadA8(cpu, (uint8_t)~A8(cpu));
+        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+    }
+    ExchangeAccumulatorBytes(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    LsrA16(cpu);
+}
+
+/* $83:E703: rotate the object's offset ($1539/$1519) by the angles
+   $14D9/$14F9 (sines $80:84ED/852D) with the PPU multiplier, then
+   divide by the depth $51 into the screen offsets $54/$56. */
+static void ObjectProject(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadX8(cpu, AbsoluteByte(memory, cpu, 0x14f9u, cpu->y));  /* E703 */
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80852du, cpu->x)));
+    StoreADirect8(memory, cpu, 0x54u);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x8084edu, cpu->x)));
+    StoreADirect8(memory, cpu, 0x55u);
+    LoadX8(cpu, AbsoluteByte(memory, cpu, 0x14d9u, cpu->y));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x8084edu, cpu->x)));
+    StoreADirect8(memory, cpu, 0x56u);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80852du, cpu->x)));
+    StoreADirect8(memory, cpu, 0x57u);
+    ObjectMultiplicand(memory, cpu, AbsoluteByte(memory, cpu, 0x1539u, cpu->y));
+    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));               /* E733 */
+    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    ObjectProduct(memory, cpu);
+    StoreADirect8(memory, cpu, 0x58u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    ObjectProduct(memory, cpu);
+    StoreADirect8(memory, cpu, 0x59u);
+    ObjectMultiplicand(memory, cpu, AbsoluteByte(memory, cpu, 0x1519u, cpu->y));
+    ObjectProduct(memory, cpu);                                /* E76B */
+    cpu->carry = 1;
+    Sbc8(cpu, DirectByte(memory, cpu, 0x58u));
+    StoreADirect8(memory, cpu, 0x58u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    ObjectProduct(memory, cpu);
+    Adc8(cpu, DirectByte(memory, cpu, 0x59u));
+    StoreADirect8(memory, cpu, 0x59u);
+    ObjectMultiplicand(memory, cpu, DirectByte(memory, cpu, 0x59u));
+    LoadA8(cpu, DirectByte(memory, cpu, 0x56u));               /* E7A2 */
+    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    ObjectProduct(memory, cpu);
+    StoreADirect8(memory, cpu, 0x5au);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
+    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    LoadAAbsolute8(memory, cpu, 0x2135u, 0);
+    cpu->carry = 0;
+    Adc8(cpu, 0x80u);
+    StoreADirect8(memory, cpu, 0x51u);                         /* depth */
+    ObjectHalfMagnitude(memory, cpu, 0x58u);                   /* E7C2 */
+    SetIndexWidth(cpu, 0);
+    StoreAAbsolute16(memory, cpu, 0x4204u, 0);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x51u));
+    StoreAAbsolute8(memory, cpu, 0x4206u, 0);
+    ObjectHalfMagnitude(memory, cpu, 0x5au);                   /* E7D8 */
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4214u, 0));
+    StoreAAbsolute16(memory, cpu, 0x4204u, 0);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x51u));
+    StoreAAbsolute8(memory, cpu, 0x4206u, 0);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x58u));               /* E7F1 */
+    AslA8(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    TransferXToA(cpu);
+    if (cpu->carry) {
+        LoadA16(cpu, (uint16_t)~cpu->accumulator);
+        IncrementA16(cpu);
+    }
+    StoreADirect16(memory, cpu, 0x54u);                        /* screen x */
+    LoadADirect16(memory, cpu, 0x59u);
+    AslA16(cpu);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4214u, 0));
+    if (cpu->carry) {
+        LoadA16(cpu, (uint16_t)~cpu->accumulator);
+        IncrementA16(cpu);
+    }
+    StoreADirect16(memory, cpu, 0x56u);                        /* screen y */
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 1);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:E27D: object opcode $14, spin and zoom: step the scale $1579
+   and the angles $14D9/$14F9, rebuild the rotated offset on a scale
+   change, project it and move the sprite; ends the object when the
+   zoom has shrunk to nothing. */
+static ObjectFlow ObjectOp14(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* E27D */
+    PushY(memory, cpu);
+    LoadAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
+    BitImmediate8(cpu, 0x08u);
+    if (!cpu->zero) {
+        LoadAAbsolute8(memory, cpu, 0x1579u, cpu->x);
+        And8(cpu, 0xfeu);
+        if (cpu->zero)
+            goto end;
+    }
+    LoadAAbsolute8(memory, cpu, 0x15d9u, cpu->x);              /* E291 zoom */
+    if (!cpu->zero) {
+        StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x15f9u, cpu->x), 1);
+        And8(cpu, 0x0fu);
+        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x15f9u, cpu->x));
+        if (cpu->zero) {
+            StoreZeroAbsolute8(memory, cpu, 0x15f9u, cpu->x);
+            LoadAAbsolute8(memory, cpu, 0x15d9u, cpu->x);
+            ObjectHighNibbleStep(memory, cpu, 0xe2a8u);
+            cpu->carry = 0;
+            Adc8(cpu, AbsoluteByte(memory, cpu, 0x1579u, cpu->x));
+            StoreAAbsolute8(memory, cpu, 0x1579u, cpu->x);
+            LsrA8(cpu);
+            StoreADirect8(memory, cpu, 0x55u);
+            LoadAAbsolute8(memory, cpu, 0x1619u, cpu->x);
+            if (cpu->negative) {
+                uint8_t clamp;
+
+                And8(cpu, 0x7fu);
+                StoreADirect8(memory, cpu, 0x54u);
+                LoadAAbsolute8(memory, cpu, 0x15d9u, cpu->x);
+                if (cpu->negative) {
+                    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+                    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x54u));
+                    clamp = cpu->negative;
+                } else {
+                    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+                    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x54u));
+                    clamp = !cpu->negative;
+                }
+                if (clamp) {
+                    StoreZeroAbsolute8(memory, cpu, 0x15d9u, cpu->x); /* E2CF */
+                    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+                    AslA8(cpu);
+                    StoreAAbsolute8(memory, cpu, 0x1579u, cpu->x);
+                }
+            }
+            LoadA8(cpu, 0x03u);                                /* E2D8 */
+            Or8(cpu, AbsoluteByte(memory, cpu, 0x15b9u, cpu->x));
+            StoreAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
+        }
+    }
+    ObjectAngleStep(memory, cpu, 0x1639u, 0x1659u, 0x14d9u, 0x1679u, 0xe2f7u);
+    ObjectAngleStep(memory, cpu, 0x1699u, 0x16b9u, 0x14f9u, 0x16d9u, 0xe348u);
+    LoadAAbsolute8(memory, cpu, 0x15b9u, cpu->x);              /* E382 */
+    BitImmediate8(cpu, 0x02u);
+    if (!cpu->zero) {
+        And8(cpu, 0xfdu);
+        StoreAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
+        SetIndexWidth(cpu, 1);                                 /* E38E */
+        LoadYDirect8(memory, cpu, DP_ACTOR_SLOT);
+        LoadAAbsolute8(memory, cpu, 0x1579u, cpu->y);
+        StoreAAbsolute8(memory, cpu, 0x211bu, 0);
+        StoreZeroAbsolute8(memory, cpu, 0x211bu, 0);
+        LoadX8(cpu, AbsoluteByte(memory, cpu, 0x1599u, cpu->y));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x8084edu, cpu->x)));
+        StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+        AslAbsolute8(memory, cpu, 0x2134u);
+        LoadAAbsolute8(memory, cpu, 0x2135u, 0);
+        RolA8(cpu);
+        StoreAAbsolute8(memory, cpu, 0x1539u, cpu->y);         /* offset x */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80852du, cpu->x)));
+        StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+        AslAbsolute8(memory, cpu, 0x2134u);
+        LoadAAbsolute8(memory, cpu, 0x2135u, 0);
+        RolA8(cpu);
+        StoreAAbsolute8(memory, cpu, 0x1519u, cpu->y);         /* offset y */
+        SetIndexWidth(cpu, 0);
+    }
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* E3C2 */
+    LoadAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
+    BitImmediate8(cpu, 0x01u);
+    if (cpu->zero)
+        goto next;
+    And8(cpu, 0xfeu);
+    StoreAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
+    SetIndexWidth(cpu, 1);                                     /* E3D3 */
+    LoadYDirect8(memory, cpu, DP_ACTOR_SLOT);
+    ObjectProject(memory, cpu, 0xe3d9u);
+    LoadAAbsolute8(memory, cpu, 0x15b9u, cpu->y);
+    BitImmediate8(cpu, 0x04u);
+    if (!cpu->zero) {
+        LoadAAbsolute8(memory, cpu, 0x15d9u, cpu->y);
+        SetIndexWidth(cpu, 0);
+        if (cpu->zero) {
+            SetAccumulatorWidth(cpu, 0);
+            goto end;
+        }
+    }
+    SetAccumulatorWidth(cpu, 0);                               /* E3EA */
+    SetIndexWidth(cpu, 0);
+    LoadXDirect16(memory, cpu, 0xa9u);
+    LoadADirect16(memory, cpu, 0x54u);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fda6cu, cpu->x)));
+    Write16Long(memory, LongIndexedAddress(0x7fddfeu, cpu->x), cpu->accumulator);
+    LoadADirect16(memory, cpu, 0x56u);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fdaacu, cpu->x)));
+    Write16Long(memory, LongIndexedAddress(0x7fde8eu, cpu->x), cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* E406 */
+    LoadA8(cpu, DirectByte(memory, cpu, 0x51u));
+    And8(cpu, 0xffu);
+    Compare8(cpu, A8(cpu), 0x80u);
+    LoadA8(cpu, 0x02u);                                        /* behind */
+    if (cpu->carry)
+        TransferDirectToA(cpu);
+    StoreADirect8(memory, cpu, 0x54u);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe33eu, cpu->x)));
+    And8(cpu, 0xfdu);
+    Or8(cpu, DirectByte(memory, cpu, 0x54u));
+    Write8(memory, LongIndexedAddress(0x7fe33eu, cpu->x), A8(cpu));
+next:
+    SetAccumulatorWidth(cpu, 1);                               /* E421 */
+    cpu->y = PullIndexValue(memory, cpu);
+    return OBJECT_FLOW_DISPATCH;
+end:
+    SetAccumulatorWidth(cpu, 1);                               /* E427 */
+    cpu->y = PullIndexValue(memory, cpu);
+    return ObjectOp0X(memory, cpu);
+}
+
 static ObjectFlow ObjectExecute(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1382,6 +1718,8 @@ static ObjectFlow ObjectExecute(
         return ObjectOpEE(memory, cpu);
     case OBJECT_OP_0X:
         return ObjectOp0X(memory, cpu);
+    case OBJECT_OP_14_SPIN_ZOOM:
+        return ObjectOp14(memory, cpu);
     default:
         cpu->resume_pc = 0x830000u | handler;
         return OBJECT_FLOW_BOUNDARY;
