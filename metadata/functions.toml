@@ -510,3 +510,62 @@ source = "src/item/item_records.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Menu window frame, JSR'd from 55 menu sites.
+[[function]]
+address = "82:810E"
+name = "Lufia2MenuDrawWindow"
+source = "src/menu/menu_window.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+# Capsule monster stats.
+[[function]]
+address = "82:C261"
+name = "Lufia2CapsuleLoadStats"
+source = "src/party/capsule.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Derived character stats.
+[[function]]
+address = "81:F4D5"
+name = "Lufia2PartyDerivedStats"
+source = "src/party/stats.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C515"
+name = "Lufia2CapsuleSetForms"
+source = "src/party/capsule.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C2FD"
+name = "Lufia2CapsuleReset"
+source = "src/party/capsule.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C352"
+name = "Lufia2CapsuleSetAll"
+source = "src/party/capsule.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CD83"
+name = "Lufia2CapsuleLevelUp"
+source = "src/party/capsule.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

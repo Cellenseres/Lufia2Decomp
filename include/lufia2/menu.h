@@ -34,6 +34,11 @@ Lufia2ExecutionResult Lufia2MenuDrawString(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $82:810E window frame at A, X = width, height; M0X0. */
+Lufia2ExecutionResult Lufia2MenuDrawWindow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $86:81A9 NMI installed by $86:8000. */
 Lufia2ExecutionResult Lufia2SelectScreenNmi(
     const Lufia2Memory *memory,
