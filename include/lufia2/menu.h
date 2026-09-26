@@ -39,6 +39,36 @@ Lufia2ExecutionResult Lufia2MenuDrawWindow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $86:8CF5 sprite slot X plays animation A; M1X0. */
+Lufia2ExecutionResult Lufia2SpriteSetAnimation(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:9F6F equipment commands window; M1X0. */
+Lufia2ExecutionResult Lufia2MenuEquipCommands(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:D721 shop windows; M1X0. */
+Lufia2ExecutionResult Lufia2MenuShopWindows(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:E49E shop kind title; M1X0. */
+Lufia2ExecutionResult Lufia2MenuShopTitle(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:EFC5 "Game saved." window; M1X0. */
+Lufia2ExecutionResult Lufia2MenuSavedWindow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:F0A2 name entry windows; M1X0. */
+Lufia2ExecutionResult Lufia2MenuNameEntryWindows(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $86:81A9 NMI installed by $86:8000. */
 Lufia2ExecutionResult Lufia2SelectScreenNmi(
     const Lufia2Memory *memory,

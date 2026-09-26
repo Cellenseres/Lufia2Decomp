@@ -19,6 +19,11 @@ Lufia2ExecutionResult Lufia2LoadSpellRecord(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:F194 A = first record byte of item $0A06; any width. */
+Lufia2ExecutionResult Lufia2ItemRecordByte(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

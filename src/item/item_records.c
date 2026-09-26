@@ -220,3 +220,24 @@ Lufia2ExecutionResult Lufia2LoadSpellRecord(
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x81f445u);
 }
+
+/* $81:F194: A = first record byte of item $0A06. */
+Lufia2ExecutionResult Lufia2ItemRecordByte(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 0);
+    SimulateJslFrame(memory, cpu, 0x81u, 0xf19cu);
+    ItemRecordAddress(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, ITEM_RECORD, 0));
+    PushDataBank(memory, cpu);
+    LoadA8(cpu, 0x96u);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+    PullDataBank(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x81f1aau);
+}

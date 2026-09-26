@@ -569,3 +569,59 @@ source = "src/party/capsule.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:8CF5"
+name = "Lufia2SpriteSetAnimation"
+source = "src/menu/menu_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9F6F"
+name = "Lufia2MenuEquipCommands"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D721"
+name = "Lufia2MenuShopWindows"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E49E"
+name = "Lufia2MenuShopTitle"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:EFC5"
+name = "Lufia2MenuSavedWindow"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F0A2"
+name = "Lufia2MenuNameEntryWindows"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F194"
+name = "Lufia2ItemRecordByte"
+source = "src/item/item_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

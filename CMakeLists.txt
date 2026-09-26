@@ -27,6 +27,8 @@ add_library(lufia2_decomp STATIC
     src/field/field_update.c
     src/item/item_records.c
     src/menu/menu.c
+    src/menu/menu_screen.c
+    src/menu/menu_sprites.c
     src/menu/menu_string.c
     src/menu/menu_window.c
     src/party/capsule.c
