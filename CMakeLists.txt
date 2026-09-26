@@ -27,6 +27,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_update.c
     src/menu/menu.c
     src/party/experience.c
+    src/system/decompress.c
     src/system/math.c
     src/system/random.c
     src/system/screen.c

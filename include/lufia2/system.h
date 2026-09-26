@@ -10,6 +10,11 @@ extern "C" {
 #endif
 
 /* $80:8299: A = (A.low * next random byte) >> 8. */
+/* $80:8E9D decompress resource $54 to $7E/$7F:[$60]; any width. */
+Lufia2ExecutionResult Lufia2DecompressResource(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 void Lufia2RandomScale(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
