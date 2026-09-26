@@ -12,7 +12,7 @@ enum {
     COPY_COUNT = 0x56u,                 /* bytes - 1 for MVN */
 };
 
-/* INY; at the end of a bank continue at $8000 of the next one. */
+/* INY; past $FFFF continue at $8000, next bank. */
 static void StreamNext(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -30,8 +30,7 @@ static uint8_t StreamByte(
     return A8(cpu);
 }
 
-/* $80:8F5C: A = source offset (negative), MVN $56 + 1 bytes from
-   X + offset to X inside the destination bank. */
+/* $80:8F5C: MVN $56 + 1 bytes from X + A. */
 static void StreamCopy(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -59,9 +58,7 @@ static void StreamCopy(
     SetAccumulatorWidth(cpu, 1);
 }
 
-/* $80:8F40: a flagged byte >= $80 starts a back reference: short
-   (12-bit offset, (n & 15) + 2 bytes) or, when n & 15 is 0, long
-   (14-bit offset, (m & 63) + 3 bytes). */
+/* $80:8F40: short or long back reference. */
 static void StreamReference(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -114,9 +111,7 @@ static void StreamReference(
     StreamCopy(memory, cpu, bank);
 }
 
-/* $80:8EEF / $80:8F93: the stream loop for destination bank $7E or
-   $7F. Bytes below $80 are literals; bytes from $80 take the next bit
-   of the control byte: 0 literal, 1 back reference. */
+/* $80:8EEF/$80:8F93: literals below $80, else flag bit. */
 static void StreamDecode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -162,9 +157,7 @@ static void StreamDecode(
     }
 }
 
-/* $80:8E9D: decompress resource $54 (table $A7:8000, 3 bytes each:
-   15-bit address, bank from bit 15 on) to $7E:[$60] or, with $62 bit 0,
-   $7F:[$60]; the stream starts with its unpacked length. */
+/* $80:8E9D: resource $54 ($A7:8000) to $7E/$7F:[$60]. */
 Lufia2ExecutionResult Lufia2DecompressResource(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
