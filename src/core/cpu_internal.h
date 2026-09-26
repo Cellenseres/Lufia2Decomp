@@ -599,6 +599,89 @@ static inline void Decrement16Direct(
     SetNz16(cpu, value);
 }
 
+static inline void Increment16Direct(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t offset) {
+    const uint16_t value = (uint16_t)(Read16Direct(memory, cpu, offset) + 1u);
+    Write16Direct(memory, cpu, offset, value);
+    SetNz16(cpu, value);
+}
+
+static inline void Or16(Lufia2CpuState *cpu, uint16_t value) {
+    LoadA16(cpu, (uint16_t)(cpu->accumulator | value));
+}
+
+static inline void RolA16(Lufia2CpuState *cpu) {
+    const uint16_t old = cpu->accumulator;
+    const uint16_t value = (uint16_t)((old << 1) | (cpu->carry ? 1u : 0u));
+    cpu->carry = (old & 0x8000u) != 0;
+    LoadA16(cpu, value);
+}
+
+static inline void RorA16(Lufia2CpuState *cpu) {
+    const uint16_t old = cpu->accumulator;
+    const uint16_t value =
+        (uint16_t)((old >> 1) | (cpu->carry ? 0x8000u : 0u));
+    cpu->carry = old & 1u;
+    LoadA16(cpu, value);
+}
+
+/* INC/DEC abs, 16-bit. */
+static inline void StepAbsolute16(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t address,
+    int delta) {
+    const uint32_t at = AbsoluteIndexedAddress(cpu, address, 0);
+    const uint16_t value = (uint16_t)(
+        Read16AbsoluteIndexed(memory, cpu, address, 0) + delta);
+
+    Write16Long(memory, at, value);
+    SetNz16(cpu, value);
+}
+
+/* ROL abs, 8-bit. */
+static inline void RolAbsolute8(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t address) {
+    const uint32_t at = AbsoluteIndexedAddress(cpu, address, 0);
+    const uint8_t old = Read8(memory, at);
+    const uint8_t value = (uint8_t)((old << 1) | (cpu->carry ? 1u : 0u));
+
+    cpu->carry = (old & 0x80u) != 0;
+    Write8(memory, at, value);
+    SetNz8(cpu, value);
+}
+
+/* LSR abs, 16-bit. */
+static inline void LsrAbsolute16(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t address) {
+    const uint16_t old = Read16AbsoluteIndexed(memory, cpu, address, 0);
+    const uint16_t value = (uint16_t)(old >> 1);
+
+    cpu->carry = old & 1u;
+    Write16Long(memory, AbsoluteIndexedAddress(cpu, address, 0), value);
+    SetNz16(cpu, value);
+}
+
+/* ROR abs, 16-bit. */
+static inline void RorAbsolute16(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t address) {
+    const uint16_t old = Read16AbsoluteIndexed(memory, cpu, address, 0);
+    const uint16_t value =
+        (uint16_t)((old >> 1) | (cpu->carry ? 0x8000u : 0u));
+
+    cpu->carry = old & 1u;
+    Write16Long(memory, AbsoluteIndexedAddress(cpu, address, 0), value);
+    SetNz16(cpu, value);
+}
+
 static inline void RolA8(Lufia2CpuState *cpu) {
     const uint8_t old = A8(cpu);
     const uint8_t value = (uint8_t)((old << 1) | (cpu->carry ? 1u : 0u));

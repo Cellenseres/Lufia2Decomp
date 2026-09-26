@@ -411,3 +411,39 @@ source = "src/actor/actor_sprites.c"
 entry_mx = "M1X1"
 exit_mx = "M1X0"
 status = "verified"
+
+# Title screen particle sprites, JSR'd once per frame by the title loop.
+[[function]]
+address = "86:88BE"
+name = "Lufia2TitleParticleSprites"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Title screen objects, JSR'd once per frame by the title loop.
+[[function]]
+address = "86:838C"
+name = "Lufia2TitleObjects"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Title screen, JSR'd once per frame by the title loop.
+[[function]]
+address = "86:86ED"
+name = "Lufia2TitleLayers"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Title screen, JSR'd once per frame by the title loop.
+[[function]]
+address = "86:8996"
+name = "Lufia2TitlePaletteCycle"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
