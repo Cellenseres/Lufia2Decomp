@@ -1167,6 +1167,8 @@ static unsigned EventScriptOpcode(
         run->total += 63u;
         return EventOpScroll(memory, cpu, run, handoff);
     }
+    if (handler == EVENT_OP_SPAWN_IN_AREA)
+        run->total += 63u;
     if (handler == EVENT_OP_CLEAR_D081)
         return EventOpClearD081(memory, cpu);
     if (handler == EVENT_OP_START_EVENT_AND_END)
