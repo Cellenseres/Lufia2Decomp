@@ -29,6 +29,11 @@ Lufia2ExecutionResult Lufia2MenuCursorBlink(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:8878 menu string $5F:Y at $7E:X; any width. */
+Lufia2ExecutionResult Lufia2MenuDrawString(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $86:81A9 NMI installed by $86:8000. */
 Lufia2ExecutionResult Lufia2SelectScreenNmi(
     const Lufia2Memory *memory,

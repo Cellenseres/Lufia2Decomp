@@ -483,3 +483,30 @@ source = "src/system/decompress.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Menu string byte code, JSL'd from about 150 sites.
+[[function]]
+address = "80:8878"
+name = "Lufia2MenuDrawString"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Item record: name and unpacked fields.
+[[function]]
+address = "81:F1C5"
+name = "Lufia2LoadItemRecord"
+source = "src/item/item_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Spell record: name and fields.
+[[function]]
+address = "81:F414"
+name = "Lufia2LoadSpellRecord"
+source = "src/item/item_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

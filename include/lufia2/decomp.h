@@ -8,6 +8,7 @@
 #include "lufia2/actor.h"
 #include "lufia2/battle.h"
 #include "lufia2/field.h"
+#include "lufia2/item.h"
 #include "lufia2/menu.h"
 #include "lufia2/party.h"
 #include "lufia2/system.h"
