@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/party.h"
+#include "party/party_internal.h"
 
 enum {
     CAPSULE = 0x11a3u,                  /* monster 0-6 */
@@ -610,4 +611,44 @@ Lufia2ExecutionResult Lufia2CapsuleLevelUp(
     }
     cpu->carry = 0;
     return ExecutionReturned(0x82ce22u);
+}
+
+void Lufia2CapsuleRecordPointer(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    CapsuleRecord(memory, cpu);
+}
+
+/* $82:CE23: experience at the level start ($113E) and the next. */
+Lufia2ExecutionResult Lufia2CapsuleExperienceRange(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    unsigned i;
+
+    StoreZeroAbsolute8(memory, cpu, 0x113eu, 0);
+    StoreZeroAbsolute8(memory, cpu, 0x113fu, 0);
+    StoreZeroAbsolute8(memory, cpu, 0x1140u, 0);
+    LoadAAbsolute8(memory, cpu, LEVEL, 0);
+    Compare8(cpu, A8(cpu), 0x01u);
+    if (!cpu->zero) {
+        const uint32_t level = AbsoluteIndexedAddress(cpu, LEVEL, 0);
+
+        Write8(memory, level, (uint8_t)(Read8(memory, level) - 1u));
+        Jsr(memory, cpu, 0xce38u);
+        CapsuleExperience(memory, cpu);
+        Rts(memory, cpu);
+        Write8(memory, level, (uint8_t)(Read8(memory, level) + 1u));
+        for (i = 0; i < 3u; ++i) {
+            LoadAAbsolute8(memory, cpu, (uint16_t)(EXPERIENCE + i), 0);
+            StoreAAbsolute8(memory, cpu, (uint16_t)(0x113eu + i), 0);
+        }
+    }
+    Jsr(memory, cpu, 0xce50u);
+    CapsuleExperience(memory, cpu);
+    Rts(memory, cpu);
+    return ExecutionReturned(0x82ce51u);
+}
+
+void Lufia2BonusClear(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t first, unsigned words) {
+    ClearBonuses(memory, cpu, first, words);
 }

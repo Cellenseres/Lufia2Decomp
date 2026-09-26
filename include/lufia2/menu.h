@@ -69,6 +69,56 @@ Lufia2ExecutionResult Lufia2MenuNameEntryWindows(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $82:D749 shop party screen with stats; M1X0. */
+Lufia2ExecutionResult Lufia2MenuShopParty(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:A2E3 capsule monster screen; M1X0. */
+Lufia2ExecutionResult Lufia2MenuCapsuleScreen(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:950E member level, HP, MP at X; M1X0. */
+Lufia2ExecutionResult Lufia2MenuMemberStatus(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:D07B capsule status screen; M1X0. */
+Lufia2ExecutionResult Lufia2MenuCapsuleStatus(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:E297 shop $30 kind and item lists; M1X0. */
+Lufia2ExecutionResult Lufia2MenuShopSetup(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:CD1F capsule may learn a skill; carry clear if so; M1X0. */
+Lufia2ExecutionResult Lufia2CapsuleTryLearn(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:E5E1 shop equipment comparison; M1X0. */
+Lufia2ExecutionResult Lufia2MenuShopCompare(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:DCF4 one shop row (M0); M1X0. */
+Lufia2ExecutionResult Lufia2MenuShopRow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:DCC1 five shop rows; M1X0. */
+Lufia2ExecutionResult Lufia2MenuShopRows(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:B2C5 upgrade flagged equipment; M1X0. */
+Lufia2ExecutionResult Lufia2MenuEquipUpgrade(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $86:81A9 NMI installed by $86:8000. */
 Lufia2ExecutionResult Lufia2SelectScreenNmi(
     const Lufia2Memory *memory,

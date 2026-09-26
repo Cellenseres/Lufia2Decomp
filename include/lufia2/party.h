@@ -44,6 +44,11 @@ Lufia2ExecutionResult Lufia2CapsuleLevelUp(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $82:CE23 capsule experience range of the level; M1X0. */
+Lufia2ExecutionResult Lufia2CapsuleExperienceRange(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

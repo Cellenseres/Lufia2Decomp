@@ -625,3 +625,91 @@ source = "src/item/item_records.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:D749"
+name = "Lufia2MenuShopParty"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:A2E3"
+name = "Lufia2MenuCapsuleScreen"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CE23"
+name = "Lufia2CapsuleExperienceRange"
+source = "src/party/capsule.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:950E"
+name = "Lufia2MenuMemberStatus"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D07B"
+name = "Lufia2MenuCapsuleStatus"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E297"
+name = "Lufia2MenuShopSetup"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CD1F"
+name = "Lufia2CapsuleTryLearn"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E5E1"
+name = "Lufia2MenuShopCompare"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DCF4"
+name = "Lufia2MenuShopRow"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DCC1"
+name = "Lufia2MenuShopRows"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B2C5"
+name = "Lufia2MenuEquipUpgrade"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
