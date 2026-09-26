@@ -11,6 +11,11 @@ void Lufia2FieldIdleBody(
     Lufia2CpuState *cpu);
 
 /* $80:CBAE: event slot timers; 0 = LLE at resume_pc. */
+/* Read-only: cells $83:8E85 draws for layer X; ~0 for no layer. */
+uint32_t Lufia2FieldRegionCells(
+    const Lufia2Memory *memory,
+    const Lufia2CpuState *cpu);
+
 /* $83:8E85 from bank 80: redraw region $7F:D046/D04C in layer X. */
 void Lufia2FieldRedrawRegion(
     const Lufia2Memory *memory,

@@ -893,21 +893,6 @@ static unsigned EventOpMoveCamera(
     return EVENT_OPCODE_NEXT;
 }
 
-/* Passes through $80:CC3F per nesting level: $26/$27 run a second
-   slot inside the first, and the verifier counts visits per stack
-   depth. */
-#define EVENT_NEST_LIMIT 8u
-
-typedef struct EventRun {
-    unsigned total;
-    unsigned depth;
-    unsigned passes[EVENT_NEST_LIMIT];
-    /* $8E:BDD7 layer calls per depth; visits at a handoff. */
-    unsigned scroll_layers[EVENT_NEST_LIMIT];
-    unsigned visits;
-    uint8_t has_visits;
-} EventRun;
-
 static uint8_t EventRunScript(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1307,7 +1292,7 @@ static unsigned EventScriptOpcode(
     case EVENT_OP_B8:
         return EventOpSmall(memory, cpu, handler);
     default:
-        return Lufia2EventActorOpcode(memory, cpu, handler, handoff);
+        return Lufia2EventActorOpcode(memory, cpu, handler, run, handoff);
     }
 }
 
@@ -1381,7 +1366,7 @@ uint8_t Lufia2FieldEventTimerBody(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     unsigned *passes) {
-    EventRun run = {0, 0, {0}, {0}, 0, 0};
+    EventRun run = {0, 0, {0}, {0}, {0}, {0}, 0, 0};
 
     *passes = 0;
     cpu->program_bank = 0x80u;
@@ -1408,8 +1393,10 @@ uint8_t Lufia2FieldEventTimerBody(
                     return 0;
                 }
                 if (!EventResumeSlot(memory, cpu, &run)) {
+                    /* Visits before the handoff pc at its depth. */
                     *passes = run.has_visits ? run.visits
-                                             : run.passes[run.depth];
+                        : cpu->resume_pc == 0x80cc3fu ? run.passes[run.depth]
+                        : 0;
                     return 0;
                 }
             }
@@ -1459,8 +1446,7 @@ Lufia2ExecutionResult Lufia2FieldEventTimerTick(
     if (!Lufia2FieldEventTimerBody(memory, cpu, &passes)) {
         result.flow = LUFIA2_EXECUTION_BOUNDARY;
         result.pc = cpu->resume_pc;
-        if (result.pc == 0x80cc3fu || result.pc == 0x8ebdd7u)
-            result.dispatches = passes;
+        result.dispatches = passes;
     }
     return result;
 }

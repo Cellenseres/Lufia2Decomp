@@ -162,8 +162,7 @@ Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
     SimulateJslFrame(memory, cpu, 0x83u, 0x81ceu);
     if (!Lufia2FieldEventTimerBody(memory, cpu, &passes)) {
         result.pc = cpu->resume_pc;
-        if (result.pc == 0x80cc3fu || result.pc == 0x8ebdd7u)
-            result.dispatches = passes;
+        result.dispatches = passes;
         return result;
     }
     SimulateRtlFrame(memory, cpu);

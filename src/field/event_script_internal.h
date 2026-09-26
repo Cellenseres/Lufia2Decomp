@@ -189,7 +189,9 @@ enum EventOpcodeHandler {
     EVENT_OP_HIDE_ACTOR = 0xddb5,                              /* $60 */
     EVENT_OP_SHOW_ACTOR = 0xddcc,                              /* $61 */
     EVENT_OP_SPAWN_IN_AREA = 0xd516,                           /* $78 */
-    EVENT_OP_CAMERA_LAYERS = 0xdc0d                            /* $59 */
+    EVENT_OP_CAMERA_LAYERS = 0xdc0d,                           /* $59 */
+    EVENT_OP_OBJECT_TILES_AT = 0xd336,                         /* $21 */
+    EVENT_OP_OBJECT_TILES_AT_POSITION = 0xd346                 /* $22 */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */
@@ -221,11 +223,31 @@ unsigned Lufia2EventSleep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* Passes through $80:CC3F per nesting level: $26/$27 run a second
+   slot inside the first, and the verifier counts visits per stack
+   depth. */
+#define EVENT_NEST_LIMIT 8u
+
+typedef struct EventRun {
+    unsigned total;
+    unsigned depth;
+    unsigned passes[EVENT_NEST_LIMIT];
+    /* $8E:BDD7 layer calls per depth; visits at a handoff. */
+    unsigned scroll_layers[EVENT_NEST_LIMIT];
+    /* $80:D38B passes ($83:8A6F tile clears) per depth. */
+    unsigned tile_clears[EVENT_NEST_LIMIT];
+    /* $80:D3CC passes ($83:8E85 region redraws) per depth. */
+    unsigned region_redraws[EVENT_NEST_LIMIT];
+    unsigned visits;
+    uint8_t has_visits;
+} EventRun;
+
 /* Actor, position and point opcodes; others hand off. */
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler,
+    EventRun *run,
     uint32_t *handoff);
 
 /* $80:E8AD: word operand, low byte first; leaves M=0. */

@@ -795,6 +795,59 @@ static void RegionCell(
     SimulateRtsFrame(memory, cpu);
 }
 
+/* Read-only $83:9000/9004. */
+static uint16_t RegionCellValue(
+    const Lufia2CpuState *cpu, uint16_t value, uint8_t round_up) {
+    if (round_up)
+        value = (uint16_t)(value + 0x000fu);
+    if (value & 0x8000u)
+        value = cpu->direct_page;
+    return (uint16_t)(value >> 4);
+}
+
+/* Read-only: the cells $83:8E85 draws for layer X; ~0 when X is no
+   layer, whose buffer could cover the direct page. */
+uint32_t Lufia2FieldRegionCells(
+    const Lufia2Memory *memory,
+    const Lufia2CpuState *cpu) {
+    const uint16_t origin = Read16Long(memory, 0x7fd046u);
+    const uint16_t end = (uint16_t)(Read16Long(memory, 0x7fd04cu) + origin);
+    uint8_t low[2], high[2], first[2], last[2];
+    uint16_t size;
+    unsigned axis;
+
+    if (cpu->x > 6u)
+        return 0xffffffffu;
+    {
+        const uint16_t x = Read16Long(memory, 0x00121eu + cpu->x);
+        const uint16_t y = Read16Long(memory, 0x001226u + cpu->x);
+
+        first[0] = (uint8_t)RegionCellValue(cpu, x, 1);
+        first[1] = (uint8_t)RegionCellValue(cpu, y, 0);
+        last[0] = (uint8_t)RegionCellValue(cpu, (uint16_t)(x + 0x0100u), 1);
+        last[1] = (uint8_t)RegionCellValue(cpu, (uint16_t)(y + 0x00ffu), 0);
+    }
+    low[0] = (uint8_t)origin;
+    low[1] = (uint8_t)(origin >> 8);
+    high[0] = (uint8_t)end;
+    high[1] = (uint8_t)(end >> 8);
+    for (axis = 0; axis < 2u; ++axis) {
+        if (!((uint8_t)(first[axis] - low[axis]) & 0x80u)) {
+            if (!((uint8_t)(first[axis] - high[axis]) & 0x80u))
+                return 0;
+            low[axis] = first[axis];
+        } else {
+            if ((uint8_t)(last[axis] - low[axis]) & 0x80u)
+                return 0;
+            if ((uint8_t)(last[axis] - high[axis]) & 0x80u)
+                high[axis] = last[axis];
+        }
+    }
+    size = (uint16_t)(((uint16_t)high[1] << 8 | high[0]) -
+                      ((uint16_t)low[1] << 8 | low[0]));
+    return (uint32_t)(size & 0xffu) * (size >> 8);
+}
+
 /* $83:8E85: redraw the cells of region $7F:D046 (x, y) + $D04C
    (w, h) that are visible in layer X into its row buffers; M=1. */
 void Lufia2FieldRedrawRegion(
