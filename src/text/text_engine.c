@@ -310,19 +310,12 @@ static void TextNextWord(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $80:A3C6: goto script base $099E/$09A0 + next word. */
-static void TextGoto(
+/* $80:C102: Y = A; below $8000 the script moves to the next bank. */
+static void TextSetScriptPointer(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    TextNextWord(memory, cpu, 0xa3c8u);                        /* A3C6 */
-    SetAccumulatorWidth(cpu, 0);
-    PushAccumulator16(memory, cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09a0u, 0));
-    Write16Absolute(memory, cpu, TEXT_SCRIPT_BANK, cpu->accumulator);
-    PullAccumulator16(memory, cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x099eu, 0));
-    SimulateJsrFrame(memory, cpu, 0xa3d9u);
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
     LoadA16(cpu, cpu->accumulator);                            /* C102 */
     if (cpu->negative) {
         LoadY16(cpu, cpu->accumulator);
@@ -340,6 +333,21 @@ static void TextGoto(
         UnpackStatus(cpu, Pull8(memory, cpu));
     }
     SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:A3C6: goto script base $099E/$09A0 + next word. */
+static void TextGoto(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    TextNextWord(memory, cpu, 0xa3c8u);                        /* A3C6 */
+    SetAccumulatorWidth(cpu, 0);
+    PushAccumulator16(memory, cpu);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09a0u, 0));
+    Write16Absolute(memory, cpu, TEXT_SCRIPT_BANK, cpu->accumulator);
+    PullAccumulator16(memory, cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x099eu, 0));
+    TextSetScriptPointer(memory, cpu, 0xa3d9u);
     SetAccumulatorWidth(cpu, 1);                               /* A3DA */
 }
 
@@ -508,7 +516,10 @@ enum TextOpcodeHandler {
     TEXT_OP_WRITE_PPU = 0xbc0b,                                /* $60 */
     TEXT_OP_SKIP_BRANCH = 0xbc3d,                              /* $68 */
     TEXT_OP_HIDE_ACTOR = 0xa679,                               /* $2E */
-    TEXT_OP_MUSIC = 0xb849                                     /* $4B */
+    TEXT_OP_MUSIC = 0xb849,                                    /* $4B */
+    TEXT_OP_WAIT_FOR_BUTTON = 0x9db3,                          /* $01 */
+    TEXT_OP_CHOICE = 0x9f37,                                   /* $0B */
+    TEXT_OP_WINDOW_MODE = 0xbcbc                               /* $69 */
 };
 
 /* $33: wait until actor $1269 stops moving. */
@@ -777,6 +788,231 @@ static unsigned TextOpMusic(
         return TEXT_OPCODE_NEXT;
     LoadAAbsolute8(memory, cpu, 0x099du, 0);                   /* B85F */
     *handoff = 0x80b862u;                                      /* JSL $80:93FE */
+    return TEXT_OPCODE_HANDOFF;
+}
+
+/* $80:C817: A & $47 (repeating buttons), consumed from $4B. */
+static void TextRepeatButton(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    And8(cpu, DirectByte(memory, cpu, 0x47u));                 /* C817 */
+    if (!cpu->zero)
+        TestBitsDirect(memory, cpu, 0x4bu, 0);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:C81E: A & $46 (new buttons), consumed from $4A. */
+static void TextPressedButton(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    And8(cpu, DirectByte(memory, cpu, DP_BUTTONS_HELD));       /* C81E */
+    if (!cpu->zero)
+        TestBitsDirect(memory, cpu, DP_BUTTONS_PRESSED, 0);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:9FE7 draw / $80:A019 erase the choice cursor at row $126A
+   of the window buffer ($7E:3040 + $7F:D085). */
+static void TextChoiceCursor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint8_t draw) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadAAbsolute8(memory, cpu, 0x126au, 0);                   /* 9FE7 */
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, 0x00u);
+    SetAccumulatorWidth(cpu, 0);
+    LsrA16(cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, 0x7fd085u));
+    TransferAToX(cpu);
+    if (draw) {
+        LoadA16(cpu, 0x20dcu);
+        Write16Long(memory, LongIndexedAddress(0x7e3040u, cpu->x), cpu->accumulator);
+        LoadA16(cpu, 0x20deu);
+        Write16Long(memory, LongIndexedAddress(0x7e3080u, cpu->x), cpu->accumulator);
+        LoadA16(cpu, 0x20ddu);
+        Write16Long(memory, LongIndexedAddress(0x7e3042u, cpu->x), cpu->accumulator);
+        LoadA16(cpu, 0x20dfu);
+        Write16Long(memory, LongIndexedAddress(0x7e3082u, cpu->x), cpu->accumulator);
+    } else {
+        LoadA16(cpu, 0x20dau);                                 /* A028 */
+        Write16Long(memory, LongIndexedAddress(0x7e3040u, cpu->x), cpu->accumulator);
+        Write16Long(memory, LongIndexedAddress(0x7e3080u, cpu->x), cpu->accumulator);
+        LoadA16(cpu, 0x20d7u);
+        Write16Long(memory, LongIndexedAddress(0x7e3042u, cpu->x), cpu->accumulator);
+        Write16Long(memory, LongIndexedAddress(0x7e3082u, cpu->x), cpu->accumulator);
+    }
+    SetAccumulatorWidth(cpu, 1);
+    if (draw) {
+        LoadA8(cpu, 0x08u);
+        StoreADirect8(memory, cpu, 0x74u);
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $01: wait for a button ($099B bit 1); the speaker $09AC sets
+   the typing sound from its $1291 ($80:C1DF). */
+static unsigned TextOpWaitForButton(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    StoreZeroAbsolute8(memory, cpu, 0x1266u, 0);               /* 9DB3 */
+    Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y);
+    LoadA8(cpu, 0x02u);
+    TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 1);
+    LoadA8(cpu, 0x01u);
+    TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
+    LoadAAbsolute8(memory, cpu, 0x09acu, 0);
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (!cpu->zero)
+        StoreAAbsolute8(memory, cpu, 0x09abu, 0);
+    SimulateJslFrame(memory, cpu, 0x80u, 0x9dd0u);
+    LoadAAbsolute8(memory, cpu, 0x09abu, 0);                   /* C1DF */
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (!cpu->zero) {
+        Lufia2EventFindActorId(memory, cpu, 0xc1e9u);
+        if (!cpu->carry) {
+            LoadXDirect(memory, cpu, DP_ACTOR_SLOT);           /* C1EC */
+            LoadAAbsolute8(memory, cpu, 0x1291u, cpu->x);
+            LsrA8(cpu);
+            LsrA8(cpu);
+            LsrA8(cpu);
+            LsrA8(cpu);
+            LsrA8(cpu);
+            cpu->carry = 0;
+            Adc8(cpu, 0x45u);
+            StoreAAbsolute8(memory, cpu, TEXT_TYPING_SOUND, 0);
+        }
+    }
+    SimulateRtlFrame(memory, cpu);
+    return TEXT_OPCODE_EXIT;
+}
+
+/* $0B: choice cursor, re-run every frame until A/X picks row $126A
+   (goto via the word table at $126D:$126B) or B cancels. */
+static unsigned TextOpChoice(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    LoadA8(cpu, 0x0fu);                                        /* 9F37 */
+    StoreAAbsolute8(memory, cpu, 0x0563u, 0);
+    LoadA8(cpu, 0x02u);
+    TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 1);
+    if (cpu->zero) {
+        StoreZeroAbsolute8(memory, cpu, 0x126au, 0);
+        TextChoiceCursor(memory, cpu, 0x9f48u, 1);
+    }
+    LoadA8(cpu, 0x08u);                                        /* 9F49 up */
+    TextRepeatButton(memory, cpu, 0x9f4du);
+    if (!cpu->zero) {
+        TextChoiceCursor(memory, cpu, 0x9f52u, 0);
+        StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x126au, 0), -1);
+    } else {
+        LoadA8(cpu, 0x04u);                                    /* 9F58 down */
+        TextRepeatButton(memory, cpu, 0x9f5cu);
+        if (cpu->zero)
+            goto confirm;
+        TextChoiceCursor(memory, cpu, 0x9f61u, 0);
+        StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x126au, 0), 1);
+    }
+    LoadAAbsolute8(memory, cpu, 0x126eu, 0);                   /* 9F65 */
+    DecrementA8(cpu);
+    StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x126au, 0), 1);
+    StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x126au, 0), -1);
+    if (cpu->negative) {
+        StoreAAbsolute8(memory, cpu, 0x126au, 0);              /* wrap to last */
+    } else {
+        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x126au, 0));
+        if (!cpu->carry)
+            StoreZeroAbsolute8(memory, cpu, 0x126au, 0);       /* wrap to first */
+    }
+    TextChoiceCursor(memory, cpu, 0x9f80u, 1);
+    goto wait;
+confirm:
+    LoadA8(cpu, 0xa0u);                                        /* 9F83 */
+    TextPressedButton(memory, cpu, 0x9f87u);
+    if (!cpu->zero) {
+        LoadAAbsolute8(memory, cpu, 0x126du, 0);
+        StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        TransferDirectToA(cpu);
+        LoadAAbsolute8(memory, cpu, 0x126au, 0);
+        SetAccumulatorWidth(cpu, 0);
+        AslA16(cpu);
+        cpu->carry = 0;
+        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x126bu, 0));
+        TextSetScriptPointer(memory, cpu, 0x9f9fu);
+        SetAccumulatorWidth(cpu, 1);
+        TextNextWord(memory, cpu, 0x9fa4u);                    /* choice target */
+        SetAccumulatorWidth(cpu, 0);
+        cpu->carry = 0;
+        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x099eu, 0));
+        PushAccumulator16(memory, cpu);
+        SetAccumulatorWidth(cpu, 1);
+        LoadAAbsolute8(memory, cpu, 0x09a0u, 0);
+        StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
+        SetAccumulatorWidth(cpu, 0);
+        PullAccumulator16(memory, cpu);
+        TextSetScriptPointer(memory, cpu, 0x9fb9u);
+        Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y);
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, 0x01u);
+        TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
+        LoadA8(cpu, 0x06u);
+        TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
+        return TEXT_OPCODE_NEXT;
+    }
+    LoadA8(cpu, 0x80u);                                        /* 9FCC cancel */
+    TextRepeatButton(memory, cpu, 0x9fd0u);
+    if (!cpu->zero) {
+        TextCloseWindow(memory, cpu, 0x9fd5u);
+        StoreZeroAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
+        LoadA8(cpu, 0x01u);
+        TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
+        return TEXT_OPCODE_NEXT;
+    }
+wait:
+    TextPrevByte(memory, cpu, 0x9fe3u);                        /* 9FE1 */
+    return TEXT_OPCODE_EXIT;
+}
+
+/* $69: window mode $09A7; bit 1 loads the window palette $A6:BFE0
+   into $0500 and waits for its upload ($80:BF0B, LLE). */
+static unsigned TextOpWindowMode(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    unsigned i;
+
+    TextNextByte(memory, cpu, 0xbcbeu);                        /* BCBC */
+    StoreAAbsolute8(memory, cpu, 0x09a7u, 0);
+    BitImmediate8(cpu, 0x02u);
+    if (cpu->zero)
+        return TEXT_OPCODE_NEXT;
+    SetAccumulatorWidth(cpu, 0);                               /* BCC6 */
+    SetIndexWidth(cpu, 0);
+    PushY(memory, cpu);
+    PushDataBank(memory, cpu);
+    LoadX16(cpu, 0xbfe0u);
+    LoadY16(cpu, 0x0500u);
+    LoadA16(cpu, 0x001fu);
+    for (i = 0; i < 0x20u; ++i) {                              /* MVN $00,$A6 */
+        Write8(memory, cpu->y, Read8(memory, 0xa60000u | cpu->x));
+        cpu->x = (uint16_t)(cpu->x + 1u);
+        cpu->y = (uint16_t)(cpu->y + 1u);
+    }
+    cpu->accumulator = 0xffffu;
+    cpu->data_bank = 0x00u;
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, 0x80u);
+    StoreADirect8(memory, cpu, 0x73u);
+    SimulateJsrFrame(memory, cpu, 0xbcdeu);
+    *handoff = 0x80bf0bu;                                      /* frame wait */
     return TEXT_OPCODE_HANDOFF;
 }
 
@@ -1153,6 +1389,12 @@ static unsigned TextScriptOpcode(
         return TextOpHideActor(memory, cpu);
     case TEXT_OP_MUSIC:
         return TextOpMusic(memory, cpu, handoff);
+    case TEXT_OP_WAIT_FOR_BUTTON:
+        return TextOpWaitForButton(memory, cpu);
+    case TEXT_OP_CHOICE:
+        return TextOpChoice(memory, cpu);
+    case TEXT_OP_WINDOW_MODE:
+        return TextOpWindowMode(memory, cpu, handoff);
     case TEXT_OP_NEW_LINE:
         return TextOpNewLine(memory, cpu);
     case TEXT_OP_SUB_SCRIPT_05:
