@@ -188,7 +188,8 @@ enum EventOpcodeHandler {
     EVENT_OP_RELEASE_ACTOR = 0xde52,                           /* $8B */
     EVENT_OP_HIDE_ACTOR = 0xddb5,                              /* $60 */
     EVENT_OP_SHOW_ACTOR = 0xddcc,                              /* $61 */
-    EVENT_OP_SPAWN_IN_AREA = 0xd516                            /* $78 */
+    EVENT_OP_SPAWN_IN_AREA = 0xd516,                           /* $78 */
+    EVENT_OP_CAMERA_LAYERS = 0xdc0d                            /* $59 */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */

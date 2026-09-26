@@ -1009,6 +1009,80 @@ static unsigned EventOpFork(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $59: with $1261 bit 6 set (cleared here) move layers 0-1 to the
+   leader camera and redraw both around it ($83:8E85), else save the
+   layer positions to $7F:D0CE-D0F0. */
+static unsigned EventOpCameraLayers(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    const uint32_t flags = AbsoluteIndexedAddress(cpu, 0x1261u, 0);
+    const uint8_t value = Read8(memory, flags);
+
+    LoadA8(cpu, 0x40u);                                        /* DC0D */
+    cpu->zero = (value & A8(cpu)) == 0;                        /* TRB */
+    Write8(memory, flags, (uint8_t)(value & ~A8(cpu)));
+    if (!cpu->zero) {
+        SetAccumulatorWidth(cpu, 0);                           /* DC14 */
+        LoadA16(cpu, Read16Long(memory, 0x7fddaeu));
+        Subtract16(cpu, 0x0080u);
+        Write16Long(memory, 0x00121eu, cpu->accumulator);
+        Write16Long(memory, 0x001220u, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, 0x7fde3eu));
+        Subtract16(cpu, 0x0070u);
+        Write16Long(memory, 0x001226u, cpu->accumulator);
+        Write16Long(memory, 0x001228u, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, 0x001220u));
+        LsrA16(cpu);
+        LsrA16(cpu);
+        LsrA16(cpu);
+        LsrA16(cpu);
+        Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, 0x001228u));
+        LsrA16(cpu);
+        LsrA16(cpu);
+        LsrA16(cpu);
+        LsrA16(cpu);
+        Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+        Write8(memory, 0x7fd046u, A8(cpu));
+        LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
+        Write8(memory, 0x7fd047u, A8(cpu));
+        LoadA8(cpu, 0x10u);
+        Write8(memory, 0x7fd04cu, A8(cpu));
+        LoadA8(cpu, 0x02u);
+        Write8(memory, 0x7fd04du, A8(cpu));
+        PushY(memory, cpu);
+        LoadX16(cpu, 0x0002u);
+        do {
+            PushIndex(memory, cpu);                            /* DC68 */
+            Lufia2FieldRedrawRegion(memory, cpu, 0xdc6cu);
+            cpu->x = PullIndexValue(memory, cpu);
+            LoadX16(cpu, (uint16_t)(cpu->x - 2u));
+        } while (!cpu->negative);
+        cpu->y = PullIndexValue(memory, cpu);
+    } else {
+        LoadX16(cpu, 0x0006u);                                 /* DC75 */
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16Long(memory, 0x001220u));
+        Write16Long(memory, 0x7fd0eeu, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, 0x001228u));
+        Write16Long(memory, 0x7fd0f0u, cpu->accumulator);
+        do {
+            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x00121eu, cpu->x)));
+            Write16Long(memory, LongIndexedAddress(0x7fd0ceu, cpu->x), cpu->accumulator);
+            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x001226u, cpu->x)));
+            Write16Long(memory, LongIndexedAddress(0x7fd0d6u, cpu->x), cpu->accumulator);
+            TransferDirectToA(cpu);
+            Write16Long(memory, LongIndexedAddress(0x7fd0deu, cpu->x), cpu->accumulator);
+            Write16Long(memory, LongIndexedAddress(0x7fd0e6u, cpu->x), cpu->accumulator);
+            LoadX16(cpu, (uint16_t)(cpu->x - 2u));
+        } while (!cpu->negative);
+    }
+    SetAccumulatorWidth(cpu, 1);                               /* DCA7 */
+    return EVENT_OPCODE_NEXT;
+}
+
 /* $10: redraw all layers ($83:8E66), then set redraw bits 0-1. */
 static unsigned EventOpRedrawLayers(
     const Lufia2Memory *memory,
@@ -1169,6 +1243,8 @@ static unsigned EventScriptOpcode(
     }
     if (handler == EVENT_OP_SPAWN_IN_AREA)
         run->total += 63u;
+    if (handler == EVENT_OP_CAMERA_LAYERS)
+        return EventOpCameraLayers(memory, cpu);
     if (handler == EVENT_OP_CLEAR_D081)
         return EventOpClearD081(memory, cpu);
     if (handler == EVENT_OP_START_EVENT_AND_END)

@@ -11,6 +11,12 @@ void Lufia2FieldIdleBody(
     Lufia2CpuState *cpu);
 
 /* $80:CBAE: event slot timers; 0 = LLE at resume_pc. */
+/* $83:8E85 from bank 80: redraw region $7F:D046/D04C in layer X. */
+void Lufia2FieldRedrawRegion(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address);
+
 /* $83:8E66: redraw all four BG layers. */
 void Lufia2FieldRedrawLayers(
     const Lufia2Memory *memory,

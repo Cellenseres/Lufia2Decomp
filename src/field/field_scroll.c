@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/field.h"
+#include "actor/actor_internal.h"
 #include "field/field_internal.h"
 #include "system/wram.h"
 
@@ -771,6 +772,212 @@ void Lufia2FieldRedrawLayers(
         LoadX16(cpu, (uint16_t)(cpu->x - 2u));                 /* 8E70 */
     } while (!cpu->negative);
     UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $83:9000 (rounding up) / $83:9004: A / 16, negative as D. */
+static void RegionCell(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint8_t round_up) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    if (round_up) {
+        cpu->carry = 0;                                        /* 9000 */
+        Add16Value(cpu, 0x000fu);
+    }
+    if (cpu->negative)                                         /* 9004 */
+        TransferDirectToA(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:8E85: redraw the cells of region $7F:D046 (x, y) + $D04C
+   (w, h) that are visible in layer X into its row buffers; M=1. */
+void Lufia2FieldRedrawRegion(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    unsigned axis;
+
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    PushDataBank(memory, cpu);                                 /* 8E85 */
+    PushIndex(memory, cpu);
+    PushY(memory, cpu);
+    LoadA8(cpu, 0x7fu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd046u, 0));
+    Write16Direct(memory, cpu, 0x9fu, cpu->accumulator);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd04cu, 0));
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Direct(memory, cpu, 0x9fu));
+    Write16Direct(memory, cpu, 0xa1u, cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x00121eu, cpu->x)));
+    RegionCell(memory, cpu, 0x8ea1u, 1);
+    Write16Direct(memory, cpu, 0x8fu, cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x001226u, cpu->x)));
+    RegionCell(memory, cpu, 0x8eaau, 0);
+    Write16Direct(memory, cpu, 0x91u, cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x00121eu, cpu->x)));
+    cpu->carry = 0;
+    Add16Value(cpu, 0x0100u);
+    RegionCell(memory, cpu, 0x8eb7u, 1);
+    Write16Direct(memory, cpu, 0x95u, cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x001226u, cpu->x)));
+    cpu->carry = 0;
+    Add16Value(cpu, 0x00ffu);
+    RegionCell(memory, cpu, 0x8ec4u, 0);
+    Write16Direct(memory, cpu, 0x96u, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    /* Clip x ($9F-$A1), then y ($A0-$A2), to the visible cells. */
+    for (axis = 0; axis < 2u; ++axis) {
+        const uint8_t low = (uint8_t)(0x9fu + axis);
+        const uint8_t high = (uint8_t)(0xa1u + axis);
+
+        LoadA8(cpu, DirectByte(memory, cpu, axis ? 0x91u : 0x8fu));
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, low));
+        if (!cpu->negative) {
+            Compare8(cpu, A8(cpu), DirectByte(memory, cpu, high));
+            if (!cpu->negative)
+                goto done;
+            Write8(memory, DirectAddress(cpu, low), A8(cpu));
+        } else {
+            LoadA8(cpu, DirectByte(memory, cpu, axis ? 0x96u : 0x95u));
+            Compare8(cpu, A8(cpu), DirectByte(memory, cpu, low));
+            if (cpu->negative)
+                goto done;
+            Compare8(cpu, A8(cpu), DirectByte(memory, cpu, high));
+            if (cpu->negative)
+                Write8(memory, DirectAddress(cpu, high), A8(cpu));
+        }
+    }
+    TransferDirectToA(cpu);                                    /* 8F02 */
+    LoadA8(cpu, DirectByte(memory, cpu, 0xa0u));
+    And8(cpu, 0x0fu);
+    ExchangeAccumulatorBytes(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    LsrA16(cpu);
+    Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x9fu));
+    And16(cpu, 0x000fu);
+    AslA16(cpu);
+    AslA16(cpu);
+    Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x838ff0u, cpu->x)));
+    Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd008u, cpu->x));
+    Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, 0x7eu);
+    Write8(memory, DirectAddress(cpu, 0x62u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, 0x5fu), A8(cpu));
+    LoadA8(cpu, DirectByte(memory, cpu, 0x9fu));
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0xa0u));
+    SimulateJsrFrame(memory, cpu, 0x8f31u);
+    Lufia2MapCellOffset(memory, cpu);                          /* $83:F9F7 */
+    SimulateRtsFrame(memory, cpu);
+    SetAccumulatorWidth(cpu, 0);                               /* 8F32 */
+    LoadA16(cpu, cpu->x);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Direct(memory, cpu, 0x56u));
+    TransferAToX(cpu);
+    LoadY16(cpu, Read16Direct(memory, cpu, 0x54u));
+    LoadA16(cpu, Read16Direct(memory, cpu, 0xa1u));
+    Subtract16(cpu, Read16Direct(memory, cpu, 0x9fu));
+    Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+    And16(cpu, 0x00ffu);
+    Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+    if (cpu->zero)
+        goto done;
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x55u));
+    And16(cpu, 0x00ffu);
+    Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
+    if (cpu->zero)
+        goto done;
+    LoadA16(cpu, Read16Long(memory, 0x0005b9u));
+    And16(cpu, 0x00ffu);
+    Subtract16(cpu, Read16Direct(memory, cpu, 0x56u));
+    AslA16(cpu);
+    Write16Direct(memory, cpu, 0x63u, cpu->accumulator);
+    LoadA16(cpu, cpu->y);
+    And16(cpu, 0xffc0u);
+    Write16Direct(memory, cpu, 0x60u, cpu->accumulator);
+    LoadA16(cpu, cpu->y);
+    And16(cpu, 0x003fu);
+    Write16Direct(memory, cpu, 0x65u, cpu->accumulator);
+    for (;;) {
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x56u));       /* 8F71 */
+        Write16Direct(memory, cpu, 0x58u, cpu->accumulator);
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x60u));
+        cpu->carry = 0;
+        Add16Value(cpu, 0x0040u);
+        Write16Direct(memory, cpu, 0x5du, cpu->accumulator);
+        LoadY16(cpu, Read16Direct(memory, cpu, 0x65u));
+        for (;;) {
+            StoreXDirect16(memory, cpu, 0x54u);                /* 8F7F */
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
+            And16(cpu, 0x3000u);
+            Compare16(cpu, cpu->accumulator, 0x3000u);
+            if (cpu->zero)
+                LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd008u, 0));
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
+            And16(cpu, 0x03ffu);
+            AslA16(cpu);
+            AslA16(cpu);
+            AslA16(cpu);
+            Add16Value(cpu, Read16Long(memory, 0x7fd03cu));
+            TransferAToX(cpu);
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
+            Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x60u), cpu->accumulator);
+            LoadY16(cpu, (uint16_t)(cpu->y + 2u));
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0004u, cpu->x));
+            Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x60u), cpu->accumulator);
+            LoadY16(cpu, (uint16_t)(cpu->y - 2u));
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0002u, cpu->x));
+            Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x5du), cpu->accumulator);
+            LoadY16(cpu, (uint16_t)(cpu->y + 2u));
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0006u, cpu->x));
+            Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x5du), cpu->accumulator);
+            Decrement16Direct(memory, cpu, 0x58u);
+            if (cpu->zero)
+                break;
+            LoadA16(cpu, (uint16_t)(cpu->y + 2u));             /* 8FBB */
+            And16(cpu, 0x003fu);
+            TransferAToY(cpu);
+            LoadXDirect(memory, cpu, 0x54u);
+            IncrementX16(cpu);
+            IncrementX16(cpu);
+        }
+        Decrement16Direct(memory, cpu, 0x5au);                 /* 8FC8 */
+        if (cpu->zero)
+            break;
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+        cpu->carry = 0;
+        Add16Value(cpu, Read16Direct(memory, cpu, 0x63u));
+        Add16Value(cpu, 0x0002u);
+        TransferAToX(cpu);
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x60u));
+        TransferAToY(cpu);
+        Add16Value(cpu, 0x0080u);
+        And16(cpu, 0x07ffu);
+        Write16Direct(memory, cpu, 0x60u, cpu->accumulator);
+        LoadA16(cpu, cpu->y);
+        And16(cpu, 0xf800u);
+        LoadA16(cpu, (uint16_t)(cpu->accumulator | Read16Direct(memory, cpu, 0x60u)));
+        Write16Direct(memory, cpu, 0x60u, cpu->accumulator);
+    }
+done:
+    SetAccumulatorWidth(cpu, 1);                               /* 8FEA */
+    cpu->y = PullIndexValue(memory, cpu);
+    cpu->x = PullIndexValue(memory, cpu);
+    PullDataBank(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
