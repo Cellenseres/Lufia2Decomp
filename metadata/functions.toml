@@ -713,3 +713,43 @@ source = "src/menu/menu_screen.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:8378"
+name = "Lufia2Divide16"
+source = "src/system/math.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8CDA"
+name = "Lufia2SpriteSetTable"
+source = "src/menu/menu_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F3F4"
+name = "Lufia2SpellRecordByteC"
+source = "src/item/item_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F404"
+name = "Lufia2SpellRecordByte8"
+source = "src/item/item_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9CB2"
+name = "Lufia2MenuWarpList"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -119,6 +119,16 @@ Lufia2ExecutionResult Lufia2MenuEquipUpgrade(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $86:8CDA sprite slot X animation list from $8E:D9A9,Y; M1X0. */
+Lufia2ExecutionResult Lufia2SpriteSetTable(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:9CB2 warp destinations list; M1X0. */
+Lufia2ExecutionResult Lufia2MenuWarpList(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $86:81A9 NMI installed by $86:8000. */
 Lufia2ExecutionResult Lufia2SelectScreenNmi(
     const Lufia2Memory *memory,

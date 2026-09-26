@@ -52,3 +52,21 @@ Lufia2ExecutionResult Lufia2SpriteSetAnimation(
     cpu->y = PullIndexValue(memory, cpu);
     return ExecutionReturned(0x868d46u);
 }
+
+/* $86:8CDA: slot X animation list from $8E:D9A9,Y. */
+Lufia2ExecutionResult Lufia2SpriteSetTable(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    PushDataBank(memory, cpu);
+    LoadA8(cpu, 0x8eu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    LoadAAbsolute8(memory, cpu, 0xd9a9u, cpu->y);
+    Write8(memory, LongIndexedAddress(0x001268u, cpu->x), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0xd9aau, cpu->y);
+    Write8(memory, LongIndexedAddress(0x001298u, cpu->x), A8(cpu));
+    LoadA8(cpu, 0x8eu);
+    Write8(memory, LongIndexedAddress(0x001238u, cpu->x), A8(cpu));
+    PullDataBank(memory, cpu);
+    return ExecutionReturned(0x868cf4u);
+}

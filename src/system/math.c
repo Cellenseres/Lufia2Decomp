@@ -108,3 +108,31 @@ void Lufia2CallCosine(
         value = QuarterSine(memory, (uint8_t)(angle - 0x87u));
     TrigLeave(memory, cpu, value);
 }
+
+/* $80:8378: $4E = $4E / $51, A = remainder; 16 shift-subtract steps. */
+Lufia2ExecutionResult Lufia2Divide16(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    unsigned i;
+
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    LoadA16(cpu, 0x0000u);
+    for (i = 0; i < 16u; ++i) {
+        const uint16_t quotient = Read16Direct(memory, cpu, 0x4eu);
+
+        cpu->carry = (quotient & 0x8000u) != 0;                /* ASL $4E */
+        Write16Direct(memory, cpu, 0x4eu, (uint16_t)(quotient << 1));
+        RolA16(cpu);
+        if (!cpu->carry) {
+            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x51u));
+            if (!cpu->carry)
+                continue;
+        }
+        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x51u));
+        Increment16Direct(memory, cpu, 0x4eu);
+    }
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x80844fu);
+}

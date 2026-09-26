@@ -241,3 +241,33 @@ Lufia2ExecutionResult Lufia2ItemRecordByte(
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x81f1aau);
 }
+
+static Lufia2ExecutionResult SpellRecordAt(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint16_t return_address, uint16_t offset,
+    uint32_t rtl) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    SpellRecordAddress(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SPELL_RECORD, 0));
+    PushDataBank(memory, cpu);
+    LoadA8(cpu, 0x95u);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    LoadAAbsolute8(memory, cpu, offset, cpu->y);
+    PullDataBank(memory, cpu);
+    return ExecutionReturned(rtl);
+}
+
+/* $81:F3F4: A = spell record byte $0C. */
+Lufia2ExecutionResult Lufia2SpellRecordByteC(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    return SpellRecordAt(memory, cpu, 0xf3f6u, 0x000cu, 0x81f403u);
+}
+
+/* $81:F404: A = spell record byte 8. */
+Lufia2ExecutionResult Lufia2SpellRecordByte8(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    return SpellRecordAt(memory, cpu, 0xf406u, 0x0008u, 0x81f413u);
+}

@@ -1663,3 +1663,250 @@ Lufia2ExecutionResult Lufia2MenuEquipUpgrade(
     cpu->carry = !changed;
     return ExecutionReturned(changed ? 0x82b2f5u : 0x82b2fdu);
 }
+
+/* $82:89C4: two cursor sprites: X (animation $57, or off), $5A. */
+static void MenuCursorPair(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    StoreXDirect16(memory, cpu, 0x58u);
+    StoreYDirect16(memory, cpu, 0x5au);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
+    if (cpu->zero) {
+        StoreZeroAbsolute8(memory, cpu, 0x11d8u, cpu->x);
+    } else {
+        Jsr(memory, cpu, 0x89d3u);
+        MenuCursorAnimation(memory, cpu);
+        Rts(memory, cpu);
+    }
+    LoadX16(cpu, (uint16_t)(Read16Direct(memory, cpu, 0x5au) - 5u));
+    StoreXDirect16(memory, cpu, 0x63u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
+    LoadX16(cpu, Read16Direct(memory, cpu, 0x5au));
+    Jsr(memory, cpu, 0x89e3u);
+    MenuCursorAnimation(memory, cpu);
+    Rts(memory, cpu);
+    LoadY16(cpu, Read16Direct(memory, cpu, 0x54u));
+    LoadX16(cpu, Read16Direct(memory, cpu, 0x63u));
+    Jsr(memory, cpu, 0x89eau);
+    MenuCursorPlace(memory, cpu);
+    Rts(memory, cpu);
+}
+
+/* $82:8C9C: scrollbar thumb sprite (slot 11) at Y. */
+static void MenuScrollThumb(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, cpu->y);
+    SetAccumulatorWidth(cpu, 1);
+    LoadX16(cpu, 0x000bu);
+    StoreAAbsolute8(memory, cpu, 0x13e8u, cpu->x);
+    StoreAAbsolute8(memory, cpu, 0x150au, 0);
+    ExchangeAccumulatorBytes(cpu);
+    StoreAAbsolute8(memory, cpu, 0x1388u, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, 0x1418u, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, 0x13b8u, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, 0x1509u, 0);
+    StoreZeroAbsolute8(memory, cpu, 0x1448u, cpu->x);
+    LoadA8(cpu, 0x04u);
+    SimulateJslFrame(memory, cpu, 0x82u, 0x8cbfu);
+    (void)Lufia2SpriteSetAnimation(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $82:8CC1: thumb step = $150B / rows past the window. */
+static void MenuScrollStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, 0x00u);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x152eu, 0));
+    Compare16(cpu, cpu->x, 0x0000u);
+    if (!cpu->negative && !cpu->zero) {
+        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x150bu, 0));
+        StoreXDirect16(memory, cpu, 0x4eu);
+        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x152eu, 0));
+        StoreXDirect16(memory, cpu, 0x51u);
+        SimulateJslFrame(memory, cpu, 0x82u, 0x8cdau);
+        (void)Lufia2Divide16(memory, cpu);
+        SimulateRtlFrame(memory, cpu);
+        LoadX16(cpu, Read16Direct(memory, cpu, 0x4eu));
+        Write16Absolute(memory, cpu, 0x150du, cpu->x);
+        LoadA8(cpu, 0x01u);
+    }
+    LoadX16(cpu, 0x000bu);
+    StoreAAbsolute8(memory, cpu, 0x11d8u, cpu->x);
+}
+
+/* $82:8C43: thumb y = $1509 + row * step; frame 4 at the ends. */
+static void MenuScrollPlace(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadX16(cpu, 0x000bu);
+    LoadAAbsolute8(memory, cpu, 0x11d8u, cpu->x);
+    if (cpu->zero)
+        return;
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x150fu, 0));
+    Write16Absolute(memory, cpu, 0x1570u, cpu->y);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x150du, 0));
+    Write16Absolute(memory, cpu, 0x1572u, cpu->x);
+    Lufia2CallMultiply(memory, cpu, 0x82u, 0x8c5cu);
+    LoadX16(cpu, 0x000bu);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1509u, 0));
+    cpu->carry = 0;
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1574u, 0));
+    SetAccumulatorWidth(cpu, 1);
+    ExchangeAccumulatorBytes(cpu);
+    StoreAAbsolute8(memory, cpu, 0x13e8u, cpu->x);
+    LoadA8(cpu, 0x04u);
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x150fu, 0));
+    if (!cpu->zero) {
+        Compare16(cpu, cpu->y, Read16AbsoluteIndexed(memory, cpu, 0x152eu, 0));
+        if (!cpu->zero)
+            LoadA8(cpu, 0x05u);
+    }
+    Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x1208u, cpu->x));
+    if (cpu->zero)
+        return;
+    SimulateJslFrame(memory, cpu, 0x82u, 0x8c83u);
+    (void)Lufia2SpriteSetAnimation(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $82:8C85: scroll range from X rows (carry: halve), then thumb. */
+static void MenuScrollbar(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SetAccumulatorWidth(cpu, 0);
+    TransferXToA(cpu);
+    if (cpu->carry) {
+        IncrementA16(cpu);
+        LsrA16(cpu);
+    }
+    Subtract16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1530u, 0));
+    StoreAAbsolute16(memory, cpu, 0x152eu, 0);
+    SetAccumulatorWidth(cpu, 1);
+    Jsr(memory, cpu, 0x8c97u);
+    MenuScrollStep(memory, cpu);
+    Rts(memory, cpu);
+    Jsr(memory, cpu, 0x8c9au);
+    MenuScrollPlace(memory, cpu);
+    Rts(memory, cpu);
+}
+
+/* $82:8680: $15 rows of $7E:943C string pointers ($8E) from index $00. */
+static int MenuPointerRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionResult *text) {
+    StoreA8Absolute(memory, cpu, 0x0564u, 0x20u);
+    LoadA8(cpu, 0x8eu);
+    StoreADirect8(memory, cpu, 0x5fu);
+    LoadA8(cpu, 0x8eu);
+    StoreADirect8(memory, cpu, 0x0au);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x00u));
+    AslA16(cpu);
+    TransferAToX(cpu);
+    do {
+        StoreXDirect16(memory, cpu, 0x19u);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7e943cu, cpu->x)));
+        Compare16(cpu, cpu->accumulator, 0xffffu);
+        if (cpu->zero)
+            break;
+        StoreADirect16(memory, cpu, 0x08u);
+        SetAccumulatorWidth(cpu, 1);
+        LoadY16(cpu, 0xd062u);
+        LoadX16(cpu, Read16Direct(memory, cpu, 0x11u));
+        if (DrawString(memory, cpu, 0x86aau, text))
+            return 1;
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x11u));
+        cpu->carry = 0;
+        Add16Value(cpu, 0x0080u);
+        StoreADirect16(memory, cpu, 0x11u);
+        LoadX16(cpu, Read16Direct(memory, cpu, 0x19u));
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        Decrement16Direct(memory, cpu, 0x15u);
+    } while (!cpu->zero);
+    SetAccumulatorWidth(cpu, 1);
+    TsbDirect(memory, cpu, 0x74u, 0x08u);
+    return 0;
+}
+
+/* $82:9CB2: warp destinations list with scrollbar. */
+Lufia2ExecutionResult Lufia2MenuWarpList(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult text;
+
+    LoadX16(cpu, 0xffb0u);
+    SimulateJslFrame(memory, cpu, 0x82u, 0x9cb8u);
+    MenuClearSlots(memory, cpu, 0x11d8u);
+    SimulateRtlFrame(memory, cpu);
+    StoreA8Absolute(memory, cpu, 0x153fu, 0x01u);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, 0x0342u);
+    LoadX16(cpu, 0x1e13u);
+    Jsr(memory, cpu, 0x9cc8u);
+    MenuClearRect(memory, cpu);
+    Rts(memory, cpu);
+    Window(memory, cpu, 0x0348u, 0x1b03u, 0x9cd1u);
+    Window(memory, cpu, 0x0408u, 0x1b0bu, 0x9cdau);
+    SetAccumulatorWidth(cpu, 1);
+    if (Text8E(memory, cpu, 0xd045u, 0x9cecu, &text))
+        return text;
+    LoadX16(cpu, 0x0003u);
+    StoreZeroAbsolute8(memory, cpu, 0x14d9u, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, 0x14ebu, cpu->x);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x150fu, 0));
+    Write16Long(memory, 0x7e93c0u, cpu->accumulator);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x14b5u, 0));
+    Write16Long(memory, 0x7e93c2u, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadX16(cpu, 0x0000u);
+    Write16Absolute(memory, cpu, 0x150fu, 0);
+    Write16Absolute(memory, cpu, 0x14b5u, 0);
+    LoadX16(cpu, 0x003fu);
+    StoreXDirect16(memory, cpu, 0x54u);
+    LoadX16(cpu, 0x0001u);
+    StoreXDirect16(memory, cpu, 0x56u);
+    LoadX16(cpu, 0x0009u);
+    LoadY16(cpu, 0x0008u);
+    Jsr(memory, cpu, 0x9d23u);
+    MenuCursorPair(memory, cpu);
+    Rts(memory, cpu);
+    LoadY16(cpu, 0xf08au);
+    Jsr(memory, cpu, 0x9d29u);
+    MenuScrollThumb(memory, cpu);
+    Rts(memory, cpu);
+    LoadX16(cpu, 0x4800u);
+    Write16Absolute(memory, cpu, 0x150bu, 0x4800u);
+    LoadAAbsolute8(memory, cpu, 0x14b9u, 0);
+    StoreZeroAbsolute8(memory, cpu, 0x14b7u, 0);
+    cpu->carry = 1;
+    Sbc8(cpu, 0x06u);
+    if (!cpu->negative) {
+        StoreAAbsolute8(memory, cpu, 0x14b7u, 0);
+    } else {
+        LoadAAbsolute8(memory, cpu, 0x14b9u, 0);
+        StoreAAbsolute8(memory, cpu, 0x14fau, 0);
+    }
+    cpu->carry = 0;
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x14b9u, 0));
+    Jsr(memory, cpu, 0x9d4cu);
+    MenuScrollbar(memory, cpu);
+    Rts(memory, cpu);
+    Jsr(memory, cpu, 0x9d4fu);                                 /* B052 */
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, 0x040eu);
+    LoadX16(cpu, 0x1410u);
+    Jsr(memory, cpu, 0xb05cu);
+    MenuClearRect2(memory, cpu);
+    Rts(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadX16(cpu, 0x344eu);
+    StoreXDirect16(memory, cpu, 0x11u);
+    LoadX16(cpu, 0x0006u);
+    StoreXDirect16(memory, cpu, 0x15u);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x14b5u, 0));
+    StoreXDirect16(memory, cpu, 0x00u);
+    Jsr(memory, cpu, 0xb070u);
+    if (MenuPointerRows(memory, cpu, &text))
+        return text;
+    Rts(memory, cpu);
+    Rts(memory, cpu);
+    TsbDirect(memory, cpu, 0x74u, 0x88u);
+    return ExecutionReturned(0x829d54u);
+}

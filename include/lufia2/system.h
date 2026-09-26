@@ -14,6 +14,11 @@ Lufia2ExecutionResult Lufia2DecompressResource(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:8378 $4E /= $51, A = remainder; any width. */
+Lufia2ExecutionResult Lufia2Divide16(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $80:8299: A = (A.low * next random byte) >> 8. */
 void Lufia2RandomScale(
     const Lufia2Memory *memory,
