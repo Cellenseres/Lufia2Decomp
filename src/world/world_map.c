@@ -1,6 +1,7 @@
 /* World map NMI, streaming and regions. */
 
 #include "core/cpu_internal.h"
+#include "lufia2/system.h"
 #include "lufia2/world_map.h"
 #include "system/wram.h"
 
@@ -769,4 +770,265 @@ Lufia2ExecutionResult Lufia2WorldMapRegionSearch(
     }
     PullDataBank(memory, cpu);                                 /* 9F11 */
     return ExecutionReturned(0x869f12u);
+}
+
+/* $86:A583: $52 += $50 * $4E (16-bit) via $4202; low byte in $51. */
+static void WorldScaleStep(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x50u));               /* A583 */
+    StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x4eu));
+    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x4fu));
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+    StoreXDirect16(memory, cpu, 0x51u);
+    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+    Write8(memory, DirectAddress(cpu, 0x53u), 0x00u);
+    SetAccumulatorWidth(cpu, 0);
+    LoadADirect16(memory, cpu, 0x52u);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+    StoreADirect16(memory, cpu, 0x52u);
+    SetAccumulatorWidth(cpu, 1);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* A16 negated into a word at dp; its sign byte at dp + 2. */
+static void WorldStoreNegated(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t from,
+    uint8_t to) {
+    LoadADirect16(memory, cpu, from);
+    LoadA16(cpu, (uint16_t)~cpu->accumulator);
+    IncrementA16(cpu);
+    StoreADirect16(memory, cpu, to);
+    SetAccumulatorWidth(cpu, 1);
+    if (!cpu->zero)
+        LoadA8(cpu, 0xffu);
+    StoreADirect8(memory, cpu, (uint8_t)(to + 2u));
+}
+
+/* $86:A417: polar step: angle $1248 (256 per turn), radius $1249
+   (8.8); x into $08-$0A and y into $0B-$0D (24-bit). */
+static void WorldPolarOffset(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1249u, 0)); /* A417 */
+    StoreXDirect16(memory, cpu, 0x4eu);
+    LoadAAbsolute8(memory, cpu, 0x1248u, 0);
+    LsrA8(cpu);
+    LsrA8(cpu);
+    LsrA8(cpu);
+    LsrA8(cpu);
+    LsrA8(cpu);
+    LsrA8(cpu);
+    StoreADirect8(memory, cpu, 0x10u);                         /* quadrant */
+    LoadA8(cpu, 0x00u);
+    ExchangeAccumulatorBytes(cpu);
+    LoadAAbsolute8(memory, cpu, 0x1248u, 0);
+    And8(cpu, 0x3fu);
+    if (cpu->zero) {
+        StoreXDirect16(memory, cpu, 0x52u);                    /* A462 */
+        LoadX16(cpu, 0x0000u);
+        StoreXDirect16(memory, cpu, 0x0eu);
+    } else {
+        StoreADirect8(memory, cpu, 0x05u);                     /* A431 */
+        AslA8(cpu);
+        TransferAToX(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x97b226u, cpu->x)));
+        StoreADirect8(memory, cpu, 0x50u);
+        WorldScaleStep(memory, cpu, 0xa43du);
+        LoadXDirect16(memory, cpu, 0x52u);
+        StoreXDirect16(memory, cpu, 0x0eu);
+        LoadA8(cpu, 0x00u);
+        ExchangeAccumulatorBytes(cpu);
+        LoadA8(cpu, 0x40u);
+        cpu->carry = 1;
+        Sbc8(cpu, DirectByte(memory, cpu, 0x05u));
+        AslA8(cpu);
+        TransferAToX(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x97b226u, cpu->x)));
+        StoreADirect8(memory, cpu, 0x50u);
+        WorldScaleStep(memory, cpu, 0xa454u);
+    }
+    LoadA8(cpu, DirectByte(memory, cpu, 0x10u));               /* A455 */
+    AslA8(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    And16(cpu, 0x0006u);
+    TransferAToX(cpu);
+    SimulateJsrFrame(memory, cpu, 0xa460u);                    /* JSR ($A46B,x) */
+    switch (cpu->x) {
+    case 0:                                                    /* A473 */
+        WorldStoreNegated(memory, cpu, 0x0eu, 0x08u);
+        SetAccumulatorWidth(cpu, 0);
+        WorldStoreNegated(memory, cpu, 0x52u, 0x0bu);
+        break;
+    case 2:                                                    /* A496 */
+        LoadADirect16(memory, cpu, 0x0eu);
+        StoreADirect16(memory, cpu, 0x0bu);
+        WorldStoreNegated(memory, cpu, 0x52u, 0x08u);
+        Write8(memory, DirectAddress(cpu, 0x0du), 0x00u);
+        break;
+    case 4:                                                    /* A4AD */
+        LoadADirect16(memory, cpu, 0x0eu);
+        StoreADirect16(memory, cpu, 0x08u);
+        LoadADirect16(memory, cpu, 0x52u);
+        StoreADirect16(memory, cpu, 0x0bu);
+        SetAccumulatorWidth(cpu, 1);
+        Write8(memory, DirectAddress(cpu, 0x0au), 0x00u);
+        Write8(memory, DirectAddress(cpu, 0x0du), 0x00u);
+        break;
+    default:                                                   /* A4BC */
+        LoadADirect16(memory, cpu, 0x52u);
+        StoreADirect16(memory, cpu, 0x08u);
+        WorldStoreNegated(memory, cpu, 0x0eu, 0x0bu);
+        Write8(memory, DirectAddress(cpu, 0x0au), 0x00u);
+        break;
+    }
+    SimulateRtsFrame(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* One chain link: position = previous + ($09,$0C), sprite = position
+   + wobble ($1E5A/$1E5B) + shake ($15/$17); y in $E0-$F7 hides it. */
+static void WorldChainSprite(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t follow) {
+    if (follow) {
+        LoadAAbsolute8(memory, cpu, 0x1e54u, cpu->x);          /* E967 */
+        cpu->carry = 0;
+        Adc8(cpu, DirectByte(memory, cpu, 0x09u));
+        StoreAAbsolute8(memory, cpu, 0x1e58u, cpu->x);
+    } else {
+        LoadAAbsolute8(memory, cpu, 0x1e58u, cpu->x);          /* E99F */
+    }
+    cpu->carry = 0;
+    Adc8(cpu, AbsoluteByte(memory, cpu, 0x1e5au, cpu->x));
+    cpu->carry = 0;
+    Adc8(cpu, DirectByte(memory, cpu, 0x15u));
+    StoreAAbsolute8(memory, cpu, 0x0100u, cpu->x);             /* OAM x */
+    if (follow) {
+        LoadAAbsolute8(memory, cpu, 0x1e55u, cpu->x);
+        Adc8(cpu, DirectByte(memory, cpu, 0x0cu));
+        StoreAAbsolute8(memory, cpu, 0x1e59u, cpu->x);
+        cpu->carry = 0;
+    } else {
+        LoadAAbsolute8(memory, cpu, 0x1e59u, cpu->x);
+    }
+    Adc8(cpu, AbsoluteByte(memory, cpu, 0x1e5bu, cpu->x));
+    cpu->carry = 0;
+    Adc8(cpu, DirectByte(memory, cpu, 0x17u));
+    Compare8(cpu, A8(cpu), 0xf8u);
+    if (!cpu->carry) {
+        Compare8(cpu, A8(cpu), 0xe0u);
+        if (cpu->carry) {
+            LoadA8(cpu, 0x3cu);
+            StoreAAbsolute8(memory, cpu, 0x0102u, cpu->x);
+        }
+    }
+    StoreAAbsolute8(memory, cpu, 0x0101u, cpu->x);             /* OAM y */
+}
+
+/* $86:E8CE: world map sprite chain: 22 OAM entries, each one polar
+   step (angle toward $1211 - $1219, random spread) from the previous;
+   the shake $1E50/$1E52 decays by $1E54/$1E56, and past frame $4AA
+   ($42) the chain drifts. */
+Lufia2ExecutionResult Lufia2WorldSpriteChain(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    unsigned axis;
+
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x86e8ceu);
+    SetAccumulatorWidth(cpu, 0);                               /* E8CE */
+    for (axis = 0; axis < 2u; ++axis) {
+        const uint16_t shake = axis ? 0x1e52u : 0x1e50u;
+
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, shake, 0));
+        if (!cpu->zero) {
+            Subtract16(cpu, Read16AbsoluteIndexed(
+                memory, cpu, (uint16_t)(shake + 4u), 0));
+            if (!cpu->carry)
+                LoadA16(cpu, 0x0000u);
+        }
+        StoreAAbsolute16(memory, cpu, shake, 0);
+        ExchangeAccumulatorBytes(cpu);
+        And16(cpu, 0x00ffu);
+        StoreADirect16(memory, cpu, axis ? 0x17u : 0x15u);
+    }
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1e54u, 0)); /* E8FE */
+    Subtract16(cpu, 0x0004u);
+    StoreAAbsolute16(memory, cpu, 0x1e54u, 0);
+    StepAbsolute16(memory, cpu, 0x1e56u, -1);
+    LoadADirect16(memory, cpu, 0x42u);
+    Subtract16(cpu, 0x04aau);
+    SetAccumulatorWidth(cpu, 1);
+    if (cpu->carry) {
+        PushAccumulator8(memory, cpu);                         /* E915 */
+        LoadA8(cpu, (uint8_t)~A8(cpu));
+        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+        StoreADirect8(memory, cpu, 0x17u);
+        LoadA8(cpu, Pull8(memory, cpu));
+        LsrA8(cpu);
+        StoreADirect8(memory, cpu, 0x00u);
+        LsrA8(cpu);
+        StoreADirect8(memory, cpu, 0x15u);
+        LsrA8(cpu);
+        cpu->carry = 0;
+        Adc8(cpu, DirectByte(memory, cpu, 0x15u));
+        StoreADirect8(memory, cpu, 0x15u);
+        LoadAAbsolute8(memory, cpu, 0x1211u, 0);
+        cpu->carry = 1;
+        Sbc8(cpu, AbsoluteByte(memory, cpu, 0x1219u, 0));
+        cpu->carry = 1;
+        Sbc8(cpu, DirectByte(memory, cpu, 0x00u));
+    } else {
+        LoadAAbsolute8(memory, cpu, 0x1211u, 0);               /* E934 */
+        cpu->carry = 1;
+        Sbc8(cpu, AbsoluteByte(memory, cpu, 0x1219u, 0));
+    }
+    cpu->carry = 0;                                            /* E93B */
+    Adc8(cpu, 0x80u);
+    StoreAAbsolute8(memory, cpu, 0x1248u, 0);                  /* angle */
+    LoadA8(cpu, 0x05u);
+    SimulateJslFrame(memory, cpu, 0x86u, 0xe946u);
+    Lufia2RandomScale(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    cpu->carry = 0;
+    Adc8(cpu, AbsoluteByte(memory, cpu, 0x1248u, 0));
+    StoreAAbsolute8(memory, cpu, 0x1248u, 0);
+    LoadA8(cpu, 0x02u);
+    SimulateJslFrame(memory, cpu, 0x86u, 0xe953u);
+    Lufia2RandomScale(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    cpu->carry = 0;
+    Adc8(cpu, 0x03u);
+    StoreAAbsolute8(memory, cpu, 0x124au, 0);                  /* radius */
+    StoreZeroAbsolute8(memory, cpu, 0x1249u, 0);
+    StoreZeroAbsolute8(memory, cpu, 0x1247u, 0);
+    WorldPolarOffset(memory, cpu, 0xe962u);
+    SetIndexWidth(cpu, 1);                                     /* E963 */
+    LoadX8(cpu, 0x54u);
+    do {
+        WorldChainSprite(memory, cpu, 1);
+        LoadX8(cpu, (uint8_t)(cpu->x - 1u));
+        LoadX8(cpu, (uint8_t)(cpu->x - 1u));
+        LoadX8(cpu, (uint8_t)(cpu->x - 1u));
+        LoadX8(cpu, (uint8_t)(cpu->x - 1u));
+    } while (!cpu->zero);
+    WorldChainSprite(memory, cpu, 0);                          /* head */
+    LoadAAbsolute8(memory, cpu, 0x0102u, cpu->x);              /* E9C5 */
+    Compare8(cpu, A8(cpu), 0x1fu);
+    if (!cpu->zero)
+        LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0x01u));
+    StoreAAbsolute8(memory, cpu, 0x0102u, cpu->x);
+    SetIndexWidth(cpu, 0);
+    return ExecutionReturned(0x86e9d3u);                       /* RTS */
 }

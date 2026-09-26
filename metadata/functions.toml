@@ -447,3 +447,12 @@ source = "src/title/title.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# World map sprite chain, JSR'd every frame by the loop at $86:9365.
+[[function]]
+address = "86:E8CE"
+name = "Lufia2WorldSpriteChain"
+source = "src/world/world_map.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
