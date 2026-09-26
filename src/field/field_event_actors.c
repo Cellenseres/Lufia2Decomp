@@ -521,7 +521,7 @@ static uint8_t EventActorTarget(
 
 /* $83:8B40: map object A ($7E:F016 list, stride 10) into
    $7F:D04A/D04C/D05F; a miss reads the list's end entry. 0 = handoff. */
-static uint8_t EventMapObject(
+uint8_t Lufia2EventMapObject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address,
@@ -621,7 +621,7 @@ static uint8_t EventPlaceActor(
     SimulateJsrFrame(memory, cpu, return_address);
     SimulateJsrFrame(memory, cpu, 0xdfb7u);                    /* DFB5 */
     StoreADirect8(memory, cpu, 0x24u);                         /* DFC2 */
-    if (!EventMapObject(memory, cpu, 0xdfc7u, handoff))
+    if (!Lufia2EventMapObject(memory, cpu, 0xdfc7u, handoff))
         return 0;
     EventClaimActor(memory, cpu);
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* DFCC */

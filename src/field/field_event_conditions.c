@@ -767,6 +767,181 @@ static unsigned EventOpSameTiles(
     return EventGotoIfTrue(memory, cpu);
 }
 
+/* $80:E2ED: result 0 and carry when the $D04C x $D04D tile block at
+   $5D differs from the one at $60 in layer X; DB = $7F. */
+static void EventBlockDiffers(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    PushY(memory, cpu);                                        /* E2ED */
+    LoadAAbsolute8(memory, cpu, 0xd04du, 0);
+    StoreADirect8(memory, cpu, 0x5au);
+    Write8(memory, DirectAddress(cpu, 0x5bu), 0x00u);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd008u, cpu->x));
+    StoreADirect16(memory, cpu, 0x54u);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Direct(memory, cpu, 0x5du));
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Direct(memory, cpu, 0x60u));
+    TransferAToY(cpu);
+    do {
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd04cu, 0));  /* E306 */
+        And16(cpu, 0x00ffu);
+        StoreADirect16(memory, cpu, 0x58u);
+        do {
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
+            And16(cpu, 0x03ffu);
+            StoreADirect16(memory, cpu, 0x54u);
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->y));
+            And16(cpu, 0x03ffu);
+            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+            if (!cpu->zero) {
+                cpu->carry = 1;                                /* E338 */
+                SetAccumulatorWidth(cpu, 1);
+                TransferDirectToA(cpu);
+                Write8(memory, EVENT_CONDITION, A8(cpu));
+                cpu->y = PullIndexValue(memory, cpu);
+                SimulateRtsFrame(memory, cpu);
+                return;
+            }
+            IncrementX16(cpu);
+            IncrementX16(cpu);
+            IncrementY16(cpu);
+            IncrementY16(cpu);
+            Decrement16Direct(memory, cpu, 0x58u);
+        } while (!cpu->zero);
+        LoadA16(cpu, cpu->x);                                  /* E328 */
+        cpu->carry = 0;
+        Add16Value(cpu, Read16Direct(memory, cpu, 0x56u));
+        TransferAToX(cpu);
+        LoadA16(cpu, cpu->y);
+        Add16Value(cpu, Read16Direct(memory, cpu, 0x56u));
+        TransferAToY(cpu);
+        Decrement16Direct(memory, cpu, 0x5au);
+    } while (!cpu->zero);
+    cpu->carry = 0;
+    cpu->y = PullIndexValue(memory, cpu);                      /* E340 */
+    SetAccumulatorWidth(cpu, 1);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $80:E28C: result $FF unless the tiles at a position differ from
+   map object n's block in its layers ($7F:D05F bits 0-1). */
+static uint8_t EventBlockMatches(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadA8(cpu, 0xffu);                                        /* E28C */
+    Write8(memory, EVENT_CONDITION, A8(cpu));
+    Lufia2EventNextByte(memory, cpu, 0xe294u);
+    Lufia2EventValue(memory, cpu, 0xe297u);
+    if (!Lufia2EventPosition(memory, cpu, 0xe29au, handoff))
+        return 0;
+    ExchangeAccumulatorBytes(cpu);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xe29fu);             /* $83:F9EE */
+    SimulateJsrFrame(memory, cpu, 0xf9f0u);
+    Lufia2MapCellOffset(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    StoreXDirect16(memory, cpu, 0x5du);
+    Lufia2EventNextByte(memory, cpu, 0xe2a4u);                 /* E2A2 */
+    if (!Lufia2EventMapObject(memory, cpu, 0xe2a8u, handoff))
+        return 0;
+    LoadA8(cpu, Read8(memory, 0x7fd04au));                     /* E2A9 */
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, Read8(memory, 0x7fd04bu));
+    SimulateJslFrame(memory, cpu, 0x80u, 0xe2b5u);
+    SimulateJsrFrame(memory, cpu, 0xf9f0u);
+    Lufia2MapCellOffset(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    StoreXDirect16(memory, cpu, 0x60u);
+    TransferDirectToA(cpu);                                    /* E2B8 */
+    LoadAAbsolute8(memory, cpu, 0x05b9u, 0);
+    cpu->carry = 1;
+    Sbc8(cpu, Read8(memory, 0x7fd04cu));
+    SetAccumulatorWidth(cpu, 0);
+    AslA16(cpu);
+    StoreADirect16(memory, cpu, 0x56u);
+    SetAccumulatorWidth(cpu, 1);
+    PushDataBank(memory, cpu);                                 /* E2C8 */
+    LoadA8(cpu, 0x7fu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    LoadA8(cpu, Read8(memory, 0x7fd05fu));
+    BitImmediate8(cpu, 0x01u);
+    if (!cpu->zero) {
+        LoadX16(cpu, 0x0000u);
+        EventBlockDiffers(memory, cpu, 0xe2dau);
+        if (cpu->carry) {
+            PullDataBank(memory, cpu);
+            SimulateRtsFrame(memory, cpu);
+            return 1;
+        }
+        LoadA8(cpu, Read8(memory, 0x7fd05fu));
+    }
+    BitImmediate8(cpu, 0x02u);                                 /* E2E1 */
+    if (!cpu->zero) {
+        LoadX16(cpu, 0x0002u);
+        EventBlockDiffers(memory, cpu, 0xe2eau);
+    }
+    PullDataBank(memory, cpu);                                 /* E2EB */
+    SimulateRtsFrame(memory, cpu);
+    return 1;
+}
+
+/* Read-only worst case of $80:E2ED for $94-$96: the map object
+   ($80:BFAA on $7E:F016, stride 10) gives the block size and layers;
+   0 counts as 65536. */
+static uint64_t EventBlockCompares(
+    const Lufia2Memory *memory,
+    const Lufia2CpuState *cpu) {
+    const uint8_t key = Lufia2EventPeekByte(memory, cpu, 1u);
+    uint16_t x = Read16Long(memory, 0x7ef016u);
+    uint64_t width, height;
+    uint8_t layers;
+    unsigned steps;
+
+    for (steps = 0; steps < EVENT_SEARCH_LIMIT; ++steps) {
+        const uint8_t value = Read8(memory, 0x7ef000u + x);
+
+        if (value == key || value == 0xffu)
+            break;
+        x = (uint16_t)(x + 10u);
+    }
+    if (steps == EVENT_SEARCH_LIMIT)
+        return 0;
+    layers = Read8(memory, LongIndexedAddress(0x7ef001u, x));
+    width = Read8(memory, LongIndexedAddress(0x7ef004u, x));
+    height = Read8(memory, LongIndexedAddress(0x7ef005u, x));
+    return (uint64_t)((layers & 1u) + ((layers >> 1) & 1u)) *
+           (width ? width : 65536u) * (height ? height : 65536u);
+}
+
+/* $94 keeps, $95 gotos on, $96 gotos unless the block matches. */
+static unsigned EventOpBlockMatches(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    /* Over 4096 tile pairs hand off before the opcode. */
+    if (EventBlockCompares(memory, cpu) > EVENT_OPCODE_LIMIT)
+        return EVENT_OPCODE_HANDOFF;
+    if (!EventBlockMatches(memory, cpu, (uint16_t)(handler + 2u), handoff))
+        return EVENT_OPCODE_HANDOFF;
+    if (handler == EVENT_OP_KEEP_BLOCK_MATCH)
+        return EventKeepResult(memory, cpu);
+    if (handler == EVENT_OP_GOTO_UNLESS_BLOCK_MATCH)
+        EventNegate(memory, cpu, 0xe288u);
+    return EventGotoIfTrue(memory, cpu);
+}
+
 /* $80:BF92: slot of actor id A in $05FA (DB-relative) into $A7;
    carry set and X = $28 when missing. */
 static void EventFindActorId(
@@ -959,6 +1134,10 @@ unsigned Lufia2EventConditionOpcode(
     case EVENT_OP_GOTO_IF_SAME_TILES:
     case EVENT_OP_GOTO_UNLESS_SAME_TILES:
         return EventOpSameTiles(memory, cpu, handler, handoff);
+    case EVENT_OP_KEEP_BLOCK_MATCH:
+    case EVENT_OP_GOTO_IF_BLOCK_MATCH:
+    case EVENT_OP_GOTO_UNLESS_BLOCK_MATCH:
+        return EventOpBlockMatches(memory, cpu, handler, handoff);
     case EVENT_OP_GOTO_UNLESS_ACTORS_BIT_5:
         return EventOpGotoUnlessActorsBit5(memory, cpu, handoff);
     default:
