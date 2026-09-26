@@ -519,7 +519,9 @@ enum TextOpcodeHandler {
     TEXT_OP_MUSIC = 0xb849,                                    /* $4B */
     TEXT_OP_WAIT_FOR_BUTTON = 0x9db3,                          /* $01 */
     TEXT_OP_CHOICE = 0x9f37,                                   /* $0B */
-    TEXT_OP_WINDOW_MODE = 0xbcbc                               /* $69 */
+    TEXT_OP_WINDOW_MODE = 0xbcbc,                              /* $69 */
+    TEXT_OP_WAIT_SECONDS = 0xb30c,                             /* $38 */
+    TEXT_OP_SCROLL_VIEW = 0xb4c4                               /* $41 */
 };
 
 /* $33: wait until actor $1269 stops moving. */
@@ -854,6 +856,72 @@ static void TextChoiceCursor(
         StoreADirect8(memory, cpu, 0x74u);
     }
     SimulateRtsFrame(memory, cpu);
+}
+
+/* $38: wait n seconds; $42 counts frames to 60, $125F seconds.
+   Re-run every frame through $099B bit 5. */
+static unsigned TextOpWaitSeconds(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    LoadA8(cpu, 0x20u);                                        /* B30C */
+    TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 1);
+    if (cpu->zero) {
+        Write8(memory, DirectAddress(cpu, 0x42u), 0x00u);
+        StoreZeroAbsolute8(memory, cpu, 0x125fu, 0);
+    }
+    for (;;) {
+        LoadAAbsolute8(memory, cpu, 0x125fu, 0);               /* B318 */
+        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x0000u, cpu->y));
+        if (cpu->carry)
+            break;
+        LoadA8(cpu, DirectByte(memory, cpu, 0x42u));
+        Compare8(cpu, A8(cpu), 0x3cu);
+        if (!cpu->carry) {
+            TextPrevByte(memory, cpu, 0xb328u);
+            return TEXT_OPCODE_EXIT;
+        }
+        Write8(memory, DirectAddress(cpu, 0x42u), 0x00u);      /* B32C */
+        StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x125fu, 0), 1);
+    }
+    TextNextByte(memory, cpu, 0xb335u);                        /* B333 */
+    LoadA8(cpu, 0x20u);
+    TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
+    return TEXT_OPCODE_NEXT;
+}
+
+/* $41: scroll the view; with $FF as second byte wait until the
+   position $121E/$1226 of view $05AA reaches $7F:D08B/D08D. The
+   other scroll modes hand off at $80:B4FE. */
+static unsigned TextOpScrollView(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    TextNextByte(memory, cpu, 0xb4c6u);                        /* B4C4 */
+    StoreADirect8(memory, cpu, 0x54u);
+    TextNextByte(memory, cpu, 0xb4cbu);
+    StoreADirect8(memory, cpu, 0x55u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (!cpu->zero) {
+        *handoff = 0x80b4feu;
+        return TEXT_OPCODE_HANDOFF;
+    }
+    SetAccumulatorWidth(cpu, 0);                               /* B4D4 */
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05aau, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x121eu, cpu->x));
+    Compare16(cpu, cpu->accumulator, Read16Long(memory, 0x7fd08bu));
+    if (cpu->zero) {
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1226u, cpu->x));
+        Compare16(cpu, cpu->accumulator, Read16Long(memory, 0x7fd08du));
+        SetAccumulatorWidth(cpu, 1);
+        if (cpu->zero)
+            return TEXT_OPCODE_NEXT;                           /* B58F */
+    }
+    SetAccumulatorWidth(cpu, 1);                               /* B4F0 */
+    TextPrevByte(memory, cpu, 0xb4f4u);
+    TextPrevByte(memory, cpu, 0xb4f7u);
+    TextPrevByte(memory, cpu, 0xb4fau);
+    return TEXT_OPCODE_EXIT;
 }
 
 /* $01: wait for a button ($099B bit 1); the speaker $09AC sets
@@ -1395,6 +1463,10 @@ static unsigned TextScriptOpcode(
         return TextOpChoice(memory, cpu);
     case TEXT_OP_WINDOW_MODE:
         return TextOpWindowMode(memory, cpu, handoff);
+    case TEXT_OP_WAIT_SECONDS:
+        return TextOpWaitSeconds(memory, cpu);
+    case TEXT_OP_SCROLL_VIEW:
+        return TextOpScrollView(memory, cpu, handoff);
     case TEXT_OP_NEW_LINE:
         return TextOpNewLine(memory, cpu);
     case TEXT_OP_SUB_SCRIPT_05:
