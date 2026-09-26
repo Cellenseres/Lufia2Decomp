@@ -456,3 +456,12 @@ source = "src/world/world_map.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Experience needed for a level; status screens and level-ups.
+[[function]]
+address = "81:F9E9"
+name = "Lufia2PartyExperienceForLevel"
+source = "src/party/experience.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
