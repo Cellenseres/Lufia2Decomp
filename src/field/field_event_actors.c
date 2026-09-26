@@ -1640,6 +1640,57 @@ static unsigned EventOpActorSlot(
     return EVENT_OPCODE_NEXT;
 }
 
+/* $60 hides listed actor id n (+$4F): $0622 bit 2 and $0736 bit 5
+   set, occupancy cleared ($8E:BB17). $61 shows it ($8E:BAF6): bit 2
+   cleared; a hidden one gets bit 5 cleared and hands off at the
+   $81:8351 call. */
+static unsigned EventOpHideActor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    const uint8_t hide = handler == EVENT_OP_HIDE_ACTOR;
+
+    EventSaveSlot(memory, cpu, (uint16_t)(handler + 2u));      /* DDB5 */
+    Lufia2EventNextByte(memory, cpu, (uint16_t)(handler + 5u));
+    cpu->carry = 0;
+    Adc8(cpu, 0x4fu);
+    Lufia2EventFindActorId(memory, cpu, (uint16_t)(handler + 0x0cu));
+    SimulateJslFrame(memory, cpu, 0x80u, (uint16_t)(handler + 0x10u));
+    cpu->program_bank = 0x8eu;
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* BB17 */
+    LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    if (hide) {
+        Or8(cpu, 0x04u);
+        StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        LoadAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+        Or8(cpu, 0x20u);
+        StoreAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+        SimulateJslFrame(memory, cpu, 0x8eu, 0xbb2cu);
+        cpu->program_bank = 0x83u;
+        Lufia2ActorClearMapOccupancy(memory, cpu);             /* $83:FA12 */
+        SimulateRtlFrame(memory, cpu);
+    } else {
+        And8(cpu, 0xfbu);                                      /* BAF6 */
+        StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        LoadAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+        BitImmediate8(cpu, 0x20u);
+        if (!cpu->zero) {
+            And8(cpu, 0xdfu);
+            StoreAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+            LoadAAbsolute8(memory, cpu, 0x05fau, cpu->x);
+            cpu->carry = 1;
+            Sbc8(cpu, 0x50u);
+            *handoff = 0x8ebb12u;                              /* JSL $81:8351 */
+            return EVENT_OPCODE_HANDOFF;
+        }
+    }
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x80u;
+    EventRestoreSlot(memory, cpu, (uint16_t)(handler + 0x13u));
+    return EVENT_OPCODE_NEXT;
+}
+
 /* Actor, position and point opcodes; the rest go to the conditions. */
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
@@ -1723,6 +1774,9 @@ unsigned Lufia2EventActorOpcode(
     case EVENT_OP_ACTOR_ACTION_5D:
     case EVENT_OP_RELEASE_ACTOR:
         return EventOpActorSlot(memory, cpu, handler, handoff);
+    case EVENT_OP_HIDE_ACTOR:
+    case EVENT_OP_SHOW_ACTOR:
+        return EventOpHideActor(memory, cpu, handler, handoff);
     case EVENT_OP_POINT_ARITHMETIC:
         return EventOpPointArithmetic(memory, cpu, handoff);
     case EVENT_OP_POINT_FROM_OBJECT:
