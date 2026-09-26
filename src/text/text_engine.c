@@ -5,6 +5,7 @@
 #include "text/text_internal.h"
 #include "actor/actor_internal.h"
 #include "field/field_internal.h"
+#include "field/event_script_internal.h"
 #include "system/wram.h"
 
 /* Text engine WRAM. */
@@ -506,6 +507,8 @@ enum TextOpcodeHandler {
     TEXT_OP_SKIP_1_5F = 0xbc05,                                /* $5F */
     TEXT_OP_WRITE_PPU = 0xbc0b,                                /* $60 */
     TEXT_OP_SKIP_BRANCH = 0xbc3d,                              /* $68 */
+    TEXT_OP_HIDE_ACTOR = 0xa679,                               /* $2E */
+    TEXT_OP_MUSIC = 0xb849                                     /* $4B */
 };
 
 /* $33: wait until actor $1269 stops moving. */
@@ -715,6 +718,66 @@ static unsigned TextOpSkipBranch(
     TextNextByte(memory, cpu, 0xbc4eu);
     TextNextByte(memory, cpu, 0xbc51u);
     return TEXT_OPCODE_NEXT;
+}
+
+/* $2E: hide listed actor id n ($80:BF92): $0622 bit 2 set and
+   occupancy cleared ($83:FA12); ids $10-$4F also set bit 7 of
+   $081E + id - $10. */
+static unsigned TextOpHideActor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    TextNextByte(memory, cpu, 0xa67bu);                        /* A679 */
+    StoreADirect8(memory, cpu, 0x54u);
+    Lufia2EventFindActorId(memory, cpu, 0xa681u);
+    if (cpu->carry)
+        return TEXT_OPCODE_NEXT;
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* A684 */
+    LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    Or8(cpu, 0x04u);
+    StoreAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xa691u);
+    cpu->program_bank = 0x83u;
+    Lufia2ActorClearMapOccupancy(memory, cpu);                 /* $83:FA12 */
+    cpu->program_bank = 0x80u;
+    SimulateRtlFrame(memory, cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));               /* A692 */
+    Compare8(cpu, A8(cpu), 0x10u);
+    if (!cpu->carry)
+        return TEXT_OPCODE_NEXT;
+    Compare8(cpu, A8(cpu), 0x50u);
+    if (cpu->carry)
+        return TEXT_OPCODE_NEXT;
+    TransferDirectToA(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    cpu->carry = 1;
+    Sbc8(cpu, 0x10u);
+    TransferAToX(cpu);
+    LoadAAbsolute8(memory, cpu, 0x081eu, cpu->x);
+    Or8(cpu, 0x80u);
+    StoreAAbsolute8(memory, cpu, 0x081eu, cpu->x);
+    return TEXT_OPCODE_NEXT;
+}
+
+/* $4B: music n into $099D and $7F:D0FD; a change with $099C bit 6
+   clear hands off at the $80:93FE call (APU). */
+static unsigned TextOpMusic(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    TextNextByte(memory, cpu, 0xb84bu);                        /* B849 */
+    Compare8(cpu, A8(cpu),
+        Read8(memory, AbsoluteIndexedAddress(cpu, 0x099du, 0)));
+    if (cpu->zero)
+        return TEXT_OPCODE_NEXT;
+    StoreAAbsolute8(memory, cpu, 0x099du, 0);
+    Write8(memory, 0x7fd0fdu, A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x099cu, 0);
+    BitImmediate8(cpu, 0x40u);
+    if (!cpu->zero)
+        return TEXT_OPCODE_NEXT;
+    LoadAAbsolute8(memory, cpu, 0x099du, 0);                   /* B85F */
+    *handoff = 0x80b862u;                                      /* JSL $80:93FE */
+    return TEXT_OPCODE_HANDOFF;
 }
 
 /* $03: new line. */
@@ -1086,6 +1149,10 @@ static unsigned TextScriptOpcode(
         return TextOpEnd(memory, cpu, handoff);
     case TEXT_OP_SKIP_BRANCH:
         return TextOpSkipBranch(memory, cpu, handoff);
+    case TEXT_OP_HIDE_ACTOR:
+        return TextOpHideActor(memory, cpu);
+    case TEXT_OP_MUSIC:
+        return TextOpMusic(memory, cpu, handoff);
     case TEXT_OP_NEW_LINE:
         return TextOpNewLine(memory, cpu);
     case TEXT_OP_SUB_SCRIPT_05:
