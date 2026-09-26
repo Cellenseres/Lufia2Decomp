@@ -16,10 +16,11 @@ uint32_t Lufia2FieldRegionCells(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu);
 
-/* $83:8E85 from bank 80: redraw region $7F:D046/D04C in layer X. */
+/* $83:8E85: redraw region $7F:D046/D04C in layer X. */
 void Lufia2FieldRedrawRegion(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
+    uint8_t return_bank,
     uint16_t return_address);
 
 /* $83:8E66: redraw all four BG layers. */

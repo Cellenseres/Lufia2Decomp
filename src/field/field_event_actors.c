@@ -1905,6 +1905,32 @@ static void EventObjectClearTiles(
     SimulateRtlFrame(memory, cpu);
 }
 
+/* Read-only: whether $83:8A6F's block (layer 2) covers its own
+   size bytes $7F:D04C/D04D, which would change the loop counts. */
+static uint8_t EventClearHitsSize(
+    const Lufia2Memory *memory,
+    const Lufia2CpuState *cpu,
+    unsigned width,
+    unsigned height) {
+    const uint8_t map_width = Read8(memory, 0x0005b9u);
+    const uint16_t cell = (uint16_t)(2u * ((uint16_t)(
+        Read8(memory, 0x7fd047u) * map_width) + Read8(memory, 0x7fd046u)));
+    const uint16_t skip = (uint16_t)(((cpu->direct_page & 0xff00u) |
+        (uint8_t)(Read8(memory, AbsoluteIndexedAddress(cpu, 0x05b9u, 0)) -
+                  width)) << 1);
+    uint16_t row = (uint16_t)(cell + Read16Long(memory, 0x7fd00au));
+    unsigned r;
+
+    for (r = 0; r < height; ++r) {
+        const uint16_t size = (uint16_t)(0xd04cu - row);
+
+        if (size < 2u * width || (uint16_t)(size + 1u) < 2u * width)
+            return 1;
+        row = (uint16_t)(row + 2u * width + skip);
+    }
+    return 0;
+}
+
 /* $83:F784: tile bits of cell X (DB) = A. */
 static void EventTileWord(
     const Lufia2Memory *memory,
@@ -1996,7 +2022,7 @@ static uint8_t EventObjectRedraw(
         return 0;
     }
     ++run->region_redraws[run->depth];
-    Lufia2FieldRedrawRegion(memory, cpu, 0xd3cfu);             /* $83:8E85 */
+    Lufia2FieldRedrawRegion(memory, cpu, 0x80u, 0xd3cfu);      /* $83:8E85 */
     LoadA8(cpu, 0x02u);
     redraw = AbsoluteIndexedAddress(cpu, 0x1273u, 0);          /* TSB */
     value = Read8(memory, redraw);
@@ -2048,7 +2074,8 @@ static uint8_t EventObjectTiles(
             LoadA8(cpu, 0x02u);                                /* D389 */
             width = Read8(memory, 0x7fd04cu);
             height = Read8(memory, 0x7fd04du);
-            if (!width || !height || width * height > EVENT_OPCODE_LIMIT) {
+            if (!width || !height || width * height > EVENT_OPCODE_LIMIT ||
+                EventClearHitsSize(memory, cpu, width, height)) {
                 run->visits = run->tile_clears[run->depth];
                 run->has_visits = 1;
                 *handoff = 0x80d38bu;                          /* JSL $83:8A6F */
@@ -2106,6 +2133,360 @@ static unsigned EventOpObjectTilesAt(
     if (!EventObjectTiles(memory, cpu, run,
             handler == EVENT_OP_OBJECT_TILES_AT ? 0xd342u : 0xd353u, handoff))
         return EVENT_OPCODE_HANDOFF;
+    return EVENT_OPCODE_NEXT;
+}
+
+/* $83:F9D4 / $83:F9D9: X = cell of (B, A) in layer $05AA; F9D4
+   takes ($8F, $91). */
+static void EventLayerCell(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint8_t from_probe) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    if (from_probe) {
+        LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));      /* F9D4 */
+        ExchangeAccumulatorBytes(cpu);
+        LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
+    }
+    SimulateJsrFrame(memory, cpu, 0xf9dbu);                    /* F9D9 */
+    Lufia2MapCellOffset(memory, cpu);                          /* $83:F9F7 */
+    SimulateRtsFrame(memory, cpu);
+    SetAccumulatorWidth(cpu, 0);
+    PushIndex(memory, cpu);
+    LoadA16(cpu, Read16Long(memory, 0x0005aau));
+    TransferAToX(cpu);
+    PullAccumulator16(memory, cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fd008u, cpu->x)));
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:FB9F: X = pending object at $8F/$91; none sets carry, X = $30
+   and A = D. */
+static void EventFindPending(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    for (LoadX16(cpu, 0x0000u);;) {                            /* FB9F */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd69cu, cpu->x)));
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_PROBE_X));
+        if (cpu->zero) {
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd6ccu, cpu->x)));
+            Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_PROBE_Y));
+            if (cpu->zero) {
+                cpu->carry = 0;                                /* FBBB */
+                break;
+            }
+        }
+        IncrementX16(cpu);                                     /* FBB2 */
+        Compare16(cpu, cpu->x, 0x0030u);
+        if (cpu->zero) {
+            TransferDirectToA(cpu);
+            cpu->carry = 1;
+            break;
+        }
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:F80D: attribute cell at $8F/$91 AND $54, ORA $55; $91 moves
+   to the object's top row. A two-row object ($D04D = 2) also sets
+   the row above with $56/$57, $58 = $FFF0 and carry. A = the old
+   attributes. */
+static void EventMarkAttributes(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    uint32_t cell;
+
+    SimulateJsrFrame(memory, cpu, return_address);
+    Lufia2MapCellIndex(memory, cpu, 0xf80fu, 1);               /* $83:F9AD */
+    cell = LongIndexedAddress(0x7e4000u, cpu->x);              /* F810 */
+    LoadA8(cpu, Read8(memory, cell));
+    StoreADirect8(memory, cpu, 0x5au);
+    And8(cpu, DirectByte(memory, cpu, 0x54u));
+    LoadA8(cpu, (uint8_t)(A8(cpu) | DirectByte(memory, cpu, 0x55u)));
+    Write8(memory, cell, A8(cpu));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
+    cpu->carry = 1;
+    Sbc8(cpu, Read8(memory, 0x7fd04du));
+    LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+    StoreADirect8(memory, cpu, DP_PROBE_Y);
+    Write8(memory, DirectAddress(cpu, 0x58u), 0x00u);
+    Write8(memory, DirectAddress(cpu, 0x59u), 0x00u);
+    LoadA8(cpu, Read8(memory, 0x7fd04du));
+    Compare8(cpu, A8(cpu), 0x02u);
+    cpu->carry = 0;
+    if (cpu->zero) {
+        LoadA8(cpu, 0xf0u);                                    /* F835 */
+        StoreADirect8(memory, cpu, 0x58u);
+        LoadA8(cpu, 0xffu);
+        StoreADirect8(memory, cpu, 0x59u);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, cpu->x);
+        StoreADirect16(memory, cpu, 0x54u);
+        Subtract16(cpu, Read16Long(memory, 0x0005b9u));
+        TransferAToX(cpu);
+        SetAccumulatorWidth(cpu, 1);
+        cell = LongIndexedAddress(0x7e4000u, cpu->x);
+        LoadA8(cpu, Read8(memory, cell));
+        And8(cpu, DirectByte(memory, cpu, 0x56u));
+        LoadA8(cpu, (uint8_t)(A8(cpu) | DirectByte(memory, cpu, 0x57u)));
+        Write8(memory, cell, A8(cpu));
+        cpu->carry = 1;
+    }
+    LoadA8(cpu, DirectByte(memory, cpu, 0x5au));               /* F857 */
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:F85A: X and Y times 4, Y + 2 when $58 is set; leaves M=0. */
+static void EventPendingOffsets(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    SetAccumulatorWidth(cpu, 0);                               /* F85A */
+    LoadA16(cpu, cpu->x);
+    AslA16(cpu);
+    AslA16(cpu);
+    TransferAToX(cpu);
+    LoadA16(cpu, cpu->y);
+    AslA16(cpu);
+    AslA16(cpu);
+    TransferAToY(cpu);
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
+    if (!cpu->zero) {
+        IncrementY16(cpu);
+        IncrementY16(cpu);
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:F91F: tile bits of cell Y (DB) = those of cell X. */
+static void EventCopyTile(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    const uint32_t to = AbsoluteIndexedAddress(cpu, 0x0000u, cpu->y);
+
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadA16(cpu, Read16Long(memory, AbsoluteIndexedAddress(cpu, 0x0000u, cpu->x)));
+    And16(cpu, 0x03ffu);                                       /* F91F */
+    StoreADirect16(memory, cpu, 0x5au);
+    LoadA16(cpu, Read16Long(memory, to));
+    And16(cpu, 0xfc00u);
+    LoadA16(cpu, (uint16_t)(cpu->accumulator | Read16Direct(memory, cpu, 0x5au)));
+    Write16Long(memory, to, cpu->accumulator);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:F86B: register pending object slot A at $8F/$91 and put the
+   object's tiles (from its map position $D04A) there; the replaced
+   map tiles go to $7F:D5DC + 4A ($D5DE the row above). Attributes
+   get bit 3, a two-row object's row above bit 6. An object already
+   pending there hands its saved tiles over. */
+static void EventPlacePending(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    StoreADirect8(memory, cpu, 0x65u);                         /* F86B */
+    Push8(memory, cpu, PackStatus(cpu));
+    PushDataBank(memory, cpu);
+    LoadA8(cpu, 0x7fu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    TransferDirectToA(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x65u));
+    TransferAToX(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
+    StoreAAbsolute8(memory, cpu, 0xd69cu, cpu->x);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
+    StoreAAbsolute8(memory, cpu, 0xd6ccu, cpu->x);
+    LoadA8(cpu, 0xffu);
+    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, 0x56u);
+    LoadA8(cpu, 0x08u);
+    StoreADirect8(memory, cpu, 0x55u);
+    LoadA8(cpu, 0x40u);
+    StoreADirect8(memory, cpu, 0x57u);
+    EventMarkAttributes(memory, cpu, 0xf891u);
+    BitImmediate8(cpu, 0x40u);
+    if (!cpu->zero) {
+        uint8_t row;
+
+        LoadA8(cpu, DirectByte(memory, cpu, 0x58u));           /* F896 */
+        if (!cpu->zero) {
+            row = (uint8_t)(DirectByte(memory, cpu, DP_PROBE_Y) + 1u);
+            Write8(memory, DirectAddress(cpu, DP_PROBE_Y), row);
+            SetNz8(cpu, row);
+        }
+        EventFindPending(memory, cpu, 0xf89eu);
+        LoadY16(cpu, cpu->x);
+        row = (uint8_t)(DirectByte(memory, cpu, DP_PROBE_Y) + 1u);
+        Write8(memory, DirectAddress(cpu, DP_PROBE_Y), row);
+        SetNz8(cpu, row);
+        EventFindPending(memory, cpu, 0xf8a4u);
+        EventPendingOffsets(memory, cpu, 0xf8a7u);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd5dcu, cpu->x));
+        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xd5dcu, cpu->y),
+            cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);                           /* F8AE */
+        LoadY16(cpu, cpu->x);
+        LoadAAbsolute8(memory, cpu, 0xd04au, 0);
+        ExchangeAccumulatorBytes(cpu);
+        LoadAAbsolute8(memory, cpu, 0xd04bu, 0);
+        cpu->carry = 0;
+        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0xd04du, 0)));
+        DecrementA8(cpu);
+        EventLayerCell(memory, cpu, 0xf8bfu, 0);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
+        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xd5dcu, cpu->y),
+            cpu->accumulator);
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
+        if (cpu->zero)
+            goto done;
+        Write16Direct(memory, cpu, 0x58u, 0x0000u);
+        SetAccumulatorWidth(cpu, 1);
+        row = (uint8_t)(DirectByte(memory, cpu, DP_PROBE_Y) - 2u);
+        Write8(memory, DirectAddress(cpu, DP_PROBE_Y), row);
+        SetNz8(cpu, row);
+    }
+    EventLayerCell(memory, cpu, 0xf8d6u, 1);                   /* F8D4 */
+    LoadY16(cpu, cpu->x);
+    LoadA8(cpu, Read8(memory, 0x7fd04au));
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, Read8(memory, 0x7fd04bu));
+    EventLayerCell(memory, cpu, 0xf8e3u, 0);
+    StoreXDirect16(memory, cpu, 0x63u);
+    TransferDirectToA(cpu);                                    /* F8E6 */
+    LoadA8(cpu, DirectByte(memory, cpu, 0x65u));
+    AslA8(cpu);
+    AslA8(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    StoreADirect16(memory, cpu, 0x56u);
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16Long(memory, 0x0005b9u));
+    AslA16(cpu);
+    StoreADirect16(memory, cpu, 0x54u);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->y));
+    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xd5dcu, cpu->x),
+        cpu->accumulator);
+    LoadXDirect(memory, cpu, 0x63u);
+    EventCopyTile(memory, cpu, 0xf901u);
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
+    if (!cpu->zero) {
+        LoadA16(cpu, cpu->y);                                  /* F906 */
+        cpu->carry = 0;
+        Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+        TransferAToY(cpu);
+        LoadXDirect(memory, cpu, 0x56u);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->y));
+        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xd5deu, cpu->x),
+            cpu->accumulator);
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x63u));
+        cpu->carry = 0;
+        Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+        TransferAToX(cpu);
+        EventCopyTile(memory, cpu, 0xf91bu);
+    }
+done:
+    PullDataBank(memory, cpu);                                 /* F91C */
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtlFrame(memory, cpu);
+}
+
+/* $83:8E76: redraw region $7F:D046 in layers 0 and 1. A redraw over
+   1024 cells (or no layer) hands off at $83:8E79. 0 = handoff. */
+static uint8_t EventRedrawLowLayers(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    EventRun *run,
+    uint16_t return_address,
+    uint32_t *handoff) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    cpu->program_bank = 0x83u;
+    for (LoadX16(cpu, 0x0000u);;) {                            /* 8E76 */
+        if (Lufia2FieldRegionCells(memory, cpu) > 1024u) {
+            run->visits = run->layer_redraws[run->depth];
+            run->has_visits = 1;
+            *handoff = 0x838e79u;                              /* JSL $83:8E85 */
+            return 0;
+        }
+        ++run->layer_redraws[run->depth];
+        Lufia2FieldRedrawRegion(memory, cpu, 0x83u, 0x8e7cu);
+        IncrementX16(cpu);                                     /* 8E7D */
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x0004u);
+        if (cpu->zero)
+            break;
+    }
+    cpu->program_bank = 0x80u;
+    SimulateRtlFrame(memory, cpu);
+    return 1;
+}
+
+/* $2A: place map object n as pending in the first free $7F:D69C
+   slot ($80:D426, slot 0 when none) at a position, swap its tiles
+   ($83:F86B) and redraw layers 0 and 1. */
+static unsigned EventOpPlaceObject(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    EventRun *run,
+    uint32_t *handoff) {
+    Lufia2EventNextByte(memory, cpu, 0xd3d8u);                 /* D3D6 */
+    if (!EventProbePosition(memory, cpu, 0xd3dbu, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    SimulateJsrFrame(memory, cpu, 0xd3e3u);
+    for (LoadX16(cpu, 0x0000u);;) {                            /* D426 */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd75cu, cpu->x)));
+        if (!cpu->negative)
+            break;
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x0030u);
+        if (cpu->zero) {
+            LoadX16(cpu, 0x0000u);
+            break;
+        }
+    }
+    SimulateRtsFrame(memory, cpu);
+    StoreXDirect16(memory, cpu, 0x56u);                        /* D3E4 */
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
+    Write8(memory, LongIndexedAddress(0x7fd69cu, cpu->x), A8(cpu));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
+    Write8(memory, LongIndexedAddress(0x7fd6ccu, cpu->x), A8(cpu));
+    LoadA8(cpu, 0x80u);
+    Write8(memory, LongIndexedAddress(0x7fd75cu, cpu->x), A8(cpu));
+    Lufia2EventNextByte(memory, cpu, 0xd3fau);
+    PushY(memory, cpu);
+    cpu->carry = 0;
+    Adc8(cpu, 0x10u);
+    Write8(memory, LongIndexedAddress(0x7fd6fcu, cpu->x), A8(cpu));
+    cpu->carry = 1;
+    Sbc8(cpu, 0x10u);
+    if (!Lufia2EventMapObject(memory, cpu, 0xd409u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    {
+        const uint32_t redraw = AbsoluteIndexedAddress(cpu, 0x1273u, 0);
+        const uint8_t value = Read8(memory, redraw);
+
+        LoadA8(cpu, Read8(memory, 0x7fd05fu));                 /* D40A */
+        cpu->zero = (value & A8(cpu)) == 0;                    /* TSB */
+        Write8(memory, redraw, (uint8_t)(value | A8(cpu)));
+    }
+    LoadXDirect(memory, cpu, 0x56u);
+    EventObjectOrigin(memory, cpu, 0xd416u);
+    TransferDirectToA(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
+    EventPlacePending(memory, cpu, 0xd41du);
+    if (!EventRedrawLowLayers(memory, cpu, run, 0xd421u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    cpu->y = PullIndexValue(memory, cpu);                      /* D422 */
     return EVENT_OPCODE_NEXT;
 }
 
@@ -2201,6 +2582,8 @@ unsigned Lufia2EventActorOpcode(
     case EVENT_OP_OBJECT_TILES_AT:
     case EVENT_OP_OBJECT_TILES_AT_POSITION:
         return EventOpObjectTilesAt(memory, cpu, handler, run, handoff);
+    case EVENT_OP_PLACE_OBJECT:
+        return EventOpPlaceObject(memory, cpu, run, handoff);
     case EVENT_OP_POINT_ARITHMETIC:
         return EventOpPointArithmetic(memory, cpu, handoff);
     case EVENT_OP_POINT_FROM_OBJECT:

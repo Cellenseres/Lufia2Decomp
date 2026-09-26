@@ -1041,7 +1041,7 @@ static unsigned EventOpCameraLayers(
         LoadX16(cpu, 0x0002u);
         do {
             PushIndex(memory, cpu);                            /* DC68 */
-            Lufia2FieldRedrawRegion(memory, cpu, 0xdc6cu);
+            Lufia2FieldRedrawRegion(memory, cpu, 0x80u, 0xdc6cu);
             cpu->x = PullIndexValue(memory, cpu);
             LoadX16(cpu, (uint16_t)(cpu->x - 2u));
         } while (!cpu->negative);
@@ -1228,6 +1228,8 @@ static unsigned EventScriptOpcode(
     }
     if (handler == EVENT_OP_SPAWN_IN_AREA)
         run->total += 63u;
+    if (handler == EVENT_OP_PLACE_OBJECT)
+        run->total += 255u;
     if (handler == EVENT_OP_CAMERA_LAYERS)
         return EventOpCameraLayers(memory, cpu);
     if (handler == EVENT_OP_CLEAR_D081)
@@ -1366,7 +1368,7 @@ uint8_t Lufia2FieldEventTimerBody(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     unsigned *passes) {
-    EventRun run = {0, 0, {0}, {0}, {0}, {0}, 0, 0};
+    EventRun run = {0, 0, {0}, {0}, {0}, {0}, {0}, 0, 0};
 
     *passes = 0;
     cpu->program_bank = 0x80u;

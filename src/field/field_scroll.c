@@ -853,10 +853,11 @@ uint32_t Lufia2FieldRegionCells(
 void Lufia2FieldRedrawRegion(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
+    uint8_t return_bank,
     uint16_t return_address) {
     unsigned axis;
 
-    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    SimulateJslFrame(memory, cpu, return_bank, return_address);
     PushDataBank(memory, cpu);                                 /* 8E85 */
     PushIndex(memory, cpu);
     PushY(memory, cpu);

@@ -191,7 +191,8 @@ enum EventOpcodeHandler {
     EVENT_OP_SPAWN_IN_AREA = 0xd516,                           /* $78 */
     EVENT_OP_CAMERA_LAYERS = 0xdc0d,                           /* $59 */
     EVENT_OP_OBJECT_TILES_AT = 0xd336,                         /* $21 */
-    EVENT_OP_OBJECT_TILES_AT_POSITION = 0xd346                 /* $22 */
+    EVENT_OP_OBJECT_TILES_AT_POSITION = 0xd346,                /* $22 */
+    EVENT_OP_PLACE_OBJECT = 0xd3d6                             /* $2A */
 };
 
 /* $80:E8B9: next script byte; a wrapping Y steps to the next bank. */
@@ -238,6 +239,8 @@ typedef struct EventRun {
     unsigned tile_clears[EVENT_NEST_LIMIT];
     /* $80:D3CC passes ($83:8E85 region redraws) per depth. */
     unsigned region_redraws[EVENT_NEST_LIMIT];
+    /* $83:8E79 passes (layer 0/1 region redraws) per depth. */
+    unsigned layer_redraws[EVENT_NEST_LIMIT];
     unsigned visits;
     uint8_t has_visits;
 } EventRun;
