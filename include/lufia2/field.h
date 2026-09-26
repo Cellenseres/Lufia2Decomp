@@ -89,6 +89,11 @@ Lufia2ExecutionResult Lufia2FieldActorSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:ED9C map cell attributes of map A; M=1. */
+Lufia2ExecutionResult Lufia2FieldBuildAttributes(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

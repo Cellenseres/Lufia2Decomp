@@ -465,3 +465,12 @@ source = "src/party/experience.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Map cell attributes, built at every map load.
+[[function]]
+address = "80:ED9C"
+name = "Lufia2FieldBuildAttributes"
+source = "src/field/field_attributes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
