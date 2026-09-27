@@ -68,6 +68,17 @@ cmake --build build --config Release
 ```
 
 This builds the static library `lufia2_decomp` (alias `Lufia2::Decomp`).
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `LUFIA2_ENABLE_WARNINGS` | ON standalone, OFF as a subdirectory | `-Wall -Wextra -Wpedantic` (GCC/Clang) or `/W4` (MSVC) on `lufia2_decomp` only |
+| `LUFIA2_WARNINGS_AS_ERRORS` | OFF | Adds `-Werror` or `/WX` to those warnings |
+| `LUFIA2_ENABLE_SANITIZERS` | OFF | AddressSanitizer and UBSan (GCC/Clang); whatever links the library also links the sanitizer runtimes |
+
+None of the options changes global or consumer flags. CI builds with GCC and
+Clang, warnings as errors, and runs `python3 scripts/metadata_index.py
+--check`; it never needs a ROM.
+
 There are no tests in this repository; differential verification runs in the
 consumer (`decomp-verify` target) against a supported ROM image supplied by
 its owner.
