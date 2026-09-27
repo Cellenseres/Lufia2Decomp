@@ -39,3 +39,10 @@ Shared implementation children belong in subsystem internal headers. The T14
 section readers and party-list search are declared in `field/field_internal.h`
 and `party/party_internal.h`; consumer differential tests explicitly include
 those private headers. They do not expand the portable consumer API.
+
+The field actor sprite builder exposes an optional `Lufia2FieldActorVisibility`
+policy at its collection boundary. The stock entry passes no policy and retains
+original memory accesses and CPU behavior. Padding wraps in 16 bits; the pure
+world-point filter can only reject otherwise visible actors. Consumers own the
+policy and context; this library never reads renderer globals or room metadata.
+Sorting, uploads and OAM remain one implementation for both paths.
