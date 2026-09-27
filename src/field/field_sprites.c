@@ -289,7 +289,8 @@ static void FieldActorFrameUpload(
 /* $83:A29B: sort visible actors by Y into $E200/$E300. */
 static void FieldSortVisible(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+    Lufia2CpuState *cpu,
+    const Lufia2FieldActorVisibility *visibility) {
     TransferDirectToA(cpu);                                    /* A295 */
     TransferAToY(cpu);
     LoadX8(cpu, 0x00u);
@@ -303,13 +304,16 @@ static void FieldSortVisible(
         }
         if (cpu->zero) {
             uint8_t visible = 0;
+            uint16_t world_x;
+            uint16_t world_y = 0;
 
             SetAccumulatorWidth(cpu, 0);
             TransferXToA(cpu);
             StoreADirect16(memory, cpu, 0xa7u);
             AslA16(cpu);
             TransferAToX(cpu);
-            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fddaeu, cpu->x)));
+            world_x = Read16Long(memory, LongIndexedAddress(0x7fddaeu, cpu->x));
+            LoadA16(cpu, world_x);
             cpu->carry = 0;
             Add16Value(cpu, 0x0030u);
             Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
@@ -317,8 +321,9 @@ static void FieldSortVisible(
                 Compare16(cpu, cpu->accumulator,
                     Read16Direct(memory, cpu, 0x56u));
                 if (cpu->negative) {
-                    LoadA16(cpu, Read16Long(
-                        memory, LongIndexedAddress(0x7fde3eu, cpu->x)));
+                    world_y = Read16Long(
+                        memory, LongIndexedAddress(0x7fde3eu, cpu->x));
+                    LoadA16(cpu, world_y);
                     cpu->carry = 0;
                     Add16Value(cpu, 0x0020u);
                     Compare16(cpu, cpu->accumulator,
@@ -330,6 +335,8 @@ static void FieldSortVisible(
                     }
                 }
             }
+            if (visible && visibility && visibility->accept)
+                visible = visibility->accept(visibility->context, world_x, world_y);
             if (visible) {
                 LoadA16(cpu, (uint16_t)(cpu->accumulator | 0x1000u));
                 StoreADirect16(memory, cpu, 0x63u);
@@ -534,9 +541,10 @@ static uint8_t FieldActorOam(
 }
 
 /* $83:A21A: field OAM from the visible, Y-sorted actors. */
-Lufia2ExecutionResult Lufia2FieldActorSprites(
+Lufia2ExecutionResult Lufia2FieldActorSpritesWithVisibility(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+    Lufia2CpuState *cpu,
+    const Lufia2FieldActorVisibility *visibility) {
     Lufia2ExecutionResult result;
 
     result.flow = LUFIA2_EXECUTION_RETURNED;
@@ -599,7 +607,16 @@ Lufia2ExecutionResult Lufia2FieldActorSprites(
     cpu->carry = 0;
     Add16Value(cpu, 0x0100u);
     StoreADirect16(memory, cpu, 0x5au);
-    FieldSortVisible(memory, cpu);
+    if (visibility && visibility->horizontal_padding) {
+        /* Deliberate consumer window change, retaining 16-bit wrapping and
+         * all stock comparisons, flags, sorting and OAM work below. */
+        const uint16_t padding = visibility->horizontal_padding;
+        Write16Direct(memory, cpu, 0x54u,
+            (uint16_t)(Read16Direct(memory, cpu, 0x54u) - padding));
+        Write16Direct(memory, cpu, 0x56u,
+            (uint16_t)(Read16Direct(memory, cpu, 0x56u) + padding));
+    }
+    FieldSortVisible(memory, cpu, visibility);
     Write8(memory, DirectAddress(cpu, 0x60u), (uint8_t)cpu->y); /* A321 */
     Push8(memory, cpu, 0x83u);                                 /* PHK */
     PullDataBank(memory, cpu);
@@ -640,4 +657,10 @@ Lufia2ExecutionResult Lufia2FieldActorSprites(
     }
     PullDataBank(memory, cpu);                                 /* A488 */
     return result;
+}
+
+Lufia2ExecutionResult Lufia2FieldActorSprites(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    return Lufia2FieldActorSpritesWithVisibility(memory, cpu, 0);
 }
