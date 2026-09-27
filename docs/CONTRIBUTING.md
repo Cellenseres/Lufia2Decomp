@@ -11,7 +11,10 @@ Every whole-function reconstruction is recorded in `metadata/functions.toml`
 place function status lives. A new entry starts as `draft`; promotion to
 `verified` requires the documented differential contract against the
 supported original program, including registers, flags, stack, memory, and bus
-effects. `metadata/symbols.toml` holds non-function symbols only. After
+effects. `metadata/symbols.toml` holds non-function symbols only. Named WRAM
+locations live in `metadata/memory_map.toml`; new code uses their generated
+constants, and an unknown location gets a neutral `unk_` name there before
+it gets a meaningful one (see [MEMORY_MAP.md](MEMORY_MAP.md)). After
 changing the metadata, run `python3 scripts/metadata_index.py` to validate it
 and regenerate the status views. Keep temporary test and debug harnesses
 outside committed source.

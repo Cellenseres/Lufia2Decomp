@@ -54,8 +54,10 @@ portable symbol, source file, entry/exit M/X and status. Current totals:
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
 index and continues with the research and verification notes.
-`python3 scripts/metadata_index.py` validates the metadata and regenerates
-both generated blocks; `--check` only reports stale blocks.
+`python3 scripts/metadata_index.py` validates the metadata, including the
+WRAM catalog `metadata/memory_map.toml`, and regenerates the generated
+blocks here, in `docs/DECOMP_STATUS.md` and in `src/system/wram.h`; `--check`
+only reports stale blocks.
 
 ## Build
 
@@ -92,7 +94,8 @@ with `-DLUFIA2_DECOMP_ROOT=<path>`.
 - [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md): naming and promotion rules.
 - [docs/CODE_STYLE.md](docs/CODE_STYLE.md): the CPU helper layers and how
   reconstructed code uses them.
-- [docs/MEMORY_MAP.md](docs/MEMORY_MAP.md): address notation.
+- [docs/MEMORY_MAP.md](docs/MEMORY_MAP.md): address notation, the WRAM
+  catalog `metadata/memory_map.toml` and its generated constants.
 - [docs/EXTERNAL_RESEARCH.md](docs/EXTERNAL_RESEARCH.md): vetted external
   reverse-engineering references and the rules for using them.
 - [docs/CAPTURE_RESEARCH.md](docs/CAPTURE_RESEARCH.md): gameplay-capture
