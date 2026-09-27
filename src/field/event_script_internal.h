@@ -259,6 +259,83 @@ unsigned Lufia2EventActorOpcode(
     EventRun *run,
     uint32_t *handoff);
 
+/* Shared between field_event_actors.c and field_event_objects.c. */
+
+/* $83:D350 from bank 80; 0 = handoff inside it. */
+uint8_t Lufia2EventActorAction(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff);
+
+/* $83:C108: claim a free actor (bit 2 set, $05D2 = $FF; none gives
+   slot $28) at the leader's tile. */
+void Lufia2EventClaimActor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address);
+
+/* $8F/$91 = a position operand ($80:EA09); 0 = handoff. */
+uint8_t Lufia2EventProbePosition(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint32_t *handoff);
+
+/* $83:FB71 map cell value at $8F/$91, from bank 80. */
+void Lufia2EventCellValue(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t return_bank,
+    uint16_t return_address);
+
+/* Map-object opcodes and helpers in field_event_objects.c. */
+
+/* $02 sets, $03 clears object bit n through the animation queue
+   ($03 only when the object covers row $06E2), directly when $0583
+   bit 7 is set. $28 is $02 on a set result, else $03; $A0/$A1 set
+   and clear directly. */
+unsigned Lufia2EventOpObjectBit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff);
+
+/* $83:F422: $7F:D046 = ($8F, $91 - $D04D + 1); A = the y. */
+void Lufia2EventObjectOriginFrom(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t return_bank,
+    uint16_t return_address);
+
+/* $21 (cell x, y) / $22 (position operand): toggle the map object
+   there ($80:D357). */
+unsigned Lufia2EventOpObjectTilesAt(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    EventRun *run,
+    uint32_t *handoff);
+
+/* $2A: place map object n as pending in the first free $7F:D69C
+   slot ($80:D426, slot 0 when none) at a position, swap its tiles
+   ($83:F86B) and redraw layers 0 and 1. */
+unsigned Lufia2EventOpPlaceObject(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    EventRun *run,
+    uint32_t *handoff);
+
+/* $5A-$5D: push pending map object n (the $7F:D69C table) one cell
+   down, up, right or left ($80:DCDA): when $83:C079 allows it, a
+   claimed actor (action 9) takes its place and walks the step
+   ($83:D350, action $48 + facing), its cell occupancy moving along. */
+unsigned Lufia2EventOpPushObject(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff);
+
 /* $80:E8AD: word operand, low byte first; leaves M=0. */
 void Lufia2EventNextWord(
     const Lufia2Memory *memory,

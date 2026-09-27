@@ -44,6 +44,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_attributes.c
     src/field/field_event_actors.c
     src/field/field_event_conditions.c
+    src/field/field_event_objects.c
     src/field/field_event_script.c
     src/field/field_nmi.c
     src/field/field_scroll.c

@@ -803,68 +803,6 @@ Lufia2ExecutionResult Lufia2MenuMemberStatus(
     return ExecutionReturned(0x829587u);
 }
 
-/* $82:CCFE: $11 = learned-bit mask of slot A for the form. */
-static void CapsuleSkillMask(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    SetAccumulatorWidth(cpu, 0);
-    And16(cpu, 0x00ffu);
-    AslA16(cpu);
-    TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x8ed8c3u, cpu->x)));
-    StoreADirect16(memory, cpu, 0x11u);
-    LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x11a4u, 0) & 0x00ffu));
-    for (;;) {
-        LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));       /* CD19 */
-        if (cpu->zero)
-            break;
-        {
-            uint16_t mask = Read16Direct(memory, cpu, 0x11u);
-
-            mask = (uint16_t)(mask << 3);
-            Write16Direct(memory, cpu, 0x11u, mask);
-        }
-    }
-    SetAccumulatorWidth(cpu, 1);
-}
-
-/* $82:C4B3: skill id of slot A (learned or not). */
-static void CapsuleSkill(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreADirect8(memory, cpu, 0x19u);
-    Write8(memory, DirectAddress(cpu, 0x1au), 0);
-    Jsr(memory, cpu, 0xc4b9u);
-    CapsuleSkillMask(memory, cpu);
-    Rts(memory, cpu);
-    Jsr(memory, cpu, 0xc4beu);
-    Lufia2CapsuleRecordPointer(memory, cpu);
-    Rts(memory, cpu);
-    Jsr(memory, cpu, 0xc4c1u);                                 /* C4A2 */
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x11a3u, 0) & 0x00ffu));
-    AslA16(cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, 0x11cau);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    Rts(memory, cpu);
-    LoadA8(cpu, 0x97u);
-    StoreADirect8(memory, cpu, 0x1bu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09c4u, 0));
-    cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x19u));
-    StoreADirect16(memory, cpu, 0x19u);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
-    {
-        const uint16_t mask = Read16Direct(memory, cpu, 0x11u);
-
-        cpu->zero = (cpu->accumulator & mask) == 0;            /* BIT $11 */
-        cpu->negative = (mask & 0x8000u) != 0;
-        cpu->overflow = (mask & 0x4000u) != 0;
-    }
-    LoadY16(cpu, cpu->zero ? 0x000fu : 0x0012u);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8IndirectLongY(memory, cpu, 0x19u));
-}
-
 /* $82:C3B1: X = name of skill A ($A5:DF00). */
 static void CapsuleSkillName(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
@@ -941,7 +879,7 @@ Lufia2ExecutionResult Lufia2MenuCapsuleStatus(
     for (i = 0; i < 3u; ++i) {
         LoadA8(cpu, (uint8_t)(2u - i));
         Jsr(memory, cpu, kSkillReturns[i]);
-        CapsuleSkill(memory, cpu);
+        Lufia2CapsuleSkill(memory, cpu);
         Rts(memory, cpu);
         LoadX16(cpu, kSkillRows[i]);
         PushIndex(memory, cpu);
@@ -1127,106 +1065,6 @@ Lufia2ExecutionResult Lufia2MenuShopSetup(
         SetNz8(cpu, count);
     }
     return ExecutionReturned(0x82e318u);
-}
-
-/* $82:C4A2: X = skill flags of the capsule ($11CA + 2n). */
-static void CapsuleSkillFlags(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x11a3u, 0) & 0x00ffu));
-    AslA16(cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, 0x11cau);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
-}
-
-/* $82:CD41: learn skill slot A if the form has it; carry = no. */
-static void CapsuleLearn(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreADirect8(memory, cpu, 0x13u);
-    Write8(memory, DirectAddress(cpu, 0x14u), 0);
-    Jsr(memory, cpu, 0xcd47u);
-    CapsuleSkillMask(memory, cpu);
-    Rts(memory, cpu);
-    Jsr(memory, cpu, 0xcd4au);
-    CapsuleSkillFlags(memory, cpu);
-    Rts(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
-    {
-        const uint16_t mask = Read16Direct(memory, cpu, 0x11u);  /* BIT $11 */
-
-        cpu->zero = (cpu->accumulator & mask) == 0;
-        cpu->negative = (mask & 0x8000u) != 0;
-        cpu->overflow = (mask & 0x4000u) != 0;
-    }
-    if (!cpu->zero) {
-        SetAccumulatorWidth(cpu, 1);
-        cpu->carry = 1;
-        return;
-    }
-    SetAccumulatorWidth(cpu, 1);
-    Jsr(memory, cpu, 0xcd58u);
-    Lufia2CapsuleRecordPointer(memory, cpu);
-    Rts(memory, cpu);
-    LoadA8(cpu, 0x97u);
-    StoreADirect8(memory, cpu, 0x1bu);
-    SetAccumulatorWidth(cpu, 0);
-    TransferXToA(cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x13u));
-    StoreADirect16(memory, cpu, 0x19u);
-    SetAccumulatorWidth(cpu, 1);
-    LoadY16(cpu, 0x0012u);
-    LoadA8(cpu, Read8IndirectLongY(memory, cpu, 0x19u));
-    if (cpu->zero) {
-        cpu->carry = 1;
-        return;
-    }
-    Jsr(memory, cpu, 0xcd70u);
-    CapsuleSkillFlags(memory, cpu);
-    Rts(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x) |
-        Read16Direct(memory, cpu, 0x11u)));
-    StoreAAbsolute16(memory, cpu, 0x0000u, cpu->x);
-    SetAccumulatorWidth(cpu, 1);
-    cpu->carry = 0;
-}
-
-static void RandomBelow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint8_t limit, uint16_t return_address) {
-    LoadA8(cpu, limit);
-    SimulateJslFrame(memory, cpu, 0x82u, return_address);
-    Lufia2RandomScale(memory, cpu);
-    SimulateRtlFrame(memory, cpu);
-}
-
-/* $82:CD1F: 1 in 8, learn a random skill; carry clear, A = skill. */
-Lufia2ExecutionResult Lufia2CapsuleTryLearn(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    RandomBelow(memory, cpu, 0x08u, 0xcd24u);
-    Compare8(cpu, A8(cpu), 0x00u);
-    if (!cpu->zero) {
-        cpu->carry = 1;
-        return ExecutionReturned(0x82cd40u);
-    }
-    RandomBelow(memory, cpu, 0x03u, 0xcd2eu);
-    Compare8(cpu, A8(cpu), 0x03u);
-    if (cpu->carry)
-        return ExecutionReturned(0x82cd40u);
-    PushAccumulator8(memory, cpu);
-    Jsr(memory, cpu, 0xcd36u);
-    CapsuleLearn(memory, cpu);
-    Rts(memory, cpu);
-    LoadA8(cpu, Pull8(memory, cpu));
-    if (cpu->carry)
-        return ExecutionReturned(0x82cd40u);
-    Jsr(memory, cpu, 0xcd3cu);
-    CapsuleSkill(memory, cpu);
-    Rts(memory, cpu);
-    cpu->carry = 0;
-    return ExecutionReturned(0x82cd3eu);
 }
 
 /* $82:E624: stats of the new item vs now, green or red. */
