@@ -96,12 +96,12 @@ Lufia2ExecutionResult Lufia2ActorPrimaryUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* Draft $83:C7F8 front-end; stops at named continuations. */
+/* $83:C7F8 front-end gates; stops at named continuations. */
 Lufia2ActorPrimaryFlow Lufia2ActorPrimaryUpdateFrontend(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* Draft $83:D508 front-end; keeps the path-dependent X width. */
+/* $83:D508 front-end gates; keeps the path-dependent X width. */
 Lufia2ActorSecondaryFlow Lufia2ActorSecondaryUpdateFrontend(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-173 functions in `metadata/functions.toml`: 173 verified, 0 draft, 0 identified, 0 disabled.
+175 functions in `metadata/functions.toml`: 175 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
@@ -90,6 +90,8 @@ with `-DLUFIA2_DECOMP_ROOT=<path>`.
 ## Further reading
 
 - [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md): naming and promotion rules.
+- [docs/CODE_STYLE.md](docs/CODE_STYLE.md): the CPU helper layers and how
+  reconstructed code uses them.
 - [docs/MEMORY_MAP.md](docs/MEMORY_MAP.md): address notation.
 - [docs/EXTERNAL_RESEARCH.md](docs/EXTERNAL_RESEARCH.md): vetted external
   reverse-engineering references and the rules for using them.
