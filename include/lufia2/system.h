@@ -39,6 +39,11 @@ Lufia2ExecutionResult Lufia2ScreenFade(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:E808 X to digits $B4, $B3, $B2; M1X0. */
+Lufia2ExecutionResult Lufia2DecimalDigits3(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

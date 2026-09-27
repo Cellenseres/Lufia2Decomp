@@ -406,3 +406,69 @@ Lufia2ExecutionResult Lufia2PartyUnpackMemberBare(
     MemberFinish(memory, cpu, kReturns);
     return ExecutionReturned(0x81ef92u);
 }
+
+static uint16_t Abs16X(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
+    uint16_t offset) {
+    return Read16AbsoluteIndexed(memory, cpu, offset, cpu->x);
+}
+
+/* CLC, then ADC of each field. */
+static void SumFields(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t first, uint16_t second, uint16_t third) {
+    LoadA16(cpu, Abs16X(memory, cpu, first));
+    cpu->carry = 0;
+    Add16Value(cpu, Abs16X(memory, cpu, second));
+    if (third)
+        Add16Value(cpu, Abs16X(memory, cpu, third));
+}
+
+/* $81:F4ED: member $C1 stats = base + equipment bonuses, caps. */
+Lufia2ExecutionResult Lufia2PartyStatTotals(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    LoadX16(cpu, Read16Direct(memory, cpu, 0xc1u));
+    SetAccumulatorWidth(cpu, 0);
+    SumFields(memory, cpu, 0x0051u, 0x0074u, 0);
+    StoreAAbsolute16(memory, cpu, 0x0025u, cpu->x);
+    SumFields(memory, cpu, 0x0053u, 0x0076u, 0);
+    StoreAAbsolute16(memory, cpu, 0x0027u, cpu->x);
+    SumFields(memory, cpu, 0x005du, 0x0084u, 0x0092u);
+    StoreAAbsolute16(memory, cpu, 0x0035u, cpu->x);
+    SumFields(memory, cpu, 0x005bu, 0x0082u, 0x0090u);
+    Compare16(cpu, cpu->accumulator, 0x00c8u);
+    if (cpu->carry)
+        LoadA16(cpu, 0x00c7u);
+    StoreAAbsolute16(memory, cpu, 0x0033u, cpu->x);
+    SumFields(memory, cpu, 0x0059u, 0x0080u, 0x008eu);
+    StoreAAbsolute16(memory, cpu, 0x0031u, cpu->x);
+    SumFields(memory, cpu, 0x0057u, 0x007eu, 0x008cu);
+    StoreAAbsolute16(memory, cpu, 0x002fu, cpu->x);
+    SumFields(memory, cpu, 0x0055u, 0x007cu, 0x008au);
+    StoreAAbsolute16(memory, cpu, 0x002du, cpu->x);
+    cpu->carry = 0;
+    Add16Value(cpu, Abs16X(memory, cpu, 0x0086u));
+    StoreAAbsolute16(memory, cpu, 0x0029u, cpu->x);
+    LoadA16(cpu, Abs16X(memory, cpu, 0x0078u));
+    if (!cpu->zero)
+        StoreAAbsolute16(memory, cpu, 0x0029u, cpu->x);
+    SumFields(memory, cpu, 0x002fu, 0x002du, 0);
+    cpu->carry = cpu->accumulator & 1u;
+    LoadA16(cpu, (uint16_t)(cpu->accumulator >> 1));
+    cpu->carry = 0;
+    Add16Value(cpu, Abs16X(memory, cpu, 0x0088u));
+    StoreAAbsolute16(memory, cpu, 0x002bu, cpu->x);
+    LoadA16(cpu, Abs16X(memory, cpu, 0x007au));
+    if (!cpu->zero)
+        StoreAAbsolute16(memory, cpu, 0x002bu, cpu->x);
+    SetAccumulatorWidth(cpu, 1);
+    return ExecutionReturned(0x81f576u);
+}
+
+/* $81:F4E9: far entry of Lufia2PartyStatTotals. */
+Lufia2ExecutionResult Lufia2PartyStatTotalsFar(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xf4ebu);
+    (void)Lufia2PartyStatTotals(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    return ExecutionReturned(0x81f4ecu);
+}

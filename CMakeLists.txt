@@ -12,10 +12,13 @@ add_library(lufia2_decomp STATIC
     src/actor/object_vm.c
     src/actor/player_controller.c
     src/actor/player_update.c
+    src/battle/battle_character.c
     src/battle/battle_frame.c
+    src/battle/battle_frame_rows.c
     src/battle/battle_ip.c
     src/battle/battle_popup.c
     src/battle/battle_util.c
+    src/battle/battle_portrait.c
     src/battle/battle_nmi.c
     src/battle/battle_script.c
     src/field/field_effects.c
@@ -28,6 +31,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_sprites.c
     src/field/field_triggers.c
     src/field/field_update.c
+    src/item/inventory.c
     src/item/item_records.c
     src/menu/menu.c
     src/menu/menu_screen.c
@@ -36,6 +40,8 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_window.c
     src/party/capsule.c
     src/party/experience.c
+    src/party/level_up.c
+    src/party/party_records.c
     src/party/stats.c
     src/system/decompress.c
     src/system/math.c

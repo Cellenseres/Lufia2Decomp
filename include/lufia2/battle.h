@@ -129,6 +129,141 @@ Lufia2ExecutionResult Lufia2BattleSpriteBlock(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:E479 frame top edge at Y, row $09FC; M0X0. */
+Lufia2ExecutionResult Lufia2BattleFrameTop(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E4AD frame side edges at Y; M0X0. */
+Lufia2ExecutionResult Lufia2BattleFrameSides(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E542 frame row from template $01:X; M0X0. */
+Lufia2ExecutionResult Lufia2BattleFrameRow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E570 frame row ends from template $01:X; M0X0. */
+Lufia2ExecutionResult Lufia2BattleFrameEnds(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E5C1 gauge block of tile A at X; M0X0. */
+Lufia2ExecutionResult Lufia2BattleGaugeBlock(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E604 gauge column of tile A at X; M0X0. */
+Lufia2ExecutionResult Lufia2BattleGaugeColumn(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:FB79 A = sprite byte of character A; M1X0. */
+Lufia2ExecutionResult Lufia2CharacterSpriteByte(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:EC41 clear $7F:F000-$FFFF; M1X0. */
+Lufia2ExecutionResult Lufia2BattleClearF000(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:FBA2 A = packed size of sprite A - 1; any M, X16. */
+Lufia2ExecutionResult Lufia2SpriteSizePacked(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:FBDB $09FC-$09FF = box of character $09FA; M1X0. */
+Lufia2ExecutionResult Lufia2CharacterSpriteBox(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:FCE2 X = $96 record of character A; M1X0. */
+Lufia2ExecutionResult Lufia2CharacterSpritePointer(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E7D2 fill $09F2 x $09F3 words at $7E:X; M1X0. */
+Lufia2ExecutionResult Lufia2BattleFillRect(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:EB34 palette $24 to $120F; M1X0. */
+Lufia2ExecutionResult Lufia2BattlePaletteCopy(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:EB62 palette $24 nibbles to $120F/$121F; M1X0. */
+Lufia2ExecutionResult Lufia2BattlePaletteSplit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E503 window $09F2 x $09F3 at $7E:X, template $09F4; M1X0. */
+Lufia2ExecutionResult Lufia2BattleWindow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E593 gauge panel at $7E:2D80; M1X0. */
+Lufia2ExecutionResult Lufia2BattleGaugePanel(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:BD47 far call of $81:BD4B; M1X0. */
+Lufia2ExecutionResult Lufia2BattleSpriteBlockFar(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:BE54 far call of $81:BE58; M1X0. */
+Lufia2ExecutionResult Lufia2BattleTileBlockFar(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E3AE filled window $87E3 at X; M1X0. */
+Lufia2ExecutionResult Lufia2BattleWindowE3AE(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E3CD filled window $87F9 at X; M1X0. */
+Lufia2ExecutionResult Lufia2BattleWindowE3CD(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:BAE8 portraits of slots 3-0, D 0; M1X0. */
+Lufia2ExecutionResult Lufia2BattlePortraits(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:BAFB portrait of slot A, DB $97, D 0; M1X0. */
+Lufia2ExecutionResult Lufia2BattlePortrait(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:BB75 portrait upload of slot $11, pose $12, DB $97; M1X0. */
+Lufia2ExecutionResult Lufia2BattlePortraitUpload(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:B48B $22 = gray $22 blended to $24 by $13; M1X0. */
+Lufia2ExecutionResult Lufia2BattleFadeColor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:B444 palette $11 grayed and faded by $13 to CGRAM buffer; M1X0. */
+Lufia2ExecutionResult Lufia2BattlePaletteFade(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E405 frame of tiles $10F1 at $7E:X + $8C0; M1X0. */
+Lufia2ExecutionResult Lufia2BattleTileFrame(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:E3EC filled tile frame at $7E:X; M1X0. */
+Lufia2ExecutionResult Lufia2BattleTileWindow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

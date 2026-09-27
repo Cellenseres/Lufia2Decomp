@@ -34,6 +34,26 @@ Lufia2ExecutionResult Lufia2SpellRecordByte8(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:F057 A = count of item $0A06 held; M1X0. */
+Lufia2ExecutionResult Lufia2InventoryCount(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:F2A9 item $0A06 name to $0B77, spaces cut; M1X0. */
+Lufia2ExecutionResult Lufia2ItemNameTrimmed(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:F291 $0A09 = text pointer of item $0A06; any width. */
+Lufia2ExecutionResult Lufia2ItemTextPointer(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:F446 $0A0D = text pointer of spell $0A0B; M1X0. */
+Lufia2ExecutionResult Lufia2SpellTextPointer(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

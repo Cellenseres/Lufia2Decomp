@@ -136,3 +136,39 @@ Lufia2ExecutionResult Lufia2Divide16(
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x80844fu);
 }
+
+/* $81:E808: X to decimal digits $B4 (hundreds), $B3, $B2. */
+Lufia2ExecutionResult Lufia2DecimalDigits3(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    static const uint16_t kSteps[2] = {0x0064u, 0x000au};
+    unsigned i;
+
+    Write8(memory, (uint16_t)(cpu->direct_page + 0xb4u), 0x00u);
+    Write8(memory, (uint16_t)(cpu->direct_page + 0xb3u), 0x00u);
+    Write8(memory, (uint16_t)(cpu->direct_page + 0xb2u), 0x00u);
+    for (i = 0; i < 2u; ++i) {
+        for (;;) {
+            SetAccumulatorWidth(cpu, 0);
+            TransferXToA(cpu);
+            Subtract16(cpu, kSteps[i]);
+            if (!cpu->carry)
+                break;
+            TransferAToX(cpu);
+            SetAccumulatorWidth(cpu, 1);
+            if (i == 0) {
+                const uint32_t at = AbsoluteIndexedAddress(cpu, 0x00b4u, 0);
+                const uint8_t value = (uint8_t)(Read8(memory, at) + 1u);
+
+                Write8(memory, at, value);
+                SetNz8(cpu, value);
+            } else {
+                IncrementDirect8(memory, cpu, 0xb3u);
+            }
+        }
+    }
+    TransferXToA(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    StoreADirect8(memory, cpu, 0xb2u);
+    return ExecutionReturned(0x81e834u);
+}

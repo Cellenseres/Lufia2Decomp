@@ -64,6 +64,51 @@ Lufia2ExecutionResult Lufia2PartyUnpackMemberBare(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:F5ED $11 = $25 in each active party record; M1X0. */
+Lufia2ExecutionResult Lufia2PartyRestore11(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:F60B $13 = $27 in each active party record; M1X0. */
+Lufia2ExecutionResult Lufia2PartyRestore13(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:F7BD X = word X of $85:9EBA; P kept. */
+Lufia2ExecutionResult Lufia2BattleTable9EBA(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:F78D $0A80 = records of members $0A7B; M1X0. */
+Lufia2ExecutionResult Lufia2PartyPointers(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:F789 far call of $81:F78D; M1X0. */
+Lufia2ExecutionResult Lufia2PartyPointersFar(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:F4ED member $C1 stats plus equipment; M1X0. */
+Lufia2ExecutionResult Lufia2PartyStatTotals(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:F4E9 far call of $81:F4ED; M1X0. */
+Lufia2ExecutionResult Lufia2PartyStatTotalsFar(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:F979 level-up of member $09FA: A = 1 raised, 0 not, 2 stale; M1X0. */
+Lufia2ExecutionResult Lufia2PartyLevelUpCheck(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:FC0B new record at $7E:[$B2] for character $09F2; M1X0. */
+Lufia2ExecutionResult Lufia2PartyNewRecord(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

@@ -977,3 +977,331 @@ source = "src/battle/battle_util.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:E479"
+name = "Lufia2BattleFrameTop"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:E4AD"
+name = "Lufia2BattleFrameSides"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:E542"
+name = "Lufia2BattleFrameRow"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:E570"
+name = "Lufia2BattleFrameEnds"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:E5C1"
+name = "Lufia2BattleGaugeBlock"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:E604"
+name = "Lufia2BattleGaugeColumn"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:F291"
+name = "Lufia2ItemTextPointer"
+source = "src/item/item_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F446"
+name = "Lufia2SpellTextPointer"
+source = "src/item/item_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F5ED"
+name = "Lufia2PartyRestore11"
+source = "src/party/party_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F60B"
+name = "Lufia2PartyRestore13"
+source = "src/party/party_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F7BD"
+name = "Lufia2BattleTable9EBA"
+source = "src/party/party_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:FB79"
+name = "Lufia2CharacterSpriteByte"
+source = "src/battle/battle_character.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:EC41"
+name = "Lufia2BattleClearF000"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F2A9"
+name = "Lufia2ItemNameTrimmed"
+source = "src/item/item_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F4ED"
+name = "Lufia2PartyStatTotals"
+source = "src/party/stats.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F78D"
+name = "Lufia2PartyPointers"
+source = "src/party/party_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:FBA2"
+name = "Lufia2SpriteSizePacked"
+source = "src/battle/battle_character.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:FBDB"
+name = "Lufia2CharacterSpriteBox"
+source = "src/battle/battle_character.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:FCE2"
+name = "Lufia2CharacterSpritePointer"
+source = "src/battle/battle_character.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E7D2"
+name = "Lufia2BattleFillRect"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E808"
+name = "Lufia2DecimalDigits3"
+source = "src/system/math.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:EB34"
+name = "Lufia2BattlePaletteCopy"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:EB62"
+name = "Lufia2BattlePaletteSplit"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F057"
+name = "Lufia2InventoryCount"
+source = "src/item/inventory.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E503"
+name = "Lufia2BattleWindow"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E593"
+name = "Lufia2BattleGaugePanel"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F4E9"
+name = "Lufia2PartyStatTotalsFar"
+source = "src/party/stats.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F789"
+name = "Lufia2PartyPointersFar"
+source = "src/party/party_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:BD47"
+name = "Lufia2BattleSpriteBlockFar"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:BE54"
+name = "Lufia2BattleTileBlockFar"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E3AE"
+name = "Lufia2BattleWindowE3AE"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E3CD"
+name = "Lufia2BattleWindowE3CD"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:BAE8"
+name = "Lufia2BattlePortraits"
+source = "src/battle/battle_portrait.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:BAFB"
+name = "Lufia2BattlePortrait"
+source = "src/battle/battle_portrait.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:BB75"
+name = "Lufia2BattlePortraitUpload"
+source = "src/battle/battle_portrait.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B48B"
+name = "Lufia2BattleFadeColor"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B444"
+name = "Lufia2BattlePaletteFade"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E405"
+name = "Lufia2BattleTileFrame"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E3EC"
+name = "Lufia2BattleTileWindow"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F979"
+name = "Lufia2PartyLevelUpCheck"
+source = "src/party/level_up.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:FC0B"
+name = "Lufia2PartyNewRecord"
+source = "src/party/level_up.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

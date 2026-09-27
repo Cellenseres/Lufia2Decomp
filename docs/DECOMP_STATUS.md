@@ -135,3 +135,51 @@
 | `$81:C5CF` | `Lufia2BattleTargetPointer` | `verified` | X = record of target mask A (nonzero): lowest set bit, party from `$0A64`, enemies (bit 7) from `$85:9EC8`. Mutations 1/1. Bound. |
 | `$81:BE58` | `Lufia2BattleTileBlock` | `verified` | `$02` x `$03` blocks of 2x2 tiles from sheet tile `$00` (attribute `$04`) at `$7E:$08`, rows `$80` apart, the tile advancing by 2 and wrapping to the next sheet row pair. Mutations 3/3. Bound. |
 | `$81:BD4B` | `Lufia2BattleSpriteBlock` | `verified` | `$02` x `$03` 5-byte sprite entries at `$7E:$08` (X from `$06` - `$07`, Y `$05` - 1, 16 px steps, tile as `$81:BE58`, attribute `$04`, size bits from `$18`); `$08` advanced, A = count. Mutations 3/3. Bound. |
+
+## Recovered bank-$81 helpers (S12–S18)
+
+Recovered from the interrupted local batch. All 41 standalone baselines, 66 mutation checks, and the full MSVC Release checkpoint are green. Each entry passes 16,384 standalone and 8,704 bridge cases. Release built successfully; all previous 80 bindings remain selected, for 121 total, with no lost AOT nodes. The existing item helpers are shared by their callers and the standalone entries. All supported contracts use X16; F291 also safely widens X internally.
+
+| Address | Function | Recovery status | Semantics / evidence |
+|---|---|---|---|
+| `$81:E479` | `Lufia2BattleFrameTop` | verified; runtime-bound | Window top edge at Y: tile `$09F4`, `+1`, width - 1 fills of `+2`, then the mirrored pair (`$4000`); Y = next row (`$09FC` + `$40`). Entered M0X0. Bound (M0X0 bridge). Standalone 16,384 cases; mutations 3/3. |
+| `$81:E4AD` | `Lufia2BattleFrameSides` | verified; runtime-bound | Window side edges: tile `$09F4` at Y and mirrored at Y + 2 * width + 4; next row. Entered M0X0. Bound (M0X0 bridge). Standalone 16,384 cases; mutations 1/1. |
+| `$81:E542` | `Lufia2BattleFrameRow` | verified; runtime-bound | Window row from a 3-word template at `$01:X` (left, width + 1 fills, right); next row. Entered M0X0. Bound (M0X0 bridge). Standalone 16,384 cases; mutations 1/1. |
+| `$81:E570` | `Lufia2BattleFrameEnds` | verified; runtime-bound | Window middle row ends from template `$01:X` (left, right); next row. Entered M0X0. Bound (M0X0 bridge). Standalone 16,384 cases; mutations 1/1. |
+| `$81:E5C1` | `Lufia2BattleGaugeBlock` | verified; runtime-bound | Gauge block of tile A at X (DB-relative): ends `A+5`/`A+6`, four rows of `A+2` then six `A`, closed by mirrored `A+5`/`A+4`. Entered M0X0. Bound (M0X0 bridge). Standalone 16,384 cases; mutations 2/2. |
+| `$81:E604` | `Lufia2BattleGaugeColumn` | verified; runtime-bound | Gauge column of tile A at X: `A+5`/`A+6`, three `A+1` 16 bytes apart, then mirrored `A+5`/`A+4`. Entered M0X0. Bound (M0X0 bridge). Standalone 16,384 cases; mutations 1/1. |
+| `$81:F291` | `Lufia2ItemTextPointer` | verified; runtime-bound | `$0A09` = `$96:CF69` + word `$96:CF69`[item `$0A06` & `$1FF`]; PHP-guarded, RTL. Bound (any width). Standalone 16,384 cases; mutations 1/1. |
+| `$81:F446` | `Lufia2SpellTextPointer` | verified; runtime-bound | `$0A0D` = `$95:FA5B` + word `$95:FA5B`[spell `$0A0B`]. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:F5ED` | `Lufia2PartyRestore11` | verified; runtime-bound | For each party record in `$0A80` (4 words) without status bit 2: `$11` = `$25`; RTL. Bound. Standalone 16,384 cases; mutations 2/2. |
+| `$81:F60B` | `Lufia2PartyRestore13` | verified; runtime-bound | Same with `$13` = `$27`; RTL. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:F7BD` | `Lufia2BattleTable9EBA` | verified; runtime-bound | X = word X of `$85:9EBA`; P kept. Bound (any width). Standalone 16,384 cases; mutations 1/1. |
+| `$81:FB79` | `Lufia2CharacterSpriteByte` | verified; runtime-bound | A = byte `$96:85CE` of character A's record (`$96:85C0` table); X kept; RTL. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:EC41` | `Lufia2BattleClearF000` | verified; runtime-bound | Clears `$7F:F000-$FFFF` through WMDATA. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:F2A9` | `Lufia2ItemNameTrimmed` | verified; runtime-bound | Item `$0A06` name, 12 bytes of `$9E:C7E8`, to `$0B77` with a terminator, trailing spaces zeroed; RTL. Bound. Standalone 16,384 cases; mutations 2/2. |
+| `$81:F4ED` | `Lufia2PartyStatTotals` | verified; runtime-bound | Member `$C1` stats: `$25`/`$27` = base + equipment, `$2D-$35` = base + two bonus sets (`$33` capped at 199), `$29` and `$2B` (average of `$2D`/`$2F` plus bonus) with fixed overrides `$78`/`$7A`. Bound. Standalone 16,384 cases; mutations 3/3. |
+| `$81:F78D` | `Lufia2PartyPointers` | verified; runtime-bound | `$0A80` = records (`$85:9EBA`) of the four members `$0A7B`, 0 when bit 7 is set. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:FBA2` | `Lufia2SpriteSizePacked` | verified; runtime-bound | A = packed size of sprite A - 1 from `$97:CA64` (low byte >> 5, high bits `$E0` >> 2); P and X kept; RTL. Bound (any width). Standalone 16,384 cases; mutations 1/1. |
+| `$81:FBDB` | `Lufia2CharacterSpriteBox` | verified; runtime-bound | `$09FC-$09FF` = four bytes `$96:85DD` of character `$09FA`'s record; RTL. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:FCE2` | `Lufia2CharacterSpritePointer` | verified; runtime-bound | X = `$96:85C0` + word `$96:85C0`[character A]; Y kept; RTL. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:E7D2` | `Lufia2BattleFillRect` | verified; runtime-bound | Fills `$09F2` x `$09F3` words of `$09F6` at `$7E:X`, rows `$40` apart. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:E808` | `Lufia2DecimalDigits3` | verified; runtime-bound | X to decimal digits: hundreds in `$B4` (DB-relative increment), tens `$B3`, ones `$B2`. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:EB34` | `Lufia2BattlePaletteCopy` | verified; runtime-bound | 16 bytes of palette `$24` (`$9A:F970` + 16 * `$24`) to `$120F`, 16 zeros after. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:EB62` | `Lufia2BattlePaletteSplit` | verified; runtime-bound | Palette `$24` split per byte: low nibble << 4 to `$121F`, high nibble to `$120F`. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:F057` | `Lufia2InventoryCount` | verified; runtime-bound | A = count (bits 9-15) of item `$0A06` in the 96-slot inventory `$0A8D`, 0 when absent; RTL. Bound. Standalone 16,384 cases; mutations 2/2. |
+| `$81:E503` | `Lufia2BattleWindow` | verified; runtime-bound | Window template `$01:$09F4`: top row, `$09F3` middle rows, bottom row; X advances through the template by six then four bytes. Width is `$09F2 - 1`. Standalone 16,384 cases; mutations 2/2. |
+| `$81:E593` | `Lufia2BattleGaugePanel` | verified; runtime-bound | Gauge panel at `$7E:2D80`: block `$2155`, four columns `$2157`, block `$A155` (`$81:E5C1`/`$81:E604`); P kept. Bound. Standalone 16,384 cases; mutations 2/2. |
+| `$81:F4E9` | `Lufia2PartyStatTotalsFar` | verified; runtime-bound | Far entry (JSR + RTL) of `$81:F4ED`. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:F789` | `Lufia2PartyPointersFar` | verified; runtime-bound | Far entry of `$81:F78D`. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:BD47` | `Lufia2BattleSpriteBlockFar` | verified; runtime-bound | Far entry of `$81:BD4B`. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:BE54` | `Lufia2BattleTileBlockFar` | verified; runtime-bound | Far entry of `$81:BE58`. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:E3AE` | `Lufia2BattleWindowE3AE` | verified; runtime-bound | Inside at X + `$42` filled with `$2154`, then window template `$87E3` at X; RTL. Bound. Standalone 16,384 cases; mutations 2/2. |
+| `$81:E3CD` | `Lufia2BattleWindowE3CD` | verified; runtime-bound | Same with fill `$2167` and template `$87F9`. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:BAE8` | `Lufia2BattlePortraits` | verified; runtime-bound | Portraits of slots 3 to 0 with DB `$97`; A kept; RTL. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:BAFB` | `Lufia2BattlePortrait` | verified; runtime-bound | Portrait slot A: pose 5 for status bit 2, pose 2 for bits `$29`, otherwise pose 0. An absent portrait clears 257 bytes with overlapping 16-bit stores in the first loop and 256 bytes in the second loop; the gap is retained. Standalone 16,384 cases; mutations 3/3. |
+| `$81:BB75` | `Lufia2BattlePortraitUpload` | verified; runtime-bound | Portrait `$153D[$11]` (source from `$8E:E5C2`, pose offset `$B534[$12]`) to `$7E:$B52C[$11]` and +`$200`, 256 bytes each, through WMDATA. Bound. Standalone 16,384 cases; mutations 2/2. |
+| `$81:B48B` | `Lufia2BattleFadeColor` | verified; runtime-bound | `$22` = gray colour `$22` blended per channel toward colour `$24` by level `$13` (0 keeps gray, `$40` takes `$24`) through `$81:B505`. Bound. Standalone 16,384 cases; mutations 3/3. |
+| `$81:B444` | `Lufia2BattlePaletteFade` | verified; runtime-bound | Colours 1-15 of palette `$11` from `$7F:F1DB`: gray (`$81:B54A`) with blue reduced, faded by `$13` (`$81:B48B`), to the CGRAM buffer `$0320`; RTL. Bound. Standalone 16,384 cases; mutations 2/2. |
+| `$81:E405` | `Lufia2BattleTileFrame` | verified; runtime-bound | Frame of tiles `$10F1` (`$81:E479`/`$81:E4AD`, bottom mirrored with `$8000`) at `$7E:X` + `$8C0`, `$09F2` x `$09F3` (`$09F3` - 2 middle rows). Bound. Standalone 16,384 cases; mutations 3/3. |
+| `$81:E3EC` | `Lufia2BattleTileWindow` | verified; runtime-bound | Inside at X + `$902` filled with `$10F0` (`$81:E7D2`), then `$81:E405` at X. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$81:F979` | `Lufia2PartyLevelUpCheck` | verified; runtime-bound | Member `$09FA` (record via `$81:F7BD`): next-level experience (`$81:F9E9`) against the stored one (A = 2 when stale), then when current experience reaches it and level < 99: level + 1, new next-level experience stored, A = 1; else A = 0. Bound. Standalone 16,384 cases; mutations 3/3. |
+| `$81:FC0B` | `Lufia2PartyNewRecord` | verified; runtime-bound | New member record at `$7E:[$B2]` (`$BE` bytes cleared) for character `$09F2` from its `$96:85C0` data: name, level, base stats, doubled bytes, equipment list (entries >= 6 at `$48` + 2 * (id - 6)), current = max HP/MP, then derived stats (`$81:F4D5`); RTL. Bound. The initial fill is the low byte of D, as in the ROM. Standalone 16,384 cases; mutations 5/5. |

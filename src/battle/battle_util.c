@@ -309,15 +309,15 @@ Lufia2ExecutionResult Lufia2BattleCopyC2C0(
 static void PortFill(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t address, uint16_t count, int pairs) {
     LoadX16(cpu, address);
-    StoreWordAbsolute(memory, cpu, 0x2181u, cpu->x);
-    StoreZeroAbsolute8(memory, cpu, 0x2183u, 0);
+    StoreWordAbsolute(memory, cpu, SNES_WMADDL, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, SNES_WMADDH, 0);
     LoadX16(cpu, count);
     if (pairs)
         LoadA8(cpu, 0x21u);
     do {
-        StoreZeroAbsolute8(memory, cpu, 0x2180u, 0);
+        StoreZeroAbsolute8(memory, cpu, SNES_WMDATA, 0);
         if (pairs)
-            StoreAAbsolute8(memory, cpu, 0x2180u, 0);
+            StoreAAbsolute8(memory, cpu, SNES_WMDATA, 0);
         LoadX16(cpu, (uint16_t)(cpu->x - 1u));
     } while (!cpu->zero);
 }
@@ -530,4 +530,244 @@ Lufia2ExecutionResult Lufia2BattleSpriteBlock(
     LoadA8(cpu, DirectByte(memory, cpu, 0x15u));
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x81bdc7u);
+}
+
+/* Blend A toward $CA through $81:B505, called at pc. */
+static void BlendAt(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t ret) {
+    SimulateJsrFrame(memory, cpu, ret);
+    (void)Lufia2BattleBlend(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $81:B48B: $22 = gray $22 blended to colour $24 by $13 (0-$40). */
+Lufia2ExecutionResult Lufia2BattleFadeColor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    uint8_t level;
+
+    LoadA8(cpu, DirectByte(memory, cpu, 0x13u));
+    level = A8(cpu);
+    if (cpu->zero)
+        return ExecutionReturned(0x81b504u);
+    Compare8(cpu, level, 0x40u);
+    if (cpu->zero) {
+        LoadX16(cpu, Read16Direct(memory, cpu, 0x24u));
+        StoreXDirect16(memory, cpu, 0x22u);
+        return ExecutionReturned(0x81b504u);
+    }
+    AslA8(cpu);
+    AslA8(cpu);
+    StoreADirect8(memory, cpu, 0x29u);
+    LoadA8(cpu, (uint8_t)((level >> 4) & 0x03u));
+    Write8(memory, (uint16_t)(cpu->direct_page + 0x29u),
+        (uint8_t)(DirectByte(memory, cpu, 0x29u) | A8(cpu)));
+    LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x22u) & 0x1fu));
+    StoreADirect8(memory, cpu, 0x26u);
+    LoadA8(cpu, (uint8_t)((DirectByte(memory, cpu, 0x23u) >> 2) & 0x1fu));
+    StoreADirect8(memory, cpu, 0x27u);
+    TransferDirectToA(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x22u));
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    ExchangeAccumulatorBytes(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    And8(cpu, 0x1fu);
+    StoreADirect8(memory, cpu, 0x28u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x26u));              /* red */
+    StoreADirect8(memory, cpu, 0xcau);
+    LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x24u) & 0x1fu));
+    BlendAt(memory, cpu, 0xb4ceu);
+    StoreADirect8(memory, cpu, 0x26u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x27u));              /* blue */
+    StoreADirect8(memory, cpu, 0xcau);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x25u));
+    cpu->carry = (A8(cpu) >> 1) & 1u;
+    LoadA8(cpu, (uint8_t)(A8(cpu) >> 2));
+    And8(cpu, 0x1fu);
+    BlendAt(memory, cpu, 0xb4ddu);
+    AslA8(cpu);
+    AslA8(cpu);
+    StoreADirect8(memory, cpu, 0x27u);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x28u));              /* green */
+    StoreADirect8(memory, cpu, 0xcau);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x24u));
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    ExchangeAccumulatorBytes(cpu);
+    And8(cpu, 0x1fu);
+    BlendAt(memory, cpu, 0xb4f4u);
+    ExchangeAccumulatorBytes(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    cpu->carry = (cpu->accumulator >> 2) & 1u;
+    LoadA16(cpu, (uint16_t)(cpu->accumulator >> 3));
+    And16(cpu, 0x03e0u);
+    Or16(cpu, Read16Direct(memory, cpu, 0x26u));
+    StoreADirect16(memory, cpu, 0x22u);
+    SetAccumulatorWidth(cpu, 1);
+    return ExecutionReturned(0x81b504u);
+}
+
+/* $81:B444: palette $11 colours 1-15 grayed, faded by $13, to CGRAM buffer. */
+Lufia2ExecutionResult Lufia2BattlePaletteFade(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    TransferDirectToA(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, 0x11u));
+    SetAccumulatorWidth(cpu, 0);
+    ExchangeAccumulatorBytes(cpu);
+    cpu->carry = (cpu->accumulator >> 2) & 1u;
+    LoadA16(cpu, (uint16_t)(cpu->accumulator >> 3));
+    TransferAToX(cpu);
+    LoadA16(cpu, 0x000fu);
+    StoreADirect16(memory, cpu, 0x19u);
+    SetAccumulatorWidth(cpu, 1);
+    do {
+        uint16_t gray;
+
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ff1dbu, cpu->x)));
+        PushIndex(memory, cpu);
+        StoreADirect16(memory, cpu, 0x24u);
+        StoreADirect16(memory, cpu, 0x15u);
+        SimulateJsrFrame(memory, cpu, 0xb464u);
+        (void)Lufia2ColorToGray(memory, cpu);
+        SimulateRtsFrame(memory, cpu);
+        gray = Read16Direct(memory, cpu, 0x15u);
+        cpu->carry = (gray >> 1) & 1u;
+        LoadA16(cpu, (uint16_t)((((gray >> 2) & 0x1c00u) ^ 0xffffu) + 1u));
+        cpu->carry = 0;
+        Add16Value(cpu, gray);
+        StoreADirect16(memory, cpu, 0x15u);
+        StoreADirect16(memory, cpu, 0x22u);
+        SetAccumulatorWidth(cpu, 1);
+        SimulateJsrFrame(memory, cpu, 0xb47bu);
+        (void)Lufia2BattleFadeColor(memory, cpu);
+        SimulateRtsFrame(memory, cpu);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x22u));
+        cpu->x = PullIndexValue(memory, cpu);
+        StoreAAbsolute16(memory, cpu, 0x0320u, cpu->x);
+        SetAccumulatorWidth(cpu, 1);
+        DecrementDirect8(memory, cpu, 0x19u);
+    } while (!cpu->zero);
+    return ExecutionReturned(0x81b48au);
+}
+
+/* Item, party and sprite helpers of bank $81. */
+
+#include "core/cpu_internal.h"
+#include "lufia2/battle.h"
+
+static void SetPaletteBank(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint8_t bank) {
+    LoadA8(cpu, bank);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+}
+
+/* $81:EC41: clear $7F:F000-$FFFF through WMDATA; M1X0. */
+Lufia2ExecutionResult Lufia2BattleClearF000(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    LoadX16(cpu, 0xf000u);
+    StoreWordAbsolute(memory, cpu, SNES_WMADDL, cpu->x);
+    LoadA8(cpu, 0x01u);
+    StoreAAbsolute8(memory, cpu, SNES_WMADDH, 0);
+    LoadX16(cpu, 0x1000u);
+    do {
+        StoreZeroAbsolute8(memory, cpu, SNES_WMDATA, 0);
+        LoadX16(cpu, (uint16_t)(cpu->x - 1u));
+    } while (!cpu->zero);
+    return ExecutionReturned(0x81ec55u);
+}
+
+/* $81:EB34: palette $24 ($9A:F970) to $120F, then 16 zeros. */
+Lufia2ExecutionResult Lufia2BattlePaletteCopy(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    PushY(memory, cpu);
+    PushDataBank(memory, cpu);
+    SetPaletteBank(memory, cpu, 0x9au);
+    LoadX16(cpu, 0x0000u);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, (uint16_t)(Read16Direct(memory, cpu, 0x24u) << 4));
+    cpu->carry = (Read16Direct(memory, cpu, 0x24u) >> 12) & 1u;
+    TransferAToY(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    do {
+        LoadAAbsolute8(memory, cpu, 0xf970u, cpu->y);
+        StoreAAbsolute8(memory, cpu, 0x120fu, cpu->x);
+        IncrementY16(cpu);
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x0010u);
+    } while (!cpu->zero);
+    TransferDirectToA(cpu);
+    do {
+        StoreAAbsolute8(memory, cpu, 0x120fu, cpu->x);
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x0020u);
+    } while (!cpu->zero);
+    PullDataBank(memory, cpu);
+    cpu->y = PullIndexValue(memory, cpu);
+    return ExecutionReturned(0x81eb61u);
+}
+
+/* $81:EB62: palette $24 split: low nibbles << 4 at $121F, high at $120F. */
+Lufia2ExecutionResult Lufia2BattlePaletteSplit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    unsigned i;
+
+    PushY(memory, cpu);
+    PushDataBank(memory, cpu);
+    SetPaletteBank(memory, cpu, 0x9au);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, (uint16_t)(Read16Direct(memory, cpu, 0x24u) << 4));
+    cpu->carry = (Read16Direct(memory, cpu, 0x24u) >> 12) & 1u;
+    TransferAToY(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadX16(cpu, 0x0000u);
+    do {
+        TransferDirectToA(cpu);
+        LoadAAbsolute8(memory, cpu, 0xf970u, cpu->y);
+        SetAccumulatorWidth(cpu, 0);
+        for (i = 0; i < 4u; ++i)
+            AslA16(cpu);
+        SetAccumulatorWidth(cpu, 1);
+        StoreAAbsolute8(memory, cpu, 0x121fu, cpu->x);
+        ExchangeAccumulatorBytes(cpu);
+        StoreAAbsolute8(memory, cpu, 0x120fu, cpu->x);
+        IncrementY16(cpu);
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x0010u);
+    } while (!cpu->zero);
+    PullDataBank(memory, cpu);
+    cpu->y = PullIndexValue(memory, cpu);
+    return ExecutionReturned(0x81eb92u);
+}
+
+/* $81:BD47: far entry of Lufia2BattleSpriteBlock. */
+Lufia2ExecutionResult Lufia2BattleSpriteBlockFar(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xbd49u);
+    (void)Lufia2BattleSpriteBlock(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    return ExecutionReturned(0x81bd4au);
+}
+
+/* $81:BE54: far entry of Lufia2BattleTileBlock. */
+Lufia2ExecutionResult Lufia2BattleTileBlockFar(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xbe56u);
+    (void)Lufia2BattleTileBlock(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    return ExecutionReturned(0x81be57u);
 }

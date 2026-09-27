@@ -271,3 +271,24 @@ Lufia2ExecutionResult Lufia2SpellRecordByte8(
     Lufia2CpuState *cpu) {
     return SpellRecordAt(memory, cpu, 0xf406u, 0x0008u, 0x81f413u);
 }
+
+/* $81:F2A9: item name with trailing spaces cleared; RTL. */
+Lufia2ExecutionResult Lufia2ItemNameTrimmed(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    ItemName(memory, cpu);
+    return ExecutionReturned(0x81f2e6u);
+}
+
+/* $81:F291: item text pointer, preserving P; RTL. */
+Lufia2ExecutionResult Lufia2ItemTextPointer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    ItemRecordAddress(memory, cpu);
+    return ExecutionReturned(0x81f2a8u);
+}
+
+/* $81:F446: spell text pointer; RTS. */
+Lufia2ExecutionResult Lufia2SpellTextPointer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SpellRecordAddress(memory, cpu);
+    return ExecutionReturned(0x81f45du);
+}
