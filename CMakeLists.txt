@@ -14,6 +14,7 @@ option(LUFIA2_ENABLE_WARNINGS "Build lufia2_decomp with compiler warnings"
 option(LUFIA2_WARNINGS_AS_ERRORS "Treat lufia2_decomp warnings as errors" OFF)
 option(LUFIA2_ENABLE_SANITIZERS
     "Build lufia2_decomp with AddressSanitizer and UBSan (GCC/Clang)" OFF)
+option(LUFIA2_BUILD_TOOLS "Build the command-line tools" ${_lufia2_top_level})
 
 add_library(lufia2_decomp STATIC
     src/actor/actor_action.c
@@ -65,6 +66,7 @@ add_library(lufia2_decomp STATIC
     src/system/decompress.c
     src/system/math.c
     src/system/random.c
+    src/system/resource_format.c
     src/system/screen.c
     src/system/sound.c
     src/text/text_engine.c
@@ -82,20 +84,22 @@ target_include_directories(lufia2_decomp
         ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_features(lufia2_decomp PUBLIC c_std_11)
 
+set(_lufia2_warnings)
 if(LUFIA2_ENABLE_WARNINGS)
     if(MSVC)
-        target_compile_options(lufia2_decomp PRIVATE /W4)
+        list(APPEND _lufia2_warnings /W4)
     elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-        target_compile_options(lufia2_decomp PRIVATE -Wall -Wextra -Wpedantic)
+        list(APPEND _lufia2_warnings -Wall -Wextra -Wpedantic)
     endif()
     if(LUFIA2_WARNINGS_AS_ERRORS)
         if(MSVC)
-            target_compile_options(lufia2_decomp PRIVATE /WX)
+            list(APPEND _lufia2_warnings /WX)
         else()
-            target_compile_options(lufia2_decomp PRIVATE -Werror)
+            list(APPEND _lufia2_warnings -Werror)
         endif()
     endif()
 endif()
+target_compile_options(lufia2_decomp PRIVATE ${_lufia2_warnings})
 
 if(LUFIA2_ENABLE_SANITIZERS)
     if(NOT CMAKE_C_COMPILER_ID MATCHES "GNU|Clang" OR MSVC)
@@ -108,3 +112,10 @@ if(LUFIA2_ENABLE_SANITIZERS)
     # The static library needs the sanitizer runtimes in whatever links it.
     target_link_options(lufia2_decomp INTERFACE ${_lufia2_sanitizers})
 endif()
+
+if(LUFIA2_BUILD_TOOLS)
+    add_executable(lufia2-resource tools/lufia2_resource.c)
+    target_link_libraries(lufia2-resource PRIVATE lufia2_decomp)
+    target_compile_options(lufia2-resource PRIVATE ${_lufia2_warnings})
+endif()
+

@@ -89,6 +89,15 @@ resource cache, which could replace the per-byte and back-reference work
 rather than restate it, would belong in the consumer's separate patch layer,
 not in this repository.
 
+The format itself, without the CPU, is `src/system/resource_format.c`
+(`include/lufia2/resource_format.h`): the table entry to stream address
+computation of `$80:8E9D`, and a decoder into a caller-owned buffer that
+neither allocates nor caches. On the supported ROM it decodes all 680
+resources, byte for byte like the consumer's host decoder
+`src/lufia2_resource.c`; the synthetic test `tests/resource_format_test.c`
+also runs random valid streams through both it and the `$80:8E9D` adapter
+and requires identical output.
+
 ### Map setup commands are not the actor VM
 
 LEdit's old map research documents a setup-command stream with examples such
