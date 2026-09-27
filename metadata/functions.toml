@@ -849,3 +849,131 @@ source = "src/battle/battle_popup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:B264"
+name = "Lufia2BattleActiveMask"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B2B5"
+name = "Lufia2BattleTargetRecord"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B2DB"
+name = "Lufia2BattleTargetSlot"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B505"
+name = "Lufia2BattleBlend"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B54A"
+name = "Lufia2ColorToGray"
+source = "src/battle/battle_util.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:B5A3"
+name = "Lufia2BattleHideOam"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B974"
+name = "Lufia2BattleLoadPalette"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B9AF"
+name = "Lufia2BattleCommitPalettes"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:C2C0"
+name = "Lufia2BattleCopyC2C0"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:C2D0"
+name = "Lufia2BattleClear2000"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:C2E3"
+name = "Lufia2BattleFill2800"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:C2FB"
+name = "Lufia2BattleClear3000"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:C30E"
+name = "Lufia2BattleClear3800"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:C5CF"
+name = "Lufia2BattleTargetPointer"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:BE58"
+name = "Lufia2BattleTileBlock"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:BD4B"
+name = "Lufia2BattleSpriteBlock"
+source = "src/battle/battle_util.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
