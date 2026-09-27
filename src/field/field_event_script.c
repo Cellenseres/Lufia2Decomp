@@ -231,7 +231,15 @@ void Lufia2EventFlagBit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
-    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    Lufia2EventFlagBitFrom(memory, cpu, 0x80u, return_address);
+}
+
+void Lufia2EventFlagBitFrom(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t return_bank,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, return_bank, return_address);
     StoreADirect8(memory, cpu, 0x54u);                         /* E898 */
     And8(cpu, 0x07u);
     /* TAX keeps B, so DP high enters both indexes. */

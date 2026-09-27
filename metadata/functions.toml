@@ -1369,3 +1369,13 @@ source = "src/text/text_window.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Ancient Cave floor generator, JSL'd from $83:B26D. $80:93FE (APU) and
+# $83:B5D3 (map loader) run through the pushed-frame child callback.
+[[function]]
+address = "83:9E31"
+name = "Lufia2AncientCaveGenerateFloor"
+source = "src/cave/ancient_cave.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

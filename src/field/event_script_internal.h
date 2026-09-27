@@ -287,6 +287,13 @@ void Lufia2EventFlagBit(
     Lufia2CpuState *cpu,
     uint16_t return_address);
 
+/* $80:E898 called from another bank. */
+void Lufia2EventFlagBitFrom(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t return_bank,
+    uint16_t return_address);
+
 /* Read-only: script byte n past Y. */
 uint8_t Lufia2EventPeekByte(
     const Lufia2Memory *memory,

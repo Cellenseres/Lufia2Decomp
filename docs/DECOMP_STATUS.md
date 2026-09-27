@@ -310,25 +310,166 @@ $80:A074 search miss/hit 512/512; goto true skip/take 514/510; false skip/take 5
 $80:9CB8 8704/8704 (host return 1334, dispatch return 2663, LLE boundary 4195, LLE entry 512, child never returned 0)
 ```
 
-## T14 AC1: Ancient Cave contract research (2026-09-27)
+## T14: Ancient Cave floor generator (2026-09-27)
 
-The actual `$83:9E31` floor entry is **M1/X0**, correcting the earlier
-tentative M0/X0 premise. The direct caller at `$83:B26D`, immediate widths
-in the ROM and incoming generated call modes independently agree. A separate
-original-ROM probe executes the B268 caller prefix and verifies the JSL frame:
-256 cases cover floors 1/10/11/50/90/98/99/100, RNG warmups 1..32 and refill
-indices 0/54. These probes establish contracts; no native function is claimed.
+`$83:9E31` (`Lufia2AncientCaveGenerateFloor`, `src/cave/ancient_cave.c`) is
+native as a whole function, with the builder `$83:9013` and all of its bank-83
+children. It is **verified, unbound**: the runtime keeps its AOT/LLE path; no
+binding or generated-graph change is part of T14.
 
-Floor is the byte `$7F:E696`. The prefix updates maximum floor `$00:0B75`,
-writes the real divider (`$00:4204/4205/4206`) and advances the existing RNG.
-Floor 99 writes its fixed scene values, clears `$05B6` bit 0 and returns at
-`$83:9EA1` with M1/X0, without incrementing the floor. The 32 floor-99 probes
-return through the caller frame. Other 224 probes stop before the first loader
-at `$83:9F2A` or `$83:9F2E`, retaining that frame and M1/X0.
+### AC1 contract
 
-DB and DP are inherited; the probes use the coherent DB83/DP0000 state.
-Actual gameplay invariants still require caller-path proof. TDC values must
-remain observable. The large builder is `$83:9013`; its internal `$83:99C8`
-child explicitly returns M0/X0. Loader children (`$80:93FE`, `$83:B5D3`),
-the dynamic RAM `$057D` call and remaining builder child modes still need
-contract research before translation. No new metadata or runtime binding.
+Entry is M1/X16 (the T13 correction stands). Evidence: the ROM immediates,
+the one ROM caller `$83:B26D` (every static path to it arrives M1/X16 with
+DB = `$83` from `PHK; PLB` at `$83:ACBB`), a static mode-tracking walk of the
+whole call tree (`scripts/ancient_cave_contracts.py` in the consumer) and
+112 original-ROM probe runs tracing every JSR/JSL entry and return (a scratch
+probe; the committed verifier exercises the same sites).
+
+| Routine | ROM callers | Entry -> exit | Stack, DB, DP | Disposition |
+| --- | --- | --- | --- | --- |
+| `$83:9E31` | 1 (`$83:B26D`) | M1X16 -> M1X16; RTL `$9EA1` (floor 99) or `$9F3E` | balanced; DB and D used as is (`$05AC/$05B6/$099D` DB-relative) | native, verified |
+| `$83:9013` | 1 (`$83:9F32`) | M1X16 -> M1X16; RTS `$99C7` | `PHB ... PLB`; sets DB `$7E/$96/$7F/$83`, MVN leaves `$7F` | native, internal |
+| `$80:93FE` | 16 | M1X16 -> M1X16; RTL `$9419` | balanced | APU handshake (`$2140-$2143` compare loops): stays external, called through the pushed-frame child |
+| `$83:B5D3` | 6 | M1X16 -> M1X16; RTL `$B66D` | `PHP/PHB` balanced | map loader, stays external through the child (see below) |
+| `$00:057D` stub | `JSR $057D` from `$83:B618`; operands also patched at `$86:900B/906E` | M0X16 -> M0X16, DB = `$7E`, A = `$FFFF` | RTS through the caller's bank | `MVN dst,src ; RTS`; `$057D = $54`, `$0580 = $60` written only by boot `$80:80E1`; callers write `$057E` (dst) and `$057F` (src) |
+| `$83:99C8` | 4 (builder) | M1 -> **M0** | balanced | internal |
+| `$83:9D46` | 4 (builder) | M0 -> M0 | balanced | internal |
+| `$80:EC98` | 2 (`$80:EB96`, `$83:99B8`) | **M0** -> M1 | balanced | native, shared (`Lufia2FieldDecompressMapData`) |
+| `$80:EBAA` | 3 (`$80:EB40/EB83`, `$83:99A7`) | M1 -> M1 | exits with DB = `$7F` | native, shared (`Lufia2FieldReadSections`) |
+| `$80:EC18/EC78` | 2 each | M1 -> M1 | balanced | native, shared |
+| `$83:C652` | 2 (`$83:919A`, `$83:C51E`) | M1 -> M1, carry = found | `PHB ... PLB` | native, shared (`Lufia2PartyListHasEntry`) |
+| `$83:9B48` | 11 (builder) + `$83:9B44` (JSL from `$8E:B8E5`) | M1 -> M1 | balanced | native (`Lufia2CaveCellPosition`) |
+| other `$83:99D3-$9E1B` | builder only | M1 -> M1 | balanced | native, internal |
+| `$80:82C7`, `$80:8E9D`, `$80:BFAA`, `$80:E898`, `$80:BE1E` | many | M1 -> M1 (RNG also under M0) | balanced | existing verified natives reused |
+
+Every return is balanced; the only non-RTS/RTL transfer in the tree is the
+`$80:CC35` event dispatch `JMP ($E5A4,x)` inside `$80:CBAE`, reached only
+through `$83:B5D3`. The probes confirm each exercised site: exit M/X, DB and
+DP equal the static prediction, including the M1->M0 (`$99C8`), M0->M1
+(`$80:EC98`, `$8E:B847`) and DB->`$7E` (MVN stub) transitions.
+
+DP: `TDC` is observable. D's low byte becomes the dividend high byte
+(`$4205`) and the multiplicand high byte of every `$83:9E1B/$9DE4` draw; D's
+high byte enters table indexes through `TDC ... TAX`. With D != 0
+(`$0100/$0200/$1000/$0080/$0001`) the original ran away in 34 of 40 probe
+cases (no return within 40M instructions); the 6 that returned matched the
+native result exactly. D = `$0000` is the only meaningful DP state. DB must
+map `$05AC-$099D` to WRAM: system banks (`$83/$80/$00`, and `$96` 8/8) and
+`$7E` behave identically; `$7F` and `$C0` ran away in 7 of 16 cases and the
+other 9 matched. The native code computes every D/DB-relative address from
+the live registers, so it is exact wherever the original terminates.
+
+### Native structure
+
+- `src/cave/ancient_cave.c`: `$83:9E31` and the builder phases (grid clear,
+  item lists, chest contents, room rectangles, linking and corridors, link
+  deduplication, start/stairs, treasure room, objects and chests, cell
+  shapes, block drawing, tile sets, decorations, final tiles and sections).
+- `src/cave/cave_grid.c`, `cave_objects.c`, `cave_random.c`: the bank-83
+  children, each with its exact JSR frame.
+- `src/field/field_sections.c`: `$80:EBAA/EC18/EC78/EC98` (shared with the
+  ordinary map loader).
+- `src/core/cpu_ops.h`: width-aware instruction helpers (new, additive).
+- `Lufia2PushedChildCall` (`execution.h`): external children whose exact JSL
+  frame the native code has already pushed. `$80:93FE` and `$83:B5D3` use it.
+- `Lufia2EventFlagBitFrom` adds the return bank to the verified `$80:E898`.
+
+Kept quirks: the grid "clear" stores D; the four diagonal `TRB $55` checks
+of the shape pass clear nothing (A is 0 at each TRB) and are dead; the 2x2
+chest-room counter `$59` is only zeroed as a side effect of `$83:9CA0`, and
+its limit of 8 never triggers because `$E734` reaches 8 first; the chest
+proximity test looks at x-1/x+2 and y-1/y+2; `$83:99D3` compares an object's
+size value + 1 (`LDA $E216,x; INC`) instead of its column + 1 with `$8F`,
+which never matches (columns are at least 7); `ADC #$0100` (`$9831`) and
+`ADC #$00C0` (`$9DD7`) have no `CLC` (their carry is provably 0);
+`$4390`/`$4458`/`$474E`/`$4754` are `$7F` tile map reads (DB), not hardware;
+the `STZ $28` at `$99B2` is 16-bit and also clears `$29`, so the second
+resource of `$80:EC98` is never loaded from the cave.
+
+The `$80:BFBC` list-search handoff is propagated as an exact boundary but is
+not reachable from ROM map data (the builder's own `$7F:C000` writes contain
+`$FF` inside the scanned window); it is not covered by whole-function cases.
+
+### AC4 verification
+
+Suite `Lufia2AncientCaveVerify` (consumer `decomp-verify`). Each case seeds
+WRAM (RNG table and index, `$40` warmup, floor, max floor, `$05B6/$05AC/$099D`,
+party lists, event and item flags, DP scratch, stale `$7F:0000-7FFF` and
+`$7F:C000-C4FF`), runs the original from the `$83:B26D` JSL frame to the RTL
+landing at `$83:B271` on `interp816` and the native function on a copy, and
+compares A/X/Y, S, D, DB, PB, all flags and M/X, the return PC, all of WRAM,
+the ordered hardware write and read streams (`$211B/$211C/$2134-$2135`,
+`$4202-$4206/$4214/$4216`) and the CPU state plus WRAM digest at the
+`$80:93FE` boundary. `$83:B5D3` runs on `interp816` from the exact native
+state inside the child callback.
+
+Structured cases: floors 1/10/11/50/90/98/99/100 x warmups 1..32 x both music
+paths; every floor 1..100 at RNG index 0, `$35` and `$36` (refill on the next
+call); DB `$83/$80/$00/$7E/$96`; then seeded cases to 16,384. D = `$0000`
+throughout (see AC1). Standalone original-ROM cases for the shared helpers
+cover inputs the cave never produces.
+
+```text
+$83:9E31 whole-function cases passed: 16384 / 16384 (floor 99 225, $80:93FE boundaries 8102, handoffs 0, unwound 0)
+$83:9013 coverage: objects max 20 (full 28), chests max 8 (full 1012), event chests 121, floor-21 chests 5312, second stairs 1025, refill-boundary cases 386
+$80:EC98 Lufia2FieldDecompressMapData standalone cases passed: 4096 / 4096 ($29 set in half)
+$80:EBAA Lufia2FieldReadSections standalone cases passed: 4096 / 4096
+$80:EC18 Lufia2FieldPackSectionAttributes standalone cases passed: 4096 / 4096
+$80:EC78 Lufia2FieldSectionSize standalone cases passed: 4096 / 4096
+$83:C652 Lufia2PartyListHasEntry standalone cases passed: 4096 / 4096 (RTL C691 x3445, C68D x651)
+```
+
+Return sites: `$83:9EA1` (floor 99) and `$83:9F3E`; `$80:93FE` taken as an
+external boundary in 8,102 cases, `$83:B5D3` in every non-99 case. The
+`$80:BFBC` handoff is not reached (see above). Off-contract probes: with
+D != 0 or DB `$7F/$C0` the native result matched in every case where the
+original returned (15 of 56).
+
+Negative mutations (`tests/decomp_verify/ancient_cave_mutations.py` in the
+consumer): 60/60 caught (entry and builder 34, grid 9, random 2, placement
+8, sections 5, party list 2). Two more replace a `TDC` value by 0 and are
+equivalent for D = 0 (the only meaningful DP). Candidates shown equivalent
+while building the list, and replaced by observable variants or dropped:
+`ORA #$0300` for `#$0200` (every `$91:FFCA` word has bit 8), the upper
+corridor bound `#$20` (row 2 never holds a room), `$59` limit 9, the diagonal
+TRB block, the `$54` reload before `$EA0F`, `CLC` before `ADC #$0100/#$00C0`
+(carry provably 0), `SBC #$0F` in `$83:9B48` (the extra bit shifts out), tile
+masks `#$01FF/#$00FF` (tiles read there are below `$100`), object size
+`AND #$07` (no object has bit 2), a one-byte-shorter tile map clear (the map
+data at `$7F:7E0E` overwrites it), `TAX` before `REP` (X16 copies all of C)
+and the `$83:99D3` size test (never matches). One survivor found a real
+source defect: the `$AE` chest threshold was tested twice in C; the chest
+branch now follows the original compare chain.
+
+T14 checkpoint (Linux GCC Release; no MSVC in the cloud session): all five
+decomp verification suites PASS with zero failures (the four existing ones
+unchanged: BBF3 semantic and bridge, actor bridges, and the actor-dispatch
+output byte-identical to the pre-T14 run), 164 verified metadata entries
+(163 + `$83:9E31`), zero drafts. The effective recompiler cfg is
+byte-identical to T13; regenerating from it gives byte-identical generated
+sources, so all 1,369 node dispositions, roots, exit-mode sets and the 122
+runtime selections are unchanged. `Lufia2Recomp` Release builds. Next:
+verifier-harness modularization, then `$85:B452`.
+
+### Not bound, and why
+
+`$83:9E31` runs once per floor and is already AOT-compiled. Binding it needs
+a bridge for pushed-frame children (`cpu_dispatch_call_pc_pushed`) plus a
+bridge-harness reference that can stop at `$80:93FE` instead of spinning in
+its APU handshake; both are new and would be verified without a gameplay
+test. A later binding needs: the bridge (guard M1, X16, native mode,
+decimal flag clear, DP = `$0000`), bridge/ABI cases through that harness,
+and a generated graph comparison.
+
+### Follow-ups for the cleanup milestone (not done in T14)
+
+- Instruction helpers are spread over `core/cpu_internal.h` (partly
+  fixed-width), module-private copies and the new width-aware
+  `core/cpu_ops.h`; they should converge on one width-aware set.
+- The consumer verifiers repeat bus/interp adapters (interp <-> native state,
+  JSL frames, flag packing) per suite; `lufia2_actor_dispatch_verify.c` and
+  `lufia2_actor_bridge_verify.c` are monolithic.
+- Earlier milestones' mutations were manual; `ancient_cave_mutations.py`
+  could become a shared runner with per-suite mutation lists.
+
