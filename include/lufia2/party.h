@@ -49,6 +49,21 @@ Lufia2ExecutionResult Lufia2CapsuleExperienceRange(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:F87F stats of member $09FA at level $09FE; DB = $97, M1X0. */
+Lufia2ExecutionResult Lufia2PartyBaseStats(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:ED8E member block $7E:Y from its stored form at X; X16. */
+Lufia2ExecutionResult Lufia2PartyUnpackMember(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:EE94 member block without equipment; X16. */
+Lufia2ExecutionResult Lufia2PartyUnpackMemberBare(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

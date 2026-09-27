@@ -801,3 +801,27 @@ source = "src/menu/menu_sprites.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:F87F"
+name = "Lufia2PartyBaseStats"
+source = "src/party/stats.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:ED8E"
+name = "Lufia2PartyUnpackMember"
+source = "src/party/stats.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:EE94"
+name = "Lufia2PartyUnpackMemberBare"
+source = "src/party/stats.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
