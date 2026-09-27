@@ -67,11 +67,12 @@ for locations that are not catalogued yet.
 
 ## Magic numbers
 
-New semantic code uses a named constant, or a slot view built on one, when
-the catalog has the location. A genuinely unknown address may stay literal
-until it is catalogued with a neutral name. ROM addresses, hardware registers
-and instruction PCs are addresses by nature and stay literal; they are not
-game-state fields and are never replaced mechanically.
+New semantic code uses a named constant, or a slot view built on one
+(`src/actor/actor_slot_view.h`), when the catalog has the location. A
+genuinely unknown address may stay literal until it is catalogued with a
+neutral name. ROM addresses, hardware registers and instruction PCs are
+addresses by nature and stay literal; they are not game-state fields and are
+never replaced mechanically.
 
 ## $83:BBF3
 

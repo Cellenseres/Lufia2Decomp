@@ -740,3 +740,22 @@ corpus did not reach 20 objects, so the runner now forces the full corpus for
 that mutation. The new identity-APU-child mutation is caught. CFG research
 tests pass 11/11; their output is not semantic verification evidence.
 No gameplay or smoke-test gate was used.
+
+## Actor slot views
+
+`$83:BB93` (`Lufia2UpdateActorSlots`) with `$83:AB4F`, and the `$83:C7F8` and
+`$83:D508` front-ends, now read and write their per-slot fields through
+`Lufia2ActorSlotView` (`src/actor/actor_slot_view.h`) and the generated
+memory-map constants instead of raw array addresses; 41 of the 42 raw WRAM
+and direct-page literals in these routines are gone (`$AD`, not catalogued,
+remains). Every access keeps its original order, addressing mode and CPU
+effects. No status or binding changed.
+
+Original-ROM differential after the change, all output identical to the
+run before it: actor-dispatch suite (`$83:BB93` 2,048/2,048, `$83:C7F8`
+16,384/16,384, `$83:D508` 16,384/16,384 whole-function cases, every other
+case of the suite unchanged), actor-bridge suite (`$83:BB93` 2,560/2,560,
+`$83:C7F8` and `$83:D508` 8,704/8,704), and the BBF3, BBF3 bridge, visibility
+and Ancient Cave suites. The suites seed DB as `$00`, `$7E`, `$80` or `$83`,
+which all reach the same low WRAM, so they do not distinguish DB-relative
+from fixed-bank addressing; the view keeps the original DB-relative form.

@@ -3,20 +3,22 @@
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
 #include "actor/actor_internal.h"
+#include "actor/actor_slot_view.h"
 #include "system/wram.h"
 
 /* $83:AB4F: record offsets for actor $A7. */
 void Lufia2ActorRecordOffsets(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Write8(memory, DirectAddress(cpu, 0xa8u), 0x00u);          /* AB4F */
+    /* $A9 = 2 * slot and $AB = 3 * slot, high bytes and $AD zero. */
+    Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT + 1u), 0x00u);  /* AB4F */
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
     AslA8(cpu);
-    Write8(memory, DirectAddress(cpu, 0xa9u), A8(cpu));
-    Write8(memory, DirectAddress(cpu, 0xaau), 0x00u);
+    Write8(memory, DirectAddress(cpu, DP_SLOT_WORD_OFFSET), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SLOT_WORD_OFFSET + 1u), 0x00u);
     Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
-    Write8(memory, DirectAddress(cpu, 0xabu), A8(cpu));
-    Write8(memory, DirectAddress(cpu, 0xacu), 0x00u);
+    Write8(memory, DirectAddress(cpu, DP_SLOT_RECORD_OFFSET), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SLOT_RECORD_OFFSET + 1u), 0x00u);
     Write8(memory, DirectAddress(cpu, 0xadu), 0x00u);
 }
 
@@ -115,13 +117,15 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
     result.pc = 0x83bbf2u;
     result.dispatches = 0;
 
-    LoadA8(cpu, Read8(memory, 0x7fd0feu));                     /* BB93 */
+    LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0FE));               /* BB93 */
     if (!cpu->zero) {
         LoadA8(cpu, 0x01u);
-        Write8(memory, 0x7fe216u, A8(cpu));
+        Write8(memory, WRAM_UNK_7FE216, A8(cpu));
     }
     Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), 0x00u);  /* BB9F */
     for (;;) {
+        Lufia2ActorSlotView slot;
+
         ++result.dispatches;
         /* A child left D set: AB4F's ADC goes BCD. */
         if (cpu->decimal) {
@@ -139,7 +143,8 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
         } else {
             LoadYDirect16(memory, cpu, DP_ACTOR_SLOT);
         }
-        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->y);
+        slot = Lufia2ActorSlotAt(memory, cpu, cpu->y);
+        LoadA8(cpu, Lufia2ActorSlotState(&slot));              /* BBA7 */
         BitImmediate8(cpu, 0x04u);
         if (cpu->zero) {
             uint32_t primary = 0;
@@ -159,7 +164,7 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
                 }
             }
             if (gate) {
-                LoadA8(cpu, Read8(memory, 0x7fd0a1u));         /* BBBE */
+                LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));   /* BBBE */
                 BitImmediate8(cpu, 0x2cu);
                 if (!cpu->zero)
                     TransferYToA8(cpu);
@@ -183,20 +188,20 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
         LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT))); /* BBD1 */
         LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
         Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), A8(cpu));
-        Compare8(cpu, A8(cpu), 0x28u);
+        Compare8(cpu, A8(cpu), ACTOR_SLOT_COUNT);
         if (cpu->zero)
             break;
     }
-    LoadA8(cpu, Read8(memory, 0x7fd0feu));                     /* BBDA */
+    LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0FE));               /* BBDA */
     if (!cpu->zero) {
         LoadA8(cpu, 0x03u);
-        Write8(memory, 0x7fe216u, A8(cpu));
+        Write8(memory, WRAM_UNK_7FE216, A8(cpu));
     }
-    LoadAAbsolute8(memory, cpu, 0x09a1u, 0);                   /* BBE6 */
+    LoadAAbsolute8(memory, cpu, WRAM_FOLLOW_SLOTS, 0);         /* BBE6 */
     Compare8(cpu, A8(cpu), 0xffu);
     if (!cpu->zero) {
         LoadA8(cpu, 0x80u);
-        TestBitsAbsolute8(memory, cpu, 0x09a1u, 0);
+        TestBitsAbsolute8(memory, cpu, WRAM_FOLLOW_SLOTS, 0);
     }
     return result;
 }
