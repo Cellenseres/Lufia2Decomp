@@ -685,7 +685,7 @@ status = "verified"
 [[function]]
 address = "82:CD1F"
 name = "Lufia2CapsuleTryLearn"
-source = "src/menu/menu_screen.c"
+source = "src/party/capsule.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"

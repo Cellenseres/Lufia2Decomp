@@ -7,6 +7,9 @@
 void Lufia2CapsuleRecordPointer(const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $82:C4B3: skill id of slot A (learned or not). */
+void Lufia2CapsuleSkill(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $82:F6A4 / $82:F6D4: clear bonus words of the block at [$2A]. */
 void Lufia2BonusClear(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t first, unsigned words);

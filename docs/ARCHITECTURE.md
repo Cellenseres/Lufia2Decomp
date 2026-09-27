@@ -47,3 +47,25 @@ original memory accesses and CPU behavior. Padding wraps in 16 bits; the pure
 world-point filter can only reject otherwise visible actors. Consumers own the
 policy and context; this library never reads renderer globals or room metadata.
 Sorting, uploads and OAM remain one implementation for both paths.
+
+## Source layout
+
+Sources are grouped by subsystem (`actor`, `battle`, `cave`, `field`, `item`,
+`menu`, `party`, `system`, `text`, `title`, `world`) and a file is split only
+along a semantic boundary, never by line count alone:
+
+- The field event script VM is `field_event_script.c` (core loop),
+  `field_event_actors.c` (actors, positions, points and the opcode
+  dispatcher), `field_event_objects.c` (map-object bits, tiles, pending
+  placement and pushing) and `field_event_conditions.c`. Helpers shared
+  across these files are declared in `field/event_script_internal.h`.
+- Capsule monster stats and skill learning (`$82:C4B3`, `$82:CD1F`)
+  live in `party/capsule.c`; `menu/menu_screen.c` keeps the menu screens and
+  their drawing helpers. Public declarations did not move.
+- `actor/actor_primary.c`, `actor/object_vm.c` and `menu/menu_screen.c` stay
+  whole: each is one VM or one family of screens sharing private helpers, and
+  splitting them would only turn those helpers into cross-file symbols.
+
+The library remains one target, `lufia2_decomp` (`Lufia2::Decomp`); there are
+no per-domain CMake targets, because they would add build surface without
+changing ownership or dependencies.
