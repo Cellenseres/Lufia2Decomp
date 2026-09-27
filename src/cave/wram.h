@@ -1,0 +1,39 @@
+#ifndef LUFIA2_CAVE_WRAM_H
+#define LUFIA2_CAVE_WRAM_H
+
+/* Established by the $83:9013-$83:9E31 ROM operations and T14 probes.
+ * Offsets remain DB-relative at OpAbs sites; LONG constants keep bank $7F.
+ * Counts may be accessed as bytes or words, according to the live CPU width.
+ * Reused DP scratch ($54-$66) deliberately has no single-purpose names. */
+enum {
+    CAVE_FLOOR = 0xe696u,
+    CAVE_ROOM_GRID = 0xea00u,
+    CAVE_SHAPE_GRID = 0xeb00u,
+    CAVE_OBJECT_COUNT = 0xe731u,
+    CAVE_CHEST_COUNT = 0xe734u,
+    CAVE_OBJECT_COLUMNS = 0xe6b1u,
+    CAVE_OBJECT_ROWS = 0xe6d1u,
+    CAVE_OBJECT_SIZES = 0xe216u,
+    CAVE_CHEST_COLUMNS = 0xe736u,
+    CAVE_CHEST_ROWS = 0xe73eu,
+    CAVE_START_COLUMN = 0xe6a9u,
+    CAVE_START_ROW = 0xe6aau,
+    CAVE_STAIR_COLUMN = 0xe6abu,
+    CAVE_STAIR_ROW = 0xe6acu,
+
+    CAVE_FLOOR_LONG = 0x7f0000u | CAVE_FLOOR,
+    CAVE_ROOM_GRID_LONG = 0x7f0000u | CAVE_ROOM_GRID,
+    CAVE_SHAPE_GRID_LONG = 0x7f0000u | CAVE_SHAPE_GRID,
+    CAVE_OBJECT_COUNT_LONG = 0x7f0000u | CAVE_OBJECT_COUNT,
+    CAVE_CHEST_COUNT_LONG = 0x7f0000u | CAVE_CHEST_COUNT,
+    CAVE_OBJECT_COLUMNS_LONG = 0x7f0000u | CAVE_OBJECT_COLUMNS,
+    CAVE_START_COLUMN_LONG = 0x7f0000u | CAVE_START_COLUMN,
+    CAVE_START_ROW_LONG = 0x7f0000u | CAVE_START_ROW,
+    CAVE_STAIR_COLUMN_LONG = 0x7f0000u | CAVE_STAIR_COLUMN,
+    CAVE_STAIR_ROW_LONG = 0x7f0000u | CAVE_STAIR_ROW,
+
+    CAVE_DP_TILE_COLUMN = 0x8f,
+    CAVE_DP_TILE_ROW = 0x91,
+};
+
+#endif

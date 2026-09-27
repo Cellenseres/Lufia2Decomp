@@ -1,8 +1,11 @@
 #ifndef LUFIA2_CORE_CPU_OPS_H
 #define LUFIA2_CORE_CPU_OPS_H
 
-/* Width-aware 65816 operations: each helper follows the live M or X flag
-   exactly like the instruction it names, flags included. */
+/* Width-aware adapters for reconstructed native-mode, binary contracts.
+ * cpu_internal.h owns scalar flags, loads, arithmetic, transfers and stack
+ * primitives; use those here instead of adding a second implementation.
+ * Addressing and memory write order stay explicit in the adapters below.
+ * OpRepWidths/OpSepWidths handle only M/X bits, not arbitrary status masks. */
 
 #include "core/cpu_internal.h"
 
@@ -232,21 +235,18 @@ static inline uint16_t OpIndexValue(const Lufia2CpuState *cpu, uint16_t v) {
     return cpu->index_is_8_bit ? (uint8_t)v : v;
 }
 
-static inline void OpSetIndexNz(Lufia2CpuState *cpu, uint16_t value) {
-    if (cpu->index_is_8_bit)
-        SetNz8(cpu, (uint8_t)value);
-    else
-        SetNz16(cpu, value);
-}
-
 static inline void OpLdx(Lufia2CpuState *cpu, uint16_t value) {
-    cpu->x = OpIndexValue(cpu, value);
-    OpSetIndexNz(cpu, cpu->x);
+    if (cpu->index_is_8_bit)
+        LoadX8(cpu, (uint8_t)value);
+    else
+        LoadX16(cpu, value);
 }
 
 static inline void OpLdy(Lufia2CpuState *cpu, uint16_t value) {
-    cpu->y = OpIndexValue(cpu, value);
-    OpSetIndexNz(cpu, cpu->y);
+    if (cpu->index_is_8_bit)
+        LoadY8(cpu, (uint8_t)value);
+    else
+        LoadY16(cpu, value);
 }
 
 static inline void OpInx(Lufia2CpuState *cpu) {
@@ -282,15 +282,15 @@ static inline void OpCpy(Lufia2CpuState *cpu, uint16_t value) {
 }
 
 static inline void OpTax(Lufia2CpuState *cpu) {
-    OpLdx(cpu, cpu->accumulator);
+    TransferAToX(cpu);
 }
 
 static inline void OpTay(Lufia2CpuState *cpu) {
-    OpLdy(cpu, cpu->accumulator);
+    TransferAToY(cpu);
 }
 
 static inline void OpTxa(Lufia2CpuState *cpu) {
-    OpLoadA(cpu, cpu->x);
+    TransferXToA(cpu);
 }
 
 static inline void OpTya(Lufia2CpuState *cpu) {
@@ -302,7 +302,7 @@ static inline void OpTxy(Lufia2CpuState *cpu) {
 }
 
 static inline void OpTyx(Lufia2CpuState *cpu) {
-    OpLdx(cpu, cpu->y);
+    TransferYToX(cpu);
 }
 
 static inline void OpPushX(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -317,18 +317,19 @@ static inline void OpPullY(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     cpu->y = PullIndexValue(memory, cpu);
 }
 
-/* REP/SEP. */
-static inline void OpRep(Lufia2CpuState *cpu, uint8_t bits) {
-    if (bits & 0x20u)
+/* Only REP/SEP width masks ($10/$20/$30). Other status bits are not modeled
+ * by these adapters; use PackStatus/UnpackStatus for full status operations. */
+static inline void OpRepWidths(Lufia2CpuState *cpu, uint8_t width_bits) {
+    if (width_bits & 0x20u)
         SetAccumulatorWidth(cpu, 0);
-    if (bits & 0x10u)
+    if (width_bits & 0x10u)
         SetIndexWidth(cpu, 0);
 }
 
-static inline void OpSep(Lufia2CpuState *cpu, uint8_t bits) {
-    if (bits & 0x20u)
+static inline void OpSepWidths(Lufia2CpuState *cpu, uint8_t width_bits) {
+    if (width_bits & 0x20u)
         SetAccumulatorWidth(cpu, 1);
-    if (bits & 0x10u)
+    if (width_bits & 0x10u)
         SetIndexWidth(cpu, 1);
 }
 

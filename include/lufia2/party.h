@@ -79,12 +79,6 @@ Lufia2ExecutionResult Lufia2BattleTable9EBA(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $83:C652 carry = a member of $0A7B has byte A in the 36-byte list at
-   record + $96; DB kept, M1X0. */
-Lufia2ExecutionResult Lufia2PartyListHasEntry(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
-
 /* $81:F78D $0A80 = records of members $0A7B; M1X0. */
 Lufia2ExecutionResult Lufia2PartyPointers(
     const Lufia2Memory *memory,

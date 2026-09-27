@@ -7,7 +7,7 @@
  */
 
 #include "core/cpu_ops.h"
-#include "lufia2/field.h"
+#include "field/field_internal.h"
 #include "lufia2/system.h"
 
 /* (dp),Y with the live DB. */
@@ -25,7 +25,7 @@ Lufia2ExecutionResult Lufia2FieldReadSections(
     OpLda(memory, cpu, FieldDpIndirectY(memory, cpu, 0x5du));
     OpSta(memory, cpu, OpDp(cpu, 0x58u));
     OpStz(memory, cpu, OpDp(cpu, 0x59u));
-    OpRep(cpu, 0x30u);                                         /* EBB7 */
+    OpRepWidths(cpu, 0x30u);                                         /* EBB7 */
     OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0xd038u)));
     OpLda(memory, cpu, OpDp(cpu, 0x58u));
     OpAslA(cpu);
@@ -41,7 +41,7 @@ Lufia2ExecutionResult Lufia2FieldReadSections(
         OpLdy(cpu, 0x0000u);
         OpLda(memory, cpu, FieldDpIndirectY(memory, cpu, 0x5du));
         OpSta(memory, cpu, OpAbsX(cpu, 0xd020u));
-        OpSep(cpu, 0x20u);
+        OpSepWidths(cpu, 0x20u);
         OpLdy(cpu, 0x0002u);                                   /* EBDC */
         OpLda(memory, cpu, FieldDpIndirectY(memory, cpu, 0x5du));
         OpSta(memory, cpu, OpAbsX(cpu, 0xd010u));
@@ -53,7 +53,7 @@ Lufia2ExecutionResult Lufia2FieldReadSections(
         TransferDirectToA(cpu);                                /* EBF2 */
         OpSta(memory, cpu, OpAbsX(cpu, 0xd011u));
         OpSta(memory, cpu, OpAbsX(cpu, 0xd019u));
-        OpRep(cpu, 0x20u);
+        OpRepWidths(cpu, 0x20u);
         OpLda(memory, cpu, OpDp(cpu, 0x5du));                  /* EBFB */
         cpu->carry = 0;
         OpAdcValue(cpu, 0x0004u);
@@ -66,7 +66,7 @@ Lufia2ExecutionResult Lufia2FieldReadSections(
         OpInx(cpu);
         OpStepMem(memory, cpu, OpDp(cpu, 0x58u), -1);
     } while (!cpu->zero);
-    OpSep(cpu, 0x20u);                                         /* EC15 */
+    OpSepWidths(cpu, 0x20u);                                         /* EC15 */
     return ExecutionReturned(0x80ec17u);
 }
 
@@ -80,7 +80,7 @@ Lufia2ExecutionResult Lufia2FieldPackSectionAttributes(
     OpSta(memory, cpu, 0x004202u);
     OpLda(memory, cpu, OpAbsX(cpu, 0xd018u));
     OpSta(memory, cpu, 0x004203u);
-    OpRep(cpu, 0x20u);
+    OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpAbsX(cpu, 0xd008u));                  /* EC2E */
     OpTax(cpu);
     OpLda(memory, cpu, 0x004216u);
@@ -89,7 +89,7 @@ Lufia2ExecutionResult Lufia2FieldPackSectionAttributes(
     OpLsrA(cpu);
     OpLsrA(cpu);
     OpSta(memory, cpu, OpDp(cpu, 0x58u));
-    OpSep(cpu, 0x20u);
+    OpSepWidths(cpu, 0x20u);
     OpLdy(cpu, 0x0000u);                                       /* EC40 */
     do {
         OpLda(memory, cpu, OpAbsX(cpu, 0x0001u));              /* EC43 */
@@ -131,7 +131,7 @@ Lufia2ExecutionResult Lufia2FieldPackSectionAttributes(
 Lufia2ExecutionResult Lufia2FieldSectionSize(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    OpSep(cpu, 0x20u);                                         /* EC78 */
+    OpSepWidths(cpu, 0x20u);                                         /* EC78 */
     TransferDirectToA(cpu);
     OpLda(memory, cpu, 0x0005aau);
     OpTax(cpu);
@@ -157,12 +157,12 @@ static void FieldDecompress(
 static void FieldAdvanceDestination(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t site) {
     SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
-    OpRep(cpu, 0x20u);                                         /* ECF2 */
+    OpRepWidths(cpu, 0x20u);                                         /* ECF2 */
     OpLda(memory, cpu, OpDp(cpu, 0x2du));
     cpu->carry = 0;
     OpAdc(memory, cpu, OpDp(cpu, 0x58u));
     OpSta(memory, cpu, OpDp(cpu, 0x2du));
-    OpSep(cpu, 0x20u);
+    OpSepWidths(cpu, 0x20u);
     SimulateRtsFrame(memory, cpu);                             /* ECFD */
 }
 
@@ -186,12 +186,12 @@ Lufia2ExecutionResult Lufia2FieldDecompressMapData(
     OpLda(memory, cpu, OpDp(cpu, 0x2du));
     OpSta(memory, cpu, 0x7fd03au);
     OpSta(memory, cpu, OpDp(cpu, 0x60u));
-    OpSep(cpu, 0x20u);
+    OpSepWidths(cpu, 0x20u);
     LoadA8(cpu, 0x7fu);
     OpSta(memory, cpu, OpDp(cpu, 0x62u));
     FieldDecompress(memory, cpu, 0xeca8u);
     FieldAdvanceDestination(memory, cpu, 0xecacu);
-    OpRep(cpu, 0x20u);                                         /* ECAF */
+    OpRepWidths(cpu, 0x20u);                                         /* ECAF */
     OpLda(memory, cpu, 0x7fd03au);
     cpu->carry = 0;
     OpAdcValue(cpu, 0x0010u);
@@ -199,12 +199,12 @@ Lufia2ExecutionResult Lufia2FieldDecompressMapData(
     LoadA16(cpu, 0x0004u);
     FieldRelativeWord(memory, cpu, 0xecc0u);
     OpSta(memory, cpu, 0x7fd03eu);
-    OpSep(cpu, 0x20u);                                         /* ECC7 */
+    OpSepWidths(cpu, 0x20u);                                         /* ECC7 */
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpDp(cpu, 0x29u));
     if (!cpu->zero) {
         OpAndValue(cpu, 0x0fu);                                /* ECCE */
-        OpRep(cpu, 0x20u);
+        OpRepWidths(cpu, 0x20u);
         cpu->carry = 0;
         OpAdcValue(cpu, 0x0166u);
         OpSta(memory, cpu, OpDp(cpu, 0x54u));
@@ -213,7 +213,7 @@ Lufia2ExecutionResult Lufia2FieldDecompressMapData(
         cpu->carry = 0;
         OpAdcValue(cpu, 0x0010u);
         OpSta(memory, cpu, 0x7fd040u);
-        OpSep(cpu, 0x20u);
+        OpSepWidths(cpu, 0x20u);
         LoadA8(cpu, 0x7fu);
         OpSta(memory, cpu, OpDp(cpu, 0x62u));
         FieldDecompress(memory, cpu, 0xeceau);

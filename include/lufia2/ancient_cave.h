@@ -11,7 +11,7 @@ extern "C" {
 
 /*
  * $83:9E31 generate the next floor ($7F:E696); entered by JSL with
- * M1X16. Floor 99 sets its fixed scene and returns at $83:9EA1. Other
+ * M1/X0 (A8, X/Y16). Floor 99 sets its fixed scene and returns at $83:9EA1. Other
  * floors pick the floor tables, run the music change $80:93FE (when $56
  * differs from $099D) and the map loader $83:B5D3 through `child` with
  * their exact JSL frames, build the floor ($83:9013) and return at

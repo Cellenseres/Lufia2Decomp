@@ -24,3 +24,18 @@ dispatcher prefixes plus handler semantics. Indirect jump-table words remain
 ROM-backed reads through the portable memory callback instead of copied ROM
 data. This keeps the standalone source descriptive while preserving the exact
 original dispatch behavior, including malformed or currently unseen opcodes.
+
+CPU helpers have one direction of reuse: `core/cpu_internal.h` owns scalar
+register, flag, arithmetic, transfer and stack primitives; `core/cpu_ops.h`
+adapts them to the live M/X widths and explicit operand addresses. New
+instruction adapters should reuse these primitives. The older fixed-width
+idioms remain for existing modules; do not introduce competing arithmetic or
+status implementations. Memory RMW adapters retain their verified byte-write
+order rather than being folded into a superficially similar store helper.
+`OpRepWidths` and `OpSepWidths` accept only width masks `$10/$20/$30`;
+they are not arbitrary REP/SEP status-mask implementations.
+
+Shared implementation children belong in subsystem internal headers. The T14
+section readers and party-list search are declared in `field/field_internal.h`
+and `party/party_internal.h`; consumer differential tests explicitly include
+those private headers. They do not expand the portable consumer API.
