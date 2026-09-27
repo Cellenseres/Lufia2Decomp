@@ -39,6 +39,11 @@ Lufia2ExecutionResult Lufia2InventoryAdd(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $82:FB1F: possession bit or first packed inventory quantity; M0/X0. */
+Lufia2ExecutionResult Lufia2ItemPossessionCount(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $81:F057 A = count of item $0A06 held; M1X0. */
 Lufia2ExecutionResult Lufia2InventoryCount(
     const Lufia2Memory *memory,

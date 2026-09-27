@@ -165,6 +165,7 @@ Recovered from the interrupted local batch. All 41 standalone baselines, 66 muta
 | `$81:E808` | `Lufia2DecimalDigits3` | verified; runtime-bound | X to decimal digits: hundreds in `$B4` (DB-relative increment), tens `$B3`, ones `$B2`. Bound. Standalone 16,384 cases; mutations 1/1. |
 | `$81:EB34` | `Lufia2BattlePaletteCopy` | verified; runtime-bound | 16 bytes of palette `$24` (`$9A:F970` + 16 * `$24`) to `$120F`, 16 zeros after. Bound. Standalone 16,384 cases; mutations 1/1. |
 | `$81:EB62` | `Lufia2BattlePaletteSplit` | verified; runtime-bound | Palette `$24` split per byte: low nibble << 4 to `$121F`, high nibble to `$120F`. Bound. Standalone 16,384 cases; mutations 1/1. |
+| `$82:FB1F` | `Lufia2ItemPossessionCount` | `verified` | M0/X0 item ID in A; ownership bit or first packed quantity. DB/DP unchanged, Y preserved; absent A0/C1. Three RTL sites, 16,384 original-ROM cases, 9/9 mutations. Not runtime-bound. |
 | `$81:F057` | `Lufia2InventoryCount` | verified; runtime-bound | A = count (bits 9-15) of item `$0A06` in the 96-slot inventory `$0A8D`, 0 when absent; RTL. Bound. Standalone 16,384 cases; mutations 2/2. |
 | `$81:E503` | `Lufia2BattleWindow` | verified; runtime-bound | Window template `$01:$09F4`: top row, `$09F3` middle rows, bottom row; X advances through the template by six then four bytes. Width is `$09F2 - 1`. Standalone 16,384 cases; mutations 2/2. |
 | `$81:E593` | `Lufia2BattleGaugePanel` | verified; runtime-bound | Gauge panel at `$7E:2D80`: block `$2155`, four columns `$2157`, block `$A155` (`$81:E5C1`/`$81:E604`); P kept. Bound. Standalone 16,384 cases; mutations 2/2. |
@@ -252,3 +253,82 @@ wait 1,934 / actor join 1,936 / C56E 6,598. Existing bridge 8,704/8,704
 Release built; all 1,369 node dispositions, roots and exit-mode sets and all
 122 runtime selections unchanged from T11. 162 verified entries, no metadata
 drafts. T13 opcode $14 / A074 is next; Ancient Cave contract research follows.
+
+## T13: conditional text expressions (2026-09-27)
+
+Opcode `$14` (`$80:A074`) now runs natively inside the existing bound
+`Lufia2TextEngineStep`. Its complete expression loop supports normal/inverted
+event flags with assignment/AND/OR, byte variables, item quantities, record
+fields and 36-byte searches, the `$0005AE/$0005B2` nibble, actor flags, and
+conditional script gotos through the existing A3C6 helper. All eight comparison
+selectors are retained. The original greater-than DEC/CMP wraps zero to FFFF;
+D8 retains the old high byte at DP:$55; false F8 retains the preceding result.
+A074 is an internal opcode entry with joins 9D00/A3C6, not a standalone callable.
+
+A1CC preserves ordered writes to DB:$4202/$4203 and the word product read
+from DB:$4216. These are ordinary WRAM accesses in DB7E/7F and hardware in CPU
+register banks. No host multiplication replaces them. A1E4 preserves word
+fetches, PHY/JSL/PLY, M transitions and DP:$54/$55 output.
+
+`Lufia2ItemPossessionCount` (`$82:FB1F`) has an independently evidenced JSL/RTL
+contract (text callers A1E4 and AC28, item callers F8E9/F925). M0/X0 throughout,
+DB/DP unchanged and Y preserved; nine-bit A selects an item. A listed ownership
+bit produces A=1/C=0. Otherwise the first matching ID in 96 packed slots yields
+its seven-bit quantity/C=0, including zero quantity. No match yields A=0/C=1.
+The internal FB51 table search and all original stack effects are retained.
+This verified function is not runtime-bound; no new runtime selection is added.
+
+Targeted original-ROM differential verification: FB1F, A1CC, A1E4 and complete
+A074 each pass 16,384 cases. Coverage requires every condition family, all eight
+comparators, both comparison results and both handler joins; FB1F requires all
+three return sites. Full CPU, WRAM, ordered MMIO and temporary stack writes are
+compared. Seeds cover independent WRAM products, actual CPU multiply registers,
+isolated possession masks, first/last and duplicate inventory IDs, zero/max
+quantities, DP offsets, actor hits/misses and script bank crossings. Targeted integrated
+9CB8 passes 16,384 cases (7,479 returns, 8,905 exact LLE continuations).
+Meaningful mutations: 31/31 caught (9 item, 6 condition-child, 13 expression,
+3 engine integration). All four MSVC Release verification suites PASS, zero failures;
+2,753,152 actor-dispatch cases. Release executable built. All 1,369 node
+dispositions, roots and exit-mode sets and all 122 runtime selections
+unchanged from T12. 163 verified metadata entries, zero drafts. T14 AC1
+research follows; its actual 9E31 entry is M1/X0, independently proved
+from the ROM caller and original-ROM probes.
+
+T13 full-run boundary and coverage counts:
+
+```text
+Full actor-dispatch cases: 2,753,152
+$80:9CB8 whole-function cases passed:      16384 / 16384 (return 7435, LLE 8949)
+$80:9CB8 T12 coverage: wait 1910, explicit 0, C56E 5973, actor 1922
+$80:9CB8 T13 families: 6868 733 731 356 368 361 356 359 369 359 358 363 359 371 370; comparisons: 311 324 325 312 315 316 311 320; false/true 1336/1198; joins 0/0
+$80:9CB8 search miss/hit 179/180; goto true skip/take 186/185; false skip/take 182/188
+$82:FB1F return coverage: possession 2731, absent 2731, packed 10922
+$80:A1CC bus coverage: WRAM 9831, CPU MMIO 6553
+$80:A074 whole-function cases passed:      16384 / 16384 (return 0, LLE 16384)
+$80:A074 T13 families: 19456 2048 2048 1024 1024 1024 1024 1024 1024 1024 1024 1024 1024 1024 1024; comparisons: 896 896 896 896 896 896 896 896; false/true 3608/3560; joins 15361/1023
+$80:A074 search miss/hit 512/512; goto true skip/take 514/510; false skip/take 511/513
+$80:9CB8 8704/8704 (host return 1334, dispatch return 2663, LLE boundary 4195, LLE entry 512, child never returned 0)
+```
+
+## T14 AC1: Ancient Cave contract research (2026-09-27)
+
+The actual `$83:9E31` floor entry is **M1/X0**, correcting the earlier
+tentative M0/X0 premise. The direct caller at `$83:B26D`, immediate widths
+in the ROM and incoming generated call modes independently agree. A separate
+original-ROM probe executes the B268 caller prefix and verifies the JSL frame:
+256 cases cover floors 1/10/11/50/90/98/99/100, RNG warmups 1..32 and refill
+indices 0/54. These probes establish contracts; no native function is claimed.
+
+Floor is the byte `$7F:E696`. The prefix updates maximum floor `$00:0B75`,
+writes the real divider (`$00:4204/4205/4206`) and advances the existing RNG.
+Floor 99 writes its fixed scene values, clears `$05B6` bit 0 and returns at
+`$83:9EA1` with M1/X0, without incrementing the floor. The 32 floor-99 probes
+return through the caller frame. Other 224 probes stop before the first loader
+at `$83:9F2A` or `$83:9F2E`, retaining that frame and M1/X0.
+
+DB and DP are inherited; the probes use the coherent DB83/DP0000 state.
+Actual gameplay invariants still require caller-path proof. TDC values must
+remain observable. The large builder is `$83:9013`; its internal `$83:99C8`
+child explicitly returns M0/X0. Loader children (`$80:93FE`, `$83:B5D3`),
+the dynamic RAM `$057D` call and remaining builder child modes still need
+contract research before translation. No new metadata or runtime binding.

@@ -3,6 +3,85 @@
 #include "core/cpu_internal.h"
 #include "lufia2/item.h"
 
+/* $82:FB51: listed items use possession bits at DB:$091E. Other items
+ * continue to the packed inventory. Internal JSR preserves its real frame. */
+static void ItemPossessionBit(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xfb27u);
+    And16(cpu, 0x01ffu);
+    StoreADirect16(memory, cpu, 0x54u);
+    LoadX16(cpu, 0);
+    for (;;) {
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x97fda0u, cpu->x)));
+        Compare16(cpu, cpu->accumulator, 0xffffu);
+        if (cpu->zero) break;
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+        if (cpu->zero) {
+            LoadA16(cpu, cpu->x);
+            for (unsigned i = 0; i < 5u; ++i) LsrA16(cpu);
+            AslA16(cpu);
+            TransferAToY(cpu);
+            LoadA16(cpu, cpu->x);
+            And16(cpu, 0x001fu);
+            TransferAToX(cpu);
+            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x8ed8c3u, cpu->x)));
+            And16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x091eu, cpu->y));
+            if (!cpu->zero) {
+                LoadA16(cpu, 0);
+                cpu->carry = 0;
+            } else {
+                LoadA16(cpu, 1);
+                cpu->carry = 1;
+            }
+            SimulateRtsFrame(memory, cpu);
+            return;
+        }
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x0080u);
+        if (cpu->zero) break;
+    }
+    LoadA16(cpu, 2);
+    cpu->carry = 1;
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $82:FB1F: A's nine-bit item ID -> possession/packed count in A.
+ * M0/X0 throughout; DB/DP unchanged, Y preserved. Carry is clear for a
+ * possession bit or a matching slot, set when the inventory has no match.
+ * The first matching ID wins even when its packed quantity is zero. */
+Lufia2ExecutionResult Lufia2ItemPossessionCount(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    And16(cpu, 0x01ffu);
+    StoreADirect16(memory, cpu, 0x54u);
+    PushY(memory, cpu);
+    ItemPossessionBit(memory, cpu);
+    cpu->y = PullIndexValue(memory, cpu);
+    SetNz16(cpu, cpu->y);
+    if (!cpu->carry) {
+        LoadA16(cpu, 1);
+        return ExecutionReturned(0x82fb2eu);
+    }
+    LoadX16(cpu, 0);
+    do {
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a8du, cpu->x));
+        And16(cpu, 0x01ffu);
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+        if (cpu->zero) {
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a8eu, cpu->x));
+            LsrA16(cpu);
+            And16(cpu, 0x007fu);
+            cpu->carry = 0;
+            return ExecutionReturned(0x82fb50u);
+        }
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x00c0u);
+    } while (!cpu->zero);
+    LoadA16(cpu, 0);
+    cpu->carry = 1;
+    return ExecutionReturned(0x82fb47u);
+}
+
 enum {
     INVENTORY_TABLE = 0x0a8du,
     INVENTORY_ITEM = 0x0a06u,

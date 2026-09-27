@@ -297,7 +297,7 @@ static void TextFlagBit(
 }
 
 /* $80:C0D0: next two text bytes as a word in A. */
-static void TextNextWord(
+void Lufia2TextNextWord(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -339,7 +339,7 @@ void Lufia2TextSetScriptPointer(
 static void TextGoto(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    TextNextWord(memory, cpu, 0xa3c8u);                        /* A3C6 */
+    Lufia2TextNextWord(memory, cpu, 0xa3c8u);                        /* A3C6 */
     SetAccumulatorWidth(cpu, 0);
     PushAccumulator16(memory, cpu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09a0u, 0));
@@ -503,6 +503,7 @@ enum TextOpcodeHandler {
     TEXT_OP_COMMA_NEW_LINE = 0x9ef8,                           /* $0E */
     TEXT_OP_PERIOD_NEW_LINE = 0x9efc,                          /* $0F */
     TEXT_OP_GOTO_IF_FLAG = 0xa288,                             /* $15 */
+    TEXT_OP_CONDITION = 0xa074,                               /* $14 */
     TEXT_OP_SET_FLAG = 0xa392,                                 /* $1A */
     TEXT_OP_CLEAR_FLAG = 0xa3ac,                               /* $1B */
     TEXT_OP_GOTO = 0xa3c6,                                     /* $1C */
@@ -1036,7 +1037,7 @@ confirm:
         Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x126bu, 0));
         Lufia2TextSetScriptPointer(memory, cpu, 0x9f9fu);
         SetAccumulatorWidth(cpu, 1);
-        TextNextWord(memory, cpu, 0x9fa4u);                    /* choice target */
+        Lufia2TextNextWord(memory, cpu, 0x9fa4u);                    /* choice target */
         SetAccumulatorWidth(cpu, 0);
         cpu->carry = 0;
         Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x099eu, 0));
@@ -1146,7 +1147,20 @@ static unsigned TextOpGotoIfFlag(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2TextNextByte(memory, cpu, 0xa28au);
-    SimulateJsrFrame(memory, cpu, 0xa28du);
+    Lufia2TextTestFlag(memory, cpu, 0xa28du);
+    if (!cpu->zero) {
+        TextGoto(memory, cpu);
+        return TEXT_OPCODE_NEXT;
+    }
+    Lufia2TextNextByte(memory, cpu, 0xa295u);                    /* A293 */
+    Lufia2TextNextByte(memory, cpu, 0xa298u);
+    return TEXT_OPCODE_NEXT;
+}
+
+/* $80:BE1E: test the selected event flag, retaining caller widths and Y. */
+void Lufia2TextTestFlag(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
     PushY(memory, cpu);                                    /* BE1E */
     Push8(memory, cpu, PackStatus(cpu));
     TextFlagBit(memory, cpu, 0xbe22u);
@@ -1158,13 +1172,6 @@ static unsigned TextOpGotoIfFlag(
     cpu->y = PullIndexValue(memory, cpu);
     LoadA8(cpu, A8(cpu));
     SimulateRtsFrame(memory, cpu);
-    if (!cpu->zero) {
-        TextGoto(memory, cpu);
-        return TEXT_OPCODE_NEXT;
-    }
-    Lufia2TextNextByte(memory, cpu, 0xa295u);                    /* A293 */
-    Lufia2TextNextByte(memory, cpu, 0xa298u);
-    return TEXT_OPCODE_NEXT;
 }
 
 /* $1A/$1B: set or clear an event flag. */
@@ -1427,7 +1434,7 @@ static unsigned TextOpChangeGold(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler) {
-    TextNextWord(memory, cpu, (uint16_t)(handler + 2u));
+    Lufia2TextNextWord(memory, cpu, (uint16_t)(handler + 2u));
     TextGold(memory, cpu, handler == TEXT_OP_ADD_GOLD, (uint16_t)(handler + 5u));
     return TEXT_OPCODE_NEXT;
 }
@@ -1501,6 +1508,10 @@ static unsigned TextScriptOpcode(
         return TextOpPunctuationNewLine(memory, cpu, handler);
     case TEXT_OP_GOTO_IF_FLAG:
         return TextOpGotoIfFlag(memory, cpu);
+    case TEXT_OP_CONDITION:
+        if (Lufia2TextEvaluateCondition(memory, cpu) == 0x80a3c6u)
+            TextGoto(memory, cpu);
+        return TEXT_OPCODE_NEXT;
     case TEXT_OP_SET_FLAG:
     case TEXT_OP_CLEAR_FLAG:
         return TextOpChangeFlag(memory, cpu, handler);
