@@ -44,6 +44,11 @@ Lufia2ExecutionResult Lufia2BattleListRows(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:C35F damage popups at $7E:4F0B for mode A; any width. */
+Lufia2ExecutionResult Lufia2BattlePopups(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
