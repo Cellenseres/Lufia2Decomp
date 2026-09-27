@@ -9,10 +9,22 @@
 extern "C" {
 #endif
 
-/* $80:9CB8 text engine step; codes and words stay LLE. */
+/* $80:9CB8 text engine step; unknown children expose exact continuations. */
 Lufia2ExecutionResult Lufia2TextEngineStep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
+
+/* $80:C652: measure upcoming text. M1X0, script in DB:Y; RTS C743. */
+Lufia2ExecutionResult Lufia2TextMeasure(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $80:C784: clear glyph buffer; restores P/DB, RTL C7BD. */
+Lufia2ExecutionResult Lufia2TextClearGlyphBuffer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $80:C56E: tilemap row and DMA setup. M1X0, restores P/Y; RTS C5DC. */
+Lufia2ExecutionResult Lufia2TextQueueWindowRow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 #ifdef __cplusplus
 }

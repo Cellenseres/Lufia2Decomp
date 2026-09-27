@@ -30,7 +30,7 @@
 #define TEXT_PRINT_COUNTDOWN 0x7fd0ffu
 
 /* $80:C0B7: next text byte from DB:Y; Y past $FFFF moves the bank. */
-static void TextNextByte(
+void Lufia2TextNextByte(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -302,16 +302,16 @@ static void TextNextWord(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    TextNextByte(memory, cpu, 0xc0d2u);                        /* C0D0 */
+    Lufia2TextNextByte(memory, cpu, 0xc0d2u);                        /* C0D0 */
     PushAccumulator8(memory, cpu);
-    TextNextByte(memory, cpu, 0xc0d6u);
+    Lufia2TextNextByte(memory, cpu, 0xc0d6u);
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, Pull8(memory, cpu));
     SimulateRtsFrame(memory, cpu);
 }
 
 /* $80:C102: Y = A; below $8000 the script moves to the next bank. */
-static void TextSetScriptPointer(
+void Lufia2TextSetScriptPointer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -347,7 +347,7 @@ static void TextGoto(
     PullAccumulator16(memory, cpu);
     cpu->carry = 0;
     Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x099eu, 0));
-    TextSetScriptPointer(memory, cpu, 0xa3d9u);
+    Lufia2TextSetScriptPointer(memory, cpu, 0xa3d9u);
     SetAccumulatorWidth(cpu, 1);                               /* A3DA */
 }
 
@@ -434,10 +434,10 @@ static void TextColorFade(
     SimulateJsrFrame(memory, cpu, return_address);
     StoreAAbsolute8(memory, cpu, SNES_CGADSUB, 0);             /* AF77 */
     StoreAImmediate8(memory, cpu, 0xe0u, SNES_COLDATA);
-    TextNextByte(memory, cpu, 0xaf81u);
+    Lufia2TextNextByte(memory, cpu, 0xaf81u);
     StoreAAbsolute8(memory, cpu, 0x1286u, 0);
     StoreAAbsolute8(memory, cpu, SNES_COLDATA, 0);
-    TextNextByte(memory, cpu, 0xaf8au);
+    Lufia2TextNextByte(memory, cpu, 0xaf8au);
     StoreAAbsolute8(memory, cpu, 0x1287u, 0);
     LoadAAbsolute8(memory, cpu, 0x1286u, 0);
     And8(cpu, 0x1fu);
@@ -452,7 +452,7 @@ static void TextColorFade(
     AslA8(cpu);
     StoreZeroAbsolute8(memory, cpu, SNES_WRDIVL, 0);
     StoreAAbsolute8(memory, cpu, SNES_WRDIVH, 0);
-    TextNextByte(memory, cpu, 0xafa8u);
+    Lufia2TextNextByte(memory, cpu, 0xafa8u);
     StoreAAbsolute8(memory, cpu, SNES_WRDIVB, 0);
     StoreAImmediate8(memory, cpu, 0x00u, SNES_CGWSEL);
     LoadA8(cpu, 0x80u);
@@ -471,8 +471,22 @@ enum {
     TEXT_OPCODE_HANDOFF
 };
 
+/* $80:9D3E: measure upcoming text and prepare its window (opcode $08). */
+static uint32_t TextOpenWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult child;
+    LoadA8(cpu, 0x81u);
+    StoreAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
+    SimulateJsrFrame(memory, cpu, 0x9d45u);
+    Lufia2TextMeasure(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    SimulateJsrFrame(memory, cpu, 0x9d48u);
+    child = Lufia2TextPrepareWindow(memory, cpu);
+    return child.pc;
+}
+
 /* Handlers in the $80:CA14 opcode table. */
 enum TextOpcodeHandler {
+    TEXT_OP_OPEN_WINDOW = 0x9d3e,                             /* $08 */
     TEXT_OP_END = 0x9d4c,                                      /* $00, $42 */
     TEXT_OP_NEW_LINE = 0x9dd5,                                 /* $03 */
     TEXT_OP_SUB_SCRIPT_05 = 0x9e45,                            /* $05 */
@@ -545,8 +559,8 @@ static unsigned TextOpWaitForActor(
     }
     LoadA8(cpu, 0xffu);                                    /* A826 */
     StoreAAbsolute8(memory, cpu, TEXT_WAIT_ACTOR, 0);
-    TextNextByte(memory, cpu, 0xa82du);
-    TextNextByte(memory, cpu, 0xa830u);
+    Lufia2TextNextByte(memory, cpu, 0xa82du);
+    Lufia2TextNextByte(memory, cpu, 0xa830u);
     return TEXT_OPCODE_NEXT;
 }
 
@@ -565,7 +579,7 @@ static unsigned TextOpWaitFrames(
         TextPrevByte(memory, cpu, 0xb2fdu);
         return TEXT_OPCODE_EXIT;
     }
-    TextNextByte(memory, cpu, 0xb303u);                    /* B301 */
+    Lufia2TextNextByte(memory, cpu, 0xb303u);                    /* B301 */
     LoadA8(cpu, 0x20u);
     TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
     return TEXT_OPCODE_NEXT;
@@ -687,9 +701,9 @@ static uint8_t TextPlaceActor(
     Lufia2ActorRecordOffsets(memory, cpu);                     /* $84:82D5 */
     SimulateRtlFrame(memory, cpu);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    TextNextByte(memory, cpu, 0xbca0u);
+    Lufia2TextNextByte(memory, cpu, 0xbca0u);
     Write8(memory, LongIndexedAddress(0x0005fau, cpu->x), A8(cpu));
-    TextNextByte(memory, cpu, 0xbca7u);
+    Lufia2TextNextByte(memory, cpu, 0xbca7u);
     Write8(memory, LongIndexedAddress(0x0005d2u, cpu->x), A8(cpu));
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x0005fau, cpu->x)));
     cpu->carry = 1;
@@ -728,8 +742,8 @@ static unsigned TextOpSkipBranch(
         IncrementDirect8(memory, cpu, DP_ACTOR_SLOT);          /* BC47 */
         return TEXT_OPCODE_NEXT;
     }
-    TextNextByte(memory, cpu, 0xbc4eu);
-    TextNextByte(memory, cpu, 0xbc51u);
+    Lufia2TextNextByte(memory, cpu, 0xbc4eu);
+    Lufia2TextNextByte(memory, cpu, 0xbc51u);
     return TEXT_OPCODE_NEXT;
 }
 
@@ -739,7 +753,7 @@ static unsigned TextOpSkipBranch(
 static unsigned TextOpHideActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    TextNextByte(memory, cpu, 0xa67bu);                        /* A679 */
+    Lufia2TextNextByte(memory, cpu, 0xa67bu);                        /* A679 */
     StoreADirect8(memory, cpu, 0x54u);
     Lufia2EventFindActorId(memory, cpu, 0xa681u);
     if (cpu->carry)
@@ -777,7 +791,7 @@ static unsigned TextOpMusic(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint32_t *handoff) {
-    TextNextByte(memory, cpu, 0xb84bu);                        /* B849 */
+    Lufia2TextNextByte(memory, cpu, 0xb84bu);                        /* B849 */
     Compare8(cpu, A8(cpu),
         Read8(memory, AbsoluteIndexedAddress(cpu, 0x099du, 0)));
     if (cpu->zero)
@@ -883,7 +897,7 @@ static unsigned TextOpWaitSeconds(
         Write8(memory, DirectAddress(cpu, 0x42u), 0x00u);      /* B32C */
         StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x125fu, 0), 1);
     }
-    TextNextByte(memory, cpu, 0xb335u);                        /* B333 */
+    Lufia2TextNextByte(memory, cpu, 0xb335u);                        /* B333 */
     LoadA8(cpu, 0x20u);
     TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
     return TEXT_OPCODE_NEXT;
@@ -896,9 +910,9 @@ static unsigned TextOpScrollView(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint32_t *handoff) {
-    TextNextByte(memory, cpu, 0xb4c6u);                        /* B4C4 */
+    Lufia2TextNextByte(memory, cpu, 0xb4c6u);                        /* B4C4 */
     StoreADirect8(memory, cpu, 0x54u);
-    TextNextByte(memory, cpu, 0xb4cbu);
+    Lufia2TextNextByte(memory, cpu, 0xb4cbu);
     StoreADirect8(memory, cpu, 0x55u);
     LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
     Compare8(cpu, A8(cpu), 0xffu);
@@ -1014,7 +1028,7 @@ confirm:
         AslA16(cpu);
         cpu->carry = 0;
         Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x126bu, 0));
-        TextSetScriptPointer(memory, cpu, 0x9f9fu);
+        Lufia2TextSetScriptPointer(memory, cpu, 0x9f9fu);
         SetAccumulatorWidth(cpu, 1);
         TextNextWord(memory, cpu, 0x9fa4u);                    /* choice target */
         SetAccumulatorWidth(cpu, 0);
@@ -1026,7 +1040,7 @@ confirm:
         StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
         SetAccumulatorWidth(cpu, 0);
         PullAccumulator16(memory, cpu);
-        TextSetScriptPointer(memory, cpu, 0x9fb9u);
+        Lufia2TextSetScriptPointer(memory, cpu, 0x9fb9u);
         Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y);
         SetAccumulatorWidth(cpu, 1);
         LoadA8(cpu, 0x01u);
@@ -1057,7 +1071,7 @@ static unsigned TextOpWindowMode(
     uint32_t *handoff) {
     unsigned i;
 
-    TextNextByte(memory, cpu, 0xbcbeu);                        /* BCBC */
+    Lufia2TextNextByte(memory, cpu, 0xbcbeu);                        /* BCBC */
     StoreAAbsolute8(memory, cpu, 0x09a7u, 0);
     BitImmediate8(cpu, 0x02u);
     if (cpu->zero)
@@ -1097,7 +1111,7 @@ static unsigned TextOpSubScript(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler) {
-    TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
+    Lufia2TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, handler == TEXT_OP_SUB_SCRIPT_05 ? 0x00u : 0x01u);
     TextSubScript(memory, cpu);
@@ -1125,7 +1139,7 @@ static unsigned TextOpPunctuationNewLine(
 static unsigned TextOpGotoIfFlag(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    TextNextByte(memory, cpu, 0xa28au);
+    Lufia2TextNextByte(memory, cpu, 0xa28au);
     SimulateJsrFrame(memory, cpu, 0xa28du);
     PushY(memory, cpu);                                    /* BE1E */
     Push8(memory, cpu, PackStatus(cpu));
@@ -1142,8 +1156,8 @@ static unsigned TextOpGotoIfFlag(
         TextGoto(memory, cpu);
         return TEXT_OPCODE_NEXT;
     }
-    TextNextByte(memory, cpu, 0xa295u);                    /* A293 */
-    TextNextByte(memory, cpu, 0xa298u);
+    Lufia2TextNextByte(memory, cpu, 0xa295u);                    /* A293 */
+    Lufia2TextNextByte(memory, cpu, 0xa298u);
     return TEXT_OPCODE_NEXT;
 }
 
@@ -1168,7 +1182,7 @@ static unsigned TextOpChangeFlag(
     StoreAAbsolute8(memory, cpu, WRAM_EVENT_FLAGS, cpu->x);
     SetIndexWidth(cpu, 0);
     cpu->y = PullIndexValue(memory, cpu);
-    TextNextByte(memory, cpu, (uint16_t)(handler + 0x16u));
+    Lufia2TextNextByte(memory, cpu, (uint16_t)(handler + 0x16u));
     return TEXT_OPCODE_NEXT;
 }
 
@@ -1185,9 +1199,9 @@ static unsigned TextOpSetVariable(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
-    TextNextByte(memory, cpu, 0xa3e2u);
+    Lufia2TextNextByte(memory, cpu, 0xa3e2u);
     TransferAToX(cpu);
-    TextNextByte(memory, cpu, 0xa3e6u);
+    Lufia2TextNextByte(memory, cpu, 0xa3e6u);
     StoreAAbsolute8(memory, cpu, 0x079eu, cpu->x);
     return TEXT_OPCODE_NEXT;
 }
@@ -1209,7 +1223,7 @@ static unsigned TextOpSkipOperand(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler) {
-    TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
+    Lufia2TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
     return TEXT_OPCODE_NEXT;
 }
 
@@ -1218,10 +1232,10 @@ static unsigned TextOpSkipOperands(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler) {
-    TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
-    TextNextByte(memory, cpu, (uint16_t)(handler + 5u));
+    Lufia2TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
+    Lufia2TextNextByte(memory, cpu, (uint16_t)(handler + 5u));
     if (handler == TEXT_OP_SKIP_3)
-        TextNextByte(memory, cpu, (uint16_t)(handler + 8u));
+        Lufia2TextNextByte(memory, cpu, (uint16_t)(handler + 8u));
     return TEXT_OPCODE_NEXT;
 }
 
@@ -1237,9 +1251,9 @@ static unsigned TextOpTypingSoundOff(
 static unsigned TextOpStoreD4F3(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    TextNextByte(memory, cpu, 0xb119u);
+    Lufia2TextNextByte(memory, cpu, 0xb119u);
     Write8(memory, 0x7fd4f3u, A8(cpu));
-    TextNextByte(memory, cpu, 0xb120u);
+    Lufia2TextNextByte(memory, cpu, 0xb120u);
     Write8(memory, 0x7fd4f4u, A8(cpu));
     return TEXT_OPCODE_NEXT;
 }
@@ -1253,7 +1267,7 @@ static unsigned TextOpStartShake(
     LoadA8(cpu, 0x04u);
     TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 1);
     for (i = 0; i < 3u; ++i) {
-        TextNextByte(memory, cpu, (uint16_t)(0xba23u + 7u * i));
+        Lufia2TextNextByte(memory, cpu, (uint16_t)(0xba23u + 7u * i));
         Write8(memory, 0x7fd07eu + i, A8(cpu));
     }
     return TEXT_OPCODE_NEXT;
@@ -1366,9 +1380,9 @@ static unsigned TextOpWritePpu(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
-    TextNextByte(memory, cpu, 0xbc0eu);
+    Lufia2TextNextByte(memory, cpu, 0xbc0eu);
     TransferAToX(cpu);
-    TextNextByte(memory, cpu, 0xbc12u);
+    Lufia2TextNextByte(memory, cpu, 0xbc12u);
     StoreAAbsolute8(memory, cpu, SNES_INIDISP, cpu->x);
     return TEXT_OPCODE_NEXT;
 }
@@ -1378,9 +1392,9 @@ static unsigned TextOpAddVariable(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
-    TextNextByte(memory, cpu, 0xa3f0u);
+    Lufia2TextNextByte(memory, cpu, 0xa3f0u);
     TransferAToX(cpu);
-    TextNextByte(memory, cpu, 0xa3f4u);
+    Lufia2TextNextByte(memory, cpu, 0xa3f4u);
     cpu->carry = 0;
     Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x079eu, cpu->x)));
     StoreAAbsolute8(memory, cpu, 0x079eu, cpu->x);
@@ -1434,7 +1448,7 @@ static unsigned TextScriptOpcode(
     for (i = 0; i < 11u; ++i) {
         if (handler != kTextByteStores[i].handler)
             continue;
-        TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
+        Lufia2TextNextByte(memory, cpu, (uint16_t)(handler + 2u));
         if (kTextByteStores[i].address > 0xffffu)
             Write8(memory, kTextByteStores[i].address, A8(cpu));
         else
@@ -1443,6 +1457,9 @@ static unsigned TextScriptOpcode(
         return TEXT_OPCODE_NEXT;
     }
     switch (handler) {
+    case TEXT_OP_OPEN_WINDOW:
+        *handoff = TextOpenWindow(memory, cpu);
+        return TEXT_OPCODE_HANDOFF;
     case TEXT_OP_WAIT_FOR_ACTOR:
         return TextOpWaitForActor(memory, cpu, handoff);
     case TEXT_OP_WAIT_FRAMES:
@@ -1614,7 +1631,7 @@ reload:
                     return result;
                 }
                 ++words;
-                TextNextByte(memory, cpu, 0x9d24u);            /* 9D22 */
+                Lufia2TextNextByte(memory, cpu, 0x9d24u);            /* 9D22 */
                 cpu->carry = 1;
                 Sbc8(cpu, 0x80u);
                 ExchangeAccumulatorBytes(cpu);
@@ -1624,7 +1641,7 @@ reload:
             }
         }
         TransferDirectToA(cpu);                                /* 9D31 */
-        TextNextByte(memory, cpu, 0x9d34u);
+        Lufia2TextNextByte(memory, cpu, 0x9d34u);
         SetAccumulatorWidth(cpu, 0);
         AslA16(cpu);
         TransferAToX(cpu);
@@ -1651,15 +1668,18 @@ reload:
     if (cpu->zero) {
         LoadA8(cpu, 0x10u);
         TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
-        if (!cpu->zero)
-            return ExecutionHandoff(cpu, 0x80bcf2u);           /* C56E */
+        if (!cpu->zero) {
+            SimulateJsrFrame(memory, cpu, 0xbcf4u);           /* BCF2 */
+            Lufia2TextQueueWindowRow(memory, cpu);
+            SimulateRtsFrame(memory, cpu);
+        }
     }
     LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* BCF5 */
     And8(cpu, 0x10u);
     if (!cpu->zero)
         IncrementY16(cpu);
     else
-        TextNextByte(memory, cpu, 0xbd01u);
+        Lufia2TextNextByte(memory, cpu, 0xbd01u);
     Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y); /* BD02 */
     TextGlyphUpload(memory, cpu, 0xbd07u);
     LoadAAbsolute8(memory, cpu, 0x09a7u, 0);                   /* BD08 */
