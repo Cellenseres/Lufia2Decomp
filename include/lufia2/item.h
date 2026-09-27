@@ -34,6 +34,11 @@ Lufia2ExecutionResult Lufia2SpellRecordByte8(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:F0A2: packed request $0A06 / quantity $09F4; M1X0, binary ADC. */
+Lufia2ExecutionResult Lufia2InventoryAdd(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $81:F057 A = count of item $0A06 held; M1X0. */
 Lufia2ExecutionResult Lufia2InventoryCount(
     const Lufia2Memory *memory,

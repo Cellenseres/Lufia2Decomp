@@ -161,7 +161,9 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
 }
 
 /* $81:E835: character A to battle tiles: A top, B bottom. */
-static void BattleGlyph(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2BattleGlyph(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
     const uint8_t c = A8(cpu);
 
     Compare8(cpu, c, 0xcdu);
@@ -176,7 +178,7 @@ static void BattleGlyph(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         }
         ExchangeAccumulatorBytes(cpu);
         LoadA8(cpu, 0x00u);
-        return;
+        return ExecutionReturned(0x81e847u);
     }
     PushIndex(memory, cpu);                                    /* E848 */
     cpu->carry = 1;
@@ -198,19 +200,20 @@ static void BattleGlyph(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             Compare8(cpu, n, 0x19u);
             if (!cpu->carry) {
                 LoadA8(cpu, 0xceu);
-                return;
+                return ExecutionReturned(0x81e86eu);
             }
             Compare8(cpu, n, 0x2du);
             if (cpu->carry) {
                 Compare8(cpu, n, 0x32u);
                 if (!cpu->zero) {
                     LoadA8(cpu, 0xceu);
-                    return;
+                    return ExecutionReturned(0x81e86eu);
                 }
             }
         }
         LoadA8(cpu, 0xcdu);
     }
+    return ExecutionReturned(0x81e871u);
 }
 
 static void TileRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
@@ -243,7 +246,7 @@ static void EntryChars(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         LoadAAbsolute8(memory, cpu, TABLE, cpu->x);
         IncrementX16(cpu);
         SimulateJsrFrame(memory, cpu, glyph_return);
-        BattleGlyph(memory, cpu);
+        Lufia2BattleGlyph(memory, cpu);
         SimulateRtsFrame(memory, cpu);
         TileRow(memory, cpu, DirectByte(memory, cpu, 0x55u));
         DecrementDirect8(memory, cpu, 0x54u);
@@ -265,7 +268,7 @@ static int EntryHead(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     IncrementX16(cpu);
     if (glyph) {
         SimulateJsrFrame(memory, cpu, glyph_return);
-        BattleGlyph(memory, cpu);
+        Lufia2BattleGlyph(memory, cpu);
         SimulateRtsFrame(memory, cpu);
         StoreAAbsolute8(memory, cpu, 0x0000u, cpu->y);
         ExchangeAccumulatorBytes(cpu);

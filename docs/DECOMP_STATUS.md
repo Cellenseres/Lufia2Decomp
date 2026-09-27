@@ -183,3 +183,14 @@ Recovered from the interrupted local batch. All 41 standalone baselines, 66 muta
 | `$81:E3EC` | `Lufia2BattleTileWindow` | verified; runtime-bound | Inside at X + `$902` filled with `$10F0` (`$81:E7D2`), then `$81:E405` at X. Bound. Standalone 16,384 cases; mutations 1/1. |
 | `$81:F979` | `Lufia2PartyLevelUpCheck` | verified; runtime-bound | Member `$09FA` (record via `$81:F7BD`): next-level experience (`$81:F9E9`) against the stored one (A = 2 when stale), then when current experience reaches it and level < 99: level + 1, new next-level experience stored, A = 1; else A = 0. Bound. Standalone 16,384 cases; mutations 3/3. |
 | `$81:FC0B` | `Lufia2PartyNewRecord` | verified; runtime-bound | New member record at `$7E:[$B2]` (`$BE` bytes cleared) for character `$09F2` from its `$96:85C0` data: name, level, base stats, doubled bytes, equipment list (entries >= 6 at `$48` + 2 * (id - 6)), current = max HP/MP, then derived stats (`$81:F4D5`); RTL. Bound. The initial fill is the low byte of D, as in the ROM. Standalone 16,384 cases; mutations 5/5. |
+
+## S19 inventory and battle glyph
+
+| Address | Function | Contract / evidence |
+|---|---|---|
+| `$81:F0A2` | `Lufia2InventoryAdd` | M1X0, binary arithmetic; first nine-bit item match, else first empty word among 96 slots. Eight-bit quantity addition, cap 99 and packed remainder. RTS F0CC/F0D8/F113. 16,384 standalone cases, mutations 11/11; 8,704 bridge cases; full MSVC Release PASS, zero failures, Release built. Exact ROM RTS site compared on every case. Empty slots copy the request verbatim; cap 99 applies only to merges. Unbound: real caller F096, absent from the current generated graph. |
+| `$81:E835` | `Lufia2BattleGlyph` | Exported existing helper; M1X0, X preserved, DB/DP unused. ROM $97:B2C9 bottom tiles, original control-character and top-tile rules, RTS E847/E86E/E871. All 256 characters; 16,384 standalone cases, mutations 9/9; 8,704 bridge cases; full MSVC Release PASS, zero failures, Release built. Exact ROM RTS site compared on every case. Runtime-bound; all previous replacements preserved, no lost AOT. Existing generated battle-text callers justify binding. |
+
+E8EE remains deferred because its WMDATA port state belongs to the caller.
+
+157 verified functions; 122 runtime replacements after S19.

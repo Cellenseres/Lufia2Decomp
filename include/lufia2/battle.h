@@ -9,6 +9,12 @@
 extern "C" {
 #endif
 
+/* $81:E835: character A to two battle glyph tiles; M1X0, binary arithmetic.
+   X is preserved; DB and DP are unused; RTS sites E847/E86E/E871. */
+Lufia2ExecutionResult Lufia2BattleGlyph(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $85:B452 battle script VM. */
 Lufia2ExecutionResult Lufia2BattleScript(
     const Lufia2Memory *memory,
