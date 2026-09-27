@@ -4,6 +4,7 @@
 /* Ancient Cave floor generator internals ($83:9013-$83:9E30). */
 
 #include "core/cpu_ops.h"
+#include "cave/wram.h"
 #include "lufia2/ancient_cave.h"
 
 /* cave_random.c: random draws scaled through the PPU multiplier. */

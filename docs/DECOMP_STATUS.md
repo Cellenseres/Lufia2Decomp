@@ -319,8 +319,8 @@ binding or generated-graph change is part of T14.
 
 ### AC1 contract
 
-Entry is M1/X16 (the T13 correction stands). Evidence: the ROM immediates,
-the one ROM caller `$83:B26D` (every static path to it arrives M1/X16 with
+Entry is M1/X0 (A8, X/Y16) (the T13 correction stands). Evidence: the ROM immediates,
+the one ROM caller `$83:B26D` (every static path to it arrives M1/X0 (A8, X/Y16) with
 DB = `$83` from `PHK; PLB` at `$83:ACBB`), a static mode-tracking walk of the
 whole call tree (`scripts/ancient_cave_contracts.py` in the consumer) and
 112 original-ROM probe runs tracing every JSR/JSL entry and return (a scratch
@@ -328,11 +328,11 @@ probe; the committed verifier exercises the same sites).
 
 | Routine | ROM callers | Entry -> exit | Stack, DB, DP | Disposition |
 | --- | --- | --- | --- | --- |
-| `$83:9E31` | 1 (`$83:B26D`) | M1X16 -> M1X16; RTL `$9EA1` (floor 99) or `$9F3E` | balanced; DB and D used as is (`$05AC/$05B6/$099D` DB-relative) | native, verified |
-| `$83:9013` | 1 (`$83:9F32`) | M1X16 -> M1X16; RTS `$99C7` | `PHB ... PLB`; sets DB `$7E/$96/$7F/$83`, MVN leaves `$7F` | native, internal |
-| `$80:93FE` | 16 | M1X16 -> M1X16; RTL `$9419` | balanced | APU handshake (`$2140-$2143` compare loops): stays external, called through the pushed-frame child |
-| `$83:B5D3` | 6 | M1X16 -> M1X16; RTL `$B66D` | `PHP/PHB` balanced | map loader, stays external through the child (see below) |
-| `$00:057D` stub | `JSR $057D` from `$83:B618`; operands also patched at `$86:900B/906E` | M0X16 -> M0X16, DB = `$7E`, A = `$FFFF` | RTS through the caller's bank | `MVN dst,src ; RTS`; `$057D = $54`, `$0580 = $60` written only by boot `$80:80E1`; callers write `$057E` (dst) and `$057F` (src) |
+| `$83:9E31` | 1 (`$83:B26D`) | M1/X0 (A8, X/Y16) -> M1/X0 (A8, X/Y16); RTL `$9EA1` (floor 99) or `$9F3E` | balanced; DB and D used as is (`$05AC/$05B6/$099D` DB-relative) | native, verified |
+| `$83:9013` | 1 (`$83:9F32`) | M1/X0 (A8, X/Y16) -> M1/X0 (A8, X/Y16); RTS `$99C7` | `PHB ... PLB`; sets DB `$7E/$96/$7F/$83`, MVN leaves `$7F` | native, internal |
+| `$80:93FE` | 16 | M1/X0 (A8, X/Y16) -> M1/X0 (A8, X/Y16); RTL `$9419` | balanced | APU handshake (`$2140-$2143` compare loops): stays external, called through the pushed-frame child |
+| `$83:B5D3` | 6 | M1/X0 (A8, X/Y16) -> M1/X0 (A8, X/Y16); RTL `$B66D` | `PHP/PHB` balanced | map loader, stays external through the child (see below) |
+| `$00:057D` stub | `JSR $057D` from `$83:B618`; operands also patched at `$86:900B/906E` | M0/X0 (A16, X/Y16) -> M0/X0 (A16, X/Y16), DB = `$7E`, A = `$FFFF` | RTS through the caller's bank | `MVN dst,src ; RTS`; `$057D = $54`, `$0580 = $60` written only by boot `$80:80E1`; callers write `$057E` (dst) and `$057F` (src) |
 | `$83:99C8` | 4 (builder) | M1 -> **M0** | balanced | internal |
 | `$83:9D46` | 4 (builder) | M0 -> M0 | balanced | internal |
 | `$80:EC98` | 2 (`$80:EB96`, `$83:99B8`) | **M0** -> M1 | balanced | native, shared (`Lufia2FieldDecompressMapData`) |
@@ -371,6 +371,9 @@ the live registers, so it is exact wherever the original terminates.
 - `src/field/field_sections.c`: `$80:EBAA/EC18/EC78/EC98` (shared with the
   ordinary map loader).
 - `src/core/cpu_ops.h`: width-aware instruction helpers (new, additive).
+- `src/cave/wram.h`: established floor, grids, counts, placement arrays and
+  tile-coordinate DP names. DB-relative offsets and explicit `$7F` long
+  addresses stay distinct; reused scratch remains numeric.
 - `Lufia2PushedChildCall` (`execution.h`): external children whose exact JSL
   frame the native code has already pushed. `$80:93FE` and `$83:B5D3` use it.
 - `Lufia2EventFlagBitFrom` adds the return bank to the verified `$80:E898`.
@@ -401,8 +404,21 @@ landing at `$83:B271` on `interp816` and the native function on a copy, and
 compares A/X/Y, S, D, DB, PB, all flags and M/X, the return PC, all of WRAM,
 the ordered hardware write and read streams (`$211B/$211C/$2134-$2135`,
 `$4202-$4206/$4214/$4216`) and the CPU state plus WRAM digest at the
-`$80:93FE` boundary. `$83:B5D3` runs on `interp816` from the exact native
-state inside the child callback.
+`$80:93FE` boundary. Windows acceptance strengthens the original cloud
+fixture: after recording this entry, both sides execute the entire original
+CPU subtree through RTL `$80:9419`, with deterministic APU replies at known
+polling sites. `$83:B5D3` then runs on `interp816` from that exact returned
+native state inside the child callback. No synchronous child is an identity.
+
+The `$80:93FE` save/restore wrapper keeps A.low, X/Y, DB, DP, balanced S and C/V/D/I/M/X
+on return. Its `PLB; PLP; PLY; PLX; PLA` at `$9414-$9418` leaves N/Z from
+the restored A.low in the Cave's M1/X0 contract. M1 `PHA/PLA` does not save
+A.high; the child can change it. Its `$941A` child and
+descendants write DP scratch `$54-$66`, audio state `$0584/$0586/$0588`,
+music data at `$7E:2020` (decompressor call `$943B`) and, on the tagged
+sample path, `$7E:2000-$201F` (`$94B0/$94E9`). Balanced frames still leave
+temporary stack writes. The verifier retains all of these effects; the
+APU response fixture makes no timing or audio-emulation claim.
 
 Structured cases: floors 1/10/11/50/90/98/99/100 x warmups 1..32 x both music
 paths; every floor 1..100 at RNG index 0, `$35` and `$36` (refill on the next
@@ -449,8 +465,9 @@ output byte-identical to the pre-T14 run), 164 verified metadata entries
 (163 + `$83:9E31`), zero drafts. The effective recompiler cfg is
 byte-identical to T13; regenerating from it gives byte-identical generated
 sources, so all 1,369 node dispositions, roots, exit-mode sets and the 122
-runtime selections are unchanged. `Lufia2Recomp` Release builds. Next:
-verifier-harness modularization, then `$85:B452`.
+runtime selections are unchanged. `Lufia2Recomp` Release builds. This is
+the historical cloud result; the Windows acceptance checkpoint follows it.
+T15 (`$85:B452`) remains queued and is not part of T14 acceptance.
 
 ### Not bound, and why
 
@@ -473,3 +490,30 @@ and a generated graph comparison.
 - Earlier milestones' mutations were manual; `ancient_cave_mutations.py`
   could become a shared runner with per-suite mutation lists.
 
+
+### Windows T14 acceptance (2026-09-27)
+
+The untouched canonical cloud heads (decomp `b1cacb3366fd3ebafbf28398584ae60a0c6f1f75`,
+consumer `984f345fdb9c305a91cc7ded89e513c8b8407ba7`) passed all five MSVC
+Release suites and the Windows Release build before source edits. The final
+full MSVC Release checkpoint and Release build also pass, with zero failures.
+All 1,369 node dispositions, roots and exit-mode sets and all 122 runtime
+selections remain identical; no AOT regression. 164 verified entries, zero
+drafts; Ancient Cave remains verified/unbound. T15 has not started.
+
+The four pre-T14 verifier stdout streams and all report files are byte-identical
+to the Windows baseline. The complete Cave/shared-helper stdout was separately
+byte-identical after the non-semantic cleanup, before strengthening the child
+fixture. Final Cave verification includes 16,384 floor cases, 8,102 real
+`$80:93FE` CPU returns, and 4,096 cases for each of the five shared helpers.
+256 independent ROM return probes pass: A.high changed in 256, DP scratch in
+100, audio state in 63; A.low/X/Y/DB/DP and the documented flag/frame contract
+match. All synchronous WRAM and stack effects are retained through `$83:B5D3`.
+
+61/61 distinct observable mutations caught across the short run and a full
+object-cap rerun; two D=0 equivalents, zero invalid checks. The shortened
+corpus did not reach 20 objects, so the runner now forces the full corpus for
+that mutation. The new identity-APU-child mutation is caught. CFG research
+tests pass 11/11; their output is not semantic verification evidence.
+Owner-local logs and exact comparisons: `.agent/decomp/t14-acceptance/` in
+the consumer. No gameplay or smoke-test gate was used.

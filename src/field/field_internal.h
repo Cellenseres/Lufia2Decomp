@@ -47,4 +47,27 @@ void Lufia2FieldScreenEffects(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:EBAA section table at $7F:D000 from the header at DB:[$5D];
+   leaves DB = $7F. M1/X0 (A8, X/Y16). */
+Lufia2ExecutionResult Lufia2FieldReadSections(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $80:EC18 pack bits 4-5 of every fourth cell word of section $05AA
+   into $7F:C000 (DB = $7F). M1/X0 (A8, X/Y16). */
+Lufia2ExecutionResult Lufia2FieldPackSectionAttributes(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $80:EC78 size of section $05AA into $05B9/$05BB (DB = $7F). */
+Lufia2ExecutionResult Lufia2FieldSectionSize(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $80:EC98 (M0/X0 (A16, X/Y16)) decompress resource A, then $29 & $0F + $166 when
+   $29 is set, to $7F:[$2D]; returns M1. */
+Lufia2ExecutionResult Lufia2FieldDecompressMapData(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #endif

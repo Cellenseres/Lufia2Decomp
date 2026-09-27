@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/party.h"
+#include "party/party_internal.h"
 
 /* Copy a word within each active party record ($0A80). */
 static void PartyCopy(const Lufia2Memory *memory, Lufia2CpuState *cpu,
