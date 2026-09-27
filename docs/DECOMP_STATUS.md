@@ -19,12 +19,14 @@ and verification notes for each task and may describe a status that a later
 task changed; the index and the metadata are authoritative.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-173 functions in `metadata/functions.toml`: 173 verified, 0 draft, 0 identified, 0 disabled.
+175 functions in `metadata/functions.toml`: 175 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
 | Address | Symbol | Status | Source |
 | --- | --- | --- | --- |
+| `$80:8299` | `Lufia2RandomScale` | verified | `src/system/random.c` |
+| `$80:82C7` | `Lufia2RandomByte` | verified | `src/system/random.c` |
 | `$80:8378` | `Lufia2Divide16` | verified | `src/system/math.c` |
 | `$80:86C1` | `Lufia2ScreenFade` | verified | `src/system/screen.c` |
 | `$80:8878` | `Lufia2MenuDrawString` | verified | `src/menu/menu_string.c` |
@@ -341,6 +343,22 @@ stay in the consumer.
 | `$81:C5CF` | `Lufia2BattleTargetPointer` | `verified` | X = record of target mask A (nonzero): lowest set bit, party from `$0A64`, enemies (bit 7) from `$85:9EC8`. Mutations 1/1. Bound. |
 | `$81:BE58` | `Lufia2BattleTileBlock` | `verified` | `$02` x `$03` blocks of 2x2 tiles from sheet tile `$00` (attribute `$04`) at `$7E:$08`, rows `$80` apart, the tile advancing by 2 and wrapping to the next sheet row pair. Mutations 3/3. Bound. |
 | `$81:BD4B` | `Lufia2BattleSpriteBlock` | `verified` | `$02` x `$03` 5-byte sprite entries at `$7E:$08` (X from `$06` - `$07`, Y `$05` - 1, 16 px steps, tile as `$81:BE58`, attribute `$04`, size bits from `$18`); `$08` advanced, A = count. Mutations 3/3. Bound. |
+
+## Exported entry points
+
+The public headers export a few entry points besides the whole functions of
+`metadata/functions.toml`:
+
+| Address | Symbol | Metadata | Evidence and reason |
+| --- | --- | --- | --- |
+| `$80:8299` | `Lufia2RandomScale` | `verified` | Whole function: `PHB/PHK/PLB/PHX/PHY/PHP/SEP #$30`, table index `$0559`, lagged-XOR refill `$80:832D` past `$36`, `$4202/$4203` product, `PLP/PLY/PLX/PLB` and its RTL at `$80:82C6`. Differential against the ROM in the consumer's actor-dispatch suite: 4,096/4,096 cases over all four M/X entry widths, DB `$7E/$83/$00/$80`, D `$0000/$0020`, full CPU state and WRAM compared. Recorded with the M1X0 caller contract; PHP/PLP keep any caller width. Not runtime-bound. |
+| `$80:82C7` | `Lufia2RandomByte` | `verified` | Same table and index, the next byte in A.low, RTL at `$80:82E6`. Same differential, 4,096/4,096 cases. Not runtime-bound. |
+| `$83:C83C` | `Lufia2ActorPrimaryScriptDispatch` | none | Continuation inside `$83:C7F8`, reached only by its own branches (no `JSR`, `JSL` or `JMP` in the ROM targets it). Exported as a prefix up to the selected handler PC for the consumer's prefix verifier (2,048/2,048 cases); the whole-function record is `$83:C7F8`. |
+| `$83:D59A` | `Lufia2ActorSecondaryScriptDispatch` | none | Continuation inside `$83:D508`, likewise reached only by its own branches; prefix verifier 2,048/2,048 cases; the whole-function record is `$83:D508`. |
+| `$83:C7F8`, `$83:D508` front-ends | `Lufia2ActorPrimaryUpdateFrontend`, `Lufia2ActorSecondaryUpdateFrontend` | covered by `$83:C7F8`/`$83:D508` | Gate prefixes that stop at named continuations; the verified whole functions call them. |
+
+A continuation prefix is not a function entry, so it never gets its own
+`functions.toml` record; the record belongs to the routine it continues.
 
 ## Recovered bank-$81 helpers (S12–S18)
 

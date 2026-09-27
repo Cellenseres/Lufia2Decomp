@@ -1,8 +1,10 @@
 # Contributing
 
-Keep changes narrowly tied to original-game behavior. Use conservative names
-until evidence establishes a structure or purpose, and record original facts
-in `metadata/` rather than consumer bridge names.
+Keep changes narrowly tied to original-game behavior. Write reconstructed
+routines with the shared CPU helper layers described in
+[CODE_STYLE.md](CODE_STYLE.md). Use conservative names until evidence
+establishes a structure or purpose, and record original facts in `metadata/`
+rather than consumer bridge names.
 
 Every whole-function reconstruction is recorded in `metadata/functions.toml`
 (address, portable symbol, source, entry/exit M/X, status), which is the only
