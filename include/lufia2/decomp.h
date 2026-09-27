@@ -6,6 +6,7 @@
 #include "lufia2/execution.h"
 
 #include "lufia2/actor.h"
+#include "lufia2/ancient_cave.h"
 #include "lufia2/battle.h"
 #include "lufia2/field.h"
 #include "lufia2/item.h"

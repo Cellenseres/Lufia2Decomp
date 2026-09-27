@@ -92,3 +92,52 @@ Lufia2ExecutionResult Lufia2PartyPointersFar(
     SimulateRtsFrame(memory, cpu);
     return ExecutionReturned(0x81f78cu);
 }
+
+/* $83:C652: search each member's list at record + $96 for A. */
+Lufia2ExecutionResult Lufia2PartyListHasEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    PushDataBank(memory, cpu);                                 /* C652 */
+    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    LoadA8(cpu, 0x00u);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    LoadY16(cpu, 0x0000u);
+    do {
+        PushY(memory, cpu);                                    /* C65C */
+        TransferDirectToA(cpu);
+        LoadAAbsolute8(memory, cpu, 0x0a7bu, cpu->y);
+        Compare8(cpu, A8(cpu), 0xffu);
+        if (!cpu->zero) {
+            AslA8(cpu);
+            TransferAToX(cpu);
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, Read16Long(
+                memory, LongIndexedAddress(0x859ebau, cpu->x)));
+            cpu->carry = 0;
+            Add16Value(cpu, 0x0096u);
+            Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+            SetAccumulatorWidth(cpu, 1);
+            LoadY16(cpu, 0x0000u);                             /* C675 */
+            do {
+                LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+                Compare8(cpu, A8(cpu), Read8(memory, AbsoluteIndexedAddress(
+                    cpu, Read16Direct(memory, cpu, 0x56u), cpu->y)));
+                if (cpu->zero) {
+                    cpu->y = PullIndexValue(memory, cpu);      /* C68E */
+                    PullDataBank(memory, cpu);
+                    cpu->carry = 1;
+                    return ExecutionReturned(0x83c691u);
+                }
+                IncrementY16(cpu);
+                Compare16(cpu, cpu->y, 0x0024u);
+            } while (!cpu->carry);
+        }
+        cpu->y = PullIndexValue(memory, cpu);                  /* C684 */
+        IncrementY16(cpu);
+        Compare16(cpu, cpu->y, 0x0004u);
+    } while (!cpu->carry);
+    PullDataBank(memory, cpu);                                 /* C68B */
+    cpu->carry = 0;
+    return ExecutionReturned(0x83c68du);
+}

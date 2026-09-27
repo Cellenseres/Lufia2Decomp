@@ -48,6 +48,18 @@ typedef enum Lufia2ExecutionFlow {
     LUFIA2_EXECUTION_CHILD_UNWOUND = 2,
 } Lufia2ExecutionFlow;
 
+/*
+ * External child at site whose 2/3-byte return frame the native caller has
+ * already pushed: run target until it returns through that frame. Returns 0
+ * when the child unwinds instead; the native caller then propagates.
+ */
+typedef uint8_t (*Lufia2PushedChildCall)(
+    void *context,
+    Lufia2CpuState *cpu,
+    uint32_t target,
+    uint32_t site,
+    uint8_t frame_size);
+
 typedef struct Lufia2ExecutionResult {
     Lufia2ExecutionFlow flow;
     uint32_t pc;

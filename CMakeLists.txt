@@ -21,6 +21,10 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_portrait.c
     src/battle/battle_nmi.c
     src/battle/battle_script.c
+    src/cave/ancient_cave.c
+    src/cave/cave_grid.c
+    src/cave/cave_objects.c
+    src/cave/cave_random.c
     src/field/field_effects.c
     src/field/field_attributes.c
     src/field/field_event_actors.c
@@ -28,6 +32,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_event_script.c
     src/field/field_nmi.c
     src/field/field_scroll.c
+    src/field/field_sections.c
     src/field/field_sprites.c
     src/field/field_triggers.c
     src/field/field_update.c
