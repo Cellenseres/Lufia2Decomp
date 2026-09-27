@@ -1,62 +1,17 @@
 format = 1
 rom = "lufia2-usa"
 
-[[symbol]]
-address = "80:8E9D"
-name = "Lufia2DecompressResourceFile"
-kind = "function"
-status = "identified"
-
-[[symbol]]
-address = "83:BB93"
-name = "Lufia2UpdateActorSlots"
-kind = "function"
-status = "verified"
-
-[[symbol]]
-address = "83:BBF3"
-name = "Lufia2PlayerSlotSpecialUpdate"
-kind = "function"
-status = "verified"
-
-[[symbol]]
-address = "83:C1B4"
-name = "Lufia2PlayerSlotStandardUpdate"
-kind = "function"
-status = "identified"
-
-[[symbol]]
-address = "83:C7F8"
-name = "Lufia2ActorPrimaryUpdate"
-kind = "function"
-status = "draft"
-
-[[symbol]]
-address = "83:D508"
-name = "Lufia2ActorSecondaryUpdate"
-kind = "function"
-status = "draft"
-
-[[symbol]]
-address = "83:D350"
-name = "Lufia2ActorPrimaryActionCore"
-kind = "function"
-status = "draft"
-
-[[symbol]]
-address = "83:F9D4"
-name = "Lufia2ActorResolveMapCellOffset"
-kind = "function"
-status = "draft"
-
-[[symbol]]
-address = "83:FB12"
-name = "Lufia2ActorMovementStep"
-kind = "function"
-status = "draft"
-
-[[symbol]]
-address = "83:FB71"
-name = "Lufia2ActorReadMapCellValue"
-kind = "function"
-status = "draft"
+# Non-function symbols only: named data tables and WRAM variables.
+#
+# Functions, their portable names and their reconstruction status live only
+# in functions.toml. Entries here carry no status, never use kind =
+# "function" and never repeat an address or name from functions.toml;
+# scripts/metadata_index.py rejects violations.
+#
+# Schema:
+#   [[symbol]]
+#   address = "7E:0A7B"
+#   name = "..."
+#   kind = "data"   # or "wram"
+#
+# No non-function symbol has been recorded yet.

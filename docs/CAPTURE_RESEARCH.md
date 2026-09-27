@@ -4,6 +4,11 @@ The decompilation uses owner-run observational captures from the reference
 interpreter path to prioritize hot code and constrain semantic reconstruction.
 The capture files themselves are not distributed in this repository.
 
+These notes record the evidence as it was gathered and do not track status.
+Remarks below about uncovered blocks or remaining boundaries describe the
+state at capture time; current function status is in
+`metadata/functions.toml` and the index in [DECOMP_STATUS.md](DECOMP_STATUS.md).
+
 ## Current corpus
 
 | Scene | Sampler | Frames | LLE instructions | $83:C7F8 | $83:D508 | $83:C1B4 |
