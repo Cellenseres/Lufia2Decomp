@@ -77,24 +77,17 @@ beginning at `$80:8E9D`. Its M0X0 and M1X0 variants are AOT-eligible and each
 contain 232 analyzed instructions. Runtime captures also show heavy loop
 activity inside the function.
 
-For project naming, the function is currently tracked conservatively as:
+The complete routine is now reconstructed as `$80:8E9D`
+`Lufia2DecompressResource` (`src/system/decompress.c`) and is `verified` in
+`metadata/functions.toml`; the earlier working name
+`Lufia2DecompressResourceFile` and status `identified` are superseded.
+Whether the consumer uses it at runtime is recorded in the consumer's bindings.
 
-`$80:8E9D Lufia2DecompressResourceFile` — `identified`.
-
-Planned progression:
-
-1. reconstruct the complete original routine as portable semantics;
-2. build an original-ROM differential verifier for its call boundary and
-   produced bytes;
-3. only then consider a native replacement;
-4. keep any host-side fast decompressor or decompressed-resource cache in the
-   separate patch layer.
-
-The distinction in step 4 matters: this function is already AOT-eligible, so a
-plain C decomp does not remove an LLE boundary the way C7F8/D508 eventually
-will. A host decoder/cache can still be a meaningful optimization because it
-can replace the original per-byte/backreference work rather than merely
-expressing the same loop more readably.
+The function was already AOT-eligible, so a semantic C version by itself does
+not remove an LLE boundary. A host-side fast decompressor or decompressed-
+resource cache, which could replace the per-byte and back-reference work
+rather than restate it, would belong in the consumer's separate patch layer,
+not in this repository.
 
 ### Map setup commands are not the actor VM
 

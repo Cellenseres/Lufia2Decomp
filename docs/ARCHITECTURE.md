@@ -15,9 +15,10 @@ selection by a consumer. Consumers independently bind an address to a bridge;
 verification without a binding is informational and never activates code.
 
 Partial semantic front-ends may stop at named continuation boundaries when a
-whole routine is not reconstructed yet. They can be marked `draft` in symbol
-status, but stay out of `metadata/functions.toml` until they describe a whole
-replacement candidate with a representable entry/exit ABI.
+whole routine is not reconstructed yet. Function status lives only in
+`metadata/functions.toml`; a partial front-end that is not yet a whole
+replacement candidate with a representable entry/exit ABI has no entry there
+and carries no status anywhere else.
 
 The actor script virtual machines are reconstructed incrementally as explicit
 dispatcher prefixes plus handler semantics. Indirect jump-table words remain

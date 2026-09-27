@@ -7,7 +7,200 @@
 | `verified` | The required decomp verification passed; consumers may select it. |
 | `disabled` | Retained for reference but deliberately excluded. |
 
-## Current functions
+`verified` describes the reconstruction, not runtime use: whether a verified
+function replaces the original at runtime is decided by the consumer's
+`recomp/decomp_bindings.toml`.
+
+## Function index
+
+Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
+the metadata, not this table. The sections after the index are the research
+and verification notes for each task and may describe a status that a later
+task changed; the index and the metadata are authoritative.
+
+<!-- metadata-counts:begin (scripts/metadata_index.py) -->
+173 functions in `metadata/functions.toml`: 173 verified, 0 draft, 0 identified, 0 disabled.
+<!-- metadata-counts:end -->
+
+<!-- metadata-index:begin (scripts/metadata_index.py) -->
+| Address | Symbol | Status | Source |
+| --- | --- | --- | --- |
+| `$80:8378` | `Lufia2Divide16` | verified | `src/system/math.c` |
+| `$80:86C1` | `Lufia2ScreenFade` | verified | `src/system/screen.c` |
+| `$80:8878` | `Lufia2MenuDrawString` | verified | `src/menu/menu_string.c` |
+| `$80:8E9D` | `Lufia2DecompressResource` | verified | `src/system/decompress.c` |
+| `$80:92A4` | `Lufia2IntroNmi` | verified | `src/title/title.c` |
+| `$80:9C72` | `Lufia2FieldEventTick` | verified | `src/field/field_update.c` |
+| `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
+| `$80:C23D` | `Lufia2TextPrepareWindow` | verified | `src/text/text_window.c` |
+| `$80:C305` | `Lufia2TextBuildWindow` | verified | `src/text/text_window.c` |
+| `$80:C56E` | `Lufia2TextQueueWindowRow` | verified | `src/text/text_window.c` |
+| `$80:C652` | `Lufia2TextMeasure` | verified | `src/text/text_layout.c` |
+| `$80:C784` | `Lufia2TextClearGlyphBuffer` | verified | `src/text/text_window.c` |
+| `$80:CBAE` | `Lufia2FieldEventTimerTick` | verified | `src/field/field_event_script.c` |
+| `$80:ED9C` | `Lufia2FieldBuildAttributes` | verified | `src/field/field_attributes.c` |
+| `$81:B264` | `Lufia2BattleActiveMask` | verified | `src/battle/battle_util.c` |
+| `$81:B2B5` | `Lufia2BattleTargetRecord` | verified | `src/battle/battle_util.c` |
+| `$81:B2DB` | `Lufia2BattleTargetSlot` | verified | `src/battle/battle_util.c` |
+| `$81:B444` | `Lufia2BattlePaletteFade` | verified | `src/battle/battle_util.c` |
+| `$81:B48B` | `Lufia2BattleFadeColor` | verified | `src/battle/battle_util.c` |
+| `$81:B505` | `Lufia2BattleBlend` | verified | `src/battle/battle_util.c` |
+| `$81:B54A` | `Lufia2ColorToGray` | verified | `src/battle/battle_util.c` |
+| `$81:B5A3` | `Lufia2BattleHideOam` | verified | `src/battle/battle_util.c` |
+| `$81:B974` | `Lufia2BattleLoadPalette` | verified | `src/battle/battle_util.c` |
+| `$81:B9AF` | `Lufia2BattleCommitPalettes` | verified | `src/battle/battle_util.c` |
+| `$81:BAE8` | `Lufia2BattlePortraits` | verified | `src/battle/battle_portrait.c` |
+| `$81:BAFB` | `Lufia2BattlePortrait` | verified | `src/battle/battle_portrait.c` |
+| `$81:BB75` | `Lufia2BattlePortraitUpload` | verified | `src/battle/battle_portrait.c` |
+| `$81:BD47` | `Lufia2BattleSpriteBlockFar` | verified | `src/battle/battle_util.c` |
+| `$81:BD4B` | `Lufia2BattleSpriteBlock` | verified | `src/battle/battle_util.c` |
+| `$81:BE54` | `Lufia2BattleTileBlockFar` | verified | `src/battle/battle_util.c` |
+| `$81:BE58` | `Lufia2BattleTileBlock` | verified | `src/battle/battle_util.c` |
+| `$81:C129` | `Lufia2BattleIpSkills` | verified | `src/battle/battle_ip.c` |
+| `$81:C2C0` | `Lufia2BattleCopyC2C0` | verified | `src/battle/battle_util.c` |
+| `$81:C2D0` | `Lufia2BattleClear2000` | verified | `src/battle/battle_util.c` |
+| `$81:C2E3` | `Lufia2BattleFill2800` | verified | `src/battle/battle_util.c` |
+| `$81:C2FB` | `Lufia2BattleClear3000` | verified | `src/battle/battle_util.c` |
+| `$81:C30E` | `Lufia2BattleClear3800` | verified | `src/battle/battle_util.c` |
+| `$81:C35F` | `Lufia2BattlePopups` | verified | `src/battle/battle_popup.c` |
+| `$81:C5CF` | `Lufia2BattleTargetPointer` | verified | `src/battle/battle_util.c` |
+| `$81:DFA2` | `Lufia2BattleListRows` | verified | `src/battle/battle_ip.c` |
+| `$81:E3AE` | `Lufia2BattleWindowE3AE` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E3CD` | `Lufia2BattleWindowE3CD` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E3EC` | `Lufia2BattleTileWindow` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E405` | `Lufia2BattleTileFrame` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E479` | `Lufia2BattleFrameTop` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E4AD` | `Lufia2BattleFrameSides` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E503` | `Lufia2BattleWindow` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E542` | `Lufia2BattleFrameRow` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E570` | `Lufia2BattleFrameEnds` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E593` | `Lufia2BattleGaugePanel` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E5C1` | `Lufia2BattleGaugeBlock` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E604` | `Lufia2BattleGaugeColumn` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E7D2` | `Lufia2BattleFillRect` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E808` | `Lufia2DecimalDigits3` | verified | `src/system/math.c` |
+| `$81:E835` | `Lufia2BattleGlyph` | verified | `src/battle/battle_ip.c` |
+| `$81:EB34` | `Lufia2BattlePaletteCopy` | verified | `src/battle/battle_util.c` |
+| `$81:EB62` | `Lufia2BattlePaletteSplit` | verified | `src/battle/battle_util.c` |
+| `$81:EC41` | `Lufia2BattleClearF000` | verified | `src/battle/battle_util.c` |
+| `$81:ED8E` | `Lufia2PartyUnpackMember` | verified | `src/party/stats.c` |
+| `$81:EE94` | `Lufia2PartyUnpackMemberBare` | verified | `src/party/stats.c` |
+| `$81:F057` | `Lufia2InventoryCount` | verified | `src/item/inventory.c` |
+| `$81:F0A2` | `Lufia2InventoryAdd` | verified | `src/item/inventory.c` |
+| `$81:F194` | `Lufia2ItemRecordByte` | verified | `src/item/item_records.c` |
+| `$81:F1C5` | `Lufia2LoadItemRecord` | verified | `src/item/item_records.c` |
+| `$81:F291` | `Lufia2ItemTextPointer` | verified | `src/item/item_records.c` |
+| `$81:F2A9` | `Lufia2ItemNameTrimmed` | verified | `src/item/item_records.c` |
+| `$81:F3F4` | `Lufia2SpellRecordByteC` | verified | `src/item/item_records.c` |
+| `$81:F404` | `Lufia2SpellRecordByte8` | verified | `src/item/item_records.c` |
+| `$81:F414` | `Lufia2LoadSpellRecord` | verified | `src/item/item_records.c` |
+| `$81:F446` | `Lufia2SpellTextPointer` | verified | `src/item/item_records.c` |
+| `$81:F4D5` | `Lufia2PartyDerivedStats` | verified | `src/party/stats.c` |
+| `$81:F4E9` | `Lufia2PartyStatTotalsFar` | verified | `src/party/stats.c` |
+| `$81:F4ED` | `Lufia2PartyStatTotals` | verified | `src/party/stats.c` |
+| `$81:F5ED` | `Lufia2PartyRestore11` | verified | `src/party/party_records.c` |
+| `$81:F60B` | `Lufia2PartyRestore13` | verified | `src/party/party_records.c` |
+| `$81:F789` | `Lufia2PartyPointersFar` | verified | `src/party/party_records.c` |
+| `$81:F78D` | `Lufia2PartyPointers` | verified | `src/party/party_records.c` |
+| `$81:F7BD` | `Lufia2BattleTable9EBA` | verified | `src/party/party_records.c` |
+| `$81:F87F` | `Lufia2PartyBaseStats` | verified | `src/party/stats.c` |
+| `$81:F979` | `Lufia2PartyLevelUpCheck` | verified | `src/party/level_up.c` |
+| `$81:F9E9` | `Lufia2PartyExperienceForLevel` | verified | `src/party/experience.c` |
+| `$81:FB79` | `Lufia2CharacterSpriteByte` | verified | `src/battle/battle_character.c` |
+| `$81:FBA2` | `Lufia2SpriteSizePacked` | verified | `src/battle/battle_character.c` |
+| `$81:FBDB` | `Lufia2CharacterSpriteBox` | verified | `src/battle/battle_character.c` |
+| `$81:FC0B` | `Lufia2PartyNewRecord` | verified | `src/party/level_up.c` |
+| `$81:FCE2` | `Lufia2CharacterSpritePointer` | verified | `src/battle/battle_character.c` |
+| `$82:810E` | `Lufia2MenuDrawWindow` | verified | `src/menu/menu_window.c` |
+| `$82:8B4B` | `Lufia2MenuButtons` | verified | `src/menu/menu.c` |
+| `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |
+| `$82:939C` | `Lufia2MenuNmi` | verified | `src/menu/menu.c` |
+| `$82:950E` | `Lufia2MenuMemberStatus` | verified | `src/menu/menu_screen.c` |
+| `$82:9CB2` | `Lufia2MenuWarpList` | verified | `src/menu/menu_screen.c` |
+| `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
+| `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
+| `$82:A918` | `Lufia2MenuListCursor` | verified | `src/menu/menu_screen.c` |
+| `$82:ACDB` | `Lufia2MenuListRow` | verified | `src/menu/menu_screen.c` |
+| `$82:B2C5` | `Lufia2MenuEquipUpgrade` | verified | `src/menu/menu_screen.c` |
+| `$82:C261` | `Lufia2CapsuleLoadStats` | verified | `src/party/capsule.c` |
+| `$82:C2FD` | `Lufia2CapsuleReset` | verified | `src/party/capsule.c` |
+| `$82:C352` | `Lufia2CapsuleSetAll` | verified | `src/party/capsule.c` |
+| `$82:C515` | `Lufia2CapsuleSetForms` | verified | `src/party/capsule.c` |
+| `$82:C627` | `Lufia2MenuCursorBlink` | verified | `src/menu/menu.c` |
+| `$82:CD1F` | `Lufia2CapsuleTryLearn` | verified | `src/menu/menu_screen.c` |
+| `$82:CD83` | `Lufia2CapsuleLevelUp` | verified | `src/party/capsule.c` |
+| `$82:CE23` | `Lufia2CapsuleExperienceRange` | verified | `src/party/capsule.c` |
+| `$82:D07B` | `Lufia2MenuCapsuleStatus` | verified | `src/menu/menu_screen.c` |
+| `$82:D721` | `Lufia2MenuShopWindows` | verified | `src/menu/menu_screen.c` |
+| `$82:D749` | `Lufia2MenuShopParty` | verified | `src/menu/menu_screen.c` |
+| `$82:DCC1` | `Lufia2MenuShopRows` | verified | `src/menu/menu_screen.c` |
+| `$82:DCF4` | `Lufia2MenuShopRow` | verified | `src/menu/menu_screen.c` |
+| `$82:E297` | `Lufia2MenuShopSetup` | verified | `src/menu/menu_screen.c` |
+| `$82:E49E` | `Lufia2MenuShopTitle` | verified | `src/menu/menu_screen.c` |
+| `$82:E5E1` | `Lufia2MenuShopCompare` | verified | `src/menu/menu_screen.c` |
+| `$82:E746` | `Lufia2TitleStateDispatch` | verified | `src/title/title.c` |
+| `$82:EFC5` | `Lufia2MenuSavedWindow` | verified | `src/menu/menu_screen.c` |
+| `$82:F0A2` | `Lufia2MenuNameEntryWindows` | verified | `src/menu/menu_screen.c` |
+| `$82:FB1F` | `Lufia2ItemPossessionCount` | verified | `src/item/inventory.c` |
+| `$83:80CD` | `Lufia2FieldIdleTest` | verified | `src/field/field_update.c` |
+| `$83:8103` | `Lufia2FieldStatusRequests` | verified | `src/field/field_update.c` |
+| `$83:81C6` | `Lufia2FieldTriggerUpdate` | verified | `src/field/field_triggers.c` |
+| `$83:83A0` | `Lufia2FieldMenuRequest` | verified | `src/field/field_update.c` |
+| `$83:85DC` | `Lufia2FieldReloadSetup` | verified | `src/field/field_update.c` |
+| `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |
+| `$83:8682` | `Lufia2FieldAnimationTicks` | verified | `src/field/field_update.c` |
+| `$83:9E31` | `Lufia2AncientCaveGenerateFloor` | verified | `src/cave/ancient_cave.c` |
+| `$83:9FA9` | `Lufia2FieldNmiUploads` | verified | `src/field/field_nmi.c` |
+| `$83:A21A` | `Lufia2FieldActorSprites` | verified | `src/field/field_sprites.c` |
+| `$83:A746` | `Lufia2ActorSyncFinePosition` | verified | `src/actor/actor_movement.c` |
+| `$83:A9BA` | `Lufia2ActorLoadSprite` | verified | `src/actor/actor_sprites.c` |
+| `$83:AEB5` | `Lufia2FieldColourEffects` | verified | `src/field/field_effects.c` |
+| `$83:B66E` | `Lufia2FieldStairRects` | verified | `src/field/field_triggers.c` |
+| `$83:B711` | `Lufia2FieldEventRects` | verified | `src/field/field_triggers.c` |
+| `$83:B747` | `Lufia2FieldAreaRects` | verified | `src/field/field_triggers.c` |
+| `$83:BB93` | `Lufia2UpdateActorSlots` | verified | `src/actor/actor_slots.c` |
+| `$83:BBF3` | `Lufia2PlayerSlotSpecialUpdate` | verified | `src/actor/player_update.c` |
+| `$83:C1B4` | `Lufia2PlayerSlotStandardUpdate` | verified | `src/actor/player_controller.c` |
+| `$83:C7F8` | `Lufia2ActorPrimaryUpdate` | verified | `src/actor/actor_primary.c` |
+| `$83:C947` | `Lufia2ActorPrimaryReset` | verified | `src/actor/actor_primary.c` |
+| `$83:CA68` | `Lufia2ActorBlockedEvent` | verified | `src/actor/actor_primary.c` |
+| `$83:CB65` | `Lufia2ActorClearSlotLinks` | verified | `src/actor/actor_primary.c` |
+| `$83:D350` | `Lufia2ActorPrimaryActionCore` | verified | `src/actor/actor_action.c` |
+| `$83:D416` | `Lufia2ActorLoadPrimaryScript` | verified | `src/actor/actor_primary.c` |
+| `$83:D508` | `Lufia2ActorSecondaryUpdate` | verified | `src/actor/actor_secondary.c` |
+| `$83:E03E` | `Lufia2ObjectSlotsUpdate` | verified | `src/actor/object_vm.c` |
+| `$83:F9D4` | `Lufia2ActorResolveMapCellOffset` | verified | `src/actor/actor_movement.c` |
+| `$83:FA3F` | `Lufia2ActorMarkMapOccupancy` | verified | `src/actor/actor_movement.c` |
+| `$83:FA81` | `Lufia2ActorMoveFinePosition` | verified | `src/actor/actor_movement.c` |
+| `$83:FACB` | `Lufia2ActorAddDisplayOffset` | verified | `src/actor/actor_movement.c` |
+| `$83:FB12` | `Lufia2ActorMovementStep` | verified | `src/actor/actor_movement.c` |
+| `$83:FB71` | `Lufia2ActorReadMapCellValue` | verified | `src/actor/actor_movement.c` |
+| `$84:8193` | `Lufia2SpriteGraphicsUpload` | verified | `src/actor/actor_sprites.c` |
+| `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
+| `$85:8A2F` | `Lufia2BattleSprites` | verified | `src/battle/battle_frame.c` |
+| `$85:8DC5` | `Lufia2BattleNmiUploads` | verified | `src/battle/battle_nmi.c` |
+| `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
+| `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
+| `$85:ECF0` | `Lufia2BattleFrameUpkeep` | verified | `src/battle/battle_frame.c` |
+| `$86:81A9` | `Lufia2SelectScreenNmi` | verified | `src/menu/menu.c` |
+| `$86:838C` | `Lufia2TitleObjects` | verified | `src/title/title.c` |
+| `$86:86ED` | `Lufia2TitleLayers` | verified | `src/title/title.c` |
+| `$86:88BE` | `Lufia2TitleParticleSprites` | verified | `src/title/title.c` |
+| `$86:8996` | `Lufia2TitlePaletteCycle` | verified | `src/title/title.c` |
+| `$86:8B55` | `Lufia2SpriteFrame` | verified | `src/menu/menu_sprites.c` |
+| `$86:8B73` | `Lufia2SpriteAnimateAll` | verified | `src/menu/menu_sprites.c` |
+| `$86:8BCF` | `Lufia2SpriteClearOam` | verified | `src/menu/menu_sprites.c` |
+| `$86:8BF5` | `Lufia2SpriteBuildOam` | verified | `src/menu/menu_sprites.c` |
+| `$86:8CDA` | `Lufia2SpriteSetTable` | verified | `src/menu/menu_sprites.c` |
+| `$86:8CF5` | `Lufia2SpriteSetAnimation` | verified | `src/menu/menu_sprites.c` |
+| `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
+| `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
+| `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
+| `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
+| `$8E:BD77` | `Lufia2FieldScrollUpdate` | verified | `src/field/field_scroll.c` |
+<!-- metadata-index:end -->
+
+## Function notes
 
 M2 consumer inspection uses the original scene NMI stub at `$00:0067-$006B`
 (`JSL target; RTS`). Boot sets its opcodes at `$80:80E6/$80:80EC`; the NMI
@@ -51,7 +244,7 @@ stay in the consumer.
 | `$83:867B` | `Lufia2FieldTakeButtons` | `verified` | `AND $46`, `TRB $4A` on a hit; JSR'd from the field loop and the controllers. Only its M1X0 variant was compiled, so M1X1 callers entered the interpreter. Verification: 16,384/16,384, 8,704/8,704, mutations 2/2. Runtime-bound through `Lufia2DecompBridge_867B`. |
 | `$83:8103` | `Lufia2FieldStatusRequests` | `verified` | Field loop (JSR at `$83:808F`): `$09A8` bit 3 gate, then `$05B7` bits 1/2/0; a set request hands off exactly at its call (`$83:8113`, `$83:811D`, `$83:8127`). Verification: 16,384/16,384, 8,704/8,704, mutations 3/3. Runtime-bound through `Lufia2DecompBridge_8103`. |
 | `$82:E746` | `Lufia2TitleStateDispatch` | `verified` | `LDA $30; JSR $8028` inline jump table (9 handlers `$82:E75D-$82:E893`, all ending `RTL` with M1X0). Native up to the `JMP ($0060)`, including the `$5D-$61` writes and the stack residue; hands off at the handler. Verification: 16,384/16,384 whole-function cases (the ROM passes `E746`/`E748` once more when the table yields those, counted), mutations 3/3. Runtime-bound through `Lufia2DecompBridge_E746`, together with `$80:9C72`. |
-| `$80:9CB8` | `Lufia2TextEngineStep` | `verified` | Text and event script engine step, reached from `$80:9C72` when `$099B` bit 7 is set and JSL'd from 10 more sites. Native: the `$7F:D0FF` print delay, the `$1259` text return stack, the next byte from `[$09B9:$09B7]`; plain characters (`$80:BCE4`, `$80:C0B7` next byte with bank step past `$FFFF`, `$80:BD38` glyph draw via `$80:C7C2` from font `$9A:F970` with attributes `$80:C815` into `$7E:[$09B1]`, the 32-byte VRAM upload setup, the `$84:8766` typing sound); script mode (`$099B` bit 0 clear): `$80:C1FD` window close (`$099C` bit 0 set and `$09A7` bit 1 clear: `$84:8328` clears the window buffer `$7E:3000-37FF`, clears `$099C` bit 0, `$059C-$059F` = 00 00 FC FF, `$74` = 8), the opcode fetch `$80:9D31` (table `$80:CA14`, 216 handlers) and opcode `$33` (`$80:A80F`, wait for actor `$1269`: while `$0622,x` & `$88` it steps the pointer back with `$80:C0EC` and returns; when done `$1269` = FF, two argument bytes are skipped and the next opcode follows in the same frame); since T3 also `$37` (`$80:B2EB`, wait until the frame counter `$42` reaches the argument; `$099B` bit 5 marks a running wait), `$3C` (`$80:B397`, wait until no party actor `$0622-$0626` has bit 3, then lock them with bit 2 or free the follow slots `$09A1-$09A5`; `$1269` negative hands off at `$80:B3DF`), `$00/$42` (`$80:9D4C`, return from a sub-script to `$1252/$1254` and reload at `$80:9CD9`; without a caller it hands off at `$80:9D69`) and `$68` (`$80:BC3D`: with `$05B3` bit 4 set it skips two bytes; since T7 the other path is native too: `$80:BC98` gives actor `$A7` the id and state bytes `$05FA/$05D2` and the position of map entity id - `$4F` (`$80:C01D`: `$7E:F010` list, stride 8, through the shared `$80:BFAA` search, exported as `Lufia2FieldListSearch`, into `$120A-$1212`; `$80:C1A7` clears `$0736` and `$0622` bit 2), then `$A7` steps; a list search over 65,536 entries hands off at `$80:BFBC`); since T8 `$2E` (`$80:A679`: hide listed actor id n via `$80:BF92`, `$0622` bit 2, occupancy `$83:FA12`, ids `$10-$4F` also set bit 7 of `$081E + id - $10`) and `$4B` (`$80:B849`: music n into `$099D`/`$7F:D0FD`; a change with `$099C` bit 6 clear hands off at `$80:B862`, the `JSL $80:93FE` to the APU); since T9 `$01` (`$80:9DB3`: wait for a button via `$099B` bit 1, typing sound from the speaker `$09AC`'s `$1291` through `$80:C1DF`), `$0B` (`$80:9F37`: choice cursor, re-run each frame until A/X picks row `$126A` from the word table `$126D:$126B` or B closes the window; cursor tiles `$80:9FE7/A019`) and `$69` (`$80:BCBC`: window mode `$09A7`; bit 1 copies the window palette `$A6:BFE0` to `$0500` (MVN) and hands off at the frame wait `$80:BF0B`). T9 mutations 25/25 (seeds: choice rows 1-4, speakers `$FE/$FF` or listed in `$05FA`, line starts off the stack page); since T10 `$38` (`$80:B30C`: wait n seconds, `$42` frames to 60, `$125F` seconds, re-run each frame through `$099B` bit 5; 8,657 hand-offs in gameplay6) and the waiting form of `$41` (`$80:B4C4` with `$FF` as second byte: until view `$05AA`'s `$121E/$1226` reach `$7F:D08B/D08D`; the scroll modes hand off at `$80:B4FE`), mutations 12/12; since T5 also dictionary words in text mode (bytes >= `$80` via `$80:9D22`, capped at 4,096 per step with an exact hand-off there), `$03` new line (`$80:9DDB`: `$1250` += `$400` into `$09B1`, `$099C` bit 4, column `$09B3` = 0), `$05/$06` sub-script call (`$80:9E54`: return point `$1252/$1254`, entry from the `$8E:EA00` table, page `$09B0` 0/1, 2 for words), `$0F` period plus new line, `$15` goto if event flag set (`$80:BE1E`/`$80:BE30`: flag n is bit `$80:BE45[n & 7]` of `$077E + n/8`), `$1A/$1B` set/clear event flag, `$1C` goto (`$80:A3C6`: script base `$099E/$09A0` plus a word, `$80:C102` moves to the next bank below `$8000`), `$1D` byte into `$079E + n`; since T6 also `$0C-$0E` (?, !, comma plus new line), `$09` (print the name buffer `$00:0BAD` as a sub-script), `$1E` (add into `$079E + n`), `$22/$26` (gold `$0A8A-$0A8C` plus/minus a word, capped at 9,999,999 or undone below zero, `$80:BF12/BF43`), `$27/$2A/$4F/$5F` (skip 2/3/1/1 argument bytes), `$3E/$3F` (brightness `$0583` = `$80`/`$0F`), `$47/$49/$4A/$52/$74/$7C-$80/$CB` (store the argument byte, table `kTextByteStores`), `$50` (typing sound off), `$57` (wait while `$1261` has an effect), `$5A/$8A` (start/stop the shake, `$7F:D07E-D084`), `$60` (write a PPU register `$2100 + n`), `$71` (wait `$7F:D0FC` frames), `$76` (wait for `$0581` and fade bits 0/1), `$94-$96` (COLDATA fade setup `$80:AF77`, rate from a `$4204` division), `$AA`, `$B5`, `$C1`, `$C5` (stop the COLDATA and palette fades), `$CC`. Other opcodes hand off at the `JMP ($CA14,x)` `$80:9D3B` (the result counts the `$33` passes before it), `$1269` negative at `$80:A834`, dictionary words at `$80:9D22`; since T11 the `$80:BCF2` call to C56E is native. Opcode `$08` measures text via C652 and runs the C23D glyph-clear/upload prefix, then exposes C274 (before C2A1) or C279 (before C305), retaining all frames. C23D remains draft. T11: 49,152 standalone helper cases, 16,384 whole-engine cases (return 8,350, LLE 8,034 in the isolated run), 19/19 meaningful mutations caught. Verification: 16,384/16,384 whole-function cases with the MMIO order compared (return 7,033, LLE 9,351 after T6), 8,704/8,704 bridge/ABI cases, mutations 16/17 for T2 (survivor: REP before the 16-bit ASL, equivalent in the model), 15/15 for T3, 20/20 for T5 and 20/21 for T6 (survivor: `$CC` stores unconditionally, equivalent because the compare only runs with `$0B62` = 0); the 9C72 cases cover the step from the field loop. Runtime-bound through `Lufia2DecompBridge_9CB8`. |
+| `$80:9CB8` | `Lufia2TextEngineStep` | `verified` | Text and event script engine step, reached from `$80:9C72` when `$099B` bit 7 is set and JSL'd from 10 more sites. Native: the `$7F:D0FF` print delay, the `$1259` text return stack, the next byte from `[$09B9:$09B7]`; plain characters (`$80:BCE4`, `$80:C0B7` next byte with bank step past `$FFFF`, `$80:BD38` glyph draw via `$80:C7C2` from font `$9A:F970` with attributes `$80:C815` into `$7E:[$09B1]`, the 32-byte VRAM upload setup, the `$84:8766` typing sound); script mode (`$099B` bit 0 clear): `$80:C1FD` window close (`$099C` bit 0 set and `$09A7` bit 1 clear: `$84:8328` clears the window buffer `$7E:3000-37FF`, clears `$099C` bit 0, `$059C-$059F` = 00 00 FC FF, `$74` = 8), the opcode fetch `$80:9D31` (table `$80:CA14`, 216 handlers) and opcode `$33` (`$80:A80F`, wait for actor `$1269`: while `$0622,x` & `$88` it steps the pointer back with `$80:C0EC` and returns; when done `$1269` = FF, two argument bytes are skipped and the next opcode follows in the same frame); since T3 also `$37` (`$80:B2EB`, wait until the frame counter `$42` reaches the argument; `$099B` bit 5 marks a running wait), `$3C` (`$80:B397`, wait until no party actor `$0622-$0626` has bit 3, then lock them with bit 2 or free the follow slots `$09A1-$09A5`; `$1269` negative hands off at `$80:B3DF`), `$00/$42` (`$80:9D4C`, return from a sub-script to `$1252/$1254` and reload at `$80:9CD9`; without a caller it hands off at `$80:9D69`) and `$68` (`$80:BC3D`: with `$05B3` bit 4 set it skips two bytes; since T7 the other path is native too: `$80:BC98` gives actor `$A7` the id and state bytes `$05FA/$05D2` and the position of map entity id - `$4F` (`$80:C01D`: `$7E:F010` list, stride 8, through the shared `$80:BFAA` search, exported as `Lufia2FieldListSearch`, into `$120A-$1212`; `$80:C1A7` clears `$0736` and `$0622` bit 2), then `$A7` steps; a list search over 65,536 entries hands off at `$80:BFBC`); since T8 `$2E` (`$80:A679`: hide listed actor id n via `$80:BF92`, `$0622` bit 2, occupancy `$83:FA12`, ids `$10-$4F` also set bit 7 of `$081E + id - $10`) and `$4B` (`$80:B849`: music n into `$099D`/`$7F:D0FD`; a change with `$099C` bit 6 clear hands off at `$80:B862`, the `JSL $80:93FE` to the APU); since T9 `$01` (`$80:9DB3`: wait for a button via `$099B` bit 1, typing sound from the speaker `$09AC`'s `$1291` through `$80:C1DF`), `$0B` (`$80:9F37`: choice cursor, re-run each frame until A/X picks row `$126A` from the word table `$126D:$126B` or B closes the window; cursor tiles `$80:9FE7/A019`) and `$69` (`$80:BCBC`: window mode `$09A7`; bit 1 copies the window palette `$A6:BFE0` to `$0500` (MVN) and hands off at the frame wait `$80:BF0B`). T9 mutations 25/25 (seeds: choice rows 1-4, speakers `$FE/$FF` or listed in `$05FA`, line starts off the stack page); since T10 `$38` (`$80:B30C`: wait n seconds, `$42` frames to 60, `$125F` seconds, re-run each frame through `$099B` bit 5; 8,657 hand-offs in gameplay6) and the waiting form of `$41` (`$80:B4C4` with `$FF` as second byte: until view `$05AA`'s `$121E/$1226` reach `$7F:D08B/D08D`; the scroll modes hand off at `$80:B4FE`), mutations 12/12; since T5 also dictionary words in text mode (bytes >= `$80` via `$80:9D22`, capped at 4,096 per step with an exact hand-off there), `$03` new line (`$80:9DDB`: `$1250` += `$400` into `$09B1`, `$099C` bit 4, column `$09B3` = 0), `$05/$06` sub-script call (`$80:9E54`: return point `$1252/$1254`, entry from the `$8E:EA00` table, page `$09B0` 0/1, 2 for words), `$0F` period plus new line, `$15` goto if event flag set (`$80:BE1E`/`$80:BE30`: flag n is bit `$80:BE45[n & 7]` of `$077E + n/8`), `$1A/$1B` set/clear event flag, `$1C` goto (`$80:A3C6`: script base `$099E/$09A0` plus a word, `$80:C102` moves to the next bank below `$8000`), `$1D` byte into `$079E + n`; since T6 also `$0C-$0E` (?, !, comma plus new line), `$09` (print the name buffer `$00:0BAD` as a sub-script), `$1E` (add into `$079E + n`), `$22/$26` (gold `$0A8A-$0A8C` plus/minus a word, capped at 9,999,999 or undone below zero, `$80:BF12/BF43`), `$27/$2A/$4F/$5F` (skip 2/3/1/1 argument bytes), `$3E/$3F` (brightness `$0583` = `$80`/`$0F`), `$47/$49/$4A/$52/$74/$7C-$80/$CB` (store the argument byte, table `kTextByteStores`), `$50` (typing sound off), `$57` (wait while `$1261` has an effect), `$5A/$8A` (start/stop the shake, `$7F:D07E-D084`), `$60` (write a PPU register `$2100 + n`), `$71` (wait `$7F:D0FC` frames), `$76` (wait for `$0581` and fade bits 0/1), `$94-$96` (COLDATA fade setup `$80:AF77`, rate from a `$4204` division), `$AA`, `$B5`, `$C1`, `$C5` (stop the COLDATA and palette fades), `$CC`. Other opcodes hand off at the `JMP ($CA14,x)` `$80:9D3B` (the result counts the `$33` passes before it), `$1269` negative at `$80:A834`, dictionary words at `$80:9D22`; since T11 the `$80:BCF2` call to C56E is native. Opcode `$08` measures text via C652 and runs the C23D glyph-clear/upload prefix, then exposes C274 (before C2A1) or C279 (before C305), retaining all frames. C23D was draft at T11 and is verified since T12. T11: 49,152 standalone helper cases, 16,384 whole-engine cases (return 8,350, LLE 8,034 in the isolated run), 19/19 meaningful mutations caught. Verification: 16,384/16,384 whole-function cases with the MMIO order compared (return 7,033, LLE 9,351 after T6), 8,704/8,704 bridge/ABI cases, mutations 16/17 for T2 (survivor: REP before the 16-bit ASL, equivalent in the model), 15/15 for T3, 20/20 for T5 and 20/21 for T6 (survivor: `$CC` stores unconditionally, equivalent because the compare only runs with `$0B62` = 0); the 9C72 cases cover the step from the field loop. Runtime-bound through `Lufia2DecompBridge_9CB8`. |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | `verified` | World map region search (JSR from `$86:9E65` on every cell step and `$86:9796`): `$86:9F35` looks up the data bank and list for region `$09EB` through `$86:CE36` and `$CF:FCBC/FCBE`, then 9-byte rectangles are tested against `$58/$5A` until an entry with bit 7; carry clear on a hit. The world map list has 79 entries, about 1,060 interpreted instructions per search on the world map save state. Verification: 16,384/16,384 whole-function cases (seeded with cells inside the world map's rectangles), 8,704/8,704 bridge/ABI cases, mutations 6/6. Runtime-bound through `Lufia2DecompBridge_9EDD`. |
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | `verified` | World map edge streaming, JSR from the `$86:924C` main loop every frame. When the camera cell `$11F2/$11F4` moved since `$11F6/$11F7`, streams the new column (`$86:ACFE` into `$7F:DF00/$7F:DF80`, VRAM address `$1714`) and/or row (`$86:AC6C` into the `$7F` buffer at `$0B`, VRAM address `$1712`), 64 cells each through the metatile tables `[$DF]`/`[$E3]` and the tile tables `[$E7]`/`[$EA]`/`[$ED]` (helpers `$86:ADEE` cell offset, `$86:AE05` block pointer), flags `$1711/$1710` for the NMI, counts moves in `$11E3` and remembers the cell (`$86:9A44`). The ROM restores the pushed `$5A` into `$58` in `$86:ACFE`; that is kept. Verification: 16,384/16,384 whole-function cases, 8,704/8,704 bridge/ABI cases, mutations 22: 19 caught, 3 equivalent (bit 7 of the `$86:ADEE` offset is always clear and its `ASL` never carries, so two VRAM masks and the `ADC #$0000` cannot differ). Runtime-bound through `Lufia2DecompBridge_99BF`; it had no compiled variant. |
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | `verified` | World map NMI through the `$00:0067` vector; `PHP`/`PLP`, so any entry width. Forced blank, the `$86:D1A1` tile upload list (`$1365` entries at `$1367`, column uploads `$86:D1E8` and two-pass block uploads `$86:D271` on DMA channels 6/7), the `$1710`/`$1711` VRAM uploads, the `$1702` CGRAM upload, the `$16E7` palette cycles (five bytes each at `$16E8`, colours from `$0320`), the Mode 7 matrix from `$1707-$170E` or the HDMA channel setups (`$11DA/$11DD/$11DF/$11E1`, window tables `$D400-$DA00`), `$420C`, the Mode 7 centre and the BG scroll copies. Verification: 16,384/16,384 whole-function cases vs ROM comparing the complete MMIO write sequence (8,456,905 writes; the verify bus log now holds 16,384 writes), 8,704/8,704 bridge/ABI cases, mutations 33/33. Runtime-bound through `Lufia2DecompBridge_CEF6` (new `recomp/bank86.cfg`). |
@@ -217,7 +410,7 @@ E8EE remains deferred because its WMDATA port state belongs to the caller.
 | `$80:C652` | `Lufia2TextMeasure` | verified, unbound | Complete measurement through RTS C743. M1X0, script DB:Y; DP $54-$57; shared C0B7/C102 bank crossing, name/dictionary/numeric widths, ROM skip/dimension tables, eight-bit width/line wrap, restored script bank/pointer. 16,384 differential cases, exact RTS checked; 5/5 mutations caught. |
 | `$80:C784` | `Lufia2TextClearGlyphBuffer` | verified, unbound | Complete 4 KB $7E:D000-DFFF fill using the ROM attribute table, reset glyph/destination/line state, PHP/PHB restores P and DB, RTL C7BD. 16,384 differential cases across entry widths, exact RTL checked; 4/4 mutations caught. Metadata names the M1X0 caller contract. |
 | `$80:C56E` | `Lufia2TextQueueWindowRow` | verified, unbound | Complete tilemap row helper C5DD and DMA-channel 1/2 setup through RTS C5DC. M1X0, P/Y restored; shift carry and TDC high byte preserved; zero width retains the ROM's 65,536-iteration row loop. 16,384 differential cases including zero/255 widths, address wrapping and DP $0100 carry; exact RTS and MMIO order checked; 6/6 mutations caught. Native through the already-bound text engine at BCF2. |
-| `$80:C23D` | `Lufia2TextPrepareWindow` | draft | Only the prefix is implemented. Clears glyphs and optionally prepares channel 0; exact continuation C274 before C2A1 or C279 before C305, parent JSR + PHY + PHB intact. Both paths verified through $80:9CB8; an additional isolated 16,384-case prefix probe covers hardware-mirrored DB values and channel 0 MMIO order (C274 8,142, C279 8,242), with 3/3 opcode-prefix mutations and one shared glyph-path mutation caught. No separate runtime binding. |
+| `$80:C23D` | `Lufia2TextPrepareWindow` | draft at T11; verified in T12 | At T11 only the prefix was implemented. Clears glyphs and optionally prepares channel 0; exact continuation C274 before C2A1 or C279 before C305, parent JSR + PHY + PHB intact. Both paths verified through $80:9CB8; an additional isolated 16,384-case prefix probe covers hardware-mirrored DB values and channel 0 MMIO order (C274 8,142, C279 8,242), with 3/3 opcode-prefix mutations and one shared glyph-path mutation caught. No separate runtime binding. |
 
 T11 adds three verified helpers (160 total), while the selected runtime replacements remain 122. The existing text-engine bridge contract is unchanged; its synthetic seeds also cover the new paths. C305 placement, C2A1 frame-wait continuation and opcode $14 / A074 remain upcoming work; they are unimplemented, not blocked on gameplay.
 
@@ -528,5 +721,4 @@ object-cap rerun; two D=0 equivalents, zero invalid checks. The shortened
 corpus did not reach 20 objects, so the runner now forces the full corpus for
 that mutation. The new identity-APU-child mutation is caught. CFG research
 tests pass 11/11; their output is not semantic verification evidence.
-Owner-local logs and exact comparisons: `.agent/decomp/t14-acceptance/` in
-the consumer. No gameplay or smoke-test gate was used.
+No gameplay or smoke-test gate was used.

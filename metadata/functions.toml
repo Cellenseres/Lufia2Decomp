@@ -1,6 +1,14 @@
 format = 1
 rom = "lufia2-usa"
 
+# Canonical function metadata. This file alone records, per reconstructed
+# routine: ROM address, portable symbol, source file, entry/exit M/X and
+# status (identified, draft, verified, disabled). Other files derive from it
+# (scripts/metadata_index.py); symbols.toml holds no function state. Names
+# are portable semantic symbols, never consumer bridge names. Runtime binding
+# is a separate consumer decision (Lufia2SNESRecomp recomp/decomp_bindings.toml);
+# verified does not imply bound.
+
 # 40-slot traversal; children go through a JSR callback. D set
 # on the way into AB4F stops at $83:BBA1.
 [[function]]
@@ -1376,6 +1384,80 @@ status = "verified"
 address = "83:9E31"
 name = "Lufia2AncientCaveGenerateFloor"
 source = "src/cave/ancient_cave.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Actor and sound helpers with their own whole-function differential
+# (consumer actor-dispatch suite, 4,096 cases each). Not runtime-bound.
+[[function]]
+address = "83:A746"
+name = "Lufia2ActorSyncFinePosition"
+source = "src/actor/actor_movement.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C947"
+name = "Lufia2ActorPrimaryReset"
+source = "src/actor/actor_primary.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:CA68"
+name = "Lufia2ActorBlockedEvent"
+source = "src/actor/actor_primary.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:CB65"
+name = "Lufia2ActorClearSlotLinks"
+source = "src/actor/actor_primary.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D416"
+name = "Lufia2ActorLoadPrimaryScript"
+source = "src/actor/actor_primary.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FA3F"
+name = "Lufia2ActorMarkMapOccupancy"
+source = "src/actor/actor_movement.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FA81"
+name = "Lufia2ActorMoveFinePosition"
+source = "src/actor/actor_movement.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:FACB"
+name = "Lufia2ActorAddDisplayOffset"
+source = "src/actor/actor_movement.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:8766"
+name = "Lufia2QueueDeferredSound"
+source = "src/system/sound.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
