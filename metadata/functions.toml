@@ -753,3 +753,51 @@ source = "src/menu/menu_screen.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:A918"
+name = "Lufia2MenuListCursor"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:ACDB"
+name = "Lufia2MenuListRow"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8B55"
+name = "Lufia2SpriteFrame"
+source = "src/menu/menu_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8B73"
+name = "Lufia2SpriteAnimateAll"
+source = "src/menu/menu_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8BCF"
+name = "Lufia2SpriteClearOam"
+source = "src/menu/menu_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8BF5"
+name = "Lufia2SpriteBuildOam"
+source = "src/menu/menu_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

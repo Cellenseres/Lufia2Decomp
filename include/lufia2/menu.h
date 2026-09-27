@@ -129,6 +129,36 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $82:A918 list cursor and page by mode $09D1; M1X0. */
+Lufia2ExecutionResult Lufia2MenuListCursor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:ACDB one list row at $3748; M1X0. */
+Lufia2ExecutionResult Lufia2MenuListRow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:8B55 animate, clear and build OAM, then the frame wait; any width. */
+Lufia2ExecutionResult Lufia2SpriteFrame(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:8B73 step the animation of every active slot; M1. */
+Lufia2ExecutionResult Lufia2SpriteAnimateAll(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:8BCF OAM buffer off screen; M1X0. */
+Lufia2ExecutionResult Lufia2SpriteClearOam(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:8BF5 OAM from the active slots; M1X0. */
+Lufia2ExecutionResult Lufia2SpriteBuildOam(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $86:81A9 NMI installed by $86:8000. */
 Lufia2ExecutionResult Lufia2SelectScreenNmi(
     const Lufia2Memory *memory,

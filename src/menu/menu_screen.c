@@ -1910,3 +1910,461 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
     TsbDirect(memory, cpu, 0x74u, 0x88u);
     return ExecutionReturned(0x829d54u);
 }
+
+static void SetAttribute(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint8_t attribute) {
+    StoreA8Absolute(memory, cpu, 0x0564u, attribute);
+}
+
+static void ItemByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x82u, return_address);
+    cpu->program_bank = 0x81u;
+    (void)Lufia2ItemRecordByte(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x82u;
+}
+
+/* $82:841E: item attribute: $20 usable, $24 not, $28 special. */
+static void ItemAttribute(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    uint8_t mode;
+    uint8_t attribute;
+
+    LoadAAbsolute8(memory, cpu, 0x153eu, 0);
+    mode = A8(cpu);
+    if (mode == 1u || mode == 2u) {
+        Compare8(cpu, mode, 0x01u);
+        if (mode == 2u)
+            Compare8(cpu, mode, 0x02u);
+        ItemByte(memory, cpu, mode == 1u ? 0x8460u : 0x846au);
+        BitImmediate8(cpu, 0x20u);
+        if (!cpu->zero)
+            attribute = 0x28u;
+        else if (mode == 1u)
+            attribute = 0x20u;
+        else {
+            BitImmediate8(cpu, 0x01u);
+            attribute = cpu->zero ? 0x24u : 0x20u;
+        }
+    } else {
+        const uint16_t item = Read16AbsoluteIndexed(memory, cpu, 0x0a06u, 0);
+
+        if (mode != 0u) {
+            Compare8(cpu, mode, 0x01u);
+            Compare8(cpu, mode, 0x02u);
+        }
+
+        LoadX16(cpu, item);
+        Compare16(cpu, item, 0x002au);
+        if (item == 0x002au || item == 0x0029u || item == 0x002du) {
+            if (item != 0x002au) {
+                Compare16(cpu, item, 0x0029u);
+                if (item != 0x0029u)
+                    Compare16(cpu, item, 0x002du);
+            }
+            LoadAAbsolute8(memory, cpu, 0x09a7u, 0);
+            BitImmediate8(cpu, item == 0x002au ? 0x10u : 0x08u);
+            attribute = cpu->zero ? 0x20u : 0x24u;
+        } else {
+            Compare16(cpu, item, 0x0029u);
+            Compare16(cpu, item, 0x002du);
+            ItemByte(memory, cpu, 0x8440u);
+            BitImmediate8(cpu, 0x20u);
+            if (!cpu->zero) {
+                attribute = 0x28u;
+            } else {
+                BitImmediate8(cpu, 0x40u);
+                attribute = cpu->zero ? 0x24u : 0x20u;
+            }
+        }
+    }
+    LoadA8(cpu, attribute);
+    StoreAAbsolute8(memory, cpu, 0x0564u, 0);
+}
+
+static void SpellByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    int twelve, uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x82u, return_address);
+    cpu->program_bank = 0x81u;
+    if (twelve)
+        (void)Lufia2SpellRecordByteC(memory, cpu);
+    else
+        (void)Lufia2SpellRecordByte8(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x82u;
+}
+
+/* $82:8483: spell attribute: $20 castable (cost <= $151D), $24 not. */
+static void SpellAttribute(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    int castable = 0;
+    uint8_t spell;
+
+    LoadAAbsolute8(memory, cpu, 0x0a0bu, 0);
+    spell = A8(cpu);
+    Compare8(cpu, spell, 0x24u);
+    if (spell >= 0x24u && spell <= 0x26u) {
+        static const uint8_t kBits[3] = {0x10u, 0x08u, 0x80u};
+
+        if (spell != 0x24u) {
+            Compare8(cpu, spell, 0x25u);
+            if (spell != 0x25u)
+                Compare8(cpu, spell, 0x26u);
+        }
+        LoadAAbsolute8(memory, cpu, 0x09a7u, 0);
+        BitImmediate8(cpu, kBits[spell - 0x24u]);
+        castable = cpu->zero;
+    } else {
+        Compare8(cpu, spell, 0x25u);
+        Compare8(cpu, spell, 0x26u);
+        SpellByte(memory, cpu, 0, 0x8495u);
+        BitImmediate8(cpu, 0x40u);
+        castable = !cpu->zero;
+    }
+    if (castable) {
+        SpellByte(memory, cpu, 1, 0x84bau);
+        SetAccumulatorWidth(cpu, 0);
+        And16(cpu, 0x00ffu);
+        Compare16(cpu, cpu->accumulator, Read16AbsoluteIndexed(memory, cpu, 0x151du, 0));
+        SetAccumulatorWidth(cpu, 1);
+        castable = cpu->zero || !cpu->carry;
+    }
+    LoadA8(cpu, castable ? 0x20u : 0x24u);
+    StoreAAbsolute8(memory, cpu, 0x0564u, 0);
+}
+
+/* $82:84F7: item row at A: name and count of $0A8D,X. */
+static int ItemRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionResult *text) {
+    StoreADirect16(memory, cpu, 0x17u);
+    PushIndex(memory, cpu);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a8du, cpu->x));
+    if (!cpu->zero) {
+        StoreADirect16(memory, cpu, 0x00u);
+        And16(cpu, 0x01ffu);
+        StoreAAbsolute16(memory, cpu, 0x0a06u, 0);
+        SetAccumulatorWidth(cpu, 1);
+        Jsr(memory, cpu, 0x850bu);
+        ItemAttribute(memory, cpu);
+        Rts(memory, cpu);
+        SetAccumulatorWidth(cpu, 0);
+        LoadY16(cpu, 0xc9b1u);
+        LoadX16(cpu, Read16Direct(memory, cpu, 0x17u));
+        if (DrawString(memory, cpu, 0x8516u, text))
+            return 1;
+        {
+            const uint16_t word = Read16Direct(memory, cpu, 0x00u);   /* LSR $00 */
+
+            cpu->carry = word & 1u;
+            Write16Direct(memory, cpu, 0x00u, (uint16_t)(word >> 1));
+            SetNz16(cpu, (uint16_t)(word >> 1));
+        }
+        LoadY16(cpu, 0xc9b7u);
+        LoadX16(cpu, Read16Direct(memory, cpu, 0x17u));
+        if (DrawString(memory, cpu, 0x8521u, text))
+            return 1;
+    }
+    cpu->x = PullIndexValue(memory, cpu);
+    IncrementX16(cpu);
+    IncrementX16(cpu);
+    return 0;
+}
+
+/* $82:854F: spell ([$2A],Y) at A: name and cost. */
+static int SpellRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionResult *text) {
+    StoreADirect16(memory, cpu, 0x17u);
+    SetAccumulatorWidth(cpu, 1);
+    PushY(memory, cpu);
+    LoadA8(cpu, Read8(memory, (((uint32_t)cpu->data_bank << 16) +
+        Read16Direct(memory, cpu, 0x2au) + cpu->y) & 0x00ffffffu));
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (!cpu->zero) {
+        StoreADirect8(memory, cpu, 0x00u);
+        StoreAAbsolute8(memory, cpu, 0x0a0bu, 0);
+        Jsr(memory, cpu, 0x8561u);
+        SpellAttribute(memory, cpu);
+        Rts(memory, cpu);
+        LoadY16(cpu, 0xca0cu);
+        LoadX16(cpu, Read16Direct(memory, cpu, 0x17u));
+        if (DrawString(memory, cpu, 0x856au, text))
+            return 1;
+        LoadY16(cpu, 0xca34u);
+        LoadX16(cpu, Read16Direct(memory, cpu, 0x17u));
+        if (DrawString(memory, cpu, 0x8573u, text))
+            return 1;
+    }
+    SetAccumulatorWidth(cpu, 0);
+    LoadY16(cpu, PullIndexValue(memory, cpu));
+    IncrementY16(cpu);
+    return 0;
+}
+
+/* $82:FC3F: A = item of the Xth set bit of $091E-$0925; carry = none. */
+static void ScenarioItem(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    IncrementX16(cpu);
+    Write16Direct(memory, cpu, 0x54u, 0);
+    Write16Direct(memory, cpu, 0x56u, 0);
+    LoadY16(cpu, 0x0000u);
+    do {
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x091eu, cpu->y));
+        if (!cpu->zero) {
+            StoreYDirect16(memory, cpu, 0x58u);
+            LoadY16(cpu, 0x0010u);
+            do {
+                Increment16Direct(memory, cpu, 0x54u);
+                LsrA16(cpu);
+                if (cpu->carry) {
+                    cpu->x = (uint16_t)(cpu->x - 1u);
+                    SetNz16(cpu, cpu->x);
+                    if (cpu->zero) {
+                        const uint16_t n = (uint16_t)(Read16Direct(memory, cpu, 0x54u) - 1u);
+
+                        Write16Direct(memory, cpu, 0x54u, (uint16_t)(n << 1));
+                        LoadX16(cpu, (uint16_t)(n << 1));
+                        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x97fda0u, cpu->x)));
+                        cpu->carry = 0;
+                        return;
+                    }
+                }
+                cpu->y = (uint16_t)(cpu->y - 1u);
+                SetNz16(cpu, cpu->y);
+            } while (!cpu->zero);
+            LoadY16(cpu, Read16Direct(memory, cpu, 0x58u));
+        }
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x56u));
+        cpu->carry = 0;
+        Add16Value(cpu, 0x0010u);
+        StoreADirect16(memory, cpu, 0x56u);
+        StoreADirect16(memory, cpu, 0x54u);
+        IncrementY16(cpu);
+        IncrementY16(cpu);
+        Compare16(cpu, cpu->y, 0x0008u);
+    } while (!cpu->zero);
+    cpu->carry = 1;
+}
+
+/* $82:86E5: scenario item row at A for the Xth item. */
+static int ScenarioRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionResult *text) {
+    PushIndex(memory, cpu);
+    StoreADirect16(memory, cpu, 0x17u);
+    Jsr(memory, cpu, 0x86eau);
+    ScenarioItem(memory, cpu);
+    Rts(memory, cpu);
+    if (!cpu->carry) {
+        StoreADirect16(memory, cpu, 0x00u);
+        SetAccumulatorWidth(cpu, 1);
+        SetAttribute(memory, cpu, 0x20u);
+        SetAccumulatorWidth(cpu, 0);
+        LoadY16(cpu, 0xc9b1u);
+        LoadX16(cpu, Read16Direct(memory, cpu, 0x17u));
+        if (DrawString(memory, cpu, 0x8700u, text))
+            return 1;
+    }
+    cpu->x = PullIndexValue(memory, cpu);
+    IncrementX16(cpu);
+    return 0;
+}
+
+/* $82:84D5 / $82:8526 / $82:86C4: $15 rows from $11, index $00. */
+static int ListRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    unsigned kind, Lufia2ExecutionResult *text) {
+    LoadA8(cpu, 0x8eu);
+    StoreADirect8(memory, cpu, 0x5fu);
+    if (kind == 1u)
+        LoadY16(cpu, Read16Direct(memory, cpu, 0x00u));
+    SetAccumulatorWidth(cpu, 0);
+    if (kind != 1u) {
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x00u));
+        if (kind == 0u)
+            AslA16(cpu);
+        TransferAToX(cpu);
+    }
+    do {
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x11u));
+        if (kind == 0u) {
+            Jsr(memory, cpu, 0x84e3u);
+            if (ItemRow(memory, cpu, text))
+                return 1;
+            Rts(memory, cpu);
+        } else if (kind == 1u) {
+            Jsr(memory, cpu, 0x8532u);
+            if (SpellRow(memory, cpu, text))
+                return 1;
+            Rts(memory, cpu);
+            LoadA16(cpu, Read16Direct(memory, cpu, 0x11u));
+            cpu->carry = 0;
+            Add16Value(cpu, 0x001cu);
+            Jsr(memory, cpu, 0x853bu);
+            if (SpellRow(memory, cpu, text))
+                return 1;
+            Rts(memory, cpu);
+        } else {
+            Jsr(memory, cpu, 0x86d1u);
+            if (ScenarioRow(memory, cpu, text))
+                return 1;
+            Rts(memory, cpu);
+        }
+        LoadA16(cpu, Read16Direct(memory, cpu, 0x11u));
+        cpu->carry = 0;
+        Add16Value(cpu, 0x0080u);
+        StoreADirect16(memory, cpu, 0x11u);
+        Decrement16Direct(memory, cpu, 0x15u);
+    } while (!cpu->zero);
+    SetAccumulatorWidth(cpu, 1);
+    TsbDirect(memory, cpu, 0x74u, 0x08u);
+    return 0;
+}
+
+/* Mode $09D1: 0 items, 2 spells, 4 items ($153E = 1), 7 scenario
+   items, $FF items ($153E = 2). */
+static int ListByMode(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    const uint16_t returns[5], Lufia2ExecutionResult *text) {
+    unsigned kind = 0;
+    uint16_t ret;
+
+    LoadAAbsolute8(memory, cpu, 0x09d1u, 0);
+    switch (A8(cpu)) {
+    case 0x02u:
+        StoreZeroAbsolute8(memory, cpu, 0x153eu, 0);
+        kind = 1u;
+        ret = returns[1];
+        break;
+    case 0x04u:
+        StoreA8Absolute(memory, cpu, 0x153eu, 0x01u);
+        ret = returns[2];
+        break;
+    case 0x07u:
+        kind = 2u;
+        ret = returns[3];
+        break;
+    case 0xffu:
+        StoreA8Absolute(memory, cpu, 0x153eu, 0x02u);
+        ret = returns[4];
+        break;
+    default:
+        StoreZeroAbsolute8(memory, cpu, 0x153eu, 0);
+        ret = returns[0];
+        break;
+    }
+    Jsr(memory, cpu, ret);
+    if (ListRows(memory, cpu, kind, text))
+        return 1;
+    Rts(memory, cpu);
+    return 0;
+}
+
+/* $82:AC84: item/spell list page from index $14B5. */
+static int MenuListPage(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionResult *text) {
+    static const uint16_t kReturns[5] = {0xacbcu, 0xacc3u, 0xacccu, 0xacd0u, 0xacd9u};
+
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, 0x0402u);
+    LoadX16(cpu, 0x1e10u);
+    Jsr(memory, cpu, 0xac8eu);
+    MenuClearRect2(memory, cpu);
+    Rts(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadX16(cpu, 0x3448u);
+    StoreXDirect16(memory, cpu, 0x11u);
+    LoadX16(cpu, 0x0006u);
+    StoreXDirect16(memory, cpu, 0x15u);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x14b5u, 0));
+    StoreXDirect16(memory, cpu, 0x00u);
+    return ListByMode(memory, cpu, kReturns, text);
+}
+
+/* $82:ACDB: one list row at $3748. */
+Lufia2ExecutionResult Lufia2MenuListRow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    static const uint16_t kReturns[5] = {0xad01u, 0xad08u, 0xad11u, 0xad15u, 0xad1eu};
+    Lufia2ExecutionResult text;
+
+    LoadX16(cpu, 0x3748u);
+    StoreXDirect16(memory, cpu, 0x11u);
+    LoadX16(cpu, 0x0001u);
+    StoreXDirect16(memory, cpu, 0x15u);
+    if (ListByMode(memory, cpu, kReturns, &text))
+        return text;
+    return ExecutionReturned(0x82ad02u);
+}
+
+/* $82:A918: list cursor sprite by the selection, then the page. */
+Lufia2ExecutionResult Lufia2MenuListCursor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult text;
+
+    LoadAAbsolute8(memory, cpu, 0x14afu, 0);
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (!cpu->zero) {
+        const int spells = AbsoluteByte(memory, cpu, 0x09d1u, 0) == 0x02u;
+        uint8_t top;
+        uint8_t row;
+
+        LoadAAbsolute8(memory, cpu, 0x09d1u, 0);
+        Compare8(cpu, A8(cpu), 0x02u);
+        top = AbsoluteByte(memory, cpu, 0x14b5u, 0);
+        row = (uint8_t)(AbsoluteByte(memory, cpu, 0x14afu, 0) >> 1);
+        if (spells) {
+            top = (uint8_t)(top >> 1);
+            row = (uint8_t)(row >> 1);
+        }
+        Write8(memory, DirectAddress(cpu, 0x00u), top);
+        Write8(memory, DirectAddress(cpu, 0x01u), row);
+        LoadA8(cpu, row);
+        cpu->carry = 1;
+        Sbc8(cpu, top);
+        StoreAAbsolute8(memory, cpu, 0x14eeu, 0);
+        StoreAAbsolute8(memory, cpu, 0x1570u, 0);
+        LoadA8(cpu, 0x00u);
+        Sbc8(cpu, 0x00u);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1570u, 0));
+        if (cpu->accumulator & 0x8000u) {
+            LoadA16(cpu, (uint16_t)((cpu->accumulator ^ 0xffffu) + 1u));
+            StoreAAbsolute16(memory, cpu, 0x1570u, 0);
+        }
+        SetAccumulatorWidth(cpu, 1);
+        LoadAAbsolute8(memory, cpu, 0x1507u, 0);
+        StoreAAbsolute8(memory, cpu, 0x1572u, 0);
+        StoreZeroAbsolute8(memory, cpu, 0x1573u, 0);
+        Lufia2CallMultiply(memory, cpu, 0x82u, 0xa971u);
+        LoadAAbsolute8(memory, cpu, 0x1574u, 0);
+        cpu->carry = 0;
+        Adc8(cpu, AbsoluteByte(memory, cpu, 0x14e3u, 0));
+        StoreAAbsolute8(memory, cpu, 0x13f0u, 0);
+        StoreZeroAbsolute8(memory, cpu, 0x11e0u, 0);
+        LoadAAbsolute8(memory, cpu, 0x09d1u, 0);
+        Compare8(cpu, A8(cpu), 0x02u);
+        top = AbsoluteByte(memory, cpu, 0x14b5u, 0);
+        row = (uint8_t)(AbsoluteByte(memory, cpu, 0x14afu, 0) >> 1);
+        if (spells) {
+            top = (uint8_t)(top >> 1);
+            row = (uint8_t)(row >> 1);
+        }
+        Write8(memory, DirectAddress(cpu, 0x02u), top);
+        LoadA8(cpu, top);
+        cpu->carry = 0;
+        Adc8(cpu, 0x06u);
+        StoreADirect8(memory, cpu, 0x03u);
+        LoadA8(cpu, row);
+        Compare8(cpu, row, top);
+        if (cpu->carry) {
+            Compare8(cpu, row, DirectByte(memory, cpu, 0x03u));
+            if (!cpu->carry) {
+                const uint32_t shown = AbsoluteIndexedAddress(cpu, 0x11e0u, 0);
+
+                Write8(memory, shown, (uint8_t)(Read8(memory, shown) + 1u));
+                SetNz8(cpu, Read8(memory, shown));
+            }
+        }
+    }
+    Jsr(memory, cpu, 0xa9b3u);
+    if (MenuListPage(memory, cpu, &text))
+        return text;
+    Rts(memory, cpu);
+    return ExecutionReturned(0x82a9b4u);
+}
