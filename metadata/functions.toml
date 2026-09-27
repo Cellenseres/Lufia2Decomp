@@ -825,3 +825,19 @@ source = "src/party/stats.c"
 entry_mx = "M1X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "81:C129"
+name = "Lufia2BattleIpSkills"
+source = "src/battle/battle_ip.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:DFA2"
+name = "Lufia2BattleListRows"
+source = "src/battle/battle_ip.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -34,6 +34,16 @@ Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:C129 IP skill table $7E:DF00 of member $1BE8; M1X0. */
+Lufia2ExecutionResult Lufia2BattleIpSkills(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:DFA2 eight battle list rows from entry X - 2; M1X0. */
+Lufia2ExecutionResult Lufia2BattleListRows(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

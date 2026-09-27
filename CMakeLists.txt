@@ -13,6 +13,7 @@ add_library(lufia2_decomp STATIC
     src/actor/player_controller.c
     src/actor/player_update.c
     src/battle/battle_frame.c
+    src/battle/battle_ip.c
     src/battle/battle_nmi.c
     src/battle/battle_script.c
     src/field/field_effects.c
