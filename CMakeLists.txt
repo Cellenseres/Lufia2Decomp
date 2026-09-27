@@ -1,6 +1,20 @@
 cmake_minimum_required(VERSION 3.20)
 project(Lufia2Decomp VERSION 0.1.0 LANGUAGES C)
 
+# Development options. Warnings default on only for a standalone build, so a
+# consumer that uses add_subdirectory keeps its own flags unless it opts in.
+# All options apply to lufia2_decomp alone and never change global flags.
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    set(_lufia2_top_level ON)
+else()
+    set(_lufia2_top_level OFF)
+endif()
+option(LUFIA2_ENABLE_WARNINGS "Build lufia2_decomp with compiler warnings"
+    ${_lufia2_top_level})
+option(LUFIA2_WARNINGS_AS_ERRORS "Treat lufia2_decomp warnings as errors" OFF)
+option(LUFIA2_ENABLE_SANITIZERS
+    "Build lufia2_decomp with AddressSanitizer and UBSan (GCC/Clang)" OFF)
+
 add_library(lufia2_decomp STATIC
     src/actor/actor_action.c
     src/actor/actor_frontend.c
@@ -67,3 +81,30 @@ target_include_directories(lufia2_decomp
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_features(lufia2_decomp PUBLIC c_std_11)
+
+if(LUFIA2_ENABLE_WARNINGS)
+    if(MSVC)
+        target_compile_options(lufia2_decomp PRIVATE /W4)
+    elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(lufia2_decomp PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    if(LUFIA2_WARNINGS_AS_ERRORS)
+        if(MSVC)
+            target_compile_options(lufia2_decomp PRIVATE /WX)
+        else()
+            target_compile_options(lufia2_decomp PRIVATE -Werror)
+        endif()
+    endif()
+endif()
+
+if(LUFIA2_ENABLE_SANITIZERS)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "GNU|Clang" OR MSVC)
+        message(FATAL_ERROR
+            "LUFIA2_ENABLE_SANITIZERS supports GCC and Clang only")
+    endif()
+    set(_lufia2_sanitizers -fsanitize=address,undefined)
+    target_compile_options(lufia2_decomp PRIVATE
+        ${_lufia2_sanitizers} -fno-omit-frame-pointer -fno-sanitize-recover=all)
+    # The static library needs the sanitizer runtimes in whatever links it.
+    target_link_options(lufia2_decomp INTERFACE ${_lufia2_sanitizers})
+endif()

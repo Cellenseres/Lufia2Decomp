@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.compiler }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        env:
+          CC: ${{ matrix.compiler }}
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DLUFIA2_ENABLE_WARNINGS=ON
+          -DLUFIA2_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build build
+
+  metadata:
+    name: Metadata
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate metadata and generated views
+        run: python3 scripts/metadata_index.py --check
+
+  format:
+    name: Format (changed lines, advisory)
+    runs-on: ubuntu-24.04
+    # Most existing sources predate .clang-format; this job reports style on
+    # changed lines only and never blocks. See docs/CONTRIBUTING.md.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+      - name: Check changed lines
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: scripts/check_format.sh "$BASE"
