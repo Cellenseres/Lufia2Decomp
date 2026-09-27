@@ -1,8 +1,393 @@
 format = 1
 rom = "lufia2-usa"
 
+# Canonical catalog of named work-RAM locations.
+#
+# Addresses are canonical WRAM addresses in BB:AAAA form. The game reaches
+# the low 8 KiB ($7E:0000-$7E:1FFF) through the bank-$00 mirror: as a direct
+# page offset while D = 0, as an absolute address while DB is a system bank
+# ($00-$3F or $80-$BF), or as a long $00:xxxx address. Such locations are
+# recorded here at $7E, which is where the byte physically lives; code that
+# reaches them through the mirror keeps its own addressing mode.
+#
+# Fields:
+#   address  first byte, "7E:xxxx" or "7F:xxxx"
+#   name     lower_snake_case; unk_<bank><address> when the meaning is not
+#            established by verified source, research notes or a verifier
+#   width    bytes per element
+#   count    elements, for per-slot arrays (default 1)
+#   stride   bytes between elements (default width)
+#   owner    subsystem that owns the location
+#   notes    evidence and addressing remarks
+#   aliases  optional names another header uses for the same address
+#
+# src/system/wram.h is generated from this file by scripts/metadata_index.py:
+#   7E:0000-00FF  DP_<NAME>    8-bit direct-page offset (D = 0)
+#   7E:0100-1FFF  WRAM_<NAME>  16-bit offset, reached through the mirror
+#   other         WRAM_<NAME>  24-bit long address
+# Entries must not overlap. The script rejects a WRAM_/DP_ constant in any
+# other header that repeats a catalogued address, unless it is an alias.
+
 [[region]]
 name = "wram"
 start = "7E:0000"
 end = "7F:FFFF"
 kind = "work_ram"
+
+# Direct page, D = 0 in the field loop.
+
+[[location]]
+address = "7E:0042"
+name = "frame_counter"
+width = 1
+owner = "system"
+notes = "Frame counter; text opcode $37 waits until it reaches its argument, $38 counts it to 60 per second."
+
+[[location]]
+address = "7E:0046"
+name = "buttons_held"
+width = 2
+owner = "system"
+notes = "Joypad buttons held; $83:867B takes buttons from $46 and $4A."
+
+[[location]]
+address = "7E:004A"
+name = "buttons_pressed"
+width = 2
+owner = "system"
+notes = "Joypad buttons newly pressed; cleared bit by bit when a field handler consumes them ($83:867B TRB)."
+
+[[location]]
+address = "7E:0067"
+name = "nmi_stub"
+width = 5
+owner = "system"
+notes = "Scene NMI stub JSL target; RTS. Boot writes its opcodes at $80:80E6/$80:80EC; the NMI dispatch at $80:8650 is gated by the target bank byte $6A. Battle setup clears $6A at $81:8644 and publishes bank $85 at $81:864D; exit clears it at $81:87A8."
+
+[[location]]
+address = "7E:0073"
+name = "nmi_upload_flags"
+width = 1
+owner = "system"
+notes = "Upload requests for the NMI handlers; bit 0 requests the CGRAM upload of $0320 (set by the field palette effects, cleared by the field NMI)."
+
+[[location]]
+address = "7E:008F"
+name = "probe_x"
+width = 2
+owner = "field"
+notes = "Tile column scratch: map-cell probes, event spawns at a tile ($80:D4E0, fine position at $83:E018) and the Ancient Cave generator's tile column."
+aliases = ["CAVE_DP_TILE_COLUMN"]
+
+[[location]]
+address = "7E:0091"
+name = "probe_y"
+width = 2
+owner = "field"
+notes = "Tile row scratch, paired with $8F: map-cell probes, event spawns and the Ancient Cave generator's tile row."
+aliases = ["CAVE_DP_TILE_ROW"]
+
+[[location]]
+address = "7E:00A7"
+name = "actor_slot"
+width = 1
+owner = "actor"
+notes = "Current slot index. $83:BB93 walks it from 0 to 39 (STZ $A7, INC); sampler evidence confirms the slot index, not a byte offset. $83:AB4F clears $A8, so a 16-bit LDX $A7 reads the same index. The event loop also passes its slot through $A7 to $83:AB4F."
+
+[[location]]
+address = "7E:00A9"
+name = "slot_word_offset"
+width = 2
+owner = "actor"
+notes = "$83:AB4F: 2 * $A7 for the word-per-slot arrays (fine positions)."
+
+[[location]]
+address = "7E:00AB"
+name = "slot_record_offset"
+width = 2
+owner = "actor"
+notes = "$83:AB4F: 3 * $A7 for the 24-bit per-slot records (script cursors, event slot pointers)."
+aliases = ["DP_EVENT_SLOT_RECORD"]
+
+# Low WRAM, reached through the bank-$00 mirror.
+
+[[location]]
+address = "7E:0320"
+name = "cgram_buffer"
+width = 2
+count = 256
+owner = "system"
+notes = "CGRAM shadow, one BGR555 word per color; the palette effects write colors here and set $73 bit 0 for the upload. The extent follows the 512-byte CGRAM."
+
+[[location]]
+address = "7E:0581"
+name = "fade_control"
+width = 1
+owner = "system"
+notes = "Fade request: bit 7 active, bits 0-5 the step added by $80:86C1; text opcode $76 waits on it."
+
+[[location]]
+address = "7E:0582"
+name = "fade_level"
+width = 1
+owner = "system"
+notes = "Fade level; while $0581 bit 7 is set, $80:86C1 adds its low six bits to this byte."
+
+[[location]]
+address = "7E:0583"
+name = "brightness"
+width = 1
+owner = "system"
+notes = "INIDISP shadow: $0F full brightness, $80 forced blank (text opcodes $3E/$3F, $81:8528)."
+
+[[location]]
+address = "7E:05B5"
+name = "field_flags"
+width = 1
+owner = "field"
+notes = "Field state bits; bit 1 marks an armed event, bit 5 and bit 7 are set by event opcodes $A2 and $86."
+
+[[location]]
+address = "7E:05B7"
+name = "field_requests"
+width = 1
+owner = "field"
+notes = "Field status requests; $83:8103 tests bits 1, 2 and 0 and hands off at the matching call."
+
+[[location]]
+address = "7E:05D2"
+name = "unk_7E05D2"
+width = 1
+count = 40
+owner = "actor"
+notes = "Per-slot byte. $FF marks a free slot for the claim search $83:C108; $83:D508 compares it with $80 and $A4; $71..$73 exclude the second occupancy column in $83:FA3F."
+
+[[location]]
+address = "7E:05FA"
+name = "actor_id"
+width = 1
+count = 40
+owner = "actor"
+notes = "Map actor id per slot; $80:BF92 looks listed ids up here (a missing id tests entry 40)."
+
+[[location]]
+address = "7E:0622"
+name = "actor_state"
+width = 1
+count = 40
+owner = "actor"
+notes = "Per-slot state bits. Bit 2 skips the slot in $83:BB93 (hidden or free), bits 3-4 and bit 0 steer its children, bit 7 ends $83:C7F8 at its first gate and diverts $83:D508 to $83:D59A, bit 6 is cleared at $83:C829."
+
+[[location]]
+address = "7E:064A"
+name = "object_state"
+width = 1
+count = 32
+owner = "object"
+notes = "Per-object state; bit 7 marks an active object slot ($83:DF87 spawns into the first slot without it), bit 4 makes the object VM yield."
+
+[[location]]
+address = "7E:066A"
+name = "unk_7E066A"
+width = 1
+count = 40
+owner = "actor"
+notes = "Per-slot byte; $83:D508 toggles bit 0 when the walk counter reaches $20."
+
+[[location]]
+address = "7E:06BA"
+name = "actor_tile_x"
+width = 1
+count = 40
+owner = "actor"
+notes = "Tile column per slot; $83:A746 derives the fine x position from it."
+
+[[location]]
+address = "7E:06E2"
+name = "actor_tile_y"
+width = 1
+count = 40
+owner = "actor"
+notes = "Tile row per slot; $83:A746 derives the fine y position from it."
+
+[[location]]
+address = "7E:0736"
+name = "unk_7E0736"
+width = 1
+count = 40
+owner = "actor"
+notes = "Per-slot flags. Bit 5 marks an actor hidden by event opcode $60; $83:D508 tests bit 7, bits 1 and 6 ($42) and bit 2, and reaches it both DB-relative and as $00:0736."
+
+[[location]]
+address = "7E:077E"
+name = "event_flags"
+width = 1
+owner = "event"
+notes = "Event flag bit array: flag n is bit $80:BE45[n & 7] of $077E + n / 8."
+
+[[location]]
+address = "7E:099B"
+name = "text_state"
+width = 1
+owner = "text"
+notes = "Text engine state; bit 7 runs the text step $80:9CB8, bit 0 selects text or script mode, bits 1/3 wait for input."
+
+[[location]]
+address = "7E:09A1"
+name = "follow_slots"
+width = 1
+count = 5
+owner = "actor"
+notes = "Party follow slots; text opcode $3C frees them, $83:BB93 clears bit 7 of the first unless it is $FF."
+
+[[location]]
+address = "7E:09A7"
+name = "window_mode"
+width = 1
+owner = "field"
+notes = "Window mode set by text opcode $69; bit 0 gates the actor front-ends $83:C7F8 and $83:D508, bit 1 the field menu request $83:83A0."
+
+[[location]]
+address = "7E:0A8A"
+name = "gold"
+width = 3
+owner = "party"
+notes = "Gold, capped at 9,999,999 by text opcodes $22/$26."
+
+[[location]]
+address = "7E:1261"
+name = "screen_effects"
+width = 1
+owner = "field"
+notes = "Screen effect bits; text opcode $57 waits while an effect runs."
+
+[[location]]
+address = "7E:1262"
+name = "palette_fade"
+width = 1
+owner = "field"
+notes = "Palette fade state; stopped by text opcode $C5."
+
+[[location]]
+address = "7E:1269"
+name = "text_wait_actor"
+width = 1
+owner = "text"
+notes = "Actor the text engine waits for (opcode $33), set to $FF when the wait ends. $83:C7F8 tests its sign."
+
+[[location]]
+address = "7E:1291"
+name = "unk_7E1291"
+width = 1
+count = 40
+owner = "actor"
+notes = "Per-slot byte; its low three bits send $83:C7F8 into the $83:C808 countdown, and the text engine reads the speaker's entry for the typing sound."
+
+[[location]]
+address = "7E:17AA"
+name = "animation_mask"
+width = 1
+owner = "field"
+notes = "Animation mask tested by the field idle check $83:80CD."
+
+[[location]]
+address = "7E:17AC"
+name = "sound_command"
+width = 1
+owner = "system"
+notes = "Sound command stored by $84:8766 unless $05B6 bit 1 is set; the field loop clears it."
+
+# Bank $7F.
+
+[[location]]
+address = "7F:D0A1"
+name = "unk_7FD0A1"
+width = 1
+owner = "field"
+notes = "Field control bits. $83:BB93 lets only the leader run $83:C7F8 while $2C is set; bit 2 records blocked steps, bit 6 gates $83:CA68."
+
+[[location]]
+address = "7F:D0FE"
+name = "unk_7FD0FE"
+width = 1
+owner = "field"
+notes = "While nonzero, $83:BB93 stores 1 and 3 into $7F:E216 around the slot loop; $83:D508 tests it for slot 0."
+
+[[location]]
+address = "7F:DDAE"
+name = "actor_fine_x"
+width = 2
+count = 40
+owner = "actor"
+notes = "1/16-tile x position per slot, indexed by 2 * slot ($A9); $83:A746 sets it from the tile column. $83:D585 toggles bit 0."
+
+[[location]]
+address = "7F:DE3E"
+name = "actor_fine_y"
+width = 2
+count = 40
+owner = "actor"
+notes = "1/16-tile y position per slot, indexed by 2 * slot; $83:A746 sets it from the tile row."
+
+[[location]]
+address = "7F:DEEE"
+name = "object_script"
+width = 3
+count = 32
+owner = "object"
+notes = "24-bit object script cursor, indexed by 3 * slot; $83:DFFD seeds it from table $91:8EC7."
+
+[[location]]
+address = "7F:E216"
+name = "unk_7FE216"
+width = 1
+owner = "field"
+notes = "$83:BB93 stores 1 before and 3 after the slot loop while $7F:D0FE is nonzero. The Ancient Cave generator uses $7F:E216 onward as its object size table (CAVE_OBJECT_SIZES, DB-relative)."
+
+[[location]]
+address = "7F:E316"
+name = "unk_7FE316"
+width = 1
+count = 40
+owner = "actor"
+notes = "Per-slot flags; $83:D508 toggles bit 7 when its countdown reloads, and several action starts set it."
+
+[[location]]
+address = "7F:E35E"
+name = "actor_secondary_timer"
+width = 1
+count = 40
+owner = "actor"
+notes = "$83:D508 countdown: low nibble counts down, the high nibble reloads it."
+
+[[location]]
+address = "7F:E3C6"
+name = "actor_primary_timer"
+width = 1
+count = 40
+owner = "actor"
+notes = "$83:C7F8 per-slot timer at $83:C82E; a nonzero value is decremented and the slot dispatches when it reaches zero."
+
+[[location]]
+address = "7F:E3EE"
+name = "actor_secondary_script"
+width = 3
+count = 40
+owner = "actor"
+notes = "24-bit secondary script cursor, indexed by 3 * slot; $83:D59A dispatches from it."
+
+[[location]]
+address = "7F:E48E"
+name = "actor_walk_counter"
+width = 1
+count = 40
+owner = "actor"
+notes = "$83:D508 walk counter; at $20 it resets and toggles bit 0 of $7E:066A. Bit 7 is a wait flag for secondary handlers."
+
+[[location]]
+address = "7F:E506"
+name = "actor_primary_script"
+width = 3
+count = 40
+owner = "actor"
+notes = "24-bit primary script cursor, indexed by 3 * slot; $83:C83C dispatches from it."

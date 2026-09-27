@@ -1,32 +1,86 @@
 #ifndef LUFIA2_SYSTEM_WRAM_H
 #define LUFIA2_SYSTEM_WRAM_H
 
-/* WRAM shared by several subsystems; meanings from DECOMP_STATUS. */
+/* Named WRAM locations. The block below is generated from
+ * metadata/memory_map.toml by scripts/metadata_index.py; edit the map, not
+ * the block. Direct-page constants are offsets for D = 0, low-WRAM constants
+ * are 16-bit offsets into the bank-$00 mirror, and the rest are long
+ * addresses. */
 
-/* Direct page, DP = 0 in the field loop. */
+/* memory-map:begin (scripts/metadata_index.py) */
+/* Direct page; D = 0 in the field loop. */
 #define DP_FRAME_COUNTER 0x42u
 #define DP_BUTTONS_HELD 0x46u
 #define DP_BUTTONS_PRESSED 0x4au
+#define DP_NMI_STUB 0x67u
 #define DP_NMI_UPLOAD_FLAGS 0x73u
 #define DP_PROBE_X 0x8fu
 #define DP_PROBE_Y 0x91u
 #define DP_ACTOR_SLOT 0xa7u
+#define DP_SLOT_WORD_OFFSET 0xa9u
+#define DP_SLOT_RECORD_OFFSET 0xabu
 
-/* Bank $00/$7E low WRAM. */
+/* Low WRAM $7E:0100-$7E:1FFF, reached through the bank-$00 mirror. */
 #define WRAM_CGRAM_BUFFER 0x0320u
+#define WRAM_CGRAM_BUFFER_COUNT 256u
 #define WRAM_FADE_CONTROL 0x0581u
 #define WRAM_FADE_LEVEL 0x0582u
 #define WRAM_BRIGHTNESS 0x0583u
 #define WRAM_FIELD_FLAGS 0x05b5u
 #define WRAM_FIELD_REQUESTS 0x05b7u
+#define WRAM_UNK_7E05D2 0x05d2u
+#define WRAM_UNK_7E05D2_COUNT 40u
+#define WRAM_ACTOR_ID 0x05fau
+#define WRAM_ACTOR_ID_COUNT 40u
 #define WRAM_ACTOR_STATE 0x0622u
+#define WRAM_ACTOR_STATE_COUNT 40u
+#define WRAM_OBJECT_STATE 0x064au
+#define WRAM_OBJECT_STATE_COUNT 32u
+#define WRAM_UNK_7E066A 0x066au
+#define WRAM_UNK_7E066A_COUNT 40u
+#define WRAM_ACTOR_TILE_X 0x06bau
+#define WRAM_ACTOR_TILE_X_COUNT 40u
+#define WRAM_ACTOR_TILE_Y 0x06e2u
+#define WRAM_ACTOR_TILE_Y_COUNT 40u
+#define WRAM_UNK_7E0736 0x0736u
+#define WRAM_UNK_7E0736_COUNT 40u
 #define WRAM_EVENT_FLAGS 0x077eu
 #define WRAM_TEXT_STATE 0x099bu
+#define WRAM_FOLLOW_SLOTS 0x09a1u
+#define WRAM_FOLLOW_SLOTS_COUNT 5u
+#define WRAM_WINDOW_MODE 0x09a7u
 #define WRAM_GOLD 0x0a8au
 #define WRAM_SCREEN_EFFECTS 0x1261u
 #define WRAM_PALETTE_FADE 0x1262u
+#define WRAM_TEXT_WAIT_ACTOR 0x1269u
+#define WRAM_UNK_7E1291 0x1291u
+#define WRAM_UNK_7E1291_COUNT 40u
 #define WRAM_ANIMATION_MASK 0x17aau
 #define WRAM_SOUND_COMMAND 0x17acu
+
+/* Long WRAM addresses. */
+#define WRAM_UNK_7FD0A1 0x7fd0a1u
+#define WRAM_UNK_7FD0FE 0x7fd0feu
+#define WRAM_ACTOR_FINE_X 0x7fddaeu
+#define WRAM_ACTOR_FINE_X_COUNT 40u
+#define WRAM_ACTOR_FINE_Y 0x7fde3eu
+#define WRAM_ACTOR_FINE_Y_COUNT 40u
+#define WRAM_OBJECT_SCRIPT 0x7fdeeeu
+#define WRAM_OBJECT_SCRIPT_COUNT 32u
+#define WRAM_UNK_7FE216 0x7fe216u
+#define WRAM_UNK_7FE316 0x7fe316u
+#define WRAM_UNK_7FE316_COUNT 40u
+#define WRAM_ACTOR_SECONDARY_TIMER 0x7fe35eu
+#define WRAM_ACTOR_SECONDARY_TIMER_COUNT 40u
+#define WRAM_ACTOR_PRIMARY_TIMER 0x7fe3c6u
+#define WRAM_ACTOR_PRIMARY_TIMER_COUNT 40u
+#define WRAM_ACTOR_SECONDARY_SCRIPT 0x7fe3eeu
+#define WRAM_ACTOR_SECONDARY_SCRIPT_COUNT 40u
+#define WRAM_ACTOR_WALK_COUNTER 0x7fe48eu
+#define WRAM_ACTOR_WALK_COUNTER_COUNT 40u
+#define WRAM_ACTOR_PRIMARY_SCRIPT 0x7fe506u
+#define WRAM_ACTOR_PRIMARY_SCRIPT_COUNT 40u
+/* memory-map:end */
 
 /* $0583 values. */
 #define BRIGHTNESS_FULL 0x0fu

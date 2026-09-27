@@ -1,17 +1,18 @@
 format = 1
 rom = "lufia2-usa"
 
-# Non-function symbols only: named data tables and WRAM variables.
+# Non-function symbols only: named ROM data tables.
 #
 # Functions, their portable names and their reconstruction status live only
-# in functions.toml. Entries here carry no status, never use kind =
-# "function" and never repeat an address or name from functions.toml;
+# in functions.toml; named WRAM locations live only in memory_map.toml.
+# Entries here carry no status, never use kind = "function", never name a
+# $7E/$7F address and never repeat an address or name from functions.toml;
 # scripts/metadata_index.py rejects violations.
 #
 # Schema:
 #   [[symbol]]
-#   address = "7E:0A7B"
+#   address = "8E:EA00"
 #   name = "..."
-#   kind = "data"   # or "wram"
+#   kind = "data"
 #
 # No non-function symbol has been recorded yet.
