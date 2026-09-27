@@ -193,7 +193,7 @@ Recovered from the interrupted local batch. All 41 standalone baselines, 66 muta
 
 E8EE remains deferred because its WMDATA port state belongs to the caller.
 
-160 verified functions; 122 runtime replacements after T11 (S19 baseline: 157/122).
+162 verified functions; 122 runtime replacements after T12 (T11 baseline: 160/122).
 
 
 ## T11 shared text helpers (2026-09-27)
@@ -208,3 +208,47 @@ E8EE remains deferred because its WMDATA port state belongs to the caller.
 T11 adds three verified helpers (160 total), while the selected runtime replacements remain 122. The existing text-engine bridge contract is unchanged; its synthetic seeds also cover the new paths. C305 placement, C2A1 frame-wait continuation and opcode $14 / A074 remain upcoming work; they are unimplemented, not blocked on gameplay.
 
 T11 checkpoint validation: all four MSVC Release decomp-verify suites PASS, zero failures; 2,654,848 actor-dispatch cases. Whole-engine MSVC cases: 8,210 returns and 8,174 continuations, coverage C274 1,711 / C279 1,673 / C56E 4,630. Existing 9CB8 bridge: 8,704/8,704 (host return 1,548; dispatch return 3,104; native continuation 3,540; LLE entry 512). Windows Release built. All 1,369 graph-node dispositions and all 122 replacement selections remain identical to S19; no lost AOT nodes.
+
+## T12 text window contract (2026-09-27)
+
+`$80:C305 Lufia2TextBuildWindow` is verified and unbound: complete frame and
+speech-tail construction through RTS C513, entry/exit M1X0, DB becomes $7E.
+It pads width, selects explicit or actor-relative placement, clips and adjusts
+the tail, composes alternating borders and paired body rows, and propagates
+carry across six ROM-backed tail tiles. BF6F, C557 and C52C are internal
+semantic children; the existing actor-record-offset helper is reused.
+
+The C431 join genuinely has two decodings. Actor placement reaches it in M0
+(`LDA #$FFFC; STA $059E`); explicit placement reaches it in M1 (`LDA #$FC;
+SBC $059E8D,X`). The original indexed read is preserved. No correction or
+optimization of this unusual path is part of the semantic source.
+
+`$80:C23D Lufia2TextPrepareWindow` is now verified and unbound. Placement
+returns through RTS C2A0, restoring Y/DB and completing the window state.
+The other branch constructs C274's JSR frame and hands off at C2A1 before
+its first BF0B frame wait. Parent JSR, PHY, PHB and C274 JSR remain outstanding.
+The original ROM owns both waits, the intervening C61D upload, subsequent
+centered tile fill and parent cleanup. This is an exact temporal boundary;
+it does not claim native execution after the wait.
+
+Both paths run through the existing bound text engine. C305 and C23D each
+pass 16,384 original-ROM cases; C23D returns 8,192 and hands off 8,192.
+C305 join coverage: M0 8,192 / M1 8,192; tail directions 256 / 2,304 / 768 /
+4,864; actor lookup miss 4,096 / hit 4,096. CPU, all WRAM, exact return PCs,
+ordered MMIO and streaming stack-write/join-read observations are compared.
+Meaningful mutations: C305 14/14, C23D 7/7, integrated engine 4/4.
+
+Synthetic states keep active stack/script regions separate from the tilemap
+and exclude impossible above/below placements that the ROM retries forever.
+Bank-crossing engine seeds also initialize the old bank's dimensions:
+measurement writes dimensions in the new DB before restoring the entry DB.
+Engine entry clears the explicit position, so both C431 widths are required
+by the standalone C305 test; the engine exercises its reached actor path.
+
+T12 checkpoint: all four MSVC Release verification suites PASS, zero failures;
+2,687,616 actor-dispatch cases. Full 9CB8: 10,373 returns / 6,011 continuations,
+wait 1,934 / actor join 1,936 / C56E 6,598. Existing bridge 8,704/8,704
+(host return 1,935; dispatch return 3,870; LLE boundary 2,387; LLE entry 512).
+Release built; all 1,369 node dispositions, roots and exit-mode sets and all
+122 runtime selections unchanged from T11. 162 verified entries, no metadata
+drafts. T13 opcode $14 / A074 is next; Ancient Cave contract research follows.

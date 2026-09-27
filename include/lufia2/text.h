@@ -26,6 +26,14 @@ Lufia2ExecutionResult Lufia2TextClearGlyphBuffer(
 Lufia2ExecutionResult Lufia2TextQueueWindowRow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $80:C305: framed tilemap and actor-relative tail. M1X0; DB becomes $7E. */
+Lufia2ExecutionResult Lufia2TextBuildWindow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $80:C23D: returns after placement or hands off before the C2A1 frame wait. */
+Lufia2ExecutionResult Lufia2TextPrepareWindow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

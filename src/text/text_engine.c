@@ -472,7 +472,8 @@ enum {
 };
 
 /* $80:9D3E: measure upcoming text and prepare its window (opcode $08). */
-static uint32_t TextOpenWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static unsigned TextOpenWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint32_t *handoff) {
     Lufia2ExecutionResult child;
     LoadA8(cpu, 0x81u);
     StoreAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
@@ -481,7 +482,12 @@ static uint32_t TextOpenWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     SimulateRtsFrame(memory, cpu);
     SimulateJsrFrame(memory, cpu, 0x9d48u);
     child = Lufia2TextPrepareWindow(memory, cpu);
-    return child.pc;
+    if (child.flow != LUFIA2_EXECUTION_RETURNED) {
+        *handoff = child.pc;
+        return TEXT_OPCODE_HANDOFF;
+    }
+    SimulateRtsFrame(memory, cpu);
+    return TEXT_OPCODE_NEXT;                                  /* 9D49 -> 9D00 */
 }
 
 /* Handlers in the $80:CA14 opcode table. */
@@ -1458,8 +1464,7 @@ static unsigned TextScriptOpcode(
     }
     switch (handler) {
     case TEXT_OP_OPEN_WINDOW:
-        *handoff = TextOpenWindow(memory, cpu);
-        return TEXT_OPCODE_HANDOFF;
+        return TextOpenWindow(memory, cpu, handoff);
     case TEXT_OP_WAIT_FOR_ACTOR:
         return TextOpWaitForActor(memory, cpu, handoff);
     case TEXT_OP_WAIT_FRAMES:

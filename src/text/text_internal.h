@@ -11,10 +11,6 @@ void Lufia2TextNextByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 void Lufia2TextSetScriptPointer(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t return_address);
 
-/* $80:C23D prefix; M1X0, continues before C2A1 or C305 with frames intact. */
-Lufia2ExecutionResult Lufia2TextPrepareWindow(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu);
-
 /* $84:8328: clear the window buffer $7E:3000-37FF and $099C bit 0. */
 void Lufia2TextWindowClear(
     const Lufia2Memory *memory,
