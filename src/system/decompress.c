@@ -1,7 +1,11 @@
 /* Resource decompressor ($80:8E9D). */
 
 #include "core/cpu_internal.h"
+#include "lufia2/resource_format.h"
 #include "lufia2/system.h"
+
+/* The CPU adapter of the stream format. The same format on byte buffers,
+ * without bus effects, is src/system/resource_format.c. */
 
 enum {
     STREAM = 0x5du,                     /* [$5D],Y: compressed bytes */
@@ -172,10 +176,12 @@ Lufia2ExecutionResult Lufia2DecompressResource(
     Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
     TransferAToX(cpu);                                         /* entry * 3 */
     Write16Direct(memory, cpu, STREAM, 0x0000u);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa78000u, cpu->x)));
+    LoadA16(cpu, Read16Long(memory,
+        LongIndexedAddress(LUFIA2_RESOURCE_TABLE_ADDRESS, cpu->x)));
     Or16(cpu, 0x8000u);
     TransferAToY(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa78001u, cpu->x)));
+    LoadA16(cpu, Read16Long(memory,
+        LongIndexedAddress(LUFIA2_RESOURCE_TABLE_ADDRESS + 1u, cpu->x)));
     AslA16(cpu);
     SetAccumulatorWidth(cpu, 1);
     ExchangeAccumulatorBytes(cpu);

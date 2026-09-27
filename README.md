@@ -76,14 +76,36 @@ This builds the static library `lufia2_decomp` (alias `Lufia2::Decomp`).
 | `LUFIA2_ENABLE_WARNINGS` | ON standalone, OFF as a subdirectory | `-Wall -Wextra -Wpedantic` (GCC/Clang) or `/W4` (MSVC) on `lufia2_decomp` only |
 | `LUFIA2_WARNINGS_AS_ERRORS` | OFF | Adds `-Werror` or `/WX` to those warnings |
 | `LUFIA2_ENABLE_SANITIZERS` | OFF | AddressSanitizer and UBSan (GCC/Clang); whatever links the library also links the sanitizer runtimes |
+| `LUFIA2_BUILD_TESTS` | ON standalone, OFF as a subdirectory | ROM-free synthetic tests, run with `ctest` |
+| `LUFIA2_BUILD_TOOLS` | ON standalone, OFF as a subdirectory | Command-line tools in `tools/` |
 
 None of the options changes global or consumer flags. CI builds with GCC and
-Clang, warnings as errors, and runs `python3 scripts/metadata_index.py
---check`; it never needs a ROM.
+Clang, warnings as errors, runs the synthetic tests and
+`python3 scripts/metadata_index.py --check`; it never needs a ROM.
 
-There are no tests in this repository; differential verification runs in the
+The tests here are synthetic and need no ROM. Original-ROM differential
+verification, which is what makes a function `verified`, runs in the
 consumer (`decomp-verify` target) against a supported ROM image supplied by
 its owner.
+
+## Tools
+
+`lufia2-resource` inspects and decodes the compressed resources of a
+supported ROM that you supply; it contains no game data, and nothing it
+extracts belongs in this repository:
+
+```sh
+lufia2-resource check <rom>                  # decode all 680 resources
+lufia2-resource list <rom>                   # table of addresses and sizes
+lufia2-resource extract <rom> <id> <output>  # one decoded resource
+lufia2-resource decode <stream> <output>     # a raw stream file
+```
+
+It uses the pure format decoder `include/lufia2/resource_format.h`, which
+also serves consumers that need the format without the CPU adapter
+`$80:8E9D`. There is no compressor: the original encoder is not
+reconstructed, and any encoder added later only has to satisfy
+`decode(stream) == data`, not reproduce the original bytes.
 
 Lufia2SNESRecomp consumes this tree through `add_subdirectory`, either from
 its pinned `lib/lufia2-decomp` submodule or from a development checkout given
