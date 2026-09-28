@@ -107,6 +107,9 @@ also serves consumers that need the format without the CPU adapter
 reconstructed, and any encoder added later only has to satisfy
 `decode(stream) == data`, not reproduce the original bytes.
 
+The decoder has its own target, `Lufia2::ResourceFormat`. `Lufia2::Decomp`
+reuses that target, while hosts can link the smaller format target directly.
+
 Lufia2SNESRecomp consumes this tree through `add_subdirectory`, either from
 its pinned `lib/lufia2-decomp` submodule or from a development checkout given
 with `-DLUFIA2_DECOMP_ROOT=<path>`.
