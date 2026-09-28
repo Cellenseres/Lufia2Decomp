@@ -129,4 +129,3 @@ if(LUFIA2_BUILD_TOOLS)
     target_link_libraries(lufia2-resource PRIVATE Lufia2::ResourceFormat)
     target_compile_options(lufia2-resource PRIVATE ${_lufia2_warnings})
 endif()
-
