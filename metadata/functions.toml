@@ -702,8 +702,8 @@ status = "verified"
 address = "82:DCF4"
 name = "Lufia2MenuShopRow"
 source = "src/menu/menu_screen.c"
-entry_mx = "M1X0"
-exit_mx = "M1X0"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
 status = "verified"
 
 [[function]]
