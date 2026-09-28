@@ -1,14 +1,7 @@
 #ifndef LUFIA2_ACTOR_ACTOR_SLOT_VIEW_H
 #define LUFIA2_ACTOR_ACTOR_SLOT_VIEW_H
 
-/* Semantic views of one actor slot over the game's parallel per-slot arrays.
- *
- * WRAM keeps actor fields as separate arrays indexed by the slot, not as a
- * packed record, so a view is only a handle: the memory interface, the CPU
- * whose data bank the mirrored arrays follow, and the index register value
- * the original code uses. Every accessor is one bus access in the original
- * order; nothing is cached or copied into host structures. Field names come
- * from metadata/memory_map.toml through system/wram.h. */
+/* One actor slot over the parallel per-slot WRAM arrays. */
 
 #include "core/cpu_internal.h"
 #include "system/wram.h"
@@ -34,9 +27,7 @@ static inline Lufia2ActorSlotView Lufia2ActorSlotAt(
     return view;
 }
 
-/* Element addresses. Arrays in the low-WRAM mirror are read as absolute,X
- * (or ,Y) and therefore follow the live data bank; bank-$7F arrays are
- * long,X. Indexing carries like the CPU. */
+/* Mirrored arrays follow DB; bank-$7F arrays are long. */
 static inline uint32_t Lufia2ActorSlotMirrored(
     const Lufia2ActorSlotView *slot, uint16_t array) {
     return AbsoluteIndexedAddress(slot->cpu, array, slot->index);
@@ -67,10 +58,6 @@ static inline void Lufia2ActorSlotWriteLong(
     Write8(slot->memory, Lufia2ActorSlotLong(slot, array), value);
 }
 
-/* Named fields ($7E:0622 actor_state, $7E:05FA actor_id, $7E:06BA/$06E2
- * actor_tile_x/y, $7F:E3C6/E35E the primary and secondary timers, $7F:E48E
- * the walk counter). Fields with neutral unk_ names use the generic
- * accessors above with their WRAM_UNK_ constant. */
 static inline uint8_t Lufia2ActorSlotState(const Lufia2ActorSlotView *slot) {
     return Lufia2ActorSlotReadMirrored(slot, WRAM_ACTOR_STATE);
 }

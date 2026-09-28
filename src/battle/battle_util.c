@@ -471,7 +471,7 @@ Lufia2ExecutionResult Lufia2BattleTileBlock(
     return ExecutionReturned(0x81bebbu);
 }
 
-/* $81:BD4B: $02 x $03 sprites from $00 at $06/$05, $7E:$08; A = count. */
+/* $81:BD4B: $02 x $03 sprites; A = count. */
 Lufia2ExecutionResult Lufia2BattleSpriteBlock(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

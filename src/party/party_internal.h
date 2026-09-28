@@ -14,8 +14,7 @@ void Lufia2CapsuleSkill(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 void Lufia2BonusClear(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t first, unsigned words);
 
-/* $83:C652 carry = a member of $0A7B has byte A in the 36-byte list at
-   record + $96; DB kept, M1X0. */
+/* $83:C652: carry = party member lists byte A; M1X0. */
 Lufia2ExecutionResult Lufia2PartyListHasEntry(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

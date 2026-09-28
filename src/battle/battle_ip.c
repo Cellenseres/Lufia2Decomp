@@ -33,8 +33,7 @@ static void StoreTable8(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     StoreAAbsolute8(memory, cpu, (uint16_t)(TABLE + offset), cpu->y);
 }
 
-/* $81:C129: per equipment slot of member $1BE8: name, IP skill, its
-   cost and text ($84:0003+), usable if skill and level >= cost level. */
+/* $81:C129: IP skills of member $1BE8's equipment. */
 Lufia2ExecutionResult Lufia2BattleIpSkills(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -294,8 +293,7 @@ static void Bank7E(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PullDataBank(memory, cpu);
 }
 
-/* $81:E019 (IP, kind 0), $81:E094 (spell, 1), $81:E100 (item, 2):
-   entry X when below $17. */
+/* $81:E019/E094/E100: IP, spell or item entry X. */
 static void BattleEntry(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     unsigned kind) {
     static const uint16_t kSkip[3] = {0x0018u, 0x0036u, 0x0034u};

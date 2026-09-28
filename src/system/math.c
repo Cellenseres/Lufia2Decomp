@@ -3,8 +3,7 @@
 #include "core/cpu_internal.h"
 #include "system/system_internal.h"
 
-/* $82:8000: $1576:$1574 = $1570 * $1572, shift and add. $1572 is
-   rotated away; P and X come back, A keeps the last partial sum. */
+/* $82:8000: 16x16 multiply by shift and add. */
 void Lufia2CallMultiply(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

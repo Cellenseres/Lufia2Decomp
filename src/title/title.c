@@ -169,9 +169,7 @@ Lufia2ExecutionResult Lufia2IntroNmi(
     return ExecutionReturned(0x8092b6u);
 }
 
-/* $86:88E5: one OAM entry for the title particle at X. The sprite
-   list [$0003] in bank $86 holds the size flag, the y and x offsets
-   and the tile word; $00 counts entries for the OAM high table. */
+/* $86:88E5: OAM entry of title particle X. */
 static void TitleParticleSprite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -271,8 +269,7 @@ static void TitleParticleSprite(
     cpu->y = PullIndexValue(memory, cpu);                      /* 8994 */
 }
 
-/* $86:88BE: OAM entries for the 75 title particles at $C448
-   (13 bytes each; byte 1 = active). */
+/* $86:88BE: OAM entries for the 75 title particles. */
 Lufia2ExecutionResult Lufia2TitleParticleSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -304,11 +301,7 @@ Lufia2ExecutionResult Lufia2TitleParticleSprites(
     return ExecutionReturned(0x8688e4u);                       /* RTS */
 }
 
-/* Title objects: three records at $C400/$C418/$C430 ($15BA), each
-   with its sprite record ($15BC) and a pool of 24 particles ($15BE).
-   Record: +0/+2 centre, +4/+6 angles (8.8, wrap at $B400), +8 timer,
-   +$0A/+$0C radii, +$0E/+$10 radius steps, +$12 flags, +$13/+$15 angle
-   steps, +$17 depth. */
+/* Title objects at $C400/$C418/$C430. */
 enum {
     TITLE_OBJECT = 0x15bau,
     TITLE_OBJECT_SPRITE = 0x15bcu,
@@ -386,8 +379,7 @@ static void TitleSignedProduct(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $86:83F2: advance radii and angles, place the sprite on the
-   ellipse; returns the depth step (0-10) from the second angle. */
+/* $86:83F2: move on the ellipse; returns the depth step. */
 static void TitleObjectProject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -461,8 +453,7 @@ static void TitleObjectSprite(
     StoreAAbsolute8(memory, cpu, 0x0004u, cpu->y);
 }
 
-/* $86:8530: angle steps for the depth from $86:8A71, signed by
-   flag bits 0 and 1. */
+/* $86:8530: angle steps for the depth. */
 static void TitleObjectSpeed(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -497,8 +488,7 @@ static void TitleObjectSpeed(
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
-/* $86:83C3: while the timer runs, move the object and refresh its
-   sprite and speed on a depth change; else hide the sprite. */
+/* $86:83C3: move the object while its timer runs. */
 static void TitleObjectStep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -540,8 +530,7 @@ static void TitleNextParticle(Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);
 }
 
-/* $86:85C2: while the sprite shows, start one free particle at the
-   sprite's place with the object's depth. */
+/* $86:85C2: start one particle at the sprite. */
 static void TitleObjectSpawn(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -597,8 +586,7 @@ done:
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
-/* $86:856F: particle frames every 2 ticks up to depth 10, then end
-   of life. */
+/* $86:856F: particle animation. */
 static void TitleObjectParticles(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -681,8 +669,7 @@ Lufia2ExecutionResult Lufia2TitleObjects(
     return ExecutionReturned(0x8683c2u);                       /* RTS */
 }
 
-/* $86:86FC: 13 layer positions, 24-bit ($1587/$1597/$15A7), step by
-   the words at $86:8726; the top byte takes only the carry. */
+/* $86:86FC: step the 13 layer positions. */
 static void TitleLayerScroll(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -715,8 +702,7 @@ static uint32_t TitleDirectPointer(
         Read16Direct(memory, cpu, offset)) & 0x00ffffffu;
 }
 
-/* $86:8695: when layer 10 crosses 8 pixels, the next of 64 frames:
-   30 words from $7E:B3C4 + 2n (stride $80) to $7E:C3C0; $1566 = 2. */
+/* $86:8695: next background frame every 8 pixels. */
 static void TitleTileAnimation(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -783,8 +769,7 @@ Lufia2ExecutionResult Lufia2TitleLayers(
     return ExecutionReturned(0x8686fbu);                       /* RTS */
 }
 
-/* $86:8996: every 3rd frame rotate colours 1-8 of four palette
-   rows ($04A0/$04C0/$04E0/$0500), step $15B9 down mod 8, $73 = $80. */
+/* $86:8996: rotate title palette colors 1-8. */
 Lufia2ExecutionResult Lufia2TitlePaletteCycle(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

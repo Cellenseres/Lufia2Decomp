@@ -409,7 +409,7 @@ static void MenuClearRect2(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PullDataBank(memory, cpu);
 }
 
-/* $82:831A: tiles Y, Y+1, ... in a rect at A, X = w << 8 | h; M0. */
+/* $82:831A: tile block at A, X = w << 8 | h; M0. */
 static void MenuTileBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushAccumulator16(memory, cpu);
     Write16Direct(memory, cpu, 0x56u, 0);
@@ -738,7 +738,7 @@ static void MenuSmallNumberFull(const Lufia2Memory *memory,
     Rts(memory, cpu);
 }
 
-/* $82:950E: level, HP and MP of member [$2A] at X; HP colour by ratio. */
+/* $82:950E: level, HP and MP of member [$2A]. */
 Lufia2ExecutionResult Lufia2MenuMemberStatus(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1417,8 +1417,7 @@ static void EquipBonuses(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
-/* $82:B2C5: with $0A62 = $25, upgrade flagged equipment of member
-   $14B3; carry clear when something changed. */
+/* $82:B2C5: upgrade flagged equipment of member $14B3. */
 Lufia2ExecutionResult Lufia2MenuEquipUpgrade(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -2054,8 +2053,7 @@ static int ListRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return 0;
 }
 
-/* Mode $09D1: 0 items, 2 spells, 4 items ($153E = 1), 7 scenario
-   items, $FF items ($153E = 2). */
+/* List mode $09D1. */
 static int ListByMode(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     const uint16_t returns[5], Lufia2ExecutionResult *text) {
     unsigned kind = 0;

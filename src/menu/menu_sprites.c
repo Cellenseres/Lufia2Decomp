@@ -315,8 +315,7 @@ Lufia2ExecutionResult Lufia2SpriteBuildOam(
     return ExecutionReturned(0x868c1eu);
 }
 
-/* $86:8B55: animate, clear and build OAM, request it ($72), then the
-   frame wait $86:8B48 on LLE. */
+/* $86:8B55: build the OAM, then frame wait on LLE. */
 Lufia2ExecutionResult Lufia2SpriteFrame(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

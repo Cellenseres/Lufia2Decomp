@@ -867,8 +867,7 @@ static unsigned EventOpReturn(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $B4: camera target = scroll of layer $05AA + (dx, dy), speed n;
-   $1261 bit 3 hands the camera to $7F:D08B/D08D. */
+/* $B4: move the camera by (dx, dy) at speed n. */
 static unsigned EventOpMoveCamera(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -906,9 +905,7 @@ static uint8_t EventRunScript(
     Lufia2CpuState *cpu,
     EventRun *run);
 
-/* $27: fork a free slot ($80:E99D, slot 0 when none) with arguments
-   and a target, run it until it yields, then go on; $26 only forks
-   when slot bit 0 is set and else skips the arguments and target. */
+/* $26/$27: fork a script slot. */
 static unsigned EventOpFork(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1002,9 +999,7 @@ static unsigned EventOpFork(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $59: with $1261 bit 6 set (cleared here) move layers 0-1 to the
-   leader camera and redraw both around it ($83:8E85), else save the
-   layer positions to $7F:D0CE-D0F0. */
+/* $59: center layers on the leader or save them. */
 static unsigned EventOpCameraLayers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1092,8 +1087,7 @@ static unsigned EventOpRedrawLayers(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $7B: the field scroll step $8E:BD77 with X8; a handoff inside
-   reports its $8E:BDD7 visits at this depth. */
+/* $7B: field scroll step $8E:BD77. */
 static unsigned EventOpScroll(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1136,8 +1130,7 @@ static unsigned EventOpClearD081(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $80:E722: start list entry Y/2 at [base + X] in the first free
-   slot (slot 0 when none), due, at $8F/$91. 0 = handoff. */
+/* $80:E722: start list entry Y/2 in a free slot. */
 static uint8_t EventStart(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

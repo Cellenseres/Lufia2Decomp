@@ -1,12 +1,5 @@
-/* lufia2-resource: inspect and decode the resource streams of a supported
- * Lufia II ROM that the user supplies. The tool contains no game data; it
- * reads everything from the ROM file given on the command line.
- *
- *   lufia2-resource list <rom>
- *   lufia2-resource check <rom>
- *   lufia2-resource extract <rom> <id> <output>
- *   lufia2-resource decode <stream-file> <output>
- */
+/* lufia2-resource list|check <rom>, extract <rom> <id> <out>,
+ * decode <stream> <out>. */
 
 #include <stdio.h>
 #include <stdlib.h>

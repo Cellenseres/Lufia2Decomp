@@ -3,9 +3,7 @@
 #include "actor/actor_slot_view.h"
 #include "system/wram.h"
 
-/* The $83:C7F8 and $83:D508 front-ends run with M=1. Per-slot fields go
- * through the slot view; these file-local loads compose the shared core
- * primitives for the remaining operands. */
+/* $83:C7F8 and $83:D508 front-ends; M=1. */
 
 static void LoadAAbsolute(
     const Lufia2Memory *memory,

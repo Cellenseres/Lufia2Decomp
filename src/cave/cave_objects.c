@@ -1,10 +1,4 @@
-/* Ancient Cave object and chest placement ($83:99C8-$83:9B17).
- *
- * Tile coordinates are $8F (column) and $91 (row). Objects live at
- * $7F:E6B1/E6D1 (count $E731, at most $14), chests at $7F:E736/E73E
- * (count $E734, at most 8). The start cell origin is $E6A9/$E6AA and the
- * stairs are at $E6AB/$E6AC.
- */
+/* Ancient Cave objects and chests ($83:99C8-$83:9B17). */
 
 #include "cave/cave_internal.h"
 
@@ -22,10 +16,7 @@ void Lufia2CaveTileAt(
     SimulateRtsFrame(memory, cpu);                             /* 99D2 */
 }
 
-/* $83:99D3: carry set when $8F,$91 is near the start cell or on an object;
-   X kept. For objects with $E216 bit 0 the ROM also compares the size value
-   + 1 (not the column + 1) with $8F; that never matches because generated
-   columns are at least 7. */
+/* $83:99D3: carry when $8F,$91 is taken; X kept. */
 void Lufia2CaveNearStartOrPlaced(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -90,8 +81,7 @@ void Lufia2CaveNearStartOrPlaced(
     SimulateRtsFrame(memory, cpu);                             /* 9A1B */
 }
 
-/* $83:9A1C: add an object at $8F,$91 (up to 20) with a random kind from
-   the floor's row of $94:D95C; X kept. */
+/* $83:9A1C: add a random object at $8F,$91; X kept. */
 void Lufia2CaveAddObject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -137,8 +127,7 @@ void Lufia2CaveAddObject(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:9A6B: carry set when a chest is at $8F,$91, one column left, two
-   columns right, one row up or two rows down. */
+/* $83:9A6B: carry when a chest is near $8F,$91. */
 void Lufia2CaveNearChest(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -204,8 +193,7 @@ void Lufia2CaveChestAt(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:9ABC: try one chest in the room of cell A; carry set when it was
-   rejected (limit, start, stairs or a nearby chest). */
+/* $83:9ABC: try one chest in room A; carry = rejected. */
 void Lufia2CaveAddChest(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

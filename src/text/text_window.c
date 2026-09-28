@@ -4,8 +4,7 @@
 #include "text/text_internal.h"
 #include "actor/actor_internal.h"
 
-/* $80:BF6F: find an actor id, excluding slots with flag $04. Missing ids
- * leave the old offsets intact, exactly as the original caller expects. */
+/* $80:BF6F: find an actor id, skipping flag $04. */
 static void TextFindWindowActor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreADirect8(memory, cpu, 0x54u);
     LoadX16(cpu, 0);
@@ -30,8 +29,7 @@ static void TextFindWindowActor(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     }
 }
 
-/* $80:C557: packed byte coordinates to a tilemap byte offset. TDC supplies
- * the low byte of the row word; its high byte is not assumed to be zero. */
+/* $80:C557: packed coordinates to a tilemap offset. */
 static void TextWindowTileOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreADirect16(memory, cpu, 0x4eu);
     SetAccumulatorWidth(cpu, 1);
@@ -47,8 +45,7 @@ static void TextWindowTileOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu
     Add16Value(cpu, Read16Direct(memory, cpu, 0x51u));
 }
 
-/* $80:C52C: border row, including alternating tiles and the mirrored end.
- * A zero width still executes the original 65,536-iteration loop. */
+/* $80:C52C: window border row. */
 static void TextWindowBorderRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushIndex(memory, cpu);
     cpu->carry = 0;
@@ -195,10 +192,7 @@ horizontal:                                                  /* C39D */
     StoreADirect16(memory, cpu, 0x5du);
 }
 
-/* $80:C305: construct the window frame and optional speech tail in WRAM.
- * Entry M1X0. The explicit-position path reaches C431 with M1 and decodes
- * A9 FC FF 8D 9E 05 as LDA #FC; SBC $059E8D,X (not LDA #FFFC; STA $059E).
- * DB becomes $7E; caller owns its saved DB frame. No MMIO writes. */
+/* $80:C305: build the window frame; M1X0, DB = $7E. */
 Lufia2ExecutionResult Lufia2TextBuildWindow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Write8(memory, DirectAddress(cpu, 0x5du), 0);
@@ -424,8 +418,7 @@ Lufia2ExecutionResult Lufia2TextQueueWindowRow(
     return ExecutionReturned(0x80c5dcu);
 }
 
-/* $80:C23D: native placement, or exact C2A1 boundary before its first BF0B
- * frame wait. Its parent JSR, PHY, PHB and C274 JSR remain outstanding. */
+/* $80:C23D: place the window or stop at C2A1. */
 Lufia2ExecutionResult Lufia2TextPrepareWindow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, 1);

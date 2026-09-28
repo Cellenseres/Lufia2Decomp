@@ -812,8 +812,7 @@ static void WorldStoreNegated(
     StoreADirect8(memory, cpu, (uint8_t)(to + 2u));
 }
 
-/* $86:A417: polar step: angle $1248 (256 per turn), radius $1249
-   (8.8); x into $08-$0A and y into $0B-$0D (24-bit). */
+/* $86:A417: polar step. */
 static void WorldPolarOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -895,8 +894,7 @@ static void WorldPolarOffset(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* One chain link: position = previous + ($09,$0C), sprite = position
-   + wobble ($1E5A/$1E5B) + shake ($15/$17); y in $E0-$F7 hides it. */
+/* One chain link. */
 static void WorldChainSprite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -936,10 +934,7 @@ static void WorldChainSprite(
     StoreAAbsolute8(memory, cpu, 0x0101u, cpu->x);             /* OAM y */
 }
 
-/* $86:E8CE: world map sprite chain: 22 OAM entries, each one polar
-   step (angle toward $1211 - $1219, random spread) from the previous;
-   the shake $1E50/$1E52 decays by $1E54/$1E56, and past frame $4AA
-   ($42) the chain drifts. */
+/* $86:E8CE: world map sprite chain. */
 Lufia2ExecutionResult Lufia2WorldSpriteChain(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

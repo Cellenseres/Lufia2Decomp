@@ -89,10 +89,7 @@ Lufia2ExecutionResult Lufia2FieldActorSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* Optional consumer visibility policy. Coordinates are the original 16-bit
- * world positions, before the ROM's +$30/+$20 visibility biases. The filter
- * runs only for actors passing the original hidden flags and padded window;
- * it must not mutate guest state. No policy means exact stock semantics. */
+/* Optional host visibility filter; none keeps stock behavior. */
 typedef struct Lufia2FieldActorVisibility {
     uint16_t horizontal_padding;
     uint8_t (*accept)(void *context, uint16_t world_x, uint16_t world_y);

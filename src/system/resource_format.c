@@ -3,8 +3,7 @@
 #include "lufia2/resource_format.h"
 
 uint32_t Lufia2ResourceStreamAddress(const uint8_t entry[3]) {
-    /* $80:8EB2-$80:8EC6: LDA entry; ORA #$8000; TAY; LDA entry+1; ASL;
-     * SEP; XBA; ADC #$A7. */
+    /* $80:8EB2-$80:8EC6. */
     const uint16_t low = (uint16_t)(entry[0] | ((unsigned)entry[1] << 8));
     const uint16_t high = (uint16_t)(entry[1] | ((unsigned)entry[2] << 8));
     const unsigned carry = high >> 15;
@@ -36,8 +35,7 @@ Lufia2ResourceStatus Lufia2ResourceDecode(const uint8_t *stream, size_t stream_s
         return status;
     if (output_size < length)
         return LUFIA2_RESOURCE_BUFFER_TOO_SMALL;
-    /* The original compares the destination only after a token, so an
-     * empty resource never reaches its end. */
+    /* The original never stops on an empty resource. */
     if (length == 0)
         return LUFIA2_RESOURCE_OVERRUN;
     for (;;) { /* $80:8EEF */
@@ -67,8 +65,7 @@ Lufia2ResourceStatus Lufia2ResourceDecode(const uint8_t *stream, size_t stream_s
             if (!reference) {
                 output[written++] = token;
             } else {
-                /* $80:8F40: the low nibble of the second byte is the short
-                 * count; zero selects the three-byte form. */
+                /* Low nibble zero selects the three-byte form. */
                 uint16_t offset;
                 size_t count;
                 size_t distance;

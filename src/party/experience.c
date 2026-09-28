@@ -9,8 +9,7 @@ enum {
     PARTY_EXPERIENCE = 0x0a2au,        /* 24-bit, $0A2A-$0A2C */
 };
 
-/* One experience step: the 24-bit step $58-$5A grows by itself times
-   the factor in $4202 / 256 (hardware multiplier, rounded down). */
+/* One experience step via the hardware multiplier. */
 static void PartyGrowStep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -54,10 +53,7 @@ static void PartyGrowStep(
     cpu->x = PullIndexValue(memory, cpu);
 }
 
-/* $81:F9E9: experience needed for level $09FE of member $09FA: the
-   sum over levels of a step that starts at the member's base ($97:B99E)
-   and grows by a factor from $97:B633 + member * $70 (a new factor every
-   8 levels); minus 10. Level 98 and up: 9,999,999. */
+/* $81:F9E9: experience needed for level $09FE. */
 Lufia2ExecutionResult Lufia2PartyExperienceForLevel(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

@@ -49,10 +49,7 @@ typedef enum Lufia2ActorPrimaryActionFlow {
     LUFIA2_ACTOR_PRIMARY_ACTION_X8_BOUNDARY_D38D = 3,
 } Lufia2ActorPrimaryActionFlow;
 
-/*
- * JSR child at site: push the frame, run target to its RTS.
- * Returns 0 when the child unwinds instead.
- */
+/* JSR child at site; 0 when it unwinds. */
 typedef uint8_t (*Lufia2ActorSlotChild)(
     void *context,
     Lufia2CpuState *cpu,

@@ -1283,8 +1283,7 @@ static void ObjectHighNibbleStep(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:E2E0/$83:E331: every (rate & 15) ticks add the rate's high
-   nibble to an angle; a limit with bit 7 stops it within one step. */
+/* $83:E2E0/$83:E331: step an angle every (rate & 15) ticks. */
 static void ObjectAngleStep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1381,9 +1380,7 @@ static void ObjectHalfMagnitude(
     LsrA16(cpu);
 }
 
-/* $83:E703: rotate the object's offset ($1539/$1519) by the angles
-   $14D9/$14F9 (sines $80:84ED/852D) with the PPU multiplier, then
-   divide by the depth $51 into the screen offsets $54/$56. */
+/* $83:E703: rotate and project the object's offset. */
 static void ObjectProject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1463,10 +1460,7 @@ static void ObjectProject(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:E27D: object opcode $14, spin and zoom: step the scale $1579
-   and the angles $14D9/$14F9, rebuild the rotated offset on a scale
-   change, project it and move the sprite; ends the object when the
-   zoom has shrunk to nothing. */
+/* $83:E27D: object opcode $14, spin and zoom. */
 static ObjectFlow ObjectOp14(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

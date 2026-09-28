@@ -1,11 +1,7 @@
 #ifndef LUFIA2_SYSTEM_WRAM_H
 #define LUFIA2_SYSTEM_WRAM_H
 
-/* Named WRAM locations. The block below is generated from
- * metadata/memory_map.toml by scripts/metadata_index.py; edit the map, not
- * the block. Direct-page constants are offsets for D = 0, low-WRAM constants
- * are 16-bit offsets into the bank-$00 mirror, and the rest are long
- * addresses. */
+/* Generated from metadata/memory_map.toml; edit the map. */
 
 /* memory-map:begin (scripts/metadata_index.py) */
 /* Direct page; D = 0 in the field loop. */

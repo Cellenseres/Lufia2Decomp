@@ -129,8 +129,7 @@ static unsigned EventOpCopyPointX(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $80:BFAA: find key A in the $7E:F000 list at [X], stride B;
-   carry clear = found. 0 = handoff at $80:BFBC. */
+/* $80:BFAA: find key A in a list; carry clear = found. */
 uint8_t Lufia2FieldListSearch(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -180,8 +179,7 @@ uint8_t Lufia2FieldListSearch(
     return 0;
 }
 
-/* $80:E912: actor A in the map's actor list [$7E:F022], stride 3;
-   not found gives the first entry. 0 = handoff. */
+/* $80:E912: actor A in the map's actor list. */
 static uint8_t EventFindActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -308,8 +306,7 @@ static unsigned EventOpSpawn(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $80:E92A: box $9F-$A2 of an operand: own slot, point, map
-   entity $60-$DF, else a position operand. 0 = handoff. */
+/* $80:E92A: box $9F-$A2 of an operand. */
 uint8_t Lufia2EventArea(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -478,9 +475,7 @@ uint8_t Lufia2EventActorAction(
     return 1;
 }
 
-/* $80:E004: $22 = direction, $23 = facing step; box of an operand
-   ($80:E92A) to $8F/$91, stepped once and stored back to its point
-   unless the step is negative. 0 = handoff. */
+/* $80:E004: target of an operand, stepped once. */
 static uint8_t EventActorTarget(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -521,8 +516,7 @@ static uint8_t EventActorTarget(
     return 1;
 }
 
-/* $83:8B40: map object A ($7E:F016 list, stride 10) into
-   $7F:D04A/D04C/D05F; a miss reads the list's end entry. 0 = handoff. */
+/* $83:8B40: map object A into $7F:D04A-D05F. */
 static uint8_t EventMapObjectFrom(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -558,8 +552,7 @@ uint8_t Lufia2EventMapObject(
     return EventMapObjectFrom(memory, cpu, 0x80u, return_address, handoff);
 }
 
-/* $83:C108: claim a free actor (bit 2 set, $05D2 = $FF; none gives
-   slot $28) at the leader's tile. */
+/* $83:C108: claim a free actor at the leader's tile. */
 void Lufia2EventClaimActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -623,8 +616,7 @@ void Lufia2EventClaimActor(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $80:DFC2: new actor for map object A at box $9F/$A0, through its
-   RTS. 0 = handoff. */
+/* $80:DFC2: new actor for map object A. */
 static uint8_t EventPlaceActorAt(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -662,8 +654,7 @@ static uint8_t EventPlaceActorAt(
     return 1;
 }
 
-/* $80:DFB5: new actor for map object n at box $9F/$A0 ($80:DFC2),
-   then its $7F:E4DE byte. 0 = handoff. */
+/* $80:DFB5: new actor for map object n. */
 static uint8_t EventPlaceActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -713,9 +704,7 @@ static uint16_t EventActorDirection(uint16_t handler) {
     }
 }
 
-/* $64-$67 ($80:DE8C), $7C-$7F ($80:DF19), $A3-$A6 ($80:DEC4): a new
-   actor for map object n at a target, action $4C + direction; the
-   last two groups also set $7F:E316. */
+/* $64-$67, $7C-$7F, $A3-$A6: place a new actor. */
 static unsigned EventOpPlaceActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -771,8 +760,7 @@ static unsigned EventOpPlaceActor(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $80 ($80:DEEF, no step) and $81 ($80:DE11): action $5C; $80 also
-   sets $7F:E316. */
+/* $80/$81: place a new actor with action $5C. */
 static unsigned EventOpPlaceActor5C(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -803,8 +791,7 @@ static unsigned EventOpPlaceActor5C(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $AF-$B2 ($80:DF83): existing actor n goes to a target, action
-   $74 + direction; $7F:E4DE and $0736 bit 4 set. */
+/* $AF-$B2: send actor n to a target. */
 static unsigned EventOpMoveActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -878,8 +865,7 @@ static unsigned EventOpFillE33E(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $82: point n = placed object m ($7F:D69C/D6CC, used when
-   $7F:D75C bit 7), box one tile wide. */
+/* $82: point n = placed object m. */
 static unsigned EventOpPointFromObject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -913,8 +899,7 @@ static unsigned EventOpPointFromObject(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $80:D49B: when $7F:D0A1 bit 2, clear leader $0622 bit 3 and
-   record the blocked step ($83:CA68). */
+/* $80:D49B: unblock the leader, record the step. */
 static void EventLeaderUnblock(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -946,8 +931,7 @@ static void EventSelectActor(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $23 ($80:D439): leader action n + facing offset ($83:C1A5 by
-   $0692); $6A ($80:D47E): leader action n. */
+/* $23/$6A: leader action n. */
 static unsigned EventOpLeaderAction(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1033,8 +1017,7 @@ void Lufia2EventCellValue(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $0F/$6C: goto when bit 0 of the cell type ($83:FB51: $7F:D296 by
-   the cell's high nibble, 0 when it is clear) is set / clear. */
+/* $0F/$6C: goto on bit 0 of the cell type. */
 static unsigned EventOpCellType(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1186,17 +1169,14 @@ static int EventPointOperation(uint16_t operation) {
            operation == 0xda7cu;
 }
 
-/* $41-$54: (opcode - $41) / 5 picks the point coordinate (x, y, x2,
-   y2), the remainder the operation: set, add, subtract, +1, -1. The
-   divider is addressed DB-relative. */
+/* $41-$54: point coordinate arithmetic. */
 static unsigned EventOpPointArithmetic(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint32_t *handoff) {
     uint16_t operation;
 
-    /* Outside the MMIO banks the remainder is memory; an unused
-       operation hands off before the opcode starts. */
+    /* Unused operations hand off before the opcode starts. */
     {
         uint8_t bank = cpu->data_bank;
 
@@ -1283,8 +1263,7 @@ static unsigned EventOpPointArithmetic(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $BA: set entry n of the $7E:F026 list (stride 4) to a position;
-   a missing key writes over the $FF end. */
+/* $BA: set list entry n to a position. */
 static unsigned EventOpSetListedPosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1310,8 +1289,7 @@ static unsigned EventOpSetListedPosition(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $97-$9A: step listed actor id n (+$4F; missing keeps the running
-   slot) one cell down, left, up or right and restart its script. */
+/* $97-$9A: step listed actor n one cell. */
 static unsigned EventOpStepActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1372,9 +1350,7 @@ static void EventClearClaimed(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $8A runs action $5D ($83:D350) for actor slot n; $8B clears its
-   occupancy ($83:FA12) and frees it ($0622 bit 2 set, bit 7 clear,
-   $05D2 = $FF, $7F:E48E = 0). Both then clear the claimed actors. */
+/* $8A runs action $5D for slot n; $8B frees it. */
 static unsigned EventOpActorSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1417,10 +1393,7 @@ static unsigned EventOpActorSlot(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $60 hides listed actor id n (+$4F): $0622 bit 2 and $0736 bit 5
-   set, occupancy cleared ($8E:BB17). $61 shows it ($8E:BAF6): bit 2
-   cleared; a hidden one gets bit 5 cleared and hands off at the
-   $81:8351 call. */
+/* $60 hides, $61 shows listed actor n. */
 static unsigned EventOpHideActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1499,8 +1472,7 @@ static void EventRandomCoordinate(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $78: spawn $00 actors of id $01 ($83:DF87) at random fine
-   positions inside an area ($80:D533); $00 = 0 spawns 256. */
+/* $78: spawn actors at random positions in an area. */
 static unsigned EventOpSpawnInArea(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1564,8 +1536,7 @@ static unsigned EventOpSpawnInArea(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $83:A71C: fine position A (x), Y (y) of actor $A9 into
-   $7F:DDAE/DE3E, the rounded cell into $06BA/$06E2 of slot $A7. */
+/* $83:A71C: fine and cell position of actor $A9. */
 static void EventSetActorPosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1595,9 +1566,7 @@ static void EventSetActorPosition(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $BC: move listed actor id n (+$4F) to the cell of a position
-   ($80:A74D): occupancy moves along, slots from 8 on restart their
-   script with action 9. */
+/* $BC: move listed actor n to a position. */
 static unsigned EventOpMoveActorTo(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1670,8 +1639,7 @@ static unsigned EventOpMoveActorTo(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $83:F731: copy the 32-byte palette at $00:[$7F:D0A4] to $00:0500
-   (MVN $00,$00) and set NMI upload bit 1; M=0. */
+/* $83:F731: copy a palette to $0500; M=0. */
 static void EventCopyPalette(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1697,9 +1665,7 @@ static void EventCopyPalette(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:F6CA: sprite of claimed actor $A7 from its map object type
-   ($7F:E5A6): palette ($7F:D88C), animation tables ($83:AA7D),
-   sprite ids ($7F:D78C/D80C) and flags. */
+/* $83:F6CA: sprite of claimed actor $A7. */
 static void EventActorSprite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1748,8 +1714,7 @@ static void EventActorSprite(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:F5EA: claimed actor $A7 takes its map object's origin
-   ($83:8B40, $83:F7F8) and sprite ($83:F6CA). 0 = handoff. */
+/* $83:F5EA: claimed actor takes its object's origin and sprite. */
 static uint8_t EventActorFromObject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1783,8 +1748,7 @@ static uint8_t EventActorFromObject(
     return 1;
 }
 
-/* $B3: a new actor for map object n (variable operand) in an area,
-   byte m into $7F:E316, sprite from the object ($83:F5EA). */
+/* $B3: new actor for map object n in an area. */
 static unsigned EventOpSpawnObjectActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
