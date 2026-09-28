@@ -94,9 +94,8 @@ The format itself, without the CPU, is `src/system/resource_format.c`
 computation of `$80:8E9D`, and a decoder into a caller-owned buffer that
 neither allocates nor caches. Before the consumer adopted this shared decoder,
 all 680 supported ROM resources matched its former host decoder byte for byte.
-The synthetic test `tests/resource_format_test.c`
-also runs random valid streams through both it and the `$80:8E9D` adapter
-and requires identical output.
+Local verification also cross-checks valid streams against the verified
+`$80:8E9D` adapter and requires identical output.
 
 ### Map setup commands are not the actor VM
 

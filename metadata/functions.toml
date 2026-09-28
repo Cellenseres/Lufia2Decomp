@@ -204,7 +204,7 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
-# Field OAM; unbound, the hand HLE widens it for widescreen.
+# Field OAM; the hand HLE widens it for widescreen.
 [[function]]
 address = "83:A21A"
 name = "Lufia2FieldActorSprites"
@@ -1388,8 +1388,7 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
-# Actor and sound helpers with their own whole-function differential
-# (consumer actor-dispatch suite, 4,096 cases each). Not runtime-bound.
+# Actor and sound helpers with their own whole-function differential.
 [[function]]
 address = "83:A746"
 name = "Lufia2ActorSyncFinePosition"
@@ -1462,9 +1461,7 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
-# Random number generator entries with their own whole-function differential
-# (consumer actor-dispatch suite, 4,096 cases each over all four entry widths;
-# PHP/PLP restore the caller's M/X). Not runtime-bound.
+# Random number generator entries; PHP/PLP restore the caller's M/X.
 [[function]]
 address = "80:8299"
 name = "Lufia2RandomScale"

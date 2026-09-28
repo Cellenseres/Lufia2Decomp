@@ -76,17 +76,14 @@ This builds the static library `lufia2_decomp` (alias `Lufia2::Decomp`).
 | `LUFIA2_ENABLE_WARNINGS` | ON standalone, OFF as a subdirectory | `-Wall -Wextra -Wpedantic` (GCC/Clang) or `/W4` (MSVC) on `lufia2_decomp` only |
 | `LUFIA2_WARNINGS_AS_ERRORS` | OFF | Adds `-Werror` or `/WX` to those warnings |
 | `LUFIA2_ENABLE_SANITIZERS` | OFF | AddressSanitizer and UBSan (GCC/Clang); whatever links the library also links the sanitizer runtimes |
-| `LUFIA2_BUILD_TESTS` | ON standalone, OFF as a subdirectory | ROM-free synthetic tests, run with `ctest` |
 | `LUFIA2_BUILD_TOOLS` | ON standalone, OFF as a subdirectory | Command-line tools in `tools/` |
 
 None of the options changes global or consumer flags. CI builds with GCC and
-Clang, warnings as errors, runs the synthetic tests and
+Clang, warnings as errors, and runs
 `python3 scripts/metadata_index.py --check`; it never needs a ROM.
 
-The tests here are synthetic and need no ROM. Original-ROM differential
-verification, which is what makes a function `verified`, runs in the
-consumer (`decomp-verify` target) against a supported ROM image supplied by
-its owner.
+Original-ROM differential verification is performed privately by the project
+maintainers against a supported ROM image supplied by its owner.
 
 ## Tools
 

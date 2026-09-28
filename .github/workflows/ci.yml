@@ -44,8 +44,6 @@ jobs:
   format:
     name: Format (changed lines, advisory)
     runs-on: ubuntu-24.04
-    # Most existing sources predate .clang-format; this job reports style on
-    # changed lines only and never blocks. See docs/CONTRIBUTING.md.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
