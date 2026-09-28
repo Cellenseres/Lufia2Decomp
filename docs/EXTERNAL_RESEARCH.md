@@ -92,9 +92,9 @@ not in this repository.
 The format itself, without the CPU, is `src/system/resource_format.c`
 (`include/lufia2/resource_format.h`): the table entry to stream address
 computation of `$80:8E9D`, and a decoder into a caller-owned buffer that
-neither allocates nor caches. On the supported ROM it decodes all 680
-resources, byte for byte like the consumer's host decoder
-`src/lufia2_resource.c`; the synthetic test `tests/resource_format_test.c`
+neither allocates nor caches. Before the consumer adopted this shared decoder,
+all 680 supported ROM resources matched its former host decoder byte for byte.
+The synthetic test `tests/resource_format_test.c`
 also runs random valid streams through both it and the `$80:8E9D` adapter
 and requires identical output.
 

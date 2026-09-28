@@ -16,6 +16,12 @@ option(LUFIA2_ENABLE_SANITIZERS
     "Build lufia2_decomp with AddressSanitizer and UBSan (GCC/Clang)" OFF)
 option(LUFIA2_BUILD_TOOLS "Build the command-line tools" ${_lufia2_top_level})
 
+add_library(lufia2_resource_format STATIC src/system/resource_format.c)
+add_library(Lufia2::ResourceFormat ALIAS lufia2_resource_format)
+target_include_directories(lufia2_resource_format PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_compile_features(lufia2_resource_format PUBLIC c_std_11)
+
 add_library(lufia2_decomp STATIC
     src/actor/actor_action.c
     src/actor/actor_frontend.c
@@ -67,7 +73,6 @@ add_library(lufia2_decomp STATIC
     src/system/decompress.c
     src/system/math.c
     src/system/random.c
-    src/system/resource_format.c
     src/system/screen.c
     src/system/sound.c
     src/text/text_engine.c
@@ -77,6 +82,7 @@ add_library(lufia2_decomp STATIC
     src/title/title.c
     src/world/world_map.c)
 add_library(Lufia2::Decomp ALIAS lufia2_decomp)
+target_link_libraries(lufia2_decomp PUBLIC Lufia2::ResourceFormat)
 
 target_include_directories(lufia2_decomp
     PUBLIC
@@ -101,6 +107,7 @@ if(LUFIA2_ENABLE_WARNINGS)
     endif()
 endif()
 target_compile_options(lufia2_decomp PRIVATE ${_lufia2_warnings})
+target_compile_options(lufia2_resource_format PRIVATE ${_lufia2_warnings})
 
 if(LUFIA2_ENABLE_SANITIZERS)
     if(NOT CMAKE_C_COMPILER_ID MATCHES "GNU|Clang" OR MSVC)
@@ -112,11 +119,14 @@ if(LUFIA2_ENABLE_SANITIZERS)
         ${_lufia2_sanitizers} -fno-omit-frame-pointer -fno-sanitize-recover=all)
     # The static library needs the sanitizer runtimes in whatever links it.
     target_link_options(lufia2_decomp INTERFACE ${_lufia2_sanitizers})
+    target_compile_options(lufia2_resource_format PRIVATE
+        ${_lufia2_sanitizers} -fno-omit-frame-pointer -fno-sanitize-recover=all)
+    target_link_options(lufia2_resource_format INTERFACE ${_lufia2_sanitizers})
 endif()
 
 if(LUFIA2_BUILD_TOOLS)
     add_executable(lufia2-resource tools/lufia2_resource.c)
-    target_link_libraries(lufia2-resource PRIVATE lufia2_decomp)
+    target_link_libraries(lufia2-resource PRIVATE Lufia2::ResourceFormat)
     target_compile_options(lufia2-resource PRIVATE ${_lufia2_warnings})
 endif()
 

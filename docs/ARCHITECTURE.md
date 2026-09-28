@@ -66,6 +66,6 @@ along a semantic boundary, never by line count alone:
   whole: each is one VM or one family of screens sharing private helpers, and
   splitting them would only turn those helpers into cross-file symbols.
 
-The library remains one target, `lufia2_decomp` (`Lufia2::Decomp`); there are
-no per-domain CMake targets, because they would add build surface without
-changing ownership or dependencies.
+The semantic library remains `lufia2_decomp` (`Lufia2::Decomp`). The pure
+resource decoder is a separate target, `Lufia2::ResourceFormat`, reused by
+the semantic library and linked directly by the host for resource extraction.
