@@ -1,5 +1,4 @@
-/* Field event script opcodes for map objects: object bits, tiles, pending
- * placement and pushing. Lufia2EventActorOpcode dispatches them. */
+/* Field event opcodes for map objects. */
 
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
@@ -92,8 +91,7 @@ static void EventObjectBit(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $83:F559: queue object B's animation A|$90 in the $7F:D057 slots
-   unless queued; the $0583 bit 7 path hands off at $83:F564. */
+/* $83:F559: queue an object animation. */
 static unsigned EventQueueObjectAnimation(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -193,10 +191,7 @@ static unsigned EventObjectCoversRow(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $02 sets, $03 clears object bit n through the animation queue
-   ($03 only when the object covers row $06E2), directly when $0583
-   bit 7 is set. $28 is $02 on a set result, else $03; $A0/$A1 set
-   and clear directly. */
+/* $02/$03/$28/$A0/$A1: set or clear object bit n. */
 unsigned Lufia2EventOpObjectBit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -279,8 +274,7 @@ static void EventObjectOrigin(
     Lufia2EventObjectOriginFrom(memory, cpu, 0x80u, return_address);
 }
 
-/* $83:F442: clear attribute bit 6 of a two-row object's top row,
-   then bit 3 of its bottom row; both cells when $D04C is 2. */
+/* $83:F442: clear a placed object's attribute bits. */
 static void EventObjectClearAttributes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -323,8 +317,7 @@ static void EventObjectClearAttributes(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $83:8A6F: clear the tile bits of the $D04C x $D04D block at $D046
-   in layer A ($7F:D008,A). */
+/* $83:8A6F: clear an object's tile block in layer A. */
 static void EventObjectClearTiles(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -379,8 +372,7 @@ static void EventObjectClearTiles(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* Read-only: whether $83:8A6F's block (layer 2) covers its own
-   size bytes $7F:D04C/D04D, which would change the loop counts. */
+/* Whether $83:8A6F overwrites its own block size. */
 static uint8_t EventClearHitsSize(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu,
@@ -422,8 +414,7 @@ static void EventTileWord(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:F750: tiles of pending object A at $8F/$91 in layer $05AA
-   from $7F:D5DC + 4A, the row above from $D5DE when $D04D is 2. */
+/* $83:F750: tiles of pending object A at $8F/$91. */
 static void EventObjectSetTiles(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -473,9 +464,7 @@ static void EventObjectSetTiles(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $80:D3C6: redraw the object's region in layer $05AA, then set
-   redraw bit 1. No layer or over 4096 cells hand off at $80:D3CC.
-   0 = handoff. */
+/* $80:D3C6: redraw the object's region. */
 static uint8_t EventObjectRedraw(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -506,11 +495,7 @@ static uint8_t EventObjectRedraw(
     return 1;
 }
 
-/* $80:D357: the map object at $8F/$91: a pending one in the
-   $7F:D69C table gets its tiles set ($80:D393), else a cell object
-   (cell value $10+) gets its tiles and attributes cleared. Blocks
-   over 4096 cells (0 counts as 65536) hand off at $80:D38B.
-   0 = handoff. */
+/* $80:D357: toggle the map object at $8F/$91. */
 static uint8_t EventObjectTiles(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -588,8 +573,7 @@ static uint8_t EventObjectTiles(
     return 1;
 }
 
-/* $21 (cell x, y) / $22 (position operand): toggle the map object
-   there ($80:D357). */
+/* $21/$22: toggle the map object at a position. */
 unsigned Lufia2EventOpObjectTilesAt(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -610,8 +594,7 @@ unsigned Lufia2EventOpObjectTilesAt(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $83:F9D4 / $83:F9D9: X = cell of (B, A) in layer $05AA; F9D4
-   takes ($8F, $91). */
+/* $83:F9D4/$83:F9D9: layer cell of a position. */
 static void EventLayerCell(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -638,8 +621,7 @@ static void EventLayerCell(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:FB9F: X = pending object at $8F/$91; none sets carry, X = $30
-   and A = D. */
+/* $83:FB9F: pending object at $8F/$91; carry when none. */
 static void EventFindPending(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -667,10 +649,7 @@ static void EventFindPending(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:F80D: attribute cell at $8F/$91 AND $54, ORA $55; $91 moves
-   to the object's top row. A two-row object ($D04D = 2) also sets
-   the row above with $56/$57, $58 = $FFF0 and carry. A = the old
-   attributes. */
+/* $83:F80D: mark attributes under a pending object. */
 static void EventMarkAttributes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -717,7 +696,7 @@ static void EventMarkAttributes(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:F85A: X and Y times 4, Y + 2 when $58 is set; leaves M=0. */
+/* $83:F85A: pending tile offsets; leaves M=0. */
 static void EventPendingOffsets(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -758,11 +737,7 @@ static void EventCopyTile(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:F86B: register pending object slot A at $8F/$91 and put the
-   object's tiles (from its map position $D04A) there; the replaced
-   map tiles go to $7F:D5DC + 4A ($D5DE the row above). Attributes
-   get bit 3, a two-row object's row above bit 6. An object already
-   pending there hands its saved tiles over. */
+/* $83:F86B: register a pending object and swap tiles. */
 static void EventPlacePending(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -875,8 +850,7 @@ done:
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $83:8E76: redraw region $7F:D046 in layers 0 and 1. A redraw over
-   1024 cells (or no layer) hands off at $83:8E79. 0 = handoff. */
+/* $83:8E76: redraw region $7F:D046 in layers 0 and 1. */
 static uint8_t EventRedrawLowLayers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -905,9 +879,7 @@ static uint8_t EventRedrawLowLayers(
     return 1;
 }
 
-/* $2A: place map object n as pending in the first free $7F:D69C
-   slot ($80:D426, slot 0 when none) at a position, swap its tiles
-   ($83:F86B) and redraw layers 0 and 1. */
+/* $2A: place map object n as pending. */
 unsigned Lufia2EventOpPlaceObject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -988,8 +960,7 @@ static void EventProbeSave(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:FB12 from bank A's code: step $8F/$91 by direction A.
-   0 = handoff. */
+/* $83:FB12: step $8F/$91 by direction A. */
 static uint8_t EventProbeStep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1009,8 +980,7 @@ static uint8_t EventProbeStep(
     return 1;
 }
 
-/* $83:C33D: carry set when a secondary actor ($064A bit 7) stands
-   on cell $8F/$91. */
+/* $83:C33D: carry when a secondary actor is at $8F/$91. */
 static void EventSecondaryAtProbe(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1047,11 +1017,7 @@ static void EventSecondaryAtProbe(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:C079: carry set when a pushed object may move from $8F/$91 in
-   direction A: the step's cell must hold no secondary actor and
-   either be marked (bit 7) or be free, not blocked ($83:D89E) and
-   of the same height, with a cell value of 0, 1 or 9 (a pending
-   type-1 object counts by its saved tile). 0 = handoff. */
+/* $83:C079: carry when a pushed object may move. */
 static uint8_t EventPushAllowed(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1159,10 +1125,7 @@ blocked:
     return 1;
 }
 
-/* $5A-$5D: push pending map object n (the $7F:D69C table) one cell
-   down, up, right or left ($80:DCDA): when $83:C079 allows it, a
-   claimed actor (action 9) takes its place and walks the step
-   ($83:D350, action $48 + facing), its cell occupancy moving along. */
+/* $5A-$5D: push pending map object n one cell. */
 unsigned Lufia2EventOpPushObject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

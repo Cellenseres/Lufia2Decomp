@@ -23,9 +23,7 @@ static void AttributeSet(
     Write8(memory, LongIndexedAddress(base, cpu->x), A8(cpu));
 }
 
-/* $80:EF2F: bit 0 under each of the 40 map actors that is not hidden
-   ($0622 bits 1-2); actors of size 2 and up that are not the $71-$73
-   kinds also cover the next cell. Leaves DB = $80. */
+/* $80:EF2F: occupancy bit 0 under visible map actors. */
 static void AttributeActors(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -76,8 +74,7 @@ static void AttributeActors(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $80:EEEB: bit 2 at each (column, row) of the list [$7E:F000 + X],
-   3 bytes per entry, $FF-terminated. Leaves DB = $7E. */
+/* $80:EEEB: bit 2 at each listed cell; DB = $7E. */
 static void AttributeListBit2(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -116,11 +113,7 @@ static void AttributeListBit2(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $80:ED9C: attribute map $7E:4000 of map A: per cell the tile class
-   of the metatile ($7F:[$D03E]: any of bits 4-7 -> 8, 8 -> 2, 9 -> $80)
-   plus bits 2-3 of the cell's high byte shifted to 4-5; then bit 0 under
-   the $7E:F000 list entries and the map actors, bit 2 from list $1E and
-   bits 3 (and 6 for size 2) under the 48 map objects $7F:D69C. */
+/* $80:ED9C: attribute map $7E:4000 of map A. */
 Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

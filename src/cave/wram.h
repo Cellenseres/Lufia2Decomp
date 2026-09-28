@@ -1,10 +1,7 @@
 #ifndef LUFIA2_CAVE_WRAM_H
 #define LUFIA2_CAVE_WRAM_H
 
-/* Established by the $83:9013-$83:9E31 ROM operations and T14 probes.
- * Offsets remain DB-relative at OpAbs sites; LONG constants keep bank $7F.
- * Counts may be accessed as bytes or words, according to the live CPU width.
- * Reused DP scratch ($54-$66) deliberately has no single-purpose names. */
+/* Ancient Cave WRAM, DB-relative; _LONG adds bank $7F. */
 enum {
     CAVE_FLOOR = 0xe696u,
     CAVE_ROOM_GRID = 0xea00u,

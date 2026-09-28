@@ -620,8 +620,7 @@ static void StreamRow(
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
-/* $80:F6C6: 16 metatiles from cell X into the row buffers [$5D]
-   and [$60] at Y, wrapping in 64 bytes. */
+/* $80:F6C6: 16 metatiles into the row buffers. */
 static void StreamRowBuffers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -687,8 +686,7 @@ static void StreamRowBuffers(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $80:F47A: redraw layer X in 16 rows unless $7F:D020,x is $FF;
-   registers and flags are restored. */
+/* $80:F47A: redraw layer X in 16 rows. */
 static void RedrawLayer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -805,8 +803,7 @@ static uint16_t RegionCellValue(
     return (uint16_t)(value >> 4);
 }
 
-/* Read-only: the cells $83:8E85 draws for layer X; ~0 when X is no
-   layer, whose buffer could cover the direct page. */
+/* Cells $83:8E85 draws for layer X. */
 uint32_t Lufia2FieldRegionCells(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu) {
@@ -848,8 +845,7 @@ uint32_t Lufia2FieldRegionCells(
     return (uint32_t)(size & 0xffu) * (size >> 8);
 }
 
-/* $83:8E85: redraw the cells of region $7F:D046 (x, y) + $D04C
-   (w, h) that are visible in layer X into its row buffers; M=1. */
+/* $83:8E85: redraw region $7F:D046 in layer X; M=1. */
 void Lufia2FieldRedrawRegion(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

@@ -4,9 +4,6 @@
 #include "lufia2/resource_format.h"
 #include "lufia2/system.h"
 
-/* The CPU adapter of the stream format. The same format on byte buffers,
- * without bus effects, is src/system/resource_format.c. */
-
 enum {
     STREAM = 0x5du,                     /* [$5D],Y: compressed bytes */
     LENGTH = 0x58u,

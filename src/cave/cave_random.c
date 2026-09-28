@@ -4,8 +4,7 @@
 #include "lufia2/system.h"
 #include "system/system_internal.h"
 
-/* One product: $211C = limit (already written), $211B = random, then DP low.
-   TDC puts D's low byte in the multiplicand's high half. */
+/* Random product; TDC puts D's low byte in the high half. */
 static void CaveMultiplyRandom(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

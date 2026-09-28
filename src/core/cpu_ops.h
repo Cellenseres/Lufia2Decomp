@@ -1,18 +1,11 @@
 #ifndef LUFIA2_CORE_CPU_OPS_H
 #define LUFIA2_CORE_CPU_OPS_H
 
-/* Width-aware adapters for reconstructed native-mode, binary contracts.
- * cpu_internal.h owns scalar flags, loads, arithmetic, transfers and stack
- * primitives; use those here instead of adding a second implementation.
- * Addressing and memory write order stay explicit in the adapters below.
- * OpRepWidths/OpSepWidths handle only M/X bits, not arbitrary status masks. */
+/* Width-aware instruction adapters over cpu_internal.h. */
 
 #include "core/cpu_internal.h"
 
-/*
- * Operand addresses. Direct-page operands carry OP_DP_WRAP so a 16-bit
- * access wraps inside bank 0 like the CPU; Read8/Write8 drop the marker.
- */
+/* OP_DP_WRAP keeps 16-bit direct-page accesses in bank 0. */
 #define OP_DP_WRAP 0x01000000u
 
 static inline uint32_t OpDp(const Lufia2CpuState *cpu, uint8_t offset) {
@@ -317,8 +310,7 @@ static inline void OpPullY(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     cpu->y = PullIndexValue(memory, cpu);
 }
 
-/* Only REP/SEP width masks ($10/$20/$30). Other status bits are not modeled
- * by these adapters; use PackStatus/UnpackStatus for full status operations. */
+/* M/X width bits only; not a general REP/SEP. */
 static inline void OpRepWidths(Lufia2CpuState *cpu, uint8_t width_bits) {
     if (width_bits & 0x20u)
         SetAccumulatorWidth(cpu, 0);

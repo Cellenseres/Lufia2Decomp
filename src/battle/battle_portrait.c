@@ -77,7 +77,7 @@ Lufia2ExecutionResult Lufia2BattlePortraitUpload(
     return ExecutionReturned(0x81bbdfu);
 }
 
-/* $81:BAFB: portrait of slot A by status (0, 2 or 5), or clear it. */
+/* $81:BAFB: portrait of slot A by status. */
 Lufia2ExecutionResult Lufia2BattlePortrait(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

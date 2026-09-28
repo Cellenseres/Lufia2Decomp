@@ -99,7 +99,7 @@ Lufia2ExecutionResult Lufia2PartyStatTotalsFar(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $81:F979 level-up of member $09FA: A = 1 raised, 0 not, 2 stale; M1X0. */
+/* $81:F979: level-up of member $09FA; M1X0. */
 Lufia2ExecutionResult Lufia2PartyLevelUpCheck(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

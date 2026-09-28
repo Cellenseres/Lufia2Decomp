@@ -660,9 +660,7 @@ static unsigned TextOpEnd(
     return TEXT_OPCODE_RELOAD;
 }
 
-/* $80:C01D: map entity A ($7E:F010 list, stride 8) position into
-   $120A-$1212 (DB-relative, $1212 long); none zeroes $120A-$120C and
-   sets carry. 0 = handoff. */
+/* $80:C01D: position of map entity A; carry when none. */
 static uint8_t TextEntityPosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -697,8 +695,7 @@ static uint8_t TextEntityPosition(
     return 1;
 }
 
-/* $80:BC98: actor $A7 gets id and state bytes, then the position of
-   map entity id - $4F ($80:C01D, $80:C1A7). 0 = handoff. */
+/* $80:BC98: place actor $A7 at a map entity. */
 static uint8_t TextPlaceActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -733,8 +730,7 @@ static uint8_t TextPlaceActor(
     return 1;
 }
 
-/* $68: skip two bytes when $05B3 bit 4 is set, else place actor
-   $A7 ($80:BC98) and step $A7. */
+/* $68: place actor $A7 unless $05B3 bit 4. */
 static unsigned TextOpSkipBranch(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -754,9 +750,7 @@ static unsigned TextOpSkipBranch(
     return TEXT_OPCODE_NEXT;
 }
 
-/* $2E: hide listed actor id n ($80:BF92): $0622 bit 2 set and
-   occupancy cleared ($83:FA12); ids $10-$4F also set bit 7 of
-   $081E + id - $10. */
+/* $2E: hide listed actor id n. */
 static unsigned TextOpHideActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -792,8 +786,7 @@ static unsigned TextOpHideActor(
     return TEXT_OPCODE_NEXT;
 }
 
-/* $4B: music n into $099D and $7F:D0FD; a change with $099C bit 6
-   clear hands off at the $80:93FE call (APU). */
+/* $4B: change music. */
 static unsigned TextOpMusic(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -838,8 +831,7 @@ static void TextPressedButton(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $80:9FE7 draw / $80:A019 erase the choice cursor at row $126A
-   of the window buffer ($7E:3040 + $7F:D085). */
+/* $80:9FE7 draw / $80:A019 erase the choice cursor. */
 static void TextChoiceCursor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -879,8 +871,7 @@ static void TextChoiceCursor(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $38: wait n seconds; $42 counts frames to 60, $125F seconds.
-   Re-run every frame through $099B bit 5. */
+/* $38: wait n seconds. */
 static unsigned TextOpWaitSeconds(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -910,9 +901,7 @@ static unsigned TextOpWaitSeconds(
     return TEXT_OPCODE_NEXT;
 }
 
-/* $41: scroll the view; with $FF as second byte wait until the
-   position $121E/$1226 of view $05AA reaches $7F:D08B/D08D. The
-   other scroll modes hand off at $80:B4FE. */
+/* $41: scroll the view or wait for it. */
 static unsigned TextOpScrollView(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -945,8 +934,7 @@ static unsigned TextOpScrollView(
     return TEXT_OPCODE_EXIT;
 }
 
-/* $01: wait for a button ($099B bit 1); the speaker $09AC sets
-   the typing sound from its $1291 ($80:C1DF). */
+/* $01: wait for a button. */
 static unsigned TextOpWaitForButton(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -982,8 +970,7 @@ static unsigned TextOpWaitForButton(
     return TEXT_OPCODE_EXIT;
 }
 
-/* $0B: choice cursor, re-run every frame until A/X picks row $126A
-   (goto via the word table at $126D:$126B) or B cancels. */
+/* $0B: choice cursor. */
 static unsigned TextOpChoice(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1070,8 +1057,7 @@ wait:
     return TEXT_OPCODE_EXIT;
 }
 
-/* $69: window mode $09A7; bit 1 loads the window palette $A6:BFE0
-   into $0500 and waits for its upload ($80:BF0B, LLE). */
+/* $69: window mode $09A7. */
 static unsigned TextOpWindowMode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

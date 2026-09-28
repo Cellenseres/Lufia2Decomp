@@ -17,7 +17,7 @@ static void CompareExp(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, with, 0));
 }
 
-/* $81:F979: member $09FA level-up: A = 1 raised, 0 not due or 99, 2 stale. */
+/* $81:F979: level-up of member $09FA. */
 Lufia2ExecutionResult Lufia2PartyLevelUpCheck(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

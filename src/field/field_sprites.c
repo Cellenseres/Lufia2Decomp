@@ -608,8 +608,7 @@ Lufia2ExecutionResult Lufia2FieldActorSpritesWithVisibility(
     Add16Value(cpu, 0x0100u);
     StoreADirect16(memory, cpu, 0x5au);
     if (visibility && visibility->horizontal_padding) {
-        /* Deliberate consumer window change, retaining 16-bit wrapping and
-         * all stock comparisons, flags, sorting and OAM work below. */
+        /* Host padding; 16-bit wrap kept. */
         const uint16_t padding = visibility->horizontal_padding;
         Write16Direct(memory, cpu, 0x54u,
             (uint16_t)(Read16Direct(memory, cpu, 0x54u) - padding));

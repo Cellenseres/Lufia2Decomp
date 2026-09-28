@@ -5,9 +5,7 @@
 #include "field/event_script_internal.h"
 #include "text/text_internal.h"
 
-/* $80:A1CC: argument -> record offset. Absolute accesses deliberately use
- * the current DB: $4202/$4203/$4216 are hardware only in its MMIO banks.
- * The ROM has enough instructions between multiply trigger and result read. */
+/* $80:A1CC: argument to record offset; DB-relative MMIO. */
 Lufia2ExecutionResult Lufia2TextConditionRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Lufia2TextNextByte(memory, cpu, 0xa1ceu);
     StoreAAbsolute8(memory, cpu, 0x4202u, 0);
@@ -51,8 +49,7 @@ static void TextConditionItemCall(const Lufia2Memory *memory, Lufia2CpuState *cp
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $80:A20C: eight selector values, with 5/6/7 sharing unsigned less-than.
- * Greater-than is the ROM's DEC/CMP, including 0000 -> FFFF wrap. */
+/* $80:A20C: compare by selector. */
 static void TextConditionCompare(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned comparison;
     int passes;
@@ -110,8 +107,7 @@ static void TextConditionFlag(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreAAbsolute8(memory, cpu, 0x1267u, 0);
 }
 
-/* $80:A0F9: item/record/actor predicates. Returns 1 for the predicates
- * that already produced $1267, 0 when an operand comparison follows. */
+/* $80:A0F9: item, record and actor predicates. */
 static int TextConditionSpecial(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned kind;
     int byte_operand = 0;

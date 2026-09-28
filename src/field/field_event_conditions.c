@@ -215,8 +215,7 @@ static uint8_t EventCellsInArea(
     return 1;
 }
 
-/* $80:CD8B: carry = a placed object of type $AE in box $9F-$A2;
-   its position becomes the slot's. */
+/* $80:CD8B: carry = type-$AE object in box $9F-$A2. */
 static void EventObjectsInBox(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -288,8 +287,7 @@ static void EventStorePointer(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $80:E78D: Y = entry Y/2 of the (key, word) table at [base + X];
-   carry set when missing. 0 = handoff at $80:E7B8. */
+/* $80:E78D: list entry Y/2; carry when missing. */
 uint8_t Lufia2EventFindList(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -350,9 +348,7 @@ uint8_t Lufia2EventFindList(
     return 1;
 }
 
-/* $80:E566: condition list $7F:D19B - $80; each entry + $60 is a box
-   for test X (0 leader, 2 map cells, 4 objects); a hit sets the
-   result. 0 = handoff. */
+/* $80:E566: test the condition list $7F:D19B. */
 static uint8_t EventConditionList(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -428,8 +424,7 @@ static const EventLeaderSites kLeaderSubroutine = {
 static const EventLeaderSites kLeaderFlag = {
     0xe10cu, 0xe10fu, 0xe122u, 0xe128u, 0xe12eu};
 
-/* $80:E0DC / $80:E105: result = leader at a position ($00-$5F),
-   in a box ($60-$7F, $E0-$FF) or in a list of boxes ($80-$DF). */
+/* $80:E0DC/$80:E105: leader at a position or box. */
 static uint8_t EventLeaderCondition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -510,8 +505,7 @@ static uint8_t EventCellList(
     return EventConditionList(memory, cpu, 0xe39eu, handoff);
 }
 
-/* $80:E365: map cell condition with mask $AE: at a position ($00-$5F),
-   in a box ($60-$7F, $E0-$FF) or in a list of boxes ($80-$DF). */
+/* $80:E365: map cell condition with mask $AE. */
 static uint8_t EventCellCondition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -542,8 +536,7 @@ static uint8_t EventCellCondition(
     return 1;
 }
 
-/* $80:CD41: result = placed object of type n + $10 at a position
-   (one-tile box), in a box or in a list of boxes. */
+/* $80:CD41: placed object of type n + $10. */
 static uint8_t EventObjectCondition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -615,7 +608,7 @@ static unsigned EventOpObjects(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $80:E1CE: result $01, or $81 when $7F:D0A1 bit 0 and n = $7F:D0F4. */
+/* $80:E1CE: result $01, or $81 on a match. */
 static void EventD0F4Condition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -673,8 +666,7 @@ static const struct {
     {EVENT_OP_GOTO_UNLESS_CELLS_01, 0x01u, 1, EVENT_THEN_GOTO_IF_TRUE},
 };
 
-/* $80:E203: result $FF when two positions hold the same tile in
-   any layer of mask n ($7F:D008 layer bases). 0 = handoff. */
+/* $80:E203: $FF when two positions share a tile. */
 static uint8_t EventSameTiles(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -767,8 +759,7 @@ static unsigned EventOpSameTiles(
     return EventGotoIfTrue(memory, cpu);
 }
 
-/* $80:E2ED: result 0 and carry when the $D04C x $D04D tile block at
-   $5D differs from the one at $60 in layer X; DB = $7F. */
+/* $80:E2ED: compare two tile blocks in layer X. */
 static void EventBlockDiffers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -829,8 +820,7 @@ static void EventBlockDiffers(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $80:E28C: result $FF unless the tiles at a position differ from
-   map object n's block in its layers ($7F:D05F bits 0-1). */
+/* $80:E28C: $FF unless tiles differ from object n. */
 static uint8_t EventBlockMatches(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -896,9 +886,7 @@ static uint8_t EventBlockMatches(
     return 1;
 }
 
-/* Read-only worst case of $80:E2ED for $94-$96: the map object
-   ($80:BFAA on $7E:F016, stride 10) gives the block size and layers;
-   0 counts as 65536. */
+/* Worst-case $80:E2ED cost for $94-$96. */
 static uint64_t EventBlockCompares(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu) {
@@ -942,8 +930,7 @@ static unsigned EventOpBlockMatches(
     return EventGotoIfTrue(memory, cpu);
 }
 
-/* $80:BF92: slot of actor id A in $05FA (DB-relative) into $A7;
-   carry set and X = $28 when missing. */
+/* $80:BF92: slot of actor id A into $A7. */
 void Lufia2EventFindActorId(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -970,8 +957,7 @@ void Lufia2EventFindActorId(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $20: goto unless every listed actor id (+$4F, to $FF) has $0736
-   bit 5; a missing id tests entry $28. */
+/* $20: goto unless all listed actors are hidden. */
 static unsigned EventOpGotoUnlessActorsBit5(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1031,8 +1017,7 @@ static unsigned EventOpCells(
     return EventConditionTail(memory, cpu, kEventCellOps[index].tail);
 }
 
-/* $14: goto when script flag n is set, else when the map cell
-   condition (mask 9) is false. */
+/* $14: goto on script flag n or cell condition. */
 static unsigned EventOp14(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

@@ -230,9 +230,7 @@ unsigned Lufia2EventSleep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* Passes through $80:CC3F per nesting level: $26/$27 run a second
-   slot inside the first, and the verifier counts visits per stack
-   depth. */
+/* $80:CC3F passes per nesting level. */
 #define EVENT_NEST_LIMIT 8u
 
 typedef struct EventRun {
@@ -268,8 +266,7 @@ uint8_t Lufia2EventActorAction(
     uint16_t return_address,
     uint32_t *handoff);
 
-/* $83:C108: claim a free actor (bit 2 set, $05D2 = $FF; none gives
-   slot $28) at the leader's tile. */
+/* $83:C108: claim a free actor at the leader's tile. */
 void Lufia2EventClaimActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -291,10 +288,7 @@ void Lufia2EventCellValue(
 
 /* Map-object opcodes and helpers in field_event_objects.c. */
 
-/* $02 sets, $03 clears object bit n through the animation queue
-   ($03 only when the object covers row $06E2), directly when $0583
-   bit 7 is set. $28 is $02 on a set result, else $03; $A0/$A1 set
-   and clear directly. */
+/* $02/$03/$28/$A0/$A1: set or clear object bit n. */
 unsigned Lufia2EventOpObjectBit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -308,8 +302,7 @@ void Lufia2EventObjectOriginFrom(
     uint8_t return_bank,
     uint16_t return_address);
 
-/* $21 (cell x, y) / $22 (position operand): toggle the map object
-   there ($80:D357). */
+/* $21/$22: toggle the map object at a position. */
 unsigned Lufia2EventOpObjectTilesAt(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -317,19 +310,14 @@ unsigned Lufia2EventOpObjectTilesAt(
     EventRun *run,
     uint32_t *handoff);
 
-/* $2A: place map object n as pending in the first free $7F:D69C
-   slot ($80:D426, slot 0 when none) at a position, swap its tiles
-   ($83:F86B) and redraw layers 0 and 1. */
+/* $2A: place map object n as pending. */
 unsigned Lufia2EventOpPlaceObject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     EventRun *run,
     uint32_t *handoff);
 
-/* $5A-$5D: push pending map object n (the $7F:D69C table) one cell
-   down, up, right or left ($80:DCDA): when $83:C079 allows it, a
-   claimed actor (action 9) takes its place and walks the step
-   ($83:D350, action $48 + facing), its cell occupancy moving along. */
+/* $5A-$5D: push pending map object n one cell. */
 unsigned Lufia2EventOpPushObject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -396,8 +384,7 @@ uint8_t Lufia2EventMapObject(
     uint16_t return_address,
     uint32_t *handoff);
 
-/* $80:E78D: find list entry Y/2 at [base + X]; carry set when
-   missing. 0 = handoff at cpu->resume_pc. */
+/* $80:E78D: list entry Y/2; carry when missing. */
 uint8_t Lufia2EventFindList(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

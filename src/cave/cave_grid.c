@@ -1,9 +1,4 @@
-/* Ancient Cave room grid helpers ($83:9B18-$83:9DE3).
- *
- * The floor is a 16x16 cell grid at $7F:EA00 (row = high nibble); each cell
- * holds a room id, bit 7 marks a visited cell and bit 6 a corridor. $7F:EB00
- * holds the matching block shapes. All routines run with DB = $7F.
- */
+/* Ancient Cave room grid ($7F:EA00, DB = $7F). */
 
 #include "cave/cave_internal.h"
 
@@ -101,8 +96,7 @@ static uint8_t CaveSameNeighbour(
     return cpu->zero;
 }
 
-/* $83:9B62: walk from the start cell $E6A9 through open neighbours; each
-   vertical step into a different room queues the link at $E6F1. */
+/* $83:9B62: walk from the start cell, queueing links. */
 void Lufia2CaveLinkRooms(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -167,9 +161,7 @@ void Lufia2CaveLinkRooms(
     SimulateRtsFrame(memory, cpu);                             /* 9B72 */
 }
 
-/* $83:9BDD: flood room $2A from its last cell. A room of one cell takes a
-   neighbour's id; otherwise each unreached cell of $2A takes its left, else
-   upper neighbour's id, else D's low byte (bit 7 dropped everywhere). */
+/* $83:9BDD: flood room $2A from its last cell. */
 void Lufia2CaveMergeRoom(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -272,8 +264,7 @@ void Lufia2CaveMergeRoom(
     SimulateRtsFrame(memory, cpu);                             /* 9C9F */
 }
 
-/* $83:9CA0: fill the empty cells of rectangle $26,$27 size $24x$25
-   with room id $54. */
+/* $83:9CA0: fill empty cells of a rectangle with room $54. */
 void Lufia2CaveFillRoom(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -368,7 +359,7 @@ void Lufia2CaveTileOffsetY(
     SimulateRtsFrame(memory, cpu);                             /* 9D10 */
 }
 
-/* $83:9D68: as $83:9CF3, reading $91 as a word masked to its low byte. */
+/* $83:9D68: $83:9CF3 with $91 read as a word. */
 void Lufia2CaveTileOffsetY2(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -383,8 +374,7 @@ void Lufia2CaveTileOffsetY2(
     SimulateRtsFrame(memory, cpu);                             /* 9D87 */
 }
 
-/* $83:9D11: A = X = a random non-empty cell (scanned from $F0 down, one
-   wrap); carry clear when none was found. */
+/* $83:9D11: random non-empty cell; carry clear when none. */
 void Lufia2CavePickCell(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -439,7 +429,7 @@ void Lufia2CaveQueueLink(
     SimulateRtsFrame(memory, cpu);                             /* 9D45 */
 }
 
-/* $83:9D46 (M0): upper-layer tile $3F0E,Y keeps its high 6 bits, takes A. */
+/* $83:9D46 (M0): set the low bits of upper tile $3F0E,Y. */
 void Lufia2CaveSetUpperTile(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -454,8 +444,7 @@ void Lufia2CaveSetUpperTile(
     SimulateRtsFrame(memory, cpu);                             /* 9D56 */
 }
 
-/* $83:9D88: draw block $22 of the $93:D69B table at tile offset Y; zero
-   source tiles leave both layers unchanged. */
+/* $83:9D88: draw block $22 at tile offset Y. */
 void Lufia2CaveDrawBlock(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

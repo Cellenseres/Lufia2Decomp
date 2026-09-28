@@ -75,6 +75,13 @@ One routine keeps its own interface on purpose: `$83:BBF3`
 `Lufia2PlayerSlotSpecialMemory`, a 16-bit read-only accessor with a flag
 result. It is not a template for new code.
 
+## Comments
+
+A comment is one short line: the ROM address and what the routine does, or
+the ROM PC of a reconstructed instruction. Explanations, evidence and
+verification history belong in `docs/`, not in the source; prefer clear names
+over prose.
+
 ## Formatting
 
 `.clang-format` describes the preferred layout for new code. Existing

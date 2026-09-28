@@ -1,10 +1,4 @@
-/* Map section tables ($80:EBAA-$80:ED0D).
- *
- * A map is split into sections described at $7F:D000: $D000 header pointer,
- * $D008 cell data pointer, $D010/$D018 width and height, $D020 the header's
- * first word; $7F:D038 is the running byte offset. Shared by the ordinary
- * map loader ($80:EB40-$80:EBA0) and the Ancient Cave ($83:99A7-$83:99C2).
- */
+/* Map section tables ($80:EBAA-$80:ED0D). */
 
 #include "core/cpu_ops.h"
 #include "field/field_internal.h"

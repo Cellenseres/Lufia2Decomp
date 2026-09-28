@@ -3,8 +3,7 @@
 #include "core/cpu_internal.h"
 #include "lufia2/item.h"
 
-/* $82:FB51: listed items use possession bits at DB:$091E. Other items
- * continue to the packed inventory. Internal JSR preserves its real frame. */
+/* $82:FB51: possession bits at DB:$091E. */
 static void ItemPossessionBit(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xfb27u);
     And16(cpu, 0x01ffu);
@@ -45,10 +44,7 @@ static void ItemPossessionBit(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $82:FB1F: A's nine-bit item ID -> possession/packed count in A.
- * M0/X0 throughout; DB/DP unchanged, Y preserved. Carry is clear for a
- * possession bit or a matching slot, set when the inventory has no match.
- * The first matching ID wins even when its packed quantity is zero. */
+/* $82:FB1F: count of item A; carry when missing. */
 Lufia2ExecutionResult Lufia2ItemPossessionCount(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     And16(cpu, 0x01ffu);
@@ -126,9 +122,7 @@ Lufia2ExecutionResult Lufia2InventoryCount(
     return ExecutionReturned(0x81f07cu);
 }
 
-/* $81:F0A2: merge the first matching item, otherwise use the first empty
-   slot. A full table leaves the request intact. Quantity arithmetic wraps
-   in eight bits; an excess over 99 remains packed in the request. */
+/* $81:F0A2: add to a matching or empty slot. */
 Lufia2ExecutionResult Lufia2InventoryAdd(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

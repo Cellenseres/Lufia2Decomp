@@ -382,11 +382,7 @@ void Lufia2SpriteFreeSlots(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $84:8193: VRAM DMA of the queued sprite graphics: each of the 8
-   queue entries with a source ($05C2) sends $11F9 bytes from bank
-   $11D9 to VRAM $11E9 and the next row to $11E9 + $100 (channel 0,
-   mode 1 to $2118); queue and $0732 are cleared. All stores are
-   DB-relative. */
+/* $84:8193: VRAM DMA of the queued sprite graphics. */
 Lufia2ExecutionResult Lufia2SpriteGraphicsUpload(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

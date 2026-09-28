@@ -97,8 +97,7 @@ enum {
     COUNT = 0x09f2u,
 };
 
-/* $81:F87F: stats of member $09FA at level $09FE: base ($97:B93C)
-   plus growth rows ($97:B62C + $70 per member, a row per 8 levels) / 16. */
+/* $81:F87F: stats of member $09FA at level $09FE. */
 Lufia2ExecutionResult Lufia2PartyBaseStats(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -217,7 +216,7 @@ static void Advance(Lufia2CpuState *cpu, uint16_t bytes) {
     SetNz16(cpu, cpu->x);
 }
 
-/* Name at $96 up to the $FF, padded with $FF to $BA; then $5F-$62. */
+/* Name at $96, $FF-padded to $BA. */
 static void MemberName(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadY16(cpu, 0x0094u);
     LoadA16(cpu, SourceWord(memory, cpu, 0));
