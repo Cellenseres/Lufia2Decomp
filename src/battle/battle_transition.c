@@ -12,14 +12,13 @@ enum {
     TRANSITION_HDMA_FLAGS = 0x81u,
 };
 
-static void ClearTransitionPlanes(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void ClearTransitionPlanes(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, 0x07fcu);
     TransferDirectToA(cpu);
     OpRepWidths(cpu, 0x20u);
 
     do {
-        OpSta(memory, cpu, OpLongX(cpu, 0x7e2000u));          /* $84:8BCE */
+        OpSta(memory, cpu, OpLongX(cpu, 0x7e2000u)); /* $84:8BCE */
         OpSta(memory, cpu, OpLongX(cpu, 0x7e2002u));
         OpSta(memory, cpu, OpLongX(cpu, 0x7e2800u));
         OpSta(memory, cpu, OpLongX(cpu, 0x7e2802u));
@@ -34,8 +33,7 @@ static void ClearTransitionPlanes(
     OpSepWidths(cpu, 0x20u);
 }
 
-static void SeedMosaicTransition(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void SeedMosaicTransition(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, 0x02u);
     OpSta(memory, cpu, SNES_BGMODE);
     TransferDirectToA(cpu);
@@ -64,8 +62,7 @@ static void SeedMosaicTransition(
     OpSta(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
 }
 
-static void BuildSwirlTilemaps(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void BuildSwirlTilemaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpDp(cpu, TRANSITION_ANGLE));
     OpIncA(cpu);
@@ -148,8 +145,7 @@ static void BuildSwirlTilemaps(
     } while (!cpu->zero);
 }
 
-static void ConfigureSwirlHdma(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void ConfigureSwirlHdma(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
     LoadA16(cpu, 0x3100u);
     OpSta(memory, cpu, SNES_A1TL(0));
@@ -173,15 +169,13 @@ static void ConfigureSwirlHdma(
     OpTestBits(memory, cpu, OpDp(cpu, TRANSITION_CONTROL), 1u);
 }
 
-Lufia2ExecutionResult Lufia2BattleVisualTransition(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child,
-    void *child_context) {
-    Lufia2BattleChildCalls calls = {
-        memory, cpu, child, child_context, 0x84u, 0u};
+Lufia2ExecutionResult Lufia2BattleVisualTransition(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu,
+                                                   Lufia2PushedChildCall child,
+                                                   void *child_context) {
+    Lufia2BattleChildCalls calls = {memory, cpu, child, child_context, 0x84u, 0u};
 
-    PushDataBank(memory, cpu);                                /* $84:8BC7 */
+    PushDataBank(memory, cpu); /* $84:8BC7 */
     ClearTransitionPlanes(memory, cpu);
 
     LoadA8(cpu, 0x08u);

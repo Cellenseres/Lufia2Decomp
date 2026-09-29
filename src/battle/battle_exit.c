@@ -5,8 +5,7 @@
 #include "system/scene_nmi_internal.h"
 #include "system/wram.h"
 
-static uint8_t UseRegularBattleFade(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static uint8_t UseRegularBattleFade(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, 0x7ff8a2u);
     OpCmpValue(cpu, 1u);
     if (!cpu->zero)
@@ -24,13 +23,10 @@ static uint8_t UseRegularBattleFade(
     return cpu->zero;
 }
 
-Lufia2ExecutionResult Lufia2BattleExit(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child,
-    void *child_context) {
-    Lufia2BattleChildCalls calls = {
-        memory, cpu, child, child_context, 0x81u, 0u};
+Lufia2ExecutionResult Lufia2BattleExit(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                       Lufia2PushedChildCall child,
+                                       void *child_context) {
+    Lufia2BattleChildCalls calls = {memory, cpu, child, child_context, 0x81u, 0u};
 
     if (!Lufia2BattleCallChild(&calls, 0x876bu, 0x85ee3eu, 3u))
         return Lufia2BattleChildUnwound(&calls);

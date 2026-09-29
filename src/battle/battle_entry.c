@@ -7,8 +7,7 @@ enum {
     BATTLE_WORK_CLEAR_END = 0x1c0cu,
 };
 
-static void ClearBattleWorkArea(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void ClearBattleWorkArea(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpStz(memory, cpu, OpDp(cpu, 0x40u));
     OpStz(memory, cpu, OpAbs(cpu, BATTLE_WORK_CLEAR_START));
     OpRepWidths(cpu, 0x20u);
@@ -24,10 +23,9 @@ Lufia2ExecutionResult Lufia2BattleEntry(
     Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,
     void *child_context) {
-    Lufia2BattleChildCalls calls = {
-        memory, cpu, child, child_context, 0x81u, 0u};
+    Lufia2BattleChildCalls calls = {memory, cpu, child, child_context, 0x81u, 0u};
 
-    PushDataBank(memory, cpu);                              /* $81:8821 */
+    PushDataBank(memory, cpu); /* $81:8821 */
     Push8(memory, cpu, PackStatus(cpu));
     OpRepWidths(cpu, 0x30u);
     PushAccumulator16(memory, cpu);
@@ -38,9 +36,8 @@ Lufia2ExecutionResult Lufia2BattleEntry(
     OpSetDataBank(memory, cpu, 0x97u);
     OpStz(memory, cpu, OpAbs(cpu, 0x11a5u));
 
-    OpLdx(cpu, cpu->stack);                                 /* TSX */
-    OpWriteX(
-        memory, cpu, OpAbs(cpu, BATTLE_SAVED_ENTRY_STACK), cpu->x);
+    OpLdx(cpu, cpu->stack); /* TSX */
+    OpWriteX(memory, cpu, OpAbs(cpu, BATTLE_SAVED_ENTRY_STACK), cpu->x);
     LoadA8(cpu, 0xffu);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_SCRIPT_CONTEXT));
 
@@ -49,11 +46,8 @@ Lufia2ExecutionResult Lufia2BattleEntry(
     if (!Lufia2BattleCallChild(&calls, 0x8852u, 0x81886fu, 2u))
         return Lufia2BattleChildUnwound(&calls);
 
-    OpLdx(
-        cpu,
-        OpReadX(
-            memory, cpu, OpAbs(cpu, BATTLE_SAVED_ENTRY_STACK)));
-    cpu->stack = cpu->x;                                    /* TXS */
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, BATTLE_SAVED_ENTRY_STACK)));
+    cpu->stack = cpu->x; /* TXS */
 
     if (!Lufia2BattleCallChild(&calls, 0x8859u, 0x85edbbu, 3u))
         return Lufia2BattleChildUnwound(&calls);

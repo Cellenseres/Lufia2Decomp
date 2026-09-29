@@ -323,12 +323,6 @@ count = 40
 owner = "actor"
 notes = "Per-slot byte; its low three bits send $83:C7F8 into the $83:C808 countdown, and the text engine reads the speaker's entry for the typing sound."
 
-[[location]]
-address = "7E:129A"
-name = "battle_frame_state"
-width = 1
-owner = "battle"
-notes = "Battle frame state byte. The main loop clears it before frame children and writes $FF afterward; display setup also uses it while preparing the first frame."
 
 
 [[location]]

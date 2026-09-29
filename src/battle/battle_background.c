@@ -10,10 +10,8 @@ enum {
     BATTLE_BACKGROUND_TILES = 0x7ec000u,
 };
 
-static void LoadBackgroundDescriptor(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t background_id) {
+static void LoadBackgroundDescriptor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                     uint8_t background_id) {
     OpLoadA(cpu, background_id);
     OpAslA(cpu);
     OpAslA(cpu);
@@ -21,14 +19,11 @@ static void LoadBackgroundDescriptor(
 
     for (uint16_t i = 0; i < 4u; ++i) {
         OpLda(memory, cpu, OpLongX(cpu, BATTLE_BACKGROUND_TABLE + i));
-        OpSta(
-            memory, cpu,
-            OpAbs(cpu, (uint16_t)(BATTLE_BACKGROUND_DESCRIPTOR + i)));
+        OpSta(memory, cpu, OpAbs(cpu, (uint16_t)(BATTLE_BACKGROUND_DESCRIPTOR + i)));
     }
 }
 
-static uint8_t DecodeBackgroundResources(
-    Lufia2BattleChildCalls *calls) {
+static uint8_t DecodeBackgroundResources(Lufia2BattleChildCalls *calls) {
     Lufia2CpuState *cpu = calls->cpu;
     const Lufia2Memory *memory = calls->memory;
 
@@ -60,8 +55,7 @@ static uint8_t DecodeBackgroundResources(
     return Lufia2BattleCallChild(calls, 0xba23u, 0x808e9du, 3u);
 }
 
-static uint8_t LoadBackgroundPalettes(
-    Lufia2BattleChildCalls *calls) {
+static uint8_t LoadBackgroundPalettes(Lufia2BattleChildCalls *calls) {
     Lufia2CpuState *cpu = calls->cpu;
     const Lufia2Memory *memory = calls->memory;
 
@@ -85,8 +79,7 @@ static uint8_t LoadBackgroundPalettes(
     return Lufia2BattleCallChild(calls, 0xba49u, 0x81b974u, 2u);
 }
 
-static void DecodeBackgroundTilemap(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void DecodeBackgroundTilemap(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7eu);
     OpRepWidths(cpu, 0x20u);
@@ -106,8 +99,7 @@ static void DecodeBackgroundTilemap(
     PullDataBank(memory, cpu);
 }
 
-static void ClearBackgroundBuffers(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void ClearBackgroundBuffers(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     OpRepWidths(cpu, 0x20u);
 
@@ -133,15 +125,13 @@ static void ClearBackgroundBuffers(
     PullDataBank(memory, cpu);
 }
 
-Lufia2ExecutionResult Lufia2BattleBackgroundPrepare(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child,
-    void *child_context) {
-    Lufia2BattleChildCalls calls = {
-        memory, cpu, child, child_context, 0x81u, 0u};
+Lufia2ExecutionResult Lufia2BattleBackgroundPrepare(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu,
+                                                    Lufia2PushedChildCall child,
+                                                    void *child_context) {
+    Lufia2BattleChildCalls calls = {memory, cpu, child, child_context, 0x81u, 0u};
 
-    TransferDirectToA(cpu);                                  /* $81:B9C7 */
+    TransferDirectToA(cpu); /* $81:B9C7 */
     OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_BACKGROUND_ID));
     const uint8_t background_id = A8(cpu);
     OpCmpValue(cpu, BATTLE_BACKGROUND_BLANK);
@@ -163,8 +153,7 @@ Lufia2ExecutionResult Lufia2BattleBackgroundPrepare(
     OpSta(memory, cpu, OpAbs(cpu, 0x1b17u));
 
     OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_BACKGROUND_ID));
-    if (cpu->zero &&
-        !Lufia2BattleCallChild(&calls, 0xbac6u, 0x85a701u, 3u))
+    if (cpu->zero && !Lufia2BattleCallChild(&calls, 0xbac6u, 0x85a701u, 3u))
         return Lufia2BattleChildUnwound(&calls);
 
     return ExecutionReturned(0x81bacau);

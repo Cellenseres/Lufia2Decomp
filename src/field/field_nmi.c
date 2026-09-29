@@ -243,7 +243,7 @@ static void NmiFade(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x9fc5u);
-    LoadAAbsolute8(memory, cpu, WRAM_FIELD_TRANSITION_FLAGS, 0);                   /* 9FE1 */
+    LoadAAbsolute8(memory, cpu, WRAM_FIELD_TRANSITION_FLAGS, 0); /* 9FE1 */
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero) {
         LoadA8(cpu, Read8(memory, WRAM_FIELD_MOSAIC_STATE));
@@ -262,13 +262,13 @@ static void NmiFade(
             And8(cpu, 0x80u);
             Write8(memory, WRAM_FIELD_MOSAIC_ACCUMULATOR, A8(cpu));
             if (!cpu->negative) {
-                LoadA8(cpu, Read8(memory, WRAM_FIELD_MOSAIC_STATE));         /* A00E */
+                LoadA8(cpu, Read8(memory, WRAM_FIELD_MOSAIC_STATE)); /* A00E */
                 cpu->carry = 1;
                 Sbc8(cpu, 0x10u);
                 Write8(memory, WRAM_FIELD_MOSAIC_STATE, A8(cpu));
                 finished = !cpu->carry;
             } else {
-                LoadA8(cpu, Read8(memory, WRAM_FIELD_MOSAIC_STATE));         /* A01D */
+                LoadA8(cpu, Read8(memory, WRAM_FIELD_MOSAIC_STATE)); /* A01D */
                 cpu->carry = 0;
                 Adc8(cpu, 0x10u);
                 Write8(memory, WRAM_FIELD_MOSAIC_STATE, A8(cpu));
@@ -279,7 +279,7 @@ static void NmiFade(
                 TestBitsAbsolute8(memory, cpu, WRAM_FIELD_TRANSITION_FLAGS, 0);
             }
         }
-        LoadAAbsolute8(memory, cpu, WRAM_FIELD_TRANSITION_FLAGS, 0);               /* A02F */
+        LoadAAbsolute8(memory, cpu, WRAM_FIELD_TRANSITION_FLAGS, 0); /* A02F */
     }
     SimulateRtsFrame(memory, cpu);
 }

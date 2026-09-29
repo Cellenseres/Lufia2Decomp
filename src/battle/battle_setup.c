@@ -10,14 +10,13 @@ enum {
     BATTLE_SCENARIO = 0x11e0u,
 };
 
-static uint8_t SelectBattleOpening(
-    Lufia2BattleChildCalls *calls) {
+static uint8_t SelectBattleOpening(Lufia2BattleChildCalls *calls) {
     const Lufia2Memory *memory = calls->memory;
     Lufia2CpuState *cpu = calls->cpu;
     uint16_t marker = 0u;
     uint8_t control = 3u;
 
-    TransferDirectToA(cpu);                                  /* $81:8000 */
+    TransferDirectToA(cpu); /* $81:8000 */
     OpSta(memory, cpu, ENCOUNTER_FLAGS);
 
     if (!Lufia2BattleCallChild(calls, 0x8005u, 0x85edb2u, 3u))
@@ -50,8 +49,7 @@ static uint8_t SelectBattleOpening(
                 OpCmpValue(cpu, 0x3fu);
                 if (cpu->zero) {
                     LoadA8(cpu, 2u);
-                    if (!Lufia2BattleCallChild(
-                            calls, 0x803au, 0x808299u, 3u))
+                    if (!Lufia2BattleCallChild(calls, 0x803au, 0x808299u, 3u))
                         return 0;
                     OpCmpValue(cpu, 0u);
                     if (!cpu->zero) {
@@ -62,8 +60,7 @@ static uint8_t SelectBattleOpening(
                     OpCmpValue(cpu, 0xbfu);
                     if (cpu->zero) {
                         LoadA8(cpu, 2u);
-                        if (!Lufia2BattleCallChild(
-                                calls, 0x8051u, 0x808299u, 3u))
+                        if (!Lufia2BattleCallChild(calls, 0x8051u, 0x808299u, 3u))
                             return 0;
                         OpCmpValue(cpu, 0u);
                         if (!cpu->zero) {
@@ -83,9 +80,8 @@ static uint8_t SelectBattleOpening(
     return 1;
 }
 
-static void CopyPartyFormation(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLda(memory, cpu, OpAbs(cpu, 0x0a7au));                 /* $81:8071 */
+static void CopyPartyFormation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, 0x0a7au)); /* $81:8071 */
     OpSta(memory, cpu, OpAbs(cpu, 0x153cu));
 
     OpLdx(cpu, 3u);
@@ -115,15 +111,13 @@ static void CopyPartyFormation(
     } while (!cpu->negative);
 }
 
-static uint8_t InitializeBattleRecords(
-    Lufia2BattleChildCalls *calls) {
+static uint8_t InitializeBattleRecords(Lufia2BattleChildCalls *calls) {
     const Lufia2Memory *memory = calls->memory;
     Lufia2CpuState *cpu = calls->cpu;
 
     Lufia2BattleLoadControlFlags(memory, cpu);
     OpBitValue(cpu, BATTLE_CONTROL_MODE_1);
-    if (cpu->zero &&
-        !Lufia2BattleCallChild(calls, 0x80a8u, 0x859419u, 3u))
+    if (cpu->zero && !Lufia2BattleCallChild(calls, 0x80a8u, 0x859419u, 3u))
         return 0;
 
     OpRepWidths(cpu, 0x20u);
@@ -179,13 +173,9 @@ static uint8_t InitializeBattleRecords(
     return 1;
 }
 
-static void ApplyScenarioLayout(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    const uint8_t slots[5],
-    const uint16_t words[4],
-    uint16_t first_value,
-    uint16_t second_value) {
+static void ApplyScenarioLayout(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                const uint8_t slots[5], const uint16_t words[4],
+                                uint16_t first_value, uint16_t second_value) {
     for (uint16_t i = 0; i < 5u; ++i) {
         LoadA8(cpu, slots[i]);
         OpSta(memory, cpu, OpAbs(cpu, (uint16_t)(0x153cu + i)));
@@ -193,8 +183,7 @@ static void ApplyScenarioLayout(
 
     for (uint16_t i = 0; i < 4u; ++i) {
         OpLdx(cpu, words[i]);
-        OpWriteX(
-            memory, cpu, OpAbs(cpu, (uint16_t)(0x0a64u + 2u * i)), cpu->x);
+        OpWriteX(memory, cpu, OpAbs(cpu, (uint16_t)(0x0a64u + 2u * i)), cpu->x);
     }
 
     OpLda(memory, cpu, OpAbs(cpu, first_value));
@@ -203,16 +192,11 @@ static void ApplyScenarioLayout(
     OpSta(memory, cpu, OpAbs(cpu, 0x1543u));
 }
 
-static void ApplyBattleScenario(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    static const uint8_t scenario_two_slots[5] = {
-        2u, 2u, 1u, 0xffu, 0xffu};
-    static const uint16_t scenario_two_words[4] = {
-        0x0d29u, 0x0c6bu, 0u, 0u};
-    static const uint8_t scenario_one_slots[5] = {
-        2u, 0u, 4u, 0xffu, 0xffu};
-    static const uint16_t scenario_one_words[4] = {
-        0x0badu, 0x0ea5u, 0u, 0u};
+static void ApplyBattleScenario(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    static const uint8_t scenario_two_slots[5] = {2u, 2u, 1u, 0xffu, 0xffu};
+    static const uint16_t scenario_two_words[4] = {0x0d29u, 0x0c6bu, 0u, 0u};
+    static const uint8_t scenario_one_slots[5] = {2u, 0u, 4u, 0xffu, 0xffu};
+    static const uint16_t scenario_one_words[4] = {0x0badu, 0x0ea5u, 0u, 0u};
 
     OpLda(memory, cpu, OpAbs(cpu, BATTLE_SCENARIO));
     OpCmpValue(cpu, 3u);
@@ -224,24 +208,19 @@ static void ApplyBattleScenario(
 
     OpCmpValue(cpu, 2u);
     if (cpu->zero) {
-        ApplyScenarioLayout(
-            memory, cpu,
-            scenario_two_slots, scenario_two_words,
-            0x0d38u, 0x0c7au);
+        ApplyScenarioLayout(memory, cpu, scenario_two_slots, scenario_two_words,
+                            0x0d38u, 0x0c7au);
         return;
     }
 
     OpCmpValue(cpu, 1u);
     if (cpu->zero) {
-        ApplyScenarioLayout(
-            memory, cpu,
-            scenario_one_slots, scenario_one_words,
-            0x0bbcu, 0x0eb4u);
+        ApplyScenarioLayout(memory, cpu, scenario_one_slots, scenario_one_words,
+                            0x0bbcu, 0x0eb4u);
     }
 }
 
-static uint8_t FinishBattleSetup(
-    Lufia2BattleChildCalls *calls) {
+static uint8_t FinishBattleSetup(Lufia2BattleChildCalls *calls) {
     const Lufia2Memory *memory = calls->memory;
     Lufia2CpuState *cpu = calls->cpu;
 
@@ -281,10 +260,7 @@ static uint8_t FinishBattleSetup(
         return 0;
 
     for (;;) {
-        OpLdx(
-            cpu,
-            OpReadX(
-                memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER)));
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER)));
         if (cpu->zero)
             return 1;
 
@@ -297,13 +273,10 @@ static uint8_t FinishBattleSetup(
     }
 }
 
-Lufia2ExecutionResult Lufia2BattleSetup(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child,
-    void *child_context) {
-    Lufia2BattleChildCalls calls = {
-        memory, cpu, child, child_context, 0x81u, 0u};
+Lufia2ExecutionResult Lufia2BattleSetup(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                        Lufia2PushedChildCall child,
+                                        void *child_context) {
+    Lufia2BattleChildCalls calls = {memory, cpu, child, child_context, 0x81u, 0u};
 
     if (!SelectBattleOpening(&calls))
         return Lufia2BattleChildUnwound(&calls);

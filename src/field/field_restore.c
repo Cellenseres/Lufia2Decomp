@@ -6,8 +6,8 @@
 #include "system/scene_nmi_internal.h"
 #include "system/wram.h"
 
-static void RestoreFieldWorkingBuffers(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void RestoreFieldWorkingBuffers(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     OpRepWidths(cpu, 0x30u);
 
@@ -29,11 +29,9 @@ static void RestoreFieldWorkingBuffers(
     OpSta(memory, cpu, 0x7fd4f8u);
     OpSta(memory, cpu, 0x7fd59au);
 
-    static const uint16_t upload_words[] = {
-        0x1246u, 0x1248u, 0x124au, 0x124cu,
-        0x123eu, 0x1240u, 0x1242u, 0x1244u, 0x125du};
-    for (unsigned i = 0;
-         i < sizeof(upload_words) / sizeof(upload_words[0]); ++i)
+    static const uint16_t upload_words[] = {0x1246u, 0x1248u, 0x124au, 0x124cu, 0x123eu,
+                                            0x1240u, 0x1242u, 0x1244u, 0x125du};
+    for (unsigned i = 0; i < sizeof(upload_words) / sizeof(upload_words[0]); ++i)
         OpSta(memory, cpu, OpAbs(cpu, upload_words[i]));
 
     OpLdx(cpu, 14u);
@@ -50,8 +48,8 @@ static void RestoreFieldWorkingBuffers(
     OpSepWidths(cpu, 0x20u);
 }
 
-static void ResetFieldPresentationState(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void ResetFieldPresentationState(const Lufia2Memory *memory,
+                                        Lufia2CpuState *cpu) {
     LoadA8(cpu, 1u);
     OpTestBits(memory, cpu, OpAbs(cpu, 0x09a9u), 0u);
     LoadA8(cpu, 0x80u);
@@ -68,8 +66,7 @@ static void ResetFieldPresentationState(
     OpSta(memory, cpu, OpDp(cpu, 0x71u));
 }
 
-static void ApplyFieldDisplayTable(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void ApplyFieldDisplayTable(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, 0u);
 
     for (;;) {
@@ -91,16 +88,13 @@ static void ApplyFieldDisplayTable(
             OpCmpValue(cpu, 0xffu);
             if (cpu->zero)
                 break;
-            OpSta(
-                memory, cpu,
-                OpAbsY(cpu, OpRead16(memory, OpDp(cpu, 0x5du))));
+            OpSta(memory, cpu, OpAbsY(cpu, OpRead16(memory, OpDp(cpu, 0x5du))));
             OpIny(cpu);
         }
     }
 }
 
-static void ResetFieldPpuState(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void ResetFieldPpuState(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, 6u);
     do {
         OpStz(memory, cpu, OpAbsX(cpu, SNES_BG1HOFS));
@@ -130,12 +124,11 @@ static void ResetFieldPpuState(
     OpSta(memory, cpu, OpAbs(cpu, SNES_TSW));
 }
 
-Lufia2ExecutionResult Lufia2FieldRestore(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child,
-    void *child_context) {
-    PushAccumulator8(memory, cpu);                           /* $83:B062 */
+Lufia2ExecutionResult Lufia2FieldRestore(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu,
+                                         Lufia2PushedChildCall child,
+                                         void *child_context) {
+    PushAccumulator8(memory, cpu); /* $83:B062 */
     OpPushX(memory, cpu);
     PushY(memory, cpu);
     PushDataBank(memory, cpu);

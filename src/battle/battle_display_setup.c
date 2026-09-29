@@ -5,9 +5,8 @@
 #include "system/scene_nmi_internal.h"
 #include "system/wram.h"
 
-static void ResetBattleDisplayWork(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpStz(memory, cpu, OpDp(cpu, 0x74u));                    /* $81:851E */
+static void ResetBattleDisplayWork(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpStz(memory, cpu, OpDp(cpu, 0x74u)); /* $81:851E */
     OpStz(memory, cpu, OpDp(cpu, 0x72u));
     OpStz(memory, cpu, OpDp(cpu, 0x73u));
     OpStz(memory, cpu, OpDp(cpu, 0x71u));
@@ -28,8 +27,7 @@ static void ResetBattleDisplayWork(
     OpSta(memory, cpu, OpAbs(cpu, 0x15b3u));
 }
 
-static uint8_t ClearBattleDisplayBuffers(
-    Lufia2BattleChildCalls *calls) {
+static uint8_t ClearBattleDisplayBuffers(Lufia2BattleChildCalls *calls) {
     const Lufia2Memory *memory = calls->memory;
     Lufia2CpuState *cpu = calls->cpu;
 
@@ -44,7 +42,7 @@ static uint8_t ClearBattleDisplayBuffers(
 
     OpStz(memory, cpu, OpDp(cpu, 0xd8u));
     OpStz(memory, cpu, OpDp(cpu, 0xd9u));
-    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_FRAME_STATE));
+    OpStz(memory, cpu, OpAbs(cpu, BATTLE_FRAME_STATE));
 
     OpRepWidths(cpu, 0x20u);
     OpLdx(cpu, 90u);
@@ -58,8 +56,7 @@ static uint8_t ClearBattleDisplayBuffers(
     return 1;
 }
 
-static void BuildPartyDisplayState(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void BuildPartyDisplayState(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
     OpLdx(cpu, 0u);
     OpTxy(cpu);
@@ -86,25 +83,22 @@ static void BuildPartyDisplayState(
     } while (!cpu->zero);
 }
 
-static void InitializeBattleDisplayRecords(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    static const uint16_t clear_bytes[] = {
-        0x15a8u, 0x15a9u, 0x15c7u, 0x15cbu, 0x15cfu,
-        0x15d3u, 0x15d7u, 0x15dbu, 0x15dfu, 0x15e3u, 0x15e7u};
+static void InitializeBattleDisplayRecords(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu) {
+    static const uint16_t clear_bytes[] = {0x15a8u, 0x15a9u, 0x15c7u, 0x15cbu,
+                                           0x15cfu, 0x15d3u, 0x15d7u, 0x15dbu,
+                                           0x15dfu, 0x15e3u, 0x15e7u};
     static const uint16_t slot_words[] = {
         0x48c0u, 0x4910u, 0x4956u, 0x4abeu, 0x4b36u};
-    static const uint16_t slot_destinations[] = {
-        0x15c8u, 0x15ccu, 0x15d4u, 0x15d8u, 0x15e8u};
+    static const uint16_t slot_destinations[] = {0x15c8u, 0x15ccu, 0x15d4u, 0x15d8u,
+                                                 0x15e8u};
 
-    for (unsigned i = 0;
-         i < sizeof(clear_bytes) / sizeof(clear_bytes[0]); ++i)
+    for (unsigned i = 0; i < sizeof(clear_bytes) / sizeof(clear_bytes[0]); ++i)
         OpStz(memory, cpu, OpAbs(cpu, clear_bytes[i]));
 
-    for (unsigned i = 0;
-         i < sizeof(slot_words) / sizeof(slot_words[0]); ++i) {
+    for (unsigned i = 0; i < sizeof(slot_words) / sizeof(slot_words[0]); ++i) {
         OpLdx(cpu, slot_words[i]);
-        OpWriteX(
-            memory, cpu, OpAbs(cpu, slot_destinations[i]), cpu->x);
+        OpWriteX(memory, cpu, OpAbs(cpu, slot_destinations[i]), cpu->x);
     }
 
     OpLdx(cpu, 0xffffu);
@@ -152,8 +146,7 @@ static void InitializeBattleDisplayRecords(
     OpSta(memory, cpu, 0x001be0u);
 }
 
-static uint8_t PrepareBattleDisplayRecords(
-    Lufia2BattleChildCalls *calls) {
+static uint8_t PrepareBattleDisplayRecords(Lufia2BattleChildCalls *calls) {
     if (!Lufia2BattleCallChild(calls, 0x8624u, 0x81c2c0u, 2u))
         return 0;
     if (!Lufia2BattleCallChild(calls, 0x8627u, 0x81e877u, 2u))
@@ -161,8 +154,7 @@ static uint8_t PrepareBattleDisplayRecords(
     return Lufia2BattleCallChild(calls, 0x862au, 0x85ec81u, 3u);
 }
 
-static void ApplyBattlePpuTable(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void ApplyBattlePpuTable(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSepWidths(cpu, 0x30u);
     OpLdy(cpu, 0u);
     OpTyx(cpu);
@@ -179,8 +171,7 @@ static void ApplyBattlePpuTable(
     }
 }
 
-static uint8_t LoadBattleBaseGraphics(
-    Lufia2BattleChildCalls *calls) {
+static uint8_t LoadBattleBaseGraphics(Lufia2BattleChildCalls *calls) {
     const Lufia2Memory *memory = calls->memory;
     Lufia2CpuState *cpu = calls->cpu;
 
@@ -207,8 +198,7 @@ static uint8_t LoadBattleBaseGraphics(
     return Lufia2BattleCallChild(calls, 0x8670u, 0x85de9du, 3u);
 }
 
-static void UploadBattleBaseTiles(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void UploadBattleBaseTiles(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, 0x1000u);
     OpWriteX(memory, cpu, OpAbs(cpu, SNES_VMADDL), cpu->x);
     LoadA8(cpu, 1u);
@@ -240,13 +230,12 @@ static void UploadBattleBaseTiles(
     OpSta(memory, cpu, OpAbs(cpu, SNES_MDMAEN));
 }
 
-static uint8_t LoadBattlePresentationAssets(
-    Lufia2BattleChildCalls *calls) {
+static uint8_t LoadBattlePresentationAssets(Lufia2BattleChildCalls *calls) {
     const Lufia2Memory *memory = calls->memory;
     Lufia2CpuState *cpu = calls->cpu;
-    static const uint32_t resource_children[9] = {
-        0x859addu, 0x859af4u, 0x859b0bu, 0x859b39u, 0x859b50u,
-        0x859b67u, 0x859b7eu, 0x859b95u, 0x859bacu};
+    static const uint32_t resource_children[9] = {0x859addu, 0x859af4u, 0x859b0bu,
+                                                  0x859b39u, 0x859b50u, 0x859b67u,
+                                                  0x859b7eu, 0x859b95u, 0x859bacu};
 
     if (!Lufia2BattleCallChild(calls, 0x86c0u, 0x81b9c7u, 3u))
         return 0;
@@ -277,21 +266,19 @@ static uint8_t LoadBattlePresentationAssets(
 
     OpRepWidths(cpu, 0x20u);
     for (unsigned i = 0; i < 9u; ++i) {
-        if (!Lufia2BattleCallChild(
-                calls, (uint16_t)(0x86f0u + 4u * i),
-                resource_children[i], 3u))
+        if (!Lufia2BattleCallChild(calls, (uint16_t)(0x86f0u + 4u * i),
+                                   resource_children[i], 3u))
             return 0;
     }
     OpSepWidths(cpu, 0x20u);
     return 1;
 }
 
-static void PrepareBattleSpriteState(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void PrepareBattleSpriteState(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, 0x40u);
     OpSta(memory, cpu, OpDp(cpu, 0x72u));
     OpAslA(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_FRAME_STATE));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_FRAME_STATE));
 
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7eu);
@@ -314,8 +301,7 @@ static void PrepareBattleSpriteState(
     PullDataBank(memory, cpu);
 }
 
-static uint8_t FinishBattleDisplay(
-    Lufia2BattleChildCalls *calls) {
+static uint8_t FinishBattleDisplay(Lufia2BattleChildCalls *calls) {
     const Lufia2Memory *memory = calls->memory;
     Lufia2CpuState *cpu = calls->cpu;
 
@@ -340,19 +326,16 @@ static uint8_t FinishBattleDisplay(
         return 0;
 
     OpLdx(cpu, 30u);
-    OpWriteX(
-        memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER), cpu->x);
 
     return Lufia2BattleCallChild(calls, 0x8766u, 0x8595feu, 3u);
 }
 
-Lufia2ExecutionResult Lufia2BattleDisplaySetup(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child,
-    void *child_context) {
-    Lufia2BattleChildCalls calls = {
-        memory, cpu, child, child_context, 0x81u, 0u};
+Lufia2ExecutionResult Lufia2BattleDisplaySetup(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu,
+                                               Lufia2PushedChildCall child,
+                                               void *child_context) {
+    Lufia2BattleChildCalls calls = {memory, cpu, child, child_context, 0x81u, 0u};
 
     ResetBattleDisplayWork(memory, cpu);
 
