@@ -134,6 +134,16 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# $81:8000 prepares Battle working state, party formation and setup children;
+# the background/display child $81:851E remains a separate function.
+[[function]]
+address = "81:8000"
+name = "Lufia2BattleSetup"
+source = "src/battle/battle_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # Per-frame field triggers. Expiring timers, touch events, the
 # trigger queue and door warps stop at their exact ROM PC.
 [[function]]
