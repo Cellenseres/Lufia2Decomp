@@ -143,13 +143,13 @@ static void InitializeBattleDisplayRecords(
     } while (!cpu->negative);
 
     LoadA8(cpu, 0x6cu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x1be6u));
+    OpSta(memory, cpu, 0x001be6u);
     LoadA8(cpu, 0x71u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x1be4u));
+    OpSta(memory, cpu, 0x001be4u);
     LoadA8(cpu, 0x76u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x1be2u));
+    OpSta(memory, cpu, 0x001be2u);
     LoadA8(cpu, 0x7bu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x1be0u));
+    OpSta(memory, cpu, 0x001be0u);
 }
 
 static uint8_t PrepareBattleDisplayRecords(
@@ -273,7 +273,7 @@ static uint8_t LoadBattlePresentationAssets(
         return 0;
 
     LoadA8(cpu, 0xffu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x12f3u));
+    OpSta(memory, cpu, 0x0012f3u);
 
     OpRepWidths(cpu, 0x20u);
     for (unsigned i = 0; i < 9u; ++i) {

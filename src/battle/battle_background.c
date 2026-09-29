@@ -9,7 +9,7 @@ enum {
     BATTLE_BACKGROUND_TILES = 0x7ec000u,
 };
 
-static uint8_t LoadBackgroundDescriptor(
+static void LoadBackgroundDescriptor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint8_t background_id) {
@@ -24,8 +24,6 @@ static uint8_t LoadBackgroundDescriptor(
             memory, cpu,
             OpAbs(cpu, (uint16_t)(BATTLE_BACKGROUND_DESCRIPTOR + i)));
     }
-
-    return background_id;
 }
 
 static uint8_t DecodeBackgroundResources(

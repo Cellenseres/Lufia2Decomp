@@ -40,16 +40,16 @@ static void ClearTransitionPlanes(
 static void SeedMosaicTransition(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, 0x02u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x2105u));
+    OpSta(memory, cpu, 0x002105u);
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_BG3HOFS));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_BG3HOFS));
-    OpSta(memory, cpu, OpAbs(cpu, 0x059cu));
-    OpSta(memory, cpu, OpAbs(cpu, 0x059du));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_BG3VOFS));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_BG3VOFS));
-    OpSta(memory, cpu, OpAbs(cpu, 0x059eu));
-    OpSta(memory, cpu, OpAbs(cpu, 0x059fu));
+    OpSta(memory, cpu, SNES_BG3HOFS);
+    OpSta(memory, cpu, SNES_BG3HOFS);
+    OpSta(memory, cpu, 0x00059cu);
+    OpSta(memory, cpu, 0x00059du);
+    OpSta(memory, cpu, SNES_BG3VOFS);
+    OpSta(memory, cpu, SNES_BG3VOFS);
+    OpSta(memory, cpu, 0x00059eu);
+    OpSta(memory, cpu, 0x00059fu);
 
     LoadA8(cpu, 0x01u);
     OpSta(memory, cpu, FIELD_MOSAIC_STATE);
@@ -87,18 +87,18 @@ static void BuildSwirlTilemaps(
     OpSta(memory, cpu, OpDp(cpu, TRANSITION_RADIUS));
     OpSepWidths(cpu, 0x20u);
 
-    OpSta(memory, cpu, OpAbs(cpu, SNES_M7A));
+    OpSta(memory, cpu, SNES_M7A);
     ExchangeAccumulatorBytes(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_M7A));
+    OpSta(memory, cpu, SNES_M7A);
 
     OpLdy(cpu, 0x0000u);
     do {
         OpLda(memory, cpu, OpLongX(cpu, 0x8084edu));
-        OpSta(memory, cpu, OpAbs(cpu, SNES_M7B));
+        OpSta(memory, cpu, SNES_M7B);
         OpRepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbs(cpu, SNES_MPYM));
+        OpLda(memory, cpu, SNES_MPYM);
         cpu->carry = 0;
-        OpAdc(memory, cpu, OpAbs(cpu, 0x1228u));
+        OpAdc(memory, cpu, 0x001228u);
         OpAndValue(cpu, 0x03ffu);
         OpOraValue(cpu, 0x6000u);
         OpSta(memory, cpu, OpAbsY(cpu, 0x3040u));
@@ -121,20 +121,20 @@ static void BuildSwirlTilemaps(
 
     OpLdy(cpu, 0x0000u);
     OpLda(memory, cpu, OpDp(cpu, TRANSITION_RADIUS));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_M7A));
+    OpSta(memory, cpu, SNES_M7A);
     OpLda(memory, cpu, OpDp(cpu, TRANSITION_RADIUS_HI));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_M7A));
+    OpSta(memory, cpu, SNES_M7A);
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpDp(cpu, TRANSITION_ANGLE));
     OpTax(cpu);
 
     do {
         OpLda(memory, cpu, OpLongX(cpu, 0x8084edu));
-        OpSta(memory, cpu, OpAbs(cpu, SNES_M7B));
+        OpSta(memory, cpu, SNES_M7B);
         OpRepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbs(cpu, SNES_MPYM));
+        OpLda(memory, cpu, SNES_MPYM);
         cpu->carry = 0;
-        OpAdc(memory, cpu, OpAbs(cpu, 0x1220u));
+        OpAdc(memory, cpu, 0x001220u);
         OpSta(memory, cpu, OpAbsY(cpu, 0x3101u));
 
         OpTxa(cpu);
@@ -155,20 +155,20 @@ static void ConfigureSwirlHdma(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
     LoadA16(cpu, 0x3100u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_A1TL(0)));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_A1TL(1)));
+    OpSta(memory, cpu, SNES_A1TL(0));
+    OpSta(memory, cpu, SNES_A1TL(1));
     OpSepWidths(cpu, 0x20u);
 
     LoadA8(cpu, 0x02u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_DMAP(0)));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_DMAP(1)));
+    OpSta(memory, cpu, SNES_DMAP(0));
+    OpSta(memory, cpu, SNES_DMAP(1));
     LoadA8(cpu, 0x0du);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_BBAD(0)));
+    OpSta(memory, cpu, SNES_BBAD(0));
     LoadA8(cpu, 0x0fu);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_BBAD(1)));
+    OpSta(memory, cpu, SNES_BBAD(1));
     LoadA8(cpu, 0x7eu);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_A1B(0)));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_A1B(1)));
+    OpSta(memory, cpu, SNES_A1B(0));
+    OpSta(memory, cpu, SNES_A1B(1));
 
     LoadA8(cpu, 0x03u);
     OpTestBits(memory, cpu, OpDp(cpu, TRANSITION_HDMA_FLAGS), 1u);

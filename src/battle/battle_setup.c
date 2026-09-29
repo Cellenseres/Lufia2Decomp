@@ -273,7 +273,7 @@ static uint8_t FinishBattleSetup(
         return 0;
 
     LoadA8(cpu, 0xffu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x12f3u));
+    OpSta(memory, cpu, 0x0012f3u);
     OpLda(memory, cpu, OpDp(cpu, 0x40u));
     OpSta(memory, cpu, OpDp(cpu, 0xd4u));
 
@@ -291,7 +291,7 @@ static uint8_t FinishBattleSetup(
         if (!Lufia2BattleCallChild(calls, 0x81d6u, 0x81d9d0u, 2u))
             return 0;
         LoadA8(cpu, 0xffu);
-        OpSta(memory, cpu, OpAbs(cpu, 0x12f3u));
+        OpSta(memory, cpu, 0x0012f3u);
         if (!Lufia2BattleCallChild(calls, 0x81dfu, 0x85ec81u, 3u))
             return 0;
     }
