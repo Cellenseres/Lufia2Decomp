@@ -38,4 +38,12 @@ BattleFrameResult BattleRunFrame(BattleContext *battle);
 void BattleClearTilemap(BattleContext *battle);
 bool BattleFinishMainLoop(BattleContext *battle);
 
+void BattleBeginSession(BattleContext *battle);
+void BattleRestoreSessionStack(BattleContext *battle);
+void BattleEndSession(BattleContext *battle);
+
+bool BattlePrepareExit(BattleContext *battle);
+bool BattleFadeOut(BattleContext *battle);
+bool BattleTearDownDisplay(BattleContext *battle);
+
 #endif
