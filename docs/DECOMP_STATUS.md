@@ -19,7 +19,7 @@ and verification notes for each task and may describe a status that a later
 task changed; the index and the metadata are authoritative.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-185 functions in `metadata/functions.toml`: 185 verified, 0 draft, 0 identified, 0 disabled.
+191 functions in `metadata/functions.toml`: 191 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -65,6 +65,7 @@ task changed; the index and the metadata are authoritative.
 | `$81:BE54` | `Lufia2BattleTileBlockFar` | verified | `src/battle/battle_util.c` |
 | `$81:BE58` | `Lufia2BattleTileBlock` | verified | `src/battle/battle_util.c` |
 | `$81:C129` | `Lufia2BattleIpSkills` | verified | `src/battle/battle_ip.c` |
+| `$81:C240` | `Lufia2BattlePrepareNextFrame` | verified | `src/battle/battle_loop_children.c` |
 | `$81:C2C0` | `Lufia2BattleLoadDisplayDefaults` | verified | `src/battle/battle_buffers.c` |
 | `$81:C2D0` | `Lufia2BattleClearBackgroundTilemap` | verified | `src/battle/battle_buffers.c` |
 | `$81:C2E3` | `Lufia2BattleResetPartyTilemap` | verified | `src/battle/battle_buffers.c` |
@@ -189,8 +190,13 @@ task changed; the index and the metadata are authoritative.
 | `$84:8193` | `Lufia2SpriteGraphicsUpload` | verified | `src/actor/actor_sprites.c` |
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
 | `$84:8BC7` | `Lufia2BattleVisualTransition` | verified | `src/battle/battle_transition.c` |
+| `$85:89E5` | `Lufia2BattleClearSpriteOffsets` | verified | `src/battle/battle_loop_children.c` |
 | `$85:8A2F` | `Lufia2BattleSprites` | verified | `src/battle/battle_frame.c` |
 | `$85:8DC5` | `Lufia2BattleNmiUploads` | verified | `src/battle/battle_nmi.c` |
+| `$85:9236` | `Lufia2BattlePartyStatusGate` | verified | `src/battle/battle_loop_children.c` |
+| `$85:96A2` | `Lufia2BattleSaveWorkArea` | verified | `src/battle/battle_loop_children.c` |
+| `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
+| `$85:AB78` | `Lufia2BattleStageTransfer` | verified | `src/battle/battle_loop_children.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
 | `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
 | `$85:ECF0` | `Lufia2BattleFrameUpkeep` | verified | `src/battle/battle_frame.c` |
@@ -818,3 +824,38 @@ case of the suite unchanged), actor-bridge suite (`$83:BB93` 2,560/2,560,
 and Ancient Cave suites. The suites seed DB as `$00`, `$7E`, `$80` or `$83`,
 which all reach the same low WRAM, so they do not distinguish DB-relative
 from fixed-bank addressing; the view keeps the original DB-relative form.
+
+## Battle main-loop child closure (BL6.1)
+
+Six whole child contracts of the verified `$81:886F` loop are now reconstructed
+in `src/battle/battle_loop_children.c`. `$85:9236` tests four party pointers
+through `$85:9255`: a null pointer or status `$0F & $34` keeps carry set; the
+first nonzero pointer without that mask clears carry. This is the carry gate
+for the `$85:96A2` / `$81:C739` / `$85:96B0` branch. The two `$85:96xx`
+functions save and restore the same 192-byte Battle work span around that
+original-ROM child. `$81:C240` sets `$11E7` bits `$03`, calls `$85:91A1`
+and `$85:8A2F`, writes `$00:12F3=FF`, and returns to the next loop iteration;
+it contains no frame wait. `$85:AB78` stages a transfer descriptor and sets
+DP `$DA` bit 7. `$85:89E5` writes DP to six Battle sprite offset pairs and
+restores DB; Battle normally enters with DP zero.
+
+Private original-ROM `interp816` differential passed 1,024 `$85:9236` cases,
+256 each for `$85:96A2`, `$85:96B0`, `$85:AB78` and `$85:89E5`, and 384
+`$81:C240` cases (128 returns, 256 child unwinds at its two calls, 640 child
+visits). CPU/flags/M/X/DB/DP/stack, full 128 KiB WRAM and ordered bus writes
+were compared. Four observable source mutations were caught. These children
+are verified but unbound; `$81:C240` and `$85:96B0` have no independently
+analyzed manifest node after the parent truncation, and `$81:C240` still
+needs a consumer bridge/ABI test before binding.
+
+The other main-loop children remain original-ROM calls. `$85:9275` stages
+record-dependent display values and calls `$85:92CE/$85:92FF`.
+`$81:C294` handles the `$0A6C` record; `$81:C254` scans six `$0A6E` records;
+both call `$85:DD19` and `$85:9337` after status `$2C` gates. `$85:93B7`
+scans both sides for records without status bit 2, setting `$11E7` bit 7 and
+the `$7F:F8A2` outcome when a side is empty. These are AOT-eligible M1X0
+nodes, with no native semantic function in this slice. `$81:C739` is LLE-only
+and can continue at `$81:8855` instead of returning to its local caller; its
+analyzed path truncates at `$81:C7F8` before `$81:CB77`. `$81:890A` is
+LLE-only with unproven `$81:A79A/$81:C600` child exits and a local RTS at
+`$81:895F`. Neither irregular child has been given a speculative C boundary.

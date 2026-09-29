@@ -191,6 +191,55 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# Battle-loop children with exact ROM differential contracts.
+[[function]]
+address = "85:9236"
+name = "Lufia2BattlePartyStatusGate"
+source = "src/battle/battle_loop_children.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:C240"
+name = "Lufia2BattlePrepareNextFrame"
+source = "src/battle/battle_loop_children.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:96A2"
+name = "Lufia2BattleSaveWorkArea"
+source = "src/battle/battle_loop_children.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:96B0"
+name = "Lufia2BattleRestoreWorkArea"
+source = "src/battle/battle_loop_children.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AB78"
+name = "Lufia2BattleStageTransfer"
+source = "src/battle/battle_loop_children.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:89E5"
+name = "Lufia2BattleClearSpriteOffsets"
+source = "src/battle/battle_loop_children.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # Per-frame field triggers. Expiring timers, touch events, the
 # trigger queue and door warps stop at their exact ROM PC.
 [[function]]

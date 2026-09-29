@@ -58,6 +58,36 @@ Lufia2ExecutionResult Lufia2BattleMainLoop(
     Lufia2PushedChildCall child,
     void *child_context);
 
+/* $85:9236: carry is set when no party record is eligible. */
+Lufia2ExecutionResult Lufia2BattlePartyStatusGate(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:C240: prepare the next Battle frame. */
+Lufia2ExecutionResult Lufia2BattlePrepareNextFrame(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,
+    void *child_context);
+
+/* $85:96A2/$85:96B0: save and restore the Battle work span. */
+Lufia2ExecutionResult Lufia2BattleSaveWorkArea(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleRestoreWorkArea(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:89E5: clear six Battle sprite offset pairs. */
+Lufia2ExecutionResult Lufia2BattleClearSpriteOffsets(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:AB78: set the Battle transfer descriptor and request bit. */
+Lufia2ExecutionResult Lufia2BattleStageTransfer(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $81:E835: character A to two battle glyph tiles; M1X0. */
 Lufia2ExecutionResult Lufia2BattleGlyph(
     const Lufia2Memory *memory,
