@@ -163,6 +163,15 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# $83:B062 resets Field display state and republishes the Field NMI vector.
+[[function]]
+address = "83:B062"
+name = "Lufia2FieldRestore"
+source = "src/field/field_restore.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # Per-frame field triggers. Expiring timers, touch events, the
 # trigger queue and door warps stop at their exact ROM PC.
 [[function]]

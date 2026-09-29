@@ -53,6 +53,7 @@ add_library(lufia2_decomp STATIC
     src/cave/cave_random.c
     src/field/field_effects.c
     src/field/encounter.c
+    src/field/field_restore.c
     src/field/field_attributes.c
     src/field/field_event_actors.c
     src/field/field_event_conditions.c

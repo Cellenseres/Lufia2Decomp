@@ -9,6 +9,13 @@
 extern "C" {
 #endif
 
+/* $83:B062 restores Field display state and republishes its NMI callback. */
+Lufia2ExecutionResult Lufia2FieldRestore(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,
+    void *child_context);
+
 /* $83:83E0 encounter handoff; the $83:83EB child uses its pushed JSL frame. */
 Lufia2ExecutionResult Lufia2FieldEncounterHandoff(
     const Lufia2Memory *memory,
