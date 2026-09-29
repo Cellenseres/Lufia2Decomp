@@ -182,6 +182,15 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# $81:886F executes Battle frames and routes menu/effect/exit children.
+[[function]]
+address = "81:886F"
+name = "Lufia2BattleMainLoop"
+source = "src/battle/battle_loop.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # Per-frame field triggers. Expiring timers, touch events, the
 # trigger queue and door warps stop at their exact ROM PC.
 [[function]]
