@@ -243,43 +243,43 @@ static void NmiFade(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x9fc5u);
-    LoadAAbsolute8(memory, cpu, 0x09aau, 0);                   /* 9FE1 */
+    LoadAAbsolute8(memory, cpu, WRAM_FIELD_TRANSITION_FLAGS, 0); /* 9FE1 */
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero) {
-        LoadA8(cpu, Read8(memory, 0x7fd0f2u));
+        LoadA8(cpu, Read8(memory, WRAM_FIELD_MOSAIC_STATE));
         And8(cpu, 0xf0u);
         Or8(cpu, 0x0fu);
         StoreAAbsolute8(memory, cpu, SNES_MOSAIC, 0);
-        LoadA8(cpu, Read8(memory, 0x7fd0f2u));
+        LoadA8(cpu, Read8(memory, WRAM_FIELD_MOSAIC_STATE));
         And8(cpu, 0x0fu);
         cpu->carry = 0;
-        Adc8(cpu, Read8(memory, 0x7fd0f3u));
-        Write8(memory, 0x7fd0f3u, A8(cpu));
+        Adc8(cpu, Read8(memory, WRAM_FIELD_MOSAIC_ACCUMULATOR));
+        Write8(memory, WRAM_FIELD_MOSAIC_ACCUMULATOR, A8(cpu));
         BitImmediate8(cpu, 0x08u);                             /* A002 */
         if (!cpu->zero) {
             uint8_t finished;
 
             And8(cpu, 0x80u);
-            Write8(memory, 0x7fd0f3u, A8(cpu));
+            Write8(memory, WRAM_FIELD_MOSAIC_ACCUMULATOR, A8(cpu));
             if (!cpu->negative) {
-                LoadA8(cpu, Read8(memory, 0x7fd0f2u));         /* A00E */
+                LoadA8(cpu, Read8(memory, WRAM_FIELD_MOSAIC_STATE)); /* A00E */
                 cpu->carry = 1;
                 Sbc8(cpu, 0x10u);
-                Write8(memory, 0x7fd0f2u, A8(cpu));
+                Write8(memory, WRAM_FIELD_MOSAIC_STATE, A8(cpu));
                 finished = !cpu->carry;
             } else {
-                LoadA8(cpu, Read8(memory, 0x7fd0f2u));         /* A01D */
+                LoadA8(cpu, Read8(memory, WRAM_FIELD_MOSAIC_STATE)); /* A01D */
                 cpu->carry = 0;
                 Adc8(cpu, 0x10u);
-                Write8(memory, 0x7fd0f2u, A8(cpu));
+                Write8(memory, WRAM_FIELD_MOSAIC_STATE, A8(cpu));
                 finished = cpu->carry;
             }
             if (finished) {
                 LoadA8(cpu, 0x01u);                            /* A02A */
-                TestBitsAbsolute8(memory, cpu, 0x09aau, 0);
+                TestBitsAbsolute8(memory, cpu, WRAM_FIELD_TRANSITION_FLAGS, 0);
             }
         }
-        LoadAAbsolute8(memory, cpu, 0x09aau, 0);               /* A02F */
+        LoadAAbsolute8(memory, cpu, WRAM_FIELD_TRANSITION_FLAGS, 0); /* A02F */
     }
     SimulateRtsFrame(memory, cpu);
 }
