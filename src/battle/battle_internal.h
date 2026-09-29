@@ -29,6 +29,15 @@ typedef struct BattleContext {
     uint32_t unwind_site;
 } BattleContext;
 
+static inline BattleContext BattleContextCreate(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,
+    void *child_context,
+    uint8_t return_bank) {
+    return (BattleContext){memory, cpu, child, child_context, return_bank, 0u};
+}
+
 static inline bool BattleCall(BattleContext *battle, uint16_t site,
                               uint32_t target, uint8_t frame_size) {
     const uint32_t full_site = ((uint32_t)battle->return_bank << 16) | site;

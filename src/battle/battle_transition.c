@@ -177,7 +177,7 @@ Lufia2ExecutionResult Lufia2BattleVisualTransition(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu,
                                                    Lufia2PushedChildCall child,
                                                    void *child_context) {
-    BattleContext battle = {memory, cpu, child, child_context, 0x84u, 0u};
+    BattleContext battle = BattleContextCreate(memory, cpu, child, child_context, 0x84u);
 
     PushDataBank(memory, cpu);
     ClearTransitionPlanes(memory, cpu);

@@ -9,49 +9,49 @@
 extern "C" {
 #endif
 
-/* $84:8BC7 encounter visual transition; frame-change waits are children. */
+/* Battle transition. */
 Lufia2ExecutionResult Lufia2BattleVisualTransition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,
     void *child_context);
 
-/* $81:8821 Battle setup, main-loop and exit wrapper. */
+/* Battle lifecycle. */
 Lufia2ExecutionResult Lufia2BattleEntry(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,
     void *child_context);
 
-/* $81:8000 Battle working-state setup; direct children remain original calls. */
+/* Battle setup. */
 Lufia2ExecutionResult Lufia2BattleSetup(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,
     void *child_context);
 
-/* $81:B9C7 prepares or clears the Battle background resource. */
+/* Battle background setup. */
 Lufia2ExecutionResult Lufia2BattleBackgroundPrepare(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,
     void *child_context);
 
-/* $81:876B Battle-side fade, buffer teardown and display blank. */
+/* Battle exit. */
 Lufia2ExecutionResult Lufia2BattleExit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,
     void *child_context);
 
-/* $81:851E configures Battle display, callback, resources and upload state. */
+/* Battle display setup. */
 Lufia2ExecutionResult Lufia2BattleDisplaySetup(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,
     void *child_context);
 
-/* $81:886F Battle frame loop through menu, update and exit boundaries. */
+/* Battle main loop. */
 Lufia2ExecutionResult Lufia2BattleMainLoop(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

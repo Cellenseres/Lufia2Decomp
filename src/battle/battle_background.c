@@ -7,7 +7,7 @@ Lufia2ExecutionResult Lufia2BattleBackgroundPrepare(
     Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,
     void *child_context) {
-    BattleContext battle = {memory, cpu, child, child_context, 0x81u, 0u};
+    BattleContext battle = BattleContextCreate(memory, cpu, child, child_context, 0x81u);
     uint8_t background_id = 0;
 
     if (BattleBackgroundIsBlank(&battle, &background_id)) {
