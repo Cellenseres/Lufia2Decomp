@@ -7,7 +7,8 @@ Lufia2ExecutionResult Lufia2BattleEntry(
     Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,
     void *child_context) {
-    BattleContext battle = BattleContextCreate(memory, cpu, child, child_context, 0x81u);
+    BattleContext battle =
+        BattleContextCreate(memory, cpu, child, child_context, 0x81u);
 
     BattleBeginSession(&battle);
 
@@ -18,9 +19,7 @@ Lufia2ExecutionResult Lufia2BattleEntry(
 
     BattleRestoreSessionStack(&battle);
 
-    if (!BattleCall(&battle, 0x8859u, 0x85edbbu, 3u))
-        return BattleChildUnwound(&battle);
-    if (!BattleCall(&battle, 0x885du, 0x85eea1u, 3u))
+    if (!BattleRunPostLoopSteps(&battle))
         return BattleChildUnwound(&battle);
     if (!BattleRunExit(&battle))
         return BattleChildUnwound(&battle);

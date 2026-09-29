@@ -40,6 +40,7 @@ bool BattleFinishMainLoop(BattleContext *battle);
 
 void BattleBeginSession(BattleContext *battle);
 void BattleRestoreSessionStack(BattleContext *battle);
+bool BattleRunPostLoopSteps(BattleContext *battle);
 void BattleEndSession(BattleContext *battle);
 
 bool BattlePrepareExit(BattleContext *battle);
