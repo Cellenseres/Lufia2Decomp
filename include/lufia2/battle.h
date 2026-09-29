@@ -51,6 +51,13 @@ Lufia2ExecutionResult Lufia2BattleDisplaySetup(
     Lufia2PushedChildCall child,
     void *child_context);
 
+/* $81:886F Battle frame loop through menu, update and exit boundaries. */
+Lufia2ExecutionResult Lufia2BattleMainLoop(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,
+    void *child_context);
+
 /* $81:E835: character A to two battle glyph tiles; M1X0. */
 Lufia2ExecutionResult Lufia2BattleGlyph(
     const Lufia2Memory *memory,
