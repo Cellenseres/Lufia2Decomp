@@ -93,8 +93,7 @@ void BattleInitializeDisplayRecords(BattleContext *battle) {
     static const uint16_t clear_bytes[] = {0x15a8u, 0x15a9u, 0x15c7u, 0x15cbu,
                                            0x15cfu, 0x15d3u, 0x15d7u, 0x15dbu,
                                            0x15dfu, 0x15e3u, 0x15e7u};
-    static const uint16_t slot_words[] = {
-        0x48c0u, 0x4910u, 0x4956u, 0x4abeu, 0x4b36u};
+    static const uint16_t slot_words[] = {0x48c0u, 0x4910u, 0x4956u, 0x4abeu, 0x4b36u};
     static const uint16_t slot_destinations[] = {0x15c8u, 0x15ccu, 0x15d4u, 0x15d8u,
                                                  0x15e8u};
 
@@ -277,8 +276,7 @@ bool BattleLoadPresentationAssets(BattleContext *battle) {
 
     OpRepWidths(cpu, 0x20u);
     for (unsigned i = 0; i < 9u; ++i) {
-        if (!BattleCall(battle, (uint16_t)(0x86f0u + 4u * i),
-                                   resource_children[i], 3u))
+        if (!BattleCall(battle, (uint16_t)(0x86f0u + 4u * i), resource_children[i], 3u))
             return false;
     }
     OpSepWidths(cpu, 0x20u);
@@ -341,4 +339,3 @@ bool BattleFinishDisplay(BattleContext *battle) {
 
     return BattleCall(battle, 0x8766u, 0x8595feu, 3u);
 }
-

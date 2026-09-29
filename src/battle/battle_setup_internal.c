@@ -128,7 +128,8 @@ bool BattleInitializeRecords(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
 
-    if (!BattleControlHas(battle, BATTLE_CONTROL_MODE_1) && !BattleCall(battle, 0x80a8u, 0x859419u, 3u))
+    if (!BattleControlHas(battle, BATTLE_CONTROL_MODE_1) &&
+        !BattleCall(battle, 0x80a8u, 0x859419u, 3u))
         return false;
 
     OpRepWidths(cpu, 0x20u);
@@ -290,4 +291,3 @@ bool BattleFinalizeSetup(BattleContext *battle) {
             return false;
     }
 }
-

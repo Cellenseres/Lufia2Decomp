@@ -144,29 +144,24 @@ Lufia2ExecutionResult Lufia2BattleCommitPalettes(
     Lufia2CpuState *cpu);
 
 /* Battle display defaults. */
-Lufia2ExecutionResult Lufia2BattleLoadDisplayDefaults(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleLoadDisplayDefaults(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu);
 
 /* Clear the background tilemap. */
-Lufia2ExecutionResult Lufia2BattleClearBackgroundTilemap(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleClearBackgroundTilemap(const Lufia2Memory *memory,
+                                                         Lufia2CpuState *cpu);
 
 /* Reset the party tilemap. */
-Lufia2ExecutionResult Lufia2BattleResetPartyTilemap(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleResetPartyTilemap(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu);
 
 /* Clear the window tilemap. */
-Lufia2ExecutionResult Lufia2BattleClearWindowTilemap(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleClearWindowTilemap(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu);
 
 /* Clear tilemap $3800. */
-Lufia2ExecutionResult Lufia2BattleClearTilemap3800(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleClearTilemap3800(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu);
 
 /* $81:C5CF X = record of target mask A, A nonzero; M1X0. */
 Lufia2ExecutionResult Lufia2BattleTargetPointer(
