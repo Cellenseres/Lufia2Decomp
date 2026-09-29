@@ -114,6 +114,16 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# $84:8BC7 builds the visual transition tile buffers and HDMA setup;
+# $84:8D4D frame-counter waits and $80:F47A remain pushed children.
+[[function]]
+address = "84:8BC7"
+name = "Lufia2BattleVisualTransition"
+source = "src/battle/battle_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # Per-frame field triggers. Expiring timers, touch events, the
 # trigger queue and door warps stop at their exact ROM PC.
 [[function]]

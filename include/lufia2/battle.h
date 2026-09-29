@@ -9,6 +9,13 @@
 extern "C" {
 #endif
 
+/* $84:8BC7 encounter visual transition; frame-change waits are children. */
+Lufia2ExecutionResult Lufia2BattleVisualTransition(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,
+    void *child_context);
+
 /* $81:E835: character A to two battle glyph tiles; M1X0. */
 Lufia2ExecutionResult Lufia2BattleGlyph(
     const Lufia2Memory *memory,
