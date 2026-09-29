@@ -300,10 +300,10 @@ def main() -> int:
             diff = list(difflib.unified_diff(
                 actual, expected, fromfile=str(relative),
                 tofile=f"{relative} (generated)", lineterm=""))
-            for line in diff[:420]:
+            for line in diff[:80]:
                 print(line, file=sys.stderr)
-            if len(diff) > 420:
-                print(f"... {len(diff) - 420} diff lines omitted", file=sys.stderr)
+            if len(diff) > 80:
+                print(f"... {len(diff) - 80} diff lines omitted", file=sys.stderr)
         return 1 if stale else 0
     for path in stale:
         path.write_text(updates[path], encoding="utf-8", newline="\n")
