@@ -23,6 +23,13 @@ Lufia2ExecutionResult Lufia2BattleEntry(
     Lufia2PushedChildCall child,
     void *child_context);
 
+/* $81:8000 Battle working-state setup; direct children remain original calls. */
+Lufia2ExecutionResult Lufia2BattleSetup(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,
+    void *child_context);
+
 /* $81:E835: character A to two battle glyph tiles; M1X0. */
 Lufia2ExecutionResult Lufia2BattleGlyph(
     const Lufia2Memory *memory,
