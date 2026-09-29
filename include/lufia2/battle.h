@@ -37,6 +37,13 @@ Lufia2ExecutionResult Lufia2BattleBackgroundPrepare(
     Lufia2PushedChildCall child,
     void *child_context);
 
+/* $81:876B Battle-side fade, buffer teardown and display blank. */
+Lufia2ExecutionResult Lufia2BattleExit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,
+    void *child_context);
+
 /* $81:E835: character A to two battle glyph tiles; M1X0. */
 Lufia2ExecutionResult Lufia2BattleGlyph(
     const Lufia2Memory *memory,
