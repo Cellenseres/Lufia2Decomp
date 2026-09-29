@@ -27,9 +27,8 @@ static void FillWramPort(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     } while (!cpu->zero);
 }
 
-Lufia2ExecutionResult Lufia2BattleLoadDisplayDefaults(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2BattleLoadDisplayDefaults(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu) {
     LoadX16(cpu, 0x0000u);
     do {
         LoadAAbsolute8(memory, cpu, 0xb401u, cpu->x);
@@ -40,30 +39,26 @@ Lufia2ExecutionResult Lufia2BattleLoadDisplayDefaults(
     return ExecutionReturned(0x81c2cfu);
 }
 
-Lufia2ExecutionResult Lufia2BattleClearBackgroundTilemap(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2BattleClearBackgroundTilemap(const Lufia2Memory *memory,
+                                                         Lufia2CpuState *cpu) {
     FillWramPort(memory, cpu, BATTLE_BACKGROUND_TILEMAP, 0x0800u, 0);
     return ExecutionReturned(0x81c2e2u);
 }
 
-Lufia2ExecutionResult Lufia2BattleResetPartyTilemap(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2BattleResetPartyTilemap(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
     FillWramPort(memory, cpu, BATTLE_PARTY_TILEMAP, 0x0400u, 1);
     return ExecutionReturned(0x81c2fau);
 }
 
-Lufia2ExecutionResult Lufia2BattleClearWindowTilemap(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2BattleClearWindowTilemap(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu) {
     FillWramPort(memory, cpu, BATTLE_WINDOW_TILEMAP, 0x0800u, 0);
     return ExecutionReturned(0x81c30du);
 }
 
-Lufia2ExecutionResult Lufia2BattleClearTilemap3800(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2BattleClearTilemap3800(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
     FillWramPort(memory, cpu, BATTLE_TILEMAP_3800, 0x0800u, 0);
     return ExecutionReturned(0x81c320u);
 }
