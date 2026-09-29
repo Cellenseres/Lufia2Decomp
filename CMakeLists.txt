@@ -43,6 +43,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_nmi.c
     src/battle/battle_script.c
     src/battle/battle_transition.c
+    src/battle/battle_entry.c
     src/cave/ancient_cave.c
     src/cave/cave_grid.c
     src/cave/cave_objects.c

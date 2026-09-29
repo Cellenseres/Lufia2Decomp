@@ -124,6 +124,16 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# $81:8821 clears Battle working state, sets DB $97, calls setup/main loop,
+# then runs exit children and restores the caller's CPU state.
+[[function]]
+address = "81:8821"
+name = "Lufia2BattleEntry"
+source = "src/battle/battle_entry.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # Per-frame field triggers. Expiring timers, touch events, the
 # trigger queue and door warps stop at their exact ROM PC.
 [[function]]

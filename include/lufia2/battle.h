@@ -16,6 +16,13 @@ Lufia2ExecutionResult Lufia2BattleVisualTransition(
     Lufia2PushedChildCall child,
     void *child_context);
 
+/* $81:8821 Battle setup, main-loop and exit wrapper. */
+Lufia2ExecutionResult Lufia2BattleEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,
+    void *child_context);
+
 /* $81:E835: character A to two battle glyph tiles; M1X0. */
 Lufia2ExecutionResult Lufia2BattleGlyph(
     const Lufia2Memory *memory,
