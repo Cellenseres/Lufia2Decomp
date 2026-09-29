@@ -30,6 +30,13 @@ Lufia2ExecutionResult Lufia2BattleSetup(
     Lufia2PushedChildCall child,
     void *child_context);
 
+/* $81:B9C7 prepares or clears the Battle background resource. */
+Lufia2ExecutionResult Lufia2BattleBackgroundPrepare(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,
+    void *child_context);
+
 /* $81:E835: character A to two battle glyph tiles; M1X0. */
 Lufia2ExecutionResult Lufia2BattleGlyph(
     const Lufia2Memory *memory,
