@@ -16,6 +16,13 @@ Lufia2ExecutionResult Lufia2FieldEncounterHandoff(
     Lufia2PushedChildCall child,
     void *child_context);
 
+/* $83:845B encounter transition through Battle and Field continuation. */
+Lufia2ExecutionResult Lufia2EncounterBattleSequence(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,
+    void *child_context);
+
 /* $83:80CD field idle test (X8); zero = idle. */
 Lufia2ExecutionResult Lufia2FieldIdleTest(
     const Lufia2Memory *memory,
