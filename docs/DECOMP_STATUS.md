@@ -49,7 +49,7 @@ task changed; the index and the metadata are authoritative.
 | `$81:B264` | `Lufia2BattleActiveMask` | verified | `src/battle/battle_util.c` |
 | `$81:B2B5` | `Lufia2BattleTargetRecord` | verified | `src/battle/battle_util.c` |
 | `$81:B2DB` | `Lufia2BattleTargetSlot` | verified | `src/battle/battle_util.c` |
-| `$81:B444` | `Lufia2BattlePaletteFade` | verified | `src/battle/battle_util.c` |
+| `$81:B444` | `Lufia2BattlePaletteFade` | verified | `src/battle/battle_buffers.c` |
 | `$81:B48B` | `Lufia2BattleFadeColor` | verified | `src/battle/battle_util.c` |
 | `$81:B505` | `Lufia2BattleBlend` | verified | `src/battle/battle_util.c` |
 | `$81:B54A` | `Lufia2ColorToGray` | verified | `src/battle/battle_util.c` |
@@ -60,16 +60,16 @@ task changed; the index and the metadata are authoritative.
 | `$81:BAE8` | `Lufia2BattlePortraits` | verified | `src/battle/battle_portrait.c` |
 | `$81:BAFB` | `Lufia2BattlePortrait` | verified | `src/battle/battle_portrait.c` |
 | `$81:BB75` | `Lufia2BattlePortraitUpload` | verified | `src/battle/battle_portrait.c` |
-| `$81:BD47` | `Lufia2BattleSpriteBlockFar` | verified | `src/battle/battle_util.c` |
+| `$81:BD47` | `Lufia2BattleSpriteBlockFar` | verified | `src/battle/battle_buffers.c` |
 | `$81:BD4B` | `Lufia2BattleSpriteBlock` | verified | `src/battle/battle_util.c` |
-| `$81:BE54` | `Lufia2BattleTileBlockFar` | verified | `src/battle/battle_util.c` |
+| `$81:BE54` | `Lufia2BattleTileBlockFar` | verified | `src/battle/battle_buffers.c` |
 | `$81:BE58` | `Lufia2BattleTileBlock` | verified | `src/battle/battle_util.c` |
 | `$81:C129` | `Lufia2BattleIpSkills` | verified | `src/battle/battle_ip.c` |
-| `$81:C2C0` | `Lufia2BattleCopyC2C0` | verified | `src/battle/battle_util.c` |
-| `$81:C2D0` | `Lufia2BattleClear2000` | verified | `src/battle/battle_util.c` |
-| `$81:C2E3` | `Lufia2BattleFill2800` | verified | `src/battle/battle_util.c` |
-| `$81:C2FB` | `Lufia2BattleClear3000` | verified | `src/battle/battle_util.c` |
-| `$81:C30E` | `Lufia2BattleClear3800` | verified | `src/battle/battle_util.c` |
+| `$81:C2C0` | `Lufia2BattleLoadDisplayDefaults` | verified | `src/battle/battle_buffers.c` |
+| `$81:C2D0` | `Lufia2BattleClearBackgroundTilemap` | verified | `src/battle/battle_buffers.c` |
+| `$81:C2E3` | `Lufia2BattleResetPartyTilemap` | verified | `src/battle/battle_buffers.c` |
+| `$81:C2FB` | `Lufia2BattleClearWindowTilemap` | verified | `src/battle/battle_buffers.c` |
+| `$81:C30E` | `Lufia2BattleClearTilemap3800` | verified | `src/battle/battle_buffers.c` |
 | `$81:C35F` | `Lufia2BattlePopups` | verified | `src/battle/battle_popup.c` |
 | `$81:C5CF` | `Lufia2BattleTargetPointer` | verified | `src/battle/battle_util.c` |
 | `$81:DFA2` | `Lufia2BattleListRows` | verified | `src/battle/battle_ip.c` |
@@ -88,9 +88,9 @@ task changed; the index and the metadata are authoritative.
 | `$81:E7D2` | `Lufia2BattleFillRect` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E808` | `Lufia2DecimalDigits3` | verified | `src/system/math.c` |
 | `$81:E835` | `Lufia2BattleGlyph` | verified | `src/battle/battle_ip.c` |
-| `$81:EB34` | `Lufia2BattlePaletteCopy` | verified | `src/battle/battle_util.c` |
-| `$81:EB62` | `Lufia2BattlePaletteSplit` | verified | `src/battle/battle_util.c` |
-| `$81:EC41` | `Lufia2BattleClearF000` | verified | `src/battle/battle_util.c` |
+| `$81:EB34` | `Lufia2BattlePaletteCopy` | verified | `src/battle/battle_buffers.c` |
+| `$81:EB62` | `Lufia2BattlePaletteSplit` | verified | `src/battle/battle_buffers.c` |
+| `$81:EC41` | `Lufia2BattleClearF000` | verified | `src/battle/battle_buffers.c` |
 | `$81:ED8E` | `Lufia2PartyUnpackMember` | verified | `src/party/stats.c` |
 | `$81:EE94` | `Lufia2PartyUnpackMemberBare` | verified | `src/party/stats.c` |
 | `$81:F057` | `Lufia2InventoryCount` | verified | `src/item/inventory.c` |
@@ -394,11 +394,11 @@ writes across both return and child-unwind paths.
 | `$81:B5A3` | `Lufia2BattleHideOam` | `verified` | OAM buffer reset: high table `$0300-$031F` = `$55`, every low entry at `$0100-$02FF` = X 1, Y `$E0`. Mutations 1/1. Bound. |
 | `$81:B974` | `Lufia2BattleLoadPalette` | `verified` | Palette slot A: source Y and bank `$24` noted at `$12B3 + 3A` (`$12B5` the slot), then 32 bytes from `$24:Y` to `$7F:F1DB + 32 * (A & 15)`. Mutations 2/2. Bound. |
 | `$81:B9AF` | `Lufia2BattleCommitPalettes` | `verified` | 512 bytes `$7F:F1DB` to the CGRAM buffer `$0320`, upload flag `$73` = `$80`; RTL. Mutations 1/1. Bound. |
-| `$81:C2C0` | `Lufia2BattleCopyC2C0` | `verified` | 16 bytes from `$B401` (DB) to `$123C`. Mutations 1/1. Bound. |
-| `$81:C2D0` | `Lufia2BattleClear2000` | `verified` | Clears `$7E:2000-$27FF` through WMDATA. Bound. |
-| `$81:C2E3` | `Lufia2BattleFill2800` | `verified` | Fills `$7E:2800-$2FFF` with tile `$2100` through WMDATA. Mutations 1/1. Bound. |
-| `$81:C2FB` | `Lufia2BattleClear3000` | `verified` | Clears `$7E:3000-$37FF` through WMDATA. Bound. |
-| `$81:C30E` | `Lufia2BattleClear3800` | `verified` | Clears `$7E:3800-$3FFF` through WMDATA. Mutations 1/1. Bound. |
+| `$81:C2C0` | `Lufia2BattleLoadDisplayDefaults` | `verified` | 16 bytes from `$B401` (DB) to `$123C`. Mutations 1/1. Bound. |
+| `$81:C2D0` | `Lufia2BattleClearBackgroundTilemap` | `verified` | Clears `$7E:2000-$27FF` through WMDATA. Bound. |
+| `$81:C2E3` | `Lufia2BattleResetPartyTilemap` | `verified` | Fills `$7E:2800-$2FFF` with tile `$2100` through WMDATA. Mutations 1/1. Bound. |
+| `$81:C2FB` | `Lufia2BattleClearWindowTilemap` | `verified` | Clears `$7E:3000-$37FF` through WMDATA. Bound. |
+| `$81:C30E` | `Lufia2BattleClearTilemap3800` | `verified` | Clears `$7E:3800-$3FFF` through WMDATA. Mutations 1/1. Bound. |
 | `$81:C5CF` | `Lufia2BattleTargetPointer` | `verified` | X = record of target mask A (nonzero): lowest set bit, party from `$0A64`, enemies (bit 7) from `$85:9EC8`. Mutations 1/1. Bound. |
 | `$81:BE58` | `Lufia2BattleTileBlock` | `verified` | `$02` x `$03` blocks of 2x2 tiles from sheet tile `$00` (attribute `$04`) at `$7E:$08`, rows `$80` apart, the tile advancing by 2 and wrapping to the next sheet row pair. Mutations 3/3. Bound. |
 | `$81:BD4B` | `Lufia2BattleSpriteBlock` | `verified` | `$02` x `$03` 5-byte sprite entries at `$7E:$08` (X from `$06` - `$07`, Y `$05` - 1, 16 px steps, tile as `$81:BE58`, attribute `$04`, size bits from `$18`); `$08` advanced, A = count. Mutations 3/3. Bound. |

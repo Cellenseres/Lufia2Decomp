@@ -143,28 +143,28 @@ Lufia2ExecutionResult Lufia2BattleCommitPalettes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $81:C2C0 16 bytes $B401 to $123C; M1X0. */
-Lufia2ExecutionResult Lufia2BattleCopyC2C0(
+/* Battle display defaults. */
+Lufia2ExecutionResult Lufia2BattleLoadDisplayDefaults(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $81:C2D0 clear $7E:2000-$27FF; M1X0. */
-Lufia2ExecutionResult Lufia2BattleClear2000(
+/* Clear the background tilemap. */
+Lufia2ExecutionResult Lufia2BattleClearBackgroundTilemap(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $81:C2E3 fill $7E:2800-$2FFF with $2100; M1X0. */
-Lufia2ExecutionResult Lufia2BattleFill2800(
+/* Reset the party tilemap. */
+Lufia2ExecutionResult Lufia2BattleResetPartyTilemap(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $81:C2FB clear $7E:3000-$37FF; M1X0. */
-Lufia2ExecutionResult Lufia2BattleClear3000(
+/* Clear the window tilemap. */
+Lufia2ExecutionResult Lufia2BattleClearWindowTilemap(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $81:C30E clear $7E:3800-$3FFF; M1X0. */
-Lufia2ExecutionResult Lufia2BattleClear3800(
+/* Clear tilemap $3800. */
+Lufia2ExecutionResult Lufia2BattleClearTilemap3800(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 

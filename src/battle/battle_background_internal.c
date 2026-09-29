@@ -1,4 +1,4 @@
-#include "battle/battle_lifecycle_detail.h"
+#include "battle/battle_lifecycle_internal.h"
 #include "core/snes_registers.h"
 
 enum {
@@ -36,7 +36,7 @@ static bool DecodeBackgroundResources(BattleContext *battle) {
     cpu->carry = 0;
     OpAdcValue(cpu, 0x016cu);
     OpSta(memory, cpu, OpDp(cpu, 0x54u));
-    if (!BattleCall(battle, 0xba08u, 0x808e9du, 3u))
+    if (!BattleDecompressResource(battle, 0xba08u))
         return false;
 
     OpLda(memory, cpu, OpAbs(cpu, BATTLE_BACKGROUND_DESCRIPTOR));
@@ -50,7 +50,7 @@ static bool DecodeBackgroundResources(BattleContext *battle) {
     OpWriteX(memory, cpu, OpDp(cpu, 0x60u), cpu->x);
     LoadA8(cpu, 0x7eu);
     OpSta(memory, cpu, OpDp(cpu, 0x62u));
-    return BattleCall(battle, 0xba23u, 0x808e9du, 3u);
+    return BattleDecompressResource(battle, 0xba23u);
 }
 
 static bool LoadBackgroundPalettes(BattleContext *battle) {

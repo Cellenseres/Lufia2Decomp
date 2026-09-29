@@ -1,6 +1,6 @@
 /* Battle display setup. */
 
-#include "battle/battle_lifecycle_detail.h"
+#include "battle/battle_lifecycle_internal.h"
 
 Lufia2ExecutionResult Lufia2BattleDisplaySetup(
     const Lufia2Memory *memory,

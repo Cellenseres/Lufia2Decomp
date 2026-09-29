@@ -291,69 +291,6 @@ Lufia2ExecutionResult Lufia2BattleCommitPalettes(
     return ExecutionReturned(0x81b9c6u);
 }
 
-/* $81:C2C0: 16 bytes $B401 to $123C. */
-Lufia2ExecutionResult Lufia2BattleCopyC2C0(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    LoadX16(cpu, 0x0000u);
-    do {
-        LoadAAbsolute8(memory, cpu, 0xb401u, cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x123cu, cpu->x);
-        IncrementX16(cpu);
-        Compare16(cpu, cpu->x, 0x0010u);
-    } while (!cpu->zero);
-    return ExecutionReturned(0x81c2cfu);
-}
-
-/* WMDATA fill from address, count words or bytes. */
-static void PortFill(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t address, uint16_t count, int pairs) {
-    LoadX16(cpu, address);
-    StoreWordAbsolute(memory, cpu, SNES_WMADDL, cpu->x);
-    StoreZeroAbsolute8(memory, cpu, SNES_WMADDH, 0);
-    LoadX16(cpu, count);
-    if (pairs)
-        LoadA8(cpu, 0x21u);
-    do {
-        StoreZeroAbsolute8(memory, cpu, SNES_WMDATA, 0);
-        if (pairs)
-            StoreAAbsolute8(memory, cpu, SNES_WMDATA, 0);
-        LoadX16(cpu, (uint16_t)(cpu->x - 1u));
-    } while (!cpu->zero);
-}
-
-/* $81:C2D0: clear $7E:2000-$27FF. */
-Lufia2ExecutionResult Lufia2BattleClear2000(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    PortFill(memory, cpu, 0x2000u, 0x0800u, 0);
-    return ExecutionReturned(0x81c2e2u);
-}
-
-/* $81:C2E3: fill $7E:2800-$2FFF with tile $2100. */
-Lufia2ExecutionResult Lufia2BattleFill2800(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    PortFill(memory, cpu, 0x2800u, 0x0400u, 1);
-    return ExecutionReturned(0x81c2fau);
-}
-
-/* $81:C2FB: clear $7E:3000-$37FF. */
-Lufia2ExecutionResult Lufia2BattleClear3000(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    PortFill(memory, cpu, 0x3000u, 0x0800u, 0);
-    return ExecutionReturned(0x81c30du);
-}
-
-/* $81:C30E: clear $7E:3800-$3FFF. */
-Lufia2ExecutionResult Lufia2BattleClear3800(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    PortFill(memory, cpu, 0x3800u, 0x0800u, 0);
-    return ExecutionReturned(0x81c320u);
-}
-
 /* $81:C5CF: X = record of target mask A (bit 7: enemy). */
 Lufia2ExecutionResult Lufia2BattleTargetPointer(
     const Lufia2Memory *memory,

@@ -39,22 +39,22 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_ip.c
     src/battle/battle_popup.c
     src/battle/battle_util.c
+    src/battle/battle_buffers.c
     src/battle/battle_portrait.c
     src/battle/battle_nmi.c
     src/battle/battle_script.c
     src/battle/battle_transition.c
     src/battle/battle_entry.c
-    src/battle/battle_entry_detail.c
+    src/battle/battle_lifecycle_internal.c
     src/battle/battle_setup.c
-    src/battle/battle_setup_detail.c
+    src/battle/battle_setup_internal.c
     src/battle/battle_background.c
-    src/battle/battle_background_detail.c
+    src/battle/battle_background_internal.c
     src/battle/battle_exit.c
-    src/battle/battle_exit_detail.c
     src/battle/battle_display_setup.c
-    src/battle/battle_display_detail.c
+    src/battle/battle_display_internal.c
     src/battle/battle_loop.c
-    src/battle/battle_loop_detail.c
+    src/battle/battle_loop_internal.c
     src/cave/ancient_cave.c
     src/cave/cave_grid.c
     src/cave/cave_objects.c
