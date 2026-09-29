@@ -7,7 +7,8 @@ Lufia2ExecutionResult Lufia2BattleDisplaySetup(
     Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,
     void *child_context) {
-    BattleContext battle = BattleContextCreate(memory, cpu, child, child_context, 0x81u);
+    BattleContext battle =
+        BattleContextCreate(memory, cpu, child, child_context, 0x81u);
 
     BattleResetDisplayWork(&battle);
 

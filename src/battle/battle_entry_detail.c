@@ -47,6 +47,13 @@ void BattleRestoreSessionStack(BattleContext *battle) {
     cpu->stack = cpu->x;
 }
 
+bool BattleRunPostLoopSteps(BattleContext *battle) {
+    if (!BattleCall(battle, 0x8859u, 0x85edbbu, 3u))
+        return false;
+
+    return BattleCall(battle, 0x885du, 0x85eea1u, 3u);
+}
+
 void BattleEndSession(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;

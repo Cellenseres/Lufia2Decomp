@@ -29,12 +29,11 @@ typedef struct BattleContext {
     uint32_t unwind_site;
 } BattleContext;
 
-static inline BattleContext BattleContextCreate(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child,
-    void *child_context,
-    uint8_t return_bank) {
+static inline BattleContext BattleContextCreate(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu,
+                                                Lufia2PushedChildCall child,
+                                                void *child_context,
+                                                uint8_t return_bank) {
     return (BattleContext){memory, cpu, child, child_context, return_bank, 0u};
 }
 
