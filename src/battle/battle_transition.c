@@ -12,6 +12,10 @@ enum {
     TRANSITION_HDMA_FLAGS = 0x81u,
 };
 
+static bool WaitForTransitionFrame(BattleContext *battle, uint16_t site) {
+    return BattleCall(battle, site, 0x848d4du, 2u);
+}
+
 static void ClearTransitionPlanes(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, 0x07fcu);
     TransferDirectToA(cpu);
@@ -173,15 +177,15 @@ Lufia2ExecutionResult Lufia2BattleVisualTransition(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu,
                                                    Lufia2PushedChildCall child,
                                                    void *child_context) {
-    Lufia2BattleChildCalls calls = {memory, cpu, child, child_context, 0x84u, 0u};
+    BattleContext battle = {memory, cpu, child, child_context, 0x84u, 0u};
 
     PushDataBank(memory, cpu);
     ClearTransitionPlanes(memory, cpu);
 
     LoadA8(cpu, 0x08u);
     OpSta(memory, cpu, OpDp(cpu, TRANSITION_CONTROL));
-    if (!Lufia2BattleCallChild(&calls, 0x8bf2u, 0x848d4du, 2u))
-        return Lufia2BattleChildUnwound(&calls);
+    if (!WaitForTransitionFrame(&battle, 0x8bf2u))
+        return BattleChildUnwound(&battle);
 
     OpLda(memory, cpu, 0x7f0001u);
     if (cpu->zero)
@@ -191,16 +195,16 @@ Lufia2ExecutionResult Lufia2BattleVisualTransition(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpAbs(cpu, SNES_TM));
 
     OpLdx(cpu, 0x0000u);
-    if (!Lufia2BattleCallChild(&calls, 0x8c07u, 0x80f47au, 3u))
-        return Lufia2BattleChildUnwound(&calls);
+    if (!BattleCall(&battle, 0x8c07u, 0x80f47au, 3u))
+        return BattleChildUnwound(&battle);
     OpLdx(cpu, 0x0002u);
-    if (!Lufia2BattleCallChild(&calls, 0x8c0eu, 0x80f47au, 3u))
-        return Lufia2BattleChildUnwound(&calls);
+    if (!BattleCall(&battle, 0x8c0eu, 0x80f47au, 3u))
+        return BattleChildUnwound(&battle);
 
     LoadA8(cpu, 0xa0u);
     OpSta(memory, cpu, OpDp(cpu, TRANSITION_CONTROL));
-    if (!Lufia2BattleCallChild(&calls, 0x8c16u, 0x848d4du, 2u))
-        return Lufia2BattleChildUnwound(&calls);
+    if (!WaitForTransitionFrame(&battle, 0x8c16u))
+        return BattleChildUnwound(&battle);
 
     SeedMosaicTransition(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7eu);
@@ -209,8 +213,8 @@ Lufia2ExecutionResult Lufia2BattleVisualTransition(const Lufia2Memory *memory,
         BuildSwirlTilemaps(memory, cpu);
         ConfigureSwirlHdma(memory, cpu);
 
-        if (!Lufia2BattleCallChild(&calls, 0x8d3fu, 0x848d4du, 2u))
-            return Lufia2BattleChildUnwound(&calls);
+        if (!WaitForTransitionFrame(&battle, 0x8d3fu))
+            return BattleChildUnwound(&battle);
 
         OpLda(memory, cpu, OpDp(cpu, TRANSITION_ANGLE));
         OpCmpValue(cpu, 0x40u);
