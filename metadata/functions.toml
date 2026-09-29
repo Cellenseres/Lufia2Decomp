@@ -1021,40 +1021,40 @@ status = "verified"
 
 [[function]]
 address = "81:C2C0"
-name = "Lufia2BattleCopyC2C0"
-source = "src/battle/battle_util.c"
+name = "Lufia2BattleLoadDisplayDefaults"
+source = "src/battle/battle_buffers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
 [[function]]
 address = "81:C2D0"
-name = "Lufia2BattleClear2000"
-source = "src/battle/battle_util.c"
+name = "Lufia2BattleClearBackgroundTilemap"
+source = "src/battle/battle_buffers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
 [[function]]
 address = "81:C2E3"
-name = "Lufia2BattleFill2800"
-source = "src/battle/battle_util.c"
+name = "Lufia2BattleResetPartyTilemap"
+source = "src/battle/battle_buffers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
 [[function]]
 address = "81:C2FB"
-name = "Lufia2BattleClear3000"
-source = "src/battle/battle_util.c"
+name = "Lufia2BattleClearWindowTilemap"
+source = "src/battle/battle_buffers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
 [[function]]
 address = "81:C30E"
-name = "Lufia2BattleClear3800"
-source = "src/battle/battle_util.c"
+name = "Lufia2BattleClearTilemap3800"
+source = "src/battle/battle_buffers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"

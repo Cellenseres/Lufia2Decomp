@@ -1,6 +1,6 @@
 /* Battle display setup. */
 
-#include "battle/battle_lifecycle_detail.h"
+#include "battle/battle_lifecycle_internal.h"
 #include "core/snes_registers.h"
 #include "system/scene_nmi_internal.h"
 #include "system/wram.h"
@@ -33,13 +33,13 @@ bool BattleClearDisplayBuffers(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
 
-    if (!BattleClear2000(battle))
+    if (!BattleClearBackgroundTilemap(battle))
         return false;
-    if (!BattleFill2800(battle))
+    if (!BattleResetPartyTilemap(battle))
         return false;
-    if (!BattleClear3000(battle, 0x8547u))
+    if (!BattleClearWindowTilemapForSetup(battle))
         return false;
-    if (!BattleClear3800(battle, 0x854au))
+    if (!BattleClearTilemap3800ForSetup(battle))
         return false;
 
     OpStz(memory, cpu, OpDp(cpu, 0xd8u));
@@ -152,7 +152,7 @@ void BattleInitializeDisplayRecords(BattleContext *battle) {
 }
 
 bool BattlePrepareDisplayRecords(BattleContext *battle) {
-    if (!BattleCall(battle, 0x8624u, 0x81c2c0u, 2u))
+    if (!BattleLoadDisplayDefaults(battle))
         return false;
     if (!BattleCall(battle, 0x8627u, 0x81e877u, 2u))
         return false;
@@ -192,7 +192,7 @@ bool BattleLoadBaseGraphics(BattleContext *battle) {
     OpLdx(cpu, 0x0190u);
     OpWriteX(memory, cpu, OpDp(cpu, 0x54u), cpu->x);
 
-    if (!BattleCall(battle, 0x865du, 0x808e9du, 3u))
+    if (!BattleDecompressResource(battle, 0x865du))
         return false;
     if (!BattleLoadPortraits(battle))
         return false;

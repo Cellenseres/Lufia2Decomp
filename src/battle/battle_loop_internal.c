@@ -1,4 +1,4 @@
-#include "battle/battle_lifecycle_detail.h"
+#include "battle/battle_lifecycle_internal.h"
 #include "core/snes_registers.h"
 
 void BattleSaveLoopStack(BattleContext *battle) {

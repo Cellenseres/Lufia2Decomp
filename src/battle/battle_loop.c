@@ -1,6 +1,6 @@
 /* Battle loop. */
 
-#include "battle/battle_lifecycle_detail.h"
+#include "battle/battle_lifecycle_internal.h"
 
 Lufia2ExecutionResult Lufia2BattleMainLoop(
     const Lufia2Memory *memory,

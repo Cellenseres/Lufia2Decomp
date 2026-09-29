@@ -1,6 +1,6 @@
 /* Battle background setup. */
 
-#include "battle/battle_lifecycle_detail.h"
+#include "battle/battle_lifecycle_internal.h"
 
 Lufia2ExecutionResult Lufia2BattleBackgroundPrepare(
     const Lufia2Memory *memory,

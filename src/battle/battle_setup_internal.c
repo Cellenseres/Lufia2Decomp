@@ -1,6 +1,6 @@
 /* Battle setup. */
 
-#include "battle/battle_lifecycle_detail.h"
+#include "battle/battle_lifecycle_internal.h"
 
 enum {
     ENCOUNTER_SELECTOR = 0x7ff8a1u,
@@ -60,7 +60,7 @@ bool BattlePrepareOpening(BattleContext *battle) {
                 OpCmpValue(cpu, 0x3fu);
                 if (cpu->zero) {
                     LoadA8(cpu, 2u);
-                    if (!BattleCall(battle, 0x803au, 0x808299u, 3u))
+                    if (!BattleRandomScale(battle, 0x803au))
                         return false;
                     OpCmpValue(cpu, 0u);
                     if (!cpu->zero) {
@@ -71,7 +71,7 @@ bool BattlePrepareOpening(BattleContext *battle) {
                     OpCmpValue(cpu, 0xbfu);
                     if (cpu->zero) {
                         LoadA8(cpu, 2u);
-                        if (!BattleCall(battle, 0x8051u, 0x808299u, 3u))
+                        if (!BattleRandomScale(battle, 0x8051u))
                             return false;
                         OpCmpValue(cpu, 0u);
                         if (!cpu->zero) {
@@ -169,7 +169,7 @@ bool BattleInitializeRecords(BattleContext *battle) {
             OpPushX(memory, cpu);
             OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, 0x0a6eu)));
             OpWriteX(memory, cpu, OpAbs(cpu, 0x00b2u), cpu->x);
-            if (!BattleCall(battle, 0x80fau, 0x81fc0bu, 3u))
+            if (!BattleCreatePartyRecord(battle))
                 return false;
             OpPullX(memory, cpu);
             OpPullY(memory, cpu);
@@ -266,7 +266,7 @@ bool BattleFinalizeSetup(BattleContext *battle) {
         return false;
     if (!BattleCall(battle, 0x81bcu, 0x8591a1u, 3u))
         return false;
-    if (!BattleCall(battle, 0x81c0u, 0x858a2fu, 3u))
+    if (!BattleBuildSprites(battle))
         return false;
 
     LoadA8(cpu, 0xffu);

@@ -1,6 +1,6 @@
 /* Battle entry. */
 
-#include "battle/battle_lifecycle_detail.h"
+#include "battle/battle_lifecycle_internal.h"
 
 Lufia2ExecutionResult Lufia2BattleEntry(
     const Lufia2Memory *memory,

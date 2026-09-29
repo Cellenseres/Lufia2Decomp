@@ -105,20 +105,48 @@ static inline bool BattleCommitPalettes(BattleContext *battle) {
     return BattleCall(battle, 0x86e4u, 0x81b9afu, 3u);
 }
 
-static inline bool BattleClear2000(BattleContext *battle) {
+static inline bool BattleLoadDisplayDefaults(BattleContext *battle) {
+    return BattleCall(battle, 0x8624u, 0x81c2c0u, 2u);
+}
+
+static inline bool BattleClearBackgroundTilemap(BattleContext *battle) {
     return BattleCall(battle, 0x8541u, 0x81c2d0u, 2u);
 }
 
-static inline bool BattleFill2800(BattleContext *battle) {
+static inline bool BattleResetPartyTilemap(BattleContext *battle) {
     return BattleCall(battle, 0x8544u, 0x81c2e3u, 2u);
 }
 
-static inline bool BattleClear3000(BattleContext *battle, uint16_t site) {
-    return BattleCall(battle, site, 0x81c2fbu, 2u);
+static inline bool BattleClearWindowTilemapForSetup(BattleContext *battle) {
+    return BattleCall(battle, 0x8547u, 0x81c2fbu, 2u);
 }
 
-static inline bool BattleClear3800(BattleContext *battle, uint16_t site) {
-    return BattleCall(battle, site, 0x81c30eu, 2u);
+static inline bool BattleClearTilemap3800ForSetup(BattleContext *battle) {
+    return BattleCall(battle, 0x854au, 0x81c30eu, 2u);
+}
+
+static inline bool BattleClearWindowTilemapForExit(BattleContext *battle) {
+    return BattleCall(battle, 0x8796u, 0x81c2fbu, 2u);
+}
+
+static inline bool BattleClearTilemap3800ForExit(BattleContext *battle) {
+    return BattleCall(battle, 0x8799u, 0x81c30eu, 2u);
+}
+
+static inline bool BattleDecompressResource(BattleContext *battle, uint16_t site) {
+    return BattleCall(battle, site, 0x808e9du, 3u);
+}
+
+static inline bool BattleCreatePartyRecord(BattleContext *battle) {
+    return BattleCall(battle, 0x80fau, 0x81fc0bu, 3u);
+}
+
+static inline bool BattleBuildSprites(BattleContext *battle) {
+    return BattleCall(battle, 0x81c0u, 0x858a2fu, 3u);
+}
+
+static inline bool BattleRandomScale(BattleContext *battle, uint16_t site) {
+    return BattleCall(battle, site, 0x808299u, 3u);
 }
 
 #endif
