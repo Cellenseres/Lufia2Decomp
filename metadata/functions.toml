@@ -104,6 +104,16 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# $83:845B saves Field CPU state, runs the visual transition and Battle,
+# then selects the Field-side continuation before restoring the saved state.
+[[function]]
+address = "83:845B"
+name = "Lufia2EncounterBattleSequence"
+source = "src/field/encounter.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # Per-frame field triggers. Expiring timers, touch events, the
 # trigger queue and door warps stop at their exact ROM PC.
 [[function]]
