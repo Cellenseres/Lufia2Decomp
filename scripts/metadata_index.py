@@ -20,6 +20,7 @@ Requires Python 3.11+ (tomllib); no third-party packages.
 from __future__ import annotations
 
 import argparse
+import difflib
 import re
 import sys
 import tomllib
@@ -292,8 +293,17 @@ def main() -> int:
              if p.read_text(encoding="utf-8") != text]
     if args.check:
         for path in stale:
-            print(f"metadata_index: {path.relative_to(ROOT)} is stale",
-                  file=sys.stderr)
+            relative = path.relative_to(ROOT)
+            print(f"metadata_index: {relative} is stale", file=sys.stderr)
+            actual = path.read_text(encoding="utf-8").splitlines()
+            expected = updates[path].splitlines()
+            diff = list(difflib.unified_diff(
+                actual, expected, fromfile=str(relative),
+                tofile=f"{relative} (generated)", lineterm=""))
+            for line in diff[:80]:
+                print(line, file=sys.stderr)
+            if len(diff) > 80:
+                print(f"... {len(diff) - 80} diff lines omitted", file=sys.stderr)
         return 1 if stale else 0
     for path in stale:
         path.write_text(updates[path], encoding="utf-8", newline="\n")
