@@ -10,9 +10,6 @@ enum {
     TRANSITION_RADIUS_HI = 0x05u,
     TRANSITION_CONTROL = 0x74u,
     TRANSITION_HDMA_FLAGS = 0x81u,
-    FIELD_TRANSITION_FLAGS = 0x09aau,
-    FIELD_MOSAIC_STATE = 0x7fd0f2u,
-    FIELD_MOSAIC_ACCUMULATOR = 0x7fd0f3u,
 };
 
 static void ClearTransitionPlanes(
@@ -40,7 +37,7 @@ static void ClearTransitionPlanes(
 static void SeedMosaicTransition(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, 0x02u);
-    OpSta(memory, cpu, 0x002105u);
+    OpSta(memory, cpu, SNES_BGMODE);
     TransferDirectToA(cpu);
     OpSta(memory, cpu, SNES_BG3HOFS);
     OpSta(memory, cpu, SNES_BG3HOFS);
@@ -52,19 +49,19 @@ static void SeedMosaicTransition(
     OpSta(memory, cpu, 0x00059fu);
 
     LoadA8(cpu, 0x01u);
-    OpSta(memory, cpu, FIELD_MOSAIC_STATE);
+    OpSta(memory, cpu, WRAM_FIELD_MOSAIC_STATE);
     LoadA8(cpu, 0x80u);
-    OpSta(memory, cpu, FIELD_MOSAIC_ACCUMULATOR);
+    OpSta(memory, cpu, WRAM_FIELD_MOSAIC_ACCUMULATOR);
     LoadA8(cpu, 0x01u);
-    OpSta(memory, cpu, OpAbs(cpu, FIELD_TRANSITION_FLAGS));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_TRANSITION_FLAGS));
 
     OpStz(memory, cpu, OpDp(cpu, TRANSITION_ANGLE));
     OpStz(memory, cpu, OpDp(cpu, TRANSITION_ANGLE_HI));
     OpStz(memory, cpu, OpDp(cpu, TRANSITION_RADIUS));
     OpStz(memory, cpu, OpDp(cpu, TRANSITION_RADIUS_HI));
-    OpStz(memory, cpu, OpAbs(cpu, 0x0582u));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_FADE_LEVEL));
     LoadA8(cpu, 0xc4u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x0581u));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
 }
 
 static void BuildSwirlTilemaps(

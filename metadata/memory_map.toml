@@ -248,11 +248,43 @@ owner = "field"
 notes = "Window mode set by text opcode $69; bit 0 gates the actor front-ends $83:C7F8 and $83:D508, bit 1 the field menu request $83:83A0."
 
 [[location]]
+address = "7E:09AA"
+name = "field_transition_flags"
+width = 1
+owner = "field"
+notes = "Field transition flags; bit 0 drives the verified field-NMI mosaic progression. Battle transition sets it and field restoration clears it."
+
+
+[[location]]
+address = "7E:0A13"
+name = "battle_script_context"
+width = 1
+owner = "battle"
+notes = "Battle script context marker. Battle entry holds it at $FF through setup and the main loop; the battle script uses it when selecting battler-local state."
+
+
+[[location]]
 address = "7E:0A8A"
 name = "gold"
 width = 3
 owner = "party"
 notes = "Gold, capped at 9,999,999 by text opcodes $22/$26."
+
+[[location]]
+address = "7E:11E1"
+name = "battle_background_id"
+width = 1
+owner = "battle"
+notes = "Battle background selector. $81:B9C7 indexes the background resource table with values $00-$17; $18 selects the blank-background path. It is not a scene-identity flag."
+
+
+[[location]]
+address = "7E:11E7"
+name = "battle_control_flags"
+width = 1
+owner = "battle"
+notes = "Battle control flags. Setup initializes values 1-3, bits 0-1 route main-loop handlers, and bit 7 ends the main loop."
+
 
 [[location]]
 address = "7E:1261"
@@ -269,6 +301,14 @@ owner = "field"
 notes = "Palette fade state; stopped by text opcode $C5."
 
 [[location]]
+address = "7E:1264"
+name = "battle_wait_counter"
+width = 2
+owner = "battle"
+notes = "Battle wait counter. Display setup seeds it to 30, setup waits while it is nonzero, and battle script opcode $4F can replace it."
+
+
+[[location]]
 address = "7E:1269"
 name = "text_wait_actor"
 width = 1
@@ -282,6 +322,14 @@ width = 1
 count = 40
 owner = "actor"
 notes = "Per-slot byte; its low three bits send $83:C7F8 into the $83:C808 countdown, and the text engine reads the speaker's entry for the typing sound."
+
+[[location]]
+address = "7E:129A"
+name = "battle_frame_state"
+width = 1
+owner = "battle"
+notes = "Battle frame state byte. The main loop clears it before frame children and writes $FF afterward; display setup also uses it while preparing the first frame."
+
 
 [[location]]
 address = "7E:17AA"
@@ -305,6 +353,21 @@ name = "unk_7FD0A1"
 width = 1
 owner = "field"
 notes = "Field control bits. $83:BB93 lets only the leader run $83:C7F8 while $2C is set; bit 2 records blocked steps, bit 6 gates $83:CA68."
+
+[[location]]
+address = "7F:D0F2"
+name = "field_mosaic_state"
+width = 1
+owner = "field"
+notes = "Field-NMI mosaic state. Its high nibble becomes the MOSAIC size and its low nibble feeds the accumulator; the Battle transition seeds it to $01."
+
+[[location]]
+address = "7F:D0F3"
+name = "field_mosaic_accumulator"
+width = 1
+owner = "field"
+notes = "Accumulator and direction byte for the field-NMI mosaic progression; the Battle transition seeds it to $80."
+
 
 [[location]]
 address = "7F:D0FE"

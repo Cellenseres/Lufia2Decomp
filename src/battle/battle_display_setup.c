@@ -44,7 +44,7 @@ static uint8_t ClearBattleDisplayBuffers(
 
     OpStz(memory, cpu, OpDp(cpu, 0xd8u));
     OpStz(memory, cpu, OpDp(cpu, 0xd9u));
-    OpStz(memory, cpu, OpAbs(cpu, BATTLE_WRAM_FRAME_STATE));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_FRAME_STATE));
 
     OpRepWidths(cpu, 0x20u);
     OpLdx(cpu, 90u);
@@ -291,7 +291,7 @@ static void PrepareBattleSpriteState(
     LoadA8(cpu, 0x40u);
     OpSta(memory, cpu, OpDp(cpu, 0x72u));
     OpAslA(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_WRAM_FRAME_STATE));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_FRAME_STATE));
 
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7eu);
@@ -341,7 +341,7 @@ static uint8_t FinishBattleDisplay(
 
     OpLdx(cpu, 30u);
     OpWriteX(
-        memory, cpu, OpAbs(cpu, BATTLE_WRAM_STARTUP_COUNTER), cpu->x);
+        memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER), cpu->x);
 
     return Lufia2BattleCallChild(calls, 0x8766u, 0x8595feu, 3u);
 }

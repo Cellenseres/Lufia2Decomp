@@ -4,6 +4,7 @@
 #include "core/snes_registers.h"
 #include "lufia2/field.h"
 #include "system/scene_nmi_internal.h"
+#include "system/wram.h"
 
 static void RestoreFieldWorkingBuffers(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -60,7 +61,7 @@ static void ResetFieldPresentationState(
     OpStz(memory, cpu, OpDp(cpu, 0x81u));
     OpStz(memory, cpu, OpAbs(cpu, SNES_HDMAEN));
     OpStz(memory, cpu, OpDp(cpu, 0x74u));
-    OpStz(memory, cpu, OpAbs(cpu, 0x09aau));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_FIELD_TRANSITION_FLAGS));
     OpStz(memory, cpu, OpAbs(cpu, 0x1209u));
 
     LoadA8(cpu, 0xffu);

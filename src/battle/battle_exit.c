@@ -1,6 +1,7 @@
 /* Battle-side exit wrapper at $81:876B. */
 
 #include "battle/battle_internal.h"
+#include "core/snes_registers.h"
 #include "system/scene_nmi_internal.h"
 #include "system/wram.h"
 
@@ -57,7 +58,7 @@ Lufia2ExecutionResult Lufia2BattleExit(
         return Lufia2BattleChildUnwound(&calls);
 
     Lufia2DisableSceneNmi(memory, cpu);
-    OpStz(memory, cpu, OpAbs(cpu, 0x420cu));
+    OpStz(memory, cpu, OpAbs(cpu, SNES_HDMAEN));
     LoadA8(cpu, BRIGHTNESS_FORCED_BLANK);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
 

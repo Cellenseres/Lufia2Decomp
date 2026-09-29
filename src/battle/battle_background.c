@@ -1,6 +1,7 @@
 /* Battle background preparation at $81:B9C7. */
 
 #include "battle/battle_internal.h"
+#include "core/snes_registers.h"
 
 enum {
     BATTLE_BACKGROUND_DESCRIPTOR = 0x11e2u,
@@ -65,15 +66,15 @@ static uint8_t LoadBackgroundPalettes(
     const Lufia2Memory *memory = calls->memory;
 
     OpLda(memory, cpu, OpAbs(cpu, BATTLE_BACKGROUND_DESCRIPTOR + 2u));
-    OpSta(memory, cpu, OpAbs(cpu, 0x4202u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
     LoadA8(cpu, 0x40u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x4203u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
     LoadA8(cpu, 0x97u);
     OpSta(memory, cpu, OpDp(cpu, 0x24u));
     OpRepWidths(cpu, 0x20u);
     cpu->carry = 0;
     LoadA16(cpu, 0xcd58u);
-    OpAdc(memory, cpu, OpAbs(cpu, 0x4216u));
+    OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
     OpTay(cpu);
     OpSepWidths(cpu, 0x20u);
 
@@ -141,7 +142,7 @@ Lufia2ExecutionResult Lufia2BattleBackgroundPrepare(
         memory, cpu, child, child_context, 0x81u, 0u};
 
     TransferDirectToA(cpu);                                  /* $81:B9C7 */
-    OpLda(memory, cpu, OpAbs(cpu, BATTLE_WRAM_BACKGROUND_ID));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_BACKGROUND_ID));
     const uint8_t background_id = A8(cpu);
     OpCmpValue(cpu, BATTLE_BACKGROUND_BLANK);
 
@@ -161,7 +162,7 @@ Lufia2ExecutionResult Lufia2BattleBackgroundPrepare(
     TransferDirectToA(cpu);
     OpSta(memory, cpu, OpAbs(cpu, 0x1b17u));
 
-    OpLda(memory, cpu, OpAbs(cpu, BATTLE_WRAM_BACKGROUND_ID));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_BACKGROUND_ID));
     if (cpu->zero &&
         !Lufia2BattleCallChild(&calls, 0xbac6u, 0x85a701u, 3u))
         return Lufia2BattleChildUnwound(&calls);

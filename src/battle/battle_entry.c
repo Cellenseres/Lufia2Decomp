@@ -40,9 +40,9 @@ Lufia2ExecutionResult Lufia2BattleEntry(
 
     OpLdx(cpu, cpu->stack);                                 /* TSX */
     OpWriteX(
-        memory, cpu, OpAbs(cpu, BATTLE_WRAM_SAVED_ENTRY_STACK), cpu->x);
+        memory, cpu, OpAbs(cpu, BATTLE_SAVED_ENTRY_STACK), cpu->x);
     LoadA8(cpu, 0xffu);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_WRAM_SCRIPT_CONTEXT));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_SCRIPT_CONTEXT));
 
     if (!Lufia2BattleCallChild(&calls, 0x884fu, 0x818000u, 2u))
         return Lufia2BattleChildUnwound(&calls);
@@ -52,7 +52,7 @@ Lufia2ExecutionResult Lufia2BattleEntry(
     OpLdx(
         cpu,
         OpReadX(
-            memory, cpu, OpAbs(cpu, BATTLE_WRAM_SAVED_ENTRY_STACK)));
+            memory, cpu, OpAbs(cpu, BATTLE_SAVED_ENTRY_STACK)));
     cpu->stack = cpu->x;                                    /* TXS */
 
     if (!Lufia2BattleCallChild(&calls, 0x8859u, 0x85edbbu, 3u))
@@ -62,7 +62,7 @@ Lufia2ExecutionResult Lufia2BattleEntry(
     if (!Lufia2BattleCallChild(&calls, 0x8861u, 0x81876bu, 2u))
         return Lufia2BattleChildUnwound(&calls);
 
-    OpStz(memory, cpu, OpAbs(cpu, BATTLE_WRAM_SCRIPT_CONTEXT));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_SCRIPT_CONTEXT));
     OpRepWidths(cpu, 0x30u);
     OpPullY(memory, cpu);
     OpPullX(memory, cpu);

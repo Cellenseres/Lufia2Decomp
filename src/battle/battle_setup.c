@@ -79,7 +79,7 @@ static uint8_t SelectBattleOpening(
     OpLdx(cpu, marker);
     OpWriteX(memory, cpu, OpAbs(cpu, BATTLE_FORMATION_MARKER), cpu->x);
     LoadA8(cpu, control);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_WRAM_CONTROL_FLAGS));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CONTROL_FLAGS));
     return 1;
 }
 
@@ -284,7 +284,7 @@ static uint8_t FinishBattleSetup(
         OpLdx(
             cpu,
             OpReadX(
-                memory, cpu, OpAbs(cpu, BATTLE_WRAM_STARTUP_COUNTER)));
+                memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER)));
         if (cpu->zero)
             return 1;
 

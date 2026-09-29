@@ -3,15 +3,11 @@
 
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "system/wram.h"
 
 enum {
-    BATTLE_WRAM_SCRIPT_CONTEXT = 0x0a13u,
-    BATTLE_WRAM_BACKGROUND_ID = 0x11e1u,
-    BATTLE_WRAM_CONTROL_FLAGS = 0x11e7u,
-    BATTLE_WRAM_STARTUP_COUNTER = 0x1264u,
-    BATTLE_WRAM_FRAME_STATE = 0x129au,
-    BATTLE_WRAM_SAVED_ENTRY_STACK = 0x1395u,
-    BATTLE_WRAM_SAVED_LOOP_STACK = 0x1397u,
+    BATTLE_SAVED_ENTRY_STACK = 0x1395u,
+    BATTLE_SAVED_LOOP_STACK = 0x1397u,
 };
 
 enum {
@@ -61,7 +57,7 @@ static inline Lufia2ExecutionResult Lufia2BattleChildUnwound(
 
 static inline void Lufia2BattleLoadControlFlags(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLda(memory, cpu, OpAbs(cpu, BATTLE_WRAM_CONTROL_FLAGS));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CONTROL_FLAGS));
 }
 
 static inline uint8_t Lufia2BattleControlFlag(
