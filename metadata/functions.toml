@@ -172,6 +172,16 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# $81:851E publishes Battle NMI, prepares graphics/background/palettes,
+# schedules uploads and reaches a frame child before returning to setup.
+[[function]]
+address = "81:851E"
+name = "Lufia2BattleDisplaySetup"
+source = "src/battle/battle_display_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # Per-frame field triggers. Expiring timers, touch events, the
 # trigger queue and door warps stop at their exact ROM PC.
 [[function]]

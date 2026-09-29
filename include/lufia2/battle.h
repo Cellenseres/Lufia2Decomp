@@ -44,6 +44,13 @@ Lufia2ExecutionResult Lufia2BattleExit(
     Lufia2PushedChildCall child,
     void *child_context);
 
+/* $81:851E configures Battle display, callback, resources and upload state. */
+Lufia2ExecutionResult Lufia2BattleDisplaySetup(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,
+    void *child_context);
+
 /* $81:E835: character A to two battle glyph tiles; M1X0. */
 Lufia2ExecutionResult Lufia2BattleGlyph(
     const Lufia2Memory *memory,
