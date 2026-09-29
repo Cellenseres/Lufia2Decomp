@@ -19,7 +19,7 @@ and verification notes for each task and may describe a status that a later
 task changed; the index and the metadata are authoritative.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-175 functions in `metadata/functions.toml`: 175 verified, 0 draft, 0 identified, 0 disabled.
+185 functions in `metadata/functions.toml`: 185 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -41,6 +41,11 @@ task changed; the index and the metadata are authoritative.
 | `$80:C784` | `Lufia2TextClearGlyphBuffer` | verified | `src/text/text_window.c` |
 | `$80:CBAE` | `Lufia2FieldEventTimerTick` | verified | `src/field/field_event_script.c` |
 | `$80:ED9C` | `Lufia2FieldBuildAttributes` | verified | `src/field/field_attributes.c` |
+| `$81:8000` | `Lufia2BattleSetup` | verified | `src/battle/battle_setup.c` |
+| `$81:851E` | `Lufia2BattleDisplaySetup` | verified | `src/battle/battle_display_setup.c` |
+| `$81:876B` | `Lufia2BattleExit` | verified | `src/battle/battle_exit.c` |
+| `$81:8821` | `Lufia2BattleEntry` | verified | `src/battle/battle_entry.c` |
+| `$81:886F` | `Lufia2BattleMainLoop` | verified | `src/battle/battle_loop.c` |
 | `$81:B264` | `Lufia2BattleActiveMask` | verified | `src/battle/battle_util.c` |
 | `$81:B2B5` | `Lufia2BattleTargetRecord` | verified | `src/battle/battle_util.c` |
 | `$81:B2DB` | `Lufia2BattleTargetSlot` | verified | `src/battle/battle_util.c` |
@@ -51,6 +56,7 @@ task changed; the index and the metadata are authoritative.
 | `$81:B5A3` | `Lufia2BattleHideOam` | verified | `src/battle/battle_util.c` |
 | `$81:B974` | `Lufia2BattleLoadPalette` | verified | `src/battle/battle_util.c` |
 | `$81:B9AF` | `Lufia2BattleCommitPalettes` | verified | `src/battle/battle_util.c` |
+| `$81:B9C7` | `Lufia2BattleBackgroundPrepare` | verified | `src/battle/battle_background.c` |
 | `$81:BAE8` | `Lufia2BattlePortraits` | verified | `src/battle/battle_portrait.c` |
 | `$81:BAFB` | `Lufia2BattlePortrait` | verified | `src/battle/battle_portrait.c` |
 | `$81:BB75` | `Lufia2BattlePortraitUpload` | verified | `src/battle/battle_portrait.c` |
@@ -148,6 +154,8 @@ task changed; the index and the metadata are authoritative.
 | `$83:8103` | `Lufia2FieldStatusRequests` | verified | `src/field/field_update.c` |
 | `$83:81C6` | `Lufia2FieldTriggerUpdate` | verified | `src/field/field_triggers.c` |
 | `$83:83A0` | `Lufia2FieldMenuRequest` | verified | `src/field/field_update.c` |
+| `$83:83E0` | `Lufia2FieldEncounterHandoff` | verified | `src/field/encounter.c` |
+| `$83:845B` | `Lufia2EncounterBattleSequence` | verified | `src/field/encounter.c` |
 | `$83:85DC` | `Lufia2FieldReloadSetup` | verified | `src/field/field_update.c` |
 | `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |
 | `$83:8682` | `Lufia2FieldAnimationTicks` | verified | `src/field/field_update.c` |
@@ -157,6 +165,7 @@ task changed; the index and the metadata are authoritative.
 | `$83:A746` | `Lufia2ActorSyncFinePosition` | verified | `src/actor/actor_movement.c` |
 | `$83:A9BA` | `Lufia2ActorLoadSprite` | verified | `src/actor/actor_sprites.c` |
 | `$83:AEB5` | `Lufia2FieldColourEffects` | verified | `src/field/field_effects.c` |
+| `$83:B062` | `Lufia2FieldRestore` | verified | `src/field/field_restore.c` |
 | `$83:B66E` | `Lufia2FieldStairRects` | verified | `src/field/field_triggers.c` |
 | `$83:B711` | `Lufia2FieldEventRects` | verified | `src/field/field_triggers.c` |
 | `$83:B747` | `Lufia2FieldAreaRects` | verified | `src/field/field_triggers.c` |
@@ -179,6 +188,7 @@ task changed; the index and the metadata are authoritative.
 | `$83:FB71` | `Lufia2ActorReadMapCellValue` | verified | `src/actor/actor_movement.c` |
 | `$84:8193` | `Lufia2SpriteGraphicsUpload` | verified | `src/actor/actor_sprites.c` |
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
+| `$84:8BC7` | `Lufia2BattleVisualTransition` | verified | `src/battle/battle_transition.c` |
 | `$85:8A2F` | `Lufia2BattleSprites` | verified | `src/battle/battle_frame.c` |
 | `$85:8DC5` | `Lufia2BattleNmiUploads` | verified | `src/battle/battle_nmi.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
