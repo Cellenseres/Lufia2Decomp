@@ -23,7 +23,7 @@ Lufia2ExecutionResult Lufia2BattleEntry(
     Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,
     void *child_context) {
-    Lufia2BattleChildCalls calls = {memory, cpu, child, child_context, 0x81u, 0u};
+    BattleContext battle = {memory, cpu, child, child_context, 0x81u, 0u};
 
     PushDataBank(memory, cpu);
     Push8(memory, cpu, PackStatus(cpu));
@@ -41,20 +41,20 @@ Lufia2ExecutionResult Lufia2BattleEntry(
     LoadA8(cpu, 0xffu);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_SCRIPT_CONTEXT));
 
-    if (!Lufia2BattleCallChild(&calls, 0x884fu, 0x818000u, 2u))
-        return Lufia2BattleChildUnwound(&calls);
-    if (!Lufia2BattleCallChild(&calls, 0x8852u, 0x81886fu, 2u))
-        return Lufia2BattleChildUnwound(&calls);
+    if (!BattleRunSetup(&battle))
+        return BattleChildUnwound(&battle);
+    if (!BattleRunMainLoop(&battle))
+        return BattleChildUnwound(&battle);
 
     OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, BATTLE_SAVED_ENTRY_STACK)));
     cpu->stack = cpu->x;
 
-    if (!Lufia2BattleCallChild(&calls, 0x8859u, 0x85edbbu, 3u))
-        return Lufia2BattleChildUnwound(&calls);
-    if (!Lufia2BattleCallChild(&calls, 0x885du, 0x85eea1u, 3u))
-        return Lufia2BattleChildUnwound(&calls);
-    if (!Lufia2BattleCallChild(&calls, 0x8861u, 0x81876bu, 2u))
-        return Lufia2BattleChildUnwound(&calls);
+    if (!BattleCall(&battle, 0x8859u, 0x85edbbu, 3u))
+        return BattleChildUnwound(&battle);
+    if (!BattleCall(&battle, 0x885du, 0x85eea1u, 3u))
+        return BattleChildUnwound(&battle);
+    if (!BattleRunExit(&battle))
+        return BattleChildUnwound(&battle);
 
     OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_SCRIPT_CONTEXT));
     OpRepWidths(cpu, 0x30u);
