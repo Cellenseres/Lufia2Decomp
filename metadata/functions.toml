@@ -299,6 +299,14 @@ exit_mx = "M1X0"
 status = "verified"
 
 [[function]]
+address = "81:C739"
+name = "Lufia2BattleCollectCommands"
+source = "src/battle/battle_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
 address = "81:CB77"
 name = "Lufia2BattleChooseCommand"
 source = "src/battle/battle_command.c"
