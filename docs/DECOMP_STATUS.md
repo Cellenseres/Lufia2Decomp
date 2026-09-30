@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not this table. The notes below describe the current state.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-204 functions in `metadata/functions.toml`: 204 verified, 0 draft, 0 identified, 0 disabled.
+211 functions in `metadata/functions.toml`: 211 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -54,6 +54,7 @@ the metadata, not this table. The notes below describe the current state.
 | `$81:B505` | `Lufia2BattleBlend` | verified | `src/battle/battle_util.c` |
 | `$81:B54A` | `Lufia2ColorToGray` | verified | `src/battle/battle_util.c` |
 | `$81:B5A3` | `Lufia2BattleHideOam` | verified | `src/battle/battle_util.c` |
+| `$81:B8B1` | `Lufia2BattleTargetCoordinates` | verified | `src/battle/battle_target_helpers.c` |
 | `$81:B974` | `Lufia2BattleLoadPalette` | verified | `src/battle/battle_util.c` |
 | `$81:B9AF` | `Lufia2BattleCommitPalettes` | verified | `src/battle/battle_util.c` |
 | `$81:B9C7` | `Lufia2BattleBackgroundPrepare` | verified | `src/battle/battle_background.c` |
@@ -82,6 +83,12 @@ the metadata, not this table. The notes below describe the current state.
 | `$81:D12F` | `Lufia2BattleActionSubmenuStart` | verified | `src/battle/battle_submenus.c` |
 | `$81:D19A` | `Lufia2BattleActionSubmenuResume` | verified | `src/battle/battle_submenus.c` |
 | `$81:D4E0` | `Lufia2BattleChooseTargets` | verified | `src/battle/battle_targets.c` |
+| `$81:D920` | `Lufia2BattleEnemyCursor` | verified | `src/battle/battle_target_helpers.c` |
+| `$81:D92C` | `Lufia2BattlePartyCursor` | verified | `src/battle/battle_target_helpers.c` |
+| `$81:D938` | `Lufia2BattleEnemyMarkedCursor` | verified | `src/battle/battle_target_helpers.c` |
+| `$81:D948` | `Lufia2BattlePartyMarkedCursor` | verified | `src/battle/battle_target_helpers.c` |
+| `$81:D975` | `Lufia2BattleConfirmCommand` | verified | `src/battle/battle_target_helpers.c` |
+| `$81:D9D0` | `Lufia2BattleCommandFrame` | verified | `src/battle/battle_target_helpers.c` |
 | `$81:DFA2` | `Lufia2BattleListRows` | verified | `src/battle/battle_ip.c` |
 | `$81:E3AE` | `Lufia2BattleWindowE3AE` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E3CD` | `Lufia2BattleWindowE3CD` | verified | `src/battle/battle_frame_rows.c` |
@@ -231,7 +238,7 @@ the metadata, not this table. The notes below describe the current state.
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **325 independent jobs**. The normal
+The full Windows Release verifier passes **326 independent jobs**. The normal
 application build also passes. The latest battle work adds verified functions
 without changing runtime bindings: the consumer still selects 186 functions,
 and all 1,374 generated CFG nodes remain unchanged.
@@ -261,6 +268,12 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Party action selection (BL6.4) | 4,151 + 128 stack-read probes | pass |
 | Action submenus (BL6.5) | 4,119 | pass |
 | Target selection (BL6.6) | 8,207 | pass |
+| Target/confirmation helpers (BL6.7) | 13,326 | pass |
+
+Target coordinates, all four cursor variants, command frame upkeep and the
+confirmation prompt are also reconstructed. They retain original coordinate
+wrapping, hardware register accesses, title drawing and input waits. Larger
+children remain explicit calls. Their tests detect 24 deliberate mistakes.
 
 These recent command functions enter with A8, X/Y16, DB `$97`, DP zero and binary
 arithmetic. They remain unbound. Public declarations and metadata give each
