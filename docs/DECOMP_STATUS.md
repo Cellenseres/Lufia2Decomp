@@ -19,7 +19,7 @@ and verification notes for each task and may describe a status that a later
 task changed; the index and the metadata are authoritative.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-201 functions in `metadata/functions.toml`: 201 verified, 0 draft, 0 identified, 0 disabled.
+203 functions in `metadata/functions.toml`: 203 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -81,6 +81,8 @@ task changed; the index and the metadata are authoritative.
 | `$81:C739` | `Lufia2BattleCollectCommands` | verified | `src/battle/battle_commands.c` |
 | `$81:CB77` | `Lufia2BattleChooseCommand` | verified | `src/battle/battle_command.c` |
 | `$81:CC2E` | `Lufia2BattleChoosePartyAction` | verified | `src/battle/battle_party_commands.c` |
+| `$81:D12F` | `Lufia2BattleActionSubmenuStart` | verified | `src/battle/battle_submenus.c` |
+| `$81:D19A` | `Lufia2BattleActionSubmenuResume` | verified | `src/battle/battle_submenus.c` |
 | `$81:DFA2` | `Lufia2BattleListRows` | verified | `src/battle/battle_ip.c` |
 | `$81:E3AE` | `Lufia2BattleWindowE3AE` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E3CD` | `Lufia2BattleWindowE3CD` | verified | `src/battle/battle_frame_rows.c` |
@@ -1049,3 +1051,46 @@ bringing this block to sixteen detected mutations. The final full MSVC
 Release verifier passes all 323 independent jobs after the address correction,
 and the normal Release build passes. Metadata validates at 201 verified
 functions; all 1,374 CFG nodes and 186 runtime selections remain unchanged.
+
+## Battle action submenus (BL6.5)
+
+`$81:D12F` (`Lufia2BattleActionSubmenuStart`) and `$81:D19A`
+(`Lufia2BattleActionSubmenuResume`) share the reconstructed caller body in
+`battle_submenus.c`. Both contracts enter M1X0, DB `$97`, DP zero, native
+binary arithmetic. The supported submenu kinds are 0/1/2, with initialized
+list/cursor state on resume. Start delegates the corresponding list builder,
+initializes the cursor and optionally restores its saved page/selection;
+resume redraws the title and enters the common selection loop.
+
+The caller includes two-column movement, page jumps, list-end clamping,
+help with six saved stack bytes, both scroll directions, cursor sprites,
+disabled-entry rejection, remembered cursor publication and accept/cancel
+priority. It preserves byte wrapping, temporary X8 table reads, hardware
+multiplier accesses, ROM-backed page tables, PHB/PLB, exact child frames,
+and the IP selection's stack-relative word operand. The original dead blocks
+at `$D1E0..D217` and `$D3FE..D441` are bypassed by unconditional branches;
+they are not speculatively activated. No original polling or scrolling loop
+is replaced by a host shortcut.
+
+Acceptance returns full A=0 at RTS `$D4D6`; cancellation returns A.low=1
+at RTS `$D4DF`. Both exit M1X0. Builders, frame/input, help and presentation
+children remain explicit callbacks with required modes and return landings;
+their unproven/nonlocal exits remain child unwinds. These two functions are
+verified/unbound, without implying reconstruction of the delegated children.
+
+Private original-ROM differential passes 4,119 cases: 2,048 starts and 2,048
+resumes plus 23 forced unwinds, one at every reachable direct callsite.
+Normal returns include 3,412 accepts and 684 cancellations. CPU, full 128 KiB
+WRAM and ordered writes match at child entries and final boundaries. The
+fixture executes 98,268 real ROM helper returns: 93,148 glyph decodes and
+5,120 complete eight-row redraws; other children have controlled return
+effects. Counts 0/1/2/11/12/13/23/230, both list ends, remembered selections,
+all sixteen direction inputs, page wrapping/clamping, disabled selections,
+help and both scroll directions are covered. Fourteen observable mutations
+are caught; an initially surviving page-limit mutation caused the explicit
+selection-217 plus page-step-12 case to be added before promotion. No runtime
+binding or analyzer exit proof is added.
+
+Full MSVC Release `decomp-verify` passes all 324 independent jobs; the normal
+Release application build also passes. All 1,374 CFG nodes and manifest fields
+and all 186 runtime selections remain unchanged.

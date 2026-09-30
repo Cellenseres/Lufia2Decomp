@@ -1071,6 +1071,22 @@ exit_mx = "M1X0"
 status = "verified"
 
 [[function]]
+address = "81:D12F"
+name = "Lufia2BattleActionSubmenuStart"
+source = "src/battle/battle_submenus.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:D19A"
+name = "Lufia2BattleActionSubmenuResume"
+source = "src/battle/battle_submenus.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
 address = "81:DFA2"
 name = "Lufia2BattleListRows"
 source = "src/battle/battle_ip.c"
