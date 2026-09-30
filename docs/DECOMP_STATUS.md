@@ -17,14 +17,14 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-258 functions in `metadata/functions.toml`: 258 verified, 0 draft, 0 identified, 0 disabled.
+260 functions in `metadata/functions.toml`: 260 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **345 independent jobs**. The normal
+The full Windows Release verifier passes **346 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -71,6 +71,7 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Message renderer/resource bus order (BL6.22) | 5,124 + 5,440 | pass |
 | Glyph renderer/font helpers (BL6.23) | 32,771 | pass |
 | Message setup/timer/cleanup (BL6.24) | 12,288 | pass |
+| Party status-icon animation (BL6.25) | 12,289 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
