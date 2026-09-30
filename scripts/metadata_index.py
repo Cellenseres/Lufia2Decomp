@@ -4,8 +4,8 @@
 metadata/functions.toml is the only source of function-level state (address,
 portable symbol, source file, entry/exit M/X, status). This script checks it,
 checks that metadata/symbols.toml holds no function or status data, and
-rewrites the generated blocks in README.md (counts) and docs/DECOMP_STATUS.md
-(index).
+rewrites counts in README.md and docs/DECOMP_STATUS.md, and the function list
+in docs/FUNCTION_INDEX.md.
 
 metadata/memory_map.toml is the only source of named WRAM locations. The
 script validates it, regenerates the constants block in src/system/wram.h and
@@ -32,6 +32,7 @@ FUNCTIONS = ROOT / "metadata" / "functions.toml"
 SYMBOLS = ROOT / "metadata" / "symbols.toml"
 README = ROOT / "README.md"
 STATUS = ROOT / "docs" / "DECOMP_STATUS.md"
+INDEX = ROOT / "docs" / "FUNCTION_INDEX.md"
 MEMORY_MAP = ROOT / "metadata" / "memory_map.toml"
 WRAM_HEADER = ROOT / "src" / "system" / "wram.h"
 
@@ -275,11 +276,11 @@ def main() -> int:
             README: replace_block(README.read_text(encoding="utf-8"),
                                   "metadata-counts", counts_block(functions),
                                   README),
-            STATUS: replace_block(STATUS.read_text(encoding="utf-8"),
+            INDEX: replace_block(INDEX.read_text(encoding="utf-8"),
                                   "metadata-index", index_block(functions),
-                                  STATUS),
+                                  INDEX),
         }
-        updates[STATUS] = replace_block(updates[STATUS], "metadata-counts",
+        updates[STATUS] = replace_block(STATUS.read_text(encoding="utf-8"), "metadata-counts",
                                         counts_block(functions), STATUS)
         locations = load_memory_map()
         updates[WRAM_HEADER] = replace_block(

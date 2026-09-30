@@ -1961,3 +1961,59 @@ source = "src/battle/battle_turn_display.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:9150"
+name = "Lufia2BattleStatusName"
+source = "src/battle/battle_status_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9173"
+name = "Lufia2BattleStatusPhrase"
+source = "src/battle/battle_status_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:91A1"
+name = "Lufia2BattleSyncStatusMarkers"
+source = "src/battle/battle_status_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:91E0"
+name = "Lufia2BattleClearStatusMarkers"
+source = "src/battle/battle_status_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:D9C9"
+name = "Lufia2BattleEffectRecord"
+source = "src/battle/battle_status_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:DCA3"
+name = "Lufia2BattleMultiply"
+source = "src/battle/battle_script.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:DCEA"
+name = "Lufia2BattleRandomFraction"
+source = "src/battle/battle_script.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
