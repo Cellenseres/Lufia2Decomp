@@ -93,6 +93,11 @@ Lufia2ExecutionResult Lufia2BattleActionSubmenuResume(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* $81:D4E0: interactive target selection; M1X0, DB $97, DP zero. */
+Lufia2ExecutionResult Lufia2BattleChooseTargets(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $81:CB77: command selection; M1X0, DB $97, DP zero, explicit children. */
 Lufia2ExecutionResult Lufia2BattleChooseCommand(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
