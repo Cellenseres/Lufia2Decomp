@@ -9,6 +9,7 @@ Generated from `metadata/functions.toml`; update it with
 | --- | --- | --- | --- |
 | `$80:8299` | `Lufia2RandomScale` | verified | `src/system/random.c` |
 | `$80:82C7` | `Lufia2RandomByte` | verified | `src/system/random.c` |
+| `$80:834C` | `Lufia2Multiply16By8` | verified | `src/system/multiply_16_by_8.c` |
 | `$80:8378` | `Lufia2Divide16` | verified | `src/system/math.c` |
 | `$80:86C1` | `Lufia2ScreenFade` | verified | `src/system/screen.c` |
 | `$80:8878` | `Lufia2MenuDrawString` | verified | `src/menu/menu_string.c` |
@@ -225,6 +226,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9671` | `Lufia2BattleClearMessage` | verified | `src/battle/battle_message_display.c` |
 | `$85:96A2` | `Lufia2BattleSaveWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
+| `$85:9A7D` | `Lufia2BattleMeasureMessage` | verified | `src/battle/battle_message_length.c` |
 | `$85:9AAA` | `Lufia2BattleSaveMessageState` | verified | `src/battle/battle_message_display.c` |
 | `$85:9ABC` | `Lufia2BattleRestoreMessageState` | verified | `src/battle/battle_message_display.c` |
 | `$85:9BDA` | `Lufia2BattleQueueStatusSprites` | verified | `src/battle/battle_message_display.c` |

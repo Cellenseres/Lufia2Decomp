@@ -2073,3 +2073,19 @@ source = "src/battle/battle_message_display.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "80:834C"
+name = "Lufia2Multiply16By8"
+source = "src/system/multiply_16_by_8.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9A7D"
+name = "Lufia2BattleMeasureMessage"
+source = "src/battle/battle_message_length.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -44,6 +44,13 @@ Lufia2ExecutionResult Lufia2DecimalDigits3(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:834C $51..$53 = $4E.word * $50.byte through two hardware products.
+ * Any M/X, native binary mode, DP zero and DB mapping the SNES registers.
+ * Restores entry widths and X; an A8 entry retains the computed A.high.
+ */
+Lufia2ExecutionResult Lufia2Multiply16By8(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

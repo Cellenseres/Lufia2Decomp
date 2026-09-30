@@ -582,6 +582,14 @@ Lufia2ExecutionResult Lufia2BattleQueueStatusSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* $85:9A7D trim trailing $20 spaces at DB:$1269 and count raw bytes into
+ * $22 modulo 256. Retains the first byte even when it is a space. M1X0,
+ * native mode, DP zero, DB mapping low WRAM and a NUL-terminated string;
+ * $1268 must not be $20 when the string is empty.
+ */
+Lufia2ExecutionResult Lufia2BattleMeasureMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
