@@ -19,7 +19,7 @@ and verification notes for each task and may describe a status that a later
 task changed; the index and the metadata are authoritative.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-200 functions in `metadata/functions.toml`: 200 verified, 0 draft, 0 identified, 0 disabled.
+201 functions in `metadata/functions.toml`: 201 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -80,6 +80,7 @@ task changed; the index and the metadata are authoritative.
 | `$81:C600` | `Lufia2BattleStatusTick` | verified | `src/battle/battle_status_tick.c` |
 | `$81:C739` | `Lufia2BattleCollectCommands` | verified | `src/battle/battle_commands.c` |
 | `$81:CB77` | `Lufia2BattleChooseCommand` | verified | `src/battle/battle_command.c` |
+| `$81:CC2E` | `Lufia2BattleChoosePartyAction` | verified | `src/battle/battle_party_commands.c` |
 | `$81:DFA2` | `Lufia2BattleListRows` | verified | `src/battle/battle_ip.c` |
 | `$81:E3AE` | `Lufia2BattleWindowE3AE` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E3CD` | `Lufia2BattleWindowE3CD` | verified | `src/battle/battle_frame_rows.c` |
@@ -996,3 +997,55 @@ The complete MSVC Release verifier passes all 322 independent jobs, including
 the new Battle Commands suite and all prior suites; the normal Release build
 also passes. Metadata validates at 200 verified functions. All 1,374 CFG nodes,
 all manifest fields and all 186 runtime selections remain unchanged.
+
+## Battle party action selection (BL6.4)
+
+`$81:CC2E` (`Lufia2BattleChoosePartyAction`, `battle_party_commands.c`) has a
+complete verified caller contract at M1X0, DP zero, DB `$97`, native binary
+arithmetic. It initializes the member descriptor/display, draws five choices,
+polls input and dispatches the five original action paths. Drawing, input,
+submenu, target-selection and record children remain explicit pushed calls;
+this does not reconstruct those delegated functions. Required child modes
+and return landings are part of the callback contract; unwinds propagate.
+
+DP `$26` selects 0/3/6/9/12. The reconstruction preserves weapon masking to
+nine bits, target-cache gates, byte/word action fields, bank `$96/$7E` reads
+with balanced PHB/PLB, original multiplier accesses, wrapped priorities and
+the IP path's stack-relative ADC. Target cancellation retries its submenu
+while retaining the outer saved index; submenu cancellation restores that
+index and returns to the five-choice polling loop. Input `$DD & $A0` has
+priority over the negative cancellation bit in `$DE`.
+
+Cancellation returns `$FF` at RTS `$CD38`. Successful paths clear the full
+accumulator through TDC at RTS `$CE0C/$CEE7/$CFBD/$D080/$D128`. A zero
+return from `$81:F15B` hands off exactly before BRK `$CF78`; the successful
+branch lands in its operand at `$CF79`, decoding there as `JSL $85:92CE`.
+Other choice values hand off at the original self-loop `$D12C` instead of
+spinning on the host. These remain original ROM continuations. The separate
+body `$D081..D0C5` is unreachable from this entry and is not invented as an
+extra switch case.
+
+Private original-ROM differential passes 4,151 cases: 2,944 local returns,
+1,024 self-loop boundaries, 128 BRK boundaries and 55 forced child unwinds.
+All 55 reachable direct callsites have unwind coverage. CPU, full 128 KiB
+WRAM and ordered writes match at every child/final boundary. The fixture
+executes 9,637 real ROM returns from descriptor, queue and random helpers;
+other children have controlled CPU/WRAM return effects. All choice values
+0..15 occur; delayed input, simultaneous accept/cancel, all six local returns,
+target retries in all three submenus, status exclusion and target-cache writes
+are covered. Return counts are cancel/attack/spell/item/IP/guard:
+213/451/320/512/512/936. Equipment seeds cover 0, 1, `$FF`, `$100`, `$101`,
+`$1FF`, `$200` and `$FFFF`; a surviving mask mutation exposed the earlier
+narrow seed range, which was corrected before promotion. All fifteen
+observable mutations are now caught. No runtime binding or analyzer exit
+proof is added by this caller reconstruction.
+
+An additional 128 original-ROM ADC probes cover stack-relative word operands
+at bank-zero wrap boundaries. The IP path uses the shared OpStack address
+adapter, retaining both operand bytes in bank zero even across `$FFFF`.
+Their exact read addresses expose the wrap error even when WRAM mirrors
+produce identical operand values; the corresponding mutation is caught,
+bringing this block to sixteen detected mutations. The final full MSVC
+Release verifier passes all 323 independent jobs after the address correction,
+and the normal Release build passes. Metadata validates at 201 verified
+functions; all 1,374 CFG nodes and 186 runtime selections remain unchanged.

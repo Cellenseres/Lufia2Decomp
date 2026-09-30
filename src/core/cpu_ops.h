@@ -12,6 +12,11 @@ static inline uint32_t OpDp(const Lufia2CpuState *cpu, uint8_t offset) {
     return DirectAddress(cpu, offset) | OP_DP_WRAP;
 }
 
+/* Stack-relative operands also wrap within bank zero. */
+static inline uint32_t OpStack(const Lufia2CpuState *cpu, uint8_t offset) {
+    return (uint16_t)(cpu->stack + offset) | OP_DP_WRAP;
+}
+
 static inline uint32_t OpAbs(const Lufia2CpuState *cpu, uint16_t address) {
     return AbsoluteIndexedAddress(cpu, address, 0);
 }

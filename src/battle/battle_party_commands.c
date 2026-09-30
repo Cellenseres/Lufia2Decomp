@@ -1,0 +1,485 @@
+#include "battle/battle_internal.h"
+
+/* $81:CC2E descendants: redraw a member label through the original children. */
+static bool BattlePartyCommandLabel(BattleContext *battle, uint16_t record_site,
+                                    uint16_t text_site, uint16_t label,
+                                    bool keep_index) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, 0x001be8u);
+    OpAslA(cpu);
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+    if (!BattleCall(battle, record_site, 0x81e1b5u, 2u))
+        return false;
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpLongX(cpu, 0x818809u));
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpPushX(memory, cpu);
+    OpLoadA(cpu, 13u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x09f2u));
+    OpLoadA(cpu, 4u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x09f3u));
+    OpLdy(cpu, label);
+    OpWriteX(memory, cpu, OpAbs(cpu, 0x09f4u), cpu->y);
+    if (!BattleCall(battle, text_site, 0x81e503u, 2u))
+        return false;
+    if (!keep_index)
+        OpPullX(memory, cpu);
+    return true;
+}
+
+static void BattlePartyCommandTextDimensions(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 16u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x09f2u));
+    OpLoadA(cpu, 6u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x09f3u));
+    OpLoadA(cpu, 0x21u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x09f6u));
+}
+
+static bool BattlePartyCommandDraw(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpLdx(cpu, 0u);
+    do {
+        OpLda(memory, cpu, OpLongX(cpu, 0x97b567u));
+        OpSta(memory, cpu, OpDp(cpu, 0u));
+        OpLda(memory, cpu, OpLongX(cpu, 0x97b568u));
+        OpSta(memory, cpu, OpDp(cpu, 8u));
+        OpLda(memory, cpu, OpLongX(cpu, 0x97b569u));
+        OpSta(memory, cpu, OpDp(cpu, 9u));
+        OpInx(cpu);
+        OpInx(cpu);
+        OpInx(cpu);
+        OpPushX(memory, cpu);
+        if (!BattleCall(battle, 0xccacu, 0x81be58u, 2u))
+            return false;
+        OpPullX(memory, cpu);
+        OpCpx(cpu, 15u);
+    } while (!cpu->zero);
+    OpSepWidths(cpu, 0x10u);
+    OpLda(memory, cpu, OpDp(cpu, 0x47u));
+    OpAndValue(cpu, 15u);
+    OpTay(cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, 0xb57au)));
+    OpRepWidths(cpu, 0x10u);
+    OpWriteX(memory, cpu, OpDp(cpu, 0x26u), cpu->x);
+    OpLda(memory, cpu, OpLongX(cpu, 0x97b567u));
+    cpu->carry = true;
+    OpSbcValue(cpu, 8u);
+    OpSta(memory, cpu, OpDp(cpu, 0u));
+    OpLda(memory, cpu, OpLongX(cpu, 0x97b568u));
+    OpSta(memory, cpu, OpDp(cpu, 8u));
+    OpLda(memory, cpu, OpLongX(cpu, 0x97b569u));
+    OpSta(memory, cpu, OpDp(cpu, 9u));
+    return BattleCall(battle, 0xccd8u, 0x81be58u, 2u) &&
+           BattleCall(battle, 0xccdbu, 0x859dd4u, 3u) &&
+           BattleCall(battle, 0xccdfu, 0x81d9d0u, 2u);
+}
+
+static void BattlePartyCommandPriority(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbsX(cpu, 0x2fu));
+    cpu->carry = false;
+    OpAdc(memory, cpu, OpAbsX(cpu, 0x3du));
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b87u));
+}
+
+/* $81:CC2E: individual action selection with exact cancellation boundaries. */
+Lufia2ExecutionResult Lufia2BattleChoosePartyAction(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu,
+                                                    Lufia2PushedChildCall child,
+                                                    void *child_context) {
+    BattleContext battle =
+        BattleContextCreate(memory, cpu, child, child_context, 0x81u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLoadA(cpu, 0u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b83u));
+    if (!BattleCall(&battle, 0xcc35u, 0x8592ceu, 3u) ||
+        !BattleCall(&battle, 0xcc39u, 0x81df0au, 2u) ||
+        !BattlePartyCommandLabel(&battle, 0xcc46u, 0xcc63u, 0x87c7u, true))
+        goto unwound;
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, 0x001be8u);
+    OpAslA(cpu);
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0x65u);
+    OpSta(memory, cpu, OpDp(cpu, 0x11u));
+    if (!BattleCall(&battle, 0xcc74u, 0x81e4d1u, 2u))
+        goto unwound;
+    OpPullX(memory, cpu);
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpDp(cpu, 2u));
+    OpSta(memory, cpu, OpDp(cpu, 3u));
+    OpSta(memory, cpu, OpDp(cpu, 1u));
+    OpLoadA(cpu, 0x20u);
+    OpSta(memory, cpu, OpDp(cpu, 4u));
+    OpLoadA(cpu, 0x97u);
+    OpSta(memory, cpu, OpDp(cpu, 0x24u));
+    OpLdy(cpu, 0xfe06u);
+    TransferDirectToA(cpu);
+    if (!BattleCall(&battle, 0xcc8cu, 0x81b974u, 2u) ||
+        !BattleCall(&battle, 0xcc8fu, 0x81b9afu, 3u))
+        goto unwound;
+poll:
+    if (!BattlePartyCommandDraw(&battle))
+        goto unwound;
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, 0x0012f3u);
+    if (!BattleCall(&battle, 0xcce8u, 0x85ec81u, 3u))
+        goto unwound;
+    OpLda(memory, cpu, OpDp(cpu, 0xddu));
+    OpBitValue(cpu, 0xa0u);
+    if (!cpu->zero)
+        goto accepted;
+    OpLda(memory, cpu, OpDp(cpu, 0xdeu));
+    if (!cpu->negative)
+        goto poll;
+    if (!BattlePartyCommandLabel(&battle, 0xcd00u, 0xcd1du, 0x87b7u, false))
+        goto unwound;
+    BattlePartyCommandTextDimensions(memory, cpu);
+    OpLoadA(cpu, 1u);
+    if (!BattleCall(&battle, 0xcd32u, 0x80953bu, 3u))
+        goto unwound;
+    OpLoadA(cpu, 0xffu);
+    return ExecutionReturned(0x81cd38u);
+accepted:
+    OpLoadA(cpu, 2u);
+    if (!BattleCall(&battle, 0xcd3bu, 0x80953bu, 3u))
+        goto unwound;
+    OpLda(memory, cpu, OpDp(cpu, 0x26u));
+    OpCmpValue(cpu, 3u);
+    if (!cpu->zero)
+        goto non_attack;
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbsX(cpu, 0x66u));
+    OpAndValue(cpu, 0x01ffu);
+    if (!cpu->zero) {
+        OpSta(memory, cpu, OpAbs(cpu, 0x0a06u));
+        OpSepWidths(cpu, 0x20u);
+        if (!BattleCall(&battle, 0xcd5eu, 0x81f291u, 3u))
+            goto unwound;
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x0a09u)));
+        PushDataBank(memory, cpu);
+        OpSetDataBank(memory, cpu, 0x96u);
+        OpLda(memory, cpu, OpAbsX(cpu, 2u));
+        PullDataBank(memory, cpu);
+        OpCmpValue(cpu, 0u);
+        if (cpu->zero)
+            goto attack_without_target;
+    } else {
+        OpSepWidths(cpu, 0x20u);
+        OpLoadA(cpu, 0x82u);
+    }
+    ExchangeAccumulatorBytes(cpu);
+    OpLda(memory, cpu, 0x001be8u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x4202u));
+    OpLoadA(cpu, 7u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x4203u));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x4216u)));
+    OpLda(memory, cpu, OpAbsX(cpu, 0x1369u));
+    ExchangeAccumulatorBytes(cpu);
+    OpPushX(memory, cpu);
+    if (!BattleCall(&battle, 0xcd90u, 0x81d4e0u, 2u))
+        goto unwound;
+    OpPullX(memory, cpu);
+    OpCmpValue(cpu, 0xffu);
+    if (cpu->zero)
+        goto poll;
+    PushAccumulator8(memory, cpu);
+    ExchangeAccumulatorBytes(cpu);
+    OpLda(memory, cpu, OpDp(cpu, 0x24u));
+    OpCmpValue(cpu, 0x82u);
+    if (cpu->zero) {
+        ExchangeAccumulatorBytes(cpu);
+        OpBitValue(cpu, 0x80u);
+        if (!cpu->zero)
+            OpSta(memory, cpu, OpAbsX(cpu, 0x1369u));
+    }
+    goto stage_attack;
+attack_without_target:
+    PushAccumulator8(memory, cpu);
+stage_attack:
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b83u));
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b81u));
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbsX(cpu, 0x66u));
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b85u));
+    BattlePartyCommandPriority(memory, cpu);
+    if (!BattleCall(&battle, 0xcdcbu, 0x8592ceu, 3u) ||
+        !BattleCall(&battle, 0xcdcfu, 0x8592ffu, 3u) ||
+        !BattlePartyCommandLabel(&battle, 0xcddbu, 0xcdf8u, 0x87b7u, false))
+        goto unwound;
+    BattlePartyCommandTextDimensions(memory, cpu);
+    TransferDirectToA(cpu);
+    return ExecutionReturned(0x81ce0cu);
+non_attack:
+    OpLda(memory, cpu, OpDp(cpu, 0x26u));
+    OpCmpValue(cpu, 0u);
+    if (!cpu->zero)
+        goto non_spell;
+    OpPushX(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
+    OpBitValue(cpu, 2u);
+    if (!cpu->zero) {
+        if (!BattleCall(&battle, 0xce20u, 0x81d975u, 2u))
+            goto unwound;
+        OpPullX(memory, cpu);
+        goto poll;
+    }
+    OpLoadA(cpu, 1u);
+    if (!BattleCall(&battle, 0xce29u, 0x81d12fu, 2u))
+        goto unwound;
+    goto spell_selection;
+spell_retry:
+    if (!BattleCall(&battle, 0xce2eu, 0x81d19au, 2u))
+        goto unwound;
+spell_selection:
+    OpCmpValue(cpu, 0u);
+    if (!cpu->zero) {
+        if (!BattleCall(&battle, 0xce35u, 0x81e16fu, 2u))
+            goto unwound;
+        OpPullX(memory, cpu);
+        goto poll;
+    }
+    OpLda(memory, cpu, OpDp(cpu, 0x12u));
+    OpSta(memory, cpu, OpAbs(cpu, 0x4202u));
+    OpLoadA(cpu, 16u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x4203u));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x4216u)));
+    OpPushX(memory, cpu);
+    OpLoadA(cpu, 2u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
+    if (!BattleCall(&battle, 0xce53u, 0x81e16fu, 2u))
+        goto unwound;
+    OpPullX(memory, cpu);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, 0x7edf0fu));
+    if (!cpu->zero) {
+        if (!BattleCall(&battle, 0xce5eu, 0x81d4e0u, 2u))
+            goto unwound;
+        OpCmpValue(cpu, 0xffu);
+        if (cpu->zero)
+            goto spell_retry;
+    }
+    PushAccumulator8(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLoadA(cpu, 2u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b83u));
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b81u));
+    OpRepWidths(cpu, 0x20u);
+    BattlePartyCommandPriority(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    PushDataBank(memory, cpu);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    OpLda(memory, cpu, OpDp(cpu, 0x12u));
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpTay(cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, 0xdf01u));
+    OpTay(cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, 0x96u));
+    OpSepWidths(cpu, 0x20u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b85u));
+    OpStz(memory, cpu, OpAbs(cpu, 0x1b86u));
+    PullDataBank(memory, cpu);
+    OpRepWidths(cpu, 0x20u);
+    if (!BattleCall(&battle, 0xcea5u, 0x8592ceu, 3u) ||
+        !BattleCall(&battle, 0xcea9u, 0x8592ffu, 3u) ||
+        !BattlePartyCommandLabel(&battle, 0xceb5u, 0xced2u, 0x87b7u, false))
+        goto unwound;
+    BattlePartyCommandTextDimensions(memory, cpu);
+    OpPullX(memory, cpu);
+    TransferDirectToA(cpu);
+    return ExecutionReturned(0x81cee7u);
+non_spell:
+    OpLda(memory, cpu, OpDp(cpu, 0x26u));
+    OpCmpValue(cpu, 9u);
+    if (!cpu->zero)
+        goto non_item;
+    OpPushX(memory, cpu);
+    TransferDirectToA(cpu);
+    if (!BattleCall(&battle, 0xcef3u, 0x81d12fu, 2u))
+        goto unwound;
+    goto item_selection;
+item_retry:
+    if (!BattleCall(&battle, 0xcef8u, 0x81d19au, 2u))
+        goto unwound;
+item_selection:
+    OpCmpValue(cpu, 0u);
+    if (!cpu->zero) {
+        if (!BattleCall(&battle, 0xceffu, 0x81e16fu, 2u))
+            goto unwound;
+        OpPullX(memory, cpu);
+        goto poll;
+    }
+    OpLda(memory, cpu, OpDp(cpu, 0x12u));
+    OpSta(memory, cpu, OpAbs(cpu, 0x4202u));
+    OpLoadA(cpu, 16u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x4203u));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x4216u)));
+    OpPushX(memory, cpu);
+    OpLoadA(cpu, 3u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
+    if (!BattleCall(&battle, 0xcf1du, 0x81e16fu, 2u))
+        goto unwound;
+    OpPullX(memory, cpu);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, 0x7edf13u));
+    if (!cpu->zero) {
+        if (!BattleCall(&battle, 0xcf28u, 0x81d4e0u, 2u))
+            goto unwound;
+        OpCmpValue(cpu, 0xffu);
+        if (cpu->zero)
+            goto item_retry;
+    }
+    PushAccumulator8(memory, cpu);
+    OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLoadA(cpu, 3u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b83u));
+    LoadA8(cpu, Pull8(memory, cpu));
+    if (cpu->zero)
+        OpLoadA(cpu, 0x81u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b81u));
+    OpLda(memory, cpu, OpDp(cpu, 0x12u));
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, 0x0a8du));
+    OpAndValue(cpu, 0x1ffu);
+    OpOraValue(cpu, 0x200u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b85u));
+    OpSta(memory, cpu, OpAbs(cpu, 0x0a06u));
+    OpSepWidths(cpu, 0x20u);
+    OpStz(memory, cpu, OpAbs(cpu, 0x0a09u));
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpRepWidths(cpu, 0x20u);
+    BattlePartyCommandPriority(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 1u);
+    if (!BattleCall(&battle, 0xcf70u, 0x81f15bu, 3u))
+        goto unwound;
+    OpCmpValue(cpu, 0u);
+    if (cpu->zero)
+        return ExecutionHandoff(cpu, 0x81cf78u);
+    if (!BattleCall(&battle, 0xcf79u, 0x8592ceu, 3u) ||
+        !BattleCall(&battle, 0xcf7du, 0x8592ffu, 3u) ||
+        !BattlePartyCommandLabel(&battle, 0xcf8bu, 0xcfa8u, 0x87b7u, false))
+        goto unwound;
+    BattlePartyCommandTextDimensions(memory, cpu);
+    OpPullX(memory, cpu);
+    TransferDirectToA(cpu);
+    return ExecutionReturned(0x81cfbdu);
+non_item:
+    OpLda(memory, cpu, OpDp(cpu, 0x26u));
+    OpCmpValue(cpu, 6u);
+    if (!cpu->zero)
+        goto non_ip;
+    OpPushX(memory, cpu);
+    OpLoadA(cpu, 2u);
+    if (!BattleCall(&battle, 0xcfcau, 0x81d12fu, 2u))
+        goto unwound;
+    goto ip_selection;
+ip_retry:
+    if (!BattleCall(&battle, 0xcfcfu, 0x81d19au, 2u))
+        goto unwound;
+ip_selection:
+    OpCmpValue(cpu, 0u);
+    if (!cpu->zero) {
+        if (!BattleCall(&battle, 0xcfd6u, 0x81e16fu, 2u))
+            goto unwound;
+        OpPullX(memory, cpu);
+        goto poll;
+    }
+    OpLda(memory, cpu, OpDp(cpu, 0x12u));
+    OpSta(memory, cpu, OpAbs(cpu, 0x4202u));
+    OpLoadA(cpu, 24u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x4203u));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x4216u)));
+    OpPushX(memory, cpu);
+    OpLda(memory, cpu, OpLongX(cpu, 0x7edf03u));
+    OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
+    if (!BattleCall(&battle, 0xcff6u, 0x81e16fu, 2u))
+        goto unwound;
+    OpPullX(memory, cpu);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, 0x7edf04u));
+    if (!cpu->zero) {
+        if (!BattleCall(&battle, 0xd001u, 0x81d4e0u, 2u))
+            goto unwound;
+        OpCmpValue(cpu, 0xffu);
+        if (cpu->zero)
+            goto ip_retry;
+    }
+    PushAccumulator8(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLoadA(cpu, 8u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b83u));
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b81u));
+    OpRepWidths(cpu, 0x20u);
+    BattlePartyCommandPriority(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    PushDataBank(memory, cpu);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    OpLda(memory, cpu, OpDp(cpu, 0x12u));
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    PushAccumulator16(memory, cpu);
+    OpAslA(cpu);
+    OpAdc(memory, cpu, OpStack(cpu, 1u));
+    OpTay(cpu);
+    PullAccumulator16(memory, cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, 0xdf01u));
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b85u));
+    PullDataBank(memory, cpu);
+    if (!BattleCall(&battle, 0xd03eu, 0x8592ceu, 3u) ||
+        !BattleCall(&battle, 0xd042u, 0x8592ffu, 3u) ||
+        !BattlePartyCommandLabel(&battle, 0xd04eu, 0xd06bu, 0x87b7u, false))
+        goto unwound;
+    BattlePartyCommandTextDimensions(memory, cpu);
+    OpPullX(memory, cpu);
+    TransferDirectToA(cpu);
+    return ExecutionReturned(0x81d080u);
+non_ip:
+    OpLda(memory, cpu, OpDp(cpu, 0x26u));
+    OpCmpValue(cpu, 12u);
+    if (!cpu->zero)
+        return ExecutionHandoff(cpu, 0x81d12cu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLoadA(cpu, 4u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b83u));
+    OpLoadA(cpu, 0x81u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b81u));
+    OpRepWidths(cpu, 0x20u);
+    BattlePartyCommandPriority(memory, cpu);
+    if (!BattleCall(&battle, 0xd0e7u, 0x8592ceu, 3u) ||
+        !BattleCall(&battle, 0xd0ebu, 0x8592ffu, 3u) ||
+        !BattlePartyCommandLabel(&battle, 0xd0f7u, 0xd114u, 0x87b7u, false))
+        goto unwound;
+    BattlePartyCommandTextDimensions(memory, cpu);
+    TransferDirectToA(cpu);
+    return ExecutionReturned(0x81d128u);
+unwound:
+    return BattleChildUnwound(&battle);
+}
