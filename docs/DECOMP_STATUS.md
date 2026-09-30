@@ -19,7 +19,7 @@ and verification notes for each task and may describe a status that a later
 task changed; the index and the metadata are authoritative.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-199 functions in `metadata/functions.toml`: 199 verified, 0 draft, 0 identified, 0 disabled.
+200 functions in `metadata/functions.toml`: 200 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -78,6 +78,7 @@ task changed; the index and the metadata are authoritative.
 | `$81:C35F` | `Lufia2BattlePopups` | verified | `src/battle/battle_popup.c` |
 | `$81:C5CF` | `Lufia2BattleTargetPointer` | verified | `src/battle/battle_util.c` |
 | `$81:C600` | `Lufia2BattleStatusTick` | verified | `src/battle/battle_status_tick.c` |
+| `$81:C739` | `Lufia2BattleCollectCommands` | verified | `src/battle/battle_commands.c` |
 | `$81:CB77` | `Lufia2BattleChooseCommand` | verified | `src/battle/battle_command.c` |
 | `$81:DFA2` | `Lufia2BattleListRows` | verified | `src/battle/battle_ip.c` |
 | `$81:E3AE` | `Lufia2BattleWindowE3AE` | verified | `src/battle/battle_frame_rows.c` |
@@ -952,5 +953,46 @@ An additional 128 ROM control probes clarify `$81:C739` without promoting it.
 `$CA68`, which writes seven `$FF` bytes and outcome zero, then jumps to
 `$81:8855` without popping its JSR frame. `$8855/$8858` restore SP from
 `$1395`. These use opaque input/frame child fixtures, not real gameplay input.
-The full `$81:C739` menu/action body remains original ROM. No new runtime
+At this checkpoint the full `$81:C739` menu/action body remained original ROM. No new runtime
 binding, analyzer exit proof or gameplay-based promotion is added.
+
+## Battle command collection (BL6.3)
+
+`$81:C739` (`Lufia2BattleCollectCommands`, `battle_commands.c`) now has a
+complete verified caller contract, entering M1X0, DP zero, DB `$97`, native
+binary arithmetic. Input, drawing, animation and individual action children
+remain explicit callbacks with their exact pushed JSR/JSL frames. Returning
+callbacks must supply the required original mode and landing; child unwinds
+propagate without a caller suffix. This function remains unbound.
+
+The reconstruction includes all initialization, command retries, collective
+priority selection, per-party command selection and backtracking, formation
+swaps/redrawing, and final cleanup. Collective priority sums wrap at 16 bits;
+the original two random fractions and carry-chained addition are retained.
+Party status gates use word mask `$003C`. Formation swaps preserve pointer
+words, four-byte descriptors, seven-, six- and thirteen-byte blocks, original
+PHA/PLA order, multiplier-register accesses and temporary X8 selection reads.
+
+Normal return is RTS `$CB76`. Commands 5..7 with `$057C != 0` hand off at
+`$81:8855`, retaining the outstanding frames; SP is restored by the original
+`$8855/$8858` code. A malformed formation mask with too few bits hands off
+exactly before BRK `$C8BC`. The taken branch at `$C8B6` lands at `$C8BD`,
+inside those BRK bytes, where they decode as `STA $09F4,Y`; linear decoding
+through `$C8BC` misses this overlapping instruction. Neither continuation
+is represented as an ordinary return.
+
+Private original-ROM differential passes 4,159 cases: 3,208 normal returns,
+768 nonlocal continuations, 120 BRK boundaries and 63 forced child unwinds.
+All 63 direct callsites are visited and have explicit unwind coverage.
+CPU, full 128 KiB WRAM and ordered writes match at every child/final boundary.
+The fixture executes 8,498 real ROM helper returns for random fractions and
+queue descriptor/publication; larger children have controlled return effects.
+Every mask 0..15 has 24 formation-selection probes; coverage also includes
+single-member exclusion, canceled selection, restart from member zero,
+backtracking across excluded members, null party pointers, and wrapped
+priority extrema. Thirteen observable source mutations are caught. No new
+runtime binding or analyzer exit proof follows from this caller verification.
+The complete MSVC Release verifier passes all 322 independent jobs, including
+the new Battle Commands suite and all prior suites; the normal Release build
+also passes. Metadata validates at 200 verified functions. All 1,374 CFG nodes,
+all manifest fields and all 186 runtime selections remain unchanged.

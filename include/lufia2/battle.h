@@ -73,6 +73,12 @@ Lufia2ExecutionResult Lufia2BattleStatusTick(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* $81:C739: command collection; M1X0, DB $97, DP zero, explicit children.
+ * Local RTS $CB76; nonlocal $8855 and malformed-selection BRK $C8BC hand off. */
+Lufia2ExecutionResult Lufia2BattleCollectCommands(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $81:CB77: command selection; M1X0, DB $97, DP zero, explicit children. */
 Lufia2ExecutionResult Lufia2BattleChooseCommand(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
