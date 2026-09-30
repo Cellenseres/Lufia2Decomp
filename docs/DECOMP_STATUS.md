@@ -24,7 +24,7 @@ The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **347 independent jobs**. The normal
+The full Windows Release verifier passes **348 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -73,6 +73,7 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Message setup/timer/cleanup (BL6.24) | 12,288 | pass |
 | Party status-icon animation (BL6.25) | 12,289 | pass |
 | Frame/input/pause handling (BL6.26) | 4,098 | pass |
+| Word TSB/TRB write order (BL6.27) | 34,816 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate

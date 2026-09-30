@@ -54,13 +54,7 @@ Lufia2ExecutionResult Lufia2BattleFrameInput(const Lufia2Memory *memory,
     SetAccumulatorWidth(cpu, 0);
     OpLda(memory, cpu, OpDp(cpu, 0x46u));
     OpAndValue(cpu, OpReadM(memory, cpu, OpDp(cpu, 0x4au)));
-    /* Original TRB $4A word writes high before low and only changes Z. */
-    const uint32_t buttons = OpDp(cpu, 0x4au);
-    const uint16_t old = OpRead16(memory, buttons);
-    const uint16_t value = (uint16_t)(old & (uint16_t)~cpu->accumulator);
-    cpu->zero = (old & cpu->accumulator) == 0u;
-    Write8(memory, OpNextByte(buttons), (uint8_t)(value >> 8));
-    Write8(memory, buttons, (uint8_t)value);
+    OpTestBits(memory, cpu, OpDp(cpu, 0x4au), 0u);
     OpSta(memory, cpu, OpDp(cpu, 0xddu));
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x85ecdau);
