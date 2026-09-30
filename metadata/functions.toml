@@ -1841,3 +1841,27 @@ source = "src/battle/battle_command_display.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:E4D1"
+name = "Lufia2BattlePartyName"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9CD7"
+name = "Lufia2BattleQueueActionWindow"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9CEE"
+name = "Lufia2BattleQueueListWindow"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

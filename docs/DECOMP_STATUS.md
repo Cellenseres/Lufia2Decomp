@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not this table. The notes below describe the current state.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-218 functions in `metadata/functions.toml`: 218 verified, 0 draft, 0 identified, 0 disabled.
+221 functions in `metadata/functions.toml`: 221 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -103,6 +103,7 @@ the metadata, not this table. The notes below describe the current state.
 | `$81:E405` | `Lufia2BattleTileFrame` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E479` | `Lufia2BattleFrameTop` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E4AD` | `Lufia2BattleFrameSides` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E4D1` | `Lufia2BattlePartyName` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$81:E503` | `Lufia2BattleWindow` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E542` | `Lufia2BattleFrameRow` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E570` | `Lufia2BattleFrameEnds` | verified | `src/battle/battle_frame_rows.c` |
@@ -221,6 +222,8 @@ the metadata, not this table. The notes below describe the current state.
 | `$85:93B7` | `Lufia2BattleCheckOutcome` | verified | `src/battle/battle_outcome.c` |
 | `$85:96A2` | `Lufia2BattleSaveWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
+| `$85:9CD7` | `Lufia2BattleQueueActionWindow` | verified | `src/battle/battle_command_display_helpers.c` |
+| `$85:9CEE` | `Lufia2BattleQueueListWindow` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:AB78` | `Lufia2BattleStageTransfer` | verified | `src/battle/battle_loop_children.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
 | `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
@@ -245,7 +248,7 @@ the metadata, not this table. The notes below describe the current state.
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **330 independent jobs**. The normal
+The full Windows Release verifier passes **331 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -279,14 +282,15 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Command/turn runtime bridges (BL6.8) | 15,615 ABI checks | pass |
 | Item/spell command lists (BL6.9) | 4,100 | pass |
 | Command display helpers (BL6.10) | 6,666 | pass |
+| Party names/window uploads (BL6.11) | 8,196 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
 wrapping, hardware register accesses, title drawing and input waits. Item and
 spell lists also preserve availability checks, MP limits and hardware division.
 Window setup and cleanup are reconstructed, with explicit upload and frame-wait
-children. Larger
-children remain explicit calls. Their tests detect 24 deliberate mistakes.
+children. Party names and tilemap queue entries are also reconstructed; full
+queues retain the original BRK handoff. Larger children remain explicit calls.
 
 The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary
 arithmetic. Other states use the original interpreter. Their tests cover stack

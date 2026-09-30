@@ -200,6 +200,21 @@ Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:E4D1 party name for X=0/2/4/6; M1X0/native binary/DP0, DB restored. */
+Lufia2ExecutionResult Lufia2BattlePartyName(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $85:9CD7 action-window upload; M0X0/native binary/DP0, DB maps low WRAM. */
+Lufia2ExecutionResult Lufia2BattleQueueActionWindow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $85:9CEE command-list upload; same entry contract, including DB7E. */
+Lufia2ExecutionResult Lufia2BattleQueueListWindow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $81:BEBC command tiles for A; M1X0/native, DB preserved. */
 Lufia2ExecutionResult Lufia2BattleCommandTiles(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);

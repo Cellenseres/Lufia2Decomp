@@ -67,6 +67,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_target_helpers.c
     src/battle/battle_command_lists.c
     src/battle/battle_command_display.c
+    src/battle/battle_command_display_helpers.c
     src/battle/battle_loop_internal.c
     src/cave/ancient_cave.c
     src/cave/cave_grid.c
