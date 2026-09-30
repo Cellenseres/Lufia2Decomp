@@ -1721,3 +1721,11 @@ source = "src/system/random.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:D4E0"
+name = "Lufia2BattleChooseTargets"
+source = "src/battle/battle_targets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
