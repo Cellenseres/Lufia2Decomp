@@ -249,6 +249,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
 | `$85:DCA3` | `Lufia2BattleMultiply` | verified | `src/battle/battle_script.c` |
 | `$85:DCEA` | `Lufia2BattleRandomFraction` | verified | `src/battle/battle_script.c` |
+| `$85:EC81` | `Lufia2BattleFrameInput` | verified | `src/battle/battle_frame_input.c` |
 | `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
 | `$85:ECF0` | `Lufia2BattleFrameUpkeep` | verified | `src/battle/battle_frame.c` |
 | `$86:81A9` | `Lufia2SelectScreenNmi` | verified | `src/menu/menu.c` |

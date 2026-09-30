@@ -2177,3 +2177,11 @@ source = "src/battle/battle_status_icons.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:EC81"
+name = "Lufia2BattleFrameInput"
+source = "src/battle/battle_frame_input.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

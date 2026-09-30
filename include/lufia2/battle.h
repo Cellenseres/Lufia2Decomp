@@ -653,6 +653,15 @@ Lufia2ExecutionResult Lufia2BattleUpdateStatusIcons(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* $85:EC81 performs status/sprite upkeep, waits for a frame and handles
+ * pause input. M1X0, PB $85, DP zero, native binary mode and DB mapping
+ * low WRAM. The memory bus must deliver asynchronous frame/input changes
+ * to finish the original polling loops. Children retain their pushed frames.
+ */
+Lufia2ExecutionResult Lufia2BattleFrameInput(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 #ifdef __cplusplus
 }
 #endif
