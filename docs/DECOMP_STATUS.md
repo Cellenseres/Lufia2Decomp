@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not this table. The notes below describe the current state.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-229 functions in `metadata/functions.toml`: 229 verified, 0 draft, 0 identified, 0 disabled.
+233 functions in `metadata/functions.toml`: 233 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -98,6 +98,7 @@ the metadata, not this table. The notes below describe the current state.
 | `$81:DDE7` | `Lufia2BattleResultWindowLine` | verified | `src/battle/battle_result_window.c` |
 | `$81:DE55` | `Lufia2BattleResultWindowScroll` | verified | `src/battle/battle_result_window.c` |
 | `$81:DE9E` | `Lufia2BattleResultWindowWait` | verified | `src/battle/battle_result_window.c` |
+| `$81:DEE9` | `Lufia2BattleRefreshTurnDisplay` | verified | `src/battle/battle_turn_display.c` |
 | `$81:DEF4` | `Lufia2BattleActionWindow` | verified | `src/battle/battle_command_display.c` |
 | `$81:DF0A` | `Lufia2BattlePartyWindows` | verified | `src/battle/battle_command_display.c` |
 | `$81:DFA2` | `Lufia2BattleListRows` | verified | `src/battle/battle_ip.c` |
@@ -115,6 +116,8 @@ the metadata, not this table. The notes below describe the current state.
 | `$81:E593` | `Lufia2BattleGaugePanel` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E5C1` | `Lufia2BattleGaugeBlock` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E604` | `Lufia2BattleGaugeColumn` | verified | `src/battle/battle_frame_rows.c` |
+| `$81:E63A` | `Lufia2BattlePartyStatusRows` | verified | `src/battle/battle_turn_display.c` |
+| `$81:E645` | `Lufia2BattlePartyStatusRow` | verified | `src/battle/battle_turn_display.c` |
 | `$81:E7D2` | `Lufia2BattleFillRect` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E808` | `Lufia2DecimalDigits3` | verified | `src/system/math.c` |
 | `$81:E835` | `Lufia2BattleGlyph` | verified | `src/battle/battle_ip.c` |
@@ -232,6 +235,7 @@ the metadata, not this table. The notes below describe the current state.
 | `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:9CD7` | `Lufia2BattleQueueActionWindow` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9CEE` | `Lufia2BattleQueueListWindow` | verified | `src/battle/battle_command_display_helpers.c` |
+| `$85:9DD4` | `Lufia2BattleQueueTurnDisplay` | verified | `src/battle/battle_turn_display.c` |
 | `$85:AB78` | `Lufia2BattleStageTransfer` | verified | `src/battle/battle_loop_children.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
 | `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
@@ -256,7 +260,7 @@ the metadata, not this table. The notes below describe the current state.
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **335 independent jobs**. The normal
+The full Windows Release verifier passes **336 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -294,6 +298,7 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Result windows (BL6.12) | 6,159 | pass |
 | Experience/gold/results (BL6.13) | 5,746 | pass |
 | Party growth/received loot (BL6.14-15) | 8,711 + 4,098 | pass |
+| Turn display (BL6.16) | 10,252 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate

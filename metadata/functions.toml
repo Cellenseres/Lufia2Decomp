@@ -1929,3 +1929,35 @@ source = "src/item/inventory_receive.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:DEE9"
+name = "Lufia2BattleRefreshTurnDisplay"
+source = "src/battle/battle_turn_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E63A"
+name = "Lufia2BattlePartyStatusRows"
+source = "src/battle/battle_turn_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E645"
+name = "Lufia2BattlePartyStatusRow"
+source = "src/battle/battle_turn_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9DD4"
+name = "Lufia2BattleQueueTurnDisplay"
+source = "src/battle/battle_turn_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
