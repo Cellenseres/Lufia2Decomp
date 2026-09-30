@@ -1785,3 +1785,19 @@ source = "src/battle/battle_target_helpers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:BF3F"
+name = "Lufia2BattleItemCommands"
+source = "src/battle/battle_command_lists.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:C031"
+name = "Lufia2BattleSpellCommands"
+source = "src/battle/battle_command_lists.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
