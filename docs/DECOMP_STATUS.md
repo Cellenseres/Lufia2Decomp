@@ -17,14 +17,14 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-242 functions in `metadata/functions.toml`: 242 verified, 0 draft, 0 identified, 0 disabled.
+247 functions in `metadata/functions.toml`: 247 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **338 independent jobs**. The normal
+The full Windows Release verifier passes **339 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -64,7 +64,8 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Party growth/received loot (BL6.14-15) | 8,711 + 4,098 | pass |
 | Turn display (BL6.16) | 10,252 | pass |
 | Status support/math entries (BL6.17) | 22,528 | pass |
-| Status recovery/expiry (BL6.18) | 4,138 | pass |
+| Status recovery/expiry (BL6.18) | 5,162 | pass |
+| Message display/state (BL6.19) | 16,391 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
@@ -74,8 +75,8 @@ Window setup and cleanup are reconstructed, with explicit upload and frame-wait
 children. Party names and tilemap queue entries are also reconstructed; full
 queues retain the original BRK handoff. The result caller now covers rewards, party and capsule progression, gold and
 result messages. Party stat gains and item reception are also reconstructed. Their original
-calibration BRK and inventory remainders are retained. Sound and further
-rendering children remain explicit calls.
+calibration BRK and inventory remainders are retained. Status recovery, timed effects and shared message display are reconstructed.
+Sound and remaining text/rendering children stay explicit calls.
 
 The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary
 arithmetic. Other states use the original interpreter. Their tests cover stack

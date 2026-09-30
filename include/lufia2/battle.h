@@ -556,6 +556,32 @@ Lufia2ExecutionResult Lufia2BattleExpireStatuses(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* $85:9AAA/$9ABC save/restore 51 direct bytes at $7F:F3DB. M1X0,
+ * native mode; DP may vary. Caller DB is restored.
+ */
+Lufia2ExecutionResult Lufia2BattleSaveMessageState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleRestoreMessageState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $85:9671 clears 257 text bytes when $1266.low is nonzero. $85:95FE
+ * displays text through explicit children and original upload/frame calls.
+ * Any M/X, native binary mode, PB $85 and DP zero. Both restore A/X/Y/P/DB
+ * on normal return; PLB then sets N/Z from the restored DB.
+ */
+Lufia2ExecutionResult Lufia2BattleClearMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleDisplayMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $85:9BDA queue $9800 -> $6C00, length $800. M0X0, DP zero,
+ * native binary mode, PB $85 and DB mapping low WRAM.
+ */
+Lufia2ExecutionResult Lufia2BattleQueueStatusSprites(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 #ifdef __cplusplus
 }
 #endif

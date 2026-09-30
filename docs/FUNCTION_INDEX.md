@@ -221,8 +221,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9236` | `Lufia2BattlePartyStatusGate` | verified | `src/battle/battle_loop_children.c` |
 | `$85:9275` | `Lufia2BattleQueuePartyTurns` | verified | `src/battle/battle_turn_order.c` |
 | `$85:93B7` | `Lufia2BattleCheckOutcome` | verified | `src/battle/battle_outcome.c` |
+| `$85:95FE` | `Lufia2BattleDisplayMessage` | verified | `src/battle/battle_message_display.c` |
+| `$85:9671` | `Lufia2BattleClearMessage` | verified | `src/battle/battle_message_display.c` |
 | `$85:96A2` | `Lufia2BattleSaveWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
+| `$85:9AAA` | `Lufia2BattleSaveMessageState` | verified | `src/battle/battle_message_display.c` |
+| `$85:9ABC` | `Lufia2BattleRestoreMessageState` | verified | `src/battle/battle_message_display.c` |
+| `$85:9BDA` | `Lufia2BattleQueueStatusSprites` | verified | `src/battle/battle_message_display.c` |
 | `$85:9CD7` | `Lufia2BattleQueueActionWindow` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9CEE` | `Lufia2BattleQueueListWindow` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9DD4` | `Lufia2BattleQueueTurnDisplay` | verified | `src/battle/battle_turn_display.c` |

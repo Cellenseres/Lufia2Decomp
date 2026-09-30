@@ -73,6 +73,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_turn_display.c
     src/battle/battle_status_support.c
     src/battle/battle_status_recovery.c
+    src/battle/battle_message_display.c
     src/battle/battle_loop_internal.c
     src/cave/ancient_cave.c
     src/cave/cave_grid.c

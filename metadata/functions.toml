@@ -2033,3 +2033,43 @@ source = "src/battle/battle_status_recovery.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:9AAA"
+name = "Lufia2BattleSaveMessageState"
+source = "src/battle/battle_message_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9ABC"
+name = "Lufia2BattleRestoreMessageState"
+source = "src/battle/battle_message_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9671"
+name = "Lufia2BattleClearMessage"
+source = "src/battle/battle_message_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:95FE"
+name = "Lufia2BattleDisplayMessage"
+source = "src/battle/battle_message_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9BDA"
+name = "Lufia2BattleQueueStatusSprites"
+source = "src/battle/battle_message_display.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
