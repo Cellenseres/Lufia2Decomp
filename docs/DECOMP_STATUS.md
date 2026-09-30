@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not this table. The notes below describe the current state.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-225 functions in `metadata/functions.toml`: 225 verified, 0 draft, 0 identified, 0 disabled.
+226 functions in `metadata/functions.toml`: 226 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -93,6 +93,7 @@ the metadata, not this table. The notes below describe the current state.
 | `$81:D948` | `Lufia2BattlePartyMarkedCursor` | verified | `src/battle/battle_target_helpers.c` |
 | `$81:D975` | `Lufia2BattleConfirmCommand` | verified | `src/battle/battle_target_helpers.c` |
 | `$81:D9D0` | `Lufia2BattleCommandFrame` | verified | `src/battle/battle_target_helpers.c` |
+| `$81:D9E1` | `Lufia2BattleResults` | verified | `src/battle/battle_results.c` |
 | `$81:DD7F` | `Lufia2BattleResultWindowPrepare` | verified | `src/battle/battle_result_window.c` |
 | `$81:DDE7` | `Lufia2BattleResultWindowLine` | verified | `src/battle/battle_result_window.c` |
 | `$81:DE55` | `Lufia2BattleResultWindowScroll` | verified | `src/battle/battle_result_window.c` |
@@ -252,7 +253,7 @@ the metadata, not this table. The notes below describe the current state.
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **332 independent jobs**. The normal
+The full Windows Release verifier passes **333 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -288,6 +289,7 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Command display helpers (BL6.10) | 6,666 | pass |
 | Party names/window uploads (BL6.11) | 8,196 | pass |
 | Result windows (BL6.12) | 6,159 | pass |
+| Experience/gold/results (BL6.13) | 5,746 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
@@ -295,7 +297,8 @@ wrapping, hardware register accesses, title drawing and input waits. Item and
 spell lists also preserve availability checks, MP limits and hardware division.
 Window setup and cleanup are reconstructed, with explicit upload and frame-wait
 children. Party names and tilemap queue entries are also reconstructed; full
-queues retain the original BRK handoff. Larger children remain explicit calls.
+queues retain the original BRK handoff. The result caller now covers rewards, party and capsule progression, gold and
+result messages. Its level, sound and item children remain explicit calls.
 
 The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary
 arithmetic. Other states use the original interpreter. Their tests cover stack
