@@ -34,6 +34,12 @@ Lufia2ExecutionResult Lufia2SpellRecordByte8(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:F085 packed item at $0A06; M1X0/native binary/DP0, DB maps low WRAM.
+ * Carry set when some quantity remains; record/add children keep their frames. */
+Lufia2ExecutionResult Lufia2InventoryReceive(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $81:F0A2: packed request $0A06 / quantity $09F4; M1X0, binary ADC. */
 Lufia2ExecutionResult Lufia2InventoryAdd(
     const Lufia2Memory *memory,

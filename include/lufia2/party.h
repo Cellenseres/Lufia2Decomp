@@ -99,6 +99,19 @@ Lufia2ExecutionResult Lufia2PartyStatTotalsFar(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:F7CA one level gain; A.low member 0-6, M1X0/native binary/DP0.
+ * DB maps low WRAM; carry set when gained. Child frames remain explicit. */
+Lufia2ExecutionResult Lufia2PartyApplyLevel(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* $81:F7ED gains for record X, member $09FA=0-6, record level 1-99.
+ * Same widths/DP/DB as F7CA; DB/X restored.
+ * Inconsistent growth retains the original BRK boundary at $81:F87E. */
+Lufia2ExecutionResult Lufia2PartyStatGrowth(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $81:F979: level-up of member $09FA; M1X0. */
 Lufia2ExecutionResult Lufia2PartyLevelUpCheck(
     const Lufia2Memory *memory,

@@ -1905,3 +1905,27 @@ source = "src/battle/battle_results.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:F7CA"
+name = "Lufia2PartyApplyLevel"
+source = "src/party/stat_growth.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F7ED"
+name = "Lufia2PartyStatGrowth"
+source = "src/party/stat_growth.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F085"
+name = "Lufia2InventoryReceive"
+source = "src/item/inventory_receive.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
