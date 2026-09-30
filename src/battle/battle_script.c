@@ -1,7 +1,6 @@
 /* Battle script VM ($85:B452). */
 
-#include "core/cpu_internal.h"
-#include "lufia2/battle.h"
+#include "battle/battle_internal.h"
 #include "lufia2/system.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
@@ -303,16 +302,6 @@ static void BattleScriptUnary(
         (uint16_t)(opcode + (kind == 0 ? 22u : kind == 1 ? 20u : 27u)));
 }
 
-/* INC $66, 16-bit. */
-static void BattleIncrement66(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    const uint16_t value = (uint16_t)(Read16Direct(memory, cpu, 0x66u) + 1u);
-
-    Write16Direct(memory, cpu, 0x66u, value);
-    SetNz16(cpu, value);
-}
-
 /* $85:DCA3: $63-$66 = $54 * $56, 16x16 via $4202. */
 static void BattleMultiply(
     const Lufia2Memory *memory,
@@ -345,12 +334,12 @@ static void BattleMultiply(
     StoreWordAbsolute(memory, cpu, SNES_WRMPYA, cpu->x);
     Add16Value(cpu, Read16Direct(memory, cpu, 0x64u));
     if (cpu->carry) {
-        BattleIncrement66(memory, cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x66u), 1);
         cpu->carry = 0;
     }
     Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     if (cpu->carry)
-        BattleIncrement66(memory, cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x66u), 1);
     Write16Direct(memory, cpu, 0x64u, cpu->accumulator);       /* DCE6 */
     UnpackStatus(cpu, Pull8(memory, cpu));
     SimulateRtlFrame(memory, cpu);
@@ -394,7 +383,7 @@ static void BattleDivide(
 }
 
 /* $85:DCEA: A times a random 16-bit fraction. */
-static void BattleRandomScale(
+void BattleCallRandomFraction(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -1098,7 +1087,7 @@ static void BattleOpRandomScale(
     PushAccumulator8(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->x);
-    BattleRandomScale(memory, cpu, 0xb748u);
+    BattleCallRandomFraction(memory, cpu, 0xb748u);
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, Pull8(memory, cpu));

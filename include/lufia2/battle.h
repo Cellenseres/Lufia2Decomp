@@ -88,6 +88,20 @@ Lufia2ExecutionResult Lufia2BattleStageTransfer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $85:9275: selected party turns; M1X0, DB $97, DP zero, count 1..4. */
+Lufia2ExecutionResult Lufia2BattleQueuePartyTurns(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+/* $81:C254: six enemy turns; M1X0, DB $97, DP zero. */
+Lufia2ExecutionResult Lufia2BattleQueueEnemyTurns(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+/* $81:C294: capsule turn; M1X0, DB $97, DP zero. */
+Lufia2ExecutionResult Lufia2BattleQueueCapsuleTurn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $85:93B7: status snapshot/outcome; M1X0, DP zero, caller DB restored. */
+Lufia2ExecutionResult Lufia2BattleCheckOutcome(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $81:E835: character A to two battle glyph tiles; M1X0. */
 Lufia2ExecutionResult Lufia2BattleGlyph(
     const Lufia2Memory *memory,
