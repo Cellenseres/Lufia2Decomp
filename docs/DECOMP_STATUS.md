@@ -19,7 +19,7 @@ and verification notes for each task and may describe a status that a later
 task changed; the index and the metadata are authoritative.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-191 functions in `metadata/functions.toml`: 191 verified, 0 draft, 0 identified, 0 disabled.
+195 functions in `metadata/functions.toml`: 195 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -66,6 +66,8 @@ task changed; the index and the metadata are authoritative.
 | `$81:BE58` | `Lufia2BattleTileBlock` | verified | `src/battle/battle_util.c` |
 | `$81:C129` | `Lufia2BattleIpSkills` | verified | `src/battle/battle_ip.c` |
 | `$81:C240` | `Lufia2BattlePrepareNextFrame` | verified | `src/battle/battle_loop_children.c` |
+| `$81:C254` | `Lufia2BattleQueueEnemyTurns` | verified | `src/battle/battle_turn_order.c` |
+| `$81:C294` | `Lufia2BattleQueueCapsuleTurn` | verified | `src/battle/battle_turn_order.c` |
 | `$81:C2C0` | `Lufia2BattleLoadDisplayDefaults` | verified | `src/battle/battle_buffers.c` |
 | `$81:C2D0` | `Lufia2BattleClearBackgroundTilemap` | verified | `src/battle/battle_buffers.c` |
 | `$81:C2E3` | `Lufia2BattleResetPartyTilemap` | verified | `src/battle/battle_buffers.c` |
@@ -194,6 +196,8 @@ task changed; the index and the metadata are authoritative.
 | `$85:8A2F` | `Lufia2BattleSprites` | verified | `src/battle/battle_frame.c` |
 | `$85:8DC5` | `Lufia2BattleNmiUploads` | verified | `src/battle/battle_nmi.c` |
 | `$85:9236` | `Lufia2BattlePartyStatusGate` | verified | `src/battle/battle_loop_children.c` |
+| `$85:9275` | `Lufia2BattleQueuePartyTurns` | verified | `src/battle/battle_turn_order.c` |
+| `$85:93B7` | `Lufia2BattleCheckOutcome` | verified | `src/battle/battle_outcome.c` |
 | `$85:96A2` | `Lufia2BattleSaveWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:AB78` | `Lufia2BattleStageTransfer` | verified | `src/battle/battle_loop_children.c` |
@@ -843,18 +847,47 @@ Private original-ROM `interp816` differential passed 1,024 `$85:9236` cases,
 256 each for `$85:96A2`, `$85:96B0`, `$85:AB78` and `$85:89E5`, and 384
 `$81:C240` cases (128 returns, 256 child unwinds at its two calls, 640 child
 visits). CPU/flags/M/X/DB/DP/stack, full 128 KiB WRAM and ordered bus writes
-were compared. Four observable source mutations were caught. These children
-are verified but unbound; `$81:C240` and `$85:96B0` have no independently
-analyzed manifest node after the parent truncation, and `$81:C240` still
-needs a consumer bridge/ABI test before binding.
+were compared. Four observable source mutations were caught. `$81:C240`
+now has a consumer bridge and binding after 8,704 ABI cases and 256 explicit
+child unwinds passed; the other five children remain verified/unbound.
+The bridge executes both real ROM children and preserves paired host returns,
+dispatch returns, unsupported-entry fallback and the already-pushed JSL frames.
 
-The other main-loop children remain original-ROM calls. `$85:9275` stages
-record-dependent display values and calls `$85:92CE/$85:92FF`.
-`$81:C294` handles the `$0A6C` record; `$81:C254` scans six `$0A6E` records;
-both call `$85:DD19` and `$85:9337` after status `$2C` gates. `$85:93B7`
-scans both sides for records without status bit 2, setting `$11E7` bit 7 and
-the `$7F:F8A2` outcome when a side is empty. These are AOT-eligible M1X0
-nodes, with no native semantic function in this slice. `$81:C739` is LLE-only
+Four more whole contracts are verified in `battle_turn_order.c` and
+`battle_outcome.c`. `$85:9275` publishes selected party action descriptors
+through `$85:92CE/$85:92FF` and inserts their priorities into `$1B8C`.
+`$81:C294` handles the capsule record at `$0A6C`; `$81:C254` scans six enemy
+pointers from `$0A6E`. Both skip null pointers/status `$2C`, form the wrapped
+16-bit `$2F+$3D` sum and apply the original `$85:DD19` random variation before
+insertion. `$85:9337` sorts descending with existing equal-priority entries
+first. The original shifts, descriptor writes, RNG advances, hardware multiply
+accesses and all child frames remain observable. Battle entry uses M1X0,
+DB `$97`, DP zero, party count 1..4 and a terminated turn queue with room
+for the added entries; malformed unbounded queues are not synthetic fixtures.
+
+`$85:93B7` snapshots eleven statuses through `$85:ED51`, then scans both
+sides for records without status bit 2. An empty enemy side takes precedence,
+including when both sides are empty: `$7F:F8A2=0`. With only the party empty,
+it writes outcome 1 and clears four nonnull party statuses through `$85:EE82`.
+Finished paths set `$11E7` bit 7 and carry, returning at `$85:9415`;
+continuing paths clear carry and return at `$85:9418`. DB is restored.
+These four entries remain verified/unbound and retain their existing AOT nodes.
+
+The new ROM differential passed 1,024 party, 2,048 enemy, 1,024 capsule and
+2,048 outcome cases, plus all 2,432 previous child cases: 8,576 total.
+CPU, full 128 KiB WRAM and ordered bus writes match. Outcome coverage is
+368 continuing / 624 party-empty / 528 enemy-empty / 528 both-empty.
+Eleven observable mutations were caught. Ordered-write comparison exposed
+a shared `$85:DCA3` 16-bit INC at DP `$66` writing low before high; it now
+uses the common read-modify-write adapter. `$85:B452` regressions pass
+16,384 standalone cases and 8,704 bridge cases. The subsequent full MSVC
+Release verification passed all 320 independent jobs on 2026-09-30,
+including 157 Actor Dispatch jobs, 131 Actor Bridge targets, the Battle
+Loop Children suite and every previous suite. The normal Release build and
+metadata check pass. All 1,374 analyzed CFG nodes and all previous 185
+runtime selections are unchanged; only the `$81:C240` selection was added.
+
+`$81:C739` is LLE-only
 and can continue at `$81:8855` instead of returning to its local caller; its
 analyzed path truncates at `$81:C7F8` before `$81:CB77`. `$81:890A` is
 LLE-only with unproven `$81:A79A/$81:C600` child exits and a local RTS at

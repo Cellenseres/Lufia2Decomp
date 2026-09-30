@@ -29,6 +29,9 @@ typedef struct BattleContext {
     uint32_t unwind_site;
 } BattleContext;
 
+void BattleCallRandomFraction(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              uint16_t return_address);
+
 static inline BattleContext BattleContextCreate(const Lufia2Memory *memory,
                                                 Lufia2CpuState *cpu,
                                                 Lufia2PushedChildCall child,

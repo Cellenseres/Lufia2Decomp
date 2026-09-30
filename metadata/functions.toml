@@ -240,6 +240,39 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# Battle turn queue construction and whole outcome decision.
+[[function]]
+address = "85:9275"
+name = "Lufia2BattleQueuePartyTurns"
+source = "src/battle/battle_turn_order.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:C254"
+name = "Lufia2BattleQueueEnemyTurns"
+source = "src/battle/battle_turn_order.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:C294"
+name = "Lufia2BattleQueueCapsuleTurn"
+source = "src/battle/battle_turn_order.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:93B7"
+name = "Lufia2BattleCheckOutcome"
+source = "src/battle/battle_outcome.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # Per-frame field triggers. Expiring timers, touch events, the
 # trigger queue and door warps stop at their exact ROM PC.
 [[function]]
