@@ -77,6 +77,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_message_length.c
     src/battle/battle_gauges.c
     src/battle/battle_message_render.c
+    src/battle/battle_message_glyph.c
     src/battle/battle_loop_internal.c
     src/cave/ancient_cave.c
     src/cave/cave_grid.c

@@ -438,12 +438,14 @@ Lufia2ExecutionResult Lufia2BattleFillRect(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $81:EB34 palette $24 to $120F; M1X0. */
+/* $81:EB34 loads 16 font rows for glyph word $24 into $120F, then
+ * pads 16 zeros. M1X0, DP zero, native mode; restores Y and DB. */
 Lufia2ExecutionResult Lufia2BattlePaletteCopy(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $81:EB62 palette $24 nibbles to $120F/$121F; M1X0. */
+/* $81:EB62 splits 16 font rows across $120F/$121F at a half-tile
+ * boundary. M1X0, DP zero, native mode; restores Y and DB. */
 Lufia2ExecutionResult Lufia2BattlePaletteSplit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
@@ -611,6 +613,20 @@ Lufia2ExecutionResult Lufia2BattleRenderMessage(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 Lufia2ExecutionResult Lufia2BattleLoadMessageGraphics(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $85:9ACE subtracts $0020 from the encoded glyph word at DP+$24,
+ * preserving full A and P. Any M/X, native binary mode; DP may vary.
+ */
+Lufia2ExecutionResult Lufia2BattleNormalizeGlyph(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $81:EA35 renders the encoded glyph at half-tile position $23, then
+ * advances it by two modulo 256. M1X0, PB $81, DP zero, native binary
+ * mode. Restores DB; child calls preserve their original pushed frames.
+ */
+Lufia2ExecutionResult Lufia2BattleRenderGlyph(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 

@@ -2121,3 +2121,19 @@ source = "src/battle/battle_message_render.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:9ACE"
+name = "Lufia2BattleNormalizeGlyph"
+source = "src/battle/battle_message_glyph.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:EA35"
+name = "Lufia2BattleRenderGlyph"
+source = "src/battle/battle_message_glyph.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
