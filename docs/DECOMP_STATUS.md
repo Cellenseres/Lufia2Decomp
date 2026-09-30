@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not this table. The notes below describe the current state.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-221 functions in `metadata/functions.toml`: 221 verified, 0 draft, 0 identified, 0 disabled.
+225 functions in `metadata/functions.toml`: 225 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -93,6 +93,10 @@ the metadata, not this table. The notes below describe the current state.
 | `$81:D948` | `Lufia2BattlePartyMarkedCursor` | verified | `src/battle/battle_target_helpers.c` |
 | `$81:D975` | `Lufia2BattleConfirmCommand` | verified | `src/battle/battle_target_helpers.c` |
 | `$81:D9D0` | `Lufia2BattleCommandFrame` | verified | `src/battle/battle_target_helpers.c` |
+| `$81:DD7F` | `Lufia2BattleResultWindowPrepare` | verified | `src/battle/battle_result_window.c` |
+| `$81:DDE7` | `Lufia2BattleResultWindowLine` | verified | `src/battle/battle_result_window.c` |
+| `$81:DE55` | `Lufia2BattleResultWindowScroll` | verified | `src/battle/battle_result_window.c` |
+| `$81:DE9E` | `Lufia2BattleResultWindowWait` | verified | `src/battle/battle_result_window.c` |
 | `$81:DEF4` | `Lufia2BattleActionWindow` | verified | `src/battle/battle_command_display.c` |
 | `$81:DF0A` | `Lufia2BattlePartyWindows` | verified | `src/battle/battle_command_display.c` |
 | `$81:DFA2` | `Lufia2BattleListRows` | verified | `src/battle/battle_ip.c` |
@@ -248,7 +252,7 @@ the metadata, not this table. The notes below describe the current state.
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **331 independent jobs**. The normal
+The full Windows Release verifier passes **332 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -283,6 +287,7 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Item/spell command lists (BL6.9) | 4,100 | pass |
 | Command display helpers (BL6.10) | 6,666 | pass |
 | Party names/window uploads (BL6.11) | 8,196 | pass |
+| Result windows (BL6.12) | 6,159 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
