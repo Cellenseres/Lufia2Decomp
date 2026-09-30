@@ -40,6 +40,7 @@ static void CommandListUnits(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
 }
 
+/* $81:BF3F: inventory entries for battle commands. */
 Lufia2ExecutionResult Lufia2BattleItemCommands(const Lufia2Memory *memory,
                                                Lufia2CpuState *cpu,
                                                Lufia2PushedChildCall child,
@@ -118,6 +119,7 @@ Lufia2ExecutionResult Lufia2BattleItemCommands(const Lufia2Memory *memory,
     return ExecutionReturned(0x81c030u);
 }
 
+/* $81:C031: spell entries for battle commands. */
 Lufia2ExecutionResult Lufia2BattleSpellCommands(const Lufia2Memory *memory,
                                                 Lufia2CpuState *cpu,
                                                 Lufia2PushedChildCall child,

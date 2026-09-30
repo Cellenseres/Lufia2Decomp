@@ -1801,3 +1801,43 @@ source = "src/battle/battle_command_lists.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:BEBC"
+name = "Lufia2BattleCommandTiles"
+source = "src/battle/battle_command_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:BEED"
+name = "Lufia2BattleActionMenuTiles"
+source = "src/battle/battle_command_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:DEF4"
+name = "Lufia2BattleActionWindow"
+source = "src/battle/battle_command_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:DF0A"
+name = "Lufia2BattlePartyWindows"
+source = "src/battle/battle_command_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E16F"
+name = "Lufia2BattleClearActionWindow"
+source = "src/battle/battle_command_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

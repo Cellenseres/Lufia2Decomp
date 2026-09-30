@@ -200,6 +200,29 @@ Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:BEBC command tiles for A; M1X0/native, DB preserved. */
+Lufia2ExecutionResult Lufia2BattleCommandTiles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $81:BEED action menu tiles; same entry contract. */
+Lufia2ExecutionResult Lufia2BattleActionMenuTiles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $81:DEF4 action window; M1X0/native binary/DP0, DB preserved. */
+Lufia2ExecutionResult Lufia2BattleActionWindow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $81:DF0A windows for present party members; same entry contract. */
+Lufia2ExecutionResult Lufia2BattlePartyWindows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $81:E16F clear action windows and queue uploads; M1X0/native binary/DB97/DP0. */
+Lufia2ExecutionResult Lufia2BattleClearActionWindow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $81:BF3F inventory command list; M1X0, native binary, DB97, DP0. */
 Lufia2ExecutionResult Lufia2BattleItemCommands(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
