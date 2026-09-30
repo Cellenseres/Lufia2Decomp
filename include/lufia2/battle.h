@@ -600,6 +600,20 @@ Lufia2ExecutionResult Lufia2BattleStatusGauge(
 Lufia2ExecutionResult Lufia2BattleStatusDigits(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $81:E73B prepares the message tilemap and parses text at DB:$1269.
+ * $81:E792 loads resource $023F into $7E:3000. M1X0, PB $81, DP zero,
+ * native binary mode and DB mapping low WRAM and the SNES registers.
+ * Text is NUL-terminated; control bytes $01..$0F have a payload byte.
+ * The measuring child requires $1268 != $20 for empty text. Child calls
+ * retain their original frames, including PHX around the glyph child.
+ */
+Lufia2ExecutionResult Lufia2BattleRenderMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+Lufia2ExecutionResult Lufia2BattleLoadMessageGraphics(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 #ifdef __cplusplus
 }
 #endif

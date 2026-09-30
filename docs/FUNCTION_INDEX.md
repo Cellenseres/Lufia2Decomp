@@ -105,6 +105,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:E604` | `Lufia2BattleGaugeColumn` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E63A` | `Lufia2BattlePartyStatusRows` | verified | `src/battle/battle_turn_display.c` |
 | `$81:E645` | `Lufia2BattlePartyStatusRow` | verified | `src/battle/battle_turn_display.c` |
+| `$81:E73B` | `Lufia2BattleRenderMessage` | verified | `src/battle/battle_message_render.c` |
+| `$81:E792` | `Lufia2BattleLoadMessageGraphics` | verified | `src/battle/battle_message_render.c` |
 | `$81:E7D2` | `Lufia2BattleFillRect` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E808` | `Lufia2DecimalDigits3` | verified | `src/system/math.c` |
 | `$81:E835` | `Lufia2BattleGlyph` | verified | `src/battle/battle_ip.c` |

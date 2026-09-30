@@ -1,6 +1,6 @@
 /* Resource decompressor ($80:8E9D). */
 
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/resource_format.h"
 #include "lufia2/system.h"
 
@@ -102,7 +102,11 @@ static void StreamReference(
                 const uint16_t word = Read16Direct(memory, cpu, 0x5au);
 
                 cpu->carry = (word & 0x8000u) != 0;
-                Write16Direct(memory, cpu, 0x5au, (uint16_t)(word << 1));
+                const uint16_t shifted = (uint16_t)(word << 1);
+                const uint32_t address = OpDp(cpu, 0x5au);
+                /* Original 16-bit ASL writes the high byte first. */
+                Write8(memory, OpNextByte(address), (uint8_t)(shifted >> 8));
+                Write8(memory, address, (uint8_t)shifted);
                 SetNz16(cpu, (uint16_t)(word << 1));
                 RolA16(cpu);
             }

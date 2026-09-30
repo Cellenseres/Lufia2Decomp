@@ -2105,3 +2105,19 @@ source = "src/battle/battle_gauges.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:E73B"
+name = "Lufia2BattleRenderMessage"
+source = "src/battle/battle_message_render.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E792"
+name = "Lufia2BattleLoadMessageGraphics"
+source = "src/battle/battle_message_render.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
