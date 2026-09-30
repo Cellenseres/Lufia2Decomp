@@ -90,6 +90,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_triggers.c
     src/field/field_update.c
     src/item/inventory.c
+    src/item/inventory_receive.c
     src/item/item_records.c
     src/menu/menu.c
     src/menu/menu_screen.c
@@ -99,6 +100,7 @@ add_library(lufia2_decomp STATIC
     src/party/capsule.c
     src/party/experience.c
     src/party/level_up.c
+    src/party/stat_growth.c
     src/party/party_records.c
     src/party/stats.c
     src/system/decompress.c

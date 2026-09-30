@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not this table. The notes below describe the current state.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-226 functions in `metadata/functions.toml`: 226 verified, 0 draft, 0 identified, 0 disabled.
+229 functions in `metadata/functions.toml`: 229 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -124,6 +124,7 @@ the metadata, not this table. The notes below describe the current state.
 | `$81:ED8E` | `Lufia2PartyUnpackMember` | verified | `src/party/stats.c` |
 | `$81:EE94` | `Lufia2PartyUnpackMemberBare` | verified | `src/party/stats.c` |
 | `$81:F057` | `Lufia2InventoryCount` | verified | `src/item/inventory.c` |
+| `$81:F085` | `Lufia2InventoryReceive` | verified | `src/item/inventory_receive.c` |
 | `$81:F0A2` | `Lufia2InventoryAdd` | verified | `src/item/inventory.c` |
 | `$81:F194` | `Lufia2ItemRecordByte` | verified | `src/item/item_records.c` |
 | `$81:F1C5` | `Lufia2LoadItemRecord` | verified | `src/item/item_records.c` |
@@ -141,6 +142,8 @@ the metadata, not this table. The notes below describe the current state.
 | `$81:F789` | `Lufia2PartyPointersFar` | verified | `src/party/party_records.c` |
 | `$81:F78D` | `Lufia2PartyPointers` | verified | `src/party/party_records.c` |
 | `$81:F7BD` | `Lufia2BattleTable9EBA` | verified | `src/party/party_records.c` |
+| `$81:F7CA` | `Lufia2PartyApplyLevel` | verified | `src/party/stat_growth.c` |
+| `$81:F7ED` | `Lufia2PartyStatGrowth` | verified | `src/party/stat_growth.c` |
 | `$81:F87F` | `Lufia2PartyBaseStats` | verified | `src/party/stats.c` |
 | `$81:F979` | `Lufia2PartyLevelUpCheck` | verified | `src/party/level_up.c` |
 | `$81:F9E9` | `Lufia2PartyExperienceForLevel` | verified | `src/party/experience.c` |
@@ -253,7 +256,7 @@ the metadata, not this table. The notes below describe the current state.
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **333 independent jobs**. The normal
+The full Windows Release verifier passes **335 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -290,6 +293,7 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Party names/window uploads (BL6.11) | 8,196 | pass |
 | Result windows (BL6.12) | 6,159 | pass |
 | Experience/gold/results (BL6.13) | 5,746 | pass |
+| Party growth/received loot (BL6.14-15) | 8,711 + 4,098 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
@@ -298,7 +302,9 @@ spell lists also preserve availability checks, MP limits and hardware division.
 Window setup and cleanup are reconstructed, with explicit upload and frame-wait
 children. Party names and tilemap queue entries are also reconstructed; full
 queues retain the original BRK handoff. The result caller now covers rewards, party and capsule progression, gold and
-result messages. Its level, sound and item children remain explicit calls.
+result messages. Party stat gains and item reception are also reconstructed. Their original
+calibration BRK and inventory remainders are retained. Sound and further
+rendering children remain explicit calls.
 
 The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary
 arithmetic. Other states use the original interpreter. Their tests cover stack
