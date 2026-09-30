@@ -98,6 +98,29 @@ Lufia2ExecutionResult Lufia2BattleChooseTargets(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* $81:B8B1: target coordinates; M1X0, DB $97, DP zero. */
+Lufia2ExecutionResult Lufia2BattleTargetCoordinates(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $81:D920/D92C/D938/D948: five-byte cursor sprites; M1X0, DP zero. */
+Lufia2ExecutionResult Lufia2BattleEnemyCursor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattlePartyCursor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEnemyMarkedCursor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattlePartyMarkedCursor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $81:D9D0/D975: command frame upkeep/confirmation; M1X0, DP zero. */
+Lufia2ExecutionResult Lufia2BattleCommandFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+Lufia2ExecutionResult Lufia2BattleConfirmCommand(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $81:CB77: command selection; M1X0, DB $97, DP zero, explicit children. */
 Lufia2ExecutionResult Lufia2BattleChooseCommand(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

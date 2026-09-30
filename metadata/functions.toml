@@ -1729,3 +1729,59 @@ source = "src/battle/battle_targets.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:B8B1"
+name = "Lufia2BattleTargetCoordinates"
+source = "src/battle/battle_target_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:D920"
+name = "Lufia2BattleEnemyCursor"
+source = "src/battle/battle_target_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:D92C"
+name = "Lufia2BattlePartyCursor"
+source = "src/battle/battle_target_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:D938"
+name = "Lufia2BattleEnemyMarkedCursor"
+source = "src/battle/battle_target_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:D948"
+name = "Lufia2BattlePartyMarkedCursor"
+source = "src/battle/battle_target_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:D9D0"
+name = "Lufia2BattleCommandFrame"
+source = "src/battle/battle_target_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:D975"
+name = "Lufia2BattleConfirmCommand"
+source = "src/battle/battle_target_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
