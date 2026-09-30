@@ -544,6 +544,18 @@ Lufia2ExecutionResult Lufia2BattleMultiply(
 Lufia2ExecutionResult Lufia2BattleRandomFraction(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $85:8F67 random status recovery / $85:9099 timed status expiry.
+ * Scan five allies and six enemies. M1X0, DP zero, PB $85, native binary
+ * mode. Caller DB is restored; names must be NUL-terminated. Children
+ * retain original pushed frames, and messages retain all 45 frame waits.
+ */
+Lufia2ExecutionResult Lufia2BattleRecoverStatuses(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+Lufia2ExecutionResult Lufia2BattleExpireStatuses(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 #ifdef __cplusplus
 }
 #endif
