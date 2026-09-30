@@ -200,6 +200,11 @@ Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:D9E1 rewards; M1X0/native binary/DB97/DP0. Party IDs must be in 0A7B. */
+Lufia2ExecutionResult Lufia2BattleResults(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $81:DD7F result-window setup; M1X0/native binary/DB81/DP0. */
 Lufia2ExecutionResult Lufia2BattleResultWindowPrepare(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

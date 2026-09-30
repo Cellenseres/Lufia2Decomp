@@ -1897,3 +1897,11 @@ source = "src/battle/battle_result_window.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:D9E1"
+name = "Lufia2BattleResults"
+source = "src/battle/battle_results.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
