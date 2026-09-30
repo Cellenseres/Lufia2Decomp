@@ -200,6 +200,26 @@ Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:DD7F result-window setup; M1X0/native binary/DB81/DP0. */
+Lufia2ExecutionResult Lufia2BattleResultWindowPrepare(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $81:DDE7 result line at Y in bank85; same contract, original DB restored. */
+Lufia2ExecutionResult Lufia2BattleResultWindowLine(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $81:DE55 scroll result rows; M1X0/native binary/DB7E/DP0, DB stays7E. */
+Lufia2ExecutionResult Lufia2BattleResultWindowScroll(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $81:DE9E result confirmation; M1X0/native binary/DB81/DP0. */
+Lufia2ExecutionResult Lufia2BattleResultWindowWait(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $81:E4D1 party name for X=0/2/4/6; M1X0/native binary/DP0, DB restored. */
 Lufia2ExecutionResult Lufia2BattlePartyName(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

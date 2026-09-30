@@ -1865,3 +1865,35 @@ source = "src/battle/battle_command_display_helpers.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "81:DD7F"
+name = "Lufia2BattleResultWindowPrepare"
+source = "src/battle/battle_result_window.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:DDE7"
+name = "Lufia2BattleResultWindowLine"
+source = "src/battle/battle_result_window.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:DE55"
+name = "Lufia2BattleResultWindowScroll"
+source = "src/battle/battle_result_window.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:DE9E"
+name = "Lufia2BattleResultWindowWait"
+source = "src/battle/battle_result_window.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
