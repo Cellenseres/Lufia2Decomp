@@ -513,6 +513,37 @@ Lufia2ExecutionResult Lufia2BattleTileWindow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* Status helpers: native binary mode, DP zero, A8 and X/Y16.
+ * $85:9150 copies the NUL-terminated name at DB:X into $1269 and trims
+ * trailing $10 glyphs. DB must map low WRAM; $1268 must not be $10 for an
+ * empty name. $85:9173 appends phrase A.low (0..6) at length $1266.
+ */
+Lufia2ExecutionResult Lufia2BattleStatusName(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleStatusPhrase(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $85:91A1 sync / $85:91E0 clear the five party status markers; M1X0, DP 0. */
+Lufia2ExecutionResult Lufia2BattleSyncStatusMarkers(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleClearStatusMarkers(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $85:D9C9 X = effect-work pointer for nonzero A.low mask; M1X0, DP 0,
+ * native binary mode and DB mapping low WRAM. Zero retains a ROM self-loop.
+ */
+Lufia2ExecutionResult Lufia2BattleEffectRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $85:DCA3 $63..$66 = $54 * $56 through the original hardware multiplier.
+ * $85:DCEA A = A times a random 16-bit fraction. Both require M0X0, DP 0
+ * and native binary mode; DCA3 also requires DB mapping the SNES registers.
+ */
+Lufia2ExecutionResult Lufia2BattleMultiply(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleRandomFraction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

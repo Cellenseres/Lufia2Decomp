@@ -303,11 +303,9 @@ static void BattleScriptUnary(
 }
 
 /* $85:DCA3: $63-$66 = $54 * $56, 16x16 via $4202. */
-static void BattleMultiply(
+static void BattleMultiplyBody(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJslFrame(memory, cpu, 0x85u, return_address);
+    Lufia2CpuState *cpu) {
     Push8(memory, cpu, PackStatus(cpu));                       /* DCA3 */
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
@@ -342,7 +340,19 @@ static void BattleMultiply(
         OpStepMem(memory, cpu, OpDp(cpu, 0x66u), 1);
     Write16Direct(memory, cpu, 0x64u, cpu->accumulator);       /* DCE6 */
     UnpackStatus(cpu, Pull8(memory, cpu));
+}
+
+static void BattleMultiply(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x85u, return_address);
+    BattleMultiplyBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleMultiply(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    BattleMultiplyBody(memory, cpu);
+    return ExecutionReturned(0x85dce9u);
 }
 
 /* $85:DC6F: $5D-$5F /= $54, 24/8 via $4204. */
@@ -383,17 +393,15 @@ static void BattleDivide(
 }
 
 /* $85:DCEA: A times a random 16-bit fraction. */
-void BattleCallRandomFraction(
+static void BattleRandomFractionBody(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
+    Lufia2CpuState *cpu) {
     static const struct {
         uint8_t limit;
         uint16_t call;
     } rolls[3] = {{0x80u, 0xdcf7u}, {0x80u, 0xdcffu}, {0x04u, 0xdd07u}};
     unsigned i;
 
-    SimulateJslFrame(memory, cpu, 0x85u, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* DCEA */
     PushDataBank(memory, cpu);
     Push8(memory, cpu, 0x85u);
@@ -426,7 +434,19 @@ void BattleCallRandomFraction(
     LoadA16(cpu, Read16Direct(memory, cpu, 0x65u));
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
+}
+
+void BattleCallRandomFraction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x85u, return_address);
+    BattleRandomFractionBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleRandomFraction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    BattleRandomFractionBody(memory, cpu);
+    return ExecutionReturned(0x85dd18u);
 }
 
 /* $85:DB6D: 32/16 shift-subtract divide of $63-$66 by $58. */
