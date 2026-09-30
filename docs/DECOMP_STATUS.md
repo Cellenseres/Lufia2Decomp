@@ -17,14 +17,14 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-255 functions in `metadata/functions.toml`: 255 verified, 0 draft, 0 identified, 0 disabled.
+258 functions in `metadata/functions.toml`: 258 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **344 independent jobs**. The normal
+The full Windows Release verifier passes **345 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -70,6 +70,7 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Status gauges/division bus order (BL6.21) | 24,576 | pass |
 | Message renderer/resource bus order (BL6.22) | 5,124 + 5,440 | pass |
 | Glyph renderer/font helpers (BL6.23) | 32,771 | pass |
+| Message setup/timer/cleanup (BL6.24) | 12,288 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
@@ -82,7 +83,7 @@ calibration BRK and inventory remainders. Status recovery, timed effects,
 gauges and shared message rendering, including aligned and shifted glyphs,
 are reconstructed. The resource loader
 also preserves the decompressor's original byte-write order. Sound and the
-remaining effect children remain explicit calls.
+frame and other effect children remain explicit calls.
 
 The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary
 arithmetic. Other states use the original interpreter. Their tests cover stack

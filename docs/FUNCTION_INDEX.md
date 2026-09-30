@@ -239,6 +239,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9CD7` | `Lufia2BattleQueueActionWindow` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9CEE` | `Lufia2BattleQueueListWindow` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9DD4` | `Lufia2BattleQueueTurnDisplay` | verified | `src/battle/battle_turn_display.c` |
+| `$85:AADC` | `Lufia2BattleStartMessageEffect` | verified | `src/battle/battle_message_effect.c` |
+| `$85:AB28` | `Lufia2BattleTickMessageEffect` | verified | `src/battle/battle_message_effect.c` |
+| `$85:AB5B` | `Lufia2BattleQueueMessageCleanup` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB78` | `Lufia2BattleStageTransfer` | verified | `src/battle/battle_loop_children.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
