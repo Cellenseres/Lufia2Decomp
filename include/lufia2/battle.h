@@ -58,6 +58,26 @@ Lufia2ExecutionResult Lufia2BattleMainLoop(
     Lufia2PushedChildCall child,
     void *child_context);
 
+/* $81:890A: turn-list execution; M1X0, DB $97, DP zero, explicit children. */
+Lufia2ExecutionResult Lufia2BattleExecuteTurns(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $81:A79A: action preparation; M1X0, DB $97, DP zero, explicit children. */
+Lufia2ExecutionResult Lufia2BattlePrepareAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $81:C600: status/HP tick; M1X0, DP zero, explicit effect children. */
+Lufia2ExecutionResult Lufia2BattleStatusTick(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $81:CB77: command selection; M1X0, DB $97, DP zero, explicit children. */
+Lufia2ExecutionResult Lufia2BattleChooseCommand(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $85:9236: carry is set when no party record is eligible. */
 Lufia2ExecutionResult Lufia2BattlePartyStatusGate(
     const Lufia2Memory *memory,
