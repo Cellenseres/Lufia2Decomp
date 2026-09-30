@@ -2017,3 +2017,19 @@ source = "src/battle/battle_script.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "85:8F67"
+name = "Lufia2BattleRecoverStatuses"
+source = "src/battle/battle_status_recovery.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9099"
+name = "Lufia2BattleExpireStatuses"
+source = "src/battle/battle_status_recovery.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
