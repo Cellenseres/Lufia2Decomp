@@ -199,8 +199,15 @@ static inline void OpTestBits(
     const uint16_t a = OpA(cpu);
 
     cpu->zero = (value & a) == 0;
-    OpWriteM(memory, cpu, address,
-        set ? (uint16_t)(value | a) : (uint16_t)(value & (uint16_t)~a));
+    const uint16_t result =
+        set ? (uint16_t)(value | a) : (uint16_t)(value & (uint16_t)~a);
+    if (cpu->accumulator_is_8_bit) {
+        Write8(memory, address, (uint8_t)result);
+    } else {
+        /* Original word TSB/TRB stores the high byte before the low byte. */
+        Write8(memory, OpNextByte(address), (uint8_t)(result >> 8));
+        Write8(memory, address, (uint8_t)result);
+    }
 }
 
 static inline void OpRolMem8(
