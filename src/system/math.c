@@ -1,6 +1,6 @@
 /* Multiply ($82:8000), sine ($80:8450) and cosine ($80:8486). */
 
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "system/system_internal.h"
 
 /* $82:8000: 16x16 multiply by shift and add. */
@@ -122,7 +122,12 @@ Lufia2ExecutionResult Lufia2Divide16(
         const uint16_t quotient = Read16Direct(memory, cpu, 0x4eu);
 
         cpu->carry = (quotient & 0x8000u) != 0;                /* ASL $4E */
-        Write16Direct(memory, cpu, 0x4eu, (uint16_t)(quotient << 1));
+        const uint16_t shifted = (uint16_t)(quotient << 1);
+        const uint32_t address = OpDp(cpu, 0x4eu);
+        /* Original 16-bit ASL writes the high byte first. */
+        Write8(memory, OpNextByte(address), (uint8_t)(shifted >> 8));
+        Write8(memory, address, (uint8_t)shifted);
+        SetNz16(cpu, shifted);
         RolA16(cpu);
         if (!cpu->carry) {
             Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x51u));
@@ -130,7 +135,7 @@ Lufia2ExecutionResult Lufia2Divide16(
                 continue;
         }
         Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x51u));
-        Increment16Direct(memory, cpu, 0x4eu);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x4eu), 1);
     }
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x80844fu);
