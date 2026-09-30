@@ -19,7 +19,7 @@ and verification notes for each task and may describe a status that a later
 task changed; the index and the metadata are authoritative.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-195 functions in `metadata/functions.toml`: 195 verified, 0 draft, 0 identified, 0 disabled.
+199 functions in `metadata/functions.toml`: 199 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -46,6 +46,8 @@ task changed; the index and the metadata are authoritative.
 | `$81:876B` | `Lufia2BattleExit` | verified | `src/battle/battle_exit.c` |
 | `$81:8821` | `Lufia2BattleEntry` | verified | `src/battle/battle_entry.c` |
 | `$81:886F` | `Lufia2BattleMainLoop` | verified | `src/battle/battle_loop.c` |
+| `$81:890A` | `Lufia2BattleExecuteTurns` | verified | `src/battle/battle_actions.c` |
+| `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |
 | `$81:B264` | `Lufia2BattleActiveMask` | verified | `src/battle/battle_util.c` |
 | `$81:B2B5` | `Lufia2BattleTargetRecord` | verified | `src/battle/battle_util.c` |
 | `$81:B2DB` | `Lufia2BattleTargetSlot` | verified | `src/battle/battle_util.c` |
@@ -75,6 +77,8 @@ task changed; the index and the metadata are authoritative.
 | `$81:C30E` | `Lufia2BattleClearTilemap3800` | verified | `src/battle/battle_buffers.c` |
 | `$81:C35F` | `Lufia2BattlePopups` | verified | `src/battle/battle_popup.c` |
 | `$81:C5CF` | `Lufia2BattleTargetPointer` | verified | `src/battle/battle_util.c` |
+| `$81:C600` | `Lufia2BattleStatusTick` | verified | `src/battle/battle_status_tick.c` |
+| `$81:CB77` | `Lufia2BattleChooseCommand` | verified | `src/battle/battle_command.c` |
 | `$81:DFA2` | `Lufia2BattleListRows` | verified | `src/battle/battle_ip.c` |
 | `$81:E3AE` | `Lufia2BattleWindowE3AE` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E3CD` | `Lufia2BattleWindowE3CD` | verified | `src/battle/battle_frame_rows.c` |
@@ -889,6 +893,64 @@ runtime selections are unchanged; only the `$81:C240` selection was added.
 
 `$81:C739` is LLE-only
 and can continue at `$81:8855` instead of returning to its local caller; its
-analyzed path truncates at `$81:C7F8` before `$81:CB77`. `$81:890A` is
-LLE-only with unproven `$81:A79A/$81:C600` child exits and a local RTS at
-`$81:895F`. Neither irregular child has been given a speculative C boundary.
+analyzed path truncates at `$81:C7F8` before `$81:CB77`. The existing
+`$81:890A` CFG remains LLE-only because its child exits lack static proofs.
+Its correct local RTS is `$81:895D`; `$81:895E` begins the next function.
+Its reconstructed control contract is described below.
+
+## Battle turn execution and command boundaries (BL6.2)
+
+Four complete caller control contracts are verified/unbound. They enter under
+M1X0, DP zero, native binary arithmetic and the Battle DB convention `$97`
+(the status tick sets DB `$81` and restores its caller). Original children
+use explicit callbacks at their exact JSR/JSL sites. Returning callbacks must
+supply the original child return mode and landing; unproven/nonlocal exits
+remain child unwinds. This verifies the caller code and its boundaries;
+it does not reconstruct the delegated action, input, audio or frame routines.
+
+- `$81:890A` (`Lufia2BattleExecuteTurns`, `battle_actions.c`) reads target
+  bytes through DP `$D5` in the three-byte `$1B8C` queue, skips `$FF`, and
+  stops at zero or carry from `$85:93B7`. Exhaustion calls `$81:C600`,
+  `$85:9099` and `$85:8F67`; early finish bypasses them. Both paths call
+  `$81:DEE9`, clear 192 bytes at `$7E:3000`, call `$85:9DD4`, then RTS `$895D`.
+- `$81:A79A` (`Lufia2BattlePrepareAction`, the same source) stages the target,
+  status gates and ordinary/capsule/enemy action paths. It retains PHB,
+  one-byte PHA/PLA on capsule/enemy paths and both RTS `$A7E2/$A831`.
+  `$81:A832`, `$81:B1A3/$B1C9` and the other delegated calls remain explicit.
+- `$81:C600` (`Lufia2BattleStatusTick`, `battle_status_tick.c`) scans capsule
+  plus four party targets and six enemy targets through internal `$81:C652`.
+  Each target clears its 30-byte effect record through the WRAM port even
+  without an HP effect. Status bit 0 applies the original divider-20/random
+  HP decrement, with minimum one, word status/death-counter updates and the
+  original dead-enemy reward carries. The word increment at `$1607` can
+  touch `$1608`; it is preserved. Effect publication, register/width changes,
+  internal JSR frames and the conditional presentation children remain exact.
+  Local RTS is `$C651`, internal RTS `$C738`.
+- `$81:CB77` (`Lufia2BattleChooseCommand`, `battle_command.c`) draws and polls
+  four selections. DP `$DD & $A0` has priority over `$40`, yielding 0..3 or
+  4..7 at RTS `$CC1F/$CC2D`. The polling loop, input/sound/frame children,
+  original ROM table reads and temporary X8/Y8 truncation are retained.
+
+Private original-ROM differential passes 5,120 caller cases: turn execution
+1,024 (569 return/455 unwind), action preparation 1,024 (826/198), status tick
+2,048 (951/1,097), command selection 1,024 (557/467). All 44 direct child
+sites have forced-unwind coverage. CPU, full 128 KiB WRAM and ordered writes
+match at child entry and final boundaries. The fixture executes 54,985 real
+ROM returns from eight small helper types; other children have controlled
+return effects. Coverage includes 5,302 HP effects, 634 dead-enemy reward
+lookups, queue exhaustion/early finish 491/78, both action return paths,
+all eight command selections, delayed input and competing input bits.
+Fourteen observable mutations are caught; source compilation uses MSVC
+`/O2 /W4 /WX`. The expanded full MSVC Release verifier passed all 321
+independent jobs on 2026-09-30, including Battle Control Flow, 157 Actor
+Dispatch jobs, 131 Actor Bridge targets and every previous suite.
+
+An additional 128 ROM control probes clarify `$81:C739` without promoting it.
+`$81:CB77` has 64 selection probes. The 64 caller dispatch probes include
+28 retries and 12 nonlocal exits: command 1 enters `$C826`, 2 enters `$CA88`,
+3 enters `$C88C`; 0/4 retry. Commands 5..7 require `$057C != 0` to reach
+`$CA68`, which writes seven `$FF` bytes and outcome zero, then jumps to
+`$81:8855` without popping its JSR frame. `$8855/$8858` restore SP from
+`$1395`. These use opaque input/frame child fixtures, not real gameplay input.
+The full `$81:C739` menu/action body remains original ROM. No new runtime
+binding, analyzer exit proof or gameplay-based promotion is added.

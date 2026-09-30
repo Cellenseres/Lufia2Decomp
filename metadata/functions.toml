@@ -273,6 +273,39 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# Battle control contracts retain original action/input children explicitly.
+[[function]]
+address = "81:890A"
+name = "Lufia2BattleExecuteTurns"
+source = "src/battle/battle_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A79A"
+name = "Lufia2BattlePrepareAction"
+source = "src/battle/battle_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:C600"
+name = "Lufia2BattleStatusTick"
+source = "src/battle/battle_status_tick.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:CB77"
+name = "Lufia2BattleChooseCommand"
+source = "src/battle/battle_command.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # Per-frame field triggers. Expiring timers, touch events, the
 # trigger queue and door warps stop at their exact ROM PC.
 [[function]]
