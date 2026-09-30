@@ -110,6 +110,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:E7D2` | `Lufia2BattleFillRect` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E808` | `Lufia2DecimalDigits3` | verified | `src/system/math.c` |
 | `$81:E835` | `Lufia2BattleGlyph` | verified | `src/battle/battle_ip.c` |
+| `$81:EA35` | `Lufia2BattleRenderGlyph` | verified | `src/battle/battle_message_glyph.c` |
 | `$81:EB34` | `Lufia2BattlePaletteCopy` | verified | `src/battle/battle_util.c` |
 | `$81:EB62` | `Lufia2BattlePaletteSplit` | verified | `src/battle/battle_util.c` |
 | `$81:EC41` | `Lufia2BattleClearF000` | verified | `src/battle/battle_util.c` |
@@ -233,6 +234,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9A7D` | `Lufia2BattleMeasureMessage` | verified | `src/battle/battle_message_length.c` |
 | `$85:9AAA` | `Lufia2BattleSaveMessageState` | verified | `src/battle/battle_message_display.c` |
 | `$85:9ABC` | `Lufia2BattleRestoreMessageState` | verified | `src/battle/battle_message_display.c` |
+| `$85:9ACE` | `Lufia2BattleNormalizeGlyph` | verified | `src/battle/battle_message_glyph.c` |
 | `$85:9BDA` | `Lufia2BattleQueueStatusSprites` | verified | `src/battle/battle_message_display.c` |
 | `$85:9CD7` | `Lufia2BattleQueueActionWindow` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9CEE` | `Lufia2BattleQueueListWindow` | verified | `src/battle/battle_command_display_helpers.c` |
