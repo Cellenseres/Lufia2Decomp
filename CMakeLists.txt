@@ -74,6 +74,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_status_support.c
     src/battle/battle_status_recovery.c
     src/battle/battle_message_display.c
+    src/battle/battle_message_length.c
     src/battle/battle_loop_internal.c
     src/cave/ancient_cave.c
     src/cave/cave_grid.c
@@ -109,6 +110,7 @@ add_library(lufia2_decomp STATIC
     src/party/stats.c
     src/system/decompress.c
     src/system/math.c
+    src/system/multiply_16_by_8.c
     src/system/random.c
     src/system/screen.c
     src/system/sound.c
