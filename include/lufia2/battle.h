@@ -642,6 +642,17 @@ Lufia2ExecutionResult Lufia2BattleTickMessageEffect(
 Lufia2ExecutionResult Lufia2BattleQueueMessageCleanup(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $85:8850 advances five party status-icon timers and sprite records;
+ * $85:919C forwards it through an explicit child call. M1X0, PB $85,
+ * DP zero, native binary mode; restores caller DB. Inactive/downed paths
+ * retain the original A value stored into the sprite's glyph byte.
+ */
+Lufia2ExecutionResult Lufia2BattleAnimateStatusIcons(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleUpdateStatusIcons(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 #ifdef __cplusplus
 }
 #endif

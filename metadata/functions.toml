@@ -2161,3 +2161,19 @@ source = "src/battle/battle_message_effect.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:8850"
+name = "Lufia2BattleAnimateStatusIcons"
+source = "src/battle/battle_status_icons.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:919C"
+name = "Lufia2BattleUpdateStatusIcons"
+source = "src/battle/battle_status_icons.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
