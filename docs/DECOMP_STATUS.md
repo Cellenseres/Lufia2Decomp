@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not this table. The notes below describe the current state.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-211 functions in `metadata/functions.toml`: 211 verified, 0 draft, 0 identified, 0 disabled.
+213 functions in `metadata/functions.toml`: 213 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
@@ -65,6 +65,8 @@ the metadata, not this table. The notes below describe the current state.
 | `$81:BD4B` | `Lufia2BattleSpriteBlock` | verified | `src/battle/battle_util.c` |
 | `$81:BE54` | `Lufia2BattleTileBlockFar` | verified | `src/battle/battle_util.c` |
 | `$81:BE58` | `Lufia2BattleTileBlock` | verified | `src/battle/battle_util.c` |
+| `$81:BF3F` | `Lufia2BattleItemCommands` | verified | `src/battle/battle_command_lists.c` |
+| `$81:C031` | `Lufia2BattleSpellCommands` | verified | `src/battle/battle_command_lists.c` |
 | `$81:C129` | `Lufia2BattleIpSkills` | verified | `src/battle/battle_ip.c` |
 | `$81:C240` | `Lufia2BattlePrepareNextFrame` | verified | `src/battle/battle_loop_children.c` |
 | `$81:C254` | `Lufia2BattleQueueEnemyTurns` | verified | `src/battle/battle_turn_order.c` |
@@ -238,7 +240,7 @@ the metadata, not this table. The notes below describe the current state.
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **328 independent jobs**. The normal
+The full Windows Release verifier passes **329 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -270,10 +272,12 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Target selection (BL6.6) | 8,207 | pass |
 | Target/confirmation helpers (BL6.7) | 13,326 | pass |
 | Command/turn runtime bridges (BL6.8) | 15,615 ABI checks | pass |
+| Item/spell command lists (BL6.9) | 4,100 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
-wrapping, hardware register accesses, title drawing and input waits. Larger
+wrapping, hardware register accesses, title drawing and input waits. Item and
+spell lists also preserve availability checks, MP limits and hardware division. Larger
 children remain explicit calls. Their tests detect 24 deliberate mistakes.
 
 The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary

@@ -200,6 +200,16 @@ Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:BF3F inventory command list; M1X0, native binary, DB97, DP0. */
+Lufia2ExecutionResult Lufia2BattleItemCommands(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* $81:C031 member spell command list; same entry contract. */
+Lufia2ExecutionResult Lufia2BattleSpellCommands(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $81:C129 IP skill table $7E:DF00 of member $1BE8; M1X0. */
 Lufia2ExecutionResult Lufia2BattleIpSkills(
     const Lufia2Memory *memory,
