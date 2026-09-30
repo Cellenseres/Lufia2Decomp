@@ -2185,3 +2185,19 @@ source = "src/battle/battle_frame_input.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:B705"
+name = "Lufia2BattleAppendOamSprites"
+source = "src/battle/battle_sprite_build.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B5C4"
+name = "Lufia2BattleBuildSprites"
+source = "src/battle/battle_sprite_build.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

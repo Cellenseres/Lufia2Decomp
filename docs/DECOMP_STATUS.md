@@ -17,14 +17,14 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-261 functions in `metadata/functions.toml`: 261 verified, 0 draft, 0 identified, 0 disabled.
+263 functions in `metadata/functions.toml`: 263 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **348 independent jobs**. The normal
+The full Windows Release verifier passes **349 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -72,8 +72,9 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Glyph renderer/font helpers (BL6.23) | 32,771 | pass |
 | Message setup/timer/cleanup (BL6.24) | 12,288 | pass |
 | Party status-icon animation (BL6.25) | 12,289 | pass |
-| Frame/input/pause handling (BL6.26) | 4,098 | pass |
+| Frame/input/pause handling (BL6.26, expanded) | 5,122 | pass |
 | Word TSB/TRB write order (BL6.27) | 34,816 | pass |
+| Sprite builder/record append (BL6.28) | 16,395 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
@@ -85,7 +86,8 @@ capsule progression, stat gains and item reception, including the original
 calibration BRK and inventory remainders. Status recovery, timed effects, gauges
 and shared messages include aligned and shifted glyphs. Frame and pause handling
 keep the original polling loops. Resource loading preserves the decompressor's
-byte-write order. Sprite building and remaining effect children stay explicit.
+byte-write order. Sprite building preserves group packing, byte-counter wrap
+and the original overlay loops. Remaining effect children stay explicit.
 
 The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary
 arithmetic. Other states use the original interpreter. Their tests cover stack

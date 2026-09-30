@@ -39,6 +39,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:B505` | `Lufia2BattleBlend` | verified | `src/battle/battle_util.c` |
 | `$81:B54A` | `Lufia2ColorToGray` | verified | `src/battle/battle_util.c` |
 | `$81:B5A3` | `Lufia2BattleHideOam` | verified | `src/battle/battle_util.c` |
+| `$81:B5C4` | `Lufia2BattleBuildSprites` | verified | `src/battle/battle_sprite_build.c` |
+| `$81:B705` | `Lufia2BattleAppendOamSprites` | verified | `src/battle/battle_sprite_build.c` |
 | `$81:B8B1` | `Lufia2BattleTargetCoordinates` | verified | `src/battle/battle_target_helpers.c` |
 | `$81:B974` | `Lufia2BattleLoadPalette` | verified | `src/battle/battle_util.c` |
 | `$81:B9AF` | `Lufia2BattleCommitPalettes` | verified | `src/battle/battle_util.c` |
