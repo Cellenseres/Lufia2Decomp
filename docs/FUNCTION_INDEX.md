@@ -88,6 +88,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:DF0A` | `Lufia2BattlePartyWindows` | verified | `src/battle/battle_command_display.c` |
 | `$81:DFA2` | `Lufia2BattleListRows` | verified | `src/battle/battle_ip.c` |
 | `$81:E16F` | `Lufia2BattleClearActionWindow` | verified | `src/battle/battle_command_display.c` |
+| `$81:E2AF` | `Lufia2BattleStatusGauge` | verified | `src/battle/battle_gauges.c` |
+| `$81:E2C8` | `Lufia2BattleStatusDigits` | verified | `src/battle/battle_gauges.c` |
 | `$81:E3AE` | `Lufia2BattleWindowE3AE` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E3CD` | `Lufia2BattleWindowE3CD` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E3EC` | `Lufia2BattleTileWindow` | verified | `src/battle/battle_frame_rows.c` |

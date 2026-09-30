@@ -590,6 +590,16 @@ Lufia2ExecutionResult Lufia2BattleQueueStatusSprites(
 Lufia2ExecutionResult Lufia2BattleMeasureMessage(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $81:E2AF label and proportional status gauge, $11 current/$13 maximum,
+ * $16 label/$15 tile base at DB:Y. M1X0, PB $81, DP zero, DB $7E,
+ * native binary mode. Retains original DB changes and zero-divisor behavior.
+ * $81:E2C8 draws the current value clamped to 999 and restores Y.
+ */
+Lufia2ExecutionResult Lufia2BattleStatusGauge(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleStatusDigits(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
