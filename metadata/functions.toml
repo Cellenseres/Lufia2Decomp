@@ -2137,3 +2137,27 @@ source = "src/battle/battle_message_glyph.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:AADC"
+name = "Lufia2BattleStartMessageEffect"
+source = "src/battle/battle_message_effect.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AB28"
+name = "Lufia2BattleTickMessageEffect"
+source = "src/battle/battle_message_effect.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AB5B"
+name = "Lufia2BattleQueueMessageCleanup"
+source = "src/battle/battle_message_effect.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

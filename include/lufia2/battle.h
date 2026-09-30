@@ -630,6 +630,18 @@ Lufia2ExecutionResult Lufia2BattleRenderGlyph(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* $85:AADC installs the message display record and DMA channel 4 bank.
+ * $85:AB28 decrements its nonzero word timer $1264; only expiry clears
+ * the message. A zero timer keeps it displayed. $85:AB5B queues cleanup.
+ * M1X0, DP zero, native binary mode and DB mapping low WRAM.
+ */
+Lufia2ExecutionResult Lufia2BattleStartMessageEffect(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleTickMessageEffect(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleQueueMessageCleanup(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
