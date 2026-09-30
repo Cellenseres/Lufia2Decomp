@@ -200,6 +200,21 @@ Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* Turn display: M1X0/native binary/DP0, DB maps low WRAM.
+ * $81:E645 takes party slot X=0/2/4/6; each entry keeps child frames explicit. */
+Lufia2ExecutionResult Lufia2BattleRefreshTurnDisplay(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2BattlePartyStatusRows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2BattlePartyStatusRow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2BattleQueueTurnDisplay(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $81:D9E1 rewards; M1X0/native binary/DB97/DP0. Party IDs must be in 0A7B. */
 Lufia2ExecutionResult Lufia2BattleResults(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
