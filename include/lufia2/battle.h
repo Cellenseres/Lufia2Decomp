@@ -662,6 +662,23 @@ Lufia2ExecutionResult Lufia2BattleFrameInput(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* $81:B705 appends A.low five-byte records at DB:X to OAM at DB:Y.
+ * M1X0, PB $81, DP zero, native binary mode. DP $58 holds the sprite count.
+ * Four-record groups preserve the original raw attribute merge. Returns
+ * before RTS at $B77F or $B7D8, with the last count retained in DP $5A.
+ */
+Lufia2ExecutionResult Lufia2BattleAppendOamSprites(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $81:B5C4 builds battle sprite groups and applies position overlays.
+ * M1X0, PB $81, DP zero, native binary mode and DB mapping low WRAM.
+ * Child JSR frames remain explicit. Returns before RTL $B704; if the bus
+ * clears $154E during the prefix loop, the original RTS $B69F is retained.
+ */
+Lufia2ExecutionResult Lufia2BattleBuildSprites(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 #ifdef __cplusplus
 }
 #endif
