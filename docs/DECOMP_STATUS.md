@@ -17,14 +17,14 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-260 functions in `metadata/functions.toml`: 260 verified, 0 draft, 0 identified, 0 disabled.
+261 functions in `metadata/functions.toml`: 261 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **346 independent jobs**. The normal
+The full Windows Release verifier passes **347 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -72,6 +72,7 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Glyph renderer/font helpers (BL6.23) | 32,771 | pass |
 | Message setup/timer/cleanup (BL6.24) | 12,288 | pass |
 | Party status-icon animation (BL6.25) | 12,289 | pass |
+| Frame/input/pause handling (BL6.26) | 4,098 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
@@ -80,11 +81,10 @@ spell lists also preserve availability checks, MP limits and hardware division.
 Window setup, cleanup, party names and tilemap queues are reconstructed.
 Full queues retain the original BRK handoff. Results cover rewards, party and
 capsule progression, stat gains and item reception, including the original
-calibration BRK and inventory remainders. Status recovery, timed effects,
-gauges and shared message rendering, including aligned and shifted glyphs,
-are reconstructed. The resource loader
-also preserves the decompressor's original byte-write order. Sound and the
-frame and other effect children remain explicit calls.
+calibration BRK and inventory remainders. Status recovery, timed effects, gauges
+and shared messages include aligned and shifted glyphs. Frame and pause handling
+keep the original polling loops. Resource loading preserves the decompressor's
+byte-write order. Sprite building and remaining effect children stay explicit.
 
 The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary
 arithmetic. Other states use the original interpreter. Their tests cover stack
