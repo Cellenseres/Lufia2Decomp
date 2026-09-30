@@ -238,10 +238,10 @@ the metadata, not this table. The notes below describe the current state.
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **326 independent jobs**. The normal
-application build also passes. The latest battle work adds verified functions
-without changing runtime bindings: the consumer still selects 186 functions,
-and all 1,374 generated CFG nodes remain unchanged.
+The full Windows Release verifier passes **328 independent jobs**. The normal
+application build also passes. The consumer selects 188 functions, including
+the complete command-collection and turn-execution callers. The generated CFG
+contains 1,403 nodes; no previously eligible AOT function was lost.
 
 Verification uses the original ROM interpreter as the reference. It checks CPU
 state, complete WRAM and, where needed, the order of memory and register writes.
@@ -269,15 +269,18 @@ remove a mark and continue; pair selection waits for exactly two party members.
 | Action submenus (BL6.5) | 4,119 | pass |
 | Target selection (BL6.6) | 8,207 | pass |
 | Target/confirmation helpers (BL6.7) | 13,326 | pass |
+| Command/turn runtime bridges (BL6.8) | 15,615 ABI checks | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
 wrapping, hardware register accesses, title drawing and input waits. Larger
 children remain explicit calls. Their tests detect 24 deliberate mistakes.
 
-These recent command functions enter with A8, X/Y16, DB `$97`, DP zero and binary
-arithmetic. They remain unbound. Public declarations and metadata give each
-entry's contract; source code retains the precise return and child-call sites.
+The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary
+arithmetic. Other states use the original interpreter. Their tests cover stack
+frames, child unwinds and three host-return modes, detecting ten deliberate
+bridge mistakes. The other recent command helpers remain unbound. Declarations
+and metadata give each entry's contract.
 
 Some unusual original exits matter:
 
