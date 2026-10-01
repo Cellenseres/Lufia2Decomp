@@ -23,6 +23,7 @@ Lufia2ExecutionResult Lufia2InventoryReceive(const Lufia2Memory *memory,
     SimulateJsrFrame(memory, cpu, 0xf098u);
     if (!child(context, cpu, 0x81f0a2u, 0x81f096u, 2u))
         return ReceiveUnwound(0x81f096u);
+    EmitExecutionCheckpoint(memory, cpu, 0x81f099u);
     OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x0a06u)));
     if (!cpu->zero) {
         cpu->carry = 1;

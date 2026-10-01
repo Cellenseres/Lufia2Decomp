@@ -48,6 +48,20 @@ world-point filter can only reject otherwise visible actors. Consumers own the
 policy and context; this library never reads renderer globals or room metadata.
 Sorting, uploads and OAM remain one implementation for both paths.
 
+`Lufia2Memory` also carries an optional execution checkpoint and its context.
+Inlined children inherit this observer through the same memory interface. A
+checkpoint reports the CPU at an exact original instruction, with that
+instruction's program bank; the inlined caller bank is restored afterward.
+Observers may change registers, flags, DB/DP and memory before execution resumes.
+Zero-initialized or aggregate memory interfaces with no observer retain the
+original behavior. Consumers must rebuild against this extended structure and
+initialize both optional fields when constructing it manually.
+
+The derived-stat checkpoint is `$81:F4E2`, after the `$F4ED` child and before
+register restore. The inventory-received checkpoint is `$81:F099`, after the
+inventory-add child has returned and before testing the remainder. Neither
+checkpoint changes original arithmetic, stat limits or inventory writes.
+
 ## Source layout
 
 Sources are grouped by subsystem (`actor`, `battle`, `cave`, `field`, `item`,

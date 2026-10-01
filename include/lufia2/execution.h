@@ -12,10 +12,19 @@ typedef uint8_t (*Lufia2BusReadByte)(void *context, uint32_t address);
 typedef void (*Lufia2BusWriteByte)(
     void *context, uint32_t address, uint8_t value);
 
+struct Lufia2CpuState;
+/* Optional consumer checkpoint; absent callbacks preserve ROM behavior. */
+typedef void (*Lufia2ExecutionCheckpoint)(
+    void *context, struct Lufia2CpuState *cpu, uint32_t pc);
+
 typedef struct Lufia2Memory {
     Lufia2BusReadByte read_byte;
     Lufia2BusWriteByte write_byte;
     void *context;
+    /* Optional observer inherited by reconstructed children; PC/bank identify
+     * the event instruction. The inlined caller bank is restored afterward. */
+    Lufia2ExecutionCheckpoint checkpoint;
+    void *checkpoint_context;
 } Lufia2Memory;
 
 /* 65816 state in native mode (E=0). */
@@ -55,10 +64,6 @@ typedef uint8_t (*Lufia2PushedChildCall)(
     uint32_t target,
     uint32_t site,
     uint8_t frame_size);
-
-/* Optional consumer checkpoint; absent callbacks preserve ROM behavior. */
-typedef void (*Lufia2ExecutionCheckpoint)(
-    void *context, Lufia2CpuState *cpu, uint32_t pc);
 
 typedef struct Lufia2ExecutionResult {
     Lufia2ExecutionFlow flow;

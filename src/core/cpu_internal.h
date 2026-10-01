@@ -825,6 +825,17 @@ static inline void CopyAbsolute8(
     StoreAAbsolute8(memory, cpu, to, 0);
 }
 
+/* Report the child bank while preserving an inlined caller's bank convention. */
+static inline void EmitExecutionCheckpoint(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t pc) {
+    if (memory->checkpoint) {
+        const uint8_t caller_bank = cpu->program_bank;
+        cpu->program_bank = (uint8_t)(pc >> 16);
+        memory->checkpoint(memory->checkpoint_context, cpu, pc);
+        cpu->program_bank = caller_bank;
+    }
+}
+
 static inline Lufia2ExecutionResult ExecutionReturned(uint32_t exit) {
     Lufia2ExecutionResult result;
 

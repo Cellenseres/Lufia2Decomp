@@ -174,6 +174,22 @@ static inline void OpLsrA(Lufia2CpuState *cpu) {
         LsrA16(cpu);
 }
 
+static inline void OpLsrMem(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t address) {
+    const uint16_t old = OpReadM(memory, cpu, address);
+    const uint16_t value = (uint16_t)(old >> 1);
+
+    cpu->carry = old & 1u;
+    if (cpu->accumulator_is_8_bit) {
+        Write8(memory, address, (uint8_t)value);
+        SetNz8(cpu, (uint8_t)value);
+    } else {
+        Write8(memory, OpNextByte(address), (uint8_t)(value >> 8));
+        Write8(memory, address, (uint8_t)value);
+        SetNz16(cpu, value);
+    }
+}
+
 /* INC/DEC/TSB/TRB/ROL on memory at the current M width. */
 static inline void OpStepMem(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t address,
