@@ -17,17 +17,17 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-312 functions in `metadata/functions.toml`: 312 verified, 0 draft, 0 identified, 0 disabled.
+314 functions in `metadata/functions.toml`: 314 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **420 independent jobs**. The normal
-application build also passes. The consumer selects 311 of 312 verified
-functions; the equipment dispatcher awaits consumer subscription migration
-before binding. The generated CFG contains 1,456 nodes, and every prior native
+The full Windows Release verifier passes **424 independent jobs**. The normal
+application build also passes. The consumer selects 312 of 314 verified
+functions; the equipment dispatcher and regular map installer await consumer
+subscription migration before binding. The generated CFG contains 1,456 nodes, and every prior native
 entry remains covered.
 
 Verification uses the original ROM interpreter as the reference. It checks CPU
@@ -35,6 +35,23 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Regular map installation
+
+`$83:B53B` reconstructs regular map resource loading, hardware multiplication,
+attribute-grid filling and final setup. The ascending MVN keeps its original
+source overlap and wrapping, including zero-sized products. The generated-map
+skip shares the RTL but emits no load-commit event. The resource loader at
+`$80:EAE7` resets all four section headers, selects the optional second resource
+and palette, and restores the original registers, widths and data bank. All
+14 child call sites retain their original frames and explicit dispatch.
+
+18,478 original-ROM cases cover both index widths, Direct-Page wraps, child
+unwinds, large fills and the composed loader. The production bridges pass
+19,502 native calls with no positive fallback, 30 redirects and 2,304 guards.
+All 23 semantic/event fault variants are detected. Native/interpreter events
+also match across 12 callback pairs without linking the decomp library; skip,
+stale load, wrong return stack and repeated commits are checked separately.
 
 ## Status menus and main NMI
 

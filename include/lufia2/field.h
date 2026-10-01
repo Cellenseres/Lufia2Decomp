@@ -138,6 +138,19 @@ Lufia2ExecutionResult Lufia2FieldActorSpritesWithVisibility(
     Lufia2CpuState *cpu,
     const Lufia2FieldActorVisibility *visibility);
 
+/* $83:B53B: regular map resources, attribute fill and setup. M1, either X
+ * width, native binary mode. Checkpoints B548 and loaded-only B580. */
+Lufia2ExecutionResult Lufia2FieldInstallMap(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
+    void *context);
+
+/* $80:EAE7: map resources and section headers; M1, either X width.
+ * Child calls retain their original pushed frames and dispatch boundaries. */
+Lufia2ExecutionResult Lufia2FieldLoadMapResources(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $83:B5D3: map header copy, object attributes and startup events. */
 Lufia2ExecutionResult Lufia2FieldLoadMapHeader(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

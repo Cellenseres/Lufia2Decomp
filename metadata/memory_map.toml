@@ -988,3 +988,10 @@ width = 1
 count = 1
 owner = "system"
 notes = "Main NMI frame counter cascades at60; bit7 skips the entire play-time tick."
+
+[[location]]
+address = "7E:05B6"
+name = "field_map_flags"
+width = 1
+owner = "field"
+notes = "Bit 0 selects the generated cave header in $83:B5D3 and skips regular resource installation in $83:B53B. Bit 1 inhibits the sound command store in $84:8766."
