@@ -9,6 +9,41 @@
 extern "C" {
 #endif
 
+/* Save/load entry events observe the file index in A before ROM work.
+ * Both functions accept any M/X width in native binary mode. */
+Lufia2ExecutionResult Lufia2LoadGameFile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
+    void *context);
+Lufia2ExecutionResult Lufia2SaveGameFile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
+    void *context);
+
+/* $80:914B reads/decrypts a whole slot; $80:9184 encrypts/writes it.
+ * M1/X16, native binary mode. Header reads also occur inside game loads. */
+Lufia2ExecutionResult Lufia2ReadGameFile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
+    void *context);
+Lufia2ExecutionResult Lufia2WriteGameFile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* $80:90FC encrypted-slot word checksum, seed $6502; M1/X16. */
+Lufia2ExecutionResult Lufia2SaveFileChecksum(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* $80:91D3 file index to SRAM slot offset in X; M1, either X width. */
+Lufia2ExecutionResult Lufia2ResolveSaveFileAddress(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $80:82E7 seed the random table from DB:$0558; any M/X, binary mode.
+ * Restores P and DP scratch byte; X/Y and A retain original outputs. */
+Lufia2ExecutionResult Lufia2SeedRandom(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $80:8638 NMI body; exact reset/RTI boundaries retain the interrupt frame. */
 Lufia2ExecutionResult Lufia2MainNmi(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

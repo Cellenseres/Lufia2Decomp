@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-314 functions in `metadata/functions.toml`: 314 verified, 0 draft, 0 identified, 0 disabled.
+321 functions in `metadata/functions.toml`: 321 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **424 independent jobs**. The normal
-application build also passes. The consumer selects 312 of 314 verified
+The full Windows Release verifier passes **428 independent jobs**. The normal
+application build also passes. The consumer selects 319 of 321 verified
 functions; the equipment dispatcher and regular map installer await consumer
 subscription migration before binding. The generated CFG contains 1,456 nodes, and every prior native
 entry remains covered.
@@ -35,6 +35,24 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Save files and random seeding
+
+`$80:9099` loads a game file and preserves the original success/error carry;
+`$80:90C9` saves it using the original packing children. `$80:914B` decrypts
+the complete 2 KiB slot, and `$80:9184` encrypts and writes it with the original
+random stream, seed byte and word checksum. The checksum and slot-address
+helpers at `$80:90FC` and `$80:91D3`, plus random seeding at `$80:82E7`, retain
+all original flags, widths, scratch bytes, wrap behavior and child frames.
+Packing and unpacking children remain explicit dispatch boundaries.
+
+34,447 original-ROM runs compare CPU state, all WRAM, the 8 KiB SRAM backing,
+ordered writes and SRAM reads. The bridges pass 34,895 native calls with no
+positive fallback, 75 redirects and 8,064 unsupported-state guards. All 37
+semantic/event fault variants are caught. The always-built file-entry event
+distinguishes a nested header read during loading from a menu preview using
+the actual guest return frame. It also passes native/interpreter comparisons
+without the decomp library, including bank aliases and both stack wraps.
 
 ## Regular map installation
 

@@ -1,6 +1,8 @@
 /* Random number generator ($80:8299). */
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
+#include "system/wram.h"
 #include "lufia2/system.h"
 #include "system/system_internal.h"
 
@@ -129,4 +131,54 @@ void Lufia2CallRandomByte(
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
     Lufia2RandomByte(memory, cpu);
     SimulateRtlFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2SeedRandom(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->decimal)
+        return ExecutionHandoff(cpu, 0x8082e7u);
+    Push8(memory, cpu, PackStatus(cpu));
+    OpSepWidths(cpu, 0x30u);
+    OpLda(memory, cpu, OpDp(cpu, 0u));
+    PushAccumulator8(memory, cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_RANDOM_SEED_WORK));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_RANDOM_TABLE + 54u));
+    OpLdx(cpu, 1u);
+    OpWriteX(memory, cpu, OpDp(cpu, 0u), cpu->x);
+    OpDex(cpu);
+    OpLdy(cpu, 55u);
+    do {
+        OpTxa(cpu);
+        cpu->carry = 0;
+        OpAdcValue(cpu, 21u);
+        OpCmpValue(cpu, 55u);
+        if (cpu->carry)
+            OpSbcValue(cpu, 55u);
+        OpTax(cpu);
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_RANDOM_SEED_WORK));
+        cpu->carry = 1;
+        OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, 0u)));
+        ExchangeAccumulatorBytes(cpu);
+        OpLda(memory, cpu, OpDp(cpu, 0u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_RANDOM_SEED_WORK));
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_RANDOM_TABLE));
+        ExchangeAccumulatorBytes(cpu);
+        OpSta(memory, cpu, OpDp(cpu, 0u));
+        OpDey(cpu);
+    } while (!cpu->zero);
+    OpLoadA(cpu, 54u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_RANDOM_NEXT_INDEX));
+    SimulateJsrFrame(memory, cpu, 0x8321u);
+    RandomRefill(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    SimulateJsrFrame(memory, cpu, 0x8324u);
+    RandomRefill(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    SimulateJsrFrame(memory, cpu, 0x8327u);
+    RandomRefill(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpDp(cpu, 0u));
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x80832cu);
 }

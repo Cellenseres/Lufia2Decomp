@@ -995,3 +995,35 @@ name = "field_map_flags"
 width = 1
 owner = "field"
 notes = "Bit 0 selects the generated cave header in $83:B5D3 and skips regular resource installation in $83:B53B. Bit 1 inhibits the sound command store in $84:8766."
+
+[[location]]
+address = "7E:3800"
+name = "save_file_buffer"
+width = 1
+count = 2048
+owner = "system"
+notes = "Plain save slot packed by 8E:BA0D and 85:C954, encrypted by 80:9184 and decrypted by 80:914B. Shared with tilemap scratch."
+
+[[location]]
+address = "7E:0521"
+name = "random_table"
+width = 1
+count = 55
+owner = "system"
+notes = "55-byte random state, seeded by 80:82E7 and refilled by 80:832D with XOR lags 24/31. Seeding first stores the initial seed in its last byte (0557)."
+
+[[location]]
+address = "7E:0558"
+name = "random_seed_work"
+width = 1
+count = 1
+owner = "system"
+notes = "80:82E7 subtracts DP scratch from this byte; save cryptography initializes it from the slot seed."
+
+[[location]]
+address = "7E:0559"
+name = "random_next_index"
+width = 1
+count = 1
+owner = "system"
+notes = "Next random-table cursor used by 80:82C7 and 80:8299; 80:82E7 sets 54 before three refills."
