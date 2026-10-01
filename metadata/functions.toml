@@ -2739,3 +2739,11 @@ source = "src/field/field_object_tiles.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "83:F86B"
+name = "Lufia2FieldPlacePendingObject"
+source = "src/field/field_object_tiles.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

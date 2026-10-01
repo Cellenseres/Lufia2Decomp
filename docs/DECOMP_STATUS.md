@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-330 functions in `metadata/functions.toml`: 330 verified, 0 draft, 0 identified, 0 disabled.
+331 functions in `metadata/functions.toml`: 331 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **445 independent jobs**. The normal
-application build also passes. The consumer selects 328 of 330 verified
+The full Windows Release verifier passes **448 independent jobs**. The normal
+application build also passes. The consumer selects 329 of 331 verified
 functions; song-load and fade-out await the consumer MSU migration commit
 before binding. The generated CFG contains 1,456 nodes, and every prior native
 entry remains covered.
@@ -35,6 +35,20 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Pending object registration and tile replacement
+
+`$83:F86B` registers a pending object's coordinates, marks its attributes,
+preserves tiles from an object already covering the cell, and saves and replaces
+the affected map tiles. The original early exit, two separate row decrements,
+data bank and status restore, and all nine pushed child calls are retained.
+
+10,250 complete ROM and native cases pass with no positive fallback. Tests
+exercise every direct child unwind, an unwind inside attribute marking, all
+three tile-copy paths, and composition with the actual children. CPU state,
+full WRAM and ordered writes agree. The bridge passes 1,536 unsupported-entry
+guards and all 24 fault probes. The complete parent is selected as a standalone
+replacement; existing event-script composition is a separate integration task.
 
 ## Pending-object tile and coordinate helpers
 

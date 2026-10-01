@@ -15,6 +15,8 @@ enum {
     OBJECT_REDRAW_VRAM_BASE = 0x56,
     OBJECT_REDRAW_SOURCE_BASE = 0x58,
     OBJECT_REDRAW_ORIGIN_Y = 0xa0,
+    OBJECT_PENDING_SLOT = 0x65,
+    OBJECT_PENDING_CELL = 0x63,
 };
 
 static uint8_t FieldTileChild(
@@ -172,4 +174,128 @@ Lufia2ExecutionResult Lufia2FieldCopyCellTile(
     OpOra(memory, cpu, OpDp(cpu, CELL_TILE));
     OpSta(memory, cpu, OpAbsY(cpu, 0u));
     return ExecutionReturned(0x83f932u);
+}
+
+Lufia2ExecutionResult Lufia2FieldPlacePendingObject(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    uint8_t skip_tile_copy = 0;
+
+    /* Publish the pending slot before saving the entry status. */
+    OpSta(memory, cpu, OpDp(cpu, OBJECT_PENDING_SLOT));
+    Push8(memory, cpu, PackStatus(cpu));
+    PushDataBank(memory, cpu);
+    OpSetDataBank(memory, cpu, 0x7fu);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpDp(cpu, OBJECT_PENDING_SLOT));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpDp(cpu, DP_PROBE_X));
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_FIELD_PENDING_RECORD_X & 0xffffu));
+    OpLda(memory, cpu, OpDp(cpu, DP_PROBE_Y));
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_FIELD_PENDING_RECORD_Y & 0xffffu));
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_MASK));
+    OpSta(memory, cpu, OpDp(cpu, OBJECT_UPPER_ATTRIBUTE_MASK));
+    OpLoadA(cpu, 8u);
+    OpSta(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_BITS));
+    OpLoadA(cpu, 0x40u);
+    OpSta(memory, cpu, OpDp(cpu, OBJECT_UPPER_ATTRIBUTE_BITS));
+    if (!FieldTileChild(memory, cpu, child, context,
+            0x83f80du, 0x83f88fu, 2u))
+        return FieldTileUnwound(0x83f88fu);
+    BitImmediate8(cpu, 0x40u);
+
+    /* Preserve the tiles belonging to an object already covering this cell. */
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpDp(cpu, OBJECT_VERTICAL_OFFSET));
+        if (!cpu->zero)
+            OpStepMem(memory, cpu, OpDp(cpu, DP_PROBE_Y), 1);
+        if (!FieldTileChild(memory, cpu, child, context,
+                0x83fb9fu, 0x83f89cu, 2u))
+            return FieldTileUnwound(0x83f89cu);
+        OpTxy(cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, DP_PROBE_Y), 1);
+        if (!FieldTileChild(memory, cpu, child, context,
+                0x83fb9fu, 0x83f8a2u, 2u))
+            return FieldTileUnwound(0x83f8a2u);
+        if (!FieldTileChild(memory, cpu, child, context,
+                0x83f85au, 0x83f8a5u, 2u))
+            return FieldTileUnwound(0x83f8a5u);
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_FIELD_PENDING_OBJECT_TILES & 0xffffu));
+        OpSta(memory, cpu, OpAbsY(cpu, WRAM_FIELD_PENDING_OBJECT_TILES & 0xffffu));
+        OpSepWidths(cpu, 0x20u);
+        OpTxy(cpu);
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_OBJECT_SOURCE_X & 0xffffu));
+        ExchangeAccumulatorBytes(cpu);
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_OBJECT_SOURCE_Y & 0xffffu));
+        cpu->carry = 0;
+        OpAdc(memory, cpu, OpAbs(cpu, WRAM_FIELD_OBJECT_HEIGHT & 0xffffu));
+        OpDecA(cpu);
+        if (!FieldTileChild(memory, cpu, child, context,
+                0x83f9d9u, 0x83f8bdu, 2u))
+            return FieldTileUnwound(0x83f8bdu);
+        OpRepWidths(cpu, 0x20u);
+        OpLda(memory, cpu, OpAbsX(cpu, 0u));
+        OpSta(memory, cpu, OpAbsY(cpu, WRAM_FIELD_PENDING_OBJECT_TILES & 0xffffu));
+        OpLda(memory, cpu, OpDp(cpu, OBJECT_VERTICAL_OFFSET));
+        skip_tile_copy = cpu->zero;
+        if (!skip_tile_copy) {
+            OpStz(memory, cpu, OpDp(cpu, OBJECT_VERTICAL_OFFSET));
+            OpSepWidths(cpu, 0x20u);
+            OpStepMem(memory, cpu, OpDp(cpu, DP_PROBE_Y), -1);
+            OpStepMem(memory, cpu, OpDp(cpu, DP_PROBE_Y), -1);
+        }
+    }
+
+    /* Save the map cells, then replace only their tile ID bits. */
+    if (!skip_tile_copy) {
+        if (!FieldTileChild(memory, cpu, child, context,
+                0x83f9d4u, 0x83f8d4u, 2u))
+            return FieldTileUnwound(0x83f8d4u);
+        OpTxy(cpu);
+        OpLda(memory, cpu, WRAM_FIELD_OBJECT_SOURCE_X);
+        ExchangeAccumulatorBytes(cpu);
+        OpLda(memory, cpu, WRAM_FIELD_OBJECT_SOURCE_Y);
+        if (!FieldTileChild(memory, cpu, child, context,
+                0x83f9d9u, 0x83f8e1u, 2u))
+            return FieldTileUnwound(0x83f8e1u);
+        OpWriteX(memory, cpu, OpDp(cpu, OBJECT_PENDING_CELL), cpu->x);
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpDp(cpu, OBJECT_PENDING_SLOT));
+        OpAslA(cpu);
+        OpAslA(cpu);
+        OpRepWidths(cpu, 0x20u);
+        OpSta(memory, cpu, OpDp(cpu, OBJECT_UPPER_ATTRIBUTE_MASK));
+        OpTax(cpu);
+        OpLda(memory, cpu, WRAM_FIELD_SECTION_WIDTH);
+        OpAslA(cpu);
+        OpSta(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_MASK));
+        OpLda(memory, cpu, OpAbsY(cpu, 0u));
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_FIELD_PENDING_OBJECT_TILES & 0xffffu));
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, OBJECT_PENDING_CELL)));
+        if (!FieldTileChild(memory, cpu, child, context,
+                0x83f91fu, 0x83f8ffu, 2u))
+            return FieldTileUnwound(0x83f8ffu);
+        OpLda(memory, cpu, OpDp(cpu, OBJECT_VERTICAL_OFFSET));
+        if (!cpu->zero) {
+            OpTya(cpu);
+            cpu->carry = 0;
+            OpAdc(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_MASK));
+            OpTay(cpu);
+            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, OBJECT_UPPER_ATTRIBUTE_MASK)));
+            OpLda(memory, cpu, OpAbsY(cpu, 0u));
+            OpSta(memory, cpu, OpAbsX(cpu,
+                (WRAM_FIELD_PENDING_OBJECT_TILES & 0xffffu) + 2u));
+            OpLda(memory, cpu, OpDp(cpu, OBJECT_PENDING_CELL));
+            cpu->carry = 0;
+            OpAdc(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_MASK));
+            OpTax(cpu);
+            if (!FieldTileChild(memory, cpu, child, context,
+                    0x83f91fu, 0x83f919u, 2u))
+                return FieldTileUnwound(0x83f919u);
+        }
+    }
+    PullDataBank(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x83f91eu);
 }
