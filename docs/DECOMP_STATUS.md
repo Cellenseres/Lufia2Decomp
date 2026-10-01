@@ -17,23 +17,44 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-310 functions in `metadata/functions.toml`: 310 verified, 0 draft, 0 identified, 0 disabled.
+312 functions in `metadata/functions.toml`: 312 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **387 independent jobs**. The normal
-application build also passes. The consumer selects all 280 verified functions,
-including the command, results, rendering and action helpers. The generated CFG
-contains 1,409 nodes; every prior native entry remains covered.
+The full Windows Release verifier passes **420 independent jobs**. The normal
+application build also passes. The consumer selects 311 of 312 verified
+functions; the equipment dispatcher awaits consumer subscription migration
+before binding. The generated CFG contains 1,456 nodes, and every prior native
+entry remains covered.
 
 Verification uses the original ROM interpreter as the reference. It checks CPU
 state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Status menus and main NMI
+
+The complete status/equipment dispatcher at `$82:A318` preserves the inline
+handler table, party loops and all original child frames. Optional execution
+checkpoints precede the equipment-list draws at `$82:A3B4` and `$82:A3F0`.
+Invalid selectors and changing loop counts retain exact ROM continuations.
+
+The main NMI body at `$80:8638` preserves screen blanking, live RAM callbacks,
+the original uncapped byte clock, frame counters, reset condition and interrupt
+restore. It continues at the original JML or RTI boundary, keeping the interrupt
+frame intact. A checkpoint follows the clock tick at `$80:8699`, including the
+stopped-clock path. Menu string rendering can also report each number operation
+at `$80:8922`, before PHY, including recursive strings. Default callbacks leave
+ROM behavior unchanged; time caps and expanded displays belong to consumers.
+
+These additions pass 82,463 original-ROM and native ABI cases, 30 redirected
+child probes and 2,304 unsupported-state guards. All 35 deliberate fault variants
+are detected. The consumer event layer also passes eight native/interpreter
+callback pairs without linking the decomp library, with safe unsubscription.
 
 ## Battle commands and targets
 

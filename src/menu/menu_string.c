@@ -38,6 +38,8 @@ typedef struct MenuVisit {
 typedef struct MenuVm {
     const Lufia2Memory *memory;
     Lufia2CpuState *cpu;
+    Lufia2ExecutionCheckpoint checkpoint;
+    void *checkpoint_context;
     uint32_t handoff;
     uint32_t dispatches;                /* earlier passes, same pc and S */
     MenuVisit visits[64];
@@ -444,6 +446,8 @@ static int MenuOpNumber(MenuVm *vm) {
         StoreADirect8(memory, cpu, 0x57u);
         IncrementY16(cpu);
     }
+    if (vm->checkpoint)
+        vm->checkpoint(vm->checkpoint_context, cpu, 0x808922u);
     PushY(memory, cpu);                                        /* 8922 */
     Jsr(vm, 0x8925u);
     MenuLoadNumber(vm);
@@ -1051,11 +1055,13 @@ static int MenuRun(MenuVm *vm) {
 }
 
 /* $80:8878: 32 characters a line; any width. */
-Lufia2ExecutionResult Lufia2MenuDrawString(
+Lufia2ExecutionResult Lufia2MenuDrawStringWithCheckpoint(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+    Lufia2CpuState *cpu, Lufia2ExecutionCheckpoint checkpoint, void *context) {
     MenuVm vm;
 
+    vm.checkpoint = checkpoint;
+    vm.checkpoint_context = context;
     vm.memory = memory;
     vm.cpu = cpu;
     vm.handoff = 0;
@@ -1079,4 +1085,9 @@ Lufia2ExecutionResult Lufia2MenuDrawString(
     cpu->y = PullIndexValue(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x80888bu);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawString(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return Lufia2MenuDrawStringWithCheckpoint(memory, cpu, 0, 0);
 }
