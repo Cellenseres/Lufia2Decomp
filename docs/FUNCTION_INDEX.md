@@ -176,6 +176,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |
 | `$82:939C` | `Lufia2MenuNmi` | verified | `src/menu/menu.c` |
 | `$82:950E` | `Lufia2MenuMemberStatus` | verified | `src/menu/menu_screen.c` |
+| `$82:9918` | `Lufia2AdjustPurchasePrice` | verified | `src/menu/menu_spell_shop.c` |
 | `$82:9CB2` | `Lufia2MenuWarpList` | verified | `src/menu/menu_screen.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
 | `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
@@ -194,6 +195,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:D07B` | `Lufia2MenuCapsuleStatus` | verified | `src/menu/menu_screen.c` |
 | `$82:D721` | `Lufia2MenuShopWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:D749` | `Lufia2MenuShopParty` | verified | `src/menu/menu_screen.c` |
+| `$82:D905` | `Lufia2MenuSpellShopSetup` | verified | `src/menu/menu_spell_shop.c` |
 | `$82:DCC1` | `Lufia2MenuShopRows` | verified | `src/menu/menu_screen.c` |
 | `$82:DCF4` | `Lufia2MenuShopRow` | verified | `src/menu/menu_screen.c` |
 | `$82:E297` | `Lufia2MenuShopSetup` | verified | `src/menu/menu_screen.c` |

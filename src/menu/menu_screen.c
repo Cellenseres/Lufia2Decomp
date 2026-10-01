@@ -1169,48 +1169,6 @@ Lufia2ExecutionResult Lufia2MenuShopCompare(
     return ExecutionReturned(0x82e623u);
 }
 
-/* $82:9918: price X halved (rounded up) unless a member holds item $167. */
-static void ShopPriceHalve(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    PushY(memory, cpu);
-    Push8(memory, cpu, PackStatus(cpu));
-    SetAccumulatorWidth(cpu, 1);
-    SetIndexWidth(cpu, 0);
-    LoadAAbsolute8(memory, cpu, 0x1544u, 0);
-    if (!cpu->zero) {
-        int halve = 0;
-
-        LoadY16(cpu, 0x0000u);
-        for (;;) {
-            LoadAAbsolute8(memory, cpu, 0x0a7bu, cpu->y);
-            Compare8(cpu, A8(cpu), 0x01u);
-            if (cpu->zero) {
-                SetAccumulatorWidth(cpu, 0);
-                LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x0cd9u, 0) & 0x01ffu));
-                Compare16(cpu, cpu->accumulator, 0x0167u);
-                halve = cpu->zero;
-                break;
-            }
-            IncrementY16(cpu);
-            TransferYToA8(cpu);
-            Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x0a7au, 0));
-            if (cpu->zero)
-                break;
-        }
-        if (!halve) {
-            UnpackStatus(cpu, Pull8(memory, cpu));
-            cpu->y = PullIndexValue(memory, cpu);
-            return;
-        }
-    }
-    SetAccumulatorWidth(cpu, 0);                               /* 9943 */
-    TransferXToA(cpu);
-    LsrA16(cpu);
-    Add16Value(cpu, 0x0000u);
-    TransferAToX(cpu);
-    UnpackStatus(cpu, Pull8(memory, cpu));
-    cpu->y = PullIndexValue(memory, cpu);
-}
-
 /* $82:98C7: 24-bit $09BD = X * 200. */
 static void ShopPriceTimes200(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint8_t kProducts[3] = {0x54u, 0x56u, 0x58u};
@@ -1268,7 +1226,7 @@ static int ShopRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
             return 1;
         LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0b89u, 0));
         Jsr(memory, cpu, 0x8603u);
-        ShopPriceHalve(memory, cpu);
+        (void)Lufia2AdjustPurchasePrice(memory, cpu);
         Rts(memory, cpu);
         Write16Absolute(memory, cpu, 0x0b89u, cpu->x);
         LoadAAbsolute8(memory, cpu, 0x154cu, 0);

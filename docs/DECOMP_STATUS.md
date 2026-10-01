@@ -17,17 +17,17 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-325 functions in `metadata/functions.toml`: 325 verified, 0 draft, 0 identified, 0 disabled.
+327 functions in `metadata/functions.toml`: 327 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **432 independent jobs**. The normal
-application build also passes. The consumer selects 323 of 325 verified
-functions; song-load and fade-out subscribers await MSU consumer migration
-before binding. The generated CFG contains 1,456 nodes, and every prior native
+The full Windows Release verifier passes **436 independent jobs**. The normal
+application build also passes. The consumer selects 324 of 327 verified
+functions; song-load, fade-out and spell-shop setup await consumer subscriber
+migration before binding. The generated CFG contains 1,456 nodes, and every prior native
 entry remains covered.
 
 Verification uses the original ROM interpreter as the reference. It checks CPU
@@ -35,6 +35,22 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Spell-shop prices and windows
+
+`$82:D905` loads the selected spell, adjusts its price, stores the two price
+words and sets up all original text, windows and HDMA children. The original
+third purchase-price byte remains unchanged. `$82:9918` halves price X with
+rounding up, retaining the original party/item condition, entry-width Y and
+status. Existing shop rows use this independently verified shared helper.
+
+81,930 original-ROM runs include all 65,536 half-price inputs, ten child
+unwinds, six data-bank/Direct-Page combinations and both entry widths.
+90,129 native calls pass with no positive fallback, 15 redirects and 2,304
+unsupported-state guards. All 30 semantic/event/bridge fault variants are
+caught. The optional checkpoint at `$82:D922` follows both word stores;
+the always-built event layer also passes 47 native/interpreter pairs without
+the decomp library, including CPU steering and subscriber isolation.
 
 ## Song loading and music commands
 

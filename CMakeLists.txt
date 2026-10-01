@@ -117,6 +117,7 @@ add_library(lufia2_decomp STATIC
     src/menu/menu.c
     src/menu/menu_status.c
     src/menu/menu_screen.c
+    src/menu/menu_spell_shop.c
     src/menu/menu_sprites.c
     src/menu/menu_string.c
     src/menu/menu_window.c

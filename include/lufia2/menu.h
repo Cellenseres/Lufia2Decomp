@@ -175,6 +175,17 @@ Lufia2ExecutionResult Lufia2SelectScreenNmi(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $82:9918 adjusts price X, preserving P and entry-width Y; binary mode. */
+Lufia2ExecutionResult Lufia2AdjustPurchasePrice(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $82:D905 spell-shop price and windows; M1X0, binary mode.
+ * Optional checkpoint after both word stores, before LDA #$20 at D922. */
+Lufia2ExecutionResult Lufia2MenuSpellShopSetup(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
+    void *context);
+
 #ifdef __cplusplus
 }
 #endif
