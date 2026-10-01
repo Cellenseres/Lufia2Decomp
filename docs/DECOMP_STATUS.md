@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-280 functions in `metadata/functions.toml`: 280 verified, 0 draft, 0 identified, 0 disabled.
+285 functions in `metadata/functions.toml`: 285 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -124,7 +124,9 @@ The floor generator `$83:9E31` is verified and selected. It uses A8, X/Y16,
 DP zero and a DB that maps low WRAM. Verification covers 16,384 floors, five
 helper groups of 4,096 cases each, and APU-return probes.
 
-The APU handshake and map loader remain explicit children. Original generator
+The APU handshake remains an explicit child. The verified map loader has its
+own runtime binding and keeps the RAM copy routine and event tick as explicit
+children. Original generator
 loops and degenerate-map behavior are preserved. Host decoding or caching
 belongs in a separate patch layer.
 
@@ -141,6 +143,19 @@ entries. Their 21,504 ROM cases compare CPU state, complete WRAM, hardware
 arithmetic and every ordered write. Five word decrements retain the original
 high-byte-first writes. Runtime bridges pass 49,152 native cases and 3,072
 unsupported-state checks; all 13 deliberate rendering faults were detected.
+
+Map-header loading `$83:B5D3`, map-event initialization `$80:E844`, event
+startup `$80:E722`, Ancient Cave header construction `$8E:B847` and room
+coordinates `$83:9B44` are independently verified. Their synthetic ROM cases
+compare CPU state, all WRAM and every ordered write, including script-bank
+crossing, zero room counts, index wrapping and a header without a terminator.
+The latter hands off at `$83:B635` after 65,536 records with the original state.
+The map loader preserves all five pushed child-call contracts. The RAM MVN
+routine and event tick remain explicit children; the three other children are
+also exercised through their reconstructed implementations. Runtime ABI tests
+cover 51,209 native calls, 15 redirected children and 4,032 unsupported states.
+All 13 deliberately faulty variants are detected. Ten proven WRAM fields were
+added to the canonical catalog.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
