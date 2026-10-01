@@ -9,6 +9,28 @@
 extern "C" {
 #endif
 
+/* Optional music execution checkpoint; false preserves a child unwind.
+ * Song at $80:942E before STA $54, fade at $80:9692 before PHP. */
+typedef uint8_t (*Lufia2MusicCheckpoint)(
+    void *context, Lufia2CpuState *cpu, uint32_t pc);
+
+/* Original song loader/player and driver commands; any M/X, binary mode.
+ * APU handshakes and sample uploads retain explicit child boundaries. */
+Lufia2ExecutionResult Lufia2LoadSong(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, Lufia2MusicCheckpoint checkpoint,
+    void *context);
+Lufia2ExecutionResult Lufia2PlaySong(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2FadeOutMusic(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, Lufia2MusicCheckpoint checkpoint,
+    void *context);
+Lufia2ExecutionResult Lufia2SetMusicVolume(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* Save/load entry events observe the file index in A before ROM work.
  * Both functions accept any M/X width in native binary mode. */
 Lufia2ExecutionResult Lufia2LoadGameFile(

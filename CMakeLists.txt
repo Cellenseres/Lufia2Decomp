@@ -131,6 +131,7 @@ add_library(lufia2_decomp STATIC
     src/system/multiply_16_by_8.c
     src/system/random.c
     src/system/save.c
+    src/system/music.c
     src/system/nmi.c
     src/system/screen.c
     src/system/sound.c
