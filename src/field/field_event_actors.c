@@ -1,6 +1,6 @@
 /* Field event script opcodes for actors, positions and points. */
 
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/actor.h"
 #include "lufia2/system.h"
 #include "actor/actor_internal.h"
@@ -1661,7 +1661,7 @@ static void EventCopyPalette(
     cpu->data_bank = 0x00u;
     PullDataBank(memory, cpu);
     LoadA16(cpu, 0x0002u);
-    TestBitsDirect(memory, cpu, 0x73u, 1);                     /* TSB $73 */
+    OpTestBits(memory, cpu, OpDp(cpu, DP_NMI_UPLOAD_FLAGS), 1u);
     SimulateRtsFrame(memory, cpu);
 }
 

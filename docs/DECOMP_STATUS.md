@@ -168,6 +168,10 @@ The same cases pass through the production bridges with 98,304 native calls;
 8,256 unsupported-state checks and all 15 deliberate fault variants pass.
 Eight proven object/actor WRAM fields were added to the canonical catalog.
 
+The legacy event VM palette path also preserves the original high-byte-first
+word TSB. Its 8,192 direct original-call comparisons cover flags, saved DB,
+palette copy overlap, wrapping indices and every ordered write.
+
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
 model and [CAPTURE_RESEARCH.md](CAPTURE_RESEARCH.md) for scene evidence.
