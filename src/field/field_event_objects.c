@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
+#include "lufia2/field.h"
 #include "lufia2/system.h"
 #include "actor/actor_internal.h"
 #include "field/event_script_internal.h"
@@ -606,18 +607,7 @@ static void EventLayerCell(
         ExchangeAccumulatorBytes(cpu);
         LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
     }
-    SimulateJsrFrame(memory, cpu, 0xf9dbu);                    /* F9D9 */
-    Lufia2MapCellOffset(memory, cpu);                          /* $83:F9F7 */
-    SimulateRtsFrame(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    PushIndex(memory, cpu);
-    LoadA16(cpu, Read16Long(memory, 0x0005aau));
-    TransferAToX(cpu);
-    PullAccumulator16(memory, cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fd008u, cpu->x)));
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
+    (void)Lufia2LayerCellOffset(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -724,16 +714,8 @@ static void EventCopyTile(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
-    const uint32_t to = AbsoluteIndexedAddress(cpu, 0x0000u, cpu->y);
-
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadA16(cpu, Read16Long(memory, AbsoluteIndexedAddress(cpu, 0x0000u, cpu->x)));
-    And16(cpu, 0x03ffu);                                       /* F91F */
-    StoreADirect16(memory, cpu, 0x5au);
-    LoadA16(cpu, Read16Long(memory, to));
-    And16(cpu, 0xfc00u);
-    LoadA16(cpu, (uint16_t)(cpu->accumulator | Read16Direct(memory, cpu, 0x5au)));
-    Write16Long(memory, to, cpu->accumulator);
+    (void)Lufia2FieldCopyCellTile(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 

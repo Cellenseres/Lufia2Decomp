@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-327 functions in `metadata/functions.toml`: 327 verified, 0 draft, 0 identified, 0 disabled.
+330 functions in `metadata/functions.toml`: 330 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **442 independent jobs**. The normal
-application build also passes. The consumer selects 325 of 327 verified
+The full Windows Release verifier passes **445 independent jobs**. The normal
+application build also passes. The consumer selects 328 of 330 verified
 functions; song-load and fade-out await the consumer MSU migration commit
 before binding. The generated CFG contains 1,456 nodes, and every prior native
 entry remains covered.
@@ -35,6 +35,20 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Pending-object tile and coordinate helpers
+
+`$83:F9F7` converts the packed row/column in A/B to a word-cell offset with
+the original hardware multiplier and index-width truncation. `$83:F9D9`
+adds the selected layer's cell-data base, retaining its child and stack
+frames. `$83:F91F` copies the tile bits of cell X to cell Y while keeping
+the destination attributes. Actor and event callers share these bodies.
+
+352,256 complete ROM cases and 352,256 native calls pass, with no positive
+fallback. Tests exhaust the multiplier inputs and tile-word values and cover
+overlapping source/destination/scratch addresses, word bank crossings and
+MMIO order. The three roots pass 4,224 unsupported-state guards and all 15
+fault probes. All three are selected as standalone replacements.
 
 ## Inherited checkpoints and map completion
 

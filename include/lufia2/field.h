@@ -9,6 +9,10 @@
 extern "C" {
 #endif
 
+/* $83:F91F: copy tile bits from cell X to cell Y, keeping Y's attrs; M0X0. */
+Lufia2ExecutionResult Lufia2FieldCopyCellTile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $83:B062 restores Field display state and republishes its NMI callback. */
 Lufia2ExecutionResult Lufia2FieldRestore(
     const Lufia2Memory *memory,

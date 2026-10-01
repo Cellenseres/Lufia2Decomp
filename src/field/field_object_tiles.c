@@ -159,3 +159,17 @@ Lufia2ExecutionResult Lufia2FieldQueueObjectRedraw(
     OpSepWidths(cpu, 0x20u);
     return ExecutionReturned(0x83f97bu);
 }
+
+Lufia2ExecutionResult Lufia2FieldCopyCellTile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    enum { CELL_TILE = 0x5au };
+
+    OpLda(memory, cpu, OpAbsX(cpu, 0u));                         /* F91F */
+    OpAndValue(cpu, 0x03ffu);
+    OpSta(memory, cpu, OpDp(cpu, CELL_TILE));
+    OpLda(memory, cpu, OpAbsY(cpu, 0u));
+    OpAndValue(cpu, 0xfc00u);
+    OpOra(memory, cpu, OpDp(cpu, CELL_TILE));
+    OpSta(memory, cpu, OpAbsY(cpu, 0u));
+    return ExecutionReturned(0x83f932u);
+}

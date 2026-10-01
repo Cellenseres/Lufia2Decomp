@@ -260,9 +260,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:F7F8` | `Lufia2FieldPrepareObjectOrigin` | verified | `src/field/field_object_graphics.c` |
 | `$83:F80D` | `Lufia2FieldMarkObjectAttributes` | verified | `src/field/field_object_tiles.c` |
 | `$83:F85A` | `Lufia2FieldPendingTileOffsets` | verified | `src/field/field_object_graphics.c` |
+| `$83:F91F` | `Lufia2FieldCopyCellTile` | verified | `src/field/field_object_tiles.c` |
 | `$83:F933` | `Lufia2FieldQueueObjectRedraw` | verified | `src/field/field_object_tiles.c` |
 | `$83:F9AD` | `Lufia2FieldObjectAttributeCell` | verified | `src/field/field_object_lookup.c` |
 | `$83:F9D4` | `Lufia2ActorResolveMapCellOffset` | verified | `src/actor/actor_movement.c` |
+| `$83:F9D9` | `Lufia2LayerCellOffset` | verified | `src/actor/actor_movement.c` |
+| `$83:F9F7` | `Lufia2MapCellOffset` | verified | `src/actor/actor_movement.c` |
 | `$83:FA3F` | `Lufia2ActorMarkMapOccupancy` | verified | `src/actor/actor_movement.c` |
 | `$83:FA81` | `Lufia2ActorMoveFinePosition` | verified | `src/actor/actor_movement.c` |
 | `$83:FACB` | `Lufia2ActorAddDisplayOffset` | verified | `src/actor/actor_movement.c` |

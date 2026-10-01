@@ -1171,3 +1171,19 @@ width = 2
 count = 1
 owner = "menu"
 notes = "Adjusted spell-shop price written by82:D905 before itsD922 checkpoint."
+
+[[location]]
+address = "7E:05AA"
+name = "field_layer_table_offset"
+width = 2
+count = 1
+owner = "field"
+notes = "83:F9D9 reads this word as the byte index into the layer cell-base table at7F:D008;80:EC78 uses it to select section dimensions."
+
+[[location]]
+address = "7E:05B9"
+name = "field_section_width"
+width = 2
+count = 1
+owner = "field"
+notes = "83:F9F7 multiplies by the low width byte.80:EC78 writes the width low byte here and the high byte from TDC into05BA;83:F86B uses the full word for a row stride."

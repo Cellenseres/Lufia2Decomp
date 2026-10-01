@@ -130,7 +130,15 @@ uint32_t Lufia2ActorMovementStep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $83:F9D4, including its $83:F9F7 coordinate-to-cell helper. */
+/* $83:F9F7: A=row, B=column to a word-cell offset in X; M1/either X. */
+Lufia2ExecutionResult Lufia2MapCellOffset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $83:F9D9: add the selected layer's cell-data base; M1X0. */
+Lufia2ExecutionResult Lufia2LayerCellOffset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $83:F9D4, including its $83:F9D9 coordinate-to-layer-cell helper. */
 void Lufia2ActorResolveMapCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
