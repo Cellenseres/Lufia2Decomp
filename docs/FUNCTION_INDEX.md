@@ -17,6 +17,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:92A4` | `Lufia2IntroNmi` | verified | `src/title/title.c` |
 | `$80:9C72` | `Lufia2FieldEventTick` | verified | `src/field/field_update.c` |
 | `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
+| `$80:BFAA` | `Lufia2FieldFindHeaderRecord` | verified | `src/field/field_object_lookup.c` |
 | `$80:C23D` | `Lufia2TextPrepareWindow` | verified | `src/text/text_window.c` |
 | `$80:C305` | `Lufia2TextBuildWindow` | verified | `src/text/text_window.c` |
 | `$80:C56E` | `Lufia2TextQueueWindowRow` | verified | `src/text/text_window.c` |
@@ -239,12 +240,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:F7DF` | `Lufia2FieldStartObjectEvent` | verified | `src/field/field_object_graphics.c` |
 | `$83:F7F8` | `Lufia2FieldPrepareObjectOrigin` | verified | `src/field/field_object_graphics.c` |
 | `$83:F85A` | `Lufia2FieldPendingTileOffsets` | verified | `src/field/field_object_graphics.c` |
+| `$83:F9AD` | `Lufia2FieldObjectAttributeCell` | verified | `src/field/field_object_lookup.c` |
 | `$83:F9D4` | `Lufia2ActorResolveMapCellOffset` | verified | `src/actor/actor_movement.c` |
 | `$83:FA3F` | `Lufia2ActorMarkMapOccupancy` | verified | `src/actor/actor_movement.c` |
 | `$83:FA81` | `Lufia2ActorMoveFinePosition` | verified | `src/actor/actor_movement.c` |
 | `$83:FACB` | `Lufia2ActorAddDisplayOffset` | verified | `src/actor/actor_movement.c` |
 | `$83:FB12` | `Lufia2ActorMovementStep` | verified | `src/actor/actor_movement.c` |
 | `$83:FB71` | `Lufia2ActorReadMapCellValue` | verified | `src/actor/actor_movement.c` |
+| `$83:FB9F` | `Lufia2FieldFindPendingObject` | verified | `src/field/field_object_lookup.c` |
 | `$84:8193` | `Lufia2SpriteGraphicsUpload` | verified | `src/actor/actor_sprites.c` |
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
 | `$84:8BC7` | `Lufia2BattleVisualTransition` | verified | `src/battle/battle_transition.c` |

@@ -215,6 +215,17 @@ Lufia2ExecutionResult Lufia2FieldClaimPlacedObject(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+
+/* Object record lookup and attribute-grid addressing; native M1/X16. */
+Lufia2ExecutionResult Lufia2FieldFindHeaderRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldFindPendingObject(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldObjectAttributeCell(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $80:ED9C map cell attributes of map A; M=1. */
 Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     const Lufia2Memory *memory,
