@@ -104,6 +104,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_graphics.c
     src/field/field_object_transitions.c
     src/field/field_object_lookup.c
+    src/field/field_object_bits.c
     src/field/field_object_tiles.c
     src/field/field_object_copy.c
     src/field/field_scroll.c
