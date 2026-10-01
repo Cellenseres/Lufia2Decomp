@@ -10,7 +10,7 @@ static bool StatusMessage(BattleContext *battle, uint16_t call_site, bool recove
     if (!BattleCall(battle, recovery ? 0x9040u : 0x9115u, 0x859aaau, 3u))
         return false;
     OpLdx(cpu, 0xffffu);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x1264u), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER), cpu->x);
     if (!BattleCall(battle, recovery ? 0x904au : 0x911fu, 0x8595feu, 3u))
         return false;
     if (recovery) {
@@ -77,7 +77,7 @@ static bool StatusTarget(BattleContext *battle, uint16_t call_site, bool recover
     OpCpx(cpu, 0u);
     if (cpu->zero)
         goto returned;
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
+    OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
     OpBitValue(cpu, 4u);
     if (!cpu->zero)
         goto returned;
@@ -106,9 +106,9 @@ static bool StatusTarget(BattleContext *battle, uint16_t call_site, bool recover
             OpCmpValue(cpu, 4u);
             if (!cpu->zero)
                 continue;
-            OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
+            OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
             OpAndValue(cpu, (uint8_t)~cures[i].bit);
-            OpSta(memory, cpu, OpAbsX(cpu, 0x0fu));
+            OpSta(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
             if (!BattleCall(battle, cures[i].name_site, 0x859150u, 3u))
                 return false;
             OpLoadA(cpu, cures[i].phrase);
@@ -130,9 +130,9 @@ static bool StatusTarget(BattleContext *battle, uint16_t call_site, bool recover
         if (!cpu->zero)
             goto returned;
         OpTyx(cpu);
-        OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
+        OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
         OpAndValue(cpu, 0x7fu);
-        OpSta(memory, cpu, OpAbsX(cpu, 0x0fu));
+        OpSta(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
         if (!BattleCall(battle, 0x9106u, 0x859150u, 3u))
             return false;
         OpLoadA(cpu, 6u);

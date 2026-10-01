@@ -65,14 +65,14 @@ static void ResultAddReward(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     ResultClamp24(memory, cpu, destination);
 }
 
-static bool ResultLine(BattleContext *battle, uint16_t text, uint16_t site,
-                       uint16_t wait) {
-    OpLdy(battle->cpu, text);
-    return BattleCall(battle, site, 0x81dde7u, 2u) &&
-           BattleCall(battle, wait, 0x81de9eu, 2u);
+static bool ResultShowLineAndWait(BattleContext *battle, uint16_t text_address,
+                                  uint16_t line_call_site, uint16_t wait_call_site) {
+    OpLdy(battle->cpu, text_address);
+    return BattleCall(battle, line_call_site, 0x81dde7u, 2u) &&
+           BattleCall(battle, wait_call_site, 0x81de9eu, 2u);
 }
 
-static bool ResultLevelMessages(BattleContext *battle, bool capsule) {
+static bool ResultShowStatGains(BattleContext *battle, bool capsule) {
     static const uint16_t texts[] = {0xf118u, 0xf134u, 0xf150u, 0xf169u,
                                      0xf182u, 0xf19bu, 0xf1b4u};
     static const uint16_t party_sites[] = {0xdb5eu, 0xdb6cu, 0xdb7au, 0xdb88u,
@@ -91,7 +91,7 @@ static bool ResultLevelMessages(BattleContext *battle, bool capsule) {
         if (cpu->zero)
             continue;
         site = capsule ? capsule_sites[i] : party_sites[i];
-        if (!ResultLine(battle, texts[i], site, (uint16_t)(site + 3u)))
+        if (!ResultShowLineAndWait(battle, texts[i], site, (uint16_t)(site + 3u)))
             return false;
     }
     return true;
@@ -108,41 +108,40 @@ static void ResultSubtractExperience(const Lufia2Memory *memory, Lufia2CpuState 
     OpSta(memory, cpu, OpDp(cpu, 0x2fu));
 }
 
-static bool ResultPartyMember(BattleContext *battle) {
+static bool ResultAwardPartyMemberExperience(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
 
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
-    OpAndValue(cpu, 4u);
-    if (!cpu->zero)
-        goto experience_gap;
-    ResultAddReward(memory, cpu, OpAbsX(cpu, 0x5fu), 0x1605u);
-    for (;;) {
-        PushY(memory, cpu);
-        OpRepWidths(cpu, 0x20u);
-        OpTya(cpu);
-        OpLsrA(cpu);
-        OpTay(cpu);
-        OpSepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbsY(cpu, 0x153du));
-        OpPushX(memory, cpu);
-        if (!BattleCall(battle, 0xdb3bu, 0x81f7cau, 2u))
-            return false;
-        OpPullX(memory, cpu);
-        OpPullY(memory, cpu);
-        if (!cpu->carry)
-            break;
-        OpPushX(memory, cpu);
-        PushY(memory, cpu);
-        OpLoadA(cpu, 0x44u);
-        if (!BattleCall(battle, 0xdb49u, 0x80953bu, 3u) ||
-            !ResultLine(battle, 0xf103u, 0xdb50u, 0xdb53u) ||
-            !ResultLevelMessages(battle, false))
-            return false;
-        OpPullY(memory, cpu);
-        OpPullX(memory, cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+    OpAndValue(cpu, BATTLE_STATUS_DOWNED);
+    if (cpu->zero) {
+        ResultAddReward(memory, cpu, OpAbsX(cpu, 0x5fu), WRAM_BATTLE_EXPERIENCE_REWARD);
+        for (;;) {
+            PushY(memory, cpu);
+            OpRepWidths(cpu, 0x20u);
+            OpTya(cpu);
+            OpLsrA(cpu);
+            OpTay(cpu);
+            OpSepWidths(cpu, 0x20u);
+            OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_IDS));
+            OpPushX(memory, cpu);
+            if (!BattleCall(battle, 0xdb3bu, 0x81f7cau, 2u))
+                return false;
+            OpPullX(memory, cpu);
+            OpPullY(memory, cpu);
+            if (!cpu->carry)
+                break;
+            OpPushX(memory, cpu);
+            PushY(memory, cpu);
+            OpLoadA(cpu, 0x44u);
+            if (!BattleCall(battle, 0xdb49u, 0x80953bu, 3u) ||
+                !ResultShowLineAndWait(battle, 0xf103u, 0xdb50u, 0xdb53u) ||
+                !ResultShowStatGains(battle, false))
+                return false;
+            OpPullY(memory, cpu);
+            OpPullX(memory, cpu);
+        }
     }
-experience_gap:
     PushY(memory, cpu);
     OpLda(memory, cpu, OpAbsX(cpu, 0x61u));
     OpSta(memory, cpu, OpDp(cpu, 0x2cu));
@@ -154,13 +153,13 @@ experience_gap:
     OpLda(memory, cpu, OpAbsX(cpu, 0x62u));
     OpSta(memory, cpu, OpDp(cpu, 0x2du));
     ResultSubtractExperience(memory, cpu);
-    if (!ResultLine(battle, 0xf0b3u, 0xdbe6u, 0xdbe9u))
+    if (!ResultShowLineAndWait(battle, 0xf0b3u, 0xdbe6u, 0xdbe9u))
         return false;
     OpPullY(memory, cpu);
     return true;
 }
 
-static bool ResultCapsule(BattleContext *battle) {
+static bool ResultAwardCapsuleExperience(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
     unsigned i;
@@ -169,11 +168,11 @@ static bool ResultCapsule(BattleContext *battle) {
     if (cpu->negative)
         return true;
     OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x0a88u)));
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
-    OpAndValue(cpu, 4u);
+    OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+    OpAndValue(cpu, BATTLE_STATUS_DOWNED);
     if (!cpu->zero)
         return true;
-    ResultAddReward(memory, cpu, OpAbsX(cpu, 0x5fu), 0x1605u);
+    ResultAddReward(memory, cpu, OpAbsX(cpu, 0x5fu), WRAM_BATTLE_EXPERIENCE_REWARD);
     for (;;) {
         if (!BattleCall(battle, 0xdc4fu, 0x82cd83u, 3u))
             return false;
@@ -184,8 +183,8 @@ static bool ResultCapsule(BattleContext *battle) {
             return false;
         OpLoadA(cpu, 4u);
         OpSta(memory, cpu, OpDp(cpu, 0u));
-        if (!ResultLine(battle, 0xf103u, 0xdc62u, 0xdc65u) ||
-            !ResultLevelMessages(battle, true))
+        if (!ResultShowLineAndWait(battle, 0xf103u, 0xdc62u, 0xdc65u) ||
+            !ResultShowStatGains(battle, true))
             return false;
     }
     if (!BattleCall(battle, 0xdcbeu, 0x82cd1fu, 3u))
@@ -195,7 +194,7 @@ static bool ResultCapsule(BattleContext *battle) {
             return false;
         OpLoadA(cpu, 0x7eu);
         OpSta(memory, cpu, OpDp(cpu, 0x5fu));
-        if (!ResultLine(battle, 0xf1cdu, 0xdccfu, 0xdcd2u))
+        if (!ResultShowLineAndWait(battle, 0xf1cdu, 0xdccfu, 0xdcd2u))
             return false;
     }
     for (i = 0; i < 6u; ++i) {
@@ -206,7 +205,7 @@ static bool ResultCapsule(BattleContext *battle) {
     ResultSubtractExperience(memory, cpu);
     OpLoadA(cpu, 4u);
     OpSta(memory, cpu, OpDp(cpu, 0u));
-    return ResultLine(battle, 0xf0b3u, 0xdd0bu, 0xdd0eu);
+    return ResultShowLineAndWait(battle, 0xf0b3u, 0xdd0bu, 0xdd0eu);
 }
 
 /* $81:D9E1: distribute battle rewards and report progression. */
@@ -236,25 +235,25 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
     OpBitValue(cpu, 3u);
     if (!cpu->zero) {
         OpBitValue(cpu, 2u);
-        ResultScaleReward(memory, cpu, 0x1605u);
-        ResultScaleReward(memory, cpu, 0x1608u);
+        ResultScaleReward(memory, cpu, WRAM_BATTLE_EXPERIENCE_REWARD);
+        ResultScaleReward(memory, cpu, WRAM_BATTLE_GOLD_REWARD);
     }
     if (!BattleCall(&battle, 0xda87u, 0x81dd7fu, 2u))
         goto unwound;
     OpLoadA(cpu, 0x85u);
     OpSta(memory, cpu, OpDp(cpu, 0x5fu));
-    if (!ResultLine(&battle, 0xf092u, 0xda91u, 0xda94u) ||
-        !ResultLine(&battle, 0xf0a2u, 0xda9au, 0xda9du))
+    if (!ResultShowLineAndWait(&battle, 0xf092u, 0xda91u, 0xda94u) ||
+        !ResultShowLineAndWait(&battle, 0xf0a2u, 0xda9au, 0xda9du))
         goto unwound;
     OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpAbs(cpu, 0x160bu));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ITEM_REWARD));
     if (!cpu->zero) {
         OpSta(memory, cpu, OpAbs(cpu, 0x0a06u));
         OpSepWidths(cpu, 0x20u);
         if (!BattleCall(&battle, 0xdaacu, 0x81f085u, 3u))
             goto unwound;
         if (!cpu->carry) {
-            if (!ResultLine(&battle, 0xf087u, 0xdab5u, 0xdab8u))
+            if (!ResultShowLineAndWait(&battle, 0xf087u, 0xdab5u, 0xdab8u))
                 goto unwound;
             OpSepWidths(cpu, 0x20u);
         }
@@ -270,7 +269,7 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
         OpTya(cpu);
         OpLsrA(cpu);
         OpTax(cpu);
-        OpLda(memory, cpu, OpAbsX(cpu, 0x153du));
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_IDS));
         OpLdx(cpu, 0u);
         for (;;) {
             OpCmp(memory, cpu, OpAbsX(cpu, 0x0a7bu));
@@ -279,19 +278,19 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
             OpInx(cpu);
         }
         OpWriteX(memory, cpu, OpDp(cpu, 0u), cpu->x);
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, 0x0a64u)));
-        if (!cpu->zero && !ResultPartyMember(&battle))
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS)));
+        if (!cpu->zero && !ResultAwardPartyMemberExperience(&battle))
             goto unwound;
         OpIny(cpu);
         OpIny(cpu);
         Compare16(cpu, cpu->y, 8u);
     } while (!cpu->zero);
-    if (!ResultCapsule(&battle))
+    if (!ResultAwardCapsuleExperience(&battle))
         goto unwound;
-    ResultAddReward(memory, cpu, OpAbs(cpu, 0x0a8au), 0x1608u);
+    ResultAddReward(memory, cpu, OpAbs(cpu, 0x0a8au), WRAM_BATTLE_GOLD_REWARD);
     OpLdy(cpu, 0xf085u);
     if (!BattleCall(&battle, 0xdd57u, 0x81dde7u, 2u) ||
-        !ResultLine(&battle, 0xf0ebu, 0xdd5du, 0xdd60u))
+        !ResultShowLineAndWait(&battle, 0xf0ebu, 0xdd5du, 0xdd60u))
         goto unwound;
     OpLda(memory, cpu, 0x7ff8a5u);
     cpu->carry = 0;

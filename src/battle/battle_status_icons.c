@@ -1,5 +1,70 @@
 #include "battle/battle_internal.h"
 
+static void BattleAdvanceStatusIcon(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_TIMER));
+    OpLda(memory, cpu, OpAbs(cpu, BATTLE_ICON_CYCLE_INDEX));
+    do {
+        OpIncA(cpu);
+        OpCmpValue(cpu, 0x0au);
+        if (cpu->zero)
+            TransferDirectToA(cpu);
+        OpSta(memory, cpu, OpAbs(cpu, BATTLE_ICON_CYCLE_INDEX));
+        OpTax(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, 0x859ea6u));
+        OpAndValue(cpu, OpReadM(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_STATUS_MASK)));
+        if (!cpu->zero)
+            break;
+        OpTxa(cpu);
+    } while (true);
+    OpTxa(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ICON_CYCLE_INDEX));
+    OpLda(memory, cpu, OpLongX(cpu, 0x859eb0u));
+    PushY(memory, cpu);
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_SPRITE_OFFSET)));
+    OpSta(memory, cpu, OpAbsY(cpu, 0x1438u));
+    OpLda(memory, cpu, OpAbsY(cpu, 0x1435u));
+    OpOraValue(cpu, 0x80u);
+    OpSta(memory, cpu, OpAbsY(cpu, 0x1435u));
+    OpPullY(memory, cpu);
+}
+
+static bool BattleUpdateStatusIconTimer(const Lufia2Memory *memory,
+                                        Lufia2CpuState *cpu) {
+    OpPushX(memory, cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, BATTLE_ICON_RECORD_TIMER));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_TIMER));
+    SetAccumulatorWidth(cpu, 1);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, BATTLE_ICON_RECORD_STATUS));
+    OpBitValue(cpu, BATTLE_STATUS_DOWNED);
+    if (!cpu->zero) {
+        OpPullX(memory, cpu);
+        return true;
+    }
+    OpAndValue(cpu, 0x3bu);
+    if (cpu->zero) {
+        OpPullX(memory, cpu);
+        return true;
+    }
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_STATUS_MASK));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, 0x97b418u));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, 0x97ca5eu));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_PERIOD));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_TIMER));
+    OpCmp(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_PERIOD));
+    if (cpu->carry) {
+        BattleAdvanceStatusIcon(memory, cpu);
+    }
+    SetAccumulatorWidth(cpu, 0);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_TIMER));
+    OpIncA(cpu);
+    OpSta(memory, cpu, OpAbsY(cpu, BATTLE_ICON_RECORD_TIMER));
+    OpPullX(memory, cpu);
+    return false;
+}
+
 /* $85:8850: advance the five party status-icon records and sprite flags. */
 Lufia2ExecutionResult Lufia2BattleAnimateStatusIcons(const Lufia2Memory *memory,
                                                      Lufia2CpuState *cpu) {
@@ -8,79 +73,24 @@ Lufia2ExecutionResult Lufia2BattleAnimateStatusIcons(const Lufia2Memory *memory,
     PullDataBank(memory, cpu);
     OpLdy(cpu, 0u);
     OpTyx(cpu);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x1491u), cpu->y);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_SPRITE_OFFSET), cpu->y);
     for (;;) {
-        bool clear = false;
-        OpLda(memory, cpu, OpAbsY(cpu, 0x1479u));
+        bool hide_icon = false;
+        OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_STATUS_ICON_RECORDS));
         if (cpu->zero) {
-            clear = true;
+            hide_icon = true;
         } else {
             SetAccumulatorWidth(cpu, 0);
-            OpLda(memory, cpu, OpAbsX(cpu, 0x0a64u));
+            OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_RECORDS));
             if (!cpu->zero) {
-                OpPushX(memory, cpu);
-                OpLda(memory, cpu, OpAbsY(cpu, 0x147bu));
-                OpSta(memory, cpu, OpAbs(cpu, 0x148fu));
-                SetAccumulatorWidth(cpu, 1);
-                TransferDirectToA(cpu);
-                OpLda(memory, cpu, OpAbsY(cpu, 0x147au));
-                OpBitValue(cpu, 4u);
-                if (!cpu->zero) {
-                    clear = true;
-                } else {
-                    OpAndValue(cpu, 0x3bu);
-                    if (cpu->zero) {
-                        clear = true;
-                    } else {
-                        OpSta(memory, cpu, OpAbs(cpu, 0x148du));
-                        OpTax(cpu);
-                        OpLda(memory, cpu, OpLongX(cpu, 0x97b418u));
-                        OpTax(cpu);
-                        OpLda(memory, cpu, OpLongX(cpu, 0x97ca5eu));
-                        OpSta(memory, cpu, OpAbs(cpu, 0x148eu));
-                        OpLda(memory, cpu, OpAbs(cpu, 0x148fu));
-                        OpCmp(memory, cpu, OpAbs(cpu, 0x148eu));
-                        if (cpu->carry) {
-                            OpStz(memory, cpu, OpAbs(cpu, 0x148fu));
-                            OpLda(memory, cpu, OpAbs(cpu, 0x1490u));
-                            do {
-                                OpIncA(cpu);
-                                OpCmpValue(cpu, 0x0au);
-                                if (cpu->zero)
-                                    TransferDirectToA(cpu);
-                                OpSta(memory, cpu, OpAbs(cpu, 0x1490u));
-                                OpTax(cpu);
-                                OpLda(memory, cpu, OpLongX(cpu, 0x859ea6u));
-                                OpAndValue(cpu,
-                                           OpReadM(memory, cpu, OpAbs(cpu, 0x148du)));
-                                if (!cpu->zero)
-                                    break;
-                                OpTxa(cpu);
-                            } while (true);
-                            OpTxa(cpu);
-                            OpSta(memory, cpu, OpAbs(cpu, 0x1490u));
-                            OpLda(memory, cpu, OpLongX(cpu, 0x859eb0u));
-                            PushY(memory, cpu);
-                            OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x1491u)));
-                            OpSta(memory, cpu, OpAbsY(cpu, 0x1438u));
-                            OpLda(memory, cpu, OpAbsY(cpu, 0x1435u));
-                            OpOraValue(cpu, 0x80u);
-                            OpSta(memory, cpu, OpAbsY(cpu, 0x1435u));
-                            OpPullY(memory, cpu);
-                        }
-                        SetAccumulatorWidth(cpu, 0);
-                        OpLda(memory, cpu, OpAbs(cpu, 0x148fu));
-                        OpIncA(cpu);
-                        OpSta(memory, cpu, OpAbsY(cpu, 0x147bu));
-                    }
-                }
-                OpPullX(memory, cpu);
+                hide_icon = BattleUpdateStatusIconTimer(memory, cpu);
             }
         }
-        if (clear) {
+        if (hide_icon) {
             PushY(memory, cpu);
-            OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x1491u)));
-            /* The original stores the retained A, including downed-status bits. */
+            OpLdy(cpu,
+                  OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_SPRITE_OFFSET)));
+            /* Hidden icons retain A, including downed-status bits. */
             OpSta(memory, cpu, OpAbsY(cpu, 0x1438u));
             OpLda(memory, cpu, OpAbsY(cpu, 0x1435u));
             OpAndValue(cpu, 0x7fu);
@@ -88,16 +98,16 @@ Lufia2ExecutionResult Lufia2BattleAnimateStatusIcons(const Lufia2Memory *memory,
             OpPullY(memory, cpu);
         }
         SetAccumulatorWidth(cpu, 0);
-        OpLda(memory, cpu, OpAbs(cpu, 0x1491u));
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_SPRITE_OFFSET));
         cpu->carry = 0;
-        OpAdcValue(cpu, 0x0du);
-        OpSta(memory, cpu, OpAbs(cpu, 0x1491u));
+        OpAdcValue(cpu, BATTLE_STATUS_SPRITE_RECORD_SIZE);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_SPRITE_OFFSET));
         SetAccumulatorWidth(cpu, 1);
         OpInx(cpu);
         OpInx(cpu);
         for (unsigned i = 0; i < 4u; ++i)
             OpIny(cpu);
-        OpCpy(cpu, 0x14u);
+        OpCpy(cpu, BATTLE_PARTY_TARGET_COUNT * BATTLE_STATUS_ICON_RECORD_SIZE);
         if (cpu->zero)
             break;
     }

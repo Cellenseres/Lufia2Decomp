@@ -24,6 +24,10 @@ slot arrays, the field flags and the direct-page slot and NMI state that the
 verified routines use most; it grows as reconstruction needs more names. It is
 not an attempt to map all of WRAM.
 
+Battle entries cover pointers, turn queues, targets, status icons, actions, rewards
+and result windows. `battle/battle_internal.h` defines their field offsets. DP
+scratch names stay local because the same bytes serve different operations.
+
 ## Addressing convention
 
 Addresses are canonical WRAM addresses. The low 8 KiB `$7E:0000-$7E:1FFF` is
@@ -70,9 +74,10 @@ for locations that are not catalogued yet.
 New semantic code uses a named constant, or a slot view built on one
 (`src/actor/actor_slot_view.h`), when the catalog has the location. A
 genuinely unknown address may stay literal until it is catalogued with a
-neutral name. ROM addresses, hardware registers and instruction PCs are
-addresses by nature and stay literal; they are not game-state fields and are
-never replaced mechanically.
+neutral name. ROM addresses and instruction PCs remain explicit for traceability.
+Use the existing `core/snes_registers.h` vocabulary for hardware accesses when
+useful. DB-relative WRAM accesses retain their WRAM meaning even when the offset
+matches a hardware register; never replace addresses mechanically.
 
 ## $83:BBF3
 

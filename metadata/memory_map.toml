@@ -448,3 +448,164 @@ width = 3
 count = 40
 owner = "actor"
 notes = "24-bit primary script cursor, indexed by 3 * slot; $83:C83C dispatches from it."
+
+[[location]]
+address = "7E:0A64"
+name = "battle_party_records"
+width = 2
+count = 4
+owner = "battle"
+notes = "$85:9275 and $81:D4E0 read four party record pointers."
+
+[[location]]
+address = "7E:0A6C"
+name = "battle_capsule_record"
+width = 2
+owner = "battle"
+notes = "$81:C294 reads the capsule battle record pointer."
+
+[[location]]
+address = "7E:0A6E"
+name = "battle_enemy_records"
+width = 2
+count = 6
+owner = "battle"
+notes = "$81:C254 reads six enemy record pointers."
+
+[[location]]
+address = "7E:1479"
+name = "battle_status_icon_records"
+width = 4
+count = 5
+owner = "battle"
+notes = "$85:91A1 and $85:8850 use active marker, status byte and word timer; four-byte stride."
+
+[[location]]
+address = "7E:148D"
+name = "battle_icon_status_mask"
+width = 1
+owner = "battle"
+notes = "$85:8850 stages status bits masked by $3B."
+
+[[location]]
+address = "7E:148E"
+name = "battle_icon_period"
+width = 1
+owner = "battle"
+notes = "$85:8850 loads the timer threshold from $97:CA5E."
+
+[[location]]
+address = "7E:148F"
+name = "battle_icon_timer"
+width = 2
+owner = "battle"
+notes = "$85:8850 stages the word timer; its high byte is also the cyclic icon index."
+
+[[location]]
+address = "7E:1491"
+name = "battle_icon_sprite_offset"
+width = 2
+owner = "battle"
+notes = "$85:8850 advances this offset by the thirteen-byte sprite-record stride."
+
+[[location]]
+address = "7E:153C"
+name = "battle_party_count"
+width = 1
+owner = "battle"
+notes = "$85:9275 terminates the party turn scan with this count, 1..4."
+
+[[location]]
+address = "7E:153D"
+name = "battle_party_ids"
+width = 1
+count = 4
+owner = "battle"
+notes = "$81:D9E1 and $81:D12F map battle party slots to character ids."
+
+[[location]]
+address = "7E:15D7"
+name = "battle_cursor_enabled"
+width = 1
+owner = "battle"
+notes = "$81:D4E0 and $81:D19A publish cursor visibility; $81:B5C4 gates the group."
+
+[[location]]
+address = "7E:15D8"
+name = "battle_cursor_source"
+width = 2
+owner = "battle"
+notes = "$81:B5C4 reads the cursor sprite source pointer."
+
+[[location]]
+address = "7E:15DA"
+name = "battle_cursor_count"
+width = 1
+owner = "battle"
+notes = "$81:D4E0 and $81:D19A publish the number of cursor sprites."
+
+[[location]]
+address = "7E:15F3"
+name = "battle_result_window"
+width = 11
+owner = "battle"
+notes = "$81:DD7F stages x/y, width/height, column/row, base/write pointers and tile attributes through $15FD."
+
+[[location]]
+address = "7E:1605"
+name = "battle_experience_reward"
+width = 3
+owner = "battle"
+notes = "$81:C600 accumulates experience; $81:D9E1 scales and distributes it."
+
+[[location]]
+address = "7E:1608"
+name = "battle_gold_reward"
+width = 3
+owner = "battle"
+notes = "$81:C600 accumulates gold; $81:D9E1 scales and adds it to party gold."
+
+[[location]]
+address = "7E:160B"
+name = "battle_item_reward"
+width = 2
+owner = "battle"
+notes = "$81:D9E1 passes a nonzero item reward to $81:F085."
+
+[[location]]
+address = "7E:1B7F"
+name = "battle_staged_action"
+width = 10
+owner = "battle"
+notes = "$85:92CE publishes actor mask, target mask, action type and parameter; $85:92FF queues the priority at +8."
+
+[[location]]
+address = "7E:1B8C"
+name = "battle_turn_queue"
+width = 3
+count = 12
+owner = "battle"
+notes = "$85:9337 inserts actor-mask/word-priority entries in descending order, shifting through offset $21."
+
+[[location]]
+address = "7E:1BB0"
+name = "battle_party_targets"
+width = 4
+count = 5
+owner = "battle"
+notes = "$81:D4E0 builds coordinate word, unavailable byte and selected byte for four members plus capsule."
+
+[[location]]
+address = "7E:1BC8"
+name = "battle_enemy_targets"
+width = 4
+count = 6
+owner = "battle"
+notes = "$81:D4E0 builds coordinate word, unavailable byte and selected byte for six enemies."
+
+[[location]]
+address = "7E:1BE8"
+name = "battle_party_slot"
+width = 2
+owner = "battle"
+notes = "$85:9275 and $81:C739 stage the current party-slot index with a bank-zero word store."

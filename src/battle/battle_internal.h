@@ -20,6 +20,59 @@ enum {
     BATTLE_BACKGROUND_BLANK = 0x18u,
 };
 
+enum {
+    BATTLE_PARTY_SIZE = WRAM_BATTLE_PARTY_RECORDS_COUNT,
+    BATTLE_ENEMY_COUNT = WRAM_BATTLE_ENEMY_RECORDS_COUNT,
+    BATTLE_PARTY_TARGET_COUNT = WRAM_BATTLE_PARTY_TARGETS_COUNT,
+    BATTLE_POINTER_SIZE = 2u,
+    BATTLE_TURN_ENTRY_SIZE = 3u,
+    BATTLE_TARGET_RECORD_SIZE = 4u,
+    BATTLE_SPRITE_SOURCE_SIZE = 5u,
+    BATTLE_OAM_ENTRY_SIZE = 4u,
+    BATTLE_STATUS_ICON_RECORD_SIZE = 4u,
+    BATTLE_STATUS_SPRITE_RECORD_SIZE = 13u,
+    BATTLE_BATTLER_STATUS = 0x0fu,
+    BATTLE_BATTLER_BASE_PRIORITY = 0x2fu,
+    BATTLE_BATTLER_PRIORITY_BONUS = 0x3du,
+    BATTLE_STATUS_DOWNED = 0x04u,
+    BATTLE_STATUS_TURN_SELECTED = 0x10u,
+    BATTLE_STATUS_NO_TURN = 0x2cu,
+    BATTLE_STATUS_NO_COMMAND = 0x3cu,
+    BATTLE_TARGET_ENEMY_SIDE = 0x80u,
+    BATTLE_TARGET_CAPSULE = 0x10u,
+    BATTLE_ACTION_TARGET_MASK = WRAM_BATTLE_STAGED_ACTION + 2u,
+    BATTLE_ACTION_TYPE = WRAM_BATTLE_STAGED_ACTION + 4u,
+    BATTLE_ACTION_PARAMETER = WRAM_BATTLE_STAGED_ACTION + 6u,
+    BATTLE_ACTION_PRIORITY = WRAM_BATTLE_STAGED_ACTION + 8u,
+    BATTLE_ICON_RECORD_STATUS = WRAM_BATTLE_STATUS_ICON_RECORDS + 1u,
+    BATTLE_ICON_RECORD_TIMER = WRAM_BATTLE_STATUS_ICON_RECORDS + 2u,
+    BATTLE_ICON_CYCLE_INDEX = WRAM_BATTLE_ICON_TIMER + 1u,
+    BATTLE_RESULT_WINDOW_Y = WRAM_BATTLE_RESULT_WINDOW + 1u,
+    BATTLE_RESULT_WINDOW_WIDTH = WRAM_BATTLE_RESULT_WINDOW + 2u,
+    BATTLE_RESULT_WINDOW_HEIGHT = WRAM_BATTLE_RESULT_WINDOW + 3u,
+    BATTLE_RESULT_COLUMN = WRAM_BATTLE_RESULT_WINDOW + 4u,
+    BATTLE_RESULT_ROW = WRAM_BATTLE_RESULT_WINDOW + 5u,
+    BATTLE_RESULT_WINDOW_BASE = WRAM_BATTLE_RESULT_WINDOW + 6u,
+    BATTLE_RESULT_WRITE_POSITION = WRAM_BATTLE_RESULT_WINDOW + 8u,
+    BATTLE_RESULT_TILE_ATTRIBUTES = WRAM_BATTLE_RESULT_WINDOW + 10u,
+};
+
+enum {
+    BATTLE_PARTY_COMMAND_SPELL = 0u,
+    BATTLE_PARTY_COMMAND_ATTACK = 3u,
+    BATTLE_PARTY_COMMAND_IP = 6u,
+    BATTLE_PARTY_COMMAND_ITEM = 9u,
+    BATTLE_PARTY_COMMAND_DEFEND = 12u,
+    BATTLE_ACTION_NONE = 0u,
+    BATTLE_ACTION_ATTACK = 1u,
+    BATTLE_ACTION_SPELL = 2u,
+    BATTLE_ACTION_ITEM = 3u,
+    BATTLE_ACTION_DEFEND = 4u,
+    BATTLE_ACTION_COLLECTIVE = 6u,
+    BATTLE_ACTION_IP = 8u,
+    BATTLE_ACTION_SELECTED_TURN = 0x0fu,
+};
+
 typedef struct BattleContext {
     const Lufia2Memory *memory;
     Lufia2CpuState *cpu;
@@ -40,8 +93,8 @@ static inline BattleContext BattleContextCreate(const Lufia2Memory *memory,
     return (BattleContext){memory, cpu, child, child_context, return_bank, 0u};
 }
 
-static inline bool BattleCall(BattleContext *battle, uint16_t site,
-                              uint32_t target, uint8_t frame_size) {
+static inline bool BattleCall(BattleContext *battle, uint16_t site, uint32_t target,
+                              uint8_t frame_size) {
     const uint32_t full_site = ((uint32_t)battle->return_bank << 16) | site;
 
     if (frame_size == 2u)
@@ -66,8 +119,7 @@ static inline Lufia2ExecutionResult BattleChildUnwound(const BattleContext *batt
 }
 
 static inline bool BattleControlHas(BattleContext *battle, uint8_t mask) {
-    OpLda(battle->memory, battle->cpu,
-          OpAbs(battle->cpu, WRAM_BATTLE_CONTROL_FLAGS));
+    OpLda(battle->memory, battle->cpu, OpAbs(battle->cpu, WRAM_BATTLE_CONTROL_FLAGS));
     OpBitValue(battle->cpu, mask);
     return !battle->cpu->zero;
 }
