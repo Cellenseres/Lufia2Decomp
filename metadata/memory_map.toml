@@ -1027,3 +1027,51 @@ width = 1
 count = 1
 owner = "system"
 notes = "Next random-table cursor used by 80:82C7 and 80:8299; 80:82E7 sets 54 before three refills."
+
+[[location]]
+address = "7E:2000"
+name = "music_sample_cache"
+width = 1
+count = 32
+owner = "system"
+notes = "80:941A second sample path initializes FF bytes and deduplicates values from ROM9A59 before uploading."
+
+[[location]]
+address = "7E:2020"
+name = "music_song_header"
+width = 1
+count = 50
+owner = "system"
+notes = "80:941A loads a song resource here; word+2 must be3253, byte+1A selects sample upload mode. Describes the proven header before the sample list, not the entire resource extent."
+
+[[location]]
+address = "7E:2052"
+name = "music_sample_list"
+width = 1
+count = 32
+owner = "system"
+notes = "80:941A first uploads direct sample IDs; bit7 switches to ROM lookup/cache path, FF terminates that path."
+
+[[location]]
+address = "7E:0584"
+name = "music_apu_upload_address"
+width = 2
+count = 1
+owner = "system"
+notes = "80:941A uses this APUIO0 upload destination when the song header mode byte is zero."
+
+[[location]]
+address = "7E:0586"
+name = "music_apu_reply"
+width = 2
+count = 1
+owner = "system"
+notes = "80:941A copies the APUIO0/APUIO1 reply here after command12."
+
+[[location]]
+address = "7E:0588"
+name = "music_sample_upload_mode"
+width = 1
+count = 1
+owner = "system"
+notes = "80:941A stores the song mode byte or clears it with TRB before optional9703 reset."

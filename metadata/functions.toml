@@ -2667,3 +2667,35 @@ source = "src/system/random.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:941A"
+name = "Lufia2LoadSong"
+source = "src/system/music.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:93FE"
+name = "Lufia2PlaySong"
+source = "src/system/music.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9692"
+name = "Lufia2FadeOutMusic"
+source = "src/system/music.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9601"
+name = "Lufia2SetMusicVolume"
+source = "src/system/music.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

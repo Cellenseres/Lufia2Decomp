@@ -17,17 +17,17 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-321 functions in `metadata/functions.toml`: 321 verified, 0 draft, 0 identified, 0 disabled.
+325 functions in `metadata/functions.toml`: 325 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **428 independent jobs**. The normal
-application build also passes. The consumer selects 319 of 321 verified
-functions; the equipment dispatcher and regular map installer await consumer
-subscription migration before binding. The generated CFG contains 1,456 nodes, and every prior native
+The full Windows Release verifier passes **432 independent jobs**. The normal
+application build also passes. The consumer selects 323 of 325 verified
+functions; song-load and fade-out subscribers await MSU consumer migration
+before binding. The generated CFG contains 1,456 nodes, and every prior native
 entry remains covered.
 
 Verification uses the original ROM interpreter as the reference. It checks CPU
@@ -35,6 +35,24 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Song loading and music commands
+
+`$80:941A` loads a song resource, validates its signature, selects the sample
+upload mode and processes all 32 sample slots. Both the direct-upload and
+lookup/cache paths preserve original memory access order, scratch bytes and
+flags. `$80:93FE` plays a successfully loaded song; `$80:9692` and `$80:9601`
+send the original fade-out and music-volume commands. APU handshakes remain
+explicit interpreter children, including the waits at `$80:9A0A`.
+
+40,985 original-ROM cases cover all four entry width combinations, resource
+rejection, both sample paths, 24 original child sites, a requested volume call
+and 8,192 composed player/loader cases. The bridges pass 49,177 native calls
+with no positive fallback, 75 redirects and 3,072 guards. All 39 injected
+semantic, event and bridge errors are detected. The always-built song event
+can request a guest call that returns to the same checkpoint, allowing the
+consumer to restore the song ID before the original store. Native/interpreter
+events also match across 30 pairs without the decomp library.
 
 ## Save files and random seeding
 

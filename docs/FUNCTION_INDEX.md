@@ -23,6 +23,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9184` | `Lufia2WriteGameFile` | verified | `src/system/save.c` |
 | `$80:91D3` | `Lufia2ResolveSaveFileAddress` | verified | `src/system/save.c` |
 | `$80:92A4` | `Lufia2IntroNmi` | verified | `src/title/title.c` |
+| `$80:93FE` | `Lufia2PlaySong` | verified | `src/system/music.c` |
+| `$80:941A` | `Lufia2LoadSong` | verified | `src/system/music.c` |
+| `$80:9601` | `Lufia2SetMusicVolume` | verified | `src/system/music.c` |
+| `$80:9692` | `Lufia2FadeOutMusic` | verified | `src/system/music.c` |
 | `$80:9C72` | `Lufia2FieldEventTick` | verified | `src/field/field_update.c` |
 | `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
 | `$80:BFAA` | `Lufia2FieldFindHeaderRecord` | verified | `src/field/field_object_lookup.c` |
