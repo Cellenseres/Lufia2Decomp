@@ -2595,3 +2595,19 @@ source = "src/system/nmi.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "83:B53B"
+name = "Lufia2FieldInstallMap"
+source = "src/field/field_map_install.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:EAE7"
+name = "Lufia2FieldLoadMapResources"
+source = "src/field/field_map_install.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
