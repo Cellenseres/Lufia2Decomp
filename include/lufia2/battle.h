@@ -716,6 +716,22 @@ Lufia2ExecutionResult Lufia2BattleLoadActionRecord(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* $81:B1A3/$B1C9/$B1F7 prepare configured, battler or item scripts.
+ * M1X0, PB $81, DP zero, native binary mode and DB mapping low WRAM.
+ * Original default scripts and base/bank fields are retained. The script VM
+ * at $81:FAC9 remains an explicit child with its three-byte JSL frame.
+ * The first two entries return before RTL; $B1F7 returns before RTS $B227.
+ */
+Lufia2ExecutionResult Lufia2BattleRunConfiguredScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+Lufia2ExecutionResult Lufia2BattleRunBattlerScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+Lufia2ExecutionResult Lufia2BattleRunItemScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 #ifdef __cplusplus
 }
 #endif
