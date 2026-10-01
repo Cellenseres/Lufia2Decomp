@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-306 functions in `metadata/functions.toml`: 306 verified, 0 draft, 0 identified, 0 disabled.
+310 functions in `metadata/functions.toml`: 310 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -191,6 +191,18 @@ strides. Ten malformed header cycles yield at the original loop PC after
 65,536 records with the saved data bank intact. All 24,586 production native
 calls and 2,304 unsupported-state checks pass; all 13 fault variants are caught.
 The multiplier keeps its original register writes and result read.
+
+Four object tile operations are complete and independently verified:
+attribute masks, saved-tile restoration, redraw queue requests and tile-bit
+rectangle copying. Their 32,768 normal ROM cases, six child unwinds and 24
+carry/zero-counter/header-overlap cases compare CPU, complete WRAM and every
+ordered write. The copier retains all three original bit-mask paths and the
+carry shared by its row advances; large or self-mutating loops yield at the
+original tile body after 262,144 transfers with the saved data bank intact.
+Production bridges pass 32,798 native cases, 45 redirected-child contracts
+and 3,072 unsupported-state checks. All 22 fault variants are caught. Six
+canonical fields identify the attribute grid, layer section words and the
+column-upload queue consumed by NMI.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary

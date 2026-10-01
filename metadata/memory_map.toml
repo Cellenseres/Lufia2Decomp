@@ -892,3 +892,51 @@ width = 1
 count = 40
 owner = "field"
 notes = "Pending object slot held by each actor."
+
+[[location]]
+address = "7E:4000"
+name = "field_map_attributes"
+width = 1
+count = 1
+owner = "field"
+notes = "Base of the byte-per-cell attribute grid; extent follows the active map."
+
+[[location]]
+address = "7F:D020"
+name = "field_layer_section_word"
+width = 2
+count = 4
+owner = "field"
+notes = "Map section header word, copied by 80:EBAA. Its low byte gates redraw and raw object tile copying."
+
+[[location]]
+address = "7F:D4F8"
+name = "field_column_upload_count_bytes"
+width = 2
+count = 1
+owner = "field"
+notes = "F933 advances this word by two; 83:A1A2 consumes queued word records backwards and clears the count."
+
+[[location]]
+address = "7F:D4FA"
+name = "field_column_upload_source"
+width = 2
+count = 16
+owner = "field"
+notes = "Queued bank-7E DMA source addresses; 83:A1A2 loads them into channel 6 A1T."
+
+[[location]]
+address = "7F:D51A"
+name = "field_column_upload_destination"
+width = 2
+count = 16
+owner = "field"
+notes = "Queued VRAM word addresses; 83:A1A2 publishes each to VMADDL."
+
+[[location]]
+address = "7F:D53A"
+name = "field_column_upload_rows"
+width = 2
+count = 16
+owner = "field"
+notes = "Queued vertical upload counts; 83:A1A2 repeats 128-byte transfers, advancing the source by 128 and VRAM by 64."

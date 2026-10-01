@@ -2547,3 +2547,35 @@ source = "src/field/field_object_lookup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:F80D"
+name = "Lufia2FieldMarkObjectAttributes"
+source = "src/field/field_object_tiles.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F747"
+name = "Lufia2FieldRestoreObjectTiles"
+source = "src/field/field_object_tiles.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F933"
+name = "Lufia2FieldQueueObjectRedraw"
+source = "src/field/field_object_tiles.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8B6A"
+name = "Lufia2FieldCopyObjectTiles"
+source = "src/field/field_object_copy.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
