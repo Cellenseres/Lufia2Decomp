@@ -24,10 +24,10 @@ The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **436 independent jobs**. The normal
-application build also passes. The consumer selects 324 of 327 verified
-functions; song-load, fade-out and spell-shop setup await consumer subscriber
-migration before binding. The generated CFG contains 1,456 nodes, and every prior native
+The full Windows Release verifier passes **442 independent jobs**. The normal
+application build also passes. The consumer selects 325 of 327 verified
+functions; song-load and fade-out await the consumer MSU migration commit
+before binding. The generated CFG contains 1,456 nodes, and every prior native
 entry remains covered.
 
 Verification uses the original ROM interpreter as the reference. It checks CPU
@@ -35,6 +35,22 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Inherited checkpoints and map completion
+
+Optional memory-interface checkpoints now reach derived party stats at
+`$81:F4E2` and item receipt at `$81:F099`, including inlined callers. The
+original uncapped stats and inventory remainder writes remain unchanged.
+Capsule growth retains each original memory shift and its high-first word
+writes. The consumer rejects unsupported X8 entry at `$82:C261`.
+
+81,154 original-ROM cases cover the two checkpoints, cross-bank callers,
+both inventory child unwinds and exhaustive byte/word memory shifts.
+15,362 native calls pass without positive fallback; 6,144 unsupported-state
+guards and all 24 injected faults pass. The always-built consumer event layer
+supports eight observers per event and passes 946 checks without the decomp
+library, including subscriber mutations and native-to-interpreter map completion.
+Spell-shop setup is now selected after its consumer hook migration.
 
 ## Spell-shop prices and windows
 

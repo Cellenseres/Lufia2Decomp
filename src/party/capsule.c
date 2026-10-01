@@ -1,6 +1,6 @@
 /* Capsule monsters: stats ($82:C261) and skills ($82:C4B3, $82:CD1F). */
 
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/menu.h"
 #include "lufia2/party.h"
 #include "lufia2/system.h"
@@ -267,10 +267,8 @@ static void CapsuleGrowth(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x13u));
             if (cpu->carry) {
                 const unsigned shifts = cpu->zero ? 1u : 2u;
-                uint16_t value = Read16Direct(memory, cpu, 0x1cu);
-
-                value = (uint16_t)(value >> shifts);
-                Write16Direct(memory, cpu, 0x1cu, value);
+                for (unsigned shift = 0; shift < shifts; ++shift)
+                    OpLsrMem(memory, cpu, OpDp(cpu, 0x1cu));
             }
             LoadA16(cpu, Read16Direct(memory, cpu, 0x1cu));    /* D35C */
             cpu->carry = 0;
@@ -278,18 +276,12 @@ static void CapsuleGrowth(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             StoreADirect16(memory, cpu, 0x11u);
             LoadA16(cpu, Word(memory, cpu, LEVEL));
             And16(cpu, 0x00ffu);
-            Write16Direct(memory, cpu, 0x15u,
-                (uint16_t)(Read16Direct(memory, cpu, 0x15u) + 1u));
+            OpStepMem(memory, cpu, OpDp(cpu, 0x15u), 1);
             Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x15u));
         } while (!cpu->zero);
     }
-    {                                                          /* D36F */
-        const uint16_t value = Read16Direct(memory, cpu, 0x11u);
-
-        cpu->carry = (value >> 3) & 1u;
-        Write16Direct(memory, cpu, 0x11u, (uint16_t)(value >> 4));
-        SetNz16(cpu, (uint16_t)(value >> 4));
-    }
+    for (unsigned shift = 0; shift < 4u; ++shift)                /* D36F */
+        OpLsrMem(memory, cpu, OpDp(cpu, 0x11u));
 }
 
 /* $82:D283: base stats plus growth into the block. */

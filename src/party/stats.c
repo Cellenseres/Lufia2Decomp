@@ -81,6 +81,7 @@ Lufia2ExecutionResult Lufia2PartyDerivedStats(
     SimulateJsrFrame(memory, cpu, 0xf4e1u);
     DerivedStats(memory, cpu);
     SimulateRtsFrame(memory, cpu);
+    EmitExecutionCheckpoint(memory, cpu, 0x81f4e2u);
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
     cpu->y = PullIndexValue(memory, cpu);
