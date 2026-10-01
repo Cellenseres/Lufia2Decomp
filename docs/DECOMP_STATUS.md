@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-332 functions in `metadata/functions.toml`: 332 verified, 0 draft, 0 identified, 0 disabled.
+334 functions in `metadata/functions.toml`: 334 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **451 independent jobs**. The normal
-application build also passes. The consumer selects 330 of 332 verified
+The full Windows Release verifier passes **454 independent jobs**. The normal
+application build also passes. The consumer selects 332 of 334 verified
 functions; song-load and fade-out await the consumer MSU migration commit
 before binding. The generated CFG contains 1,456 nodes, and every prior native
 entry remains covered.
@@ -35,6 +35,20 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Region coordinate conversion
+
+`$83:9000` adds fifteen before the shared `$83:9004` conversion. The latter
+uses its entry Negative flag to select the direct page, then shifts four times.
+The reconstruction retains wrapping arithmetic, every flag and either index
+width. The existing region renderer shares these bodies and their original
+child frames. Neither root includes the following frame-wait loop.
+
+393,216 original-ROM and native cases pass with no positive fallback: every
+accumulator word, both index widths, all direct-page words and the independent
+Negative flag are covered. Both native entries pass 2,304 unsupported-state
+guards together, and all 12 injected faults are caught. Both roots are selected
+as standalone replacements.
 
 ## Clearing tile IDs in object rectangles
 

@@ -2755,3 +2755,19 @@ source = "src/field/field_object_tiles.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:9000"
+name = "Lufia2FieldPixelCellCeiling"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:9004"
+name = "Lufia2FieldPixelCellFloor"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

@@ -244,6 +244,13 @@ Lufia2ExecutionResult Lufia2FieldObjectAttributeCell(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 
+/* Region coordinates; M0/either X width, negative flag selects direct page. */
+Lufia2ExecutionResult Lufia2FieldPixelCellFloor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldPixelCellCeiling(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* Object attributes, saved tiles, redraw requests and tile-bit copying. */
 Lufia2ExecutionResult Lufia2FieldClearObjectTileIds(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);

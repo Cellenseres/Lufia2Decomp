@@ -810,6 +810,26 @@ void Lufia2FieldRedrawLayers(
     SimulateRtlFrame(memory, cpu);
 }
 
+Lufia2ExecutionResult Lufia2FieldPixelCellFloor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    /* BPL observes the entry flag, which need not match the accumulator. */
+    if (cpu->negative)
+        TransferDirectToA(cpu);
+    OpLsrA(cpu);
+    OpLsrA(cpu);
+    OpLsrA(cpu);
+    OpLsrA(cpu);
+    return ExecutionReturned(0x83900bu);
+}
+
+Lufia2ExecutionResult Lufia2FieldPixelCellCeiling(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    cpu->carry = 0;
+    OpAdcValue(cpu, 0x000fu);
+    return Lufia2FieldPixelCellFloor(memory, cpu);
+}
+
 /* $83:9000 (rounding up) / $83:9004: A / 16, negative as D. */
 static void RegionCell(
     const Lufia2Memory *memory,
@@ -817,16 +837,10 @@ static void RegionCell(
     uint16_t return_address,
     uint8_t round_up) {
     SimulateJsrFrame(memory, cpu, return_address);
-    if (round_up) {
-        cpu->carry = 0;                                        /* 9000 */
-        Add16Value(cpu, 0x000fu);
-    }
-    if (cpu->negative)                                         /* 9004 */
-        TransferDirectToA(cpu);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    LsrA16(cpu);
+    if (round_up)
+        (void)Lufia2FieldPixelCellCeiling(memory, cpu);
+    else
+        (void)Lufia2FieldPixelCellFloor(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
