@@ -1131,15 +1131,12 @@ static unsigned EventOpClearD081(
 }
 
 /* $80:E722: start list entry Y/2 in a free slot. */
-static uint8_t EventStart(
+static uint8_t EventStartBody(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, EVENT_SCRIPT_BASE_BANK));        /* E722 */
     Compare8(cpu, A8(cpu), 0xffu);
     if (cpu->zero) {
-        SimulateRtlFrame(memory, cpu);
         return 1;
     }
     Write16Direct(memory, cpu, 0x5du, cpu->x);
@@ -1187,6 +1184,23 @@ static uint8_t EventStart(
         Write8(memory, LongIndexedAddress(0x7fd184u, cpu->x), A8(cpu));
     }
     SetAccumulatorWidth(cpu, 1);                               /* E78A */
+    return 2;
+}
+
+Lufia2ExecutionResult Lufia2FieldStartEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const uint8_t result = EventStartBody(memory, cpu);
+    if (!result)
+        return ExecutionHandoff(cpu, cpu->resume_pc);
+    return ExecutionReturned(result == 1u ? 0x80e72au : 0x80e78cu);
+}
+
+static uint8_t EventStart(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    if (!EventStartBody(memory, cpu))
+        return 0;
     SimulateRtlFrame(memory, cpu);
     return 1;
 }

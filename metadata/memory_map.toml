@@ -665,3 +665,86 @@ width = 2
 count = 1
 owner = "field"
 notes = "$80:F734 selects this bank-$7F four-word metatile catalog for layers 2 and 3."
+
+[[location]]
+address = "7E:05AC"
+name = "field_map_id"
+width = 2
+count = 1
+owner = "field"
+notes = "Map identifier used by $83:B5D3 and $80:E844 to select ROM tables."
+
+[[location]]
+address = "7F:D194"
+name = "field_event_base"
+aliases = ["EVENT_SCRIPT_BASE"]
+width = 2
+count = 1
+owner = "field"
+notes = "$80:E844 publishes the map event-script base; $80:E78D adds list offsets."
+
+[[location]]
+address = "7F:D196"
+name = "field_event_base_bank"
+aliases = ["EVENT_SCRIPT_BASE_BANK"]
+width = 1
+count = 1
+owner = "field"
+notes = "$80:E844 publishes the event base bank; FF means no event script."
+
+[[location]]
+address = "7F:D2A6"
+name = "field_map_record_byte7"
+width = 1
+count = 224
+owner = "field"
+notes = "$83:B635 publishes byte 7 of each ten-byte header record, indexed by its ID."
+
+[[location]]
+address = "7F:D386"
+name = "field_map_record_byte8"
+width = 1
+count = 224
+owner = "field"
+notes = "$83:B635 publishes byte 8 of each ten-byte header record, indexed by its ID."
+
+[[location]]
+address = "7F:D466"
+name = "field_event_call_records"
+aliases = ["EVENT_CALL_FRAMES"]
+width = 4
+count = 32
+owner = "field"
+notes = "$80:E844 clears 32 four-byte event call records before map event startup."
+
+[[location]]
+address = "7F:E6A5"
+name = "cave_map_header_pointer"
+width = 2
+count = 1
+owner = "field"
+notes = "$83:B5D3 selects this header source when 05B6 bit 0 is set."
+
+[[location]]
+address = "7F:E6A7"
+name = "cave_map_header_bank"
+width = 1
+count = 1
+owner = "field"
+notes = "Bank paired with E6A5 for the RAM MVN source and direct-long header read."
+
+[[location]]
+address = "7F:E731"
+name = "cave_header_room_point_count"
+width = 1
+count = 1
+owner = "field"
+notes = "$8E:B847 bounds the room-point records read from E6B1 and E6D1."
+
+[[location]]
+address = "7F:E734"
+name = "cave_header_object_count"
+width = 1
+count = 1
+owner = "field"
+notes = "$8E:B847 bounds generated four-byte object records at F800."

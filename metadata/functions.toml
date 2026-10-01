@@ -2339,3 +2339,43 @@ source = "src/field/field_scroll.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+[[function]]
+address = "83:B5D3"
+name = "Lufia2FieldLoadMapHeader"
+source = "src/field/field_map_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:E844"
+name = "Lufia2FieldInitializeMapEvents"
+source = "src/field/field_map_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:E722"
+name = "Lufia2FieldStartEvent"
+source = "src/field/field_event_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B847"
+name = "Lufia2CaveBuildMapHeader"
+source = "src/cave/cave_header.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9B44"
+name = "Lufia2CaveRoomHeaderCoordinates"
+source = "src/cave/cave_header.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

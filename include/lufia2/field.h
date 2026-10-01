@@ -138,6 +138,19 @@ Lufia2ExecutionResult Lufia2FieldActorSpritesWithVisibility(
     Lufia2CpuState *cpu,
     const Lufia2FieldActorVisibility *visibility);
 
+/* $83:B5D3: map header copy, object attributes and startup events. */
+Lufia2ExecutionResult Lufia2FieldLoadMapHeader(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* $80:E722: queue the event list entry Y/2, using slot zero if full. */
+Lufia2ExecutionResult Lufia2FieldStartEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $80:E844: clear event work records and select the map event script. */
+Lufia2ExecutionResult Lufia2FieldInitializeMapEvents(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $80:ED9C map cell attributes of map A; M=1. */
 Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     const Lufia2Memory *memory,
