@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-303 functions in `metadata/functions.toml`: 303 verified, 0 draft, 0 identified, 0 disabled.
+306 functions in `metadata/functions.toml`: 306 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -183,6 +183,14 @@ all 34 child unwind sites pass. Production bridges pass 90,173 native calls,
 deliberate fault variants are detected. The record loader retains the child’s
 returned X; rebuild preserves the original caller-X lookup; claim retains the
 indexed map-tile read and its conditional saved data bank.
+
+Three object lookup dependencies are independently verified: header-record
+search, pending-object search and the attribute-cell multiplier. Their 24,576
+ROM cases cover both search exits, wrapped record pointers and carry-sensitive
+strides. Ten malformed header cycles yield at the original loop PC after
+65,536 records with the saved data bank intact. All 24,586 production native
+calls and 2,304 unsupported-state checks pass; all 13 fault variants are caught.
+The multiplier keeps its original register writes and result read.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
