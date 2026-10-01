@@ -1203,3 +1203,11 @@ width = 2
 count = 1024
 owner = "field"
 notes = "Layer 2 32x32 tilemap ring. ROM 83:8FF0 table selects its bank-7E base; 83:8E85 writes metatile quadrants and wraps rows with 07FF."
+
+[[location]]
+address = "7F:D095"
+name = "field_object_state_bits"
+width = 1
+count = 1
+owner = "field"
+notes = "83:8AC9/8AD5/8AE5 test, set and clear indexed object bits using 83:8AF7 and the ROM80:BE45 mask table. Base only; no extent inferred across D0A2 fields."

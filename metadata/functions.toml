@@ -2779,3 +2779,35 @@ source = "src/field/field_scroll.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:8AF7"
+name = "Lufia2FieldObjectBitIndex"
+source = "src/field/field_object_bits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8AC9"
+name = "Lufia2FieldObjectBitTest"
+source = "src/field/field_object_bits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8AD5"
+name = "Lufia2FieldObjectBitSet"
+source = "src/field/field_object_bits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8AE5"
+name = "Lufia2FieldObjectBitClear"
+source = "src/field/field_object_bits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

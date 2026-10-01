@@ -244,6 +244,19 @@ Lufia2ExecutionResult Lufia2FieldObjectAttributeCell(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 
+/* Object state bits; M1/X16, index and ROM mask retain the direct page. */
+Lufia2ExecutionResult Lufia2FieldObjectBitIndex(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldObjectBitTest(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldObjectBitSet(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldObjectBitClear(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* Clipped object-region rendering; M1/X16, explicit long-loop continuation. */
 Lufia2ExecutionResult Lufia2FieldRenderRegion(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);

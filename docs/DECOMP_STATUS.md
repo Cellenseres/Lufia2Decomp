@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-335 functions in `metadata/functions.toml`: 335 verified, 0 draft, 0 identified, 0 disabled.
+339 functions in `metadata/functions.toml`: 339 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **458 independent jobs**. The normal
-application build also passes. The consumer selects 333 of 335 verified
+The full Windows Release verifier passes **461 independent jobs**. The normal
+application build also passes. The consumer selects 337 of 339 verified
 functions; song-load and fade-out await the consumer MSU migration commit
 before binding. The generated CFG contains 1,456 nodes, and every prior native
 entry remains covered.
@@ -35,6 +35,23 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Object state bits
+
+`$83:8AF7` computes an object's byte index and ROM-backed mask; `$83:8AC9`,
+`$83:8AD5` and `$83:8AE5` test, set and clear the state bit. The reconstruction
+retains the hidden direct-page byte in the index, the original stack frames,
+and the different flag results of testing versus writing. If scratch overwrites
+a child's return frame, the parent follows its live return address through an
+exact interpreter continuation.
+
+532,480 original-ROM and native cases pass without a positive entry fallback.
+They cover every direct-page and accumulator word and 8,192 deliberate stack
+aliases. All data reads and writes are compared; 2,301 changed child returns
+and 6,144 unsupported native entries are proven. All 24 injected faults are
+caught, including duplicate reads in both semantic and native tests. The four
+roots are selected as standalone replacements. Event-adapter sharing remains
+a separate composed verification task.
 
 ## Clipped region rendering
 
