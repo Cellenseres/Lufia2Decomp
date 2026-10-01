@@ -2475,3 +2475,51 @@ source = "src/field/field_object_graphics.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:8B40"
+name = "Lufia2FieldLoadObjectRecord"
+source = "src/field/field_object_transitions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F5EA"
+name = "Lufia2FieldInitializeObjectActor"
+source = "src/field/field_object_transitions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F5B9"
+name = "Lufia2FieldRefreshObjectActor"
+source = "src/field/field_object_transitions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F7B1"
+name = "Lufia2FieldPlaceActorObject"
+source = "src/field/field_object_transitions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F795"
+name = "Lufia2FieldRebuildActorObject"
+source = "src/field/field_object_transitions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F620"
+name = "Lufia2FieldClaimPlacedObject"
+source = "src/field/field_object_transitions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
