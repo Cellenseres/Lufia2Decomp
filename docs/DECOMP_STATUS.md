@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-331 functions in `metadata/functions.toml`: 331 verified, 0 draft, 0 identified, 0 disabled.
+332 functions in `metadata/functions.toml`: 332 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **448 independent jobs**. The normal
-application build also passes. The consumer selects 329 of 331 verified
+The full Windows Release verifier passes **451 independent jobs**. The normal
+application build also passes. The consumer selects 330 of 332 verified
 functions; song-load and fade-out await the consumer MSU migration commit
 before binding. The generated CFG contains 1,456 nodes, and every prior native
 entry remains covered.
@@ -35,6 +35,20 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Clearing tile IDs in object rectangles
+
+`$83:8A6F` clears the tile IDs in an object's rectangle while retaining cell
+attributes. It preserves the separate data-bank width read, live width reload
+on every row, wrapping word counters, and every original memory write. After
+262,144 cells it can hand control to the interpreter at `$83:8AAC`, with the
+exact original state, so long and self-modifying loops remain executable.
+
+8,224 complete ROM and native cases pass without a positive entry fallback.
+Cases include bank crossings, zero width and height, a rectangle overwriting
+its own size fields, and wrapped direct pages. The native guard passes 1,536
+unsupported entries; all 18 injected faults are detected. The root is selected
+as a standalone replacement. Event-script sharing remains a separate task.
 
 ## Pending object registration and tile replacement
 
