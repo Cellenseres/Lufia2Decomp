@@ -2611,3 +2611,59 @@ source = "src/field/field_map_install.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:9099"
+name = "Lufia2LoadGameFile"
+source = "src/system/save.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:90C9"
+name = "Lufia2SaveGameFile"
+source = "src/system/save.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:914B"
+name = "Lufia2ReadGameFile"
+source = "src/system/save.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9184"
+name = "Lufia2WriteGameFile"
+source = "src/system/save.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:90FC"
+name = "Lufia2SaveFileChecksum"
+source = "src/system/save.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:91D3"
+name = "Lufia2ResolveSaveFileAddress"
+source = "src/system/save.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:82E7"
+name = "Lufia2SeedRandom"
+source = "src/system/random.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
