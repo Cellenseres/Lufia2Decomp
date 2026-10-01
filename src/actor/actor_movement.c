@@ -307,11 +307,11 @@ void Lufia2ActorMoveFinePosition(
 
 
 
-void Lufia2MapCellOffset(
+Lufia2ExecutionResult Lufia2MapCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Write8(memory, SNES_WRMPYA, A8(cpu));                      /* $83:F9F7 */
-    LoadA8(cpu, Read8(memory, 0x0005b9u));              /* $83:F9FB */
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_SECTION_WIDTH));       /* F9FB */
     Write8(memory, SNES_WRMPYB, A8(cpu));                      /* $83:F9FF */
     LoadA8(cpu, 0x00u);                                 /* $83:FA03 */
     ExchangeAccumulatorBytes(cpu);                      /* $83:FA05 */
@@ -321,6 +321,7 @@ void Lufia2MapCellOffset(
     AslA16(cpu);                                        /* $83:FA0D */
     TransferAToX(cpu);                                  /* $83:FA0E */
     SetAccumulatorWidth(cpu, 1);                        /* $83:FA0F */
+    return ExecutionReturned(0x83fa11u);
 }
 
 uint32_t Lufia2ActorMovementStep(
@@ -368,28 +369,34 @@ uint32_t Lufia2ActorMovementStep(
     }
 }
 
-void Lufia2ActorResolveMapCellOffset(
+Lufia2ExecutionResult Lufia2LayerCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X))); /* F9D4 */
-    ExchangeAccumulatorBytes(cpu);                             /* F9D6 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y))); /* F9D7 */
-
     SimulateJsrFrame(memory, cpu, 0xf9dbu);                    /* F9D9 */
-    Lufia2MapCellOffset(memory, cpu);             /* F9F7 */
+    (void)Lufia2MapCellOffset(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 
     SetAccumulatorWidth(cpu, 0);                               /* F9DC */
     PushIndex(memory, cpu);                                    /* F9DE */
-    LoadA16(cpu, Read16Long(memory, 0x0005aau));               /* F9DF */
+    LoadA16(cpu, Read16Long(memory, WRAM_FIELD_LAYER_TABLE_OFFSET));
     TransferAToX(cpu);                                         /* F9E3 */
     PullAccumulator16(memory, cpu);                            /* F9E4 */
     cpu->carry = 0;                                            /* F9E5 */
     Add16Value(
         cpu, Read16Long(
-            memory, LongIndexedAddress(0x7fd008u, cpu->x)));   /* F9E6 */
+            memory, LongIndexedAddress(WRAM_FIELD_LAYER_CELL_BASE, cpu->x)));
     TransferAToX(cpu);                                         /* F9EA */
     SetAccumulatorWidth(cpu, 1);                               /* F9EB */
+    return ExecutionReturned(0x83f9edu);
+}
+
+void Lufia2ActorResolveMapCellOffset(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X))); /* F9D4 */
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
+    (void)Lufia2LayerCellOffset(memory, cpu);
 }
 
 void Lufia2ActorReadMapCellValue(
