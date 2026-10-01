@@ -199,6 +199,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |
 | `$83:8682` | `Lufia2FieldAnimationTicks` | verified | `src/field/field_update.c` |
 | `$83:8B40` | `Lufia2FieldLoadObjectRecord` | verified | `src/field/field_object_transitions.c` |
+| `$83:8B6A` | `Lufia2FieldCopyObjectTiles` | verified | `src/field/field_object_copy.c` |
 | `$83:8E66` | `Lufia2FieldRedrawAllLayers` | verified | `src/field/field_scroll.c` |
 | `$83:9B44` | `Lufia2CaveRoomHeaderCoordinates` | verified | `src/cave/cave_header.c` |
 | `$83:9E31` | `Lufia2AncientCaveGenerateFloor` | verified | `src/cave/ancient_cave.c` |
@@ -233,13 +234,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:F6B0` | `Lufia2ActorResetObjectOffsets` | verified | `src/field/field_object_graphics.c` |
 | `$83:F6CA` | `Lufia2FieldSetupObjectActorSprite` | verified | `src/field/field_object_graphics.c` |
 | `$83:F731` | `Lufia2FieldCopyObjectPalette` | verified | `src/field/field_object_graphics.c` |
+| `$83:F747` | `Lufia2FieldRestoreObjectTiles` | verified | `src/field/field_object_tiles.c` |
 | `$83:F784` | `Lufia2FieldSetMapTileNumber` | verified | `src/field/field_object_graphics.c` |
 | `$83:F795` | `Lufia2FieldRebuildActorObject` | verified | `src/field/field_object_transitions.c` |
 | `$83:F7B1` | `Lufia2FieldPlaceActorObject` | verified | `src/field/field_object_transitions.c` |
 | `$83:F7D4` | `Lufia2FieldReleaseClaimedActors` | verified | `src/field/field_object_graphics.c` |
 | `$83:F7DF` | `Lufia2FieldStartObjectEvent` | verified | `src/field/field_object_graphics.c` |
 | `$83:F7F8` | `Lufia2FieldPrepareObjectOrigin` | verified | `src/field/field_object_graphics.c` |
+| `$83:F80D` | `Lufia2FieldMarkObjectAttributes` | verified | `src/field/field_object_tiles.c` |
 | `$83:F85A` | `Lufia2FieldPendingTileOffsets` | verified | `src/field/field_object_graphics.c` |
+| `$83:F933` | `Lufia2FieldQueueObjectRedraw` | verified | `src/field/field_object_tiles.c` |
 | `$83:F9AD` | `Lufia2FieldObjectAttributeCell` | verified | `src/field/field_object_lookup.c` |
 | `$83:F9D4` | `Lufia2ActorResolveMapCellOffset` | verified | `src/actor/actor_movement.c` |
 | `$83:FA3F` | `Lufia2ActorMarkMapOccupancy` | verified | `src/actor/actor_movement.c` |

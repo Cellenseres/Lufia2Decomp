@@ -226,6 +226,23 @@ Lufia2ExecutionResult Lufia2FieldFindPendingObject(
 Lufia2ExecutionResult Lufia2FieldObjectAttributeCell(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+
+/* Object attributes, saved tiles, redraw requests and tile-bit copying. */
+Lufia2ExecutionResult Lufia2FieldMarkObjectAttributes(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldRestoreObjectTiles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldQueueObjectRedraw(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldCopyObjectTiles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $80:ED9C map cell attributes of map A; M=1. */
 Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     const Lufia2Memory *memory,
