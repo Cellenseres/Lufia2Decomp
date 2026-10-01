@@ -260,6 +260,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:F7F8` | `Lufia2FieldPrepareObjectOrigin` | verified | `src/field/field_object_graphics.c` |
 | `$83:F80D` | `Lufia2FieldMarkObjectAttributes` | verified | `src/field/field_object_tiles.c` |
 | `$83:F85A` | `Lufia2FieldPendingTileOffsets` | verified | `src/field/field_object_graphics.c` |
+| `$83:F86B` | `Lufia2FieldPlacePendingObject` | verified | `src/field/field_object_tiles.c` |
 | `$83:F91F` | `Lufia2FieldCopyCellTile` | verified | `src/field/field_object_tiles.c` |
 | `$83:F933` | `Lufia2FieldQueueObjectRedraw` | verified | `src/field/field_object_tiles.c` |
 | `$83:F9AD` | `Lufia2FieldObjectAttributeCell` | verified | `src/field/field_object_lookup.c` |
