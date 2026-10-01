@@ -56,6 +56,10 @@ typedef uint8_t (*Lufia2PushedChildCall)(
     uint32_t site,
     uint8_t frame_size);
 
+/* Optional consumer checkpoint; absent callbacks preserve ROM behavior. */
+typedef void (*Lufia2ExecutionCheckpoint)(
+    void *context, Lufia2CpuState *cpu, uint32_t pc);
+
 typedef struct Lufia2ExecutionResult {
     Lufia2ExecutionFlow flow;
     uint32_t pc;

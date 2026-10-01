@@ -9,6 +9,12 @@
 extern "C" {
 #endif
 
+/* $82:A318 status/equipment text selector; M1X0. */
+Lufia2ExecutionResult Lufia2MenuDrawStatus(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
+    void *context);
+
 /* $82:939C menu NMI; redraws stay LLE. */
 Lufia2ExecutionResult Lufia2MenuNmi(
     const Lufia2Memory *memory,
@@ -33,6 +39,11 @@ Lufia2ExecutionResult Lufia2MenuCursorBlink(
 Lufia2ExecutionResult Lufia2MenuDrawString(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
+
+/* Optional number checkpoints before PHY at $80:8922, including nested strings. */
+Lufia2ExecutionResult Lufia2MenuDrawStringWithCheckpoint(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionCheckpoint checkpoint, void *context);
 
 /* $82:810E window frame at A, X = width, height; M0X0. */
 Lufia2ExecutionResult Lufia2MenuDrawWindow(

@@ -11,6 +11,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:82C7` | `Lufia2RandomByte` | verified | `src/system/random.c` |
 | `$80:834C` | `Lufia2Multiply16By8` | verified | `src/system/multiply_16_by_8.c` |
 | `$80:8378` | `Lufia2Divide16` | verified | `src/system/math.c` |
+| `$80:8638` | `Lufia2MainNmi` | verified | `src/system/nmi.c` |
 | `$80:86C1` | `Lufia2ScreenFade` | verified | `src/system/screen.c` |
 | `$80:8878` | `Lufia2MenuDrawString` | verified | `src/menu/menu_string.c` |
 | `$80:8E9D` | `Lufia2DecompressResource` | verified | `src/system/decompress.c` |
@@ -166,6 +167,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9CB2` | `Lufia2MenuWarpList` | verified | `src/menu/menu_screen.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
 | `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
+| `$82:A318` | `Lufia2MenuDrawStatus` | verified | `src/menu/menu_status.c` |
 | `$82:A918` | `Lufia2MenuListCursor` | verified | `src/menu/menu_screen.c` |
 | `$82:ACDB` | `Lufia2MenuListRow` | verified | `src/menu/menu_screen.c` |
 | `$82:B2C5` | `Lufia2MenuEquipUpgrade` | verified | `src/menu/menu_screen.c` |

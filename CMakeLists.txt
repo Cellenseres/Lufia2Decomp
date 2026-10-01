@@ -114,6 +114,7 @@ add_library(lufia2_decomp STATIC
     src/item/inventory_receive.c
     src/item/item_records.c
     src/menu/menu.c
+    src/menu/menu_status.c
     src/menu/menu_screen.c
     src/menu/menu_sprites.c
     src/menu/menu_string.c
@@ -128,6 +129,7 @@ add_library(lufia2_decomp STATIC
     src/system/math.c
     src/system/multiply_16_by_8.c
     src/system/random.c
+    src/system/nmi.c
     src/system/screen.c
     src/system/sound.c
     src/text/text_engine.c

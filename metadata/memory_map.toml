@@ -940,3 +940,51 @@ width = 2
 count = 16
 owner = "field"
 notes = "Queued vertical upload counts; 83:A1A2 repeats 128-byte transfers, advancing the source by 128 and VRAM by 64."
+
+[[location]]
+address = "7E:0A7A"
+name = "menu_party_member_count"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:A318 compares this byte against the party scan index; zero wraps through all 256 byte indices."
+
+[[location]]
+address = "7E:0A80"
+name = "menu_party_character_offset"
+width = 2
+count = 4
+owner = "menu"
+notes = "82:A318 indexes these character-record offsets by twice the party slot and publishes the selected word in DP2A."
+
+[[location]]
+address = "7E:0B4D"
+name = "play_time_hours"
+width = 1
+count = 1
+owner = "system"
+notes = "Byte hour counter incremented without saturation by80:8638; saved hour byte; cave time add saturates atFF."
+
+[[location]]
+address = "7E:0B4E"
+name = "play_time_minutes"
+width = 1
+count = 1
+owner = "system"
+notes = "Main NMI minute counter cascades into hours at60."
+
+[[location]]
+address = "7E:0B4F"
+name = "play_time_seconds"
+width = 1
+count = 1
+owner = "system"
+notes = "Main NMI second counter cascades into minutes at60."
+
+[[location]]
+address = "7E:0B50"
+name = "play_time_frames"
+width = 1
+count = 1
+owner = "system"
+notes = "Main NMI frame counter cascades at60; bit7 skips the entire play-time tick."
