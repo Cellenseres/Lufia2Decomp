@@ -1,6 +1,7 @@
 /* Object attributes, saved tiles and redraw queue requests. */
 
 #include "core/cpu_ops.h"
+#include "lufia2/actor.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
 
@@ -174,6 +175,69 @@ Lufia2ExecutionResult Lufia2FieldCopyCellTile(
     OpOra(memory, cpu, OpDp(cpu, CELL_TILE));
     OpSta(memory, cpu, OpAbsY(cpu, 0u));
     return ExecutionReturned(0x83f932u);
+}
+
+Lufia2ExecutionResult Lufia2FieldClearObjectTileIds(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    enum {
+        OBJECT_LAYER_INDEX = 0x54,
+        OBJECT_ROW_SKIP = 0x54,
+        OBJECT_COLUMNS_REMAINING = 0x56,
+        OBJECT_ROWS_REMAINING = 0x58,
+    };
+    unsigned cells_cleared = 0;
+
+    OpSta(memory, cpu, OpDp(cpu, OBJECT_LAYER_INDEX));
+    OpStz(memory, cpu, OpDp(cpu, OBJECT_LAYER_INDEX + 1u));
+    OpLda(memory, cpu, WRAM_FIELD_PENDING_OBJECT_X);
+    ExchangeAccumulatorBytes(cpu);
+    OpLda(memory, cpu, WRAM_FIELD_PENDING_OBJECT_Y);
+    SimulateJsrFrame(memory, cpu, 0x8a7eu);
+    (void)Lufia2MapCellOffset(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    OpRepWidths(cpu, 0x20u);
+    OpTxa(cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, OBJECT_LAYER_INDEX)));
+    cpu->carry = 0;
+    OpAdc(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_CELL_BASE));
+    OpTax(cpu);
+
+    /* The row skip reads the caller's data bank, unlike the cell multiplier. */
+    OpSepWidths(cpu, 0x20u);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_SECTION_WIDTH & 0xffffu));
+    cpu->carry = 1;
+    OpSbcValue(cpu, OpReadM(memory, cpu, WRAM_FIELD_OBJECT_WIDTH));
+    OpRepWidths(cpu, 0x20u);
+    OpAslA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, OBJECT_ROW_SKIP));
+    OpLda(memory, cpu, WRAM_FIELD_OBJECT_HEIGHT);
+    OpAndValue(cpu, 0xffu);
+    OpSta(memory, cpu, OpDp(cpu, OBJECT_ROWS_REMAINING));
+    do {
+        OpLda(memory, cpu, WRAM_FIELD_OBJECT_WIDTH);
+        OpAndValue(cpu, 0xffu);
+        OpSta(memory, cpu, OpDp(cpu, OBJECT_COLUMNS_REMAINING));
+        do {
+            /* Leave long or self-modifying rectangles at the original loop PC. */
+            if (cells_cleared == 262144u)
+                return ExecutionHandoff(cpu, 0x838aacu);
+            ++cells_cleared;
+            OpLda(memory, cpu, OpLongX(cpu, 0x7f0000u));
+            OpAndValue(cpu, 0xfc00u);
+            OpSta(memory, cpu, OpLongX(cpu, 0x7f0000u));
+            OpInx(cpu);
+            OpInx(cpu);
+            OpStepMem(memory, cpu, OpDp(cpu, OBJECT_COLUMNS_REMAINING), -1);
+        } while (!cpu->zero);
+        OpTxa(cpu);
+        cpu->carry = 0;
+        OpAdc(memory, cpu, OpDp(cpu, OBJECT_ROW_SKIP));
+        OpTax(cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, OBJECT_ROWS_REMAINING), -1);
+    } while (!cpu->zero);
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x838ac8u);
 }
 
 Lufia2ExecutionResult Lufia2FieldPlacePendingObject(
