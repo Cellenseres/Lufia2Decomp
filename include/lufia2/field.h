@@ -105,6 +105,22 @@ Lufia2ExecutionResult Lufia2FieldScrollUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:F4FD/F518/F589/F5A2: queue the newly exposed map edge. */
+Lufia2ExecutionResult Lufia2FieldStreamRightColumn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldStreamLeftColumn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldStreamTopRow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldStreamBottomRow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $80:F47A / $83:8E66: rebuild one layer or all four layers; M=1. */
+Lufia2ExecutionResult Lufia2FieldRedrawLayer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldRedrawAllLayers(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $83:A21A field OAM from the Y-sorted visible actors. */
 Lufia2ExecutionResult Lufia2FieldActorSprites(
     const Lufia2Memory *memory,

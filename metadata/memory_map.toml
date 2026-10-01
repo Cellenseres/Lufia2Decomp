@@ -609,3 +609,59 @@ name = "battle_party_slot"
 width = 2
 owner = "battle"
 notes = "$85:9275 and $81:C739 stage the current party-slot index with a bank-zero word store."
+
+[[location]]
+address = "7E:121E"
+name = "field_layer_scroll_x"
+width = 2
+count = 4
+owner = "field"
+notes = "$8E:BD77 and $80:F47A keep four pixel scroll coordinates, indexed by layer*2."
+
+[[location]]
+address = "7E:1226"
+name = "field_layer_scroll_y"
+width = 2
+count = 4
+owner = "field"
+notes = "$8E:BD77 and $80:F47A keep four pixel scroll coordinates, indexed by layer*2."
+
+[[location]]
+address = "7F:D008"
+name = "field_layer_cell_base"
+width = 2
+count = 4
+owner = "field"
+notes = "$80:F734 adds this bank-$7F cell-data offset after wrapped row/column indexing."
+
+[[location]]
+address = "7F:D010"
+name = "field_layer_width"
+width = 2
+count = 4
+owner = "field"
+notes = "$80:F734 wraps cell X by this word; hardware division consumes its low byte."
+
+[[location]]
+address = "7F:D018"
+name = "field_layer_height"
+width = 2
+count = 4
+owner = "field"
+notes = "$80:F734 wraps cell Y by this word; hardware division consumes its low byte."
+
+[[location]]
+address = "7F:D03C"
+name = "field_metatile_base"
+width = 2
+count = 1
+owner = "field"
+notes = "$80:F734 selects this bank-$7F four-word metatile catalog for layers 0 and 1."
+
+[[location]]
+address = "7F:D040"
+name = "field_alternate_metatile_base"
+width = 2
+count = 1
+owner = "field"
+notes = "$80:F734 selects this bank-$7F four-word metatile catalog for layers 2 and 3."
