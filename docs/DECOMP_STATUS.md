@@ -17,14 +17,14 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-271 functions in `metadata/functions.toml`: 271 verified, 0 draft, 0 identified, 0 disabled.
+274 functions in `metadata/functions.toml`: 274 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **350 independent jobs**. The normal
+The full Windows Release verifier passes **352 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -63,6 +63,7 @@ run history are recorded in the consumer's worklog.
 | Word TSB/TRB write order | 34,816 | pass |
 | Sprite builder and record append | 16,395 | pass |
 | Action working records | 32,774 | pass |
+| Action script callers and active-mask write order | 12,294 + 8,192 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
@@ -76,7 +77,8 @@ and shared messages include aligned and shifted glyphs. Frame and pause handling
 keep the original polling loops. Resource loading preserves the decompressor's
 byte-write order. Sprite building preserves group packing, byte-counter wrap
 and the original overlay loops. Action records retain their descending copies,
-register saves and zero-mask shifts. Remaining effect children stay explicit.
+register saves and zero-mask shifts. Configured, battler and item script callers
+retain their default scripts; the script VM remains an explicit child.
 
 The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary
 arithmetic. Other states use the original interpreter. Their tests cover stack

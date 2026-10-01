@@ -31,6 +31,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:886F` | `Lufia2BattleMainLoop` | verified | `src/battle/battle_loop.c` |
 | `$81:890A` | `Lufia2BattleExecuteTurns` | verified | `src/battle/battle_actions.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |
+| `$81:B1A3` | `Lufia2BattleRunConfiguredScript` | verified | `src/battle/battle_action_script.c` |
+| `$81:B1C9` | `Lufia2BattleRunBattlerScript` | verified | `src/battle/battle_action_script.c` |
+| `$81:B1F7` | `Lufia2BattleRunItemScript` | verified | `src/battle/battle_action_script.c` |
 | `$81:B264` | `Lufia2BattleActiveMask` | verified | `src/battle/battle_util.c` |
 | `$81:B2B5` | `Lufia2BattleTargetRecord` | verified | `src/battle/battle_util.c` |
 | `$81:B2DB` | `Lufia2BattleTargetSlot` | verified | `src/battle/battle_util.c` |

@@ -2265,3 +2265,27 @@ source = "src/battle/battle_action_work.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:B1A3"
+name = "Lufia2BattleRunConfiguredScript"
+source = "src/battle/battle_action_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B1C9"
+name = "Lufia2BattleRunBattlerScript"
+source = "src/battle/battle_action_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B1F7"
+name = "Lufia2BattleRunItemScript"
+source = "src/battle/battle_action_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

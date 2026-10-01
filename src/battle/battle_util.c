@@ -24,7 +24,9 @@ static void ActiveBits(const Lufia2Memory *memory, Lufia2CpuState *cpu,
             const uint16_t value = (uint16_t)((old << 1) | (active ? 1u : 0u));
 
             cpu->carry = (old & 0x8000u) != 0;
-            Write16Long(memory, at, value);
+            /* Original word ROL writes the high byte before the low byte. */
+            Write8(memory, (at + 1u) & 0x00ffffffu, (uint8_t)(value >> 8));
+            Write8(memory, at, (uint8_t)value);
             SetNz16(cpu, value);
         }
         LoadX16(cpu, (uint16_t)(cpu->x - 2u));
