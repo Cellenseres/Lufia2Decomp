@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-274 functions in `metadata/functions.toml`: 274 verified, 0 draft, 0 identified, 0 disabled.
+280 functions in `metadata/functions.toml`: 280 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **380 independent jobs**. The normal
-application build also passes. The consumer selects all 274 verified functions,
+The full Windows Release verifier passes **387 independent jobs**. The normal
+application build also passes. The consumer selects all 280 verified functions,
 including the command, results, rendering and action helpers. The generated CFG
 contains 1,409 nodes; every prior native entry remains covered.
 
@@ -136,6 +136,12 @@ world-map helpers and shared resource/menu/math routines are covered by the
 consumer's differential and bridge suites. The index is the source of truth for
 individual functions.
 
-Further battle work reconstructs the remaining child dependencies.
+Map edge streaming and full layer redraws now have six independently verified
+entries. Their 21,504 ROM cases compare CPU state, complete WRAM, hardware
+arithmetic and every ordered write. Five word decrements retain the original
+high-byte-first writes. Runtime bridges pass 49,152 native cases and 3,072
+unsupported-state checks; all 13 deliberate rendering faults were detected.
+
+Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
 model and [CAPTURE_RESEARCH.md](CAPTURE_RESEARCH.md) for scene evidence.

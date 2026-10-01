@@ -24,6 +24,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C784` | `Lufia2TextClearGlyphBuffer` | verified | `src/text/text_window.c` |
 | `$80:CBAE` | `Lufia2FieldEventTimerTick` | verified | `src/field/field_event_script.c` |
 | `$80:ED9C` | `Lufia2FieldBuildAttributes` | verified | `src/field/field_attributes.c` |
+| `$80:F47A` | `Lufia2FieldRedrawLayer` | verified | `src/field/field_scroll.c` |
+| `$80:F4FD` | `Lufia2FieldStreamRightColumn` | verified | `src/field/field_scroll.c` |
+| `$80:F518` | `Lufia2FieldStreamLeftColumn` | verified | `src/field/field_scroll.c` |
+| `$80:F589` | `Lufia2FieldStreamTopRow` | verified | `src/field/field_scroll.c` |
+| `$80:F5A2` | `Lufia2FieldStreamBottomRow` | verified | `src/field/field_scroll.c` |
 | `$81:8000` | `Lufia2BattleSetup` | verified | `src/battle/battle_setup.c` |
 | `$81:851E` | `Lufia2BattleDisplaySetup` | verified | `src/battle/battle_display_setup.c` |
 | `$81:876B` | `Lufia2BattleExit` | verified | `src/battle/battle_exit.c` |
@@ -190,6 +195,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:85DC` | `Lufia2FieldReloadSetup` | verified | `src/field/field_update.c` |
 | `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |
 | `$83:8682` | `Lufia2FieldAnimationTicks` | verified | `src/field/field_update.c` |
+| `$83:8E66` | `Lufia2FieldRedrawAllLayers` | verified | `src/field/field_scroll.c` |
 | `$83:9E31` | `Lufia2AncientCaveGenerateFloor` | verified | `src/cave/ancient_cave.c` |
 | `$83:9FA9` | `Lufia2FieldNmiUploads` | verified | `src/field/field_nmi.c` |
 | `$83:A21A` | `Lufia2FieldActorSprites` | verified | `src/field/field_sprites.c` |

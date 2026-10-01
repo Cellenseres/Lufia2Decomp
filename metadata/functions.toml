@@ -343,7 +343,7 @@ entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
 
-# Field scroll targets; LLE at the tile-streaming JSLs.
+# Field camera targets and tile streaming.
 [[function]]
 address = "8E:BD77"
 name = "Lufia2FieldScrollUpdate"
@@ -2288,4 +2288,54 @@ name = "Lufia2BattleRunItemScript"
 source = "src/battle/battle_action_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+
+# Entries record field caller widths; streamers preserve all native widths.
+address = "80:F4FD"
+name = "Lufia2FieldStreamRightColumn"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "80:F518"
+name = "Lufia2FieldStreamLeftColumn"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "80:F589"
+name = "Lufia2FieldStreamTopRow"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "80:F5A2"
+name = "Lufia2FieldStreamBottomRow"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "80:F47A"
+name = "Lufia2FieldRedrawLayer"
+source = "src/field/field_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8E66"
+name = "Lufia2FieldRedrawAllLayers"
+source = "src/field/field_scroll.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
 status = "verified"
