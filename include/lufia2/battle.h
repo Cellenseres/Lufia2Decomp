@@ -679,6 +679,43 @@ Lufia2ExecutionResult Lufia2BattleBuildSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* $85:CCCE/$CCE3 clear the 132-byte action/saved work bodies; $CCF8 clears
+ * 330 bytes of action records. All entry M/X widths and A/X/P are restored.
+ * DP zero supplies the zero fill; other DP values retain the original TDC fill.
+ */
+Lufia2ExecutionResult Lufia2BattleClearActionWork(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleClearSavedActionWork(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleClearActionRecords(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $85:CD8C/$CD9B copy the complete 136-byte action work record, including
+ * its header, in descending order. M1X0, PB $85; DB and DP are preserved.
+ */
+Lufia2ExecutionResult Lufia2BattleSaveActionWork(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleRestoreActionWork(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $85:CDFA selects a bank-$7F record from A.low's first set bit and bit7.
+ * M1X0, PB $85, native binary mode, DB mapping low WRAM. A zero mask keeps
+ * shifting the original $09FB byte until the bus supplies a set bit.
+ */
+Lufia2ExecutionResult Lufia2BattleActionRecordPointer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $85:CDAA/$CDD0 load twelve record bytes through DP long pointers $B5/$B8.
+ * All entry M/X widths and A/X/Y/P/DB are restored; native binary mode,
+ * PB $85. Child frames remain explicit. $CDD0 clears action work first.
+ */
+Lufia2ExecutionResult Lufia2BattleLoadTurnRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+Lufia2ExecutionResult Lufia2BattleLoadActionRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 #ifdef __cplusplus
 }
 #endif

@@ -2201,3 +2201,67 @@ source = "src/battle/battle_sprite_build.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:CCCE"
+name = "Lufia2BattleClearActionWork"
+source = "src/battle/battle_action_work.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CCE3"
+name = "Lufia2BattleClearSavedActionWork"
+source = "src/battle/battle_action_work.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CCF8"
+name = "Lufia2BattleClearActionRecords"
+source = "src/battle/battle_action_work.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CD8C"
+name = "Lufia2BattleSaveActionWork"
+source = "src/battle/battle_action_work.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CD9B"
+name = "Lufia2BattleRestoreActionWork"
+source = "src/battle/battle_action_work.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CDFA"
+name = "Lufia2BattleActionRecordPointer"
+source = "src/battle/battle_action_work.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CDAA"
+name = "Lufia2BattleLoadTurnRecord"
+source = "src/battle/battle_action_work.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CDD0"
+name = "Lufia2BattleLoadActionRecord"
+source = "src/battle/battle_action_work.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

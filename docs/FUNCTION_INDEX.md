@@ -248,6 +248,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:AB5B` | `Lufia2BattleQueueMessageCleanup` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB78` | `Lufia2BattleStageTransfer` | verified | `src/battle/battle_loop_children.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
+| `$85:CCCE` | `Lufia2BattleClearActionWork` | verified | `src/battle/battle_action_work.c` |
+| `$85:CCE3` | `Lufia2BattleClearSavedActionWork` | verified | `src/battle/battle_action_work.c` |
+| `$85:CCF8` | `Lufia2BattleClearActionRecords` | verified | `src/battle/battle_action_work.c` |
+| `$85:CD8C` | `Lufia2BattleSaveActionWork` | verified | `src/battle/battle_action_work.c` |
+| `$85:CD9B` | `Lufia2BattleRestoreActionWork` | verified | `src/battle/battle_action_work.c` |
+| `$85:CDAA` | `Lufia2BattleLoadTurnRecord` | verified | `src/battle/battle_action_work.c` |
+| `$85:CDD0` | `Lufia2BattleLoadActionRecord` | verified | `src/battle/battle_action_work.c` |
+| `$85:CDFA` | `Lufia2BattleActionRecordPointer` | verified | `src/battle/battle_action_work.c` |
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
 | `$85:DCA3` | `Lufia2BattleMultiply` | verified | `src/battle/battle_script.c` |
 | `$85:DCEA` | `Lufia2BattleRandomFraction` | verified | `src/battle/battle_script.c` |

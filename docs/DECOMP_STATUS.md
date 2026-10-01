@@ -17,14 +17,14 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-263 functions in `metadata/functions.toml`: 263 verified, 0 draft, 0 identified, 0 disabled.
+271 functions in `metadata/functions.toml`: 271 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **349 independent jobs**. The normal
+The full Windows Release verifier passes **350 independent jobs**. The normal
 application build also passes. The consumer selects 188 functions, including
 the complete command-collection and turn-execution callers. The generated CFG
 contains 1,403 nodes; no previously eligible AOT function was lost.
@@ -46,35 +46,23 @@ submenus and target selection. It retains the original polling, scrolling,
 backtracking, invalid-target skipping and side changes. Target cancellation can
 remove a mark and continue; pair selection waits for exactly two party members.
 
-| Slice | ROM comparison cases | Result |
+Recent ROM comparison suites are summarized below. Earlier slices and exact
+run history are recorded in the consumer's worklog.
+
+| Suite | Cases | Result |
 | --- | ---: | --- |
-| Main-loop children (BL6.1) | 8,576 | pass |
-| Turn/command control (BL6.2) | 5,120 + 128 control probes | pass |
-| Command collection (BL6.3) | 4,159 | pass |
-| Party action selection (BL6.4) | 4,151 + 128 stack-read probes | pass |
-| Action submenus (BL6.5) | 4,119 | pass |
-| Target selection (BL6.6) | 8,207 | pass |
-| Target/confirmation helpers (BL6.7) | 13,326 | pass |
-| Command/turn runtime bridges (BL6.8) | 15,615 ABI checks | pass |
-| Item/spell command lists (BL6.9) | 4,100 | pass |
-| Command display helpers (BL6.10) | 6,666 | pass |
-| Party names/window uploads (BL6.11) | 8,196 | pass |
-| Result windows (BL6.12) | 6,159 | pass |
-| Experience/gold/results (BL6.13) | 5,746 | pass |
-| Party growth/received loot (BL6.14-15) | 8,711 + 4,098 | pass |
-| Turn display (BL6.16) | 10,252 | pass |
-| Status support/math entries (BL6.17) | 22,528 | pass |
-| Status recovery/expiry (BL6.18) | 5,162 | pass |
-| Message display/state (BL6.19, expanded) | 17,415 | pass |
-| Hardware product/message length (BL6.20) | 12,288 | pass |
-| Status gauges/division bus order (BL6.21) | 24,576 | pass |
-| Message renderer/resource bus order (BL6.22) | 5,124 + 5,440 | pass |
-| Glyph renderer/font helpers (BL6.23) | 32,771 | pass |
-| Message setup/timer/cleanup (BL6.24) | 12,288 | pass |
-| Party status-icon animation (BL6.25) | 12,289 | pass |
-| Frame/input/pause handling (BL6.26, expanded) | 5,122 | pass |
-| Word TSB/TRB write order (BL6.27) | 34,816 | pass |
-| Sprite builder/record append (BL6.28) | 16,395 | pass |
+| Turn/command control, including composed records | 6,144 + 128 probes | pass |
+| Command/turn runtime bridges | 15,615 ABI checks | pass |
+| Results and growth | 5,746 + 8,711 | pass |
+| Status recovery and support | 5,162 + 22,528 | pass |
+| Turn display and gauges | 10,252 + 24,576 | pass |
+| Message display and glyph rendering | 17,415 + 32,771 | pass |
+| Resource decompressor write order | 5,440 | pass |
+| Message effects and status icons | 12,288 + 12,289 | pass |
+| Frame/input/pause handling | 5,122 | pass |
+| Word TSB/TRB write order | 34,816 | pass |
+| Sprite builder and record append | 16,395 | pass |
+| Action working records | 32,774 | pass |
 
 Target coordinates, all four cursor variants, command frame upkeep and the
 confirmation prompt are also reconstructed. They retain original coordinate
@@ -87,7 +75,8 @@ calibration BRK and inventory remainders. Status recovery, timed effects, gauges
 and shared messages include aligned and shifted glyphs. Frame and pause handling
 keep the original polling loops. Resource loading preserves the decompressor's
 byte-write order. Sprite building preserves group packing, byte-counter wrap
-and the original overlay loops. Remaining effect children stay explicit.
+and the original overlay loops. Action records retain their descending copies,
+register saves and zero-mask shifts. Remaining effect children stay explicit.
 
 The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary
 arithmetic. Other states use the original interpreter. Their tests cover stack
