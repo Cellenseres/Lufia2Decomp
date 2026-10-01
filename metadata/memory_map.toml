@@ -496,10 +496,10 @@ notes = "$85:8850 loads the timer threshold from $97:CA5E."
 
 [[location]]
 address = "7E:148F"
-name = "battle_icon_timer"
+name = "battle_icon_state"
 width = 2
 owner = "battle"
-notes = "$85:8850 stages the word timer; its high byte is also the cyclic icon index."
+notes = "$85:8850 temporary status-icon state: low-byte timer, high-byte cycle index; staged and incremented as a word."
 
 [[location]]
 address = "7E:1491"

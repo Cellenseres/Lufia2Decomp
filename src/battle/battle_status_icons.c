@@ -1,7 +1,7 @@
 #include "battle/battle_internal.h"
 
 static void BattleAdvanceStatusIcon(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_TIMER));
+    OpStz(memory, cpu, OpAbs(cpu, BATTLE_ICON_TIMER));
     OpLda(memory, cpu, OpAbs(cpu, BATTLE_ICON_CYCLE_INDEX));
     do {
         OpIncA(cpu);
@@ -32,7 +32,7 @@ static bool BattleUpdateStatusIconTimer(const Lufia2Memory *memory,
                                         Lufia2CpuState *cpu) {
     OpPushX(memory, cpu);
     OpLda(memory, cpu, OpAbsY(cpu, BATTLE_ICON_RECORD_TIMER));
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_TIMER));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_STATE));
     SetAccumulatorWidth(cpu, 1);
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpAbsY(cpu, BATTLE_ICON_RECORD_STATUS));
@@ -52,13 +52,13 @@ static bool BattleUpdateStatusIconTimer(const Lufia2Memory *memory,
     OpTax(cpu);
     OpLda(memory, cpu, OpLongX(cpu, 0x97ca5eu));
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_PERIOD));
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_TIMER));
+    OpLda(memory, cpu, OpAbs(cpu, BATTLE_ICON_TIMER));
     OpCmp(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_PERIOD));
     if (cpu->carry) {
         BattleAdvanceStatusIcon(memory, cpu);
     }
     SetAccumulatorWidth(cpu, 0);
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_TIMER));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_STATE));
     OpIncA(cpu);
     OpSta(memory, cpu, OpAbsY(cpu, BATTLE_ICON_RECORD_TIMER));
     OpPullX(memory, cpu);
@@ -107,7 +107,7 @@ Lufia2ExecutionResult Lufia2BattleAnimateStatusIcons(const Lufia2Memory *memory,
         OpInx(cpu);
         for (unsigned i = 0; i < 4u; ++i)
             OpIny(cpu);
-        OpCpy(cpu, BATTLE_PARTY_TARGET_COUNT * BATTLE_STATUS_ICON_RECORD_SIZE);
+        OpCpy(cpu, WRAM_BATTLE_STATUS_ICON_RECORDS_COUNT * BATTLE_STATUS_ICON_RECORD_SIZE);
         if (cpu->zero)
             break;
     }

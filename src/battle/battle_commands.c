@@ -43,7 +43,7 @@ static void BattleCollectPartyPriorityBounds(const Lufia2Memory *memory,
         OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS)));
         if (!cpu->zero) {
             OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-            OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND);
+            OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND_MASK);
             if (cpu->zero) {
                 OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_BASE_PRIORITY));
                 cpu->carry = false;
@@ -446,7 +446,7 @@ next_party_command:
     OpSta(memory, cpu, OpDp(cpu, 0xd5u));
     OpTay(cpu);
     OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
-    OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND);
+    OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND_MASK);
     OpSepWidths(cpu, 0x20u);
     if (!cpu->zero) {
         OpPullX(memory, cpu);
@@ -480,7 +480,7 @@ previous_party:
     OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS));
     OpTay(cpu);
     OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
-    OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND);
+    OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND_MASK);
     OpSepWidths(cpu, 0x20u);
     if (!cpu->zero)
         goto previous_party;
