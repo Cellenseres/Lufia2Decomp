@@ -181,13 +181,13 @@ Lufia2ExecutionResult Lufia2BattleQueueEnemyTurns(const Lufia2Memory *memory,
         OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_ENEMY_RECORDS)));
         if (!cpu->zero) {
             OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
-            OpBitValue(cpu, BATTLE_STATUS_NO_TURN);
+            OpBitValue(cpu, BATTLE_STATUS_NO_TURN_MASK);
             if (cpu->zero) {
                 OpPushX(memory, cpu);
                 PushY(memory, cpu);
                 BattleStageRandomizedTurnPriority(memory, cpu);
                 BattleRandomizePriority(memory, cpu, 0xc27du);
-                OpLoadA(cpu, BATTLE_TARGET_ENEMY_SIDE);
+                OpLoadA(cpu, BATTLE_ACTOR_ENEMY_SIDE);
                 OpOra(memory, cpu, OpDp(cpu, 0u));
                 OpSta(memory, cpu, OpDp(cpu, TURN_DP_ACTOR_OR_SPREAD));
                 BattleInsertTurnQueueEntry(memory, cpu, 0x81u, 0xc287u);
@@ -209,12 +209,12 @@ Lufia2ExecutionResult Lufia2BattleQueueCapsuleTurn(const Lufia2Memory *memory,
     OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CAPSULE_RECORD)));
     if (!cpu->zero) {
         OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
-        OpBitValue(cpu, BATTLE_STATUS_NO_TURN);
+        OpBitValue(cpu, BATTLE_STATUS_NO_TURN_MASK);
         if (cpu->zero) {
             PushY(memory, cpu);
             BattleStageRandomizedTurnPriority(memory, cpu);
             BattleRandomizePriority(memory, cpu, 0xc2b5u);
-            OpLoadA(cpu, BATTLE_TARGET_CAPSULE);
+            OpLoadA(cpu, BATTLE_ACTOR_CAPSULE);
             OpSta(memory, cpu, OpDp(cpu, TURN_DP_ACTOR_OR_SPREAD));
             BattleInsertTurnQueueEntry(memory, cpu, 0x81u, 0xc2bdu);
             OpPullY(memory, cpu);

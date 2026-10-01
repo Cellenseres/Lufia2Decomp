@@ -85,7 +85,7 @@ Lufia2ExecutionResult Lufia2BattlePrepareAction(const Lufia2Memory *memory,
         OpStz(memory, cpu, OpAbs(cpu, 0x1269u));
         OpStz(memory, cpu, OpAbs(cpu, 0x0a5bu));
         OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-        OpBitValue(cpu, BATTLE_STATUS_NO_TURN);
+        OpBitValue(cpu, BATTLE_STATUS_NO_TURN_MASK);
         if (!cpu->zero) {
             PullDataBank(memory, cpu);
             return ExecutionReturned(0x81a7e2u);
