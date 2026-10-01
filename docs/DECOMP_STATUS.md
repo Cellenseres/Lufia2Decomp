@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-334 functions in `metadata/functions.toml`: 334 verified, 0 draft, 0 identified, 0 disabled.
+335 functions in `metadata/functions.toml`: 335 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **454 independent jobs**. The normal
-application build also passes. The consumer selects 332 of 334 verified
+The full Windows Release verifier passes **458 independent jobs**. The normal
+application build also passes. The consumer selects 333 of 335 verified
 functions; song-load and fade-out await the consumer MSU migration commit
 before binding. The generated CFG contains 1,456 nodes, and every prior native
 entry remains covered.
@@ -35,6 +35,23 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Clipped region rendering
+
+`$83:8E85` clips an object rectangle against the layer viewport and writes
+each visible metatile as four tiles into the original tilemap ring. It retains
+the signed-byte clipping branches, source-cell attributes, carry between row
+additions, ring wrapping, child stack frames, and every word-decrement write.
+Long loops can resume in the interpreter at `$83:8F7F` after exactly 262,144
+cells, with the original CPU and memory state.
+
+8,736 original-ROM and native cases pass without a positive entry fallback.
+They cover four layers, bank crossings, all sixteen scroll pixel phases,
+signed-coordinate edges, and overwritten saved frames or counters. The native
+entry passes 1,536 unsupported-state guards; all 23 injected faults are caught.
+The existing event-call adapter separately passes 8,720 cases with complete
+outer call and return frames. The renderer is selected as a standalone
+replacement.
 
 ## Region coordinate conversion
 

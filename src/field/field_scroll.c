@@ -896,6 +896,237 @@ uint32_t Lufia2FieldRegionCells(
     return (uint32_t)(size & 0xffu) * (size >> 8);
 }
 
+enum {
+    REGION_VISIBLE_FIRST_X = 0x8f,
+    REGION_VISIBLE_FIRST_Y = 0x91,
+    REGION_VISIBLE_LAST_X = 0x95,
+    REGION_VISIBLE_LAST_Y = 0x96,
+    REGION_CLIPPED_FIRST_X = 0x9f,
+    REGION_CLIPPED_FIRST_Y = 0xa0,
+    REGION_CLIPPED_LAST_X = 0xa1,
+    REGION_TILEMAP_ORIGIN = 0x54,
+    REGION_LAYER_CELL_BASE = 0x56,
+    REGION_SIZE_DELTA = 0x54,
+    REGION_HEIGHT_DELTA = 0x55,
+    REGION_SOURCE_CELL = 0x54,
+    REGION_COLUMNS = 0x56,
+    REGION_COLUMNS_REMAINING = 0x58,
+    REGION_ROWS_REMAINING = 0x5a,
+    REGION_BOTTOM_ROW = 0x5d,
+    REGION_BOTTOM_ROW_BANK = 0x5f,
+    REGION_TOP_ROW = 0x60,
+    REGION_TOP_ROW_BANK = 0x62,
+    REGION_SOURCE_ROW_SKIP = 0x63,
+    REGION_TILEMAP_COLUMN = 0x65,
+};
+
+static uint8_t RegionClipAxis(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint8_t first, uint8_t last, uint8_t minimum, uint8_t maximum) {
+    OpLda(memory, cpu, OpDp(cpu, first));
+    OpCmp(memory, cpu, OpDp(cpu, minimum));
+    if (!cpu->negative) {
+        OpCmp(memory, cpu, OpDp(cpu, maximum));
+        if (!cpu->negative)
+            return 0;
+        OpSta(memory, cpu, OpDp(cpu, minimum));
+    } else {
+        OpLda(memory, cpu, OpDp(cpu, last));
+        OpCmp(memory, cpu, OpDp(cpu, minimum));
+        if (cpu->negative)
+            return 0;
+        OpCmp(memory, cpu, OpDp(cpu, maximum));
+        if (cpu->negative)
+            OpSta(memory, cpu, OpDp(cpu, maximum));
+    }
+    return 1;
+}
+
+static void RegionWriteMetatile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpWriteX(memory, cpu, OpDp(cpu, REGION_SOURCE_CELL), cpu->x);
+    OpLda(memory, cpu, OpAbsX(cpu, 0x0000u));
+    OpAndValue(cpu, 0x3000u);
+    OpCmpValue(cpu, 0x3000u);
+    if (cpu->zero)
+        OpLdx(cpu, OpReadX(memory, cpu,
+            OpAbs(cpu, WRAM_FIELD_LAYER_CELL_BASE & 0xffffu)));
+    OpLda(memory, cpu, OpAbsX(cpu, 0x0000u));
+    OpAndValue(cpu, 0x03ffu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAdc(memory, cpu, WRAM_FIELD_METATILE_BASE);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, 0x0000u));
+    OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, REGION_TOP_ROW));
+    OpIny(cpu);
+    OpIny(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, 0x0004u));
+    OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, REGION_TOP_ROW));
+    OpDey(cpu);
+    OpDey(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, 0x0002u));
+    OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, REGION_BOTTOM_ROW));
+    OpIny(cpu);
+    OpIny(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, 0x0006u));
+    OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, REGION_BOTTOM_ROW));
+}
+
+Lufia2ExecutionResult Lufia2FieldRenderRegion(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    unsigned axis, cells_drawn = 0;
+
+    /* Clip the object rectangle against the visible layer cells. */
+    PushDataBank(memory, cpu);
+    PushIndex(memory, cpu);
+    PushY(memory, cpu);
+    OpSetDataBank(memory, cpu, 0x7fu);
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_PENDING_OBJECT_X & 0xffffu));
+    OpSta(memory, cpu, OpDp(cpu, REGION_CLIPPED_FIRST_X));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_OBJECT_WIDTH & 0xffffu));
+    cpu->carry = 0;
+    OpAdc(memory, cpu, OpDp(cpu, REGION_CLIPPED_FIRST_X));
+    OpSta(memory, cpu, OpDp(cpu, REGION_CLIPPED_LAST_X));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_X));
+    RegionCell(memory, cpu, 0x8ea1u, 1);
+    OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_FIRST_X));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_Y));
+    RegionCell(memory, cpu, 0x8eaau, 0);
+    OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_FIRST_Y));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_X));
+    cpu->carry = 0;
+    OpAdcValue(cpu, 0x0100u);
+    RegionCell(memory, cpu, 0x8eb7u, 1);
+    OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_LAST_X));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_Y));
+    cpu->carry = 0;
+    OpAdcValue(cpu, 0x00ffu);
+    RegionCell(memory, cpu, 0x8ec4u, 0);
+    OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_LAST_Y));
+    OpSepWidths(cpu, 0x20u);
+    for (axis = 0; axis < 2u; ++axis) {
+        if (!RegionClipAxis(memory, cpu,
+                axis ? REGION_VISIBLE_FIRST_Y : REGION_VISIBLE_FIRST_X,
+                axis ? REGION_VISIBLE_LAST_Y : REGION_VISIBLE_LAST_X,
+                (uint8_t)(REGION_CLIPPED_FIRST_X + axis),
+                (uint8_t)(REGION_CLIPPED_LAST_X + axis)))
+            goto done;
+    }
+    /* Locate the source cells and the two tilemap rows. */
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpDp(cpu, REGION_CLIPPED_FIRST_Y));
+    OpAndValue(cpu, 0x0fu);
+    ExchangeAccumulatorBytes(cpu);
+    OpRepWidths(cpu, 0x20u);
+    OpLsrA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, REGION_TILEMAP_ORIGIN));
+    OpLda(memory, cpu, OpDp(cpu, REGION_CLIPPED_FIRST_X));
+    OpAndValue(cpu, 0x000fu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAdc(memory, cpu, OpDp(cpu, REGION_TILEMAP_ORIGIN));
+    cpu->carry = 0;
+    OpAdc(memory, cpu, OpLongX(cpu, 0x838ff0u));
+    OpSta(memory, cpu, OpDp(cpu, REGION_TILEMAP_ORIGIN));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_FIELD_LAYER_CELL_BASE & 0xffffu));
+    OpSta(memory, cpu, OpDp(cpu, REGION_LAYER_CELL_BASE));
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpDp(cpu, REGION_TOP_ROW_BANK));
+    OpSta(memory, cpu, OpDp(cpu, REGION_BOTTOM_ROW_BANK));
+    OpLda(memory, cpu, OpDp(cpu, REGION_CLIPPED_FIRST_X));
+    ExchangeAccumulatorBytes(cpu);
+    OpLda(memory, cpu, OpDp(cpu, REGION_CLIPPED_FIRST_Y));
+    SimulateJsrFrame(memory, cpu, 0x8f31u);
+    (void)Lufia2MapCellOffset(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    OpRepWidths(cpu, 0x20u);
+    OpTxa(cpu);
+    cpu->carry = 0;
+    OpAdc(memory, cpu, OpDp(cpu, REGION_LAYER_CELL_BASE));
+    OpTax(cpu);
+    OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, REGION_TILEMAP_ORIGIN)));
+    OpLda(memory, cpu, OpDp(cpu, REGION_CLIPPED_LAST_X));
+    cpu->carry = 1;
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, REGION_CLIPPED_FIRST_X)));
+    OpSta(memory, cpu, OpDp(cpu, REGION_SIZE_DELTA));
+    OpAndValue(cpu, 0x00ffu);
+    OpSta(memory, cpu, OpDp(cpu, REGION_COLUMNS));
+    if (cpu->zero)
+        goto done;
+    OpLda(memory, cpu, OpDp(cpu, REGION_HEIGHT_DELTA));
+    OpAndValue(cpu, 0x00ffu);
+    OpSta(memory, cpu, OpDp(cpu, REGION_ROWS_REMAINING));
+    if (cpu->zero)
+        goto done;
+    OpLda(memory, cpu, WRAM_FIELD_SECTION_WIDTH);
+    OpAndValue(cpu, 0x00ffu);
+    cpu->carry = 1;
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, REGION_COLUMNS)));
+    OpAslA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, REGION_SOURCE_ROW_SKIP));
+    OpTya(cpu);
+    OpAndValue(cpu, 0xffc0u);
+    OpSta(memory, cpu, OpDp(cpu, REGION_TOP_ROW));
+    OpTya(cpu);
+    OpAndValue(cpu, 0x003fu);
+    OpSta(memory, cpu, OpDp(cpu, REGION_TILEMAP_COLUMN));
+    /* Write each cell as four tiles, preserving the tilemap ring wrap. */
+    for (;;) {
+        OpLda(memory, cpu, OpDp(cpu, REGION_COLUMNS));
+        OpSta(memory, cpu, OpDp(cpu, REGION_COLUMNS_REMAINING));
+        OpLda(memory, cpu, OpDp(cpu, REGION_TOP_ROW));
+        cpu->carry = 0;
+        OpAdcValue(cpu, 0x0040u);
+        OpSta(memory, cpu, OpDp(cpu, REGION_BOTTOM_ROW));
+        OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, REGION_TILEMAP_COLUMN)));
+        for (;;) {
+            if (cells_drawn == 262144u)
+                return ExecutionHandoff(cpu, 0x838f7fu);
+            ++cells_drawn;
+            RegionWriteMetatile(memory, cpu);
+            OpStepMem(memory, cpu, OpDp(cpu, REGION_COLUMNS_REMAINING), -1);
+            if (cpu->zero)
+                break;
+            OpTya(cpu);
+            OpIncA(cpu);
+            OpIncA(cpu);
+            OpAndValue(cpu, 0x003fu);
+            OpTay(cpu);
+            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, REGION_SOURCE_CELL)));
+            OpInx(cpu);
+            OpInx(cpu);
+        }
+        OpStepMem(memory, cpu, OpDp(cpu, REGION_ROWS_REMAINING), -1);
+        if (cpu->zero)
+            break;
+        OpLda(memory, cpu, OpDp(cpu, REGION_SOURCE_CELL));
+        cpu->carry = 0;
+        OpAdc(memory, cpu, OpDp(cpu, REGION_SOURCE_ROW_SKIP));
+        OpAdcValue(cpu, 0x0002u);
+        OpTax(cpu);
+        OpLda(memory, cpu, OpDp(cpu, REGION_TOP_ROW));
+        OpTay(cpu);
+        OpAdcValue(cpu, 0x0080u);
+        OpAndValue(cpu, 0x07ffu);
+        OpSta(memory, cpu, OpDp(cpu, REGION_TOP_ROW));
+        OpTya(cpu);
+        OpAndValue(cpu, 0xf800u);
+        OpOra(memory, cpu, OpDp(cpu, REGION_TOP_ROW));
+        OpSta(memory, cpu, OpDp(cpu, REGION_TOP_ROW));
+    }
+done:
+    OpSepWidths(cpu, 0x20u);
+    cpu->y = PullIndexValue(memory, cpu);
+    cpu->x = PullIndexValue(memory, cpu);
+    PullDataBank(memory, cpu);
+    return ExecutionReturned(0x838fefu);
+}
+
+
 /* $83:8E85: redraw region $7F:D046 in layer X; M=1. */
 void Lufia2FieldRedrawRegion(
     const Lufia2Memory *memory,
@@ -1046,7 +1277,7 @@ void Lufia2FieldRedrawRegion(
             LoadY16(cpu, (uint16_t)(cpu->y + 2u));
             LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0006u, cpu->x));
             Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x5du), cpu->accumulator);
-            Decrement16Direct(memory, cpu, 0x58u);
+            OpStepMem(memory, cpu, OpDp(cpu, 0x58u), -1);
             if (cpu->zero)
                 break;
             LoadA16(cpu, (uint16_t)(cpu->y + 2u));             /* 8FBB */
@@ -1056,7 +1287,7 @@ void Lufia2FieldRedrawRegion(
             IncrementX16(cpu);
             IncrementX16(cpu);
         }
-        Decrement16Direct(memory, cpu, 0x5au);                 /* 8FC8 */
+        OpStepMem(memory, cpu, OpDp(cpu, 0x5au), -1);                 /* 8FC8 */
         if (cpu->zero)
             break;
         LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));

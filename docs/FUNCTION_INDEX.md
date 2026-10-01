@@ -218,6 +218,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:8B40` | `Lufia2FieldLoadObjectRecord` | verified | `src/field/field_object_transitions.c` |
 | `$83:8B6A` | `Lufia2FieldCopyObjectTiles` | verified | `src/field/field_object_copy.c` |
 | `$83:8E66` | `Lufia2FieldRedrawAllLayers` | verified | `src/field/field_scroll.c` |
+| `$83:8E85` | `Lufia2FieldRenderRegion` | verified | `src/field/field_scroll.c` |
 | `$83:9000` | `Lufia2FieldPixelCellCeiling` | verified | `src/field/field_scroll.c` |
 | `$83:9004` | `Lufia2FieldPixelCellFloor` | verified | `src/field/field_scroll.c` |
 | `$83:9B44` | `Lufia2CaveRoomHeaderCoordinates` | verified | `src/cave/cave_header.c` |

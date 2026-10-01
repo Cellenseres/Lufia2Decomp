@@ -244,6 +244,10 @@ Lufia2ExecutionResult Lufia2FieldObjectAttributeCell(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 
+/* Clipped object-region rendering; M1/X16, explicit long-loop continuation. */
+Lufia2ExecutionResult Lufia2FieldRenderRegion(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* Region coordinates; M0/either X width, negative flag selects direct page. */
 Lufia2ExecutionResult Lufia2FieldPixelCellFloor(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);

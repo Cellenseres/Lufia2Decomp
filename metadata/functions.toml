@@ -2771,3 +2771,11 @@ source = "src/field/field_scroll.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "83:8E85"
+name = "Lufia2FieldRenderRegion"
+source = "src/field/field_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

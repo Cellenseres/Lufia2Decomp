@@ -1002,7 +1002,7 @@ name = "save_file_buffer"
 width = 1
 count = 2048
 owner = "system"
-notes = "Plain save slot packed by 8E:BA0D and 85:C954, encrypted by 80:9184 and decrypted by 80:914B. Shared with tilemap scratch."
+notes = "Plain save slot packed by 8E:BA0D and 85:C954, encrypted by 80:9184 and decrypted by 80:914B. Also the layer-3 32x32 tilemap ring (3800-3FFF) selected by ROM 83:8FF0 and written by 83:8E85."
 
 [[location]]
 address = "7E:0521"
@@ -1034,7 +1034,7 @@ name = "music_sample_cache"
 width = 1
 count = 32
 owner = "system"
-notes = "80:941A second sample path initializes FF bytes and deduplicates values from ROM9A59 before uploading."
+notes = "80:941A second sample path initializes FF bytes and deduplicates values from ROM9A59 before uploading. Overlays the layer-1 tilemap ring (2000-27FF) selected by ROM 83:8FF0 and written by 83:8E85."
 
 [[location]]
 address = "7E:2020"
@@ -1187,3 +1187,19 @@ width = 2
 count = 1
 owner = "field"
 notes = "83:F9F7 multiplies by the low width byte.80:EC78 writes the width low byte here and the high byte from TDC into05BA;83:F86B uses the full word for a row stride."
+
+[[location]]
+address = "7E:2800"
+name = "field_layer0_tilemap"
+width = 2
+count = 1024
+owner = "field"
+notes = "Layer 0 32x32 tilemap ring. ROM 83:8FF0 table selects its bank-7E base; 83:8E85 writes metatile quadrants and wraps rows with 07FF."
+
+[[location]]
+address = "7E:3000"
+name = "field_layer2_tilemap"
+width = 2
+count = 1024
+owner = "field"
+notes = "Layer 2 32x32 tilemap ring. ROM 83:8FF0 table selects its bank-7E base; 83:8E85 writes metatile quadrants and wraps rows with 07FF."
