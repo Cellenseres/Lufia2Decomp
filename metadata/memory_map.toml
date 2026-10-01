@@ -812,3 +812,83 @@ width = 2
 count = 40
 owner = "field"
 notes = "$83:F6B0 and $83:F5EA publish the object vertical-offset word through DPA9."
+
+[[location]]
+address = "7F:D04A"
+name = "field_object_source_x"
+width = 1
+count = 1
+owner = "field"
+notes = "Object record byte 2, copied by 83:8B40."
+
+[[location]]
+address = "7F:D04B"
+name = "field_object_source_y"
+width = 1
+count = 1
+owner = "field"
+notes = "Object record byte 3, copied by 83:8B40."
+
+[[location]]
+address = "7F:D04C"
+name = "field_object_width"
+width = 1
+count = 1
+owner = "field"
+notes = "Object record byte 4, paired with height in 83:8B40."
+
+[[location]]
+address = "7F:D0F4"
+name = "field_claimed_object_record"
+width = 1
+count = 1
+owner = "field"
+notes = "83:F620 stores pending object ID minus 10 hex."
+
+[[location]]
+address = "7F:D5DC"
+name = "field_pending_object_tiles"
+width = 4
+count = 48
+owner = "field"
+notes = "Saved map tile words for the 48 pending object records."
+
+[[location]]
+address = "7F:D69C"
+name = "field_pending_record_x"
+width = 1
+count = 48
+owner = "field"
+notes = "83:F620 releases the pending object X by storing FF."
+
+[[location]]
+address = "7F:D6CC"
+name = "field_pending_record_y"
+width = 1
+count = 48
+owner = "field"
+notes = "83:F620 releases the pending object Y by storing FF."
+
+[[location]]
+address = "7F:D6FC"
+name = "field_pending_object_record"
+width = 1
+count = 48
+owner = "field"
+notes = "Pending map object record IDs; 83:F620 subtracts 10 hex."
+
+[[location]]
+address = "7F:E5A6"
+name = "actor_claimed_object_record"
+width = 1
+count = 40
+owner = "field"
+notes = "Map object record ID held by each actor."
+
+[[location]]
+address = "7F:E5CE"
+name = "actor_claimed_pending_object"
+width = 1
+count = 40
+owner = "field"
+notes = "Pending object slot held by each actor."

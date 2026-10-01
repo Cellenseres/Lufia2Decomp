@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-297 functions in `metadata/functions.toml`: 297 verified, 0 draft, 0 identified, 0 disabled.
+303 functions in `metadata/functions.toml`: 303 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -171,6 +171,18 @@ Eight proven object/actor WRAM fields were added to the canonical catalog.
 The legacy event VM palette path also preserves the original high-byte-first
 word TSB. Its 8,192 direct original-call comparisons cover flags, saved DB,
 palette copy overlap, wrapping indices and every ordered write.
+
+Six placed-object transitions are complete and independently verified: the
+object-record loader, actor initialization and refresh, object placement and
+rebuild, and claiming a placed object. Their explicit child callbacks preserve
+the original pushed frames and every unwind boundary. Known children compose
+with the existing decomp; remaining children retain original dispatch.
+49,152 ROM cases compare CPU state, complete WRAM and every ordered write;
+all 34 child unwind sites pass. Production bridges pass 90,173 native calls,
+90 redirected-child contracts and 4,608 unsupported-state guards. All 16
+deliberate fault variants are detected. The record loader retains the child’s
+returned X; rebuild preserves the original caller-X lookup; claim retains the
+indexed map-tile read and its conditional saved data bank.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary

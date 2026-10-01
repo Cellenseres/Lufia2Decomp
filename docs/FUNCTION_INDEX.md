@@ -197,6 +197,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:85DC` | `Lufia2FieldReloadSetup` | verified | `src/field/field_update.c` |
 | `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |
 | `$83:8682` | `Lufia2FieldAnimationTicks` | verified | `src/field/field_update.c` |
+| `$83:8B40` | `Lufia2FieldLoadObjectRecord` | verified | `src/field/field_object_transitions.c` |
 | `$83:8E66` | `Lufia2FieldRedrawAllLayers` | verified | `src/field/field_scroll.c` |
 | `$83:9B44` | `Lufia2CaveRoomHeaderCoordinates` | verified | `src/cave/cave_header.c` |
 | `$83:9E31` | `Lufia2AncientCaveGenerateFloor` | verified | `src/cave/ancient_cave.c` |
@@ -224,11 +225,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:D7A5` | `Lufia2ActorPositionToObjectProbe` | verified | `src/field/field_object_graphics.c` |
 | `$83:E03E` | `Lufia2ObjectSlotsUpdate` | verified | `src/actor/object_vm.c` |
 | `$83:F422` | `Lufia2FieldSetObjectOrigin` | verified | `src/field/field_object_graphics.c` |
+| `$83:F5B9` | `Lufia2FieldRefreshObjectActor` | verified | `src/field/field_object_transitions.c` |
+| `$83:F5EA` | `Lufia2FieldInitializeObjectActor` | verified | `src/field/field_object_transitions.c` |
 | `$83:F611` | `Lufia2FieldObjectLayer` | verified | `src/field/field_object_graphics.c` |
+| `$83:F620` | `Lufia2FieldClaimPlacedObject` | verified | `src/field/field_object_transitions.c` |
 | `$83:F6B0` | `Lufia2ActorResetObjectOffsets` | verified | `src/field/field_object_graphics.c` |
 | `$83:F6CA` | `Lufia2FieldSetupObjectActorSprite` | verified | `src/field/field_object_graphics.c` |
 | `$83:F731` | `Lufia2FieldCopyObjectPalette` | verified | `src/field/field_object_graphics.c` |
 | `$83:F784` | `Lufia2FieldSetMapTileNumber` | verified | `src/field/field_object_graphics.c` |
+| `$83:F795` | `Lufia2FieldRebuildActorObject` | verified | `src/field/field_object_transitions.c` |
+| `$83:F7B1` | `Lufia2FieldPlaceActorObject` | verified | `src/field/field_object_transitions.c` |
 | `$83:F7D4` | `Lufia2FieldReleaseClaimedActors` | verified | `src/field/field_object_graphics.c` |
 | `$83:F7DF` | `Lufia2FieldStartObjectEvent` | verified | `src/field/field_object_graphics.c` |
 | `$83:F7F8` | `Lufia2FieldPrepareObjectOrigin` | verified | `src/field/field_object_graphics.c` |

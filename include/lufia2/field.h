@@ -189,6 +189,32 @@ Lufia2ExecutionResult Lufia2FieldUploadFixedGraphics(
 Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+
+/* Placed-object and actor transitions, with exact original child frames. */
+Lufia2ExecutionResult Lufia2FieldLoadObjectRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldInitializeObjectActor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldRefreshObjectActor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldPlaceActorObject(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldRebuildActorObject(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldClaimPlacedObject(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $80:ED9C map cell attributes of map A; M=1. */
 Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     const Lufia2Memory *memory,
