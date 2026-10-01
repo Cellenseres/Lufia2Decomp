@@ -151,6 +151,44 @@ Lufia2ExecutionResult Lufia2FieldStartEvent(
 Lufia2ExecutionResult Lufia2FieldInitializeMapEvents(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+
+/* Field-object tile and sprite setup; return PCs are recorded in metadata. */
+Lufia2ExecutionResult Lufia2FieldObjectLayer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2ActorPositionToObjectProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldSetObjectOrigin(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2ActorResetObjectOffsets(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldPendingTileOffsets(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldSetMapTileNumber(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldReleaseClaimedActors(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldCopyObjectPalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldPrepareObjectOrigin(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldStartObjectEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldUploadFixedGraphics(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $80:ED9C map cell attributes of map A; M=1. */
 Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     const Lufia2Memory *memory,

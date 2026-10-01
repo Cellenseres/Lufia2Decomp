@@ -748,3 +748,67 @@ width = 1
 count = 1
 owner = "field"
 notes = "$8E:B847 bounds generated four-byte object records at F800."
+
+[[location]]
+address = "7F:D046"
+name = "field_pending_object_x"
+width = 1
+count = 1
+owner = "field"
+notes = "$83:F422 publishes the destination X from DP8F."
+
+[[location]]
+address = "7F:D047"
+name = "field_pending_object_y"
+width = 1
+count = 1
+owner = "field"
+notes = "$83:F422 publishes DP91 minus object height plus one, wrapping as an A8 byte."
+
+[[location]]
+address = "7F:D04D"
+name = "field_object_height"
+width = 1
+count = 1
+owner = "field"
+notes = "$83:F422 adjusts the origin by this height; $83:F7F8 selects a vertical offset for height 2."
+
+[[location]]
+address = "7F:D05F"
+name = "field_object_flags"
+width = 1
+count = 1
+owner = "field"
+notes = "$83:8B40 copies object-record byte 1 here; $83:F611 tests bit 1 for the tile layer."
+
+[[location]]
+address = "7F:D0A2"
+name = "field_claimed_actor_ids"
+width = 1
+count = 2
+owner = "field"
+notes = "$83:F7D4 releases both claimed actor IDs by storing FF."
+
+[[location]]
+address = "7F:D0A4"
+name = "field_object_palette_pointer"
+width = 2
+count = 1
+owner = "field"
+notes = "$83:F6CA selects the palette address; $83:F731 copies 32 bytes from bank 00 to 0500."
+
+[[location]]
+address = "7F:DC8C"
+name = "actor_display_offset_x"
+width = 2
+count = 40
+owner = "field"
+notes = "$83:F6B0 and $83:F5EA clear the actor display-offset word through DPA9."
+
+[[location]]
+address = "7F:DD1C"
+name = "actor_display_offset_y"
+width = 2
+count = 40
+owner = "field"
+notes = "$83:F6B0 and $83:F5EA publish the object vertical-offset word through DPA9."
