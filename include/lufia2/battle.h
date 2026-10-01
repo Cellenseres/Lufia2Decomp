@@ -662,6 +662,13 @@ Lufia2ExecutionResult Lufia2BattleFrameInput(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* Same entry, stopping at $85:EC94 before polling. Runtime consumers use
+ * this continuation when their bus cannot deliver interrupts inside C loops.
+ */
+Lufia2ExecutionResult Lufia2BattleFrameInputUpkeep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $81:B705 appends A.low five-byte records at DB:X to OAM at DB:Y.
  * M1X0, PB $81, DP zero, native binary mode. DP $58 holds the sprite count.
  * Four-record groups preserve the original raw attribute merge. Returns

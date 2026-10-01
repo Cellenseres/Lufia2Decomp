@@ -7,11 +7,10 @@ static void WaitForBattleFrame(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     } while (cpu->zero);
 }
 
-/* $85:EC81: status/sprite upkeep, original frame waits and pause input. */
-Lufia2ExecutionResult Lufia2BattleFrameInput(const Lufia2Memory *memory,
-                                             Lufia2CpuState *cpu,
-                                             Lufia2PushedChildCall child,
-                                             void *child_context) {
+/* Stop before the first frame wait so a consumer can deliver interrupts. */
+Lufia2ExecutionResult Lufia2BattleFrameInputUpkeep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context) {
     BattleContext battle =
         BattleContextCreate(memory, cpu, child, child_context, 0x85u);
     if (!BattleCall(&battle, 0xec81u, 0x85919cu, 3u))
@@ -23,6 +22,22 @@ Lufia2ExecutionResult Lufia2BattleFrameInput(const Lufia2Memory *memory,
         TransferDirectToA(cpu);
         OpSta(memory, cpu, 0x0012f3u);
     }
+    Lufia2ExecutionResult result = ExecutionReturned(0x85ec94u);
+    result.flow = LUFIA2_EXECUTION_BOUNDARY;
+    cpu->resume_pc = result.pc;
+    return result;
+}
+
+/* $85:EC81: status/sprite upkeep, original frame waits and pause input. */
+Lufia2ExecutionResult Lufia2BattleFrameInput(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context) {
+    const uint32_t entry_resume = cpu->resume_pc;
+    const Lufia2ExecutionResult upkeep =
+        Lufia2BattleFrameInputUpkeep(memory, cpu, child, child_context);
+    if (upkeep.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
+        return upkeep;
+    cpu->resume_pc = entry_resume;
     WaitForBattleFrame(memory, cpu);
     OpLda(memory, cpu, OpAbs(cpu, 0x057cu));
     if (!cpu->zero) {

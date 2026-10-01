@@ -24,10 +24,10 @@ The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **352 independent jobs**. The normal
-application build also passes. The consumer selects 188 functions, including
-the complete command-collection and turn-execution callers. The generated CFG
-contains 1,403 nodes; no previously eligible AOT function was lost.
+The full Windows Release verifier passes **380 independent jobs**. The normal
+application build also passes. The consumer selects all 274 verified functions,
+including the command, results, rendering and action helpers. The generated CFG
+contains 1,409 nodes; every prior native entry remains covered.
 
 Verification uses the original ROM interpreter as the reference. It checks CPU
 state, complete WRAM and, where needed, the order of memory and register writes.
@@ -52,7 +52,7 @@ run history are recorded in the consumer's worklog.
 | Suite | Cases | Result |
 | --- | ---: | --- |
 | Turn/command control, including composed records | 6,144 + 128 probes | pass |
-| Command/turn runtime bridges | 15,615 ABI checks | pass |
+| Newly bound runtime bridges | 717,659 native ABI cases | pass |
 | Results and growth | 5,746 + 8,711 | pass |
 | Status recovery and support | 5,162 + 22,528 | pass |
 | Turn display and gauges | 10,252 + 24,576 | pass |
@@ -80,11 +80,11 @@ and the original overlay loops. Action records retain their descending copies,
 register saves and zero-mask shifts. Configured, battler and item script callers
 retain their default scripts; the script VM remains an explicit child.
 
-The two new runtime bridges require A8, X/Y16, DB `$97`, DP zero and native binary
-arithmetic. Other states use the original interpreter. Their tests cover stack
-frames, child unwinds and three host-return modes, detecting ten deliberate
-bridge mistakes. The other recent command helpers remain unbound. Declarations
-and metadata give each entry's contract.
+Runtime bridges check each entry's CPU mode, DB and DP contract. Other states
+use the original interpreter. Tests cover stack frames, child unwinds and three
+host-return modes; all 18 deliberate bridge mistakes were detected. Frame upkeep
+yields at `$85:EC94` before frame and pause waits so interrupts can run.
+Declarations and metadata give each entry's contract.
 
 Some unusual original exits matter:
 
@@ -116,14 +116,13 @@ the function index. Runtime use is decided by the consumer's bindings file.
 
 ## Ancient Cave
 
-The floor generator `$83:9E31` is verified and unbound. It uses A8, X/Y16,
+The floor generator `$83:9E31` is verified and selected. It uses A8, X/Y16,
 DP zero and a DB that maps low WRAM. Verification covers 16,384 floors, five
 helper groups of 4,096 cases each, and APU-return probes.
 
-The APU handshake and map loader remain explicit children. Binding this entry
-still needs a consumer bridge and ABI tests; its semantic verification alone
-is insufficient. Original generator loops and degenerate-map behavior are
-preserved. Host decoding or caching belongs in a separate patch layer.
+The APU handshake and map loader remain explicit children. Original generator
+loops and degenerate-map behavior are preserved. Host decoding or caching
+belongs in a separate patch layer.
 
 ## Actors, field and shared helpers
 
@@ -133,6 +132,6 @@ world-map helpers and shared resource/menu/math routines are covered by the
 consumer's differential and bridge suites. The index is the source of truth for
 individual functions.
 
-Further battle work closes the remaining child dependencies before considering
-new runtime bindings. See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
+Further battle work reconstructs the remaining child dependencies.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
 model and [CAPTURE_RESEARCH.md](CAPTURE_RESEARCH.md) for scene evidence.
