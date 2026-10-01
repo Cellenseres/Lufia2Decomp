@@ -2699,3 +2699,19 @@ source = "src/system/music.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:D905"
+name = "Lufia2MenuSpellShopSetup"
+source = "src/menu/menu_spell_shop.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9918"
+name = "Lufia2AdjustPurchasePrice"
+source = "src/menu/menu_spell_shop.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

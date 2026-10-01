@@ -1075,3 +1075,99 @@ width = 1
 count = 1
 owner = "system"
 notes = "80:941A stores the song mode byte or clears it with TRB before optional9703 reset."
+
+[[location]]
+address = "7E:0564"
+name = "menu_draw_mode"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:D905 selects mode20 for spell-shop text."
+
+[[location]]
+address = "7E:09BA"
+name = "menu_purchase_price"
+width = 3
+count = 1
+owner = "menu"
+notes = "82:D905 stores the adjusted price into the first two bytes only; the original leaves the third byte unchanged."
+
+[[location]]
+address = "7E:09CF"
+name = "menu_selected_spell"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:D905 passes this spell ID to the record loader."
+
+[[location]]
+address = "7E:0A0B"
+name = "menu_spell_record_id"
+width = 1
+count = 1
+owner = "menu"
+notes = "Spell ID consumed by81:F414 and set by82:D905."
+
+[[location]]
+address = "7E:0A7B"
+name = "menu_party_first_id"
+width = 1
+count = 1
+owner = "menu"
+notes = "First party ID;82:9918 scans with Y against byte0A7A. Only the first byte is catalogued, without assuming a scan bound."
+
+[[location]]
+address = "7E:0B77"
+name = "menu_spell_record"
+width = 1
+count = 20
+owner = "menu"
+notes = "81:F414 copies eight name bytes, a DP-low terminator and eleven payload bytes here; price word is offset10."
+
+[[location]]
+address = "7E:0CD9"
+name = "menu_price_discount_item"
+width = 2
+count = 1
+owner = "menu"
+notes = "82:9918 checks low9 bits for item167 after finding party ID1."
+
+[[location]]
+address = "7E:14DB"
+name = "menu_spell_window_state_2"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:D905 clears window-state base14D9 indexed by X2."
+
+[[location]]
+address = "7E:14ED"
+name = "menu_spell_window_state_2_alt"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:D905 clears alternate window-state base14EB indexed by X2."
+
+[[location]]
+address = "7E:14F4"
+name = "menu_spell_member_count"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:D905 copies the party-count byte here before HDMA setup."
+
+[[location]]
+address = "7E:1544"
+name = "menu_price_adjust_mode"
+width = 1
+count = 1
+owner = "menu"
+notes = "Zero always halves purchase price; nonzero lets82:9918 examine party/item state."
+
+[[location]]
+address = "7E:1545"
+name = "menu_display_price"
+width = 2
+count = 1
+owner = "menu"
+notes = "Adjusted spell-shop price written by82:D905 before itsD922 checkpoint."
