@@ -46,6 +46,10 @@ submenus and target selection. It retains the original polling, scrolling,
 backtracking, invalid-target skipping and side changes. Target cancellation can
 remove a mark and continue; pair selection waits for exactly two party members.
 
+Battle code uses named action, turn-queue, target, status-icon and result-window
+records. Helpers separate priority calculation, target drawing, command publication
+and sprite overlays while preserving CPU state and memory access order.
+
 Recent ROM comparison suites are summarized below. Earlier slices and exact
 run history are recorded in the consumer's worklog.
 

@@ -1,16 +1,18 @@
 #include "battle/battle_internal.h"
 
 /* $81:890A: consume three-byte turn entries, then clear effect work. */
-Lufia2ExecutionResult Lufia2BattleExecuteTurns(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *child_context) {
-    BattleContext battle = BattleContextCreate(memory, cpu, child, child_context, 0x81u);
+Lufia2ExecutionResult Lufia2BattleExecuteTurns(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu,
+                                               Lufia2PushedChildCall child,
+                                               void *child_context) {
+    BattleContext battle =
+        BattleContextCreate(memory, cpu, child, child_context, 0x81u);
     if (!BattleCall(&battle, 0x890au, 0x81c2e3u, 2u) ||
         !BattleCall(&battle, 0x890du, 0x81dee9u, 2u) ||
         !BattleCall(&battle, 0x8910u, 0x859dd4u, 3u) ||
         !BattleCall(&battle, 0x8914u, 0x85ec81u, 3u))
         return BattleChildUnwound(&battle);
-    OpLdx(cpu, 0x1b8cu);
+    OpLdx(cpu, WRAM_BATTLE_TURN_QUEUE);
     OpWriteX(memory, cpu, OpDp(cpu, 0xd5u), cpu->x);
     for (;;) {
         OpLda(memory, cpu, OpAbs(cpu, Read16Direct(memory, cpu, 0xd5u)));
@@ -33,7 +35,7 @@ Lufia2ExecutionResult Lufia2BattleExecuteTurns(
                 break;
         }
         OpRepWidths(cpu, 0x20u);
-        for (unsigned i = 0; i < 3u; ++i)
+        for (unsigned i = 0; i < BATTLE_TURN_ENTRY_SIZE; ++i)
             OpStepMem(memory, cpu, OpDp(cpu, 0xd5u), 1);
         OpSepWidths(cpu, 0x20u);
     }
@@ -51,16 +53,18 @@ Lufia2ExecutionResult Lufia2BattleExecuteTurns(
 }
 
 /* $81:A79A: stage an action and route its original execution children. */
-Lufia2ExecutionResult Lufia2BattlePrepareAction(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *child_context) {
-    BattleContext battle = BattleContextCreate(memory, cpu, child, child_context, 0x81u);
+Lufia2ExecutionResult Lufia2BattlePrepareAction(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu,
+                                                Lufia2PushedChildCall child,
+                                                void *child_context) {
+    BattleContext battle =
+        BattleContextCreate(memory, cpu, child, child_context, 0x81u);
     if (!BattleCall(&battle, 0xa79au, 0x85ccceu, 3u))
         return BattleChildUnwound(&battle);
     OpLdx(cpu, 0x100u);
     OpWriteX(memory, cpu, OpAbs(cpu, 0x0a4bu), cpu->x);
     OpLdx(cpu, 0xffffu);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x1264u), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER), cpu->x);
     PushDataBank(memory, cpu);
     OpStz(memory, cpu, OpAbs(cpu, 0x0a62u));
     OpSta(memory, cpu, 0x7ff44eu);
@@ -80,13 +84,13 @@ Lufia2ExecutionResult Lufia2BattlePrepareAction(
         OpSta(memory, cpu, OpAbs(cpu, 0x0a5cu));
         OpStz(memory, cpu, OpAbs(cpu, 0x1269u));
         OpStz(memory, cpu, OpAbs(cpu, 0x0a5bu));
-        OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
-        OpBitValue(cpu, 0x2cu);
+        OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+        OpBitValue(cpu, BATTLE_STATUS_NO_TURN);
         if (!cpu->zero) {
             PullDataBank(memory, cpu);
             return ExecutionReturned(0x81a7e2u);
         }
-        OpBitValue(cpu, 0x10u);
+        OpBitValue(cpu, BATTLE_STATUS_TURN_SELECTED);
         if (!cpu->zero) {
             OpLoadA(cpu, 0x0fu);
             OpSta(memory, cpu, 0x7ff454u);

@@ -19,8 +19,12 @@ arithmetic or stack rule that the lower layer already owns.
 
 ## Rules for new or meaningfully changed code
 
-- Prefer the `Op*` adapters from `cpu_ops.h` when they represent the
-  original instruction exactly, including its width and addressing mode.
+- Organize routines around proven game operations, with domain names and small
+  semantic helpers where useful. Use ordinary structured C when it preserves
+  the full observable contract.
+- Use the `Op*` adapters from `cpu_ops.h` for required CPU behavior, including
+  widths, flags and addressing modes. Do not remove or introduce adapters merely
+  to change the abstraction level.
 - Use the primitives from `cpu_internal.h` and `memory_internal.h` when the
   exact lower-level behavior is the point, for example a fixed-width access, a
   hand-ordered 16-bit read-modify-write or an explicit stack frame.
@@ -29,13 +33,16 @@ arithmetic or stack rule that the lower layer already owns.
   `Lufia2Memory`, whenever the original contract can observe them.
 - Never introduce a higher-level helper that merges or reorders bus accesses,
   or that drops a register or flag the caller could observe.
-- A small file-local helper is fine when it only composes the shared layers
-  and is named after the instruction or addressing mode it models, for example
-  `LoadADirect` in `src/actor/actor_frontend.c`. It must not redefine a
+- Name file-local helpers after the proven operation they perform; name CPU-only
+  helpers after the instruction or addressing mode they model. Do not redefine a
   shared primitive (`Read8`, `SetNz8`, `LoadA8`, `Compare8`, ...).
-- Leave exact continuation points as ROM PCs with `ExecutionHandoff`, and
-  annotate reconstructed instructions with their ROM PC, for example
-  `/* $83:C82E */`.
+- Leave exact continuation points as ROM PCs with `ExecutionHandoff`. Preserve
+  useful ROM addresses in boundary comments and child call sites.
+
+Known persistent WRAM fields belong in `metadata/memory_map.toml`. Record field
+offsets may be named relative to the generated base. Reused DP scratch belongs
+in local enums: the same bytes can mean different things in different routines.
+Keep uncertain fields neutral and never cache bus-backed records in host structs.
 
 ## Slot views
 
@@ -77,8 +84,8 @@ result. It is not a template for new code.
 
 ## Comments
 
-A comment is one short line: the ROM address and what the routine does, or
-the ROM PC of a reconstructed instruction. Explanations, evidence and
+A comment is one short line: a useful ROM boundary or a non-obvious CPU quirk.
+Do not narrate obvious code. Explanations, evidence and
 verification history belong in `docs/`, not in the source; prefer clear names
 over prose.
 

@@ -37,9 +37,9 @@ Lufia2ExecutionResult Lufia2BattleStartMessageEffect(const Lufia2Memory *memory,
 Lufia2ExecutionResult Lufia2BattleTickMessageEffect(const Lufia2Memory *memory,
                                                     Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
-    OpLda(memory, cpu, OpAbs(cpu, 0x1264u));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER));
     if (!cpu->zero) {
-        OpStepMem(memory, cpu, OpAbs(cpu, 0x1264u), -1);
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER), -1);
         if (cpu->zero) {
             const uint16_t positions[] = {0x1258u, 0x125au, 0x125cu};
             for (unsigned i = 0; i < 3u; ++i) {

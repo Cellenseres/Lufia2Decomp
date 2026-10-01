@@ -65,25 +65,25 @@ Lufia2ExecutionResult Lufia2BattleSyncStatusMarkers(const Lufia2Memory *memory,
     OpTyx(cpu);
     do {
         OpRepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbsX(cpu, 0x0a64u));
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_RECORDS));
         if (!cpu->zero) {
             OpPushX(memory, cpu);
             OpTax(cpu);
             OpSepWidths(cpu, 0x20u);
-            OpLda(memory, cpu, OpAbsY(cpu, 0x147au));
+            OpLda(memory, cpu, OpAbsY(cpu, BATTLE_ICON_RECORD_STATUS));
             ExchangeAccumulatorBytes(cpu);
-            OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
-            OpSta(memory, cpu, OpAbsY(cpu, 0x147au));
+            OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+            OpSta(memory, cpu, OpAbsY(cpu, BATTLE_ICON_RECORD_STATUS));
             if (!cpu->zero) {
                 ExchangeAccumulatorBytes(cpu);
                 if (cpu->zero) {
                     OpLoadA(cpu, 0xffu);
-                    OpSta(memory, cpu, OpAbsY(cpu, 0x147bu));
-                    OpSta(memory, cpu, OpAbsY(cpu, 0x1479u));
+                    OpSta(memory, cpu, OpAbsY(cpu, BATTLE_ICON_RECORD_TIMER));
+                    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_STATUS_ICON_RECORDS));
                 }
             } else {
                 TransferDirectToA(cpu);
-                OpSta(memory, cpu, OpAbsY(cpu, 0x1479u));
+                OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_STATUS_ICON_RECORDS));
             }
             OpPullX(memory, cpu);
         }
@@ -108,7 +108,7 @@ Lufia2ExecutionResult Lufia2BattleClearStatusMarkers(const Lufia2Memory *memory,
     OpTyx(cpu);
     TransferDirectToA(cpu);
     do {
-        OpSta(memory, cpu, OpAbsY(cpu, 0x1479u));
+        OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_STATUS_ICON_RECORDS));
         OpInx(cpu);
         OpInx(cpu);
         for (unsigned i = 0; i < 4u; ++i)

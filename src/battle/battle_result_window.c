@@ -31,20 +31,20 @@ Lufia2ExecutionResult Lufia2BattleResultWindowPrepare(const Lufia2Memory *memory
         return BattleChildUnwound(&battle);
     PullDataBank(memory, cpu);
     OpLdx(cpu, 0x3108u);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x15f9u), cpu->x);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x15fbu), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WINDOW_BASE), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WRITE_POSITION), cpu->x);
     OpLoadA(cpu, 3u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x15f3u));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_RESULT_WINDOW));
     OpLoadA(cpu, 2u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x15f4u));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WINDOW_Y));
     OpLoadA(cpu, 26u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x15f5u));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WINDOW_WIDTH));
     OpLoadA(cpu, 6u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x15f6u));
-    OpStz(memory, cpu, OpAbs(cpu, 0x15f7u));
-    OpStz(memory, cpu, OpAbs(cpu, 0x15f8u));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WINDOW_HEIGHT));
+    OpStz(memory, cpu, OpAbs(cpu, BATTLE_RESULT_COLUMN));
+    OpStz(memory, cpu, OpAbs(cpu, BATTLE_RESULT_ROW));
     OpLoadA(cpu, 0x20u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x15fdu));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_RESULT_TILE_ATTRIBUTES));
     if (!BattleCall(&battle, 0xddd6u, 0x85a972u, 3u))
         return BattleChildUnwound(&battle);
     OpRepWidths(cpu, 0x20u);
@@ -58,19 +58,19 @@ Lufia2ExecutionResult Lufia2BattleResultWindowPrepare(const Lufia2Memory *memory
 
 /* Original ADC chain keeps carry between the row offset and window base. */
 static void ResultWindowNextPosition(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLda(memory, cpu, OpAbs(cpu, 0x15f8u));
+    OpLda(memory, cpu, OpAbs(cpu, BATTLE_RESULT_ROW));
     ExchangeAccumulatorBytes(cpu);
     OpRepWidths(cpu, 0x20u);
     OpLsrA(cpu);
     OpSta(memory, cpu, OpDp(cpu, 0x63u));
     OpSepWidths(cpu, 0x20u);
     TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpAbs(cpu, 0x15f7u));
+    OpLda(memory, cpu, OpAbs(cpu, BATTLE_RESULT_COLUMN));
     OpAslA(cpu);
     OpRepWidths(cpu, 0x20u);
     OpAdc(memory, cpu, OpDp(cpu, 0x63u));
-    OpAdc(memory, cpu, OpAbs(cpu, 0x15f9u));
-    OpSta(memory, cpu, OpAbs(cpu, 0x15fbu));
+    OpAdc(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WINDOW_BASE));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WRITE_POSITION));
 }
 
 /* $81:DDE7: draw the next result line, scrolling when full. */
@@ -84,32 +84,32 @@ Lufia2ExecutionResult Lufia2BattleResultWindowLine(const Lufia2Memory *memory,
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7eu);
     OpWriteX(memory, cpu, OpDp(cpu, 0x5du), cpu->y);
-    OpLda(memory, cpu, OpAbs(cpu, 0x15f8u));
-    OpCmp(memory, cpu, OpAbs(cpu, 0x15f6u));
+    OpLda(memory, cpu, OpAbs(cpu, BATTLE_RESULT_ROW));
+    OpCmp(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WINDOW_HEIGHT));
     if (cpu->carry && !cpu->zero) {
-        OpLda(memory, cpu, OpAbs(cpu, 0x15fdu));
+        OpLda(memory, cpu, OpAbs(cpu, BATTLE_RESULT_TILE_ATTRIBUTES));
         OpSta(memory, cpu, OpAbs(cpu, 0x0564u));
         OpLoadA(cpu, 0x85u);
         OpSta(memory, cpu, OpDp(cpu, 0x5fu));
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x15fbu)));
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WRITE_POSITION)));
         OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x5du)));
         if (!BattleCall(&battle, 0xde07u, 0x808878u, 3u) ||
             !BattleCall(&battle, 0xde0bu, 0x81de55u, 2u))
             return BattleChildUnwound(&battle);
     } else {
-        OpLda(memory, cpu, OpAbs(cpu, 0x15fdu));
+        OpLda(memory, cpu, OpAbs(cpu, BATTLE_RESULT_TILE_ATTRIBUTES));
         OpSta(memory, cpu, OpAbs(cpu, 0x0564u));
         OpLoadA(cpu, 0x85u);
         OpSta(memory, cpu, OpDp(cpu, 0x5fu));
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x15fbu)));
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WRITE_POSITION)));
         OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x5du)));
         if (!BattleCall(&battle, 0xde1fu, 0x808878u, 3u))
             return BattleChildUnwound(&battle);
     }
     OpLoadA(cpu, 0x20u);
     OpSta(memory, cpu, 0x7e3213u);
-    OpStz(memory, cpu, OpAbs(cpu, 0x15f7u));
-    OpStepMem(memory, cpu, OpAbs(cpu, 0x15f8u), 1);
+    OpStz(memory, cpu, OpAbs(cpu, BATTLE_RESULT_COLUMN));
+    OpStepMem(memory, cpu, OpAbs(cpu, BATTLE_RESULT_ROW), 1);
     ResultWindowNextPosition(memory, cpu);
     OpSepWidths(cpu, 0x20u);
     OpRepWidths(cpu, 0x20u);
@@ -129,8 +129,8 @@ Lufia2ExecutionResult Lufia2BattleResultWindowScroll(const Lufia2Memory *memory,
         BattleContextCreate(memory, cpu, child, child_context, 0x81u);
 
     TransferDirectToA(cpu);
-    OpStepMem(memory, cpu, OpAbs(cpu, 0x15f8u), -1);
-    OpStz(memory, cpu, OpAbs(cpu, 0x15f7u));
+    OpStepMem(memory, cpu, OpAbs(cpu, BATTLE_RESULT_ROW), -1);
+    OpStz(memory, cpu, OpAbs(cpu, BATTLE_RESULT_COLUMN));
     ResultWindowNextPosition(memory, cpu);
     OpRepWidths(cpu, 0x20u);
     OpLdy(cpu, 0x3000u);
