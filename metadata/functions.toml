@@ -2379,3 +2379,99 @@ source = "src/cave/cave_header.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:F611"
+name = "Lufia2FieldObjectLayer"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D7A5"
+name = "Lufia2ActorPositionToObjectProbe"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F422"
+name = "Lufia2FieldSetObjectOrigin"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F6B0"
+name = "Lufia2ActorResetObjectOffsets"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F85A"
+name = "Lufia2FieldPendingTileOffsets"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:F784"
+name = "Lufia2FieldSetMapTileNumber"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:F7D4"
+name = "Lufia2FieldReleaseClaimedActors"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F731"
+name = "Lufia2FieldCopyObjectPalette"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:F7F8"
+name = "Lufia2FieldPrepareObjectOrigin"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F7DF"
+name = "Lufia2FieldStartObjectEvent"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:B007"
+name = "Lufia2FieldUploadFixedGraphics"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F6CA"
+name = "Lufia2FieldSetupObjectActorSprite"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

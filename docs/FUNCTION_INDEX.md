@@ -205,6 +205,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:A746` | `Lufia2ActorSyncFinePosition` | verified | `src/actor/actor_movement.c` |
 | `$83:A9BA` | `Lufia2ActorLoadSprite` | verified | `src/actor/actor_sprites.c` |
 | `$83:AEB5` | `Lufia2FieldColourEffects` | verified | `src/field/field_effects.c` |
+| `$83:B007` | `Lufia2FieldUploadFixedGraphics` | verified | `src/field/field_object_graphics.c` |
 | `$83:B062` | `Lufia2FieldRestore` | verified | `src/field/field_restore.c` |
 | `$83:B5D3` | `Lufia2FieldLoadMapHeader` | verified | `src/field/field_map_load.c` |
 | `$83:B66E` | `Lufia2FieldStairRects` | verified | `src/field/field_triggers.c` |
@@ -220,7 +221,18 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:D350` | `Lufia2ActorPrimaryActionCore` | verified | `src/actor/actor_action.c` |
 | `$83:D416` | `Lufia2ActorLoadPrimaryScript` | verified | `src/actor/actor_primary.c` |
 | `$83:D508` | `Lufia2ActorSecondaryUpdate` | verified | `src/actor/actor_secondary.c` |
+| `$83:D7A5` | `Lufia2ActorPositionToObjectProbe` | verified | `src/field/field_object_graphics.c` |
 | `$83:E03E` | `Lufia2ObjectSlotsUpdate` | verified | `src/actor/object_vm.c` |
+| `$83:F422` | `Lufia2FieldSetObjectOrigin` | verified | `src/field/field_object_graphics.c` |
+| `$83:F611` | `Lufia2FieldObjectLayer` | verified | `src/field/field_object_graphics.c` |
+| `$83:F6B0` | `Lufia2ActorResetObjectOffsets` | verified | `src/field/field_object_graphics.c` |
+| `$83:F6CA` | `Lufia2FieldSetupObjectActorSprite` | verified | `src/field/field_object_graphics.c` |
+| `$83:F731` | `Lufia2FieldCopyObjectPalette` | verified | `src/field/field_object_graphics.c` |
+| `$83:F784` | `Lufia2FieldSetMapTileNumber` | verified | `src/field/field_object_graphics.c` |
+| `$83:F7D4` | `Lufia2FieldReleaseClaimedActors` | verified | `src/field/field_object_graphics.c` |
+| `$83:F7DF` | `Lufia2FieldStartObjectEvent` | verified | `src/field/field_object_graphics.c` |
+| `$83:F7F8` | `Lufia2FieldPrepareObjectOrigin` | verified | `src/field/field_object_graphics.c` |
+| `$83:F85A` | `Lufia2FieldPendingTileOffsets` | verified | `src/field/field_object_graphics.c` |
 | `$83:F9D4` | `Lufia2ActorResolveMapCellOffset` | verified | `src/actor/actor_movement.c` |
 | `$83:FA3F` | `Lufia2ActorMarkMapOccupancy` | verified | `src/actor/actor_movement.c` |
 | `$83:FA81` | `Lufia2ActorMoveFinePosition` | verified | `src/actor/actor_movement.c` |

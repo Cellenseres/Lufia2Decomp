@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-285 functions in `metadata/functions.toml`: 285 verified, 0 draft, 0 identified, 0 disabled.
+297 functions in `metadata/functions.toml`: 297 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -156,6 +156,17 @@ also exercised through their reconstructed implementations. Runtime ABI tests
 cover 51,209 native calls, 15 redirected children and 4,032 unsupported states.
 All 13 deliberately faulty variants are detected. Ten proven WRAM fields were
 added to the canonical catalog.
+
+Twelve field-object graphics dependencies are independently verified: layer
+selection, actor position probes, pending origins and tile offsets, tile-number
+replacement, claimed-actor release, object palettes, actor sprite setup,
+object-event startup and the fixed graphics DMA loader. Their 98,304 ROM cases
+compare CPU state, complete WRAM and every ordered write. This includes word
+TSB order, overlapping palette copies, index wrapping, all four entry widths
+for the DMA loader and the unusual TDC behavior with nonzero direct page.
+The same cases pass through the production bridges with 98,304 native calls;
+8,256 unsupported-state checks and all 15 deliberate fault variants pass.
+Eight proven object/actor WRAM fields were added to the canonical catalog.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
