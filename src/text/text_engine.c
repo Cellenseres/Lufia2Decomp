@@ -1,12 +1,16 @@
 /* Text and cutscene script engine ($80:9CB8). */
 
-#include "core/cpu_internal.h"
-#include "lufia2/text.h"
-#include "text/text_internal.h"
+#include <stdbool.h>
+
 #include "actor/actor_internal.h"
-#include "field/field_internal.h"
+#include "core/cpu_internal.h"
+#include "core/joypad.h"
+#include "core/wram_view.h"
 #include "field/event_script_internal.h"
+#include "field/field_internal.h"
+#include "lufia2/text.h"
 #include "system/wram.h"
+#include "text/text_internal.h"
 
 /* Text engine WRAM. */
 #define TEXT_WINDOW_STATE 0x099cu          /* bit 0: window buffer in use */
@@ -24,6 +28,10 @@
 #define TEXT_RETURN_BANK 0x1259u           /* zero: nothing queued */
 #define TEXT_RETURN_COUNT 0x125au
 #define TEXT_TYPING_SOUND 0x1260u          /* zero: silent */
+#define TEXT_CHOICE_INDEX 0x126au          /* selected entry */
+#define TEXT_CHOICE_TABLE 0x126bu          /* word: pointer to the target table */
+#define TEXT_CHOICE_TABLE_BANK 0x126du
+#define TEXT_CHOICE_COUNT 0x126eu
 #define TEXT_PROMPT_TIMER 0x1265u
 #define TEXT_WAIT_ACTOR 0x1269u            /* negative: none */
 #define TEXT_TYPING_SOUND_PHASE 0x7fd0c0u  /* sound every other glyph */
@@ -807,29 +815,34 @@ static unsigned TextOpMusic(
     return TEXT_OPCODE_HANDOFF;
 }
 
-/* $80:C817: A & $47 (repeating buttons), consumed from $4B. */
-static void TextRepeatButton(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
+/* $80:C817 (high joypad byte) / $80:C81E (low byte): whether one of the
+ * buttons of `mask` was newly pressed. The press is consumed. */
+static bool TextButtonPressed(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              uint16_t return_address, uint8_t mask,
+                              uint8_t joypad_byte) {
+    bool pressed;
+
+    LoadA8(cpu, mask);
     SimulateJsrFrame(memory, cpu, return_address);
-    And8(cpu, DirectByte(memory, cpu, 0x47u));                 /* C817 */
-    if (!cpu->zero)
-        TestBitsDirect(memory, cpu, 0x4bu, 0);
+    pressed = TakeButtonPress8(memory, cpu, joypad_byte);
     SimulateRtsFrame(memory, cpu);
+    return pressed;
 }
 
-/* $80:C81E: A & $46 (new buttons), consumed from $4A. */
-static void TextPressedButton(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
-    And8(cpu, DirectByte(memory, cpu, DP_BUTTONS_HELD));       /* C81E */
-    if (!cpu->zero)
-        TestBitsDirect(memory, cpu, DP_BUTTONS_PRESSED, 0);
-    SimulateRtsFrame(memory, cpu);
-}
+/* The choice cursor is a 2x2 tile block at the selected entry's row. */
+enum {
+    CHOICE_ROW_BYTES = 0x80, /* one tilemap row */
+    CURSOR_TOP_LEFT = 0x20dc,
+    CURSOR_TOP_RIGHT = 0x20dd,
+    CURSOR_BOTTOM_LEFT = 0x20de,
+    CURSOR_BOTTOM_RIGHT = 0x20df,
+    CURSOR_BLANK_LEFT = 0x20da,
+    CURSOR_BLANK_RIGHT = 0x20d7,
+    CURSOR_DRAWN_FLAG = 0x08, /* stored at $74 after drawing */
+};
+#define TEXT_TILEMAP_ROW_ORIGIN 0x7fd085u /* word: tilemap offset of entry 0 */
+#define TEXT_CURSOR_TOP 0x7e3040u         /* tilemap rows of the cursor */
+#define TEXT_CURSOR_BOTTOM 0x7e3080u
 
 /* $80:9FE7 draw / $80:A019 erase the choice cursor. */
 static void TextChoiceCursor(
@@ -837,36 +850,34 @@ static void TextChoiceCursor(
     Lufia2CpuState *cpu,
     uint16_t return_address,
     uint8_t draw) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint8_t choice;
+    uint16_t row;
+
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadAAbsolute8(memory, cpu, 0x126au, 0);                   /* 9FE7 */
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, 0x00u);
+    choice = WramRead(wram, TEXT_CHOICE_INDEX);
     SetAccumulatorWidth(cpu, 0);
-    LsrA16(cpu);
+    cpu->accumulator = (uint16_t)(choice * CHOICE_ROW_BYTES);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, 0x7fd085u));
+    Add16Value(cpu, WramRead16(wram, TEXT_TILEMAP_ROW_ORIGIN));
     TransferAToX(cpu);
+    row = cpu->x;
     if (draw) {
-        LoadA16(cpu, 0x20dcu);
-        Write16Long(memory, LongIndexedAddress(0x7e3040u, cpu->x), cpu->accumulator);
-        LoadA16(cpu, 0x20deu);
-        Write16Long(memory, LongIndexedAddress(0x7e3080u, cpu->x), cpu->accumulator);
-        LoadA16(cpu, 0x20ddu);
-        Write16Long(memory, LongIndexedAddress(0x7e3042u, cpu->x), cpu->accumulator);
-        LoadA16(cpu, 0x20dfu);
-        Write16Long(memory, LongIndexedAddress(0x7e3082u, cpu->x), cpu->accumulator);
+        WramWrite16At(wram, TEXT_CURSOR_TOP, row, CURSOR_TOP_LEFT);
+        WramWrite16At(wram, TEXT_CURSOR_BOTTOM, row, CURSOR_BOTTOM_LEFT);
+        WramWrite16At(wram, TEXT_CURSOR_TOP + 2u, row, CURSOR_TOP_RIGHT);
+        WramWrite16At(wram, TEXT_CURSOR_BOTTOM + 2u, row, CURSOR_BOTTOM_RIGHT);
+        LoadA16(cpu, CURSOR_BOTTOM_RIGHT);
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, CURSOR_DRAWN_FLAG);
+        WramWrite(wram, 0x74u, CURSOR_DRAWN_FLAG);
     } else {
-        LoadA16(cpu, 0x20dau);                                 /* A028 */
-        Write16Long(memory, LongIndexedAddress(0x7e3040u, cpu->x), cpu->accumulator);
-        Write16Long(memory, LongIndexedAddress(0x7e3080u, cpu->x), cpu->accumulator);
-        LoadA16(cpu, 0x20d7u);
-        Write16Long(memory, LongIndexedAddress(0x7e3042u, cpu->x), cpu->accumulator);
-        Write16Long(memory, LongIndexedAddress(0x7e3082u, cpu->x), cpu->accumulator);
-    }
-    SetAccumulatorWidth(cpu, 1);
-    if (draw) {
-        LoadA8(cpu, 0x08u);
-        StoreADirect8(memory, cpu, 0x74u);
+        WramWrite16At(wram, TEXT_CURSOR_TOP, row, CURSOR_BLANK_LEFT);
+        WramWrite16At(wram, TEXT_CURSOR_BOTTOM, row, CURSOR_BLANK_LEFT);
+        WramWrite16At(wram, TEXT_CURSOR_TOP + 2u, row, CURSOR_BLANK_RIGHT);
+        WramWrite16At(wram, TEXT_CURSOR_BOTTOM + 2u, row, CURSOR_BLANK_RIGHT);
+        LoadA16(cpu, CURSOR_BLANK_RIGHT);
+        SetAccumulatorWidth(cpu, 1);
     }
     SimulateRtsFrame(memory, cpu);
 }
@@ -971,89 +982,100 @@ static unsigned TextOpWaitForButton(
     return TEXT_OPCODE_EXIT;
 }
 
-/* $0B: choice cursor. */
+/* Window state bits of a choice. */
+enum {
+    TEXT_WINDOW_CHOICE_SHOWN = 0x02,
+    TEXT_WINDOW_CHOICE_BITS = 0x06,
+    TEXT_STATE_MODE_BIT = 0x01,
+};
+
+/* After a step, the selected entry wraps around the list. */
+static void TextChoiceWrapCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, TEXT_CHOICE_COUNT, 0);
+    DecrementA8(cpu); /* last entry */
+    /* The pair only leaves the sign of the entry in the flags. */
+    StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, TEXT_CHOICE_INDEX, 0), 1);
+    StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, TEXT_CHOICE_INDEX, 0), -1);
+    if (cpu->negative) {
+        StoreAAbsolute8(memory, cpu, TEXT_CHOICE_INDEX, 0); /* before the first */
+    } else {
+        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, TEXT_CHOICE_INDEX, 0));
+        if (!cpu->carry)
+            StoreZeroAbsolute8(memory, cpu, TEXT_CHOICE_INDEX, 0); /* past the last */
+    }
+}
+
+/* The script continues at the target of the confirmed entry. */
+static void TextChoiceJump(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, TEXT_CHOICE_TABLE_BANK, 0);
+    StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    TransferDirectToA(cpu);
+    LoadAAbsolute8(memory, cpu, TEXT_CHOICE_INDEX, 0);
+    SetAccumulatorWidth(cpu, 0);
+    AslA16(cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_CHOICE_TABLE, 0));
+    Lufia2TextSetScriptPointer(memory, cpu, 0x9f9fu);
+    SetAccumulatorWidth(cpu, 1);
+    Lufia2TextNextWord(memory, cpu, 0x9fa4u); /* target offset */
+    SetAccumulatorWidth(cpu, 0);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x099eu, 0));
+    PushAccumulator16(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadAAbsolute8(memory, cpu, 0x09a0u, 0);
+    StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
+    SetAccumulatorWidth(cpu, 0);
+    PullAccumulator16(memory, cpu);
+    Lufia2TextSetScriptPointer(memory, cpu, 0x9fb9u);
+    Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, TEXT_STATE_MODE_BIT);
+    TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
+    LoadA8(cpu, TEXT_WINDOW_CHOICE_BITS);
+    TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
+}
+
+/* $0B: choice cursor. Up and down move it, A or L confirms, B cancels. */
 static unsigned TextOpChoice(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    bool moved = true;
+
     LoadA8(cpu, 0x0fu);                                        /* 9F37 */
     StoreAAbsolute8(memory, cpu, 0x0563u, 0);
-    LoadA8(cpu, 0x02u);
+    LoadA8(cpu, TEXT_WINDOW_CHOICE_SHOWN);
     TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 1);
     if (cpu->zero) {
-        StoreZeroAbsolute8(memory, cpu, 0x126au, 0);
+        StoreZeroAbsolute8(memory, cpu, TEXT_CHOICE_INDEX, 0);
         TextChoiceCursor(memory, cpu, 0x9f48u, 1);
     }
-    LoadA8(cpu, 0x08u);                                        /* 9F49 up */
-    TextRepeatButton(memory, cpu, 0x9f4du);
-    if (!cpu->zero) {
+    if (TextButtonPressed(memory, cpu, 0x9f4du, JOY_HIGH_UP, JOYPAD_HIGH_BYTE)) {
         TextChoiceCursor(memory, cpu, 0x9f52u, 0);
-        StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x126au, 0), -1);
-    } else {
-        LoadA8(cpu, 0x04u);                                    /* 9F58 down */
-        TextRepeatButton(memory, cpu, 0x9f5cu);
-        if (cpu->zero)
-            goto confirm;
+        StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, TEXT_CHOICE_INDEX, 0), -1);
+    } else if (TextButtonPressed(memory, cpu, 0x9f5cu, JOY_HIGH_DOWN,
+                                 JOYPAD_HIGH_BYTE)) {
         TextChoiceCursor(memory, cpu, 0x9f61u, 0);
-        StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x126au, 0), 1);
-    }
-    LoadAAbsolute8(memory, cpu, 0x126eu, 0);                   /* 9F65 */
-    DecrementA8(cpu);
-    StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x126au, 0), 1);
-    StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x126au, 0), -1);
-    if (cpu->negative) {
-        StoreAAbsolute8(memory, cpu, 0x126au, 0);              /* wrap to last */
+        StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, TEXT_CHOICE_INDEX, 0), 1);
     } else {
-        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x126au, 0));
-        if (!cpu->carry)
-            StoreZeroAbsolute8(memory, cpu, 0x126au, 0);       /* wrap to first */
+        moved = false;
     }
-    TextChoiceCursor(memory, cpu, 0x9f80u, 1);
-    goto wait;
-confirm:
-    LoadA8(cpu, 0xa0u);                                        /* 9F83 */
-    TextPressedButton(memory, cpu, 0x9f87u);
-    if (!cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x126du, 0);
-        StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
-        PushAccumulator8(memory, cpu);
-        PullDataBank(memory, cpu);
-        TransferDirectToA(cpu);
-        LoadAAbsolute8(memory, cpu, 0x126au, 0);
-        SetAccumulatorWidth(cpu, 0);
-        AslA16(cpu);
-        cpu->carry = 0;
-        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x126bu, 0));
-        Lufia2TextSetScriptPointer(memory, cpu, 0x9f9fu);
-        SetAccumulatorWidth(cpu, 1);
-        Lufia2TextNextWord(memory, cpu, 0x9fa4u);                    /* choice target */
-        SetAccumulatorWidth(cpu, 0);
-        cpu->carry = 0;
-        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x099eu, 0));
-        PushAccumulator16(memory, cpu);
-        SetAccumulatorWidth(cpu, 1);
-        LoadAAbsolute8(memory, cpu, 0x09a0u, 0);
-        StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
-        SetAccumulatorWidth(cpu, 0);
-        PullAccumulator16(memory, cpu);
-        Lufia2TextSetScriptPointer(memory, cpu, 0x9fb9u);
-        Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y);
-        SetAccumulatorWidth(cpu, 1);
-        LoadA8(cpu, 0x01u);
-        TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
-        LoadA8(cpu, 0x06u);
-        TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
+    if (moved) {
+        TextChoiceWrapCursor(memory, cpu);
+        TextChoiceCursor(memory, cpu, 0x9f80u, 1);
+    } else if (TextButtonPressed(memory, cpu, 0x9f87u, JOY_LOW_A | JOY_LOW_L,
+                                 JOYPAD_LOW_BYTE)) {
+        TextChoiceJump(memory, cpu);
         return TEXT_OPCODE_NEXT;
-    }
-    LoadA8(cpu, 0x80u);                                        /* 9FCC cancel */
-    TextRepeatButton(memory, cpu, 0x9fd0u);
-    if (!cpu->zero) {
+    } else if (TextButtonPressed(memory, cpu, 0x9fd0u, JOY_HIGH_B, JOYPAD_HIGH_BYTE)) {
         TextCloseWindow(memory, cpu, 0x9fd5u);
         StoreZeroAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
-        LoadA8(cpu, 0x01u);
+        LoadA8(cpu, TEXT_STATE_MODE_BIT);
         TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
         return TEXT_OPCODE_NEXT;
     }
-wait:
     TextPrevByte(memory, cpu, 0x9fe3u);                        /* 9FE1 */
     return TEXT_OPCODE_EXIT;
 }
@@ -1750,13 +1772,8 @@ Lufia2ExecutionResult Lufia2TextPromptTick(
         if (cpu->carry)
             return result;
     } else {
-        LoadA8(cpu, 0xa0u);                                    /* 9C8F */
-        SimulateJsrFrame(memory, cpu, 0x9c93u);
-        And8(cpu, DirectByte(memory, cpu, DP_BUTTONS_HELD));   /* C81E */
-        if (!cpu->zero)
-            TestBitsDirect(memory, cpu, DP_BUTTONS_PRESSED, 0);
-        SimulateRtsFrame(memory, cpu);
-        if (cpu->zero)
+        if (!TextButtonPressed(memory, cpu, 0x9c93u, JOY_LOW_A | JOY_LOW_L,
+                               JOYPAD_LOW_BYTE))
             return result;
     }
     LoadA8(cpu, 0x08u);                                        /* 9C96 */
