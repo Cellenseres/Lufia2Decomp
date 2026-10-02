@@ -381,6 +381,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:E11F` | `Lufia2WorldMapStepAnimations` | draft | `src/world/world_map_objects.c` |
 | `$86:E287` | `Lufia2WorldMapTestObjects` | draft | `src/world/world_map_objects.c` |
 | `$86:E295` | `Lufia2WorldMapTestObject` | draft | `src/world/world_map_objects.c` |
+| `$86:E555` | `Lufia2WorldMapDrawSpritePair` | draft | `src/world/world_map_objects.c` |
+| `$86:E5BB` | `Lufia2WorldMapStoreHighBits` | draft | `src/world/world_map_objects.c` |
 | `$86:E640` | `Lufia2WorldMapClearSlotFlags` | draft | `src/world/world_map_objects.c` |
 | `$86:E650` | `Lufia2WorldMapClearSprites` | draft | `src/world/world_map_objects.c` |
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
