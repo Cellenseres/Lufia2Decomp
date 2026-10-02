@@ -1,5 +1,6 @@
 /* Status and equipment text dispatch. */
 
+#include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/menu.h"
 #include "system/wram.h"
@@ -41,11 +42,8 @@ static uint8_t StatusChild(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context,
     uint32_t site, uint32_t target, uint8_t frame) {
-    if (frame == 3u)
-        SimulateJslFrame(memory, cpu, 0x82u, (uint16_t)(site + 3u));
-    else
-        SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
-    return child(context, cpu, target, site, frame);
+    return CallChildWithFrame(
+        memory, cpu, child, context, site, target, frame, 0x82u);
 }
 
 /* $82:A318: modes 0/1 party, 2 equipment, 3 equipment refresh, 4 details. */
