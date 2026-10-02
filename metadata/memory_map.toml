@@ -1235,3 +1235,91 @@ width = 1
 count = 1
 owner = "field"
 notes = "Scene-script bank byte.80:C0B7 increments it through the current DB when Y enters the positive half, loads DB from it and resets Y to8000.80:C12E initializes it from09A0."
+
+[[location]]
+address = "7E:0B68"
+name = "ancient_cave_total_hours"
+width = 1
+count = 1
+owner = "cave"
+notes = "84:890B adds the current Cave hour byte with saturation at FF."
+
+[[location]]
+address = "7E:0B69"
+name = "ancient_cave_total_minutes"
+width = 1
+count = 1
+owner = "cave"
+notes = "84:890B adds the current Cave minutes, subtracting sixty once and carrying into B68."
+
+[[location]]
+address = "7E:0B5B"
+name = "ancient_cave_counter"
+width = 2
+count = 1
+owner = "cave"
+notes = "84:890B adds this word to B72 with saturation at FFFF; the counted activity is not yet identified."
+
+[[location]]
+address = "7E:0B72"
+name = "ancient_cave_total_counter"
+width = 2
+count = 1
+owner = "cave"
+notes = "84:890B accumulates B5B into this word with saturation at FFFF."
+
+[[location]]
+address = "7E:E200"
+name = "ancient_cave_carry_count"
+width = 2
+count = 1
+owner = "cave"
+notes = "84:890B stores a word count after scanning Iris and blue equipment; consumption doubles the low byte and uses it as a byte limit. Original overflow is retained."
+
+[[location]]
+address = "7E:E202"
+name = "ancient_cave_carry_items"
+width = 2
+count = 1
+owner = "cave"
+notes = "Start of variable-length item words appended through WMDATA, then consumed after restoration by84:8A84. Low nine bits are item ID, upper seven bits encode quantity."
+
+[[location]]
+address = "7F:E756"
+name = "ancient_cave_exit_hours"
+width = 1
+count = 1
+owner = "cave"
+notes = "84:890B stages current hours before restoring the old play time and adds this byte afterward."
+
+[[location]]
+address = "7F:E757"
+name = "ancient_cave_exit_minutes"
+width = 1
+count = 1
+owner = "cave"
+notes = "84:890B stages current minutes before restoring the old play time and adds this byte afterward."
+
+[[location]]
+address = "7F:E759"
+name = "ancient_cave_inventory_mode"
+width = 1
+count = 1
+owner = "cave"
+notes = "Nonzero skips the Iris/blue scan and selects the saved item list at7F:BF00 after restoration."
+
+[[location]]
+address = "7F:B000"
+name = "ancient_cave_state_backup"
+width = 1
+count = 1931
+owner = "cave"
+notes = "84:8B20 has eleven destination-bank-length records covering1931 bytes.84:890B reads this consecutive backup through WMDATA."
+
+[[location]]
+address = "7F:BF00"
+name = "ancient_cave_saved_items"
+width = 2
+count = 1
+owner = "cave"
+notes = "Start of the alternate zero-terminated item-word list consumed at84:8A43 whenE759 is nonzero."

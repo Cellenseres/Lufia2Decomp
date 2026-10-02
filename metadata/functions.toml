@@ -2915,3 +2915,20 @@ source = "src/field/scene_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Blue-item carry list and full Cave exit, with explicit child call contracts.
+[[function]]
+address = "84:8AF4"
+name = "Lufia2AncientCaveCarryBlueItem"
+source = "src/cave/cave_exit.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:890B"
+name = "Lufia2AncientCaveExit"
+source = "src/cave/cave_exit.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

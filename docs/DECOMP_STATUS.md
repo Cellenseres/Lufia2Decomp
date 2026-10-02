@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-352 functions in `metadata/functions.toml`: 352 verified, 0 draft, 0 identified, 0 disabled.
+354 functions in `metadata/functions.toml`: 354 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **486 independent jobs**. The normal
-application build also passes. The consumer selects all 352 verified functions,
+The full Windows Release verifier passes **493 independent jobs**. The normal
+application build also passes. The consumer selects all 354 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -34,6 +34,38 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Ancient Cave exit and carry items
+
+`$84:890B` restores the pre-Cave state, preserves the original time arithmetic,
+and returns the original carry items. `$84:8AF4` checks the 41 blue-equipment
+IDs and appends eligible item words through WMDATA. Both are standalone
+replacements with an explicit PB `$84` contract; unsupported banks and CPU
+modes enter the interpreter at the actual original address.
+
+The exit exposes checkpoints before its first PHP (`$84:890B`) and after
+restoring the backup (`$84:8A38`). The consumer event layer supports eight
+subscribers and the same interpreter checkpoints without a decomp build.
+The standalone code contains the original behavior; carryout fixes belong
+to consumers of these interfaces.
+
+Verification covers 65,792 blue-item states and 10,540 exit states against the
+original parent instructions, with identical explicit contracts at six unknown
+child-call sites. The runtime bridge enters both routines without an initial
+fallback in these cases. The 171 exact continuations cover bounded loops,
+changed live returns, child unwinds and changed child CPU modes. The tests
+compare CPU state, all WRAM and every operand read and write, including the
+1,931 real backup bytes read through WMDATA. There are also 4,602 unsupported
+entry checks, 40 detected deliberate faults, 1,151 subscriber checks and 768
+WRAM-port bank/wrap checks.
+
+## Menu member status read order
+
+`$82:950E` now follows the original conditional and repeated status/HP reads,
+rather than caching their values before selecting a colour. The difference
+is observable when a synthetic member pointer reaches the WMDATA read port.
+All 16,384 original-ROM and runtime cases pass; reinserting the old cached
+sequence reproduces the three detected failures.
 
 ## Scene script operand reader
 

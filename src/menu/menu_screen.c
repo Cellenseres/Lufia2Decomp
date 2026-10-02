@@ -1,6 +1,6 @@
 /* Menu screen building blocks and screens. */
 
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/item.h"
 #include "lufia2/menu.h"
 #include "lufia2/party.h"
@@ -742,8 +742,6 @@ static void MenuSmallNumberFull(const Lufia2Memory *memory,
 Lufia2ExecutionResult Lufia2MenuMemberStatus(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    static const uint16_t kColumns[5] = {
-        0x0004u, 0x0084u, 0x0080u, 0x0044u, 0x0040u};
     static const struct {
         uint16_t field;
         int full;
@@ -751,15 +749,27 @@ Lufia2ExecutionResult Lufia2MenuMemberStatus(
     } kValues[4] = {
         {0x0027u, 1, 0x956fu}, {0x0013u, 0, 0x9576u},
         {0x0025u, 1, 0x957du}, {0x0011u, 0, 0x9584u}};
-    const uint16_t base = cpu->x;
     unsigned i;
 
-    SetAccumulatorWidth(cpu, 0);
-    for (i = 0; i < 5u; ++i) {                                 /* pushed columns */
-        LoadA16(cpu, (uint16_t)(base + kColumns[4u - i]));
-        cpu->carry = 0;
-        PushAccumulator16(memory, cpu);
-    }
+    OpRepWidths(cpu, 0x20u);
+    OpTxa(cpu);
+    cpu->carry = 0;
+    OpAdcValue(cpu, 0x40u);
+    PushAccumulator16(memory, cpu);
+    cpu->carry = 0;
+    OpAdcValue(cpu, 4u);
+    PushAccumulator16(memory, cpu);
+    OpTxa(cpu);
+    cpu->carry = 0;
+    OpAdcValue(cpu, 0x80u);
+    PushAccumulator16(memory, cpu);
+    cpu->carry = 0;
+    OpAdcValue(cpu, 4u);
+    PushAccumulator16(memory, cpu);
+    OpTxa(cpu);
+    cpu->carry = 0;
+    OpAdcValue(cpu, 4u);
+    PushAccumulator16(memory, cpu);
     LoadY16(cpu, Read16Direct(memory, cpu, 0x2au));
     LoadA16(cpu, 0x3900u);
     StoreAAbsolute16(memory, cpu, 0x155cu, 0);
@@ -768,25 +778,29 @@ Lufia2ExecutionResult Lufia2MenuMemberStatus(
     Jsr(memory, cpu, 0x953du);
     MenuSmallNumber(memory, cpu);
     Rts(memory, cpu);
-    {
-        const uint16_t flags = Read16AbsoluteIndexed(memory, cpu, 0x000fu, cpu->y);
-        const uint16_t hp = Read16AbsoluteIndexed(memory, cpu, 0x0025u, cpu->y);
-        const uint16_t now = Read16AbsoluteIndexed(memory, cpu, 0x0011u, cpu->y);
-        uint16_t colour = 0;
-
-        if ((flags & 0x0005u) || now <= (uint16_t)(hp >> 3)) {
-            colour = 0x3500u;                                  /* 9563 */
-            LoadA16(cpu, (flags & 0x0005u) ? flags : (uint16_t)(hp >> 3));
-        } else if (now <= (uint16_t)(hp >> 2)) {
-            colour = 0x3100u;
-            LoadA16(cpu, (uint16_t)(hp >> 2));
+    OpLda(memory, cpu, OpAbsY(cpu, 0x000fu));
+    OpBitValue(cpu, 5u);
+    if (!cpu->zero) {
+        OpLoadA(cpu, 0x3500u);
+        OpSta(memory, cpu, OpAbs(cpu, 0x155cu));
+    } else {
+        OpLda(memory, cpu, OpAbsY(cpu, 0x0025u));
+        OpLsrA(cpu);
+        OpLsrA(cpu);
+        OpLsrA(cpu);
+        OpCmp(memory, cpu, OpAbsY(cpu, 0x0011u));
+        if (cpu->carry) {
+            OpLoadA(cpu, 0x3500u);
+            OpSta(memory, cpu, OpAbs(cpu, 0x155cu));
         } else {
-            LoadA16(cpu, (uint16_t)(hp >> 2));
-        }
-        Compare16(cpu, cpu->accumulator, now);
-        if (colour) {
-            LoadA16(cpu, colour);
-            StoreAAbsolute16(memory, cpu, 0x155cu, 0);
+            OpLda(memory, cpu, OpAbsY(cpu, 0x0025u));
+            OpLsrA(cpu);
+            OpLsrA(cpu);
+            OpCmp(memory, cpu, OpAbsY(cpu, 0x0011u));
+            if (cpu->carry) {
+                OpLoadA(cpu, 0x3100u);
+                OpSta(memory, cpu, OpAbs(cpu, 0x155cu));
+            }
         }
     }
     for (i = 0; i < 4u; ++i) {
