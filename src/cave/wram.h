@@ -1,6 +1,8 @@
 #ifndef LUFIA2_CAVE_WRAM_H
 #define LUFIA2_CAVE_WRAM_H
 
+#include "system/wram.h"
+
 /* Ancient Cave WRAM, DB-relative; _LONG adds bank $7F. */
 enum {
     CAVE_FLOOR = 0xe696u,
@@ -125,6 +127,105 @@ enum {
     CAVE_DP_LINK_INDEX = 0x5a,
     CAVE_DP_LINK_KEY = 0x54,
     CAVE_DP_SCRATCH_COUNT = 0x56,
+
+    /* Cell positions in the 16-wide grid; the first row is the border. */
+    CAVE_GRID_WIDTH = 0x10,
+    CAVE_GRID_ROWS = 0x0e,
+    CAVE_FIRST_ROOM_CELL = 0x10,
+    CAVE_GRID_ROWS_END = 0xf0,
+    CAVE_CELL_MARKED = 0x80,
+    CAVE_BLANK_SHAPE = 0x1c,
+    CAVE_BORDER_SHAPE_BASE = 0x33,
+    CAVE_BORDER_SHAPES = 6,
+    CAVE_SHAPE_TABLE = 0x93d59b,
+    CAVE_LINK_SHAPE = 0x39,
+    CAVE_LINK_BLOCK_ROW = 4,
+
+    /* The hidden 2x2 treasure room and the objects and chests of ordinary
+     * rooms. */
+    CAVE_TREASURE_ROOM_ODDS = 0x10,
+    CAVE_TREASURE_CELL_ODDS = 0x80,
+    CAVE_TREASURE_LAST_CELL = 0xc0,
+    CAVE_TREASURE_CELL = 0xe6a8,
+    CAVE_TREASURE_MARK = 0xea,
+    CAVE_TREASURE_OBJECTS = 13,
+    CAVE_TREASURE_CHESTS = 8,
+    CAVE_TREASURE_SPREAD = 8,
+    CAVE_TREASURE_COLUMN_OFFSET = 1,
+    CAVE_TREASURE_ROW_OFFSET = 3,
+    CAVE_MIN_ROOM_OBJECTS = 4,
+    CAVE_EXTRA_ROOM_OBJECTS = 4,
+    CAVE_OBJECT_JITTER = 2,
+    CAVE_MAX_CHESTS = 8,
+    CAVE_DP_OBJECT_TARGET = 0x22,
+    CAVE_DP_OBJECT_INDEX = 0x24,
+    CAVE_DP_CHEST_ATTEMPTS = 0x59,
+    CAVE_DP_NEIGHBOUR_BITS = 0x55,
+
+    /* Block drawing: the decompressed block set at $7E:4000, the tile map in
+     * bank $7F (a header, then two layers of 96-word rows) and the scratch
+     * the passes below share. */
+    CAVE_BLOCK_SET = 0xe699,
+    CAVE_BLOCK_BUFFER = 0x4000,
+    CAVE_BLOCK_BUFFER_LONG = WRAM_FIELD_MAP_ATTRIBUTES,
+    CAVE_MAP_RESOURCE_LONG = 0x7fe69b,
+    CAVE_MAP_BYTES = 0x7e1c,
+    CAVE_MAP_LAYER_1 = 0x000a,
+    CAVE_MAP_LAYER_2_HEADER = 0x3f0a,
+    CAVE_MAP_LAYER_2 = 0x3f0e,
+    CAVE_MAP_ROW_BYTES = 0xc0,
+    CAVE_BLOCK_TILE_SPAN = 6,
+    CAVE_MAP_ROW_SKIP = CAVE_MAP_ROW_BYTES - 2 * (CAVE_BLOCK_TILE_SPAN - 1),
+    CAVE_TEMPLATE_A = 0x9f3f,
+    CAVE_TEMPLATE_A_BYTES = 10,
+    CAVE_TEMPLATE_B = 0x9f45,
+    CAVE_TEMPLATE_B_BYTES = 4,
+    CAVE_TILE_INDEX_MASK = 0x03ff,
+    CAVE_TILE_FLAG_MASK = 0xfc00,
+    CAVE_DP_RESOURCE = 0x54,
+    CAVE_DP_RESOURCE_TARGET = 0x60,
+    CAVE_DP_DRAW_CELL = 0x23,
+    CAVE_DP_DRAW_COLUMNS = 0x26,
+    CAVE_DP_DRAW_ROWS = 0x27,
+    CAVE_DP_BLOCK_SHAPE = 0x22,
+
+    /* Tile sets and decorations come from lists searched by key; each found
+     * entry is read from $7E:F000 into eight-byte records at $7F:C000, one
+     * 256-byte block per variant, the first block being the header (variant
+     * count, then rows below the first). */
+    CAVE_LIST_ENTRY_LONG = 0x7ef000,
+    CAVE_LIST_TILE_SETS = 0x05,
+    CAVE_LIST_DECORATIONS = 0x0a,
+    CAVE_TILE_SET_KEY = 0x0a,
+    CAVE_DECORATION_KEY = 0x04,
+    CAVE_TILE_SET_COUNT = 4,
+    CAVE_DECORATION_FIRST_SET = 3,
+    CAVE_DECORATION_SETS = 5,
+    CAVE_SET_TABLE = 0xc000,
+    CAVE_SET_SIZE = 8,
+    CAVE_SET_VARIANT_STRIDE = 0x100,
+    CAVE_CELL_SET_MASK = 0x03,
+    CAVE_DECORATION_ODDS = 0x30,
+    CAVE_TILE_SET_WORDS_LONG = 0x000022,
+    CAVE_DP_SET_OFFSET = 0x56,
+    CAVE_DP_TILE_COUNT = 0x56,
+    CAVE_DP_ROW_COUNT = 0x58,
+    CAVE_DP_TILE_BITS = 0x54,
+    CAVE_DP_EXTRA_ROWS = 0x5a,
+
+    /* The finishing pass: link, stair and chest tiles, then the map sections. */
+    CAVE_LINK_MARK_A = 0xe6ad,
+    CAVE_LINK_MARK_B = 0xe6ae,
+    CAVE_LINK_MARK_TILE = 0x4390,
+    CAVE_STAIR_TILE = 0x4458,
+    CAVE_CHEST_TILE = 0x474e,
+    CAVE_CHEST_TILE_ITEM = 0x4754,
+    CAVE_CHEST_ITEM_FLAG = 0x4000,
+    CAVE_SECTION_COUNT = 0xd038,
+    CAVE_SECTION_BYTES = 0x7e0e,
+    CAVE_DP_SECTION_INDEX = 0x5d,
+    CAVE_DP_SECTION_SIZE = 0x2d,
+    CAVE_DP_SECTION_FLAGS = 0x28,
 
     CAVE_DP_TILE_COLUMN = 0x8f,
     CAVE_DP_TILE_ROW = 0x91,
