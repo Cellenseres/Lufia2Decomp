@@ -114,9 +114,11 @@ static void NmiTileUploads(
     StoreYIndex(memory, cpu, SNES_BBAD(6));
     LoadX8(cpu, 0x06u);
     for (;;) {
-        NmiTileBlock(memory, cpu, 0x1246u, 0x1236u, 0x81u, 0x7fu, 0, 1u);
-        NmiTileBlock(memory, cpu, 0x123eu, 0x122eu, 0x80u, 0x7eu, 1,
-            0x0020u);                                          /* A13E */
+        NmiTileBlock(memory, cpu, WRAM_FIELD_STREAMED_COLUMN_VRAM,
+                     WRAM_FIELD_STREAMED_COLUMN_SOURCE, 0x81u, 0x7fu, 0, 1u);
+        NmiTileBlock(memory, cpu, WRAM_FIELD_STREAMED_ROW_VRAM,
+                     WRAM_FIELD_STREAMED_ROW_SOURCE, 0x80u, 0x7eu, 1,
+                     0x0020u);                                 /* A13E */
         LoadX8(cpu, (uint8_t)(cpu->x - 2u));                   /* A193 */
         if (cpu->negative)
             break;
