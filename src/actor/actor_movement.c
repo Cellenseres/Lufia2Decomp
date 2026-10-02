@@ -1,6 +1,7 @@
 /* Actor positions, map cells and collision. */
 
 #include "actor/actor_internal.h"
+#include "actor/actor_slot_view.h"
 #include "core/cpu_internal.h"
 #include "core/hardware_math.h"
 #include "core/wram_view.h"
@@ -201,85 +202,104 @@ uint8_t Lufia2ActorStepBlockedBody(
     return 1;
 }
 
+/* Scratch byte: non-zero when the actor blocks its cell. */
+enum { DP_ACTOR_BLOCKS = 0x9e };
+
+/* Map cell attribute bit that marks a cell as occupied by an actor. */
+enum { CELL_OCCUPIED = 0x01 };
+
+/* Second plane the occupancy of blocking actors is also recorded in. */
+#define MAP_BLOCKING_ATTRIBUTES 0x7e4001u
+
+/* Actors with this state or higher can be solid. */
+enum { ACTOR_SOLID_FROM_STATE = 2 };
+
+/* Sprite ids of actors that never block the cell they stand on. */
+enum { NON_BLOCKING_FIRST = 0x71, NON_BLOCKING_LAST = 0x73 };
+
+/* A = A | CELL_OCCUPIED in the attribute byte of `cell`; the flags are those
+ * of the OR. */
+static void SetCellOccupied(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            uint32_t attributes, uint16_t cell) {
+    const Lufia2Wram wram = WramViewLong(memory);
+
+    LoadA8(cpu, WramReadAt(wram, attributes, cell));
+    Or8(cpu, CELL_OCCUPIED);
+    WramWriteAt(wram, attributes, cell, A8(cpu));
+}
+
+/* $83:FA3F: marks the map cell under the actor in slot [$A7] as occupied. */
 void Lufia2ActorMarkMapOccupancy(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* FA3F */
-    Write8(memory, DirectAddress(cpu, 0x9eu), 0x00u);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
-    Compare8(cpu, A8(cpu), 0x02u);                             /* FA47 */
-    if (cpu->carry) {
-        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E05D2, cpu->x);          /* FA4B */
-        Compare8(cpu, A8(cpu), 0x71u);
-        if (!cpu->zero) {
-            Compare8(cpu, A8(cpu), 0x72u);
-            if (!cpu->zero) {
-                Compare8(cpu, A8(cpu), 0x73u);
-                if (!cpu->zero) {
-                    LoadA8(cpu, 0xffu);                        /* FA5A */
-                    Write8(memory, DirectAddress(cpu, 0x9eu), A8(cpu));
-                }
-            }
-        }
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    Lufia2ActorSlotView slot;
+    uint8_t blocks;
+
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    slot = Lufia2ActorSlotAt(memory, cpu, cpu->x);
+    WramWrite(wram, DP_ACTOR_BLOCKS, 0);
+    if (Lufia2ActorSlotReadLong(&slot, WRAM_UNK_7FE216) >= ACTOR_SOLID_FROM_STATE) {
+        const uint8_t sprite = Lufia2ActorSlotReadMirrored(&slot, WRAM_UNK_7E05D2);
+
+        if (sprite < NON_BLOCKING_FIRST || sprite > NON_BLOCKING_LAST)
+            WramWrite(wram, DP_ACTOR_BLOCKS, 0xff);
     }
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);              /* FA5E */
+    LoadA8(cpu, Lufia2ActorSlotTileX(&slot));
     ExchangeAccumulatorBytes(cpu);
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
-    Lufia2MapCellIndex(memory, cpu, 0xfa67u, 0);               /* FA65 */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x)));
-    Or8(cpu, 0x01u);
-    Write8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x), A8(cpu));
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x9eu)));     /* FA72 */
-    if (!cpu->zero) {
-        LoadA8(
-            cpu, Read8(memory, LongIndexedAddress(0x7e4001u, cpu->x)));
-        Or8(cpu, 0x01u);
-        Write8(memory, LongIndexedAddress(0x7e4001u, cpu->x), A8(cpu));
-    }
+    LoadA8(cpu, Lufia2ActorSlotTileY(&slot));
+    Lufia2MapCellIndex(memory, cpu, 0xfa67u, 0);
+    SetCellOccupied(memory, cpu, WRAM_FIELD_MAP_ATTRIBUTES, cpu->x);
+    blocks = WramRead(wram, DP_ACTOR_BLOCKS);
+    LoadA8(cpu, blocks);
+    if (blocks != 0)
+        SetCellOccupied(memory, cpu, MAP_BLOCKING_ATTRIBUTES, cpu->x);
 }
 
+/* Tile numbers are kept in 1/16 units as well. The accumulator carries the
+ * flags of the shifts and, from TDC, the high byte of the direct page. */
+static uint16_t TileToFine(Lufia2CpuState *cpu, uint8_t tile) {
+    unsigned shifts;
+
+    cpu->accumulator = (uint16_t)((cpu->direct_page & 0xff00u) | tile);
+    for (shifts = 0; shifts < 4; ++shifts)
+        AslA16(cpu);
+    return cpu->accumulator;
+}
+
+/* $83:A746: fine position of the actor = its tile position * 16. */
 void Lufia2ActorSyncFinePosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* A746 */
-    TransferDirectToA(cpu);
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);
-    SetAccumulatorWidth(cpu, 0);                               /* A74C */
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    PushAccumulator16(memory, cpu);                            /* A752 */
+    const Lufia2Wram wram = WramViewLong(memory);
+    Lufia2ActorSlotView slot;
+    uint16_t fine_y;
+
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    slot = Lufia2ActorSlotAt(memory, cpu, cpu->x);
+    TileToFine(cpu, Lufia2ActorSlotTileX(&slot));
+    PushAccumulator16(memory, cpu); /* x waits on the stack */
+    fine_y = TileToFine(cpu, Lufia2ActorSlotTileY(&slot));
+    LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
+    WramWrite16At(wram, WRAM_ACTOR_FINE_Y, cpu->x, fine_y);
+    PullAccumulator16(memory, cpu);
+    WramWrite16At(wram, WRAM_ACTOR_FINE_X, cpu->x, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
-    TransferDirectToA(cpu);                                    /* A755 */
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
-    SetAccumulatorWidth(cpu, 0);                               /* A759 */
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                           /* A75F */
-    Write16Long(
-        memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x), cpu->accumulator);
-    PullAccumulator16(memory, cpu);                            /* A765 */
-    Write16Long(
-        memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x), cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);                               /* A76A */
 }
 
-/* $83:FAFA: sign-extend A.low, leave M=0. */
+/* $83:FAFA: sign-extends A.low into the high byte and leaves A 16-bit. A
+ * positive value keeps the old high byte. */
 void Lufia2SignExtendA8(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
+    const uint8_t value = A8(cpu);
+
     SimulateJsrFrame(memory, cpu, return_address);
-    Or8(cpu, 0x00u);                                           /* FAFA */
-    if (cpu->negative) {
-        ExchangeAccumulatorBytes(cpu);                         /* FAFE */
-        LoadA8(cpu, 0xffu);
-        ExchangeAccumulatorBytes(cpu);
-    }
-    SetAccumulatorWidth(cpu, 0);                               /* FB02 */
+    if (value & 0x80u)
+        cpu->accumulator = (uint16_t)(0xff00u | value);
+    SetNz8(cpu, value);
+    SetAccumulatorWidth(cpu, 0);
     SimulateRtsFrame(memory, cpu);
 }
 
