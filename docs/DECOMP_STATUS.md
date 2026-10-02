@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-360 functions in `metadata/functions.toml`: 360 verified, 0 draft, 0 identified, 0 disabled.
+363 functions in `metadata/functions.toml`: 363 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **510 independent jobs**. The normal
-application build also passes. The consumer selects all 360 verified functions,
+The full Windows Release verifier passes **513 independent jobs**. The normal
+application build also passes. The consumer selects all 363 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -34,6 +34,31 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Metatile graphics and planar mirroring
+
+`$80:F35B` copies the four planar tiles of a metatile, applying horizontal
+and vertical flips from the original tile attributes. Its C separates
+raw block copying, mirrored plane words and reverse row traversal. The
+byte mirror at `$80:F40A` uses three bit exchanges instead of reproducing
+the original shift sequence; it preserves the hidden accumulator byte's
+observable carry effect. `$80:F3F1` mirrors both plane bytes through their
+actual call frames and direct-page scratch.
+
+Both direct and runtime comparisons pass 65,792 byte-mirror, 65,792
+word-mirror and 4,864 metatile states. All initial accumulator words are
+covered for the mirror routines. Tests vary data banks, direct pages,
+flip combinations and stack aliases, including 324 exact continuations
+from changed returns or bounded malformed loops. Runtime execution has
+no initial native fallback. Normal metatile cases execute 250 to 5,618
+original body instructions per call; this is an instruction-count result,
+not a wall-clock benchmark.
+
+The tests compare CPU state, full WRAM, hardware state and operand bus
+order. Long malformed traces compare their first 262,144 events directly
+and their complete event count and 64-bit stream hash. There are 6,135
+unsupported-entry checks, and all 40 deliberate semantic and bridge
+faults are detected. All three functions are selected by the consumer.
 
 ## Field reload and camera preparation
 
