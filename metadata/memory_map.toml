@@ -611,6 +611,13 @@ owner = "battle"
 notes = "$85:9275 and $81:C739 stage the current party-slot index with a bank-zero word store."
 
 [[location]]
+address = "7E:1201"
+name = "world_map_view_angle"
+width = 1
+owner = "world"
+notes = "World map view angle, 256 steps to a turn; $86:A894 derives the sine and cosine terms of the ground plane from it."
+
+[[location]]
 address = "7E:121E"
 name = "field_layer_scroll_x"
 width = 2

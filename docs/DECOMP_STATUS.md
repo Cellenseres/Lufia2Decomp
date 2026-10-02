@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-366 functions in `metadata/functions.toml`: 366 verified, 0 draft, 0 identified, 0 disabled.
+367 functions in `metadata/functions.toml`: 366 verified, 1 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -680,6 +680,19 @@ Production bridges pass 32,798 native cases, 45 redirected-child contracts
 and 3,072 unsupported-state checks. All 22 fault variants are caught. Six
 canonical fields identify the attribute grid, layer section words and the
 column-upload queue consumed by NMI.
+
+## World map ground plane
+
+`$86:A894` builds the two Mode 7 matrix HDMA tables of the world map's
+perspective view: the sine and cosine terms of the view angle, the row step
+from the tilt, and 2 x 112 scanlines scaled by a reciprocal table through the
+hardware multiplier. It is the most expensive routine the interpreter still
+ran in play (about 11,000 instructions per call, once per frame). The angle
+terms, the 16-bit multiply, the 32-bit restoring divider and the four sign
+patterns are internal. The routine is `draft`: it was compared against the
+original ROM code in the interpreter on random work-RAM states (CPU state,
+complete WRAM, ordered writes, hardware multiplier accesses and the stack
+frames it leaves behind) and awaits the maintainer's verifier.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
