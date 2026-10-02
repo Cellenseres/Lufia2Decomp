@@ -739,77 +739,69 @@ static void CaveTreasureRoom(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
  * each unmarked 2x2 room until the chest limit is reached. */
 static void CaveObjectsAndChests(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadA8(cpu, CAVE_EXTRA_ROOM_OBJECTS); /* 9515 */
-    Lufia2CaveRandomBelow(memory, cpu, 0x9517u);
-    cpu->carry = 0;
-    OpAdcValue(cpu, CAVE_MIN_ROOM_OBJECTS);
-    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_TARGET));
-    OpStz(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_TARGET + 1u));
-    OpLdx(cpu, 0x0000u);
-    do {
-        LoadA8(cpu, CAVE_OBJECT_JITTER); /* 9524 */
-        Lufia2CaveRandomBelow(memory, cpu, 0x9526u);
-        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
-        LoadA8(cpu, CAVE_OBJECT_JITTER);
-        Lufia2CaveRandomBelow(memory, cpu, 0x952du);
-        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
-        OpWriteX(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_INDEX), cpu->x);
-        Lufia2CavePickCell(memory, cpu, 0x9534u);
-        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_INDEX)));
-        if (cpu->carry) {
-            Lufia2CaveCellPosition(memory, cpu, 0x953bu);      /* 953B */
-            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_INDEX)));
-            cpu->carry = 1;
-            OpAdc(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
-            OpIncA(cpu);
-            OpIncA(cpu);
-            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
-            ExchangeAccumulatorBytes(cpu);
-            cpu->carry = 1;
-            OpAdc(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
-            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t target;
+    uint16_t index;
+    uint16_t cell;
+
+    target =
+        (uint8_t)(CaveRandomBelowOf(memory, cpu, 0x9517u, CAVE_EXTRA_ROOM_OBJECTS) +
+                  CAVE_MIN_ROOM_OBJECTS);
+    WramWrite16(wram, CAVE_DP_OBJECT_TARGET, target);
+    for (index = 0;;) {
+        uint8_t room_cell;
+        uint8_t column;
+        uint8_t row;
+
+        /* A random offset within the room, then the room's own origin. */
+        WramWrite(wram, CAVE_DP_TILE_COLUMN,
+                  CaveRandomBelowOf(memory, cpu, 0x9526u, CAVE_OBJECT_JITTER));
+        WramWrite(wram, CAVE_DP_TILE_ROW,
+                  CaveRandomBelowOf(memory, cpu, 0x952du, CAVE_OBJECT_JITTER));
+        WramWrite16(wram, CAVE_DP_OBJECT_INDEX, index);
+        if (CavePickCellOf(memory, cpu, 0x9534u, &room_cell)) {
+            CaveCellOrigin(memory, cpu, 0x953bu, room_cell, &column, &row);
+            WramWrite(wram, CAVE_DP_TILE_ROW,
+                      (uint8_t)(row + WramRead(wram, CAVE_DP_TILE_ROW) + 1u + 2u));
+            WramWrite(wram, CAVE_DP_TILE_COLUMN,
+                      (uint8_t)(column + WramRead(wram, CAVE_DP_TILE_COLUMN) + 1u));
             Lufia2CaveNearStartOrPlaced(memory, cpu, 0x954du);
             if (!cpu->carry)
                 Lufia2CaveAddObject(memory, cpu, 0x9552u);
         }
-        OpInx(cpu);                                            /* 9555 */
-        OpCompareIndex(cpu, cpu->x,
-                       OpReadX(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_TARGET)));
-    } while (!cpu->carry);
-    OpLdx(cpu, CAVE_FIRST_ROOM_CELL); /* 955A */
-    do {
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));              /* 955D */
-        if (!cpu->zero && !cpu->negative &&
-            (OpCmp(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT)),
-             cpu->zero) &&
-            (OpCmp(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN)),
-             cpu->zero) &&
-            (OpCmp(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT)),
-             cpu->zero)) {
-            OpOraValue(cpu, CAVE_CELL_MARKED); /* 9573 */
-            OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
-            OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT));
-            OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN));
-            OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT));
-            OpTxa(cpu);
+        index = (uint16_t)(WramRead16(wram, CAVE_DP_OBJECT_INDEX) + 1u);
+        if (index >= WramRead16(wram, CAVE_DP_OBJECT_TARGET))
+            break;
+    }
+    /* A chest in each room that is a plain 2x2 block, marking it as used. */
+    for (cell = CAVE_FIRST_ROOM_CELL; cell < CAVE_GRID_ROWS_END; ++cell) {
+        const uint8_t room = WramReadAt(wram, CAVE_ROOM_GRID, cell);
+
+        if (room != 0u && !(room & 0x80u) &&
+            WramReadAt(wram, CAVE_ROOM_GRID + CAVE_CELL_RIGHT, cell) == room &&
+            WramReadAt(wram, CAVE_ROOM_GRID + CAVE_CELL_DOWN, cell) == room &&
+            WramReadAt(wram, CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT, cell) == room) {
+            const uint8_t marked = (uint8_t)(room | CAVE_CELL_MARKED);
+
+            WramWriteAt(wram, CAVE_ROOM_GRID, cell, marked);
+            WramWriteAt(wram, CAVE_ROOM_GRID + CAVE_CELL_RIGHT, cell, marked);
+            WramWriteAt(wram, CAVE_ROOM_GRID + CAVE_CELL_DOWN, cell, marked);
+            WramWriteAt(wram, CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT, cell, marked);
+            LoadA8(cpu, (uint8_t)cell);
             Lufia2CaveAddChest(memory, cpu, 0x9582u);
             if (!cpu->carry) {
-                OpLda(memory, cpu, OpAbs(cpu, CAVE_CHEST_COUNT));       /* 9587 */
-                OpCmpValue(cpu, CAVE_MAX_CHESTS);
-                if (cpu->carry)
+                uint8_t attempts;
+
+                if (WramRead(wram, CAVE_CHEST_COUNT) >= CAVE_MAX_CHESTS)
                     break;
-                /* Never ends the loop: $E734 reaches 8 first. */
-                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CHEST_ATTEMPTS));
-                OpIncA(cpu);
-                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_CHEST_ATTEMPTS));
-                OpCmpValue(cpu, CAVE_MAX_CHESTS);
-                if (cpu->carry)
+                /* Never ends the loop: the chest count reaches 8 first. */
+                attempts = (uint8_t)(WramRead(wram, CAVE_DP_CHEST_ATTEMPTS) + 1u);
+                WramWrite(wram, CAVE_DP_CHEST_ATTEMPTS, attempts);
+                if (attempts >= CAVE_MAX_CHESTS)
                     break;
             }
         }
-        OpInx(cpu);                                            /* 9597 */
-        OpCpx(cpu, CAVE_GRID_ROWS_END);
-    } while (!cpu->carry);
+    }
     Lufia2CaveClearVisited(memory, cpu, 0x959du);              /* 959D */
 }
 
