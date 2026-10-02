@@ -33,19 +33,5 @@ you change. `scripts/check_format.sh [base]` reports clang-format differences
 on lines changed since `base` (default `HEAD~1`); CI runs it as an advisory
 check.
 
-Two helper scripts support these rules; both only read the repository:
-
-- `scripts/objequiv.py BASE NEW` compiles every `src/**/*.c` of two revisions
-  with identical flags and compares the disassembly, with symbol names
-  canonicalized, so a commit that only renames, introduces constants or edits
-  comments can be shown to leave the object code unchanged. It needs `cc` and
-  `objdump`; it exits 1 and lists the differing functions otherwise.
-- `scripts/lint_raw.py` counts raw hex literals, `goto`, direct flag access,
-  `Op*` calls and frame simulation per file in `src/`. `--check` fails when a
-  count rises above `scripts/lint_baseline.json`, and `--diff REF` inspects only
-  the lines added since `REF`. After a change that lowers counts, refresh the
-  baseline with `--write-baseline`. Mark an
-  intentional exception with a `lint: allow` comment on that line.
-
 Do not add ROMs, extracted proprietary assets, generated game C, platform
 dependencies, or a license chosen without the owner's decision.
