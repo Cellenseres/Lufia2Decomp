@@ -1,9 +1,15 @@
 #include "battle/battle_internal.h"
-#include "core/snes_registers.h"
+#include "core/wram_view.h"
+#include "lufia2/system.h"
 
 enum {
+    TURN_DP_SLOT_BIT = 0x00u,
     TURN_DP_ACTOR_OR_SPREAD = 0x54u,
+    TURN_SPREAD_FACTOR = 0x0du,
     TURN_DP_PRIORITY = 0x56u,
+    TURN_DP_PRODUCT_SOURCE = 0x4eu,
+    TURN_DP_PRODUCT_FACTOR = 0x50u,
+    TURN_DP_PRODUCT_HIGH = 0x52u,
     TURN_DP_RANDOM_RANGE = 0x58u,
     TURN_DP_RANDOM_SUM = 0x5au,
     TURN_DP_INSERT_OFFSET = 0xcau,
@@ -42,183 +48,179 @@ static void BattleFindActionRecord(const Lufia2Memory *memory, Lufia2CpuState *c
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $85:9337: insert a three-byte target/priority entry, descending. */
+/* $85:9337: insert the staged entry (actor $54, priority $56) into the turn
+ * queue, which is kept in descending priority order. Entries of equal
+ * priority stay ahead of the new one; an actor byte of zero ends the queue.
+ * Runs with 16-bit index registers. */
 static void BattleInsertTurnQueueEntry(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                        uint8_t return_bank, uint16_t return_address) {
     static const uint8_t staged_bytes[BATTLE_TURN_ENTRY_SIZE] = {
         TURN_DP_ACTOR_OR_SPREAD, TURN_DP_PRIORITY, TURN_DP_PRIORITY + 1u};
+    const Lufia2Wram dp = WramViewOfCaller(memory, cpu);
+    Lufia2Wram queue;
+    uint16_t priority, insert_at, from;
+    unsigned i;
+
     SimulateJslFrame(memory, cpu, return_bank, return_address);
     PushDataBank(memory, cpu);
     Push8(memory, cpu, 0x85u);
     PullDataBank(memory, cpu);
-    OpLdx(cpu, 0u);
-    for (;;) {
-        OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_TURN_QUEUE));
-        if (cpu->zero)
-            break;
-        OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_TURN_QUEUE + 1u)));
-        OpCpy(cpu, OpReadX(memory, cpu, OpDp(cpu, TURN_DP_PRIORITY)));
-        if (!cpu->carry)
-            break;
-        OpInx(cpu);
-        OpInx(cpu);
-        OpInx(cpu);
-    }
-    OpWriteX(memory, cpu, OpDp(cpu, TURN_DP_INSERT_OFFSET), cpu->x);
-    OpLdy(cpu, (WRAM_BATTLE_TURN_QUEUE_COUNT - 1u) * BATTLE_TURN_ENTRY_SIZE);
+    queue = WramViewInBank(memory, cpu, 0x85u);
+
+    priority = WramRead16(dp, TURN_DP_PRIORITY);
+    insert_at = 0;
+    while (WramReadAt(queue, WRAM_BATTLE_TURN_QUEUE, insert_at) != 0 &&
+           WramRead16At(queue, WRAM_BATTLE_TURN_QUEUE + 1u, insert_at) >= priority)
+        insert_at = (uint16_t)(insert_at + BATTLE_TURN_ENTRY_SIZE);
+    WramWrite16(dp, TURN_DP_INSERT_OFFSET, insert_at);
+
+    /* Make room by moving the entries from the insertion point up by one. */
+    from = (WRAM_BATTLE_TURN_QUEUE_COUNT - 1u) * BATTLE_TURN_ENTRY_SIZE;
     do {
-        OpDey(cpu);
-        OpDey(cpu);
-        OpDey(cpu);
-        for (unsigned i = 0; i < BATTLE_TURN_ENTRY_SIZE; ++i) {
-            OpLda(memory, cpu, OpAbsY(cpu, (uint16_t)(WRAM_BATTLE_TURN_QUEUE + i)));
-            OpSta(memory, cpu,
-                  OpAbsY(cpu, (uint16_t)(WRAM_BATTLE_TURN_QUEUE +
-                                         BATTLE_TURN_ENTRY_SIZE + i)));
-        }
-        OpCpy(cpu, OpReadX(memory, cpu, OpDp(cpu, TURN_DP_INSERT_OFFSET)));
-    } while (!cpu->zero);
-    for (unsigned i = 0; i < BATTLE_TURN_ENTRY_SIZE; ++i) {
-        OpLda(memory, cpu, OpDp(cpu, staged_bytes[i]));
-        OpSta(memory, cpu, OpAbsX(cpu, (uint16_t)(WRAM_BATTLE_TURN_QUEUE + i)));
-    }
+        from = (uint16_t)(from - BATTLE_TURN_ENTRY_SIZE);
+        for (i = 0; i < BATTLE_TURN_ENTRY_SIZE; ++i)
+            WramWriteAt(queue, WRAM_BATTLE_TURN_QUEUE + BATTLE_TURN_ENTRY_SIZE + i,
+                        from, WramReadAt(queue, WRAM_BATTLE_TURN_QUEUE + i, from));
+    } while (from != WramRead16(dp, TURN_DP_INSERT_OFFSET));
+    for (i = 0; i < BATTLE_TURN_ENTRY_SIZE; ++i)
+        WramWriteAt(queue, WRAM_BATTLE_TURN_QUEUE + i, insert_at,
+                    WramRead(dp, staged_bytes[i]));
+
+    /* Exit registers: the last staged byte in A, both indexes at the entry. */
+    cpu->x = insert_at;
+    cpu->y = from;
+    cpu->carry = 1;
+    LoadA8(cpu, WramRead(dp, staged_bytes[BATTLE_TURN_ENTRY_SIZE - 1u]));
     PullDataBank(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $80:834C: 16x8 product in DP $51-$53, preserving A/X/status. */
+/* $80:834C: 16x8 product in DP $51-$53, called as a long subroutine. */
 static void BattlePriorityProduct(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SimulateJslFrame(memory, cpu, 0x85u, 0xdd27u);
-    PushAccumulator8(memory, cpu);
-    OpPushX(memory, cpu);
-    Push8(memory, cpu, PackStatus(cpu));
-    OpSepWidths(cpu, 0x20u);
-    OpStz(memory, cpu, OpDp(cpu, 0x53u));
-    OpLda(memory, cpu, OpDp(cpu, 0x50u));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-    OpLda(memory, cpu, OpDp(cpu, 0x4eu));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-    OpLda(memory, cpu, OpDp(cpu, 0x4fu));
-    ExchangeAccumulatorBytes(cpu);
-    OpLda(memory, cpu, OpDp(cpu, 0x50u));
-    OpRepWidths(cpu, 0x30u);
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-    OpWriteX(memory, cpu, OpDp(cpu, 0x51u), cpu->x);
-    OpLda(memory, cpu, OpDp(cpu, 0x52u));
-    cpu->carry = false;
-    OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
-    OpSta(memory, cpu, OpDp(cpu, 0x52u));
-    UnpackStatus(cpu, Pull8(memory, cpu));
-    OpPullX(memory, cpu);
-    OpLoadA(cpu, Pull8(memory, cpu));
+    (void)Lufia2Multiply16By8(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $85:DD19: randomize DP $56 around its staged priority. */
+/* $85:DD19: spread the staged turn priority at $56 by a random amount.
+ * The spread is (priority * factor / 256 + 1) with the factor staged in $54;
+ * the priority moves by two random draws below that range minus the range
+ * itself, and stays within 0..$FFFF. */
 static void BattleRandomizePriority(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                     uint16_t return_address) {
+    const Lufia2Wram dp = WramViewOfCaller(memory, cpu);
+    uint16_t priority;
+    int below_zero;
+
     SimulateJslFrame(memory, cpu, 0x81u, return_address);
     PushDataBank(memory, cpu);
     Push8(memory, cpu, 0x85u);
     PullDataBank(memory, cpu);
-    OpLda(memory, cpu, OpDp(cpu, TURN_DP_ACTOR_OR_SPREAD));
-    OpSta(memory, cpu, OpDp(cpu, 0x50u));
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, TURN_DP_PRIORITY)));
-    OpWriteX(memory, cpu, OpDp(cpu, 0x4eu), cpu->x);
+
+    WramWrite(dp, TURN_DP_PRODUCT_FACTOR, WramRead(dp, TURN_DP_ACTOR_OR_SPREAD));
+    priority = WramRead16(dp, TURN_DP_PRIORITY);
+    LoadX16(cpu, priority);
+    WramWrite16(dp, TURN_DP_PRODUCT_SOURCE, priority);
     BattlePriorityProduct(memory, cpu);
-    OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpDp(cpu, 0x52u));
-    OpIncA(cpu);
-    OpCmpValue(cpu, 2u);
-    OpAdcValue(cpu, 0u);
-    OpSta(memory, cpu, OpDp(cpu, TURN_DP_RANDOM_RANGE));
+
+    /* Range: the product's upper word plus one, and one more from 2 up. */
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, (uint16_t)(WramRead16(dp, TURN_DP_PRODUCT_HIGH) + 1u));
+    Compare16(cpu, cpu->accumulator, 2u);
+    Add16Value(cpu, 0u);
+    WramWrite16(dp, TURN_DP_RANDOM_RANGE, cpu->accumulator);
+
     BattleCallRandomFraction(memory, cpu, 0xdd38u);
-    OpSta(memory, cpu, OpDp(cpu, TURN_DP_RANDOM_SUM));
-    OpLda(memory, cpu, OpDp(cpu, TURN_DP_RANDOM_RANGE));
+    WramWrite16(dp, TURN_DP_RANDOM_SUM, cpu->accumulator);
+    LoadA16(cpu, WramRead16(dp, TURN_DP_RANDOM_RANGE));
     BattleCallRandomFraction(memory, cpu, 0xdd40u);
-    cpu->carry = false;
-    OpAdc(memory, cpu, OpDp(cpu, TURN_DP_RANDOM_SUM));
-    OpSta(memory, cpu, OpDp(cpu, TURN_DP_RANDOM_SUM));
-    OpLda(memory, cpu, OpDp(cpu, 0x4eu));
-    cpu->carry = true;
-    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, TURN_DP_RANDOM_RANGE)));
-    if (cpu->carry) {
-        cpu->carry = false;
-        OpAdc(memory, cpu, OpDp(cpu, TURN_DP_RANDOM_SUM));
-        if (cpu->carry)
-            OpLoadA(cpu, 0xffffu);
-    } else {
-        cpu->carry = false;
-        OpAdc(memory, cpu, OpDp(cpu, TURN_DP_RANDOM_SUM));
-        if (!cpu->carry)
-            TransferDirectToA(cpu);
-    }
-    OpSta(memory, cpu, OpDp(cpu, TURN_DP_PRIORITY));
-    OpSepWidths(cpu, 0x20u);
+    cpu->carry = 0;
+    Add16Value(cpu, WramRead16(dp, TURN_DP_RANDOM_SUM));
+    WramWrite16(dp, TURN_DP_RANDOM_SUM, cpu->accumulator);
+
+    /* priority - range + random draws, clamped at both ends. */
+    LoadA16(cpu, WramRead16(dp, TURN_DP_PRODUCT_SOURCE));
+    Subtract16(cpu, WramRead16(dp, TURN_DP_RANDOM_RANGE));
+    below_zero = !cpu->carry;
+    cpu->carry = 0;
+    Add16Value(cpu, WramRead16(dp, TURN_DP_RANDOM_SUM));
+    if (below_zero && !cpu->carry)
+        LoadA16(cpu, cpu->direct_page);
+    else if (!below_zero && cpu->carry)
+        LoadA16(cpu, 0xffffu);
+    WramWrite16(dp, TURN_DP_PRIORITY, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
     PullDataBank(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
+/* Stage the battler at Y for a turn: its base priority plus bonus in $56 and
+ * the spread factor 13 in $54. The accumulator is 8-bit afterwards. */
 static void BattleStageRandomizedTurnPriority(const Lufia2Memory *memory,
                                               Lufia2CpuState *cpu) {
-    OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_BASE_PRIORITY));
-    cpu->carry = false;
-    OpAdc(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_PRIORITY_BONUS));
-    OpSta(memory, cpu, OpDp(cpu, TURN_DP_PRIORITY));
-    OpSepWidths(cpu, 0x20u);
-    OpLoadA(cpu, 0x0du);
-    OpSta(memory, cpu, OpDp(cpu, TURN_DP_ACTOR_OR_SPREAD));
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, WramRead16At(wram, BATTLE_BATTLER_BASE_PRIORITY, cpu->y));
+    cpu->carry = 0;
+    Add16Value(cpu, WramRead16At(wram, BATTLE_BATTLER_PRIORITY_BONUS, cpu->y));
+    WramWrite16(wram, TURN_DP_PRIORITY, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, TURN_SPREAD_FACTOR);
+    WramWrite(wram, TURN_DP_ACTOR_OR_SPREAD, TURN_SPREAD_FACTOR);
 }
 
+/* A battler takes a turn unless it has a status that forbids one. */
+static bool BattlerCanTakeTurn(const Lufia2Wram wram, Lufia2CpuState *cpu) {
+    LoadA8(cpu, WramReadAt(wram, BATTLE_BATTLER_STATUS, cpu->y));
+    cpu->zero = (A8(cpu) & BATTLE_STATUS_NO_TURN_MASK) == 0;
+    return cpu->zero;
+}
+
+/* Queue a turn for every live enemy, one bit of $00 per enemy slot. Runs with
+ * 8-bit A and 16-bit index registers. */
 Lufia2ExecutionResult Lufia2BattleQueueEnemyTurns(const Lufia2Memory *memory,
                                                   Lufia2CpuState *cpu) {
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpDp(cpu, 0u));
-    OpLdx(cpu, 0u);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    LoadA8(cpu, 1u);
+    WramWrite(wram, TURN_DP_SLOT_BIT, A8(cpu));
+    LoadX16(cpu, 0u);
     do {
-        OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_ENEMY_RECORDS)));
-        if (!cpu->zero) {
-            OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
-            OpBitValue(cpu, BATTLE_STATUS_NO_TURN_MASK);
-            if (cpu->zero) {
-                OpPushX(memory, cpu);
-                PushY(memory, cpu);
-                BattleStageRandomizedTurnPriority(memory, cpu);
-                BattleRandomizePriority(memory, cpu, 0xc27du);
-                OpLoadA(cpu, BATTLE_ACTOR_ENEMY_SIDE);
-                OpOra(memory, cpu, OpDp(cpu, 0u));
-                OpSta(memory, cpu, OpDp(cpu, TURN_DP_ACTOR_OR_SPREAD));
-                BattleInsertTurnQueueEntry(memory, cpu, 0x81u, 0xc287u);
-                OpPullY(memory, cpu);
-                OpPullX(memory, cpu);
-            }
+        LoadY16(cpu, WramRead16At(wram, WRAM_BATTLE_ENEMY_RECORDS, cpu->x));
+        if (cpu->y != 0 && BattlerCanTakeTurn(wram, cpu)) {
+            OpPushX(memory, cpu);
+            PushY(memory, cpu);
+            BattleStageRandomizedTurnPriority(memory, cpu);
+            BattleRandomizePriority(memory, cpu, 0xc27du);
+            LoadA8(cpu, BATTLE_ACTOR_ENEMY_SIDE | WramRead(wram, TURN_DP_SLOT_BIT));
+            WramWrite(wram, TURN_DP_ACTOR_OR_SPREAD, A8(cpu));
+            BattleInsertTurnQueueEntry(memory, cpu, 0x81u, 0xc287u);
+            OpPullY(memory, cpu);
+            OpPullX(memory, cpu);
         }
         cpu->carry = false;
-        OpRolMem8(memory, cpu, OpDp(cpu, 0u));
-        OpInx(cpu);
-        OpInx(cpu);
-        OpCpx(cpu, BATTLE_ENEMY_COUNT * BATTLE_POINTER_SIZE);
+        OpRolMem8(memory, cpu, OpDp(cpu, TURN_DP_SLOT_BIT));
+        LoadX16(cpu, (uint16_t)(cpu->x + BATTLE_POINTER_SIZE));
+        Compare16(cpu, cpu->x, BATTLE_ENEMY_COUNT * BATTLE_POINTER_SIZE);
     } while (!cpu->zero);
     return ExecutionReturned(0x81c293u);
 }
 
+/* Queue the capsule monster's turn, if it is out and able. */
 Lufia2ExecutionResult Lufia2BattleQueueCapsuleTurn(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu) {
-    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CAPSULE_RECORD)));
-    if (!cpu->zero) {
-        OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
-        OpBitValue(cpu, BATTLE_STATUS_NO_TURN_MASK);
-        if (cpu->zero) {
-            PushY(memory, cpu);
-            BattleStageRandomizedTurnPriority(memory, cpu);
-            BattleRandomizePriority(memory, cpu, 0xc2b5u);
-            OpLoadA(cpu, BATTLE_ACTOR_CAPSULE);
-            OpSta(memory, cpu, OpDp(cpu, TURN_DP_ACTOR_OR_SPREAD));
-            BattleInsertTurnQueueEntry(memory, cpu, 0x81u, 0xc2bdu);
-            OpPullY(memory, cpu);
-        }
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    LoadY16(cpu, WramRead16(wram, WRAM_BATTLE_CAPSULE_RECORD));
+    if (cpu->y != 0 && BattlerCanTakeTurn(wram, cpu)) {
+        PushY(memory, cpu);
+        BattleStageRandomizedTurnPriority(memory, cpu);
+        BattleRandomizePriority(memory, cpu, 0xc2b5u);
+        LoadA8(cpu, BATTLE_ACTOR_CAPSULE);
+        WramWrite(wram, TURN_DP_ACTOR_OR_SPREAD, A8(cpu));
+        BattleInsertTurnQueueEntry(memory, cpu, 0x81u, 0xc2bdu);
+        OpPullY(memory, cpu);
     }
     return ExecutionReturned(0x81c2bfu);
 }
