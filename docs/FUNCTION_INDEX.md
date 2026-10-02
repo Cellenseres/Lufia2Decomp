@@ -41,6 +41,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:E844` | `Lufia2FieldInitializeMapEvents` | verified | `src/field/field_map_load.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |
 | `$80:ED9C` | `Lufia2FieldBuildAttributes` | verified | `src/field/field_attributes.c` |
+| `$80:F35B` | `Lufia2FieldCopyMetatileGraphics` | verified | `src/field/field_metatile_graphics.c` |
+| `$80:F3F1` | `Lufia2FieldMirrorPlaneWord` | verified | `src/field/field_metatile_graphics.c` |
+| `$80:F40A` | `Lufia2FieldMirrorPlaneByte` | verified | `src/field/field_metatile_graphics.c` |
 | `$80:F47A` | `Lufia2FieldRedrawLayer` | verified | `src/field/field_scroll.c` |
 | `$80:F4FD` | `Lufia2FieldStreamRightColumn` | verified | `src/field/field_scroll.c` |
 | `$80:F518` | `Lufia2FieldStreamLeftColumn` | verified | `src/field/field_scroll.c` |

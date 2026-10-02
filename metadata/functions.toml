@@ -2983,3 +2983,27 @@ source = "src/field/field_camera.c"
 entry_mx = "M1X0"
 exit_mx = "M1X1"
 status = "verified"
+
+[[function]]
+address = "80:F35B"
+name = "Lufia2FieldCopyMetatileGraphics"
+source = "src/field/field_metatile_graphics.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "80:F3F1"
+name = "Lufia2FieldMirrorPlaneWord"
+source = "src/field/field_metatile_graphics.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "80:F40A"
+name = "Lufia2FieldMirrorPlaneByte"
+source = "src/field/field_metatile_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
