@@ -659,6 +659,14 @@ owner = "field"
 notes = "$80:F734 selects this bank-$7F four-word metatile catalog for layers 0 and 1."
 
 [[location]]
+address = "7F:D03E"
+name = "field_metatile_attribute_base"
+width = 2
+count = 1
+owner = "field"
+notes = "$83:8C8A reads the bank-$7F byte catalog indexed by the low ten metatile bits."
+
+[[location]]
 address = "7F:D040"
 name = "field_alternate_metatile_base"
 width = 2
