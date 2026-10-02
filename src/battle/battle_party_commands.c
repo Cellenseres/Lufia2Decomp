@@ -119,7 +119,7 @@ Lufia2ExecutionResult Lufia2BattleChoosePartyAction(const Lufia2Memory *memory,
     if (!BattleCall(&battle, 0xcc35u, 0x8592ceu, 3u) ||
         !BattleCall(&battle, 0xcc39u, 0x81df0au, 2u) ||
         !BattlePartyCommandLabel(&battle, 0xcc46u, 0xcc63u, 0x87c7u, true))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
     OpAslA(cpu);
@@ -128,7 +128,7 @@ Lufia2ExecutionResult Lufia2BattleChoosePartyAction(const Lufia2Memory *memory,
     OpLoadA(cpu, 0x65u);
     OpSta(memory, cpu, OpDp(cpu, 0x11u));
     if (!BattleCall(&battle, 0xcc74u, 0x81e4d1u, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpPullX(memory, cpu);
     OpLoadA(cpu, 1u);
     OpSta(memory, cpu, OpDp(cpu, 2u));
@@ -142,14 +142,14 @@ Lufia2ExecutionResult Lufia2BattleChoosePartyAction(const Lufia2Memory *memory,
     TransferDirectToA(cpu);
     if (!BattleCall(&battle, 0xcc8cu, 0x81b974u, 2u) ||
         !BattleCall(&battle, 0xcc8fu, 0x81b9afu, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
 poll:
     if (!BattlePartyCommandDraw(&battle))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x0012f3u);
     if (!BattleCall(&battle, 0xcce8u, 0x85ec81u, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLda(memory, cpu, OpDp(cpu, 0xddu));
     OpBitValue(cpu, 0xa0u);
     if (!cpu->zero)
@@ -158,17 +158,17 @@ poll:
     if (!cpu->negative)
         goto poll;
     if (!BattlePartyCommandLabel(&battle, 0xcd00u, 0xcd1du, 0x87b7u, false))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     BattlePartyCommandTextDimensions(memory, cpu);
     OpLoadA(cpu, 1u);
     if (!BattleCall(&battle, 0xcd32u, 0x80953bu, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLoadA(cpu, 0xffu);
     return ExecutionReturned(0x81cd38u);
 accepted:
     OpLoadA(cpu, 2u);
     if (!BattleCall(&battle, 0xcd3bu, 0x80953bu, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLda(memory, cpu, OpDp(cpu, 0x26u));
     OpCmpValue(cpu, BATTLE_PARTY_COMMAND_ATTACK);
     if (!cpu->zero)
@@ -183,7 +183,7 @@ accepted:
         OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
         OpSepWidths(cpu, 0x20u);
         if (!BattleCall(&battle, 0xcd5eu, 0x81f291u, 3u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_POINTER)));
         PushDataBank(memory, cpu);
         OpSetDataBank(memory, cpu, 0x96u);
@@ -206,7 +206,7 @@ accepted:
     ExchangeAccumulatorBytes(cpu);
     OpPushX(memory, cpu);
     if (!BattleCall(&battle, 0xcd90u, 0x81d4e0u, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpPullX(memory, cpu);
     OpCmpValue(cpu, 0xffu);
     if (cpu->zero)
@@ -235,7 +235,7 @@ stage_attack:
     OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_PARAMETER));
     BattlePartyCommandPriority(memory, cpu);
     if (!BattleCommitPartyCommand(&battle, 0xcdcbu, 0xcdcfu, 0xcddbu, 0xcdf8u, false))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81ce0cu);
 choose_spell:
     OpLda(memory, cpu, OpDp(cpu, 0x26u));
@@ -248,22 +248,22 @@ choose_spell:
     OpBitValue(cpu, 2u);
     if (!cpu->zero) {
         if (!BattleCall(&battle, 0xce20u, 0x81d975u, 2u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpPullX(memory, cpu);
         goto poll;
     }
     OpLoadA(cpu, 1u);
     if (!BattleCall(&battle, 0xce29u, 0x81d12fu, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     goto spell_selection;
 spell_retry:
     if (!BattleCall(&battle, 0xce2eu, 0x81d19au, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
 spell_selection:
     OpCmpValue(cpu, 0u);
     if (!cpu->zero) {
         if (!BattleCall(&battle, 0xce35u, 0x81e16fu, 2u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpPullX(memory, cpu);
         goto poll;
     }
@@ -276,13 +276,13 @@ spell_selection:
     OpLoadA(cpu, 2u);
     OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
     if (!BattleCall(&battle, 0xce53u, 0x81e16fu, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpPullX(memory, cpu);
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpLongX(cpu, 0x7edf0fu));
     if (!cpu->zero) {
         if (!BattleCall(&battle, 0xce5eu, 0x81d4e0u, 2u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpCmpValue(cpu, 0xffu);
         if (cpu->zero)
             goto spell_retry;
@@ -315,7 +315,7 @@ spell_selection:
     PullDataBank(memory, cpu);
     OpRepWidths(cpu, 0x20u);
     if (!BattleCommitPartyCommand(&battle, 0xcea5u, 0xcea9u, 0xceb5u, 0xced2u, true))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81cee7u);
 choose_item:
     OpLda(memory, cpu, OpDp(cpu, 0x26u));
@@ -325,16 +325,16 @@ choose_item:
     OpPushX(memory, cpu);
     TransferDirectToA(cpu);
     if (!BattleCall(&battle, 0xcef3u, 0x81d12fu, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     goto item_selection;
 item_retry:
     if (!BattleCall(&battle, 0xcef8u, 0x81d19au, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
 item_selection:
     OpCmpValue(cpu, 0u);
     if (!cpu->zero) {
         if (!BattleCall(&battle, 0xceffu, 0x81e16fu, 2u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpPullX(memory, cpu);
         goto poll;
     }
@@ -347,13 +347,13 @@ item_selection:
     OpLoadA(cpu, 3u);
     OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
     if (!BattleCall(&battle, 0xcf1du, 0x81e16fu, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpPullX(memory, cpu);
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpLongX(cpu, 0x7edf13u));
     if (!cpu->zero) {
         if (!BattleCall(&battle, 0xcf28u, 0x81d4e0u, 2u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpCmpValue(cpu, 0xffu);
         if (cpu->zero)
             goto item_retry;
@@ -383,12 +383,12 @@ item_selection:
     OpSepWidths(cpu, 0x20u);
     OpLoadA(cpu, 1u);
     if (!BattleCall(&battle, 0xcf70u, 0x81f15bu, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpCmpValue(cpu, 0u);
     if (cpu->zero)
         return ExecutionHandoff(cpu, 0x81cf78u);
     if (!BattleCommitPartyCommand(&battle, 0xcf79u, 0xcf7du, 0xcf8bu, 0xcfa8u, true))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81cfbdu);
 choose_ip:
     OpLda(memory, cpu, OpDp(cpu, 0x26u));
@@ -398,16 +398,16 @@ choose_ip:
     OpPushX(memory, cpu);
     OpLoadA(cpu, 2u);
     if (!BattleCall(&battle, 0xcfcau, 0x81d12fu, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     goto ip_selection;
 ip_retry:
     if (!BattleCall(&battle, 0xcfcfu, 0x81d19au, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
 ip_selection:
     OpCmpValue(cpu, 0u);
     if (!cpu->zero) {
         if (!BattleCall(&battle, 0xcfd6u, 0x81e16fu, 2u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpPullX(memory, cpu);
         goto poll;
     }
@@ -420,13 +420,13 @@ ip_selection:
     OpLda(memory, cpu, OpLongX(cpu, 0x7edf03u));
     OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
     if (!BattleCall(&battle, 0xcff6u, 0x81e16fu, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpPullX(memory, cpu);
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpLongX(cpu, 0x7edf04u));
     if (!cpu->zero) {
         if (!BattleCall(&battle, 0xd001u, 0x81d4e0u, 2u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpCmpValue(cpu, 0xffu);
         if (cpu->zero)
             goto ip_retry;
@@ -457,7 +457,7 @@ ip_selection:
     OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_PARAMETER));
     PullDataBank(memory, cpu);
     if (!BattleCommitPartyCommand(&battle, 0xd03eu, 0xd042u, 0xd04eu, 0xd06bu, true))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81d080u);
 choose_defend:
     OpLda(memory, cpu, OpDp(cpu, 0x26u));
@@ -472,8 +472,6 @@ choose_defend:
     OpRepWidths(cpu, 0x20u);
     BattlePartyCommandPriority(memory, cpu);
     if (!BattleCommitPartyCommand(&battle, 0xd0e7u, 0xd0ebu, 0xd0f7u, 0xd114u, false))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81d128u);
-unwound:
-    return BattleChildUnwound(&battle);
 }
