@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-372 functions in `metadata/functions.toml`: 366 verified, 6 draft, 0 identified, 0 disabled.
+374 functions in `metadata/functions.toml`: 366 verified, 8 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -715,6 +715,14 @@ reconstructions. They are the interpreter's largest battle-frame cost outside
 the main loop. Both were compared against the original ROM code in the
 interpreter on random actor tables (CPU state, complete WRAM, ordered writes
 and the stack frames they leave behind) and await the maintainer's verifier.
+
+## Battle palette brightness
+
+`$81:B396` (darken or lighten the 15 palette entries of a set into the upload
+buffer) and its colour helper `$81:B3F8` (per-component scaling through the
+hardware multiplier) are `draft` reconstructions, compared against the
+original ROM code like the sections above, including the order of the
+read-modify-write stores and of the multiplier accesses.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary

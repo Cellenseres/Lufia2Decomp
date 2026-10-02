@@ -84,6 +84,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_frame_input.c
     src/battle/battle_sprite_build.c
     src/battle/battle_monster_oam.c
+    src/battle/battle_palette_fade.c
     src/battle/battle_action_work.c
     src/battle/battle_action_script.c
     src/battle/battle_loop_internal.c
