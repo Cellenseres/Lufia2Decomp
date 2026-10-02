@@ -2932,3 +2932,20 @@ source = "src/cave/cave_exit.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Cave party reset and defeat restart, preserving original child-call frames.
+[[function]]
+address = "84:8888"
+name = "Lufia2AncientCaveResetParty"
+source = "src/cave/cave_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:8B9C"
+name = "Lufia2AncientCaveDefeat"
+source = "src/cave/cave_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

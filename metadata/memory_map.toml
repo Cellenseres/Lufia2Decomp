@@ -1323,3 +1323,35 @@ width = 2
 count = 1
 owner = "cave"
 notes = "Start of the alternate zero-terminated item-word list consumed at84:8A43 whenE759 is nonzero."
+
+[[location]]
+address = "7E:0B6C"
+name = "ancient_cave_defeat_count"
+width = 2
+count = 1
+owner = "cave"
+notes = "84:8B9C increments this word on Cave defeat and retains FFFF when it would wrap."
+
+[[location]]
+address = "7E:05B3"
+name = "field_reload_flags"
+width = 1
+count = 1
+owner = "field"
+notes = "84:8B9C sets bit40 on Cave restart;83:B76E assigns2 or6 for a map rectangle."
+
+[[location]]
+address = "7E:05B4"
+name = "field_transition_source_map"
+width = 1
+count = 1
+owner = "field"
+notes = "83:B76E copies the current map byte here.84:8B9C stores the low direct-page byte;83:B254 tests nonzero for the next Cave floor."
+
+[[location]]
+address = "7E:05C0"
+name = "field_unk_05c0"
+width = 1
+count = 1
+owner = "field"
+notes = "84:8B9C stores F0 on Cave restart; the later consumer is not yet reconstructed."

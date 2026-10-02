@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-354 functions in `metadata/functions.toml`: 354 verified, 0 draft, 0 identified, 0 disabled.
+356 functions in `metadata/functions.toml`: 356 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **493 independent jobs**. The normal
-application build also passes. The consumer selects all 354 verified functions,
+The full Windows Release verifier passes **497 independent jobs**. The normal
+application build also passes. The consumer selects all 356 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -34,6 +34,30 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Ancient Cave party reset and defeat
+
+`$84:8888` clears the original party records and restores the initial items,
+party levels and capsule state through explicit child-call contracts.
+`$84:8B9C` invokes that reset, saturates the defeat counter at `$FFFF`, and
+sets the original field reload flags. Both routines accept PB `$84`, an
+8-bit accumulator and 16-bit indexes. They are standalone replacements.
+
+The defeat exposes checkpoints at entry (`$84:8B9C`) and after the actual
+party-reset return (`$84:8BA5`). Both support eight subscribers, native
+execution and matching interpreter checkpoints without the decomp library.
+The reconstruction retains the original inventory loss; consumers can
+implement carryout changes through these interfaces.
+
+Verification compares 68,452 original-parent states with direct and runtime
+execution, using identical explicit contracts at the three unknown child
+sites. All 65,536 defeat-counter values are covered. There are no initial
+native fallbacks; 899 exact continuations preserve loop limits, changed
+child modes, modified return frames and child unwinds. CPU state, all WRAM,
+mutable hardware state and every operand read and write agree. The tests
+also cover 30 dispatcher redirects, 4,602 unsupported entries, 1,277
+subscriber checks and 36 detected deliberate faults. Direct-page aliases
+retain the original TDC fill byte and variable initial-item byte count.
 
 ## Ancient Cave exit and carry items
 

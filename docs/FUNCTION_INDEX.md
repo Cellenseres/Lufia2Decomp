@@ -296,8 +296,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:FB9F` | `Lufia2FieldFindPendingObject` | verified | `src/field/field_object_lookup.c` |
 | `$84:8193` | `Lufia2SpriteGraphicsUpload` | verified | `src/actor/actor_sprites.c` |
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
+| `$84:8888` | `Lufia2AncientCaveResetParty` | verified | `src/cave/cave_reset.c` |
 | `$84:890B` | `Lufia2AncientCaveExit` | verified | `src/cave/cave_exit.c` |
 | `$84:8AF4` | `Lufia2AncientCaveCarryBlueItem` | verified | `src/cave/cave_exit.c` |
+| `$84:8B9C` | `Lufia2AncientCaveDefeat` | verified | `src/cave/cave_reset.c` |
 | `$84:8BC7` | `Lufia2BattleVisualTransition` | verified | `src/battle/battle_transition.c` |
 | `$85:8850` | `Lufia2BattleAnimateStatusIcons` | verified | `src/battle/battle_status_icons.c` |
 | `$85:89E5` | `Lufia2BattleClearSpriteOffsets` | verified | `src/battle/battle_loop_children.c` |
