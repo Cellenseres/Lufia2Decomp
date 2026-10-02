@@ -1,10 +1,11 @@
 /* Field loop steps and event tick. */
 
 #include "core/cpu_internal.h"
-#include "lufia2/field.h"
+#include "core/joypad.h"
 #include "field/field_internal.h"
-#include "text/text_internal.h"
+#include "lufia2/field.h"
 #include "system/wram.h"
+#include "text/text_internal.h"
 
 /* $83:80CD: field idle test; zero = no event running. */
 void Lufia2FieldIdleBody(
@@ -152,6 +153,9 @@ Lufia2ExecutionResult Lufia2FieldEventTick(
     return result;
 }
 
+/* B, Start and A together open the menu. */
+#define FIELD_MENU_BUTTONS (((JOY_HIGH_B | JOY_HIGH_START) << 8) | JOY_LOW_A)
+
 /* $83:83A0: menu request; the menu itself runs on LLE. */
 Lufia2ExecutionResult Lufia2FieldMenuRequest(
     const Lufia2Memory *memory,
@@ -166,14 +170,10 @@ Lufia2ExecutionResult Lufia2FieldMenuRequest(
     BitImmediate8(cpu, 0x02u);
     if (!cpu->zero) {
         SetAccumulatorWidth(cpu, 0);                           /* 83AE */
-        LoadA16(cpu, 0x9080u);
-        And16(cpu, Read16Direct(memory, cpu, DP_BUTTONS_HELD));
-        if (!cpu->zero) {
-            TestBitsDirect(memory, cpu, DP_BUTTONS_PRESSED, 0);
-            if (!cpu->zero) {
-                SetAccumulatorWidth(cpu, 1);
-                return ExecutionHandoff(cpu, 0x8383bdu);
-            }
+        LoadA16(cpu, FIELD_MENU_BUTTONS);
+        if (TakeButtonPress16(memory, cpu)) {
+            SetAccumulatorWidth(cpu, 1);
+            return ExecutionHandoff(cpu, 0x8383bdu);
         }
         SetAccumulatorWidth(cpu, 1);                           /* 83DD */
     }
@@ -186,9 +186,7 @@ Lufia2ExecutionResult Lufia2FieldTakeButtons(
     Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x83867bu);
-    And8(cpu, DirectByte(memory, cpu, DP_BUTTONS_HELD));       /* 867B */
-    if (!cpu->zero)
-        TestBitsDirect(memory, cpu, DP_BUTTONS_PRESSED, 0);
+    (void)TakeButtonPress8(memory, cpu, JOYPAD_LOW_BYTE); /* 867B */
     return ExecutionReturned(0x838681u);
 }
 
