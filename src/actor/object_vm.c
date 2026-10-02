@@ -395,63 +395,63 @@ static void ObjectDespawn(
 
 /* Object script handlers from $83:F2C8 and its low-nibble tables. */
 enum ObjectOpcodeHandler {
-    OBJECT_OP_0X = 0xe13d,                /* $0x */
-    OBJECT_OP_2F = 0xe150,                /* $2F */
-    OBJECT_OP_F6_NIBBLE_OFFSETS = 0xe168, /* $F6 */
-    OBJECT_OP_F7 = 0xe191,                /* $F7 */
-    OBJECT_OP_3X_SET_FRAME = 0xe1c5,      /* $3x */
-    OBJECT_OP_2C_SET_FRAME = 0xe1d3,      /* $2C */
-    OBJECT_OP_25_SET_FRAME = 0xe1e6,      /* $25 */
-    OBJECT_OP_FD_SET_FRAME = 0xe1f4,      /* $FD */
-    OBJECT_OP_2E = 0xe270,                /* $2E */
-    OBJECT_OP_19 = 0xe437,                /* $19 */
-    OBJECT_OP_8E = 0xe445,                /* $8E */
-    OBJECT_OP_1A_SPRITE_FRAME = 0xe589,   /* $1A */
-    OBJECT_OP_8F_SET_FRAME = 0xe59f,      /* $8F */
-    OBJECT_OP_1D = 0xe5b5,                /* $1D */
-    OBJECT_OP_12 = 0xe700,                /* $12 */
-    OBJECT_OP_13 = 0xe810,                /* $13 */
-    OBJECT_OP_14_SPIN_ZOOM = 0xe27d,      /* $14 */
-    OBJECT_OP_4X_WAIT = 0xe831,           /* $4x */
-    OBJECT_OP_5X = 0xe840,                /* $5x */
-    OBJECT_OP_6X = 0xe854,                /* $6x */
-    OBJECT_OP_85 = 0xe860,                /* $85 */
-    OBJECT_OP_8A = 0xe87c,                /* $8A */
-    OBJECT_OP_EE = 0xe937,                /* $EE */
-    OBJECT_OP_20 = 0xe99a,                /* $20 */
-    OBJECT_OP_22 = 0xea7d,                /* $22 */
-    OBJECT_OP_23 = 0xea8c,                /* $23 */
-    OBJECT_OP_8D = 0xea94,                /* $8D */
-    OBJECT_OP_7X_LOOP_START = 0xeab5,     /* $7x */
-    OBJECT_OP_80_LOOP_END = 0xead5,       /* $80 */
-    OBJECT_OP_26 = 0xeaff,                /* $26 */
-    OBJECT_OP_28 = 0xeb38,                /* $28 */
-    OBJECT_OP_29 = 0xeb50,                /* $29 */
-    OBJECT_OP_2B = 0xec6d,                /* $2B */
-    OBJECT_OP_AX = 0xec8e,                /* $Ax */
-    OBJECT_OP_CX = 0xed11,                /* $Cx */
-    OBJECT_OP_DX = 0xed32,                /* $Dx */
-    OBJECT_OP_8X_TABLE = 0xed45,          /* $8x */
-    OBJECT_OP_1X_TABLE = 0xed4b,          /* $1x */
-    OBJECT_OP_2X_TABLE = 0xed51,          /* $2x */
-    OBJECT_OP_EX_TABLE = 0xed57,          /* $Ex */
-    OBJECT_OP_FX_TABLE = 0xed5d,          /* $Fx */
-    OBJECT_OP_84 = 0xed9b,                /* $84 */
-    OBJECT_OP_89 = 0xedc2,                /* $89 */
-    OBJECT_OP_EA = 0xedd7,                /* $EA */
-    OBJECT_OP_F1 = 0xede6,                /* $F1 */
-    OBJECT_OP_FB = 0xee48,                /* $FB */
-    OBJECT_OP_FC = 0xee71,                /* $FC */
-    OBJECT_OP_F2_RANDOM_JITTER = 0xeeb5,  /* $F2 */
-    OBJECT_OP_F8 = 0xefd1,                /* $F8 */
-    OBJECT_OP_F9 = 0xefde,                /* $F9 */
-    OBJECT_OP_E2 = 0xf0e8,                /* $E2 */
-    OBJECT_OP_82 = 0xf0fa,                /* $82 */
-    OBJECT_OP_83 = 0xf10b,                /* $83 */
-    OBJECT_OP_EB = 0xf11c,                /* $EB */
-    OBJECT_OP_EC = 0xf137,                /* $EC */
-    OBJECT_OP_ED = 0xf155,                /* $ED */
-    OBJECT_OP_E3 = 0xf19f,                /* $E3 */
+    OBJECT_OP_0X_DESPAWN = 0xe13d,              /* $0x */
+    OBJECT_OP_2F_COPY_ACTOR0_POSITION = 0xe150, /* $2F */
+    OBJECT_OP_F6_NIBBLE_OFFSETS = 0xe168,       /* $F6 */
+    OBJECT_OP_F7_BYTE_OFFSETS = 0xe191,         /* $F7 */
+    OBJECT_OP_3X_SET_FRAME = 0xe1c5,            /* $3x */
+    OBJECT_OP_2C_SET_FRAME = 0xe1d3,            /* $2C */
+    OBJECT_OP_25_SET_FRAME = 0xe1e6,            /* $25 */
+    OBJECT_OP_FD_SET_FRAME = 0xe1f4,            /* $FD */
+    OBJECT_OP_2E = 0xe270,                      /* $2E */
+    OBJECT_OP_19 = 0xe437,                      /* $19 */
+    OBJECT_OP_8E = 0xe445,                      /* $8E */
+    OBJECT_OP_1A_SPRITE_FRAME = 0xe589,         /* $1A */
+    OBJECT_OP_8F_SET_FRAME = 0xe59f,            /* $8F */
+    OBJECT_OP_1D = 0xe5b5,                      /* $1D */
+    OBJECT_OP_12_NOP = 0xe700,                  /* $12 */
+    OBJECT_OP_13 = 0xe810,                      /* $13 */
+    OBJECT_OP_14_SPIN_ZOOM = 0xe27d,            /* $14 */
+    OBJECT_OP_4X_WAIT = 0xe831,                 /* $4x */
+    OBJECT_OP_5X = 0xe840,                      /* $5x */
+    OBJECT_OP_6X_SPAWN_CHILD = 0xe854,          /* $6x */
+    OBJECT_OP_85 = 0xe860,                      /* $85 */
+    OBJECT_OP_8A = 0xe87c,                      /* $8A */
+    OBJECT_OP_EE = 0xe937,                      /* $EE */
+    OBJECT_OP_20 = 0xe99a,                      /* $20 */
+    OBJECT_OP_22 = 0xea7d,                      /* $22 */
+    OBJECT_OP_23 = 0xea8c,                      /* $23 */
+    OBJECT_OP_8D_OR_FIELD_BITS = 0xea94,        /* $8D */
+    OBJECT_OP_7X_LOOP_START = 0xeab5,           /* $7x */
+    OBJECT_OP_80_LOOP_END = 0xead5,             /* $80 */
+    OBJECT_OP_26 = 0xeaff,                      /* $26 */
+    OBJECT_OP_28 = 0xeb38,                      /* $28 */
+    OBJECT_OP_29 = 0xeb50,                      /* $29 */
+    OBJECT_OP_2B = 0xec6d,                      /* $2B */
+    OBJECT_OP_AX = 0xec8e,                      /* $Ax */
+    OBJECT_OP_CX = 0xed11,                      /* $Cx */
+    OBJECT_OP_DX = 0xed32,                      /* $Dx */
+    OBJECT_OP_8X_TABLE = 0xed45,                /* $8x */
+    OBJECT_OP_1X_TABLE = 0xed4b,                /* $1x */
+    OBJECT_OP_2X_TABLE = 0xed51,                /* $2x */
+    OBJECT_OP_EX_TABLE = 0xed57,                /* $Ex */
+    OBJECT_OP_FX_TABLE = 0xed5d,                /* $Fx */
+    OBJECT_OP_84_SET_FIELD_BIT4 = 0xed9b,       /* $84 */
+    OBJECT_OP_89 = 0xedc2,                      /* $89 */
+    OBJECT_OP_EA = 0xedd7,                      /* $EA */
+    OBJECT_OP_F1 = 0xede6,                      /* $F1 */
+    OBJECT_OP_FB = 0xee48,                      /* $FB */
+    OBJECT_OP_FC = 0xee71,                      /* $FC */
+    OBJECT_OP_F2_RANDOM_JITTER = 0xeeb5,        /* $F2 */
+    OBJECT_OP_F8_SET_STATE_BIT4 = 0xefd1,       /* $F8 */
+    OBJECT_OP_F9_CLEAR_STATE_BIT4 = 0xefde,     /* $F9 */
+    OBJECT_OP_E2 = 0xf0e8,                      /* $E2 */
+    OBJECT_OP_82 = 0xf0fa,                      /* $82 */
+    OBJECT_OP_83 = 0xf10b,                      /* $83 */
+    OBJECT_OP_EB = 0xf11c,                      /* $EB */
+    OBJECT_OP_EC = 0xf137,                      /* $EC */
+    OBJECT_OP_ED = 0xf155,                      /* $ED */
+    OBJECT_OP_E3 = 0xf19f,                      /* $E3 */
 };
 
 /* $83:E831: object opcode $4x. */
@@ -553,8 +553,8 @@ static ObjectFlow ObjectOp80LoopEnd(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E150: object opcode $2F. */
-static ObjectFlow ObjectOp2F(
+/* $83:E150: object opcode $2F: actor 0 fine position to $7F:DDFE/DE8E. */
+static ObjectFlow ObjectOp2FCopyActor0Position(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
@@ -567,7 +567,7 @@ static ObjectFlow ObjectOp2F(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E270: object opcode $2E. */
+/* $83:E270: object opcode $2E: next script byte to $7F:E33E[slot]. */
 static ObjectFlow ObjectOp2E(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -578,7 +578,7 @@ static ObjectFlow ObjectOp2E(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E5B5: object opcode $1D. */
+/* $83:E5B5: object opcode $1D: slot word offset to $1724/$1725. */
 static ObjectFlow ObjectOp1D(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -589,7 +589,7 @@ static ObjectFlow ObjectOp1D(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E810: object opcode $13. */
+/* $83:E810: object opcode $13: position = scroll $1220/$1228 + (128, 112). */
 static ObjectFlow ObjectOp13(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -607,7 +607,7 @@ static ObjectFlow ObjectOp13(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EA7D: object opcode $22. */
+/* $83:EA7D: object opcode $22: $066A[0] = ($066A[0] & $06) | script byte. */
 static ObjectFlow ObjectOp22(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -619,7 +619,7 @@ static ObjectFlow ObjectOp22(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EA8C: object opcode $23. */
+/* $83:EA8C: object opcode $23: $7F:D0A1 = low byte of D. */
 static ObjectFlow ObjectOp23(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -628,8 +628,8 @@ static ObjectFlow ObjectOp23(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EA94: object opcode $8D. */
-static ObjectFlow ObjectOp8D(
+/* $83:EA94: object opcode $8D: OR the next script byte into $7F:D0A1. */
+static ObjectFlow ObjectOp8DOrFieldBits(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
@@ -660,7 +660,9 @@ static ObjectFlow ObjectOp7XLoopStart(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EB50: object opcode $29 $2B $Cx. */
+/* $83:EB50: object opcode $29 $2B $Cx: set or clear one flag bit.
+ * $29: state bit 2 if the byte is non-zero; $2B: bit 6 of $7F:DB0C if the byte
+ * is negative; $Cx: state bit 3 if the low nibble is zero. */
 static ObjectFlow ObjectOp292BCX(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -695,8 +697,8 @@ static ObjectFlow ObjectOp292BCX(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:ED9B: object opcode $84. */
-static ObjectFlow ObjectOp84(
+/* $83:ED9B: object opcode $84: set bit 4 of $7F:D0A1. */
+static ObjectFlow ObjectOp84SetFieldBit4(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));
@@ -705,7 +707,7 @@ static ObjectFlow ObjectOp84(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EDC2: object opcode $89. */
+/* $83:EDC2: object opcode $89: $7F:E23E = $FF, set bit 7 of $7F:E33E. */
 static ObjectFlow ObjectOp89(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -718,7 +720,7 @@ static ObjectFlow ObjectOp89(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EDD7: object opcode $EA. */
+/* $83:EDD7: object opcode $EA: set bit 7 of $7F:DB0C[slot]. */
 static ObjectFlow ObjectOpEA(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -729,14 +731,14 @@ static ObjectFlow ObjectOpEA(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EFD1: object opcode $F8 $F9. */
-static ObjectFlow ObjectOpF8F9(
+/* $83:EFD1: object opcode $F8 $F9: set or clear bit 4 of the object state. */
+static ObjectFlow ObjectOpF8F9StateBit4(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
-    if (handler == OBJECT_OP_F8)
+    if (handler == OBJECT_OP_F8_SET_STATE_BIT4)
         Or8(cpu, 0x10u);
     else
         And8(cpu, 0xefu);
@@ -744,7 +746,7 @@ static ObjectFlow ObjectOpF8F9(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:F0E8: object opcode $E2. */
+/* $83:F0E8: object opcode $E2: word operand to $7F:DA6C[slot]. */
 static ObjectFlow ObjectOpE2(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -758,7 +760,7 @@ static ObjectFlow ObjectOpE2(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:F0FA: object opcode $82 $83. */
+/* $83:F0FA: object opcode $82 $83: copy $7F:DA6C to DAAC ($83: reverse). */
 static ObjectFlow ObjectOp8283(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -773,7 +775,7 @@ static ObjectFlow ObjectOp8283(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:F11C: object opcode $EB. */
+/* $83:F11C: object opcode $EB: $7F:DA6C[slot] = -$7F:DAAC[slot], per byte. */
 static ObjectFlow ObjectOpEB(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -891,7 +893,7 @@ static ObjectFlow ObjectOp3X2C25FD8FSetFrame(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E840: object opcode $5x $28 $Dx. */
+/* $83:E840: object opcode $5x $28 $Dx: script jump to the operand + $8EC7. */
 static ObjectFlow ObjectOp5X28DX(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -931,7 +933,7 @@ static ObjectFlow ObjectOp5X28DX(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EE48: object opcode $FB. */
+/* $83:EE48: object opcode $FB: signed nibbles to $7F:DDFE/DE8E positions. */
 static ObjectFlow ObjectOpFB(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -958,7 +960,7 @@ static ObjectFlow ObjectOpFB(
     return ObjectAdvance(memory, cpu);
 }
 
-/* $83:EE71: object opcode $FC $E3. */
+/* $83:EE71: object opcode $FC $E3: signed bytes to $7F:DDFE/DE8E positions. */
 static ObjectFlow ObjectOpFCE3(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -994,8 +996,8 @@ static ObjectFlow ObjectOpFCE3(
     return ObjectAdvance(memory, cpu);
 }
 
-/* $83:E191: object opcode $F7. */
-static ObjectFlow ObjectOpF7(
+/* $83:E191: object opcode $F7: signed bytes to $7F:DCDC/DD6C positions. */
+static ObjectFlow ObjectOpF7ByteOffsets(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
@@ -1041,7 +1043,7 @@ static ObjectFlow ObjectOp20(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EDE6: object opcode $F1. */
+/* $83:EDE6: object opcode $F1: take the animation of the slot with this id. */
 static ObjectFlow ObjectOpF1(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1074,7 +1076,8 @@ static ObjectFlow ObjectOpF1(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E437: object opcode $19 $8E. */
+/* $83:E437: object opcode $19 $8E: share a slot with the same animation, else
+ * set one up; $8E takes its ids from $7F:D4F3/D4F4. */
 static ObjectFlow ObjectOp198E(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1127,7 +1130,7 @@ static ObjectFlow ObjectOp198E(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EAFF: object opcode $26. */
+/* $83:EAFF: object opcode $26: set up the animation id of $7F:DA4C[slot]. */
 static ObjectFlow ObjectOp26(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1144,7 +1147,7 @@ static ObjectFlow ObjectOp26(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EC8E: object opcode $Ax. */
+/* $83:EC8E: object opcode $Ax: set up the animation named by the operand. */
 static ObjectFlow ObjectOpAX(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1163,8 +1166,8 @@ static ObjectFlow ObjectOpAX(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E854: object opcode $6x. */
-static ObjectFlow ObjectOp6X(
+/* $83:E854: object opcode $6x: spawn a child object. */
+static ObjectFlow ObjectOp6XSpawnChild(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     IncrementY16(cpu);
@@ -1177,7 +1180,7 @@ static ObjectFlow ObjectOp6X(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E860: object opcode $85. */
+/* $83:E860: object opcode $85: spawn a child and take its animation. */
 static ObjectFlow ObjectOp85(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1199,7 +1202,7 @@ static ObjectFlow ObjectOp85(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E87C: object opcode $8A. */
+/* $83:E87C: object opcode $8A: spawn a child at an offset from the operands. */
 static ObjectFlow ObjectOp8A(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1227,7 +1230,7 @@ static ObjectFlow ObjectOp8A(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E937: object opcode $EE. */
+/* $83:E937: object opcode $EE: spawn a child and register it in $7F:D0A6. */
 static ObjectFlow ObjectOpEE(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1261,8 +1264,8 @@ static ObjectFlow ObjectOpEE(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E13D: object opcode $0x. */
-static ObjectFlow ObjectOp0X(
+/* $83:E13D: object opcode $0x: despawn the object and leave the script. */
+static ObjectFlow ObjectOpDespawn(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     ObjectDespawn(memory, cpu);
@@ -1596,7 +1599,7 @@ next:
 end:
     SetAccumulatorWidth(cpu, 1);                               /* E427 */
     cpu->y = PullIndexValue(memory, cpu);
-    return ObjectOp0X(memory, cpu);
+    return ObjectOpDespawn(memory, cpu);
 }
 
 static ObjectFlow ObjectExecute(
@@ -1634,13 +1637,13 @@ static ObjectFlow ObjectExecute(
         return ObjectOp1ASpriteFrame(memory, cpu);
     case OBJECT_OP_80_LOOP_END:
         return ObjectOp80LoopEnd(memory, cpu);
-    case OBJECT_OP_2F:
-        return ObjectOp2F(memory, cpu);
+    case OBJECT_OP_2F_COPY_ACTOR0_POSITION:
+        return ObjectOp2FCopyActor0Position(memory, cpu);
     case OBJECT_OP_2E:
         return ObjectOp2E(memory, cpu);
     case OBJECT_OP_1D:
         return ObjectOp1D(memory, cpu);
-    case OBJECT_OP_12:                                         /* no-op */
+    case OBJECT_OP_12_NOP:                                         /* no-op */
         return OBJECT_FLOW_DISPATCH;
     case OBJECT_OP_13:
         return ObjectOp13(memory, cpu);
@@ -1648,23 +1651,23 @@ static ObjectFlow ObjectExecute(
         return ObjectOp22(memory, cpu);
     case OBJECT_OP_23:
         return ObjectOp23(memory, cpu);
-    case OBJECT_OP_8D:
-        return ObjectOp8D(memory, cpu);
+    case OBJECT_OP_8D_OR_FIELD_BITS:
+        return ObjectOp8DOrFieldBits(memory, cpu);
     case OBJECT_OP_7X_LOOP_START:
         return ObjectOp7XLoopStart(memory, cpu);
     case OBJECT_OP_29:
     case OBJECT_OP_2B:
     case OBJECT_OP_CX:
         return ObjectOp292BCX(memory, cpu, handler);
-    case OBJECT_OP_84:
-        return ObjectOp84(memory, cpu);
+    case OBJECT_OP_84_SET_FIELD_BIT4:
+        return ObjectOp84SetFieldBit4(memory, cpu);
     case OBJECT_OP_89:
         return ObjectOp89(memory, cpu);
     case OBJECT_OP_EA:
         return ObjectOpEA(memory, cpu);
-    case OBJECT_OP_F8:
-    case OBJECT_OP_F9:
-        return ObjectOpF8F9(memory, cpu, handler);
+    case OBJECT_OP_F8_SET_STATE_BIT4:
+    case OBJECT_OP_F9_CLEAR_STATE_BIT4:
+        return ObjectOpF8F9StateBit4(memory, cpu, handler);
     case OBJECT_OP_E2:
         return ObjectOpE2(memory, cpu);
     case OBJECT_OP_82:
@@ -1691,8 +1694,8 @@ static ObjectFlow ObjectExecute(
     case OBJECT_OP_FC:
     case OBJECT_OP_E3:
         return ObjectOpFCE3(memory, cpu, handler);
-    case OBJECT_OP_F7:
-        return ObjectOpF7(memory, cpu);
+    case OBJECT_OP_F7_BYTE_OFFSETS:
+        return ObjectOpF7ByteOffsets(memory, cpu);
     case OBJECT_OP_20:
         return ObjectOp20(memory, cpu);
     case OBJECT_OP_F1:
@@ -1704,16 +1707,16 @@ static ObjectFlow ObjectExecute(
         return ObjectOp26(memory, cpu, handler);
     case OBJECT_OP_AX:
         return ObjectOpAX(memory, cpu, handler);
-    case OBJECT_OP_6X:
-        return ObjectOp6X(memory, cpu);
+    case OBJECT_OP_6X_SPAWN_CHILD:
+        return ObjectOp6XSpawnChild(memory, cpu);
     case OBJECT_OP_85:
         return ObjectOp85(memory, cpu);
     case OBJECT_OP_8A:
         return ObjectOp8A(memory, cpu);
     case OBJECT_OP_EE:
         return ObjectOpEE(memory, cpu);
-    case OBJECT_OP_0X:
-        return ObjectOp0X(memory, cpu);
+    case OBJECT_OP_0X_DESPAWN:
+        return ObjectOpDespawn(memory, cpu);
     case OBJECT_OP_14_SPIN_ZOOM:
         return ObjectOp14(memory, cpu);
     default:
