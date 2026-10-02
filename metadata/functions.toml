@@ -2949,3 +2949,12 @@ source = "src/cave/cave_reset.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Area rectangle destination and its transition children.
+[[function]]
+address = "83:B76E"
+name = "Lufia2FieldApplyAreaTransition"
+source = "src/field/field_area_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

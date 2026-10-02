@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-356 functions in `metadata/functions.toml`: 356 verified, 0 draft, 0 identified, 0 disabled.
+357 functions in `metadata/functions.toml`: 357 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **497 independent jobs**. The normal
-application build also passes. The consumer selects all 356 verified functions,
+The full Windows Release verifier passes **500 independent jobs**. The normal
+application build also passes. The consumer selects all 357 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -34,6 +34,26 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Area rectangle destinations
+
+`$83:B76E` applies the destination map, coordinates and transition parameters
+from an area rectangle. It preserves the current-map case, the original Cave
+reload flags, parameter inheritance from `$066A`, and all five child-call
+sites. It is a standalone replacement with a PB `$83`, M1/X16, binary-mode
+contract. The indexed rectangle reads carry into the next bank; the mixed
+short and long destination accesses retain their original bus order.
+
+67,584 original-parent states pass in direct and runtime execution with no
+initial native fallback. They include every type/target-map combination,
+every 16-bit rectangle index, all 256 high direct-page bytes on the TDC path,
+small stacks, changed child modes and banks, and modified returns/unwinds.
+The tests compare CPU state at every child entry, final CPU state, complete
+WRAM, mutable hardware state and every operand access. There are 448 exact
+continuations, 15 dispatcher redirects, 2,301 unsupported-entry checks and
+29 detected deliberate faults. The child bodies use identical explicit
+contracts on both sides; their gameplay effects are not inferred from these
+parent comparisons.
 
 ## Ancient Cave party reset and defeat
 
