@@ -38,10 +38,10 @@ bool BattlePrepareOpening(BattleContext *battle) {
     OpLdx(cpu, 0x0f20u);
     OpWriteX(memory, cpu, OpAbs(cpu, 0x0562u), cpu->x);
 
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x0b5bu)));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_ANCIENT_CAVE_COUNTER)));
     OpInx(cpu);
     if (!cpu->zero)
-        OpWriteX(memory, cpu, OpAbs(cpu, 0x0b5bu), cpu->x);
+        OpWriteX(memory, cpu, OpAbs(cpu, WRAM_ANCIENT_CAVE_COUNTER), cpu->x);
 
     OpLda(memory, cpu, ENCOUNTER_SOURCE);
     if (cpu->zero) {
@@ -94,13 +94,13 @@ bool BattlePrepareOpening(BattleContext *battle) {
 void BattleCopyPartyFormation(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
-    OpLda(memory, cpu, OpAbs(cpu, 0x0a7au));
-    OpSta(memory, cpu, OpAbs(cpu, 0x153cu));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_MENU_PARTY_MEMBER_COUNT));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_COUNT));
 
     OpLdx(cpu, 3u);
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, 0x0a7bu));
-        OpSta(memory, cpu, OpAbsX(cpu, 0x153du));
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_MENU_PARTY_FIRST_ID));
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_IDS));
         OpDex(cpu);
     } while (!cpu->negative);
 
@@ -111,8 +111,8 @@ void BattleCopyPartyFormation(BattleContext *battle) {
         OpAslA(cpu);
         OpTay(cpu);
 
-        OpLda(memory, cpu, OpAbsY(cpu, 0x0a80u));
-        OpSta(memory, cpu, OpAbsY(cpu, 0x0a64u));
+        OpLda(memory, cpu, OpAbsY(cpu, WRAM_MENU_PARTY_CHARACTER_OFFSET));
+        OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS));
         OpTay(cpu);
 
         OpSepWidths(cpu, 0x20u);
@@ -138,14 +138,14 @@ bool BattleInitializeRecords(BattleContext *battle) {
     OpStz(memory, cpu, OpAbs(cpu, 0x160au));
     OpStz(memory, cpu, OpAbs(cpu, 0x1607u));
     OpRepWidths(cpu, 0x20u);
-    OpStz(memory, cpu, OpAbs(cpu, 0x1608u));
-    OpStz(memory, cpu, OpAbs(cpu, 0x1605u));
-    OpStz(memory, cpu, OpAbs(cpu, 0x160bu));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_GOLD_REWARD));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EXPERIENCE_REWARD));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ITEM_REWARD));
 
     OpLdx(cpu, 0u);
     do {
         OpLda(memory, cpu, OpLongX(cpu, 0x859ec8u));
-        OpSta(memory, cpu, OpAbsX(cpu, 0x0a6eu));
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_ENEMY_RECORDS));
         OpInx(cpu);
         OpInx(cpu);
         OpCpx(cpu, 12u);
@@ -162,13 +162,13 @@ bool BattleInitializeRecords(BattleContext *battle) {
         OpCmpValue(cpu, 0xffu);
         if (cpu->zero) {
             OpIncA(cpu);
-            OpSta(memory, cpu, OpAbsY(cpu, 0x0a6eu));
+            OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_RECORDS));
             OpSta(memory, cpu, OpAbsY(cpu, 0x0a6fu));
         } else {
             OpSta(memory, cpu, OpAbs(cpu, 0x09f2u));
             PushY(memory, cpu);
             OpPushX(memory, cpu);
-            OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, 0x0a6eu)));
+            OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_RECORDS)));
             OpWriteX(memory, cpu, OpAbs(cpu, 0x00b2u), cpu->x);
             if (!BattleCreatePartyRecord(battle))
                 return false;
@@ -189,12 +189,13 @@ static void ApplyScenarioLayout(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                 const BattleScenarioLayout *layout) {
     for (uint16_t i = 0; i < 5u; ++i) {
         LoadA8(cpu, layout->slots[i]);
-        OpSta(memory, cpu, OpAbs(cpu, (uint16_t)(0x153cu + i)));
+        OpSta(memory, cpu, OpAbs(cpu, (uint16_t)(WRAM_BATTLE_PARTY_COUNT + i)));
     }
 
     for (uint16_t i = 0; i < 4u; ++i) {
         OpLdx(cpu, layout->records[i]);
-        OpWriteX(memory, cpu, OpAbs(cpu, (uint16_t)(0x0a64u + 2u * i)), cpu->x);
+        OpWriteX(memory, cpu, OpAbs(cpu,
+            (uint16_t)(WRAM_BATTLE_PARTY_RECORDS + 2u * i)), cpu->x);
     }
 
     OpLda(memory, cpu, OpAbs(cpu, layout->first_member));
@@ -249,14 +250,14 @@ bool BattleFinalizeSetup(BattleContext *battle) {
     OpLda(memory, cpu, OpAbs(cpu, 0x1144u));
     OpSta(memory, cpu, OpAbs(cpu, 0x154du));
     OpLdx(cpu, 0x10dfu);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x0a6cu), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CAPSULE_RECORD), cpu->x);
 
     OpLda(memory, cpu, OpAbs(cpu, 0x0a7fu));
     OpIncA(cpu);
     OpSta(memory, cpu, OpAbs(cpu, 0x154cu));
     if (cpu->zero) {
         OpLdx(cpu, 0u);
-        OpWriteX(memory, cpu, OpAbs(cpu, 0x0a6cu), cpu->x);
+        OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CAPSULE_RECORD), cpu->x);
         LoadA8(cpu, 4u);
         OpTestBits(memory, cpu, OpAbs(cpu, 0x10eeu), 1u);
     }

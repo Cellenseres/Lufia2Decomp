@@ -8,6 +8,7 @@
 #include "lufia2/system.h"
 #include "system/system_internal.h"
 #include "text/text_internal.h"
+#include "system/wram.h"
 
 #define BFAA_HANDOFF 0x80bfbcu
 
@@ -576,12 +577,12 @@ static void CavePlaceStart(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpIncA(cpu);
     OpIncA(cpu);
     OpIncA(cpu);
-    OpSta(memory, cpu, 0x0005b1u);
+    OpSta(memory, cpu, WRAM_FIELD_DESTINATION_Y);
     OpSta(memory, cpu, CAVE_START_ROW_LONG);
     ExchangeAccumulatorBytes(cpu);
     OpIncA(cpu);
     OpIncA(cpu);
-    OpSta(memory, cpu, 0x0005b0u);
+    OpSta(memory, cpu, WRAM_FIELD_DESTINATION_X);
     OpSta(memory, cpu, CAVE_START_COLUMN_LONG);
     OpLdx(cpu, 0x0000u);                                       /* 942D */
     for (;;) {
@@ -1362,11 +1363,11 @@ Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(
     OpCmpValue(cpu, 0x63u);
     if (cpu->zero) {
         LoadA8(cpu, 0x0bu);                                    /* 9E85 */
-        OpSta(memory, cpu, 0x0005b0u);
+        OpSta(memory, cpu, WRAM_FIELD_DESTINATION_X);
         LoadA8(cpu, 0x2eu);
-        OpSta(memory, cpu, 0x0005b1u);
+        OpSta(memory, cpu, WRAM_FIELD_DESTINATION_Y);
         LoadA8(cpu, 0x40u);
-        OpSta(memory, cpu, 0x0005b2u);
+        OpSta(memory, cpu, WRAM_FIELD_DESTINATION_PARAMETERS);
         LoadA8(cpu, 0xf1u);
         OpSta(memory, cpu, OpAbs(cpu, 0x05acu));
         LoadA8(cpu, 0x01u);
@@ -1411,10 +1412,10 @@ Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(
     OpAdc(memory, cpu, 0x7fe697u);
     OpTax(cpu);
     OpLda(memory, cpu, OpLongX(cpu, 0x839f73u));
-    OpSta(memory, cpu, 0x7fe6a5u);
+    OpSta(memory, cpu, WRAM_CAVE_MAP_HEADER_POINTER);
     OpSepWidths(cpu, 0x20u);                                         /* 9F16 */
     OpLda(memory, cpu, OpLongX(cpu, 0x839f75u));
-    OpSta(memory, cpu, 0x7fe6a7u);
+    OpSta(memory, cpu, WRAM_CAVE_MAP_HEADER_BANK);
     OpLda(memory, cpu, OpDp(cpu, 0x56u));                      /* music */
     OpCmp(memory, cpu, OpAbs(cpu, 0x099du));
     if (!cpu->zero) {

@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/battle.h"
+#include "system/wram.h"
 
 enum {
     PORTRAITS = 0x153du,                /* portrait id per slot, $FF none */
@@ -95,7 +96,8 @@ Lufia2ExecutionResult Lufia2BattlePortrait(
         TransferXToA(cpu);
         AslA16(cpu);
         TransferAToX(cpu);
-        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a64u, cpu->x));
+        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_BATTLE_PARTY_RECORDS,
+            cpu->x));
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x000fu, cpu->x));
         status = cpu->accumulator;
         cpu->zero = (status & 0x0004u) == 0;

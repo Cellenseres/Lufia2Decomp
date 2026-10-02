@@ -121,9 +121,9 @@ static Lufia2ExecutionResult CollectCaveCarryItems(
                 result = CaveChild(memory, cpu, child, context, 0x84898du, 0x80be1au);
                 if (result.flow != LUFIA2_EXECUTION_RETURNED)
                     return result;
-                OpLda(memory, cpu, OpLongX(cpu, 0x00077eu));
+                OpLda(memory, cpu, OpLongX(cpu, WRAM_EVENT_FLAGS));
                 OpOraValue(cpu, OpReadM(memory, cpu, OpDp(cpu, 0x57u)));
-                OpSta(memory, cpu, OpLongX(cpu, 0x00077eu));
+                OpSta(memory, cpu, OpLongX(cpu, WRAM_EVENT_FLAGS));
                 OpPullX(memory, cpu);
                 OpRepWidths(cpu, 0x20u);
             }
@@ -301,8 +301,8 @@ Lufia2ExecutionResult Lufia2AncientCaveExit(
     Push8(memory, cpu, cpu->program_bank);
     PullDataBank(memory, cpu);
     OpLoadA(cpu, 8u);
-    CaveTestSetBits(memory, cpu, OpAbs(cpu, 0x09a7u), 0u);
-    OpLda(memory, cpu, OpAbs(cpu, 0x0b4eu));
+    CaveTestSetBits(memory, cpu, OpAbs(cpu, WRAM_WINDOW_MODE), 0u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_PLAY_TIME_MINUTES));
     OpSta(memory, cpu, WRAM_ANCIENT_CAVE_EXIT_MINUTES);
     cpu->carry = 0;
     OpAdc(memory, cpu, OpAbs(cpu, WRAM_ANCIENT_CAVE_TOTAL_MINUTES & 0xffffu));
@@ -313,7 +313,7 @@ Lufia2ExecutionResult Lufia2AncientCaveExit(
         OpStepMem(memory, cpu, OpAbs(cpu, WRAM_ANCIENT_CAVE_TOTAL_HOURS & 0xffffu), 1);
     }
     OpSta(memory, cpu, OpAbs(cpu, WRAM_ANCIENT_CAVE_TOTAL_MINUTES & 0xffffu));
-    OpLda(memory, cpu, OpAbs(cpu, 0x0b4du));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_PLAY_TIME_HOURS));
     OpSta(memory, cpu, WRAM_ANCIENT_CAVE_EXIT_HOURS);
     cpu->carry = 0;
     OpAdc(memory, cpu, OpAbs(cpu, WRAM_ANCIENT_CAVE_TOTAL_HOURS & 0xffffu));
@@ -341,25 +341,25 @@ Lufia2ExecutionResult Lufia2AncientCaveExit(
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
     OpLoadA(cpu, 0x80u);
-    CaveTestSetBits(memory, cpu, OpAbs(cpu, 0x0b50u), 0u);
+    CaveTestSetBits(memory, cpu, OpAbs(cpu, WRAM_PLAY_TIME_FRAMES), 0u);
     OpLda(memory, cpu, WRAM_ANCIENT_CAVE_EXIT_MINUTES);
     cpu->carry = 0;
-    OpAdc(memory, cpu, OpAbs(cpu, 0x0b4eu));
+    OpAdc(memory, cpu, OpAbs(cpu, WRAM_PLAY_TIME_MINUTES));
     OpCmpValue(cpu, 60u);
     if (cpu->carry) {
         cpu->carry = 1;
         OpSbcValue(cpu, 60u);
-        OpStepMem(memory, cpu, OpAbs(cpu, 0x0b4du), 1);
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_PLAY_TIME_HOURS), 1);
     }
-    OpSta(memory, cpu, OpAbs(cpu, 0x0b4eu));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_PLAY_TIME_MINUTES));
     OpLda(memory, cpu, WRAM_ANCIENT_CAVE_EXIT_HOURS);
     cpu->carry = 0;
-    OpAdc(memory, cpu, OpAbs(cpu, 0x0b4du));
+    OpAdc(memory, cpu, OpAbs(cpu, WRAM_PLAY_TIME_HOURS));
     if (cpu->carry)
         OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x0b4du));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_PLAY_TIME_HOURS));
     OpLoadA(cpu, 0x80u);
-    CaveTestSetBits(memory, cpu, OpAbs(cpu, 0x0b50u), 1u);
+    CaveTestSetBits(memory, cpu, OpAbs(cpu, WRAM_PLAY_TIME_FRAMES), 1u);
     result = CaveChild(memory, cpu, child, context, 0x848ae2u, 0x82c515u);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
