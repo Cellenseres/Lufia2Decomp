@@ -907,7 +907,7 @@ name = "field_layer_section_word"
 width = 2
 count = 4
 owner = "field"
-notes = "Map section header word, copied by 80:EBAA. Its low byte gates redraw and raw object tile copying."
+notes = "Map section header word, copied by 80:EBAA. Its low byte gates redraw and raw object tile copying; its high-byte nibbles control horizontal and vertical coordinate scaling in 83:8D42 via 83:8DDA/8E01."
 
 [[location]]
 address = "7F:D4F8"
@@ -1211,3 +1211,11 @@ width = 1
 count = 1
 owner = "field"
 notes = "83:8AC9/8AD5/8AE5 test, set and clear indexed object bits using 83:8AF7 and the ROM80:BE45 mask table. Base only; no extent inferred across D0A2 fields."
+
+[[location]]
+address = "7F:D028"
+name = "field_layer_coarse_scroll_cache"
+width = 2
+count = 5
+owner = "field"
+notes = "83:8D42 writes pixel-scroll words divided by sixteen at D028+X and D02A+X for X=6,4,2,0. These writes overlap; five words cover the proven cache, including disabled layers. Descending layer order determines the final contents."

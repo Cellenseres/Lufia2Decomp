@@ -2811,3 +2811,59 @@ source = "src/field/field_object_bits.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:8E01"
+name = "Lufia2FieldLayerScaleMode"
+source = "src/field/field_layer_scale.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8E2B"
+name = "Lufia2FieldPrepareCoordinateScale"
+source = "src/field/field_layer_scale.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:8E09"
+name = "Lufia2FieldScaleCoordinateRight"
+source = "src/field/field_layer_scale.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:8E1A"
+name = "Lufia2FieldScaleCoordinateLeft"
+source = "src/field/field_layer_scale.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:8DDA"
+name = "Lufia2FieldPrepareLayerScrollX"
+source = "src/field/field_layer_scale.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8DF0"
+name = "Lufia2FieldPrepareLayerScrollY"
+source = "src/field/field_layer_scale.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8D42"
+name = "Lufia2FieldSetupLayerScroll"
+source = "src/field/field_layer_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
