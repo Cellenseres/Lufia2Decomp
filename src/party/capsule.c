@@ -41,6 +41,29 @@ enum {
     GROWTH_ROW = 0x17u,
     GROWTH_RATE = 0x1cu,
     GROWTH_RATES = 0xa6f420u,
+    /* Level-up. */
+    MAX_LEVEL = 99u,
+    LEVEL_START_EXPERIENCE = 0x113eu, /* 24-bit, experience the level began at */
+    LEVEL_GAINS_OUT = 0x0a38u,
+    /* Capsule record in bank $97. */
+    RECORD_BANK = 0x97u,
+    RECORD_STATS_COPY_A = 0x1165u,
+    RECORD_STATS_COPY_B = 0x1167u,
+    RECORD_COPY_A_OFFSET = 0x16u,
+    RECORD_COPY_B_OFFSET = 0x17u,
+    RECORD_SKILL_BEFORE_LEARNING = 0x0fu, /* skill id per slot */
+    RECORD_SKILL_AFTER_LEARNING = 0x12u,
+    /* Skills. */
+    SKILL_FLAGS = 0x11cau,        /* one word of learned bits per monster */
+    SKILL_MASK_TABLE = 0x8ed8c3u, /* word per slot, shifted 3 bits per form */
+    SKILL_SLOT_COUNT = 3u,
+    SKILL_FORM_SHIFT = 3u,
+    DP_SKILL_MASK = 0x11u,
+    DP_LEARN_SLOT = 0x13u,
+    DP_SKILL_SLOT = 0x19u, /* later the 24-bit record pointer */
+    DP_SKILL_POINTER_BANK = 0x1bu,
+    /* Random learning odds. */
+    LEARN_ODDS = 8u,
 };
 
 static void Jsr(const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t ret) {
@@ -295,9 +318,11 @@ static void CapsuleGrowth(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 
 /* $82:D283: base stats plus growth into the block. */
 static void CapsuleStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    static const uint8_t kStats[6][2] = {
-        {0x1du, 0x15u}, {0x1eu, 0x18u}, {0x1fu, 0x19u},
-        {0x20u, 0x1au}, {0x21u, 0x1bu}, {0x22u, 0x1cu}};
+    /* Per stat: the record offset of its growth input and of its base value. */
+    static const uint8_t kRecordOffsets[6][2] = {{0x1du, 0x15u}, {0x1eu, 0x18u},
+                                                 {0x1fu, 0x19u}, {0x20u, 0x1au},
+                                                 {0x21u, 0x1bu}, {0x22u, 0x1cu}};
+    /* Where each stat lands in the capsule block. */
     static const uint16_t kTargets[6] = {
         0x1130u, 0x1134u, 0x1136u, 0x1138u, 0x113au, 0x113cu};
     static const uint16_t kReturns[6] = {
@@ -309,25 +334,25 @@ static void CapsuleStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Rts(memory, cpu);
     LoadY16(cpu, Word(memory, cpu, RECORD));
     PushDataBank(memory, cpu);
-    LoadA8(cpu, 0x97u);
+    LoadA8(cpu, RECORD_BANK);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0016u, cpu->y));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, RECORD_COPY_A_OFFSET, cpu->y));
     And16(cpu, 0x00ffu);
-    StoreWord(memory, cpu, 0x1165u);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0017u, cpu->y));
+    StoreWord(memory, cpu, RECORD_STATS_COPY_A);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, RECORD_COPY_B_OFFSET, cpu->y));
     And16(cpu, 0x00ffu);
-    StoreWord(memory, cpu, 0x1167u);
+    StoreWord(memory, cpu, RECORD_STATS_COPY_B);
     for (i = 0; i < 6u; ++i) {
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, kStats[i][0], cpu->y));
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, kRecordOffsets[i][0], cpu->y));
         Jsr(memory, cpu, kReturns[i]);
         CapsuleGrowth(memory, cpu);
         Rts(memory, cpu);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, kStats[i][1], cpu->y));
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, kRecordOffsets[i][1], cpu->y));
         And16(cpu, 0x00ffu);
         cpu->carry = 0;
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x11u));
+        Add16Value(cpu, Read16Direct(memory, cpu, GROWTH_SUM));
         StoreWord(memory, cpu, kTargets[i]);
         if (i == 0)
             StoreWord(memory, cpu, 0x1104u);
@@ -392,10 +417,10 @@ Lufia2ExecutionResult Lufia2CapsuleLoadStats(
     StoreAAbsolute8(memory, cpu, 0x1144u, 0);
     StoreZeroAbsolute8(memory, cpu, 0x10eeu, 0);
     PushDataBank(memory, cpu);
-    LoadA8(cpu, 0x97u);
+    LoadA8(cpu, RECORD_BANK);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
-    StoreA8Absolute(memory, cpu, 0x1126u, 0x97u);
+    StoreA8Absolute(memory, cpu, 0x1126u, RECORD_BANK);
     SetAccumulatorWidth(cpu, 0);
     LoadY16(cpu, Word(memory, cpu, RECORD));
     Write16Absolute(memory, cpu, 0x1124u, cpu->y);
@@ -557,21 +582,24 @@ Lufia2ExecutionResult Lufia2CapsuleLevelUp(
     Lufia2CpuState *cpu) {
     static const uint16_t kStats[6] = {
         0x1104u, 0x110cu, 0x110eu, 0x1110u, 0x1112u, 0x1114u};
+    /* Direct-page scratch holding each stat before the level-up. */
     static const uint8_t kGains[6] = {0xdfu, 0xe1u, 0xe3u, 0xe5u, 0xe7u, 0xeau};
-    static const uint16_t kOut[6] = {
-        0x0a38u, 0x0a3au, 0x0a3bu, 0x0a3cu, 0x0a3du, 0x0a3eu};
+    /* The gains reported to the caller. */
+    static const uint16_t kOut[6] = {LEVEL_GAINS_OUT,      LEVEL_GAINS_OUT + 2u,
+                                     LEVEL_GAINS_OUT + 3u, LEVEL_GAINS_OUT + 4u,
+                                     LEVEL_GAINS_OUT + 5u, LEVEL_GAINS_OUT + 6u};
     unsigned i;
     int due = 0;
 
     LoadAAbsolute8(memory, cpu, LEVEL, 0);
-    Compare8(cpu, A8(cpu), 0x63u);
+    Compare8(cpu, A8(cpu), MAX_LEVEL);
     if (!cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x113eu, 0);
+        LoadAAbsolute8(memory, cpu, LEVEL_START_EXPERIENCE, 0);
         cpu->carry = 1;
         Sbc8(cpu, AbsoluteByte(memory, cpu, EXPERIENCE, 0));
-        LoadAAbsolute8(memory, cpu, 0x113fu, 0);
+        LoadAAbsolute8(memory, cpu, LEVEL_START_EXPERIENCE + 1u, 0);
         Sbc8(cpu, AbsoluteByte(memory, cpu, (uint16_t)(EXPERIENCE + 1u), 0));
-        LoadAAbsolute8(memory, cpu, 0x1140u, 0);
+        LoadAAbsolute8(memory, cpu, LEVEL_START_EXPERIENCE + 2u, 0);
         Sbc8(cpu, AbsoluteByte(memory, cpu, (uint16_t)(EXPERIENCE + 2u), 0));
         due = cpu->carry;
     }
@@ -627,9 +655,8 @@ Lufia2ExecutionResult Lufia2CapsuleExperienceRange(
     Lufia2CpuState *cpu) {
     unsigned i;
 
-    StoreZeroAbsolute8(memory, cpu, 0x113eu, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x113fu, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x1140u, 0);
+    for (i = 0; i < 3u; ++i)
+        StoreZeroAbsolute8(memory, cpu, (uint16_t)(LEVEL_START_EXPERIENCE + i), 0);
     LoadAAbsolute8(memory, cpu, LEVEL, 0);
     Compare8(cpu, A8(cpu), 0x01u);
     if (!cpu->zero) {
@@ -642,7 +669,7 @@ Lufia2ExecutionResult Lufia2CapsuleExperienceRange(
         Write8(memory, level, (uint8_t)(Read8(memory, level) + 1u));
         for (i = 0; i < 3u; ++i) {
             LoadAAbsolute8(memory, cpu, (uint16_t)(EXPERIENCE + i), 0);
-            StoreAAbsolute8(memory, cpu, (uint16_t)(0x113eu + i), 0);
+            StoreAAbsolute8(memory, cpu, (uint16_t)(LEVEL_START_EXPERIENCE + i), 0);
         }
     }
     Jsr(memory, cpu, 0xce50u);
@@ -656,24 +683,35 @@ void Lufia2BonusClear(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     ClearBonuses(memory, cpu, first, words);
 }
 
+/* $82:C4A2: X = skill flags of the capsule ($11CA + 2n). */
+static void CapsuleSkillFlags(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, CAPSULE, 0) & 0x00ffu));
+    AslA16(cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, SKILL_FLAGS);
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1);
+}
+
 /* $82:CCFE: $11 = learned-bit mask of slot A for the form. */
 static void CapsuleSkillMask(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
     And16(cpu, 0x00ffu);
     AslA16(cpu);
     TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x8ed8c3u, cpu->x)));
-    StoreADirect16(memory, cpu, 0x11u);
-    LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x11a4u, 0) & 0x00ffu));
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(SKILL_MASK_TABLE, cpu->x)));
+    StoreADirect16(memory, cpu, DP_SKILL_MASK);
+    LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, FORM, 0) & 0x00ffu));
     for (;;) {
         LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));       /* CD19 */
         if (cpu->zero)
             break;
         {
-            uint16_t mask = Read16Direct(memory, cpu, 0x11u);
+            uint16_t mask = Read16Direct(memory, cpu, DP_SKILL_MASK);
 
-            mask = (uint16_t)(mask << 3);
-            Write16Direct(memory, cpu, 0x11u, mask);
+            mask = (uint16_t)(mask << SKILL_FORM_SHIFT);
+            Write16Direct(memory, cpu, DP_SKILL_MASK, mask);
         }
     }
     SetAccumulatorWidth(cpu, 1);
@@ -681,8 +719,8 @@ static void CapsuleSkillMask(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 
 /* $82:C4B3: skill id of slot A (learned or not). */
 void Lufia2CapsuleSkill(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreADirect8(memory, cpu, 0x19u);
-    Write8(memory, DirectAddress(cpu, 0x1au), 0);
+    StoreADirect8(memory, cpu, DP_SKILL_SLOT);
+    Write8(memory, DirectAddress(cpu, DP_SKILL_SLOT + 1u), 0);
     Jsr(memory, cpu, 0xc4b9u);
     CapsuleSkillMask(memory, cpu);
     Rts(memory, cpu);
@@ -690,49 +728,33 @@ void Lufia2CapsuleSkill(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Lufia2CapsuleRecordPointer(memory, cpu);
     Rts(memory, cpu);
     Jsr(memory, cpu, 0xc4c1u);                                 /* C4A2 */
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x11a3u, 0) & 0x00ffu));
-    AslA16(cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, 0x11cau);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
+    CapsuleSkillFlags(memory, cpu);
     Rts(memory, cpu);
-    LoadA8(cpu, 0x97u);
-    StoreADirect8(memory, cpu, 0x1bu);
+    LoadA8(cpu, RECORD_BANK);
+    StoreADirect8(memory, cpu, DP_SKILL_POINTER_BANK);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09c4u, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, RECORD, 0));
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x19u));
-    StoreADirect16(memory, cpu, 0x19u);
+    Add16Value(cpu, Read16Direct(memory, cpu, DP_SKILL_SLOT));
+    StoreADirect16(memory, cpu, DP_SKILL_SLOT);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
     {
-        const uint16_t mask = Read16Direct(memory, cpu, 0x11u);
+        const uint16_t mask = Read16Direct(memory, cpu, DP_SKILL_MASK);
 
         cpu->zero = (cpu->accumulator & mask) == 0;            /* BIT $11 */
         cpu->negative = (mask & 0x8000u) != 0;
         cpu->overflow = (mask & 0x4000u) != 0;
     }
-    LoadY16(cpu, cpu->zero ? 0x000fu : 0x0012u);
+    LoadY16(cpu,
+            cpu->zero ? RECORD_SKILL_BEFORE_LEARNING : RECORD_SKILL_AFTER_LEARNING);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8IndirectLongY(memory, cpu, 0x19u));
-}
-
-/* $82:C4A2: X = skill flags of the capsule ($11CA + 2n). */
-static void CapsuleSkillFlags(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x11a3u, 0) & 0x00ffu));
-    AslA16(cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, 0x11cau);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, Read8IndirectLongY(memory, cpu, DP_SKILL_SLOT));
 }
 
 /* $82:CD41: learn skill slot A if the form has it; carry = no. */
 static void CapsuleLearn(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreADirect8(memory, cpu, 0x13u);
-    Write8(memory, DirectAddress(cpu, 0x14u), 0);
+    StoreADirect8(memory, cpu, DP_LEARN_SLOT);
+    Write8(memory, DirectAddress(cpu, DP_LEARN_SLOT + 1u), 0);
     Jsr(memory, cpu, 0xcd47u);
     CapsuleSkillMask(memory, cpu);
     Rts(memory, cpu);
@@ -742,7 +764,7 @@ static void CapsuleLearn(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
     {
-        const uint16_t mask = Read16Direct(memory, cpu, 0x11u);  /* BIT $11 */
+        const uint16_t mask = Read16Direct(memory, cpu, DP_SKILL_MASK); /* BIT $11 */
 
         cpu->zero = (cpu->accumulator & mask) == 0;
         cpu->negative = (mask & 0x8000u) != 0;
@@ -757,16 +779,16 @@ static void CapsuleLearn(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Jsr(memory, cpu, 0xcd58u);
     Lufia2CapsuleRecordPointer(memory, cpu);
     Rts(memory, cpu);
-    LoadA8(cpu, 0x97u);
-    StoreADirect8(memory, cpu, 0x1bu);
+    LoadA8(cpu, RECORD_BANK);
+    StoreADirect8(memory, cpu, DP_SKILL_POINTER_BANK);
     SetAccumulatorWidth(cpu, 0);
     TransferXToA(cpu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x13u));
-    StoreADirect16(memory, cpu, 0x19u);
+    Add16Value(cpu, Read16Direct(memory, cpu, DP_LEARN_SLOT));
+    StoreADirect16(memory, cpu, DP_SKILL_SLOT);
     SetAccumulatorWidth(cpu, 1);
-    LoadY16(cpu, 0x0012u);
-    LoadA8(cpu, Read8IndirectLongY(memory, cpu, 0x19u));
+    LoadY16(cpu, RECORD_SKILL_AFTER_LEARNING);
+    LoadA8(cpu, Read8IndirectLongY(memory, cpu, DP_SKILL_SLOT));
     if (cpu->zero) {
         cpu->carry = 1;
         return;
@@ -776,7 +798,7 @@ static void CapsuleLearn(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Rts(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x) |
-        Read16Direct(memory, cpu, 0x11u)));
+                            Read16Direct(memory, cpu, DP_SKILL_MASK)));
     StoreAAbsolute16(memory, cpu, 0x0000u, cpu->x);
     SetAccumulatorWidth(cpu, 1);
     cpu->carry = 0;
@@ -794,14 +816,14 @@ static void RandomBelow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 Lufia2ExecutionResult Lufia2CapsuleTryLearn(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    RandomBelow(memory, cpu, 0x08u, 0xcd24u);
+    RandomBelow(memory, cpu, LEARN_ODDS, 0xcd24u);
     Compare8(cpu, A8(cpu), 0x00u);
     if (!cpu->zero) {
         cpu->carry = 1;
         return ExecutionReturned(0x82cd40u);
     }
-    RandomBelow(memory, cpu, 0x03u, 0xcd2eu);
-    Compare8(cpu, A8(cpu), 0x03u);
+    RandomBelow(memory, cpu, SKILL_SLOT_COUNT, 0xcd2eu);
+    Compare8(cpu, A8(cpu), SKILL_SLOT_COUNT);
     if (cpu->carry)
         return ExecutionReturned(0x82cd40u);
     PushAccumulator8(memory, cpu);
