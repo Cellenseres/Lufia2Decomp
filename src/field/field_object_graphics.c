@@ -143,19 +143,19 @@ static void FieldFixedGraphicsDma(
     uint8_t source_bank, uint16_t source, uint16_t length,
     uint16_t destination) {
     OpLoadA(cpu, 0x0001u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x4300u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_DMAP(0)));
     OpLdx(cpu, source);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x4302u), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, SNES_A1TL(0)), cpu->x);
     OpLoadA(cpu, source_bank);
-    OpSta(memory, cpu, OpAbs(cpu, 0x4304u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_A1B(0)));
     OpLdx(cpu, length);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x4305u), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, SNES_DASL(0)), cpu->x);
     OpLoadA(cpu, 0x0018u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x4301u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_BBAD(0)));
     OpLdx(cpu, destination);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x2116u), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, SNES_VMADDL), cpu->x);
     OpLoadA(cpu, 0x0001u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x420bu));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_MDMAEN));
 }
 
 Lufia2ExecutionResult Lufia2FieldUploadFixedGraphics(

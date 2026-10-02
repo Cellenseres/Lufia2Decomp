@@ -31,18 +31,18 @@ static Lufia2ExecutionResult ClearCaveParty(
         OpCmpValue(cpu, 0xffffu);
         if (cpu->zero)
             break;
-        OpSta(memory, cpu, OpAbs(cpu, 0x2181u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDL));
         OpLda(memory, cpu, OpAbsX(cpu, 0x8b5cu));
         OpSta(memory, cpu, OpDp(cpu, CAVE_CLEAR_LENGTH));
         OpSepWidths(cpu, 0x20u);
         OpLda(memory, cpu, OpAbsX(cpu, 0x8b5bu));
-        OpSta(memory, cpu, OpAbs(cpu, 0x2183u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
         OpLdy(cpu, 0u);
         TransferDirectToA(cpu);
         do {
             if (++steps > 65536u)
                 return ExecutionHandoff(cpu, 0x8488acu);
-            OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
+            OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
             OpIny(cpu);
             OpCpy(cpu, OpRead16(memory, OpDp(cpu, CAVE_CLEAR_LENGTH)));
         } while (!cpu->carry);

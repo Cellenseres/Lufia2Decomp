@@ -172,8 +172,8 @@ static bool TargetDrawSelection(BattleContext *battle) {
     OpSepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
     if (cpu->zero) {
-        OpStz(memory, cpu, OpAbs(cpu, 0x4201u));
-        OpStz(memory, cpu, OpAbs(cpu, 0x4203u));
+        OpStz(memory, cpu, OpAbs(cpu, SNES_WRIO));
+        OpStz(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
         if (!BattleCall(battle, 0xd5afu, 0x81d92cu, 2u))
             return false;
     } else {
@@ -208,14 +208,14 @@ static bool TargetDrawSelection(BattleContext *battle) {
         if (cpu->carry)
             OpLoadA(cpu, 0x90u);
         OpDecA(cpu);
-        OpSta(memory, cpu, OpAbs(cpu, 0x4200u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_NMITIMEN));
         OpDecA(cpu);
-        OpSta(memory, cpu, OpAbs(cpu, 0x4202u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
         cpu->carry = false;
         OpAdcValue(cpu, 0x68u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x4201u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRIO));
         OpIncA(cpu);
-        OpSta(memory, cpu, OpAbs(cpu, 0x4203u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
         OpPullX(memory, cpu);
     }
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
@@ -520,8 +520,8 @@ enemy_accept:
     goto redraw;
 publish_enemy:
     TargetPublishSelectionMask(memory, cpu, TARGET_ENEMY_UNAVAILABLE, 20u);
-    OpStz(memory, cpu, OpAbs(cpu, 0x4201u));
-    OpStz(memory, cpu, OpAbs(cpu, 0x4203u));
+    OpStz(memory, cpu, OpAbs(cpu, SNES_WRIO));
+    OpStz(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
     OpOraValue(cpu, 0x80u);
     PullDataBank(memory, cpu);
@@ -555,8 +555,8 @@ cancel:
     OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x0012f3u);
-    OpStz(memory, cpu, OpAbs(cpu, 0x4201u));
-    OpStz(memory, cpu, OpAbs(cpu, 0x4203u));
+    OpStz(memory, cpu, OpAbs(cpu, SNES_WRIO));
+    OpStz(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
     OpLoadA(cpu, 0xffu);
     PullDataBank(memory, cpu);
     OpPullX(memory, cpu);

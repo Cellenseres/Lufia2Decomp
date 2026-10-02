@@ -51,10 +51,10 @@ Lufia2ExecutionResult Lufia2MainNmi(
     Push8(memory, cpu, cpu->program_bank);
     PullDataBank(memory, cpu);
     OpLoadA(cpu, 0x80u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x2100u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_INIDISP));
     OpLda(memory, cpu, OpAbs(cpu, 0x0081u));
     if (!cpu->zero)
-        OpStz(memory, cpu, OpAbs(cpu, 0x420cu));
+        OpStz(memory, cpu, OpAbs(cpu, SNES_HDMAEN));
 #define NMI_CALL(site, target)                                                   \
     do {                                                                        \
         if (!NmiChild(memory, cpu, child, context, site, target)) {               \
@@ -76,7 +76,7 @@ Lufia2ExecutionResult Lufia2MainNmi(
     NMI_CALL(0x808661u, 0x8086c1u);
 #undef NMI_CALL
     OpLda(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
-    OpSta(memory, cpu, OpAbs(cpu, 0x2100u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_INIDISP));
     NmiTickPlayTime(memory, cpu);
     if (checkpoint)
         checkpoint(context, cpu, 0x808699u);
@@ -92,7 +92,7 @@ Lufia2ExecutionResult Lufia2MainNmi(
         if (cpu->zero)
             return ExecutionHandoff(cpu, 0x8086b1u);
     }
-    OpLda(memory, cpu, OpAbs(cpu, 0x4210u));
+    OpLda(memory, cpu, OpAbs(cpu, SNES_RDNMI));
     OpRepWidths(cpu, 0x30u);
     OpPullY(memory, cpu);
     OpPullX(memory, cpu);

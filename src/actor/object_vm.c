@@ -1347,12 +1347,12 @@ static void ObjectMultiplicand(
     Lufia2CpuState *cpu,
     uint8_t value) {
     LoadA8(cpu, value);
-    StoreAAbsolute8(memory, cpu, 0x211bu, 0);
+    StoreAAbsolute8(memory, cpu, SNES_M7A, 0);
     if (cpu->negative) {
         LoadA8(cpu, 0xffu);
-        StoreAAbsolute8(memory, cpu, 0x211bu, 0);
+        StoreAAbsolute8(memory, cpu, SNES_M7A, 0);
     } else {
-        StoreZeroAbsolute8(memory, cpu, 0x211bu, 0);
+        StoreZeroAbsolute8(memory, cpu, SNES_M7A, 0);
     }
 }
 
@@ -1361,7 +1361,7 @@ static void ObjectProduct(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x2134u, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_MPYL, 0));
     AslA16(cpu);
     SetAccumulatorWidth(cpu, 1);
     RolA8(cpu);
@@ -1403,11 +1403,11 @@ static void ObjectProject(
     StoreADirect8(memory, cpu, 0x57u);
     ObjectMultiplicand(memory, cpu, AbsoluteByte(memory, cpu, 0x1539u, cpu->y));
     LoadA8(cpu, DirectByte(memory, cpu, 0x55u));               /* E733 */
-    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
     ObjectProduct(memory, cpu);
     StoreADirect8(memory, cpu, 0x58u);
     LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
-    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
     ObjectProduct(memory, cpu);
     StoreADirect8(memory, cpu, 0x59u);
     ObjectMultiplicand(memory, cpu, AbsoluteByte(memory, cpu, 0x1519u, cpu->y));
@@ -1416,33 +1416,33 @@ static void ObjectProject(
     Sbc8(cpu, DirectByte(memory, cpu, 0x58u));
     StoreADirect8(memory, cpu, 0x58u);
     LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
-    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
     ObjectProduct(memory, cpu);
     Adc8(cpu, DirectByte(memory, cpu, 0x59u));
     StoreADirect8(memory, cpu, 0x59u);
     ObjectMultiplicand(memory, cpu, DirectByte(memory, cpu, 0x59u));
     LoadA8(cpu, DirectByte(memory, cpu, 0x56u));               /* E7A2 */
-    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
     ObjectProduct(memory, cpu);
     StoreADirect8(memory, cpu, 0x5au);
     LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
-    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
-    LoadAAbsolute8(memory, cpu, 0x2135u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
+    LoadAAbsolute8(memory, cpu, SNES_MPYM, 0);
     cpu->carry = 0;
     Adc8(cpu, 0x80u);
     StoreADirect8(memory, cpu, 0x51u);                         /* depth */
     ObjectHalfMagnitude(memory, cpu, 0x58u);                   /* E7C2 */
     SetIndexWidth(cpu, 0);
-    StoreAAbsolute16(memory, cpu, 0x4204u, 0);
+    StoreAAbsolute16(memory, cpu, SNES_WRDIVL, 0);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, DirectByte(memory, cpu, 0x51u));
-    StoreAAbsolute8(memory, cpu, 0x4206u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRDIVB, 0);
     ObjectHalfMagnitude(memory, cpu, 0x5au);                   /* E7D8 */
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4214u, 0));
-    StoreAAbsolute16(memory, cpu, 0x4204u, 0);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDDIVL, 0));
+    StoreAAbsolute16(memory, cpu, SNES_WRDIVL, 0);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, DirectByte(memory, cpu, 0x51u));
-    StoreAAbsolute8(memory, cpu, 0x4206u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRDIVB, 0);
     LoadA8(cpu, DirectByte(memory, cpu, 0x58u));               /* E7F1 */
     AslA8(cpu);
     SetAccumulatorWidth(cpu, 0);
@@ -1454,7 +1454,7 @@ static void ObjectProject(
     StoreADirect16(memory, cpu, 0x54u);                        /* screen x */
     LoadADirect16(memory, cpu, 0x59u);
     AslA16(cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4214u, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDDIVL, 0));
     if (cpu->carry) {
         LoadA16(cpu, (uint16_t)~cpu->accumulator);
         IncrementA16(cpu);
@@ -1531,19 +1531,19 @@ static ObjectFlow ObjectOp14(
         SetIndexWidth(cpu, 1);                                 /* E38E */
         LoadYDirect8(memory, cpu, DP_ACTOR_SLOT);
         LoadAAbsolute8(memory, cpu, 0x1579u, cpu->y);
-        StoreAAbsolute8(memory, cpu, 0x211bu, 0);
-        StoreZeroAbsolute8(memory, cpu, 0x211bu, 0);
+        StoreAAbsolute8(memory, cpu, SNES_M7A, 0);
+        StoreZeroAbsolute8(memory, cpu, SNES_M7A, 0);
         LoadX8(cpu, AbsoluteByte(memory, cpu, 0x1599u, cpu->y));
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x8084edu, cpu->x)));
-        StoreAAbsolute8(memory, cpu, 0x211cu, 0);
-        AslAbsolute8(memory, cpu, 0x2134u);
-        LoadAAbsolute8(memory, cpu, 0x2135u, 0);
+        StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
+        AslAbsolute8(memory, cpu, SNES_MPYL);
+        LoadAAbsolute8(memory, cpu, SNES_MPYM, 0);
         RolA8(cpu);
         StoreAAbsolute8(memory, cpu, 0x1539u, cpu->y);         /* offset x */
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80852du, cpu->x)));
-        StoreAAbsolute8(memory, cpu, 0x211cu, 0);
-        AslAbsolute8(memory, cpu, 0x2134u);
-        LoadAAbsolute8(memory, cpu, 0x2135u, 0);
+        StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
+        AslAbsolute8(memory, cpu, SNES_MPYL);
+        LoadAAbsolute8(memory, cpu, SNES_MPYM, 0);
         RolA8(cpu);
         StoreAAbsolute8(memory, cpu, 0x1519u, cpu->y);         /* offset y */
         SetIndexWidth(cpu, 0);

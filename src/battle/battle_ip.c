@@ -42,8 +42,8 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
     int usable;
 
     LoadX16(cpu, TABLE);
-    StoreWordAbsolute(memory, cpu, 0x2181u, cpu->x);          /* WRAM port */
-    StoreZeroAbsolute8(memory, cpu, 0x2183u, 0);
+    StoreWordAbsolute(memory, cpu, SNES_WMADDL, cpu->x); /* WRAM port */
+    StoreZeroAbsolute8(memory, cpu, SNES_WMADDH, 0);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, WRAM_BATTLE_PARTY_SLOT));
     AslA16(cpu);
@@ -349,11 +349,11 @@ static void BattleListRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned i;
     uint8_t mode;
 
-    StoreWordAbsolute(memory, cpu, 0x2181u, cpu->y);
-    StoreZeroAbsolute8(memory, cpu, 0x2183u, 0);
+    StoreWordAbsolute(memory, cpu, SNES_WMADDL, cpu->y);
+    StoreZeroAbsolute8(memory, cpu, SNES_WMADDH, 0);
     LoadA8(cpu, 0x80u);
     for (i = 0; i < 0x80u; ++i)
-        StoreZeroAbsolute8(memory, cpu, 0x2180u, 0);
+        StoreZeroAbsolute8(memory, cpu, SNES_WMDATA, 0);
     LoadA8(cpu, 0x00u);
     LoadA8(cpu, DirectByte(memory, cpu, 0x1bu));
     mode = A8(cpu);
