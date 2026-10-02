@@ -348,7 +348,7 @@ static void BattleSpriteParty(
     StoreZeroAbsolute8(memory, cpu, 0x15d6u, 0);
     LoadX16(cpu, 0x0000u);
     StoreXDirect16(memory, cpu, 0x0bu);
-    StoreZeroAbsolute8(memory, cpu, 0x1577u, 0);
+    StoreZeroAbsolute8(memory, cpu, (WRAM_SYSTEM_MULTIPLY_PRODUCT + 3u), 0);
     LoadAAbsolute8(memory, cpu, 0x154eu, 0);
     if (!cpu->zero) {
         LoadA8(cpu, 0x06u);

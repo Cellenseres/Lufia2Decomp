@@ -1,6 +1,7 @@
 /* Battle setup. */
 
 #include "battle/battle_lifecycle_internal.h"
+#include "system/wram.h"
 
 enum {
     ENCOUNTER_SELECTOR = 0x7ff8a1u,
@@ -117,7 +118,7 @@ void BattleCopyPartyFormation(BattleContext *battle) {
 
         OpSepWidths(cpu, 0x20u);
         OpLda(memory, cpu, OpAbsY(cpu, 0x000fu));
-        OpSta(memory, cpu, OpAbsX(cpu, 0x1542u));
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_MENU_SHOP_LIST_COUNT));
         TransferDirectToA(cpu);
         OpSta(memory, cpu, OpAbsY(cpu, 0x0010u));
         OpDex(cpu);
@@ -199,7 +200,7 @@ static void ApplyScenarioLayout(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     }
 
     OpLda(memory, cpu, OpAbs(cpu, layout->first_member));
-    OpSta(memory, cpu, OpAbs(cpu, 0x1542u));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_SHOP_LIST_COUNT));
     OpLda(memory, cpu, OpAbs(cpu, layout->second_member));
     OpSta(memory, cpu, OpAbs(cpu, 0x1543u));
 }

@@ -111,12 +111,12 @@ Lufia2ExecutionResult Lufia2MenuDrawStatus(
         STATUS_CALL(0x82a379u, 0x8294c0u, 2u);
         OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, STATUS_CHARACTER)));
         OpLda(memory, cpu, OpAbsX(cpu, 0x00bcu));
-        OpSta(memory, cpu, OpAbs(cpu, 0x1570u));
-        OpStz(memory, cpu, OpAbs(cpu, 0x1571u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_SYSTEM_MULTIPLY_A));
+        OpStz(memory, cpu, OpAbs(cpu, (WRAM_SYSTEM_MULTIPLY_A + 1u)));
         OpLdy(cpu, 0x64u);
-        OpWriteX(memory, cpu, OpAbs(cpu, 0x1572u), cpu->y);
+        OpWriteX(memory, cpu, OpAbs(cpu, WRAM_SYSTEM_MULTIPLY_B), cpu->y);
         STATUS_CALL(0x82a38du, 0x828000u, 3u);
-        OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x1574u)));
+        OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_SYSTEM_MULTIPLY_PRODUCT)));
         OpWriteX(memory, cpu, OpDp(cpu, STATUS_VALUE), cpu->y);
         OpLdy(cpu, 0xffu);
         OpWriteX(memory, cpu, OpDp(cpu, STATUS_DIGITS), cpu->y);
