@@ -734,14 +734,14 @@ enum SecondaryOpcodeHandler {
     SECONDARY_OP_D4_SPAWN_AT_ACTOR_SKIP = 0x83d63e, /* $D4 */
     SECONDARY_OP_D5 = 0x83d6ad,                     /* $D5 */
     SECONDARY_OP_D6 = 0x83d6c7,                     /* $D6 */
-    SECONDARY_OP_D7 = 0x83d6ef,                     /* $D7 */
+    SECONDARY_OP_D7_ASSIGN_STATE_BIT1 = 0x83d6ef,   /* $D7 */
     SECONDARY_OP_CX_SPAWN = 0x83d70c,               /* $Cx */
     SECONDARY_OP_FE_PLAY_SOUND = 0x83d760,          /* $FE */
     SECONDARY_OP_FF_MAP_CELL_TEST = 0x83d76e,       /* $FF */
     SECONDARY_OP_E0 = 0x83d78c,                     /* $E0 */
     SECONDARY_OP_E1_STEP_PROBE = 0x83d79c,          /* $E1 */
-    SECONDARY_OP_E2 = 0x83d7b2,                     /* $E2 */
-    SECONDARY_OP_E3 = 0x83d7cc,                     /* $E3 */
+    SECONDARY_OP_E2_LOOP_START = 0x83d7b2,          /* $E2 */
+    SECONDARY_OP_E3_LOOP_END = 0x83d7cc,            /* $E3 */
     SECONDARY_OP_E4_SIGNED_OPERAND = 0x83d7eb,      /* $E4 */
     SECONDARY_OP_E5 = 0x83d80e,                     /* $E5 */
     SECONDARY_OP_1X = 0x83d833,                     /* $1x */
@@ -771,7 +771,7 @@ enum SecondaryOpcodeHandler {
     SECONDARY_OP_F7_ORBIT = 0x83de29,               /* $F7 */
     SECONDARY_OP_F8_ORBIT = 0x83de5d,               /* $F8 */
     SECONDARY_OP_F9 = 0x83debd,                     /* $F9 */
-    SECONDARY_OP_9X = 0x83dee9,                     /* $9x */
+    SECONDARY_OP_9X_WAIT = 0x83dee9,                /* $9x */
 };
 
 static SecondaryStep SecondaryExecuteHandler(
@@ -871,8 +871,8 @@ static SecondaryStep SecondaryOpD6(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:D6EF: secondary opcode $D7. */
-static SecondaryStep SecondaryOpD7(
+/* $83:D6EF: secondary opcode $D7: operand bit 0 sets or clears state bit 1. */
+static SecondaryStep SecondaryOpD7AssignStateBit1(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* D6EF */
@@ -891,7 +891,7 @@ static SecondaryStep SecondaryOpD7(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:D833: secondary opcode $1x. */
+/* $83:D833: secondary opcode $1x: operand to $7F:E4DE[slot]. */
 static SecondaryStep SecondaryOp1X(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -905,7 +905,7 @@ static SecondaryStep SecondaryOp1X(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:D844: secondary opcode $2x. */
+/* $83:D844: secondary opcode $2x: operand to $066A unless $0736 bit 1 is set. */
 static SecondaryStep SecondaryOp2X(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -938,8 +938,8 @@ static SecondaryStep SecondaryOp5X(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:DEE9: secondary opcode $9x. */
-static SecondaryStep SecondaryOp9X(
+/* $83:DEE9: secondary opcode $9x: wait for the low nibble in steps. */
+static SecondaryStep SecondaryOp9XWait(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const uint32_t wait = 0x7fe48eu;
@@ -966,8 +966,8 @@ static SecondaryStep SecondaryOp9X(
     return SecondarySaveCursorExit(memory, cpu);
 }
 
-/* $83:D7B2: secondary opcode $E2. */
-static SecondaryStep SecondaryOpE2(
+/* $83:D7B2: secondary opcode $E2: repeat count, loop start after the operand. */
+static SecondaryStep SecondaryOpE2LoopStart(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadYDirect16(memory, cpu, 0x2au);                     /* D7B2 */
@@ -985,8 +985,8 @@ static SecondaryStep SecondaryOpE2(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:D7CC: secondary opcode $E3. */
-static SecondaryStep SecondaryOpE3(
+/* $83:D7CC: secondary opcode $E3: count down, jump back to the loop start. */
+static SecondaryStep SecondaryOpE3LoopEnd(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                       /* D7CC */
@@ -1619,20 +1619,20 @@ static SecondaryStep SecondaryExecuteHandler(
         return SecondaryOpD5(memory, cpu);
     case SECONDARY_OP_D6:
         return SecondaryOpD6(memory, cpu);
-    case SECONDARY_OP_D7:
-        return SecondaryOpD7(memory, cpu);
+    case SECONDARY_OP_D7_ASSIGN_STATE_BIT1:
+        return SecondaryOpD7AssignStateBit1(memory, cpu);
     case SECONDARY_OP_1X:
         return SecondaryOp1X(memory, cpu);
     case SECONDARY_OP_2X:
         return SecondaryOp2X(memory, cpu);
     case SECONDARY_OP_5X:
         return SecondaryOp5X(memory, cpu);
-    case SECONDARY_OP_9X:
-        return SecondaryOp9X(memory, cpu);
-    case SECONDARY_OP_E2:
-        return SecondaryOpE2(memory, cpu);
-    case SECONDARY_OP_E3:
-        return SecondaryOpE3(memory, cpu);
+    case SECONDARY_OP_9X_WAIT:
+        return SecondaryOp9XWait(memory, cpu);
+    case SECONDARY_OP_E2_LOOP_START:
+        return SecondaryOpE2LoopStart(memory, cpu);
+    case SECONDARY_OP_E3_LOOP_END:
+        return SecondaryOpE3LoopEnd(memory, cpu);
     case SECONDARY_OP_E5:
         return SecondaryOpE5(memory, cpu);
     case SECONDARY_OP_E6:
