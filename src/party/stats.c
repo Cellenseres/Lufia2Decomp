@@ -1,68 +1,104 @@
 /* Derived character stats ($81:F4D5). */
 
+#include <stdbool.h>
+#include <stddef.h>
+
 #include "core/cpu_internal.h"
 #include "lufia2/party.h"
 
-static uint16_t Field(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
-    uint16_t offset) {
+/* The character record is addressed by its offset in X. Each total is the
+ * sum of a base word and one or two modifier words of the record. */
+enum {
+    DP_RECORD = 0xc1,
+    TOTAL_CAP_LIMIT = 200, /* a total of 200 or more reads as 199 */
+    TOTAL_CAP_VALUE = 199,
+};
+
+typedef struct StatTotal {
+    uint8_t base;
+    uint8_t modifier;
+    uint8_t second_modifier; /* zero: none */
+    uint8_t total;
+    bool capped;
+} StatTotal;
+
+static const StatTotal kStatTotals[] = {
+    {0x51, 0x74, 0x00, 0x25, false}, {0x53, 0x76, 0x00, 0x27, false},
+    {0x5d, 0x84, 0x92, 0x35, false}, {0x5b, 0x82, 0x90, 0x33, true},
+    {0x59, 0x80, 0x8e, 0x31, false}, {0x57, 0x7e, 0x8c, 0x2f, false},
+    {0x55, 0x7c, 0x8a, 0x2d, false},
+};
+
+/* Totals that are derived from other totals or replaced by a record word. */
+enum {
+    TOTAL_2D = 0x2d,
+    TOTAL_2F = 0x2f,
+    TOTAL_29 = 0x29,
+    TOTAL_2B = 0x2b,
+    ADDEND_29 = 0x86,
+    OVERRIDE_29 = 0x78,
+    ADDEND_2B = 0x88,
+    OVERRIDE_2B = 0x7a,
+};
+
+static uint16_t RecordWord(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
+                           uint16_t offset) {
     return Read16AbsoluteIndexed(memory, cpu, offset, cpu->x);
 }
 
-static void StoreField(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
-    uint16_t offset) {
-    const uint32_t at = AbsoluteIndexedAddress(cpu, offset, cpu->x);
-
-    Write8(memory, at, (uint8_t)cpu->accumulator);
-    Write8(memory, (at + 1u) & 0x00ffffffu, (uint8_t)(cpu->accumulator >> 8));
+static void SetRecordWord(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
+                          uint16_t offset, uint16_t value) {
+    Write16Long(memory, AbsoluteIndexedAddress(cpu, offset, cpu->x), value);
 }
 
-/* A = base + bonus (+ second bonus). */
-static void Sum(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t base, uint16_t bonus, uint16_t bonus2) {
-    LoadA16(cpu, Field(memory, cpu, base));
+/* The first modifier's carry feeds the second one, as in the original. */
+static uint16_t SumStat(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                        const StatTotal *stat) {
+    LoadA16(cpu, RecordWord(memory, cpu, stat->base));
     cpu->carry = 0;
-    Add16Value(cpu, Field(memory, cpu, bonus));
-    if (bonus2)
-        Add16Value(cpu, Field(memory, cpu, bonus2));
+    Add16Value(cpu, RecordWord(memory, cpu, stat->modifier));
+    if (stat->second_modifier)
+        Add16Value(cpu, RecordWord(memory, cpu, stat->second_modifier));
+    return cpu->accumulator;
 }
 
-/* $81:F4ED: stats of the block at [$C1]. */
+/* Replaces a total by a record word when that word is set. */
+static void ApplyOverride(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                          uint16_t override_offset, uint16_t total_offset) {
+    const uint16_t override = RecordWord(memory, cpu, override_offset);
+
+    LoadA16(cpu, override);
+    if (override != 0)
+        SetRecordWord(memory, cpu, total_offset, override);
+}
+
+/* $81:F4ED: totals of the record at [$C1]. The checkpoint is part of the
+ * original routine. */
 static void DerivedStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadX16(cpu, Read16Direct(memory, cpu, 0xc1u));
+    uint16_t total = 0;
+    size_t i;
+
+    LoadX16(cpu, Read16Direct(memory, cpu, DP_RECORD));
     SetAccumulatorWidth(cpu, 0);
-    Sum(memory, cpu, 0x0051u, 0x0074u, 0);
-    StoreField(memory, cpu, 0x0025u);
-    Sum(memory, cpu, 0x0053u, 0x0076u, 0);
-    StoreField(memory, cpu, 0x0027u);
-    Sum(memory, cpu, 0x005du, 0x0084u, 0x0092u);
-    StoreField(memory, cpu, 0x0035u);
-    Sum(memory, cpu, 0x005bu, 0x0082u, 0x0090u);
-    Compare16(cpu, cpu->accumulator, 0x00c8u);
-    if (cpu->carry)
-        LoadA16(cpu, 0x00c7u);                                 /* cap 199 */
-    StoreField(memory, cpu, 0x0033u);
-    Sum(memory, cpu, 0x0059u, 0x0080u, 0x008eu);
-    StoreField(memory, cpu, 0x0031u);
-    Sum(memory, cpu, 0x0057u, 0x007eu, 0x008cu);
-    StoreField(memory, cpu, 0x002fu);
-    Sum(memory, cpu, 0x0055u, 0x007cu, 0x008au);
-    StoreField(memory, cpu, 0x002du);
+    for (i = 0; i < sizeof kStatTotals / sizeof kStatTotals[0]; ++i) {
+        total = SumStat(memory, cpu, &kStatTotals[i]);
+        if (kStatTotals[i].capped && total >= TOTAL_CAP_LIMIT)
+            total = TOTAL_CAP_VALUE;
+        SetRecordWord(memory, cpu, kStatTotals[i].total, total);
+    }
+
+    /* $29 continues from the last sum, $2B averages $2F and $2D. */
     cpu->carry = 0;
-    Add16Value(cpu, Field(memory, cpu, 0x0086u));
-    StoreField(memory, cpu, 0x0029u);
-    LoadA16(cpu, Field(memory, cpu, 0x0078u));
-    if (!cpu->zero)
-        StoreField(memory, cpu, 0x0029u);
-    LoadA16(cpu, Field(memory, cpu, 0x002fu));                 /* F55D */
+    Add16Value(cpu, RecordWord(memory, cpu, ADDEND_29));
+    SetRecordWord(memory, cpu, TOTAL_29, cpu->accumulator);
+    ApplyOverride(memory, cpu, OVERRIDE_29, TOTAL_29);
+    total = (uint16_t)(RecordWord(memory, cpu, TOTAL_2F) +
+                       RecordWord(memory, cpu, TOTAL_2D));
+    cpu->accumulator = (uint16_t)(total >> 1);
     cpu->carry = 0;
-    Add16Value(cpu, Field(memory, cpu, 0x002du));
-    LsrA16(cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, Field(memory, cpu, 0x0088u));
-    StoreField(memory, cpu, 0x002bu);
-    LoadA16(cpu, Field(memory, cpu, 0x007au));
-    if (!cpu->zero)
-        StoreField(memory, cpu, 0x002bu);
+    Add16Value(cpu, RecordWord(memory, cpu, ADDEND_2B));
+    SetRecordWord(memory, cpu, TOTAL_2B, cpu->accumulator);
+    ApplyOverride(memory, cpu, OVERRIDE_2B, TOTAL_2B);
     SetAccumulatorWidth(cpu, 1);
     EmitExecutionCheckpoint(memory, cpu, 0x81f576u);
 }
@@ -408,61 +444,11 @@ Lufia2ExecutionResult Lufia2PartyUnpackMemberBare(
     return ExecutionReturned(0x81ef92u);
 }
 
-static uint16_t Abs16X(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
-    uint16_t offset) {
-    return Read16AbsoluteIndexed(memory, cpu, offset, cpu->x);
-}
-
-/* CLC, then ADC of each field. */
-static void SumFields(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t first, uint16_t second, uint16_t third) {
-    LoadA16(cpu, Abs16X(memory, cpu, first));
-    cpu->carry = 0;
-    Add16Value(cpu, Abs16X(memory, cpu, second));
-    if (third)
-        Add16Value(cpu, Abs16X(memory, cpu, third));
-}
-
-/* $81:F4ED: member $C1 stats = base + equipment bonuses, caps. */
+/* $81:F4ED: totals of the record at [$C1]. */
 Lufia2ExecutionResult Lufia2PartyStatTotals(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadX16(cpu, Read16Direct(memory, cpu, 0xc1u));
-    SetAccumulatorWidth(cpu, 0);
-    SumFields(memory, cpu, 0x0051u, 0x0074u, 0);
-    StoreAAbsolute16(memory, cpu, 0x0025u, cpu->x);
-    SumFields(memory, cpu, 0x0053u, 0x0076u, 0);
-    StoreAAbsolute16(memory, cpu, 0x0027u, cpu->x);
-    SumFields(memory, cpu, 0x005du, 0x0084u, 0x0092u);
-    StoreAAbsolute16(memory, cpu, 0x0035u, cpu->x);
-    SumFields(memory, cpu, 0x005bu, 0x0082u, 0x0090u);
-    Compare16(cpu, cpu->accumulator, 0x00c8u);
-    if (cpu->carry)
-        LoadA16(cpu, 0x00c7u);
-    StoreAAbsolute16(memory, cpu, 0x0033u, cpu->x);
-    SumFields(memory, cpu, 0x0059u, 0x0080u, 0x008eu);
-    StoreAAbsolute16(memory, cpu, 0x0031u, cpu->x);
-    SumFields(memory, cpu, 0x0057u, 0x007eu, 0x008cu);
-    StoreAAbsolute16(memory, cpu, 0x002fu, cpu->x);
-    SumFields(memory, cpu, 0x0055u, 0x007cu, 0x008au);
-    StoreAAbsolute16(memory, cpu, 0x002du, cpu->x);
-    cpu->carry = 0;
-    Add16Value(cpu, Abs16X(memory, cpu, 0x0086u));
-    StoreAAbsolute16(memory, cpu, 0x0029u, cpu->x);
-    LoadA16(cpu, Abs16X(memory, cpu, 0x0078u));
-    if (!cpu->zero)
-        StoreAAbsolute16(memory, cpu, 0x0029u, cpu->x);
-    SumFields(memory, cpu, 0x002fu, 0x002du, 0);
-    cpu->carry = cpu->accumulator & 1u;
-    LoadA16(cpu, (uint16_t)(cpu->accumulator >> 1));
-    cpu->carry = 0;
-    Add16Value(cpu, Abs16X(memory, cpu, 0x0088u));
-    StoreAAbsolute16(memory, cpu, 0x002bu, cpu->x);
-    LoadA16(cpu, Abs16X(memory, cpu, 0x007au));
-    if (!cpu->zero)
-        StoreAAbsolute16(memory, cpu, 0x002bu, cpu->x);
-    SetAccumulatorWidth(cpu, 1);
-    EmitExecutionCheckpoint(memory, cpu, 0x81f576u);
+    DerivedStats(memory, cpu);
     return ExecutionReturned(0x81f576u);
 }
 
