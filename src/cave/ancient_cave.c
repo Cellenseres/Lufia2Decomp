@@ -1189,111 +1189,125 @@ static uint8_t CaveReadDecorations(
  * for a random variant of that set, on both map layers and on the row below
  * when the set is two tiles tall. */
 static void CaveDecorate(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLdx(cpu, CAVE_FIRST_ROOM_CELL); /* 9869 */
-    do {
-        OpPushX(memory, cpu);                                  /* 986C */
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
-        if (cpu->zero)
-            goto next;
-        OpTxa(cpu);                                            /* 9875 */
-        Lufia2CaveCellPosition(memory, cpu, 0x9876u);
-        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
-        ExchangeAccumulatorBytes(cpu);
-        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
-        Lufia2CaveTileOffsetY(memory, cpu, 0x987eu);
-        OpRepWidths(cpu, 0x20u);
-        LoadA16(cpu, CAVE_BLOCK_TILE_SPAN);
-        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_ROW_COUNT));
-        for (;;) {
-            LoadA16(cpu, CAVE_BLOCK_TILE_SPAN); /* 9888 */
-            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT));
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    /* The map layers start below $100, so they need the full address. */
+    const uint32_t layer1 = ((uint32_t)cpu->data_bank << 16) | CAVE_MAP_LAYER_1;
+    const uint32_t layer2 = ((uint32_t)cpu->data_bank << 16) | CAVE_MAP_LAYER_2;
+    uint16_t cell;
+
+    for (cell = CAVE_FIRST_ROOM_CELL; cell < CAVE_GRID_ROWS_END; ++cell) {
+        /* The cell number waits on the stack while the helpers run. */
+        cpu->x = cell;
+        OpPushX(memory, cpu);
+        LoadA8(cpu, WramReadAt(wram, CAVE_ROOM_GRID, cell));
+        if (cpu->accumulator & 0xffu) {
+            uint8_t column;
+            uint8_t row;
+            uint16_t tile;
+
+            CaveCellOrigin(memory, cpu, 0x9876u, (uint8_t)cell, &column, &row);
+            WramWrite(wram, CAVE_DP_TILE_ROW, row);
+            WramWrite(wram, CAVE_DP_TILE_COLUMN, column);
+            Lufia2CaveTileOffsetY(memory, cpu, 0x987eu);
+            tile = cpu->y;
+            OpRepWidths(cpu, 0x20u);
+            WramWrite16(wram, CAVE_DP_ROW_COUNT, CAVE_BLOCK_TILE_SPAN);
             for (;;) {
-                CaveRandomByte(memory, cpu, 0x988du);          /* 988D */
-                OpCmpValue(cpu, CAVE_DECORATION_ODDS);
-                if (cpu->carry)
-                    goto step;
-                OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_2));
-                OpAndValue(cpu, CAVE_TILE_INDEX_MASK);
-                if (!cpu->zero)
-                    goto step;
-                OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1)); /* 989E */
-                OpAndValue(cpu, CAVE_TILE_INDEX_MASK);
-                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS));
-                OpLdx(cpu, 0x0000u);
+                LoadA16(cpu, CAVE_BLOCK_TILE_SPAN);
+                WramWrite16(wram, CAVE_DP_TILE_COUNT, CAVE_BLOCK_TILE_SPAN);
                 for (;;) {
-                    OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS)); /* 98A9 */
-                    OpCmp(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE + 0x100u));
-                    if (cpu->zero)
-                        break;
-                    OpTxa(cpu);
-                    cpu->carry = 0;
-                    OpAdcValue(cpu, CAVE_SET_SIZE);
-                    OpTax(cpu);
-                    OpCpx(cpu, CAVE_DECORATION_SETS * CAVE_SET_SIZE);
-                    if (cpu->carry)
+                    uint16_t index;
+                    uint16_t set;
+
+                    /* The accumulator keeps whatever the previous tile left
+                     * in its high byte, and the 16-bit odds comparison
+                     * sees it, so every path below leaves it as the code
+                     * did. */
+                    cpu->y = tile;
+                    CaveRandomByte(memory, cpu, 0x988du);
+                    if (cpu->accumulator >= CAVE_DECORATION_ODDS)
                         goto step;
-                }
-                OpWriteX(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS), cpu->x); /* 98BD */
-                OpSepWidths(cpu, 0x20u);
-                OpLda(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE + 1u));
-                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_EXTRA_ROWS));
-                OpStz(memory, cpu, OpDp(cpu, CAVE_DP_EXTRA_ROWS + 1u));
-                OpLda(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE));
-                Lufia2CaveRandomBelow(memory, cpu, 0x98cbu);
-                OpIncA(cpu);
-                ExchangeAccumulatorBytes(cpu);
-                LoadA8(cpu, 0x00u);
-                OpRepWidths(cpu, 0x20u);
-                cpu->carry = 0;
-                OpAdc(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS));
-                OpTax(cpu);
-                OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1)); /* 98D8 */
-                OpAndValue(cpu, CAVE_TILE_FLAG_MASK);
-                OpOra(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE));
-                OpSta(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1));
-                OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_2));
-                OpAndValue(cpu, CAVE_TILE_FLAG_MASK);
-                OpOra(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE + 4u));
-                OpSta(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_2));
-                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_EXTRA_ROWS));
-                if (!cpu->zero) {
-                    OpLda(
-                        memory, cpu,
-                        OpAbsY(cpu, CAVE_MAP_LAYER_1 + CAVE_MAP_ROW_BYTES)); /* 98F4 */
-                    OpAndValue(cpu, CAVE_TILE_FLAG_MASK);
-                    OpOra(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE + 2u));
-                    OpSta(memory, cpu,
-                          OpAbsY(cpu, CAVE_MAP_LAYER_1 + CAVE_MAP_ROW_BYTES));
-                    OpLda(memory, cpu,
-                          OpAbsY(cpu, CAVE_MAP_LAYER_2 + CAVE_MAP_ROW_BYTES));
-                    OpAndValue(cpu, CAVE_TILE_FLAG_MASK);
-                    OpOra(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE + 6u));
-                    OpSta(memory, cpu,
-                          OpAbsY(cpu, CAVE_MAP_LAYER_2 + CAVE_MAP_ROW_BYTES));
-                }
+                    index = WramRead16At(wram, layer2, tile) & CAVE_TILE_INDEX_MASK;
+                    if (index != 0u) {
+                        cpu->accumulator = index;
+                        goto step;
+                    }
+                    index = WramRead16At(wram, layer1, tile) & CAVE_TILE_INDEX_MASK;
+                    WramWrite16(wram, CAVE_DP_TILE_BITS, index);
+                    for (set = 0;
+                         index != WramRead16At(wram, CAVE_SET_TABLE + 0x100u, set);
+                         set = (uint16_t)(set + CAVE_SET_SIZE)) {
+                        if (set + CAVE_SET_SIZE >=
+                            CAVE_DECORATION_SETS * CAVE_SET_SIZE) {
+                            cpu->accumulator = (uint16_t)(set + CAVE_SET_SIZE);
+                            cpu->x = cpu->accumulator;
+                            goto step;
+                        }
+                    }
+                    cpu->x = set;
+                    {
+                        /* A random variant of the set: its first byte is the
+                         * variant count, its second the extra rows. */
+                        uint8_t variant;
+
+                        WramWrite16(wram, CAVE_DP_TILE_BITS, set);
+                        OpSepWidths(cpu, 0x20u);
+                        WramWrite(wram, CAVE_DP_EXTRA_ROWS,
+                                  WramReadAt(wram, CAVE_SET_TABLE + 1u, set));
+                        WramWrite(wram, CAVE_DP_EXTRA_ROWS + 1u, 0u);
+                        variant = (uint8_t)(CaveRandomBelowOf(
+                                                memory, cpu, 0x98cbu,
+                                                WramReadAt(wram, CAVE_SET_TABLE, set)) +
+                                            1u);
+                        OpRepWidths(cpu, 0x20u);
+                        set = (uint16_t)((variant << 8) + set);
+                        cpu->x = set;
+                    }
+                    WramWrite16At(wram, layer1, tile,
+                                  (uint16_t)((WramRead16At(wram, layer1, tile) &
+                                              CAVE_TILE_FLAG_MASK) |
+                                             WramRead16At(wram, CAVE_SET_TABLE, set)));
+                    WramWrite16At(
+                        wram, layer2, tile,
+                        (uint16_t)((WramRead16At(wram, layer2, tile) &
+                                    CAVE_TILE_FLAG_MASK) |
+                                   WramRead16At(wram, CAVE_SET_TABLE + 4u, set)));
+                    if (WramRead16(wram, CAVE_DP_EXTRA_ROWS) == 0u) {
+                        cpu->accumulator = 0u;
+                    } else {
+                        WramWrite16At(
+                            wram, layer1 + CAVE_MAP_ROW_BYTES, tile,
+                            (uint16_t)((WramRead16At(wram, layer1 + CAVE_MAP_ROW_BYTES,
+                                                     tile) &
+                                        CAVE_TILE_FLAG_MASK) |
+                                       WramRead16At(wram, CAVE_SET_TABLE + 2u, set)));
+                        cpu->accumulator =
+                            (uint16_t)((WramRead16At(wram, layer2 + CAVE_MAP_ROW_BYTES,
+                                                     tile) &
+                                        CAVE_TILE_FLAG_MASK) |
+                                       WramRead16At(wram, CAVE_SET_TABLE + 6u, set));
+                        WramWrite16At(wram, layer2 + CAVE_MAP_ROW_BYTES, tile,
+                                      cpu->accumulator);
+                    }
 step:
-    OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT), -1); /* 990C */
-    if (cpu->zero)
+    if (WramStep16(wram, CAVE_DP_TILE_COUNT, -1) == 0u)
         break;
-    OpIny(cpu);
-    OpIny(cpu);
+    tile = (uint16_t)(tile + 2u);
+}
+if (WramStep16(wram, CAVE_DP_ROW_COUNT, -1) == 0u)
+    break;
+tile = (uint16_t)(tile + CAVE_MAP_ROW_SKIP);
+cpu->accumulator = tile;
+if (tile == 0u)
+    break;
             }
-            OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_ROW_COUNT), -1); /* 9915 */
-            if (cpu->zero)
-                break;
-            OpTya(cpu);
-            cpu->carry = 0;
-            OpAdcValue(cpu, CAVE_MAP_ROW_SKIP);
-            OpTay(cpu);
-            if (cpu->zero)
-                break;
+            cpu->y = tile;
         }
-next:
-        OpSepWidths(cpu, 0x20u);                                     /* 9924 */
+        OpSepWidths(cpu, 0x20u);
         OpPullX(memory, cpu);
-        OpInx(cpu);
-        OpCpx(cpu, CAVE_GRID_ROWS_END);
-    } while (!cpu->carry);
+    }
+    cpu->x = CAVE_GRID_ROWS_END;
+    OpCpx(cpu, CAVE_GRID_ROWS_END);
 }
 
 /* Upper tile at cell A/B, then $83:9D46. */
