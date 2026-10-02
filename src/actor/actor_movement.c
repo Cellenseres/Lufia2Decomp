@@ -374,7 +374,13 @@ Lufia2ExecutionResult Lufia2LayerCellOffset(
     Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xf9dbu);                    /* F9D9 */
     (void)Lufia2MapCellOffset(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
+    {
+        const uint8_t low = Pull8(memory, cpu);
+        const uint8_t high = Pull8(memory, cpu);
+        const uint16_t frame = (uint16_t)(low | ((uint16_t)high << 8));
+        if (frame != 0xf9dbu)
+            return ExecutionHandoff(cpu, 0x830000u | (uint16_t)(frame + 1u));
+    }
 
     SetAccumulatorWidth(cpu, 0);                               /* F9DC */
     PushIndex(memory, cpu);                                    /* F9DE */

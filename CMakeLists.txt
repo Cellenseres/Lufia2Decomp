@@ -110,6 +110,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_tiles.c
     src/field/field_object_copy.c
     src/field/field_object_attributes.c
+    src/field/field_object_render.c
     src/field/field_scroll.c
     src/field/field_sections.c
     src/field/field_sprites.c

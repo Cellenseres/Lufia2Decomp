@@ -300,6 +300,12 @@ Lufia2ExecutionResult Lufia2FieldRefreshObjectAttributes(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 /* Object attributes, saved tiles, redraw requests and tile-bit copying. */
+Lufia2ExecutionResult Lufia2FieldClearObjectTileBit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldRenderObjectLayers(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2FieldClearObjectTileIds(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
