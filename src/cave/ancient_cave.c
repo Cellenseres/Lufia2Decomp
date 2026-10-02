@@ -413,136 +413,115 @@ static void CavePlaceRooms(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
 }
 
-/* Corridor bit for one cell pair. */
-static void CaveOpenCorridor(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t id_offset,
-    uint16_t opposite, uint16_t pair, uint16_t mark) {
-    OpSta(memory, cpu, OpDp(cpu, id_offset));
-    OpLda(memory, cpu, OpAbsX(cpu, opposite));
-    if (cpu->zero) {
-        OpLda(memory, cpu, OpDp(cpu, id_offset));
-        OpOraValue(cpu, CAVE_CELL_LINKED);
-        OpSta(memory, cpu, OpAbsX(cpu, pair));
-        OpSta(memory, cpu, OpAbsX(cpu, mark));
-    } else if (!cpu->negative) {
-        return;
-    } else {
-        OpSta(memory, cpu, OpAbsX(cpu, mark));
+/* Opens the cell between a room cell and a marked side cell's diagonal
+ * neighbour. An empty diagonal cell is linked together with the cell between
+ * it; a marked one just lends its mark to the cell between. */
+static void CaveOpenCorridor(Lufia2Wram wram, uint16_t cell, uint8_t marked,
+                             int diagonal, int between) {
+    uint8_t beyond;
+
+    WramWrite(wram, CAVE_DP_CORRIDOR_ID, marked);
+    beyond = WramReadAt(wram, CAVE_ROOM_GRID + diagonal, cell);
+    if (beyond == 0u) {
+        const uint8_t joined = (uint8_t)(marked | CAVE_CELL_LINKED);
+
+        WramWriteAt(wram, CAVE_ROOM_GRID + diagonal, cell, joined);
+        WramWriteAt(wram, CAVE_ROOM_GRID + between, cell, joined);
+    } else if ((beyond & CAVE_CELL_MARKED) != 0u) {
+        WramWriteAt(wram, CAVE_ROOM_GRID + between, cell, beyond);
     }
+}
+
+/* An empty side cell takes the room's number, flagged as linked, when either
+ * cell diagonally beside it is occupied. */
+static void CaveLinkSideCell(Lufia2Wram wram, uint16_t cell, uint8_t room, int side,
+                             int upper, int lower) {
+    if (WramReadAt(wram, CAVE_ROOM_GRID + upper, cell) != 0u ||
+        WramReadAt(wram, CAVE_ROOM_GRID + lower, cell) != 0u)
+        WramWriteAt(wram, CAVE_ROOM_GRID + side, cell,
+                    (uint8_t)(room | CAVE_CELL_LINKED));
 }
 
 /* $83:9266-$83:9387: merge and link rooms, open corridors. */
 static void CaveLinkFloor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2Wram wram;
+    uint16_t cell;
+    uint8_t passes;
+
     OpSetDataBank(memory, cpu, 0x7fu);                         /* 9266 */
+    wram = WramViewOfCaller(memory, cpu);
     LoadA8(cpu, 0x08u);
-    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_MERGE_PASSES));
+    WramWrite(wram, CAVE_DP_MERGE_PASSES, 0x08u);
     do {
         Lufia2CaveMergeRoom(memory, cpu, 0x926eu);             /* 926E */
-        OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_MERGE_PASSES), -1);
-    } while (!cpu->zero);
+        passes = (uint8_t)(WramRead(wram, CAVE_DP_MERGE_PASSES) - 1u);
+        WramWrite(wram, CAVE_DP_MERGE_PASSES, passes);
+    } while (passes != 0u);
     Lufia2CaveCountCells(memory, cpu, 0x9275u);
     Lufia2CavePickCell(memory, cpu, 0x9278u);
     OpWriteX(memory, cpu, OpAbs(cpu, CAVE_START_COLUMN), cpu->x);
     Lufia2CaveLinkRooms(memory, cpu, 0x927eu);
-    OpLdx(cpu, 0x00ffu);                                       /* 9281 */
-    do {
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));              /* 9284 */
-        if (cpu->zero)
-            goto next;
-        OpBitValue(cpu, CAVE_CELL_FLAGS);
-        if (!cpu->zero)
-            goto next;
-        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE)); /* 9290 */
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT));
-        if (cpu->zero) {
-            /* $92A9: empty right neighbour beside a room below or above. */
-            OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_UP_RIGHT));
-            if (cpu->zero)
-                OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT));
-            if (!cpu->zero) {
-                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE)); /* 92B6 */
-                OpOraValue(cpu, CAVE_CELL_LINKED);
-                OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT));
-            }
-            goto next;
+
+    /* Ties between neighbouring cells: a cell without link flags marks the
+     * empty cell beside it, or reaches past the marked side cell to open the
+     * cell above or below it. */
+    for (cell = 0xffu; cell >= 0x10u; --cell) {
+        const uint8_t room = WramReadAt(wram, CAVE_ROOM_GRID, cell);
+        const uint8_t row = (uint8_t)(cell & 0xf0u);
+        uint8_t right;
+        uint8_t left;
+
+        if (room == 0u || (room & CAVE_CELL_FLAGS) != 0u)
+            continue;
+        WramWrite(wram, CAVE_DP_CELL_VALUE, room);
+        right = WramReadAt(wram, CAVE_ROOM_GRID + CAVE_CELL_RIGHT, cell);
+        if (right == 0u) {
+            CaveLinkSideCell(wram, cell, room, CAVE_CELL_RIGHT, CAVE_CELL_UP_RIGHT,
+                             CAVE_CELL_DOWN_RIGHT);
+            continue;
         }
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_LEFT)); /* 9297 */
-        if (cpu->zero) {
-            OpLda(memory, cpu,
-                  OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_UP_LEFT)); /* 92C0 */
-            if (cpu->zero)
-                OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN_LEFT));
-            if (!cpu->zero) {
-                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE)); /* 92CD */
-                OpOraValue(cpu, CAVE_CELL_LINKED);
-                OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_LEFT));
-            }
-            goto next;
+        left = WramReadAt(wram, CAVE_ROOM_GRID + CAVE_CELL_LEFT, cell);
+        if (left == 0u) {
+            CaveLinkSideCell(wram, cell, room, CAVE_CELL_LEFT, CAVE_CELL_UP_LEFT,
+                             CAVE_CELL_DOWN_LEFT);
+            continue;
         }
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN)); /* 929C */
-        if (cpu->zero) {
-            OpTxa(cpu);                                        /* 92D7 */
-            OpAndValue(cpu, 0xf0u);
-            OpCmpValue(cpu, 0xe0u);
-            if (cpu->carry)
-                goto next;
-            OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT));
-            if (cpu->negative) {
-                CaveOpenCorridor(memory, cpu, 0x55u,
-                                 CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT, /* 9304 */
-                                 CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT,
-                                 CAVE_ROOM_GRID + CAVE_CELL_DOWN);
-            } else {
-                OpLda(memory, cpu,
-                      OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_LEFT)); /* 92E3 */
-                if (cpu->negative)
-                    CaveOpenCorridor(memory, cpu, 0x55u,
-                                     CAVE_ROOM_GRID + CAVE_CELL_DOWN_LEFT,
-                                     CAVE_ROOM_GRID + CAVE_CELL_DOWN_LEFT,
-                                     CAVE_ROOM_GRID + CAVE_CELL_DOWN); /* 92EA */
-            }
-            goto next;
+        if (WramReadAt(wram, CAVE_ROOM_GRID + CAVE_CELL_DOWN, cell) == 0u) {
+            /* Nothing below: reach down past a marked side cell. */
+            if (row >= 0xe0u)
+                continue;
+            if ((right & CAVE_CELL_MARKED) != 0u)
+                CaveOpenCorridor(wram, cell, right, CAVE_CELL_DOWN_RIGHT,
+                                 CAVE_CELL_DOWN);
+            else if ((left & CAVE_CELL_MARKED) != 0u)
+                CaveOpenCorridor(wram, cell, left, CAVE_CELL_DOWN_LEFT, CAVE_CELL_DOWN);
+        } else if (WramReadAt(wram, CAVE_ROOM_GRID + CAVE_CELL_UP, cell) == 0u) {
+            /* Nothing above: the same, upwards. */
+            if (row < 0x30u)
+                continue;
+            if ((right & CAVE_CELL_MARKED) != 0u)
+                CaveOpenCorridor(wram, cell, right, CAVE_CELL_UP_RIGHT, CAVE_CELL_UP);
+            else if ((left & CAVE_CELL_MARKED) != 0u)
+                CaveOpenCorridor(wram, cell, left, CAVE_CELL_UP_LEFT, CAVE_CELL_UP);
         }
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_UP)); /* 92A1 */
-        if (cpu->zero) {
-            OpTxa(cpu);                                        /* 931E */
-            OpAndValue(cpu, 0xf0u);
-            OpCmpValue(cpu, 0x30u);
-            if (!cpu->carry)
-                goto next;
-            OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT));
-            if (cpu->negative) {
-                CaveOpenCorridor(
-                    memory, cpu, 0x55u, CAVE_ROOM_GRID + CAVE_CELL_UP_RIGHT, /* 934B */
-                    CAVE_ROOM_GRID + CAVE_CELL_UP_RIGHT, CAVE_ROOM_GRID + CAVE_CELL_UP);
-            } else {
-                OpLda(memory, cpu,
-                      OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_LEFT)); /* 932A */
-                if (cpu->negative)
-                    CaveOpenCorridor(memory, cpu, 0x55u,
-                                     CAVE_ROOM_GRID + CAVE_CELL_UP_LEFT,
-                                     CAVE_ROOM_GRID + CAVE_CELL_UP_LEFT,
-                                     CAVE_ROOM_GRID + CAVE_CELL_UP); /* 9331 */
-            }
-        }
-next:
-        OpDex(cpu);                                            /* 9363 */
-        OpCpx(cpu, 0x0010u);
-    } while (cpu->carry);
+    }
     Lufia2CaveClearVisited(memory, cpu, 0x936cu);
     Lufia2CaveLinkRooms(memory, cpu, 0x936fu);
-    OpLdx(cpu, 0x00ffu);                                       /* 9372 */
-    do {
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
-        if (!cpu->zero) {
-            if (!cpu->negative)
-                TransferDirectToA(cpu);                        /* 937C */
-            OpAndValue(cpu, CAVE_CELL_ID_MASK);
-            OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
-        }
-        OpDex(cpu);                                            /* 9382 */
-        OpCpx(cpu, 0x0010u);
-    } while (cpu->carry);
+
+    /* Only the cells the second pass reached keep a room number. */
+    for (cell = 0xffu; cell >= 0x10u; --cell) {
+        const uint8_t room = WramReadAt(wram, CAVE_ROOM_GRID, cell);
+
+        if (room == 0u)
+            continue;
+        WramWriteAt(
+            wram, CAVE_ROOM_GRID, cell,
+            (uint8_t)(((room & CAVE_CELL_MARKED) != 0u ? room
+                                                       : (uint8_t)wram.direct_page) &
+                      CAVE_CELL_ID_MASK));
+    }
+    cpu->x = 0x000fu;
+    OpCpx(cpu, 0x0010u);
 }
 
 /* $83:9388-$83:940D: keep one random link per room pair. The link list holds
