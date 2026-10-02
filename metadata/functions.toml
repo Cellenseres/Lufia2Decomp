@@ -3105,3 +3105,37 @@ source = "src/battle/battle_palette_fade.c"
 entry_mx = "M1X0"
 exit_mx = "M0X0"
 status = "draft"
+
+# World map object tests: visible-list builder and its per-object step.
+[[function]]
+address = "86:E287"
+name = "Lufia2WorldMapTestObjects"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:E295"
+name = "Lufia2WorldMapTestObject"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+# World map per-frame resets.
+[[function]]
+address = "86:E640"
+name = "Lufia2WorldMapClearSlotFlags"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:E650"
+name = "Lufia2WorldMapClearSprites"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"

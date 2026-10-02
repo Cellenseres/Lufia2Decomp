@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-374 functions in `metadata/functions.toml`: 366 verified, 8 draft, 0 identified, 0 disabled.
+378 functions in `metadata/functions.toml`: 366 verified, 12 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -723,6 +723,16 @@ buffer) and its colour helper `$81:B3F8` (per-component scaling through the
 hardware multiplier) are `draft` reconstructions, compared against the
 original ROM code like the sections above, including the order of the
 read-modify-write stores and of the multiplier accesses.
+
+## World map objects
+
+`$86:E287` / `$86:E295` (the on-screen test that builds the visible object
+list), `$86:E640` (object slot flags) and `$86:E650` (hide every hardware
+sprite, clear the OAM high table) are `draft` reconstructions of the world map
+per-frame object update. They are compared against the original ROM code on
+random object tables, camera positions and data banks, including the
+screen-edge boundaries, for CPU state, work RAM, ordered writes and the
+frames they leave behind. They await the maintainer's verifier.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
