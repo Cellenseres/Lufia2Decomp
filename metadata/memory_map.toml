@@ -65,6 +65,14 @@ owner = "system"
 notes = "Scene NMI stub JSL target; RTS. Boot writes its opcodes at $80:80E6/$80:80EC; the NMI dispatch at $80:8650 is gated by the target bank byte $6A. Battle setup clears $6A at $81:8644 and publishes bank $85 at $81:864D; exit clears it at $81:87A8."
 
 [[location]]
+address = "7E:0594"
+name = "nmi_scroll_registers"
+width = 2
+count = 8
+owner = "system"
+notes = "Scroll register pairs the NMI copies to $210D-$2114 ($80:87A7): low byte, then high byte of each write-twice register."
+
+[[location]]
 address = "7E:0073"
 name = "nmi_upload_flags"
 width = 1

@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-367 functions in `metadata/functions.toml`: 366 verified, 1 draft, 0 identified, 0 disabled.
+370 functions in `metadata/functions.toml`: 366 verified, 4 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -693,6 +693,19 @@ patterns are internal. The routine is `draft`: it was compared against the
 original ROM code in the interpreter on random work-RAM states (CPU state,
 complete WRAM, ordered writes, hardware multiplier accesses and the stack
 frames it leaves behind) and awaits the maintainer's verifier.
+
+## NMI uploads
+
+Three children of the main NMI are `draft` reconstructions: `$80:8703`
+(OAM and palette DMA when requested, then the pad words with their key repeat
+after the automatic read), `$80:87A7` (the scroll registers from `$0594`, the
+four listed DMA requests, the tilemap uploads and the HDMA channel mask) and
+`$80:87FC` (the three VRAM tilemap blocks). They are the NMI's largest
+remaining interpreted cost (about 150 instructions per frame). Each was
+compared against the original ROM code in the interpreter on random work-RAM
+states with the pad registers varied to reach the repeat paths: CPU state,
+complete WRAM, ordered writes, the order of every hardware register access
+and the stack frames they leave behind. They await the maintainer's verifier.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
