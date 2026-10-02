@@ -23,9 +23,9 @@ Lufia2ExecutionResult Lufia2FieldObjectLayer(
 Lufia2ExecutionResult Lufia2ActorPositionToObjectProbe(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
-    OpLda(memory, cpu, OpAbsX(cpu, 0x06bau));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_X));
     OpSta(memory, cpu, OpDp(cpu, DP_PROBE_X));
-    OpLda(memory, cpu, OpAbsX(cpu, 0x06e2u));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_Y));
     OpSta(memory, cpu, OpDp(cpu, DP_PROBE_Y));
     return ExecutionReturned(0x83d7b1u);
 }
@@ -187,7 +187,7 @@ Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
     TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7fe5a6u));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_ACTOR_CLAIMED_OBJECT_RECORD));
     OpTax(cpu);
     OpLda(memory, cpu, OpLongX(cpu, 0x7fd88cu));
     OpRepWidths(cpu, 0x20u);
@@ -202,7 +202,7 @@ Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     Lufia2ActorSpriteTables(memory, cpu, 0xf6ecu);
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
     TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7fe5a6u));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_ACTOR_CLAIMED_OBJECT_RECORD));
     OpTax(cpu);
     OpLda(memory, cpu, OpLongX(cpu, 0x7fd78cu));
     OpSta(memory, cpu, OpDp(cpu, 0x54u));
@@ -219,10 +219,10 @@ Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E05D2));
     OpLoadA(cpu, 0x00ffu);
     OpSta(memory, cpu, OpLongX(cpu, 0x001471u));
-    OpSta(memory, cpu, OpLongX(cpu, 0x00066au));
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0736u));
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7E066A));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E0736));
     OpOraValue(cpu, 0x0002u);
-    OpSta(memory, cpu, OpAbsX(cpu, 0x0736u));
-    OpStz(memory, cpu, OpAbsX(cpu, 0x1291u));
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E0736));
+    OpStz(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E1291));
     return ExecutionReturned(0x83f730u);
 }

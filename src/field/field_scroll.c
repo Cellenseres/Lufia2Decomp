@@ -720,7 +720,8 @@ static void RedrawLayerBody(
     PushY(memory, cpu);
     PushDataBank(memory, cpu);
     Push8(memory, cpu, PackStatus(cpu));
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd020u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SECTION_WORD,
+        cpu->x)));
     Compare8(cpu, A8(cpu), 0xffu);
     if (!cpu->zero) {
         SetAccumulatorWidth(cpu, 0);                           /* F487 */
@@ -876,8 +877,9 @@ static uint16_t RegionCellValue(
 uint32_t Lufia2FieldRegionCells(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu) {
-    const uint16_t origin = Read16Long(memory, 0x7fd046u);
-    const uint16_t end = (uint16_t)(Read16Long(memory, 0x7fd04cu) + origin);
+    const uint16_t origin = Read16Long(memory, WRAM_FIELD_PENDING_OBJECT_X);
+    const uint16_t end = (uint16_t)(Read16Long(memory,
+        WRAM_FIELD_OBJECT_WIDTH) + origin);
     uint8_t low[2], high[2], first[2], last[2];
     uint16_t size;
     unsigned axis;
@@ -1218,10 +1220,10 @@ void Lufia2FieldRedrawRegion(
     Write16Direct(memory, cpu, 0xa1u, cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_X, cpu->x)));
     RegionCell(memory, cpu, 0x8ea1u, 1);
-    Write16Direct(memory, cpu, 0x8fu, cpu->accumulator);
+    Write16Direct(memory, cpu, DP_PROBE_X, cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_Y, cpu->x)));
     RegionCell(memory, cpu, 0x8eaau, 0);
-    Write16Direct(memory, cpu, 0x91u, cpu->accumulator);
+    Write16Direct(memory, cpu, DP_PROBE_Y, cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_X, cpu->x)));
     cpu->carry = 0;
     Add16Value(cpu, 0x0100u);
@@ -1300,7 +1302,7 @@ void Lufia2FieldRedrawRegion(
     Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
     if (cpu->zero)
         goto done;
-    LoadA16(cpu, Read16Long(memory, 0x0005b9u));
+    LoadA16(cpu, Read16Long(memory, WRAM_FIELD_SECTION_WIDTH));
     And16(cpu, 0x00ffu);
     Subtract16(cpu, Read16Direct(memory, cpu, 0x56u));
     AslA16(cpu);
@@ -1445,10 +1447,10 @@ Lufia2ExecutionResult Lufia2FieldScrollUpdate(
         Write16Absolute(memory, cpu, 0x05a6u, cpu->accumulator);
     } else {
         LoadX8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x0734u, 0)));
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fddaeu, cpu->x)));
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x)));
         Subtract16(cpu, 0x0080u);
         Write16Absolute(memory, cpu, 0x05a4u, cpu->accumulator);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fde3eu, cpu->x)));
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x)));
         Subtract16(cpu, 0x0070u);
         Write16Absolute(memory, cpu, 0x05a6u, cpu->accumulator);
     }
@@ -1456,7 +1458,8 @@ Lufia2ExecutionResult Lufia2FieldScrollUpdate(
     LoadX8(cpu, 0x00u);
     do {
         TransferDirectToA(cpu);                                /* BDAD */
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd020u, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SECTION_WORD,
+            cpu->x)));
         if (!cpu->negative) {
             SetAccumulatorWidth(cpu, 0);                       /* BDB7 */
             LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
@@ -1470,7 +1473,8 @@ Lufia2ExecutionResult Lufia2FieldScrollUpdate(
             Write8(memory, DirectAddress(cpu, 0x5du), (uint8_t)cpu->x);
             Write8(memory, DirectAddress(cpu, 0x5eu), 0x00u);
             TransferDirectToA(cpu);
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd020u, cpu->x)));
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SECTION_WORD,
+                cpu->x)));
             AslA8(cpu);
             TransferAToX(cpu);
             SetAccumulatorWidth(cpu, 0);

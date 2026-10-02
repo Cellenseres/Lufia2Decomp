@@ -5,6 +5,7 @@
 #include "actor/actor_internal.h"
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
+#include "system/wram.h"
 
 enum {
     MAP_WIDTH = 0x05b9u,                /* cells per row, word */
@@ -32,21 +33,21 @@ static void AttributeActors(
     PullDataBank(memory, cpu);
     LoadY16(cpu, 0x0027u);
     do {
-        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->y);          /* EF34 */
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->y);          /* EF34 */
         BitImmediate8(cpu, 0x06u);
         if (cpu->zero) {
-            LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->y);      /* row */
+            LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->y);      /* row */
             StoreAAbsolute8(memory, cpu, 0x4202u, 0);
             LoadAAbsolute8(memory, cpu, MAP_WIDTH, 0);
             StoreAAbsolute8(memory, cpu, 0x4203u, 0);
             TransferYToX(cpu);
             Write8(memory, DirectAddress(cpu, 0x9au), 0x00u);
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
             Compare8(cpu, A8(cpu), 0x02u);
             if (cpu->carry) {
                 uint8_t kind;
 
-                LoadAAbsolute8(memory, cpu, 0x05d2u, cpu->x);  /* kind */
+                LoadAAbsolute8(memory, cpu, WRAM_UNK_7E05D2, cpu->x);  /* kind */
                 for (kind = 0x71u; kind <= 0x73u; ++kind) {
                     Compare8(cpu, A8(cpu), kind);
                     if (cpu->zero)
@@ -58,7 +59,7 @@ static void AttributeActors(
                 }
             }
             TransferDirectToA(cpu);                            /* EF65 */
-            LoadAAbsolute8(memory, cpu, 0x06bau, cpu->y);      /* column */
+            LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->y);      /* column */
             SetAccumulatorWidth(cpu, 0);
             cpu->carry = 0;
             Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
@@ -135,20 +136,21 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     LoadA8(cpu, 0x7eu);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd010u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_LAYER_WIDTH, cpu->x)));
     Write8(memory, 0x004202u, A8(cpu));
     StoreAAbsolute8(memory, cpu, MAP_WIDTH, 0);
     StoreZeroAbsolute8(memory, cpu, 0x05bau, 0);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd018u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_LAYER_HEIGHT, cpu->x)));
     Write8(memory, 0x004203u, A8(cpu));
     StoreAAbsolute8(memory, cpu, MAP_HEIGHT, 0);
     StoreZeroAbsolute8(memory, cpu, 0x05bcu, 0);
     LoadA8(cpu, 0x7fu);
     StoreADirect8(memory, cpu, 0x62u);
     SetAccumulatorWidth(cpu, 0);                               /* EDCE */
-    LoadA16(cpu, Read16Long(memory, 0x7fd03eu));
+    LoadA16(cpu, Read16Long(memory, WRAM_FIELD_METATILE_ATTRIBUTE_BASE));
     StoreADirect16(memory, cpu, 0x60u);                        /* tile classes */
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd008u, cpu->x)));
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_CELL_BASE,
+        cpu->x)));
     TransferAToX(cpu);                                         /* cells */
     LoadY16(cpu, 0x0000u);
     LoadA16(cpu, Read16Long(memory, 0x004216u));
@@ -237,15 +239,18 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     LoadX16(cpu, 0x0000u);
     do {
         PushIndex(memory, cpu);                                /* EE7B */
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd69cu, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_PENDING_RECORD_X,
+            cpu->x)));
         Compare8(cpu, A8(cpu), 0xffu);
         if (!cpu->zero) {
-            StoreADirect8(memory, cpu, 0x8fu);                 /* column */
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd6ccu, cpu->x)));
-            StoreADirect8(memory, cpu, 0x91u);                 /* row */
+            StoreADirect8(memory, cpu, DP_PROBE_X);                 /* column */
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_PENDING_RECORD_Y,
+                cpu->x)));
+            StoreADirect8(memory, cpu, DP_PROBE_Y);                 /* row */
             LoadA8(cpu, 0x0au);
             ExchangeAccumulatorBytes(cpu);
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd6fcu, cpu->x)));
+            LoadA8(cpu, Read8(memory,
+                LongIndexedAddress(WRAM_FIELD_PENDING_OBJECT_RECORD, cpu->x)));
             cpu->carry = 1;
             Sbc8(cpu, 0x10u);
             LoadX16(cpu, 0x0016u);
@@ -259,11 +264,11 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
             if (!cpu->zero) {
                 LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef005u, cpu->x)));
                 StoreADirect8(memory, cpu, 0x54u);             /* size */
-                LoadA8(cpu, DirectByte(memory, cpu, 0x91u));
+                LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
                 cpu->carry = 1;
                 Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
                 LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-                StoreADirect8(memory, cpu, 0x91u);
+                StoreADirect8(memory, cpu, DP_PROBE_Y);
                 SimulateJslFrame(memory, cpu, 0x80u, 0xeeb8u);
                 cpu->program_bank = 0x83u;
                 Lufia2MapCellIndex(memory, cpu, 0xf9a7u, 1);   /* $83:F9A5 */
@@ -276,7 +281,7 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
                     SetAccumulatorWidth(cpu, 0);
                     TransferXToA(cpu);
                     cpu->carry = 0;
-                    Add16Value(cpu, Read16Long(memory, 0x0005b9u));
+                    Add16Value(cpu, Read16Long(memory, WRAM_FIELD_SECTION_WIDTH));
                     TransferAToX(cpu);
                     SetAccumulatorWidth(cpu, 1);
                 }

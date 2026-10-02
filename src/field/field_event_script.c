@@ -539,13 +539,13 @@ static unsigned EventOpSmall(
     switch (handler) {
     case EVENT_OP_STORE_E316:
         Lufia2EventNextByte(memory, cpu, 0xd5a7u);                   /* D5A5 */
-        Write8(memory, 0x7fe316u, A8(cpu));
+        Write8(memory, WRAM_UNK_7FE316, A8(cpu));
         break;
     case EVENT_OP_86:
         LoadA8(cpu, 0x80u);                                    /* DB11 */
         TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
         LoadA8(cpu, 0x08u);
-        TestBitsAbsolute8(memory, cpu, 0x05b3u, 1);
+        TestBitsAbsolute8(memory, cpu, WRAM_FIELD_RELOAD_FLAGS, 1);
         break;
     case EVENT_OP_A2:
         LoadA8(cpu, 0x20u);                                    /* CFB7 */
@@ -882,7 +882,8 @@ static unsigned EventOpMoveCamera(
     };
     unsigned i;
 
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05aau, 0)); /* DB6A */
+    LoadX16(                                                   /* DB6A */
+        cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_TABLE_OFFSET, 0));
     for (i = 0; i < 2u; ++i) {
         TransferDirectToA(cpu);
         Lufia2EventNextByte(memory, cpu, kAxes[i].fetch);
@@ -1003,7 +1004,7 @@ static unsigned EventOpFork(
 static unsigned EventOpCameraLayers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    const uint32_t flags = AbsoluteIndexedAddress(cpu, 0x1261u, 0);
+    const uint32_t flags = AbsoluteIndexedAddress(cpu, WRAM_SCREEN_EFFECTS, 0);
     const uint8_t value = Read8(memory, flags);
 
     LoadA8(cpu, 0x40u);                                        /* DC0D */
@@ -1011,13 +1012,13 @@ static unsigned EventOpCameraLayers(
     Write8(memory, flags, (uint8_t)(value & ~A8(cpu)));
     if (!cpu->zero) {
         SetAccumulatorWidth(cpu, 0);                           /* DC14 */
-        LoadA16(cpu, Read16Long(memory, 0x7fddaeu));
+        LoadA16(cpu, Read16Long(memory, WRAM_ACTOR_FINE_X));
         Subtract16(cpu, 0x0080u);
-        Write16Long(memory, 0x00121eu, cpu->accumulator);
+        Write16Long(memory, WRAM_FIELD_LAYER_SCROLL_X, cpu->accumulator);
         Write16Long(memory, 0x001220u, cpu->accumulator);
-        LoadA16(cpu, Read16Long(memory, 0x7fde3eu));
+        LoadA16(cpu, Read16Long(memory, WRAM_ACTOR_FINE_Y));
         Subtract16(cpu, 0x0070u);
-        Write16Long(memory, 0x001226u, cpu->accumulator);
+        Write16Long(memory, WRAM_FIELD_LAYER_SCROLL_Y, cpu->accumulator);
         Write16Long(memory, 0x001228u, cpu->accumulator);
         LoadA16(cpu, Read16Long(memory, 0x001220u));
         LsrA16(cpu);
@@ -1033,13 +1034,13 @@ static unsigned EventOpCameraLayers(
         Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
         LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
-        Write8(memory, 0x7fd046u, A8(cpu));
+        Write8(memory, WRAM_FIELD_PENDING_OBJECT_X, A8(cpu));
         LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
-        Write8(memory, 0x7fd047u, A8(cpu));
+        Write8(memory, WRAM_FIELD_PENDING_OBJECT_Y, A8(cpu));
         LoadA8(cpu, 0x10u);
-        Write8(memory, 0x7fd04cu, A8(cpu));
+        Write8(memory, WRAM_FIELD_OBJECT_WIDTH, A8(cpu));
         LoadA8(cpu, 0x02u);
-        Write8(memory, 0x7fd04du, A8(cpu));
+        Write8(memory, WRAM_FIELD_OBJECT_HEIGHT, A8(cpu));
         PushY(memory, cpu);
         LoadX16(cpu, 0x0002u);
         do {
@@ -1057,9 +1058,11 @@ static unsigned EventOpCameraLayers(
         LoadA16(cpu, Read16Long(memory, 0x001228u));
         Write16Long(memory, 0x7fd0f0u, cpu->accumulator);
         do {
-            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x00121eu, cpu->x)));
+            LoadA16(cpu, Read16Long(memory,
+                LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_X, cpu->x)));
             Write16Long(memory, LongIndexedAddress(0x7fd0ceu, cpu->x), cpu->accumulator);
-            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x001226u, cpu->x)));
+            LoadA16(cpu, Read16Long(memory,
+                LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_Y, cpu->x)));
             Write16Long(memory, LongIndexedAddress(0x7fd0d6u, cpu->x), cpu->accumulator);
             TransferDirectToA(cpu);
             Write16Long(memory, LongIndexedAddress(0x7fd0deu, cpu->x), cpu->accumulator);
@@ -1120,7 +1123,8 @@ static unsigned EventOpClearD081(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SimulateJslFrame(memory, cpu, 0x80u, 0xe557u);
-    Write8(memory, AbsoluteIndexedAddress(cpu, 0x1261u, 0), 0x00u);  /* B97E */
+    Write8(                                                    /* B97E */
+        memory, AbsoluteIndexedAddress(cpu, WRAM_SCREEN_EFFECTS, 0), 0x00u);
     SetAccumulatorWidth(cpu, 0);
     TransferDirectToA(cpu);
     Write16Long(memory, 0x7fd081u, cpu->accumulator);
@@ -1178,9 +1182,9 @@ static uint8_t EventStartBody(
         Write8(memory, LongIndexedAddress(EVENT_SLOT_POINTERS + 2u, cpu->x),
             A8(cpu));
         LoadXDirect16(memory, cpu, 0x54u);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x8fu));
+        LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
         Write8(memory, LongIndexedAddress(0x7fd17cu, cpu->x), A8(cpu));
-        LoadA8(cpu, DirectByte(memory, cpu, 0x91u));
+        LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
         Write8(memory, LongIndexedAddress(0x7fd184u, cpu->x), A8(cpu));
     }
     SetAccumulatorWidth(cpu, 1);                               /* E78A */

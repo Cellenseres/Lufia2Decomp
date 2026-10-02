@@ -96,7 +96,7 @@ static void MapResetSectionHeaders(
         OpSta(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_WIDTH));
         OpSta(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_HEIGHT));
         OpLoadA(cpu, 0xffffu);
-        OpSta(memory, cpu, OpLongX(cpu, 0x7fd020u));
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SECTION_WORD));
         OpInx(cpu);
         OpInx(cpu);
         OpCpx(cpu, 8u);

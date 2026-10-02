@@ -28,7 +28,7 @@ static void FieldEdgeTest(
     else if (slot == 3)
         IncrementDirect8(memory, cpu, DP_PROBE_X);             /* D952 */
     Lufia2MapCellIndex(memory, cpu, sites[slot], 1);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e4000u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x)));
     BitImmediate8(cpu, (slot == 0 || slot == 2) ? 0x10u : 0x20u);
     SimulateRtsFrame(memory, cpu);
 }
@@ -48,9 +48,9 @@ static uint8_t FieldTouchScan(
         }
     }
     SetIndexWidth(cpu, 0);                                     /* B8CB */
-    LoadAAbsolute8(memory, cpu, 0x06bau, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);
     Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
-    LoadAAbsolute8(memory, cpu, 0x06e2u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
     Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
     Lufia2MapTileHeight(memory, cpu, 0xb8d9u);
     Write8(memory, DirectAddress(cpu, 0x56u), A8(cpu));
@@ -65,19 +65,19 @@ static uint8_t FieldTouchScan(
         BitImmediate8(cpu, 0x80u);
         if (!cpu->zero)
             goto next;
-        LoadAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
         BitImmediate8(cpu, 0x14u);
         if (!cpu->zero)
             goto next;
-        LoadAAbsolute8(memory, cpu, 0x05fau, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_ID, cpu->x);
         Compare8(cpu, A8(cpu), 0xfdu);
         if (cpu->zero)
             goto next;
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
         And8(cpu, 0x02u);
         LsrA8(cpu);
         Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
-        LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);          /* B901 */
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);          /* B901 */
         Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
         if (!cpu->zero) {
             LoadA8(cpu, (uint8_t)(A8(cpu) - 2u));              /* B908 */
@@ -88,7 +88,7 @@ static uint8_t FieldTouchScan(
             Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
             if (!cpu->carry)
                 goto next;
-            LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);      /* B915 */
+            LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);      /* B915 */
             Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
             if (cpu->zero) {
                 hit = 1;
@@ -100,7 +100,7 @@ static uint8_t FieldTouchScan(
                 hit = cpu->zero;
             }
         } else {
-            LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);      /* B925 */
+            LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);      /* B925 */
             LoadA8(cpu, (uint8_t)(A8(cpu) - 2u));
             Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
             if (cpu->carry)
@@ -115,12 +115,12 @@ static uint8_t FieldTouchScan(
             uint8_t side;
 
             StoreXDirect16(memory, cpu, 0x65u);                /* B942 */
-            LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+            LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
             Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
             if (!cpu->zero) {
                 side = cpu->carry ? 0u : 4u;                   /* B94B */
             } else {
-                LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);  /* B955 */
+                LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);  /* B955 */
                 Compare8(
                     cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
                 if (cpu->zero) {
@@ -167,20 +167,20 @@ Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
     }
     SimulateRtlFrame(memory, cpu);
     cpu->program_bank = 0x83u;
-    LoadAAbsolute8(memory, cpu, 0x09a7u, 0);                   /* 81CF */
+    LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);                   /* 81CF */
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero) {
         SetIndexWidth(cpu, 1);                                 /* 81D6 */
         FieldIdle(memory, cpu, 0x81dau);
         SetIndexWidth(cpu, 0);
         if (cpu->zero) {
-            LoadA8(cpu, Read8(memory, 0x7fd0a1u));             /* 81DF */
+            LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));             /* 81DF */
             BitImmediate8(cpu, 0x3cu);
             if (cpu->zero) {
                 PushDataBank(memory, cpu);                     /* 81E7 */
-                LoadAAbsolute8(memory, cpu, 0x06bau, 0);
+                LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);
                 Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
-                LoadAAbsolute8(memory, cpu, 0x06e2u, 0);
+                LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
                 Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
                 LoadA8(cpu, 0x7eu);
                 PushAccumulator8(memory, cpu);
@@ -200,7 +200,7 @@ Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
         if (cpu->zero) {
             uint8_t armed = 0;
 
-            LoadA8(cpu, Read8(memory, 0x7fd0a1u));             /* 8205 */
+            LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));             /* 8205 */
             BitImmediate8(cpu, 0x04u);
             if (!cpu->zero) {
                 armed = 1;
@@ -232,7 +232,7 @@ Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
         LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, 0);
         BitImmediate8(cpu, 0x80u);
         if (cpu->zero) {
-            LoadA8(cpu, Read8(memory, 0x7fd0a1u));
+            LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));
             BitImmediate8(cpu, 0x08u);
             if (cpu->zero) {
                 /* Door/warp handling stays in LLE. */
