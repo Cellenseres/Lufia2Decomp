@@ -962,7 +962,7 @@ Lufia2ExecutionResult Lufia2WorldSpriteChain(
     Subtract16(cpu, 0x0004u);
     StoreAAbsolute16(memory, cpu, 0x1e54u, 0);
     StepAbsolute16(memory, cpu, 0x1e56u, -1);
-    LoadADirect16(memory, cpu, 0x42u);
+    LoadADirect16(memory, cpu, DP_FRAME_COUNTER);
     Subtract16(cpu, 0x04aau);
     SetAccumulatorWidth(cpu, 1);
     if (cpu->carry) {

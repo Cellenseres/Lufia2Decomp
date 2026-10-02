@@ -60,7 +60,7 @@ Lufia2ExecutionResult Lufia2MenuDrawStatus(
         return ExecutionHandoff(cpu, 0x82a318u);
     PushAccumulator8(memory, cpu);
     OpLoadA(cpu, 0x20u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x0564u));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
     LoadA8(cpu, Pull8(memory, cpu));
     target = StatusDispatchTarget(memory, cpu);
 
@@ -127,7 +127,7 @@ Lufia2ExecutionResult Lufia2MenuDrawStatus(
         OpSta(memory, cpu, OpDp(cpu, 0u));
         STATUS_CALL(0x82a3a3u, 0x82942fu, 2u);
         OpLoadA(cpu, 0x20u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x0564u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
         OpLdx(cpu, 0x1560u);
         OpWriteX(memory, cpu, OpDp(cpu, STATUS_TILE_CURSOR), cpu->x);
         OpLoadA(cpu, 0x8eu);
@@ -151,7 +151,7 @@ Lufia2ExecutionResult Lufia2MenuDrawStatus(
         OpLdx(cpu, 0x308au);
         STATUS_CALL(0x82a3dfu, 0x8294c0u, 2u);
         OpLoadA(cpu, 0x20u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x0564u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
         OpLdx(cpu, 0x1560u);
         OpWriteX(memory, cpu, OpDp(cpu, STATUS_TILE_CURSOR), cpu->x);
         OpLoadA(cpu, 0x8eu);

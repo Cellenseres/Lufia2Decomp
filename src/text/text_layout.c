@@ -2,6 +2,7 @@
 #include "core/cpu_internal.h"
 #include "lufia2/text.h"
 #include "text/text_internal.h"
+#include "system/wram.h"
 
 /* $54: maximum width; $55: lines beyond the first; $56: current width. */
 static void TextMeasureLine(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -35,7 +36,7 @@ static void TextMeasureDictionary(const Lufia2Memory *memory, Lufia2CpuState *cp
 
 Lufia2ExecutionResult Lufia2TextMeasure(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Write16Absolute(memory, cpu, 0x09b7u, cpu->y);             /* C652 */
-    LoadAAbsolute8(memory, cpu, 0x09b9u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_SCENE_SCRIPT_BANK, 0);
     StoreADirect8(memory, cpu, 0x57u);
     Write8(memory, DirectAddress(cpu, 0x54u), 0);
     Write8(memory, DirectAddress(cpu, 0x55u), 0);
@@ -134,7 +135,7 @@ Lufia2ExecutionResult Lufia2TextMeasure(const Lufia2Memory *memory, Lufia2CpuSta
     LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
     StoreAAbsolute8(memory, cpu, 0x125cu, 0);
     LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
-    StoreAAbsolute8(memory, cpu, 0x09b9u, 0);
+    StoreAAbsolute8(memory, cpu, WRAM_SCENE_SCRIPT_BANK, 0);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09b7u, 0));

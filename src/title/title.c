@@ -813,7 +813,7 @@ Lufia2ExecutionResult Lufia2TitlePaletteCycle(
             StoreAAbsolute8(memory, cpu, 0x15b9u, 0);
         }
         LoadA8(cpu, 0x80u);                                    /* 89F6 */
-        StoreADirect8(memory, cpu, 0x73u);
+        StoreADirect8(memory, cpu, DP_NMI_UPLOAD_FLAGS);
     }
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x8689fcu);                       /* RTS */
