@@ -30,10 +30,11 @@ static void SecondarySpawnScript(
     AslA16(cpu);
     TransferAToX(cpu);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x918ec7u, cpu->x)));
-    LoadXDirect(memory, cpu, 0xabu);
+    LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
     cpu->carry = 0;
     Add16Immediate(cpu, 0x8ec7u);
-    Write16Long(memory, LongIndexedAddress(0x7fdeeeu, cpu->x), cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_SCRIPT, cpu->x),
+        cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x91u);
     Write8(memory, LongIndexedAddress(0x7fdef0u, cpu->x), A8(cpu));
@@ -55,7 +56,7 @@ static void SecondarySpawnInit(
     Lufia2ActorRecordOffsets(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     LoadA8(cpu, 0x84u);                                        /* DFAB */
-    StoreAAbsolute8(memory, cpu, 0x064au, cpu->x);
+    StoreAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
     LoadA8(cpu, 0x01u);
     Write8(memory, LongIndexedAddress(0x7fdfaeu, cpu->x), A8(cpu));
     LoadAAbsolute8(memory, cpu, 0x0692u, 0);
@@ -68,7 +69,7 @@ static void SecondarySpawnInit(
     LoadA8(cpu, 0xffu);                                        /* DFD4 */
     for (i = 0; i < 3u; ++i)
         Write8(memory, LongIndexedAddress(filled[i], cpu->x), A8(cpu));
-    LoadXDirect(memory, cpu, 0xa9u);                           /* DFE2 */
+    LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                           /* DFE2 */
     TransferDirectToA(cpu);
     for (i = 0; i < 4u; ++i)
         Write8(memory, LongIndexedAddress(cleared[i], cpu->x), A8(cpu));
@@ -89,7 +90,7 @@ void Lufia2ActorSpawn(
     PullDataBank(memory, cpu);
     LoadX16(cpu, 0x0000u);
     for (;;) {
-        LoadAAbsolute8(memory, cpu, 0x064au, cpu->x);          /* DF8F */
+        LoadAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);          /* DF8F */
         BitImmediate8(cpu, 0x80u);
         if (cpu->zero) {
             LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
