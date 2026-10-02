@@ -94,7 +94,7 @@ Lufia2ActorSecondaryFlow Lufia2ActorSecondaryUpdateFrontend(
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);         /* $83:D508 */
     slot = Lufia2ActorSlotAt(memory, cpu, cpu->x);
     /* LDA $000736,X: the long form of the same array. */
-    LoadA8(cpu, Lufia2ActorSlotReadLong(&slot, WRAM_UNK_7E0736));
+    LoadA8(cpu, Lufia2ActorSlotReadLong(&slot, WRAM_ACTOR_FLAGS));
                                                      /* $83:D50A */
     BitImmediate8(cpu, 0x80u);                       /* $83:D50E */
     if (!cpu->zero) {
@@ -139,7 +139,7 @@ Lufia2ActorSecondaryFlow Lufia2ActorSecondaryUpdateFrontend(
     goto walk_counter;                               /* $83:D550 */
 
 state_gate:
-    LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_UNK_7E0736));
+    LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_ACTOR_FLAGS));
                                                      /* $83:D552 */
     BitImmediate8(cpu, 0x42u);                       /* $83:D555 */
     if (!cpu->zero)                                  /* $83:D557 */
@@ -171,7 +171,7 @@ walk_counter:
                                                      /* $83:D57B */
 
 final_gate:
-    LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_UNK_7E0736));
+    LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_ACTOR_FLAGS));
                                                      /* $83:D57E */
     BitImmediate8(cpu, 0x04u);                       /* $83:D581 */
     if (!cpu->zero) {

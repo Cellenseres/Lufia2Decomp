@@ -86,7 +86,7 @@ Lufia2ExecutionResult Lufia2MainNmi(
     OpLda(memory, cpu, 0x000520u);
     OpAndValue(cpu, 0x00ffu);
     if (!cpu->zero) {
-        OpLda(memory, cpu, OpDp(cpu, 0x46u));
+        OpLda(memory, cpu, OpDp(cpu, DP_BUTTONS_HELD));
         OpCmpValue(cpu, 0x3030u);
         OpSepWidths(cpu, 0x20u);
         if (cpu->zero)

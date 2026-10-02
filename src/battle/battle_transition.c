@@ -22,11 +22,11 @@ static void ClearTransitionPlanes(const Lufia2Memory *memory, Lufia2CpuState *cp
     OpRepWidths(cpu, 0x20u);
 
     do {
-        OpSta(memory, cpu, OpLongX(cpu, 0x7e2000u));
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_MUSIC_SAMPLE_CACHE));
         OpSta(memory, cpu, OpLongX(cpu, 0x7e2002u));
-        OpSta(memory, cpu, OpLongX(cpu, 0x7e2800u));
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER0_TILEMAP));
         OpSta(memory, cpu, OpLongX(cpu, 0x7e2802u));
-        OpSta(memory, cpu, OpLongX(cpu, 0x7e3000u));
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER2_TILEMAP));
         OpSta(memory, cpu, OpLongX(cpu, 0x7e3002u));
         OpDex(cpu);
         OpDex(cpu);

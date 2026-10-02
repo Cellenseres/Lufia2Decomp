@@ -12,10 +12,10 @@ void Lufia2ActorTargetDirection(
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* CA93 */
     LoadA8(
         cpu, Read8(
-            memory, AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x)));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x)));
     Compare8(
         cpu, A8(cpu),
-        Read8(memory, LongIndexedAddress(0x7fe5a6u, cpu->x)));
+        Read8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_OBJECT_RECORD, cpu->x)));
     if (!cpu->zero) {
         const uint8_t ahead = cpu->carry;
         LoadA8(cpu, ahead ? 0x02u : 0x03u);                    /* CA9E */
@@ -24,10 +24,10 @@ void Lufia2ActorTargetDirection(
     }
     LoadA8(
         cpu, Read8(
-            memory, AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x)));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x)));
     Compare8(
         cpu, A8(cpu),
-        Read8(memory, LongIndexedAddress(0x7fe5ceu, cpu->x)));
+        Read8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_PENDING_OBJECT, cpu->x)));
     if (!cpu->zero) {
         const uint8_t ahead = cpu->carry;
         LoadA8(cpu, ahead ? 0x00u : 0x01u);                    /* CAAF */
@@ -82,7 +82,7 @@ static void PrimaryActionBoundaryHelper(
     switch (helper_pc) {
     case 0xd3b7u:
         coordinate = Read8(
-            memory, AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x));
         LoadA8(cpu, coordinate);
         cpu->carry = 0;
         if (!cpu->zero) {
@@ -95,7 +95,7 @@ static void PrimaryActionBoundaryHelper(
 
     case 0xd3c5u:
         coordinate = Read8(
-            memory, AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x));
         LoadA8(cpu, coordinate);
         cpu->carry = 0;
         if (!cpu->zero) {
@@ -108,13 +108,13 @@ static void PrimaryActionBoundaryHelper(
                 cpu, A8(cpu),
                 Read8(
                     memory,
-                    AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x)));
+                    AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x)));
         }
         break;
 
     case 0xd3d7u:
         coordinate = Read8(
-            memory, AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x));
         LoadA8(cpu, coordinate);
         cpu->carry = 0;
         if (!cpu->zero) {
@@ -127,7 +127,7 @@ static void PrimaryActionBoundaryHelper(
 
     case 0xd3e5u:
         coordinate = Read8(
-            memory, AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x));
         LoadA8(cpu, coordinate);
         cpu->carry = 0;
         if (!cpu->zero) {
@@ -140,7 +140,7 @@ static void PrimaryActionBoundaryHelper(
                 cpu, A8(cpu),
                 Read8(
                     memory,
-                    AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x)));
+                    AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x)));
         }
         break;
 
@@ -161,11 +161,11 @@ void Lufia2ActorInstallSecondaryScript(
     LoadA16(
         cpu, Read16Long(
             memory, LongIndexedAddress(0x918000u, cpu->x)));
-    LoadXDirect(memory, cpu, 0xabu);
+    LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
     cpu->carry = 0;
     Add16Immediate(cpu, 0x8000u);
     Write16Long(
-        memory, LongIndexedAddress(0x7fe3eeu, cpu->x),
+        memory, LongIndexedAddress(WRAM_ACTOR_SECONDARY_SCRIPT, cpu->x),
         cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x91u);
@@ -185,11 +185,11 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
                                                                /* D354 */
     LoadA8(
         cpu, Read8(
-            memory, AbsoluteIndexedAddress(cpu, 0x0736u, cpu->x)));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x)));
                                                                /* D358 */
     And8(cpu, 0xefu);                                         /* D35B */
     Write8(
-        memory, AbsoluteIndexedAddress(cpu, 0x0736u, cpu->x),
+        memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x),
         A8(cpu));                                              /* D35D */
     LoadA8(
         cpu, Read8(
@@ -226,12 +226,12 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* D375 */
     LoadA8(
         cpu, Read8(
-            memory, AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x)));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x)));
                                                                /* D377 */
     Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));   /* D37A */
     LoadA8(
         cpu, Read8(
-            memory, AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x)));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x)));
                                                                /* D37C */
     Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));   /* D37F */
     TransferDirectToA(cpu);                                   /* D381 */

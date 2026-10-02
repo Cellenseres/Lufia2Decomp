@@ -70,7 +70,7 @@ static Lufia2ExecutionResult GiveCaveInitialItems(
             break;
         PushIndex(memory, cpu);
         OpLda(memory, cpu, OpLongX(cpu, WRAM_ANCIENT_CAVE_SAVED_ITEMS));
-        OpSta(memory, cpu, OpAbs(cpu, 0x09cfu));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_SELECTED_SPELL));
         OpLda(memory, cpu, OpLongX(cpu, WRAM_ANCIENT_CAVE_SAVED_ITEMS + 1u));
         OpAndValue(cpu, 1u);
         OpSta(memory, cpu, OpAbs(cpu, 0x09d0u));

@@ -4,6 +4,7 @@
 #include "lufia2/item.h"
 #include "field/event_script_internal.h"
 #include "text/text_internal.h"
+#include "system/wram.h"
 
 /* $80:A1CC: argument to record offset; DB-relative MMIO. */
 Lufia2ExecutionResult Lufia2TextConditionRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -168,11 +169,11 @@ static int TextConditionSpecial(const Lufia2Memory *memory, Lufia2CpuState *cpu)
         break;
     case 0xf0u:
         Lufia2TextNextByte(memory, cpu, 0xa148u);
-        LoadA8(cpu, Read8(memory, 0x0005aeu));
+        LoadA8(cpu, Read8(memory, WRAM_FIELD_DESTINATION_MAP));
         Compare8(cpu, A8(cpu), 2u);
         if (cpu->carry) LoadA8(cpu, 0xffu);
         else {
-            LoadA8(cpu, Read8(memory, 0x0005b2u));
+            LoadA8(cpu, Read8(memory, WRAM_FIELD_DESTINATION_PARAMETERS));
             for (unsigned i = 0; i < 4u; ++i) LsrA8(cpu);
         }
         StoreADirect8(memory, cpu, 0x54u);
@@ -184,8 +185,8 @@ static int TextConditionSpecial(const Lufia2Memory *memory, Lufia2CpuState *cpu)
         Lufia2EventFindActorId(memory, cpu, 0xa132u);
         Lufia2TextNextByte(memory, cpu, 0xa135u);
         PushY(memory, cpu);
-        LoadX16(cpu, Read16Direct(memory, cpu, 0xa7u));
-        LoadAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+        LoadX16(cpu, Read16Direct(memory, cpu, DP_ACTOR_SLOT));
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
         BitImmediate8(cpu, 0x20u);
         if (!cpu->zero) {
             LoadA8(cpu, 0xffu);

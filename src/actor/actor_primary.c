@@ -13,19 +13,20 @@ Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
     Lufia2ActorScriptDispatchResult result;
     uint16_t actor_record;
 
-    LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x0736u, cpu->x)));
+    LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x)));
     And8(cpu, 0xebu);
-    Write8(memory, AbsoluteIndexedAddress(cpu, 0x0736u, cpu->x), A8(cpu));
+    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x), A8(cpu));
     PushDataBank(memory, cpu);
     SetIndexWidth(cpu, 0);
-    LoadXDirect16(memory, cpu, 0xabu);
+    LoadXDirect16(memory, cpu, DP_SLOT_RECORD_OFFSET);
     actor_record = cpu->x;
 
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe508u, actor_record)));
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fe506u, actor_record)));
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_SCRIPT,
+        actor_record)));
     Write16Direct(memory, cpu, 0x2au, cpu->accumulator);
     TransferAToY(cpu);
     SetAccumulatorWidth(cpu, 1);
@@ -210,9 +211,9 @@ void Lufia2ActorLeaderToProbe(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x06bau, 0)));
+    LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, 0)));
     Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
-    LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x06e2u, 0)));
+    LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, 0)));
     Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
     SimulateRtsFrame(memory, cpu);
 }
@@ -225,10 +226,10 @@ static void PrimaryActorToProbe(
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadA8(
-        cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x)));
+        cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x)));
     Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
     LoadA8(
-        cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x)));
+        cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x)));
     Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
     SimulateRtsFrame(memory, cpu);
 }
@@ -264,7 +265,7 @@ static void PrimaryRadiusBox(
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
     AslA8(cpu);
     Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
-    PrimaryProbeBox(memory, cpu, 0x8fu, 0x91u);
+    PrimaryProbeBox(memory, cpu, DP_PROBE_X, DP_PROBE_Y);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -299,33 +300,37 @@ static void PrimaryApproachProbe(
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* C9C5 */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe5a6u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_OBJECT_RECORD,
+        cpu->x)));
     if (!cpu->zero) {
         PrimaryProbeAxisDirection(
-            memory, cpu, 0x06e2u, 0x91u, 0x00u, 0x01u, 0xc9cfu);
+            memory, cpu, WRAM_ACTOR_TILE_Y, DP_PROBE_Y, 0x00u, 0x01u, 0xc9cfu);
         if (!cpu->carry)
             PrimaryProbeAxisDirection(
-                memory, cpu, 0x06bau, 0x8fu, 0x02u, 0x03u, 0xc9d4u);
+                memory, cpu, WRAM_ACTOR_TILE_X, DP_PROBE_X, 0x02u, 0x03u, 0xc9d4u);
         if (cpu->carry) {
             ExchangeAccumulatorBytes(cpu);                     /* C9D7 */
             LoadA8(cpu, 0x00u);
-            Write8(memory, LongIndexedAddress(0x7fe5a6u, cpu->x), 0x00u);
+            Write8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_OBJECT_RECORD, cpu->x),
+                0x00u);
             ExchangeAccumulatorBytes(cpu);
             cpu->carry = 1;
         }
     } else {
         PrimaryProbeAxisDirection(
-            memory, cpu, 0x06bau, 0x8fu, 0x02u, 0x03u, 0xc9e4u);
+            memory, cpu, WRAM_ACTOR_TILE_X, DP_PROBE_X, 0x02u, 0x03u, 0xc9e4u);
         if (!cpu->carry)
             PrimaryProbeAxisDirection(
-                memory, cpu, 0x06e2u, 0x91u, 0x00u, 0x01u, 0xc9e9u);
+                memory, cpu, WRAM_ACTOR_TILE_Y, DP_PROBE_Y, 0x00u, 0x01u, 0xc9e9u);
         if (cpu->carry) {
             ExchangeAccumulatorBytes(cpu);                     /* C9EC */
             LoadA8(
-                cpu, Read8(memory, LongIndexedAddress(0x7fe5a6u, cpu->x)));
+                cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_OBJECT_RECORD,
+                    cpu->x)));
             DecrementA8(cpu);
             Write8(
-                memory, LongIndexedAddress(0x7fe5a6u, cpu->x), A8(cpu));
+                memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_OBJECT_RECORD, cpu->x),
+                    A8(cpu));
             ExchangeAccumulatorBytes(cpu);
             cpu->carry = 1;
         }
@@ -459,8 +464,8 @@ static uint8_t PrimaryMeasureRun(
             return 0;
         if (!cpu->zero)
             break;
-        CopyDirect8(memory, cpu, 0x95u, 0x8fu);                /* CE0D */
-        CopyDirect8(memory, cpu, 0x96u, 0x91u);
+        CopyDirect8(memory, cpu, 0x95u, DP_PROBE_X);                /* CE0D */
+        CopyDirect8(memory, cpu, 0x96u, DP_PROBE_Y);
         LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x94u)));
         SimulateJslFrame(memory, cpu, 0x83u, 0xce1au);         /* CE17 */
         if (Lufia2ActorMovementStep(memory, cpu) == 0)
@@ -532,7 +537,7 @@ static void PrimaryRecordProbe(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadXDirect(memory, cpu, 0xa9u);
+    LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
     Write8(memory, LongIndexedAddress(0x7fdb4cu, cpu->x), A8(cpu));
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
@@ -546,8 +551,8 @@ static void PrimaryResetProbe(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    CopyDirect8(memory, cpu, 0x63u, 0x8fu);
-    CopyDirect8(memory, cpu, 0x64u, 0x91u);
+    CopyDirect8(memory, cpu, 0x63u, DP_PROBE_X);
+    CopyDirect8(memory, cpu, 0x64u, DP_PROBE_Y);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -623,11 +628,12 @@ void Lufia2ActorLoadPrimaryScript(
     SetAccumulatorWidth(cpu, 0);
     LoadA16(
         cpu, Read16Long(memory, LongIndexedAddress(0x91a1d4u, cpu->x)));
-    LoadXDirect(memory, cpu, 0xabu);                           /* D424 */
+    LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET); /* D424 */
     cpu->carry = 0;
     Add16Immediate(cpu, 0xa1d4u);
     Write16Long(
-        memory, LongIndexedAddress(0x7fe506u, cpu->x), cpu->accumulator);
+        memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_SCRIPT, cpu->x),
+            cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);                               /* D42E */
     LoadA8(cpu, 0x91u);
     Write8(memory, LongIndexedAddress(0x7fe508u, cpu->x), A8(cpu));
@@ -643,7 +649,7 @@ void Lufia2ActorPrimaryReset(
     if (cpu->zero) {
         LoadA8(cpu, 0x02u);                                    /* C94F */
         TestBitsAbsolute8(memory, cpu, WRAM_ACTOR_STATE, 0);
-        LoadAAbsolute8(memory, cpu, 0x09a7u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);
         And8(cpu, 0x01u);
         if (cpu->zero) {
             LoadA8(cpu, 0x01u);                                /* C95B */
@@ -653,16 +659,16 @@ void Lufia2ActorPrimaryReset(
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);     /* C960 */
     And8(cpu, 0xf7u);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-    LoadAAbsolute8(memory, cpu, 0x05d2u, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_UNK_7E05D2, cpu->x);
     Compare8(cpu, A8(cpu), 0x0au);                             /* C96B */
     if (cpu->carry) {
         LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
         And8(cpu, 0xfdu);
         StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     }
-    LoadAAbsolute8(memory, cpu, 0x0736u, cpu->x);              /* C977 */
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);              /* C977 */
     And8(cpu, 0xfdu);
-    StoreAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     LoadA8(cpu, 0x08u);
     Write8(memory, LongIndexedAddress(0x7fe4deu, cpu->x), A8(cpu));
     SimulateJslFrame(memory, cpu, 0x83u, 0xc988u);             /* C985 */
@@ -676,7 +682,7 @@ void Lufia2ActorClearSlotLinks(
     LoadX16(cpu, 0x0004u);                                     /* CB65 */
     LoadA8(cpu, 0xffu);
     do {
-        StoreAAbsolute8(memory, cpu, 0x09a1u, cpu->x);
+        StoreAAbsolute8(memory, cpu, WRAM_FOLLOW_SLOTS, cpu->x);
         LoadX16(cpu, (uint16_t)(cpu->x - 1u));
     } while (!cpu->negative);
 }
@@ -684,7 +690,7 @@ void Lufia2ActorClearSlotLinks(
 void Lufia2ActorBlockedEvent(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadA8(cpu, Read8(memory, 0x7fd0a1u));                     /* CA68 */
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));                     /* CA68 */
     BitImmediate8(cpu, 0x40u);
     if (!cpu->zero)
         return;
@@ -701,7 +707,7 @@ void Lufia2ActorBlockedEvent(
     cpu->carry = 0;
     Add16Immediate(cpu, 0x8ec7u);
     Write16Long(
-        memory, LongIndexedAddress(0x7fdeeeu, cpu->x), cpu->accumulator);
+        memory, LongIndexedAddress(WRAM_OBJECT_SCRIPT, cpu->x), cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);                               /* CA90 */
 }
 
@@ -849,7 +855,7 @@ primary_fixed_action:
         LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);             /* $83:CC86 */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x06bau, 0)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, 0)));
                                                         /* $83:CC88 */
         Write8(memory, DirectAddress(cpu, 0x56u), A8(cpu));
                                                         /* $83:CC8B */
@@ -861,7 +867,7 @@ primary_fixed_action:
                                                         /* $83:CC90 */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x)));
                                                         /* $83:CC92 */
         PrimaryIntervalCheck(memory, cpu, 0xcc97u);    /* JSR $CCC1 */
         if (!cpu->carry)
@@ -878,7 +884,7 @@ primary_fixed_action:
         LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);             /* $83:CCA4 */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x06e2u, 0)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, 0)));
                                                         /* $83:CCA6 */
         Write8(memory, DirectAddress(cpu, 0x56u), A8(cpu));
                                                         /* $83:CCA9 */
@@ -890,7 +896,7 @@ primary_fixed_action:
                                                         /* $83:CCAE */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x)));
                                                         /* $83:CCB0 */
         PrimaryIntervalCheck(memory, cpu, 0xccb5u);    /* JSR $CCC1 */
         if (!cpu->carry)
@@ -905,7 +911,7 @@ primary_fixed_action:
     case PRIMARY_OP_CONDITIONAL_ACTION:
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x09a1u, 0)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_FOLLOW_SLOTS, 0)));
                                                         /* $83:D14D */
         if (!cpu->negative)                            /* $83:D150 */
             goto d14d_commit;
@@ -922,12 +928,12 @@ primary_fixed_action:
         TransferDirectToA(cpu);                       /* $83:D15B */
         LoadA8(
             cpu, Read8(
-                memory, LongIndexedAddress(0x7fe5a6u, cpu->x)));
+                memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_OBJECT_RECORD, cpu->x)));
                                                         /* $83:D15C */
         TransferAToX(cpu);                            /* $83:D160 */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x09a1u, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_FOLLOW_SLOTS, cpu->x)));
                                                         /* $83:D161 */
         if (!cpu->negative) {                         /* $83:D164 */
             if (!PrimaryCallActionCore(memory, cpu, 0xd169u)) {
@@ -947,11 +953,11 @@ d14d_commit:
             memory, cpu, PRIMARY_OP_COMMIT_CURSOR);                 /* $83:D173 */
 
     case PRIMARY_OP_COMMIT_CURSOR:
-        LoadXDirect16(memory, cpu, 0xabu);             /* $83:C8C7 */
+        LoadXDirect16(memory, cpu, DP_SLOT_RECORD_OFFSET);             /* $83:C8C7 */
         SetAccumulatorWidth(cpu, 0);                   /* $83:C8C9 */
         LoadA16(cpu, cpu->y);                          /* $83:C8CB TYA */
         Write16Long(
-            memory, LongIndexedAddress(0x7fe506u, cpu->x),
+            memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_SCRIPT, cpu->x),
             cpu->accumulator);                         /* $83:C8CC */
         SetAccumulatorWidth(cpu, 1);                   /* $83:C8D0 */
         result.flow = LUFIA2_ACTOR_PRIMARY_SCRIPT_CONTINUE_C8D2;
@@ -1056,7 +1062,7 @@ d14d_commit:
                                                         /* $83:C8B7 */
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:C8BA */
         Write8(
-            memory, LongIndexedAddress(0x7fe3c6u, cpu->x), A8(cpu));
+            memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_TIMER, cpu->x), A8(cpu));
                                                         /* $83:C8BC */
         IncrementY16(cpu);                             /* $83:C8C0 */
         IncrementY16(cpu);                             /* $83:C8C1 */
@@ -1080,7 +1086,7 @@ d14d_commit:
         AslA8(cpu);                                    /* $83:C8E2 */
         AslA8(cpu);                                    /* $83:C8E3 */
         Write8(
-            memory, LongIndexedAddress(0x7fe3c6u, cpu->x), A8(cpu));
+            memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_TIMER, cpu->x), A8(cpu));
                                                         /* $83:C8E4 */
         IncrementY16(cpu);                             /* $83:C8E8 */
         IncrementY16(cpu);                             /* $83:C8E9 */
@@ -1107,14 +1113,14 @@ d14d_commit:
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:C8FC */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x0736u, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x)));
                                                         /* $83:C8FE */
         if ((handler_pc & 0x00ffffffu) == PRIMARY_OP_SET_FLAG_1)
             Or8(cpu, 0x02u);                           /* $83:C901 */
         else
             And8(cpu, 0xfdu);                          /* $83:C90F */
         Write8(
-            memory, AbsoluteIndexedAddress(cpu, 0x0736u, cpu->x),
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x),
             A8(cpu));                                  /* $83:C903 */
         IncrementY16(cpu);                             /* $83:C906 */
         dispatch = PrimaryRedispatch(memory, cpu, 0);  /* $83:C85C */
@@ -1124,13 +1130,13 @@ d14d_commit:
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:CBB7 */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x)));
                                                         /* $83:CBB9 */
         Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
                                                         /* $83:CBBC */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x)));
                                                         /* $83:CBBE */
         Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
                                                         /* $83:CBC1 */
@@ -1150,11 +1156,11 @@ d14d_commit:
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:CBD0 */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x0736u, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x)));
                                                         /* $83:CBD2 */
         Or8(cpu, 0x40u);                               /* $83:CBD5 */
         Write8(
-            memory, AbsoluteIndexedAddress(cpu, 0x0736u, cpu->x),
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x),
             A8(cpu));                                  /* $83:CBD7 */
         result.flow = LUFIA2_ACTOR_PRIMARY_SCRIPT_CONTINUE_C8D2;
         result.handler_pc = 0x83c8d2u;                 /* $83:CBDA */
@@ -1172,8 +1178,8 @@ d14d_commit:
         Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
                                                         /* $83:CBE8 */
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:CBEA */
-        if (!PrimaryLeaderWithinRadius(memory, cpu, 0x06bau) ||
-            !PrimaryLeaderWithinRadius(memory, cpu, 0x06e2u))
+        if (!PrimaryLeaderWithinRadius(memory, cpu, WRAM_ACTOR_TILE_X) ||
+            !PrimaryLeaderWithinRadius(memory, cpu, WRAM_ACTOR_TILE_Y))
             return Lufia2ActorPrimaryScriptExecuteKnownHandler(
                 memory, cpu, PRIMARY_OP_JUMP);              /* $83:CC18 */
         IncrementY16(cpu);                             /* $83:CC12 */
@@ -1216,9 +1222,9 @@ d14d_commit:
         SimulateJsrFrame(
             memory, cpu, x_axis ? 0xcc43u : 0xcc65u); /* $83:CC41 */
         if (x_axis)
-            PrimaryLeaderDirection(memory, cpu, 0x06bau, 0x02u, 0x03u);
+            PrimaryLeaderDirection(memory, cpu, WRAM_ACTOR_TILE_X, 0x02u, 0x03u);
         else
-            PrimaryLeaderDirection(memory, cpu, 0x06e2u, 0x00u, 0x01u);
+            PrimaryLeaderDirection(memory, cpu, WRAM_ACTOR_TILE_Y, 0x00u, 0x01u);
         SimulateRtsFrame(memory, cpu);
         if (cpu->carry &&
             !PrimaryCallActionCore(
@@ -1289,9 +1295,9 @@ d14d_commit:
         SimulateJsrFrame(
             memory, cpu, x_axis ? 0xccf2u : 0xcd0fu); /* $83:CCF0 */
         if (x_axis)
-            PrimaryLeaderDirection(memory, cpu, 0x06bau, 0x02u, 0x03u);
+            PrimaryLeaderDirection(memory, cpu, WRAM_ACTOR_TILE_X, 0x02u, 0x03u);
         else
-            PrimaryLeaderDirection(memory, cpu, 0x06e2u, 0x00u, 0x01u);
+            PrimaryLeaderDirection(memory, cpu, WRAM_ACTOR_TILE_Y, 0x00u, 0x01u);
         SimulateRtsFrame(memory, cpu);
         if (cpu->carry) {
             TransferAToX(cpu);                         /* $83:CD00 */
@@ -1404,7 +1410,7 @@ d14d_commit:
                 memory, AbsoluteIndexedAddress(cpu, 0x0001u, cpu->y)));
                                                         /* $83:CABB */
         Write8(
-            memory, LongIndexedAddress(0x7fe3c6u, cpu->x), A8(cpu));
+            memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_TIMER, cpu->x), A8(cpu));
                                                         /* $83:CABE */
         SimulateJsrFrame(memory, cpu, 0xcac4u);        /* $83:CAC2 */
         Lufia2ActorTargetDirection(memory, cpu);               /* $83:CA93 */
@@ -1449,13 +1455,13 @@ d14d_commit:
     }
 
     case PRIMARY_OP_STEP_TOWARD_FOUND_ACTOR:
-        LoadXDirect(memory, cpu, 0xa9u);               /* $83:D01E */
+        LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);               /* $83:D01E */
         TransferDirectToA(cpu);                        /* $83:D020 */
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb4cu, cpu->x)));
         TransferAToX(cpu);                             /* $83:D025 */
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x0006bau, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_TILE_X, cpu->x)));
         Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x0006e2u, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_TILE_Y, cpu->x)));
         Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
         PrimaryApproachProbe(memory, cpu, 0xd034u);    /* $83:D032 */
         if (cpu->carry)
@@ -1470,12 +1476,12 @@ d14d_commit:
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:CF74 */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x)));
         ExchangeAccumulatorBytes(cpu);                 /* $83:CF79 */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x)));
-        LoadXDirect(memory, cpu, 0xa9u);               /* $83:CF7D */
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x)));
+        LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);               /* $83:CF7D */
         Write8(memory, LongIndexedAddress(0x7fdb9du, cpu->x), A8(cpu));
         ExchangeAccumulatorBytes(cpu);                 /* $83:CF83 */
         Write8(memory, LongIndexedAddress(0x7fdb9cu, cpu->x), A8(cpu));
@@ -1489,7 +1495,7 @@ d14d_commit:
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:CF8C */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x)));
         Compare8(
             cpu, A8(cpu),
             Read8(memory, AbsoluteIndexedAddress(cpu, 0x0001u, cpu->y)));
@@ -1500,7 +1506,7 @@ d14d_commit:
             LoadA8(
                 cpu, Read8(
                     memory,
-                    AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x)));
+                    AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x)));
             Compare8(
                 cpu, A8(cpu),
                 Read8(
@@ -1549,7 +1555,7 @@ d14d_commit:
             LoadA8(
                 cpu, Read8(
                     memory,
-                    AbsoluteIndexedAddress(cpu, 0x05d2u, cpu->x)));
+                    AbsoluteIndexedAddress(cpu, WRAM_UNK_7E05D2, cpu->x)));
             Compare8(cpu, A8(cpu), 0xffu);             /* $83:CFE3 */
             if (cpu->zero)
                 goto cfb9_next;
@@ -1562,7 +1568,7 @@ d14d_commit:
             LoadA8(
                 cpu, Read8(
                     memory,
-                    AbsoluteIndexedAddress(cpu, 0x06bau, cpu->x)));
+                    AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x)));
             Compare8(
                 cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x9fu)));
             if (!cpu->carry)
@@ -1574,7 +1580,7 @@ d14d_commit:
             LoadA8(
                 cpu, Read8(
                     memory,
-                    AbsoluteIndexedAddress(cpu, 0x06e2u, cpu->x)));
+                    AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x)));
             Compare8(
                 cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0xa0u)));
             if (!cpu->carry)
@@ -1586,7 +1592,7 @@ d14d_commit:
                 goto cfb9_next;
 
             TransferXToA(cpu);                         /* $83:D006 */
-            LoadXDirect(memory, cpu, 0xa9u);
+            LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
             Write8(
                 memory, LongIndexedAddress(0x7fdb4cu, cpu->x), A8(cpu));
             IncrementY16(cpu);                         /* $83:D00D */
@@ -1633,16 +1639,16 @@ cfb9_next:
             cpu, Read8(
                 memory,
                 AbsoluteIndexedAddress(
-                    cpu, 0x06bau, around_leader ? 0 : cpu->x)));
+                    cpu, WRAM_ACTOR_TILE_X, around_leader ? 0 : cpu->x)));
         Write8(memory, DirectAddress(cpu, 0x63u), A8(cpu));
         LoadA8(
             cpu, Read8(
                 memory,
                 AbsoluteIndexedAddress(
-                    cpu, 0x06e2u, around_leader ? 0 : cpu->x)));
+                    cpu, WRAM_ACTOR_TILE_Y, around_leader ? 0 : cpu->x)));
         Write8(memory, DirectAddress(cpu, 0x64u), A8(cpu));
         LoadA8(
-            cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+            cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
         Write8(memory, DirectAddress(cpu, 0x9au), A8(cpu));
         if (around_leader) {
             LoadA8(
@@ -1717,12 +1723,12 @@ cfb9_next:
 
     case PRIMARY_OP_WALK_AHEAD_OF_LEADER: {
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:CDA5 */
-        LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x06bau, 0)));
+        LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, 0)));
         Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
-        LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x06e2u, 0)));
+        LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, 0)));
         Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
         LoadA8(
-            cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+            cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
         Write8(memory, DirectAddress(cpu, 0x9au), A8(cpu));
         IncrementY16(cpu);                             /* $83:CDB7 */
         LoadA8(
@@ -1748,9 +1754,9 @@ cfb9_next:
         if (!cpu->carry)
             return Lufia2ActorPrimaryScriptExecuteKnownHandler(
                 memory, cpu, PRIMARY_OP_JUMP);              /* $83:CDF3 */
-        LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x06bau, 0)));
+        LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, 0)));
         Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
-        LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x06e2u, 0)));
+        LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, 0)));
         Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
         LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x93u)));
         if (!PrimaryWalkSteps(memory, cpu, 0xcde9u)) {
@@ -1771,7 +1777,7 @@ cfb9_next:
         PrimaryActorToProbe(memory, cpu, 0xd041u);     /* $83:D03F */
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:D042 */
         LoadA8(
-            cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+            cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
         Write8(memory, DirectAddress(cpu, 0x9au), A8(cpu));
         TransferDirectToA(cpu);                        /* $83:D04A */
         IncrementY16(cpu);
@@ -1820,7 +1826,7 @@ cfb9_next:
                 DecrementA8(cpu);                      /* $83:D088 */
                 Compare8(
                     cpu, A8(cpu),
-                    Read8(memory, LongIndexedAddress(0x0006bau, cpu->x)));
+                    Read8(memory, LongIndexedAddress(WRAM_ACTOR_TILE_X, cpu->x)));
             }
             if (!cpu->zero && cpu->carry) {            /* $83:D08D */
                 IncrementY16(cpu);                     /* $83:D094 */
@@ -1847,7 +1853,7 @@ cfb9_next:
             LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
             Or8(cpu, 0x01u);
             StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-            LoadAAbsolute8(memory, cpu, 0x09a7u, 0);   /* $83:C925 */
+            LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);   /* $83:C925 */
             BitImmediate8(cpu, 0x01u);
             if (!cpu->zero) {
                 LoadA8(cpu, 0x09u);                    /* $83:C92C */
@@ -1882,9 +1888,9 @@ cfb9_next:
         TestBitsAbsolute8(memory, cpu, WRAM_ACTOR_STATE, 1);
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:CA2E */
         TransferDirectToA(cpu);
-        LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
         Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
-        LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);
         Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
         SimulateJsrFrame(memory, cpu, 0xca3du);        /* $83:CA3B */
         Lufia2ActorTargetDirection(memory, cpu);
@@ -1902,7 +1908,8 @@ cfb9_next:
             SimulateRtlFrame(memory, cpu);
             Lufia2MapCellIndex(memory, cpu, 0xca4du, 1); /* $83:CA4B */
             LoadA8(
-                cpu, Read8(memory, LongIndexedAddress(0x7e4000u, cpu->x)));
+                cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES,
+                    cpu->x)));
             BitImmediate8(cpu, 0x0bu);                 /* $83:CA52 */
             if (cpu->zero) {
                 TransferDirectToA(cpu);                /* $83:CA56 */
@@ -1922,9 +1929,9 @@ cfb9_next:
     case PRIMARY_OP_SET_TILE_POSITION:
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:D135 */
         LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
-        StoreAAbsolute8(memory, cpu, 0x06bau, cpu->x);
+        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);
         LoadAAbsolute8(memory, cpu, 0x0002u, cpu->y);
-        StoreAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
         IncrementY16(cpu);                             /* $83:D143 */
         IncrementY16(cpu);
         IncrementY16(cpu);
@@ -1965,13 +1972,13 @@ cfb9_next:
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:D176 */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x1291u, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E1291, cpu->x)));
         And8(cpu, 0xf8u);                              /* $83:D17B */
         Or8(
             cpu, Read8(
                 memory, AbsoluteIndexedAddress(cpu, 0x0001u, cpu->y)));
         Write8(
-            memory, AbsoluteIndexedAddress(cpu, 0x1291u, cpu->x),
+            memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E1291, cpu->x),
             A8(cpu));                                  /* $83:D180 */
         IncrementY16(cpu);                             /* $83:D183 */
         IncrementY16(cpu);
@@ -1984,7 +1991,7 @@ cfb9_next:
             cpu, Read8(
                 memory, AbsoluteIndexedAddress(cpu, 0x0001u, cpu->y)));
         Write8(
-            memory, LongIndexedAddress(0x7fe3c6u, cpu->x), A8(cpu));
+            memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_TIMER, cpu->x), A8(cpu));
         IncrementY16(cpu);                             /* $83:D191 */
         IncrementY16(cpu);
         return Lufia2ActorPrimaryScriptExecuteKnownHandler(
@@ -2003,7 +2010,8 @@ cfb9_next:
             cpu, Read8(
                 memory, AbsoluteIndexedAddress(cpu, 0x0001u, cpu->y)));
         Write8(
-            memory, LongIndexedAddress(0x7fe5a6u, cpu->x), A8(cpu));
+            memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_OBJECT_RECORD, cpu->x),
+                A8(cpu));
         LoadA8(cpu, 0x1cu);                            /* $83:D1A7 */
         Write8(
             memory, LongIndexedAddress(0x7fe466u, cpu->x), A8(cpu));
@@ -2017,7 +2025,7 @@ cfb9_next:
 
     case PRIMARY_OP_ACTION_IF_09A1_NEGATIVE:
         LoadA8(
-            cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x09a1u, 0)));
+            cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_FOLLOW_SLOTS, 0)));
                                                         /* $83:D1C1 */
         if (cpu->negative) {
             LoadA8(
@@ -2092,7 +2100,8 @@ cfb9_next:
         Write16Direct(memory, cpu, 0x2au, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);                   /* $83:D22E */
         LoadA8(
-            cpu, Read8(memory, LongIndexedAddress(0x7fe5a6u, cpu->x)));
+            cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_OBJECT_RECORD,
+                cpu->x)));
         ExchangeAccumulatorBytes(cpu);                 /* $83:D234 */
         LoadA8(
             cpu, Read8(
@@ -2208,7 +2217,7 @@ Lufia2ExecutionResult Lufia2ActorPrimaryUpdate(
     if (flow == LUFIA2_ACTOR_PRIMARY_CONTINUE_C808) {
         DecrementA8(cpu);                                      /* C808 */
         Write8(
-            memory, AbsoluteIndexedAddress(cpu, 0x1291u, cpu->x),
+            memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E1291, cpu->x),
             A8(cpu));
     }
 

@@ -88,7 +88,7 @@ bool BattleFinishMainLoop(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
 
-    OpLda(memory, cpu, 0x7ff8a2u);
+    OpLda(memory, cpu, WRAM_FIELD_BATTLE_RESULT);
     OpCmpValue(cpu, 0u);
     if (!cpu->zero)
         return true;

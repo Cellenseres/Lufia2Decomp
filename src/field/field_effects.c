@@ -75,7 +75,7 @@ static uint8_t FieldPaletteCycles(
         AslA16(cpu);
         TransferAToX(cpu);
         LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
-        Write16Long(memory, LongIndexedAddress(0x000320u, cpu->x),
+        Write16Long(memory, LongIndexedAddress(WRAM_CGRAM_BUFFER, cpu->x),
             cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
         cpu->x = cpu->y;                                       /* TYX */

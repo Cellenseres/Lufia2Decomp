@@ -36,6 +36,13 @@ order rather than being folded into a superficially similar store helper.
 `OpRepWidths` and `OpSepWidths` accept only width masks `$10/$20/$30`;
 they are not arbitrary REP/SEP status-mask implementations.
 
+These rules describe the legacy CPU-helper dialect. New and refactored code
+follows the semantic layer in [CODE_STYLE.md](CODE_STYLE.md): readable C with
+named constants and typed accessors, no emulated CPU state in converted
+routines unless a caller still depends on it, and behavior identical to the
+original game. Hardware-facing code sits behind a small interface so a recomp
+can swap individual functions without touching game logic.
+
 Shared implementation children belong in subsystem internal headers. The T14
 section readers and party-list search are declared in `field/field_internal.h`
 and `party/party_internal.h`; consumer differential tests explicitly include

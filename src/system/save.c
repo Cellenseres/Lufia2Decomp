@@ -1,5 +1,6 @@
 /* Original save-file loading, packing and byte-stream encryption. */
 
+#include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/system.h"
 #include "system/wram.h"
@@ -38,11 +39,8 @@ static uint8_t SaveChild(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context,
     uint32_t site, uint32_t target, uint8_t frame) {
-    if (frame == 3u)
-        SimulateJslFrame(memory, cpu, cpu->program_bank, (uint16_t)(site + 3u));
-    else
-        SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
-    return child(context, cpu, target, site, frame);
+    return CallChildWithFrame(
+        memory, cpu, child, context, site, target, frame, cpu->program_bank);
 }
 
 #define SAVE_CALL(site, target, frame) \

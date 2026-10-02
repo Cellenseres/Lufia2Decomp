@@ -61,7 +61,7 @@ static Lufia2ExecutionResult MapHeaderChildUnwound(uint32_t site) {
 
 static void MapHeaderSource(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLda(memory, cpu, OpAbs(cpu, 0x05b6u));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS));
     OpBitValue(cpu, 0x0001u);
     if (!cpu->zero) {
         OpSepWidths(cpu, 0x20u);
@@ -132,7 +132,7 @@ Lufia2ExecutionResult Lufia2FieldLoadMapHeader(
     SimulateJsrFrame(memory, cpu, 0xb61au);
     if (!child(context, cpu, 0x83057du, 0x83b618u, 2u))
         return MapHeaderChildUnwound(0x83b618u);
-    OpLda(memory, cpu, OpAbs(cpu, 0x05b6u));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS));
     OpBitValue(cpu, 0x0001u);
     if (!cpu->zero) {
         SimulateJslFrame(memory, cpu, 0x83u, 0xb626u);

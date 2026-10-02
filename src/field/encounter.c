@@ -2,6 +2,7 @@
 
 #include "core/cpu_ops.h"
 #include "lufia2/field.h"
+#include "system/wram.h"
 
 enum {
     ENCOUNTER_SELECTOR = 0x7ff8a1u,
@@ -75,7 +76,7 @@ static uint8_t ResumeFieldAfterBattle(const Lufia2Memory *memory, Lufia2CpuState
             return 0;
         }
 
-        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xa7u)));
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
         OpLda(memory, cpu, ENCOUNTER_TYPE);
         OpCmpValue(cpu, 2u);
         if (cpu->zero) {

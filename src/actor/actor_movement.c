@@ -20,7 +20,7 @@ void Lufia2MapCellIndex(
         LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
     }
     Write8(memory, SNES_WRMPYA, A8(cpu));                      /* F9B6 */
-    LoadA8(cpu, Read8(memory, 0x0005b9u));
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_SECTION_WIDTH));
     Write8(memory, SNES_WRMPYB, A8(cpu));
     LoadA8(cpu, 0x00u);
     ExchangeAccumulatorBytes(cpu);
@@ -45,10 +45,11 @@ void Lufia2MapTileHeight(
     Lufia2MapCellOffset(memory, cpu);             /* F9F7 */
     SimulateRtsFrame(memory, cpu);
     SetAccumulatorWidth(cpu, 0);                               /* F98B */
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05aau, 0));
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_TABLE_OFFSET, 0));
     cpu->carry = 0;
     Add16Value(
-        cpu, Read16Long(memory, LongIndexedAddress(0x7fd008u, cpu->x)));
+        cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_CELL_BASE,
+            cpu->x)));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7f0001u, cpu->x)));
@@ -161,10 +162,10 @@ void Lufia2ActorMarkMapOccupancy(
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* FA3F */
     Write8(memory, DirectAddress(cpu, 0x9eu), 0x00u);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
     Compare8(cpu, A8(cpu), 0x02u);                             /* FA47 */
     if (cpu->carry) {
-        LoadAAbsolute8(memory, cpu, 0x05d2u, cpu->x);          /* FA4B */
+        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E05D2, cpu->x);          /* FA4B */
         Compare8(cpu, A8(cpu), 0x71u);
         if (!cpu->zero) {
             Compare8(cpu, A8(cpu), 0x72u);
@@ -177,13 +178,13 @@ void Lufia2ActorMarkMapOccupancy(
             }
         }
     }
-    LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);              /* FA5E */
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);              /* FA5E */
     ExchangeAccumulatorBytes(cpu);
-    LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
     Lufia2MapCellIndex(memory, cpu, 0xfa67u, 0);               /* FA65 */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e4000u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x)));
     Or8(cpu, 0x01u);
-    Write8(memory, LongIndexedAddress(0x7e4000u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x), A8(cpu));
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x9eu)));     /* FA72 */
     if (!cpu->zero) {
         LoadA8(
@@ -198,7 +199,7 @@ void Lufia2ActorSyncFinePosition(
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* A746 */
     TransferDirectToA(cpu);
-    LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);
     SetAccumulatorWidth(cpu, 0);                               /* A74C */
     AslA16(cpu);
     AslA16(cpu);
@@ -207,18 +208,18 @@ void Lufia2ActorSyncFinePosition(
     PushAccumulator16(memory, cpu);                            /* A752 */
     SetAccumulatorWidth(cpu, 1);
     TransferDirectToA(cpu);                                    /* A755 */
-    LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
     SetAccumulatorWidth(cpu, 0);                               /* A759 */
     AslA16(cpu);
     AslA16(cpu);
     AslA16(cpu);
     AslA16(cpu);
-    LoadXDirect(memory, cpu, 0xa9u);                           /* A75F */
+    LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                           /* A75F */
     Write16Long(
-        memory, LongIndexedAddress(0x7fde3eu, cpu->x), cpu->accumulator);
+        memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x), cpu->accumulator);
     PullAccumulator16(memory, cpu);                            /* A765 */
     Write16Long(
-        memory, LongIndexedAddress(0x7fddaeu, cpu->x), cpu->accumulator);
+        memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x), cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);                               /* A76A */
 }
 
@@ -257,10 +258,12 @@ void Lufia2ActorAddSignedPair(
 void Lufia2ActorAddDisplayOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadXDirect(memory, cpu, 0xa9u);                           /* FACB */
-    Lufia2ActorAddSignedPair(memory, cpu, 0x7fdc8cu, 0x0001u, 0xfad3u);
+    LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                           /* FACB */
+    Lufia2ActorAddSignedPair(memory, cpu, WRAM_ACTOR_DISPLAY_OFFSET_X, 0x0001u,
+        0xfad3u);
     SetAccumulatorWidth(cpu, 1);                               /* FADD */
-    Lufia2ActorAddSignedPair(memory, cpu, 0x7fdd1cu, 0x0002u, 0xfae5u);
+    Lufia2ActorAddSignedPair(memory, cpu, WRAM_ACTOR_DISPLAY_OFFSET_Y, 0x0002u,
+        0xfae5u);
     LoadA16(cpu, cpu->y);                                      /* FAEF */
     IncrementA16(cpu);
     IncrementA16(cpu);
@@ -284,20 +287,20 @@ void Lufia2ActorMoveFinePosition(
     TransferDirectToA(cpu);
     LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
     Lufia2SignExtendA8(memory, cpu, 0xfa89u);
-    LoadXDirect(memory, cpu, 0xa9u);                           /* FA8A */
+    LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                           /* FA8A */
     cpu->carry = 0;
     Add16Value(
-        cpu, Read16Long(memory, LongIndexedAddress(0x7fddaeu, cpu->x)));
+        cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x)));
     Write16Long(
-        memory, LongIndexedAddress(0x7fddaeu, cpu->x), cpu->accumulator);
+        memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x), cpu->accumulator);
     PrimaryFineToTile(cpu);                                    /* FA95 */
     Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
-    Lufia2ActorAddSignedPair(memory, cpu, 0x7fde3eu, 0x0002u, 0xfaa6u);
+    Lufia2ActorAddSignedPair(memory, cpu, WRAM_ACTOR_FINE_Y, 0x0002u, 0xfaa6u);
     PrimaryFineToTile(cpu);                                    /* FAB0 */
     LoadYDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* FAB9 */
-    StoreAAbsolute8(memory, cpu, 0x06e2u, cpu->y);
+    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->y);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
-    StoreAAbsolute8(memory, cpu, 0x06bau, cpu->y);
+    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->y);
     SetAccumulatorWidth(cpu, 0);                               /* FAC3 */
     LoadA16(cpu, Read16Direct(memory, cpu, 0x2au));
     IncrementA16(cpu);
@@ -418,7 +421,7 @@ void Lufia2ActorReadMapCellValue(
             memory, LongIndexedAddress(0x7f0000u, cpu->x)));   /* FB76 */
     And16(cpu, 0x03ffu);                                       /* FB7A */
     cpu->carry = 0;                                            /* FB7D */
-    Add16Value(cpu, Read16Long(memory, 0x7fd03eu));            /* FB7E */
+    Add16Value(cpu, Read16Long(memory, WRAM_FIELD_METATILE_ATTRIBUTE_BASE)); /* FB7E */
     TransferAToX(cpu);                                         /* FB82 */
     SetAccumulatorWidth(cpu, 1);                               /* FB83 */
     TransferDirectToA(cpu);                                    /* FB85 */
@@ -442,14 +445,14 @@ void Lufia2ActorClearMapOccupancy(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* FA12 */
-    LoadAAbsolute8(memory, cpu, 0x06bau, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);
     ExchangeAccumulatorBytes(cpu);
-    LoadAAbsolute8(memory, cpu, 0x06e2u, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
     Lufia2MapCellIndex(memory, cpu, 0xfa1du, 0);               /* F9B6 */
-    ClearCellBit0(memory, cpu, 0x7e4000u);                     /* FA1E */
+    ClearCellBit0(memory, cpu, WRAM_FIELD_MAP_ATTRIBUTES); /* FA1E */
     PushIndex(memory, cpu);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
     Compare8(cpu, A8(cpu), 0x02u);
     cpu->x = PullIndexValue(memory, cpu);                      /* FA31 */
     if (cpu->carry)

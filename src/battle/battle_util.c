@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/battle.h"
+#include "system/wram.h"
 
 /* Mask bit per record without status bit 2. */
 static void ActiveBits(const Lufia2Memory *memory, Lufia2CpuState *cpu,
@@ -42,11 +43,11 @@ Lufia2ExecutionResult Lufia2BattleActiveMask(
     StoreZeroAbsolute8(memory, cpu, 0x0022u, 0);
     BitImmediate8(cpu, 0x80u);
     if (!cpu->zero) {
-        ActiveBits(memory, cpu, 0x0a6eu, 0x000au);
+        ActiveBits(memory, cpu, WRAM_BATTLE_ENEMY_RECORDS, 0x000au);
         Or8(cpu, 0x80u);
         return ExecutionReturned(0x81b290u);
     }
-    ActiveBits(memory, cpu, 0x0a64u, 0x0008u);
+    ActiveBits(memory, cpu, WRAM_BATTLE_PARTY_RECORDS, 0x0008u);
     return ExecutionReturned(0x81b2b4u);
 }
 
@@ -84,7 +85,7 @@ Lufia2ExecutionResult Lufia2BattleTargetRecord(
     And16(cpu, 0x00ffu);
     AslA16(cpu);
     TransferAToX(cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a64u, cpu->x));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_BATTLE_PARTY_RECORDS, cpu->x));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x81b2dau);
@@ -284,7 +285,7 @@ Lufia2ExecutionResult Lufia2BattleCommitPalettes(
     LoadX16(cpu, 0x01ffu);
     do {
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ff1dbu, cpu->x)));
-        StoreAAbsolute8(memory, cpu, 0x0320u, cpu->x);
+        StoreAAbsolute8(memory, cpu, WRAM_CGRAM_BUFFER, cpu->x);
         LoadX16(cpu, (uint16_t)(cpu->x - 1u));
     } while (!cpu->negative);
     LoadA8(cpu, 0x80u);
@@ -593,7 +594,7 @@ Lufia2ExecutionResult Lufia2BattlePaletteFade(
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, Read16Direct(memory, cpu, 0x22u));
         cpu->x = PullIndexValue(memory, cpu);
-        StoreAAbsolute16(memory, cpu, 0x0320u, cpu->x);
+        StoreAAbsolute16(memory, cpu, WRAM_CGRAM_BUFFER, cpu->x);
         SetAccumulatorWidth(cpu, 1);
         DecrementDirect8(memory, cpu, 0x19u);
     } while (!cpu->zero);

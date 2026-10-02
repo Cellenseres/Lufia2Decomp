@@ -162,7 +162,7 @@ Lufia2ExecutionResult Lufia2FieldMenuRequest(
     TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 0);
     if (!cpu->zero)
         return ExecutionHandoff(cpu, 0x8383bdu);
-    LoadAAbsolute8(memory, cpu, 0x09a7u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);
     BitImmediate8(cpu, 0x02u);
     if (!cpu->zero) {
         SetAccumulatorWidth(cpu, 0);                           /* 83AE */
