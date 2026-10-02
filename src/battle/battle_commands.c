@@ -254,7 +254,7 @@ Lufia2ExecutionResult Lufia2BattleCollectCommands(const Lufia2Memory *memory,
     if (!BattleCall(&battle, 0xc772u, 0x85ec81u, 3u))
         goto unwound;
     OpLoadA(cpu, 10u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x2109u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_BG3SC));
     OpLoadA(cpu, 0x97u);
     OpSta(memory, cpu, OpDp(cpu, COMMAND_DP_PALETTE_BANK));
     OpLdy(cpu, 0xfe46u);

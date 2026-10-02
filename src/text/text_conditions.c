@@ -9,13 +9,13 @@
 /* $80:A1CC: argument to record offset; DB-relative MMIO. */
 Lufia2ExecutionResult Lufia2TextConditionRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Lufia2TextNextByte(memory, cpu, 0xa1ceu);
-    StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
     LoadA8(cpu, 0xbeu);
-    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, 0x0badu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x80a1e3u);

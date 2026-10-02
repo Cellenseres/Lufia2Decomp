@@ -19,9 +19,9 @@ Lufia2ExecutionResult Lufia2AncientCaveCarryBlueItem(
                 OpStepMem(memory, cpu, OpDp(cpu, CAVE_CARRY_COUNT), 1);
                 OpLda(memory, cpu, OpDp(cpu, CAVE_CARRY_ITEM));
                 OpSepWidths(cpu, 0x20u);
-                OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
+                OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
                 ExchangeAccumulatorBytes(cpu);
-                OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
+                OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
                 OpRepWidths(cpu, 0x20u);
                 cpu->carry = 1;
                 return ExecutionReturned(0x848b1fu);
@@ -92,9 +92,9 @@ static Lufia2ExecutionResult CollectCaveCarryItems(
     Lufia2ExecutionResult result;
     unsigned steps = 0u;
     OpLdx(cpu, WRAM_ANCIENT_CAVE_CARRY_ITEMS & 0xffffu);
-    OpWrite16(memory, OpAbs(cpu, 0x2181u), cpu->x);
+    OpWrite16(memory, OpAbs(cpu, SNES_WMADDL), cpu->x);
     OpLoadA(cpu, 0x7eu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x2183u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
     OpRepWidths(cpu, 0x20u);
     OpLdy(cpu, 0u);
     OpWrite16(memory, OpDp(cpu, CAVE_CARRY_COUNT), cpu->y);
@@ -110,10 +110,10 @@ static Lufia2ExecutionResult CollectCaveCarryItems(
                 PushIndex(memory, cpu);
                 OpStepMem(memory, cpu, OpDp(cpu, CAVE_CARRY_COUNT), 1);
                 OpSepWidths(cpu, 0x20u);
-                OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
+                OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
                 ExchangeAccumulatorBytes(cpu);
                 OpOraValue(cpu, 2u);
-                OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
+                OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
                 OpTxa(cpu);
                 OpLsrA(cpu);
                 cpu->carry = 0;
@@ -176,9 +176,9 @@ static Lufia2ExecutionResult RestoreCaveBackup(
     unsigned steps = 0u;
     OpSepWidths(cpu, 0x20u);
     OpLdx(cpu, WRAM_ANCIENT_CAVE_STATE_BACKUP & 0xffffu);
-    OpWrite16(memory, OpAbs(cpu, 0x2181u), cpu->x);
+    OpWrite16(memory, OpAbs(cpu, SNES_WMADDL), cpu->x);
     OpLoadA(cpu, 0x7fu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x2183u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
     OpLdx(cpu, 0u);
     for (;;) {
         if (++steps > CAVE_LOOP_LIMIT)
@@ -199,7 +199,7 @@ static Lufia2ExecutionResult RestoreCaveBackup(
             uint32_t destination;
             if (++steps > CAVE_LOOP_LIMIT)
                 return ExecutionHandoff(cpu, 0x848a25u);
-            OpLda(memory, cpu, OpAbs(cpu, 0x2180u));
+            OpLda(memory, cpu, OpAbs(cpu, SNES_WMDATA));
             destination = Read16Direct(memory, cpu, CAVE_RESTORE_DESTINATION);
             destination |= (uint32_t)Read8(memory,
                 DirectAddress(cpu, CAVE_RESTORE_BANK)) << 16;

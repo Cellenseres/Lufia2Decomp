@@ -37,9 +37,9 @@ static void AttributeActors(
         BitImmediate8(cpu, 0x06u);
         if (cpu->zero) {
             LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->y);      /* row */
-            StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+            StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
             LoadAAbsolute8(memory, cpu, MAP_WIDTH, 0);
-            StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+            StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
             TransferYToX(cpu);
             Write8(memory, DirectAddress(cpu, 0x9au), 0x00u);
             LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
@@ -62,7 +62,7 @@ static void AttributeActors(
             LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->y);      /* column */
             SetAccumulatorWidth(cpu, 0);
             cpu->carry = 0;
-            Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+            Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
             TransferAToX(cpu);
             SetAccumulatorWidth(cpu, 1);
             AttributeSet(memory, cpu, ATTRIBUTES, 0x01u);
@@ -216,15 +216,15 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
         if (cpu->zero)
             break;
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef002u, cpu->x)));
-        StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+        StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
         LoadAAbsolute8(memory, cpu, MAP_WIDTH, 0);
-        StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+        StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
         TransferDirectToA(cpu);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef001u, cpu->x)));
         PushIndex(memory, cpu);
         SetAccumulatorWidth(cpu, 0);
         cpu->carry = 0;
-        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
         TransferAToX(cpu);
         SetAccumulatorWidth(cpu, 1);
         AttributeSet(memory, cpu, ATTRIBUTES, 0x01u);

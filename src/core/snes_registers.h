@@ -6,6 +6,7 @@
 #define SNES_INIDISP 0x2100u
 #define SNES_BGMODE 0x2105u
 #define SNES_MOSAIC 0x2106u
+#define SNES_BG3SC 0x2109u
 #define SNES_BG1HOFS 0x210du
 #define SNES_BG1VOFS 0x210eu
 #define SNES_BG2HOFS 0x210fu
@@ -47,6 +48,7 @@
 #define SNES_WMADDM 0x2182u
 #define SNES_WMADDH 0x2183u
 #define SNES_NMITIMEN 0x4200u
+#define SNES_WRIO 0x4201u
 #define SNES_WRMPYA 0x4202u
 #define SNES_WRMPYB 0x4203u
 #define SNES_WRDIVL 0x4204u
@@ -54,6 +56,7 @@
 #define SNES_WRDIVB 0x4206u
 #define SNES_MDMAEN 0x420bu
 #define SNES_HDMAEN 0x420cu
+#define SNES_RDNMI 0x4210u
 #define SNES_RDDIVL 0x4214u
 #define SNES_RDDIVH 0x4215u
 #define SNES_RDMPYL 0x4216u

@@ -142,21 +142,21 @@ Lufia2ExecutionResult Lufia2PartyBaseStats(
     unsigned i;
 
     LoadAAbsolute8(memory, cpu, MEMBER, 0);
-    StoreAAbsolute8(memory, cpu, 0x4202u, 0);
-    StoreA8Absolute(memory, cpu, 0x4203u, 0x0eu);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
+    StoreA8Absolute(memory, cpu, SNES_WRMPYB, 0x0eu);
     PushIndex(memory, cpu);
     PushY(memory, cpu);
     LoadX16(cpu, 0x0000u);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));   /* member * 14 */
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0)); /* member * 14 */
     PushY(memory, cpu);
-    StoreA8Absolute(memory, cpu, 0x4203u, 0x70u);
+    StoreA8Absolute(memory, cpu, SNES_WRMPYB, 0x70u);
     LoadX16(cpu, 0x0001u);
     SetAccumulatorWidth(cpu, 0);
     for (i = 0; i < 7u; ++i)
         Write16Absolute(memory, cpu, (uint16_t)(STATS + 2u * i), 0);
     LoadA16(cpu, 0xb62cu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     StoreADirect16(memory, cpu, 0xb2u);
     SetAccumulatorWidth(cpu, 1);
     for (;;) {

@@ -97,13 +97,13 @@ Lufia2ExecutionResult Lufia2BattleTargetSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     TargetIndex(memory, cpu);
-    StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
     LoadA8(cpu, 0x07u);
-    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, 0x1499u);
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x81b307u);
@@ -114,7 +114,7 @@ static void ScaleAdd(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, 0x0080u);
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     SetAccumulatorWidth(cpu, 1);
     ExchangeAccumulatorBytes(cpu);
     cpu->carry = 0;
@@ -133,9 +133,9 @@ Lufia2ExecutionResult Lufia2BattleBlend(
     if (cpu->carry) {
         cpu->carry = 1;                                        /* B52F */
         Sbc8(cpu, base);
-        StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+        StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
         LoadA8(cpu, DirectByte(memory, cpu, 0x29u));
-        StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+        StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
         ScaleAdd(memory, cpu);
         return ExecutionReturned(0x81b549u);
     }
@@ -146,11 +146,11 @@ Lufia2ExecutionResult Lufia2BattleBlend(
     ExchangeAccumulatorBytes(cpu);
     cpu->carry = 1;
     Sbc8(cpu, DirectByte(memory, cpu, 0xcau));
-    StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
     TransferDirectToA(cpu);
     cpu->carry = 1;
     Sbc8(cpu, DirectByte(memory, cpu, 0x29u));
-    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
     ScaleAdd(memory, cpu);
     return ExecutionReturned(0x81b52eu);
 }

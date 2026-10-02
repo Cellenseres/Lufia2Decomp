@@ -403,38 +403,38 @@ Lufia2ExecutionResult Lufia2SpriteGraphicsUpload(
     do {
         LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05c2u, cpu->x));
         if (!cpu->zero) {
-            Write16Absolute(memory, cpu, 0x4302u, cpu->y);     /* 819F */
+            Write16Absolute(memory, cpu, SNES_A1TL(0), cpu->y); /* 819F */
             Write16Direct(memory, cpu, 0x54u, cpu->y);
             Write8(memory, AbsoluteIndexedAddress(cpu, 0x05c2u, cpu->x), 0x00u);
             Write8(memory, AbsoluteIndexedAddress(cpu, 0x05c3u, cpu->x), 0x00u);
             LoadAAbsolute8(memory, cpu, 0x11d9u, cpu->x);
-            StoreAAbsolute8(memory, cpu, 0x4304u, 0);
+            StoreAAbsolute8(memory, cpu, SNES_A1B(0), 0);
             LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11e9u, cpu->x));
             Write16Direct(memory, cpu, 0x56u, cpu->y);
-            Write16Absolute(memory, cpu, 0x2116u, cpu->y);
+            Write16Absolute(memory, cpu, SNES_VMADDL, cpu->y);
             LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11f9u, cpu->x));
             Write16Direct(memory, cpu, 0x58u, cpu->y);
-            Write16Absolute(memory, cpu, 0x4305u, cpu->y);
+            Write16Absolute(memory, cpu, SNES_DASL(0), cpu->y);
             for (i = 0; i < 2u; ++i) {
                 if (i) {
                     SetAccumulatorWidth(cpu, 0);               /* 81CF */
                     LoadA16(cpu, Read16Direct(memory, cpu, 0x56u));
                     cpu->carry = 0;
                     Add16Value(cpu, 0x0100u);
-                    Write16Absolute(memory, cpu, 0x2116u, cpu->accumulator);
+                    Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
                     LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
-                    Write16Absolute(memory, cpu, 0x4305u, cpu->accumulator);
+                    Write16Absolute(memory, cpu, SNES_DASL(0), cpu->accumulator);
                     cpu->carry = 0;
                     Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
-                    Write16Absolute(memory, cpu, 0x4302u, cpu->accumulator);
+                    Write16Absolute(memory, cpu, SNES_A1TL(0), cpu->accumulator);
                     SetAccumulatorWidth(cpu, 1);
                 }
                 LoadA8(cpu, 0x01u);                            /* 81C0 */
-                StoreAAbsolute8(memory, cpu, 0x4300u, 0);
+                StoreAAbsolute8(memory, cpu, SNES_DMAP(0), 0);
                 LoadA8(cpu, 0x18u);
-                StoreAAbsolute8(memory, cpu, 0x4301u, 0);
+                StoreAAbsolute8(memory, cpu, SNES_BBAD(0), 0);
                 LoadA8(cpu, 0x01u);
-                StoreAAbsolute8(memory, cpu, 0x420bu, 0);
+                StoreAAbsolute8(memory, cpu, SNES_MDMAEN, 0);
             }
         }
         IncrementX16(cpu);                                     /* 81F6 */

@@ -199,16 +199,16 @@ static void PopupDigits(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferAToY(cpu);
     SetAccumulatorWidth(cpu, 1);
     for (i = 0; i < 4u; ++i) {
-        StoreWordAbsolute(memory, cpu, 0x4204u, cpu->y);
+        StoreWordAbsolute(memory, cpu, SNES_WRDIVL, cpu->y);
         LoadA8(cpu, 0x0au);
-        StoreAAbsolute8(memory, cpu, 0x4206u, 0);
+        StoreAAbsolute8(memory, cpu, SNES_WRDIVB, 0);
         PushIndex(memory, cpu);
         cpu->x = PullIndexValue(memory, cpu);
         PushAccumulator8(memory, cpu);
         LoadA8(cpu, Pull8(memory, cpu));
-        LoadAAbsolute8(memory, cpu, 0x4216u, 0);
+        LoadAAbsolute8(memory, cpu, SNES_RDMPYL, 0);
         Write8(memory, LongIndexedAddress(0x7e4f13u - i, cpu->x), A8(cpu));
-        LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4214u, 0));
+        LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDDIVL, 0));
         if (cpu->zero)
             break;
     }

@@ -779,18 +779,18 @@ static void WorldScaleStep(
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadA8(cpu, DirectByte(memory, cpu, 0x50u));               /* A583 */
-    StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
     LoadA8(cpu, DirectByte(memory, cpu, 0x4eu));
-    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
     LoadA8(cpu, DirectByte(memory, cpu, 0x4fu));
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     StoreXDirect16(memory, cpu, 0x51u);
-    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
     Write8(memory, DirectAddress(cpu, 0x53u), 0x00u);
     SetAccumulatorWidth(cpu, 0);
     LoadADirect16(memory, cpu, 0x52u);
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     StoreADirect16(memory, cpu, 0x52u);
     SetAccumulatorWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);

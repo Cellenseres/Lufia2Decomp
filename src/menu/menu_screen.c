@@ -1196,14 +1196,14 @@ static void ShopPriceTimes200(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 
     Write16Absolute(memory, cpu, 0x09bdu, cpu->x);
     StoreZeroAbsolute8(memory, cpu, 0x09bfu, 0);
-    StoreA8Absolute(memory, cpu, 0x4202u, 0xc8u);
+    StoreA8Absolute(memory, cpu, SNES_WRMPYA, 0xc8u);
     for (i = 0; i < 3u; ++i) {
         if (i < 2u)
             LoadAAbsolute8(memory, cpu, (uint16_t)(0x09bdu + i), 0);
         else
             LoadA8(cpu, 0x00u);
-        StoreAAbsolute8(memory, cpu, 0x4203u, 0);
-        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+        StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
+        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
         StoreXDirect16(memory, cpu, kProducts[i]);
     }
     LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
