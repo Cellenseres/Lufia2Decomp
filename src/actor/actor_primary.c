@@ -13,9 +13,9 @@ Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
     Lufia2ActorScriptDispatchResult result;
     uint16_t actor_record;
 
-    LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E0736, cpu->x)));
+    LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x)));
     And8(cpu, 0xebu);
-    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E0736, cpu->x), A8(cpu));
+    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x), A8(cpu));
     PushDataBank(memory, cpu);
     SetIndexWidth(cpu, 0);
     LoadXDirect16(memory, cpu, DP_SLOT_RECORD_OFFSET);
@@ -666,9 +666,9 @@ void Lufia2ActorPrimaryReset(
         And8(cpu, 0xfdu);
         StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     }
-    LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);              /* C977 */
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);              /* C977 */
     And8(cpu, 0xfdu);
-    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     LoadA8(cpu, 0x08u);
     Write8(memory, LongIndexedAddress(0x7fe4deu, cpu->x), A8(cpu));
     SimulateJslFrame(memory, cpu, 0x83u, 0xc988u);             /* C985 */
@@ -690,7 +690,7 @@ void Lufia2ActorClearSlotLinks(
 void Lufia2ActorBlockedEvent(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));                     /* CA68 */
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));                     /* CA68 */
     BitImmediate8(cpu, 0x40u);
     if (!cpu->zero)
         return;
@@ -1113,14 +1113,14 @@ d14d_commit:
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:C8FC */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E0736, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x)));
                                                         /* $83:C8FE */
         if ((handler_pc & 0x00ffffffu) == PRIMARY_OP_SET_FLAG_1)
             Or8(cpu, 0x02u);                           /* $83:C901 */
         else
             And8(cpu, 0xfdu);                          /* $83:C90F */
         Write8(
-            memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E0736, cpu->x),
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x),
             A8(cpu));                                  /* $83:C903 */
         IncrementY16(cpu);                             /* $83:C906 */
         dispatch = PrimaryRedispatch(memory, cpu, 0);  /* $83:C85C */
@@ -1156,11 +1156,11 @@ d14d_commit:
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* $83:CBD0 */
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E0736, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x)));
                                                         /* $83:CBD2 */
         Or8(cpu, 0x40u);                               /* $83:CBD5 */
         Write8(
-            memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E0736, cpu->x),
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x),
             A8(cpu));                                  /* $83:CBD7 */
         result.flow = LUFIA2_ACTOR_PRIMARY_SCRIPT_CONTINUE_C8D2;
         result.handler_pc = 0x83c8d2u;                 /* $83:CBDA */

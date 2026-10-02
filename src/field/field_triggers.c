@@ -65,7 +65,7 @@ static uint8_t FieldTouchScan(
         BitImmediate8(cpu, 0x80u);
         if (!cpu->zero)
             goto next;
-        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
         BitImmediate8(cpu, 0x14u);
         if (!cpu->zero)
             goto next;
@@ -174,7 +174,7 @@ Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
         FieldIdle(memory, cpu, 0x81dau);
         SetIndexWidth(cpu, 0);
         if (cpu->zero) {
-            LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));             /* 81DF */
+            LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));             /* 81DF */
             BitImmediate8(cpu, 0x3cu);
             if (cpu->zero) {
                 PushDataBank(memory, cpu);                     /* 81E7 */
@@ -200,7 +200,7 @@ Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
         if (cpu->zero) {
             uint8_t armed = 0;
 
-            LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));             /* 8205 */
+            LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));             /* 8205 */
             BitImmediate8(cpu, 0x04u);
             if (!cpu->zero) {
                 armed = 1;
@@ -232,7 +232,7 @@ Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
         LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, 0);
         BitImmediate8(cpu, 0x80u);
         if (cpu->zero) {
-            LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));
+            LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));
             BitImmediate8(cpu, 0x08u);
             if (cpu->zero) {
                 /* Door/warp handling stays in LLE. */

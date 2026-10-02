@@ -600,9 +600,9 @@ void Lufia2EventClaimActor(
     And8(cpu, 0xfbu);
     Or8(cpu, 0x22u);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-    LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     Or8(cpu, 0x10u);
-    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     TransferDirectToA(cpu);
     Write8(memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_TIMER, cpu->x), A8(cpu));
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
@@ -642,10 +642,10 @@ static uint8_t EventPlaceActorAt(
     LoadA8(cpu, DirectByte(memory, cpu, 0x23u));
     if (!cpu->negative)
         StoreAAbsolute8(memory, cpu, WRAM_EVENT_MAP_0692, cpu->x);
-    LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);              /* DFF0 */
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);              /* DFF0 */
     And8(cpu, 0xf7u);
     Or8(cpu, 0x12u);
-    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     LoadA8(cpu, 0x09u);
     StoreAAbsolute8(memory, cpu, 0x070au, cpu->x);
     SimulateJslFrame(memory, cpu, 0x80u, 0xe002u);
@@ -818,9 +818,9 @@ static unsigned EventOpMoveActor(
     Lufia2EventNextByte(memory, cpu, 0xdfa0u);
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
     Write8(memory, LongIndexedAddress(0x7fe4deu, cpu->x), A8(cpu));
-    LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     Or8(cpu, 0x10u);
-    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     EventRestoreSlot(memory, cpu, 0xdfb1u);
     return EVENT_OPCODE_NEXT;
 }
@@ -906,7 +906,7 @@ static void EventLeaderUnblock(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));                     /* D49B */
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));                     /* D49B */
     BitImmediate8(cpu, 0x04u);
     if (!cpu->zero) {
         LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, 0);
@@ -967,9 +967,9 @@ static unsigned EventOpLeaderAction(
         And8(cpu, 0x87u);
         Or8(cpu, 0x20u);
         StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
         And8(cpu, 0xfdu);
-        StoreAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     }
     LoadA8(cpu, Pull8(memory, cpu));
     EventSelectActor(memory, cpu, facing ? 0xd47au : 0xd497u);
@@ -1418,9 +1418,9 @@ static unsigned EventOpHideActor(
     if (hide) {
         Or8(cpu, 0x04u);
         StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
         Or8(cpu, 0x20u);
-        StoreAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
         SimulateJslFrame(memory, cpu, 0x8eu, 0xbb2cu);
         cpu->program_bank = 0x83u;
         Lufia2ActorClearMapOccupancy(memory, cpu);             /* $83:FA12 */
@@ -1428,11 +1428,11 @@ static unsigned EventOpHideActor(
     } else {
         And8(cpu, 0xfbu);                                      /* BAF6 */
         StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
         BitImmediate8(cpu, 0x20u);
         if (!cpu->zero) {
             And8(cpu, 0xdfu);
-            StoreAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+            StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
             LoadAAbsolute8(memory, cpu, WRAM_ACTOR_ID, cpu->x);
             cpu->carry = 1;
             Sbc8(cpu, 0x50u);
@@ -1716,9 +1716,9 @@ static void EventActorSprite(
     LoadA8(cpu, 0xffu);
     Write8(memory, LongIndexedAddress(0x001471u, cpu->x), A8(cpu));
     Write8(memory, LongIndexedAddress(WRAM_UNK_7E066A, cpu->x), A8(cpu));
-    LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     Or8(cpu, 0x02u);
-    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E1291, cpu->x), 0x00u);
     SimulateRtsFrame(memory, cpu);
 }

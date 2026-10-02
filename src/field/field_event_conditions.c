@@ -619,7 +619,7 @@ static void EventD0F4Condition(
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, 0x01u);
     Write8(memory, EVENT_CONDITION, A8(cpu));
-    LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero) {
         ExchangeAccumulatorBytes(cpu);
@@ -987,7 +987,7 @@ static unsigned EventOpGotoUnlessActorsBit5(
         cpu->carry = 0;
         Adc8(cpu, 0x4fu);
         Lufia2EventFindActorId(memory, cpu, 0xe0b4u);
-        LoadAAbsolute8(memory, cpu, 0x0736u, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
         BitImmediate8(cpu, 0x20u);
         if (cpu->zero) {
             TransferDirectToA(cpu);                            /* E0BC */

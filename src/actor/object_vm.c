@@ -624,7 +624,7 @@ static ObjectFlow ObjectOp23(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
-    Write8(memory, WRAM_UNK_7FD0A1, A8(cpu));
+    Write8(memory, WRAM_FIELD_CONTROL_FLAGS, A8(cpu));
     return OBJECT_FLOW_DISPATCH;
 }
 
@@ -633,8 +633,8 @@ static ObjectFlow ObjectOp8DOrFieldBits(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-    Or8(cpu, Read8(memory, WRAM_UNK_7FD0A1));
-    Write8(memory, WRAM_UNK_7FD0A1, A8(cpu));
+    Or8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));
+    Write8(memory, WRAM_FIELD_CONTROL_FLAGS, A8(cpu));
     IncrementY16(cpu);
     return OBJECT_FLOW_DISPATCH;
 }
@@ -701,9 +701,9 @@ static ObjectFlow ObjectOp292BCX(
 static ObjectFlow ObjectOp84SetFieldBit4(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));
     Or8(cpu, 0x10u);
-    Write8(memory, WRAM_UNK_7FD0A1, A8(cpu));
+    Write8(memory, WRAM_FIELD_CONTROL_FLAGS, A8(cpu));
     return OBJECT_FLOW_DISPATCH;
 }
 

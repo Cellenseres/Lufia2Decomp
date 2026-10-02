@@ -212,7 +212,7 @@ notes = "Tile row per slot; $83:A746 derives the fine y position from it."
 
 [[location]]
 address = "7E:0736"
-name = "unk_7E0736"
+name = "actor_flags"
 width = 1
 count = 40
 owner = "actor"
@@ -343,7 +343,7 @@ notes = "Sound command stored by $84:8766 unless $05B6 bit 1 is set; the field l
 
 [[location]]
 address = "7F:D0A1"
-name = "unk_7FD0A1"
+name = "field_control_flags"
 width = 1
 owner = "field"
 notes = "Field control bits. $83:BB93 lets only the leader run $83:C7F8 while $2C is set; bit 2 records blocked steps, bit 6 gates $83:CA68."

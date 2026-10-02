@@ -186,7 +186,7 @@ static int TextConditionSpecial(const Lufia2Memory *memory, Lufia2CpuState *cpu)
         Lufia2TextNextByte(memory, cpu, 0xa135u);
         PushY(memory, cpu);
         LoadX16(cpu, Read16Direct(memory, cpu, DP_ACTOR_SLOT));
-        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
         BitImmediate8(cpu, 0x20u);
         if (!cpu->zero) {
             LoadA8(cpu, 0xffu);

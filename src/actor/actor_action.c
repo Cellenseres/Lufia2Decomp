@@ -185,11 +185,11 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
                                                                /* D354 */
     LoadA8(
         cpu, Read8(
-            memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E0736, cpu->x)));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x)));
                                                                /* D358 */
     And8(cpu, 0xefu);                                         /* D35B */
     Write8(
-        memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E0736, cpu->x),
+        memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x),
         A8(cpu));                                              /* D35D */
     LoadA8(
         cpu, Read8(

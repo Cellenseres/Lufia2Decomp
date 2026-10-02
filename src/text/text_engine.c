@@ -716,7 +716,7 @@ static uint8_t TextPlaceActor(
         return 0;
     SimulateJslFrame(memory, cpu, 0x80u, 0xbcbau);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* C1A7 */
-    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E0736, cpu->x), 0x00u);
+    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x), 0x00u);
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     And8(cpu, 0xfbu);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
