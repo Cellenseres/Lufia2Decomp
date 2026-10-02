@@ -1,16 +1,34 @@
 #include "battle/battle_internal.h"
 
+/* Each party member's status icon cycles through the ailments it has, one
+ * animation frame pair at a time. */
+enum {
+    ICON_CYCLE_LENGTH = 10u,
+    ICON_STATUS_MASK = 0x3bu,
+    ICON_MASK_TABLE = 0x859ea6u,
+    ICON_TILE_TABLE = 0x859eb0u,
+    ICON_PERIOD_CLASS_TABLE = 0x97b418u,
+    ICON_PERIOD_TABLE = 0x97ca5eu,
+    ICON_SPRITE_STATE = 0x1435u,
+    ICON_SPRITE_TILE = 0x1438u,
+    ICON_SPRITE_SHOWN = 0x80u,
+    ICON_SPRITE_HIDDEN_MASK = 0x7fu,
+};
+
+/* Moves the icon to the next ailment the member has (the cycle wraps at ten
+ * entries, two frames per ailment), shows that ailment's tile and marks the
+ * sprite as visible. */
 static void BattleAdvanceStatusIcon(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpStz(memory, cpu, OpAbs(cpu, BATTLE_ICON_TIMER));
     OpLda(memory, cpu, OpAbs(cpu, BATTLE_ICON_CYCLE_INDEX));
     do {
         OpIncA(cpu);
-        OpCmpValue(cpu, 0x0au);
+        OpCmpValue(cpu, ICON_CYCLE_LENGTH);
         if (cpu->zero)
             TransferDirectToA(cpu);
         OpSta(memory, cpu, OpAbs(cpu, BATTLE_ICON_CYCLE_INDEX));
         OpTax(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0x859ea6u));
+        OpLda(memory, cpu, OpLongX(cpu, ICON_MASK_TABLE));
         OpAndValue(cpu, OpReadM(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_STATUS_MASK)));
         if (!cpu->zero)
             break;
@@ -18,16 +36,19 @@ static void BattleAdvanceStatusIcon(const Lufia2Memory *memory, Lufia2CpuState *
     } while (true);
     OpTxa(cpu);
     OpSta(memory, cpu, OpAbs(cpu, BATTLE_ICON_CYCLE_INDEX));
-    OpLda(memory, cpu, OpLongX(cpu, 0x859eb0u));
+    OpLda(memory, cpu, OpLongX(cpu, ICON_TILE_TABLE));
     PushY(memory, cpu);
     OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_SPRITE_OFFSET)));
-    OpSta(memory, cpu, OpAbsY(cpu, 0x1438u));
-    OpLda(memory, cpu, OpAbsY(cpu, 0x1435u));
-    OpOraValue(cpu, 0x80u);
-    OpSta(memory, cpu, OpAbsY(cpu, 0x1435u));
+    OpSta(memory, cpu, OpAbsY(cpu, ICON_SPRITE_TILE));
+    OpLda(memory, cpu, OpAbsY(cpu, ICON_SPRITE_STATE));
+    OpOraValue(cpu, ICON_SPRITE_SHOWN);
+    OpSta(memory, cpu, OpAbsY(cpu, ICON_SPRITE_STATE));
     OpPullY(memory, cpu);
 }
 
+/* Counts the icon's timer up; once it reaches the period of the member's
+ * ailment class the icon advances. Returns true when the icon should be hidden:
+ * the member is downed or has no icon-worthy ailment. */
 static bool BattleUpdateStatusIconTimer(const Lufia2Memory *memory,
                                         Lufia2CpuState *cpu) {
     OpPushX(memory, cpu);
@@ -41,16 +62,16 @@ static bool BattleUpdateStatusIconTimer(const Lufia2Memory *memory,
         OpPullX(memory, cpu);
         return true;
     }
-    OpAndValue(cpu, 0x3bu);
+    OpAndValue(cpu, ICON_STATUS_MASK);
     if (cpu->zero) {
         OpPullX(memory, cpu);
         return true;
     }
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_STATUS_MASK));
     OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x97b418u));
+    OpLda(memory, cpu, OpLongX(cpu, ICON_PERIOD_CLASS_TABLE));
     OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x97ca5eu));
+    OpLda(memory, cpu, OpLongX(cpu, ICON_PERIOD_TABLE));
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_PERIOD));
     OpLda(memory, cpu, OpAbs(cpu, BATTLE_ICON_TIMER));
     OpCmp(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_PERIOD));
@@ -91,10 +112,10 @@ Lufia2ExecutionResult Lufia2BattleAnimateStatusIcons(const Lufia2Memory *memory,
             OpLdy(cpu,
                   OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ICON_SPRITE_OFFSET)));
             /* Hidden icons retain A, including downed-status bits. */
-            OpSta(memory, cpu, OpAbsY(cpu, 0x1438u));
-            OpLda(memory, cpu, OpAbsY(cpu, 0x1435u));
-            OpAndValue(cpu, 0x7fu);
-            OpSta(memory, cpu, OpAbsY(cpu, 0x1435u));
+            OpSta(memory, cpu, OpAbsY(cpu, ICON_SPRITE_TILE));
+            OpLda(memory, cpu, OpAbsY(cpu, ICON_SPRITE_STATE));
+            OpAndValue(cpu, ICON_SPRITE_HIDDEN_MASK);
+            OpSta(memory, cpu, OpAbsY(cpu, ICON_SPRITE_STATE));
             OpPullY(memory, cpu);
         }
         SetAccumulatorWidth(cpu, 0);
@@ -105,7 +126,7 @@ Lufia2ExecutionResult Lufia2BattleAnimateStatusIcons(const Lufia2Memory *memory,
         SetAccumulatorWidth(cpu, 1);
         OpInx(cpu);
         OpInx(cpu);
-        for (unsigned i = 0; i < 4u; ++i)
+        for (unsigned i = 0; i < BATTLE_STATUS_ICON_RECORD_SIZE; ++i)
             OpIny(cpu);
         OpCpy(cpu, WRAM_BATTLE_STATUS_ICON_RECORDS_COUNT * BATTLE_STATUS_ICON_RECORD_SIZE);
         if (cpu->zero)
