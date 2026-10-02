@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-378 functions in `metadata/functions.toml`: 366 verified, 12 draft, 0 identified, 0 disabled.
+380 functions in `metadata/functions.toml`: 366 verified, 14 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -742,6 +742,15 @@ per-frame object update. They are compared against the original ROM code on
 random object tables, camera positions and data banks, including the
 screen-edge boundaries, for CPU state, work RAM, ordered writes and the
 frames they leave behind. They await the maintainer's verifier.
+
+`$86:E0B9` (start an animation on an object: first frame record, step,
+timer and tile base) and `$86:E11F` (the per-frame timer step of the 22
+objects at `$1469`, with the frame advance and the loop or restart at the
+end of an animation) are `draft` reconstructions in the same file. Both
+need M1X0 and the world map data bank for the animation tables; any other
+entry state is handed back. They are compared against the original ROM code
+on random object tables, including wrapped frame counters, flagged
+animation ends and data bank mirrors.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary

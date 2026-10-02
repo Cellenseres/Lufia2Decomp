@@ -3139,3 +3139,20 @@ source = "src/world/world_map_objects.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# World map object animation: start and per-frame step.
+[[function]]
+address = "86:E0B9"
+name = "Lufia2WorldMapStartAnimation"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:E11F"
+name = "Lufia2WorldMapStepAnimations"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
