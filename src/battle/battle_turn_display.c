@@ -71,7 +71,7 @@ Lufia2ExecutionResult Lufia2BattlePartyStatusRow(const Lufia2Memory *memory,
     OpLda(memory, cpu, OpLongX(cpu, 0x818819u));
     PushAccumulator16(memory, cpu);
     OpSepWidths(cpu, 0x20u);
-    OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, 0x0a64u)));
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_RECORDS)));
     OpTyx(cpu);
     OpPullY(memory, cpu);
     OpCpx(cpu, 0u);

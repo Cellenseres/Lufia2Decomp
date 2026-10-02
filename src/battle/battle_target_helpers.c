@@ -26,24 +26,24 @@ static Lufia2ExecutionResult TargetCursor(const Lufia2Memory *memory,
     OpInx(cpu);
     OpInx(cpu);
     OpInx(cpu);
-    OpStepMem(memory, cpu, OpAbs(cpu, 0x15dau), 1);
+    OpStepMem(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT), 1);
     return ExecutionReturned(0x81d974u);
 }
 Lufia2ExecutionResult Lufia2BattleEnemyCursor(const Lufia2Memory *memory,
                                               Lufia2CpuState *cpu) {
-    return TargetCursor(memory, cpu, 0x1bc8u, false);
+    return TargetCursor(memory, cpu, WRAM_BATTLE_ENEMY_TARGETS, false);
 }
 Lufia2ExecutionResult Lufia2BattlePartyCursor(const Lufia2Memory *memory,
                                               Lufia2CpuState *cpu) {
-    return TargetCursor(memory, cpu, 0x1bb0u, false);
+    return TargetCursor(memory, cpu, WRAM_BATTLE_PARTY_TARGETS, false);
 }
 Lufia2ExecutionResult Lufia2BattleEnemyMarkedCursor(const Lufia2Memory *memory,
                                                     Lufia2CpuState *cpu) {
-    return TargetCursor(memory, cpu, 0x1bc8u, true);
+    return TargetCursor(memory, cpu, WRAM_BATTLE_ENEMY_TARGETS, true);
 }
 Lufia2ExecutionResult Lufia2BattlePartyMarkedCursor(const Lufia2Memory *memory,
                                                     Lufia2CpuState *cpu) {
-    return TargetCursor(memory, cpu, 0x1bb0u, true);
+    return TargetCursor(memory, cpu, WRAM_BATTLE_PARTY_TARGETS, true);
 }
 
 Lufia2ExecutionResult Lufia2BattleTargetCoordinates(const Lufia2Memory *memory,
@@ -110,7 +110,7 @@ Lufia2ExecutionResult Lufia2BattleTargetCoordinates(const Lufia2Memory *memory,
     PushAccumulator16(memory, cpu);
     OpAslA(cpu);
     OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0a6eu));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_ENEMY_RECORDS));
     OpTax(cpu);
     OpLda(memory, cpu, OpAbsX(cpu, 0x50u));
     if (!BattleCall(&battle, 0xb924u, 0x81fbc6u, 3u) ||

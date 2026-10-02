@@ -25,7 +25,7 @@ static void CommandListName(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             uint16_t length) {
     OpLdy(cpu, 0u);
     do {
-        OpLda(memory, cpu, OpAbsY(cpu, 0x0b77u));
+        OpLda(memory, cpu, OpAbsY(cpu, WRAM_MENU_SPELL_RECORD));
         OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
         OpIny(cpu);
         Compare16(cpu, cpu->y, length);
@@ -129,10 +129,10 @@ Lufia2ExecutionResult Lufia2BattleSpellCommands(const Lufia2Memory *memory,
 
     StartCommandList(memory, cpu);
     OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, 0x001be8u);
+    OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
     OpAslA(cpu);
     OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0a64u));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_RECORDS));
     OpTax(cpu);
     OpLda(memory, cpu, OpAbsX(cpu, 0x13u));
     OpCmpValue(cpu, 0xffu);
@@ -147,7 +147,7 @@ Lufia2ExecutionResult Lufia2BattleSpellCommands(const Lufia2Memory *memory,
         if (cpu->zero) {
             CommandListPadding(memory, cpu, 16u);
         } else {
-            OpSta(memory, cpu, OpAbs(cpu, 0x0a0bu));
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_SPELL_RECORD_ID));
             OpPushX(memory, cpu);
             if (!BattleCall(&battle, 0xc093u, 0x81f414u, 3u))
                 return BattleChildUnwound(&battle);

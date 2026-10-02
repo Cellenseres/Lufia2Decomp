@@ -200,7 +200,7 @@ static bool TargetDrawSelection(BattleContext *battle) {
         OpLoadA(cpu, 0x7eu);
         OpSta(memory, cpu, OpDp(cpu, 0x5fu));
         OpLoadA(cpu, 0x20u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x0564u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
         if (!BattleCall(battle, 0xd5e3u, 0x808878u, 3u))
             return false;
         OpLda(memory, cpu, OpAbs(cpu, 0x4abeu));

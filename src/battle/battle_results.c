@@ -272,7 +272,7 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
         OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_IDS));
         OpLdx(cpu, 0u);
         for (;;) {
-            OpCmp(memory, cpu, OpAbsX(cpu, 0x0a7bu));
+            OpCmp(memory, cpu, OpAbsX(cpu, WRAM_MENU_PARTY_FIRST_ID));
             if (cpu->zero)
                 break;
             OpInx(cpu);
@@ -287,7 +287,7 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
     } while (!cpu->zero);
     if (!ResultAwardCapsuleExperience(&battle))
         goto unwound;
-    ResultAddReward(memory, cpu, OpAbs(cpu, 0x0a8au), WRAM_BATTLE_GOLD_REWARD);
+    ResultAddReward(memory, cpu, OpAbs(cpu, WRAM_GOLD), WRAM_BATTLE_GOLD_REWARD);
     OpLdy(cpu, 0xf085u);
     if (!BattleCall(&battle, 0xdd57u, 0x81dde7u, 2u) ||
         !ResultShowLineAndWait(&battle, 0xf0ebu, 0xdd5du, 0xdd60u))

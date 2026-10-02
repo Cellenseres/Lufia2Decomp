@@ -101,7 +101,7 @@ Lufia2ExecutionResult Lufia2BattlePartyWindows(const Lufia2Memory *memory,
         OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, 0x8809u)));
         OpWriteX(memory, cpu, OpDp(cpu, 0x11u), cpu->y);
         OpPushX(memory, cpu);
-        OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, 0x0a64u)));
+        OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_RECORDS)));
         if (!cpu->zero) {
             PushY(memory, cpu);
             OpLoadA(cpu, 13u);
@@ -164,7 +164,7 @@ Lufia2ExecutionResult Lufia2BattleClearActionWindow(const Lufia2Memory *memory,
         !BattleCall(&battle, 0xe1a1u, 0x859ceeu, 3u))
         return BattleChildUnwound(&battle);
     OpSepWidths(cpu, 0x20u);
-    OpStz(memory, cpu, OpAbs(cpu, 0x15d7u));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x0012f3u);
     if (!BattleCall(&battle, 0xe1b0u, 0x85ec81u, 3u))

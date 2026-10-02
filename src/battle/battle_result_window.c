@@ -88,7 +88,7 @@ Lufia2ExecutionResult Lufia2BattleResultWindowLine(const Lufia2Memory *memory,
     OpCmp(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WINDOW_HEIGHT));
     if (cpu->carry && !cpu->zero) {
         OpLda(memory, cpu, OpAbs(cpu, BATTLE_RESULT_TILE_ATTRIBUTES));
-        OpSta(memory, cpu, OpAbs(cpu, 0x0564u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
         OpLoadA(cpu, 0x85u);
         OpSta(memory, cpu, OpDp(cpu, 0x5fu));
         OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WRITE_POSITION)));
@@ -98,7 +98,7 @@ Lufia2ExecutionResult Lufia2BattleResultWindowLine(const Lufia2Memory *memory,
             return BattleChildUnwound(&battle);
     } else {
         OpLda(memory, cpu, OpAbs(cpu, BATTLE_RESULT_TILE_ATTRIBUTES));
-        OpSta(memory, cpu, OpAbs(cpu, 0x0564u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
         OpLoadA(cpu, 0x85u);
         OpSta(memory, cpu, OpDp(cpu, 0x5fu));
         OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, BATTLE_RESULT_WRITE_POSITION)));

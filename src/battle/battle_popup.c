@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/battle.h"
+#include "system/wram.h"
 
 enum {
     SLOTS = 0x7ff60cu,                  /* 11 slots, $1E bytes */
@@ -59,7 +60,7 @@ static void MemberSize(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t sprite_return, uint16_t size_return) {
     AslA16(cpu);
     TransferAToX(cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a6eu, cpu->x));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_BATTLE_ENEMY_RECORDS, cpu->x));
     TransferAToX(cpu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0050u, cpu->x));
     Jsl81(memory, cpu, sprite_return);

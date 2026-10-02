@@ -66,7 +66,7 @@ void BattleBuildPartyDisplayState(BattleContext *battle) {
     OpTxy(cpu);
 
     do {
-        OpLda(memory, cpu, OpAbsY(cpu, 0x153du));
+        OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_IDS));
         PushY(memory, cpu);
         OpTay(cpu);
 

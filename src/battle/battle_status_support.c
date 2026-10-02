@@ -7,7 +7,7 @@ Lufia2ExecutionResult Lufia2BattleStatusName(const Lufia2Memory *memory,
     OpLdy(cpu, 0u);
     for (;;) {
         OpLda(memory, cpu, OpAbsX(cpu, 0u));
-        OpSta(memory, cpu, OpAbsY(cpu, 0x1269u));
+        OpSta(memory, cpu, OpAbsY(cpu, WRAM_TEXT_WAIT_ACTOR));
         if (cpu->zero)
             break;
         OpInx(cpu);
@@ -43,7 +43,7 @@ Lufia2ExecutionResult Lufia2BattleStatusPhrase(const Lufia2Memory *memory,
     OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x1266u)));
     for (;;) {
         OpLda(memory, cpu, OpAbsX(cpu, 0u));
-        OpSta(memory, cpu, OpAbsY(cpu, 0x1269u));
+        OpSta(memory, cpu, OpAbsY(cpu, WRAM_TEXT_WAIT_ACTOR));
         if (cpu->zero)
             break;
         OpInx(cpu);

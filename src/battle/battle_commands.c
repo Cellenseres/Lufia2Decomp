@@ -234,7 +234,7 @@ Lufia2ExecutionResult Lufia2BattleCollectCommands(const Lufia2Memory *memory,
     OpLdx(cpu, 0xbfu);
     TransferDirectToA(cpu);
     do {
-        OpSta(memory, cpu, OpLongX(cpu, 0x7e3800u));
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_SAVE_FILE_BUFFER));
         OpDex(cpu);
     } while (!cpu->negative);
     if (!BattleCall(&battle, 0xc749u, 0x81c2e3u, 2u) ||
@@ -347,7 +347,7 @@ select_command:
     OpSta(memory, cpu, OpAbs(cpu, 0x101fu));
     OpSta(memory, cpu, OpAbs(cpu, 0x10ddu));
     OpLoadA(cpu, 0u);
-    OpSta(memory, cpu, 0x7ff8a2u);
+    OpSta(memory, cpu, WRAM_FIELD_BATTLE_RESULT);
     return ExecutionHandoff(cpu, 0x818855u);
 swap_command:
     OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_COUNT));
