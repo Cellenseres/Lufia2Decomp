@@ -9,6 +9,13 @@
 #include "system/system_internal.h"
 #include "system/wram.h"
 
+enum {
+    /* Shop description word, in the same bytes the battle screen keeps its
+     * party ids: bit 0 shows the owned items, bits 1-5 the sale lists, bit 7
+     * the extra list. */
+    MENU_SHOP_FLAGS = 0x1540u,
+};
+
 static void Jsr(const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t ret) {
     SimulateJsrFrame(memory, cpu, ret);
 }
@@ -94,17 +101,17 @@ static void MenuCursorPosition(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
 
     for (i = 0; i < 2u; ++i) {
         LoadAAbsolute8(memory, cpu, kIn[i][0], cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x1570u, 0);
-        StoreZeroAbsolute8(memory, cpu, 0x1571u, 0);
+        StoreAAbsolute8(memory, cpu, WRAM_SYSTEM_MULTIPLY_A, 0);
+        StoreZeroAbsolute8(memory, cpu, (WRAM_SYSTEM_MULTIPLY_A + 1u), 0);
         LoadAAbsolute8(memory, cpu, kIn[i][1], cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x1572u, 0);
-        StoreZeroAbsolute8(memory, cpu, 0x1573u, 0);
+        StoreAAbsolute8(memory, cpu, WRAM_SYSTEM_MULTIPLY_B, 0);
+        StoreZeroAbsolute8(memory, cpu, (WRAM_SYSTEM_MULTIPLY_B + 1u), 0);
         Lufia2CallMultiply(memory, cpu, 0x82u, kReturn[i]);
-        LoadAAbsolute8(memory, cpu, 0x1574u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_SYSTEM_MULTIPLY_PRODUCT, 0);
         cpu->carry = 0;
         Adc8(cpu, AbsoluteByte(memory, cpu, kBase[i][0], cpu->x));
         StoreIndexed(memory, cpu, kOut[i][0]);
-        LoadAAbsolute8(memory, cpu, 0x1575u, 0);
+        LoadAAbsolute8(memory, cpu, (WRAM_SYSTEM_MULTIPLY_PRODUCT + 1u), 0);
         Adc8(cpu, AbsoluteByte(memory, cpu, kBase[i][1], cpu->x));
         StoreIndexed(memory, cpu, kOut[i][1]);
     }
@@ -280,7 +287,7 @@ Lufia2ExecutionResult Lufia2MenuShopWindows(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1540u, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, MENU_SHOP_FLAGS, 0));
     if (cpu->accumulator & 0x0002u)
         Window(memory, cpu, 0x0382u, 0x0f03u, 0xd733u);
     Window(memory, cpu, 0x03a0u, 0x0f03u, 0xd73cu);
@@ -303,7 +310,9 @@ Lufia2ExecutionResult Lufia2MenuShopTitle(
     if (DrawString(memory, cpu, 0xe4b0u, &text))
         return text;
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x1542u, 0) - 1u));
+    LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu,
+                                                  WRAM_MENU_SHOP_LIST_COUNT, 0) -
+                            1u));
     And16(cpu, 0x00ffu);
     TransferAToX(cpu);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x82e4d0u, cpu->x)));
@@ -370,7 +379,7 @@ Lufia2ExecutionResult Lufia2MenuNameEntryWindows(
     Rts(memory, cpu);
     LoadX16(cpu, 0x0000u);
     Write16Absolute(memory, cpu, 0x14bbu, 0);
-    Write16Absolute(memory, cpu, 0x14b9u, 0);
+    Write16Absolute(memory, cpu, WRAM_MENU_LIST_COUNT, 0);
     LoadX16(cpu, 0x3162u);
     Write16Absolute(memory, cpu, 0x14adu, 0x3162u);
     return ExecutionReturned(0x82f0f5u);
@@ -499,7 +508,8 @@ static void MenuNumberTail(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     cpu->carry = 0;
     Add16Value(cpu, Read16Direct(memory, cpu, 0x04u));
     LoadA16(cpu, (uint16_t)(cpu->accumulator |
-        Read16AbsoluteIndexed(memory, cpu, 0x155cu, 0)));
+                            Read16AbsoluteIndexed(memory, cpu,
+                                                  WRAM_MENU_TILE_ATTRIBUTES, 0)));
     Write16Long(memory, LongIndexedAddress(0x7e3002u, cpu->x), cpu->accumulator);
 }
 
@@ -515,7 +525,8 @@ static void MenuSmallNumber(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         cpu->carry = 0;
         Add16Value(cpu, 0x0050u);
         LoadA16(cpu, (uint16_t)(cpu->accumulator |
-            Read16AbsoluteIndexed(memory, cpu, 0x155cu, 0)));
+                                Read16AbsoluteIndexed(memory, cpu,
+                                                      WRAM_MENU_TILE_ATTRIBUTES, 0)));
         Write16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER2_TILEMAP, cpu->x),
             cpu->accumulator);
         LoadA16(cpu, 0x0060u);
@@ -533,7 +544,7 @@ static void MenuPartyStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     And16(cpu, 0x00ffu);
     StoreADirect16(memory, cpu, 0x26u);
     LoadA16(cpu, 0x3d00u);
-    StoreAAbsolute16(memory, cpu, 0x155cu, 0);
+    StoreAAbsolute16(memory, cpu, WRAM_MENU_TILE_ATTRIBUTES, 0);
     LoadX16(cpu, 0x0000u);
     do {
         PushIndex(memory, cpu);
@@ -609,7 +620,7 @@ Lufia2ExecutionResult Lufia2MenuShopParty(
     Jsr(memory, cpu, 0xd783u);
     MenuCursorPlace(memory, cpu);
     Rts(memory, cpu);
-    LoadAAbsolute8(memory, cpu, 0x1542u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_MENU_SHOP_LIST_COUNT, 0);
     StoreAAbsolute8(memory, cpu, 0x14f7u, 0);
     LoadX16(cpu, 0x0001u);
     StoreZeroAbsolute8(memory, cpu, 0x14d9u, cpu->x);
@@ -728,7 +739,8 @@ static void MenuSmallNumberFull(const Lufia2Memory *memory,
     cpu->carry = 0;
     Add16Value(cpu, 0x0040u);
     LoadA16(cpu, (uint16_t)(cpu->accumulator |
-        Read16AbsoluteIndexed(memory, cpu, 0x155cu, 0)));
+                            Read16AbsoluteIndexed(memory, cpu,
+                                                  WRAM_MENU_TILE_ATTRIBUTES, 0)));
     Write16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER2_TILEMAP, cpu->x),
         cpu->accumulator);
     LoadA16(cpu, Read16Direct(memory, cpu, 0x00u));
@@ -775,7 +787,7 @@ Lufia2ExecutionResult Lufia2MenuMemberStatus(
     PushAccumulator16(memory, cpu);
     LoadY16(cpu, Read16Direct(memory, cpu, 0x2au));
     LoadA16(cpu, 0x3900u);
-    StoreAAbsolute16(memory, cpu, 0x155cu, 0);
+    StoreAAbsolute16(memory, cpu, WRAM_MENU_TILE_ATTRIBUTES, 0);
     cpu->x = PullIndexValue(memory, cpu);
     LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x000eu, cpu->y) & 0x00ffu));
     Jsr(memory, cpu, 0x953du);
@@ -785,7 +797,7 @@ Lufia2ExecutionResult Lufia2MenuMemberStatus(
     OpBitValue(cpu, 5u);
     if (!cpu->zero) {
         OpLoadA(cpu, 0x3500u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x155cu));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_TILE_ATTRIBUTES));
     } else {
         OpLda(memory, cpu, OpAbsY(cpu, 0x0025u));
         OpLsrA(cpu);
@@ -794,7 +806,7 @@ Lufia2ExecutionResult Lufia2MenuMemberStatus(
         OpCmp(memory, cpu, OpAbsY(cpu, 0x0011u));
         if (cpu->carry) {
             OpLoadA(cpu, 0x3500u);
-            OpSta(memory, cpu, OpAbs(cpu, 0x155cu));
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_TILE_ATTRIBUTES));
         } else {
             OpLda(memory, cpu, OpAbsY(cpu, 0x0025u));
             OpLsrA(cpu);
@@ -802,7 +814,7 @@ Lufia2ExecutionResult Lufia2MenuMemberStatus(
             OpCmp(memory, cpu, OpAbsY(cpu, 0x0011u));
             if (cpu->carry) {
                 OpLoadA(cpu, 0x3100u);
-                OpSta(memory, cpu, OpAbs(cpu, 0x155cu));
+                OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_TILE_ATTRIBUTES));
             }
         }
     }
@@ -950,7 +962,7 @@ static void ShopCount(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 
 /* $82:E319: list X starts at [$08]. */
 static void ShopList(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    const uint32_t lists = AbsoluteIndexedAddress(cpu, 0x1542u, 0);
+    const uint32_t lists = AbsoluteIndexedAddress(cpu, WRAM_MENU_SHOP_LIST_COUNT, 0);
 
     Write8(memory, lists, (uint8_t)(Read8(memory, lists) + 1u));
     SetAccumulatorWidth(cpu, 0);
@@ -1046,14 +1058,15 @@ Lufia2ExecutionResult Lufia2MenuShopSetup(
     SetAccumulatorWidth(cpu, 0);
     Increment16Direct(memory, cpu, 0x08u);
     LoadA16(cpu, Read16Long(memory, DirectLongPointer(memory, cpu, 0x08u)));
-    StoreAAbsolute16(memory, cpu, 0x1540u, 0);
+    StoreAAbsolute16(memory, cpu, MENU_SHOP_FLAGS, 0);
     Increment16Direct(memory, cpu, 0x08u);
     Increment16Direct(memory, cpu, 0x08u);
     SetAccumulatorWidth(cpu, 1);
-    StoreZeroAbsolute8(memory, cpu, 0x1542u, 0);
-    LoadAAbsolute8(memory, cpu, 0x1540u, 0);
+    StoreZeroAbsolute8(memory, cpu, WRAM_MENU_SHOP_LIST_COUNT, 0);
+    LoadAAbsolute8(memory, cpu, MENU_SHOP_FLAGS, 0);
     if (A8(cpu) & 0x01u) {
-        const uint32_t lists = AbsoluteIndexedAddress(cpu, 0x1542u, 0);
+        const uint32_t lists =
+            AbsoluteIndexedAddress(cpu, WRAM_MENU_SHOP_LIST_COUNT, 0);
 
         Write8(memory, lists, (uint8_t)(Read8(memory, lists) + 1u));
         Jsr(memory, cpu, 0xe2bdu);
@@ -1061,7 +1074,7 @@ Lufia2ExecutionResult Lufia2MenuShopSetup(
         Rts(memory, cpu);
     }
     for (i = 0; i < 5u; ++i) {                                 /* bits 1-5 */
-        LoadAAbsolute8(memory, cpu, 0x1540u, 0);
+        LoadAAbsolute8(memory, cpu, MENU_SHOP_FLAGS, 0);
         if (!(A8(cpu) & (0x02u << i)))
             continue;
         LoadX16(cpu, (uint16_t)(2u + 2u * i));
@@ -1072,10 +1085,11 @@ Lufia2ExecutionResult Lufia2MenuShopSetup(
         ShopCount(memory, cpu, i == 4u);
         Rts(memory, cpu);
     }
-    LoadAAbsolute8(memory, cpu, 0x1540u, 0);
+    LoadAAbsolute8(memory, cpu, MENU_SHOP_FLAGS, 0);
     BitImmediate8(cpu, 0x80u);
     if (!cpu->zero) {
-        const uint32_t lists = AbsoluteIndexedAddress(cpu, 0x1542u, 0);
+        const uint32_t lists =
+            AbsoluteIndexedAddress(cpu, WRAM_MENU_SHOP_LIST_COUNT, 0);
         const uint8_t count = (uint8_t)(Read8(memory, lists) + 1u);
 
         Write8(memory, lists, count);
@@ -1108,7 +1122,7 @@ static void ShopCompareStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             Write16Long(memory, LongIndexedAddress(0x7e3002u, cpu->x), 0);
         } else {
             LoadA16(cpu, colour);
-            StoreAAbsolute16(memory, cpu, 0x155cu, 0);
+            StoreAAbsolute16(memory, cpu, WRAM_MENU_TILE_ATTRIBUTES, 0);
             LoadA16(cpu, Indirect16At(memory, cpu, 0xeau, cpu->y));
             Jsr(memory, cpu, 0xe655u);
             MenuSmallNumberFull(memory, cpu);
@@ -1513,12 +1527,12 @@ static void MenuScrollThumb(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);
     LoadX16(cpu, 0x000bu);
     StoreAAbsolute8(memory, cpu, 0x13e8u, cpu->x);
-    StoreAAbsolute8(memory, cpu, 0x150au, 0);
+    StoreAAbsolute8(memory, cpu, (WRAM_MENU_SCROLL_THUMB_Y + 1u), 0);
     ExchangeAccumulatorBytes(cpu);
     StoreAAbsolute8(memory, cpu, 0x1388u, cpu->x);
     StoreZeroAbsolute8(memory, cpu, 0x1418u, cpu->x);
     StoreZeroAbsolute8(memory, cpu, 0x13b8u, cpu->x);
-    StoreZeroAbsolute8(memory, cpu, 0x1509u, 0);
+    StoreZeroAbsolute8(memory, cpu, WRAM_MENU_SCROLL_THUMB_Y, 0);
     StoreZeroAbsolute8(memory, cpu, 0x1448u, cpu->x);
     LoadA8(cpu, 0x04u);
     SimulateJslFrame(memory, cpu, 0x82u, 0x8cbfu);
@@ -1529,18 +1543,18 @@ static void MenuScrollThumb(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 /* $82:8CC1: thumb step = $150B / rows past the window. */
 static void MenuScrollStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, 0x00u);
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x152eu, 0));
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_RANGE, 0));
     Compare16(cpu, cpu->x, 0x0000u);
     if (!cpu->negative && !cpu->zero) {
-        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x150bu, 0));
+        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_TRACK, 0));
         StoreXDirect16(memory, cpu, 0x4eu);
-        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x152eu, 0));
+        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_RANGE, 0));
         StoreXDirect16(memory, cpu, 0x51u);
         SimulateJslFrame(memory, cpu, 0x82u, 0x8cdau);
         (void)Lufia2Divide16(memory, cpu);
         SimulateRtlFrame(memory, cpu);
         LoadX16(cpu, Read16Direct(memory, cpu, 0x4eu));
-        Write16Absolute(memory, cpu, 0x150du, cpu->x);
+        Write16Absolute(memory, cpu, WRAM_MENU_SCROLL_STEP, cpu->x);
         LoadA8(cpu, 0x01u);
     }
     LoadX16(cpu, 0x000bu);
@@ -1555,22 +1569,24 @@ static void MenuScrollPlace(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         return;
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x150fu, 0));
-    Write16Absolute(memory, cpu, 0x1570u, cpu->y);
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x150du, 0));
-    Write16Absolute(memory, cpu, 0x1572u, cpu->x);
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_ROW, 0));
+    Write16Absolute(memory, cpu, WRAM_SYSTEM_MULTIPLY_A, cpu->y);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_STEP, 0));
+    Write16Absolute(memory, cpu, WRAM_SYSTEM_MULTIPLY_B, cpu->x);
     Lufia2CallMultiply(memory, cpu, 0x82u, 0x8c5cu);
     LoadX16(cpu, 0x000bu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1509u, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_THUMB_Y, 0));
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1574u, 0));
+    Add16Value(cpu,
+               Read16AbsoluteIndexed(memory, cpu, WRAM_SYSTEM_MULTIPLY_PRODUCT, 0));
     SetAccumulatorWidth(cpu, 1);
     ExchangeAccumulatorBytes(cpu);
     StoreAAbsolute8(memory, cpu, 0x13e8u, cpu->x);
     LoadA8(cpu, 0x04u);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x150fu, 0));
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_ROW, 0));
     if (!cpu->zero) {
-        Compare16(cpu, cpu->y, Read16AbsoluteIndexed(memory, cpu, 0x152eu, 0));
+        Compare16(cpu, cpu->y,
+                  Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_RANGE, 0));
         if (!cpu->zero)
             LoadA8(cpu, 0x05u);
     }
@@ -1590,8 +1606,9 @@ static void MenuScrollbar(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         IncrementA16(cpu);
         LsrA16(cpu);
     }
-    Subtract16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1530u, 0));
-    StoreAAbsolute16(memory, cpu, 0x152eu, 0);
+    Subtract16(cpu,
+               Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_WINDOW_ROWS, 0));
+    StoreAAbsolute16(memory, cpu, WRAM_MENU_SCROLL_RANGE, 0);
     SetAccumulatorWidth(cpu, 1);
     Jsr(memory, cpu, 0x8c97u);
     MenuScrollStep(memory, cpu);
@@ -1666,14 +1683,14 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
     StoreZeroAbsolute8(memory, cpu, 0x14d9u, cpu->x);
     StoreZeroAbsolute8(memory, cpu, 0x14ebu, cpu->x);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x150fu, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_ROW, 0));
     Write16Long(memory, 0x7e93c0u, cpu->accumulator);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x14b5u, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_LIST_TOP_ROW, 0));
     Write16Long(memory, 0x7e93c2u, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadX16(cpu, 0x0000u);
-    Write16Absolute(memory, cpu, 0x150fu, 0);
-    Write16Absolute(memory, cpu, 0x14b5u, 0);
+    Write16Absolute(memory, cpu, WRAM_MENU_SCROLL_ROW, 0);
+    Write16Absolute(memory, cpu, WRAM_MENU_LIST_TOP_ROW, 0);
     LoadX16(cpu, 0x003fu);
     StoreXDirect16(memory, cpu, 0x54u);
     LoadX16(cpu, 0x0001u);
@@ -1688,19 +1705,19 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
     MenuScrollThumb(memory, cpu);
     Rts(memory, cpu);
     LoadX16(cpu, 0x4800u);
-    Write16Absolute(memory, cpu, 0x150bu, 0x4800u);
-    LoadAAbsolute8(memory, cpu, 0x14b9u, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x14b7u, 0);
+    Write16Absolute(memory, cpu, WRAM_MENU_SCROLL_TRACK, 0x4800u);
+    LoadAAbsolute8(memory, cpu, WRAM_MENU_LIST_COUNT, 0);
+    StoreZeroAbsolute8(memory, cpu, WRAM_MENU_LIST_OVERFLOW, 0);
     cpu->carry = 1;
     Sbc8(cpu, 0x06u);
     if (!cpu->negative) {
-        StoreAAbsolute8(memory, cpu, 0x14b7u, 0);
+        StoreAAbsolute8(memory, cpu, WRAM_MENU_LIST_OVERFLOW, 0);
     } else {
-        LoadAAbsolute8(memory, cpu, 0x14b9u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_MENU_LIST_COUNT, 0);
         StoreAAbsolute8(memory, cpu, 0x14fau, 0);
     }
     cpu->carry = 0;
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x14b9u, 0));
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_LIST_COUNT, 0));
     Jsr(memory, cpu, 0x9d4cu);
     MenuScrollbar(memory, cpu);
     Rts(memory, cpu);
@@ -1716,7 +1733,7 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
     StoreXDirect16(memory, cpu, 0x11u);
     LoadX16(cpu, 0x0006u);
     StoreXDirect16(memory, cpu, 0x15u);
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x14b5u, 0));
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_LIST_TOP_ROW, 0));
     StoreXDirect16(memory, cpu, 0x00u);
     Jsr(memory, cpu, 0xb070u);
     if (MenuPointerRows(memory, cpu, &text))
@@ -2039,7 +2056,7 @@ static int ListByMode(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     unsigned kind = 0;
     uint16_t ret;
 
-    LoadAAbsolute8(memory, cpu, 0x09d1u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_MENU_LIST_MODE, 0);
     switch (A8(cpu)) {
     case 0x02u:
         StoreZeroAbsolute8(memory, cpu, 0x153eu, 0);
@@ -2086,7 +2103,7 @@ static int MenuListPage(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     StoreXDirect16(memory, cpu, 0x11u);
     LoadX16(cpu, 0x0006u);
     StoreXDirect16(memory, cpu, 0x15u);
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x14b5u, 0));
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_LIST_TOP_ROW, 0));
     StoreXDirect16(memory, cpu, 0x00u);
     return ListByMode(memory, cpu, kReturns, text);
 }
@@ -2113,17 +2130,17 @@ Lufia2ExecutionResult Lufia2MenuListCursor(
     Lufia2CpuState *cpu) {
     Lufia2ExecutionResult text;
 
-    LoadAAbsolute8(memory, cpu, 0x14afu, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_MENU_LIST_SELECTION, 0);
     Compare8(cpu, A8(cpu), 0xffu);
     if (!cpu->zero) {
-        const int spells = AbsoluteByte(memory, cpu, 0x09d1u, 0) == 0x02u;
+        const int spells = AbsoluteByte(memory, cpu, WRAM_MENU_LIST_MODE, 0) == 0x02u;
         uint8_t top;
         uint8_t row;
 
-        LoadAAbsolute8(memory, cpu, 0x09d1u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_MENU_LIST_MODE, 0);
         Compare8(cpu, A8(cpu), 0x02u);
-        top = AbsoluteByte(memory, cpu, 0x14b5u, 0);
-        row = (uint8_t)(AbsoluteByte(memory, cpu, 0x14afu, 0) >> 1);
+        top = AbsoluteByte(memory, cpu, WRAM_MENU_LIST_TOP_ROW, 0);
+        row = (uint8_t)(AbsoluteByte(memory, cpu, WRAM_MENU_LIST_SELECTION, 0) >> 1);
         if (spells) {
             top = (uint8_t)(top >> 1);
             row = (uint8_t)(row >> 1);
@@ -2134,29 +2151,29 @@ Lufia2ExecutionResult Lufia2MenuListCursor(
         cpu->carry = 1;
         Sbc8(cpu, top);
         StoreAAbsolute8(memory, cpu, 0x14eeu, 0);
-        StoreAAbsolute8(memory, cpu, 0x1570u, 0);
+        StoreAAbsolute8(memory, cpu, WRAM_SYSTEM_MULTIPLY_A, 0);
         LoadA8(cpu, 0x00u);
         Sbc8(cpu, 0x00u);
         SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1570u, 0));
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_SYSTEM_MULTIPLY_A, 0));
         if (cpu->accumulator & 0x8000u) {
             LoadA16(cpu, (uint16_t)((cpu->accumulator ^ 0xffffu) + 1u));
-            StoreAAbsolute16(memory, cpu, 0x1570u, 0);
+            StoreAAbsolute16(memory, cpu, WRAM_SYSTEM_MULTIPLY_A, 0);
         }
         SetAccumulatorWidth(cpu, 1);
         LoadAAbsolute8(memory, cpu, 0x1507u, 0);
-        StoreAAbsolute8(memory, cpu, 0x1572u, 0);
-        StoreZeroAbsolute8(memory, cpu, 0x1573u, 0);
+        StoreAAbsolute8(memory, cpu, WRAM_SYSTEM_MULTIPLY_B, 0);
+        StoreZeroAbsolute8(memory, cpu, (WRAM_SYSTEM_MULTIPLY_B + 1u), 0);
         Lufia2CallMultiply(memory, cpu, 0x82u, 0xa971u);
-        LoadAAbsolute8(memory, cpu, 0x1574u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_SYSTEM_MULTIPLY_PRODUCT, 0);
         cpu->carry = 0;
         Adc8(cpu, AbsoluteByte(memory, cpu, 0x14e3u, 0));
         StoreAAbsolute8(memory, cpu, 0x13f0u, 0);
         StoreZeroAbsolute8(memory, cpu, 0x11e0u, 0);
-        LoadAAbsolute8(memory, cpu, 0x09d1u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_MENU_LIST_MODE, 0);
         Compare8(cpu, A8(cpu), 0x02u);
-        top = AbsoluteByte(memory, cpu, 0x14b5u, 0);
-        row = (uint8_t)(AbsoluteByte(memory, cpu, 0x14afu, 0) >> 1);
+        top = AbsoluteByte(memory, cpu, WRAM_MENU_LIST_TOP_ROW, 0);
+        row = (uint8_t)(AbsoluteByte(memory, cpu, WRAM_MENU_LIST_SELECTION, 0) >> 1);
         if (spells) {
             top = (uint8_t)(top >> 1);
             row = (uint8_t)(row >> 1);

@@ -358,7 +358,7 @@ static void TitleTrigMagnitude(
     RolAbsolute8(memory, cpu, TITLE_SIGNS);
     SetAccumulatorWidth(cpu, 0);
     And16(cpu, 0x00ffu);
-    StoreAAbsolute16(memory, cpu, 0x1570u, 0);
+    StoreAAbsolute16(memory, cpu, WRAM_SYSTEM_MULTIPLY_A, 0);
 }
 
 /* $82:8000 then $86:8503: $1575 = signed magnitude * factor. */
@@ -367,7 +367,7 @@ static void TitleSignedProduct(
     Lufia2CpuState *cpu,
     uint16_t multiply_return,
     uint16_t sign_return) {
-    StoreAAbsolute16(memory, cpu, 0x1572u, 0);
+    StoreAAbsolute16(memory, cpu, WRAM_SYSTEM_MULTIPLY_B, 0);
     Lufia2CallMultiply(memory, cpu, 0x86u, multiply_return);
     SimulateJsrFrame(memory, cpu, sign_return);
     LsrAbsolute16(memory, cpu, TITLE_SIGNS);                   /* 8503 */
@@ -783,7 +783,7 @@ Lufia2ExecutionResult Lufia2TitlePaletteCycle(
     StepAbsolute16(memory, cpu, 0x14b5u, -1);
     if (cpu->zero) {
         LoadA16(cpu, 0x0003u);
-        StoreAAbsolute16(memory, cpu, 0x14b5u, 0);
+        StoreAAbsolute16(memory, cpu, WRAM_MENU_LIST_TOP_ROW, 0);
         for (row = 0; row < 4u; ++row) {                       /* 89A3 */
             LoadA16(cpu, Read16AbsoluteIndexed(
                 memory, cpu, (uint16_t)(rows[row] + 2u), 0));

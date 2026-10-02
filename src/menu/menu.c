@@ -119,7 +119,7 @@ static void MenuWindowGrow(
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1538u, 0));  /* 8F14 */
     MenuTableStep8(memory, cpu, -3);
     SetAccumulatorWidth(cpu, 0);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1530u, 0));
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_WINDOW_ROWS, 0));
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1538u, 0));
     IncrementX16(cpu);
     do {
@@ -174,7 +174,8 @@ static void MenuWindowLines(
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1532u, 0));
         Write16Direct(memory, cpu, 0x33u, cpu->accumulator);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1530u, 0));
+        LoadA16(cpu,
+                Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_WINDOW_ROWS, 0));
         AslA16(cpu);
         AslA16(cpu);
         AslA16(cpu);
@@ -182,7 +183,8 @@ static void MenuWindowLines(
         cpu->carry = 0;
         Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1534u, 0));
         Write16Direct(memory, cpu, 0x35u, cpu->accumulator);
-        LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1530u, 0));
+        LoadY16(cpu,
+                Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_WINDOW_ROWS, 0));
         IncrementY16(cpu);
         LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1538u, 0));
         IncrementX16(cpu);
@@ -223,7 +225,8 @@ static void MenuWindowLines(
         LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1538u, 0));
         MenuTableStep8(memory, cpu, 3);
         SetAccumulatorWidth(cpu, 0);
-        LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1530u, 0));
+        LoadY16(cpu,
+                Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_WINDOW_ROWS, 0));
         LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1538u, 0));
         IncrementX16(cpu);
         do {

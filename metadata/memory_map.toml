@@ -1856,3 +1856,115 @@ width = 1
 count = 32
 owner = "object"
 notes = "Receives the source slot in $83:EE0E when an object takes over another slot's animation; $FF when the slot is free."
+
+[[location]]
+address = "7E:09D1"
+name = "menu_list_mode"
+width = 1
+owner = "menu"
+notes = "Selects the layout of the item and spell list windows: 2 lists spells, 4, 7 and $FF pick other variants, anything else the default list."
+
+[[location]]
+address = "7E:14AF"
+name = "menu_list_selection"
+width = 1
+owner = "menu"
+notes = "Selected list entry; $82:A918 treats $FF as none and halves the value for the two-column spell list."
+
+[[location]]
+address = "7E:14B5"
+name = "menu_list_top_row"
+width = 2
+owner = "menu"
+notes = "First visible row of the list; the cursor sprite position is the selection less this row."
+
+[[location]]
+address = "7E:14B7"
+name = "menu_list_overflow"
+width = 1
+owner = "menu"
+notes = "Number of list entries beyond the six visible rows."
+
+[[location]]
+address = "7E:14B9"
+name = "menu_list_count"
+width = 1
+owner = "menu"
+notes = "Number of entries in the list being shown."
+
+[[location]]
+address = "7E:1509"
+name = "menu_scroll_thumb_y"
+width = 2
+owner = "menu"
+notes = "$82:8C43 places the scroll thumb at this y plus the current row times the step."
+
+[[location]]
+address = "7E:150B"
+name = "menu_scroll_track"
+width = 2
+owner = "menu"
+notes = "$82:8CC1 divides this track length by the rows past the window to get the thumb step."
+
+[[location]]
+address = "7E:150D"
+name = "menu_scroll_step"
+width = 2
+owner = "menu"
+notes = "Thumb step per row, set by $82:8CC1."
+
+[[location]]
+address = "7E:150F"
+name = "menu_scroll_row"
+width = 2
+owner = "menu"
+notes = "Current row of the scroll bar."
+
+[[location]]
+address = "7E:152E"
+name = "menu_scroll_range"
+width = 2
+owner = "menu"
+notes = "Rows past the window, set by $82:8C85; the scroll bar is hidden when it is not positive."
+
+[[location]]
+address = "7E:1530"
+name = "menu_scroll_window_rows"
+width = 2
+owner = "menu"
+notes = "Rows the window shows; $82:8C85 subtracts it from the total to get the range."
+
+[[location]]
+address = "7E:1542"
+name = "menu_shop_list_count"
+width = 1
+owner = "menu"
+notes = "Number of sale lists in the shop being shown; the shop title uses it minus one as an index."
+
+[[location]]
+address = "7E:155C"
+name = "menu_tile_attributes"
+width = 2
+owner = "menu"
+notes = "Tile attribute bits (palette and priority) ORed into the digits and glyphs the menu draws."
+
+[[location]]
+address = "7E:1570"
+name = "system_multiply_a"
+width = 2
+owner = "menu"
+notes = "First factor of the multiply at $82:8000."
+
+[[location]]
+address = "7E:1572"
+name = "system_multiply_b"
+width = 2
+owner = "menu"
+notes = "Second factor of the multiply at $82:8000."
+
+[[location]]
+address = "7E:1574"
+name = "system_multiply_product"
+width = 4
+owner = "menu"
+notes = "32-bit product of the multiply at $82:8000."

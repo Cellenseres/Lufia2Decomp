@@ -1,4 +1,5 @@
 #include "battle/battle_internal.h"
+#include "system/wram.h"
 
 enum {
     SPRITE_DP_OAM_COUNT = 0x58u,
@@ -192,7 +193,7 @@ static bool BattleApplySpritePositionOverlays(const Lufia2Memory *memory,
                 OpAslA(cpu);
                 OpAslA(cpu);
                 OpTay(cpu);
-                OpLda(memory, cpu, OpAbsX(cpu, 0x1577u));
+                OpLda(memory, cpu, OpAbsX(cpu, (WRAM_SYSTEM_MULTIPLY_PRODUCT + 3u)));
                 OpAndValue(cpu, 0xffu);
                 OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_SOURCE_OFFSET));
                 OpAslA(cpu);
