@@ -229,6 +229,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:8E1A` | `Lufia2FieldScaleCoordinateLeft` | verified | `src/field/field_layer_scale.c` |
 | `$83:8E2B` | `Lufia2FieldPrepareCoordinateScale` | verified | `src/field/field_layer_scale.c` |
 | `$83:8E66` | `Lufia2FieldRedrawAllLayers` | verified | `src/field/field_scroll.c` |
+| `$83:8E76` | `Lufia2FieldRenderLayerPair` | verified | `src/field/field_scroll.c` |
 | `$83:8E85` | `Lufia2FieldRenderRegion` | verified | `src/field/field_scroll.c` |
 | `$83:9000` | `Lufia2FieldPixelCellCeiling` | verified | `src/field/field_scroll.c` |
 | `$83:9004` | `Lufia2FieldPixelCellFloor` | verified | `src/field/field_scroll.c` |

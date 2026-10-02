@@ -282,6 +282,9 @@ Lufia2ExecutionResult Lufia2FieldObjectBitClear(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 /* Clipped object-region rendering; M1/X16, explicit long-loop continuation. */
+Lufia2ExecutionResult Lufia2FieldRenderLayerPair(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2FieldRenderRegion(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
