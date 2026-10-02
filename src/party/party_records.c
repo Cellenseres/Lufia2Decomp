@@ -3,13 +3,15 @@
 #include "core/cpu_internal.h"
 #include "lufia2/party.h"
 #include "party/party_internal.h"
+#include "system/wram.h"
 
 /* Copy a word within each active party record ($0A80). */
 static void PartyCopy(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t from, uint16_t to) {
     LoadY16(cpu, 0x0006u);
     do {
-        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a80u, cpu->y));
+        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu,
+            WRAM_MENU_PARTY_CHARACTER_OFFSET, cpu->y));
         if (!cpu->zero) {
             LoadAAbsolute8(memory, cpu, 0x000fu, cpu->x);
             cpu->zero = (A8(cpu) & 0x04u) == 0;
@@ -62,7 +64,8 @@ Lufia2ExecutionResult Lufia2PartyPointers(
     SetAccumulatorWidth(cpu, 0);
     LoadY16(cpu, 0x0000u);
     do {
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a7bu, cpu->y));
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_PARTY_FIRST_ID,
+            cpu->y));
         cpu->zero = (cpu->accumulator & 0x0080u) == 0;
         if (cpu->zero) {
             And16(cpu, 0x00ffu);
@@ -77,7 +80,7 @@ Lufia2ExecutionResult Lufia2PartyPointers(
         AslA16(cpu);
         TransferAToX(cpu);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09f2u, 0));
-        StoreAAbsolute16(memory, cpu, 0x0a80u, cpu->x);
+        StoreAAbsolute16(memory, cpu, WRAM_MENU_PARTY_CHARACTER_OFFSET, cpu->x);
         IncrementY16(cpu);
         Compare16(cpu, cpu->y, 0x0004u);
     } while (!cpu->zero);
@@ -107,7 +110,7 @@ Lufia2ExecutionResult Lufia2PartyListHasEntry(
     do {
         PushY(memory, cpu);                                    /* C65C */
         TransferDirectToA(cpu);
-        LoadAAbsolute8(memory, cpu, 0x0a7bu, cpu->y);
+        LoadAAbsolute8(memory, cpu, WRAM_MENU_PARTY_FIRST_ID, cpu->y);
         Compare8(cpu, A8(cpu), 0xffu);
         if (!cpu->zero) {
             AslA8(cpu);

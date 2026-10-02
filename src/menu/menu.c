@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/menu.h"
+#include "system/wram.h"
 
 /* Menu WRAM. */
 #define MENU_PRESSED_4A 0x14abu       /* buttons from $4A */
@@ -524,7 +525,7 @@ Lufia2ExecutionResult Lufia2MenuWindowRequest(
     LoadAAbsolute8(memory, cpu, MENU_WINDOW_REFRESH, 0);       /* 9313 */
     if (cpu->zero)
         return ExecutionReturned(0x82932fu);
-    StoreAImmediate8(memory, cpu, 0x20u, 0x0564u);
+    StoreAImmediate8(memory, cpu, 0x20u, WRAM_MENU_DRAW_MODE);
     LoadA8(cpu, 0x8eu);
     StoreADirect8(memory, cpu, 0x5fu);
     LoadY16(cpu, 0xd4deu);
