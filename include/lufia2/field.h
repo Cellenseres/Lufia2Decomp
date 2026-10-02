@@ -9,6 +9,10 @@
 extern "C" {
 #endif
 
+/* Scene-script operands at DB:Y; either M width, X16. */
+Lufia2ExecutionResult Lufia2SceneScriptReadOperand(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $83:F91F: copy tile bits from cell X to cell Y, keeping Y's attrs; M0X0. */
 Lufia2ExecutionResult Lufia2FieldCopyCellTile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);

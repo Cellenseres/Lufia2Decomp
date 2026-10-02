@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-351 functions in `metadata/functions.toml`: 351 verified, 0 draft, 0 identified, 0 disabled.
+352 functions in `metadata/functions.toml`: 352 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **483 independent jobs**. The normal
-application build also passes. The consumer selects all 351 verified functions,
+The full Windows Release verifier passes **486 independent jobs**. The normal
+application build also passes. The consumer selects all 352 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -34,6 +34,21 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Scene script operand reader
+
+`$80:C0B7` reads a scene operand at DB:Y and advances the original script
+pointer. It preserves the original accumulator width, bank-byte rollover,
+saved status and stack operations. A restored 8-bit index status resumes the
+interpreter before `$80:C0CC`, where the operand length changes.
+
+131,680 original-ROM and native cases pass without positive native fallback,
+including every 16-bit Y value with both accumulator widths and every bank
+byte. CPU state, full WRAM, all operand accesses and mutable hardware state
+agree; opcode fetches are counted separately so operands overlapping ROM code
+remain checked. All 1,152 unsupported entries and 22 injected faults pass;
+32 saved-status width continuations retain their exact boundary. The complete
+reader is selected as a standalone replacement.
 
 ## Shared party stat totals
 
