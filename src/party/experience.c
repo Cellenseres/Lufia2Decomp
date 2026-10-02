@@ -1,141 +1,189 @@
 /* Party experience curves ($81:F9E9). */
 
 #include "core/cpu_internal.h"
+#include "core/snes_registers.h"
+#include "core/wram_view.h"
 #include "lufia2/party.h"
 
 enum {
     PARTY_MEMBER = 0x09fau,
     PARTY_LEVEL = 0x09feu,
-    PARTY_EXPERIENCE = 0x0a2au,        /* 24-bit, $0A2A-$0A2C */
+    PARTY_EXPERIENCE = 0x0a2au, /* 24-bit, $0A2A-$0A2C */
+    PARTY_EXPERIENCE_HIGH = 0x0a2cu
 };
 
-/* One experience step via the hardware multiplier. */
+/* Level cap of the curve and the experience reported from there on. */
+enum {
+    LEVEL_CAP = 0x62u,
+    EXPERIENCE_AT_CAP = 0x98967fu /* 9,999,999 */
+};
+
+/* Tables in bank $97: a row of growth factors per member (a new factor every
+ * eight levels) and the first growth step of each member. */
+enum {
+    GROWTH_TABLE = 0xb633u,
+    GROWTH_ROW_SIZE = 0x70u,
+    GROWTH_FACTORS_PER_ROW_STEP = 8u,
+    GROWTH_START_STEP = 0xb99eu
+};
+
+/* Work bytes. */
+enum {
+    DP_STEP = 0x58u, /* 32-bit growth step */
+    DP_SUM = 0x63u,  /* 32-bit running sum, scaled by 256 */
+    DP_PRODUCT_LOW = 0x54u,
+    DP_PRODUCT_MID = 0x55u,
+    DP_PRODUCT_HIGH = 0x56u,
+    DP_PRODUCT_TOP = 0x57u
+};
+
+/* Step = step + step * factor / 256 on the 32-bit step at $58, with the
+ * factor already in the multiplier. The multiplier unit works on bytes, so the
+ * four step bytes are multiplied one by one and the partial products are
+ * added with carries between the 16-bit halves. */
 static void PartyGrowStep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadA8(cpu, DirectByte(memory, cpu, 0x5bu));               /* FA42 */
-    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x59u));
+    const Lufia2Wram dp = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram bus = dp; /* registers are reached through the data bank */
+    uint16_t top_product, byte1_product, byte2_product, byte0_product;
+    uint32_t sum;
+    unsigned carry;
+
+    WramWrite(bus, SNES_WRMPYB, WramRead(dp, DP_STEP + 3u));
     PushIndex(memory, cpu);
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
-    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
-    StoreXDirect16(memory, cpu, 0x56u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x5au));
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
-    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
-    StoreXDirect16(memory, cpu, 0x54u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x58u));
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
-    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
-    TransferDirectToA(cpu);                                    /* FA64 */
-    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
-    ExchangeAccumulatorBytes(cpu);
-    SetAccumulatorWidth(cpu, 0);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
-    SetAccumulatorWidth(cpu, 1);
-    ExchangeAccumulatorBytes(cpu);
-    StoreADirect8(memory, cpu, 0x54u);
-    SetAccumulatorWidth(cpu, 0);
-    TransferXToA(cpu);
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x55u));
-    StoreADirect16(memory, cpu, 0x55u);
-    if (cpu->carry)
-        Increment16Direct(memory, cpu, 0x57u);
-    LoadADirect16(memory, cpu, 0x54u);                         /* FA7E */
-    cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x58u));
-    StoreADirect16(memory, cpu, 0x58u);
-    LoadADirect16(memory, cpu, 0x56u);
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x5au));
-    StoreADirect16(memory, cpu, 0x5au);
+    top_product = WramRead16(bus, SNES_RDMPYL);
+    WramWrite(bus, SNES_WRMPYB, WramRead(dp, DP_STEP + 1u));
+    WramWrite16(dp, DP_PRODUCT_HIGH, top_product);
+    byte1_product = WramRead16(bus, SNES_RDMPYL);
+    WramWrite(bus, SNES_WRMPYB, WramRead(dp, DP_STEP + 2u));
+    WramWrite16(dp, DP_PRODUCT_LOW, byte1_product);
+    byte2_product = WramRead16(bus, SNES_RDMPYL);
+    WramWrite(bus, SNES_WRMPYB, WramRead(dp, DP_STEP));
+    byte0_product = WramRead16(bus, SNES_RDMPYL);
+
+    /* The low byte of the direct page rides along as the lowest addend. */
+    sum = (((uint32_t)WramRead(dp, DP_PRODUCT_LOW) << 8) |
+           ((cpu->direct_page >> 8) & 0xffu)) +
+          byte0_product;
+    carry = sum >> 16;
+    WramWrite(dp, DP_PRODUCT_LOW, (uint8_t)(sum >> 8));
+
+    sum = (uint32_t)byte2_product + WramRead16(dp, DP_PRODUCT_MID) + carry;
+    WramWrite16(dp, DP_PRODUCT_MID, (uint16_t)sum);
+    if (sum >> 16)
+        WramWrite16(dp, DP_PRODUCT_TOP,
+                    (uint16_t)(WramRead16(dp, DP_PRODUCT_TOP) + 1u));
+
+    sum = (uint32_t)WramRead16(dp, DP_PRODUCT_LOW) + WramRead16(dp, DP_STEP);
+    carry = sum >> 16;
+    WramWrite16(dp, DP_STEP, (uint16_t)sum);
+    sum = (uint32_t)WramRead16(dp, DP_PRODUCT_HIGH) + WramRead16(dp, DP_STEP + 2u) +
+          carry;
+    WramWrite16(dp, DP_STEP + 2u, (uint16_t)sum);
     SetAccumulatorWidth(cpu, 1);
     cpu->x = PullIndexValue(memory, cpu);
 }
 
-/* $81:F9E9: experience needed for level $09FE. */
+/* The growth factor of the row at Y, plus one, into the multiplier. */
+static void SelectGrowthFactor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram bus = WramViewOfCaller(memory, cpu);
+
+    LoadA8(cpu, (uint8_t)(Read8(memory, AbsoluteIndexedAddress(cpu, 0u, cpu->y)) + 1u));
+    WramWrite(bus, SNES_WRMPYA, A8(cpu));
+}
+
+/* $81:F9E9: experience needed for level $09FE of member $09FA. The step grows
+ * by a member-specific factor every level, and the sum of the steps (less ten
+ * after scaling) is the requirement; the curve stops at the level cap. */
 Lufia2ExecutionResult Lufia2PartyExperienceForLevel(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram dp = WramViewOfCaller(memory, cpu);
+    Lufia2Wram bus;
+
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x81f9e9u);
-    PushDataBank(memory, cpu);                                 /* F9E9 */
+    PushDataBank(memory, cpu);
     LoadA8(cpu, 0x97u);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     PushIndex(memory, cpu);
-    LoadA8(cpu, 0x70u);
-    StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+    bus = WramViewOfCaller(memory, cpu);
+
+    /* Y = growth row of the member, X = member * 2. */
+    LoadA8(cpu, GROWTH_ROW_SIZE);
+    WramWrite(bus, SNES_WRMPYA, A8(cpu));
     TransferDirectToA(cpu);
-    LoadAAbsolute8(memory, cpu, PARTY_MEMBER, 0);
-    StoreAAbsolute8(memory, cpu, 0x4203u, 0);
+    LoadA8(cpu, WramRead(bus, PARTY_MEMBER));
+    WramWrite(bus, SNES_WRMPYB, A8(cpu));
     AslA8(cpu);
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, 0xb633u);                                     /* growth rows */
+    LoadA16(cpu, GROWTH_TABLE);
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+    Add16Value(cpu, WramRead16(bus, SNES_RDMPYL));
     TransferAToY(cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xb99eu, cpu->x));
+
+    /* The start step is stored big-endian in the table. */
+    LoadA16(cpu, WramRead16At(bus, GROWTH_START_STEP, cpu->x));
     ExchangeAccumulatorBytes(cpu);
-    StoreADirect16(memory, cpu, 0x58u);                        /* step */
-    Write16Direct(memory, cpu, 0x5au, 0x0000u);
-    Write16Direct(memory, cpu, 0x63u, 0x0000u);                /* sum */
-    Write16Direct(memory, cpu, 0x65u, 0x0000u);
+    WramWrite16(dp, DP_STEP, cpu->accumulator);
+    WramWrite16(dp, DP_STEP + 2u, 0u);
+    WramWrite16(dp, DP_SUM, 0u);
+    WramWrite16(dp, DP_SUM + 2u, 0u);
     SetAccumulatorWidth(cpu, 1);
-    LoadAAbsolute8(memory, cpu, PARTY_LEVEL, 0);
-    Compare8(cpu, A8(cpu), 0x62u);
+
+    LoadA8(cpu, WramRead(bus, PARTY_LEVEL));
+    Compare8(cpu, A8(cpu), LEVEL_CAP);
     if (cpu->carry) {
-        LoadX16(cpu, 0x967fu);                                 /* FABB */
-        Write16Absolute(memory, cpu, PARTY_EXPERIENCE, cpu->x);
-        LoadA8(cpu, 0x98u);
-        StoreAAbsolute8(memory, cpu, 0x0a2cu, 0);
+        LoadX16(cpu, (uint16_t)EXPERIENCE_AT_CAP);
+        WramWrite16(bus, PARTY_EXPERIENCE, cpu->x);
+        LoadA8(cpu, (uint8_t)(EXPERIENCE_AT_CAP >> 16));
+        WramWrite(bus, PARTY_EXPERIENCE_HIGH, A8(cpu));
     } else {
-        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);          /* FA1F */
-        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        StoreAAbsolute8(memory, cpu, 0x4202u, 0);
-        LoadX16(cpu, 0x0001u);
+        SelectGrowthFactor(memory, cpu);
+        LoadX16(cpu, 1u);
         for (;;) {
-            SetAccumulatorWidth(cpu, 0);                       /* FA8F */
-            LoadADirect16(memory, cpu, 0x58u);
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, WramRead16(dp, DP_STEP));
             cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, 0x63u));
-            StoreADirect16(memory, cpu, 0x63u);
-            LoadADirect16(memory, cpu, 0x5au);
-            Add16Value(cpu, Read16Direct(memory, cpu, 0x65u));
-            StoreADirect16(memory, cpu, 0x65u);
+            Add16Value(cpu, WramRead16(dp, DP_SUM));
+            WramWrite16(dp, DP_SUM, cpu->accumulator);
+            LoadA16(cpu, WramRead16(dp, DP_STEP + 2u));
+            Add16Value(cpu, WramRead16(dp, DP_SUM + 2u));
+            WramWrite16(dp, DP_SUM + 2u, cpu->accumulator);
             SetAccumulatorWidth(cpu, 1);
-            Compare16(cpu, cpu->x,
-                Read16AbsoluteIndexed(memory, cpu, PARTY_LEVEL, 0));
+            Compare16(cpu, cpu->x, WramRead16(bus, PARTY_LEVEL));
             if (cpu->zero)
                 break;
-            TransferXToA(cpu);                                 /* FA2B */
+            /* A new growth factor every eight levels. */
+            TransferXToA(cpu);
             LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-            And8(cpu, 0x07u);
+            And8(cpu, GROWTH_FACTORS_PER_ROW_STEP - 1u);
             if (cpu->zero) {
-                SetAccumulatorWidth(cpu, 0);                   /* next factor */
+                SetAccumulatorWidth(cpu, 0);
                 LoadA16(cpu, cpu->y);
                 cpu->carry = 0;
-                Add16Value(cpu, 0x0008u);
+                Add16Value(cpu, GROWTH_FACTORS_PER_ROW_STEP);
                 TransferAToY(cpu);
                 SetAccumulatorWidth(cpu, 1);
-                LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-                LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-                StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+                SelectGrowthFactor(memory, cpu);
             }
             PartyGrowStep(memory, cpu);
             IncrementX16(cpu);
         }
-        SetAccumulatorWidth(cpu, 0);                           /* FAA5 */
-        LoadADirect16(memory, cpu, 0x64u);
+        /* Requirement: the 24 bits above the low byte of the sum, minus ten. */
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, WramRead16(dp, DP_SUM + 1u));
         Subtract16(cpu, 0x000au);
-        StoreAAbsolute16(memory, cpu, PARTY_EXPERIENCE, 0);
+        WramWrite16(bus, PARTY_EXPERIENCE, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x66u));
+        LoadA8(cpu, WramRead(dp, DP_SUM + 3u));
         Sbc8(cpu, 0x00u);
-        StoreAAbsolute8(memory, cpu, 0x0a2cu, 0);
+        WramWrite(bus, PARTY_EXPERIENCE_HIGH, A8(cpu));
     }
-    cpu->x = PullIndexValue(memory, cpu);                      /* FAC6 */
+    cpu->x = PullIndexValue(memory, cpu);
     PullDataBank(memory, cpu);
-    return ExecutionReturned(0x81fac8u);                       /* RTL */
+    return ExecutionReturned(0x81fac8u);
 }
