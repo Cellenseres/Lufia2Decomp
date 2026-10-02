@@ -1,13 +1,23 @@
 #ifndef LUFIA2_ANCIENT_CAVE_H
 #define LUFIA2_ANCIENT_CAVE_H
 
-/* Ancient Cave floor generation. */
+/* Ancient Cave generation and inventory transitions. */
 
 #include "lufia2/execution.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* $84:8AF4: append eligible blue equipment to WMDATA; PB84/M0X0. */
+Lufia2ExecutionResult Lufia2AncientCaveCarryBlueItem(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $84:890B: restore pre-Cave state and carry items out; PB84/M1X0.
+ * Checkpoints precede PHP at 890B and the restored-state test at 8A38. */
+Lufia2ExecutionResult Lufia2AncientCaveExit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* $83:9E31: next Ancient Cave floor; M1X0. */
 Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(
