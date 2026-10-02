@@ -61,6 +61,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:8821` | `Lufia2BattleEntry` | verified | `src/battle/battle_entry.c` |
 | `$81:886F` | `Lufia2BattleMainLoop` | verified | `src/battle/battle_loop.c` |
 | `$81:890A` | `Lufia2BattleExecuteTurns` | verified | `src/battle/battle_actions.c` |
+| `$81:8E92` | `Lufia2BattleActorSprites` | draft | `src/battle/battle_monster_oam.c` |
+| `$81:8EEA` | `Lufia2BattleActorSprite` | draft | `src/battle/battle_monster_oam.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |
 | `$81:B1A3` | `Lufia2BattleRunConfiguredScript` | verified | `src/battle/battle_action_script.c` |
 | `$81:B1C9` | `Lufia2BattleRunBattlerScript` | verified | `src/battle/battle_action_script.c` |
