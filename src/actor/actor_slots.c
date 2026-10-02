@@ -165,7 +165,7 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
                 }
             }
             if (gate) {
-                LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));   /* BBBE */
+                LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));   /* BBBE */
                 BitImmediate8(cpu, 0x2cu);
                 if (!cpu->zero)
                     TransferYToA8(cpu);

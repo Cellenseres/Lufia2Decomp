@@ -132,7 +132,7 @@ static void SecondaryLeaderStopFlag(
     if (cpu->zero) {
         uint8_t mark;
 
-        LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));
+        LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));
         BitImmediate8(cpu, 0x04u);
         mark = !cpu->zero;
         if (!mark) {
@@ -429,7 +429,7 @@ static SecondaryStep SecondaryWalk(
     Compare8(cpu, A8(cpu), 0x04u);                             /* DCA6 */
     if (cpu->zero || (Compare8(cpu, A8(cpu), 0x0cu), cpu->zero)) {
         const int delta = A8(cpu) == 0x04u ? 1 : -1;
-        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
         BitImmediate8(cpu, 0x02u);
         if (cpu->zero)
             StepMemory8(                                       /* DCB1 */
@@ -441,7 +441,7 @@ static SecondaryStep SecondaryWalk(
     if (!SecondaryFineStep(memory, cpu))
         return SecondaryBoundary(cpu);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* DCD0 */
-    LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     BitImmediate8(cpu, 0x08u);
     if (!cpu->zero) {
         /* Bob offset from $83:DD44. */
@@ -910,7 +910,7 @@ static SecondaryStep SecondaryOp2X(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* D844 */
-    LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->y);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->y);
     BitImmediate8(cpu, 0x02u);
     if (cpu->zero) {
         LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);      /* D84D */
@@ -1064,12 +1064,12 @@ static SecondaryStep SecondaryOpEA(
     LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
     {
         const uint8_t clear = !cpu->zero;
-        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->y);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->y);
         if (clear)
             And8(cpu, 0xfdu);                              /* DB81 */
         else
             Or8(cpu, 0x02u);                               /* DB8B */
-        StoreAAbsolute8(memory, cpu, WRAM_UNK_7E0736, cpu->y);
+        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->y);
     }
     IncrementX16(cpu);
     IncrementX16(cpu);
@@ -1088,12 +1088,12 @@ static SecondaryStep SecondaryOpED(
     {
         const uint8_t blink = !cpu->zero;
         LoadA8(
-            cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7E0736, cpu->x)));
+            cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_FLAGS, cpu->x)));
         if (blink)
             Or8(cpu, 0x80u);                               /* DBF7 */
         else
             And8(cpu, 0x7fu);                              /* DBEF */
-        Write8(memory, LongIndexedAddress(WRAM_UNK_7E0736, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(WRAM_ACTOR_FLAGS, cpu->x), A8(cpu));
     }
     return SecondaryNextByte(memory, cpu, 2);
 }

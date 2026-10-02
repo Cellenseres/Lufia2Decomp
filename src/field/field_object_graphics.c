@@ -220,9 +220,9 @@ Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     OpLoadA(cpu, 0x00ffu);
     OpSta(memory, cpu, OpLongX(cpu, 0x001471u));
     OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7E066A));
-    OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E0736));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FLAGS));
     OpOraValue(cpu, 0x0002u);
-    OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E0736));
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FLAGS));
     OpStz(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E1291));
     return ExecutionReturned(0x83f730u);
 }
