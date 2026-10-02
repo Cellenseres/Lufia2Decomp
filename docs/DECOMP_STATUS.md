@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-346 functions in `metadata/functions.toml`: 346 verified, 0 draft, 0 identified, 0 disabled.
+347 functions in `metadata/functions.toml`: 347 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **471 independent jobs**. The normal
-application build also passes. The consumer selects all 346 verified functions,
+The full Windows Release verifier passes **474 independent jobs**. The normal
+application build also passes. The consumer selects all 347 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -47,6 +47,21 @@ interpreter execution.
 35,840 original-ROM states and 27,648 native entries pass, including actual
 equipment and level-up JSR frames. There are no positive native fallbacks.
 All 1,025 subscriber checks and 11 injected faults pass.
+
+## Rendering a pair of layers
+
+`$83:8E76` renders the pending rectangle in layers zero and one through the
+verified region renderer. It retains the live child RTL frame, the original
+layer increments and exact continuations after 4,096 child calls or 262,144
+cells. The region renderer also follows the live RTS frames of its coordinate
+and map-offset helpers. Native continuations export the actual program bank.
+
+8,257 ROM and native cases pass without a positive entry fallback. CPU state,
+complete WRAM, every data read and write, and mutable hardware state agree.
+The checks include 17 changed child returns, eight additional symmetric
+bus-observer frame rewrites and eight independently counted loop limits.
+All 1,536 unsupported native entries and 17 injected faults are detected.
+The pair is selected as a standalone replacement.
 
 ## Layer scroll and coordinate scaling
 

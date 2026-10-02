@@ -844,6 +844,24 @@ static void RegionCell(
     SimulateRtsFrame(memory, cpu);
 }
 
+static Lufia2ExecutionResult CheckedRegionCell(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t frame, uint8_t round_up) {
+    uint8_t low, high;
+    uint16_t actual;
+    SimulateJsrFrame(memory, cpu, frame);
+    if (round_up)
+        (void)Lufia2FieldPixelCellCeiling(memory, cpu);
+    else
+        (void)Lufia2FieldPixelCellFloor(memory, cpu);
+    low = Pull8(memory, cpu);
+    high = Pull8(memory, cpu);
+    actual = (uint16_t)(low | ((uint16_t)high << 8));
+    if (actual != frame)
+        return ExecutionHandoff(cpu, 0x830000u | (uint16_t)(actual + 1u));
+    return ExecutionReturned(0x83900bu);
+}
+
 /* Read-only $83:9000/9004. */
 static uint16_t RegionCellValue(
     const Lufia2CpuState *cpu, uint16_t value, uint8_t round_up) {
@@ -974,9 +992,44 @@ static void RegionWriteMetatile(
     OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, REGION_BOTTOM_ROW));
 }
 
+Lufia2ExecutionResult Lufia2FieldRenderLayerPair(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    unsigned calls = 0;
+
+    OpLdx(cpu, 0u);
+    for (;;) {
+        Lufia2ExecutionResult result;
+        uint8_t low, high, bank;
+        uint16_t frame;
+
+        if (calls == 4096u)
+            return ExecutionHandoff(cpu, 0x838e79u);
+        ++calls;
+        SimulateJslFrame(memory, cpu, 0x83u, 0x8e7cu);
+        result = Lufia2FieldRenderRegion(memory, cpu);
+        if (result.flow != LUFIA2_EXECUTION_RETURNED)
+            return result;
+        low = Pull8(memory, cpu);
+        high = Pull8(memory, cpu);
+        bank = Pull8(memory, cpu);
+        frame = (uint16_t)(low | ((uint16_t)high << 8));
+        cpu->program_bank = bank;
+        if (frame != 0x8e7cu || bank != 0x83u)
+            return ExecutionHandoff(cpu,
+                ((uint32_t)bank << 16) | (uint16_t)(frame + 1u));
+        OpInx(cpu);
+        OpInx(cpu);
+        Compare16(cpu, cpu->x, 4u);
+        if (cpu->zero)
+            break;
+    }
+    return ExecutionReturned(0x838e84u);
+}
+
 Lufia2ExecutionResult Lufia2FieldRenderRegion(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned axis, cells_drawn = 0;
+    Lufia2ExecutionResult child_result;
 
     /* Clip the object rectangle against the visible layer cells. */
     PushDataBank(memory, cpu);
@@ -991,20 +1044,28 @@ Lufia2ExecutionResult Lufia2FieldRenderRegion(
     OpAdc(memory, cpu, OpDp(cpu, REGION_CLIPPED_FIRST_X));
     OpSta(memory, cpu, OpDp(cpu, REGION_CLIPPED_LAST_X));
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_X));
-    RegionCell(memory, cpu, 0x8ea1u, 1);
+    child_result = CheckedRegionCell(memory, cpu, 0x8ea1u, 1u);
+    if (child_result.flow != LUFIA2_EXECUTION_RETURNED)
+        return child_result;
     OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_FIRST_X));
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_Y));
-    RegionCell(memory, cpu, 0x8eaau, 0);
+    child_result = CheckedRegionCell(memory, cpu, 0x8eaau, 0u);
+    if (child_result.flow != LUFIA2_EXECUTION_RETURNED)
+        return child_result;
     OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_FIRST_Y));
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_X));
     cpu->carry = 0;
     OpAdcValue(cpu, 0x0100u);
-    RegionCell(memory, cpu, 0x8eb7u, 1);
+    child_result = CheckedRegionCell(memory, cpu, 0x8eb7u, 1u);
+    if (child_result.flow != LUFIA2_EXECUTION_RETURNED)
+        return child_result;
     OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_LAST_X));
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_Y));
     cpu->carry = 0;
     OpAdcValue(cpu, 0x00ffu);
-    RegionCell(memory, cpu, 0x8ec4u, 0);
+    child_result = CheckedRegionCell(memory, cpu, 0x8ec4u, 0u);
+    if (child_result.flow != LUFIA2_EXECUTION_RETURNED)
+        return child_result;
     OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_LAST_Y));
     OpSepWidths(cpu, 0x20u);
     for (axis = 0; axis < 2u; ++axis) {
@@ -1042,7 +1103,13 @@ Lufia2ExecutionResult Lufia2FieldRenderRegion(
     OpLda(memory, cpu, OpDp(cpu, REGION_CLIPPED_FIRST_Y));
     SimulateJsrFrame(memory, cpu, 0x8f31u);
     (void)Lufia2MapCellOffset(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
+    {
+        uint8_t low = Pull8(memory, cpu);
+        uint8_t high = Pull8(memory, cpu);
+        uint16_t actual = (uint16_t)(low | ((uint16_t)high << 8));
+        if (actual != 0x8f31u)
+            return ExecutionHandoff(cpu, 0x830000u | (uint16_t)(actual + 1u));
+    }
     OpRepWidths(cpu, 0x20u);
     OpTxa(cpu);
     cpu->carry = 0;
