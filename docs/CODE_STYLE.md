@@ -144,6 +144,30 @@ original access order. A view never caches values or copies WRAM into host
 memory. `$83:BB93` (`Lufia2UpdateActorSlots`) and the `$83:C7F8`/`$83:D508`
 front-ends are written this way; other routines adopt views one at a time, when they are touched for real work.
 
+## WRAM views
+
+Plain work-RAM accesses go through `src/core/wram_view.h` instead of
+spelled-out helper chains. A `Lufia2Wram` handle is created where the original
+code establishes its addressing state:
+
+- `WramViewOfCaller` follows the current direct page and data bank, so a
+  location below `$100` is a direct-page offset and anything else is an
+  absolute address in the data bank;
+- `WramViewInBank` fixes the bank, and `WramViewLong` is bank 0 with long
+  addressing, used for hardware registers and 24-bit constants.
+
+`WramRead`, `WramWrite` and the 16-bit forms are each exactly one bus access
+in the original order. Indexed accesses use `WramReadAt` and friends so the
+index wrap of the original is kept. Note that `WramStep16` stores the high
+byte first, as `INC`/`DEC` on memory does, while the read-modify-write
+helpers in the direct-page dialect store the low byte first; use the one the
+original function used.
+
+Held and newly pressed joypad buttons are tested with the named masks from
+`core/joypad.h`, and the 16-by-8 multiply is `Lufia2Multiply16By8`, which
+writes the two byte products with named work bytes. Neither changes the access
+order of the original code.
+
 ## REP and SEP
 
 `OpRepWidths` and `OpSepWidths` model only the M and X width bits (`$20` and
