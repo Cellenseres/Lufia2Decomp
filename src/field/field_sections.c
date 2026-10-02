@@ -1,142 +1,184 @@
 /* Map section tables ($80:EBAA-$80:ED0D). */
 
 #include "core/cpu_ops.h"
+#include "core/snes_registers.h"
+#include "core/wram_view.h"
 #include "field/field_internal.h"
 #include "lufia2/system.h"
 #include "system/wram.h"
 
-/* (dp),Y with the live DB. */
-static uint32_t FieldDpIndirectY(
-    const Lufia2Memory *memory, const Lufia2CpuState *cpu, uint8_t offset) {
-    return AbsoluteIndexedAddress(
-        cpu, Read16Direct(memory, cpu, offset), cpu->y);
+/* Section table in bank $7F, one slot per section (parallel arrays of 16-bit
+ * entries; the byte-sized values keep a zero high byte). */
+enum {
+    SECTION_RECORD = 0xd000u,         /* address of the section record */
+    SECTION_ATTRIBUTE_DATA = 0xd008u, /* address of the attribute cells */
+    SECTION_WIDTH = 0xd010u,
+    SECTION_HEIGHT = 0xd018u,
+    SECTION_FIRST_WORD = 0xd020u,
+    SECTION_NEXT_SLOT = 0xd038u, /* number of used slots, times two */
+    SECTION_RECORD_HEADER = 6u,  /* bytes before the first record */
+    SECTION_DATA_OFFSET = 4u,    /* attribute cells follow word, width, height */
+    SECTION_PACKED_ATTRIBUTES = 0xc000u,
+    WRAM_FIELD_SECTION_HEIGHT = 0x05bbu
+};
+
+/* Work bytes. */
+enum {
+    SECTION_DP_SOURCE = 0x5du, /* read pointer into the map header */
+    SECTION_DP_COUNT = 0x58u,
+    SECTION_DP_PACKED = 0x54u
+};
+
+/* Byte or word of a section record, addressed through the data bank. */
+static uint8_t SectionByte(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
+                           uint16_t record, uint16_t offset) {
+    return Read8(memory, AbsoluteIndexedAddress(cpu, record, offset));
 }
 
+static uint16_t SectionWord(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
+                            uint16_t record, uint16_t offset) {
+    return Read16AbsoluteIndexed(memory, cpu, record, offset);
+}
+
+/* The attribute bits (4-5) of the cell that starts at offset `cell`. */
+static uint8_t SectionAttributeBits(const Lufia2Memory *memory,
+                                    const Lufia2CpuState *cpu, uint16_t cell) {
+    return SectionByte(memory, cpu, 1u, cell) & 0x30u;
+}
+
+/* Read the sections of a map header at the pointer in $5D into the section
+ * table at $7F:D000. A record is a word, the width and height in cells, and
+ * two bytes of attributes per cell; the pointer ends up behind the last
+ * record. Entered with 8-bit A. */
 Lufia2ExecutionResult Lufia2FieldReadSections(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    OpSetDataBank(memory, cpu, 0x7fu);                         /* EBAA */
-    OpLdy(cpu, 0x0000u);
-    OpLda(memory, cpu, FieldDpIndirectY(memory, cpu, 0x5du));
-    OpSta(memory, cpu, OpDp(cpu, 0x58u));
-    OpStz(memory, cpu, OpDp(cpu, 0x59u));
-    OpRepWidths(cpu, 0x30u);                                         /* EBB7 */
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0xd038u)));
-    OpLda(memory, cpu, OpDp(cpu, 0x58u));
-    OpAslA(cpu);
-    OpAdc(memory, cpu, OpAbs(cpu, 0xd038u));
-    OpSta(memory, cpu, OpAbs(cpu, 0xd038u));
-    OpLda(memory, cpu, OpDp(cpu, 0x5du));
-    cpu->carry = 0;
-    OpAdcValue(cpu, 0x0006u);
-    OpSta(memory, cpu, OpDp(cpu, 0x5du));
+    const Lufia2Wram dp = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram registers = WramViewLong(memory);
+    Lufia2Wram map;
+    uint16_t record, slot, product;
+    uint8_t count;
+
+    OpSetDataBank(memory, cpu, 0x7fu);
+    map = WramViewOfCaller(memory, cpu);
+    record = WramRead16(dp, SECTION_DP_SOURCE);
+    count = SectionByte(memory, cpu, record, 0u);
+    LoadA8(cpu, count);
+    WramWrite(dp, SECTION_DP_COUNT, count);
+    WramWrite(dp, SECTION_DP_COUNT + 1u, 0u);
+
+    slot = WramRead16(map, SECTION_NEXT_SLOT);
+    WramWrite16(map, SECTION_NEXT_SLOT, (uint16_t)(slot + 2u * count));
+    record = (uint16_t)(record + SECTION_RECORD_HEADER);
+    WramWrite16(dp, SECTION_DP_SOURCE, record);
+
     do {
-        OpLda(memory, cpu, OpDp(cpu, 0x5du));                  /* EBCD */
-        OpSta(memory, cpu, OpAbsX(cpu, 0xd000u));
-        OpLdy(cpu, 0x0000u);
-        OpLda(memory, cpu, FieldDpIndirectY(memory, cpu, 0x5du));
-        OpSta(memory, cpu, OpAbsX(cpu, 0xd020u));
-        OpSepWidths(cpu, 0x20u);
-        OpLdy(cpu, 0x0002u);                                   /* EBDC */
-        OpLda(memory, cpu, FieldDpIndirectY(memory, cpu, 0x5du));
-        OpSta(memory, cpu, OpAbsX(cpu, 0xd010u));
-        OpSta(memory, cpu, 0x004202u);
-        OpIny(cpu);
-        OpLda(memory, cpu, FieldDpIndirectY(memory, cpu, 0x5du));
-        OpSta(memory, cpu, OpAbsX(cpu, 0xd018u));
-        OpSta(memory, cpu, 0x004203u);
-        TransferDirectToA(cpu);                                /* EBF2 */
-        OpSta(memory, cpu, OpAbsX(cpu, 0xd011u));
-        OpSta(memory, cpu, OpAbsX(cpu, 0xd019u));
-        OpRepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpDp(cpu, 0x5du));                  /* EBFB */
+        const uint8_t width = SectionByte(memory, cpu, record, 2u);
+        const uint8_t height = SectionByte(memory, cpu, record, 3u);
+
+        WramWrite16At(map, SECTION_RECORD, slot, record);
+        WramWrite16At(map, SECTION_FIRST_WORD, slot,
+                      SectionWord(memory, cpu, record, 0u));
+        WramWrite(map, SECTION_WIDTH + slot, width);
+        WramWrite(registers, SNES_WRMPYA, width);
+        WramWrite(map, SECTION_HEIGHT + slot, height);
+        WramWrite(registers, SNES_WRMPYB, height);
+        WramWrite(map, SECTION_WIDTH + slot + 1u, (uint8_t)cpu->direct_page);
+        WramWrite(map, SECTION_HEIGHT + slot + 1u, (uint8_t)cpu->direct_page);
+
+        /* The next record starts after the cells: two bytes each. */
+        WramWrite16At(map, SECTION_ATTRIBUTE_DATA, slot,
+                      (uint16_t)(record + SECTION_DATA_OFFSET));
+        product = WramRead16(registers, SNES_RDMPYL);
+        LoadA16(cpu, (uint16_t)(record + SECTION_DATA_OFFSET));
         cpu->carry = 0;
-        OpAdcValue(cpu, 0x0004u);
-        OpSta(memory, cpu, OpAbsX(cpu, 0xd008u));
-        cpu->carry = 0;
-        OpAdc(memory, cpu, 0x004216u);                         /* 2 * w * h */
-        OpAdc(memory, cpu, 0x004216u);
-        OpSta(memory, cpu, OpDp(cpu, 0x5du));
-        OpInx(cpu);
-        OpInx(cpu);
-        OpStepMem(memory, cpu, OpDp(cpu, 0x58u), -1);
+        Add16Value(cpu, product);
+        Add16Value(cpu, WramRead16(registers, SNES_RDMPYL));
+        record = cpu->accumulator;
+        WramWrite16(dp, SECTION_DP_SOURCE, record);
+        slot = (uint16_t)(slot + 2u);
+        count = (uint8_t)(count - 1u);
+        SetNz16(cpu, WramStep16(dp, SECTION_DP_COUNT, -1));
     } while (!cpu->zero);
-    OpSepWidths(cpu, 0x20u);                                         /* EC15 */
+    cpu->x = slot;
+    cpu->y = 3u;
+    cpu->index_is_8_bit = 0;
+    SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x80ec17u);
 }
 
+/* Pack the two attribute bits (4-5) of every cell of section $05AA, four cells
+ * to a byte, into $7F:C000. The cells are two bytes each; the first of a group
+ * ends up in the low bits. Entered with 8-bit A and 16-bit indexes. */
 Lufia2ExecutionResult Lufia2FieldPackSectionAttributes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    TransferDirectToA(cpu);                                    /* EC18 */
-    OpLda(memory, cpu, WRAM_FIELD_LAYER_TABLE_OFFSET);
-    OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, 0xd010u));
-    OpSta(memory, cpu, 0x004202u);
-    OpLda(memory, cpu, OpAbsX(cpu, 0xd018u));
-    OpSta(memory, cpu, 0x004203u);
-    OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpAbsX(cpu, 0xd008u));                  /* EC2E */
-    OpTax(cpu);
-    OpLda(memory, cpu, 0x004216u);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram registers = WramViewLong(memory); /* bank $00 */
+    uint16_t cell, group = 0, groups;
+    uint8_t packed;
+
+    TransferDirectToA(cpu);
+    LoadA8(cpu, WramRead(registers, WRAM_FIELD_LAYER_TABLE_OFFSET));
+    TransferAToX(cpu);
+    WramWrite(registers, SNES_WRMPYA, WramReadAt(wram, SECTION_WIDTH, cpu->x));
+    WramWrite(registers, SNES_WRMPYB, WramReadAt(wram, SECTION_HEIGHT, cpu->x));
+    cell = WramRead16At(wram, SECTION_ATTRIBUTE_DATA, cpu->x);
+    LoadA16(cpu, WramRead16(registers, SNES_RDMPYL));
     cpu->carry = 0;
-    OpAdcValue(cpu, 0x0003u);
-    OpLsrA(cpu);
-    OpLsrA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, 0x58u));
-    OpSepWidths(cpu, 0x20u);
-    OpLdy(cpu, 0x0000u);                                       /* EC40 */
+    Add16Value(cpu, 3u); /* round up to whole groups of four cells */
+    LsrA16(cpu);
+    LsrA16(cpu);
+    groups = cpu->accumulator;
+    WramWrite16(wram, SECTION_DP_COUNT, groups);
+    SetAccumulatorWidth(cpu, 1);
+
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, 0x0001u));              /* EC43 */
-        OpAndValue(cpu, 0x30u);
-        OpLsrA(cpu);
-        OpLsrA(cpu);
-        OpLsrA(cpu);
-        OpLsrA(cpu);
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));
-        OpInx(cpu);
-        OpInx(cpu);
-        OpLda(memory, cpu, OpAbsX(cpu, 0x0001u));              /* EC50 */
-        OpAndValue(cpu, 0x30u);
-        OpLsrA(cpu);
-        OpLsrA(cpu);
-        OpTestBits(memory, cpu, OpDp(cpu, 0x54u), 1);
-        OpInx(cpu);
-        OpInx(cpu);
-        OpLda(memory, cpu, OpAbsX(cpu, 0x0001u));              /* EC5B */
-        OpAndValue(cpu, 0x30u);
-        OpTestBits(memory, cpu, OpDp(cpu, 0x54u), 1);
-        OpInx(cpu);
-        OpInx(cpu);
-        OpLda(memory, cpu, OpAbsX(cpu, 0x0001u));              /* EC64 */
-        OpAndValue(cpu, 0x30u);
-        OpAslA(cpu);
-        OpAslA(cpu);
-        OpOra(memory, cpu, OpDp(cpu, 0x54u));
-        OpSta(memory, cpu, OpAbsY(cpu, 0xc000u));
-        OpInx(cpu);
-        OpInx(cpu);
-        OpIny(cpu);
-        OpCompareIndex(cpu, cpu->y,
-            OpReadX(memory, cpu, OpDp(cpu, 0x58u)));
-    } while (!cpu->zero);                                      /* EC75 */
+        packed = (uint8_t)(SectionAttributeBits(memory, cpu, cell) >> 4);
+
+        WramWrite(wram, SECTION_DP_PACKED, packed);
+        cell = (uint16_t)(cell + 2u);
+        packed |= (uint8_t)(SectionAttributeBits(memory, cpu, cell) >> 2);
+        WramWrite(wram, SECTION_DP_PACKED, packed);
+        cell = (uint16_t)(cell + 2u);
+        packed |= SectionAttributeBits(memory, cpu, cell);
+        WramWrite(wram, SECTION_DP_PACKED, packed);
+        cell = (uint16_t)(cell + 2u);
+        packed |= (uint8_t)(SectionAttributeBits(memory, cpu, cell) << 2);
+        cell = (uint16_t)(cell + 2u);
+        Write8(memory, AbsoluteIndexedAddress(cpu, SECTION_PACKED_ATTRIBUTES, group),
+               packed);
+        ++group;
+        Compare16(cpu, group, WramRead16(wram, SECTION_DP_COUNT));
+    } while (!cpu->zero);
+
+    /* Exit registers: the last packed byte in A, the byte count in Y. */
+    cpu->accumulator = (uint16_t)((groups & 0xff00u) | packed);
+    cpu->x = cell;
+    cpu->y = group;
     return ExecutionReturned(0x80ec77u);
 }
 
+/* Publish the width and height of section $05AA as words at $05B9 and $05BB
+ * (the high bytes are cleared with the low byte of the direct page, which is
+ * zero). */
 Lufia2ExecutionResult Lufia2FieldSectionSize(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    OpSepWidths(cpu, 0x20u);                                         /* EC78 */
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram registers = WramViewLong(memory); /* bank $00 */
+
+    SetAccumulatorWidth(cpu, 1);
     TransferDirectToA(cpu);
-    OpLda(memory, cpu, WRAM_FIELD_LAYER_TABLE_OFFSET);
-    OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, 0xd010u));
-    OpSta(memory, cpu, WRAM_FIELD_SECTION_WIDTH);
-    OpLda(memory, cpu, OpAbsX(cpu, 0xd018u));
-    OpSta(memory, cpu, 0x0005bbu);
-    TransferDirectToA(cpu);                                    /* EC8E */
-    OpSta(memory, cpu, 0x0005bau);
-    OpSta(memory, cpu, 0x0005bcu);
+    LoadA8(cpu, WramRead(registers, WRAM_FIELD_LAYER_TABLE_OFFSET));
+    TransferAToX(cpu);
+    LoadA8(cpu, WramReadAt(wram, SECTION_WIDTH, cpu->x));
+    WramWrite(registers, WRAM_FIELD_SECTION_WIDTH, A8(cpu));
+    LoadA8(cpu, WramReadAt(wram, SECTION_HEIGHT, cpu->x));
+    WramWrite(registers, WRAM_FIELD_SECTION_HEIGHT, A8(cpu));
+    TransferDirectToA(cpu);
+    WramWrite(registers, WRAM_FIELD_SECTION_WIDTH + 1u, A8(cpu));
+    WramWrite(registers, WRAM_FIELD_SECTION_HEIGHT + 1u, A8(cpu));
     return ExecutionReturned(0x80ec97u);
 }
 
