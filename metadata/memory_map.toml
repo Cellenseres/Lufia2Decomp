@@ -48,14 +48,14 @@ address = "7E:0046"
 name = "buttons_held"
 width = 2
 owner = "system"
-notes = "Joypad buttons held; $83:867B takes buttons from $46 and $4A."
+notes = "Joypad state as read from the pad: low byte $46 holds A, X, L, R in bits 7-4, high byte $47 holds B, Y, Select, Start, Up, Down, Left, Right in bits 7-0. Distinct from buttons_pressed at $4A; $83:867B takes buttons from $46 and $4A."
 
 [[location]]
 address = "7E:004A"
 name = "buttons_pressed"
 width = 2
 owner = "system"
-notes = "Joypad buttons newly pressed; cleared bit by bit when a field handler consumes them ($83:867B TRB)."
+notes = "Pending joypad presses in the same bit layout ($4A low byte, $4B high byte); cleared bit by bit when a handler consumes them ($83:867B TRB)."
 
 [[location]]
 address = "7E:0067"
