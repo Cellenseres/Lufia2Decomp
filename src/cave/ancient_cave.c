@@ -1,14 +1,16 @@
 /* Ancient Cave floor entry ($83:9E31) and builder ($83:9013). */
 
 #include "cave/cave_internal.h"
+#include "core/snes_registers.h"
+#include "core/wram_view.h"
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
-#include "party/party_internal.h"
 #include "lufia2/system.h"
+#include "party/party_internal.h"
 #include "system/system_internal.h"
-#include "text/text_internal.h"
 #include "system/wram.h"
+#include "text/text_internal.h"
 
 #define BFAA_HANDOFF 0x80bfbcu
 
@@ -28,210 +30,249 @@ static void CaveCallLong(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $83:9013-$83:9032: clear the grid to D and the shapes to $1C. */
+/* $83:9013-$83:9032: clear the room grid to the direct page's value and fill
+ * the shape grid with the blank shape. Leaves the registers as the compare
+ * that ends the original loop did. */
 static void CaveClearGrid(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram work = WramViewLong(memory);
+    uint16_t offset;
+
     PushDataBank(memory, cpu);                                 /* 9013 */
     OpSepWidths(cpu, 0x20u);
     OpRepWidths(cpu, 0x10u);
     OpSetDataBank(memory, cpu, 0x7eu);
     OpRepWidths(cpu, 0x20u);
-    OpLdx(cpu, 0x0000u);
-    do {
-        TransferDirectToA(cpu);                                /* 9021 */
-        OpSta(memory, cpu, OpLongX(cpu, CAVE_ROOM_GRID_LONG));
-        LoadA16(cpu, 0x1c1cu);
-        OpSta(memory, cpu, OpLongX(cpu, CAVE_SHAPE_GRID_LONG));
-        OpInx(cpu);
-        OpInx(cpu);
-        OpCpx(cpu, 0x0100u);
-    } while (!cpu->carry);
+    for (offset = 0; offset < CAVE_GRID_BYTES; offset += 2u) {
+        WramWrite16At(work, CAVE_ROOM_GRID_LONG, offset, cpu->direct_page);
+        WramWrite16At(work, CAVE_SHAPE_GRID_LONG, offset, CAVE_BLANK_SHAPE_PAIR);
+    }
+    LoadX16(cpu, CAVE_GRID_BYTES);
+    LoadA16(cpu, CAVE_BLANK_SHAPE_PAIR);
+    OpCpx(cpu, CAVE_GRID_BYTES);
 }
 
-/* $83:9034-$83:90C3: split item records by floor limit. */
+/* $83:9034-$83:90C3: sort the item records that are allowed on this floor into
+ * two lists in bank $7F. A record qualifies when it is a field item, is not
+ * excluded, and its price is below the floor's limit (1000 per floor up to
+ * floor 59, unlimited after). Bit 0 of its use word picks the list; the lists
+ * are written at $7F:0000 and $7F:1000, each entry the item number. */
 static void CaveCollectItems(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram work = WramViewLong(memory);
+    Lufia2Wram records;
+    uint16_t item;
+
     OpSepWidths(cpu, 0x20u);                                         /* 9034 */
-    OpSetDataBank(memory, cpu, 0x96u);
+    OpSetDataBank(memory, cpu, ITEM_RECORD_BANK);
+    records = WramViewInBank(memory, cpu, ITEM_RECORD_BANK);
     OpRepWidths(cpu, 0x20u);
     OpSepWidths(cpu, 0x20u);
-    OpLdx(cpu, 0x0000u);                                       /* 903E */
-    OpWriteX(memory, cpu, OpDp(cpu, 0x5du), cpu->x);
-    OpLdx(cpu, 0x1000u);
-    OpWriteX(memory, cpu, OpDp(cpu, 0x60u), cpu->x);
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);                             /* 9048 */
-    OpCmpValue(cpu, 0x3cu);
+    LoadX16(cpu, 0); /* 903E */
+    WramWrite16(wram, CAVE_DP_LIST_A_END, cpu->x);
+    LoadX16(cpu, CAVE_ITEM_LIST_B_BASE);
+    WramWrite16(wram, CAVE_DP_LIST_B_END, cpu->x);
+    LoadA8(cpu, WramRead(work, CAVE_FLOOR_LONG)); /* 9048 */
+    OpCmpValue(cpu, CAVE_UNLIMITED_PRICE_FLOOR);
     if (cpu->carry) {
         LoadA8(cpu, 0xffu);
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));
-        OpSta(memory, cpu, OpDp(cpu, 0x55u));
+        WramWrite(wram, CAVE_DP_PRICE_LIMIT, A8(cpu));
+        WramWrite(wram, CAVE_DP_PRICE_LIMIT + 1u, A8(cpu));
     } else {
-        /* Limit = 1000 * (floor + 1) through the PPU multiplier. */
-        LoadA8(cpu, 0xe8u);                                    /* 9058 */
-        OpSta(memory, cpu, OpAbs(cpu, 0x211bu));
-        LoadA8(cpu, 0x03u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x211bu));
-        OpLda(memory, cpu, CAVE_FLOOR_LONG);
+        /* Limit = 1000 * (floor + 1) through the PPU multiplier, reached
+         * through the data bank's mirror of the registers. */
+        LoadA8(cpu, CAVE_PRICE_PER_FLOOR & 0xffu); /* 9058 */
+        WramWrite(records, SNES_M7A, A8(cpu));
+        LoadA8(cpu, CAVE_PRICE_PER_FLOOR >> 8);
+        WramWrite(records, SNES_M7A, A8(cpu));
+        LoadA8(cpu, WramRead(work, CAVE_FLOOR_LONG));
         OpIncA(cpu);
-        OpSta(memory, cpu, OpAbs(cpu, 0x211cu));
-        OpLda(memory, cpu, OpAbs(cpu, 0x2134u));
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));
-        OpLda(memory, cpu, OpAbs(cpu, 0x2135u));
-        OpSta(memory, cpu, OpDp(cpu, 0x55u));
+        WramWrite(records, SNES_M7B, A8(cpu));
+        LoadA8(cpu, WramRead(records, SNES_MPYL));
+        WramWrite(wram, CAVE_DP_PRICE_LIMIT, A8(cpu));
+        LoadA8(cpu, WramRead(records, SNES_MPYM));
+        WramWrite(wram, CAVE_DP_PRICE_LIMIT + 1u, A8(cpu));
     }
-    OpLdy(cpu, 0x0000u);                                       /* 9074 */
+    cpu->y = 0; /* 9074 */
     do {
+        uint16_t record;
+        uint8_t list_end;
+
+        item = cpu->y;
         OpRepWidths(cpu, 0x20u);                                     /* 9077 */
-        OpLda(memory, cpu, OpAbsY(cpu, 0xcf69u));
-        OpTax(cpu);
+        LoadA16(cpu, WramRead16At(records, ITEM_RECORD_TABLE, item));
+        TransferAToX(cpu);
+        record = cpu->x;
         OpSepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbsX(cpu, 0xcf69u));
-        OpBitValue(cpu, 0x02u);
+        LoadA8(cpu, WramReadAt(records, ITEM_RECORD_TABLE + ITEM_RECORD_FLAGS, record));
+        OpBitValue(cpu, ITEM_FLAG_FIELD_USABLE);
         if (cpu->zero)
             goto next;
-        OpBitValue(cpu, 0x20u);
+        OpBitValue(cpu, ITEM_FLAG_EXCLUDED);
         if (!cpu->zero)
             goto next;
-        OpLda(memory, cpu, OpAbsX(cpu, 0xcf6au));
-        OpBitValue(cpu, 0x20u);
+        LoadA8(cpu,
+               WramReadAt(records, ITEM_RECORD_TABLE + ITEM_RECORD_FLAGS2, record));
+        OpBitValue(cpu, ITEM_FLAG_EXCLUDED);
         if (!cpu->zero)
             goto next;
         OpRepWidths(cpu, 0x20u);                                     /* 9091 */
-        OpLda(memory, cpu, OpAbsX(cpu, 0xcf6eu));
-        OpCmp(memory, cpu, OpDp(cpu, 0x54u));
+        LoadA16(cpu,
+                WramRead16At(records, ITEM_RECORD_TABLE + ITEM_RECORD_PRICE, record));
+        OpCmp(memory, cpu, OpDp(cpu, CAVE_DP_PRICE_LIMIT));
         if (cpu->carry)
             goto next;
-        OpLda(memory, cpu, OpAbsX(cpu, 0xcf70u));
-        OpBitValue(cpu, 0x0001u);
-        {
-            const uint8_t list = cpu->zero ? 0x60u : 0x5du;    /* 90A2/90B0 */
-
-            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, list)));
-            OpTya(cpu);
-            OpLsrA(cpu);
-            OpSta(memory, cpu, OpLongX(cpu, 0x7f0000u));
-            OpInx(cpu);
-            OpInx(cpu);
-            OpWriteX(memory, cpu, OpDp(cpu, list), cpu->x);
-        }
+        LoadA16(cpu,
+                WramRead16At(records, ITEM_RECORD_TABLE + ITEM_RECORD_USE, record));
+        OpBitValue(cpu, ITEM_USE_LIST_B);
+        list_end = cpu->zero ? CAVE_DP_LIST_B_END : CAVE_DP_LIST_A_END; /* 90A2/90B0 */
+        LoadX16(cpu, WramRead16(wram, list_end));
+        OpTya(cpu);
+        OpLsrA(cpu);
+        WramWrite16At(work, CAVE_ITEM_LISTS_LONG, cpu->x, cpu->accumulator);
+        OpInx(cpu);
+        OpInx(cpu);
+        WramWrite16(wram, list_end, cpu->x);
 next:
         OpSepWidths(cpu, 0x20u);                                     /* 90BC */
         OpIny(cpu);
         OpIny(cpu);
-        OpCpy(cpu, 0x03a4u);
+        OpCpy(cpu, ITEM_RECORD_TABLE_BYTES);
     } while (!cpu->carry);
 }
 
-/* $83:90C5-$83:9141: optional first chests; Y = next slot. */
+/* $83:90C5-$83:9141: the optional first chests. Y is the next chest slot (two
+ * bytes each) and is advanced when a chest is placed.
+ *
+ * A one in five roll may place a story item chest: a random one of nine, once
+ * per game (tracked in the seen bits) and only while its game flag is clear. Failing
+ * that, the first time on a floor below 21 a chest with the spell scroll
+ * (word $022D) may appear, with a chance that falls as the floor rises. */
 static void CaveFirstChests(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram work = WramViewLong(memory);
+    Lufia2Wram cave;
+
     OpSetDataBank(memory, cpu, 0x7fu);                         /* 90C5 */
-    OpLdy(cpu, 0x0000u);
+    cave = WramViewInBank(memory, cpu, 0x7fu);
+    LoadY16(cpu, 0);
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, 0xe75du));
+    WramWrite(cave, CAVE_STORY_CHEST_STATE, A8(cpu));
     CaveRandomByte(memory, cpu, 0x90d0u);
-    OpCmpValue(cpu, 0x05u);
+    OpCmpValue(cpu, CAVE_STORY_CHEST_ODDS);
     if (!cpu->carry) {
-        LoadA8(cpu, 0x09u);                                    /* 90D8 */
+        LoadA8(cpu, CAVE_STORY_CHEST_KINDS); /* 90D8 */
         Lufia2CaveRandomBelow(memory, cpu, 0x90dau);
-        OpSta(memory, cpu, OpDp(cpu, 0x58u));
+        WramWrite(wram, CAVE_DP_CHEST_KIND, A8(cpu));
         Lufia2EventFlagBitFrom(memory, cpu, 0x83u, 0x90e2u);
-        OpLda(memory, cpu, OpLongX(cpu, 0x7fe75eu));           /* 90E3 */
-        OpBit(memory, cpu, OpDp(cpu, 0x55u));
+        LoadA8(cpu, WramReadAt(work, CAVE_STORY_CHEST_SEEN_LONG, cpu->x)); /* 90E3 */
+        OpBit(memory, cpu, OpDp(cpu, CAVE_DP_CHEST_BIT));
         if (cpu->zero) {
-            OpOra(memory, cpu, OpDp(cpu, 0x55u));
-            OpSta(memory, cpu, OpLongX(cpu, 0x7fe75eu));
-            OpLda(memory, cpu, OpDp(cpu, 0x58u));
+            OpOra(memory, cpu, OpDp(cpu, CAVE_DP_CHEST_BIT));
+            WramWriteAt(work, CAVE_STORY_CHEST_SEEN_LONG, cpu->x, A8(cpu));
+            LoadA8(cpu, WramRead(wram, CAVE_DP_CHEST_KIND));
             cpu->carry = 0;
-            OpAdcValue(cpu, 0xc8u);
+            OpAdcValue(cpu, CAVE_STORY_FLAG_BASE);
             /* JSL $80:BE1A = JSR $80:BE1E; RTL. */
             SimulateJslFrame(memory, cpu, 0x83u, 0x90f9u);     /* 90F6 */
             Lufia2TextTestFlag(memory, cpu, 0xbe1cu);
             SimulateRtlFrame(memory, cpu);
             if (cpu->zero) {
                 TransferDirectToA(cpu);                        /* 90FC */
-                OpLda(memory, cpu, OpDp(cpu, 0x58u));
+                LoadA8(cpu, WramRead(wram, CAVE_DP_CHEST_KIND));
                 OpRepWidths(cpu, 0x20u);
                 OpAslA(cpu);
                 OpTax(cpu);
-                OpLda(memory, cpu, OpLongX(cpu, 0x91ffcau));
-                OpOraValue(cpu, 0x0200u);
-                OpSta(memory, cpu, OpAbs(cpu, 0xe746u));
+                LoadA16(cpu, Read16Long(memory, LongIndexedAddress(
+                                                    CAVE_STORY_CHEST_ITEMS, cpu->x)));
+                OpOraValue(cpu, CAVE_CHEST_ITEM_MARK);
+                WramWrite16(cave, CAVE_CHEST_WORDS, cpu->accumulator);
                 OpSepWidths(cpu, 0x20u);
-                LoadA8(cpu, 0x80u);
-                OpSta(memory, cpu, OpAbs(cpu, 0xe75du));
+                LoadA8(cpu, CAVE_STORY_CHEST_PLACED);
+                WramWrite(cave, CAVE_STORY_CHEST_STATE, A8(cpu));
                 goto take_slot;
             }
         }
     }
-    OpLda(memory, cpu, 0x7fe75bu);                             /* 9116 */
+    LoadA8(cpu, WramRead(work, CAVE_SCROLL_CHEST_STATE_LONG)); /* 9116 */
     if (cpu->negative)
         return;
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, 0x7fe75bu);
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);
-    OpCmpValue(cpu, 0x15u);
+    WramWrite(work, CAVE_SCROLL_CHEST_STATE_LONG, A8(cpu));
+    LoadA8(cpu, WramRead(work, CAVE_FLOOR_LONG));
+    OpCmpValue(cpu, CAVE_SCROLL_CHEST_FLOOR_LIMIT);
     if (!cpu->carry)
         return;
-    LoadA8(cpu, 0x3cu);                                        /* 9129 */
+    LoadA8(cpu, CAVE_SCROLL_CHEST_CHANCE); /* 9129 */
     Lufia2CaveRandomBelow(memory, cpu, 0x912bu);
     OpCmp(memory, cpu, CAVE_FLOOR_LONG);
     if (cpu->carry)
         return;
-    OpLdx(cpu, 0x022du);                                       /* 9134 */
-    OpWriteX(memory, cpu, OpAbs(cpu, 0xe746u), cpu->x);
+    LoadX16(cpu, CAVE_SCROLL_CHEST_WORD); /* 9134 */
+    WramWrite16(cave, CAVE_CHEST_WORDS, cpu->x);
     LoadA8(cpu, 0x01u);
-    OpSta(memory, cpu, 0x7fe75bu);
+    WramWrite(work, CAVE_SCROLL_CHEST_STATE_LONG, A8(cpu));
 take_slot:
     OpIny(cpu);                                                /* 9140 */
     OpIny(cpu);
 }
 
-/* Chest word from a ROM table at X. */
+/* Copies the word at table[X] to the chest word at Y, setting bits in its high
+ * byte. */
 static void CaveChestFromTable(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t table,
     uint8_t high_or) {
-    OpLda(memory, cpu, OpLongX(cpu, table));
-    OpSta(memory, cpu, OpAbsY(cpu, 0xe746u));
-    OpLda(memory, cpu, OpLongX(cpu, table + 1u));
+    const Lufia2Wram cave = WramViewOfCaller(memory, cpu);
+
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(table, cpu->x)));
+    WramWriteAt(cave, CAVE_CHEST_WORDS, cpu->y, A8(cpu));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(table + 1u, cpu->x)));
     if (high_or)
         OpOraValue(cpu, high_or);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xe747u));
+    WramWriteAt(cave, CAVE_CHEST_WORDS + 1u, cpu->y, A8(cpu));
 }
 
-/* $83:91AD: common item from $91:FFDC. */
+/* $83:91AD: a common item, drawn from the middle of the table at $91:FFDC. */
 static void CaveCommonChest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadA8(cpu, 0x09u);                                        /* 91AD */
+    LoadA8(cpu, CAVE_COMMON_ITEM_COUNT); /* 91AD */
     Lufia2CaveRandomMean(memory, cpu, 0x91afu);
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, 0x00u);
     ExchangeAccumulatorBytes(cpu);
     OpAslA(cpu);
     OpTax(cpu);
-    CaveChestFromTable(memory, cpu, 0x91ffdcu, 0);
+    CaveChestFromTable(memory, cpu, CAVE_COMMON_ITEM_TABLE, 0);
 }
 
-/* $83:916F/$83:9176: random word of an item list. */
+/* $83:916F/$83:9176: a random entry of the item list that starts at `base` in
+ * bank $7F and ends at the direct-page pointer `end`. */
 static void CaveChestFromList(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t base,
     uint8_t end) {
-    OpLdx(cpu, base);
-    OpLda(memory, cpu, OpDp(cpu, end));
-    OpWriteX(memory, cpu, OpDp(cpu, 0x54u), cpu->x);           /* 917B */
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    LoadX16(cpu, base);
+    LoadA8(cpu, WramRead(wram, end));
+    WramWrite16(wram, CAVE_DP_PRICE_LIMIT, cpu->x); /* 917B */
     OpLsrA(cpu);
     Lufia2CaveRandomIndex(memory, cpu, 0x917eu);
     OpRepWidths(cpu, 0x20u);
     OpTxa(cpu);
     cpu->carry = 0;
-    OpAdc(memory, cpu, OpDp(cpu, 0x54u));
+    OpAdc(memory, cpu, OpDp(cpu, CAVE_DP_PRICE_LIMIT));
     OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0000u));
-    OpSta(memory, cpu, OpAbsY(cpu, 0xe746u));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, CAVE_ITEM_LISTS, cpu->x));
+    WramWrite16At(wram, CAVE_CHEST_WORDS, cpu->y, cpu->accumulator);
     OpSepWidths(cpu, 0x20u);
 }
 
-/* $83:9192: spell $00-$22 unless a party member already has it. */
+/* $83:9192: a spell scroll, or a common item when a party member already knows
+ * the spell. */
 static void CaveSpellChest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadA8(cpu, 0x23u);                                        /* 9192 */
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    LoadA8(cpu, CAVE_SPELL_COUNT); /* 9192 */
     Lufia2CaveRandomBelow(memory, cpu, 0x9194u);
-    OpSta(memory, cpu, OpDp(cpu, 0x55u));
+    WramWrite(wram, CAVE_DP_CHEST_BIT, A8(cpu));
     PushY(memory, cpu);
     CaveCallLong(memory, cpu, 0x919au, Lufia2PartyListHasEntry);
     OpPullY(memory, cpu);
@@ -239,50 +280,55 @@ static void CaveSpellChest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         CaveCommonChest(memory, cpu);
         return;
     }
-    OpLda(memory, cpu, OpDp(cpu, 0x55u));                      /* 91A1 */
-    OpSta(memory, cpu, OpAbsY(cpu, 0xe746u));
-    LoadA8(cpu, 0x80u);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xe747u));
+    LoadA8(cpu, WramRead(wram, CAVE_DP_CHEST_BIT)); /* 91A1 */
+    WramWriteAt(wram, CAVE_CHEST_WORDS, cpu->y, A8(cpu));
+    LoadA8(cpu, CAVE_SPELL_CHEST_MARK);
+    WramWriteAt(wram, CAVE_CHEST_WORDS + 1u, cpu->y, A8(cpu));
 }
 
-/* $83:9142-$83:91E4: fill the chest words $E746,Y. */
+/* $83:9142-$83:91E4: fill the eight chest words. Each draws a random byte and
+ * takes the first matching kind: the top rolls pick from the two item lists,
+ * then a spell scroll, a piece of equipment, a common item, and last a
+ * consumable. */
 static void CaveChestContents(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     do {
         CaveRandomByte(memory, cpu, 0x9142u);                  /* 9142 */
-        OpCmpValue(cpu, 0xaeu);
+        OpCmpValue(cpu, CAVE_ROLL_LIST_A);
         if (cpu->carry) {
-            CaveChestFromList(memory, cpu, 0x0000u, 0x5du);    /* 916F */
+            CaveChestFromList(memory, cpu, 0x0000u, CAVE_DP_LIST_A_END); /* 916F */
             goto next;
         }
-        OpCmpValue(cpu, 0x81u);
+        OpCmpValue(cpu, CAVE_ROLL_LIST_B);
         if (cpu->carry) {
-            CaveChestFromList(memory, cpu, 0x1000u, 0x60u);    /* 9176 */
+            CaveChestFromList(memory, cpu, CAVE_ITEM_LIST_B_BASE,
+                              CAVE_DP_LIST_B_END); /* 9176 */
             goto next;
         }
-        OpCmpValue(cpu, 0x63u);
+        OpCmpValue(cpu, CAVE_ROLL_SPELL);
         if (cpu->carry) {
             CaveSpellChest(memory, cpu);
             goto next;
         }
-        OpCmpValue(cpu, 0x5eu);
+        OpCmpValue(cpu, CAVE_ROLL_EQUIPMENT);
         if (cpu->carry) {
-            LoadA8(cpu, 0x29u);                                /* 91C8 */
+            LoadA8(cpu, CAVE_EQUIPMENT_COUNT); /* 91C8 */
             Lufia2CaveRandomIndex(memory, cpu, 0x91cau);
-            CaveChestFromTable(memory, cpu, 0x94eea0u, 0x40u);
+            CaveChestFromTable(memory, cpu, CAVE_EQUIPMENT_TABLE,
+                               CAVE_CHEST_EQUIPMENT_MARK);
             goto next;
         }
-        OpCmpValue(cpu, 0x24u);
+        OpCmpValue(cpu, CAVE_ROLL_COMMON);
         if (cpu->carry) {
             CaveCommonChest(memory, cpu);                      /* 91AD */
             goto next;
         }
-        LoadA8(cpu, 0x1fu);                                    /* 915A */
+        LoadA8(cpu, CAVE_CONSUMABLE_COUNT); /* 915A */
         Lufia2CaveRandomIndex(memory, cpu, 0x915cu);
-        CaveChestFromTable(memory, cpu, 0x94f13du, 0);
+        CaveChestFromTable(memory, cpu, CAVE_CONSUMABLE_TABLE, 0);
 next:
         OpIny(cpu);                                            /* 91DD */
         OpIny(cpu);
-        OpCpy(cpu, 0x0010u);
+        OpCpy(cpu, CAVE_CHEST_WORD_BYTES);
     } while (!cpu->carry);
 }
 
