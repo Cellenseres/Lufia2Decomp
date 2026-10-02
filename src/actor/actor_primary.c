@@ -21,7 +21,8 @@ Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
     LoadXDirect16(memory, cpu, DP_SLOT_RECORD_OFFSET);
     actor_record = cpu->x;
 
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe508u, actor_record)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress((WRAM_ACTOR_PRIMARY_SCRIPT + 2u),
+                                                 actor_record)));
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
@@ -636,7 +637,8 @@ void Lufia2ActorLoadPrimaryScript(
             cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);                               /* D42E */
     LoadA8(cpu, 0x91u);
-    Write8(memory, LongIndexedAddress(0x7fe508u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress((WRAM_ACTOR_PRIMARY_SCRIPT + 2u), cpu->x),
+           A8(cpu));
 }
 
 void Lufia2ActorPrimaryReset(
@@ -696,7 +698,7 @@ void Lufia2ActorBlockedEvent(
         return;
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1724u, 0));
     LoadA8(cpu, 0x01u);                                        /* CA73 */
-    Write8(memory, LongIndexedAddress(0x7fdfaeu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FDFAE, cpu->x), A8(cpu));
     SetAccumulatorWidth(cpu, 0);                               /* CA79 */
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1724u, 0));
     Write16Direct(memory, cpu, 0x56u, cpu->accumulator);

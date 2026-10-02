@@ -105,10 +105,10 @@ static uint8_t EventLeaderAt(
     SimulateJsrFrame(memory, cpu, return_address);
     if (!Lufia2EventPosition(memory, cpu, 0xe134u, handoff))   /* E132 */
         return 0;
-    Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x06bau, 0));
+    Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, WRAM_ACTOR_TILE_X, 0));
     if (cpu->zero) {
         ExchangeAccumulatorBytes(cpu);
-        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x06e2u, 0));
+        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, WRAM_ACTOR_TILE_Y, 0));
         if (cpu->zero) {
             LoadA8(cpu, 0xffu);
             Write8(memory, EVENT_CONDITION, A8(cpu));
@@ -137,10 +137,10 @@ static uint8_t EventLeaderInArea(
     SimulateJsrFrame(memory, cpu, return_address);
     if (!Lufia2EventArea(memory, cpu, 0xe15cu, handoff))       /* E15A */
         return 0;
-    LoadAAbsolute8(memory, cpu, 0x06bau, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);
     if (EventInRange(cpu, A8(cpu), DirectByte(memory, cpu, 0x9fu),
                      DirectByte(memory, cpu, 0xa1u))) {
-        LoadAAbsolute8(memory, cpu, 0x06e2u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
         if (EventInRange(cpu, A8(cpu), DirectByte(memory, cpu, 0xa0u),
                          DirectByte(memory, cpu, 0xa2u))) {
             cpu->carry = 1;
@@ -855,7 +855,7 @@ static uint8_t EventBlockMatches(
     SimulateRtlFrame(memory, cpu);
     StoreXDirect16(memory, cpu, 0x60u);
     TransferDirectToA(cpu);                                    /* E2B8 */
-    LoadAAbsolute8(memory, cpu, 0x05b9u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_FIELD_SECTION_WIDTH, 0);
     cpu->carry = 1;
     Sbc8(cpu, Read8(memory, WRAM_FIELD_OBJECT_WIDTH));
     SetAccumulatorWidth(cpu, 0);
@@ -893,7 +893,7 @@ static uint64_t EventBlockCompares(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu) {
     const uint8_t key = Lufia2EventPeekByte(memory, cpu, 1u);
-    uint16_t x = Read16Long(memory, 0x7ef016u);
+    uint16_t x = Read16Long(memory, WRAM_FIELD_HEADER_OBJECT_RECORDS_OFFSET);
     uint64_t width, height;
     uint8_t layers;
     unsigned steps;
@@ -940,7 +940,7 @@ void Lufia2EventFindActorId(
     SimulateJslFrame(memory, cpu, 0x80u, return_address);
     for (LoadX16(cpu, 0x0000u);;) {                            /* BF92 */
         Compare8(cpu, A8(cpu),
-            Read8(memory, AbsoluteIndexedAddress(cpu, 0x05fau, cpu->x)));
+                 Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_ID, cpu->x)));
         if (cpu->zero) {
             StoreXDirect16(memory, cpu, DP_ACTOR_SLOT);        /* BFA2 */
             SimulateJslFrame(memory, cpu, 0x80u, 0xbfa7u);

@@ -254,7 +254,8 @@ void Lufia2ActorSpriteReload(
         cpu->x)));
     PushAccumulator16(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe508u, cpu->x)));
+    LoadA8(cpu,
+           Read8(memory, LongIndexedAddress((WRAM_ACTOR_PRIMARY_SCRIPT + 2u), cpu->x)));
     PushAccumulator8(memory, cpu);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_TIMER, cpu->x)));
@@ -274,7 +275,8 @@ void Lufia2ActorSpriteReload(
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     LoadA8(cpu, Pull8(memory, cpu));
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
-    Write8(memory, LongIndexedAddress(0x7fe508u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress((WRAM_ACTOR_PRIMARY_SCRIPT + 2u), cpu->x),
+           A8(cpu));
     SetAccumulatorWidth(cpu, 0);
     PullAccumulator16(memory, cpu);
     Write16Long(memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_SCRIPT, cpu->x),

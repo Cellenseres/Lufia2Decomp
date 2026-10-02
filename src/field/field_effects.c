@@ -20,7 +20,7 @@ static uint8_t FieldPaletteCycles(
         SimulateRtsFrame(memory, cpu);
         return 1;
     }
-    LoadA8(cpu, Read8(memory, 0x7fd0f7u));
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_SCENE_RECORD_COUNT));
     if (cpu->zero) {
         SimulateRtsFrame(memory, cpu);
         return 1;
@@ -111,7 +111,7 @@ static void FieldWaveTable(
     TransferAToX(cpu);
     LoadAAbsolute8(memory, cpu, 0xd0c8u, 0);
     LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-    Write8(memory, 0x7fd0c8u, A8(cpu));
+    Write8(memory, WRAM_UNK_7FD0C8, A8(cpu));
     Compare8(cpu, A8(cpu), Read8(memory, LongIndexedAddress(0x7e0001u, cpu->x)));
     if (!cpu->zero)
         goto done;
@@ -134,7 +134,7 @@ static void FieldWaveTable(
     cpu->carry = 0;
     Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, 0x7fd0c6u));
+    Add16Value(cpu, Read16Long(memory, WRAM_FIELD_AUXILIARY_RESOURCE_OFFSET));
     Write16Long(memory, SNES_A1TL(1), cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     IncrementX16(cpu);                                         /* AF99 */
@@ -343,8 +343,8 @@ static void ScreenPaletteFade(
         Write16Absolute(memory, cpu, channels[i].level, cpu->accumulator);
         Write16Direct(memory, cpu, channels[i].out, cpu->accumulator);
     }
-    LoadX16(cpu, Read16Long(memory, 0x7fd0f8u));               /* 8E66 */
-    LoadY16(cpu, Read16Long(memory, 0x7fd0fau));
+    LoadX16(cpu, Read16Long(memory, WRAM_FIELD_PALETTE_SOURCE)); /* 8E66 */
+    LoadY16(cpu, Read16Long(memory, WRAM_FIELD_PALETTE_SKIP_BYTES));
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1283u, 0));
     cpu->zero = (cpu->accumulator & 0x0040u) == 0;
     darken = !cpu->zero;
@@ -395,8 +395,8 @@ static void ScreenPaletteFade(
             Read16Direct(memory, cpu, 0x56u)));
         Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_CGRAM_BUFFER, cpu->y),
             (uint8_t)cpu->accumulator);
-        Write8(memory, AbsoluteIndexedAddress(cpu, 0x0321u, cpu->y),
-            (uint8_t)(cpu->accumulator >> 8));
+        Write8(memory, AbsoluteIndexedAddress(cpu, (WRAM_CGRAM_BUFFER + 1u), cpu->y),
+               (uint8_t)(cpu->accumulator >> 8));
         IncrementX16(cpu);
         IncrementX16(cpu);
         IncrementY16(cpu);

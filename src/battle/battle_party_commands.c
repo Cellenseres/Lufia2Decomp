@@ -180,11 +180,11 @@ accepted:
     OpLda(memory, cpu, OpAbsX(cpu, 0x66u));
     OpAndValue(cpu, 0x01ffu);
     if (!cpu->zero) {
-        OpSta(memory, cpu, OpAbs(cpu, 0x0a06u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
         OpSepWidths(cpu, 0x20u);
         if (!BattleCall(&battle, 0xcd5eu, 0x81f291u, 3u))
             goto unwound;
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x0a09u)));
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_POINTER)));
         PushDataBank(memory, cpu);
         OpSetDataBank(memory, cpu, 0x96u);
         OpLda(memory, cpu, OpAbsX(cpu, 2u));
@@ -374,9 +374,9 @@ item_selection:
     OpAndValue(cpu, 0x1ffu);
     OpOraValue(cpu, 0x200u);
     OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_PARAMETER));
-    OpSta(memory, cpu, OpAbs(cpu, 0x0a06u));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
     OpSepWidths(cpu, 0x20u);
-    OpStz(memory, cpu, OpAbs(cpu, 0x0a09u));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_POINTER));
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
     OpRepWidths(cpu, 0x20u);
     BattlePartyCommandPriority(memory, cpu);

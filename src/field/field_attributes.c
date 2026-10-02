@@ -139,7 +139,7 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_LAYER_WIDTH, cpu->x)));
     Write8(memory, 0x004202u, A8(cpu));
     StoreAAbsolute8(memory, cpu, MAP_WIDTH, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x05bau, 0);
+    StoreZeroAbsolute8(memory, cpu, (WRAM_FIELD_SECTION_WIDTH + 1u), 0);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_LAYER_HEIGHT, cpu->x)));
     Write8(memory, 0x004203u, A8(cpu));
     StoreAAbsolute8(memory, cpu, MAP_HEIGHT, 0);

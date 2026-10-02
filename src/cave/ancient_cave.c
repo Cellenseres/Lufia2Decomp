@@ -1462,9 +1462,9 @@ Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(
         LoadA8(cpu, 0x40u);
         OpSta(memory, cpu, WRAM_FIELD_DESTINATION_PARAMETERS);
         LoadA8(cpu, 0xf1u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x05acu));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
         LoadA8(cpu, 0x01u);
-        OpTestBits(memory, cpu, OpAbs(cpu, 0x05b6u), 0);
+        OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS), 0);
         return ExecutionReturned(0x839ea1u);                   /* 9EA1 RTL */
     }
     TransferDirectToA(cpu);                                    /* 9EA2 */

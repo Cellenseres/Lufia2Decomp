@@ -1329,7 +1329,7 @@ static void EquipFlagged(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     EquipSlot(memory, cpu);
     Rts(memory, cpu);
     LoadA16(cpu, (uint16_t)(Indirect16At(memory, cpu, 0x2au, cpu->y) & 0x01ffu));
-    StoreAAbsolute16(memory, cpu, 0x0a06u, 0);
+    StoreAAbsolute16(memory, cpu, WRAM_ITEM_RECORD_ID, 0);
     if (cpu->zero) {
         cpu->carry = 0;
         return;
@@ -1366,7 +1366,7 @@ static void EquipBonuses(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             Rts(memory, cpu);
         } else {
             And16(cpu, 0x01ffu);
-            StoreAAbsolute16(memory, cpu, 0x0a06u, 0);
+            StoreAAbsolute16(memory, cpu, WRAM_ITEM_RECORD_ID, 0);
             SimulateJslFrame(memory, cpu, 0x82u, 0xf71du);
             (void)Lufia2LoadItemRecord(memory, cpu);
             SimulateRtlFrame(memory, cpu);
@@ -1399,7 +1399,7 @@ static void EquipBonuses(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 Lufia2ExecutionResult Lufia2MenuEquipUpgrade(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    const uint16_t item = Read16AbsoluteIndexed(memory, cpu, 0x0a06u, 0);
+    const uint16_t item = Read16AbsoluteIndexed(memory, cpu, WRAM_ITEM_RECORD_ID, 0);
     int changed = 0;
 
     LoadX16(cpu, item);
@@ -1475,7 +1475,7 @@ Lufia2ExecutionResult Lufia2MenuEquipUpgrade(
     }
     SetAccumulatorWidth(cpu, 1);
     LoadX16(cpu, PullIndexValue(memory, cpu));
-    Write16Absolute(memory, cpu, 0x0a06u, cpu->x);
+    Write16Absolute(memory, cpu, WRAM_ITEM_RECORD_ID, cpu->x);
     cpu->carry = !changed;
     return ExecutionReturned(changed ? 0x82b2f5u : 0x82b2fdu);
 }
@@ -1763,7 +1763,8 @@ static void ItemAttribute(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             attribute = cpu->zero ? 0x24u : 0x20u;
         }
     } else {
-        const uint16_t item = Read16AbsoluteIndexed(memory, cpu, 0x0a06u, 0);
+        const uint16_t item =
+            Read16AbsoluteIndexed(memory, cpu, WRAM_ITEM_RECORD_ID, 0);
 
         if (mode != 0u) {
             Compare8(cpu, mode, 0x01u);
@@ -1857,7 +1858,7 @@ static int ItemRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     if (!cpu->zero) {
         StoreADirect16(memory, cpu, 0x00u);
         And16(cpu, 0x01ffu);
-        StoreAAbsolute16(memory, cpu, 0x0a06u, 0);
+        StoreAAbsolute16(memory, cpu, WRAM_ITEM_RECORD_ID, 0);
         SetAccumulatorWidth(cpu, 1);
         Jsr(memory, cpu, 0x850bu);
         ItemAttribute(memory, cpu);

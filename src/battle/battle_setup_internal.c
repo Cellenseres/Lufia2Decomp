@@ -135,8 +135,8 @@ bool BattleInitializeRecords(BattleContext *battle) {
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpAbs(cpu, 0x1104u));
     OpSta(memory, cpu, OpAbs(cpu, 0x10f0u));
-    OpStz(memory, cpu, OpAbs(cpu, 0x160au));
-    OpStz(memory, cpu, OpAbs(cpu, 0x1607u));
+    OpStz(memory, cpu, OpAbs(cpu, (WRAM_BATTLE_GOLD_REWARD + 2u)));
+    OpStz(memory, cpu, OpAbs(cpu, (WRAM_BATTLE_EXPERIENCE_REWARD + 2u)));
     OpRepWidths(cpu, 0x20u);
     OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_GOLD_REWARD));
     OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EXPERIENCE_REWARD));
@@ -163,7 +163,7 @@ bool BattleInitializeRecords(BattleContext *battle) {
         if (cpu->zero) {
             OpIncA(cpu);
             OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_RECORDS));
-            OpSta(memory, cpu, OpAbsY(cpu, 0x0a6fu));
+            OpSta(memory, cpu, OpAbsY(cpu, (WRAM_BATTLE_ENEMY_RECORDS + 1u)));
         } else {
             OpSta(memory, cpu, OpAbs(cpu, 0x09f2u));
             PushY(memory, cpu);

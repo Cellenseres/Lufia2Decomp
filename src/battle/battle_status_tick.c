@@ -85,13 +85,14 @@ static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
             OpAdc(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EXPERIENCE_REWARD));
             OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EXPERIENCE_REWARD));
             if (cpu->carry)
-                OpStepMem(memory, cpu, OpAbs(cpu, 0x1607u), 1);
+                OpStepMem(memory, cpu, OpAbs(cpu, (WRAM_BATTLE_EXPERIENCE_REWARD + 2u)),
+                          1);
             OpLda(memory, cpu, OpAbs(cpu, 0x09feu));
             cpu->carry = false;
             OpAdc(memory, cpu, OpAbs(cpu, WRAM_BATTLE_GOLD_REWARD));
             OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_GOLD_REWARD));
             if (cpu->carry)
-                OpStepMem(memory, cpu, OpAbs(cpu, 0x160au), 1);
+                OpStepMem(memory, cpu, OpAbs(cpu, (WRAM_BATTLE_GOLD_REWARD + 2u)), 1);
             OpSepWidths(cpu, 0x20u);
         } else {
             OpStz(memory, cpu, OpAbsX(cpu, 0xbcu));

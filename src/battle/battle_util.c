@@ -698,7 +698,7 @@ Lufia2ExecutionResult Lufia2BattlePaletteSplit(
         for (i = 0; i < 4u; ++i)
             AslA16(cpu);
         SetAccumulatorWidth(cpu, 1);
-        StoreAAbsolute8(memory, cpu, 0x121fu, cpu->x);
+        StoreAAbsolute8(memory, cpu, (WRAM_FIELD_LAYER_SCROLL_X + 1u), cpu->x);
         ExchangeAccumulatorBytes(cpu);
         StoreAAbsolute8(memory, cpu, 0x120fu, cpu->x);
         IncrementY16(cpu);

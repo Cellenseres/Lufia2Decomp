@@ -169,8 +169,8 @@ void Lufia2ActorInstallSecondaryScript(
         cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x91u);
-    Write8(
-        memory, LongIndexedAddress(0x7fe3f0u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress((WRAM_ACTOR_SECONDARY_SCRIPT + 2u), cpu->x),
+           A8(cpu));
 }
 
 Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(

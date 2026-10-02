@@ -1827,10 +1827,10 @@ static uint8_t ObjectRunScript(
 
     PushDataBank(memory, cpu);                                 /* E0FC */
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdef0u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress((WRAM_OBJECT_SCRIPT + 2u), cpu->x)));
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdeefu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress((WRAM_OBJECT_SCRIPT + 1u), cpu->x)));
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SCRIPT, cpu->x)));
     TransferAToY(cpu);

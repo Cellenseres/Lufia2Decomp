@@ -83,7 +83,7 @@ Lufia2ExecutionResult Lufia2FieldReloadMap(
     if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x83864cu);
     OpLoadA(cpu, 1u);
-    OpTestBits(memory, cpu, OpAbs(cpu, 0x09a9u), 1u);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_UNK_7E09A9), 1u);
     result = ReloadChild(memory, cpu, child, context, 0x838651u, 0x8eb09cu, 3u);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
