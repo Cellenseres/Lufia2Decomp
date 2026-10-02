@@ -214,6 +214,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:85DC` | `Lufia2FieldReloadSetup` | verified | `src/field/field_update.c` |
 | `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |
 | `$83:8682` | `Lufia2FieldAnimationTicks` | verified | `src/field/field_update.c` |
+| `$83:89CE` | `Lufia2FieldClearObjectTileBit` | verified | `src/field/field_object_render.c` |
+| `$83:8A0A` | `Lufia2FieldRenderObjectLayers` | verified | `src/field/field_object_render.c` |
 | `$83:8A6F` | `Lufia2FieldClearObjectTileIds` | verified | `src/field/field_object_tiles.c` |
 | `$83:8AC9` | `Lufia2FieldObjectBitTest` | verified | `src/field/field_object_bits.c` |
 | `$83:8AD5` | `Lufia2FieldObjectBitSet` | verified | `src/field/field_object_bits.c` |

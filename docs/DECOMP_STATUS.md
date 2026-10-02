@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-348 functions in `metadata/functions.toml`: 348 verified, 0 draft, 0 identified, 0 disabled.
+350 functions in `metadata/functions.toml`: 350 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **477 independent jobs**. The normal
-application build also passes. The consumer selects all 348 verified functions,
+The full Windows Release verifier passes **480 independent jobs**. The normal
+application build also passes. The consumer selects all 350 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -47,6 +47,21 @@ interpreter execution.
 35,840 original-ROM states and 27,648 native entries pass, including actual
 equipment and level-up JSR frames. There are no positive native fallbacks.
 All 1,025 subscriber checks and 11 injected faults pass.
+
+## Object rendering and upload queues
+
+`$83:89CE` clears the original tile bit below a pending object when its flags
+permit it. `$83:8A0A` renders the selected object layers and appends their source,
+destination and row count to the upload queues. Both retain the original height
+thresholds, ROM-backed tables, saved bank, live child frames and byte queue count.
+The coordinate helper at `$83:F9D9` also follows its live child RTS frame.
+
+82,000 original-ROM and native cases pass without a positive entry fallback.
+CPU state, full WRAM, every data access and mutable hardware state agree. The
+checks include eight independently counted loop limits, nineteen naturally
+changed returns and sixteen symmetric bus-observer frame rewrites. All 3,072
+unsupported entries and 44 injected faults are detected. Both complete object
+routines are selected as standalone replacements.
 
 ## Object map attributes
 

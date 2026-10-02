@@ -2883,3 +2883,19 @@ source = "src/field/field_object_attributes.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:89CE"
+name = "Lufia2FieldClearObjectTileBit"
+source = "src/field/field_object_render.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8A0A"
+name = "Lufia2FieldRenderObjectLayers"
+source = "src/field/field_object_render.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
