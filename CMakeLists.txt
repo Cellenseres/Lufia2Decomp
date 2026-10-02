@@ -29,6 +29,7 @@ add_library(lufia2_decomp STATIC
     src/actor/actor_primary.c
     src/actor/actor_secondary.c
     src/actor/actor_slots.c
+    src/actor/sprite_reset.c
     src/actor/actor_sprites.c
     src/actor/object_vm.c
     src/actor/player_controller.c
@@ -121,6 +122,8 @@ add_library(lufia2_decomp STATIC
     src/field/field_sections.c
     src/field/field_sprites.c
     src/field/field_triggers.c
+    src/field/field_reload.c
+    src/field/field_camera.c
     src/field/field_update.c
     src/item/inventory.c
     src/item/inventory_receive.c
