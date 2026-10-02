@@ -2899,3 +2899,11 @@ source = "src/field/field_object_render.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:8B0E"
+name = "Lufia2FieldUpdatePlacedObject"
+source = "src/field/field_object_update.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -221,6 +221,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:8AD5` | `Lufia2FieldObjectBitSet` | verified | `src/field/field_object_bits.c` |
 | `$83:8AE5` | `Lufia2FieldObjectBitClear` | verified | `src/field/field_object_bits.c` |
 | `$83:8AF7` | `Lufia2FieldObjectBitIndex` | verified | `src/field/field_object_bits.c` |
+| `$83:8B0E` | `Lufia2FieldUpdatePlacedObject` | verified | `src/field/field_object_update.c` |
 | `$83:8B40` | `Lufia2FieldLoadObjectRecord` | verified | `src/field/field_object_transitions.c` |
 | `$83:8B6A` | `Lufia2FieldCopyObjectTiles` | verified | `src/field/field_object_copy.c` |
 | `$83:8C8A` | `Lufia2FieldRefreshObjectAttributes` | verified | `src/field/field_object_attributes.c` |
