@@ -1,19 +1,46 @@
 /* Capsule monsters: stats ($82:C261) and skills ($82:C4B3, $82:CD1F). */
 
 #include "core/cpu_ops.h"
+#include "core/wram_view.h"
 #include "lufia2/menu.h"
 #include "lufia2/party.h"
 #include "lufia2/system.h"
 #include "party/party_internal.h"
 
 enum {
-    CAPSULE = 0x11a3u,                  /* monster 0-6 */
+    CAPSULE = 0x11a3u, /* monster 0-6 */
     FORM = 0x11a4u,
     LEVEL = 0x10edu,
-    BLOCK = 0x10dfu,                    /* stats block for $81:F4D5 */
-    STEP = 0x09d5u,                     /* 32-bit experience step */
-    EXPERIENCE = 0x1141u,               /* 24-bit */
-    RECORD = 0x09c4u,                   /* pointer into bank $97 */
+    BLOCK = 0x10dfu,              /* stats block for $81:F4D5 */
+    STEP = 0x09d5u,               /* 32-bit experience step */
+    EXPERIENCE = 0x1141u,         /* 24-bit */
+    RECORD = 0x09c4u,             /* pointer into bank $97 */
+    SAVED_LEVELS = 0x7ff1a3u,     /* level per monster */
+    SAVED_EXPERIENCE = 0x7ff1aau, /* 24-bit experience per monster */
+    SAVED_BLOCKS = 0x7ff180u,     /* 5-byte stats block per monster */
+    MONSTER_INDEX = 0x09d9u,      /* n */
+    EXPERIENCE_OFFSET = 0x09dbu,  /* 3n */
+    BLOCK_OFFSET = 0x09ddu,       /* 5n */
+    BLOCK_SIZE = 10u,
+    EXPERIENCE_CAP = 0x98967fu, /* 9,999,999 */
+    EXPERIENCE_CAP_LEVEL = 0x62u,
+    GROWTH_FACTORS = 0x8ee4cbu, /* one per 8 levels, plus 1 */
+    MULTIPLICAND = 0x4202u,
+    MULTIPLIER = 0x4203u,
+    PRODUCT = 0x4216u,
+    FLAG_ANY = 0x11a5u,
+    FLAG_LIST = 0x11c2u,
+    FLAG_LIST_SIZE = 0x14u,
+    /* Direct-page scratch of the experience step. */
+    DP_PRODUCT_0 = 0x11u,
+    DP_STEP_ADD = 0x12u,
+    /* Direct-page scratch of the stat growth. */
+    GROWTH_SUM = 0x11u,
+    GROWTH_FORM = 0x13u,
+    GROWTH_COUNTER = 0x15u,
+    GROWTH_ROW = 0x17u,
+    GROWTH_RATE = 0x1cu,
+    GROWTH_RATES = 0xa6f420u,
 };
 
 static void Jsr(const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t ret) {
@@ -34,174 +61,161 @@ static void StoreWord(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
     Write16Absolute(memory, cpu, address, cpu->accumulator);
 }
 
-/* 8-bit ADC/SBC chain on absolute bytes. */
-static void AddByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t to, uint16_t from) {
-    LoadAAbsolute8(memory, cpu, to, 0);
-    Adc8(cpu, AbsoluteByte(memory, cpu, from, 0));
-    StoreAAbsolute8(memory, cpu, to, 0);
-}
-
 /* $82:C3D3: $09D9 = n, $09DB = 3n, $09DD = 5n. */
 static void CapsuleIndices(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint16_t n = WramRead16(wram, CAPSULE) & 0x00ffu;
+
+    WramWrite16(wram, MONSTER_INDEX, n);
+    WramWrite16(wram, EXPERIENCE_OFFSET, (uint16_t)(3u * n));
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Word(memory, cpu, CAPSULE));
-    And16(cpu, 0x00ffu);
-    StoreWord(memory, cpu, 0x09d9u);
-    LoadA16(cpu, Word(memory, cpu, 0x09d9u));
-    AslA16(cpu);
+    LoadA16(cpu, (uint16_t)(4u * n));
     cpu->carry = 0;
-    Add16Value(cpu, Word(memory, cpu, 0x09d9u));
-    StoreWord(memory, cpu, 0x09dbu);
-    LoadA16(cpu, Word(memory, cpu, 0x09d9u));
-    AslA16(cpu);
-    AslA16(cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, Word(memory, cpu, 0x09d9u));
-    StoreWord(memory, cpu, 0x09ddu);
+    Add16Value(cpu, n);
+    WramWrite16(wram, BLOCK_OFFSET, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
 }
 
 /* $82:C3F8: level and saved stats from $7F:F180-$7F:F1AC. */
 static void CapsuleLoad(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram saved = WramViewLong(memory);
+    uint16_t index;
+    uint16_t offset;
+    unsigned i;
+
     Jsr(memory, cpu, 0xc3fau);
     CapsuleIndices(memory, cpu);
     Rts(memory, cpu);
-    LoadX16(cpu, 0x0000u);
-    do {
-        StoreZeroAbsolute8(memory, cpu, BLOCK, cpu->x);
-        IncrementX16(cpu);
-        Compare16(cpu, cpu->x, 0x000au);
-    } while (!cpu->zero);
-    LoadX16(cpu, Word(memory, cpu, 0x09d9u));
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ff1a3u, cpu->x)));
-    StoreAAbsolute8(memory, cpu, LEVEL, 0);
-    SetAccumulatorWidth(cpu, 0);
-    LoadX16(cpu, Word(memory, cpu, 0x09dbu));
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ff1aau, cpu->x)));
-    StoreWord(memory, cpu, 0x113eu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ff1acu, cpu->x)));
-    StoreAAbsolute8(memory, cpu, 0x1140u, 0);
-    SetAccumulatorWidth(cpu, 0);
-    LoadX16(cpu, Word(memory, cpu, 0x09ddu));
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ff180u, cpu->x)));
-    StoreWord(memory, cpu, BLOCK);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ff182u, cpu->x)));
-    StoreWord(memory, cpu, (uint16_t)(BLOCK + 2u));
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ff184u, cpu->x)));
-    StoreAAbsolute8(memory, cpu, (uint16_t)(BLOCK + 4u), 0);
+    for (i = 0; i < BLOCK_SIZE; ++i)
+        WramWriteAt(wram, BLOCK, (uint16_t)i, 0);
+    index = WramRead16(wram, MONSTER_INDEX);
+    WramWrite(wram, LEVEL, WramReadAt(saved, SAVED_LEVELS, index));
+    offset = WramRead16(wram, EXPERIENCE_OFFSET);
+    WramWrite16(wram, 0x113eu, WramRead16At(saved, SAVED_EXPERIENCE, offset));
+    WramWrite(wram, 0x1140u, WramReadAt(saved, SAVED_EXPERIENCE + 2u, offset));
+    offset = WramRead16(wram, BLOCK_OFFSET);
+    WramWrite16(wram, BLOCK, WramRead16At(saved, SAVED_BLOCKS, offset));
+    WramWrite16(wram, BLOCK + 2u, WramRead16At(saved, SAVED_BLOCKS + 2u, offset));
+    WramWrite(wram, BLOCK + 4u, WramReadAt(saved, SAVED_BLOCKS + 4u, offset));
+    /* Registers as the last loads left them. */
+    cpu->x = offset;
+    cpu->accumulator =
+        (uint16_t)(WramRead16(wram, BLOCK + 2u) & 0xff00u) | WramRead(wram, BLOCK + 4u);
+    SetNz8(cpu, WramRead(wram, BLOCK + 4u));
+    cpu->carry = 1;
 }
 
 /* $82:CEAB: add the step, cap 9,999,999, grow the step. */
 static void CapsuleLevelStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    static const uint8_t kProducts[4] = {0x11u, 0x13u, 0x15u, 0x17u};
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint32_t experience = 0;
+    uint32_t added = 0;
+    uint32_t step = 0;
+    uint32_t grown;
+    uint32_t gain;
+    uint16_t product[4];
+    uint8_t factor;
     unsigned i;
 
-    cpu->carry = 0;
-    AddByte(memory, cpu, EXPERIENCE, (uint16_t)(STEP + 1u));
-    AddByte(memory, cpu, (uint16_t)(EXPERIENCE + 1u), (uint16_t)(STEP + 2u));
-    AddByte(memory, cpu, (uint16_t)(EXPERIENCE + 2u), (uint16_t)(STEP + 3u));
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Word(memory, cpu, EXPERIENCE));
-    Subtract16(cpu, 0x967fu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadAAbsolute8(memory, cpu, (uint16_t)(EXPERIENCE + 2u), 0);
-    Sbc8(cpu, 0x98u);
-    if (cpu->carry) {
-        StoreA8Absolute(memory, cpu, EXPERIENCE, 0x7fu);
-        StoreA8Absolute(memory, cpu, (uint16_t)(EXPERIENCE + 1u), 0x96u);
-        StoreA8Absolute(memory, cpu, (uint16_t)(EXPERIENCE + 2u), 0x98u);
+    for (i = 0; i < 3u; ++i) {
+        experience |= (uint32_t)WramRead(wram, EXPERIENCE + i) << (8u * i);
+        added |= (uint32_t)WramRead(wram, STEP + 1u + i) << (8u * i);
     }
-    SetAccumulatorWidth(cpu, 0);                               /* CEE8 */
-    LoadA16(cpu, Word(memory, cpu, LEVEL));
-    And16(cpu, 0x00ffu);
-    IncrementA16(cpu);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, (uint8_t)(Read8(memory, LongIndexedAddress(0x8ee4cbu, cpu->x)) + 1u));
-    StoreAAbsolute8(memory, cpu, 0x4202u, 0);
+    experience = (experience + added) & 0x00ffffffu;
+    for (i = 0; i < 3u; ++i)
+        WramWrite(wram, EXPERIENCE + i, (uint8_t)(experience >> (8u * i)));
+    if (experience >= EXPERIENCE_CAP) {
+        WramWrite(wram, EXPERIENCE, (uint8_t)EXPERIENCE_CAP);
+        WramWrite(wram, EXPERIENCE + 1u, (uint8_t)(EXPERIENCE_CAP >> 8));
+        WramWrite(wram, EXPERIENCE + 2u, (uint8_t)(EXPERIENCE_CAP >> 16));
+    }
+
+    /* The step grows by step * factor / 256, where the factor comes from a
+     * table with one entry per 8 levels. */
+    factor =
+        (uint8_t)(Read8(memory,
+                        LongIndexedAddress(
+                            GROWTH_FACTORS,
+                            (uint16_t)(((WramRead16(wram, LEVEL) & 0x00ffu) + 1u) >>
+                                       3))) +
+                  1u);
+    WramWrite(wram, MULTIPLICAND, factor);
     for (i = 0; i < 4u; ++i) {
-        LoadAAbsolute8(memory, cpu, (uint16_t)(STEP + i), 0);
-        StoreAAbsolute8(memory, cpu, 0x4203u, 0);
-        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
-        StoreXDirect16(memory, cpu, kProducts[i]);
+        WramWrite(wram, MULTIPLIER, WramRead(wram, STEP + i));
+        product[i] = WramRead16(wram, PRODUCT);
+        cpu->x = product[i];
+        WramWrite16(wram, DP_PRODUCT_0 + 2u * i, product[i]);
     }
-    LoadA8(cpu, DirectByte(memory, cpu, 0x12u));               /* CF37 */
-    cpu->carry = 0;
-    Adc8(cpu, DirectByte(memory, cpu, 0x13u));
-    StoreADirect8(memory, cpu, 0x12u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x14u));
-    Adc8(cpu, DirectByte(memory, cpu, 0x15u));
-    StoreADirect8(memory, cpu, 0x13u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x17u));
-    Adc8(cpu, DirectByte(memory, cpu, 0x16u));
-    StoreADirect8(memory, cpu, 0x14u);
-    LoadA8(cpu, 0x00u);
-    Adc8(cpu, DirectByte(memory, cpu, 0x18u));
-    StoreADirect8(memory, cpu, 0x15u);
-    cpu->carry = 0;
-    for (i = 0; i < 4u; ++i) {
-        LoadAAbsolute8(memory, cpu, (uint16_t)(STEP + i), 0);
-        Adc8(cpu, DirectByte(memory, cpu, (uint8_t)(0x12u + i)));
-        StoreAAbsolute8(memory, cpu, (uint16_t)(STEP + i), 0);
-    }
+    gain = (uint32_t)(product[0] >> 8) + product[1] + ((uint32_t)product[2] << 8) +
+           ((uint32_t)product[3] << 16);
+    for (i = 0; i < 4u; ++i)
+        WramWrite(wram, DP_STEP_ADD + i, (uint8_t)(gain >> (8u * i)));
+    for (i = 0; i < 4u; ++i)
+        step |= (uint32_t)WramRead(wram, STEP + i) << (8u * i);
+    grown = step + gain;
+    for (i = 0; i < 3u; ++i)
+        WramWrite(wram, STEP + i, (uint8_t)(grown >> (8u * i)));
+    /* The top byte's addition leaves the carry and overflow flags. */
+    cpu->carry = (uint8_t)((((step & 0x00ffffffu) + (gain & 0x00ffffffu)) >> 24) & 1u);
+    cpu->accumulator = (uint8_t)(step >> 24);
+    Adc8(cpu, (uint8_t)(gain >> 24));
+    WramWrite(wram, STEP + 3u, A8(cpu));
 }
 
-/* $82:CE52: experience for the level, minus 10. */
+/* $82:CE52: experience for the level, minus 10. The level is counted up from
+ * zero, one step per level, and the monster's level byte ends up zero. */
 static void CapsuleExperience(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint8_t remaining;
+    uint32_t experience;
+    unsigned i;
+
     LoadAAbsolute8(memory, cpu, LEVEL, 0);
-    Compare8(cpu, A8(cpu), 0x62u);
+    Compare8(cpu, A8(cpu), EXPERIENCE_CAP_LEVEL);
     if (cpu->carry) {
-        StoreA8Absolute(memory, cpu, EXPERIENCE, 0x7fu);
-        StoreA8Absolute(memory, cpu, (uint16_t)(EXPERIENCE + 1u), 0x96u);
-        StoreA8Absolute(memory, cpu, (uint16_t)(EXPERIENCE + 2u), 0x98u);
+        WramWrite(wram, EXPERIENCE, (uint8_t)EXPERIENCE_CAP);
+        WramWrite(wram, EXPERIENCE + 1u, (uint8_t)(EXPERIENCE_CAP >> 8));
+        WramWrite(wram, EXPERIENCE + 2u, (uint8_t)(EXPERIENCE_CAP >> 16));
+        LoadA8(cpu, (uint8_t)(EXPERIENCE_CAP >> 16));
         return;
     }
-    LoadA8(cpu, 0x14u);                                        /* CE69 */
-    StoreZeroAbsolute8(memory, cpu, STEP, 0);
-    StoreAAbsolute8(memory, cpu, (uint16_t)(STEP + 1u), 0);
-    StoreZeroAbsolute8(memory, cpu, (uint16_t)(STEP + 2u), 0);
-    StoreZeroAbsolute8(memory, cpu, (uint16_t)(STEP + 3u), 0);
-    StoreZeroAbsolute8(memory, cpu, EXPERIENCE, 0);
-    StoreZeroAbsolute8(memory, cpu, (uint16_t)(EXPERIENCE + 1u), 0);
-    StoreZeroAbsolute8(memory, cpu, (uint16_t)(EXPERIENCE + 2u), 0);
-    LoadAAbsolute8(memory, cpu, LEVEL, 0);
-    StoreZeroAbsolute8(memory, cpu, LEVEL, 0);
+    for (i = 0; i < 4u; ++i)
+        WramWrite(wram, STEP + i, i == 1u ? 0x14u : 0u);
+    for (i = 0; i < 3u; ++i)
+        WramWrite(wram, EXPERIENCE + i, 0);
+    WramWrite(wram, LEVEL, 0);
     do {
-        const uint32_t level = AbsoluteIndexedAddress(cpu, LEVEL, 0);
-
         PushAccumulator8(memory, cpu);
-        Write8(memory, level, (uint8_t)(Read8(memory, level) + 1u));
+        WramWrite(wram, LEVEL, (uint8_t)(WramRead(wram, LEVEL) + 1u));
         Jsr(memory, cpu, 0xce8cu);
         CapsuleLevelStep(memory, cpu);
         Rts(memory, cpu);
         LoadA8(cpu, Pull8(memory, cpu));
         DecrementA8(cpu);
-    } while (!cpu->zero);
-    LoadAAbsolute8(memory, cpu, EXPERIENCE, 0);                /* CE91 */
-    cpu->carry = 1;
-    Sbc8(cpu, 0x0au);
-    StoreAAbsolute8(memory, cpu, EXPERIENCE, 0);
-    LoadAAbsolute8(memory, cpu, (uint16_t)(EXPERIENCE + 1u), 0);
+        remaining = A8(cpu);
+    } while (remaining != 0);
+    experience = (uint32_t)WramRead(wram, EXPERIENCE) |
+                 ((uint32_t)WramRead(wram, EXPERIENCE + 1u) << 8) |
+                 ((uint32_t)WramRead(wram, EXPERIENCE + 2u) << 16);
+    for (i = 0; i < 3u; ++i)
+        WramWrite(wram, EXPERIENCE + i, (uint8_t)((experience - 10u) >> (8u * i)));
+    /* The top byte's subtraction leaves the flags. */
+    cpu->carry = (experience & 0xffffu) >= 10u;
+    LoadA8(cpu, (uint8_t)(experience >> 16));
     Sbc8(cpu, 0x00u);
-    StoreAAbsolute8(memory, cpu, (uint16_t)(EXPERIENCE + 1u), 0);
-    LoadAAbsolute8(memory, cpu, (uint16_t)(EXPERIENCE + 2u), 0);
-    Sbc8(cpu, 0x00u);
-    StoreAAbsolute8(memory, cpu, (uint16_t)(EXPERIENCE + 2u), 0);
 }
 
 /* $82:F6A4 / $82:F6D4: clear bonus words of the block at [$2A]. */
 static void ClearBonuses(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t first, unsigned words) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     unsigned i;
 
-    LoadX16(cpu, Read16Direct(memory, cpu, 0x2au));
+    LoadX16(cpu, WramRead16(wram, 0x2au));
     for (i = 0; i < words; ++i) {
+        /* The bonus words sit at absolute addresses below $100, so the
+         * index is added without the direct page. */
         const uint32_t at = AbsoluteIndexedAddress(
             cpu, (uint16_t)(first + 2u * i), cpu->x);
 
@@ -212,76 +226,71 @@ static void ClearBonuses(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 
 /* $82:C38B: $09C4 = record of monster and form ($97:DCB8). */
 static void CapsuleRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, CAPSULE, 0);
-    And8(cpu, 0x07u);
-    AslA8(cpu);
-    AslA8(cpu);
-    cpu->carry = 0;
-    Adc8(cpu, AbsoluteByte(memory, cpu, CAPSULE, 0));
-    cpu->carry = 0;
-    Adc8(cpu, AbsoluteByte(memory, cpu, FORM, 0));
-    DecrementA8(cpu);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint8_t monster = WramRead(wram, CAPSULE);
+    const uint8_t form = WramRead(wram, FORM);
+    const uint8_t record = (uint8_t)(((monster & 7u) << 2) + monster + form - 1u);
+
     SetAccumulatorWidth(cpu, 0);
-    And16(cpu, 0x00ffu);
-    AslA16(cpu);
-    TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x97dcb8u, cpu->x)));
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x97dcb8u, 2u * record)));
     cpu->carry = 0;
     Add16Value(cpu, 0xdcb8u);
     TransferAToX(cpu);
-    Write16Absolute(memory, cpu, RECORD, cpu->x);
+    WramWrite16(wram, RECORD, cpu->x);
     SetAccumulatorWidth(cpu, 1);
 }
 
-/* $82:D31C: growth over the levels, / 16. */
+/* Shifts a word right in place, high byte stored first. */
+static void ShiftWordRight(Lufia2Wram wram, uint32_t location) {
+    const uint32_t low = WramAddress(wram, location, 0);
+    const uint16_t value = (uint16_t)(WramRead16(wram, location) >> 1);
+
+    Write8(wram.memory, WramNextAddress(location, low), (uint8_t)(value >> 8));
+    Write8(wram.memory, low, (uint8_t)value);
+}
+
+/* $82:D31C: growth of a stat over the levels, / 16. The stat's growth rate is
+ * taken from the table at $A6:F420 in steps of 16 levels; a level at or past
+ * the form number only counts a half or a quarter. The running values live in
+ * direct-page scratch. */
 static void CapsuleGrowth(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    And16(cpu, 0x00ffu);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    StoreADirect16(memory, cpu, 0x17u);
-    Write16Direct(memory, cpu, 0x11u, 0);
-    LoadA16(cpu, Word(memory, cpu, LEVEL));
-    And16(cpu, 0x00ffu);
-    Compare16(cpu, cpu->accumulator, 0x0001u);
-    if (!cpu->zero) {
-        LoadA16(cpu, Word(memory, cpu, FORM));
-        StoreADirect16(memory, cpu, 0x13u);
-        Write16Direct(memory, cpu, 0x14u, 0);
-        LoadA16(cpu, 0x0001u);
-        StoreADirect16(memory, cpu, 0x15u);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint16_t level = WramRead16(wram, LEVEL) & 0x00ffu;
+
+    WramWrite16(wram, GROWTH_ROW, (uint16_t)((cpu->accumulator & 0x00ffu) << 3));
+    WramWrite16(wram, GROWTH_SUM, 0);
+    if (level != 1u) {
+        uint16_t counter;
+
+        WramWrite16(wram, GROWTH_FORM, WramRead16(wram, FORM));
+        WramWrite16(wram, GROWTH_FORM + 1u, 0);
+        WramWrite16(wram, GROWTH_COUNTER, 1);
         do {
-            LoadA16(cpu, Read16Direct(memory, cpu, 0x15u));    /* D33D */
-            LsrA16(cpu);
-            LsrA16(cpu);
-            LsrA16(cpu);
-            LsrA16(cpu);
+            uint16_t block;
+
+            counter = WramRead16(wram, GROWTH_COUNTER);
+            block = (uint16_t)(counter >> 4);
+            cpu->accumulator = block;
             PushAccumulator16(memory, cpu);
-            cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, 0x17u));
-            TransferAToX(cpu);
-            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa6f420u, cpu->x)));
-            And16(cpu, 0x00ffu);
-            StoreADirect16(memory, cpu, 0x1cu);
+            cpu->x = (uint16_t)(block + WramRead16(wram, GROWTH_ROW));
+            WramWrite16(wram, GROWTH_RATE,
+                        Read16Long(memory, LongIndexedAddress(GROWTH_RATES, cpu->x)) &
+                            0x00ffu);
             PullAccumulator16(memory, cpu);
-            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x13u));
-            if (cpu->carry) {
-                const unsigned shifts = cpu->zero ? 1u : 2u;
-                for (unsigned shift = 0; shift < shifts; ++shift)
-                    OpLsrMem(memory, cpu, OpDp(cpu, 0x1cu));
+            if (block >= WramRead16(wram, GROWTH_FORM)) {
+                ShiftWordRight(wram, GROWTH_RATE);
+                if (block != WramRead16(wram, GROWTH_FORM))
+                    ShiftWordRight(wram, GROWTH_RATE);
             }
-            LoadA16(cpu, Read16Direct(memory, cpu, 0x1cu));    /* D35C */
-            cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, 0x11u));
-            StoreADirect16(memory, cpu, 0x11u);
-            LoadA16(cpu, Word(memory, cpu, LEVEL));
-            And16(cpu, 0x00ffu);
-            OpStepMem(memory, cpu, OpDp(cpu, 0x15u), 1);
-            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x15u));
-        } while (!cpu->zero);
+            WramWrite16(wram, GROWTH_SUM,
+                        (uint16_t)(WramRead16(wram, GROWTH_RATE) +
+                                   WramRead16(wram, GROWTH_SUM)));
+            counter = WramStep16(wram, GROWTH_COUNTER, 1);
+        } while (counter != level);
     }
-    for (unsigned shift = 0; shift < 4u; ++shift)                /* D36F */
-        OpLsrMem(memory, cpu, OpDp(cpu, 0x11u));
+    cpu->accumulator = level;
+    for (unsigned shift = 0; shift < 4u; ++shift)
+        OpLsrMem(memory, cpu, OpDp(cpu, GROWTH_SUM));
 }
 
 /* $82:D283: base stats plus growth into the block. */
@@ -405,13 +414,14 @@ Lufia2ExecutionResult Lufia2CapsuleLoadStats(
 
 /* $82:C37B: clear $11A5 and $11C2-$11D5. */
 static void CapsuleClearFlags(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreZeroAbsolute8(memory, cpu, 0x11a5u, 0);
-    LoadX16(cpu, 0x0000u);
-    do {
-        StoreZeroAbsolute8(memory, cpu, 0x11c2u, cpu->x);
-        IncrementX16(cpu);
-        Compare16(cpu, cpu->x, 0x0014u);
-    } while (!cpu->zero);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    unsigned i;
+
+    WramWrite(wram, FLAG_ANY, 0);
+    for (i = 0; i < FLAG_LIST_SIZE; ++i)
+        WramWriteAt(wram, FLAG_LIST, (uint16_t)i, 0);
+    LoadX16(cpu, FLAG_LIST_SIZE);
+    Compare16(cpu, cpu->x, FLAG_LIST_SIZE);
 }
 
 /* $82:C515: forms from $8E:E485 for present monsters. */
@@ -518,28 +528,27 @@ Lufia2ExecutionResult Lufia2CapsuleSetAll(
 
 /* $82:C443: level, experience and stats back to $7F:F180+. */
 static void CapsuleSave(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram saved = WramViewLong(memory);
+    uint16_t offset;
+
     Jsr(memory, cpu, 0xc445u);
     CapsuleIndices(memory, cpu);
     Rts(memory, cpu);
-    LoadX16(cpu, Word(memory, cpu, 0x09d9u));
-    LoadAAbsolute8(memory, cpu, LEVEL, 0);
-    Write8(memory, LongIndexedAddress(0x7ff1a3u, cpu->x), A8(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    LoadX16(cpu, Word(memory, cpu, 0x09dbu));
-    LoadA16(cpu, Word(memory, cpu, 0x113eu));
-    Write16Long(memory, LongIndexedAddress(0x7ff1aau, cpu->x), cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
-    LoadAAbsolute8(memory, cpu, 0x1140u, 0);
-    Write8(memory, LongIndexedAddress(0x7ff1acu, cpu->x), A8(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    LoadX16(cpu, Word(memory, cpu, 0x09ddu));
-    LoadA16(cpu, Word(memory, cpu, BLOCK));
-    Write16Long(memory, LongIndexedAddress(0x7ff180u, cpu->x), cpu->accumulator);
-    LoadA16(cpu, Word(memory, cpu, (uint16_t)(BLOCK + 2u)));
-    Write16Long(memory, LongIndexedAddress(0x7ff182u, cpu->x), cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
-    LoadAAbsolute8(memory, cpu, (uint16_t)(BLOCK + 4u), 0);
-    Write8(memory, LongIndexedAddress(0x7ff184u, cpu->x), A8(cpu));
+    WramWriteAt(saved, SAVED_LEVELS, WramRead16(wram, MONSTER_INDEX),
+                WramRead(wram, LEVEL));
+    offset = WramRead16(wram, EXPERIENCE_OFFSET);
+    WramWrite16At(saved, SAVED_EXPERIENCE, offset, WramRead16(wram, 0x113eu));
+    WramWriteAt(saved, SAVED_EXPERIENCE + 2u, offset, WramRead(wram, 0x1140u));
+    offset = WramRead16(wram, BLOCK_OFFSET);
+    WramWrite16At(saved, SAVED_BLOCKS, offset, WramRead16(wram, BLOCK));
+    WramWrite16At(saved, SAVED_BLOCKS + 2u, offset, WramRead16(wram, BLOCK + 2u));
+    WramWriteAt(saved, SAVED_BLOCKS + 4u, offset, WramRead(wram, BLOCK + 4u));
+    /* Registers as the last loads left them. */
+    cpu->x = offset;
+    cpu->accumulator =
+        (uint16_t)(WramRead16(wram, BLOCK + 2u) & 0xff00u) | WramRead(wram, BLOCK + 4u);
+    SetNz8(cpu, WramRead(wram, BLOCK + 4u));
 }
 
 /* $82:CD83: level up if due; carry clear with gains in $0A38. */
