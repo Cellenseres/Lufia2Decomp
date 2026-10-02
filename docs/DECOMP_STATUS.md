@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-357 functions in `metadata/functions.toml`: 357 verified, 0 draft, 0 identified, 0 disabled.
+358 functions in `metadata/functions.toml`: 358 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **500 independent jobs**. The normal
-application build also passes. The consumer selects all 357 verified functions,
+The full Windows Release verifier passes **503 independent jobs**. The normal
+application build also passes. The consumer selects all 358 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -34,6 +34,27 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Field battle transition
+
+`$83:83EB` waits for the pending field upload, calls the original fade,
+redraw and battle children, and routes the battle result. Cave maps `$F0`
+and `$F1` take the original defeat routine; other defeats reset the stack
+and hand off to `$83:ACEF`. The normal path retains mosaic and fade writes,
+optional actor-touch handling and the field-event call. All six pushed
+child frames and changed returns remain observable.
+
+6,800 original-parent states pass in direct and runtime execution without
+initial native fallback. They cover all result and map bytes, every data
+bank, all high direct-page bytes, small-stack aliases, changed child modes,
+modified returns and both 65,536-read wait boundaries. The tests compare
+child-entry CPU state, final CPU state, complete WRAM, mutable hardware
+state and every operand access. There are 1,885 exact continuations,
+15 dispatcher redirects, 2,301 unsupported-entry checks and 31 detected
+faults. The fade-completion inputs activate after the original fade-start
+write; these schedules do not model the NMI body. Child bodies use identical
+explicit contracts, so the parent proof does not establish the gameplay
+cause of the Cave stairs issue.
 
 ## Area rectangle destinations
 

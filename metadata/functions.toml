@@ -2958,3 +2958,12 @@ source = "src/field/field_area_transition.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Field battle entry, outcome routing and return to field events.
+[[function]]
+address = "83:83EB"
+name = "Lufia2FieldBattleTransition"
+source = "src/field/field_battle_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

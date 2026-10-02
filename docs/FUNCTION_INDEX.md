@@ -211,6 +211,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:81C6` | `Lufia2FieldTriggerUpdate` | verified | `src/field/field_triggers.c` |
 | `$83:83A0` | `Lufia2FieldMenuRequest` | verified | `src/field/field_update.c` |
 | `$83:83E0` | `Lufia2FieldEncounterHandoff` | verified | `src/field/encounter.c` |
+| `$83:83EB` | `Lufia2FieldBattleTransition` | verified | `src/field/field_battle_transition.c` |
 | `$83:845B` | `Lufia2EncounterBattleSequence` | verified | `src/field/encounter.c` |
 | `$83:85DC` | `Lufia2FieldReloadSetup` | verified | `src/field/field_update.c` |
 | `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |

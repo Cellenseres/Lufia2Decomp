@@ -1387,3 +1387,19 @@ width = 1
 count = 1
 owner = "field"
 notes = "83:B76E copies rectangle byte5; its low nibble selects the transition type and F in the high nibble inherits066A shifted left4."
+
+[[location]]
+address = "7F:F8A2"
+name = "field_battle_result"
+width = 1
+count = 1
+owner = "field"
+notes = "83:8401 reads the battle result; value1 selects Ancient Cave defeat reset or the game-over tail."
+
+[[location]]
+address = "7F:F8A3"
+name = "field_battle_source"
+width = 1
+count = 1
+owner = "field"
+notes = "83:83E0 stores FF for the field encounter wrapper;83:8445 skips the actor-touch scan when this byte is FF."
