@@ -64,6 +64,7 @@ static void DerivedStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!cpu->zero)
         StoreField(memory, cpu, 0x002bu);
     SetAccumulatorWidth(cpu, 1);
+    EmitExecutionCheckpoint(memory, cpu, 0x81f576u);
 }
 
 /* $81:F4D5: derived stats of block X; keeps A, X, Y, P. */
@@ -461,6 +462,7 @@ Lufia2ExecutionResult Lufia2PartyStatTotals(
     if (!cpu->zero)
         StoreAAbsolute16(memory, cpu, 0x002bu, cpu->x);
     SetAccumulatorWidth(cpu, 1);
+    EmitExecutionCheckpoint(memory, cpu, 0x81f576u);
     return ExecutionReturned(0x81f576u);
 }
 

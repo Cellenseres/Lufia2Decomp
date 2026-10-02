@@ -24,17 +24,29 @@ The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **467 independent jobs**. The normal
-application build also passes. The consumer selects 344 of 346 verified
-functions; song-load and fade-out await the consumer MSU migration commit
-before binding. The generated CFG contains 1,451 nodes, and every prior native
-entry remains covered.
+The full Windows Release verifier passes **471 independent jobs**. The normal
+application build also passes. The consumer selects all 346 verified functions,
+including song-load and fade-out after the MSU migration. The generated CFG
+contains 1,451 nodes, and every prior native entry remains covered.
 
 Verification uses the original ROM interpreter as the reference. It checks CPU
 state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Shared party stat totals
+
+The checkpoint at `$81:F576` reports the completed original totals before RTS,
+with X pointing to the stat block. It covers direct and far entry, equipment
+preview, level-up and wrapped derived stats. The earlier `$81:F4E2` checkpoint
+remains available. The reconstruction preserves the original uncapped values;
+consumer adjustments belong to subscribers compiled for both native and
+interpreter execution.
+
+35,840 original-ROM states and 27,648 native entries pass, including actual
+equipment and level-up JSR frames. There are no positive native fallbacks.
+All 1,025 subscriber checks and 11 injected faults pass.
 
 ## Layer scroll and coordinate scaling
 
