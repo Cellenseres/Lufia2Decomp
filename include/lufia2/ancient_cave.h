@@ -19,6 +19,17 @@ Lufia2ExecutionResult Lufia2AncientCaveExit(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+/* $84:8888: clear the Cave party and give its initial items; PB84/M1X0. */
+Lufia2ExecutionResult Lufia2AncientCaveResetParty(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* $84:8B9C: restart after defeat; PB84/M1X0. Checkpoints before the
+ * first LDA at8B9C and after the party reset returns at8BA5. */
+Lufia2ExecutionResult Lufia2AncientCaveDefeat(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $83:9E31: next Ancient Cave floor; M1X0. */
 Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(
     const Lufia2Memory *memory,
