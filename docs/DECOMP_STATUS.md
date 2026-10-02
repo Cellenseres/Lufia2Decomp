@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-363 functions in `metadata/functions.toml`: 363 verified, 0 draft, 0 identified, 0 disabled.
+366 functions in `metadata/functions.toml`: 366 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **513 independent jobs**. The normal
-application build also passes. The consumer selects all 363 verified functions,
+The full Windows Release verifier passes **518 independent jobs**. The normal
+application build also passes. The consumer selects all 366 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -34,6 +34,37 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Scene graphics and palette loading
+
+`$80:EF8E` loads scene graphics through readable phases for record indexing,
+object assembly, tileset loading, two DMA transfers and auxiliary resources.
+Its nine child-call boundaries retain their original frames and width changes.
+`$80:F2F3` configures the scene display. `$80:F338` copies the scene palette
+into the CGRAM upload buffer and clears its first color. All three functions
+are selected by the consumer.
+
+The loader preserves all four caller accumulator/index width combinations,
+data banks, direct pages, fixed-bank DMA writes and zero-counter underflow.
+Malformed record, object and metatile loops continue at the exact original
+instruction when their respective bounds are reached. Changed child returns
+and unsupported child modes likewise preserve the actual continuation.
+
+Direct and runtime comparisons each cover 18,384 loader states, 4,096 display
+states and 7,168 palette states. The loader reference executes 56,740,335 body
+instructions; ordinary cases take 56 to 5,959 instructions, excluding child
+bodies. There are 9,280 calls to the reconstructed display, metatile and palette
+children in composed comparisons. Other child bodies use explicit contracts;
+these results are not a complete gameplay or wall-clock benchmark.
+
+Loader comparisons cover 4,779 direct and 6,394 runtime boundaries, including
+141 bounded loops, plus 3,225 child-unwind cases. Runtime tests also exercise
+15 redirects, with no initial fallback on supported entries. All CPU fields,
+full WRAM, mutable hardware state and operand bus order are compared. Long
+traces compare their first 262,144 events directly and their entire event count
+and 64-bit stream hash. There are 4,983 unsupported-entry checks, and all 62
+deliberate semantic and bridge faults are detected. The WRAM catalog adds 17
+proven locations; indexed bases do not claim unproven array extents.
 
 ## Metatile graphics and planar mirroring
 
