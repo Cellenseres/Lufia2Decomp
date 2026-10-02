@@ -1042,77 +1042,71 @@ static uint8_t CaveReadTileSets(
  * 6x6 block that match a set's keys with the set's tiles, keeping the flag
  * bits. */
 static void CaveApplyTileSets(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLdx(cpu, CAVE_FIRST_ROOM_CELL); /* 9753 */
-    do {
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));              /* 9756 */
-        if (cpu->zero)
-            goto next;
-        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT));
-        OpPushX(memory, cpu);
-        OpTxa(cpu);
-        Lufia2CaveCellPosition(memory, cpu, 0x9762u);
-        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
-        ExchangeAccumulatorBytes(cpu);
-        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
-        Lufia2CaveTileOffsetY(memory, cpu, 0x976au);
-        OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT));
-        OpAndValue(cpu, CAVE_CELL_SET_MASK);
-        if (!cpu->zero) {
-            static const uint8_t kKeys[4] = {0x22u, 0x24u, 0x26u, 0x28u};
-            static const uint8_t kTiles[4] = {0x11u, 0x13u, 0x15u, 0x17u};
+    /* The tile numbers the sets replace are kept as words at $22..$28 by
+     * CaveReadTileSets; the replacements are copied to $11..$17 below. */
+    static const uint8_t kKeys[4] = {0x22u, 0x24u, 0x26u, 0x28u};
+    static const uint8_t kTiles[4] = {0x11u, 0x13u, 0x15u, 0x17u};
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    /* The map layers start below $100, so they need the full address. */
+    const uint32_t layer = ((uint32_t)cpu->data_bank << 16) | CAVE_MAP_LAYER_1;
+    uint16_t cell;
 
-            ExchangeAccumulatorBytes(cpu);                     /* 9773 */
-            LoadA8(cpu, 0x00u);
-            OpTax(cpu);
-            OpRepWidths(cpu, 0x20u);
-            for (unsigned i = 0; i < 4; ++i) {
-                OpLda(memory, cpu, OpAbsX(cpu, (uint16_t)(CAVE_SET_TABLE + 2u * i)));
-                OpSta(memory, cpu, OpDp(cpu, kTiles[i]));
-            }
-            LoadA16(cpu, CAVE_BLOCK_TILE_SPAN);
-            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_ROW_COUNT));
+    for (cell = CAVE_FIRST_ROOM_CELL; cell < CAVE_GRID_ROWS_END; ++cell) {
+        const uint8_t room = WramReadAt(wram, CAVE_ROOM_GRID, cell);
+        uint8_t column;
+        uint8_t row;
+        uint8_t set;
+
+        if (room == 0u)
+            continue;
+        WramWrite(wram, CAVE_DP_TILE_COUNT, room);
+        CaveCellOrigin(memory, cpu, 0x9762u, (uint8_t)cell, &column, &row);
+        WramWrite(wram, CAVE_DP_TILE_ROW, row);
+        WramWrite(wram, CAVE_DP_TILE_COLUMN, column);
+        Lufia2CaveTileOffsetY(memory, cpu, 0x976au);
+        set = WramRead(wram, CAVE_DP_TILE_COUNT) & CAVE_CELL_SET_MASK;
+        if (set != 0u) {
+            /* The room's set number picks a 256-byte variant of the set
+             * table; replace its four tile numbers wherever they occur in
+             * the room's block of the first map layer. */
+            const uint16_t variant = (uint16_t)((uint16_t)set << 8);
+            uint16_t tile = cpu->y;
+            unsigned i;
+
+            for (i = 0; i < 4; ++i)
+                WramWrite16(wram, kTiles[i],
+                            WramRead16At(wram, CAVE_SET_TABLE + 2u * i, variant));
+            WramWrite16(wram, CAVE_DP_ROW_COUNT, CAVE_BLOCK_TILE_SPAN);
             for (;;) {
-                LoadA16(cpu, CAVE_BLOCK_TILE_SPAN); /* 9792 */
-                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT));
+                WramWrite16(wram, CAVE_DP_TILE_COUNT, CAVE_BLOCK_TILE_SPAN);
                 for (;;) {
-                    OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1)); /* 9797 */
-                    OpAndValue(cpu, CAVE_TILE_INDEX_MASK);
-                    for (unsigned i = 0; i < 4; ++i) {
-                        OpCmp(memory, cpu, OpDp(cpu, kKeys[i]));
-                        if (cpu->zero) {
-                            OpLda(memory, cpu, OpDp(cpu, kTiles[i]));
-                            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS)); /* 97BB */
-                            OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1));
-                            OpAndValue(cpu, CAVE_TILE_FLAG_MASK);
-                            OpOra(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS));
-                            OpSta(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1));
+                    const uint16_t index =
+                        WramRead16At(wram, layer, tile) & CAVE_TILE_INDEX_MASK;
+
+                    for (i = 0; i < 4; ++i) {
+                        if (index == WramRead16(wram, kKeys[i])) {
+                            WramWrite16(wram, CAVE_DP_TILE_BITS,
+                                        WramRead16(wram, kTiles[i]));
+                            WramWrite16At(
+                                wram, layer, tile,
+                                (uint16_t)((WramRead16At(wram, layer, tile) &
+                                            CAVE_TILE_FLAG_MASK) |
+                                           WramRead16(wram, CAVE_DP_TILE_BITS)));
                             break;
                         }
                     }
-                    OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT),
-                              -1); /* 97C8 */
-                    if (cpu->zero)
+                    if (WramStep16(wram, CAVE_DP_TILE_COUNT, -1) == 0u)
                         break;
-                    OpIny(cpu);
-                    OpIny(cpu);
+                    tile = (uint16_t)(tile + 2u);
                 }
-                OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_ROW_COUNT), -1); /* 97D0 */
-                if (cpu->zero)
+                if (WramStep16(wram, CAVE_DP_ROW_COUNT, -1) == 0u)
                     break;
-                OpTya(cpu);
-                cpu->carry = 0;
-                OpAdcValue(cpu, CAVE_MAP_ROW_SKIP);
-                OpTay(cpu);
-                if (cpu->zero)
+                tile = (uint16_t)(tile + CAVE_MAP_ROW_SKIP);
+                if (tile == 0u)
                     break;
             }
         }
-        OpSepWidths(cpu, 0x20u);                                     /* 97DC */
-        OpPullX(memory, cpu);
-next:
-        OpInx(cpu);                                            /* 97DF */
-        OpCpx(cpu, CAVE_GRID_ROWS_END);
-    } while (!cpu->carry);
+    }
 }
 
 /* $83:97E8-$83:9868: read the five decoration sets from list 10 into the
