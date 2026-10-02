@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-350 functions in `metadata/functions.toml`: 350 verified, 0 draft, 0 identified, 0 disabled.
+351 functions in `metadata/functions.toml`: 351 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **480 independent jobs**. The normal
-application build also passes. The consumer selects all 350 verified functions,
+The full Windows Release verifier passes **483 independent jobs**. The normal
+application build also passes. The consumer selects all 351 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -47,6 +47,23 @@ interpreter execution.
 35,840 original-ROM states and 27,648 native entries pass, including actual
 equipment and level-up JSR frames. There are no positive native fallbacks.
 All 1,025 subscriber checks and 11 injected faults pass.
+
+## Updating a placed object
+
+`$83:8B0E` combines the original object-record lookup, tile copying, layer
+rendering, tile-bit clear and attribute refresh. It retains the byte coordinate
+and height adjustments, restores the caller's bank, and accepts either caller
+accumulator width with 16-bit indexes. Each child follows its live return frame
+and passes through its exact continuation when it cannot finish.
+
+8,328 ROM and native cases pass without a positive entry fallback. CPU state,
+full WRAM, all data accesses and mutable hardware state agree. The checks cover
+44 independently counted child limits and 288 changed returns, including 24
+symmetric frame rewrites. Eight additional symmetric state changes exercise
+region-renderer limits after tile copying. Original calls and returns are
+tracked independently by the reference runner. All 1,152 unsupported entries
+and 30 injected faults are detected. The complete update is selected as a
+standalone replacement.
 
 ## Object rendering and upload queues
 
