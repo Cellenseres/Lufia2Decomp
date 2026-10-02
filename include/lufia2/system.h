@@ -114,6 +114,18 @@ Lufia2ExecutionResult Lufia2DecimalDigits3(
 Lufia2ExecutionResult Lufia2Multiply16By8(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $80:8703 NMI sprite and palette DMA and pad reading; entry M1. */
+Lufia2ExecutionResult Lufia2NmiSpritesPaletteAndPads(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $80:87A7 NMI scroll registers, listed DMA and tilemap uploads. */
+Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $80:87FC NMI tilemap uploads; entry M1X0. */
+Lufia2ExecutionResult Lufia2NmiTilemapUploads(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

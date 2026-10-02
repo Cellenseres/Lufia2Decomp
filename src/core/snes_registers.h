@@ -4,6 +4,7 @@
 /* SNES MMIO addresses, official register names. */
 
 #define SNES_INIDISP 0x2100u
+#define SNES_OAMADDL 0x2102u
 #define SNES_BGMODE 0x2105u
 #define SNES_MOSAIC 0x2106u
 #define SNES_BG1HOFS 0x210du
@@ -58,6 +59,8 @@
 #define SNES_RDDIVH 0x4215u
 #define SNES_RDMPYL 0x4216u
 #define SNES_RDMPYH 0x4217u
+#define SNES_HVBJOY 0x4212u
+#define SNES_JOY1L 0x4218u
 
 /* DMA channel n registers. */
 #define SNES_DMAP(n) (0x4300u + ((unsigned)(n) << 4))

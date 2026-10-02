@@ -3041,3 +3041,31 @@ source = "src/world/world_map_plane.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# NMI child: OAM and palette DMA when requested, then the pad words with
+# their key repeat. Runs with M=1 inside the NMI.
+[[function]]
+address = "80:8703"
+name = "Lufia2NmiSpritesPaletteAndPads"
+source = "src/system/nmi_uploads.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "draft"
+
+# NMI child: scroll registers, listed DMA requests and tilemap uploads.
+[[function]]
+address = "80:87A7"
+name = "Lufia2NmiScrollAndUploads"
+source = "src/system/nmi_uploads.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "draft"
+
+# VRAM tilemap blocks requested in $74; also called by the NMI child above.
+[[function]]
+address = "80:87FC"
+name = "Lufia2NmiTilemapUploads"
+source = "src/system/nmi_uploads.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"

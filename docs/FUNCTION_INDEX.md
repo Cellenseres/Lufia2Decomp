@@ -14,6 +14,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:8378` | `Lufia2Divide16` | verified | `src/system/math.c` |
 | `$80:8638` | `Lufia2MainNmi` | verified | `src/system/nmi.c` |
 | `$80:86C1` | `Lufia2ScreenFade` | verified | `src/system/screen.c` |
+| `$80:8703` | `Lufia2NmiSpritesPaletteAndPads` | draft | `src/system/nmi_uploads.c` |
+| `$80:87A7` | `Lufia2NmiScrollAndUploads` | draft | `src/system/nmi_uploads.c` |
+| `$80:87FC` | `Lufia2NmiTilemapUploads` | draft | `src/system/nmi_uploads.c` |
 | `$80:8878` | `Lufia2MenuDrawString` | verified | `src/menu/menu_string.c` |
 | `$80:8E9D` | `Lufia2DecompressResource` | verified | `src/system/decompress.c` |
 | `$80:9099` | `Lufia2LoadGameFile` | verified | `src/system/save.c` |
