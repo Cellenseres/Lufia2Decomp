@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-370 functions in `metadata/functions.toml`: 366 verified, 4 draft, 0 identified, 0 disabled.
+372 functions in `metadata/functions.toml`: 366 verified, 6 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -706,6 +706,15 @@ compared against the original ROM code in the interpreter on random work-RAM
 states with the pad registers varied to reach the repeat paths: CPU state,
 complete WRAM, ordered writes, the order of every hardware register access
 and the stack frames they leave behind. They await the maintainer's verifier.
+
+## Battle actor sprites
+
+`$81:8E92` (all 64 actor records into the three OAM lists, then the
+published totals) and its per-actor child `$81:8EEA` are `draft`
+reconstructions. They are the interpreter's largest battle-frame cost outside
+the main loop. Both were compared against the original ROM code in the
+interpreter on random actor tables (CPU state, complete WRAM, ordered writes
+and the stack frames they leave behind) and await the maintainer's verifier.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary

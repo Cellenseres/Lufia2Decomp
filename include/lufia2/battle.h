@@ -739,6 +739,19 @@ Lufia2ExecutionResult Lufia2BattleRunItemScript(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+/* $81:8E92 rebuilds the actor sprite lists ($4B4A, $4C8A, $4DCA) from the
+ * 64 actor records and publishes the per-list totals ($15DB, $15DF, $15E3).
+ * M1X0 only (otherwise handed back), any DP. DB is set to $7E and restored.
+ * Returns before RTS $818EE9. */
+Lufia2ExecutionResult Lufia2BattleActorSprites(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $81:8EEA adds actor Y to the sprite list of its kind, M0X0 only. DB must
+ * be $7E for the original table addresses. Returns before RTS $818F8D, or
+ * $818F90 when the sprite is off screen. */
+Lufia2ExecutionResult Lufia2BattleActorSprite(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

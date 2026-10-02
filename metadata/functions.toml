@@ -3069,3 +3069,21 @@ source = "src/system/nmi_uploads.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Battle actor sprites: rebuilds the three OAM lists from the actor records.
+[[function]]
+address = "81:8E92"
+name = "Lufia2BattleActorSprites"
+source = "src/battle/battle_monster_oam.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+# One actor's entry in its kind's sprite list.
+[[function]]
+address = "81:8EEA"
+name = "Lufia2BattleActorSprite"
+source = "src/battle/battle_monster_oam.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
