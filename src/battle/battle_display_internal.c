@@ -129,7 +129,7 @@ void BattleInitializeDisplayRecords(BattleContext *battle) {
     OpLdx(cpu, 10u);
     do {
         OpLda(memory, cpu, OpAbsX(cpu, 0xb2fcu));
-        OpSta(memory, cpu, OpAbsX(cpu, 0x122fu));
+        OpSta(memory, cpu, OpAbsX(cpu, (WRAM_FIELD_STREAMED_ROW_SOURCE + 1u)));
         OpDex(cpu);
     } while (!cpu->negative);
 

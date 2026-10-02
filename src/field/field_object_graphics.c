@@ -189,7 +189,7 @@ Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpLongX(cpu, WRAM_ACTOR_CLAIMED_OBJECT_RECORD));
     OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7fd88cu));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_OBJECT_GRAPHICS_PALETTE));
     OpRepWidths(cpu, 0x20u);
     for (unsigned bit = 0; bit < 5u; ++bit)
         OpAslA(cpu);
@@ -204,9 +204,9 @@ Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpLongX(cpu, WRAM_ACTOR_CLAIMED_OBJECT_RECORD));
     OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7fd78cu));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_OBJECT_SPRITE_ALLOCATION));
     OpSta(memory, cpu, OpDp(cpu, 0x54u));
-    OpLda(memory, cpu, OpLongX(cpu, 0x7fd80cu));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_OBJECT_GRAPHICS_SHAPE));
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
     OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE216));
     OpLda(memory, cpu, OpDp(cpu, 0x54u));

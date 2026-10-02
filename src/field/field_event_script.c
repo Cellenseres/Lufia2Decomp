@@ -811,12 +811,14 @@ static unsigned EventOpCall(
     PushAccumulator16(memory, cpu);                            /* M=0 */
     LoadXDirect16(memory, cpu, 0x56u);
     LoadA16(cpu, cpu->y);
-    Write16Long(memory, LongIndexedAddress(0x7fd467u, cpu->x),
-        cpu->accumulator);
+    Write16Long(memory,
+                LongIndexedAddress((WRAM_FIELD_EVENT_CALL_RECORDS + 1u), cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     PushDataBank(memory, cpu);
     LoadA8(cpu, Pull8(memory, cpu));
-    Write8(memory, LongIndexedAddress(0x7fd469u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress((WRAM_FIELD_EVENT_CALL_RECORDS + 3u), cpu->x),
+           A8(cpu));
     SetAccumulatorWidth(cpu, 0);
     PullAccumulator16(memory, cpu);
     cpu->carry = 0;
@@ -854,11 +856,13 @@ static unsigned EventOpReturn(
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd46eu, cpu->x)));
     Write8(memory, EVENT_CONDITION + 1u, A8(cpu));
     EventSlotVariablePointer(memory, cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd467u, cpu->x)));
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(
+                                        (WRAM_FIELD_EVENT_CALL_RECORDS + 1u), cpu->x)));
     TransferAToY(cpu);
     SetAccumulatorWidth(cpu, 1);
     PushY(memory, cpu);                                        /* D8A4 */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd469u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress((WRAM_FIELD_EVENT_CALL_RECORDS + 3u),
+                                                 cpu->x)));
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     LoadY16(cpu, 0x0000u);

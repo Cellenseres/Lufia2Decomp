@@ -287,15 +287,15 @@ static unsigned EventOpSpawn(
     AslA16(cpu);
     AslA16(cpu);
     AslA16(cpu);
-    Write16Long(memory, LongIndexedAddress(0x7fddfeu, cpu->x),
-        cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X, cpu->x),
+                cpu->accumulator);
     LoadADirect16(memory, cpu, DP_PROBE_Y);
     AslA16(cpu);
     AslA16(cpu);
     AslA16(cpu);
     AslA16(cpu);
-    Write16Long(memory, LongIndexedAddress(0x7fde8eu, cpu->x),
-        cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_Y, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     SimulateRtlFrame(memory, cpu);
     LoadA8(cpu, Pull8(memory, cpu));                           /* D50C */
@@ -859,7 +859,7 @@ static unsigned EventOpFillE33E(
     SimulateJslFrame(memory, cpu, 0x80u, 0xced5u);
     LoadX16(cpu, 0x001fu);                                     /* $83:E033 */
     do {
-        Write8(memory, LongIndexedAddress(0x7fe33eu, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x), A8(cpu));
         LoadX16(cpu, (uint16_t)(cpu->x - 1u));
     } while (!cpu->negative);
     SimulateRtlFrame(memory, cpu);
@@ -1524,9 +1524,11 @@ static unsigned EventOpSpawnInArea(
         LoadXDirect16(memory, cpu, DP_SLOT_WORD_OFFSET);
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, Read16Direct(memory, cpu, DP_PROBE_X));
-        Write16Long(memory, LongIndexedAddress(0x7fddfeu, cpu->x), cpu->accumulator);
+        Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X, cpu->x),
+                    cpu->accumulator);
         LoadA16(cpu, Read16Direct(memory, cpu, DP_PROBE_Y));
-        Write16Long(memory, LongIndexedAddress(0x7fde8eu, cpu->x), cpu->accumulator);
+        Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_Y, cpu->x),
+                    cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
         count = (uint8_t)(DirectByte(memory, cpu, 0x00u) - 1u);  /* D577 */
         Write8(memory, DirectAddress(cpu, 0x00u), count);
@@ -1683,7 +1685,8 @@ static void EventActorSprite(
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_OBJECT_RECORD,
         cpu->x)));
     TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd88cu, cpu->x)));
+    LoadA8(cpu, Read8(memory,
+                      LongIndexedAddress(WRAM_FIELD_OBJECT_GRAPHICS_PALETTE, cpu->x)));
     SetAccumulatorWidth(cpu, 0);
     AslA16(cpu);
     AslA16(cpu);
@@ -1700,9 +1703,11 @@ static void EventActorSprite(
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_OBJECT_RECORD,
         cpu->x)));
     TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd78cu, cpu->x)));
+    LoadA8(cpu, Read8(memory,
+                      LongIndexedAddress(WRAM_FIELD_OBJECT_SPRITE_ALLOCATION, cpu->x)));
     StoreADirect8(memory, cpu, 0x54u);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd80cu, cpu->x)));
+    LoadA8(cpu,
+           Read8(memory, LongIndexedAddress(WRAM_FIELD_OBJECT_GRAPHICS_SHAPE, cpu->x)));
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     Write8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x), A8(cpu));
     LoadA8(cpu, DirectByte(memory, cpu, 0x54u));

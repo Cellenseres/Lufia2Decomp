@@ -57,17 +57,17 @@ Lufia2ExecutionResult Lufia2BattleItemCommands(const Lufia2Memory *memory,
         if (cpu->zero) {
             CommandListPadding(memory, cpu, 0x20u);
         } else {
-            OpSta(memory, cpu, OpAbs(cpu, 0x0a07u));
+            OpSta(memory, cpu, OpAbs(cpu, (WRAM_ITEM_RECORD_ID + 1u)));
             OpLsrA(cpu);
             OpSta(memory, cpu, OpAbs(cpu, SNES_WRDIVL));
             OpStz(memory, cpu, OpAbs(cpu, SNES_WRDIVH));
             OpLoadA(cpu, 10u);
             OpSta(memory, cpu, OpAbs(cpu, SNES_WRDIVB));
             OpLda(memory, cpu, OpAbsX(cpu, 0x0a8du));
-            OpSta(memory, cpu, OpAbs(cpu, 0x0a06u));
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
             OpLda(memory, cpu, OpAbsX(cpu, 0x0a8eu));
             OpAndValue(cpu, 1u);
-            OpSta(memory, cpu, OpAbs(cpu, 0x0a07u));
+            OpSta(memory, cpu, OpAbs(cpu, (WRAM_ITEM_RECORD_ID + 1u)));
             OpPushX(memory, cpu);
             if (!BattleCall(&battle, 0xbfa3u, 0x81f1c5u, 3u))
                 return BattleChildUnwound(&battle);
@@ -80,7 +80,7 @@ Lufia2ExecutionResult Lufia2BattleItemCommands(const Lufia2Memory *memory,
                 OpLoadA(cpu, 1u);
             OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
             OpRepWidths(cpu, 0x20u);
-            OpLda(memory, cpu, OpAbs(cpu, 0x0a06u));
+            OpLda(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
             OpSepWidths(cpu, 0x20u);
             OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
             ExchangeAccumulatorBytes(cpu);

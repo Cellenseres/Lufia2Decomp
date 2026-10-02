@@ -365,9 +365,9 @@ static void TextGold(
         Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_GOLD, 0));
         Write16Absolute(memory, cpu, WRAM_GOLD, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
-        LoadAAbsolute8(memory, cpu, 0x0a8cu, 0);
+        LoadAAbsolute8(memory, cpu, (WRAM_GOLD + 2u), 0);
         Adc8(cpu, 0x00u);
-        StoreAAbsolute8(memory, cpu, 0x0a8cu, 0);
+        StoreAAbsolute8(memory, cpu, (WRAM_GOLD + 2u), 0);
         Compare8(cpu, A8(cpu), 0x98u);
         if (cpu->carry) {
             SetAccumulatorWidth(cpu, 0);
@@ -387,9 +387,9 @@ static void TextGold(
         Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x54u));
         Write16Absolute(memory, cpu, WRAM_GOLD, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
-        LoadAAbsolute8(memory, cpu, 0x0a8cu, 0);
+        LoadAAbsolute8(memory, cpu, (WRAM_GOLD + 2u), 0);
         Sbc8(cpu, 0x00u);
-        StoreAAbsolute8(memory, cpu, 0x0a8cu, 0);
+        StoreAAbsolute8(memory, cpu, (WRAM_GOLD + 2u), 0);
         if (!cpu->carry) {
             uint8_t high;
 
@@ -400,8 +400,9 @@ static void TextGold(
             Write16Absolute(memory, cpu, WRAM_GOLD, cpu->accumulator);
             SetAccumulatorWidth(cpu, 1);
             high = (uint8_t)(Read8(memory,
-                AbsoluteIndexedAddress(cpu, 0x0a8cu, 0)) + 1u);
-            Write8(memory, AbsoluteIndexedAddress(cpu, 0x0a8cu, 0), high);
+                                   AbsoluteIndexedAddress(cpu, (WRAM_GOLD + 2u), 0)) +
+                             1u);
+            Write8(memory, AbsoluteIndexedAddress(cpu, (WRAM_GOLD + 2u), 0), high);
             SetNz8(cpu, high);
         }
     }
@@ -1249,7 +1250,7 @@ static unsigned TextOpStoreD4F3(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2TextNextByte(memory, cpu, 0xb119u);
-    Write8(memory, 0x7fd4f3u, A8(cpu));
+    Write8(memory, WRAM_OBJECT_SPAWN_IDS, A8(cpu));
     Lufia2TextNextByte(memory, cpu, 0xb120u);
     Write8(memory, 0x7fd4f4u, A8(cpu));
     return TEXT_OPCODE_NEXT;

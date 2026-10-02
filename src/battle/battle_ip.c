@@ -67,7 +67,7 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x859e8fu, cpu->x)));   /* C177 */
         StoreTable16(memory, cpu, 0x06u);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, EQUIPMENT, cpu->x));
-        StoreAAbsolute16(memory, cpu, 0x0a06u, 0);
+        StoreAAbsolute16(memory, cpu, WRAM_ITEM_RECORD_ID, 0);
         PushIndex(memory, cpu);
         PushY(memory, cpu);
         SimulateJslFrame(memory, cpu, 0x81u, 0xc189u);

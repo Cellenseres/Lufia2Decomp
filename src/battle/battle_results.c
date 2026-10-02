@@ -248,7 +248,7 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ITEM_REWARD));
     if (!cpu->zero) {
-        OpSta(memory, cpu, OpAbs(cpu, 0x0a06u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
         OpSepWidths(cpu, 0x20u);
         if (!BattleCall(&battle, 0xdaacu, 0x81f085u, 3u))
             goto unwound;

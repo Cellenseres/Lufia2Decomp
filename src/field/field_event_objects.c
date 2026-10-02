@@ -988,12 +988,16 @@ static void EventSecondaryAtProbe(
     do {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_OBJECT_STATE, cpu->y));
         if (cpu->accumulator & 0x0080u) {                      /* BIT #$80 */
-            LoadA16(cpu, (uint16_t)(Read16Long(memory,
-                LongIndexedAddress(0x7fddfeu, cpu->x)) >> 4));
+            LoadA16(cpu,
+                    (uint16_t)(Read16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X,
+                                                                     cpu->x)) >>
+                               4));
             Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_PROBE_X));
             if (cpu->zero) {
                 LoadA16(cpu, (uint16_t)(Read16Long(memory,
-                    LongIndexedAddress(0x7fde8eu, cpu->x)) >> 4));
+                                                   LongIndexedAddress(
+                                                       WRAM_OBJECT_FINE_Y, cpu->x)) >>
+                                        4));
                 Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_PROBE_Y));
                 if (cpu->zero) {
                     cpu->carry = 1;

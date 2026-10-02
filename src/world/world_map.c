@@ -377,7 +377,7 @@ Lufia2ExecutionResult Lufia2WorldMapNmiUploads(
         LoadA8(cpu, 0x30u);
         TestBitsDirect(memory, cpu, 0x33u, 1);
     }
-    LoadAAbsolute8(memory, cpu, 0x11e1u, 0);                   /* D0DC */
+    LoadAAbsolute8(memory, cpu, WRAM_BATTLE_BACKGROUND_ID, 0); /* D0DC */
     if (!cpu->zero) {
         LoadA8(cpu, 0x41u);
         StoreAAbsolute8(memory, cpu, SNES_DMAP(2), 0);
@@ -1007,7 +1007,7 @@ Lufia2ExecutionResult Lufia2WorldSpriteChain(
     Adc8(cpu, 0x03u);
     StoreAAbsolute8(memory, cpu, 0x124au, 0);                  /* radius */
     StoreZeroAbsolute8(memory, cpu, 0x1249u, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x1247u, 0);
+    StoreZeroAbsolute8(memory, cpu, (WRAM_FIELD_STREAMED_COLUMN_VRAM + 1u), 0);
     WorldPolarOffset(memory, cpu, 0xe962u);
     SetIndexWidth(cpu, 1);                                     /* E963 */
     LoadX8(cpu, 0x54u);

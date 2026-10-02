@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/battle.h"
+#include "system/wram.h"
 
 /* Y += step with M=0, back to M=1. */
 static void BattleNextRecord(Lufia2CpuState *cpu, uint16_t step) {
@@ -184,7 +185,7 @@ static void BattleSpriteRecords(
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x15c8u, 0));
     StoreXDirect16(memory, cpu, 0x08u);
     StoreZeroAbsolute8(memory, cpu, 0x15cau, 0);
-    LoadAAbsolute8(memory, cpu, 0x153cu, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_BATTLE_PARTY_COUNT, 0);
     if (!cpu->zero) {
         StoreADirect8(memory, cpu, 0x0du);
         LoadY16(cpu, 0x0000u);
@@ -575,24 +576,28 @@ static void BattleSlotStates(
     LoadX16(cpu, cpu->y);                                      /* TYX */
     do {
         SetAccumulatorWidth(cpu, 0);                           /* 91A8 */
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a64u, cpu->x));
+        LoadA16(cpu,
+                Read16AbsoluteIndexed(memory, cpu, WRAM_BATTLE_PARTY_RECORDS, cpu->x));
         if (!cpu->zero) {
             PushIndex(memory, cpu);
             TransferAToX(cpu);
             SetAccumulatorWidth(cpu, 1);
-            LoadAAbsolute8(memory, cpu, 0x147au, cpu->y);
+            LoadAAbsolute8(memory, cpu, (WRAM_BATTLE_STATUS_ICON_RECORDS + 1u), cpu->y);
             ExchangeAccumulatorBytes(cpu);
             LoadAAbsolute8(memory, cpu, 0x000fu, cpu->x);
-            StoreAAbsolute8(memory, cpu, 0x147au, cpu->y);
+            StoreAAbsolute8(memory, cpu, (WRAM_BATTLE_STATUS_ICON_RECORDS + 1u),
+                            cpu->y);
             if (cpu->zero) {
                 TransferDirectToA(cpu);                        /* 91CC */
-                StoreAAbsolute8(memory, cpu, 0x1479u, cpu->y);
+                StoreAAbsolute8(memory, cpu, WRAM_BATTLE_STATUS_ICON_RECORDS, cpu->y);
             } else {
                 ExchangeAccumulatorBytes(cpu);
                 if (cpu->zero) {
                     LoadA8(cpu, 0xffu);
-                    StoreAAbsolute8(memory, cpu, 0x147bu, cpu->y);
-                    StoreAAbsolute8(memory, cpu, 0x1479u, cpu->y);
+                    StoreAAbsolute8(memory, cpu, (WRAM_BATTLE_STATUS_ICON_RECORDS + 2u),
+                                    cpu->y);
+                    StoreAAbsolute8(memory, cpu, WRAM_BATTLE_STATUS_ICON_RECORDS,
+                                    cpu->y);
                 }
             }
             cpu->x = PullIndexValue(memory, cpu);
