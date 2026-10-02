@@ -295,6 +295,10 @@ Lufia2ExecutionResult Lufia2FieldPixelCellFloor(
 Lufia2ExecutionResult Lufia2FieldPixelCellCeiling(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $83:8C8A refreshes the pending rectangle; restores caller M/X. */
+Lufia2ExecutionResult Lufia2FieldRefreshObjectAttributes(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* Object attributes, saved tiles, redraw requests and tile-bit copying. */
 Lufia2ExecutionResult Lufia2FieldClearObjectTileIds(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);

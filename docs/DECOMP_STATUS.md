@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-347 functions in `metadata/functions.toml`: 347 verified, 0 draft, 0 identified, 0 disabled.
+348 functions in `metadata/functions.toml`: 348 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **474 independent jobs**. The normal
-application build also passes. The consumer selects all 347 verified functions,
+The full Windows Release verifier passes **477 independent jobs**. The normal
+application build also passes. The consumer selects all 348 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -47,6 +47,20 @@ interpreter execution.
 35,840 original-ROM states and 27,648 native entries pass, including actual
 equipment and level-up JSR frames. There are no positive native fallbacks.
 All 1,025 subscriber checks and 11 injected faults pass.
+
+## Object map attributes
+
+`$83:8C8A` updates the attribute grid under the pending object. It keeps the
+original metatile catalog lookup, classification bytes, preserved attribute
+bits, row strides and byte counters. A zero dimension still processes 256
+cells along that axis. The caller's saved bank and M/X widths are restored.
+
+32,952 ROM and native states pass with no positive entry fallback. The checks
+cover all four caller widths, bank crossings, overwritten saved state, twelve
+read-only child returns, 32 symmetric bus-observer return rewrites and eight
+exact 262,144-cell continuations. CPU state, full WRAM, all data accesses and
+mutable hardware state agree. All 768 unsupported entries and 30 injected
+faults are detected. The complete routine is selected as a standalone replacement.
 
 ## Rendering a pair of layers
 

@@ -2875,3 +2875,11 @@ source = "src/field/field_scroll.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:8C8A"
+name = "Lufia2FieldRefreshObjectAttributes"
+source = "src/field/field_object_attributes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
