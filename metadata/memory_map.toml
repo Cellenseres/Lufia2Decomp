@@ -48,14 +48,14 @@ address = "7E:0046"
 name = "buttons_held"
 width = 2
 owner = "system"
-notes = "Joypad buttons held; $83:867B takes buttons from $46 and $4A."
+notes = "Joypad state as read from the pad: low byte $46 holds A, X, L, R in bits 7-4, high byte $47 holds B, Y, Select, Start, Up, Down, Left, Right in bits 7-0. Distinct from buttons_pressed at $4A; $83:867B takes buttons from $46 and $4A."
 
 [[location]]
 address = "7E:004A"
 name = "buttons_pressed"
 width = 2
 owner = "system"
-notes = "Joypad buttons newly pressed; cleared bit by bit when a field handler consumes them ($83:867B TRB)."
+notes = "Pending joypad presses in the same bit layout ($4A low byte, $4B high byte); cleared bit by bit when a handler consumes them ($83:867B TRB)."
 
 [[location]]
 address = "7E:0067"
@@ -212,7 +212,7 @@ notes = "Tile row per slot; $83:A746 derives the fine y position from it."
 
 [[location]]
 address = "7E:0736"
-name = "unk_7E0736"
+name = "actor_flags"
 width = 1
 count = 40
 owner = "actor"
@@ -343,7 +343,7 @@ notes = "Sound command stored by $84:8766 unless $05B6 bit 1 is set; the field l
 
 [[location]]
 address = "7F:D0A1"
-name = "unk_7FD0A1"
+name = "field_control_flags"
 width = 1
 owner = "field"
 notes = "Field control bits. $83:BB93 lets only the leader run $83:C7F8 while $2C is set; bit 2 records blocked steps, bit 6 gates $83:CA68."

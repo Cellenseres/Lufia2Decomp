@@ -1,5 +1,6 @@
 /* Status and equipment text dispatch. */
 
+#include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/menu.h"
 #include "system/wram.h"
@@ -41,11 +42,8 @@ static uint8_t StatusChild(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context,
     uint32_t site, uint32_t target, uint8_t frame) {
-    if (frame == 3u)
-        SimulateJslFrame(memory, cpu, 0x82u, (uint16_t)(site + 3u));
-    else
-        SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
-    return child(context, cpu, target, site, frame);
+    return CallChildWithFrame(
+        memory, cpu, child, context, site, target, frame, 0x82u);
 }
 
 /* $82:A318: modes 0/1 party, 2 equipment, 3 equipment refresh, 4 details. */
@@ -60,7 +58,7 @@ Lufia2ExecutionResult Lufia2MenuDrawStatus(
         return ExecutionHandoff(cpu, 0x82a318u);
     PushAccumulator8(memory, cpu);
     OpLoadA(cpu, 0x20u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x0564u));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
     LoadA8(cpu, Pull8(memory, cpu));
     target = StatusDispatchTarget(memory, cpu);
 
@@ -127,7 +125,7 @@ Lufia2ExecutionResult Lufia2MenuDrawStatus(
         OpSta(memory, cpu, OpDp(cpu, 0u));
         STATUS_CALL(0x82a3a3u, 0x82942fu, 2u);
         OpLoadA(cpu, 0x20u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x0564u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
         OpLdx(cpu, 0x1560u);
         OpWriteX(memory, cpu, OpDp(cpu, STATUS_TILE_CURSOR), cpu->x);
         OpLoadA(cpu, 0x8eu);
@@ -151,7 +149,7 @@ Lufia2ExecutionResult Lufia2MenuDrawStatus(
         OpLdx(cpu, 0x308au);
         STATUS_CALL(0x82a3dfu, 0x8294c0u, 2u);
         OpLoadA(cpu, 0x20u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x0564u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
         OpLdx(cpu, 0x1560u);
         OpWriteX(memory, cpu, OpDp(cpu, STATUS_TILE_CURSOR), cpu->x);
         OpLoadA(cpu, 0x8eu);

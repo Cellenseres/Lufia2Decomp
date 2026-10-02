@@ -3,19 +3,20 @@
 #include "lufia2/text.h"
 #include "text/text_internal.h"
 #include "actor/actor_internal.h"
+#include "system/wram.h"
 
 /* $80:BF6F: find an actor id, skipping flag $04. */
 static void TextFindWindowActor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreADirect8(memory, cpu, 0x54u);
     LoadX16(cpu, 0);
     for (;;) {
-        LoadAAbsolute8(memory, cpu, 0x0622u, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
         And8(cpu, 4);
         if (cpu->zero) {
-            LoadAAbsolute8(memory, cpu, 0x05fau, cpu->x);
+            LoadAAbsolute8(memory, cpu, WRAM_ACTOR_ID, cpu->x);
             Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x54u));
             if (cpu->zero) {
-                StoreXDirect16(memory, cpu, 0xa7u);
+                StoreXDirect16(memory, cpu, DP_ACTOR_SLOT);
                 SimulateJslFrame(memory, cpu, 0x80u, 0xbf8fu);
                 Lufia2ActorRecordOffsets(memory, cpu);
                 SimulateRtlFrame(memory, cpu);
@@ -80,22 +81,22 @@ static void TextWindowActorPosition(const Lufia2Memory *memory, Lufia2CpuState *
     LoadAAbsolute8(memory, cpu, 0x125cu, 0);
     AslA8(cpu); Adc8(cpu, 2);
     StoreADirect8(memory, cpu, 0x54u);
-    LoadXDirect(memory, cpu, 0xa9u);
+    LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fde3eu, cpu->x)));
-    Subtract16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a6u, 0));
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x)));
+    Subtract16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, 0));
     And16(cpu, 0xfff0u);
     LsrA16(cpu); LsrA16(cpu); LsrA16(cpu);
     PushAccumulator16(memory, cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fddaeu, cpu->x)));
-    Subtract16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a4u, 0));
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x)));
+    Subtract16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, 0));
     LsrA16(cpu); LsrA16(cpu); LsrA16(cpu);
     Add16Value(cpu, 0);
     StoreADirect16(memory, cpu, 0x5du);
     PullAccumulator16(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     StoreADirect8(memory, cpu, 0x5eu);
-    LoadXDirect(memory, cpu, 0xa7u);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadAAbsolute8(memory, cpu, 0x0692u, cpu->x);
     Compare8(cpu, A8(cpu), 4);
     if (!cpu->zero) goto above;
@@ -144,8 +145,8 @@ horizontal:                                                  /* C39D */
         ExchangeAccumulatorBytes(cpu);
     }
     IncrementDirect8(memory, cpu, 0x5du);
-    LoadXDirect(memory, cpu, 0xa7u);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
     BitImmediate8(cpu, 2);
     if (!cpu->zero) {
         IncrementDirect8(memory, cpu, 0x5du);
@@ -158,7 +159,7 @@ horizontal:                                                  /* C39D */
         cpu->carry = 1; Sbc8(cpu, 4);
         StoreADirect8(memory, cpu, 0x5du);
         LoadA8(cpu, 0x40u); TestBitsDirect(memory, cpu, 0x5bu, 0);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
         BitImmediate8(cpu, 2);
         if (!cpu->zero) {
             DecrementDirect8(memory, cpu, 0x5du);
@@ -428,7 +429,7 @@ Lufia2ExecutionResult Lufia2TextPrepareWindow(
     Lufia2TextClearGlyphBuffer(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     PushDataBank(memory, cpu);
-    LoadAAbsolute8(memory, cpu, 0x09a7u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);
     BitImmediate8(cpu, 2);
     if (cpu->zero) {
         SimulateJsrFrame(memory, cpu, 0xc27bu);

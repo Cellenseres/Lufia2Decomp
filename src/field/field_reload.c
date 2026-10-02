@@ -36,7 +36,7 @@ static void BeginFieldReload(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     for (unsigned i = 0u; i < 4u; ++i)
         OpStz(memory, cpu, OpAbs(cpu, cleared[i]));
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x1269u));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_TEXT_WAIT_ACTOR));
     for (unsigned i = 4u; i < 7u; ++i)
         OpStz(memory, cpu, OpAbs(cpu, cleared[i]));
 }

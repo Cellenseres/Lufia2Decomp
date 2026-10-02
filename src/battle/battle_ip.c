@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "lufia2/battle.h"
 #include "lufia2/item.h"
+#include "system/wram.h"
 
 enum {
     TABLE = 0xdf00u,                    /* $7E, $30 bytes per slot */
@@ -44,10 +45,10 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
     StoreWordAbsolute(memory, cpu, 0x2181u, cpu->x);          /* WRAM port */
     StoreZeroAbsolute8(memory, cpu, 0x2183u, 0);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Long(memory, 0x001be8u));
+    LoadA16(cpu, Read16Long(memory, WRAM_BATTLE_PARTY_SLOT));
     AslA16(cpu);
     TransferAToX(cpu);
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a64u, cpu->x));
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_BATTLE_PARTY_RECORDS, cpu->x));
     LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x00bcu, cpu->x) & 0x00ffu));
     StoreADirect16(memory, cpu, LEVEL);
     for (i = 0; i < 6u; ++i) {
@@ -74,7 +75,8 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
         SimulateRtlFrame(memory, cpu);
         cpu->y = PullIndexValue(memory, cpu);
         for (i = 0; i < 6u; ++i) {                             /* name */
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (uint16_t)(0x0b77u + 2u * i), 0));
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
+                (uint16_t)(WRAM_MENU_SPELL_RECORD + 2u * i), 0));
             StoreTable16(memory, cpu, (uint16_t)(0x07u + 2u * i));
         }
         TransferDirectToA(cpu);

@@ -25,7 +25,7 @@ static void ObjectCopyRectangleOffsets(
     OpRepWidths(cpu, 0x20u);
     OpAslA(cpu);
     OpSta(memory, cpu, OpDp(cpu, OBJECT_COPY_ROW_WIDTH));
-    OpLda(memory, cpu, 0x0005b9u);
+    OpLda(memory, cpu, WRAM_FIELD_SECTION_WIDTH);
     OpAslA(cpu);
     cpu->carry = 1;
     OpSbcValue(cpu, OpReadM(memory, cpu,
@@ -34,7 +34,7 @@ static void ObjectCopyRectangleOffsets(
     OpIncA(cpu);
     OpSta(memory, cpu, OpDp(cpu, OBJECT_COPY_ROW_ADVANCE));
     OpSepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, 0x0005b9u);
+    OpLda(memory, cpu, WRAM_FIELD_SECTION_WIDTH);
     OpSta(memory, cpu, 0x004202u);
     OpLda(memory, cpu, OpAbs(cpu, (WRAM_FIELD_OBJECT_SOURCE_Y & 0xffffu)));
     OpSta(memory, cpu, 0x004203u);

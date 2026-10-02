@@ -14,12 +14,12 @@ static void RandomRefill(
     do {
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x0521u, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_TABLE, cpu->x)));
         LoadA8(
             cpu, (uint8_t)(A8(cpu) ^ Read8(
                 memory, AbsoluteIndexedAddress(cpu, 0x0540u, cpu->x))));
         Write8(
-            memory, AbsoluteIndexedAddress(cpu, 0x0521u, cpu->x),
+            memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_TABLE, cpu->x),
             A8(cpu));
         LoadX8(cpu, (uint8_t)(cpu->x + 1u));
         Compare8(cpu, (uint8_t)cpu->x, 0x18u);                 /* 8339 */
@@ -27,12 +27,12 @@ static void RandomRefill(
     do {
         LoadA8(
             cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x0521u, cpu->x)));
+                memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_TABLE, cpu->x)));
         LoadA8(
             cpu, (uint8_t)(A8(cpu) ^ Read8(
                 memory, AbsoluteIndexedAddress(cpu, 0x0509u, cpu->x))));
         Write8(
-            memory, AbsoluteIndexedAddress(cpu, 0x0521u, cpu->x),
+            memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_TABLE, cpu->x),
             A8(cpu));
         LoadX8(cpu, (uint8_t)(cpu->x + 1u));
         Compare8(cpu, (uint8_t)cpu->x, 0x37u);                 /* 8347 */
@@ -59,7 +59,7 @@ static void RandomAdvance(
     Lufia2CpuState *cpu,
     uint16_t refill_return) {
     LoadX8(
-        cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x0559u, 0)));
+        cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_NEXT_INDEX, 0)));
     LoadX8(cpu, (uint8_t)(cpu->x + 1u));
     Compare8(cpu, (uint8_t)cpu->x, 0x37u);
     if (cpu->carry) {
@@ -69,7 +69,7 @@ static void RandomAdvance(
         LoadX8(cpu, 0x00u);
     }
     Write8(
-        memory, AbsoluteIndexedAddress(cpu, 0x0559u, 0),
+        memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_NEXT_INDEX, 0),
         (uint8_t)cpu->x);
 }
 
@@ -90,7 +90,7 @@ void Lufia2RandomByte(
     RandomAdvance(memory, cpu, 0x82d9u);                       /* 82CF */
     LoadA8(
         cpu, Read8(
-            memory, AbsoluteIndexedAddress(cpu, 0x0521u, cpu->x)));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_TABLE, cpu->x)));
     RandomLeave(memory, cpu);                                  /* 82E2 */
 }
 
@@ -105,7 +105,7 @@ void Lufia2RandomScale(
         memory, AbsoluteIndexedAddress(cpu, SNES_WRMPYA, 0), A8(cpu));
     LoadA8(
         cpu, Read8(
-            memory, AbsoluteIndexedAddress(cpu, 0x0521u, cpu->x)));
+            memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_TABLE, cpu->x)));
     Write8(
         memory, AbsoluteIndexedAddress(cpu, SNES_WRMPYB, 0), A8(cpu));
     LoadA8(cpu, 0x00u);                                        /* 82BC */

@@ -82,14 +82,14 @@ static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
             OpRepWidths(cpu, 0x20u);
             OpLda(memory, cpu, OpAbs(cpu, 0x09fcu));
             cpu->carry = false;
-            OpAdc(memory, cpu, OpAbs(cpu, 0x1605u));
-            OpSta(memory, cpu, OpAbs(cpu, 0x1605u));
+            OpAdc(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EXPERIENCE_REWARD));
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EXPERIENCE_REWARD));
             if (cpu->carry)
                 OpStepMem(memory, cpu, OpAbs(cpu, 0x1607u), 1);
             OpLda(memory, cpu, OpAbs(cpu, 0x09feu));
             cpu->carry = false;
-            OpAdc(memory, cpu, OpAbs(cpu, 0x1608u));
-            OpSta(memory, cpu, OpAbs(cpu, 0x1608u));
+            OpAdc(memory, cpu, OpAbs(cpu, WRAM_BATTLE_GOLD_REWARD));
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_GOLD_REWARD));
             if (cpu->carry)
                 OpStepMem(memory, cpu, OpAbs(cpu, 0x160au), 1);
             OpSepWidths(cpu, 0x20u);
@@ -152,7 +152,7 @@ Lufia2ExecutionResult Lufia2BattleStatusTick(
         OpLdx(cpu, 1u);
         OpWriteX(memory, cpu, OpAbs(cpu, 0x1266u), cpu->x);
         OpLdx(cpu, 0xffffu);
-        OpWriteX(memory, cpu, OpAbs(cpu, 0x1264u), cpu->x);
+        OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER), cpu->x);
         if (!BattleCall(&battle, 0xc638u, 0x8595feu, 3u))
             return BattleChildUnwound(&battle);
         OpLoadA(cpu, 0u);

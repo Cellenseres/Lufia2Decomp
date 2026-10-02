@@ -47,14 +47,14 @@ static void FieldOamQuad(
             LoadA8(cpu, (uint8_t)(A8(cpu) + 2u));
         StoreAAbsolute8(memory, cpu, order[i], cpu->x);
     }
-    LoadA8(cpu, DirectByte(memory, cpu, 0x91u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
     StoreAAbsolute8(memory, cpu, (layout & 2u) ? 0x0009u : 0x0001u, cpu->x);
     StoreAAbsolute8(memory, cpu, (layout & 2u) ? 0x000du : 0x0005u, cpu->x);
     cpu->carry = 0;
     Adc8(cpu, 0x10u);
     StoreAAbsolute8(memory, cpu, (layout & 2u) ? 0x0001u : 0x0009u, cpu->x);
     StoreAAbsolute8(memory, cpu, (layout & 2u) ? 0x0005u : 0x000du, cpu->x);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x8fu));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
     StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x);
     StoreAAbsolute8(memory, cpu, 0x0008u, cpu->x);
     cpu->carry = 0;
@@ -76,9 +76,9 @@ static void FieldOamEntries(
         StoreAAbsolute8(memory, cpu, 0x0002u, cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, 0x97u));
         StoreAAbsolute8(memory, cpu, 0x0003u, cpu->x);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x91u));
+        LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
         StoreAAbsolute8(memory, cpu, 0x0001u, cpu->x);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x8fu));
+        LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
         StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, 0x90u));
         if (!cpu->zero)
@@ -95,13 +95,13 @@ static void FieldOamEntries(
         {
             const uint16_t top = cpu->zero ? 0x0001u : 0x0005u;
 
-            LoadA8(cpu, DirectByte(memory, cpu, 0x91u));
+            LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
             StoreAAbsolute8(memory, cpu, top, cpu->x);
             cpu->carry = 0;
             Adc8(cpu, 0x10u);
             StoreAAbsolute8(memory, cpu, top ^ 0x0004u, cpu->x);
         }
-        LoadA8(cpu, DirectByte(memory, cpu, 0x8fu));           /* A4EE */
+        LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));           /* A4EE */
         StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x);
         StoreAAbsolute8(memory, cpu, 0x0004u, cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, 0x90u));
@@ -114,13 +114,13 @@ static void FieldOamEntries(
         StoreAAbsolute8(memory, cpu, 0x0002u, cpu->x);
         LoadA8(cpu, (uint8_t)(A8(cpu) + 2u));
         StoreAAbsolute8(memory, cpu, 0x0006u, cpu->x);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x91u));
+        LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
         StoreAAbsolute8(memory, cpu, 0x0001u, cpu->x);
         StoreAAbsolute8(memory, cpu, 0x0005u, cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, 0x97u));
         StoreAAbsolute8(memory, cpu, 0x0003u, cpu->x);
         StoreAAbsolute8(memory, cpu, 0x0007u, cpu->x);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x8fu));
+        LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
         StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x);
         cpu->carry = 0;
         Adc8(cpu, 0x10u);
@@ -151,7 +151,7 @@ static void FieldOamEntries(
         FieldOamQuad(memory, cpu, (uint8_t)(cpu->x >> 1));
         LoadA8(cpu, DirectByte(memory, cpu, 0x90u));           /* A556 */
         if (!cpu->negative) {
-            LoadA8(cpu, DirectByte(memory, cpu, 0x8fu));
+            LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
             cpu->carry = 0;
             Adc8(cpu, 0x10u);
             if (cpu->carry) {
@@ -161,7 +161,7 @@ static void FieldOamEntries(
                 FieldOamHighBit(memory, cpu, 0xa56au);
             }
         } else {
-            LoadA8(cpu, DirectByte(memory, cpu, 0x8fu));       /* A56C */
+            LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));       /* A56C */
             cpu->carry = 0;
             Adc8(cpu, 0x10u);
             if (!cpu->carry) {
@@ -186,18 +186,18 @@ static void FieldObjectSpriteUpload(
     SimulateJsrFrame(memory, cpu, 0xa4a0u);
     LoadY8(cpu, AbsoluteByte(memory, cpu, 0x0732u, 0));        /* FCD1 */
     TransferDirectToA(cpu);
-    LoadXDirect8(memory, cpu, 0xa7u);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+    LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
     AslA8(cpu);
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x83abfcu, cpu->x)));
     StoreAAbsolute16(memory, cpu, 0x11f9u, cpu->y);
-    LoadXDirect8(memory, cpu, 0xa9u);
+    LoadXDirect8(memory, cpu, DP_SLOT_WORD_OFFSET);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fe05eu, cpu->x)));
     StoreAAbsolute16(memory, cpu, 0x11e9u, cpu->y);
     SetAccumulatorWidth(cpu, 1);
-    LoadXDirect8(memory, cpu, 0xabu);
+    LoadXDirect8(memory, cpu, DP_SLOT_RECORD_OFFSET);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd896u, cpu->x)));
     StoreAAbsolute8(memory, cpu, 0x11d9u, cpu->y);
     SetAccumulatorWidth(cpu, 0);
@@ -235,31 +235,31 @@ static void FieldActorFrameUpload(
     SimulateJsrFrame(memory, cpu, 0xa3d2u);
     SetAccumulatorWidth(cpu, 1);                               /* AAE5 */
     SetIndexWidth(cpu, 1);
-    LoadXDirect8(memory, cpu, 0xa7u);
+    LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
     TransferDirectToA(cpu);
-    LoadAAbsolute8(memory, cpu, 0x066au, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_UNK_7E066A, cpu->x);
     cpu->carry = 0;
     Adc8(cpu, Read8(memory, LongIndexedAddress(0x7fe2eeu, cpu->x)));
     SetAccumulatorWidth(cpu, 0);
-    LoadYDirect8(memory, cpu, 0xa9u);
+    LoadYDirect8(memory, cpu, DP_SLOT_WORD_OFFSET);
     cpu->carry = 0;
     Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x13d1u, cpu->y));
     StoreADirect16(memory, cpu, 0x54u);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x83u);
     StoreADirect8(memory, cpu, 0x56u);
-    LoadXDirect8(memory, cpu, 0xa7u);
+    LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
     pointer = Read16Direct(memory, cpu, 0x54u) |
         ((uint32_t)DirectByte(memory, cpu, 0x56u) << 16);
     LoadA8(cpu, Read8(memory, pointer));                       /* LDA [$54] */
     And8(cpu, 0x7fu);
     StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
     TransferAToX(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83abf8u, cpu->x)));
     StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
-    LoadYDirect8(memory, cpu, 0xabu);
+    LoadYDirect8(memory, cpu, DP_SLOT_RECORD_OFFSET);
     LoadAAbsolute8(memory, cpu, 0x12bbu, cpu->y);
     StoreADirect8(memory, cpu, 0x54u);
     LoadAAbsolute8(memory, cpu, SNES_RDMPYL, 0);
@@ -271,7 +271,7 @@ static void FieldActorFrameUpload(
     Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x12b9u, cpu->y));
     StoreADirect16(memory, cpu, 0x56u);
     LoadY8(cpu, AbsoluteByte(memory, cpu, 0x0732u, 0));
-    LoadXDirect8(memory, cpu, 0xa9u);
+    LoadXDirect8(memory, cpu, DP_SLOT_WORD_OFFSET);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1381u, cpu->x));
     StoreAAbsolute16(memory, cpu, 0x11f9u, cpu->y);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1331u, cpu->x));
@@ -299,7 +299,7 @@ static void FieldSortVisible(
         LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x); /* A29B */
         BitImmediate8(cpu, 0x04u);
         if (cpu->zero) {
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe316u, cpu->x)));
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE316, cpu->x)));
             BitImmediate8(cpu, 0x80u);
         }
         if (cpu->zero) {
@@ -309,10 +309,10 @@ static void FieldSortVisible(
 
             SetAccumulatorWidth(cpu, 0);
             TransferXToA(cpu);
-            StoreADirect16(memory, cpu, 0xa7u);
+            StoreADirect16(memory, cpu, DP_ACTOR_SLOT);
             AslA16(cpu);
             TransferAToX(cpu);
-            world_x = Read16Long(memory, LongIndexedAddress(0x7fddaeu, cpu->x));
+            world_x = Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x));
             LoadA16(cpu, world_x);
             cpu->carry = 0;
             Add16Value(cpu, 0x0030u);
@@ -322,7 +322,7 @@ static void FieldSortVisible(
                     Read16Direct(memory, cpu, 0x56u));
                 if (cpu->negative) {
                     world_y = Read16Long(
-                        memory, LongIndexedAddress(0x7fde3eu, cpu->x));
+                        memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x));
                     LoadA16(cpu, world_y);
                     cpu->carry = 0;
                     Add16Value(cpu, 0x0020u);
@@ -340,9 +340,9 @@ static void FieldSortVisible(
             if (visible) {
                 LoadA16(cpu, (uint16_t)(cpu->accumulator | 0x1000u));
                 StoreADirect16(memory, cpu, 0x63u);
-                LoadXDirect8(memory, cpu, 0xa7u);
+                LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
                 LoadA16(cpu, Read16Long(
-                    memory, LongIndexedAddress(0x7fe316u, cpu->x)));
+                    memory, LongIndexedAddress(WRAM_UNK_7FE316, cpu->x)));
                 cpu->zero = (cpu->accumulator & 0x0001u) == 0;
                 if (!cpu->zero) {
                     LoadA16(cpu, 0x1000u);
@@ -371,13 +371,13 @@ static void FieldSortVisible(
                 }
                 LoadADirect16(memory, cpu, 0x63u);             /* A309 */
                 StoreAAbsolute16(memory, cpu, 0xe200u, cpu->x);
-                LoadADirect16(memory, cpu, 0xa7u);
+                LoadADirect16(memory, cpu, DP_ACTOR_SLOT);
                 StoreAAbsolute16(memory, cpu, 0xe300u, cpu->x);
                 LoadY8(cpu, (uint8_t)(cpu->y + 1u));
                 LoadY8(cpu, (uint8_t)(cpu->y + 1u));
             }
             SetAccumulatorWidth(cpu, 1);                       /* A315 */
-            LoadXDirect8(memory, cpu, 0xa7u);
+            LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
         }
         LoadX8(cpu, (uint8_t)(cpu->x + 1u));                   /* A319 */
         Compare8(cpu, (uint8_t)cpu->x, 0x48u);
@@ -389,13 +389,13 @@ static uint8_t FieldActorOam(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ee300u, cpu->x)));
-    StoreADirect8(memory, cpu, 0xa7u);
+    StoreADirect8(memory, cpu, DP_ACTOR_SLOT);
     TransferAToX(cpu);
     AslA8(cpu);
-    StoreADirect8(memory, cpu, 0xa9u);
+    StoreADirect8(memory, cpu, DP_SLOT_WORD_OFFSET);
     cpu->carry = 0;
-    Adc8(cpu, DirectByte(memory, cpu, 0xa7u));
-    StoreADirect8(memory, cpu, 0xabu);
+    Adc8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));
+    StoreADirect8(memory, cpu, DP_SLOT_RECORD_OFFSET);
     Write8(memory, DirectAddress(cpu, 0x97u), 0x00u);
     Compare8(cpu, (uint8_t)cpu->x, 0x28u);
     if (cpu->carry) {
@@ -409,14 +409,14 @@ static uint8_t FieldActorOam(
                 PushIndex(memory, cpu);
                 cpu->carry = 0;
                 Adc8(cpu, 0x28u);
-                StoreADirect8(memory, cpu, 0xa7u);
+                StoreADirect8(memory, cpu, DP_ACTOR_SLOT);
                 SimulateJslFrame(memory, cpu, 0x83u, 0xa368u);
                 Lufia2ActorRecordOffsets(memory, cpu);
                 SimulateRtlFrame(memory, cpu);
-                LoadXDirect8(memory, cpu, 0xa7u);
+                LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
                 FieldObjectReload(memory, cpu, 0xa36du);
                 cpu->x = PullIndexValue(memory, cpu);
-                Write8(memory, DirectAddress(cpu, 0xa7u), (uint8_t)cpu->x);
+                Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), (uint8_t)cpu->x);
                 SimulateJslFrame(memory, cpu, 0x83u, 0xa374u);
                 Lufia2ActorRecordOffsets(memory, cpu);
                 SimulateRtlFrame(memory, cpu);
@@ -425,21 +425,23 @@ static uint8_t FieldActorOam(
             }
         }
         SetAccumulatorWidth(cpu, 0);                           /* A37A */
-        LoadXDirect8(memory, cpu, 0xa9u);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fddaeu, cpu->x)));
+        LoadXDirect8(memory, cpu, DP_SLOT_WORD_OFFSET);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x)));
         cpu->carry = 0;
-        Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fdc8cu, cpu->x)));
+        Add16Value(cpu, Read16Long(memory,
+            LongIndexedAddress(WRAM_ACTOR_DISPLAY_OFFSET_X, cpu->x)));
         Subtract16(cpu, Read16Direct(memory, cpu, 0x9fu));
         Subtract16(cpu, 0x0008u);
-        StoreADirect16(memory, cpu, 0x8fu);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fde3eu, cpu->x)));
+        StoreADirect16(memory, cpu, DP_PROBE_X);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x)));
         cpu->carry = 0;
-        Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fdd1cu, cpu->x)));
+        Add16Value(cpu, Read16Long(memory,
+            LongIndexedAddress(WRAM_ACTOR_DISPLAY_OFFSET_Y, cpu->x)));
         cpu->carry = 0;
         Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0xa1u));
-        StoreADirect16(memory, cpu, 0x91u);
+        StoreADirect16(memory, cpu, DP_PROBE_Y);
         SetAccumulatorWidth(cpu, 1);
-        LoadXDirect8(memory, cpu, 0xa7u);
+        LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe1ceu, cpu->x)));
         AslA8(cpu);
         TestBitsDirect(memory, cpu, 0x97u, 1);
@@ -455,42 +457,44 @@ static uint8_t FieldActorOam(
         RorA8(cpu);
         TestBitsDirect(memory, cpu, 0x97u, 1);
     } else {
-        LoadAAbsolute8(memory, cpu, 0x066au, cpu->x);          /* A3BB */
+        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E066A, cpu->x);          /* A3BB */
         Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x1471u, cpu->x));
         if (!cpu->zero) {
             LoadAAbsolute8(memory, cpu, 0x0732u, 0);
             Compare8(cpu, A8(cpu), 0x0au);
             if (!cpu->carry) {
-                LoadAAbsolute8(memory, cpu, 0x066au, cpu->x);
+                LoadAAbsolute8(memory, cpu, WRAM_UNK_7E066A, cpu->x);
                 StoreAAbsolute8(memory, cpu, 0x1471u, cpu->x);
                 FieldActorFrameUpload(memory, cpu);
             }
         }
         SetAccumulatorWidth(cpu, 0);                           /* A3D3 */
-        LoadXDirect8(memory, cpu, 0xa9u);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fddaeu, cpu->x)));
+        LoadXDirect8(memory, cpu, DP_SLOT_WORD_OFFSET);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x)));
         cpu->carry = 0;
-        Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fdc8cu, cpu->x)));
+        Add16Value(cpu, Read16Long(memory,
+            LongIndexedAddress(WRAM_ACTOR_DISPLAY_OFFSET_X, cpu->x)));
         Subtract16(cpu, Read16Direct(memory, cpu, 0x9fu));
         Subtract16(cpu, 0x0008u);
         Subtract16(cpu, Read16Long(memory, 0x7fd081u));
-        StoreADirect16(memory, cpu, 0x8fu);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fde3eu, cpu->x)));
+        StoreADirect16(memory, cpu, DP_PROBE_X);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x)));
         cpu->carry = 0;
-        Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fdd1cu, cpu->x)));
+        Add16Value(cpu, Read16Long(memory,
+            LongIndexedAddress(WRAM_ACTOR_DISPLAY_OFFSET_Y, cpu->x)));
         Subtract16(cpu, Read16Direct(memory, cpu, 0xa1u));
         cpu->carry = 0;
         Add16Value(cpu, (uint16_t)~Read16Long(memory, 0x7fd083u));
-        StoreADirect16(memory, cpu, 0x91u);
+        StoreADirect16(memory, cpu, DP_PROBE_Y);
         SetAccumulatorWidth(cpu, 1);
-        LoadXDirect8(memory, cpu, 0xa7u);
+        LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe1ceu, cpu->x)));
         And8(cpu, 0x0eu);
         TestBitsDirect(memory, cpu, 0x97u, 1);
-        LoadAAbsolute8(memory, cpu, 0x1291u, cpu->x);
+        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E1291, cpu->x);
         And8(cpu, 0x18u);
         if (!cpu->zero) {
-            LoadAAbsolute8(memory, cpu, 0x066au, cpu->x);
+            LoadAAbsolute8(memory, cpu, WRAM_UNK_7E066A, cpu->x);
             And8(cpu, 0x07u);
             Compare8(cpu, A8(cpu), 0x06u);
             if (cpu->carry) {
@@ -499,15 +503,15 @@ static uint8_t FieldActorOam(
             }
         }
     }
-    LoadXDirect8(memory, cpu, 0xa7u);                          /* A421 */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe316u, cpu->x)));
+    LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);                          /* A421 */
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE316, cpu->x)));
     And8(cpu, 0x30u);
     TestBitsDirect(memory, cpu, 0x97u, 1);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe2a6u, cpu->x)));
     TestBitsDirect(memory, cpu, 0x97u, 1);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe25eu, cpu->x)));
     StoreADirect8(memory, cpu, 0x9du);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
     TransferAToY(cpu);
     LoadA8(cpu, DirectByte(memory, cpu, 0x5fu));
     StoreADirect8(memory, cpu, 0x94u);
@@ -525,7 +529,7 @@ static uint8_t FieldActorOam(
     TransferAToY(cpu);
     SetAccumulatorWidth(cpu, 1);
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe216u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
     Compare8(cpu, A8(cpu), 0x04u);
     if (cpu->carry)
         TransferDirectToA(cpu);

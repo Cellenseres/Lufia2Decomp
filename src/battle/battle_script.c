@@ -53,7 +53,7 @@ static void BattleScriptSlot(
     And16(cpu, 0x00ffu);
     AslA16(cpu);
     TransferAToX(cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a13u, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_BATTLE_SCRIPT_CONTEXT, 0));
     And16(cpu, 0x00ffu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
         cpu->zero ? 0x0a80u : 0x0a64u, cpu->x));
@@ -925,7 +925,7 @@ static void BattleOpAction1(
     Write16Long(memory, 0x7ff456u, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     StoreAImmediate8(memory, cpu, 0xffu, WRAM_PALETTE_FADE);
-    StoreZeroAbsolute8(memory, cpu, 0x1269u, 0);
+    StoreZeroAbsolute8(memory, cpu, WRAM_TEXT_WAIT_ACTOR, 0);
 }
 
 /* $29/$2A/$2E/$41: action code 4, 6, 13 or 12. */
@@ -972,7 +972,7 @@ static void BattleOpPartyFlagCount(
         LoadY16(cpu, 0x0008u);
         do {
             LoadX16(cpu, Read16AbsoluteIndexed(
-                memory, cpu, 0x0a64u, cpu->y));        /* BB5F */
+                memory, cpu, WRAM_BATTLE_PARTY_RECORDS, cpu->y));        /* BB5F */
             if (!cpu->zero) {
                 LoadAAbsolute8(memory, cpu, 0x000fu, cpu->x);
                 BitImmediate8(cpu, 0x04u);
@@ -999,7 +999,7 @@ static void BattleOpSideLeader(
     if (cpu->negative) {
         LoadAAbsolute8(memory, cpu, 0x15feu, 0);
     } else {
-        LoadAAbsolute8(memory, cpu, 0x0a13u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_BATTLE_SCRIPT_CONTEXT, 0);
         LoadAAbsolute8(memory, cpu,
             cpu->zero ? 0x0a7au : 0x153cu, 0);
     }
@@ -1035,7 +1035,7 @@ static void BattleOpSetTimer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     BattleScriptValue(memory, cpu, 0xbe24u);
-    Write16Absolute(memory, cpu, 0x1264u, cpu->x);
+    Write16Absolute(memory, cpu, WRAM_BATTLE_WAIT_COUNTER, cpu->x);
 }
 
 /* $50: battler mask $7F:F450. */

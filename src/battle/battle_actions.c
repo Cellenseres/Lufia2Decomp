@@ -44,7 +44,7 @@ Lufia2ExecutionResult Lufia2BattleExecuteTurns(const Lufia2Memory *memory,
     OpLdx(cpu, 0xbfu);
     TransferDirectToA(cpu);
     do {
-        OpSta(memory, cpu, OpLongX(cpu, 0x7e3000u));
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER2_TILEMAP));
         OpDex(cpu);
     } while (!cpu->negative);
     if (!BattleCall(&battle, 0x8959u, 0x859dd4u, 3u))
@@ -71,7 +71,7 @@ Lufia2ExecutionResult Lufia2BattlePrepareAction(const Lufia2Memory *memory,
     OpCmpValue(cpu, 0x20u);
     if (cpu->zero) {
         OpStz(memory, cpu, OpAbs(cpu, 0x0a5cu));
-        OpStz(memory, cpu, OpAbs(cpu, 0x1269u));
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_TEXT_WAIT_ACTOR));
         OpStz(memory, cpu, OpAbs(cpu, 0x0a5bu));
     } else {
         if (!BattleCall(&battle, 0xa7c1u, 0x81b2b5u, 3u))
@@ -79,10 +79,10 @@ Lufia2ExecutionResult Lufia2BattlePrepareAction(const Lufia2Memory *memory,
         TransferDirectToA(cpu);
         OpSta(memory, cpu, 0x7ffab6u);
         OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, OpAbs(cpu, 0x1262u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
         OpLoadA(cpu, 1u);
         OpSta(memory, cpu, OpAbs(cpu, 0x0a5cu));
-        OpStz(memory, cpu, OpAbs(cpu, 0x1269u));
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_TEXT_WAIT_ACTOR));
         OpStz(memory, cpu, OpAbs(cpu, 0x0a5bu));
         OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
         OpBitValue(cpu, BATTLE_STATUS_NO_TURN_MASK);
@@ -105,7 +105,7 @@ Lufia2ExecutionResult Lufia2BattlePrepareAction(const Lufia2Memory *memory,
         OpLoadA(cpu, Pull8(memory, cpu));
         OpSta(memory, cpu, 0x7ff44eu);
         OpLoadA(cpu, 0xe0u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x1262u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
         if (!BattleCall(&battle, 0xa823u, 0x81b1c9u, 3u))
             return BattleChildUnwound(&battle);
     } else {
@@ -117,7 +117,7 @@ Lufia2ExecutionResult Lufia2BattlePrepareAction(const Lufia2Memory *memory,
             OpLoadA(cpu, Pull8(memory, cpu));
             OpSta(memory, cpu, 0x7ff44eu);
             OpLoadA(cpu, 0xf0u);
-            OpSta(memory, cpu, OpAbs(cpu, 0x1262u));
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
             if (!BattleCall(&battle, 0xa80eu, 0x81b1a3u, 3u))
                 return BattleChildUnwound(&battle);
         } else if (!BattleCall(&battle, 0xa7f9u, 0x85cdd0u, 3u)) {

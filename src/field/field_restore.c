@@ -26,7 +26,7 @@ static void RestoreFieldWorkingBuffers(const Lufia2Memory *memory,
 
     OpRepWidths(cpu, 0x20u);
     LoadA16(cpu, 0u);
-    OpSta(memory, cpu, 0x7fd4f8u);
+    OpSta(memory, cpu, WRAM_FIELD_COLUMN_UPLOAD_COUNT_BYTES);
     OpSta(memory, cpu, 0x7fd59au);
 
     static const uint16_t upload_words[] = {0x1246u, 0x1248u, 0x124au, 0x124cu, 0x123eu,
@@ -53,7 +53,7 @@ static void ResetFieldPresentationState(const Lufia2Memory *memory,
     LoadA8(cpu, 1u);
     OpTestBits(memory, cpu, OpAbs(cpu, 0x09a9u), 0u);
     LoadA8(cpu, 0x80u);
-    OpSta(memory, cpu, OpDp(cpu, 0x73u));
+    OpSta(memory, cpu, OpDp(cpu, DP_NMI_UPLOAD_FLAGS));
 
     OpStz(memory, cpu, OpDp(cpu, 0x72u));
     OpStz(memory, cpu, OpDp(cpu, 0x81u));

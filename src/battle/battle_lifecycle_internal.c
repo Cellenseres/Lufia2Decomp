@@ -72,12 +72,12 @@ void BattleEndSession(BattleContext *battle) {
 static bool UseRegularBattleFade(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
 
-    OpLda(battle->memory, cpu, 0x7ff8a2u);
+    OpLda(battle->memory, cpu, WRAM_FIELD_BATTLE_RESULT);
     OpCmpValue(cpu, 1u);
     if (!cpu->zero)
         return true;
 
-    OpLda(battle->memory, cpu, 0x7ff8a3u);
+    OpLda(battle->memory, cpu, WRAM_FIELD_BATTLE_SOURCE);
     if (!cpu->negative)
         return false;
 

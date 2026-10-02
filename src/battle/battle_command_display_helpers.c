@@ -10,7 +10,7 @@ Lufia2ExecutionResult Lufia2BattlePartyName(const Lufia2Memory *memory,
 
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpLongX(cpu, 0x818811u));
-    OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, 0x0a64u)));
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_RECORDS)));
     cpu->carry = 1;
     OpSbcValue(cpu, 0x40u);
     OpTax(cpu);
