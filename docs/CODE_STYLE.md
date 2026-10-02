@@ -1,8 +1,10 @@
 # Reconstructed code style
 
-This file defines how reconstructed 65816 routines are written in C. Its main
-purpose is to keep one CPU-helper dialect in the tree: new and meaningfully
-changed code uses the layers below instead of adding another private set of
+This file defines how reconstructed 65816 routines are written in C. It knows
+two styles. The semantic layer (see below) is the target for new and refactored
+code. The CPU-helper dialect keeps routines that are not converted yet
+faithful to the original instruction stream; new or meaningfully changed code in
+that dialect uses the layers below instead of adding another private set of
 helpers.
 
 ## Helper layers
@@ -17,7 +19,9 @@ The two CPU headers are intentional layers, not competing styles:
 `cpu_ops.h` builds on `cpu_internal.h` and never re-implements a flag,
 arithmetic or stack rule that the lower layer already owns.
 
-## Rules for new or meaningfully changed code
+## Rules for the CPU-helper dialect
+
+These rules apply to routines that are still written in the dialect.
 
 - Organize routines around proven game operations, with domain names and small
   semantic helpers where useful. Use ordinary structured C when it preserves
@@ -31,8 +35,10 @@ arithmetic or stack rule that the lower layer already owns.
 - Keep observable CPU state visible. Data bank, direct page, M/X widths,
   flags and stack contents stay in `Lufia2CpuState`, and memory goes through
   `Lufia2Memory`, whenever the original contract can observe them.
-- Never introduce a higher-level helper that merges or reorders bus accesses,
-  or that drops a register or flag the caller could observe.
+- Within the dialect, never introduce a higher-level helper that merges or
+  reorders bus accesses, or that drops a register or flag the caller could
+  observe. Routines converted to the semantic layer follow the conversion rule
+  below instead.
 - Name file-local helpers after the proven operation they perform; name CPU-only
   helpers after the instruction or addressing mode they model. Do not redefine a
   shared primitive (`Read8`, `SetNz8`, `LoadA8`, `Compare8`, ...).
@@ -43,6 +49,48 @@ Known persistent WRAM fields belong in `metadata/memory_map.toml`. Record field
 offsets may be named relative to the generated base. Reused DP scratch belongs
 in local enums: the same bytes can mean different things in different routines.
 Keep uncertain fields neutral and never cache bus-backed records in host structs.
+
+## Semantic layer
+
+New and refactored code should read as ordinary, natural C, as if a normal
+developer had written the game logic.
+
+- Use named constants and enums instead of raw addresses and magic numbers.
+- Use typed structs and accessors instead of raw WRAM offsets.
+- Write small, well-named functions.
+- Return results as real return values or out parameters instead of leaving
+  them in emulated registers or flags.
+- Prefer structured control flow over `goto` where it is equivalent.
+- Keep comments short and about intent (why), not ROM-address banners.
+
+The CPU-helper dialect stays allowed for routines that are not converted yet.
+A converted routine does not touch emulated CPU state (carry, zero, negative,
+A/X/Y widths, DP/DB) unless a caller still depends on it.
+
+### Conversion rule
+
+Behavior must stay identical to the original game. A function may be converted
+when its inputs, outputs and memory side effects are preserved, including the
+order of hardware-register, PPU and DMA accesses, and no caller depends on
+leftover register or flag state. Otherwise convert the caller and the callee
+together.
+
+### Hardware-facing code
+
+Rendering and other hardware-facing code is reached through a small interface,
+so a recomp can replace individual functions (for example for 2D-HD rendering)
+without touching game logic.
+
+### Verification
+
+A change is checked by:
+
+- a build with warnings as errors;
+- `scripts/metadata_index.py --check`;
+- the maintainer's private ROM differential verification.
+
+Commits that only rename, introduce constants or change comments must produce
+identical object code.
 
 ## Slot views
 
@@ -75,7 +123,9 @@ explicitly, and full status transfers use `PackStatus`/`UnpackStatus`.
 Most routines predate `cpu_ops.h` and use the `cpu_internal.h` primitives
 directly. That is a valid style for them. Legacy routines move to the `Op*`
 adapters only when they are touched for real work, and each such change is
-verified like any other semantic change. There is no mass conversion.
+verified like any other semantic change. There is no mass conversion of the
+legacy dialect; routines move to the semantic layer one at a time under the
+conversion rule above.
 
 One routine keeps its own interface on purpose: `$83:BBF3`
 (`src/actor/player_update.c`) exposes the original verified bridge ABI
@@ -84,8 +134,8 @@ result. It is not a template for new code.
 
 ## Comments
 
-A comment is one short line: a useful ROM boundary or a non-obvious CPU quirk.
-Do not narrate obvious code. Explanations, evidence and
+A comment is one short line: a useful ROM boundary, a non-obvious CPU quirk or,
+in the semantic layer, the intent behind a step. Do not narrate obvious code. Explanations, evidence and
 verification history belong in `docs/`, not in the source; prefer clear names
 over prose.
 
