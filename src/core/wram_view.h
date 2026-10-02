@@ -29,6 +29,17 @@ static inline Lufia2Wram WramViewOfCaller(
     return wram;
 }
 
+/* Low work RAM reached by long addresses in bank $00; the direct page does not
+ * apply. */
+static inline Lufia2Wram WramViewLong(const Lufia2Memory *memory) {
+    Lufia2Wram wram;
+
+    wram.memory = memory;
+    wram.data_bank = 0;
+    wram.direct_page = 0;
+    return wram;
+}
+
 /* The view of a routine that loaded its own data bank. */
 static inline Lufia2Wram WramViewInBank(
     const Lufia2Memory *memory, const Lufia2CpuState *cpu, uint8_t data_bank) {
