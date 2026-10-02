@@ -57,6 +57,19 @@ Lufia2ExecutionResult Lufia2WorldMapClearSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $86:E0B9 starts animation A on object X: loads its first frame record
+ * and tile base. M1X0 only (else handed back). */
+Lufia2ExecutionResult Lufia2WorldMapStartAnimation(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:E11F steps the animation timers of the 22 world map objects at
+ * $1469. M1X0 only. Needs the animation tables of the world map bank in the
+ * data bank. */
+Lufia2ExecutionResult Lufia2WorldMapStepAnimations(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

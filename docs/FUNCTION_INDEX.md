@@ -377,6 +377,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:A894` | `Lufia2WorldMapPlane` | draft | `src/world/world_map_plane.c` |
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
+| `$86:E0B9` | `Lufia2WorldMapStartAnimation` | draft | `src/world/world_map_objects.c` |
+| `$86:E11F` | `Lufia2WorldMapStepAnimations` | draft | `src/world/world_map_objects.c` |
 | `$86:E287` | `Lufia2WorldMapTestObjects` | draft | `src/world/world_map_objects.c` |
 | `$86:E295` | `Lufia2WorldMapTestObject` | draft | `src/world/world_map_objects.c` |
 | `$86:E640` | `Lufia2WorldMapClearSlotFlags` | draft | `src/world/world_map_objects.c` |

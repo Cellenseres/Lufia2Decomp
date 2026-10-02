@@ -1,9 +1,10 @@
-/* World map objects: the sprite buffer reset and the on-screen test that
- * builds the list of visible objects. */
+/* World map objects: animation steps, the sprite buffer reset and the
+ * on-screen test that builds the list of visible objects. */
 
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/snes_registers.h"
 #include "core/wram_view.h"
 #include "lufia2/world_map.h"
 
@@ -207,4 +208,228 @@ Lufia2ExecutionResult Lufia2WorldMapClearSprites(
     SetAccumulatorWidth(cpu, 1);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x86e685u);
+}
+
+/* Animation record fields of an object, and the layout of an animation frame
+ * in ROM (a pointer to a table of frame records, indexed by pose). */
+enum {
+    OBJECT_POSE = 0x0fu,
+    OBJECT_ANIMATION = 0x10u,
+    OBJECT_FRAME = 0x11u,
+    OBJECT_FRAME_COUNT = 0x14u,
+    OBJECT_FRAME_END = 0x13u,
+    OBJECT_FRAME_RESTART = 0x12u,
+    OBJECT_TIMER = 0x15u,
+    OBJECT_ANIMATION_FLAGS = 0x18u,
+    OBJECT_STEP_X = 0x0bu,
+    OBJECT_STEP_X_HIGH = 0x0cu,
+    OBJECT_STEP_Y = 0x0du,
+    OBJECT_STEP_Y_HIGH = 0x0eu,
+    OBJECT_FRAME_POINTER = 0x19u,
+    OBJECT_TILE_BASE = 0x17u,
+    ANIMATION_POINTERS = 0xeba7u,
+    FRAME_POINTER_LOCATION = 0x00u,
+    FRAME_SIZE = 5u,
+    OBJECT_COUNT = 0x16u,
+    OBJECT_TABLE = 0x1469u
+};
+
+static uint16_t ReadAbsolute16(
+    const Lufia2Wram wram, uint16_t offset, uint16_t index) {
+    const uint32_t low = Absolute(wram, offset, index);
+
+    return (uint16_t)(Read8(wram.memory, low) |
+        ((uint16_t)Read8(wram.memory, (low + 1u) & 0x00ffffffu) << 8));
+}
+
+/* Stores a step byte and its sign extension (A is left $FF for a negative
+ * step). */
+static void StoreStep(
+    Lufia2Wram wram, Lufia2CpuState *cpu, uint16_t object, uint8_t low,
+    uint8_t high) {
+    WramWriteAt(wram, low, object, A8(cpu));
+    if (cpu->negative) {
+        LoadA8(cpu, 0xffu);
+        WramWriteAt(wram, high, object, A8(cpu));
+    } else {
+        WramWriteAt(wram, high, object, 0);
+    }
+}
+
+/* Reads the frame record at Y into the object's step and timer fields; with
+ * `full` also its frame bounds. M=1 on return. */
+static void LoadFrameStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram,
+    bool full) {
+    const uint16_t object = cpu->x;
+    const uint16_t frame = cpu->y;
+
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, Read8(memory, Absolute(wram, 5u, frame)));
+    StoreStep(wram, cpu, object, OBJECT_STEP_X, OBJECT_STEP_X_HIGH);
+    LoadA8(cpu, Read8(memory, Absolute(wram, 6u, frame)));
+    StoreStep(wram, cpu, object, OBJECT_STEP_Y, OBJECT_STEP_Y_HIGH);
+    LoadA8(cpu, Read8(memory, Absolute(wram, 7u, frame)));
+    WramWriteAt(wram, OBJECT_TIMER, object, A8(cpu));
+    if (full) {
+        LoadA8(cpu, Read8(memory, Absolute(wram, 0u, frame)));
+        WramWriteAt(wram, OBJECT_FRAME_COUNT, object, A8(cpu));
+        LoadA8(cpu, Read8(memory, Absolute(wram, 2u, frame)));
+        WramWriteAt(wram, OBJECT_FRAME_END, object, A8(cpu));
+        WramWriteAt(wram, OBJECT_FRAME, object, 0);
+        LoadA8(cpu, Read8(memory, Absolute(wram, 1u, frame)));
+        WramWriteAt(wram, OBJECT_FRAME_RESTART, object, A8(cpu));
+    }
+}
+
+/* Loads the frame pointer of pose/animation: the record address Y. */
+static uint16_t FindFrame(Lufia2Wram wram, Lufia2CpuState *cpu) {
+    const uint16_t table = ReadAbsolute16(wram, ANIMATION_POINTERS, cpu->y);
+    uint32_t at;
+
+    LoadA16(cpu, table);
+    WramWrite16(wram, FRAME_POINTER_LOCATION, cpu->accumulator);
+    LoadA16(cpu, WramRead16At(wram, OBJECT_POSE, cpu->x));
+    And16(cpu, 0x00ffu);
+    AslA16(cpu);
+    TransferAToY(cpu);
+    at = (((uint32_t)wram.data_bank << 16) + WramRead16(wram, FRAME_POINTER_LOCATION)
+          + cpu->y) & 0x00ffffffu;
+    LoadA16(cpu, (uint16_t)(Read8(wram.memory, at) |
+        ((uint16_t)Read8(wram.memory, (at + 1u) & 0x00ffffffu) << 8)));
+    return cpu->accumulator;
+}
+
+/* $86:E0B9: starts animation A on object X. M1X0. */
+Lufia2ExecutionResult Lufia2WorldMapStartAnimation(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2Wram wram;
+
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x86e0b9u);
+    wram = WramViewOfCaller(memory, cpu);
+    WramWriteAt(wram, OBJECT_ANIMATION, cpu->x, A8(cpu));
+    SetAccumulatorWidth(cpu, 0);
+    And16(cpu, 0x00ffu);
+    AslA16(cpu);
+    TransferAToY(cpu);
+    (void)FindFrame(wram, cpu);
+    TransferAToY(cpu);
+    LoadA16(cpu, ReadAbsolute16(wram, 3u, cpu->y));
+    WramWrite16At(wram, OBJECT_FRAME_POINTER, cpu->x, cpu->accumulator);
+    LoadFrameStep(memory, cpu, wram, true);
+    LoadY16(cpu, WramRead16At(wram, OBJECT_FRAME_POINTER, cpu->x));
+    if (cpu->negative) {
+        const uint16_t object = cpu->x;
+
+        Push8(memory, cpu, (uint8_t)(object >> 8));
+        Push8(memory, cpu, (uint8_t)object);
+        cpu->x = cpu->y;
+        SetNz16(cpu, cpu->x);
+        LoadA8(cpu, Read8(memory, Absolute(wram, 0u, cpu->x)));
+        cpu->x = PullIndexValue(memory, cpu);
+    } else {
+        LoadA8(cpu, 0);
+    }
+    And8(cpu, 0x7fu);
+    WramWriteAt(wram, OBJECT_TILE_BASE, cpu->x, A8(cpu));
+    return ExecutionReturned(0x86e11au);
+}
+
+/* $86:E186: after the frame counter moved, finds the frame record for the
+ * product in $4216 and loads the object's frame pointer. M1X0. */
+static void NextFrameRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
+    const uint16_t object = cpu->x;
+
+    LoadA8(cpu, WramReadAt(wram, OBJECT_ANIMATION, object));
+    SetAccumulatorWidth(cpu, 0);
+    And16(cpu, 0x00ffu);
+    AslA16(cpu);
+    TransferAToY(cpu);
+    (void)FindFrame(wram, cpu);
+    Add16Value(cpu, WramRead16(wram, SNES_RDMPYL));
+    TransferAToY(cpu);
+    LoadA16(cpu, ReadAbsolute16(wram, 3u, cpu->y));
+    WramWrite16At(wram, OBJECT_FRAME_POINTER, object, cpu->accumulator);
+    Push8(memory, cpu, (uint8_t)(object >> 8));
+    Push8(memory, cpu, (uint8_t)object);
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    if (cpu->negative)
+        LoadA8(cpu, Read8(memory, Absolute(wram, 0u, cpu->x)));
+    else
+        LoadA8(cpu, 0);
+    cpu->x = PullIndexValue(memory, cpu);
+    And8(cpu, 0x7fu);
+    WramWriteAt(wram, OBJECT_TILE_BASE, cpu->x, A8(cpu));
+}
+
+/* $86:E11F: steps the animation of all 22 objects. A timer of 1 runs out
+ * into the next frame record; a positive timer counts down. M1X0. */
+Lufia2ExecutionResult Lufia2WorldMapStepAnimations(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2Wram wram;
+    bool restart;
+
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x86e11fu);
+    wram = WramViewOfCaller(memory, cpu);
+    cpu->x = OBJECT_TABLE;
+    LoadA8(cpu, OBJECT_COUNT);
+    WramWrite(wram, OBJECTS_LEFT, A8(cpu));
+    do {
+        LoadA8(cpu, WramReadAt(wram, OBJECT_TIMER, cpu->x));
+        if (cpu->zero || cpu->negative) {
+            WramWriteAt(wram, OBJECT_TIMER, cpu->x, A8(cpu));
+        } else {
+            DecrementA8(cpu);
+            if (!cpu->zero) {
+                WramWriteAt(wram, OBJECT_TIMER, cpu->x, A8(cpu));
+            } else {
+                LoadA8(cpu, WramReadAt(wram, OBJECT_FRAME, cpu->x));
+                LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+                Compare8(cpu, A8(cpu), WramReadAt(wram, OBJECT_FRAME_COUNT, cpu->x));
+                restart = false;
+                if (cpu->carry) {
+                    LoadA8(cpu, WramReadAt(wram, OBJECT_FRAME_END, cpu->x));
+                    BitImmediate8(cpu, 1u);
+                    if (cpu->zero) {
+                        LoadA8(cpu, WramReadAt(wram, OBJECT_ANIMATION_FLAGS, cpu->x));
+                        SimulateJsrFrame(memory, cpu, 0xe17fu);
+                        (void)Lufia2WorldMapStartAnimation(memory, cpu);
+                        SimulateRtsFrame(memory, cpu);
+                        restart = true;
+                    } else {
+                        LoadA8(cpu, 0);
+                    }
+                }
+                if (!restart) {
+                    WramWriteAt(wram, OBJECT_FRAME, cpu->x, A8(cpu));
+                    WramWrite(wram, SNES_WRMPYA, A8(cpu));
+                    LoadA8(cpu, FRAME_SIZE);
+                    WramWrite(wram, SNES_WRMPYB, A8(cpu));
+                    SimulateJsrFrame(memory, cpu, 0xe142u);
+                    NextFrameRecord(memory, cpu, wram);
+                    SimulateRtsFrame(memory, cpu);
+                    LoadFrameStep(memory, cpu, wram, false);
+                }
+            }
+        }
+        SetAccumulatorWidth(cpu, 0);
+        TransferXToA(cpu);
+        cpu->carry = false;
+        Add16Value(cpu, OBJECT_SIZE);
+        TransferAToX(cpu);
+        SetAccumulatorWidth(cpu, 1);
+        {
+            const uint8_t left = (uint8_t)(WramRead(wram, OBJECTS_LEFT) - 1u);
+
+            WramWrite(wram, OBJECTS_LEFT, left);
+            SetNz8(cpu, left);
+        }
+    } while (!cpu->zero);
+    return ExecutionReturned(0x86e174u);
 }
