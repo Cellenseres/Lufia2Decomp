@@ -50,6 +50,10 @@ Known persistent WRAM fields belong in `metadata/memory_map.toml`. Record field
 offsets may be named relative to the generated base. Reused DP scratch belongs
 in local enums: the same bytes can mean different things in different routines.
 Keep uncertain fields neutral and never cache bus-backed records in host structs.
+Replace a raw literal with its catalogued name only where it is that address in
+that addressing mode: not for a ROM address, a value or mask, an offset inside a
+multi-byte entry, or a direct-page or data-bank context that differs from the
+catalog.
 
 ## Semantic layer
 
@@ -57,7 +61,8 @@ New and refactored code should read as ordinary, natural C, as if a normal
 developer had written the game logic.
 
 - Use named constants and enums instead of raw addresses and magic numbers.
-- Use typed structs and accessors instead of raw WRAM offsets.
+- Use typed accessors instead of raw WRAM offsets. Structs are for records the
+  game really stores contiguously; per-slot arrays use slot views (below).
 - Write small, well-named functions.
 - Return results as real return values or out parameters instead of leaving
   them in emulated registers or flags.
@@ -75,6 +80,24 @@ when its inputs, outputs and memory side effects are preserved, including the
 order of hardware-register, PPU and DMA accesses, and no caller depends on
 leftover register or flag state. Otherwise convert the caller and the callee
 together.
+
+Convert one routine at a time. There is no mass conversion: each step has to
+be checkable against the original on its own, and a bulk rewrite would hide
+which change broke which behavior. Renames, constants and comments may be
+applied broadly because they leave the object code unchanged.
+
+The contract a converted function keeps is what the differential verification
+compares: the exit values of A/X/Y, the flags, S, DB and DP where a caller can
+observe them; the stack contents and any frames or return addresses it pushes,
+modifies or unwinds; every WRAM and SRAM write; and the order and width of
+every memory, PPU, DMA and other hardware-register access, including reads that
+have side effects. Child calls keep their call frames, and checkpoints stay at
+the original program counters.
+
+Until a caller is converted, keep the original entry point as a thin shell that
+sets up and exports the CPU state and delegates to a readable core function
+with ordinary parameters and a return value. Only the interior of the core may
+be restructured, and only where no access in the list above changes.
 
 ### Hardware-facing code
 
@@ -106,11 +129,20 @@ exactly one bus access. Fields that only have a neutral `unk_` name use the
 generic `Lufia2ActorSlotReadMirrored`/`ReadLong` accessors with their
 constant.
 
+This is the real layout, so it is kept. Byte arrays are indexed by the slot
+number, word arrays by twice the slot number and 24-bit script records by three
+times the slot number, and the arrays sit in different banks (the `$7E` mirror
+reached through the data bank, the `$7F` arrays through long addressing). No
+field of a slot is adjacent to another, so a packed `struct` would need a
+copy in and out of WRAM, which changes the access order and widths and breaks
+swapping a single function. Add accessors and view structs over the names in
+`metadata/memory_map.toml`; deriving them from the catalog is the preferred way
+to grow the set.
+
 Create the view where the original loads the index register, and keep the
 original access order. A view never caches values or copies WRAM into host
 memory. `$83:BB93` (`Lufia2UpdateActorSlots`) and the `$83:C7F8`/`$83:D508`
-front-ends are written this way; other routines adopt views when they are
-touched for real work.
+front-ends are written this way; other routines adopt views one at a time, when they are touched for real work.
 
 ## REP and SEP
 
