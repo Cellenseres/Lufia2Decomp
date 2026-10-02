@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-380 functions in `metadata/functions.toml`: 366 verified, 14 draft, 0 identified, 0 disabled.
+382 functions in `metadata/functions.toml`: 366 verified, 16 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -751,6 +751,14 @@ need M1X0 and the world map data bank for the animation tables; any other
 entry state is handed back. They are compared against the original ROM code
 on random object tables, including wrapped frame counters, flagged
 animation ends and data bank mirrors.
+
+`$86:E555` (the pair of hardware sprites of an object, mirrored for the
+poses that face the other way) and its helper `$86:E5BB` (two x bits into
+the OAM high table, advancing the sprite counter) are `draft`
+reconstructions in the same file, entered with M0X0 only. They are compared
+on random objects, counters near the byte boundary of the high table and
+several data banks, including the stack frames of the helper's indirect
+call.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary

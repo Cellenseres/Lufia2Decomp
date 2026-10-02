@@ -3156,3 +3156,20 @@ source = "src/world/world_map_objects.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# World map object sprites: the pair writer and its high table helper.
+[[function]]
+address = "86:E555"
+name = "Lufia2WorldMapDrawSpritePair"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:E5BB"
+name = "Lufia2WorldMapStoreHighBits"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"

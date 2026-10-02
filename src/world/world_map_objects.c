@@ -219,6 +219,7 @@ enum {
     OBJECT_FRAME_COUNT = 0x14u,
     OBJECT_FRAME_END = 0x13u,
     OBJECT_FRAME_RESTART = 0x12u,
+    OBJECT_SPRITE_FLAGS = 0x12u,
     OBJECT_TIMER = 0x15u,
     OBJECT_ANIMATION_FLAGS = 0x18u,
     OBJECT_STEP_X = 0x0bu,
@@ -432,4 +433,175 @@ Lufia2ExecutionResult Lufia2WorldMapStepAnimations(
         }
     } while (!cpu->zero);
     return ExecutionReturned(0x86e174u);
+}
+
+/* Direct page of the sprite pair drawer: the object pointer, the attribute
+ * word being built, the screen x of the pair and the tile word. */
+enum {
+    DRAW_OBJECT = 0x02u,
+    DRAW_ATTRIBUTES = 0x00u,
+    DRAW_ATTRIBUTE_FLAGS = 0x01u,
+    DRAW_SCREEN_X = 0x04u,
+    DRAW_SCREEN_X_HIGH = 0x05u,
+    DRAW_TILE = 0x11u,
+    DRAW_BASE_ATTRIBUTES = 0x3000u,
+    DRAW_MIRROR_FLAG = 0x40u,
+    DRAW_MIRROR_POSE = 3u,
+    DRAW_X_BIAS = 8u,
+    DRAW_Y_BIAS = 0x21u,
+    DRAW_LOWER_ROW = 0x10u,
+    DRAW_NEXT_TILE = 0x20u,
+    DRAW_X_MASK = 0xfdffu
+};
+
+/* Absolute work RAM: the sprite counter (bits 0-1 pick the 2-bit field of a
+ * high-table byte, the rest is the byte index) and the OAM high table. */
+enum {
+    SPRITE_COUNTER = 0x1467u,
+    OAM_HIGH_TABLE = 0x0300u
+};
+
+/* High-table field handlers, indexed by the counter's low two bits. Each gets
+ * the old high-table byte in A and the x bits at $05, and leaves the new byte
+ * in A (M1). */
+static void MergeHighBits(
+    Lufia2Wram wram, Lufia2CpuState *cpu, unsigned field) {
+    static const uint8_t kKeep[4] = {0xfcu, 0xf3u, 0xcfu, 0x3fu};
+
+    And8(cpu, kKeep[field]);
+    WramWrite(wram, DRAW_ATTRIBUTES, A8(cpu));
+    LoadA8(cpu, WramRead(wram, DRAW_SCREEN_X_HIGH));
+    And8(cpu, 3u);
+    switch (field) {
+    case 1:
+        AslA8(cpu);
+        AslA8(cpu);
+        break;
+    case 2:
+        AslA8(cpu);
+        AslA8(cpu);
+        AslA8(cpu);
+        AslA8(cpu);
+        break;
+    case 3:
+        LsrA8(cpu);
+        RorA8(cpu);
+        RorA8(cpu);
+        break;
+    default:
+        break;
+    }
+    Or8(cpu, WramRead(wram, DRAW_ATTRIBUTES));
+}
+
+/* $86:E5BB: stores the next two x bits of the sprite pair into the OAM high
+ * table and advances the counter. M0X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapStoreHighBits(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2Wram wram;
+    uint16_t counter;
+    uint32_t location;
+
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x86e5bbu);
+    wram = WramViewOfCaller(memory, cpu);
+    counter = ReadAbsolute16(wram, SPRITE_COUNTER, 0);
+    LoadA16(cpu, counter);
+    And16(cpu, 3u);
+    AslA16(cpu);
+    TransferAToX(cpu);
+    LoadA16(cpu, counter);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    TransferAToY(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, Read8(memory, Absolute(wram, OAM_HIGH_TABLE, cpu->y)));
+    SimulateJsrFrame(memory, cpu, 0xe5d0u);
+    MergeHighBits(wram, cpu, cpu->x >> 1);
+    SimulateRtsFrame(memory, cpu);
+    Write8(memory, Absolute(wram, OAM_HIGH_TABLE, cpu->y), A8(cpu));
+    location = Absolute(wram, SPRITE_COUNTER, 0);
+    {
+        const uint8_t next = (uint8_t)(Read8(memory, location) + 1u);
+
+        Write8(memory, location, next);
+        SetNz8(cpu, next);
+    }
+    SetAccumulatorWidth(cpu, 0);
+    return ExecutionReturned(0x86e5d9u);
+}
+
+/* $86:E555: writes the pair of hardware sprites of the object at $02 into
+ * the OAM buffer slots selected by the sprite counter, mirroring objects
+ * whose pose is 3 or more, then stores both x bits. M0X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapDrawSpritePair(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2Wram wram;
+    uint32_t slot;
+    uint8_t flags;
+
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x86e555u);
+    wram = WramViewOfCaller(memory, cpu);
+    LoadX16(cpu, WramRead16(wram, DRAW_OBJECT));
+    LoadY16(cpu, DRAW_BASE_ATTRIBUTES);
+    WramWrite16(wram, DRAW_ATTRIBUTES, cpu->y);
+    LoadA16(cpu, ReadAbsolute16(wram, SPRITE_COUNTER, 0));
+    AslA16(cpu);
+    AslA16(cpu);
+    TransferAToY(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, WramReadAt(wram, OBJECT_POSE, cpu->x));
+    Compare8(cpu, A8(cpu), DRAW_MIRROR_POSE);
+    if (cpu->carry) {
+        const uint8_t old = WramRead(wram, DRAW_ATTRIBUTE_FLAGS);
+
+        LoadA8(cpu, DRAW_MIRROR_FLAG);
+        cpu->zero = (old & A8(cpu)) == 0;
+        WramWrite(wram, DRAW_ATTRIBUTE_FLAGS, (uint8_t)(old | A8(cpu)));
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, WramRead16At(wram, OBJECT_SCREEN_X, cpu->x));
+        Subtract16(cpu, WramRead16At(wram, OBJECT_STEP_X, cpu->x));
+    } else {
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, WramRead16At(wram, OBJECT_SCREEN_X, cpu->x));
+        cpu->carry = false;
+        Add16Value(cpu, WramRead16At(wram, OBJECT_STEP_X, cpu->x));
+    }
+    Subtract16(cpu, DRAW_X_BIAS);
+    And16(cpu, DRAW_X_MASK);
+    WramWrite16(wram, DRAW_SCREEN_X, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    slot = Absolute(wram, OAM_BUFFER, cpu->y);
+    Write8(memory, slot, A8(cpu));
+    Write8(memory, Absolute(wram, OAM_BUFFER + 4u, cpu->y), A8(cpu));
+    LoadA8(cpu, WramReadAt(wram, OBJECT_SPRITE_FLAGS, cpu->x));
+    flags = WramRead(wram, DRAW_ATTRIBUTE_FLAGS);
+    cpu->zero = (flags & A8(cpu)) == 0;
+    WramWrite(wram, DRAW_ATTRIBUTE_FLAGS, (uint8_t)(flags | A8(cpu)));
+    LoadA8(cpu, WramReadAt(wram, OBJECT_SCREEN_Y, cpu->x));
+    cpu->carry = false;
+    Adc8(cpu, (uint8_t)WramReadAt(wram, OBJECT_HEIGHT, cpu->x));
+    cpu->carry = true;
+    Sbc8(cpu, DRAW_Y_BIAS);
+    Write8(memory, Absolute(wram, OAM_BUFFER + 1u, cpu->y), A8(cpu));
+    cpu->carry = false;
+    Adc8(cpu, DRAW_LOWER_ROW);
+    Write8(memory, Absolute(wram, OAM_BUFFER + 5u, cpu->y), A8(cpu));
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, WramRead16(wram, DRAW_TILE));
+    Or16(cpu, WramRead16(wram, DRAW_ATTRIBUTES));
+    WriteAbsolute16(wram, OAM_BUFFER + 2u, cpu->y, cpu->accumulator);
+    cpu->carry = false;
+    Add16Value(cpu, DRAW_NEXT_TILE);
+    WriteAbsolute16(wram, OAM_BUFFER + 6u, cpu->y, cpu->accumulator);
+    SimulateJsrFrame(memory, cpu, 0xe5b6u);
+    (void)Lufia2WorldMapStoreHighBits(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    SimulateJsrFrame(memory, cpu, 0xe5b9u);
+    (void)Lufia2WorldMapStoreHighBits(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    return ExecutionReturned(0x86e5bau);
 }

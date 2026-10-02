@@ -70,6 +70,18 @@ Lufia2ExecutionResult Lufia2WorldMapStepAnimations(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $86:E555 writes the two hardware sprites of the object at $02 into the
+ * OAM buffer and their x bits into the high table. M0X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapDrawSpritePair(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:E5BB stores the next two x bits into the OAM high table and advances
+ * the sprite counter at $1467. M0X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapStoreHighBits(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
