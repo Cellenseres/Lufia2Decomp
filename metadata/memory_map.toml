@@ -1624,3 +1624,235 @@ width = 2
 count = 1
 owner = "field"
 notes = "80:EF8E publishes the two bytes at each indexed scene record address minus one. Indexed base only."
+
+[[location]]
+address = "7F:D0A6"
+name = "unk_7FD0A6"
+width = 1
+count = 8
+owner = "object"
+notes = "$83:E94F scans these eight bytes for the first negative entry while setting up an object, then stores the id in $54 there."
+
+[[location]]
+address = "7F:D4F3"
+name = "object_spawn_ids"
+width = 1
+count = 2
+owner = "object"
+notes = "Animation and second id that object opcode $8E takes from here, as opcode $19 takes them from its operands."
+
+[[location]]
+address = "7F:D90C"
+name = "object_frame_pointer"
+width = 3
+count = 32
+owner = "object"
+notes = "24-bit pointer to the frame data of an object, built by $83:E200 from the animation record and the frame."
+
+[[location]]
+address = "7F:D9CC"
+name = "unk_7FD9CC"
+width = 1
+count = 32
+owner = "object"
+notes = "Byte that object opcode $5x adds to the script position; swapped with $7F:DA2C by the slot exchange at $83:E8C6."
+
+[[location]]
+address = "7F:DA2C"
+name = "unk_7FDA2C"
+width = 1
+count = 32
+owner = "object"
+notes = "Frame that object opcode $25 sets and distance, doubled, that opcode $28 jumps; swapped with $7F:D9CC by the slot exchange at $83:E8C6."
+
+[[location]]
+address = "7F:DA4C"
+name = "object_animation_request"
+width = 1
+count = 32
+owner = "object"
+notes = "Animation id that object opcode $26 sets up through the animation routine at $83:EC9C."
+
+[[location]]
+address = "7F:DA6C"
+name = "object_screen_x"
+width = 2
+count = 32
+owner = "object"
+notes = "Object x position; opcode $13 sets it to the scroll position plus 128."
+
+[[location]]
+address = "7F:DAAC"
+name = "object_screen_y"
+width = 2
+count = 32
+owner = "object"
+notes = "Object y position; opcode $13 sets it to the scroll position plus 112."
+
+[[location]]
+address = "7F:DAEC"
+name = "object_step_counter"
+width = 1
+count = 32
+owner = "object"
+notes = "$83:E0C7 increments it each frame for objects without the blink flag and acts when it reaches $20."
+
+[[location]]
+address = "7F:DB0C"
+name = "object_flags"
+width = 1
+count = 32
+owner = "object"
+notes = "Bit 4 selects the blink counter, bit 5 lets opcode $1A set a frame, bit 6 is set by $2B and bit 7 by $EA."
+
+[[location]]
+address = "7F:DB2C"
+name = "object_frame"
+width = 1
+count = 32
+owner = "object"
+notes = "Current frame number; $83:E200 stores it and opcode $2C adds the operand to it."
+
+[[location]]
+address = "7F:DCDC"
+name = "object_display_offset_x"
+width = 2
+count = 32
+owner = "object"
+notes = "Object slots after the actor entries of $7F:DC8C; the $F6 nibble offsets add to it."
+
+[[location]]
+address = "7F:DD6C"
+name = "object_display_offset_y"
+width = 2
+count = 32
+owner = "object"
+notes = "Object slots after the actor entries of $7F:DD1C; the $F6 nibble offsets add to it."
+
+[[location]]
+address = "7F:DDAC"
+name = "unk_7FDDAC"
+width = 1
+count = 2
+owner = "object"
+notes = "Both bytes are cleared with the direct page at the start of the object update at $83:E03E."
+
+[[location]]
+address = "7F:DDFE"
+name = "object_fine_x"
+width = 2
+count = 32
+owner = "object"
+notes = "Object slots after the actor entries of $7F:DDAE; opcode $2F copies actor 0 into it."
+
+[[location]]
+address = "7F:DE8E"
+name = "object_fine_y"
+width = 2
+count = 32
+owner = "object"
+notes = "Object slots after the actor entries of $7F:DE3E; opcode $2F copies actor 0 into it."
+
+[[location]]
+address = "7F:DFAE"
+name = "unk_7FDFAE"
+width = 1
+count = 32
+owner = "object"
+notes = "Set to 1 when a script ends with bit 4 of the object state set; the slot exchange at $83:E8C6 increments it for the higher slot."
+
+[[location]]
+address = "7F:DFCE"
+name = "object_loop_pointer"
+width = 3
+count = 32
+owner = "object"
+notes = "24-bit script position that opcode $7x records and opcode $80 returns to."
+
+[[location]]
+address = "7F:E08E"
+name = "object_loop_counter"
+width = 1
+count = 32
+owner = "object"
+notes = "Repeat count that opcode $7x sets and opcode $80 decrements."
+
+[[location]]
+address = "7F:E0AE"
+name = "object_sprite_vram_base"
+width = 2
+count = 32
+owner = "object"
+notes = "VRAM base returned by the sprite allocator when $83:ECDE sets up the object."
+
+[[location]]
+address = "7F:E0EE"
+name = "object_animation_pointer"
+width = 3
+count = 32
+owner = "object"
+notes = "24-bit animation data pointer loaded from the record table at $83:F388."
+
+[[location]]
+address = "7F:E1AE"
+name = "object_animation_id"
+width = 1
+count = 32
+owner = "object"
+notes = "Animation id of the object, $FF when the slot is free; $83:EC9C sets it and $83:F205 clears it."
+
+[[location]]
+address = "7F:E1F6"
+name = "object_animation_flags"
+width = 1
+count = 32
+owner = "object"
+notes = "Low nibble of the animation record byte at $83:F38B."
+
+[[location]]
+address = "7F:E23E"
+name = "object_sprite_size"
+width = 1
+count = 32
+owner = "object"
+notes = "High nibble of the animation record byte at $83:F38B; indexes the sprite slot counts at $83:ABF4."
+
+[[location]]
+address = "7F:E286"
+name = "object_sprite_slot_a"
+width = 1
+count = 32
+owner = "object"
+notes = "First sprite slot returned by the allocator at $83:ECDE; $FF when none."
+
+[[location]]
+address = "7F:E2CE"
+name = "object_sprite_slot_b"
+width = 1
+count = 32
+owner = "object"
+notes = "Second sprite slot returned by the allocator at $83:ECDE; $FF when none."
+
+[[location]]
+address = "7F:E33E"
+name = "object_draw_flags"
+width = 1
+count = 32
+owner = "object"
+notes = "Opcode $2E loads it from the script; the spin and zoom opcode $14 sets bit 1 for objects behind the camera."
+
+[[location]]
+address = "7F:E386"
+name = "object_blink_counter"
+width = 1
+count = 32
+owner = "object"
+notes = "Blink countdown used while bit 4 of $7F:DB0C is set."
+
+[[location]]
+address = "7F:E3A6"
+name = "unk_7FE3A6"
+width = 1
+count = 32
+owner = "object"
+notes = "Receives the source slot in $83:EE0E when an object takes over another slot's animation; $FF when the slot is free."
