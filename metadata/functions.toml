@@ -3031,3 +3031,13 @@ source = "src/field/field_scene_display.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# World map ground plane: Mode 7 matrix tables of both bands, with the
+# angle terms, row step and divider helpers. Hot every world map frame.
+[[function]]
+address = "86:A894"
+name = "Lufia2WorldMapPlane"
+source = "src/world/world_map_plane.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"

@@ -368,6 +368,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:8CF5` | `Lufia2SpriteSetAnimation` | verified | `src/menu/menu_sprites.c` |
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
+| `$86:A894` | `Lufia2WorldMapPlane` | draft | `src/world/world_map_plane.c` |
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
