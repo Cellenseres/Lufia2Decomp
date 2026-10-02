@@ -112,7 +112,13 @@ static uint16_t ReadPads(Lufia2Wram wram) {
 }
 
 /* $80:8703: OAM and palette DMA when requested, then the pads once the
- * automatic read has finished. */
+ * automatic read has finished.
+ *
+ * Entry contract (the main NMI calls it with M8 and either index width):
+ * the routine saves P, forces X16 itself and restores P on exit, so entry
+ * and exit widths are equal. The first accumulator access comes before any
+ * width change, so the declared contract is M1X1 and a caller in M16 is
+ * handed back to the original code instead. */
 Lufia2ExecutionResult Lufia2NmiSpritesPaletteAndPads(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -207,7 +213,10 @@ static void UploadRequestedTilemaps(
     WramWrite(wram, VRAM_UPLOAD_FLAGS, (uint8_t)(current & ~0xaau));
 }
 
-/* $80:87FC: M1X0 only. */
+/* $80:87FC: the three tilemap blocks. Entry contract: M1X0 only. The code
+ * has no PHP and no width change of its own and runs on the caller's
+ * widths, so any other entry state is handed back to the original code, and
+ * the exit state equals the entry state. */
 Lufia2ExecutionResult Lufia2NmiTilemapUploads(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -218,7 +227,11 @@ Lufia2ExecutionResult Lufia2NmiTilemapUploads(
 }
 
 /* $80:87A7: scroll registers from $0594, the queued DMA requests, the
- * tilemap uploads and the HDMA channel mask. */
+ * tilemap uploads and the HDMA channel mask.
+ *
+ * Entry contract: M1X1 as declared. The routine saves P, sets M8 and X16
+ * itself and restores P on exit, so it is correct for every entry width and
+ * leaves the caller's widths unchanged. */
 Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

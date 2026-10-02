@@ -707,6 +707,15 @@ states with the pad registers varied to reach the repeat paths: CPU state,
 complete WRAM, ordered writes, the order of every hardware register access
 and the stack frames they leave behind. They await the maintainer's verifier.
 
+Entry contract of the three shells: `$80:8703` and `$80:87A7` are declared
+`M1X1` (the main NMI enters with M8 and either index width; both save P, set
+the widths they need and restore P, so exit widths equal entry widths) and
+`$80:87FC` is `M1X0` (it runs on the caller's widths, without saving P). A
+shell does not reinterpret any other entry state: `$80:8703` and `$80:87FC`
+return `ExecutionHandoff` to the original code when M or X differ from the
+declared widths, which keeps the original instruction semantics for the
+callers that do not match.
+
 ## Battle actor sprites
 
 `$81:8E92` (all 64 actor records into the three OAM lists, then the
