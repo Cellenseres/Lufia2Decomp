@@ -496,11 +496,11 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
-# Field reload setup; map loading stays on LLE.
+# Complete field reload parent; children use the pushed-call interface.
 [[function]]
 address = "83:85DC"
-name = "Lufia2FieldReloadSetup"
-source = "src/field/field_update.c"
+name = "Lufia2FieldReloadMap"
+source = "src/field/field_reload.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
@@ -2966,4 +2966,20 @@ name = "Lufia2FieldBattleTransition"
 source = "src/field/field_battle_transition.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:AB61"
+name = "Lufia2SpriteResetAllocations"
+source = "src/actor/sprite_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B09C"
+name = "Lufia2FieldPrepareCameraScroll"
+source = "src/field/field_camera.c"
+entry_mx = "M1X0"
+exit_mx = "M1X1"
 status = "verified"

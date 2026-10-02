@@ -17,15 +17,15 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-358 functions in `metadata/functions.toml`: 358 verified, 0 draft, 0 identified, 0 disabled.
+360 functions in `metadata/functions.toml`: 360 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **503 independent jobs**. The normal
-application build also passes. The consumer selects all 358 verified functions,
+The full Windows Release verifier passes **510 independent jobs**. The normal
+application build also passes. The consumer selects all 360 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.
 
@@ -34,6 +34,31 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Field reload and camera preparation
+
+`$83:85DC` reconstructs the complete field reload through its original
+return at `$83:8673`. The earlier setup-only API remains available. All
+eleven child calls preserve their actual stack frames, modified returns
+and unwind boundaries. The consumer selects the complete routine.
+
+`$83:AB61` clears the 128 sprite-allocation bytes while preserving the
+original data-bank and processor-status stack effects. `$8E:B09C` prepares
+camera pixel offsets and cell coordinates, then calls the original scroll
+child. Its pixel reads are unindexed; its cell reads use the byte actor
+selector. This original difference is retained.
+
+3,456 reload, 68,352 camera and 66,048 sprite-reset original-parent states
+pass both direct and runtime execution, with no initial native fallback.
+They cover all four entry register-width combinations, all accumulator
+values for the reset, all pixel-coordinate word values for the camera,
+data banks, direct-page variation and small-stack aliases. Tests compare
+child-entry and final CPU state, complete WRAM, hardware state and operand
+access order. There are 928 exact continuations, 30 dispatcher redirects,
+4,599 unsupported-entry checks and 41 detected deliberate faults. The
+earlier reload-prefix regression also passes all 8,704 cases. Unknown
+child bodies retain explicit contracts; these comparisons do not establish
+the complete battle-to-stairs gameplay chain.
 
 ## Field battle transition
 

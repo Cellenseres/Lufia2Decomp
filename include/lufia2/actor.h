@@ -188,6 +188,10 @@ void Lufia2ActorBlockedEvent(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $83:AB61 clears sprite allocation flags and restores DB/P; any M/X widths. */
+Lufia2ExecutionResult Lufia2SpriteResetAllocations(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

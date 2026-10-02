@@ -213,7 +213,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:83E0` | `Lufia2FieldEncounterHandoff` | verified | `src/field/encounter.c` |
 | `$83:83EB` | `Lufia2FieldBattleTransition` | verified | `src/field/field_battle_transition.c` |
 | `$83:845B` | `Lufia2EncounterBattleSequence` | verified | `src/field/encounter.c` |
-| `$83:85DC` | `Lufia2FieldReloadSetup` | verified | `src/field/field_update.c` |
+| `$83:85DC` | `Lufia2FieldReloadMap` | verified | `src/field/field_reload.c` |
 | `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |
 | `$83:8682` | `Lufia2FieldAnimationTicks` | verified | `src/field/field_update.c` |
 | `$83:89CE` | `Lufia2FieldClearObjectTileBit` | verified | `src/field/field_object_render.c` |
@@ -245,6 +245,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:A21A` | `Lufia2FieldActorSprites` | verified | `src/field/field_sprites.c` |
 | `$83:A746` | `Lufia2ActorSyncFinePosition` | verified | `src/actor/actor_movement.c` |
 | `$83:A9BA` | `Lufia2ActorLoadSprite` | verified | `src/actor/actor_sprites.c` |
+| `$83:AB61` | `Lufia2SpriteResetAllocations` | verified | `src/actor/sprite_reset.c` |
 | `$83:AEB5` | `Lufia2FieldColourEffects` | verified | `src/field/field_effects.c` |
 | `$83:B007` | `Lufia2FieldUploadFixedGraphics` | verified | `src/field/field_object_graphics.c` |
 | `$83:B062` | `Lufia2FieldRestore` | verified | `src/field/field_restore.c` |
@@ -363,6 +364,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
+| `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |
 | `$8E:BD77` | `Lufia2FieldScrollUpdate` | verified | `src/field/field_scroll.c` |
 <!-- metadata-index:end -->

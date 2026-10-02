@@ -58,6 +58,16 @@ Lufia2ExecutionResult Lufia2FieldStatusRequests(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $83:85DC completes the map reload; PB83, any native M/X widths. */
+Lufia2ExecutionResult Lufia2FieldReloadMap(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* $8E:B09C prepares pixel and cell scroll; PB8E, binary, any M/X widths. */
+Lufia2ExecutionResult Lufia2FieldPrepareCameraScroll(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $83:85DC field reload setup; loading stays LLE. */
 Lufia2ExecutionResult Lufia2FieldReloadSetup(
     const Lufia2Memory *memory,

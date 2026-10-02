@@ -1403,3 +1403,35 @@ width = 1
 count = 1
 owner = "field"
 notes = "83:83E0 stores FF for the field encounter wrapper;83:8445 skips the actor-touch scan when this byte is FF."
+
+[[location]]
+address = "7E:E100"
+name = "sprite_allocation_flags"
+width = 1
+count = 128
+owner = "actor"
+notes = "83:AB61 clears all128 allocation bytes;83:AB7C scans and marks free sprite slots."
+
+[[location]]
+address = "7E:0734"
+name = "field_camera_actor"
+width = 1
+count = 1
+owner = "field"
+notes = "8E:B09C loads this byte with X8 for the indexed cell-coordinate reads; pixel offsets use unindexed actor0."
+
+[[location]]
+address = "7E:05A4"
+name = "field_camera_scroll_x"
+width = 2
+count = 1
+owner = "field"
+notes = "8E:B09C stores actor0 fineX minus128; absolute DB-relative word access."
+
+[[location]]
+address = "7E:05A6"
+name = "field_camera_scroll_y"
+width = 2
+count = 1
+owner = "field"
+notes = "8E:B09C stores actor0 fineY minus112; absolute DB-relative word access."
