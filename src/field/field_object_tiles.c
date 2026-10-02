@@ -1,6 +1,10 @@
 /* Object attributes, saved tiles and redraw queue requests. */
 
+#include <stdbool.h>
+
+#include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
+#include "core/wram_view.h"
 #include "lufia2/actor.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
@@ -163,80 +167,134 @@ Lufia2ExecutionResult Lufia2FieldQueueObjectRedraw(
     return ExecutionReturned(0x83f97bu);
 }
 
+/* A map cell word: the low ten bits select the metatile, the rest are
+ * attribute bits. */
+enum {
+    CELL_METATILE_MASK = 0x03ff,
+    CELL_ATTRIBUTE_MASK = 0xfc00,
+    CELL_SIZE = 2,
+    DP_CELL_METATILE = 0x5a,
+};
+
+/* Cells of every layer; offsets into them are 16-bit and wrap. */
+#define MAP_LAYER_CELLS 0x7f0000u
+
+/* The cell at offset Y in the data bank takes the metatile number of the cell
+ * at offset X and keeps its own attribute bits. */
 Lufia2ExecutionResult Lufia2FieldCopyCellTile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    enum { CELL_TILE = 0x5au };
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint32_t target = AbsoluteIndexedAddress(cpu, 0, cpu->y);
+    const uint16_t metatile =
+        Read16AbsoluteIndexed(memory, cpu, 0, cpu->x) & CELL_METATILE_MASK;
+    uint16_t cell;
 
-    OpLda(memory, cpu, OpAbsX(cpu, 0u));                         /* F91F */
-    OpAndValue(cpu, 0x03ffu);
-    OpSta(memory, cpu, OpDp(cpu, CELL_TILE));
-    OpLda(memory, cpu, OpAbsY(cpu, 0u));
-    OpAndValue(cpu, 0xfc00u);
-    OpOra(memory, cpu, OpDp(cpu, CELL_TILE));
-    OpSta(memory, cpu, OpAbsY(cpu, 0u));
+    WramWrite16(wram, DP_CELL_METATILE, metatile);
+    cell = Read16Long(memory, target) & CELL_ATTRIBUTE_MASK;
+    cell |= WramRead16(wram, DP_CELL_METATILE);
+    Write16Long(memory, target, cell);
+    LoadA16(cpu, cell);
     return ExecutionReturned(0x83f932u);
 }
 
+/* Counters of the clearing loop live in the direct page. */
+enum {
+    DP_CLEAR_LAYER_INDEX = 0x54,
+    DP_CLEAR_ROW_SKIP = 0x54,
+    DP_CLEAR_COLUMNS_LEFT = 0x56,
+    DP_CLEAR_ROWS_LEFT = 0x58,
+    /* A rectangle this large is left to the interpreter at its loop PC. */
+    CLEAR_CELL_LIMIT = 262144,
+};
+
+/* The original keeps the running offset in A, so the carry and overflow of
+ * the last sum stay visible. */
+static uint16_t AddKeepingFlags(Lufia2CpuState *cpu, uint16_t base, uint16_t addend) {
+    cpu->accumulator = base;
+    cpu->carry = 0;
+    Add16Value(cpu, addend);
+    return cpu->accumulator;
+}
+
+/* Registers of the clearing loop as it stood when the cell limit was hit. */
+static Lufia2ExecutionResult HandOffClearLoop(Lufia2CpuState *cpu, uint16_t cell,
+                                              uint16_t columns_left, bool row_start,
+                                              uint16_t last_cell) {
+    cpu->x = cell;
+    if (row_start) {
+        LoadA16(cpu, columns_left);
+    } else {
+        cpu->accumulator = last_cell;
+        SetNz16(cpu, columns_left);
+    }
+    return ExecutionHandoff(cpu, 0x838aacu);
+}
+
+/* Removes the metatile numbers from the cells under the pending object's
+ * rectangle. A = layer byte offset. */
 Lufia2ExecutionResult Lufia2FieldClearObjectTileIds(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    enum {
-        OBJECT_LAYER_INDEX = 0x54,
-        OBJECT_ROW_SKIP = 0x54,
-        OBJECT_COLUMNS_REMAINING = 0x56,
-        OBJECT_ROWS_REMAINING = 0x58,
-    };
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t cell;
+    uint16_t columns_left;
+    uint16_t rows_left;
+    uint16_t last_cell = 0;
     unsigned cells_cleared = 0;
 
-    OpSta(memory, cpu, OpDp(cpu, OBJECT_LAYER_INDEX));
-    OpStz(memory, cpu, OpDp(cpu, OBJECT_LAYER_INDEX + 1u));
-    OpLda(memory, cpu, WRAM_FIELD_PENDING_OBJECT_X);
+    WramWrite(wram, DP_CLEAR_LAYER_INDEX, A8(cpu));
+    WramWrite(wram, DP_CLEAR_LAYER_INDEX + 1u, 0);
+    LoadA8(cpu, WramRead(wram, WRAM_FIELD_PENDING_OBJECT_X));
     ExchangeAccumulatorBytes(cpu);
-    OpLda(memory, cpu, WRAM_FIELD_PENDING_OBJECT_Y);
+    LoadA8(cpu, WramRead(wram, WRAM_FIELD_PENDING_OBJECT_Y));
     SimulateJsrFrame(memory, cpu, 0x8a7eu);
     (void)Lufia2MapCellOffset(memory, cpu);
     SimulateRtsFrame(memory, cpu);
-    OpRepWidths(cpu, 0x20u);
-    OpTxa(cpu);
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, OBJECT_LAYER_INDEX)));
-    cpu->carry = 0;
-    OpAdc(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_CELL_BASE));
-    OpTax(cpu);
 
-    /* The row skip reads the caller's data bank, unlike the cell multiplier. */
-    OpSepWidths(cpu, 0x20u);
+    /* First cell of the rectangle in the selected layer. */
+    SetAccumulatorWidth(cpu, 0);
+    TransferXToA(cpu);
+    LoadX16(cpu, WramRead16(wram, DP_CLEAR_LAYER_INDEX));
+    cpu->carry = 0;
+    Add16Value(cpu, WramRead16At(wram, WRAM_FIELD_LAYER_CELL_BASE, cpu->x));
+    TransferAToX(cpu);
+    cell = cpu->x;
+
+    /* Cells to skip at the end of a row, as a byte offset. The section width
+     * is read through the caller's data bank. */
+    SetAccumulatorWidth(cpu, 1);
     TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_SECTION_WIDTH & 0xffffu));
+    LoadA8(cpu, WramRead(wram, WRAM_FIELD_SECTION_WIDTH));
     cpu->carry = 1;
-    OpSbcValue(cpu, OpReadM(memory, cpu, WRAM_FIELD_OBJECT_WIDTH));
-    OpRepWidths(cpu, 0x20u);
-    OpAslA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, OBJECT_ROW_SKIP));
-    OpLda(memory, cpu, WRAM_FIELD_OBJECT_HEIGHT);
-    OpAndValue(cpu, 0xffu);
-    OpSta(memory, cpu, OpDp(cpu, OBJECT_ROWS_REMAINING));
+    Sbc8(cpu, WramRead(wram, WRAM_FIELD_OBJECT_WIDTH));
+    SetAccumulatorWidth(cpu, 0);
+    AslA16(cpu);
+    WramWrite16(wram, DP_CLEAR_ROW_SKIP, cpu->accumulator);
+    rows_left = WramRead(wram, WRAM_FIELD_OBJECT_HEIGHT);
+    WramWrite16(wram, DP_CLEAR_ROWS_LEFT, rows_left);
+
     do {
-        OpLda(memory, cpu, WRAM_FIELD_OBJECT_WIDTH);
-        OpAndValue(cpu, 0xffu);
-        OpSta(memory, cpu, OpDp(cpu, OBJECT_COLUMNS_REMAINING));
+        /* Clearing can overwrite the width byte, so it is read for every row. */
+        bool row_start = true;
+
+        columns_left = WramRead(wram, WRAM_FIELD_OBJECT_WIDTH);
+        WramWrite16(wram, DP_CLEAR_COLUMNS_LEFT, columns_left);
         do {
-            /* Leave long or self-modifying rectangles at the original loop PC. */
-            if (cells_cleared == 262144u)
-                return ExecutionHandoff(cpu, 0x838aacu);
+            if (cells_cleared == CLEAR_CELL_LIMIT)
+                return HandOffClearLoop(cpu, cell, columns_left, row_start, last_cell);
+            row_start = false;
             ++cells_cleared;
-            OpLda(memory, cpu, OpLongX(cpu, 0x7f0000u));
-            OpAndValue(cpu, 0xfc00u);
-            OpSta(memory, cpu, OpLongX(cpu, 0x7f0000u));
-            OpInx(cpu);
-            OpInx(cpu);
-            OpStepMem(memory, cpu, OpDp(cpu, OBJECT_COLUMNS_REMAINING), -1);
-        } while (!cpu->zero);
-        OpTxa(cpu);
-        cpu->carry = 0;
-        OpAdc(memory, cpu, OpDp(cpu, OBJECT_ROW_SKIP));
-        OpTax(cpu);
-        OpStepMem(memory, cpu, OpDp(cpu, OBJECT_ROWS_REMAINING), -1);
-    } while (!cpu->zero);
-    OpSepWidths(cpu, 0x20u);
+            last_cell = WramRead16At(wram, MAP_LAYER_CELLS, cell) & CELL_ATTRIBUTE_MASK;
+            WramWrite16At(wram, MAP_LAYER_CELLS, cell, last_cell);
+            cell = (uint16_t)(cell + CELL_SIZE);
+            columns_left = WramStep16(wram, DP_CLEAR_COLUMNS_LEFT, -1);
+        } while (columns_left != 0);
+        cell = AddKeepingFlags(cpu, cell, WramRead16(wram, DP_CLEAR_ROW_SKIP));
+        rows_left = WramStep16(wram, DP_CLEAR_ROWS_LEFT, -1);
+    } while (rows_left != 0);
+
+    cpu->x = cell;
+    SetNz16(cpu, rows_left);
+    SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x838ac8u);
 }
 
