@@ -553,7 +553,7 @@ static ObjectFlow ObjectOp80LoopEnd(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E150: object opcode $2F: actor 0 fine position to $7F:DDFE/DE8E. */
+/* Object opcode $2F: actor 0 fine position to $7F:DDFE/DE8E. */
 static ObjectFlow ObjectOp2FCopyActor0Position(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -567,7 +567,7 @@ static ObjectFlow ObjectOp2FCopyActor0Position(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E270: object opcode $2E: next script byte to $7F:E33E[slot]. */
+/* Object opcode $2E: next script byte to $7F:E33E[slot]. */
 static ObjectFlow ObjectOp2E(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -578,7 +578,7 @@ static ObjectFlow ObjectOp2E(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E5B5: object opcode $1D: slot word offset to $1724/$1725. */
+/* Object opcode $1D: slot word offset to $1724/$1725. */
 static ObjectFlow ObjectOp1D(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -589,7 +589,7 @@ static ObjectFlow ObjectOp1D(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E810: object opcode $13: position = scroll $1220/$1228 + (128, 112). */
+/* Object opcode $13: position = scroll $1220/$1228 + (128, 112). */
 static ObjectFlow ObjectOp13(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -607,7 +607,7 @@ static ObjectFlow ObjectOp13(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EA7D: object opcode $22: $066A[0] = ($066A[0] & $06) | script byte. */
+/* Object opcode $22: $066A[0] = ($066A[0] & $06) | script byte. */
 static ObjectFlow ObjectOp22(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -619,7 +619,7 @@ static ObjectFlow ObjectOp22(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EA8C: object opcode $23: $7F:D0A1 = low byte of D. */
+/* Object opcode $23: $7F:D0A1 = low byte of D. */
 static ObjectFlow ObjectOp23(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -628,7 +628,7 @@ static ObjectFlow ObjectOp23(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EA94: object opcode $8D: OR the next script byte into $7F:D0A1. */
+/* Object opcode $8D: OR the next script byte into $7F:D0A1. */
 static ObjectFlow ObjectOp8DOrFieldBits(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -660,7 +660,7 @@ static ObjectFlow ObjectOp7XLoopStart(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EB50: object opcode $29 $2B $Cx: set or clear one flag bit.
+/* Object opcode $29 $2B $Cx: set or clear one flag bit.
  * $29: state bit 2 if the byte is non-zero; $2B: bit 6 of $7F:DB0C if the byte
  * is negative; $Cx: state bit 3 if the low nibble is zero. */
 static ObjectFlow ObjectOp292BCX(
@@ -697,7 +697,7 @@ static ObjectFlow ObjectOp292BCX(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:ED9B: object opcode $84: set bit 4 of $7F:D0A1. */
+/* Object opcode $84: set bit 4 of $7F:D0A1. */
 static ObjectFlow ObjectOp84SetFieldBit4(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -707,7 +707,7 @@ static ObjectFlow ObjectOp84SetFieldBit4(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EDC2: object opcode $89: $7F:E23E = $FF, set bit 7 of $7F:E33E. */
+/* Object opcode $89: $7F:E23E = $FF, set bit 7 of $7F:E33E. */
 static ObjectFlow ObjectOp89(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -720,7 +720,7 @@ static ObjectFlow ObjectOp89(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EDD7: object opcode $EA: set bit 7 of $7F:DB0C[slot]. */
+/* Object opcode $EA: set bit 7 of $7F:DB0C[slot]. */
 static ObjectFlow ObjectOpEA(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -731,7 +731,7 @@ static ObjectFlow ObjectOpEA(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EFD1: object opcode $F8 $F9: set or clear bit 4 of the object state. */
+/* Object opcode $F8 $F9: set or clear bit 4 of the object state. */
 static ObjectFlow ObjectOpF8F9StateBit4(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -746,7 +746,7 @@ static ObjectFlow ObjectOpF8F9StateBit4(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:F0E8: object opcode $E2: word operand to $7F:DA6C[slot]. */
+/* Object opcode $E2: word operand to $7F:DA6C[slot]. */
 static ObjectFlow ObjectOpE2(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -760,7 +760,7 @@ static ObjectFlow ObjectOpE2(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:F0FA: object opcode $82 $83: copy $7F:DA6C to DAAC ($83: reverse). */
+/* Object opcode $82 $83: copy $7F:DA6C to DAAC ($83: reverse). */
 static ObjectFlow ObjectOp8283(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -775,7 +775,7 @@ static ObjectFlow ObjectOp8283(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:F11C: object opcode $EB: $7F:DA6C[slot] = -$7F:DAAC[slot], per byte. */
+/* Object opcode $EB: $7F:DA6C[slot] = -$7F:DAAC[slot], per byte. */
 static ObjectFlow ObjectOpEB(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -893,7 +893,7 @@ static ObjectFlow ObjectOp3X2C25FD8FSetFrame(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E840: object opcode $5x $28 $Dx: script jump to the operand + $8EC7. */
+/* Object opcode $5x $28 $Dx: script jump to the operand + $8EC7. */
 static ObjectFlow ObjectOp5X28DX(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -933,7 +933,7 @@ static ObjectFlow ObjectOp5X28DX(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EE48: object opcode $FB: signed nibbles to $7F:DDFE/DE8E positions. */
+/* Object opcode $FB: signed nibbles to $7F:DDFE/DE8E positions. */
 static ObjectFlow ObjectOpFB(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -960,7 +960,7 @@ static ObjectFlow ObjectOpFB(
     return ObjectAdvance(memory, cpu);
 }
 
-/* $83:EE71: object opcode $FC $E3: signed bytes to $7F:DDFE/DE8E positions. */
+/* Object opcode $FC $E3: signed bytes to $7F:DDFE/DE8E positions. */
 static ObjectFlow ObjectOpFCE3(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -996,7 +996,7 @@ static ObjectFlow ObjectOpFCE3(
     return ObjectAdvance(memory, cpu);
 }
 
-/* $83:E191: object opcode $F7: signed bytes to $7F:DCDC/DD6C positions. */
+/* Object opcode $F7: signed bytes to $7F:DCDC/DD6C positions. */
 static ObjectFlow ObjectOpF7ByteOffsets(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1043,7 +1043,7 @@ static ObjectFlow ObjectOp20(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EDE6: object opcode $F1: take the animation of the slot with this id. */
+/* Object opcode $F1: take the animation of the slot with this id. */
 static ObjectFlow ObjectOpF1(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1076,7 +1076,7 @@ static ObjectFlow ObjectOpF1(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E437: object opcode $19 $8E: share a slot with the same animation, else
+/* Object opcode $19 $8E: share a slot with the same animation, else
  * set one up; $8E takes its ids from $7F:D4F3/D4F4. */
 static ObjectFlow ObjectOp198E(
     const Lufia2Memory *memory,
@@ -1130,7 +1130,7 @@ static ObjectFlow ObjectOp198E(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EAFF: object opcode $26: set up the animation id of $7F:DA4C[slot]. */
+/* Object opcode $26: set up the animation id of $7F:DA4C[slot]. */
 static ObjectFlow ObjectOp26(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1147,7 +1147,7 @@ static ObjectFlow ObjectOp26(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:EC8E: object opcode $Ax: set up the animation named by the operand. */
+/* Object opcode $Ax: set up the animation named by the operand. */
 static ObjectFlow ObjectOpAX(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1166,7 +1166,7 @@ static ObjectFlow ObjectOpAX(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E854: object opcode $6x: spawn a child object. */
+/* Object opcode $6x: spawn a child object. */
 static ObjectFlow ObjectOp6XSpawnChild(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1180,7 +1180,7 @@ static ObjectFlow ObjectOp6XSpawnChild(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E860: object opcode $85: spawn a child and take its animation. */
+/* Object opcode $85: spawn a child and take its animation. */
 static ObjectFlow ObjectOp85(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1202,7 +1202,7 @@ static ObjectFlow ObjectOp85(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E87C: object opcode $8A: spawn a child at an offset from the operands. */
+/* Object opcode $8A: spawn a child at an offset from the operands. */
 static ObjectFlow ObjectOp8A(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1230,7 +1230,7 @@ static ObjectFlow ObjectOp8A(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E937: object opcode $EE: spawn a child and register it in $7F:D0A6. */
+/* Object opcode $EE: spawn a child and register it in $7F:D0A6. */
 static ObjectFlow ObjectOpEE(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1264,7 +1264,7 @@ static ObjectFlow ObjectOpEE(
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:E13D: object opcode $0x: despawn the object and leave the script. */
+/* Object opcode $0x: despawn the object and leave the script. */
 static ObjectFlow ObjectOpDespawn(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
