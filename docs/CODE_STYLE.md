@@ -14,8 +14,9 @@ helpers.
 | `src/core/memory_internal.h` | Bus access through `Lufia2Memory` and the 65816 address modes | `Read8`, `Write8`, `DirectAddress`, `AbsoluteIndexedAddress`, `LongIndexedAddress`, `Read16Direct`, `Write16Long` |
 | `src/core/cpu_internal.h` | Primitive register, flag, arithmetic, transfer and stack behavior of `Lufia2CpuState`, plus the execution-result helpers | `SetNz8`, `LoadA8`, `LoadX16`, `Compare16`, `Adc8`, `Push8`, `PullDataBank`, `PackStatus`, `ExecutionReturned`, `ExecutionHandoff` |
 | `src/core/cpu_ops.h` | Width-aware instruction adapters that follow the current M/X widths, with explicit operand addressing | `OpDp`, `OpAbsX`, `OpLda`, `OpSta`, `OpCmp`, `OpAdc`, `OpStepMem`, `OpLdx`, `OpRepWidths`, `OpSetDataBank`, `OpMoveNext` |
+| `src/core/child_call.h` | Pushes the JSR or JSL return frame of a call site and runs the child through the consumer | `CallChildWithFrame` |
 
-The two CPU headers are intentional layers, not competing styles:
+The CPU headers are intentional layers, not competing styles:
 `cpu_ops.h` builds on `cpu_internal.h` and never re-implements a flag,
 arithmetic or stack rule that the lower layer already owns.
 
