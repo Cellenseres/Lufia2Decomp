@@ -871,7 +871,7 @@ static SecondaryStep SecondaryOpD6(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:D6EF: secondary opcode $D7: operand bit 0 sets or clears state bit 1. */
+/* Secondary opcode $D7: operand bit 0 sets or clears state bit 1. */
 static SecondaryStep SecondaryOpD7AssignStateBit1(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -891,7 +891,7 @@ static SecondaryStep SecondaryOpD7AssignStateBit1(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:D833: secondary opcode $1x: operand to $7F:E4DE[slot]. */
+/* Secondary opcode $1x: operand to $7F:E4DE[slot]. */
 static SecondaryStep SecondaryOp1X(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -905,7 +905,7 @@ static SecondaryStep SecondaryOp1X(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:D844: secondary opcode $2x: operand to $066A unless $0736 bit 1 is set. */
+/* Secondary opcode $2x: operand to $066A unless $0736 bit 1 is set. */
 static SecondaryStep SecondaryOp2X(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -938,7 +938,7 @@ static SecondaryStep SecondaryOp5X(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:DEE9: secondary opcode $9x: wait for the low nibble in steps. */
+/* Secondary opcode $9x: wait for the low nibble in steps. */
 static SecondaryStep SecondaryOp9XWait(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -966,7 +966,7 @@ static SecondaryStep SecondaryOp9XWait(
     return SecondarySaveCursorExit(memory, cpu);
 }
 
-/* $83:D7B2: secondary opcode $E2: repeat count, loop start after the operand. */
+/* Secondary opcode $E2: repeat count, loop start after the operand. */
 static SecondaryStep SecondaryOpE2LoopStart(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -985,7 +985,7 @@ static SecondaryStep SecondaryOpE2LoopStart(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:D7CC: secondary opcode $E3: count down, jump back to the loop start. */
+/* Secondary opcode $E3: count down, jump back to the loop start. */
 static SecondaryStep SecondaryOpE3LoopEnd(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
