@@ -87,6 +87,45 @@ enum {
     CAVE_DP_CHEST_KIND = 0x58,
     CAVE_DP_CHEST_BIT = 0x55,
 
+    /* Room placement scratch: the next room's corner and the rectangle being
+     * tried. */
+    CAVE_DP_ROOM_WIDTH = 0x24,
+    CAVE_DP_ROOM_HEIGHT = 0x25,
+    CAVE_DP_ROOM_COLUMN = 0x26,
+    CAVE_DP_ROOM_ROW = 0x27,
+    CAVE_DP_FILL_ROOM = 0x54,
+    CAVE_DP_ROOM_COUNT = 0x56,
+    CAVE_DP_CURSOR_COLUMN = 0x5a,
+    CAVE_DP_CURSOR_ROW = 0x5b,
+    CAVE_DP_TALLEST_ROOM = 0x63,
+
+    /* Neighbours of a cell in the 16-wide room grid. */
+    CAVE_CELL_RIGHT = 1,
+    CAVE_CELL_LEFT = -1,
+    CAVE_CELL_DOWN = 0x10,
+    CAVE_CELL_UP = -0x10,
+    CAVE_CELL_UP_RIGHT = -0x0f,
+    CAVE_CELL_UP_LEFT = -0x11,
+    CAVE_CELL_DOWN_RIGHT = 0x11,
+    CAVE_CELL_DOWN_LEFT = 0x0f,
+    CAVE_CELL_LINKED = 0x40,
+    CAVE_CELL_FLAGS = 0xc0,
+    CAVE_CELL_ID_MASK = 0x3f,
+
+    /* Room links: pairs of cells, ended by $FF, and the scratch list the
+     * duplicate pass builds. */
+    CAVE_LINKS = 0xe6f1,
+    CAVE_LINK_SCRATCH = 0x0400,
+    CAVE_LINK_MARK_A_LONG = 0x7fe6ad,
+    CAVE_LINK_MARK_B_LONG = 0x7fe6ae,
+    CAVE_DP_MERGE_PASSES = 0x2a,
+    CAVE_DP_CELL_VALUE = 0x54,
+    CAVE_DP_CORRIDOR_ID = 0x55,
+    CAVE_DP_LINK_COUNT = 0x2d,
+    CAVE_DP_LINK_INDEX = 0x5a,
+    CAVE_DP_LINK_KEY = 0x54,
+    CAVE_DP_SCRATCH_COUNT = 0x56,
+
     CAVE_DP_TILE_COLUMN = 0x8f,
     CAVE_DP_TILE_ROW = 0x91,
 };
