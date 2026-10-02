@@ -70,6 +70,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:B264` | `Lufia2BattleActiveMask` | verified | `src/battle/battle_util.c` |
 | `$81:B2B5` | `Lufia2BattleTargetRecord` | verified | `src/battle/battle_util.c` |
 | `$81:B2DB` | `Lufia2BattleTargetSlot` | verified | `src/battle/battle_util.c` |
+| `$81:B396` | `Lufia2BattlePaletteBrightness` | draft | `src/battle/battle_palette_fade.c` |
+| `$81:B3F8` | `Lufia2BattleScaleColor` | draft | `src/battle/battle_palette_fade.c` |
 | `$81:B444` | `Lufia2BattlePaletteFade` | verified | `src/battle/battle_util.c` |
 | `$81:B48B` | `Lufia2BattleFadeColor` | verified | `src/battle/battle_util.c` |
 | `$81:B505` | `Lufia2BattleBlend` | verified | `src/battle/battle_util.c` |

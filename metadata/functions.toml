@@ -3087,3 +3087,21 @@ source = "src/battle/battle_monster_oam.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "draft"
+
+# Battle palette fade: 15 entries towards black or white.
+[[function]]
+address = "81:B396"
+name = "Lufia2BattlePaletteBrightness"
+source = "src/battle/battle_palette_fade.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+# Per-component colour scaling through the hardware multiplier.
+[[function]]
+address = "81:B3F8"
+name = "Lufia2BattleScaleColor"
+source = "src/battle/battle_palette_fade.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "draft"

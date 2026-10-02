@@ -501,7 +501,7 @@ Lufia2ExecutionResult Lufia2BattleFadeColor(
     Lufia2CpuState *cpu);
 
 /* $81:B444 palette $11 grayed and faded by $13 to CGRAM buffer; M1X0. */
-Lufia2ExecutionResult Lufia2BattlePaletteFade(
+Lufia2ExecutionResult Lufia2BattlePaletteBrightness(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
@@ -750,6 +750,18 @@ Lufia2ExecutionResult Lufia2BattleActorSprites(
  * be $7E for the original table addresses. Returns before RTS $818F8D, or
  * $818F90 when the sprite is off screen. */
 Lufia2ExecutionResult Lufia2BattleActorSprite(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $81:B396 fades palette entries (15 of them, from entry $11 * 16 + 1) of
+ * the $7F:F1DB palette towards black or white into the $0320 buffer; sign of
+ * $13 picks the direction and its low bits the level. M1X0 only (else
+ * handed back). Returns before RTS $81B3F7. */
+Lufia2ExecutionResult Lufia2BattlePaletteBrightness(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $81:B3F8 scales the colour in DP $15 by the factor already written to
+ * $4202, per 5-bit component. X0 only. Returns before RTS $81B443. */
+Lufia2ExecutionResult Lufia2BattleScaleColor(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 #ifdef __cplusplus
