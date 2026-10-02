@@ -76,7 +76,7 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
         cpu->y = PullIndexValue(memory, cpu);
         for (i = 0; i < 6u; ++i) {                             /* name */
             LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
-                (uint16_t)(WRAM_MENU_SPELL_RECORD + 2u * i), 0));
+                (uint16_t)(WRAM_RECORD_BUFFER + 2u * i), 0));
             StoreTable16(memory, cpu, (uint16_t)(0x07u + 2u * i));
         }
         TransferDirectToA(cpu);

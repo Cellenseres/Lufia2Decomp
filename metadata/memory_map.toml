@@ -1109,6 +1109,27 @@ owner = "menu"
 notes = "82:D905 passes this spell ID to the record loader."
 
 [[location]]
+address = "7E:0A06"
+name = "item_record_id"
+width = 2
+owner = "item"
+notes = "Item selector of the record routines 81:F194, F1C5, F291 and F2A9; the low nine bits index the item tables. Set by the menu, battle and inventory code."
+
+[[location]]
+address = "7E:0A09"
+name = "item_record_pointer"
+width = 2
+owner = "item"
+notes = "Offset of the selected item's record in bank 96, from the word table at 96:CF69; computed by 81:F291."
+
+[[location]]
+address = "7E:0A0D"
+name = "spell_record_pointer"
+width = 2
+owner = "item"
+notes = "Offset of the selected spell's record in bank 95, from the word table at 95:FA5B; computed by 81:F446."
+
+[[location]]
 address = "7E:0A0B"
 name = "menu_spell_record_id"
 width = 1
@@ -1126,11 +1147,11 @@ notes = "First party ID;82:9918 scans with Y against byte0A7A. Only the first by
 
 [[location]]
 address = "7E:0B77"
-name = "menu_spell_record"
+name = "record_buffer"
 width = 1
-count = 20
-owner = "menu"
-notes = "81:F414 copies eight name bytes, a DP-low terminator and eleven payload bytes here; price word is offset10."
+count = 54
+owner = "item"
+notes = "Work buffer of the record loaders. 81:F1C5 clears all 54 bytes, then stores the item name (12 bytes plus a zero at 0B83) and the compacted record from 0B84. 81:F414 stores eight spell name bytes, a DP-low terminator and eleven payload bytes; price word is offset10."
 
 [[location]]
 address = "7E:0CD9"

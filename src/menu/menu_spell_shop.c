@@ -88,7 +88,7 @@ Lufia2ExecutionResult Lufia2MenuSpellShopSetup(
     OpLda(memory, cpu, OpAbs(cpu, WRAM_MENU_SELECTED_SPELL));
     OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_SPELL_RECORD_ID));
     SPELL_PRICE_CALL(0x82d912u, 0x81f414u, 3u);
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, (WRAM_MENU_SPELL_RECORD + 0x10u))));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, (WRAM_RECORD_BUFFER + 0x10u))));
     SPELL_PRICE_CALL(0x82d919u, 0x829918u, 2u);
     OpWriteX(memory, cpu, OpAbs(cpu, WRAM_MENU_DISPLAY_PRICE), cpu->x);
     OpWriteX(memory, cpu, OpAbs(cpu, WRAM_MENU_PURCHASE_PRICE), cpu->x);

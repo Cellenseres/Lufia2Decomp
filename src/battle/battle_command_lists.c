@@ -25,7 +25,7 @@ static void CommandListName(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             uint16_t length) {
     OpLdy(cpu, 0u);
     do {
-        OpLda(memory, cpu, OpAbsY(cpu, WRAM_MENU_SPELL_RECORD));
+        OpLda(memory, cpu, OpAbsY(cpu, WRAM_RECORD_BUFFER));
         OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
         OpIny(cpu);
         Compare16(cpu, cpu->y, length);
