@@ -1435,3 +1435,139 @@ width = 2
 count = 1
 owner = "field"
 notes = "8E:B09C stores actor0 fineY minus112; absolute DB-relative word access."
+
+[[location]]
+address = "7E:09A9"
+name = "unk_7E09A9"
+width = 1
+count = 1
+owner = "field"
+notes = "Cleared through a bank-00 long write by 80:EF8E before scene graphics setup."
+
+[[location]]
+address = "7E:F016"
+name = "field_header_object_records_offset"
+width = 2
+count = 1
+owner = "field"
+notes = "80:EF8E reads this word as two bytes to locate ten-byte object records relative to F000."
+
+[[location]]
+address = "7F:D0F5"
+name = "field_scene_record_list"
+width = 2
+count = 1
+owner = "field"
+notes = "80:EF8E publishes the bank-A1 list selected from the regular map table or E6A2."
+
+[[location]]
+address = "7F:D0F7"
+name = "field_scene_record_count"
+width = 1
+count = 1
+owner = "field"
+notes = "80:EF8E publishes the low seven bits of list header byte 2; a zero count retains the original byte-counter underflow."
+
+[[location]]
+address = "7F:D0F8"
+name = "field_palette_source"
+width = 2
+count = 1
+owner = "field"
+notes = "80:F338 copies scene palette bytes from this source offset in bank 9B to the CGRAM buffer at 0320."
+
+[[location]]
+address = "7F:D0FA"
+name = "field_palette_skip_bytes"
+width = 2
+count = 1
+owner = "field"
+notes = "80:F338 skips this many CGRAM buffer bytes, then copies 0100 minus this value bytes, modulo 16 bits. The routine clears palette color zero afterward."
+
+[[location]]
+address = "7F:D78C"
+name = "field_object_sprite_allocation"
+width = 1
+count = 1
+owner = "field"
+notes = "80:EF8E stores the sprite allocator result here, indexed by object record ID. Base only; extent is not inferred."
+
+[[location]]
+address = "7F:D80C"
+name = "field_object_graphics_shape"
+width = 1
+count = 1
+owner = "field"
+notes = "80:EF8E combines width minus one, shifted left, with height minus one for sprite-size and graphics-copy tables. Indexed base only."
+
+[[location]]
+address = "7F:D88C"
+name = "field_object_graphics_palette"
+width = 1
+count = 1
+owner = "field"
+notes = "80:EF8E publishes the first nonzero tile word bits 10-12 as the object palette index. Indexed base only."
+
+[[location]]
+address = "7F:D0C6"
+name = "field_auxiliary_resource_offset"
+width = 2
+count = 1
+owner = "field"
+notes = "80:EF8E publishes C000 plus the decoded auxiliary resource header word."
+
+[[location]]
+address = "7F:D0C8"
+name = "unk_7FD0C8"
+width = 1
+count = 1
+owner = "field"
+notes = "80:EF8E stores the direct-page register low byte here after loading the auxiliary resource; normally zero."
+
+[[location]]
+address = "7F:D0C9"
+name = "field_auxiliary_table_offset"
+width = 2
+count = 1
+owner = "field"
+notes = "80:EF8E initializes FFFF and replaces it with the immediate C002 when the auxiliary resource is present."
+
+[[location]]
+address = "7F:E69D"
+name = "cave_tileset_resource"
+width = 2
+count = 1
+owner = "field"
+notes = "80:EF8E selects this tileset resource index when map flag bit 0 is set; zero skips tileset and object loading."
+
+[[location]]
+address = "7F:E69F"
+name = "cave_palette_source"
+width = 2
+count = 1
+owner = "field"
+notes = "80:EF8E selects this bank-9B palette source offset for generated cave maps."
+
+[[location]]
+address = "7F:E6A2"
+name = "cave_scene_record_list"
+width = 2
+count = 1
+owner = "field"
+notes = "80:EF8E selects this bank-A1 scene record list for generated cave maps; zero skips list indexing."
+
+[[location]]
+address = "7F:EC00"
+name = "field_scene_record_offsets"
+width = 2
+count = 1
+owner = "field"
+notes = "80:EF8E publishes each indexed list offset plus its bank-A1 list base and a zero terminator. Indexed base only."
+
+[[location]]
+address = "7F:ED00"
+name = "field_scene_record_header_words"
+width = 2
+count = 1
+owner = "field"
+notes = "80:EF8E publishes the two bytes at each indexed scene record address minus one. Indexed base only."

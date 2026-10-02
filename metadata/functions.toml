@@ -3007,3 +3007,27 @@ source = "src/field/field_metatile_graphics.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:EF8E"
+name = "Lufia2FieldLoadSceneGraphics"
+source = "src/field/field_scene_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:F2F3"
+name = "Lufia2FieldSetSceneDisplay"
+source = "src/field/field_scene_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:F338"
+name = "Lufia2FieldCopyScenePalette"
+source = "src/field/field_scene_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

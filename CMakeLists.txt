@@ -123,6 +123,8 @@ add_library(lufia2_decomp STATIC
     src/field/field_sprites.c
     src/field/field_triggers.c
     src/field/field_metatile_graphics.c
+    src/field/field_scene_graphics.c
+    src/field/field_scene_display.c
     src/field/field_reload.c
     src/field/field_camera.c
     src/field/field_update.c

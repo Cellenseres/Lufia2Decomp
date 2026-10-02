@@ -58,6 +58,19 @@ Lufia2ExecutionResult Lufia2FieldStatusRequests(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:EF8E: scene graphics loading; PB80, binary, restores caller M/X. */
+Lufia2ExecutionResult Lufia2FieldLoadSceneGraphics(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* $80:F2F3: scene display setup; PB80, M1, accepts either X width. */
+Lufia2ExecutionResult Lufia2FieldSetSceneDisplay(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $80:F338: scene palette copy; PB80, binary, accepts all M/X entry widths. */
+Lufia2ExecutionResult Lufia2FieldCopyScenePalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $80:F35B: four planar tiles with original flip attributes; PB80, M0X0, binary. */
 Lufia2ExecutionResult Lufia2FieldCopyMetatileGraphics(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
