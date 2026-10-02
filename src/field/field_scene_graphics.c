@@ -1,5 +1,6 @@
 #include "core/cpu_ops.h"
 #include "core/snes_registers.h"
+#include "core/wram_view.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
 
@@ -19,6 +20,18 @@ enum {
     OBJECT_ROWS_REMAINING = 0xa5,
     OBJECT_SLOT = 0xa7,
     SCENE_RECORD_BUDGET = 65536,
+    WRAM_BANK_7E = 0x7e,
+    VRAM_DATA_PORT = 0x18,
+    DMA_WORD_PAIR = 0x01,
+    DMA_CHANNEL_0 = 0x01,
+    OBJECT_PLANE_SIZES = 0x83abfc,
+    OBJECT_PLANE_BUFFER = 0xd000,
+    OBJECT_SECOND_PLANE_OFFSET = 0x100,
+    TILESET_STAGING = 0x4000,
+    MAP_FLAG_CAVE = 0x01,
+    SCENE_RECORD_BANK = 0xa1,
+    SCENE_LIST_INDEX_TABLE = 0xcffba6,
+    SCENE_LIST_TABLE = 0xcffc98,
     SCENE_OBJECT_BUDGET = 4096,
     SCENE_METATILE_BUDGET = 4096,
     OBJECT_RECORD_BYTES = 10,
@@ -45,118 +58,129 @@ CallGraphicsChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return ExecutionReturned(next);
 }
 
+/* Copies the offsets and header words of the scene's records into work RAM.
+ * The map's record list is a pointer into bank $A1: a count byte at +2 (low
+ * seven bits) and then one word per record, which points at the record body.
+ * Each record's offset is stored relative to the list, and the first two bytes
+ * of the body are kept as its header. The tables end with the direct page's
+ * low byte as a marker. */
 static Lufia2ExecutionResult IndexSceneRecords(const Lufia2Memory *memory,
                                                Lufia2CpuState *cpu) {
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS));
-    OpBitValue(cpu, 1u);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram work = WramViewLong(memory);
+    unsigned records = 0;
+    uint16_t list;
+    uint8_t remaining;
+
+    LoadX16(cpu, WramRead16(wram, WRAM_FIELD_MAP_ID));
+    LoadA8(cpu, WramRead(wram, WRAM_FIELD_MAP_FLAGS));
+    cpu->zero = (A8(cpu) & MAP_FLAG_CAVE) == 0;
     if (!cpu->zero) {
-        OpRepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, WRAM_CAVE_SCENE_RECORD_LIST);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, WramRead16(work, WRAM_CAVE_SCENE_RECORD_LIST));
         if (cpu->zero)
             return ExecutionReturned(0x80f028u);
     } else {
         TransferDirectToA(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0xcffba6u));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(SCENE_LIST_INDEX_TABLE, cpu->x)));
         if (cpu->zero)
             return ExecutionReturned(0x80f028u);
-        OpDecA(cpu);
-        OpAslA(cpu);
-        OpRepWidths(cpu, 0x20u);
-        OpTax(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0xcffc98u));
+        DecrementA8(cpu);
+        AslA8(cpu);
+        SetAccumulatorWidth(cpu, 0);
+        TransferAToX(cpu);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(SCENE_LIST_TABLE, cpu->x)));
     }
-    OpSta(memory, cpu, WRAM_FIELD_SCENE_RECORD_LIST);
-    OpSta(memory, cpu, OpDp(cpu, RESOURCE));
-    OpTay(cpu);
-    OpSepWidths(cpu, 0x20u);
+    list = cpu->accumulator;
+    WramWrite16(work, WRAM_FIELD_SCENE_RECORD_LIST, list);
+    WramWrite16(wram, RESOURCE, list);
+    cpu->y = list;
+    SetAccumulatorWidth(cpu, 1);
     PushDataBank(memory, cpu);
-    OpLoadA(cpu, 0xa1u);
+    LoadA8(cpu, SCENE_RECORD_BANK);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, 2u));
-    OpAndValue(cpu, 0x7fu);
-    OpSta(memory, cpu, OpDp(cpu, RESOURCE_LENGTH));
-    OpSta(memory, cpu, WRAM_FIELD_SCENE_RECORD_COUNT);
-    OpIny(cpu);
-    OpIny(cpu);
-    OpIny(cpu);
-    OpLdx(cpu, 0u);
-    unsigned records = 0;
+
+    remaining =
+        (uint8_t)(Read8(memory, AbsoluteIndexedAddress(cpu, 2u, cpu->y)) & 0x7fu);
+    WramWrite(wram, RESOURCE_LENGTH, remaining);
+    WramWrite(work, WRAM_FIELD_SCENE_RECORD_COUNT, remaining);
+    cpu->y = (uint16_t)(cpu->y + 3u);
+    cpu->x = 0;
     do {
+        uint16_t body;
+
+        /* A direct page that overlaps the stack can keep the count from ever
+         * reaching zero; the budget turns that into a handoff. */
         if (records++ == SCENE_RECORD_BUDGET)
             return ExecutionHandoff(cpu, 0x80eff6u);
-        OpRepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbsY(cpu, 0u));
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0u, cpu->y));
         PushY(memory, cpu);
         cpu->carry = 1u;
-        OpAdc(memory, cpu, OpDp(cpu, RESOURCE));
-        OpSta(memory, cpu, OpLongX(cpu, WRAM_FIELD_SCENE_RECORD_OFFSETS));
-        OpDecA(cpu);
-        OpTay(cpu);
-        OpSepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbsY(cpu, 0u));
-        OpSta(memory, cpu, OpLongX(cpu, WRAM_FIELD_SCENE_RECORD_HEADER_WORDS));
-        OpLda(memory, cpu, OpAbsY(cpu, 1u));
-        OpSta(memory, cpu, OpLongX(cpu, 0x7fed01u));
+        Add16Value(cpu, WramRead16(wram, RESOURCE));
+        WramWrite16At(work, WRAM_FIELD_SCENE_RECORD_OFFSETS, cpu->x, cpu->accumulator);
+        body = (uint16_t)(cpu->accumulator - 1u);
+        cpu->y = body;
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0u, body)));
+        WramWriteAt(work, WRAM_FIELD_SCENE_RECORD_HEADER_WORDS, cpu->x, A8(cpu));
+        LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 1u, body)));
+        WramWriteAt(work, WRAM_FIELD_SCENE_RECORD_HEADER_WORDS + 1u, cpu->x, A8(cpu));
         OpPullY(memory, cpu);
-        OpInx(cpu);
-        OpInx(cpu);
-        OpIny(cpu);
-        OpIny(cpu);
-        OpStepMem(memory, cpu, OpDp(cpu, RESOURCE_LENGTH), -1);
-    } while (!cpu->zero);
+        cpu->x = (uint16_t)(cpu->x + 2u);
+        cpu->y = (uint16_t)(cpu->y + 2u);
+        remaining = (uint8_t)(WramRead(wram, RESOURCE_LENGTH) - 1u);
+        WramWrite(wram, RESOURCE_LENGTH, remaining);
+        SetNz8(cpu, remaining);
+    } while (remaining != 0);
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, OpLongX(cpu, WRAM_FIELD_SCENE_RECORD_OFFSETS));
-    OpSta(memory, cpu, OpLongX(cpu, 0x7fec01u));
+    WramWriteAt(work, WRAM_FIELD_SCENE_RECORD_OFFSETS, cpu->x, A8(cpu));
+    WramWriteAt(work, WRAM_FIELD_SCENE_RECORD_OFFSETS + 1u, cpu->x, A8(cpu));
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x80f028u);
 }
 
+/* Channel 0 sends the staged object tiles from work RAM to the PPU data port
+ * ($2118). */
 static void StartObjectPlaneDma(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLoadA(cpu, 0x7eu);
-    OpSta(memory, cpu, SNES_A1B(0));
-    OpLoadA(cpu, 0x18u);
-    OpSta(memory, cpu, SNES_BBAD(0));
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, SNES_DMAP(0));
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, SNES_MDMAEN);
+    const Lufia2Wram io = WramViewLong(memory);
+
+    WramWrite(io, SNES_A1B(0), WRAM_BANK_7E);
+    WramWrite(io, SNES_BBAD(0), VRAM_DATA_PORT);
+    WramWrite(io, SNES_DMAP(0), DMA_WORD_PAIR);
+    LoadA8(cpu, DMA_CHANNEL_0);
+    WramWrite(io, SNES_MDMAEN, DMA_CHANNEL_0);
 }
 
+/* Sends the assembled object tiles to video memory in two halves: the first
+ * plane at the object's address and the second a page further on. */
 static void UploadObjectGraphics(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, OBJECT_SLOT)));
-    OpSepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpDp(cpu, OBJECT_TILE_ATTRIBUTES + 1u));
-    OpAndValue(cpu, 0x1cu);
-    OpLsrA(cpu);
-    OpLsrA(cpu);
-    OpSta(memory, cpu, OpLongX(cpu, WRAM_FIELD_OBJECT_GRAPHICS_PALETTE));
-    OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_OBJECT_GRAPHICS_SHAPE));
-    OpAndValue(cpu, 0xffu);
-    OpAslA(cpu);
-    OpTax(cpu);
-    OpLoadA(cpu, 0xd000u);
-    OpSta(memory, cpu, SNES_A1TL(0));
-    OpLda(memory, cpu, OpDp(cpu, OBJECT_VRAM));
-    OpSta(memory, cpu, SNES_VMADDL);
-    OpLda(memory, cpu, OpLongX(cpu, 0x83abfcu));
-    OpSta(memory, cpu, SNES_DASL(0));
-    OpSepWidths(cpu, 0x20u);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram io = WramViewLong(memory);
+    uint16_t size;
+
+    LoadX16(cpu, WramRead16(wram, OBJECT_SLOT));
+    SetAccumulatorWidth(cpu, 1);
+    WramWriteAt(io, WRAM_FIELD_OBJECT_GRAPHICS_PALETTE, cpu->x,
+                (uint8_t)((WramRead(wram, OBJECT_TILE_ATTRIBUTES + 1u) & 0x1cu) >> 2));
+    cpu->x = (uint16_t)((WramRead16At(io, WRAM_FIELD_OBJECT_GRAPHICS_SHAPE, cpu->x) &
+                         0x00ffu)
+                        << 1);
+    size = WramRead16At(io, OBJECT_PLANE_SIZES, cpu->x);
+    WramWrite16(io, SNES_A1TL(0), OBJECT_PLANE_BUFFER);
+    WramWrite16(io, SNES_VMADDL, WramRead16(wram, OBJECT_VRAM));
+    WramWrite16(io, SNES_DASL(0), size);
     StartObjectPlaneDma(memory, cpu);
-    OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpLongX(cpu, 0x83abfcu));
-    cpu->carry = 0u;
-    OpAdcValue(cpu, 0xd000u);
-    OpSta(memory, cpu, SNES_A1TL(0));
-    OpLda(memory, cpu, OpLongX(cpu, 0x83abfcu));
-    OpSta(memory, cpu, SNES_DASL(0));
-    OpLda(memory, cpu, OpDp(cpu, OBJECT_VRAM));
-    cpu->carry = 0u;
-    OpAdcValue(cpu, 0x100u);
-    OpSta(memory, cpu, SNES_VMADDL);
-    OpSepWidths(cpu, 0x20u);
+
+    WramWrite16(io, SNES_A1TL(0), (uint16_t)(size + OBJECT_PLANE_BUFFER));
+    WramWrite16(io, SNES_DASL(0), size);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, WramRead16(wram, OBJECT_VRAM));
+    cpu->carry = 0;
+    Add16Value(cpu, OBJECT_SECOND_PLANE_OFFSET);
+    WramWrite16(io, SNES_VMADDL, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
     StartObjectPlaneDma(memory, cpu);
 }
 
@@ -272,25 +296,21 @@ static Lufia2ExecutionResult AssembleObjectGraphics(const Lufia2Memory *memory,
     return ExecutionReturned(0x80f1e0u);
 }
 
+/* Sends the tileset staged at $7E:4000 to video memory. The length comes from
+ * the resource length word unless the caller names one. */
 static void StartTilesetDma(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             uint16_t vram, uint16_t length) {
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_DMAP(0)));
-    OpLdx(cpu, 0x4000u);
-    OpWriteX(memory, cpu, OpAbs(cpu, SNES_A1TL(0)), cpu->x);
-    OpLoadA(cpu, 0x7eu);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_A1B(0)));
-    OpLoadA(cpu, 0x18u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_BBAD(0)));
-    OpLdx(cpu, vram);
-    OpWriteX(memory, cpu, OpAbs(cpu, SNES_VMADDL), cpu->x);
-    if (vram == 0x4000u)
-        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, RESOURCE_LENGTH)));
-    else
-        OpLdx(cpu, length);
-    OpWriteX(memory, cpu, OpAbs(cpu, SNES_DASL(0)), cpu->x);
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_MDMAEN));
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    WramWrite(wram, SNES_DMAP(0), DMA_CHANNEL_0);
+    WramWrite16(wram, SNES_A1TL(0), TILESET_STAGING);
+    WramWrite(wram, SNES_A1B(0), WRAM_BANK_7E);
+    WramWrite(wram, SNES_BBAD(0), VRAM_DATA_PORT);
+    WramWrite16(wram, SNES_VMADDL, vram);
+    LoadX16(cpu, vram == TILESET_STAGING ? WramRead16(wram, RESOURCE_LENGTH) : length);
+    WramWrite16(wram, SNES_DASL(0), cpu->x);
+    LoadA8(cpu, DMA_CHANNEL_0);
+    WramWrite(wram, SNES_MDMAEN, DMA_CHANNEL_0);
 }
 
 static Lufia2ExecutionResult LoadTilesetAndObjects(const Lufia2Memory *memory,
