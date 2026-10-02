@@ -134,12 +134,13 @@ static void NmiColumnUploads(
     Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0x9fbfu);
     TransferDirectToA(cpu);                                    /* A1A2 */
-    LoadA8(cpu, Read8(memory, 0x7fd4f8u));
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_COLUMN_UPLOAD_COUNT_BYTES));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
     do {
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd4f8u, cpu->x)));
+        LoadA16(cpu, Read16Long(memory,
+            LongIndexedAddress(WRAM_FIELD_COLUMN_UPLOAD_COUNT_BYTES, cpu->x)));
         Write16Direct(memory, cpu, 0x33u, cpu->accumulator);   /* A1A8 */
         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd518u, cpu->x)));
         Write16Direct(memory, cpu, 0x35u, cpu->accumulator);
@@ -182,7 +183,7 @@ static void NmiColumnUploads(
         LoadX16(cpu, (uint16_t)(cpu->x - 2u));                 /* A20E */
     } while (!cpu->zero);
     TransferDirectToA(cpu);                                    /* A212 */
-    Write8(memory, 0x7fd4f8u, A8(cpu));
+    Write8(memory, WRAM_FIELD_COLUMN_UPLOAD_COUNT_BYTES, A8(cpu));
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
@@ -297,7 +298,7 @@ Lufia2ExecutionResult Lufia2FieldNmiUploads(
     PullDataBank(memory, cpu);
     NmiPaletteUploads(memory, cpu);
     NmiTileUploads(memory, cpu);
-    LoadA8(cpu, Read8(memory, 0x7fd4f8u));                     /* 9FB7 */
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_COLUMN_UPLOAD_COUNT_BYTES)); /* 9FB7 */
     if (!cpu->zero)
         NmiColumnUploads(memory, cpu);
     NmiBlockUploads(memory, cpu);

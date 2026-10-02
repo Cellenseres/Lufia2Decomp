@@ -34,7 +34,7 @@ static void PrepareAreaDestination(
     OpAndValue(cpu, 0xf0u);
     OpCmpValue(cpu, 0xf0u);
     if (cpu->zero) {
-        OpLda(memory, cpu, OpAbs(cpu, 0x066au));
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E066A));
         for (unsigned shift = 0; shift < 4u; ++shift)
             OpAslA(cpu);
         OpSta(memory, cpu, OpDp(cpu, 0x54u));
@@ -90,7 +90,7 @@ Lufia2ExecutionResult Lufia2FieldApplyAreaTransition(
     } else {
         OpCmpValue(cpu, 1u);
         if (cpu->zero) {
-            OpStz(memory, cpu, OpDp(cpu, 0xa7u));
+            OpStz(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
             result = AreaChild(memory, cpu, child, context, 0x83b809u, 0x83ab4fu);
             if (result.flow != LUFIA2_EXECUTION_RETURNED)
                 return result;

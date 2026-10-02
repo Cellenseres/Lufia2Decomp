@@ -79,7 +79,7 @@ Lufia2ExecutionResult Lufia2FieldObjectAttributeCell(
     ExchangeAccumulatorBytes(cpu);
     OpLda(memory, cpu, OpDp(cpu, DP_PROBE_Y));
     OpSta(memory, cpu, 0x004202u);
-    OpLda(memory, cpu, 0x0005b9u);
+    OpLda(memory, cpu, WRAM_FIELD_SECTION_WIDTH);
     OpSta(memory, cpu, 0x004203u);
     OpLoadA(cpu, 0u);
     ExchangeAccumulatorBytes(cpu);

@@ -3,6 +3,7 @@
 #include "core/cpu_ops.h"
 #include "field/field_internal.h"
 #include "lufia2/system.h"
+#include "system/wram.h"
 
 /* (dp),Y with the live DB. */
 static uint32_t FieldDpIndirectY(
@@ -68,7 +69,7 @@ Lufia2ExecutionResult Lufia2FieldPackSectionAttributes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);                                    /* EC18 */
-    OpLda(memory, cpu, 0x0005aau);
+    OpLda(memory, cpu, WRAM_FIELD_LAYER_TABLE_OFFSET);
     OpTax(cpu);
     OpLda(memory, cpu, OpAbsX(cpu, 0xd010u));
     OpSta(memory, cpu, 0x004202u);
@@ -127,10 +128,10 @@ Lufia2ExecutionResult Lufia2FieldSectionSize(
     Lufia2CpuState *cpu) {
     OpSepWidths(cpu, 0x20u);                                         /* EC78 */
     TransferDirectToA(cpu);
-    OpLda(memory, cpu, 0x0005aau);
+    OpLda(memory, cpu, WRAM_FIELD_LAYER_TABLE_OFFSET);
     OpTax(cpu);
     OpLda(memory, cpu, OpAbsX(cpu, 0xd010u));
-    OpSta(memory, cpu, 0x0005b9u);
+    OpSta(memory, cpu, WRAM_FIELD_SECTION_WIDTH);
     OpLda(memory, cpu, OpAbsX(cpu, 0xd018u));
     OpSta(memory, cpu, 0x0005bbu);
     TransferDirectToA(cpu);                                    /* EC8E */
@@ -189,10 +190,10 @@ Lufia2ExecutionResult Lufia2FieldDecompressMapData(
     OpLda(memory, cpu, 0x7fd03au);
     cpu->carry = 0;
     OpAdcValue(cpu, 0x0010u);
-    OpSta(memory, cpu, 0x7fd03cu);
+    OpSta(memory, cpu, WRAM_FIELD_METATILE_BASE);
     LoadA16(cpu, 0x0004u);
     FieldRelativeWord(memory, cpu, 0xecc0u);
-    OpSta(memory, cpu, 0x7fd03eu);
+    OpSta(memory, cpu, WRAM_FIELD_METATILE_ATTRIBUTE_BASE);
     OpSepWidths(cpu, 0x20u);                                         /* ECC7 */
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpDp(cpu, 0x29u));
@@ -206,7 +207,7 @@ Lufia2ExecutionResult Lufia2FieldDecompressMapData(
         OpSta(memory, cpu, OpDp(cpu, 0x60u));
         cpu->carry = 0;
         OpAdcValue(cpu, 0x0010u);
-        OpSta(memory, cpu, 0x7fd040u);
+        OpSta(memory, cpu, WRAM_FIELD_ALTERNATE_METATILE_BASE);
         OpSepWidths(cpu, 0x20u);
         LoadA8(cpu, 0x7fu);
         OpSta(memory, cpu, OpDp(cpu, 0x62u));

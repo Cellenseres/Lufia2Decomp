@@ -188,7 +188,8 @@ static uint8_t EventCellsInArea(
         CopyDirect8(memory, cpu, 0x58u, 0x55u);                /* E46F */
         StoreXDirect16(memory, cpu, 0x5du);
         do {
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e4000u, cpu->x)));
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES,
+                cpu->x)));
             EventBitCellMask(memory, cpu);
             if (!cpu->zero) {
                 LoadA8(cpu, 0xffu);                            /* E499 */
@@ -203,7 +204,7 @@ static uint8_t EventCellsInArea(
         SetAccumulatorWidth(cpu, 0);                           /* E482 */
         LoadADirect16(memory, cpu, 0x5du);
         cpu->carry = 0;
-        Add16Value(cpu, Read16Long(memory, 0x0005b9u));
+        Add16Value(cpu, Read16Long(memory, WRAM_FIELD_SECTION_WIDTH));
         TransferAToX(cpu);
         SetAccumulatorWidth(cpu, 1);
         DecrementDirect8(memory, cpu, 0x59u);
@@ -476,7 +477,7 @@ static uint8_t EventCellAt(
     Lufia2MapCellIndex(memory, cpu, 0xf9abu, 0);               /* $83:F9A9 */
     SimulateRtlFrame(memory, cpu);
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e4000u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x)));
     EventBitCellMask(memory, cpu);
     if (!cpu->zero) {
         LoadA8(cpu, 0xffu);
@@ -618,11 +619,11 @@ static void EventD0F4Condition(
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, 0x01u);
     Write8(memory, EVENT_CONDITION, A8(cpu));
-    LoadA8(cpu, Read8(memory, 0x7fd0a1u));
+    LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0A1));
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero) {
         ExchangeAccumulatorBytes(cpu);
-        Compare8(cpu, A8(cpu), Read8(memory, 0x7fd0f4u));
+        Compare8(cpu, A8(cpu), Read8(memory, WRAM_FIELD_CLAIMED_OBJECT_RECORD));
         if (cpu->zero) {
             LoadA8(cpu, 0x81u);
             Write8(memory, EVENT_CONDITION, A8(cpu));
@@ -706,7 +707,8 @@ static uint8_t EventSameTiles(
         SetNz16(cpu, mask);
         if (cpu->carry) {
             LoadXDirect16(memory, cpu, 0x5au);
-            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd008u, cpu->x)));
+            LoadA16(cpu, Read16Long(memory,
+                LongIndexedAddress(WRAM_FIELD_LAYER_CELL_BASE, cpu->x)));
             StoreADirect16(memory, cpu, 0x63u);
             cpu->carry = 0;
             Add16Value(cpu, Read16Direct(memory, cpu, 0x58u));
@@ -843,9 +845,9 @@ static uint8_t EventBlockMatches(
     Lufia2EventNextByte(memory, cpu, 0xe2a4u);                 /* E2A2 */
     if (!Lufia2EventMapObject(memory, cpu, 0xe2a8u, handoff))
         return 0;
-    LoadA8(cpu, Read8(memory, 0x7fd04au));                     /* E2A9 */
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_OBJECT_SOURCE_X)); /* E2A9 */
     ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Read8(memory, 0x7fd04bu));
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_OBJECT_SOURCE_Y));
     SimulateJslFrame(memory, cpu, 0x80u, 0xe2b5u);
     SimulateJsrFrame(memory, cpu, 0xf9f0u);
     Lufia2MapCellOffset(memory, cpu);
@@ -855,7 +857,7 @@ static uint8_t EventBlockMatches(
     TransferDirectToA(cpu);                                    /* E2B8 */
     LoadAAbsolute8(memory, cpu, 0x05b9u, 0);
     cpu->carry = 1;
-    Sbc8(cpu, Read8(memory, 0x7fd04cu));
+    Sbc8(cpu, Read8(memory, WRAM_FIELD_OBJECT_WIDTH));
     SetAccumulatorWidth(cpu, 0);
     AslA16(cpu);
     StoreADirect16(memory, cpu, 0x56u);
@@ -864,7 +866,7 @@ static uint8_t EventBlockMatches(
     LoadA8(cpu, 0x7fu);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
-    LoadA8(cpu, Read8(memory, 0x7fd05fu));
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_OBJECT_FLAGS));
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero) {
         LoadX16(cpu, 0x0000u);
@@ -874,7 +876,7 @@ static uint8_t EventBlockMatches(
             SimulateRtsFrame(memory, cpu);
             return 1;
         }
-        LoadA8(cpu, Read8(memory, 0x7fd05fu));
+        LoadA8(cpu, Read8(memory, WRAM_FIELD_OBJECT_FLAGS));
     }
     BitImmediate8(cpu, 0x02u);                                 /* E2E1 */
     if (!cpu->zero) {
