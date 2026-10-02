@@ -1227,3 +1227,11 @@ width = 2
 count = 5
 owner = "field"
 notes = "83:8D42 writes pixel-scroll words divided by sixteen at D028+X and D02A+X for X=6,4,2,0. These writes overlap; five words cover the proven cache, including disabled layers. Descending layer order determines the final contents."
+
+[[location]]
+address = "7E:09B9"
+name = "scene_script_bank"
+width = 1
+count = 1
+owner = "field"
+notes = "Scene-script bank byte.80:C0B7 increments it through the current DB when Y enters the positive half, loads DB from it and resets Y to8000.80:C12E initializes it from09A0."

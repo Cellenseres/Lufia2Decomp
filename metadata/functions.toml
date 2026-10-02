@@ -2907,3 +2907,11 @@ source = "src/field/field_object_update.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:C0B7"
+name = "Lufia2SceneScriptReadOperand"
+source = "src/field/scene_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
