@@ -255,13 +255,13 @@ Lufia2ExecutionResult Lufia2BattleChooseTargets(const Lufia2Memory *memory,
         BattleContextCreate(memory, cpu, child, child_context, 0x81u);
     PushAccumulator8(memory, cpu);
     if (!BattleCall(&battle, 0xd4e1u, 0x85ec81u, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     LoadA8(cpu, Pull8(memory, cpu));
     OpPushX(memory, cpu);
     OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
     PushDataBank(memory, cpu);
     if (!TargetBuildSelectionRecords(&battle))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
     OpAndValue(cpu, 0x80u);
     OpSta(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
@@ -272,22 +272,22 @@ Lufia2ExecutionResult Lufia2BattleChooseTargets(const Lufia2Memory *memory,
     OpStz(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
     OpLda(memory, cpu, OpAbs(cpu, 0x129eu));
     if (!BattleCall(&battle, 0xd581u, 0x81bebcu, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpSetDataBank(memory, cpu, 0x7eu);
 redraw:
     if (!TargetDrawSelection(&battle))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     if (!BattleCall(&battle, 0xd635u, 0x81d9d0u, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x0012f3u);
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(&battle, 0xd640u, 0x859cc0u, 3u) ||
         !BattleCall(&battle, 0xd644u, 0x859c64u, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpSepWidths(cpu, 0x20u);
     if (!BattleCall(&battle, 0xd64au, 0x85ec81u, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLda(memory, cpu, OpDp(cpu, 0xddu));
     OpBitValue(cpu, 0xa0u);
     if (!cpu->zero)
@@ -452,11 +452,11 @@ enemy_vertical:
 accept:
     OpLoadA(cpu, 2u);
     if (!BattleCall(&battle, 0xd7bdu, 0x80953bu, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     TargetClearName(memory, cpu);
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(&battle, 0xd7cdu, 0x859cc0u, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpSepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
     OpAndValue(cpu, 3u);
@@ -530,11 +530,11 @@ publish_enemy:
 cancel:
     OpLoadA(cpu, 1u);
     if (!BattleCall(&battle, 0xd8c4u, 0x80953bu, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     TargetClearName(memory, cpu);
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(&battle, 0xd8d4u, 0x859cc0u, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpSepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
     if (cpu->zero) {
@@ -561,6 +561,4 @@ cancel:
     PullDataBank(memory, cpu);
     OpPullX(memory, cpu);
     return ExecutionReturned(0x81d908u);
-unwound:
-    return BattleChildUnwound(&battle);
 }

@@ -228,7 +228,7 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
     if (!BattleCall(&battle, 0xd9f4u, 0x85ec81u, 3u) ||
         !BattleCall(&battle, 0xd9f8u, 0x8591e0u, 3u) ||
         !BattleCall(&battle, 0xd9fcu, 0x858a2fu, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x0012f3u);
     OpLda(memory, cpu, OpAbs(cpu, 0x0b51u));
@@ -239,22 +239,22 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
         ResultScaleReward(memory, cpu, WRAM_BATTLE_GOLD_REWARD);
     }
     if (!BattleCall(&battle, 0xda87u, 0x81dd7fu, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLoadA(cpu, 0x85u);
     OpSta(memory, cpu, OpDp(cpu, 0x5fu));
     if (!ResultShowLineAndWait(&battle, 0xf092u, 0xda91u, 0xda94u) ||
         !ResultShowLineAndWait(&battle, 0xf0a2u, 0xda9au, 0xda9du))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ITEM_REWARD));
     if (!cpu->zero) {
         OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
         OpSepWidths(cpu, 0x20u);
         if (!BattleCall(&battle, 0xdaacu, 0x81f085u, 3u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         if (!cpu->carry) {
             if (!ResultShowLineAndWait(&battle, 0xf087u, 0xdab5u, 0xdab8u))
-                goto unwound;
+                return BattleChildUnwound(&battle);
             OpSepWidths(cpu, 0x20u);
         }
     } else {
@@ -262,7 +262,7 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
     }
     OpLdy(cpu, 0xf085u);
     if (!BattleCall(&battle, 0xdac0u, 0x81dde7u, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLdy(cpu, 0u);
     do {
         TransferDirectToA(cpu);
@@ -280,18 +280,18 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
         OpWriteX(memory, cpu, OpDp(cpu, 0u), cpu->x);
         OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS)));
         if (!cpu->zero && !ResultAwardPartyMemberExperience(&battle))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpIny(cpu);
         OpIny(cpu);
         Compare16(cpu, cpu->y, 8u);
     } while (!cpu->zero);
     if (!ResultAwardCapsuleExperience(&battle))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     ResultAddReward(memory, cpu, OpAbs(cpu, WRAM_GOLD), WRAM_BATTLE_GOLD_REWARD);
     OpLdy(cpu, 0xf085u);
     if (!BattleCall(&battle, 0xdd57u, 0x81dde7u, 2u) ||
         !ResultShowLineAndWait(&battle, 0xf0ebu, 0xdd5du, 0xdd60u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLda(memory, cpu, 0x7ff8a5u);
     cpu->carry = 0;
     OpAdc(memory, cpu, OpAbs(cpu, 0x0b74u));
@@ -304,6 +304,4 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
     OpSepWidths(cpu, 0x20u);
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x81dd7eu);
-unwound:
-    return BattleChildUnwound(&battle);
 }

@@ -48,25 +48,25 @@ static Lufia2ExecutionResult BattleRunActionSubmenu(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
     if (!BattleCall(battle, 0xd19au, 0x85ec81u, 3u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpLoadA(cpu, 0u);
     if (!BattleCall(battle, 0xd1a0u, 0x81bebcu, 3u) ||
         !BattleCall(battle, 0xd1a4u, 0x81beedu, 3u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(battle, 0xd1aau, 0x859c64u, 3u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpSepWidths(cpu, 0x20u);
     if (!BattleCall(battle, 0xd1b0u, 0x81def4u, 2u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     if (!BattleDrawSubmenuTitle(battle))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(battle, 0xd21bu, 0x859b67u, 3u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpSepWidths(cpu, 0x20u);
     if (!BattleCall(battle, 0xd221u, 0x85ec81u, 3u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpLoadA(cpu, 2u);
     OpSta(memory, cpu, OpAbs(cpu, SNES_CGWSEL));
     OpLoadA(cpu, 0x1fu);
@@ -93,7 +93,7 @@ input:
         OpPushX(memory, cpu);
         if (!BattleCall(battle, 0xd259u, 0x859906u, 3u) ||
             !BattleCall(battle, 0xd25du, 0x81def4u, 2u))
-            goto unwound;
+            return BattleChildUnwound(battle);
         OpPullX(memory, cpu);
         OpWriteX(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP), cpu->x);
         OpPullX(memory, cpu);
@@ -102,7 +102,7 @@ input:
         OpWriteX(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), cpu->x);
         OpRepWidths(cpu, 0x20u);
         if (!BattleCall(battle, 0xd26bu, 0x859b67u, 3u))
-            goto unwound;
+            return BattleChildUnwound(battle);
         OpSepWidths(cpu, 0x20u);
         goto poll;
     }
@@ -226,10 +226,10 @@ draw_rows:
     OpTax(cpu);
     OpSepWidths(cpu, 0x20u);
     if (!BattleCall(battle, 0xd340u, 0x81dfa2u, 2u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(battle, 0xd345u, 0x859c08u, 3u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpSepWidths(cpu, 0x20u);
 scroll:
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
@@ -319,7 +319,7 @@ draw_cursor:
 draw_frame:
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(battle, 0xd444u, 0x859ca9u, 3u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpLda(memory, cpu, OpDp(cpu, 0x46u));
     OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffffu));
     OpSta(memory, cpu, OpDp(cpu, 0x4au));
@@ -328,11 +328,11 @@ draw_frame:
     OpSta(memory, cpu, OpAbs(cpu, 0x1b22u));
     OpStz(memory, cpu, OpAbs(cpu, 0x1b23u));
     if (!BattleCall(battle, 0xd459u, 0x81d9d0u, 2u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x0012f3u);
     if (!BattleCall(battle, 0xd462u, 0x85ec81u, 3u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
     if (!cpu->zero)
         goto scroll;
@@ -340,11 +340,11 @@ draw_frame:
     goto input;
 poll:
     if (!BattleCall(battle, 0xd472u, 0x81d9d0u, 2u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x0012f3u);
     if (!BattleCall(battle, 0xd47bu, 0x85ec81u, 3u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     goto input;
 accept:
     TransferDirectToA(cpu);
@@ -378,7 +378,7 @@ accept:
         goto poll;
     OpLoadA(cpu, 2u);
     if (!BattleCall(battle, 0xd4afu, 0x80953bu, 3u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     TransferDirectToA(cpu);
     OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
     OpTax(cpu);
@@ -400,11 +400,9 @@ accept:
 cancel:
     OpLoadA(cpu, 1u);
     if (!BattleCall(battle, 0xd4d9u, 0x80953bu, 3u))
-        goto unwound;
+        return BattleChildUnwound(battle);
     OpLoadA(cpu, 1u);
     return ExecutionReturned(0x81d4dfu);
-unwound:
-    return BattleChildUnwound(battle);
 }
 
 Lufia2ExecutionResult Lufia2BattleActionSubmenuResume(const Lufia2Memory *memory,
@@ -426,17 +424,17 @@ Lufia2ExecutionResult Lufia2BattleActionSubmenuStart(const Lufia2Memory *memory,
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
     if (cpu->zero) {
         if (!BattleCall(&battle, 0xd135u, 0x81bf3fu, 2u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpLdx(cpu, 0xf030u);
     } else {
         OpCmpValue(cpu, 1u);
         if (cpu->zero) {
             if (!BattleCall(&battle, 0xd141u, 0x81c031u, 2u))
-                goto unwound;
+                return BattleChildUnwound(&battle);
             OpLdx(cpu, 0xf047u);
         } else {
             if (!BattleCall(&battle, 0xd149u, 0x81c129u, 2u))
-                goto unwound;
+                return BattleChildUnwound(&battle);
             OpLdx(cpu, 0xf05eu);
         }
     }
@@ -480,6 +478,4 @@ Lufia2ExecutionResult Lufia2BattleActionSubmenuStart(const Lufia2Memory *memory,
         OpTestBits(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN), 0u);
     }
     return BattleRunActionSubmenu(&battle);
-unwound:
-    return BattleChildUnwound(&battle);
 }
