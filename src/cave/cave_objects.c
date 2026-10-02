@@ -127,40 +127,42 @@ void Lufia2CaveAddObject(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:9A6B: carry when a chest is near $8F,$91. */
-void Lufia2CaveNearChest(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t site) {
-    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
+/* Probe the centre cell, then the neighbours, stopping at the first chest. */
+static void CaveNearChestBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));                  /* 9A6B */
     OpSta(memory, cpu, OpDp(cpu, 0x55u));
     OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
     OpSta(memory, cpu, OpDp(cpu, 0x54u));
     Lufia2CaveChestAt(memory, cpu, 0x9a73u);
     if (cpu->carry)
-        goto done;
+        return;
     OpStepMem(memory, cpu, OpDp(cpu, 0x54u), -1);          /* 9A78 */
     Lufia2CaveChestAt(memory, cpu, 0x9a7au);
     if (cpu->carry)
-        goto done;
+        return;
     OpStepMem(memory, cpu, OpDp(cpu, 0x54u), 1);           /* 9A7F */
     OpStepMem(memory, cpu, OpDp(cpu, 0x54u), 1);
     OpStepMem(memory, cpu, OpDp(cpu, 0x54u), 1);
     Lufia2CaveChestAt(memory, cpu, 0x9a85u);
     if (cpu->carry)
-        goto done;
+        return;
     OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));                  /* 9A8A */
     OpSta(memory, cpu, OpDp(cpu, 0x54u));
     OpStepMem(memory, cpu, OpDp(cpu, 0x55u), -1);
     Lufia2CaveChestAt(memory, cpu, 0x9a90u);
     if (cpu->carry)
-        goto done;
+        return;
     OpStepMem(memory, cpu, OpDp(cpu, 0x55u), 1);           /* 9A95 */
     OpStepMem(memory, cpu, OpDp(cpu, 0x55u), 1);
     OpStepMem(memory, cpu, OpDp(cpu, 0x55u), 1);
     Lufia2CaveChestAt(memory, cpu, 0x9a9bu);
-done:
+}
+
+/* $83:9A6B: carry when a chest is near $8F,$91. */
+void Lufia2CaveNearChest(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                         uint16_t site) {
+    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
+    CaveNearChestBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);                             /* 9A9E */
 }
 
@@ -193,17 +195,13 @@ void Lufia2CaveChestAt(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:9ABC: try one chest in room A; carry = rejected. */
-void Lufia2CaveAddChest(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t site) {
-    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
+/* Roll a position and keep it unless it is rejected; carry set = rejected. */
+static void CaveAddChestBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSta(memory, cpu, OpAbs(cpu, 0xe6a8u));               /* 9ABC */
     OpLda(memory, cpu, OpAbs(cpu, CAVE_CHEST_COUNT));
     OpCmpValue(cpu, 0x08u);
     if (cpu->carry)
-        goto done;
+        return;
     LoadA8(cpu, 0x07u);                                        /* 9AC6 */
     Lufia2CaveRandomBelow(memory, cpu, 0x9ac8u);
     cpu->carry = 0;
@@ -225,7 +223,7 @@ void Lufia2CaveAddChest(
     OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
     Lufia2CaveNearStartOrPlaced(memory, cpu, 0x9aebu);
     if (cpu->carry)
-        goto done;
+        return;
     OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));                  /* 9AF0 */
     OpCmp(memory, cpu, OpAbs(cpu, CAVE_STAIR_COLUMN));
     if (cpu->zero) {
@@ -233,12 +231,12 @@ void Lufia2CaveAddChest(
         OpCmp(memory, cpu, OpAbs(cpu, CAVE_STAIR_ROW));
         if (cpu->zero) {
             cpu->carry = 1;                                    /* 9AFE */
-            goto done;
+            return;
         }
     }
     Lufia2CaveNearChest(memory, cpu, 0x9b01u);                 /* 9B01 */
     if (cpu->carry)
-        goto done;
+        return;
     OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, CAVE_CHEST_COUNT)));
     OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
     OpSta(memory, cpu, OpAbsY(cpu, CAVE_CHEST_COLUMNS));
@@ -246,6 +244,12 @@ void Lufia2CaveAddChest(
     OpSta(memory, cpu, OpAbsY(cpu, CAVE_CHEST_ROWS));
     OpStepMem(memory, cpu, OpAbs(cpu, CAVE_CHEST_COUNT), 1);
     cpu->carry = 0;                                            /* 9B16 */
-done:
+}
+
+/* $83:9ABC: try one chest in room A; carry = rejected. */
+void Lufia2CaveAddChest(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                        uint16_t site) {
+    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
+    CaveAddChestBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);                             /* 9B17 */
 }
