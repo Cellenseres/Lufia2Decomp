@@ -335,6 +335,11 @@ Lufia2ExecutionResult Lufia2FieldQueueObjectRedraw(
 Lufia2ExecutionResult Lufia2FieldCopyObjectTiles(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $83:83EB runs the field battle transition; PB83/M1X16, binary. */
+Lufia2ExecutionResult Lufia2FieldBattleTransition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $83:B76E applies a map rectangle destination; PB83/M1X16, binary. */
 Lufia2ExecutionResult Lufia2FieldApplyAreaTransition(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
