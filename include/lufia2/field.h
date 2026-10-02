@@ -58,6 +58,18 @@ Lufia2ExecutionResult Lufia2FieldStatusRequests(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:F35B: four planar tiles with original flip attributes; PB80, M0X0, binary. */
+Lufia2ExecutionResult Lufia2FieldCopyMetatileGraphics(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $80:F3F1: mirror the two plane bytes in A; PB80, M0, either X width. */
+Lufia2ExecutionResult Lufia2FieldMirrorPlaneWord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $80:F40A: mirror low A, clear high A and retain the original carry; PB80, M1. */
+Lufia2ExecutionResult Lufia2FieldMirrorPlaneByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $83:85DC completes the map reload; PB83, any native M/X widths. */
 Lufia2ExecutionResult Lufia2FieldReloadMap(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
