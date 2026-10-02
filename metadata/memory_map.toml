@@ -627,6 +627,38 @@ owner = "field"
 notes = "$8E:BD77 and $80:F47A keep four pixel scroll coordinates, indexed by layer*2."
 
 [[location]]
+address = "7E:122E"
+name = "field_streamed_row_source"
+width = 2
+count = 4
+owner = "field"
+notes = "$80:F5DB stages the row buffer address that the NMI upload at $80:A0E1 copies; zero VRAM word means nothing pending. Indexed by layer*2."
+
+[[location]]
+address = "7E:1236"
+name = "field_streamed_column_source"
+width = 2
+count = 4
+owner = "field"
+notes = "$80:F4FD and $80:F518 stage the column buffer address that the NMI upload at $80:A0E1 copies. Indexed by layer*2."
+
+[[location]]
+address = "7E:123E"
+name = "field_streamed_row_vram"
+width = 2
+count = 4
+owner = "field"
+notes = "$80:F5DB queues the VRAM word address of a streamed row for the NMI upload at $80:A0E1; zero means nothing pending. Indexed by layer*2."
+
+[[location]]
+address = "7E:1246"
+name = "field_streamed_column_vram"
+width = 2
+count = 4
+owner = "field"
+notes = "$80:F4FD and $80:F518 queue the VRAM word address of a streamed column for the NMI upload at $80:A0E1; zero means nothing pending. Indexed by layer*2."
+
+[[location]]
 address = "7F:D008"
 name = "field_layer_cell_base"
 width = 2

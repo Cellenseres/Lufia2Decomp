@@ -7,6 +7,43 @@
 #include "field/field_internal.h"
 #include "system/wram.h"
 
+/* Direct-page scratch of the tile streaming routines ($80:F4FD-F7D0). A
+ * layer is a grid of 16x16 cells; streaming copies the cells at one screen
+ * edge into the layer's tilemap buffer, 32 tile rows by 64 tile columns. */
+enum {
+    STREAM_LAYER = 0x5du, /* layer index * 2 */
+    STREAM_ROW_POINTER = 0x5du,
+    STREAM_ROW_POINTER_NEXT = 0x60u,
+    STREAM_METATILE_BASE = 0x65u,
+    STREAM_LAYER_WIDTH = 0x83u,  /* in cells */
+    STREAM_LAYER_HEIGHT = 0x85u, /* in cells */
+    STREAM_CELL_X = 0x87u,
+    STREAM_CELL_Y = 0x89u,
+    STREAM_MAP_ROW_BYTES = 0x8bu,
+    STREAM_CELL_BASE = 0x8du,
+    STREAM_CELL_ADDRESS = 0x30u,
+    STREAM_BUFFER_COLUMN = 0x22u,
+    STREAM_BUFFER_ROW = 0x24u,
+    STREAM_BUFFER_OFFSET = 0x2du,
+    STREAM_BUFFER = 0x2au, /* 24-bit pointer, bank in the next byte */
+    STREAM_BUFFER_BANK = 0x2cu,
+    STREAM_ROW_TILES_LEFT = 0x26u,
+    STREAM_COLUMN_TILES_LEFT = 0x28u,
+    STREAM_RUN_LENGTH = 0x10u,
+    STREAM_TILE_ROW_STEP = 0x3eu, /* next tile row, less the tile just written */
+    STREAM_BUFFER_MASK = 0x07ffu,
+    STREAM_CELL_SHARED_FLAGS = 0x3000u,
+    STREAM_CELL_METATILE_MASK = 0x03ffu,
+    COLUMN_STAGING_TABLE = 0x80f581u, /* per-layer column buffer addresses */
+    LAYER_BUFFER_TABLE = 0x838ff0u,   /* per-layer tilemap buffer addresses */
+    REDRAW_X = 0x11u,
+    REDRAW_Y = 0x13u,
+    REDRAW_LAYER = 0x15u,
+    REDRAW_ROWS_LEFT = 0x17u,
+    REDRAW_X_SLOT_TABLE = 0x80f4edu,
+    REDRAW_Y_SLOT_TABLE = 0x80f4f5u,
+};
+
 /* $8E:BF88: shift count from $8E:BF93 into $4E. */
 static void ScrollShiftCount(
     const Lufia2Memory *memory,
@@ -87,7 +124,7 @@ static void ScrollModeFollow(
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_SCREEN_EFFECTS, 0)); /* BE78 */
     cpu->zero = (cpu->accumulator & 0x0040u) == 0;
     if (!cpu->zero) {
-        LoadXDirect(memory, cpu, 0x5du);                       /* BE80 */
+        LoadXDirect(memory, cpu, STREAM_LAYER); /* BE80 */
         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd0ceu, cpu->x)));
         Write16Direct(memory, cpu, 0x58u, cpu->accumulator);
         Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
@@ -102,7 +139,7 @@ static void ScrollModeFollow(
                 LongIndexedAddress(0x7fd0e6u, cpu->x));
         return;
     }
-    LoadXDirect(memory, cpu, 0x5du);                           /* BEC4 */
+    LoadXDirect(memory, cpu, STREAM_LAYER); /* BEC4 */
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a8u, 0));
     if (cpu->zero) {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a4u, 0));
@@ -178,7 +215,7 @@ static void ScrollLayerNibble(
 static void ScrollModeParallax(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadXDirect(memory, cpu, 0x5du);                           /* BF25 */
+    LoadXDirect(memory, cpu, STREAM_LAYER); /* BF25 */
     ScrollLayerNibble(memory, cpu, 1);
     ScrollShiftCount(memory, cpu, 0xbf34u);
     if (!cpu->zero) {
@@ -189,7 +226,7 @@ static void ScrollModeParallax(
         else
             ScrollOffsetTarget(memory, cpu, 0x54u, 0x58u);
     }
-    LoadXDirect(memory, cpu, 0x5du);                           /* BF4D */
+    LoadXDirect(memory, cpu, STREAM_LAYER); /* BF4D */
     ScrollLayerNibble(memory, cpu, 0);
     ScrollShiftCount(memory, cpu, 0xbf58u);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a6u, 0));
@@ -204,7 +241,7 @@ static void ScrollModeParallax(
 static void ScrollModeScaled(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadXDirect(memory, cpu, 0x5du);                           /* BF9B */
+    LoadXDirect(memory, cpu, STREAM_LAYER); /* BF9B */
     ScrollLayerNibble(memory, cpu, 1);
     ScrollShiftCount(memory, cpu, 0xbfaau);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a4u, 0));
@@ -231,7 +268,7 @@ static void ScrollWrapAxis(
     Add16Value(cpu, Read16Direct(memory, cpu, current));
     And16(cpu, 0x7fffu);
     Write16Direct(memory, cpu, out, cpu->accumulator);
-    LoadXDirect(memory, cpu, 0x5du);
+    LoadXDirect(memory, cpu, STREAM_LAYER);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(size, cpu->x)));
     AslA16(cpu);
     AslA16(cpu);
@@ -251,7 +288,7 @@ static void ScrollWrapAxis(
 static void ScrollModeWrap(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadXDirect(memory, cpu, 0x5du);                           /* BFEE */
+    LoadXDirect(memory, cpu, STREAM_LAYER); /* BFEE */
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd021u, cpu->x)));
     And16(cpu, 0x00f0u);
     LsrA16(cpu);
@@ -320,63 +357,63 @@ static void StreamLocate(
     LsrA16(cpu);
     LsrA16(cpu);
     LsrA16(cpu);
-    Write16Direct(memory, cpu, 0x30u, cpu->accumulator);
-    Write16Direct(memory, cpu, 0x22u, cpu->accumulator);
+    Write16Direct(memory, cpu, STREAM_CELL_ADDRESS, cpu->accumulator);
+    Write16Direct(memory, cpu, STREAM_BUFFER_COLUMN, cpu->accumulator);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_LAYER_WIDTH & 0xffffu), cpu->x));
-    Write16Direct(memory, cpu, 0x83u, cpu->accumulator);
+    Write16Direct(memory, cpu, STREAM_LAYER_WIDTH, cpu->accumulator);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_LAYER_HEIGHT & 0xffffu), cpu->x));
-    Write16Direct(memory, cpu, 0x85u, cpu->accumulator);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x22u));
-    StreamWrap(memory, cpu, 0x83u, 0xf762u, 0xf77au, 0);
-    Write16Direct(memory, cpu, 0x87u, cpu->accumulator);       /* F77F */
-    Write16Direct(memory, cpu, 0x26u, cpu->accumulator);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x30u));
+    Write16Direct(memory, cpu, STREAM_LAYER_HEIGHT, cpu->accumulator);
+    LoadA16(cpu, Read16Direct(memory, cpu, STREAM_BUFFER_COLUMN));
+    StreamWrap(memory, cpu, STREAM_LAYER_WIDTH, 0xf762u, 0xf77au, 0);
+    Write16Direct(memory, cpu, STREAM_CELL_X, cpu->accumulator); /* F77F */
+    Write16Direct(memory, cpu, STREAM_ROW_TILES_LEFT, cpu->accumulator);
+    LoadA16(cpu, Read16Direct(memory, cpu, STREAM_CELL_ADDRESS));
     AslA16(cpu);
     AslA16(cpu);
     And16(cpu, 0x003eu);
-    Write16Direct(memory, cpu, 0x22u, cpu->accumulator);
+    Write16Direct(memory, cpu, STREAM_BUFFER_COLUMN, cpu->accumulator);
     LoadA16(cpu, cpu->y);
     LsrA16(cpu);
     LsrA16(cpu);
     LsrA16(cpu);
     LsrA16(cpu);
-    Write16Direct(memory, cpu, 0x28u, cpu->accumulator);
-    StreamWrap(memory, cpu, 0x85u, 0xf7adu, 0xf7c9u, 1);
-    Write16Direct(memory, cpu, 0x89u, cpu->accumulator);       /* F7CE */
-    Write16Direct(memory, cpu, 0x28u, cpu->accumulator);
+    Write16Direct(memory, cpu, STREAM_COLUMN_TILES_LEFT, cpu->accumulator);
+    StreamWrap(memory, cpu, STREAM_LAYER_HEIGHT, 0xf7adu, 0xf7c9u, 1);
+    Write16Direct(memory, cpu, STREAM_CELL_Y, cpu->accumulator); /* F7CE */
+    Write16Direct(memory, cpu, STREAM_COLUMN_TILES_LEFT, cpu->accumulator);
     LoadA16(cpu, cpu->y);
     And16(cpu, 0x00f0u);
     AslA16(cpu);
     AslA16(cpu);
     AslA16(cpu);
-    Write16Direct(memory, cpu, 0x24u, cpu->accumulator);
+    Write16Direct(memory, cpu, STREAM_BUFFER_ROW, cpu->accumulator);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x22u));
-    Write16Direct(memory, cpu, 0x2du, cpu->accumulator);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x838ff0u, cpu->x)));
-    Write16Direct(memory, cpu, 0x2au, cpu->accumulator);
+    Add16Value(cpu, Read16Direct(memory, cpu, STREAM_BUFFER_COLUMN));
+    Write16Direct(memory, cpu, STREAM_BUFFER_OFFSET, cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(LAYER_BUFFER_TABLE, cpu->x)));
+    Write16Direct(memory, cpu, STREAM_BUFFER, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x28u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, STREAM_COLUMN_TILES_LEFT)));
     Write8(memory, SNES_WRMPYA, A8(cpu));
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x83u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, STREAM_LAYER_WIDTH)));
     Write8(memory, SNES_WRMPYB, A8(cpu));
     LoadA8(cpu, 0x7eu);
-    Write8(memory, DirectAddress(cpu, 0x2cu), A8(cpu));
+    Write8(memory, DirectAddress(cpu, STREAM_BUFFER_BANK), A8(cpu));
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_LAYER_CELL_BASE & 0xffffu), cpu->x));
-    Write16Direct(memory, cpu, 0x8du, cpu->accumulator);
+    Write16Direct(memory, cpu, STREAM_CELL_BASE, cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, SNES_RDMPYL));
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x26u));
+    Add16Value(cpu, Read16Direct(memory, cpu, STREAM_ROW_TILES_LEFT));
     AslA16(cpu);
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x8du));
-    Write16Direct(memory, cpu, 0x30u, cpu->accumulator);
+    Add16Value(cpu, Read16Direct(memory, cpu, STREAM_CELL_BASE));
+    Write16Direct(memory, cpu, STREAM_CELL_ADDRESS, cpu->accumulator);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_METATILE_BASE & 0xffffu), 0));
-    Write16Direct(memory, cpu, 0x65u, cpu->accumulator);
+    Write16Direct(memory, cpu, STREAM_METATILE_BASE, cpu->accumulator);
     Compare16(cpu, cpu->x, 0x0004u);
     if (cpu->carry) {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_ALTERNATE_METATILE_BASE & 0xffffu), 0));
-        Write16Direct(memory, cpu, 0x65u, cpu->accumulator);
+        Write16Direct(memory, cpu, STREAM_METATILE_BASE, cpu->accumulator);
     }
     cpu->carry = 0;
     SimulateRtsFrame(memory, cpu);
@@ -389,16 +426,16 @@ static void StreamCellIndex(
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     SetAccumulatorWidth(cpu, 1);                               /* F6AA */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x89u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, STREAM_CELL_Y)));
     Write8(memory, SNES_WRMPYA, A8(cpu));
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x83u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, STREAM_LAYER_WIDTH)));
     Write8(memory, SNES_WRMPYB, A8(cpu));
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x87u));
+    LoadA16(cpu, Read16Direct(memory, cpu, STREAM_CELL_X));
     cpu->carry = 0;
     Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));
     AslA16(cpu);
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x8du));
+    Add16Value(cpu, Read16Direct(memory, cpu, STREAM_CELL_BASE));
     TransferAToX(cpu);
     SimulateRtsFrame(memory, cpu);
 }
@@ -408,33 +445,37 @@ static void StreamMetatile(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
-    And16(cpu, 0x3000u);
-    Compare16(cpu, cpu->accumulator, 0x3000u);
+    And16(cpu, STREAM_CELL_SHARED_FLAGS);
+    Compare16(cpu, cpu->accumulator, STREAM_CELL_SHARED_FLAGS);
     if (cpu->zero)
         LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_LAYER_CELL_BASE & 0xffffu), 0));
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
-    And16(cpu, 0x03ffu);
+    And16(cpu, STREAM_CELL_METATILE_MASK);
     AslA16(cpu);
     AslA16(cpu);
     AslA16(cpu);
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x65u));
+    Add16Value(cpu, Read16Direct(memory, cpu, STREAM_METATILE_BASE));
     TransferAToX(cpu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
-    Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x2au), cpu->accumulator);
+    Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_BUFFER),
+                cpu->accumulator);
     IncrementY16(cpu);
     IncrementY16(cpu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0004u, cpu->x));
-    Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x2au), cpu->accumulator);
+    Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_BUFFER),
+                cpu->accumulator);
     LoadA16(cpu, cpu->y);
     cpu->carry = 0;
     Add16Value(cpu, 0x003eu);
     TransferAToY(cpu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0002u, cpu->x));
-    Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x2au), cpu->accumulator);
+    Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_BUFFER),
+                cpu->accumulator);
     IncrementY16(cpu);
     IncrementY16(cpu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0006u, cpu->x));
-    Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x2au), cpu->accumulator);
+    Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_BUFFER),
+                cpu->accumulator);
 }
 
 /* Advance a wrapped map coordinate; refresh X on wrap. */
@@ -462,22 +503,22 @@ static void StreamColumnTiles(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadA16(cpu, 0x0010u);                                     /* F5ED */
-    Write16Direct(memory, cpu, 0x28u, cpu->accumulator);
+    LoadA16(cpu, STREAM_RUN_LENGTH); /* F5ED */
+    Write16Direct(memory, cpu, STREAM_COLUMN_TILES_LEFT, cpu->accumulator);
     do {
         PushIndex(memory, cpu);                                /* F5F2 */
         StreamMetatile(memory, cpu);
         LoadA16(cpu, cpu->y);                                  /* F62B */
         cpu->carry = 0;
-        Add16Value(cpu, 0x003eu);
-        And16(cpu, 0x07ffu);
+        Add16Value(cpu, STREAM_TILE_ROW_STEP);
+        And16(cpu, STREAM_BUFFER_MASK);
         TransferAToY(cpu);
         PullAccumulator16(memory, cpu);
         cpu->carry = 0;
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x8bu));
+        Add16Value(cpu, Read16Direct(memory, cpu, STREAM_MAP_ROW_BYTES));
         TransferAToX(cpu);
-        StreamStep(memory, cpu, 0x89u, 0x85u, 0xf648u);
-        OpStepMem(memory, cpu, OpDp(cpu, 0x28u), -1);         /* F649 */
+        StreamStep(memory, cpu, STREAM_CELL_Y, STREAM_LAYER_HEIGHT, 0xf648u);
+        OpStepMem(memory, cpu, OpDp(cpu, STREAM_COLUMN_TILES_LEFT), -1); /* F649 */
     } while (!cpu->zero);
     SimulateRtsFrame(memory, cpu);
 }
@@ -488,7 +529,7 @@ static void StreamRowTiles(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    Write16Direct(memory, cpu, 0x26u, cpu->accumulator);       /* F64E */
+    Write16Direct(memory, cpu, STREAM_ROW_TILES_LEFT, cpu->accumulator); /* F64E */
     do {
         PushIndex(memory, cpu);                                /* F650 */
         StreamMetatile(memory, cpu);
@@ -496,11 +537,11 @@ static void StreamRowTiles(
         IncrementX16(cpu);
         IncrementX16(cpu);
         LoadA16(cpu, cpu->y);
-        Subtract16(cpu, 0x003eu);
-        And16(cpu, 0x07ffu);
+        Subtract16(cpu, STREAM_TILE_ROW_STEP);
+        And16(cpu, STREAM_BUFFER_MASK);
         TransferAToY(cpu);
-        StreamStep(memory, cpu, 0x87u, 0x83u, 0xf6a4u);
-        OpStepMem(memory, cpu, OpDp(cpu, 0x26u), -1);         /* F6A5 */
+        StreamStep(memory, cpu, STREAM_CELL_X, STREAM_LAYER_WIDTH, 0xf6a4u);
+        OpStepMem(memory, cpu, OpDp(cpu, STREAM_ROW_TILES_LEFT), -1); /* F6A5 */
     } while (!cpu->zero);
     SimulateRtsFrame(memory, cpu);
 }
@@ -517,7 +558,7 @@ static void StreamEnter(
     PullDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
-    LoadXDirect(memory, cpu, 0x5du);
+    LoadXDirect(memory, cpu, STREAM_LAYER);
 }
 
 /* $80:F4FD/F518: stream a column at the right/left edge. */
@@ -535,31 +576,34 @@ static void StreamColumn(
     }
     StreamLocate(memory, cpu, 0xf52fu);                        /* F52D */
     PushIndex(memory, cpu);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x83u));
+    LoadA16(cpu, Read16Direct(memory, cpu, STREAM_LAYER_WIDTH));
     AslA16(cpu);
-    Write16Direct(memory, cpu, 0x8bu, cpu->accumulator);
-    LoadXDirect(memory, cpu, 0x30u);
-    LoadYDirect16(memory, cpu, 0x2du);
+    Write16Direct(memory, cpu, STREAM_MAP_ROW_BYTES, cpu->accumulator);
+    LoadXDirect(memory, cpu, STREAM_CELL_ADDRESS);
+    LoadYDirect16(memory, cpu, STREAM_BUFFER_OFFSET);
     StreamColumnTiles(memory, cpu, 0xf53cu);
     cpu->x = PullIndexValue(memory, cpu);                      /* F53D */
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x22u));
+    LoadA16(cpu, Read16Direct(memory, cpu, STREAM_BUFFER_COLUMN));
     TransferAToY(cpu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x2au));
-    Write16Direct(memory, cpu, 0x2du, cpu->accumulator);
-    StoreXDirect16(memory, cpu, 0x30u);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80f581u, cpu->x)));
-    Write16Long(memory, LongIndexedAddress(0x001236u, cpu->x), cpu->accumulator);
+    Add16Value(cpu, Read16Direct(memory, cpu, STREAM_BUFFER));
+    Write16Direct(memory, cpu, STREAM_BUFFER_OFFSET, cpu->accumulator);
+    StoreXDirect16(memory, cpu, STREAM_CELL_ADDRESS);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(COLUMN_STAGING_TABLE, cpu->x)));
+    Write16Long(memory, LongIndexedAddress(WRAM_FIELD_STREAMED_COLUMN_SOURCE, cpu->x),
+                cpu->accumulator);
     TransferAToX(cpu);
     LoadA16(cpu, 0x0020u);
-    Write16Direct(memory, cpu, 0x22u, cpu->accumulator);
+    Write16Direct(memory, cpu, STREAM_BUFFER_COLUMN, cpu->accumulator);
     do {
-        LoadA16(cpu, Read16Long(memory, DirectLongIndirectY(memory, cpu, 0x2au)));
+        LoadA16(cpu,
+                Read16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_BUFFER)));
         Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x0000u, cpu->x),
             cpu->accumulator);
         IncrementY16(cpu);
         IncrementY16(cpu);
-        LoadA16(cpu, Read16Long(memory, DirectLongIndirectY(memory, cpu, 0x2au)));
+        LoadA16(cpu,
+                Read16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_BUFFER)));
         Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x0040u, cpu->x),
             cpu->accumulator);
         LoadA16(cpu, cpu->y);
@@ -568,13 +612,15 @@ static void StreamColumn(
         TransferAToY(cpu);
         IncrementX16(cpu);
         IncrementX16(cpu);
-        OpStepMem(memory, cpu, OpDp(cpu, 0x22u), -1);
+        OpStepMem(memory, cpu, OpDp(cpu, STREAM_BUFFER_COLUMN), -1);
     } while (!cpu->zero);
-    LoadXDirect(memory, cpu, 0x30u);                           /* F56E */
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x2du));
-    Write16Long(memory, LongIndexedAddress(0x001246u, cpu->x), cpu->accumulator);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80f581u, cpu->x)));
-    Write16Long(memory, LongIndexedAddress(0x001236u, cpu->x), cpu->accumulator);
+    LoadXDirect(memory, cpu, STREAM_CELL_ADDRESS); /* F56E */
+    LoadA16(cpu, Read16Direct(memory, cpu, STREAM_BUFFER_OFFSET));
+    Write16Long(memory, LongIndexedAddress(WRAM_FIELD_STREAMED_COLUMN_VRAM, cpu->x),
+                cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(COLUMN_STAGING_TABLE, cpu->x)));
+    Write16Long(memory, LongIndexedAddress(WRAM_FIELD_STREAMED_COLUMN_SOURCE, cpu->x),
+                cpu->accumulator);
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
@@ -597,26 +643,28 @@ static void StreamRow(
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_X, cpu->x)));
     StreamLocate(memory, cpu, 0xf5c0u);
     LoadA16(cpu, 0x0040u);                                     /* F5C1 */
-    Subtract16(cpu, Read16Direct(memory, cpu, 0x22u));
+    Subtract16(cpu, Read16Direct(memory, cpu, STREAM_BUFFER_COLUMN));
     LsrA16(cpu);
     LsrA16(cpu);
-    LoadXDirect(memory, cpu, 0x30u);
-    LoadYDirect16(memory, cpu, 0x2du);
+    LoadXDirect(memory, cpu, STREAM_CELL_ADDRESS);
+    LoadYDirect16(memory, cpu, STREAM_BUFFER_OFFSET);
     StreamRowTiles(memory, cpu, 0xf5cfu);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x22u));            /* F5D0 */
+    LoadA16(cpu, Read16Direct(memory, cpu, STREAM_BUFFER_COLUMN)); /* F5D0 */
     LsrA16(cpu);
     LsrA16(cpu);
     if (!cpu->zero) {
         /* X continues from the first run. */
-        LoadYDirect16(memory, cpu, 0x24u);
+        LoadYDirect16(memory, cpu, STREAM_BUFFER_ROW);
         StreamRowTiles(memory, cpu, 0xf5dau);
     }
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x24u));            /* F5DB */
+    LoadA16(cpu, Read16Direct(memory, cpu, STREAM_BUFFER_ROW)); /* F5DB */
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x2au));
-    LoadXDirect(memory, cpu, 0x5du);
-    Write16Long(memory, LongIndexedAddress(0x00122eu, cpu->x), cpu->accumulator);
-    Write16Long(memory, LongIndexedAddress(0x00123eu, cpu->x), cpu->accumulator);
+    Add16Value(cpu, Read16Direct(memory, cpu, STREAM_BUFFER));
+    LoadXDirect(memory, cpu, STREAM_LAYER);
+    Write16Long(memory, LongIndexedAddress(WRAM_FIELD_STREAMED_ROW_SOURCE, cpu->x),
+                cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_FIELD_STREAMED_ROW_VRAM, cpu->x),
+                cpu->accumulator);
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
@@ -651,62 +699,67 @@ static void StreamRowBuffers(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadA16(cpu, 0x0010u);                                     /* F6C6 */
-    Write16Direct(memory, cpu, 0x26u, cpu->accumulator);
+    LoadA16(cpu, STREAM_RUN_LENGTH); /* F6C6 */
+    Write16Direct(memory, cpu, STREAM_ROW_TILES_LEFT, cpu->accumulator);
     LoadA16(cpu, cpu->y);
     And16(cpu, 0xffc0u);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x2au));
-    Write16Direct(memory, cpu, 0x5du, cpu->accumulator);
+    Add16Value(cpu, Read16Direct(memory, cpu, STREAM_BUFFER));
+    Write16Direct(memory, cpu, STREAM_ROW_POINTER, cpu->accumulator);
     cpu->carry = 0;
     Add16Value(cpu, 0x0040u);
-    Write16Direct(memory, cpu, 0x60u, cpu->accumulator);
+    Write16Direct(memory, cpu, STREAM_ROW_POINTER_NEXT, cpu->accumulator);
     LoadA16(cpu, cpu->y);
     And16(cpu, 0x003fu);
     TransferAToY(cpu);
     do {
         PushIndex(memory, cpu);                                /* F6DF */
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
-        And16(cpu, 0x3000u);
-        Compare16(cpu, cpu->accumulator, 0x3000u);
+        And16(cpu, STREAM_CELL_SHARED_FLAGS);
+        Compare16(cpu, cpu->accumulator, STREAM_CELL_SHARED_FLAGS);
         if (cpu->zero)
             LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_LAYER_CELL_BASE & 0xffffu), 0));
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
-        And16(cpu, 0x03ffu);
+        And16(cpu, STREAM_CELL_METATILE_MASK);
         AslA16(cpu);
         AslA16(cpu);
         AslA16(cpu);
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x65u));
+        Add16Value(cpu, Read16Direct(memory, cpu, STREAM_METATILE_BASE));
         TransferAToX(cpu);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
-        Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x5du), cpu->accumulator);
+        Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_ROW_POINTER),
+                    cpu->accumulator);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0002u, cpu->x));
-        Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x60u), cpu->accumulator);
+        Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_ROW_POINTER_NEXT),
+                    cpu->accumulator);
         LoadA16(cpu, (uint16_t)(cpu->y + 2u));
         And16(cpu, 0x003fu);
         TransferAToY(cpu);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0004u, cpu->x));
-        Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x5du), cpu->accumulator);
+        Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_ROW_POINTER),
+                    cpu->accumulator);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0006u, cpu->x));
-        Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x60u), cpu->accumulator);
+        Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_ROW_POINTER_NEXT),
+                    cpu->accumulator);
         cpu->x = PullIndexValue(memory, cpu);                  /* F715 */
         LoadA16(cpu, (uint16_t)(cpu->y + 2u));
         And16(cpu, 0x003fu);
         TransferAToY(cpu);
         IncrementX16(cpu);
         IncrementX16(cpu);
-        LoadA16(cpu, (uint16_t)(Read16Direct(memory, cpu, 0x87u) + 1u));
-        Write16Direct(memory, cpu, 0x87u, cpu->accumulator);
+        LoadA16(cpu, (uint16_t)(Read16Direct(memory, cpu, STREAM_CELL_X) + 1u));
+        Write16Direct(memory, cpu, STREAM_CELL_X, cpu->accumulator);
         if (cpu->zero) {
             StreamCellIndex(memory, cpu, 0xf72eu);
         } else {
-            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x83u));
+            Compare16(cpu, cpu->accumulator,
+                      Read16Direct(memory, cpu, STREAM_LAYER_WIDTH));
             if (cpu->carry) {
-                Write16Direct(memory, cpu, 0x87u, 0x0000u);
+                Write16Direct(memory, cpu, STREAM_CELL_X, 0x0000u);
                 StreamCellIndex(memory, cpu, 0xf72eu);         /* F72C */
             }
         }
-        OpStepMem(memory, cpu, OpDp(cpu, 0x26u), -1);         /* F72F */
+        OpStepMem(memory, cpu, OpDp(cpu, STREAM_ROW_TILES_LEFT), -1); /* F72F */
     } while (!cpu->zero);
     SimulateRtsFrame(memory, cpu);
 }
@@ -726,21 +779,23 @@ static void RedrawLayerBody(
     if (!cpu->zero) {
         SetAccumulatorWidth(cpu, 0);                           /* F487 */
         SetIndexWidth(cpu, 0);
-        StoreXDirect16(memory, cpu, 0x15u);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80f4edu, cpu->x)));
+        StoreXDirect16(memory, cpu, REDRAW_LAYER);
+        LoadA16(cpu,
+                Read16Long(memory, LongIndexedAddress(REDRAW_X_SLOT_TABLE, cpu->x)));
         TransferAToY(cpu);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
         cpu->carry = 0;
         Add16Value(cpu, 0x0008u);
         Write16Absolute(memory, cpu, (uint16_t)(0x0594u + cpu->y), cpu->accumulator);
         And16(cpu, 0xfff0u);
-        Write16Direct(memory, cpu, 0x11u, cpu->accumulator);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80f4f5u, cpu->x)));
+        Write16Direct(memory, cpu, REDRAW_X, cpu->accumulator);
+        LoadA16(cpu,
+                Read16Long(memory, LongIndexedAddress(REDRAW_Y_SLOT_TABLE, cpu->x)));
         TransferAToY(cpu);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_Y, cpu->x));
         Write16Absolute(memory, cpu, (uint16_t)(0x0596u + cpu->y), cpu->accumulator);
         And16(cpu, 0xfff0u);
-        Write16Direct(memory, cpu, 0x13u, cpu->accumulator);
+        Write16Direct(memory, cpu, REDRAW_Y, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);                           /* F4AF */
         LoadA8(cpu, 0x7eu);
         Write8(memory, DirectAddress(cpu, 0x5fu), A8(cpu));
@@ -752,22 +807,22 @@ static void RedrawLayerBody(
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_LAYER_WIDTH & 0xffffu), cpu->x));
         AslA16(cpu);
         Subtract16(cpu, 0x0020u);
-        Write16Direct(memory, cpu, 0x28u, cpu->accumulator);
+        Write16Direct(memory, cpu, STREAM_COLUMN_TILES_LEFT, cpu->accumulator);
         LoadA16(cpu, 0x0010u);
-        Write16Direct(memory, cpu, 0x17u, cpu->accumulator);
+        Write16Direct(memory, cpu, REDRAW_ROWS_LEFT, cpu->accumulator);
         do {
-            LoadA16(cpu, Read16Direct(memory, cpu, 0x13u));    /* F4CC */
+            LoadA16(cpu, Read16Direct(memory, cpu, REDRAW_Y)); /* F4CC */
             TransferAToY(cpu);
             cpu->carry = 0;
             Add16Value(cpu, 0x0010u);
-            Write16Direct(memory, cpu, 0x13u, cpu->accumulator);
-            LoadXDirect(memory, cpu, 0x15u);
-            LoadA16(cpu, Read16Direct(memory, cpu, 0x11u));
+            Write16Direct(memory, cpu, REDRAW_Y, cpu->accumulator);
+            LoadXDirect(memory, cpu, REDRAW_LAYER);
+            LoadA16(cpu, Read16Direct(memory, cpu, REDRAW_X));
             StreamLocate(memory, cpu, 0xf4dbu);
-            LoadXDirect(memory, cpu, 0x30u);
-            LoadY16(cpu, Read16Direct(memory, cpu, 0x2du));
+            LoadXDirect(memory, cpu, STREAM_CELL_ADDRESS);
+            LoadY16(cpu, Read16Direct(memory, cpu, STREAM_BUFFER_OFFSET));
             StreamRowBuffers(memory, cpu, 0xf4e2u);
-            OpStepMem(memory, cpu, OpDp(cpu, 0x17u), -1);
+            OpStepMem(memory, cpu, OpDp(cpu, REDRAW_ROWS_LEFT), -1);
         } while (!cpu->zero);
     }
     UnpackStatus(cpu, Pull8(memory, cpu));                     /* F4E7 */
@@ -1270,7 +1325,7 @@ void Lufia2FieldRedrawRegion(
     AslA16(cpu);
     Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x838ff0u, cpu->x)));
+    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(LAYER_BUFFER_TABLE, cpu->x)));
     Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_LAYER_CELL_BASE & 0xffffu), cpu->x));
     Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
@@ -1481,7 +1536,7 @@ Lufia2ExecutionResult Lufia2FieldScrollUpdate(
             if (!ScrollLayerMode(memory, cpu))
                 return ScrollBoundary(result, cpu, 0x8ebdd7u);
             ++result.dispatches;
-            LoadXDirect(memory, cpu, 0x5du);                   /* BDDA */
+            LoadXDirect(memory, cpu, STREAM_LAYER); /* BDDA */
             LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
             And16(cpu, 0x000fu);
             if (cpu->zero) {
@@ -1501,7 +1556,7 @@ Lufia2ExecutionResult Lufia2FieldScrollUpdate(
                         ScrollStream(memory, cpu, 0xbdf8u, 0xf518u); /* BDF5 */
                 }
             }
-            LoadXDirect(memory, cpu, 0x5du);                   /* BDFF */
+            LoadXDirect(memory, cpu, STREAM_LAYER); /* BDFF */
             LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
             Write16Absolute(memory, cpu,
                 (uint16_t)(WRAM_FIELD_LAYER_SCROLL_X + cpu->x), cpu->accumulator);
@@ -1546,7 +1601,7 @@ Lufia2ExecutionResult Lufia2FieldScrollUpdate(
                         ScrollStream(memory, cpu, 0xbe4au, 0xf5a2u); /* BE47 */
                 }
             }
-            LoadXDirect(memory, cpu, 0x5du);                   /* BE4B */
+            LoadXDirect(memory, cpu, STREAM_LAYER); /* BE4B */
             LoadA16(cpu, Read16Direct(memory, cpu, 0x5au));
             Write16Absolute(memory, cpu,
                 (uint16_t)(WRAM_FIELD_LAYER_SCROLL_Y + cpu->x), cpu->accumulator);
