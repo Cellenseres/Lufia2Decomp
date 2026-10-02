@@ -221,6 +221,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:8AF7` | `Lufia2FieldObjectBitIndex` | verified | `src/field/field_object_bits.c` |
 | `$83:8B40` | `Lufia2FieldLoadObjectRecord` | verified | `src/field/field_object_transitions.c` |
 | `$83:8B6A` | `Lufia2FieldCopyObjectTiles` | verified | `src/field/field_object_copy.c` |
+| `$83:8D42` | `Lufia2FieldSetupLayerScroll` | verified | `src/field/field_layer_scroll.c` |
+| `$83:8DDA` | `Lufia2FieldPrepareLayerScrollX` | verified | `src/field/field_layer_scale.c` |
+| `$83:8DF0` | `Lufia2FieldPrepareLayerScrollY` | verified | `src/field/field_layer_scale.c` |
+| `$83:8E01` | `Lufia2FieldLayerScaleMode` | verified | `src/field/field_layer_scale.c` |
+| `$83:8E09` | `Lufia2FieldScaleCoordinateRight` | verified | `src/field/field_layer_scale.c` |
+| `$83:8E1A` | `Lufia2FieldScaleCoordinateLeft` | verified | `src/field/field_layer_scale.c` |
+| `$83:8E2B` | `Lufia2FieldPrepareCoordinateScale` | verified | `src/field/field_layer_scale.c` |
 | `$83:8E66` | `Lufia2FieldRedrawAllLayers` | verified | `src/field/field_scroll.c` |
 | `$83:8E85` | `Lufia2FieldRenderRegion` | verified | `src/field/field_scroll.c` |
 | `$83:9000` | `Lufia2FieldPixelCellCeiling` | verified | `src/field/field_scroll.c` |

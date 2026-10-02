@@ -244,6 +244,30 @@ Lufia2ExecutionResult Lufia2FieldObjectAttributeCell(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 
+/* $83:8D42 sets pixel scroll and the overlapping coarse cache; preserves M/X. */
+Lufia2ExecutionResult Lufia2FieldSetupLayerScroll(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Layer coordinate scaling; X16, the scale calls change M1 to M0. */
+Lufia2ExecutionResult Lufia2FieldLayerScaleMode(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldPrepareCoordinateScale(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldScaleCoordinateRight(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldScaleCoordinateLeft(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* X prepares either M width; Y enters M0. Both return M1. */
+Lufia2ExecutionResult Lufia2FieldPrepareLayerScrollX(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldPrepareLayerScrollY(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* Object state bits; M1/X16, index and ROM mask retain the direct page. */
 Lufia2ExecutionResult Lufia2FieldObjectBitIndex(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);

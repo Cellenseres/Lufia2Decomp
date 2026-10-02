@@ -17,17 +17,17 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-339 functions in `metadata/functions.toml`: 339 verified, 0 draft, 0 identified, 0 disabled.
+346 functions in `metadata/functions.toml`: 346 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
 
 ## Current checkpoint
 
-The full Windows Release verifier passes **461 independent jobs**. The normal
-application build also passes. The consumer selects 337 of 339 verified
+The full Windows Release verifier passes **467 independent jobs**. The normal
+application build also passes. The consumer selects 344 of 346 verified
 functions; song-load and fade-out await the consumer MSU migration commit
-before binding. The generated CFG contains 1,456 nodes, and every prior native
+before binding. The generated CFG contains 1,451 nodes, and every prior native
 entry remains covered.
 
 Verification uses the original ROM interpreter as the reference. It checks CPU
@@ -35,6 +35,21 @@ state, complete WRAM and, where needed, the order of memory and register writes.
 Tests also force child calls to unwind and inject deliberate mistakes to check
 that the comparisons can detect them. Detailed run logs belong in the consumer's
 worklog rather than this status page.
+
+## Layer scroll and coordinate scaling
+
+`$83:8D42` sets the four layer scrolls, including centered coordinates, zero
+scroll and signed scaling. Its six helpers at `$83:8DDA`, `$83:8DF0`,
+`$83:8E01`, `$83:8E2B`, `$83:8E09` and `$83:8E1A` retain ROM-backed shift
+lookup, register-width changes and original arithmetic. Disabled layers still
+update the coarse cache; its X and Y words overlap in the original memory.
+
+2,067,760 original-ROM and native cases pass without a positive entry fallback.
+The checks compare CPU state, full WRAM, every data read and write, and mutable
+hardware state. They include all caller M/X combinations, 3,396 exact shift
+continuations, 64 changed child returns and overwritten saved status and bank.
+All 9,600 unsupported entries and 52 injected faults are detected. The complete
+parent and six helpers are selected together, retaining compiled caller coverage.
 
 ## Object state bits
 
