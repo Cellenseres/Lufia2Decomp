@@ -335,6 +335,11 @@ Lufia2ExecutionResult Lufia2FieldQueueObjectRedraw(
 Lufia2ExecutionResult Lufia2FieldCopyObjectTiles(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $83:B76E applies a map rectangle destination; PB83/M1X16, binary. */
+Lufia2ExecutionResult Lufia2FieldApplyAreaTransition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $80:ED9C map cell attributes of map A; M=1. */
 Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     const Lufia2Memory *memory,

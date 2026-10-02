@@ -252,6 +252,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:B66E` | `Lufia2FieldStairRects` | verified | `src/field/field_triggers.c` |
 | `$83:B711` | `Lufia2FieldEventRects` | verified | `src/field/field_triggers.c` |
 | `$83:B747` | `Lufia2FieldAreaRects` | verified | `src/field/field_triggers.c` |
+| `$83:B76E` | `Lufia2FieldApplyAreaTransition` | verified | `src/field/field_area_transition.c` |
 | `$83:BB93` | `Lufia2UpdateActorSlots` | verified | `src/actor/actor_slots.c` |
 | `$83:BBF3` | `Lufia2PlayerSlotSpecialUpdate` | verified | `src/actor/player_update.c` |
 | `$83:C1B4` | `Lufia2PlayerSlotStandardUpdate` | verified | `src/actor/player_controller.c` |

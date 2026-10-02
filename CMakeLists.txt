@@ -101,6 +101,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_event_objects.c
     src/field/field_event_script.c
     src/field/field_nmi.c
+    src/field/field_area_transition.c
     src/field/field_map_load.c
     src/field/field_map_install.c
     src/field/field_object_graphics.c

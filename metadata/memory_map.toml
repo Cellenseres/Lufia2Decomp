@@ -1355,3 +1355,35 @@ width = 1
 count = 1
 owner = "field"
 notes = "84:8B9C stores F0 on Cave restart; the later consumer is not yet reconstructed."
+
+[[location]]
+address = "7E:05AE"
+name = "field_destination_map"
+width = 1
+count = 1
+owner = "field"
+notes = "83:B76E selects the current map or rectangle byte8;83:803D swaps this word with the current map before reload."
+
+[[location]]
+address = "7E:05B0"
+name = "field_destination_x"
+width = 1
+count = 1
+owner = "field"
+notes = "Rectangle byte6 from83:B76E;83:B2C4 copies it to leader X on the coordinate entry path."
+
+[[location]]
+address = "7E:05B1"
+name = "field_destination_y"
+width = 1
+count = 1
+owner = "field"
+notes = "Rectangle byte7 from83:B76E;83:B2CA copies it to leader Y on the coordinate entry path."
+
+[[location]]
+address = "7E:05B2"
+name = "field_destination_parameters"
+width = 1
+count = 1
+owner = "field"
+notes = "83:B76E copies rectangle byte5; its low nibble selects the transition type and F in the high nibble inherits066A shifted left4."
