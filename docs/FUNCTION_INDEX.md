@@ -377,6 +377,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:A894` | `Lufia2WorldMapPlane` | draft | `src/world/world_map_plane.c` |
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
+| `$86:E287` | `Lufia2WorldMapTestObjects` | draft | `src/world/world_map_objects.c` |
+| `$86:E295` | `Lufia2WorldMapTestObject` | draft | `src/world/world_map_objects.c` |
+| `$86:E640` | `Lufia2WorldMapClearSlotFlags` | draft | `src/world/world_map_objects.c` |
+| `$86:E650` | `Lufia2WorldMapClearSprites` | draft | `src/world/world_map_objects.c` |
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |
