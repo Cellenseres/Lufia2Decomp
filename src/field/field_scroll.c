@@ -46,6 +46,51 @@ enum {
     REDRAW_Y_SLOT_TABLE = 0x80f4f5u,
 };
 
+/* Layer scroll ($8E:BD77). A layer's section byte, times two, selects one of
+ * five modes. $54/$56 hold the layer's scroll before the mode runs and
+ * $58/$5A the scroll it asks for; $4E is a shift count. */
+enum {
+    SCROLL_CURRENT_X = 0x54u,
+    SCROLL_CURRENT_Y = 0x56u,
+    SCROLL_TARGET_X = 0x58u,
+    SCROLL_TARGET_Y = 0x5au,
+    SCROLL_SHIFT_COUNT = 0x4eu,
+    SCROLL_MODE_FOLLOW = 0,   /* chase the camera, or scripted per-layer targets */
+    SCROLL_MODE_NONE = 2,     /* the layer does not move */
+    SCROLL_MODE_PARALLAX = 4, /* camera shifted right by the layer's nibbles */
+    SCROLL_MODE_WRAP = 6,     /* fixed offsets, wrapped by the layer size */
+    SCROLL_MODE_SCALED = 8,   /* camera shifted left by the layer's nibbles */
+    SCROLL_LAYER_HIGH_NIBBLE = 0x00f0u, /* of the byte after the section byte */
+    SCROLL_LAYER_LOW_NIBBLE = 0x000fu,
+    SCROLL_SHIFT_MASK = 0x00ffu,
+    SCROLL_WRAP_MASK = 0x7fffu,
+    SCROLL_HALF_SCREEN_WIDTH = 0x0080u,
+    SCROLL_HALF_SCREEN_HEIGHT = 0x0070u,
+    SCROLL_CELL_PHASE_MASK = 0x000fu,   /* position inside a 16 pixel cell */
+    SCROLL_CELL_BOUNDARY_BIT = 0x0010u, /* changes when a cell boundary is crossed */
+    SCROLL_MAX_STEP = 0x0100u,
+    SCROLL_REGISTER_BIAS = 0x0008u,
+    SCREEN_EFFECT_SCRIPTED_CAMERA = 0x08u,   /* byte of WRAM_SCREEN_EFFECTS */
+    SCREEN_EFFECT_SCRIPTED_LAYERS = 0x0040u, /* word of WRAM_SCREEN_EFFECTS */
+    WRAM_SCROLL_SPEED = 0x05a8u,             /* per layer; zero snaps to the camera */
+    SCROLL_REGISTER_X = 0x0594u, /* scroll register pairs, indexed by slot */
+    SCROLL_REGISTER_Y = 0x0596u,
+    SCROLL_SHIFT_TABLE = 0x8ebf93u,
+    SCROLL_WRAP_TABLE = 0x8ec04du,
+    SCROLL_SCRIPTED_CAMERA_X = 0x7fd08bu,
+    SCROLL_SCRIPTED_CAMERA_Y = 0x7fd08du,
+    SCROLL_SCREEN_OFFSET_X = 0x7fd081u, /* added to the published scroll */
+    SCROLL_SCREEN_OFFSET_Y = 0x7fd083u,
+    FOLLOW_TARGET_X = 0x7fd0ceu, /* per layer, with the speeds below */
+    FOLLOW_TARGET_Y = 0x7fd0d6u,
+    FOLLOW_SPEED_X = 0x7fd0deu,
+    FOLLOW_SPEED_Y = 0x7fd0e6u,
+    ROM_STREAM_RIGHT_COLUMN = 0xf4fdu,
+    ROM_STREAM_LEFT_COLUMN = 0xf518u,
+    ROM_STREAM_TOP_ROW = 0xf589u,
+    ROM_STREAM_BOTTOM_ROW = 0xf5a2u,
+};
+
 /* $8E:BF88: shift count from $8E:BF93 into $4E. */
 static void ScrollShiftCount(
     const Lufia2Memory *memory,
@@ -53,9 +98,9 @@ static void ScrollShiftCount(
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     TransferAToX(cpu);                                         /* BF88 */
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x8ebf93u, cpu->x)));
-    And16(cpu, 0x00ffu);
-    Write16Direct(memory, cpu, 0x4eu, cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(SCROLL_SHIFT_TABLE, cpu->x)));
+    And16(cpu, SCROLL_SHIFT_MASK);
+    Write16Direct(memory, cpu, SCROLL_SHIFT_COUNT, cpu->accumulator);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -65,7 +110,7 @@ static void ScrollShiftRight(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadY8(cpu, Read8(memory, DirectAddress(cpu, 0x4eu)));    /* BF70 */
+    LoadY8(cpu, Read8(memory, DirectAddress(cpu, SCROLL_SHIFT_COUNT))); /* BF70 */
     if (cpu->zero) {
         TransferDirectToA(cpu);                                /* BF85 */
         cpu->carry = 0;
@@ -91,7 +136,7 @@ static void ScrollShiftLeft(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadY8(cpu, Read8(memory, DirectAddress(cpu, 0x4eu)));    /* BFDE */
+    LoadY8(cpu, Read8(memory, DirectAddress(cpu, SCROLL_SHIFT_COUNT))); /* BFDE */
     while (!cpu->zero) {
         /* ORA/CLC/SEC before ASL are dead. */
         AslA16(cpu);                                           /* BFE9 */
@@ -124,47 +169,48 @@ static void ScrollModeFollow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_SCREEN_EFFECTS, 0)); /* BE78 */
-    cpu->zero = (cpu->accumulator & 0x0040u) == 0;
+    cpu->zero = (cpu->accumulator & SCREEN_EFFECT_SCRIPTED_LAYERS) == 0;
     if (!cpu->zero) {
         LoadXDirect(memory, cpu, STREAM_LAYER); /* BE80 */
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd0ceu, cpu->x)));
-        Write16Direct(memory, cpu, 0x58u, cpu->accumulator);
-        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(FOLLOW_TARGET_X, cpu->x)));
+        Write16Direct(memory, cpu, SCROLL_TARGET_X, cpu->accumulator);
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, SCROLL_CURRENT_X));
         if (!cpu->zero)
-            ScrollStepToward(memory, cpu, 0x54u, 0x58u,
-                LongIndexedAddress(0x7fd0deu, cpu->x));
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd0d6u, cpu->x)));
-        Write16Direct(memory, cpu, 0x5au, cpu->accumulator);   /* BEA2 */
-        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x56u));
+            ScrollStepToward(memory, cpu, SCROLL_CURRENT_X, SCROLL_TARGET_X,
+                             LongIndexedAddress(FOLLOW_SPEED_X, cpu->x));
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(FOLLOW_TARGET_Y, cpu->x)));
+        Write16Direct(memory, cpu, SCROLL_TARGET_Y, cpu->accumulator); /* BEA2 */
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, SCROLL_CURRENT_Y));
         if (!cpu->zero)
-            ScrollStepToward(memory, cpu, 0x56u, 0x5au,
-                LongIndexedAddress(0x7fd0e6u, cpu->x));
+            ScrollStepToward(memory, cpu, SCROLL_CURRENT_Y, SCROLL_TARGET_Y,
+                             LongIndexedAddress(FOLLOW_SPEED_Y, cpu->x));
         return;
     }
     LoadXDirect(memory, cpu, STREAM_LAYER); /* BEC4 */
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x05a8u, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_SCROLL_SPEED, 0));
     if (cpu->zero) {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, 0));
-        Write16Direct(memory, cpu, 0x58u, cpu->accumulator);
+        Write16Direct(memory, cpu, SCROLL_TARGET_X, cpu->accumulator);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, 0));
-        Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
+        Write16Direct(memory, cpu, SCROLL_TARGET_Y, cpu->accumulator);
     } else {
-        const uint32_t speed = AbsoluteIndexedAddress(cpu, 0x05a8u, 0);
+        const uint32_t speed = AbsoluteIndexedAddress(cpu, WRAM_SCROLL_SPEED, 0);
 
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, 0));
-        Write16Direct(memory, cpu, 0x58u, cpu->accumulator);   /* BED7 */
-        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+        Write16Direct(memory, cpu, SCROLL_TARGET_X, cpu->accumulator); /* BED7 */
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, SCROLL_CURRENT_X));
         if (!cpu->zero) {
-            ScrollStepToward(memory, cpu, 0x54u, 0x58u, speed);
+            ScrollStepToward(memory, cpu, SCROLL_CURRENT_X, SCROLL_TARGET_X, speed);
         } else {
             LoadA16(cpu,
                     Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, 0));
-            Write16Direct(memory, cpu, 0x5au, cpu->accumulator); /* BEF6 */
-            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x56u));
+            Write16Direct(memory, cpu, SCROLL_TARGET_Y, cpu->accumulator); /* BEF6 */
+            Compare16(cpu, cpu->accumulator,
+                      Read16Direct(memory, cpu, SCROLL_CURRENT_Y));
             if (!cpu->zero) {
                 const uint8_t down = cpu->negative;
 
-                ScrollStepToward(memory, cpu, 0x56u, 0x5au, speed);
+                ScrollStepToward(memory, cpu, SCROLL_CURRENT_Y, SCROLL_TARGET_Y, speed);
                 if (down)
                     return;                                    /* BF09 */
             }
@@ -172,14 +218,14 @@ static void ScrollModeFollow(
     }
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X,
                                        0)); /* BF12 */
-    Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+    Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, SCROLL_CURRENT_X));
     if (!cpu->zero)
         return;
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, 0));
-    Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x56u));
+    Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, SCROLL_CURRENT_Y));
     if (!cpu->zero)
         return;
-    Write16Absolute(memory, cpu, 0x05a8u, 0x0000u);
+    Write16Absolute(memory, cpu, WRAM_SCROLL_SPEED, 0x0000u);
 }
 
 /* $8E:BF25/BF9B tail: camera + $80 unless equal. */
@@ -189,7 +235,7 @@ static void ScrollOffsetTarget(
     uint8_t current,
     uint8_t out) {
     cpu->carry = 0;
-    Add16Value(cpu, 0x0080u);
+    Add16Value(cpu, SCROLL_HALF_SCREEN_WIDTH);
     Subtract16(cpu, Read16Direct(memory, cpu, current));
     if (cpu->zero)
         return;
@@ -206,13 +252,13 @@ static void ScrollLayerNibble(
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(
                                         (WRAM_FIELD_LAYER_SECTION_WORD + 1u), cpu->x)));
     if (high) {
-        And16(cpu, 0x00f0u);
+        And16(cpu, SCROLL_LAYER_HIGH_NIBBLE);
         LsrA16(cpu);
         LsrA16(cpu);
         LsrA16(cpu);
         LsrA16(cpu);
     } else {
-        And16(cpu, 0x000fu);
+        And16(cpu, SCROLL_LAYER_LOW_NIBBLE);
     }
 }
 
@@ -227,9 +273,9 @@ static void ScrollModeParallax(
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, 0));
         ScrollShiftRight(memory, cpu, 0xbf3cu);
         if (cpu->carry)
-            Write16Direct(memory, cpu, 0x58u, cpu->accumulator);
+            Write16Direct(memory, cpu, SCROLL_TARGET_X, cpu->accumulator);
         else
-            ScrollOffsetTarget(memory, cpu, 0x54u, 0x58u);
+            ScrollOffsetTarget(memory, cpu, SCROLL_CURRENT_X, SCROLL_TARGET_X);
     }
     LoadXDirect(memory, cpu, STREAM_LAYER); /* BF4D */
     ScrollLayerNibble(memory, cpu, 0);
@@ -237,9 +283,9 @@ static void ScrollModeParallax(
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, 0));
     ScrollShiftRight(memory, cpu, 0xbf5eu);
     if (cpu->carry)
-        Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
+        Write16Direct(memory, cpu, SCROLL_TARGET_Y, cpu->accumulator);
     else
-        ScrollOffsetTarget(memory, cpu, 0x56u, 0x5au);
+        ScrollOffsetTarget(memory, cpu, SCROLL_CURRENT_Y, SCROLL_TARGET_Y);
 }
 
 /* $8E:BF9B: camera shifted left. */
@@ -251,13 +297,13 @@ static void ScrollModeScaled(
     ScrollShiftCount(memory, cpu, 0xbfaau);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, 0));
     ScrollShiftLeft(memory, cpu, 0xbfb0u);
-    ScrollOffsetTarget(memory, cpu, 0x54u, 0x58u);
+    ScrollOffsetTarget(memory, cpu, SCROLL_CURRENT_X, SCROLL_TARGET_X);
     /* X still holds the high nibble. */
     ScrollLayerNibble(memory, cpu, 0);                         /* BFBF */
     ScrollShiftCount(memory, cpu, 0xbfc8u);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, 0));
     ScrollShiftLeft(memory, cpu, 0xbfceu);
-    ScrollOffsetTarget(memory, cpu, 0x56u, 0x5au);
+    ScrollOffsetTarget(memory, cpu, SCROLL_CURRENT_Y, SCROLL_TARGET_Y);
 }
 
 /* One axis of $8E:BFEE: offset, wrap at map size. */
@@ -268,10 +314,10 @@ static void ScrollWrapAxis(
     uint8_t out,
     uint32_t size) {
     TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x8ec04du, cpu->x)));
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(SCROLL_WRAP_TABLE, cpu->x)));
     cpu->carry = 0;
     Add16Value(cpu, Read16Direct(memory, cpu, current));
-    And16(cpu, 0x7fffu);
+    And16(cpu, SCROLL_WRAP_MASK);
     Write16Direct(memory, cpu, out, cpu->accumulator);
     LoadXDirect(memory, cpu, STREAM_LAYER);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(size, cpu->x)));
@@ -296,16 +342,18 @@ static void ScrollModeWrap(
     LoadXDirect(memory, cpu, STREAM_LAYER); /* BFEE */
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(
                                         (WRAM_FIELD_LAYER_SECTION_WORD + 1u), cpu->x)));
-    And16(cpu, 0x00f0u);
+    And16(cpu, SCROLL_LAYER_HIGH_NIBBLE);
     LsrA16(cpu);
     LsrA16(cpu);
     LsrA16(cpu);
-    ScrollWrapAxis(memory, cpu, 0x54u, 0x58u, WRAM_FIELD_LAYER_WIDTH);
+    ScrollWrapAxis(memory, cpu, SCROLL_CURRENT_X, SCROLL_TARGET_X,
+                   WRAM_FIELD_LAYER_WIDTH);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(
                                         (WRAM_FIELD_LAYER_SECTION_WORD + 1u), cpu->x)));
-    And16(cpu, 0x000fu);                                       /* C01F */
+    And16(cpu, SCROLL_LAYER_LOW_NIBBLE); /* C01F */
     AslA16(cpu);
-    ScrollWrapAxis(memory, cpu, 0x56u, 0x5au, WRAM_FIELD_LAYER_HEIGHT);
+    ScrollWrapAxis(memory, cpu, SCROLL_CURRENT_Y, SCROLL_TARGET_Y,
+                   WRAM_FIELD_LAYER_HEIGHT);
 }
 
 /* $80:F81C: divider settle delay; leaves M=0. */
@@ -796,15 +844,17 @@ static void RedrawLayerBody(
         TransferAToY(cpu);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
         cpu->carry = 0;
-        Add16Value(cpu, 0x0008u);
-        Write16Absolute(memory, cpu, (uint16_t)(0x0594u + cpu->y), cpu->accumulator);
+        Add16Value(cpu, SCROLL_REGISTER_BIAS);
+        Write16Absolute(memory, cpu, (uint16_t)(SCROLL_REGISTER_X + cpu->y),
+                        cpu->accumulator);
         And16(cpu, 0xfff0u);
         Write16Direct(memory, cpu, REDRAW_X, cpu->accumulator);
         LoadA16(cpu,
                 Read16Long(memory, LongIndexedAddress(REDRAW_Y_SLOT_TABLE, cpu->x)));
         TransferAToY(cpu);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_Y, cpu->x));
-        Write16Absolute(memory, cpu, (uint16_t)(0x0596u + cpu->y), cpu->accumulator);
+        Write16Absolute(memory, cpu, (uint16_t)(SCROLL_REGISTER_Y + cpu->y),
+                        cpu->accumulator);
         And16(cpu, 0xfff0u);
         Write16Direct(memory, cpu, REDRAW_Y, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);                           /* F4AF */
@@ -1497,9 +1547,15 @@ static void ScrollStream(
     uint16_t entry) {
     SimulateJslFrame(memory, cpu, 0x8eu, return_address);
     switch (entry) {
-    case 0xf4fdu: StreamColumn(memory, cpu, 1); break;
-    case 0xf518u: StreamColumn(memory, cpu, 0); break;
-    case 0xf589u: StreamRow(memory, cpu, 0); break;
+    case ROM_STREAM_RIGHT_COLUMN:
+        StreamColumn(memory, cpu, 1);
+        break;
+    case ROM_STREAM_LEFT_COLUMN:
+        StreamColumn(memory, cpu, 0);
+        break;
+    case ROM_STREAM_TOP_ROW:
+        StreamRow(memory, cpu, 0);
+        break;
     default: StreamRow(memory, cpu, 1); break;
     }
     SimulateRtlFrame(memory, cpu);
@@ -1509,14 +1565,21 @@ static void ScrollStream(
 static uint8_t ScrollLayerMode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    if (cpu->x > 8u)
+    if (cpu->x > SCROLL_MODE_SCALED)
         return 0;
     SimulateJsrFrame(memory, cpu, 0xbdd9u);
     switch (cpu->x) {
-    case 0: ScrollModeFollow(memory, cpu); break;
-    case 2: break;                                             /* BF24 */
-    case 4: ScrollModeParallax(memory, cpu); break;
-    case 6: ScrollModeWrap(memory, cpu); break;
+    case SCROLL_MODE_FOLLOW:
+        ScrollModeFollow(memory, cpu);
+        break;
+    case SCROLL_MODE_NONE:
+        break; /* BF24 */
+    case SCROLL_MODE_PARALLAX:
+        ScrollModeParallax(memory, cpu);
+        break;
+    case SCROLL_MODE_WRAP:
+        ScrollModeWrap(memory, cpu);
+        break;
     default: ScrollModeScaled(memory, cpu); break;
     }
     SimulateRtsFrame(memory, cpu);
@@ -1533,12 +1596,161 @@ static Lufia2ExecutionResult ScrollBoundary(
     return result;
 }
 
+/* Camera scroll: the scripted position when the screen effect asks for it,
+ * otherwise the camera actor's position less half a screen. */
+static void ScrollLoadCamera(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);       /* BD77 */
+    BitImmediate8(cpu, SCREEN_EFFECT_SCRIPTED_CAMERA);
+    SetAccumulatorWidth(cpu, 0);
+    if (!cpu->zero) {
+        LoadA16(cpu, Read16Long(memory, SCROLL_SCRIPTED_CAMERA_X));
+        Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, SCROLL_SCRIPTED_CAMERA_Y));
+        Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, cpu->accumulator);
+    } else {
+        LoadX8(cpu,
+               Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_FIELD_CAMERA_ACTOR, 0)));
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x)));
+        Subtract16(cpu, SCROLL_HALF_SCREEN_WIDTH);
+        Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x)));
+        Subtract16(cpu, SCROLL_HALF_SCREEN_HEIGHT);
+        Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, cpu->accumulator);
+    }
+}
+
+/* Copies the layer's scroll into the current and target slots, records the
+ * layer index and leaves X holding the scroll mode (the section byte times
+ * two) for ScrollLayerMode. */
+static void ScrollBeginLayer(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SetAccumulatorWidth(cpu, 0); /* BDB7 */
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
+    Write16Direct(memory, cpu, SCROLL_CURRENT_X, cpu->accumulator);
+    Write16Direct(memory, cpu, SCROLL_TARGET_X, cpu->accumulator);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_Y, cpu->x));
+    Write16Direct(memory, cpu, SCROLL_CURRENT_Y, cpu->accumulator);
+    Write16Direct(memory, cpu, SCROLL_TARGET_Y, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    PushIndex(memory, cpu);
+    Write8(memory, DirectAddress(cpu, STREAM_LAYER), (uint8_t)cpu->x);
+    Write8(memory, DirectAddress(cpu, STREAM_LAYER + 1u), 0x00u);
+    TransferDirectToA(cpu);
+    LoadA8(cpu,
+           Read8(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SECTION_WORD, cpu->x)));
+    AslA8(cpu);
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 0);
+}
+
+/* Streams a column of cells when the layer has just moved a whole cell
+ * horizontally: the right edge for a rightward move or a jump of a screen
+ * or more, the left edge otherwise. */
+static void ScrollStreamColumns(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadXDirect(memory, cpu, STREAM_LAYER); /* BDDA */
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
+    And16(cpu, SCROLL_CELL_PHASE_MASK);
+    if (!cpu->zero)
+        return;
+    LoadA16(cpu, Read16Direct(memory, cpu, SCROLL_TARGET_X));
+    Subtract16(cpu, Read16Direct(memory, cpu, SCROLL_CURRENT_X));
+    if (cpu->zero)
+        return;
+    {
+        uint8_t right = 1;
+
+        if (cpu->negative) {
+            LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
+            Compare16(cpu, cpu->accumulator, SCROLL_MAX_STEP);
+            right = cpu->carry;
+        }
+        if (right)
+            ScrollStream(memory, cpu, 0xbdfeu, ROM_STREAM_RIGHT_COLUMN); /* BDFB */
+        else
+            ScrollStream(memory, cpu, 0xbdf8u, ROM_STREAM_LEFT_COLUMN); /* BDF5 */
+    }
+}
+
+/* Stores the new horizontal scroll for the layer and publishes it, biased
+ * and offset, into the layer's scroll register pair. */
+static void ScrollPublishX(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadXDirect(memory, cpu, STREAM_LAYER); /* BDFF */
+    LoadA16(cpu, Read16Direct(memory, cpu, SCROLL_TARGET_X));
+    Write16Absolute(memory, cpu, (uint16_t)(WRAM_FIELD_LAYER_SCROLL_X + cpu->x),
+                    cpu->accumulator);
+    cpu->carry = 0;
+    Add16Value(cpu, SCROLL_REGISTER_BIAS);
+    PushAccumulator16(memory, cpu);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(REDRAW_X_SLOT_TABLE, cpu->x)));
+    TransferAToY(cpu);
+    PullAccumulator16(memory, cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, SCROLL_SCREEN_OFFSET_X));
+    Write16Absolute(memory, cpu, (uint16_t)(SCROLL_REGISTER_X + cpu->y),
+                    cpu->accumulator);
+}
+
+/* Streams a row of cells when the layer's vertical scroll changed: the top
+ * row when moving up across a cell boundary, the bottom row when moving down
+ * from a cell-aligned position or across a boundary at an odd position. */
+static void ScrollStreamRows(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA16(cpu, Read16Direct(memory, cpu, SCROLL_TARGET_Y)); /* BE19 */
+    Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, SCROLL_CURRENT_Y));
+    if (cpu->zero)
+        return;
+    {
+        const uint16_t from = Read16Direct(memory, cpu, SCROLL_CURRENT_Y);
+
+        if (cpu->negative) {
+            LoadA16(cpu, from); /* BE21 */
+            LoadA16(cpu, (uint16_t)(from ^ Read16Direct(memory, cpu, SCROLL_TARGET_Y)));
+            And16(cpu, SCROLL_CELL_BOUNDARY_BIT);
+            if (!cpu->zero)
+                ScrollStream(memory, cpu, 0xbe2du, ROM_STREAM_TOP_ROW); /* BE2A */
+        } else {
+            uint8_t stream;
+
+            LoadA16(cpu, from); /* BE30 */
+            And16(cpu, SCROLL_CELL_PHASE_MASK);
+            stream = cpu->zero;
+            if (!stream) {
+                LoadA16(cpu, from);
+                LoadA16(cpu,
+                        (uint16_t)(from ^ Read16Direct(memory, cpu, SCROLL_TARGET_Y)));
+                And16(cpu, SCROLL_CELL_BOUNDARY_BIT);
+                if (!cpu->zero) {
+                    LoadA16(cpu, from);
+                    And16(cpu, 0x0001u);
+                    stream = !cpu->zero;
+                }
+            }
+            if (stream)
+                ScrollStream(memory, cpu, 0xbe4au, ROM_STREAM_BOTTOM_ROW); /* BE47 */
+        }
+    }
+}
+
+/* Stores the new vertical scroll for the layer and publishes it, offset, into
+ * the layer's scroll register pair. */
+static void ScrollPublishY(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadXDirect(memory, cpu, STREAM_LAYER); /* BE4B */
+    LoadA16(cpu, Read16Direct(memory, cpu, SCROLL_TARGET_Y));
+    Write16Absolute(memory, cpu, (uint16_t)(WRAM_FIELD_LAYER_SCROLL_Y + cpu->x),
+                    cpu->accumulator);
+    PushAccumulator16(memory, cpu);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(REDRAW_Y_SLOT_TABLE, cpu->x)));
+    TransferAToY(cpu);
+    PullAccumulator16(memory, cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, SCROLL_SCREEN_OFFSET_Y));
+    Write16Absolute(memory, cpu, (uint16_t)(SCROLL_REGISTER_Y + cpu->y),
+                    cpu->accumulator);
+}
+
 /* $8E:BD77: per-frame field scroll. Takes the camera scroll from the screen
  * effect override or from the camera actor, then runs each active layer's
  * scroll mode and streams any column or row that came into view. */
-Lufia2ExecutionResult Lufia2FieldScrollUpdate(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2FieldScrollUpdate(const Lufia2Memory *memory,
+                                              Lufia2CpuState *cpu) {
     Lufia2ExecutionResult result;
 
     result.flow = LUFIA2_EXECUTION_RETURNED;
@@ -1547,24 +1759,7 @@ Lufia2ExecutionResult Lufia2FieldScrollUpdate(
     /* The field loop always calls with X8. */
     if (!cpu->index_is_8_bit)
         return ScrollBoundary(result, cpu, 0x8ebd77u);
-    LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);       /* BD77 */
-    BitImmediate8(cpu, 0x08u);
-    SetAccumulatorWidth(cpu, 0);
-    if (!cpu->zero) {
-        LoadA16(cpu, Read16Long(memory, 0x7fd08bu));
-        Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, cpu->accumulator);
-        LoadA16(cpu, Read16Long(memory, 0x7fd08du));
-        Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, cpu->accumulator);
-    } else {
-        LoadX8(cpu,
-               Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_FIELD_CAMERA_ACTOR, 0)));
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x)));
-        Subtract16(cpu, 0x0080u);
-        Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, cpu->accumulator);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x)));
-        Subtract16(cpu, 0x0070u);
-        Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, cpu->accumulator);
-    }
+    ScrollLoadCamera(memory, cpu);
     SetAccumulatorWidth(cpu, 1);                               /* BDA9 */
     LoadX8(cpu, 0x00u);
     do {
@@ -1572,103 +1767,14 @@ Lufia2ExecutionResult Lufia2FieldScrollUpdate(
         LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SECTION_WORD,
             cpu->x)));
         if (!cpu->negative) {
-            SetAccumulatorWidth(cpu, 0);                       /* BDB7 */
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
-            Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
-            Write16Direct(memory, cpu, 0x58u, cpu->accumulator);
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_Y, cpu->x));
-            Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
-            Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
-            SetAccumulatorWidth(cpu, 1);
-            PushIndex(memory, cpu);
-            Write8(memory, DirectAddress(cpu, 0x5du), (uint8_t)cpu->x);
-            Write8(memory, DirectAddress(cpu, 0x5eu), 0x00u);
-            TransferDirectToA(cpu);
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SECTION_WORD,
-                cpu->x)));
-            AslA8(cpu);
-            TransferAToX(cpu);
-            SetAccumulatorWidth(cpu, 0);
+            ScrollBeginLayer(memory, cpu);
             if (!ScrollLayerMode(memory, cpu))
                 return ScrollBoundary(result, cpu, 0x8ebdd7u);
             ++result.dispatches;
-            LoadXDirect(memory, cpu, STREAM_LAYER); /* BDDA */
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
-            And16(cpu, 0x000fu);
-            if (cpu->zero) {
-                LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
-                Subtract16(cpu, Read16Direct(memory, cpu, 0x54u));
-                if (!cpu->zero) {
-                    uint8_t right = 1;
-
-                    if (cpu->negative) {
-                        LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
-                        Compare16(cpu, cpu->accumulator, 0x0100u);
-                        right = cpu->carry;
-                    }
-                    if (right)
-                        ScrollStream(memory, cpu, 0xbdfeu, 0xf4fdu); /* BDFB */
-                    else
-                        ScrollStream(memory, cpu, 0xbdf8u, 0xf518u); /* BDF5 */
-                }
-            }
-            LoadXDirect(memory, cpu, STREAM_LAYER); /* BDFF */
-            LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
-            Write16Absolute(memory, cpu,
-                (uint16_t)(WRAM_FIELD_LAYER_SCROLL_X + cpu->x), cpu->accumulator);
-            cpu->carry = 0;
-            Add16Value(cpu, 0x0008u);
-            PushAccumulator16(memory, cpu);
-            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80f4edu, cpu->x)));
-            TransferAToY(cpu);
-            PullAccumulator16(memory, cpu);
-            cpu->carry = 0;
-            Add16Value(cpu, Read16Long(memory, 0x7fd081u));
-            Write16Absolute(memory, cpu,
-                (uint16_t)(0x0594u + cpu->y), cpu->accumulator);
-            LoadA16(cpu, Read16Direct(memory, cpu, 0x5au));    /* BE19 */
-            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x56u));
-            if (!cpu->zero) {
-                const uint16_t from = Read16Direct(memory, cpu, 0x56u);
-
-                if (cpu->negative) {
-                    LoadA16(cpu, from);                        /* BE21 */
-                    LoadA16(cpu, (uint16_t)(from ^ Read16Direct(memory, cpu, 0x5au)));
-                    And16(cpu, 0x0010u);
-                    if (!cpu->zero)
-                        ScrollStream(memory, cpu, 0xbe2du, 0xf589u); /* BE2A */
-                } else {
-                    uint8_t stream;
-
-                    LoadA16(cpu, from);                        /* BE30 */
-                    And16(cpu, 0x000fu);
-                    stream = cpu->zero;
-                    if (!stream) {
-                        LoadA16(cpu, from);
-                        LoadA16(cpu, (uint16_t)(from ^ Read16Direct(memory, cpu, 0x5au)));
-                        And16(cpu, 0x0010u);
-                        if (!cpu->zero) {
-                            LoadA16(cpu, from);
-                            And16(cpu, 0x0001u);
-                            stream = !cpu->zero;
-                        }
-                    }
-                    if (stream)
-                        ScrollStream(memory, cpu, 0xbe4au, 0xf5a2u); /* BE47 */
-                }
-            }
-            LoadXDirect(memory, cpu, STREAM_LAYER); /* BE4B */
-            LoadA16(cpu, Read16Direct(memory, cpu, 0x5au));
-            Write16Absolute(memory, cpu,
-                (uint16_t)(WRAM_FIELD_LAYER_SCROLL_Y + cpu->x), cpu->accumulator);
-            PushAccumulator16(memory, cpu);
-            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80f4f5u, cpu->x)));
-            TransferAToY(cpu);
-            PullAccumulator16(memory, cpu);
-            cpu->carry = 0;
-            Add16Value(cpu, Read16Long(memory, 0x7fd083u));
-            Write16Absolute(memory, cpu,
-                (uint16_t)(0x0596u + cpu->y), cpu->accumulator);
+            ScrollStreamColumns(memory, cpu);
+            ScrollPublishX(memory, cpu);
+            ScrollStreamRows(memory, cpu);
+            ScrollPublishY(memory, cpu);
             SetAccumulatorWidth(cpu, 1);
             cpu->x = PullIndexValue(memory, cpu);              /* BE63 */
         }
