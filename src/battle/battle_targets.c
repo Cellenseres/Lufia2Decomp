@@ -247,128 +247,160 @@ static bool TargetDrawSelection(BattleContext *battle) {
     return true;
 }
 
-Lufia2ExecutionResult Lufia2BattleChooseTargets(const Lufia2Memory *memory,
-                                                Lufia2CpuState *cpu,
-                                                Lufia2PushedChildCall child,
-                                                void *child_context) {
-    BattleContext battle =
-        BattleContextCreate(memory, cpu, child, child_context, 0x81u);
-    PushAccumulator8(memory, cpu);
-    if (!BattleCall(&battle, 0xd4e1u, 0x85ec81u, 3u))
-        return BattleChildUnwound(&battle);
-    LoadA8(cpu, Pull8(memory, cpu));
-    OpPushX(memory, cpu);
-    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
-    PushDataBank(memory, cpu);
-    if (!TargetBuildSelectionRecords(&battle))
-        return BattleChildUnwound(&battle);
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
-    OpAndValue(cpu, 0x80u);
-    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
-    OpStz(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+/* What the main loop does after a handler ran. */
+typedef enum { TARGET_REDRAW, TARGET_UNWOUND, TARGET_DONE } TargetOutcome;
+
+/* Loads the side flag: zero for the party list, $80 for the enemy list. */
+static void TargetLoadSide(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
-    if (cpu->negative)
-        TargetFindFirstEnemy(memory, cpu);
-    OpStz(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
-    OpLda(memory, cpu, OpAbs(cpu, 0x129eu));
-    if (!BattleCall(&battle, 0xd581u, 0x81bebcu, 3u))
-        return BattleChildUnwound(&battle);
-    OpSetDataBank(memory, cpu, 0x7eu);
-redraw:
-    if (!TargetDrawSelection(&battle))
-        return BattleChildUnwound(&battle);
-    if (!BattleCall(&battle, 0xd635u, 0x81d9d0u, 2u))
-        return BattleChildUnwound(&battle);
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
-    OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xd640u, 0x859cc0u, 3u) ||
-        !BattleCall(&battle, 0xd644u, 0x859c64u, 3u))
-        return BattleChildUnwound(&battle);
-    OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xd64au, 0x85ec81u, 3u))
-        return BattleChildUnwound(&battle);
-    OpLda(memory, cpu, OpDp(cpu, 0xddu));
-    OpBitValue(cpu, 0xa0u);
-    if (!cpu->zero)
-        goto accept;
-    OpBitValue(cpu, 0x30u);
-    if (!cpu->zero) {
-        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
-        OpAndValue(cpu, 3u);
-        OpCmpValue(cpu, 1u);
-        if (cpu->zero)
-            goto select_all;
-    }
-    OpLda(memory, cpu, OpDp(cpu, 0xdeu));
-    if (cpu->negative)
-        goto cancel;
-    OpRepWidths(cpu, 0x20u);
-    OpAndValue(cpu, 15u);
-    OpTax(cpu);
-    OpSepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpLongX(cpu, 0x97b5aau));
-    if (cpu->zero)
-        goto redraw;
-    OpBitValue(cpu, 1u);
-    if (cpu->zero)
-        goto vertical;
-    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
-horizontal:
+}
+
+/* Steps the cursor by the move delta. Running off the front wraps to the end
+ * of the list, running off the end wraps to the front. */
+static void TargetStepCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    bool party;
+
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
     cpu->carry = false;
     OpAdc(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
     if (cpu->negative) {
-        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
+        TargetLoadSide(memory, cpu);
         cpu->carry = false;
         RolA8(cpu);
         RolA8(cpu);
         OpAdcValue(cpu, 4u);
     }
     PushAccumulator8(memory, cpu);
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
-    if (cpu->zero) {
-        LoadA8(cpu, Pull8(memory, cpu));
-        OpCmpValue(cpu, BATTLE_PARTY_TARGET_COUNT);
-    } else {
-        LoadA8(cpu, Pull8(memory, cpu));
-        OpCmpValue(cpu, BATTLE_ENEMY_COUNT);
-    }
+    TargetLoadSide(memory, cpu);
+    party = cpu->zero;
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpCmpValue(cpu, party ? BATTLE_PARTY_TARGET_COUNT : BATTLE_ENEMY_COUNT);
     if (cpu->zero)
         OpLoadA(cpu, 0u);
-validate:
+}
+
+/* Takes the candidate cursor from A, makes it the cursor, and tells whether
+ * that target can be chosen. */
+static bool TargetCursorAvailable(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    bool party;
+
     OpSta(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
     ExchangeAccumulatorBytes(cpu);
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
-    if (cpu->zero) {
-        ExchangeAccumulatorBytes(cpu);
-        OpRepWidths(cpu, 0x20u);
-        OpAndValue(cpu, 0xffu);
-        OpAslA(cpu);
-        OpAslA(cpu);
-        OpTax(cpu);
-        OpSepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_UNAVAILABLE));
-    } else {
-        ExchangeAccumulatorBytes(cpu);
-        OpRepWidths(cpu, 0x20u);
-        OpAndValue(cpu, 0xffu);
-        OpAslA(cpu);
-        OpAslA(cpu);
-        OpTax(cpu);
-        OpSepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_UNAVAILABLE));
+    TargetLoadSide(memory, cpu);
+    party = cpu->zero;
+    ExchangeAccumulatorBytes(cpu);
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLda(memory, cpu,
+          OpAbsX(cpu, party ? TARGET_PARTY_UNAVAILABLE : TARGET_ENEMY_UNAVAILABLE));
+    return cpu->zero;
+}
+
+/* Keeps stepping from the candidate in A until the cursor rests on a target
+ * that can be chosen. */
+static void TargetSettleCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    while (!TargetCursorAvailable(memory, cpu))
+        TargetStepCursor(memory, cpu);
+}
+
+/* A pad direction left or right. */
+static void TargetMoveAcross(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TargetStepCursor(memory, cpu);
+    TargetSettleCursor(memory, cpu);
+}
+
+/* Moving past the last party member leads to the first enemy. */
+static void TargetSwitchToEnemies(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TargetClearParty(memory, cpu);
+    OpStz(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+    OpLoadA(cpu, 0x80u);
+    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
+    TargetFindFirstEnemy(memory, cpu);
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
+    OpDecA(cpu);
+    TargetSettleCursor(memory, cpu);
+}
+
+/* Moving back from the enemies leads to the first party member. */
+static void TargetSwitchToParty(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TargetClearEnemies(memory, cpu);
+    OpStz(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+    OpStz(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
+    OpDecA(cpu);
+    TargetSettleCursor(memory, cpu);
+}
+
+/* A pad direction up or down, the delta already stored. On the party side
+ * the cursor follows the neighbour tables until it finds a target that can be
+ * chosen; running off either end switches to the enemy list. */
+static void TargetMoveVertical(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    bool down;
+
+    TargetLoadSide(memory, cpu);
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
+        OpBitValue(cpu, 0x80u);
+        if (cpu->zero)
+            TargetSwitchToParty(memory, cpu);
+        return;
     }
-    if (!cpu->zero)
-        goto horizontal;
-    goto redraw;
-select_all:
+    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
+    OpBitValue(cpu, 0x80u);
+    down = cpu->zero;
+    TransferDirectToA(cpu);
+    if (down) {
+        /* Down. */
+        do {
+            OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+            OpTax(cpu);
+            OpLda(memory, cpu, OpLongX(cpu, 0x97b5bau));
+            if (cpu->negative) {
+                TargetSwitchToEnemies(memory, cpu);
+                return;
+            }
+            OpSta(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+            OpAslA(cpu);
+            OpAslA(cpu);
+            OpTax(cpu);
+            OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_UNAVAILABLE));
+        } while (!cpu->zero);
+        return;
+    }
+    /* Up. */
+    do {
+        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+        OpTax(cpu);
+        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
+        OpAndValue(cpu, 0x20u);
+        OpLda(memory, cpu, OpLongX(cpu, cpu->zero ? 0x97b5bfu : 0x97b5c4u));
+        if (cpu->negative) {
+            TargetSwitchToEnemies(memory, cpu);
+            return;
+        }
+        OpSta(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+        OpAslA(cpu);
+        OpAslA(cpu);
+        OpTax(cpu);
+        OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_UNAVAILABLE));
+    } while (!cpu->zero);
+}
+
+/* The "select all" button: flips every record of the cursor's side to the
+ * opposite of the record under the cursor. */
+static void TargetToggleAll(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
     OpAslA(cpu);
     OpAslA(cpu);
     OpTax(cpu);
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
+    TargetLoadSide(memory, cpu);
     if (cpu->zero) {
         OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
         OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffu));
@@ -384,95 +416,60 @@ select_all:
              address += BATTLE_TARGET_RECORD_SIZE)
             OpSta(memory, cpu, OpAbs(cpu, address));
     }
-    goto redraw;
-vertical:
-    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
-    if (!cpu->zero)
-        goto enemy_vertical;
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
-    OpBitValue(cpu, 0x80u);
-    if (!cpu->zero)
-        goto party_up;
-    TransferDirectToA(cpu);
-party_down:
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-    OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x97b5bau));
-    if (cpu->negative)
-        goto switch_enemy;
-    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-    OpAslA(cpu);
-    OpAslA(cpu);
-    OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_UNAVAILABLE));
-    if (!cpu->zero)
-        goto party_down;
-    goto redraw;
-party_up:
-    TransferDirectToA(cpu);
-party_up_next:
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-    OpTax(cpu);
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
-    OpAndValue(cpu, 0x20u);
-    OpLda(memory, cpu, OpLongX(cpu, cpu->zero ? 0x97b5bfu : 0x97b5c4u));
-    if (cpu->negative)
-        goto switch_enemy;
-    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-    OpAslA(cpu);
-    OpAslA(cpu);
-    OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_UNAVAILABLE));
-    if (!cpu->zero)
-        goto party_up_next;
-    goto redraw;
-switch_enemy:
-    TargetClearParty(memory, cpu);
-    OpStz(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-    OpLoadA(cpu, 0x80u);
-    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
-    TargetFindFirstEnemy(memory, cpu);
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
-    OpDecA(cpu);
-    goto validate;
-enemy_vertical:
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
-    OpBitValue(cpu, 0x80u);
-    if (!cpu->zero)
-        goto redraw;
-    TargetClearEnemies(memory, cpu);
-    OpStz(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-    OpStz(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
-    OpDecA(cpu);
-    goto validate;
-accept:
+}
+
+/* Leaves with the party's selection published. */
+static TargetOutcome TargetFinishParty(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                       uint32_t *return_pc) {
+    TargetPublishSelectionMask(memory, cpu, TARGET_PARTY_UNAVAILABLE, 16u);
+    TargetLoadSide(memory, cpu);
+    *return_pc = 0x81d876u;
+    return TARGET_DONE;
+}
+
+/* Leaves with the enemies' selection published. */
+static TargetOutcome TargetFinishEnemies(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu, uint32_t *return_pc) {
+    TargetPublishSelectionMask(memory, cpu, TARGET_ENEMY_UNAVAILABLE, 20u);
+    OpStz(memory, cpu, OpAbs(cpu, SNES_WRIO));
+    OpStz(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+    TargetLoadSide(memory, cpu);
+    OpOraValue(cpu, 0x80u);
+    *return_pc = 0x81d8c1u;
+    return TARGET_DONE;
+}
+
+/* The confirm button. What counts as a complete choice depends on the mode
+ * (low two bits of the mode byte): a lone target of either side (2), the whole
+ * party (3), or one target that is marked first and confirmed on the second
+ * press. */
+static TargetOutcome TargetAccept(BattleContext *battle, uint32_t *return_pc) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
     OpLoadA(cpu, 2u);
-    if (!BattleCall(&battle, 0xd7bdu, 0x80953bu, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xd7bdu, 0x80953bu, 3u))
+        return TARGET_UNWOUND;
     TargetClearName(memory, cpu);
     OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xd7cdu, 0x859cc0u, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xd7cdu, 0x859cc0u, 3u))
+        return TARGET_UNWOUND;
     OpSepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
     OpAndValue(cpu, 3u);
     OpCmpValue(cpu, 2u);
     if (cpu->zero) {
-        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
+        TargetLoadSide(memory, cpu);
         if (!cpu->zero) {
             TargetLoadCursorRecordOffset(memory, cpu);
             OpLoadA(cpu, 0xffu);
             OpSta(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
-            goto publish_enemy;
+            return TargetFinishEnemies(memory, cpu, return_pc);
         }
         TargetLoadCursorRecordOffset(memory, cpu);
         OpLoadA(cpu, 0xffu);
         OpSta(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
-        goto publish_party;
+        return TargetFinishParty(memory, cpu, return_pc);
     }
     OpCmpValue(cpu, 3u);
     if (cpu->zero) {
@@ -491,65 +488,56 @@ accept:
         } while (!cpu->negative);
         OpCmpValue(cpu, 0xfeu);
         if (!cpu->zero)
-            goto redraw;
-        goto publish_party;
+            return TARGET_REDRAW;
+        return TargetFinishParty(memory, cpu, return_pc);
     }
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
-    if (!cpu->zero)
-        goto enemy_accept;
+    TargetLoadSide(memory, cpu);
+    if (!cpu->zero) {
+        TargetLoadCursorRecordOffset(memory, cpu);
+        OpLda(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
+        if (!cpu->zero)
+            return TargetFinishEnemies(memory, cpu, return_pc);
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
+        return TARGET_REDRAW;
+    }
     TargetLoadCursorRecordOffset(memory, cpu);
     OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
     if (!cpu->zero)
-        goto publish_party;
+        return TargetFinishParty(memory, cpu, return_pc);
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
-    goto redraw;
-publish_party:
-    TargetPublishSelectionMask(memory, cpu, TARGET_PARTY_UNAVAILABLE, 16u);
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
-    PullDataBank(memory, cpu);
-    OpPullX(memory, cpu);
-    return ExecutionReturned(0x81d876u);
-enemy_accept:
-    TargetLoadCursorRecordOffset(memory, cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
-    if (!cpu->zero)
-        goto publish_enemy;
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
-    goto redraw;
-publish_enemy:
-    TargetPublishSelectionMask(memory, cpu, TARGET_ENEMY_UNAVAILABLE, 20u);
-    OpStz(memory, cpu, OpAbs(cpu, SNES_WRIO));
-    OpStz(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
-    OpOraValue(cpu, 0x80u);
-    PullDataBank(memory, cpu);
-    OpPullX(memory, cpu);
-    return ExecutionReturned(0x81d8c1u);
-cancel:
+    return TARGET_REDRAW;
+}
+
+/* The cancel button: takes back the mark under the cursor, or when there is
+ * none leaves without a choice. */
+static TargetOutcome TargetCancel(BattleContext *battle, uint32_t *return_pc) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
     OpLoadA(cpu, 1u);
-    if (!BattleCall(&battle, 0xd8c4u, 0x80953bu, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xd8c4u, 0x80953bu, 3u))
+        return TARGET_UNWOUND;
     TargetClearName(memory, cpu);
     OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xd8d4u, 0x859cc0u, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xd8d4u, 0x859cc0u, 3u))
+        return TARGET_UNWOUND;
     OpSepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
+    TargetLoadSide(memory, cpu);
     if (cpu->zero) {
         TargetLoadCursorRecordOffset(memory, cpu);
         OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
         if (!cpu->zero) {
             OpStz(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
-            goto redraw;
+            return TARGET_REDRAW;
         }
     } else {
         TargetLoadCursorRecordOffset(memory, cpu);
         OpLda(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
         if (!cpu->zero) {
             OpStz(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
-            goto redraw;
+            return TARGET_REDRAW;
         }
     }
     OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
@@ -558,7 +546,104 @@ cancel:
     OpStz(memory, cpu, OpAbs(cpu, SNES_WRIO));
     OpStz(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
     OpLoadA(cpu, 0xffu);
+    *return_pc = 0x81d908u;
+    return TARGET_DONE;
+}
+
+/* Reads the pad: confirm, select all, cancel, or a direction. The direction
+ * table at $97:B5AA has bit 0 set for left/right and is zero for no
+ * direction. */
+static TargetOutcome TargetHandleInput(BattleContext *battle, uint32_t *return_pc) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
+    OpLda(memory, cpu, OpDp(cpu, 0xddu));
+    OpBitValue(cpu, 0xa0u);
+    if (!cpu->zero)
+        return TargetAccept(battle, return_pc);
+    OpBitValue(cpu, 0x30u);
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
+        OpAndValue(cpu, 3u);
+        OpCmpValue(cpu, 1u);
+        if (cpu->zero) {
+            TargetToggleAll(memory, cpu);
+            return TARGET_REDRAW;
+        }
+    }
+    OpLda(memory, cpu, OpDp(cpu, 0xdeu));
+    if (cpu->negative)
+        return TargetCancel(battle, return_pc);
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 15u);
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpLongX(cpu, 0x97b5aau));
+    if (cpu->zero)
+        return TARGET_REDRAW;
+    OpBitValue(cpu, 1u);
+    if (cpu->zero) {
+        OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
+        TargetMoveVertical(memory, cpu);
+    } else {
+        OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
+        TargetMoveAcross(memory, cpu);
+    }
+    return TARGET_REDRAW;
+}
+
+Lufia2ExecutionResult Lufia2BattleChooseTargets(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu,
+                                                Lufia2PushedChildCall child,
+                                                void *child_context) {
+    BattleContext battle =
+        BattleContextCreate(memory, cpu, child, child_context, 0x81u);
+    uint32_t return_pc = 0u;
+
+    PushAccumulator8(memory, cpu);
+    if (!BattleCall(&battle, 0xd4e1u, 0x85ec81u, 3u))
+        return BattleChildUnwound(&battle);
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpPushX(memory, cpu);
+    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
+    PushDataBank(memory, cpu);
+    if (!TargetBuildSelectionRecords(&battle))
+        return BattleChildUnwound(&battle);
+    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
+    OpAndValue(cpu, 0x80u);
+    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
+    OpStz(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+    TargetLoadSide(memory, cpu);
+    if (cpu->negative)
+        TargetFindFirstEnemy(memory, cpu);
+    OpStz(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
+    OpLda(memory, cpu, OpAbs(cpu, 0x129eu));
+    if (!BattleCall(&battle, 0xd581u, 0x81bebcu, 3u))
+        return BattleChildUnwound(&battle);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    for (;;) {
+        TargetOutcome outcome;
+
+        if (!TargetDrawSelection(&battle))
+            return BattleChildUnwound(&battle);
+        if (!BattleCall(&battle, 0xd635u, 0x81d9d0u, 2u))
+            return BattleChildUnwound(&battle);
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, 0x0012f3u);
+        OpRepWidths(cpu, 0x20u);
+        if (!BattleCall(&battle, 0xd640u, 0x859cc0u, 3u) ||
+            !BattleCall(&battle, 0xd644u, 0x859c64u, 3u))
+            return BattleChildUnwound(&battle);
+        OpSepWidths(cpu, 0x20u);
+        if (!BattleCall(&battle, 0xd64au, 0x85ec81u, 3u))
+            return BattleChildUnwound(&battle);
+        outcome = TargetHandleInput(&battle, &return_pc);
+        if (outcome == TARGET_UNWOUND)
+            return BattleChildUnwound(&battle);
+        if (outcome == TARGET_DONE)
+            break;
+    }
     PullDataBank(memory, cpu);
     OpPullX(memory, cpu);
-    return ExecutionReturned(0x81d908u);
+    return ExecutionReturned(return_pc);
 }
