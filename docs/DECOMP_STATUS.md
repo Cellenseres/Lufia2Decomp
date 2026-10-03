@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-409 functions in `metadata/functions.toml`: 366 verified, 43 draft, 0 identified, 0 disabled.
+411 functions in `metadata/functions.toml`: 366 verified, 45 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -839,6 +839,16 @@ at that call, with the state exactly as the original has it there. They are
 compared against the original ROM code for CPU state, work RAM, ordered writes
 and stack frames, on random item tables, every button, rows at both edges,
 items with and without a limit and flagged items.
+
+## Select screen setup
+
+`$86:8DD7` sets up the select screen video registers and the four empty tile
+map layers, clears the sprite table and stops at the frame wait of `$86:8B48`
+with its return pushed. `$86:8E6B` switches all sprite slot flags off. Both
+are `draft` reconstructions that need M1X0 (else handed back). They are
+compared against the original ROM code for CPU state, work RAM, ordered
+writes (including every video register write) and stack frames, at every
+entry width and with the data bank both inside and outside work RAM.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary

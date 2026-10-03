@@ -391,6 +391,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:8BF5` | `Lufia2SpriteBuildOam` | verified | `src/menu/menu_sprites.c` |
 | `$86:8CDA` | `Lufia2SpriteSetTable` | verified | `src/menu/menu_sprites.c` |
 | `$86:8CF5` | `Lufia2SpriteSetAnimation` | verified | `src/menu/menu_sprites.c` |
+| `$86:8DD7` | `Lufia2MenuScreenSetup` | draft | `src/menu/menu_scene_setup.c` |
+| `$86:8E6B` | `Lufia2SpriteClearSlots` | draft | `src/menu/menu_scene_setup.c` |
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:A5A9` | `Lufia2WorldMapDivide32` | draft | `src/world/world_map_objects.c` |
