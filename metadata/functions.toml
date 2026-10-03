@@ -3412,3 +3412,92 @@ source = "src/menu/menu_scene_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Battle frame setup and sprite entries
+[[function]]
+address = "85:8A39"
+name = "Lufia2BattleFrameSetup"
+source = "src/battle/battle_frame_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:8AAF"
+name = "Lufia2BattleColorsInit"
+source = "src/battle/battle_frame_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:8AF4"
+name = "Lufia2BattleColorsParty"
+source = "src/battle/battle_frame_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:8B22"
+name = "Lufia2BattleColorsMonster"
+source = "src/battle/battle_frame_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:9790"
+name = "Lufia2BattleTileRow"
+source = "src/battle/battle_frame_setup.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "85:8B4B"
+name = "Lufia2BattleSpriteRecordsEntry"
+source = "src/battle/battle_frame.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:8BC0"
+name = "Lufia2BattleSpriteSingleEntry"
+source = "src/battle/battle_frame.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:8C27"
+name = "Lufia2BattleSpriteMarkersEntry"
+source = "src/battle/battle_frame.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:8C98"
+name = "Lufia2BattleSpritePartyEntry"
+source = "src/battle/battle_frame.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:8D2E"
+name = "Lufia2BattlePartyTilemapEntry"
+source = "src/battle/battle_frame.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:972E"
+name = "Lufia2BattleTileGridEntry"
+source = "src/battle/battle_frame.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"

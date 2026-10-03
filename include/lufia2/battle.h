@@ -190,6 +190,52 @@ Lufia2ExecutionResult Lufia2BattleSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $85:8A39 battle sprite pass with its setup; JSL, M1X0. */
+Lufia2ExecutionResult Lufia2BattleFrameSetup(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:8AAF, $85:8AF4, $85:8B22 color tables to the work RAM port; M1X0. */
+Lufia2ExecutionResult Lufia2BattleColorsInit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleColorsParty(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleColorsMonster(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:8B4B, $85:8BC0, $85:8C27, $85:8C98 sprite passes of the battle list;
+ * JSL, M1X0. */
+Lufia2ExecutionResult Lufia2BattleSpriteRecordsEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleSpriteSingleEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleSpriteMarkersEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleSpritePartyEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:8D2E party tilemap at $7E:2800; JSL, M1X0. */
+Lufia2ExecutionResult Lufia2BattlePartyTilemapEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:972E 15 x 16 tile grid from $3710; JSL, any M, X16. */
+Lufia2ExecutionResult Lufia2BattleTileGridEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:9790 sixteen rising tile ids at X; JSR, M0X0. */
+Lufia2ExecutionResult Lufia2BattleTileRow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $85:ECF0 per-frame battle upkeep. */
 Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     const Lufia2Memory *memory,

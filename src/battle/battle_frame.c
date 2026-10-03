@@ -727,3 +727,73 @@ Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
     result.pc = cpu->resume_pc = 0x85eceeu;
     return result;
 }
+
+/* $85:8B4B: sprite records of the battle list; JSL entry. */
+Lufia2ExecutionResult Lufia2BattleSpriteRecordsEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result =
+        BattleFrameEntry(cpu, 0x858b4bu, 0x858bbfu);
+
+    if (result.flow == LUFIA2_EXECUTION_RETURNED)
+        BattleSpriteRecords(memory, cpu);
+    return result;
+}
+
+/* $85:8BC0: the single sprite; JSL entry. */
+Lufia2ExecutionResult Lufia2BattleSpriteSingleEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result =
+        BattleFrameEntry(cpu, 0x858bc0u, 0x858c26u);
+
+    if (result.flow == LUFIA2_EXECUTION_RETURNED)
+        BattleSpriteSingle(memory, cpu);
+    return result;
+}
+
+/* $85:8C27: the marker sprites; JSL entry. */
+Lufia2ExecutionResult Lufia2BattleSpriteMarkersEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result =
+        BattleFrameEntry(cpu, 0x858c27u, 0x858c97u);
+
+    if (result.flow == LUFIA2_EXECUTION_RETURNED)
+        BattleSpriteMarkers(memory, cpu);
+    return result;
+}
+
+/* $85:8C98: the party sprites; JSL entry. */
+Lufia2ExecutionResult Lufia2BattleSpritePartyEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result =
+        BattleFrameEntry(cpu, 0x858c98u, 0x858d2du);
+
+    if (result.flow == LUFIA2_EXECUTION_RETURNED)
+        BattleSpriteParty(memory, cpu);
+    return result;
+}
+
+/* $85:8D2E: the party tilemap; JSL entry. */
+Lufia2ExecutionResult Lufia2BattlePartyTilemapEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result =
+        BattleFrameEntry(cpu, 0x858d2eu, 0x858dc4u);
+
+    if (result.flow == LUFIA2_EXECUTION_RETURNED)
+        BattlePartyTilemap(memory, cpu);
+    return result;
+}
+
+/* $85:972E: the 15 x 16 tile grid; JSL entry, any M, X16. */
+Lufia2ExecutionResult Lufia2BattleTileGridEntry(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    if (cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x85972eu);
+    BattleTileGrid(memory, cpu);
+    return ExecutionReturned(0x85978fu);
+}
