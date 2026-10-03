@@ -2,66 +2,124 @@
  * buffer at $7E:6000 through the RAM block move, queue the buffer for the
  * video upload, and copy the palette blocks of bank $9F. */
 
+#include <stdbool.h>
+
 #include "core/cpu_ops.h"
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
+#include "core/snes_registers.h"
+#include "core/wram_view.h"
 #include "lufia2/menu.h"
 #include "lufia2/system.h"
 
+/* Direct page: the row being copied, and the image set being walked. */
 enum {
     ROW_SOURCE = 0x08u,
     ROW_BANK = 0x0au,
     ROW_TARGET = 0x0bu,
+    SET_INDEX = 0x04u,
+    IMAGE_BASE = 0x19u,
     IMAGE_BANK = 0x1bu,
+    SET_TARGET = 0x1cu,
+    SLOT_TARGET = 0x02u,
+    SLOT_INDEX = 0x04u,
+    SLOTS_LEFT = 0x15u
+};
+
+/* Direct page: the video transfer request, and the words that the transfer
+ * routine at $82:8067 takes from it. */
+enum {
     STAGE_SOURCE = 0x5du,
     STAGE_BANK = 0x5fu,
     STAGE_TARGET = 0x60u,
     STAGE_SIZE = 0x58u,
+    TRANSFER_ADDRESS = 0x79u,
+    TRANSFER_START = 0x75u,
+    TRANSFER_START_VALUE = 0x41u,
+    TRANSFER_PORT = 0x18u,
+    TRANSFER_MODE = 0x01u,
+    VIDEO_TARGET = 0x3000u
+};
+
+/* The block move stub in work RAM, and the buffer the rows are copied to. */
+enum {
     MOVE_DESTINATION = 0x057eu,
     MOVE_SOURCE = 0x057fu,
     BUFFER = 0x6000u,
     BUFFER_BANK = 0x7eu
 };
 
-/* INC/DEC dp, 16-bit: the high byte is stored first. */
-static void StepDirect16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint8_t offset, int delta) {
-    const uint16_t value =
-        (uint16_t)(Read16Direct(memory, cpu, offset) + delta);
+/* The list of entries to load: its length, then one byte per entry. */
+enum {
+    LIST_COUNT = 0x0a7au,
+    LIST_ENTRIES = 0x0a7bu
+};
 
-    Write8(memory, DirectAddress(cpu, (uint8_t)(offset + 1u)),
-        (uint8_t)(value >> 8));
-    Write8(memory, DirectAddress(cpu, offset), (uint8_t)value);
-    SetNz16(cpu, value);
+/* Tables in ROM: seven grid rows (source word, bank byte), the image table
+ * of the set loader (the same layout), and the class table of the slot
+ * palettes. */
+enum {
+    GRID_TABLE = 0x8690abu,
+    GRID_ENTRY_SIZE = 3u,
+    GRID_END = 0x15u,
+    IMAGE_TABLE = 0x8ee5c2u,
+    CLASS_TABLE = 0x869165u
+};
+
+/* Palette blocks of bank $9F go to bank $00, slot palettes come from $97. */
+enum {
+    PALETTE_DESTINATION_BANK = 0x00u,
+    PALETTE_SOURCE_BANK = 0x9fu,
+    SLOT_SOURCE_BANK = 0x97u,
+    SLOT_PALETTES = 0x04a0u,
+    SLOT_BLOCK_SIZE = 0x20u,
+    SLOT_BLOCKS = 0xccf8u
+};
+
+typedef Lufia2ExecutionResult (*Subroutine)(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* JSR into a routine of this file; a result that is not a plain return is
+ * passed on. */
+static bool CallSubroutine(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Subroutine routine, uint16_t last_byte, Lufia2ExecutionResult *result) {
+    SimulateJsrFrame(memory, cpu, last_byte);
+    *result = routine(memory, cpu);
+    if (result->flow != LUFIA2_EXECUTION_RETURNED)
+        return false;
+    SimulateRtsFrame(memory, cpu);
+    return true;
 }
 
-/* JSR $057D; a result that is not a plain return is passed on. */
-static int MoveBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t last_byte, Lufia2ExecutionResult *result) {
-    SimulateJsrFrame(memory, cpu, last_byte);
-    *result = Lufia2RamBlockMove(memory, cpu);
-    if (result->flow != LUFIA2_EXECUTION_RETURNED)
-        return 0;
-    SimulateRtsFrame(memory, cpu);
-    return 1;
+/* JSR $057D: copies count + 1 bytes from the offset `source` to the offset
+ * `target` of the banks set in the stub. */
+static bool MoveBytes(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t source, uint16_t target, uint16_t count, uint16_t last_byte,
+    Lufia2ExecutionResult *result) {
+    SetAccumulatorWidth(cpu, 0);
+    cpu->x = source;
+    cpu->y = target;
+    LoadA16(cpu, count);
+    return CallSubroutine(memory, cpu, Lufia2RamBlockMove, last_byte, result);
+}
+
+static void StepDirect8(Lufia2Wram wram, uint32_t location) {
+    WramWrite(wram, location, (uint8_t)(WramRead(wram, location) + 1u));
 }
 
 /* $86:9009: one 256-byte row from the image bank at $1B to $7E:$0B. */
 Lufia2ExecutionResult Lufia2MenuCopyImageRow256(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x869009u);
-    LoadA8(cpu, BUFFER_BANK);
-    StoreAAbsolute8(memory, cpu, MOVE_DESTINATION, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, IMAGE_BANK));
-    StoreAAbsolute8(memory, cpu, MOVE_SOURCE, 0);
-    SetAccumulatorWidth(cpu, 0);
-    LoadXDirect16(memory, cpu, ROW_SOURCE);
-    LoadYDirect16(memory, cpu, ROW_TARGET);
-    LoadA16(cpu, 0x00ffu);
-    if (!MoveBlock(memory, cpu, 0x901eu, &result))
+    WramWrite(wram, MOVE_DESTINATION, BUFFER_BANK);
+    WramWrite(wram, MOVE_SOURCE, WramRead(wram, IMAGE_BANK));
+    if (!MoveBytes(memory, cpu, WramRead16(wram, ROW_SOURCE),
+            WramRead16(wram, ROW_TARGET), 0x00ffu, 0x901eu, &result))
         return result;
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x869021u);
@@ -71,25 +129,22 @@ Lufia2ExecutionResult Lufia2MenuCopyImageRow256(
 Lufia2ExecutionResult Lufia2MenuCopyImageBlock(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
 
     if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x868ff6u);
     SetAccumulatorWidth(cpu, 1);
     PushDataBank(memory, cpu);
-    SimulateJsrFrame(memory, cpu, 0x8ffbu);
-    result = Lufia2MenuCopyImageRow256(memory, cpu);
-    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+    if (!CallSubroutine(memory, cpu, Lufia2MenuCopyImageRow256, 0x8ffbu,
+            &result))
         return result;
-    SimulateRtsFrame(memory, cpu);
-    IncrementDirect8(memory, cpu, 0x09u);
-    IncrementDirect8(memory, cpu, 0x0cu);
-    IncrementDirect8(memory, cpu, 0x0cu);
-    SimulateJsrFrame(memory, cpu, 0x9004u);
-    result = Lufia2MenuCopyImageRow256(memory, cpu);
-    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+    StepDirect8(wram, ROW_SOURCE + 1u);
+    StepDirect8(wram, ROW_TARGET + 1u);
+    StepDirect8(wram, ROW_TARGET + 1u);
+    if (!CallSubroutine(memory, cpu, Lufia2MenuCopyImageRow256, 0x9004u,
+            &result))
         return result;
-    SimulateRtsFrame(memory, cpu);
     PullDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
     return ExecutionReturned(0x869008u);
@@ -100,41 +155,24 @@ Lufia2ExecutionResult Lufia2MenuCopyImageBlock(
 Lufia2ExecutionResult Lufia2MenuCopyImageRow128(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
+    Word16Result source;
+    Word16Result target;
 
     if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86906au);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, BUFFER_BANK);
-    StoreAAbsolute8(memory, cpu, MOVE_DESTINATION, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, ROW_BANK));
-    StoreAAbsolute8(memory, cpu, MOVE_SOURCE, 0);
-    SetAccumulatorWidth(cpu, 0);
-    LoadXDirect16(memory, cpu, ROW_SOURCE);
-    LoadYDirect16(memory, cpu, ROW_TARGET);
-    LoadA16(cpu, 0x007fu);
-    if (!MoveBlock(memory, cpu, 0x9081u, &result))
+    WramWrite(wram, MOVE_DESTINATION, BUFFER_BANK);
+    WramWrite(wram, MOVE_SOURCE, WramRead(wram, ROW_BANK));
+    if (!MoveBytes(memory, cpu, WramRead16(wram, ROW_SOURCE),
+            WramRead16(wram, ROW_TARGET), 0x007fu, 0x9081u, &result))
         return result;
-    LoadADirect16(memory, cpu, ROW_SOURCE);
-    cpu->carry = 0;
-    Add16Value(cpu, 0x0080u);
-    StoreADirect16(memory, cpu, ROW_SOURCE);
-    LoadADirect16(memory, cpu, ROW_TARGET);
-    cpu->carry = 0;
-    Add16Value(cpu, 0x0200u);
-    StoreADirect16(memory, cpu, ROW_TARGET);
+    source = Sum16(WramRead16(wram, ROW_SOURCE), 0x0080u, false);
+    WramWrite16(wram, ROW_SOURCE, source.value);
+    target = Sum16(WramRead16(wram, ROW_TARGET), 0x0200u, false);
+    WramWrite16(wram, ROW_TARGET, target.value);
+    LeaveSum(cpu, target);
     return ExecutionReturned(0x869092u);
-}
-
-/* JSR $906A from inside a loader. */
-static int CopyRow128(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t last_byte, Lufia2ExecutionResult *result) {
-    SimulateJsrFrame(memory, cpu, last_byte);
-    *result = Lufia2MenuCopyImageRow128(memory, cpu);
-    if (result->flow != LUFIA2_EXECUTION_RETURNED)
-        return 0;
-    SimulateRtsFrame(memory, cpu);
-    return 1;
 }
 
 /* Stages the buffer for the video upload and waits for it; the wait is
@@ -144,14 +182,13 @@ static Lufia2ExecutionResult StageBuffer(
     Lufia2CpuState *cpu,
     uint16_t size,
     uint16_t return_address) {
-    LoadX16(cpu, BUFFER);
-    StoreXDirect16(memory, cpu, STAGE_SOURCE);
-    LoadA8(cpu, BUFFER_BANK);
-    StoreADirect8(memory, cpu, STAGE_BANK);
-    LoadX16(cpu, 0x3000u);
-    StoreXDirect16(memory, cpu, STAGE_TARGET);
-    LoadX16(cpu, size);
-    StoreXDirect16(memory, cpu, STAGE_SIZE);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    WramWrite16(wram, STAGE_SOURCE, BUFFER);
+    WramWrite(wram, STAGE_BANK, BUFFER_BANK);
+    WramWrite16(wram, STAGE_TARGET, VIDEO_TARGET);
+    WramWrite16(wram, STAGE_SIZE, size);
+    cpu->x = size;
     SimulateJslFrame(memory, cpu, 0x86u, return_address);
     return Lufia2MenuQueueVideoWrite(memory, cpu);
 }
@@ -160,55 +197,59 @@ static Lufia2ExecutionResult StageBuffer(
 Lufia2ExecutionResult Lufia2MenuLoadImageGrid(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
+    uint16_t entry = 0;
 
     if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x869022u);
     SetAccumulatorWidth(cpu, 0);
-    LoadX16(cpu, BUFFER);
-    StoreXDirect16(memory, cpu, ROW_TARGET);
-    LoadX16(cpu, 0);
+    WramWrite16(wram, ROW_TARGET, BUFFER);
     do {
-        SetAccumulatorWidth(cpu, 1);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x8690adu, cpu->x)));
-        StoreADirect8(memory, cpu, ROW_BANK);
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, Read16Long(memory,
-            LongIndexedAddress(0x8690abu, cpu->x)));
-        StoreADirect16(memory, cpu, ROW_SOURCE);
-        PushIndex(memory, cpu);
+        Word16Result back;
+
+        WramWrite(wram, ROW_BANK,
+            Read8(memory, LongIndexedAddress(GRID_TABLE + 2u, entry)));
+        WramWrite16(wram, ROW_SOURCE,
+            Read16Long(memory, LongIndexedAddress(GRID_TABLE, entry)));
+        PushStackWord(memory, cpu, entry);
         PushDataBank(memory, cpu);
-        if (!CopyRow128(memory, cpu, 0x9040u, &result) ||
-            !CopyRow128(memory, cpu, 0x9043u, &result))
+        if (!CallSubroutine(memory, cpu, Lufia2MenuCopyImageRow128, 0x9040u,
+                &result) ||
+            !CallSubroutine(memory, cpu, Lufia2MenuCopyImageRow128, 0x9043u,
+                &result))
             return result;
-        LoadADirect16(memory, cpu, ROW_TARGET);
-        Subtract16(cpu, 0x0380u);
-        StoreADirect16(memory, cpu, ROW_TARGET);
-        if (!CopyRow128(memory, cpu, 0x904eu, &result) ||
-            !CopyRow128(memory, cpu, 0x9051u, &result))
+        back = Difference16(WramRead16(wram, ROW_TARGET), 0x0380u);
+        WramWrite16(wram, ROW_TARGET, back.value);
+        if (!CallSubroutine(memory, cpu, Lufia2MenuCopyImageRow128, 0x904eu,
+                &result) ||
+            !CallSubroutine(memory, cpu, Lufia2MenuCopyImageRow128, 0x9051u,
+                &result))
             return result;
-        LoadADirect16(memory, cpu, ROW_TARGET);
-        Subtract16(cpu, 0x0080u);
-        StoreADirect16(memory, cpu, ROW_TARGET);
+        back = Difference16(WramRead16(wram, ROW_TARGET), 0x0080u);
+        WramWrite16(wram, ROW_TARGET, back.value);
         PullDataBank(memory, cpu);
-        cpu->x = PullIndexValue(memory, cpu);
-        cpu->x = (uint16_t)(cpu->x + 3u);
-        Compare16(cpu, cpu->x, 0x0015u);
-    } while (!cpu->zero);
+        entry = (uint16_t)(PullStackWord(memory, cpu) + GRID_ENTRY_SIZE);
+        LeaveSum(cpu, back);
+        LeaveComparison(cpu, entry, GRID_END);
+    } while (entry != GRID_END);
     SetAccumulatorWidth(cpu, 1);
     SimulateJsrFrame(memory, cpu, 0x9068u);
     return StageBuffer(memory, cpu, 0x1c00u, 0x90a9u);
 }
 
-/* JSR $8FF6 from inside the image set loader. */
-static int CopyBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t last_byte, Lufia2ExecutionResult *result) {
-    SimulateJsrFrame(memory, cpu, last_byte);
-    *result = Lufia2MenuCopyImageBlock(memory, cpu);
-    if (result->flow != LUFIA2_EXECUTION_RETURNED)
-        return 0;
-    SimulateRtsFrame(memory, cpu);
-    return 1;
+/* Sets the source and target of the next block to the image base and the
+ * set target, each moved on by a step. */
+static void SetBlockPositions(Lufia2CpuState *cpu, Lufia2Wram wram,
+    uint16_t source_step, uint16_t target_step) {
+    const Word16Result source =
+        Sum16(WramRead16(wram, IMAGE_BASE), source_step, false);
+    Word16Result target;
+
+    WramWrite16(wram, ROW_SOURCE, source.value);
+    target = Sum16(WramRead16(wram, SET_TARGET), target_step, false);
+    WramWrite16(wram, ROW_TARGET, target.value);
+    SetSumFlags(cpu, target);
 }
 
 /* $86:8F6F: three image blocks per entry of the list at $0A7B, taken from
@@ -216,67 +257,52 @@ static int CopyBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 Lufia2ExecutionResult Lufia2MenuLoadImageSet(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
+    uint8_t done;
+    uint8_t total;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x868f6fu);
-    LoadX16(cpu, BUFFER);
-    StoreXDirect16(memory, cpu, 0x1cu);
-    Write8(memory, DirectAddress(cpu, 0x04u), 0);
-    Write8(memory, DirectAddress(cpu, 0x05u), 0);
+    WramWrite16(wram, SET_TARGET, BUFFER);
+    WramWrite(wram, SET_INDEX, 0);
+    WramWrite(wram, SET_INDEX + 1u, 0);
     do {
-        SetAccumulatorWidth(cpu, 1);
-        LoadA8(cpu, 0x00u);
-        ExchangeAccumulatorBytes(cpu);
-        LoadXDirect16(memory, cpu, 0x04u);
-        LoadA8(cpu, AbsoluteByte(memory, cpu, 0x0a7bu, cpu->x));
-        AslA8(cpu);
-        cpu->carry = 0;
-        Adc8(cpu, AbsoluteByte(memory, cpu, 0x0a7bu, cpu->x));
-        TransferAToX(cpu);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x8ee5c4u, cpu->x)));
-        StoreADirect8(memory, cpu, IMAGE_BANK);
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, Read16Long(memory,
-            LongIndexedAddress(0x8ee5c2u, cpu->x)));
-        cpu->carry = 0;
-        Add16Value(cpu, 0x0200u);
-        StoreADirect16(memory, cpu, 0x19u);
-        LoadADirect16(memory, cpu, 0x19u);
-        StoreADirect16(memory, cpu, ROW_SOURCE);
-        LoadADirect16(memory, cpu, 0x1cu);
-        StoreADirect16(memory, cpu, ROW_TARGET);
-        if (!CopyBlock(memory, cpu, 0x8fa4u, &result))
+        /* Three table bytes per image: the offset is a byte quantity. */
+        const uint8_t image_entry = (uint8_t)(3u *
+            WramReadAt(wram, LIST_ENTRIES, WramRead16(wram, SET_INDEX)));
+        Word16Result image;
+        Word16Result next_target;
+
+        WramWrite(wram, IMAGE_BANK,
+            Read8(memory, LongIndexedAddress(IMAGE_TABLE + 2u, image_entry)));
+        image = Sum16(Read16Long(memory,
+                          LongIndexedAddress(IMAGE_TABLE, image_entry)),
+            0x0200u, false);
+        WramWrite16(wram, IMAGE_BASE, image.value);
+        SetBlockPositions(cpu, wram, 0, 0);
+        SetSumFlags(cpu, image);
+        if (!CallSubroutine(memory, cpu, Lufia2MenuCopyImageBlock, 0x8fa4u,
+                &result))
             return result;
-        LoadADirect16(memory, cpu, 0x19u);
-        cpu->carry = 0;
-        Add16Value(cpu, 0x0400u);
-        StoreADirect16(memory, cpu, ROW_SOURCE);
-        LoadADirect16(memory, cpu, 0x1cu);
-        cpu->carry = 0;
-        Add16Value(cpu, 0x0100u);
-        StoreADirect16(memory, cpu, ROW_TARGET);
-        if (!CopyBlock(memory, cpu, 0x8fb7u, &result))
+        SetBlockPositions(cpu, wram, 0x0400u, 0x0100u);
+        if (!CallSubroutine(memory, cpu, Lufia2MenuCopyImageBlock, 0x8fb7u,
+                &result))
             return result;
-        LoadADirect16(memory, cpu, 0x19u);
-        cpu->carry = 0;
-        Add16Value(cpu, 0x0a00u);
-        StoreADirect16(memory, cpu, ROW_SOURCE);
-        LoadADirect16(memory, cpu, 0x1cu);
-        cpu->carry = 0;
-        Add16Value(cpu, 0x0400u);
-        StoreADirect16(memory, cpu, ROW_TARGET);
-        if (!CopyBlock(memory, cpu, 0x8fcau, &result))
+        SetBlockPositions(cpu, wram, 0x0a00u, 0x0400u);
+        if (!CallSubroutine(memory, cpu, Lufia2MenuCopyImageBlock, 0x8fcau,
+                &result))
             return result;
-        LoadADirect16(memory, cpu, 0x1cu);
-        cpu->carry = 0;
-        Add16Value(cpu, 0x0800u);
-        StoreADirect16(memory, cpu, 0x1cu);
-        SetAccumulatorWidth(cpu, 1);
-        IncrementDirect8(memory, cpu, 0x04u);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x04u));
-        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x0a7au, 0));
-    } while (!cpu->zero);
+        next_target = Sum16(WramRead16(wram, SET_TARGET), 0x0800u, false);
+        WramWrite16(wram, SET_TARGET, next_target.value);
+        StepDirect8(wram, SET_INDEX);
+        done = WramRead(wram, SET_INDEX);
+        total = WramRead(wram, LIST_COUNT);
+        cpu->accumulator = (uint16_t)((next_target.value & 0xff00u) | done);
+        cpu->overflow = next_target.overflow;
+        Compare8(cpu, done, total);
+    } while (done != total);
+    SetAccumulatorWidth(cpu, 1);
     return StageBuffer(memory, cpu, 0x2000u, 0x8ff4u);
 }
 
@@ -291,10 +317,10 @@ static Lufia2ExecutionResult CopyPalette(
     uint32_t return_address) {
     SetAccumulatorWidth(cpu, 0);
     PushDataBank(memory, cpu);
-    LoadX16(cpu, source);
-    LoadY16(cpu, target);
-    LoadA16(cpu, count);
-    OpMoveNext(memory, cpu, 0x00u, 0x9fu);
+    cpu->x = source;
+    cpu->y = target;
+    cpu->accumulator = count;
+    OpMoveNext(memory, cpu, PALETTE_DESTINATION_BANK, PALETTE_SOURCE_BANK);
     PullDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(return_address);
@@ -319,42 +345,35 @@ PALETTE(Lufia2MenuLoadPalette4, 0x86910cu, 0x8140u, 0x04c0u, 0x001fu)
 Lufia2ExecutionResult Lufia2MenuLoadSlotPalettes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t remaining;
+
     if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86911fu);
     SetAccumulatorWidth(cpu, 0);
-    LoadX16(cpu, 0x04a0u);
-    StoreXDirect16(memory, cpu, 0x02u);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a7au, 0));
-    And16(cpu, 0x00ffu);
-    StoreADirect16(memory, cpu, 0x15u);
-    Write16Direct(memory, cpu, 0x04u, 0);
+    WramWrite16(wram, SLOT_TARGET, SLOT_PALETTES);
+    WramWrite16(wram, SLOTS_LEFT, WramRead(wram, LIST_COUNT));
+    WramWrite16(wram, SLOT_INDEX, 0);
     do {
-        LoadXDirect16(memory, cpu, 0x04u);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a7bu, cpu->x));
-        And16(cpu, 0x00ffu);
-        TransferAToX(cpu);
+        const uint8_t entry =
+            WramReadAt(wram, LIST_ENTRIES, WramRead16(wram, SLOT_INDEX));
+        const uint8_t block =
+            Read8(memory, LongIndexedAddress(CLASS_TABLE, entry));
+        Word16Result next;
+
         PushDataBank(memory, cpu);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x869165u, cpu->x)));
-        And16(cpu, 0x00ffu);
-        AslA16(cpu);
-        AslA16(cpu);
-        AslA16(cpu);
-        AslA16(cpu);
-        AslA16(cpu);
-        cpu->carry = 0;
-        Add16Value(cpu, 0xccf8u);
-        TransferAToX(cpu);
-        LoadYDirect16(memory, cpu, 0x02u);
-        LoadA16(cpu, 0x001fu);
-        OpMoveNext(memory, cpu, 0x00u, 0x97u);
+        cpu->x = (uint16_t)((block * SLOT_BLOCK_SIZE) + SLOT_BLOCKS);
+        cpu->y = WramRead16(wram, SLOT_TARGET);
+        cpu->accumulator = SLOT_BLOCK_SIZE - 1u;
+        OpMoveNext(memory, cpu, PALETTE_DESTINATION_BANK, SLOT_SOURCE_BANK);
         PullDataBank(memory, cpu);
-        LoadADirect16(memory, cpu, 0x02u);
-        cpu->carry = 0;
-        Add16Value(cpu, 0x0020u);
-        StoreADirect16(memory, cpu, 0x02u);
-        StepDirect16(memory, cpu, 0x04u, 1);
-        StepDirect16(memory, cpu, 0x15u, -1);
-    } while (!cpu->zero);
+        next = Sum16(WramRead16(wram, SLOT_TARGET), SLOT_BLOCK_SIZE, false);
+        WramWrite16(wram, SLOT_TARGET, next.value);
+        (void)WramStep16(wram, SLOT_INDEX, 1);
+        remaining = WramStep16(wram, SLOTS_LEFT, -1);
+        LeaveSum(cpu, next);
+        LeaveCounter(cpu, remaining);
+    } while (remaining != 0);
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x869164u);
 }
@@ -365,20 +384,21 @@ Lufia2ExecutionResult Lufia2MenuLoadSlotPalettes(
 Lufia2ExecutionResult Lufia2MenuQueueVideoWrite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t video_address;
+
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x828044u);
-    StoreAImmediate8(memory, cpu, 0x01u, 0x4300u);
-    LoadXDirect16(memory, cpu, STAGE_SOURCE);
-    Write16Absolute(memory, cpu, 0x4302u, cpu->x);
-    LoadA8(cpu, DirectByte(memory, cpu, STAGE_BANK));
-    StoreAAbsolute8(memory, cpu, 0x4304u, 0);
-    LoadXDirect16(memory, cpu, STAGE_SIZE);
-    Write16Absolute(memory, cpu, 0x4305u, cpu->x);
-    StoreAImmediate8(memory, cpu, 0x18u, 0x4301u);
-    LoadXDirect16(memory, cpu, STAGE_TARGET);
-    StoreXDirect16(memory, cpu, 0x79u);
-    LoadA8(cpu, 0x41u);
-    StoreADirect8(memory, cpu, 0x75u);
+    WramWrite(wram, SNES_DMAP(0), TRANSFER_MODE);
+    WramWrite16(wram, SNES_A1TL(0), WramRead16(wram, STAGE_SOURCE));
+    WramWrite(wram, SNES_A1B(0), WramRead(wram, STAGE_BANK));
+    WramWrite16(wram, SNES_DASL(0), WramRead16(wram, STAGE_SIZE));
+    WramWrite(wram, SNES_BBAD(0), TRANSFER_PORT);
+    video_address = WramRead16(wram, STAGE_TARGET);
+    WramWrite16(wram, TRANSFER_ADDRESS, video_address);
+    WramWrite(wram, TRANSFER_START, TRANSFER_START_VALUE);
+    cpu->x = video_address;
+    LoadA8(cpu, TRANSFER_START_VALUE);
     SimulateJsrFrame(memory, cpu, 0x8067u);
     cpu->program_bank = 0x82u;
     return ExecutionHandoff(cpu, 0x8293c2u);

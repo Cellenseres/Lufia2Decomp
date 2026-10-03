@@ -80,6 +80,12 @@ static inline void LeaveSum(Lufia2CpuState *cpu, Word16Result result) {
     LoadA16(cpu, result.value);
 }
 
+/* Only the carry and overflow flags of an addition or subtraction. */
+static inline void SetSumFlags(Lufia2CpuState *cpu, Word16Result result) {
+    cpu->carry = result.carry;
+    cpu->overflow = result.overflow;
+}
+
 /* Only the low byte of the accumulator changes. */
 static inline void LeaveByteSum(Lufia2CpuState *cpu, Byte8Result result) {
     cpu->carry = result.carry;
