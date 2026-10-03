@@ -3,51 +3,57 @@
  * script stream pointed to by the long pointer at $C3. */
 
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
+#include "core/wram_view.h"
 #include "lufia2/battle.h"
 
 enum {
     STREAM = 0xc3u,
     SCRATCH = 0x15edu,
-    FIELD_BASE = 0x0013u,
+    SLOT = 0x7e0000u,
     ANGLE = 0x54u,
     SPEED = 0x5au,
     VELOCITY_A = 0x56u,
-    VELOCITY_B = 0x58u
+    VELOCITY_B = 0x58u,
+    SLOT_LOOP_START = 0x03u,
+    SLOT_COPY_FROM = 0x02u,
+    SLOT_COPY_TO = 0x01u,
+    SLOT_REPEAT = 0x07u,
+    SLOT_REPEAT_TARGET = 0x08u,
+    SLOT_FIELDS = 0x13u,
+    SLOT_ANGLE = 0x13u,
+    SLOT_SPEED = 0x15u,
+    SLOT_VELOCITY_A = 0x1bu,
+    SLOT_VELOCITY_B = 0x1du,
+    WORK_BANK = 0x7eu
 };
-
-/* INC dp, 16-bit: the high byte is stored first. */
-static void IncrementStream(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    const uint16_t value = (uint16_t)(Read16Direct(memory, cpu, STREAM) + 1u);
-
-    Write8(memory, DirectAddress(cpu, STREAM + 1u), (uint8_t)(value >> 8));
-    Write8(memory, DirectAddress(cpu, STREAM), (uint8_t)value);
-    SetNz16(cpu, value);
-}
 
 /* $81:A40B: reads a field offset byte and a word from the stream and adds
  * the word to the slot field at that offset; M8/X16, JSR. */
 Lufia2ExecutionResult Lufia2BattleEffectAddToField(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    Lufia2Wram wram;
+    uint8_t offset;
+    uint16_t field;
+    uint16_t amount;
+    Word16Result sum;
+
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x81a40bu);
-    SelectDataBank(memory, cpu, 0x7eu);
-    LoadA8(cpu, Read8(memory, DirectLongPointer(memory, cpu, STREAM)));
-    SetAccumulatorWidth(cpu, 0);
-    IncrementStream(memory, cpu);
-    And16(cpu, 0x00ffu);
-    StoreAAbsolute16(memory, cpu, SCRATCH, 0);
-    LoadA16(cpu, cpu->y);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SCRATCH, 0));
-    TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, DirectLongPointer(memory, cpu, STREAM)));
-    IncrementStream(memory, cpu);
-    IncrementStream(memory, cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, FIELD_BASE, cpu->x));
-    StoreAAbsolute16(memory, cpu, FIELD_BASE, cpu->x);
-    SetAccumulatorWidth(cpu, 1);
+    SelectDataBank(memory, cpu, WORK_BANK);
+    wram = WramViewOfCaller(memory, cpu);
+    offset = Read8(memory, DirectLongPointer(memory, cpu, STREAM));
+    (void)WramStep16(wram, STREAM, 1);
+    WramWrite16(wram, SCRATCH, offset);
+    field = Sum16(cpu->y, offset, false).value;
+    amount = Read16Long(memory, DirectLongPointer(memory, cpu, STREAM));
+    (void)WramStep16(wram, STREAM, 1);
+    (void)WramStep16(wram, STREAM, 1);
+    sum = Sum16(amount, WramRead16At(wram, SLOT + SLOT_FIELDS, field), false);
+    WramWrite16At(wram, SLOT + SLOT_FIELDS, field, sum.value);
+    cpu->x = field;
+    LeaveSum(cpu, sum);
     return ExecutionReturned(0x81a430u);
 }
 
@@ -56,23 +62,24 @@ Lufia2ExecutionResult Lufia2BattleEffectAddToField(
 Lufia2ExecutionResult Lufia2BattleEffectRepeat(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    Lufia2Wram wram;
     uint8_t count;
-    uint32_t address;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x81953fu);
-    SelectDataBank(memory, cpu, 0x7eu);
+    SelectDataBank(memory, cpu, WORK_BANK);
+    wram = WramViewOfCaller(memory, cpu);
     cpu->x = cpu->y;
-    SetNz16(cpu, cpu->x);
-    address = AbsoluteIndexedAddress(cpu, 0x0007u, cpu->x);
-    count = (uint8_t)(Read8(memory, address) - 1u);
-    Write8(memory, address, count);
-    SetNz8(cpu, count);
-    if (!cpu->zero) {
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0008u, cpu->y));
-        StoreADirect16(memory, cpu, STREAM);
-        SetAccumulatorWidth(cpu, 1);
+    count = (uint8_t)(WramReadAt(wram, SLOT + SLOT_REPEAT, cpu->y) - 1u);
+    WramWriteAt(wram, SLOT + SLOT_REPEAT, cpu->y, count);
+    if (count == 0) {
+        SetNz8(cpu, count);
+    } else {
+        const uint16_t target =
+            WramRead16At(wram, SLOT + SLOT_REPEAT_TARGET, cpu->y);
+
+        WramWrite16(wram, STREAM, target);
+        LeaveWord(cpu, target);
     }
     return ExecutionReturned(0x819552u);
 }
@@ -82,15 +89,20 @@ Lufia2ExecutionResult Lufia2BattleEffectRepeat(
 Lufia2ExecutionResult Lufia2BattleEffectMarkLoop(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    Lufia2Wram wram;
+    uint16_t stream;
+    uint8_t copied;
+
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x819169u);
-    SelectDataBank(memory, cpu, 0x7eu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadADirect16(memory, cpu, STREAM);
-    StoreAAbsolute16(memory, cpu, 0x0003u, cpu->y);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, AbsoluteByte(memory, cpu, 0x0002u, cpu->y));
-    StoreAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+    SelectDataBank(memory, cpu, WORK_BANK);
+    wram = WramViewOfCaller(memory, cpu);
+    stream = WramRead16(wram, STREAM);
+    WramWrite16At(wram, SLOT + SLOT_LOOP_START, cpu->y, stream);
+    copied = WramReadAt(wram, SLOT + SLOT_COPY_FROM, cpu->y);
+    WramWriteAt(wram, SLOT + SLOT_COPY_TO, cpu->y, copied);
+    cpu->accumulator = (uint16_t)((stream & 0xff00u) | copied);
+    SetNz8(cpu, copied);
     return ExecutionHandoff(cpu, 0x818c58u);
 }
 
@@ -100,26 +112,24 @@ Lufia2ExecutionResult Lufia2BattleEffectVelocity(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2ExecutionResult result;
+    Lufia2Wram wram;
+    uint16_t velocity;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x81a598u);
-    SelectDataBank(memory, cpu, 0x7eu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0013u, cpu->y));
-    StoreADirect16(memory, cpu, ANGLE);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0015u, cpu->y));
-    StoreADirect16(memory, cpu, SPEED);
-    SetAccumulatorWidth(cpu, 1);
+    SelectDataBank(memory, cpu, WORK_BANK);
+    wram = WramViewOfCaller(memory, cpu);
+    WramWrite16(wram, ANGLE, WramRead16At(wram, SLOT + SLOT_ANGLE, cpu->y));
+    WramWrite16(wram, SPEED, WramRead16At(wram, SLOT + SLOT_SPEED, cpu->y));
     SimulateJslFrame(memory, cpu, 0x81u, 0xa5adu);
     result = Lufia2BattleVelocityOfAngle(memory, cpu);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
     SimulateRtlFrame(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadADirect16(memory, cpu, VELOCITY_A);
-    StoreAAbsolute16(memory, cpu, 0x001bu, cpu->y);
-    LoadADirect16(memory, cpu, VELOCITY_B);
-    StoreAAbsolute16(memory, cpu, 0x001du, cpu->y);
-    SetAccumulatorWidth(cpu, 1);
+    WramWrite16At(wram, SLOT + SLOT_VELOCITY_A, cpu->y,
+        WramRead16(wram, VELOCITY_A));
+    velocity = WramRead16(wram, VELOCITY_B);
+    WramWrite16At(wram, SLOT + SLOT_VELOCITY_B, cpu->y, velocity);
+    LeaveWord(cpu, velocity);
     return ExecutionReturned(0x81a5bcu);
 }
