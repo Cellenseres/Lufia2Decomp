@@ -7,37 +7,34 @@
 #include "system/system_internal.h"
 #include "system/wram.h"
 
-/* $80:832D: lagged XOR refill, lags 24 and 31. */
+enum {
+    RANDOM_LONG_LAG = 31,  /* first pass mixes in the entry 31 ahead */
+    RANDOM_SHORT_LAG = 24, /* second pass mixes in the entry 24 behind */
+};
+
+/* $80:832D: lagged XOR refill of the whole table. Leaves X at the table size
+ * and the accumulator holding the last entry written. */
 static void RandomRefill(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadX8(cpu, 0x00u);                                        /* 832D */
-    do {
-        LoadA8(
-            cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_TABLE, cpu->x)));
-        LoadA8(
-            cpu, (uint8_t)(A8(cpu) ^ Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x0540u, cpu->x))));
-        Write8(
-            memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_TABLE, cpu->x),
-            A8(cpu));
-        LoadX8(cpu, (uint8_t)(cpu->x + 1u));
-        Compare8(cpu, (uint8_t)cpu->x, 0x18u);                 /* 8339 */
-    } while (!cpu->zero);
-    do {
-        LoadA8(
-            cpu, Read8(
-                memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_TABLE, cpu->x)));
-        LoadA8(
-            cpu, (uint8_t)(A8(cpu) ^ Read8(
-                memory, AbsoluteIndexedAddress(cpu, 0x0509u, cpu->x))));
-        Write8(
-            memory, AbsoluteIndexedAddress(cpu, WRAM_RANDOM_TABLE, cpu->x),
-            A8(cpu));
-        LoadX8(cpu, (uint8_t)(cpu->x + 1u));
-        Compare8(cpu, (uint8_t)cpu->x, 0x37u);                 /* 8347 */
-    } while (!cpu->zero);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint8_t value = 0u;
+    unsigned i;
+
+    for (i = 0; i < RANDOM_SHORT_LAG; ++i) {
+        value = (uint8_t)(WramReadAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i) ^
+                          WramReadAt(wram, WRAM_RANDOM_TABLE,
+                                     (uint16_t)(i + RANDOM_LONG_LAG)));
+        WramWriteAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i, value);
+    }
+    for (; i < WRAM_RANDOM_TABLE_COUNT; ++i) {
+        value = (uint8_t)(WramReadAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i) ^
+                          WramReadAt(wram, WRAM_RANDOM_TABLE,
+                                     (uint16_t)(i - RANDOM_SHORT_LAG)));
+        WramWriteAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i, value);
+    }
+    cpu->x = (uint16_t)i;
+    LoadA8(cpu, value);
 }
 
 /* PHB/PHK/PLB/PHX/PHY/PHP/SEP #$30 */
@@ -84,6 +81,7 @@ static void RandomLeave(
     PullDataBank(memory, cpu);
 }
 
+/* $80:82C7: A = next byte from the table. */
 void Lufia2RandomByte(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -95,6 +93,7 @@ void Lufia2RandomByte(
     RandomLeave(memory, cpu);                                  /* 82E2 */
 }
 
+/* $80:8299: A = the next byte scaled to 0..A-1 through the hardware multiplier. */
 void Lufia2RandomScale(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -116,6 +115,7 @@ void Lufia2RandomScale(
     RandomLeave(memory, cpu);                                  /* 82C2 */
 }
 
+/* JSL $80:8299 with the caller's return address on the stack. */
 void Lufia2CallRandomScale(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -125,6 +125,7 @@ void Lufia2CallRandomScale(
     SimulateRtlFrame(memory, cpu);
 }
 
+/* JSL $80:82C7 with the caller's return address on the stack. */
 void Lufia2CallRandomByte(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
