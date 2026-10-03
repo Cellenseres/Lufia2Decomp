@@ -126,6 +126,12 @@ Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
 Lufia2ExecutionResult Lufia2NmiTilemapUploads(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $00:057D RAM block move: A + 1 bytes from the source bank at X to the
+ * destination bank at Y, banks taken from $057E/$057F; JSR. */
+Lufia2ExecutionResult Lufia2RamBlockMove(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

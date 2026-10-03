@@ -267,6 +267,66 @@ Lufia2ExecutionResult Lufia2MenuSpellShopSetup(
     Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
     void *context);
 
+/* $82:8044 video transfer setup, then the frame wait; M8/X16, JSL */
+Lufia2ExecutionResult Lufia2MenuQueueVideoWrite(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:9009 one 256-byte image row; M8/X16, JSR */
+Lufia2ExecutionResult Lufia2MenuCopyImageRow256(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:906A one 128-byte image row; X16, JSR */
+Lufia2ExecutionResult Lufia2MenuCopyImageRow128(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:8FF6 two image rows; X16, JSR */
+Lufia2ExecutionResult Lufia2MenuCopyImageBlock(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:9022 image grid and upload; X16, JSL */
+Lufia2ExecutionResult Lufia2MenuLoadImageGrid(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:8F6F image set and upload; M8/X16, JSL */
+Lufia2ExecutionResult Lufia2MenuLoadImageSet(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:90C0 palette block copy; X16, JSL */
+Lufia2ExecutionResult Lufia2MenuLoadPalette0(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:90D3 palette block copy; X16, JSL */
+Lufia2ExecutionResult Lufia2MenuLoadPalette1(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:90E6 palette block copy; X16, JSL */
+Lufia2ExecutionResult Lufia2MenuLoadPalette2(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:90F9 palette block copy; X16, JSL */
+Lufia2ExecutionResult Lufia2MenuLoadPalette3(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:910C palette block copy; X16, JSL */
+Lufia2ExecutionResult Lufia2MenuLoadPalette4(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:911F slot palette blocks; X16, JSL */
+Lufia2ExecutionResult Lufia2MenuLoadSlotPalettes(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

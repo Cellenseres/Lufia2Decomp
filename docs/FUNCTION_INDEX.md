@@ -7,6 +7,7 @@ Generated from `metadata/functions.toml`; update it with
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
 | Address | Symbol | Status | Source |
 | --- | --- | --- | --- |
+| `$00:057D` | `Lufia2RamBlockMove` | draft | `src/system/block_move.c` |
 | `$80:8299` | `Lufia2RandomScale` | verified | `src/system/random.c` |
 | `$80:82C7` | `Lufia2RandomByte` | verified | `src/system/random.c` |
 | `$80:82E7` | `Lufia2SeedRandom` | verified | `src/system/random.c` |
@@ -34,6 +35,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
 | `$80:BFAA` | `Lufia2FieldFindHeaderRecord` | verified | `src/field/field_object_lookup.c` |
 | `$80:C0B7` | `Lufia2SceneScriptReadOperand` | verified | `src/field/scene_script.c` |
+| `$80:C195` | `Lufia2FieldMarkObjectSlots` | draft | `src/field/field_object_flags.c` |
 | `$80:C23D` | `Lufia2TextPrepareWindow` | verified | `src/text/text_window.c` |
 | `$80:C305` | `Lufia2TextBuildWindow` | verified | `src/text/text_window.c` |
 | `$80:C56E` | `Lufia2TextQueueWindowRow` | verified | `src/text/text_window.c` |
@@ -191,6 +193,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:FC0B` | `Lufia2PartyNewRecord` | verified | `src/party/level_up.c` |
 | `$81:FCE2` | `Lufia2CharacterSpritePointer` | verified | `src/battle/battle_character.c` |
 | `$82:8000` | `Lufia2MenuMultiply` | draft | `src/menu/menu_cursor.c` |
+| `$82:8044` | `Lufia2MenuQueueVideoWrite` | draft | `src/menu/menu_image_load.c` |
 | `$82:8069` | `Lufia2MenuTileGridFill` | draft | `src/menu/menu_tilemap.c` |
 | `$82:80A5` | `Lufia2MenuTileBlockFill` | draft | `src/menu/menu_tilemap.c` |
 | `$82:80CA` | `Lufia2MenuRecolorRect` | draft | `src/menu/menu_tilemap.c` |
@@ -416,6 +419,17 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:8CF5` | `Lufia2SpriteSetAnimation` | verified | `src/menu/menu_sprites.c` |
 | `$86:8DD7` | `Lufia2MenuScreenSetup` | draft | `src/menu/menu_scene_setup.c` |
 | `$86:8E6B` | `Lufia2SpriteClearSlots` | draft | `src/menu/menu_scene_setup.c` |
+| `$86:8F6F` | `Lufia2MenuLoadImageSet` | draft | `src/menu/menu_image_load.c` |
+| `$86:8FF6` | `Lufia2MenuCopyImageBlock` | draft | `src/menu/menu_image_load.c` |
+| `$86:9009` | `Lufia2MenuCopyImageRow256` | draft | `src/menu/menu_image_load.c` |
+| `$86:9022` | `Lufia2MenuLoadImageGrid` | draft | `src/menu/menu_image_load.c` |
+| `$86:906A` | `Lufia2MenuCopyImageRow128` | draft | `src/menu/menu_image_load.c` |
+| `$86:90C0` | `Lufia2MenuLoadPalette0` | draft | `src/menu/menu_image_load.c` |
+| `$86:90D3` | `Lufia2MenuLoadPalette1` | draft | `src/menu/menu_image_load.c` |
+| `$86:90E6` | `Lufia2MenuLoadPalette2` | draft | `src/menu/menu_image_load.c` |
+| `$86:90F9` | `Lufia2MenuLoadPalette3` | draft | `src/menu/menu_image_load.c` |
+| `$86:910C` | `Lufia2MenuLoadPalette4` | draft | `src/menu/menu_image_load.c` |
+| `$86:911F` | `Lufia2MenuLoadSlotPalettes` | draft | `src/menu/menu_image_load.c` |
 | `$86:94D4` | `Lufia2SceneTrackStep` | draft | `src/field/field_scene_tracks.c` |
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
