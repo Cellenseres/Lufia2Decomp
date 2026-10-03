@@ -7,10 +7,10 @@ Lufia2ExecutionResult Lufia2BattleExecuteTurns(const Lufia2Memory *memory,
                                                void *child_context) {
     BattleContext battle =
         BattleContextCreate(memory, cpu, child, child_context, 0x81u);
-    if (!BattleCall(&battle, 0x890au, 0x81c2e3u, 2u) ||
+    if (!BattleCall(&battle, 0x890au, BATTLE_ROUTINE_RESET_PARTY_TILEMAP, 2u) ||
         !BattleCall(&battle, 0x890du, 0x81dee9u, 2u) ||
         !BattleCall(&battle, 0x8910u, 0x859dd4u, 3u) ||
-        !BattleCall(&battle, 0x8914u, 0x85ec81u, 3u))
+        !BattleCall(&battle, 0x8914u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return BattleChildUnwound(&battle);
     OpLdx(cpu, WRAM_BATTLE_TURN_QUEUE);
     OpWriteX(memory, cpu, OpDp(cpu, 0xd5u), cpu->x);

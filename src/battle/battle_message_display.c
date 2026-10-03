@@ -123,7 +123,7 @@ Lufia2ExecutionResult Lufia2BattleDisplayMessage(const Lufia2Memory *memory,
     OpLoadA(cpu, 0x100u);
     OpSta(memory, cpu, OpAbsY(cpu, 0x1a8fu));
     OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0x9661u, 0x85ec81u, 3u) ||
+    if (!BattleCall(&battle, 0x9661u, BATTLE_ROUTINE_FRAME_INPUT, 3u) ||
         !BattleCall(&battle, 0x9665u, 0x85aadcu, 3u))
         return BattleChildUnwound(&battle);
     MessageRestoreRegisters(memory, cpu);

@@ -16,12 +16,12 @@ Lufia2ExecutionResult Lufia2BattleFrameInputUpkeep(
         BattleContextCreate(memory, cpu, child, child_context, 0x85u);
     if (!BattleCall(&battle, 0xec81u, 0x85919cu, 3u))
         return BattleChildUnwound(&battle);
-    OpLda(memory, cpu, 0x0012f3u);
+    OpLda(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
     if (!cpu->zero) {
-        if (!BattleCall(&battle, 0xec8bu, 0x81b5c4u, 3u))
+        if (!BattleCall(&battle, 0xec8bu, BATTLE_ROUTINE_BUILD_SPRITES, 3u))
             return BattleChildUnwound(&battle);
         TransferDirectToA(cpu);
-        OpSta(memory, cpu, 0x0012f3u);
+        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
     }
     Lufia2ExecutionResult result = ExecutionReturned(0x85ec94u);
     result.flow = LUFIA2_EXECUTION_BOUNDARY;

@@ -41,7 +41,8 @@ static bool BattleDrawCommands(BattleContext *battle, bool after_selection) {
         OpInx(cpu);
         OpInx(cpu);
         OpPushX(memory, cpu);
-        if (!BattleCall(battle, after_selection ? 0xcb0fu : 0xc9ddu, 0x81be58u, 2u))
+        if (!BattleCall(battle, after_selection ? 0xcb0fu : 0xc9ddu,
+                        BATTLE_ROUTINE_TILE_BLOCK, 2u))
             return false;
         OpPullX(memory, cpu);
         OpCpx(cpu, after_selection ? 15u : 9u);
@@ -100,11 +101,11 @@ static bool BattleQueueCollectiveCommand(BattleContext *battle) {
     OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, COMMAND_DP_MIN_PRIORITY)));
     OpLsrA(cpu);
     PushAccumulator16(memory, cpu);
-    if (!BattleCall(battle, 0xc85du, 0x85dceau, 3u))
+    if (!BattleCall(battle, 0xc85du, BATTLE_ROUTINE_RANDOM_FRACTION, 3u))
         return false;
     OpSta(memory, cpu, OpDp(cpu, COMMAND_DP_MAX_PRIORITY_OR_RANDOM));
     PullAccumulator16(memory, cpu);
-    if (!BattleCall(battle, 0xc864u, 0x85dceau, 3u))
+    if (!BattleCall(battle, 0xc864u, BATTLE_ROUTINE_RANDOM_FRACTION, 3u))
         return false;
     cpu->carry = false;
     OpAdc(memory, cpu, OpDp(cpu, COMMAND_DP_MAX_PRIORITY_OR_RANDOM));
@@ -271,31 +272,32 @@ static bool BattleRedrawFormation(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
     if (!BattleCall(battle, 0xc9bbu, 0x81e872u, 2u) ||
         !BattleCall(battle, 0xc9beu, 0x81dea9u, 2u) ||
-        !BattleCall(battle, 0xc9c1u, 0x81df0au, 2u) ||
+        !BattleCall(battle, 0xc9c1u, BATTLE_ROUTINE_PARTY_WINDOWS, 2u) ||
         !BattleDrawCommands(battle, false))
         return false;
     FormationLoadCursorLayout(memory, cpu);
-    if (!BattleCall(battle, 0xca0bu, 0x81be58u, 2u))
+    if (!BattleCall(battle, 0xca0bu, BATTLE_ROUTINE_TILE_BLOCK, 2u))
         return false;
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(battle, 0xca10u, 0x859b22u, 3u) ||
         !BattleCall(battle, 0xca14u, 0x859b67u, 3u))
         return false;
     OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xca1au, 0x85ec81u, 3u))
+    if (!BattleCall(battle, 0xca1au, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return false;
     FormationStageMembers(memory, cpu);
-    if (!BattleCall(battle, 0xca3eu, 0x8591a1u, 3u) ||
-        !BattleCall(battle, 0xca42u, 0x858a2fu, 3u) || !FormationDrawMembers(battle))
+    if (!BattleCall(battle, 0xca3eu, BATTLE_ROUTINE_SYNC_STATUS_MARKERS, 3u) ||
+        !BattleCall(battle, 0xca42u, BATTLE_ROUTINE_SPRITES, 3u) ||
+        !FormationDrawMembers(battle))
         return false;
     OpSepWidths(cpu, 0x20u);
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
     OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xca5bu, 0x859bdau, 3u))
+    if (!BattleCall(battle, 0xca5bu, BATTLE_ROUTINE_QUEUE_STATUS_SPRITES, 3u))
         return false;
     OpSepWidths(cpu, 0x20u);
-    return BattleCall(battle, 0xca61u, 0x85ec81u, 3u);
+    return BattleCall(battle, 0xca61u, BATTLE_ROUTINE_FRAME_INPUT, 3u);
 }
 
 /* $81:C739: complete caller body; exceptional exits remain exact handoffs. */
@@ -322,21 +324,21 @@ static bool BattleCommandsSetup(BattleContext *battle) {
         OpSta(memory, cpu, OpLongX(cpu, WRAM_SAVE_FILE_BUFFER));
         OpDex(cpu);
     } while (!cpu->negative);
-    if (!BattleCall(battle, 0xc749u, 0x81c2e3u, 2u) ||
+    if (!BattleCall(battle, 0xc749u, BATTLE_ROUTINE_RESET_PARTY_TILEMAP, 2u) ||
         !BattleCall(battle, 0xc74cu, 0x8597d1u, 3u) ||
-        !BattleCall(battle, 0xc750u, 0x81b9afu, 3u) ||
-        !BattleCall(battle, 0xc754u, 0x8591a1u, 3u) ||
+        !BattleCall(battle, 0xc750u, BATTLE_ROUTINE_COMMIT_PALETTES, 3u) ||
+        !BattleCall(battle, 0xc754u, BATTLE_ROUTINE_SYNC_STATUS_MARKERS, 3u) ||
         !BattleCall(battle, 0xc758u, 0x858905u, 3u) ||
-        !BattleCall(battle, 0xc75cu, 0x85ec81u, 3u))
+        !BattleCall(battle, 0xc75cu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return false;
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(battle, 0xc768u, 0x859b67u, 3u) ||
         !BattleCall(battle, 0xc76cu, 0x859c7bu, 3u))
         return false;
     OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xc772u, 0x85ec81u, 3u))
+    if (!BattleCall(battle, 0xc772u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return false;
     OpLoadA(cpu, 10u);
     OpSta(memory, cpu, OpAbs(cpu, SNES_BG3SC));
@@ -344,8 +346,8 @@ static bool BattleCommandsSetup(BattleContext *battle) {
     OpSta(memory, cpu, OpDp(cpu, COMMAND_DP_PALETTE_BANK));
     OpLdy(cpu, 0xfe46u);
     OpLoadA(cpu, 1u);
-    if (!BattleCall(battle, 0xc784u, 0x81b974u, 2u) ||
-        !BattleCall(battle, 0xc787u, 0x81b9afu, 3u))
+    if (!BattleCall(battle, 0xc784u, BATTLE_ROUTINE_LOAD_PALETTE, 2u) ||
+        !BattleCall(battle, 0xc787u, BATTLE_ROUTINE_COMMIT_PALETTES, 3u))
         return false;
     OpLdx(cpu, 0x151fu);
     OpWriteX(memory, cpu, OpAbs(cpu, 0x1245u), cpu->x);
@@ -362,10 +364,10 @@ static bool BattleCommandsSetup(BattleContext *battle) {
     if (!BattleCall(battle, 0xc7a9u, 0x859b0bu, 3u))
         return false;
     OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xc7afu, 0x85ec81u, 3u) ||
+    if (!BattleCall(battle, 0xc7afu, BATTLE_ROUTINE_FRAME_INPUT, 3u) ||
         !BattleCall(battle, 0xc7b3u, 0x81eb93u, 3u) ||
-        !BattleCall(battle, 0xc7b7u, 0x858a2fu, 3u) ||
-        !BattleCall(battle, 0xc7bbu, 0x85ec81u, 3u) ||
+        !BattleCall(battle, 0xc7b7u, BATTLE_ROUTINE_SPRITES, 3u) ||
+        !BattleCall(battle, 0xc7bbu, BATTLE_ROUTINE_FRAME_INPUT, 3u) ||
         !BattleCall(battle, 0xc7bfu, 0x81dea9u, 2u))
         return false;
     OpRepWidths(cpu, 0x20u);
@@ -374,8 +376,8 @@ static bool BattleCommandsSetup(BattleContext *battle) {
         return false;
     OpSepWidths(cpu, 0x20u);
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(battle, 0xc7d4u, 0x85ec81u, 3u))
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    if (!BattleCall(battle, 0xc7d4u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return false;
     OpLdx(cpu, COMMAND_SETUP_DESTINATION);
     OpWriteX(memory, cpu, OpDp(cpu, COMMAND_DP_DESTINATION), cpu->x);
@@ -383,7 +385,7 @@ static bool BattleCommandsSetup(BattleContext *battle) {
     OpSta(memory, cpu, OpDp(cpu, COMMAND_DP_DESTINATION_BANK));
     OpLdx(cpu, COMMAND_SETUP_RESOURCE_ENTRY);
     OpWriteX(memory, cpu, OpDp(cpu, COMMAND_DP_RESOURCE_ENTRY), cpu->x);
-    if (!BattleCall(battle, 0xc7e6u, 0x808e9du, 3u))
+    if (!BattleCall(battle, 0xc7e6u, BATTLE_ROUTINE_DECOMPRESS_RESOURCE, 3u))
         return false;
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(battle, 0xc7ecu, 0x859c92u, 3u))
@@ -508,7 +510,7 @@ static CommandStep BattleSwapPartyOrder(BattleContext *battle, uint32_t *handoff
     OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
     TransferDirectToA(cpu);
     OpLoadA(cpu, 0x23u);
-    if (!BattleCall(battle, 0xc89eu, 0x81d4e0u, 2u))
+    if (!BattleCall(battle, 0xc89eu, BATTLE_ROUTINE_CHOOSE_TARGETS, 2u))
         return COMMAND_UNWOUND;
     OpCmpValue(cpu, 0xffu);
     if (cpu->zero)
@@ -572,7 +574,7 @@ static CommandStep BattlePartyCommands(BattleContext *battle) {
             if (!BattleCall(battle, 0xcab8u, 0x85937du, 3u))
                 return COMMAND_UNWOUND;
             OpPullX(memory, cpu);
-            if (!BattleCall(battle, 0xcabdu, 0x81cc2eu, 2u))
+            if (!BattleCall(battle, 0xcabdu, BATTLE_ROUTINE_CHOOSE_PARTY_ACTION, 2u))
                 return COMMAND_UNWOUND;
             OpPullX(memory, cpu);
             OpCmpValue(cpu, 0u);
@@ -610,7 +612,7 @@ static CommandStep BattleChooseCommand(BattleContext *battle, uint32_t *handoff)
     for (;;) {
         CommandStep step;
 
-        if (!BattleCall(battle, 0xc7f8u, 0x81cb77u, 2u))
+        if (!BattleCall(battle, 0xc7f8u, BATTLE_ROUTINE_CHOOSE_COMMAND, 2u))
             return COMMAND_UNWOUND;
         OpDecA(cpu);
         if (cpu->zero) {
@@ -654,10 +656,10 @@ static bool BattleCommandsFinish(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
 
-    if (!BattleCall(battle, 0xcaf3u, 0x81df0au, 2u) ||
+    if (!BattleCall(battle, 0xcaf3u, BATTLE_ROUTINE_PARTY_WINDOWS, 2u) ||
         !BattleDrawCommands(battle, true) ||
-        !BattleCall(battle, 0xcb18u, 0x81c2e3u, 2u) ||
-        !BattleCall(battle, 0xcb1bu, 0x81c2fbu, 2u))
+        !BattleCall(battle, 0xcb18u, BATTLE_ROUTINE_RESET_PARTY_TILEMAP, 2u) ||
+        !BattleCall(battle, 0xcb1bu, BATTLE_ROUTINE_CLEAR_WINDOW_TILEMAP, 2u))
         return false;
     OpStz(memory, cpu, OpAbs(cpu, 0x125fu));
     OpLoadA(cpu, 2u);
@@ -675,25 +677,25 @@ static bool BattleCommandsFinish(BattleContext *battle) {
     OpTestBits(memory, cpu, OpDp(cpu, 0xd9u), 0u);
     OpStz(memory, cpu, OpAbs(cpu, 0x1b1fu));
     OpStz(memory, cpu, OpAbs(cpu, 0x124au));
-    if (!BattleCall(battle, 0xcb44u, 0x85ec81u, 3u) ||
+    if (!BattleCall(battle, 0xcb44u, BATTLE_ROUTINE_FRAME_INPUT, 3u) ||
         !BattleCall(battle, 0xcb48u, 0x81e877u, 2u))
         return false;
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(battle, 0xcb4du, 0x859b0bu, 3u))
         return false;
     OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xcb53u, 0x85ec81u, 3u) ||
+    if (!BattleCall(battle, 0xcb53u, BATTLE_ROUTINE_FRAME_INPUT, 3u) ||
         !BattleCall(battle, 0xcb57u, 0x81ebf4u, 3u) ||
-        !BattleCall(battle, 0xcb5bu, 0x858a2fu, 3u))
+        !BattleCall(battle, 0xcb5bu, BATTLE_ROUTINE_SPRITES, 3u))
         return false;
     OpLoadA(cpu, 2u);
     OpSta(memory, cpu, OpAbs(cpu, 0x15abu));
     if (!BattleCall(battle, 0xcb64u, 0x858a39u, 3u) ||
-        !BattleCall(battle, 0xcb68u, 0x8589e5u, 3u))
+        !BattleCall(battle, 0xcb68u, BATTLE_ROUTINE_CLEAR_SPRITE_OFFSETS, 3u))
         return false;
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(battle, 0xcb72u, 0x85ec81u, 3u))
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    if (!BattleCall(battle, 0xcb72u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return false;
     return true;
 }

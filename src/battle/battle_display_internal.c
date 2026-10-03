@@ -175,7 +175,7 @@ bool BattlePrepareDisplayRecords(BattleContext *battle) {
         return false;
     if (!BattleCall(battle, 0x8627u, 0x81e877u, 2u))
         return false;
-    return BattleCall(battle, 0x862au, 0x85ec81u, 3u);
+    return BattleCall(battle, 0x862au, BATTLE_ROUTINE_FRAME_INPUT, 3u);
 }
 
 /* Writes the (register, value) pairs of the PPU table, ending at a register
@@ -307,7 +307,7 @@ bool BattleLoadPresentationAssets(BattleContext *battle) {
         return false;
 
     LoadA8(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
 
     OpRepWidths(cpu, 0x20u);
     for (unsigned i = 0; i < 9u; ++i) {
@@ -373,7 +373,7 @@ bool BattleFinishDisplay(BattleContext *battle) {
 
     if (!BattleCall(battle, 0x873eu, 0x85ab5bu, 3u))
         return false;
-    if (!BattleCall(battle, 0x8742u, 0x85ec81u, 3u))
+    if (!BattleCall(battle, 0x8742u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return false;
 
     OpSta(memory, cpu, OpAbs(cpu, 0x123au));

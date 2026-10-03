@@ -50,7 +50,7 @@ BattleFrameResult BattleRunFrame(BattleContext *battle) {
     OpStz(memory, cpu, OpAbs(cpu, BATTLE_FRAME_STATE));
     if (!BattleCall(battle, 0x88b9u, 0x85ab78u, 3u))
         return BATTLE_FRAME_UNWOUND;
-    if (!BattleCall(battle, 0x88bdu, 0x8589e5u, 3u))
+    if (!BattleCall(battle, 0x88bdu, BATTLE_ROUTINE_CLEAR_SPRITE_OFFSETS, 3u))
         return BATTLE_FRAME_UNWOUND;
     if (!BattleCall(battle, 0x88c1u, 0x81890au, 2u))
         return BATTLE_FRAME_UNWOUND;

@@ -192,8 +192,8 @@ static bool SubmenuDrawFrame(BattleContext *battle) {
     if (!BattleCall(battle, 0xd459u, 0x81d9d0u, 2u))
         return false;
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(battle, 0xd462u, 0x85ec81u, 3u))
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    if (!BattleCall(battle, 0xd462u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return false;
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
     return true;
@@ -242,8 +242,8 @@ static bool SubmenuPoll(BattleContext *battle) {
     if (!BattleCall(battle, 0xd472u, 0x81d9d0u, 2u))
         return false;
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(battle, 0xd47bu, 0x85ec81u, 3u))
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    if (!BattleCall(battle, 0xd47bu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return false;
     return true;
 }
@@ -500,7 +500,7 @@ static SubmenuOutcome SubmenuInput(BattleContext *battle) {
 static Lufia2ExecutionResult BattleRunActionSubmenu(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
-    if (!BattleCall(battle, 0xd19au, 0x85ec81u, 3u))
+    if (!BattleCall(battle, 0xd19au, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return BattleChildUnwound(battle);
     OpLoadA(cpu, 0u);
     if (!BattleCall(battle, 0xd1a0u, 0x81bebcu, 3u) ||
@@ -518,7 +518,7 @@ static Lufia2ExecutionResult BattleRunActionSubmenu(BattleContext *battle) {
     if (!BattleCall(battle, 0xd21bu, 0x859b67u, 3u))
         return BattleChildUnwound(battle);
     OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xd221u, 0x85ec81u, 3u))
+    if (!BattleCall(battle, 0xd221u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return BattleChildUnwound(battle);
     OpLoadA(cpu, 2u);
     OpSta(memory, cpu, OpAbs(cpu, SNES_CGWSEL));
