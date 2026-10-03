@@ -806,66 +806,84 @@ static void CaveObjectsAndChests(
     Lufia2CaveClearVisited(memory, cpu, 0x959du);              /* 959D */
 }
 
-/* $83:95A0-$83:9653: pick the block shape of each occupied cell. The eight
- * neighbours that hold the same room value form a bit mask; the corner bits
- * are dropped when an adjacent side is open, and the result indexes the shape
- * table. The first column then gets the border shapes. */
-static void CaveShapeCells(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+/* Bits of CAVE_DP_NEIGHBOUR_BITS, most significant first, in the order the
+ * neighbours are compared: down-right, right, up-right, down, up, down-left,
+ * left, up-left. */
+enum {
+    CAVE_NEIGHBOUR_DOWN_RIGHT = 0x80u,
+    CAVE_NEIGHBOUR_UP_RIGHT = 0x20u,
+    CAVE_NEIGHBOUR_DOWN_LEFT = 0x04u,
+    CAVE_NEIGHBOUR_UP_LEFT = 0x01u,
+    CAVE_SIDES_DOWN_RIGHT = 0x50u,
+    CAVE_SIDES_DOWN_LEFT = 0x12u,
+    CAVE_SIDES_UP_LEFT = 0x0au,
+    CAVE_SIDES_UP_RIGHT = 0x48u,
+};
+
+/* Compares the cell's room value with its eight neighbours and rolls one bit
+ * per neighbour into the neighbour mask (set when they hold the same value). */
+static void CaveCollectNeighbours(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint16_t kNeighbours[8] = {
         CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT, CAVE_ROOM_GRID + CAVE_CELL_RIGHT,
         CAVE_ROOM_GRID + CAVE_CELL_UP_RIGHT,   CAVE_ROOM_GRID + CAVE_CELL_DOWN,
         CAVE_ROOM_GRID + CAVE_CELL_UP,         CAVE_ROOM_GRID + CAVE_CELL_DOWN_LEFT,
         CAVE_ROOM_GRID + CAVE_CELL_LEFT,       CAVE_ROOM_GRID + CAVE_CELL_UP_LEFT,
     };
-    static const uint8_t kSide[4] = {0x80u, 0x04u, 0x01u, 0x20u};
-    static const uint8_t kCorner[4] = {0x50u, 0x12u, 0x0au, 0x48u};
 
-    LoadA8(cpu, 0x01u);                                        /* 95A0 */
-    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
-    OpStz(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
-    Lufia2CaveCellIndex(memory, cpu, 0x95a6u);
-    OpTxy(cpu);
-    do {
-        OpLda(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID));              /* 95AA */
-        if (!cpu->zero) {
-            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE));
-            OpStz(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS));
-            OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE));
-            for (unsigned i = 0; i < 8; ++i) {
-                if (i == 5)
-                    OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE)); /* 95E0 */
-                OpCmp(memory, cpu, OpAbsY(cpu, kNeighbours[i]));
-                if (!cpu->zero)
-                    cpu->carry = 0;
-                OpRolMem8(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS));
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE));
+    OpStz(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS));
+    OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE));
+    for (unsigned i = 0; i < 8; ++i) {
+        if (i == 5)
+            OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE)); /* 95E0 */
+        OpCmp(memory, cpu, OpAbsY(cpu, kNeighbours[i]));
+        if (!cpu->zero)
+            cpu->carry = 0;
+        OpRolMem8(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS));
+    }
+}
+
+/* Checks each corner bit of the neighbour mask against the two sides next to
+ * it (the 0x50/0x12/0x0a/0x48 masks), in the ROM's order. */
+static void CaveCheckCorners(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    static const uint8_t kCornerBit[4] = {
+        CAVE_NEIGHBOUR_DOWN_RIGHT, CAVE_NEIGHBOUR_DOWN_LEFT, CAVE_NEIGHBOUR_UP_LEFT,
+        CAVE_NEIGHBOUR_UP_RIGHT};
+    static const uint8_t kAdjacentSides[4] = {CAVE_SIDES_DOWN_RIGHT,
+                                              CAVE_SIDES_DOWN_LEFT, CAVE_SIDES_UP_LEFT,
+                                              CAVE_SIDES_UP_RIGHT};
+
+    for (unsigned i = 0; i < 4; ++i) {
+        OpLda(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS)); /* 95FA */
+        if (i == 0) {
+            if (cpu->negative) {
+                OpAndValue(cpu, kAdjacentSides[i]);
+                if (cpu->zero)
+                    OpTestBits(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS), 0);
             }
-            for (unsigned i = 0; i < 4; ++i) {
-                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS)); /* 95FA */
-                if (i == 0) {
-                    if (cpu->negative) {
-                        OpAndValue(cpu, kCorner[i]);
-                        if (cpu->zero)
-                            OpTestBits(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS),
-                                       0);
-                    }
-                    continue;
-                }
-                OpBitValue(cpu, kSide[i]);
-                if (!cpu->zero) {
-                    OpAndValue(cpu, kCorner[i]);
-                    if (cpu->zero)
-                        OpTestBits(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS), 0);
-                }
-            }
-            TransferDirectToA(cpu);                            /* 9628 */
-            OpLda(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS));
-            OpTax(cpu);
-            OpLda(memory, cpu, OpLongX(cpu, CAVE_SHAPE_TABLE));
-            OpSta(memory, cpu, OpAbsY(cpu, CAVE_SHAPE_GRID));
+            continue;
         }
-        OpIny(cpu);                                            /* 9633 */
-        OpCpy(cpu, CAVE_GRID_ROWS_END);
-    } while (!cpu->carry);
+        OpBitValue(cpu, kCornerBit[i]);
+        if (!cpu->zero) {
+            OpAndValue(cpu, kAdjacentSides[i]);
+            if (cpu->zero)
+                OpTestBits(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS), 0);
+        }
+    }
+}
+
+/* Looks the neighbour mask up in the shape table and stores the shape for the
+ * cell at Y. */
+static void CaveStoreShape(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TransferDirectToA(cpu); /* 9628 */
+    OpLda(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, CAVE_SHAPE_TABLE));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_SHAPE_GRID));
+}
+
+/* Gives the first column of block cells their border shapes. */
+static void CaveBorderShapes(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdy(cpu, CAVE_FIRST_ROOM_CELL); /* 963C */
     OpLdx(cpu, 0x0000u);
     do {
@@ -880,6 +898,29 @@ static void CaveShapeCells(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         OpInx(cpu);
         OpCpx(cpu, CAVE_BORDER_SHAPES);
     } while (!cpu->carry);
+}
+
+/* $83:95A0-$83:9653: pick the block shape of each occupied cell. The eight
+ * neighbours that hold the same room value form a bit mask; the corner bits
+ * are dropped when an adjacent side is open, and the result indexes the shape
+ * table. The first column then gets the border shapes. */
+static void CaveShapeCells(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, 0x01u); /* 95A0 */
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
+    OpStz(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
+    Lufia2CaveCellIndex(memory, cpu, 0x95a6u);
+    OpTxy(cpu);
+    do {
+        OpLda(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID)); /* 95AA */
+        if (!cpu->zero) {
+            CaveCollectNeighbours(memory, cpu);
+            CaveCheckCorners(memory, cpu);
+            CaveStoreShape(memory, cpu);
+        }
+        OpIny(cpu); /* 9633 */
+        OpCpy(cpu, CAVE_GRID_ROWS_END);
+    } while (!cpu->carry);
+    CaveBorderShapes(memory, cpu);
 }
 
 /* $83:9654-$83:9692: unpack the floor's block set to $7E:4000, clear the tile
@@ -1296,13 +1337,13 @@ static void CaveDecorate(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                     if (WramStep16(wram, CAVE_DP_TILE_COUNT, -1) == 0u)
                         break;
                     tile = (uint16_t)(tile + 2u);
-}
-if (WramStep16(wram, CAVE_DP_ROW_COUNT, -1) == 0u)
-    break;
-tile = (uint16_t)(tile + CAVE_MAP_ROW_SKIP);
-cpu->accumulator = tile;
-if (tile == 0u)
-    break;
+                }
+                if (WramStep16(wram, CAVE_DP_ROW_COUNT, -1) == 0u)
+                    break;
+                tile = (uint16_t)(tile + CAVE_MAP_ROW_SKIP);
+                cpu->accumulator = tile;
+                if (tile == 0u)
+                    break;
             }
             cpu->y = tile;
         }
