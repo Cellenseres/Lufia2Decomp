@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
 #include "lufia2/world_map.h"
@@ -54,6 +55,14 @@ static uint32_t Absolute(
     return (((uint32_t)wram.data_bank << 16) + offset + index) & 0x00ffffffu;
 }
 
+static uint16_t ReadAbsolute16(
+    const Lufia2Wram wram, uint16_t offset, uint16_t index) {
+    const uint32_t low = Absolute(wram, offset, index);
+
+    return (uint16_t)(Read8(wram.memory, low) |
+        ((uint16_t)Read8(wram.memory, (low + 1u) & 0x00ffffffu) << 8));
+}
+
 static void WriteAbsolute16(
     const Lufia2Wram wram, uint16_t offset, uint16_t index, uint16_t value) {
     const uint32_t low = Absolute(wram, offset, index);
@@ -79,49 +88,49 @@ static void WriteModified16(
 
 /* $86:E295: appends object X to the visible list at Y when its box overlaps
  * the screen, storing its screen position. M0X0. */
-static void TestObjectVisible(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
-    const uint16_t object = cpu->x;
-    uint32_t count;
-    uint16_t value;
+static void AppendIfOnScreen(
+    Lufia2Wram wram, Lufia2CpuState *cpu, uint16_t object) {
+    const uint16_t y = WramRead16At(wram, OBJECT_Y, object);
+    Word16Result top;
+    Word16Result bottom;
+    Word16Result left;
+    Word16Result right;
+    Word16Result screen_y;
+    uint16_t count;
 
-    LoadA16(cpu, WramRead16At(wram, OBJECT_Y, object));
-    if (cpu->negative)
+    if ((y & 0x8000u) != 0) {
+        LeaveWord(cpu, y);
         return;
-    Subtract16(cpu, WramRead16(wram, CAMERA_Y));
-    cpu->carry = false;
-    Add16Value(cpu, WramRead16At(wram, OBJECT_HEIGHT, object));
-    Compare16(cpu, cpu->accumulator, SCREEN_HEIGHT);
-    if (cpu->carry)
+    }
+    top = Difference16(y, WramRead16(wram, CAMERA_Y));
+    bottom = Sum16(top.value, WramRead16At(wram, OBJECT_HEIGHT, object), false);
+    if (bottom.value >= SCREEN_HEIGHT) {
+        LeaveSumCompared(cpu, bottom, SCREEN_HEIGHT);
         return;
-    LoadA16(cpu, WramRead16At(wram, OBJECT_X, object));
-    cpu->carry = false;
-    Add16Value(cpu, SPRITE_MARGIN);
-    Subtract16(cpu, WramRead16(wram, CAMERA_X));
-    cpu->carry = false;
-    Add16Value(cpu, WramRead16At(wram, OBJECT_WIDTH, object));
-    Compare16(cpu, cpu->accumulator, SCREEN_WIDTH);
-    if (cpu->carry)
+    }
+    left = Sum16(WramRead16At(wram, OBJECT_X, object), SPRITE_MARGIN, false);
+    left = Difference16(left.value, WramRead16(wram, CAMERA_X));
+    right = Sum16(left.value, WramRead16At(wram, OBJECT_WIDTH, object), false);
+    if (right.value >= SCREEN_WIDTH) {
+        LeaveSumCompared(cpu, right, SCREEN_WIDTH);
         return;
-    LoadA16(cpu, WramRead16At(wram, OBJECT_X, object));
-    Subtract16(cpu, WramRead16(wram, CAMERA_X));
-    WramWrite16At(wram, OBJECT_SCREEN_X, object, cpu->accumulator);
-    LoadA16(cpu, WramRead16At(wram, OBJECT_Y, object));
-    Subtract16(cpu, WramRead16(wram, CAMERA_Y));
-    WramWrite16At(wram, OBJECT_SCREEN_Y, object, cpu->accumulator);
-    LoadA16(cpu, WramRead16At(wram, OBJECT_Y, object));
-    WriteAbsolute16(wram, VISIBLE_KEY, cpu->y, cpu->accumulator);
-    LoadA16(cpu, object);
-    WriteAbsolute16(wram, VISIBLE_OBJECT, cpu->y, cpu->accumulator);
+    }
+    WramWrite16At(wram, OBJECT_SCREEN_X, object,
+        (uint16_t)(WramRead16At(wram, OBJECT_X, object) -
+                   WramRead16(wram, CAMERA_X)));
+    screen_y = Difference16(WramRead16At(wram, OBJECT_Y, object),
+        WramRead16(wram, CAMERA_Y));
+    WramWrite16At(wram, OBJECT_SCREEN_Y, object, screen_y.value);
+    WriteAbsolute16(wram, VISIBLE_KEY, cpu->y,
+        WramRead16At(wram, OBJECT_Y, object));
+    WriteAbsolute16(wram, VISIBLE_OBJECT, cpu->y, object);
     cpu->y = (uint16_t)(cpu->y + 2u);
-    SetNz16(cpu, cpu->y);
-    count = Absolute(wram, VISIBLE_COUNT, 0);
-    value = (uint16_t)(Read8(memory, count) |
-                       ((uint16_t)Read8(memory, (count + 1u) & 0x00ffffffu) << 8));
-    value = (uint16_t)(value + 1u);
-    Write8(memory, (count + 1u) & 0x00ffffffu, (uint8_t)(value >> 8));
-    Write8(memory, count, (uint8_t)value);
-    SetNz16(cpu, value);
+    count = (uint16_t)(ReadAbsolute16(wram, VISIBLE_COUNT, 0) + 1u);
+    WriteModified16(wram, VISIBLE_COUNT, 0, count);
+    cpu->carry = screen_y.carry;
+    cpu->overflow = screen_y.overflow;
+    cpu->accumulator = object;
+    LeaveCounter(cpu, count);
 }
 
 Lufia2ExecutionResult Lufia2WorldMapTestObject(
@@ -129,7 +138,7 @@ Lufia2ExecutionResult Lufia2WorldMapTestObject(
     Lufia2CpuState *cpu) {
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e295u);
-    TestObjectVisible(memory, cpu, WramViewOfCaller(memory, cpu));
+    AppendIfOnScreen(WramViewOfCaller(memory, cpu), cpu, cpu->x);
     return ExecutionReturned(0x86e2d1u);
 }
 
@@ -139,20 +148,22 @@ Lufia2ExecutionResult Lufia2WorldMapTestObjects(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
+    Word16Result next = {0, false, false};
+    uint16_t objects_left;
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e287u);
     wram = WramViewOfCaller(memory, cpu);
     do {
         SimulateJsrFrame(memory, cpu, 0xe289u);
-        TestObjectVisible(memory, cpu, wram);
+        AppendIfOnScreen(wram, cpu, cpu->x);
         SimulateRtsFrame(memory, cpu);
-        TransferXToA(cpu);
-        cpu->carry = false;
-        Add16Value(cpu, OBJECT_SIZE);
-        TransferAToX(cpu);
-        SetNz16(cpu, StepDirect16(wram, OBJECTS_LEFT, -1));
-    } while (!cpu->zero);
+        next = Sum16(cpu->x, OBJECT_SIZE, false);
+        cpu->x = next.value;
+        objects_left = StepDirect16(wram, OBJECTS_LEFT, -1);
+    } while (objects_left != 0);
+    LeaveSum(cpu, next);
+    LeaveCounter(cpu, objects_left);
     return ExecutionReturned(0x86e294u);
 }
 
@@ -161,20 +172,19 @@ Lufia2ExecutionResult Lufia2WorldMapClearSlotFlags(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
-    uint8_t left;
+    uint16_t slot = SLOT_TABLE;
+    unsigned count;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e640u);
     wram = WramViewOfCaller(memory, cpu);
-    cpu->x = SLOT_TABLE;
-    LoadA8(cpu, SLOT_COUNT);
-    LoadY16(cpu, 0);
-    for (left = SLOT_COUNT; left != 0; --left) {
-        WramWrite16At(wram, SLOT_FLAGS, cpu->x, cpu->y);
-        cpu->x = (uint16_t)(cpu->x + 2u);
-        SetNz16(cpu, cpu->x);
-        DecrementA8(cpu);
+    for (count = 0; count < SLOT_COUNT; ++count) {
+        WramWrite16At(wram, SLOT_FLAGS, slot, 0);
+        slot = (uint16_t)(slot + 2u);
     }
+    cpu->x = slot;
+    cpu->y = 0;
+    LoadA8(cpu, 0);
     return ExecutionReturned(0x86e64fu);
 }
 
@@ -183,45 +193,33 @@ Lufia2ExecutionResult Lufia2WorldMapClearSlotFlags(
 Lufia2ExecutionResult Lufia2WorldMapClearSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    /* The Y bytes of the eight sprites of an OAM row, from the row start. */
     static const uint8_t kYOffsets[8] = {0x01u, 0x05u, 0x09u, 0x0du,
                                          0x11u, 0x15u, 0x19u, 0x1du};
     Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t at = OAM_BUFFER;
     unsigned row;
     unsigned i;
 
     Push8(memory, cpu, PackStatus(cpu));
-    SetIndexWidth(cpu, 0);
-    cpu->x = OAM_BUFFER;
-    cpu->y = OAM_ROWS;
-    cpu->carry = false;
     for (row = 0; row < OAM_ROWS; ++row) {
-        SetAccumulatorWidth(cpu, 1);
-        LoadA8(cpu, OAM_HIDDEN_Y);
         for (i = 0; i < 8u; ++i)
-            WramWriteAt(wram, kYOffsets[i], cpu->x, A8(cpu));
-        SetAccumulatorWidth(cpu, 0);
-        TransferXToA(cpu);
-        Add16Value(cpu, OAM_ROW_SIZE);
-        TransferAToX(cpu);
-        cpu->y = (uint16_t)(cpu->y - 1u);
-        SetNz16(cpu, cpu->y);
+            WramWriteAt(wram, kYOffsets[i], at, OAM_HIDDEN_Y);
+        at = (uint16_t)(at + OAM_ROW_SIZE);
     }
-    cpu->y = OAM_HIGH_TABLE_WORDS;
-    SetNz16(cpu, cpu->y);
+    cpu->accumulator = at;
     for (i = 0; i < OAM_HIGH_TABLE_WORDS; ++i) {
-        WramWrite16At(wram, 0, cpu->x, 0);
-        cpu->x = (uint16_t)(cpu->x + 2u);
-        SetNz16(cpu, cpu->x);
-        cpu->y = (uint16_t)(cpu->y - 1u);
-        SetNz16(cpu, cpu->y);
+        WramWrite16At(wram, 0, at, 0);
+        at = (uint16_t)(at + 2u);
     }
-    SetAccumulatorWidth(cpu, 1);
+    cpu->x = at;
+    cpu->y = 0;
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x86e685u);
 }
 
-/* Animation record fields of an object, and the layout of an animation frame
- * in ROM (a pointer to a table of frame records, indexed by pose). */
+/* Animation fields of an object, and the layout of the animation data in
+ * ROM: a table of animations, each a table of per-pose records. */
 enum {
     OBJECT_POSE = 0x0fu,
     OBJECT_ANIMATION = 0x10u,
@@ -231,7 +229,7 @@ enum {
     OBJECT_FRAME_RESTART = 0x12u,
     OBJECT_SPRITE_FLAGS = 0x12u,
     OBJECT_TIMER = 0x15u,
-    OBJECT_ANIMATION_FLAGS = 0x18u,
+    OBJECT_NEXT_ANIMATION = 0x18u,
     OBJECT_STEP_X = 0x0bu,
     OBJECT_STEP_X_HIGH = 0x0cu,
     OBJECT_STEP_Y = 0x0du,
@@ -239,76 +237,82 @@ enum {
     OBJECT_FRAME_POINTER = 0x19u,
     OBJECT_TILE_BASE = 0x17u,
     ANIMATION_POINTERS = 0xeba7u,
-    FRAME_POINTER_LOCATION = 0x00u,
+    TABLE_POINTER_SCRATCH = 0x00u,
     FRAME_SIZE = 5u,
     OBJECT_COUNT = 0x16u,
     OBJECT_TABLE = 0x1469u
 };
 
-static uint16_t ReadAbsolute16(
-    const Lufia2Wram wram, uint16_t offset, uint16_t index) {
-    const uint32_t low = Absolute(wram, offset, index);
+/* Bytes of an animation record, reached through the data bank. */
+enum {
+    RECORD_COUNT = 0u,    /* frames in the animation */
+    RECORD_RESTART = 1u,
+    RECORD_END = 2u,      /* bit 0 set: loop; clear: go on to the next one */
+    RECORD_POINTER = 3u,  /* word; bit 15 set: a tile base byte lies there */
+    RECORD_STEP_X = 5u,   /* signed */
+    RECORD_STEP_Y = 6u,   /* signed */
+    RECORD_TIMER = 7u,
+    TILE_BASE_MASK = 0x7fu,
+    LOOP_BIT = 0x01u
+};
 
-    return (uint16_t)(Read8(wram.memory, low) |
-        ((uint16_t)Read8(wram.memory, (low + 1u) & 0x00ffffffu) << 8));
+static bool IsNegative16(uint16_t value) {
+    return (value & 0x8000u) != 0;
 }
 
-/* Stores a step byte and its sign extension (A is left $FF for a negative
- * step). */
+/* Stores a signed step byte with its sign extension. */
 static void StoreStep(
-    Lufia2Wram wram, Lufia2CpuState *cpu, uint16_t object, uint8_t low,
-    uint8_t high) {
-    WramWriteAt(wram, low, object, A8(cpu));
-    if (cpu->negative) {
-        LoadA8(cpu, 0xffu);
-        WramWriteAt(wram, high, object, A8(cpu));
-    } else {
-        WramWriteAt(wram, high, object, 0);
-    }
+    Lufia2Wram wram, uint16_t object, uint8_t low_field, uint8_t high_field,
+    uint8_t step) {
+    WramWriteAt(wram, low_field, object, step);
+    WramWriteAt(wram, high_field, object, (step & 0x80u) != 0 ? 0xffu : 0u);
 }
 
-/* Reads the frame record at Y into the object's step and timer fields; with
- * `full` also its frame bounds. M=1 on return. */
-static void LoadFrameStep(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram,
-    bool full) {
-    const uint16_t object = cpu->x;
-    const uint16_t frame = cpu->y;
+/* Copies the step and timer of the record into the object; `whole` also
+ * copies the frame bounds and restarts the frame counter. Returns the last
+ * byte read. */
+static uint8_t LoadFrameStep(
+    Lufia2Wram wram, uint16_t object, uint16_t record, bool whole) {
+    uint8_t byte = Read8(wram.memory, Absolute(wram, RECORD_STEP_X, record));
 
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, Absolute(wram, 5u, frame)));
-    StoreStep(wram, cpu, object, OBJECT_STEP_X, OBJECT_STEP_X_HIGH);
-    LoadA8(cpu, Read8(memory, Absolute(wram, 6u, frame)));
-    StoreStep(wram, cpu, object, OBJECT_STEP_Y, OBJECT_STEP_Y_HIGH);
-    LoadA8(cpu, Read8(memory, Absolute(wram, 7u, frame)));
-    WramWriteAt(wram, OBJECT_TIMER, object, A8(cpu));
-    if (full) {
-        LoadA8(cpu, Read8(memory, Absolute(wram, 0u, frame)));
-        WramWriteAt(wram, OBJECT_FRAME_COUNT, object, A8(cpu));
-        LoadA8(cpu, Read8(memory, Absolute(wram, 2u, frame)));
-        WramWriteAt(wram, OBJECT_FRAME_END, object, A8(cpu));
+    StoreStep(wram, object, OBJECT_STEP_X, OBJECT_STEP_X_HIGH, byte);
+    byte = Read8(wram.memory, Absolute(wram, RECORD_STEP_Y, record));
+    StoreStep(wram, object, OBJECT_STEP_Y, OBJECT_STEP_Y_HIGH, byte);
+    byte = Read8(wram.memory, Absolute(wram, RECORD_TIMER, record));
+    WramWriteAt(wram, OBJECT_TIMER, object, byte);
+    if (whole) {
+        byte = Read8(wram.memory, Absolute(wram, RECORD_COUNT, record));
+        WramWriteAt(wram, OBJECT_FRAME_COUNT, object, byte);
+        byte = Read8(wram.memory, Absolute(wram, RECORD_END, record));
+        WramWriteAt(wram, OBJECT_FRAME_END, object, byte);
         WramWriteAt(wram, OBJECT_FRAME, object, 0);
-        LoadA8(cpu, Read8(memory, Absolute(wram, 1u, frame)));
-        WramWriteAt(wram, OBJECT_FRAME_RESTART, object, A8(cpu));
+        byte = Read8(wram.memory, Absolute(wram, RECORD_RESTART, record));
+        WramWriteAt(wram, OBJECT_FRAME_RESTART, object, byte);
     }
+    return byte;
 }
 
-/* Loads the frame pointer of pose/animation: the record address Y. */
-static uint16_t FindFrame(Lufia2Wram wram, Lufia2CpuState *cpu) {
-    const uint16_t table = ReadAbsolute16(wram, ANIMATION_POINTERS, cpu->y);
-    uint32_t at;
+/* Finds the record of the object's pose in the table of an animation
+ * (`animation_offset` is twice the animation number). The table pointer is
+ * left in the scratch word at $00. */
+static uint16_t FindPoseRecord(
+    Lufia2Wram wram, uint16_t object, uint16_t animation_offset) {
+    const uint16_t table =
+        ReadAbsolute16(wram, ANIMATION_POINTERS, animation_offset);
+    const uint16_t pose =
+        (uint16_t)((WramRead16At(wram, OBJECT_POSE, object) & 0x00ffu) << 1);
 
-    LoadA16(cpu, table);
-    WramWrite16(wram, FRAME_POINTER_LOCATION, cpu->accumulator);
-    LoadA16(cpu, WramRead16At(wram, OBJECT_POSE, cpu->x));
-    And16(cpu, 0x00ffu);
-    AslA16(cpu);
-    TransferAToY(cpu);
-    at = (((uint32_t)wram.data_bank << 16) + WramRead16(wram, FRAME_POINTER_LOCATION)
-          + cpu->y) & 0x00ffffffu;
-    LoadA16(cpu, (uint16_t)(Read8(wram.memory, at) |
-        ((uint16_t)Read8(wram.memory, (at + 1u) & 0x00ffffffu) << 8)));
-    return cpu->accumulator;
+    WramWrite16(wram, TABLE_POINTER_SCRATCH, table);
+    return ReadAbsolute16(wram, WramRead16(wram, TABLE_POINTER_SCRATCH), pose);
+}
+
+/* The tile base of a frame: the byte a negative record pointer leads to,
+ * or zero. */
+static uint8_t TileBaseOf(Lufia2Wram wram, uint16_t pointer) {
+    const uint8_t base =
+        IsNegative16(pointer) ? Read8(wram.memory, Absolute(wram, 0u, pointer)) : 0;
+
+    return (uint8_t)(base & TILE_BASE_MASK);
 }
 
 /* $86:E0B9: starts animation A on object X. M1X0. */
@@ -316,65 +320,81 @@ Lufia2ExecutionResult Lufia2WorldMapStartAnimation(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
+    uint16_t object;
+    uint16_t record;
+    uint16_t pointer;
+    uint8_t tile_base;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e0b9u);
     wram = WramViewOfCaller(memory, cpu);
-    WramWriteAt(wram, OBJECT_ANIMATION, cpu->x, A8(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    And16(cpu, 0x00ffu);
-    AslA16(cpu);
-    TransferAToY(cpu);
-    (void)FindFrame(wram, cpu);
-    TransferAToY(cpu);
-    LoadA16(cpu, ReadAbsolute16(wram, 3u, cpu->y));
-    WramWrite16At(wram, OBJECT_FRAME_POINTER, cpu->x, cpu->accumulator);
-    LoadFrameStep(memory, cpu, wram, true);
-    LoadY16(cpu, WramRead16At(wram, OBJECT_FRAME_POINTER, cpu->x));
-    if (cpu->negative) {
-        const uint16_t object = cpu->x;
-
-        Push8(memory, cpu, (uint8_t)(object >> 8));
-        Push8(memory, cpu, (uint8_t)object);
-        cpu->x = cpu->y;
-        SetNz16(cpu, cpu->x);
-        LoadA8(cpu, Read8(memory, Absolute(wram, 0u, cpu->x)));
-        cpu->x = PullIndexValue(memory, cpu);
-    } else {
-        LoadA8(cpu, 0);
-    }
-    And8(cpu, 0x7fu);
-    WramWriteAt(wram, OBJECT_TILE_BASE, cpu->x, A8(cpu));
+    object = cpu->x;
+    WramWriteAt(wram, OBJECT_ANIMATION, object, A8(cpu));
+    record = FindPoseRecord(wram, object, (uint16_t)(A8(cpu) << 1));
+    pointer = ReadAbsolute16(wram, RECORD_POINTER, record);
+    WramWrite16At(wram, OBJECT_FRAME_POINTER, object, pointer);
+    (void)LoadFrameStep(wram, object, record, true);
+    cpu->y = WramRead16At(wram, OBJECT_FRAME_POINTER, object);
+    if (IsNegative16(cpu->y))
+        PushStackWord(memory, cpu, object);
+    tile_base = TileBaseOf(wram, cpu->y);
+    if (IsNegative16(cpu->y))
+        (void)PullStackWord(memory, cpu);
+    WramWriteAt(wram, OBJECT_TILE_BASE, object, tile_base);
+    cpu->accumulator = (uint16_t)((pointer & 0xff00u) | tile_base);
+    cpu->carry = false;
+    SetNz8(cpu, tile_base);
     return ExecutionReturned(0x86e11au);
 }
 
-/* $86:E186: after the frame counter moved, finds the frame record for the
- * product in $4216 and loads the object's frame pointer. M1X0. */
-static void NextFrameRecord(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
-    const uint16_t object = cpu->x;
+/* $86:E186: after the frame counter moved, finds the record of the new
+ * frame (the product in $4216 is the frame number times the record size) and
+ * loads the object's frame pointer and tile base. M1X0. Returns the record. */
+static uint16_t NextFrameRecord(
+    Lufia2Wram wram, Lufia2CpuState *cpu, uint16_t object) {
+    const uint16_t animation_offset =
+        (uint16_t)(WramReadAt(wram, OBJECT_ANIMATION, object) << 1);
+    const uint16_t pose_record = FindPoseRecord(wram, object, animation_offset);
+    const uint16_t record = (uint16_t)(pose_record +
+        WramRead16(wram, SNES_RDMPYL));
+    const uint16_t pointer = ReadAbsolute16(wram, RECORD_POINTER, record);
+    uint8_t tile_base;
 
-    LoadA8(cpu, WramReadAt(wram, OBJECT_ANIMATION, object));
-    SetAccumulatorWidth(cpu, 0);
-    And16(cpu, 0x00ffu);
-    AslA16(cpu);
-    TransferAToY(cpu);
-    (void)FindFrame(wram, cpu);
-    Add16Value(cpu, WramRead16(wram, SNES_RDMPYL));
-    TransferAToY(cpu);
-    LoadA16(cpu, ReadAbsolute16(wram, 3u, cpu->y));
-    WramWrite16At(wram, OBJECT_FRAME_POINTER, object, cpu->accumulator);
-    Push8(memory, cpu, (uint8_t)(object >> 8));
-    Push8(memory, cpu, (uint8_t)object);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    if (cpu->negative)
-        LoadA8(cpu, Read8(memory, Absolute(wram, 0u, cpu->x)));
-    else
-        LoadA8(cpu, 0);
-    cpu->x = PullIndexValue(memory, cpu);
-    And8(cpu, 0x7fu);
-    WramWriteAt(wram, OBJECT_TILE_BASE, cpu->x, A8(cpu));
+    WramWrite16At(wram, OBJECT_FRAME_POINTER, object, pointer);
+    PushStackWord(wram.memory, cpu, object);
+    tile_base = TileBaseOf(wram, pointer);
+    (void)PullStackWord(wram.memory, cpu);
+    WramWriteAt(wram, OBJECT_TILE_BASE, object, tile_base);
+    return record;
+}
+
+/* The timer of the object ran out: moves on to the next frame, looping or
+ * starting the follow-up animation at the end. Returns Y as it is left. */
+static uint16_t AdvanceFrame(
+    Lufia2Wram wram, Lufia2CpuState *cpu, uint16_t object) {
+    const Lufia2Memory *memory = wram.memory;
+    uint8_t frame = (uint8_t)(WramReadAt(wram, OBJECT_FRAME, object) + 1u);
+    uint16_t record;
+
+    if (frame >= WramReadAt(wram, OBJECT_FRAME_COUNT, object)) {
+        if ((WramReadAt(wram, OBJECT_FRAME_END, object) & LOOP_BIT) == 0) {
+            cpu->x = object;
+            LoadA8(cpu, WramReadAt(wram, OBJECT_NEXT_ANIMATION, object));
+            SimulateJsrFrame(memory, cpu, 0xe17fu);
+            (void)Lufia2WorldMapStartAnimation(memory, cpu);
+            SimulateRtsFrame(memory, cpu);
+            return cpu->y;
+        }
+        frame = 0;
+    }
+    WramWriteAt(wram, OBJECT_FRAME, object, frame);
+    WramWrite(wram, SNES_WRMPYA, frame);
+    WramWrite(wram, SNES_WRMPYB, FRAME_SIZE);
+    SimulateJsrFrame(memory, cpu, 0xe142u);
+    record = NextFrameRecord(wram, cpu, object);
+    SimulateRtsFrame(memory, cpu);
+    (void)LoadFrameStep(wram, object, record, false);
+    return record;
 }
 
 /* $86:E11F: steps the animation of all 22 objects. A timer of 1 runs out
@@ -383,65 +403,33 @@ Lufia2ExecutionResult Lufia2WorldMapStepAnimations(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
-    bool restart;
+    Word16Result next = {OBJECT_TABLE, false, false};
+    uint16_t object = OBJECT_TABLE;
+    uint16_t y = cpu->y;
+    uint8_t left = OBJECT_COUNT;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e11fu);
     wram = WramViewOfCaller(memory, cpu);
-    cpu->x = OBJECT_TABLE;
-    LoadA8(cpu, OBJECT_COUNT);
-    WramWrite(wram, OBJECTS_LEFT, A8(cpu));
+    WramWrite(wram, OBJECTS_LEFT, left);
     do {
-        LoadA8(cpu, WramReadAt(wram, OBJECT_TIMER, cpu->x));
-        if (cpu->zero || cpu->negative) {
-            WramWriteAt(wram, OBJECT_TIMER, cpu->x, A8(cpu));
-        } else {
-            DecrementA8(cpu);
-            if (!cpu->zero) {
-                WramWriteAt(wram, OBJECT_TIMER, cpu->x, A8(cpu));
-            } else {
-                LoadA8(cpu, WramReadAt(wram, OBJECT_FRAME, cpu->x));
-                LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-                Compare8(cpu, A8(cpu), WramReadAt(wram, OBJECT_FRAME_COUNT, cpu->x));
-                restart = false;
-                if (cpu->carry) {
-                    LoadA8(cpu, WramReadAt(wram, OBJECT_FRAME_END, cpu->x));
-                    BitImmediate8(cpu, 1u);
-                    if (cpu->zero) {
-                        LoadA8(cpu, WramReadAt(wram, OBJECT_ANIMATION_FLAGS, cpu->x));
-                        SimulateJsrFrame(memory, cpu, 0xe17fu);
-                        (void)Lufia2WorldMapStartAnimation(memory, cpu);
-                        SimulateRtsFrame(memory, cpu);
-                        restart = true;
-                    } else {
-                        LoadA8(cpu, 0);
-                    }
-                }
-                if (!restart) {
-                    WramWriteAt(wram, OBJECT_FRAME, cpu->x, A8(cpu));
-                    WramWrite(wram, SNES_WRMPYA, A8(cpu));
-                    LoadA8(cpu, FRAME_SIZE);
-                    WramWrite(wram, SNES_WRMPYB, A8(cpu));
-                    SimulateJsrFrame(memory, cpu, 0xe142u);
-                    NextFrameRecord(memory, cpu, wram);
-                    SimulateRtsFrame(memory, cpu);
-                    LoadFrameStep(memory, cpu, wram, false);
-                }
-            }
-        }
-        SetAccumulatorWidth(cpu, 0);
-        TransferXToA(cpu);
-        cpu->carry = false;
-        Add16Value(cpu, OBJECT_SIZE);
-        TransferAToX(cpu);
-        SetAccumulatorWidth(cpu, 1);
-        {
-            const uint8_t left = (uint8_t)(WramRead(wram, OBJECTS_LEFT) - 1u);
+        const uint8_t timer = WramReadAt(wram, OBJECT_TIMER, object);
 
-            WramWrite(wram, OBJECTS_LEFT, left);
-            SetNz8(cpu, left);
-        }
-    } while (!cpu->zero);
+        if (timer == 0 || (timer & 0x80u) != 0)
+            WramWriteAt(wram, OBJECT_TIMER, object, timer);
+        else if (timer != 1)
+            WramWriteAt(wram, OBJECT_TIMER, object, (uint8_t)(timer - 1u));
+        else
+            y = AdvanceFrame(wram, cpu, object);
+        next = Sum16(object, OBJECT_SIZE, false);
+        object = next.value;
+        left = (uint8_t)(WramRead(wram, OBJECTS_LEFT) - 1u);
+        WramWrite(wram, OBJECTS_LEFT, left);
+    } while (left != 0);
+    cpu->x = object;
+    cpu->y = y;
+    LeaveSum(cpu, next);
+    SetNz8(cpu, left);
     return ExecutionReturned(0x86e174u);
 }
 
@@ -474,71 +462,44 @@ enum {
     OAM_HIGH_TABLE = 0x0300u
 };
 
-/* High-table field handlers, indexed by the counter's low two bits. Each gets
- * the old high-table byte in A and the x bits at $05, and leaves the new byte
- * in A (M1). */
-static void MergeHighBits(
-    Lufia2Wram wram, Lufia2CpuState *cpu, unsigned field) {
+/* Merges the two high bits of the x position into their field of the
+ * high-table byte: `kKeep` is what stays of the old byte. */
+static uint8_t MergeXBits(Lufia2Wram wram, uint8_t old_byte, unsigned field) {
     static const uint8_t kKeep[4] = {0xfcu, 0xf3u, 0xcfu, 0x3fu};
+    const uint8_t kept = (uint8_t)(old_byte & kKeep[field]);
+    uint8_t bits;
 
-    And8(cpu, kKeep[field]);
-    WramWrite(wram, DRAW_ATTRIBUTES, A8(cpu));
-    LoadA8(cpu, WramRead(wram, DRAW_SCREEN_X_HIGH));
-    And8(cpu, 3u);
-    switch (field) {
-    case 1:
-        AslA8(cpu);
-        AslA8(cpu);
-        break;
-    case 2:
-        AslA8(cpu);
-        AslA8(cpu);
-        AslA8(cpu);
-        AslA8(cpu);
-        break;
-    case 3:
-        LsrA8(cpu);
-        RorA8(cpu);
-        RorA8(cpu);
-        break;
-    default:
-        break;
-    }
-    Or8(cpu, WramRead(wram, DRAW_ATTRIBUTES));
+    WramWrite(wram, DRAW_ATTRIBUTES, kept);
+    bits = (uint8_t)(WramRead(wram, DRAW_SCREEN_X_HIGH) & 3u);
+    return (uint8_t)((bits << (2u * field)) | WramRead(wram, DRAW_ATTRIBUTES));
 }
 
 /* The shared body of $86:E5BB and of the copies of it inside $86:E479 and
  * $86:E4E7; they differ only in the return address their indirect call
- * leaves on the stack. M0X0. */
+ * leaves on the stack. The sprite counter picks a 2-bit field (its low
+ * bits) of a byte (the rest) of the OAM high table. M0X0. */
 static void StoreHighBitsBody(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram,
     uint16_t handler_return) {
-    uint16_t counter;
-    uint32_t location;
+    const uint16_t counter = ReadAbsolute16(wram, SPRITE_COUNTER, 0);
+    const unsigned field = counter & 3u;
+    const uint16_t byte_index = (uint16_t)(counter >> 2);
+    const uint32_t table_byte = Absolute(wram, OAM_HIGH_TABLE, byte_index);
+    const uint32_t counter_byte = Absolute(wram, SPRITE_COUNTER, 0);
+    uint8_t merged = Read8(memory, table_byte);
+    uint8_t next;
 
-    counter = ReadAbsolute16(wram, SPRITE_COUNTER, 0);
-    LoadA16(cpu, counter);
-    And16(cpu, 3u);
-    AslA16(cpu);
-    TransferAToX(cpu);
-    LoadA16(cpu, counter);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    TransferAToY(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, Absolute(wram, OAM_HIGH_TABLE, cpu->y)));
     SimulateJsrFrame(memory, cpu, handler_return);
-    MergeHighBits(wram, cpu, cpu->x >> 1);
+    merged = MergeXBits(wram, merged, field);
     SimulateRtsFrame(memory, cpu);
-    Write8(memory, Absolute(wram, OAM_HIGH_TABLE, cpu->y), A8(cpu));
-    location = Absolute(wram, SPRITE_COUNTER, 0);
-    {
-        const uint8_t next = (uint8_t)(Read8(memory, location) + 1u);
-
-        Write8(memory, location, next);
-        SetNz8(cpu, next);
-    }
-    SetAccumulatorWidth(cpu, 0);
+    Write8(memory, table_byte, merged);
+    next = (uint8_t)(Read8(memory, counter_byte) + 1u);
+    Write8(memory, counter_byte, next);
+    cpu->x = (uint16_t)(field << 1);
+    cpu->y = byte_index;
+    cpu->accumulator = (uint16_t)((byte_index & 0xff00u) | merged);
+    cpu->carry = field == 0 ? ((counter >> 1) & 1u) != 0 : false;
+    SetNz8(cpu, next);
 }
 
 /* $86:E5BB: stores the next two x bits of the sprite pair into the OAM high
@@ -552,6 +513,49 @@ Lufia2ExecutionResult Lufia2WorldMapStoreHighBits(
     return ExecutionReturned(0x86e5d9u);
 }
 
+/* Sets bits in the attribute flags byte. */
+static void AddAttributeFlags(Lufia2Wram wram, uint8_t bits) {
+    WramWrite(wram, DRAW_ATTRIBUTE_FLAGS,
+        (uint8_t)(WramRead(wram, DRAW_ATTRIBUTE_FLAGS) | bits));
+}
+
+/* Starts the sprite: the base attributes and the OAM slot offset, which is
+ * four bytes per sprite counted. Returns the object. */
+static uint16_t BeginSprite(Lufia2Wram wram, uint16_t *slot) {
+    const uint16_t object = WramRead16(wram, DRAW_OBJECT);
+
+    WramWrite16(wram, DRAW_ATTRIBUTES, DRAW_BASE_ATTRIBUTES);
+    *slot = (uint16_t)(ReadAbsolute16(wram, SPRITE_COUNTER, 0) << 2);
+    return object;
+}
+
+/* The horizontal position of a sprite: the object's screen x moved by its
+ * step, mirrored for poses 3 and up, which also sets the mirror attribute. */
+static uint16_t SpriteScreenX(Lufia2Wram wram, uint16_t object) {
+    if (WramReadAt(wram, OBJECT_POSE, object) >= DRAW_MIRROR_POSE) {
+        AddAttributeFlags(wram, DRAW_MIRROR_FLAG);
+        return (uint16_t)(WramRead16At(wram, OBJECT_SCREEN_X, object) -
+                          WramRead16At(wram, OBJECT_STEP_X, object));
+    }
+    return (uint16_t)(WramRead16At(wram, OBJECT_SCREEN_X, object) +
+                      WramRead16At(wram, OBJECT_STEP_X, object));
+}
+
+/* The vertical position: screen y plus the y step, less `bias`. */
+static Byte8Result SpriteScreenY(
+    Lufia2Wram wram, uint16_t object, uint8_t bias) {
+    const uint8_t screen_y = WramReadAt(wram, OBJECT_SCREEN_Y, object);
+    const uint8_t height = WramReadAt(wram, OBJECT_HEIGHT, object);
+
+    return Difference8(Sum8(screen_y, height, false).value, bias);
+}
+
+/* The tile word of the sprite: the tile number with the attributes. */
+static uint16_t SpriteTile(Lufia2Wram wram) {
+    return (uint16_t)(WramRead16(wram, DRAW_TILE) |
+                      WramRead16(wram, DRAW_ATTRIBUTES));
+}
+
 /* $86:E555: writes the pair of hardware sprites of the object at $02 into
  * the OAM buffer slots selected by the sprite counter, mirroring objects
  * whose pose is 3 or more, then stores both x bits. M0X0 only. */
@@ -559,107 +563,65 @@ Lufia2ExecutionResult Lufia2WorldMapDrawSpritePair(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
-    uint32_t slot;
-    uint8_t flags;
+    uint16_t object;
+    uint16_t slot;
+    uint16_t screen_x;
+    uint8_t top;
+    uint16_t tile;
+    Word16Result lower_tile;
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e555u);
     wram = WramViewOfCaller(memory, cpu);
-    LoadX16(cpu, WramRead16(wram, DRAW_OBJECT));
-    LoadY16(cpu, DRAW_BASE_ATTRIBUTES);
-    WramWrite16(wram, DRAW_ATTRIBUTES, cpu->y);
-    LoadA16(cpu, ReadAbsolute16(wram, SPRITE_COUNTER, 0));
-    AslA16(cpu);
-    AslA16(cpu);
-    TransferAToY(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, WramReadAt(wram, OBJECT_POSE, cpu->x));
-    Compare8(cpu, A8(cpu), DRAW_MIRROR_POSE);
-    if (cpu->carry) {
-        const uint8_t old = WramRead(wram, DRAW_ATTRIBUTE_FLAGS);
-
-        LoadA8(cpu, DRAW_MIRROR_FLAG);
-        cpu->zero = (old & A8(cpu)) == 0;
-        WramWrite(wram, DRAW_ATTRIBUTE_FLAGS, (uint8_t)(old | A8(cpu)));
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, WramRead16At(wram, OBJECT_SCREEN_X, cpu->x));
-        Subtract16(cpu, WramRead16At(wram, OBJECT_STEP_X, cpu->x));
-    } else {
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, WramRead16At(wram, OBJECT_SCREEN_X, cpu->x));
-        cpu->carry = false;
-        Add16Value(cpu, WramRead16At(wram, OBJECT_STEP_X, cpu->x));
-    }
-    Subtract16(cpu, DRAW_X_BIAS);
-    And16(cpu, DRAW_X_MASK);
-    WramWrite16(wram, DRAW_SCREEN_X, cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
-    slot = Absolute(wram, OAM_BUFFER, cpu->y);
-    Write8(memory, slot, A8(cpu));
-    Write8(memory, Absolute(wram, OAM_BUFFER + 4u, cpu->y), A8(cpu));
-    LoadA8(cpu, WramReadAt(wram, OBJECT_SPRITE_FLAGS, cpu->x));
-    flags = WramRead(wram, DRAW_ATTRIBUTE_FLAGS);
-    cpu->zero = (flags & A8(cpu)) == 0;
-    WramWrite(wram, DRAW_ATTRIBUTE_FLAGS, (uint8_t)(flags | A8(cpu)));
-    LoadA8(cpu, WramReadAt(wram, OBJECT_SCREEN_Y, cpu->x));
-    cpu->carry = false;
-    Adc8(cpu, (uint8_t)WramReadAt(wram, OBJECT_HEIGHT, cpu->x));
-    cpu->carry = true;
-    Sbc8(cpu, DRAW_Y_BIAS);
-    Write8(memory, Absolute(wram, OAM_BUFFER + 1u, cpu->y), A8(cpu));
-    cpu->carry = false;
-    Adc8(cpu, DRAW_LOWER_ROW);
-    Write8(memory, Absolute(wram, OAM_BUFFER + 5u, cpu->y), A8(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, WramRead16(wram, DRAW_TILE));
-    Or16(cpu, WramRead16(wram, DRAW_ATTRIBUTES));
-    WriteAbsolute16(wram, OAM_BUFFER + 2u, cpu->y, cpu->accumulator);
-    cpu->carry = false;
-    Add16Value(cpu, DRAW_NEXT_TILE);
-    WriteAbsolute16(wram, OAM_BUFFER + 6u, cpu->y, cpu->accumulator);
+    object = BeginSprite(wram, &slot);
+    screen_x = (uint16_t)((SpriteScreenX(wram, object) - DRAW_X_BIAS) &
+                          DRAW_X_MASK);
+    WramWrite16(wram, DRAW_SCREEN_X, screen_x);
+    Write8(memory, Absolute(wram, OAM_BUFFER, slot), (uint8_t)screen_x);
+    Write8(memory, Absolute(wram, OAM_BUFFER + 4u, slot), (uint8_t)screen_x);
+    AddAttributeFlags(wram, WramReadAt(wram, OBJECT_SPRITE_FLAGS, object));
+    top = SpriteScreenY(wram, object, DRAW_Y_BIAS).value;
+    Write8(memory, Absolute(wram, OAM_BUFFER + 1u, slot), top);
+    Write8(memory, Absolute(wram, OAM_BUFFER + 5u, slot),
+        (uint8_t)(top + DRAW_LOWER_ROW));
+    tile = SpriteTile(wram);
+    WriteAbsolute16(wram, OAM_BUFFER + 2u, slot, tile);
+    lower_tile = Sum16(tile, DRAW_NEXT_TILE, false);
+    WriteAbsolute16(wram, OAM_BUFFER + 6u, slot, lower_tile.value);
     SimulateJsrFrame(memory, cpu, 0xe5b6u);
     (void)Lufia2WorldMapStoreHighBits(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     SimulateJsrFrame(memory, cpu, 0xe5b9u);
     (void)Lufia2WorldMapStoreHighBits(memory, cpu);
     SimulateRtsFrame(memory, cpu);
+    cpu->overflow = lower_tile.overflow;
     return ExecutionReturned(0x86e5bau);
 }
 
-/* TSB $01: sets the bits of A in the attribute flags byte. */
-static void SetAttributeFlags(Lufia2Wram wram, Lufia2CpuState *cpu) {
-    const uint8_t flags = WramRead(wram, DRAW_ATTRIBUTE_FLAGS);
+/* The single sprites differ in how the x position is adjusted, the y bias
+ * and the return address their high-bit store leaves. */
+static void DrawSingleSprite(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, bool wide,
+    uint16_t high_bits_return) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t slot;
+    const uint16_t object = BeginSprite(wram, &slot);
+    uint16_t screen_x;
+    Byte8Result top;
 
-    cpu->zero = (flags & A8(cpu)) == 0;
-    WramWrite(wram, DRAW_ATTRIBUTE_FLAGS, (uint8_t)(flags | A8(cpu)));
-}
-
-/* The horizontal position of a sprite: the object's screen x moved by its
- * step, mirrored for poses 3 and up, which also sets the mirror attribute.
- * Leaves M16 with the position in A. */
-static void MirroredScreenX(Lufia2Wram wram, Lufia2CpuState *cpu) {
-    Compare8(cpu, A8(cpu), DRAW_MIRROR_POSE);
-    if (cpu->carry) {
-        LoadA8(cpu, DRAW_MIRROR_FLAG);
-        SetAttributeFlags(wram, cpu);
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, WramRead16At(wram, OBJECT_SCREEN_X, cpu->x));
-        Subtract16(cpu, WramRead16At(wram, OBJECT_STEP_X, cpu->x));
-    } else {
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, WramRead16At(wram, OBJECT_SCREEN_X, cpu->x));
-        cpu->carry = false;
-        Add16Value(cpu, WramRead16At(wram, OBJECT_STEP_X, cpu->x));
-    }
-}
-
-/* The vertical position: screen y plus the y step, less `bias`. M8. */
-static void SpriteScreenY(Lufia2Wram wram, Lufia2CpuState *cpu, uint8_t bias) {
-    LoadA8(cpu, WramReadAt(wram, OBJECT_SCREEN_Y, cpu->x));
-    cpu->carry = false;
-    Adc8(cpu, WramReadAt(wram, OBJECT_HEIGHT, cpu->x));
-    cpu->carry = true;
-    Sbc8(cpu, bias);
+    AddAttributeFlags(wram, WramReadAt(wram, OBJECT_SPRITE_FLAGS, object));
+    screen_x = SpriteScreenX(wram, object);
+    if (wide)
+        screen_x = (uint16_t)((screen_x - DRAW_WIDE_X_BIAS) | DRAW_WIDE_SIZE_BIT);
+    else
+        screen_x = (uint16_t)((screen_x - DRAW_X_BIAS) & DRAW_X_MASK);
+    WramWrite16(wram, DRAW_SCREEN_X, screen_x);
+    Write8(memory, Absolute(wram, OAM_BUFFER, slot), (uint8_t)screen_x);
+    top = SpriteScreenY(wram, object, wide ? DRAW_Y_BIAS : DRAW_SMALL_Y_BIAS);
+    Write8(memory, Absolute(wram, OAM_BUFFER + 1u, slot), top.value);
+    WriteAbsolute16(wram, OAM_BUFFER + 2u, slot, SpriteTile(wram));
+    StoreHighBitsBody(memory, cpu, wram, high_bits_return);
+    cpu->overflow = top.overflow;
 }
 
 /* $86:E479: one 16-pixel-wide sprite for the object at $02 (mirrored from
@@ -667,35 +629,9 @@ static void SpriteScreenY(Lufia2Wram wram, Lufia2CpuState *cpu, uint8_t bias) {
 Lufia2ExecutionResult Lufia2WorldMapDrawSprite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2Wram wram;
-
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e479u);
-    wram = WramViewOfCaller(memory, cpu);
-    LoadX16(cpu, WramRead16(wram, DRAW_OBJECT));
-    LoadY16(cpu, DRAW_BASE_ATTRIBUTES);
-    WramWrite16(wram, DRAW_ATTRIBUTES, cpu->y);
-    LoadA16(cpu, ReadAbsolute16(wram, SPRITE_COUNTER, 0));
-    AslA16(cpu);
-    AslA16(cpu);
-    TransferAToY(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, WramReadAt(wram, OBJECT_SPRITE_FLAGS, cpu->x));
-    SetAttributeFlags(wram, cpu);
-    LoadA8(cpu, WramReadAt(wram, OBJECT_POSE, cpu->x));
-    MirroredScreenX(wram, cpu);
-    Subtract16(cpu, DRAW_WIDE_X_BIAS);
-    Or16(cpu, DRAW_WIDE_SIZE_BIT);
-    WramWrite16(wram, DRAW_SCREEN_X, cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
-    Write8(memory, Absolute(wram, OAM_BUFFER, cpu->y), A8(cpu));
-    SpriteScreenY(wram, cpu, DRAW_Y_BIAS);
-    Write8(memory, Absolute(wram, OAM_BUFFER + 1u, cpu->y), A8(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, WramRead16(wram, DRAW_TILE));
-    Or16(cpu, WramRead16(wram, DRAW_ATTRIBUTES));
-    WriteAbsolute16(wram, OAM_BUFFER + 2u, cpu->y, cpu->accumulator);
-    StoreHighBitsBody(memory, cpu, wram, 0xe4ddu);
+    DrawSingleSprite(memory, cpu, true, 0xe4ddu);
     return ExecutionReturned(0x86e4e6u);
 }
 
@@ -704,35 +640,9 @@ Lufia2ExecutionResult Lufia2WorldMapDrawSprite(
 Lufia2ExecutionResult Lufia2WorldMapDrawSmallSprite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2Wram wram;
-
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e4e7u);
-    wram = WramViewOfCaller(memory, cpu);
-    LoadX16(cpu, WramRead16(wram, DRAW_OBJECT));
-    LoadY16(cpu, DRAW_BASE_ATTRIBUTES);
-    WramWrite16(wram, DRAW_ATTRIBUTES, cpu->y);
-    LoadA16(cpu, ReadAbsolute16(wram, SPRITE_COUNTER, 0));
-    AslA16(cpu);
-    AslA16(cpu);
-    TransferAToY(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, WramReadAt(wram, OBJECT_SPRITE_FLAGS, cpu->x));
-    SetAttributeFlags(wram, cpu);
-    LoadA8(cpu, WramReadAt(wram, OBJECT_POSE, cpu->x));
-    MirroredScreenX(wram, cpu);
-    Subtract16(cpu, DRAW_X_BIAS);
-    And16(cpu, DRAW_X_MASK);
-    WramWrite16(wram, DRAW_SCREEN_X, cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
-    Write8(memory, Absolute(wram, OAM_BUFFER, cpu->y), A8(cpu));
-    SpriteScreenY(wram, cpu, DRAW_SMALL_Y_BIAS);
-    Write8(memory, Absolute(wram, OAM_BUFFER + 1u, cpu->y), A8(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, WramRead16(wram, DRAW_TILE));
-    Or16(cpu, WramRead16(wram, DRAW_ATTRIBUTES));
-    WriteAbsolute16(wram, OAM_BUFFER + 2u, cpu->y, cpu->accumulator);
-    StoreHighBitsBody(memory, cpu, wram, 0xe54bu);
+    DrawSingleSprite(memory, cpu, false, 0xe54bu);
     return ExecutionReturned(0x86e554u);
 }
 
@@ -749,50 +659,53 @@ enum {
 };
 
 /* $86:E686: insertion sort of the visible list by its key words, ascending.
- * The word before the list is set to $FFFF so the scan stops there. M0X0. */
+ * The word before the list is set to $FFFF so the scan stops there. M0X0.
+ * The list is reached through the direct page, entry by entry. */
 Lufia2ExecutionResult Lufia2WorldMapSortVisible(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
+    uint16_t count;
+    uint16_t entry = LIST_FIRST_MOVED;
+    uint16_t moved_object = 0;
+    uint16_t left;
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e686u);
     wram = WramViewOfCaller(memory, cpu);
-    LoadA16(cpu, 0xffffu);
-    WriteAbsolute16(wram, LIST_SENTINEL, 0, cpu->accumulator);
-    LoadA16(cpu, ReadAbsolute16(wram, VISIBLE_COUNT, 0));
-    if (cpu->zero)
+    WriteAbsolute16(wram, LIST_SENTINEL, 0, 0xffffu);
+    count = ReadAbsolute16(wram, VISIBLE_COUNT, 0);
+    if (count <= 1u) {
+        LeaveWord(cpu, 0);
         return ExecutionReturned(0x86e6c3u);
-    LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
-    if (cpu->zero)
-        return ExecutionReturned(0x86e6c3u);
-    WramWrite16(wram, SORT_LEFT, cpu->accumulator);
-    LoadX16(cpu, LIST_FIRST_MOVED);
+    }
+    WramWrite16(wram, SORT_LEFT, (uint16_t)(count - 1u));
     do {
-        LoadA16(cpu, WramRead16At(wram, SORT_KEY, cpu->x));
-        WramWrite16(wram, SORT_KEY, cpu->accumulator);
-        LoadA16(cpu, WramRead16At(wram, LIST_OBJECTS, cpu->x));
-        WramWrite16(wram, SORT_OBJECT, cpu->accumulator);
-        PushIndex(memory, cpu);
-        LoadX16(cpu, (uint16_t)(cpu->x - 2u));
-        for (;;) {
-            LoadA16(cpu, WramRead16At(wram, SORT_KEY, cpu->x));
-            Compare16(cpu, cpu->accumulator, WramRead16(wram, SORT_KEY));
-            if (cpu->carry)
+        uint16_t scan;
+
+        WramWrite16(wram, SORT_KEY, WramRead16At(wram, SORT_KEY, entry));
+        WramWrite16(wram, SORT_OBJECT, WramRead16At(wram, LIST_OBJECTS, entry));
+        PushStackWord(memory, cpu, entry);
+        /* Shift the larger keys up one entry until the place is found. */
+        for (scan = (uint16_t)(entry - 2u);; scan = (uint16_t)(scan - 2u)) {
+            const uint16_t key = WramRead16At(wram, SORT_KEY, scan);
+
+            if (key >= WramRead16(wram, SORT_KEY))
                 break;
-            WramWrite16At(wram, 2u, cpu->x, cpu->accumulator);
-            LoadA16(cpu, WramRead16At(wram, LIST_OBJECTS, cpu->x));
-            WramWrite16At(wram, LIST_OBJECTS + 2u, cpu->x, cpu->accumulator);
-            LoadX16(cpu, (uint16_t)(cpu->x - 2u));
+            WramWrite16At(wram, 2u, scan, key);
+            WramWrite16At(wram, LIST_OBJECTS + 2u, scan,
+                WramRead16At(wram, LIST_OBJECTS, scan));
         }
-        LoadA16(cpu, WramRead16(wram, SORT_KEY));
-        WramWrite16At(wram, 2u, cpu->x, cpu->accumulator);
-        LoadA16(cpu, WramRead16(wram, SORT_OBJECT));
-        WramWrite16At(wram, LIST_OBJECTS + 2u, cpu->x, cpu->accumulator);
-        cpu->x = PullIndexValue(memory, cpu);
-        LoadX16(cpu, (uint16_t)(cpu->x + 2u));
-        SetNz16(cpu, StepDirect16(wram, SORT_LEFT, -1));
-    } while (!cpu->zero);
+        WramWrite16At(wram, 2u, scan, WramRead16(wram, SORT_KEY));
+        moved_object = WramRead16(wram, SORT_OBJECT);
+        WramWrite16At(wram, LIST_OBJECTS + 2u, scan, moved_object);
+        entry = (uint16_t)(PullStackWord(memory, cpu) + 2u);
+        left = StepDirect16(wram, SORT_LEFT, -1);
+    } while (left != 0);
+    cpu->x = entry;
+    cpu->carry = true;
+    LeaveWord(cpu, moved_object);
+    LeaveCounter(cpu, left);
     return ExecutionReturned(0x86e6c3u);
 }
 
@@ -812,6 +725,13 @@ enum {
     OBJECT_SLOT_INDEX = 0x16u
 };
 
+/* One more object uses the pattern of `slot`; returns the new user count. */
+static uint16_t AddSlotUser(Lufia2Wram wram, uint16_t slot) {
+    WriteModified16(wram, SLOT_USERS, slot,
+        (uint16_t)(WramRead16At(wram, SLOT_USERS, slot) + 1u));
+    return WramRead16At(wram, SLOT_USERS, slot);
+}
+
 /* $86:E430: finds or adds the pattern of the object at $02 in the slot list
  * starting at $08 (Y entries), then in the shared list at $1367. Carry set:
  * a new use was recorded for the object (its slot index stored); carry
@@ -821,82 +741,93 @@ Lufia2ExecutionResult Lufia2WorldMapAssignSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
+    uint16_t object;
+    uint16_t pattern;
+    uint16_t slot;
+    uint16_t remaining;
+    uint16_t last_user;
+    uint16_t user;
     bool found = false;
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e430u);
     wram = WramViewOfCaller(memory, cpu);
-    LoadX16(cpu, WramRead16(wram, DRAW_OBJECT));
-    LoadA16(cpu, WramRead16At(wram, OBJECT_PATTERN, cpu->x));
-    if (!cpu->negative) {
-        WramWrite16(wram, DRAW_TILE, cpu->accumulator);
+    object = WramRead16(wram, DRAW_OBJECT);
+    pattern = WramRead16At(wram, OBJECT_PATTERN, object);
+    cpu->x = object;
+    LeaveWord(cpu, pattern);
+    if (!IsNegative16(pattern)) {
+        WramWrite16(wram, DRAW_TILE, pattern);
         cpu->carry = false;
         return ExecutionReturned(0x86e478u);
     }
-    LoadX16(cpu, WramRead16(wram, SLOT_POOL_POINTER));
+    /* A pattern already in this kind's pool only needs another user. */
+    slot = WramRead16(wram, SLOT_POOL_POINTER);
+    remaining = cpu->y;
     do {
-        Compare16(cpu, cpu->accumulator, WramRead16At(wram, SLOT_PATTERN, cpu->x));
-        if (cpu->zero) {
-            WriteModified16(wram, SLOT_USERS, cpu->x,
-                (uint16_t)(WramRead16At(wram, SLOT_USERS, cpu->x) + 1u));
-            SetNz16(cpu, WramRead16At(wram, SLOT_USERS, cpu->x));
-            LoadA16(cpu, WramRead16At(wram, SLOT_TILE_BLOCK, cpu->x));
-            WramWrite16(wram, DRAW_TILE, cpu->accumulator);
+        if (pattern == WramRead16At(wram, SLOT_PATTERN, slot)) {
+            const uint16_t users = AddSlotUser(wram, slot);
+            const uint16_t tile = WramRead16At(wram, SLOT_TILE_BLOCK, slot);
+
+            WramWrite16(wram, DRAW_TILE, tile);
+            cpu->x = slot;
+            cpu->y = remaining;
+            LeaveCounter(cpu, users);
+            LeaveWord(cpu, tile);
             cpu->carry = false;
             return ExecutionReturned(0x86e478u);
         }
-        LoadX16(cpu, (uint16_t)(cpu->x + 2u));
-        LoadY16(cpu, (uint16_t)(cpu->y - 1u));
-    } while (!cpu->zero);
-    LoadX16(cpu, SLOT_LIST);
-    LoadY16(cpu, ReadAbsolute16(wram, SLOT_LIST_COUNT, 0));
-    if (!cpu->zero) {
-        do {
-            Compare16(cpu, cpu->accumulator, WramRead16At(wram, SLOT_PATTERN, cpu->x));
-            if (cpu->zero) {
-                found = true;
-                break;
-            }
-            LoadX16(cpu, (uint16_t)(cpu->x + 2u));
-            LoadY16(cpu, (uint16_t)(cpu->y - 1u));
-        } while (!cpu->zero);
+        slot = (uint16_t)(slot + 2u);
+        remaining = (uint16_t)(remaining - 1u);
+    } while (remaining != 0);
+    /* Otherwise look through the patterns of the frame, adding it last. */
+    slot = SLOT_LIST;
+    remaining = ReadAbsolute16(wram, SLOT_LIST_COUNT, 0);
+    while (remaining != 0) {
+        if (pattern == WramRead16At(wram, SLOT_PATTERN, slot)) {
+            found = true;
+            break;
+        }
+        slot = (uint16_t)(slot + 2u);
+        remaining = (uint16_t)(remaining - 1u);
     }
     if (found) {
-        uint16_t last;
-
-        WriteModified16(wram, SLOT_USERS, cpu->x,
-            (uint16_t)(WramRead16At(wram, SLOT_USERS, cpu->x) + 1u));
-        SetNz16(cpu, WramRead16At(wram, SLOT_USERS, cpu->x));
-        LoadY16(cpu, WramRead16At(wram, SLOT_LAST_USER, cpu->x));
-        LoadA16(cpu, WramRead16(wram, DRAW_OBJECT));
-        WramWrite16At(wram, SLOT_LAST_USER, cpu->x, cpu->accumulator);
-        last = cpu->y;
-        WriteAbsolute16(wram, OBJECT_NEXT_USER, last, cpu->accumulator);
+        (void)AddSlotUser(wram, slot);
+        last_user = WramRead16At(wram, SLOT_LAST_USER, slot);
+        user = WramRead16(wram, DRAW_OBJECT);
+        WramWrite16At(wram, SLOT_LAST_USER, slot, user);
+        WriteAbsolute16(wram, OBJECT_NEXT_USER, last_user, user);
+        cpu->y = last_user;
     } else {
-        WramWrite16At(wram, SLOT_PATTERN, cpu->x, cpu->accumulator);
-        LoadA16(cpu, 1u);
-        WramWrite16At(wram, SLOT_USERS, cpu->x, cpu->accumulator);
-        LoadA16(cpu, WramRead16(wram, DRAW_OBJECT));
-        WramWrite16At(wram, SLOT_TILE_BLOCK, cpu->x, cpu->accumulator);
-        WramWrite16At(wram, SLOT_LAST_USER, cpu->x, cpu->accumulator);
+        WramWrite16At(wram, SLOT_PATTERN, slot, pattern);
+        WramWrite16At(wram, SLOT_USERS, slot, 1u);
+        user = WramRead16(wram, DRAW_OBJECT);
+        WramWrite16At(wram, SLOT_TILE_BLOCK, slot, user);
+        WramWrite16At(wram, SLOT_LAST_USER, slot, user);
         WriteModified16(wram, SLOT_LIST_COUNT, 0,
             (uint16_t)(ReadAbsolute16(wram, SLOT_LIST_COUNT, 0) + 1u));
+        cpu->y = 0;
     }
     /* Both ways end by recording the slot index in the object. */
-    LoadX16(cpu, WramRead16(wram, DRAW_OBJECT));
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, Absolute(wram, SPRITE_COUNTER, 0)));
-    WramWriteAt(wram, OBJECT_SLOT_INDEX, cpu->x, A8(cpu));
-    SetAccumulatorWidth(cpu, 0);
+    object = WramRead16(wram, DRAW_OBJECT);
+    {
+        const uint8_t index = Read8(memory, Absolute(wram, SPRITE_COUNTER, 0));
+
+        WramWriteAt(wram, OBJECT_SLOT_INDEX, object, index);
+        cpu->x = object;
+        cpu->accumulator = (uint16_t)((object & 0xff00u) | index);
+        SetNz8(cpu, index);
+    }
     cpu->carry = true;
     return ExecutionReturned(0x86e42fu);
 }
 
-/* The three object kinds, by the byte at $17: the sprite writer, the pool
- * of tile blocks it draws from and the number of blocks in the pool. */
+/* The three object kinds, by the byte at $17: the pool of tile blocks the
+ * slots come from, how many blocks it has, how many sprites the kind uses
+ * and the sprite writer, with the return addresses the original indirect
+ * calls leave. */
 enum {
     OBJECT_KIND = 0x17u,
-    KIND_COUNT = 3u,
     KIND_POOL_SMALL = 0x12b5u,
     KIND_POOL_SMALL_BLOCKS = 0x0010u,
     KIND_POOL_WIDE = 0x12a5u,
@@ -905,42 +836,53 @@ enum {
     PLAYER_OBJECT = 0x16cau
 };
 
-/* The slot lookup shared by the three kinds below: Y blocks from `pool`,
- * then the draw, or just another use of the sprite counter. */
+typedef Lufia2ExecutionResult (*SpriteWriter)(
+    const Lufia2Memory *, Lufia2CpuState *);
+
+typedef struct {
+    uint16_t pool;
+    uint16_t blocks;
+    unsigned sprites;
+    uint16_t assign_return;
+    uint16_t draw_return;
+    SpriteWriter draw;
+} ObjectKind;
+
+static const ObjectKind kObjectKinds[] = {
+    {KIND_POOL_WIDE, KIND_POOL_BLOCKS, 1u, 0xe400u, 0xe405u,
+        Lufia2WorldMapDrawSprite},
+    {KIND_POOL_SMALL, KIND_POOL_SMALL_BLOCKS, 1u, 0xe3efu, 0xe3f4u,
+        Lufia2WorldMapDrawSmallSprite},
+    {KIND_POOL_PAIR, KIND_POOL_BLOCKS, 2u, 0xe415u, 0xe41au,
+        Lufia2WorldMapDrawSpritePair},
+};
+#define KIND_COUNT (sizeof kObjectKinds / sizeof kObjectKinds[0])
+
+/* Takes the pattern slot of the object, then draws it, or only counts its
+ * sprites when the pattern is new (its first user draws it later). */
 static void DrawObjectKind(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram,
-    unsigned kind) {
-    static const uint16_t kPool[KIND_COUNT] = {
-        KIND_POOL_WIDE, KIND_POOL_SMALL, KIND_POOL_PAIR};
-    static const uint16_t kBlocks[KIND_COUNT] = {
-        KIND_POOL_BLOCKS, KIND_POOL_SMALL_BLOCKS, KIND_POOL_BLOCKS};
-    static const uint16_t kAssignReturn[KIND_COUNT] = {0xe400u, 0xe3efu, 0xe415u};
-    static const uint16_t kDrawReturn[KIND_COUNT] = {0xe405u, 0xe3f4u, 0xe41au};
-    const unsigned extra_uses = kind == 2u ? 2u : 1u;
+    const ObjectKind *kind) {
     unsigned i;
 
-    LoadX16(cpu, kPool[kind]);
-    WramWrite16(wram, SLOT_POOL_POINTER, cpu->x);
-    LoadY16(cpu, kBlocks[kind]);
-    SimulateJsrFrame(memory, cpu, kAssignReturn[kind]);
+    WramWrite16(wram, SLOT_POOL_POINTER, kind->pool);
+    cpu->x = kind->pool;
+    cpu->y = kind->blocks;
+    SimulateJsrFrame(memory, cpu, kind->assign_return);
     (void)Lufia2WorldMapAssignSlot(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     if (cpu->carry) {
-        for (i = 0; i < extra_uses; ++i) {
-            const uint16_t counter = ReadAbsolute16(wram, SPRITE_COUNTER, 0);
+        for (i = 0; i < kind->sprites; ++i) {
+            const uint16_t counter =
+                (uint16_t)(ReadAbsolute16(wram, SPRITE_COUNTER, 0) + 1u);
 
-            WriteModified16(wram, SPRITE_COUNTER, 0, (uint16_t)(counter + 1u));
-            SetNz16(cpu, (uint16_t)(counter + 1u));
+            WriteModified16(wram, SPRITE_COUNTER, 0, counter);
+            LeaveCounter(cpu, counter);
         }
         return;
     }
-    SimulateJsrFrame(memory, cpu, kDrawReturn[kind]);
-    if (kind == 0u)
-        (void)Lufia2WorldMapDrawSprite(memory, cpu);
-    else if (kind == 1u)
-        (void)Lufia2WorldMapDrawSmallSprite(memory, cpu);
-    else
-        (void)Lufia2WorldMapDrawSpritePair(memory, cpu);
+    SimulateJsrFrame(memory, cpu, kind->draw_return);
+    (void)kind->draw(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -950,19 +892,20 @@ Lufia2ExecutionResult Lufia2WorldMapDrawObjectByKind(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
+    uint16_t kind_offset;
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e3d2u);
     wram = WramViewOfCaller(memory, cpu);
     WramWrite16(wram, DRAW_OBJECT, cpu->x);
-    LoadA16(cpu, WramRead16At(wram, OBJECT_KIND, cpu->x));
-    And16(cpu, 0x00ffu);
-    AslA16(cpu);
-    TransferAToX(cpu);
-    if (cpu->x >= 2u * KIND_COUNT)
+    kind_offset = (uint16_t)((WramRead16At(wram, OBJECT_KIND, cpu->x) & 0x00ffu) << 1);
+    cpu->x = kind_offset;
+    cpu->carry = false;
+    LeaveWord(cpu, kind_offset);
+    if (kind_offset >= 2u * KIND_COUNT)
         return ExecutionHandoff(cpu, 0x86e3dbu);
     SimulateJsrFrame(memory, cpu, 0xe3ddu);
-    DrawObjectKind(memory, cpu, wram, cpu->x >> 1);
+    DrawObjectKind(memory, cpu, wram, &kObjectKinds[kind_offset >> 1]);
     SimulateRtsFrame(memory, cpu);
     return ExecutionReturned(0x86e3deu);
 }
@@ -987,30 +930,38 @@ Lufia2ExecutionResult Lufia2WorldMapDrawObjects(
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
     Lufia2ExecutionResult result;
+    uint16_t count;
+    uint16_t entry = LIST_KEYS;
+    uint16_t left;
+    uint16_t player_y;
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e3abu);
     wram = WramViewOfCaller(memory, cpu);
-    LoadA16(cpu, ReadAbsolute16(wram, VISIBLE_COUNT, 0));
-    if (!cpu->zero) {
-        WramWrite16(wram, SORT_LEFT, cpu->accumulator);
-        LoadY16(cpu, LIST_KEYS);
+    count = ReadAbsolute16(wram, VISIBLE_COUNT, 0);
+    LeaveWord(cpu, count);
+    if (count != 0) {
+        WramWrite16(wram, SORT_LEFT, count);
         do {
-            PushY(memory, cpu);
-            LoadX16(cpu, ReadAbsolute16(wram, LIST_OBJECTS, cpu->y));
+            cpu->y = entry;
+            PushStackWord(memory, cpu, entry);
+            cpu->x = ReadAbsolute16(wram, LIST_OBJECTS, entry);
             SimulateJsrFrame(memory, cpu, 0xe3bbu);
             result = DrawObject(memory, cpu);
             if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
                 return result;
             SimulateRtsFrame(memory, cpu);
-            cpu->y = PullIndexValue(memory, cpu);
-            LoadY16(cpu, (uint16_t)(cpu->y + 2u));
-            SetNz16(cpu, StepDirect16(wram, SORT_LEFT, -1));
-        } while (!cpu->zero);
+            entry = (uint16_t)(PullStackWord(memory, cpu) + 2u);
+            cpu->y = entry;
+            left = StepDirect16(wram, SORT_LEFT, -1);
+            LeaveCounter(cpu, left);
+        } while (left != 0);
     }
-    LoadX16(cpu, PLAYER_OBJECT);
-    LoadY16(cpu, WramRead16At(wram, OBJECT_Y, cpu->x));
-    if (!cpu->negative) {
+    cpu->x = PLAYER_OBJECT;
+    player_y = WramRead16At(wram, OBJECT_Y, PLAYER_OBJECT);
+    cpu->y = player_y;
+    LeaveCounter(cpu, player_y);
+    if (!IsNegative16(player_y)) {
         SimulateJsrFrame(memory, cpu, 0xe3ccu);
         result = DrawObject(memory, cpu);
         if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
@@ -1044,8 +995,6 @@ Lufia2ExecutionResult Lufia2WorldMapDivide32(
     unsigned bit;
 
     Push8(memory, cpu, PackStatus(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    SetIndexWidth(cpu, 0);
     low = WramRead16(wram, DIVIDEND_LOW);
     high = WramRead16(wram, DIVIDEND_HIGH);
     for (bit = 0; bit < DIVISION_BITS; ++bit) {
@@ -1064,7 +1013,7 @@ Lufia2ExecutionResult Lufia2WorldMapDivide32(
             WriteModified16(wram, DIVIDEND_LOW, 0, low);
         }
     }
-    LoadA16(cpu, remainder);
+    cpu->accumulator = remainder;
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x86a790u);
 }
@@ -1091,42 +1040,40 @@ enum {
     PROJECTION_ROW_LIMIT = 0xe0u,
     PROJECTION_LIMIT = 0xf0u,
     PROJECTION_CENTRE = 0x80u,
+    PROJECTION_FIRST_PASS_BIAS = 0x0100u,
     TILT_WORD = 0x12u,
-    TILT_DEPTH = 0x01u
+    TILT_DEPTH = 0x01u,
+    CAMERA_BOTTOM_OFFSET = 0x70u
 };
 
 /* $86:E356: scales the distance in $4E by the two depth factors $12 and $11
- * with the hardware multiplier, then divides the 32-bit result. M0X0. */
-static void ProjectDistance(const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
+ * with the hardware multiplier, then divides the 32-bit result. The sum of
+ * the second pass is what the division starts from, and the flags it left
+ * are the ones the division returns with. M0X0. */
+static void ProjectDistance(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
     const uint8_t factors[2] = {WramRead(wram, PROJECTION_SCALE_NEAR),
                                 WramRead(wram, PROJECTION_SCALE)};
+    Word16Result sum = {0, false, false};
     unsigned pass;
 
     for (pass = 0; pass < 2u; ++pass) {
-        SetAccumulatorWidth(cpu, 1);
-        LoadA8(cpu, factors[pass]);
-        WramWrite(wram, SNES_WRMPYA, A8(cpu));
-        LoadA8(cpu, WramRead(wram, PROJECTION_DISTANCE));
-        WramWrite(wram, SNES_WRMPYB, A8(cpu));
+        WramWrite(wram, SNES_WRMPYA, factors[pass]);
+        WramWrite(wram, SNES_WRMPYB, WramRead(wram, PROJECTION_DISTANCE));
         WramWrite(wram, PROJECTION_PRODUCT_TOP, 0);
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, WramRead16(wram, SNES_RDMPYL));
-        WramWrite16(wram, PROJECTION_PRODUCT, cpu->accumulator);
-        SetAccumulatorWidth(cpu, 1);
-        LoadA8(cpu, WramRead(wram, PROJECTION_DISTANCE_HIGH));
-        WramWrite(wram, SNES_WRMPYB, A8(cpu));
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, WramRead16(wram, PROJECTION_PRODUCT_HIGH));
-        cpu->carry = false;
-        Add16Value(cpu, WramRead16(wram, SNES_RDMPYL));
+        WramWrite16(wram, PROJECTION_PRODUCT, WramRead16(wram, SNES_RDMPYL));
+        WramWrite(wram, SNES_WRMPYB, WramRead(wram, PROJECTION_DISTANCE_HIGH));
+        sum = Sum16(WramRead16(wram, PROJECTION_PRODUCT_HIGH),
+            WramRead16(wram, SNES_RDMPYL), false);
         if (pass == 0u) {
-            Add16Value(cpu, 0x0100u);
-            WramWrite16(wram, PROJECTION_ROW_X, cpu->accumulator);
+            sum = Sum16(sum.value, PROJECTION_FIRST_PASS_BIAS, sum.carry);
+            WramWrite16(wram, PROJECTION_ROW_X, sum.value);
         } else {
-            WramWrite16(wram, PROJECTION_COLUMN, cpu->accumulator);
+            WramWrite16(wram, PROJECTION_COLUMN, sum.value);
         }
     }
     WramWrite16(wram, DIVIDEND_LOW, 0);
+    LeaveSum(cpu, sum);
     SimulateJsrFrame(memory, cpu, 0xe3a9u);
     (void)Lufia2WorldMapDivide32(memory, cpu);
     SimulateRtsFrame(memory, cpu);
@@ -1135,42 +1082,44 @@ static void ProjectDistance(const Lufia2Memory *memory, Lufia2CpuState *cpu, Luf
 /* The part of $86:E2D2 for an object with a negative tilt word: projects
  * its distance below the camera and appends it to the visible list at Y. */
 static void ProjectObject(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram,
+    uint16_t object) {
+    Word16Result below;
+    Word16Result row;
+    Word16Result column;
     uint16_t count;
 
-    LoadA16(cpu, WramRead16At(wram, OBJECT_Y, cpu->x));
-    if (cpu->negative)
+    if (IsNegative16(WramRead16At(wram, OBJECT_Y, object)))
         return;
-    Subtract16(cpu, WramRead16(wram, CAMERA_BOTTOM));
-    if (cpu->carry)
+    below = Difference16(WramRead16At(wram, OBJECT_Y, object),
+        WramRead16(wram, CAMERA_BOTTOM));
+    if (below.carry)
         return;
-    LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
-    LoadA16(cpu, (uint16_t)(cpu->accumulator + 1u));
-    WramWrite16(wram, PROJECTION_DISTANCE, cpu->accumulator);
+    WramWrite16(wram, PROJECTION_DISTANCE, (uint16_t)(0u - below.value));
     SimulateJsrFrame(memory, cpu, 0xe31eu);
     ProjectDistance(memory, cpu, wram);
     SimulateRtsFrame(memory, cpu);
-    LoadA16(cpu, PROJECTION_ROW_LIMIT);
-    Subtract16(cpu, WramRead16(wram, TILT_DEPTH));
-    if (!cpu->carry)
+    row = Difference16(PROJECTION_ROW_LIMIT, WramRead16(wram, TILT_DEPTH));
+    if (!row.carry)
         return;
-    WramWrite16At(wram, OBJECT_SCREEN_Y, cpu->x, cpu->accumulator);
-    LoadA16(cpu, WramRead16At(wram, OBJECT_X, cpu->x));
-    Subtract16(cpu, WramRead16(wram, CAMERA_ROW));
-    Compare16(cpu, cpu->accumulator, PROJECTION_LIMIT);
-    if (cpu->carry)
+    WramWrite16At(wram, OBJECT_SCREEN_Y, object, row.value);
+    column = Difference16(WramRead16At(wram, OBJECT_X, object),
+        WramRead16(wram, CAMERA_ROW));
+    if (column.value >= PROJECTION_LIMIT)
         return;
-    LoadA16(cpu, PROJECTION_CENTRE);
-    WramWrite16At(wram, OBJECT_SCREEN_X, cpu->x, cpu->accumulator);
-    LoadA16(cpu, WramRead16At(wram, OBJECT_Y, cpu->x));
-    WriteAbsolute16(wram, VISIBLE_KEY, cpu->y, cpu->accumulator);
-    LoadA16(cpu, cpu->x);
-    WriteAbsolute16(wram, VISIBLE_OBJECT, cpu->y, cpu->accumulator);
+    WramWrite16At(wram, OBJECT_SCREEN_X, object, PROJECTION_CENTRE);
+    WriteAbsolute16(wram, VISIBLE_KEY, cpu->y,
+        WramRead16At(wram, OBJECT_Y, object));
+    WriteAbsolute16(wram, VISIBLE_OBJECT, cpu->y, object);
     cpu->y = (uint16_t)(cpu->y + 2u);
-    SetNz16(cpu, cpu->y);
     count = (uint16_t)(ReadAbsolute16(wram, VISIBLE_COUNT, 0) + 1u);
     WriteModified16(wram, VISIBLE_COUNT, 0, count);
-    SetNz16(cpu, count);
+}
+
+/* The two depth factors of the horizon row: the far one from the row after
+ * next, the near one from the rows left below the limit. */
+static uint8_t DepthFactor(const Lufia2Memory *memory, uint16_t row_offset) {
+    return Read8(memory, (DEPTH_TABLE + row_offset) & 0x00ffffffu);
 }
 
 /* $86:E2D2: the object visibility test of the tilted map. Objects with a
@@ -1181,53 +1130,42 @@ Lufia2ExecutionResult Lufia2WorldMapProjectObjects(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
+    uint16_t horizon;
+    uint16_t object;
+    uint16_t left;
+    Word16Result next = {0, false, false};
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e2d2u);
     wram = WramViewOfCaller(memory, cpu);
-    LoadA16(cpu, ReadAbsolute16(wram, VIEW_HORIZON, 0));
-    And16(cpu, 0x00ffu);
-    Compare16(cpu, cpu->accumulator, VIEW_HORIZON_LIMIT);
-    if (cpu->carry)
+    horizon = (uint16_t)(ReadAbsolute16(wram, VIEW_HORIZON, 0) & 0x00ffu);
+    if (horizon >= VIEW_HORIZON_LIMIT)
         return Lufia2WorldMapTestObjects(memory, cpu);
-    LoadA16(cpu, (uint16_t)(cpu->accumulator + 1u));
-    LoadA16(cpu, (uint16_t)(cpu->accumulator + 1u));
-    AslA16(cpu);
-    PushIndex(memory, cpu);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, (DEPTH_TABLE + cpu->x) & 0x00ffffffu));
-    WramWrite(wram, PROJECTION_SCALE, A8(cpu));
-    LoadA8(cpu, VIEW_HORIZON_LIMIT);
-    cpu->carry = true;
-    Sbc8(cpu, Read8(memory, Absolute(wram, VIEW_HORIZON, 0)));
-    AslA8(cpu);
-    TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, (DEPTH_TABLE + cpu->x) & 0x00ffffffu));
-    WramWrite(wram, PROJECTION_SCALE_NEAR, A8(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    cpu->x = PullIndexValue(memory, cpu);
-    LoadA16(cpu, ReadAbsolute16(wram, VIEW_X, 0));
-    WramWrite16(wram, CAMERA_ROW, cpu->accumulator);
-    LoadA16(cpu, ReadAbsolute16(wram, VIEW_Y, 0));
-    cpu->carry = false;
-    Add16Value(cpu, 0x0070u);
-    WramWrite16(wram, CAMERA_BOTTOM, cpu->accumulator);
+    PushStackWord(memory, cpu, cpu->x);
+    WramWrite(wram, PROJECTION_SCALE,
+        DepthFactor(memory, (uint16_t)((horizon + 2u) << 1)));
+    WramWrite(wram, PROJECTION_SCALE_NEAR, DepthFactor(memory,
+        (uint8_t)((VIEW_HORIZON_LIMIT -
+                   Read8(memory, Absolute(wram, VIEW_HORIZON, 0))) << 1)));
+    object = PullStackWord(memory, cpu);
+    WramWrite16(wram, CAMERA_ROW, ReadAbsolute16(wram, VIEW_X, 0));
+    WramWrite16(wram, CAMERA_BOTTOM,
+        (uint16_t)(ReadAbsolute16(wram, VIEW_Y, 0) + CAMERA_BOTTOM_OFFSET));
     do {
-        LoadA16(cpu, WramRead16At(wram, TILT_WORD, cpu->x));
-        if (cpu->negative) {
-            ProjectObject(memory, cpu, wram);
+        if (IsNegative16(WramRead16At(wram, TILT_WORD, object))) {
+            ProjectObject(memory, cpu, wram, object);
         } else {
             SimulateJsrFrame(memory, cpu, 0xe353u);
-            TestObjectVisible(memory, cpu, wram);
+            AppendIfOnScreen(wram, cpu, object);
             SimulateRtsFrame(memory, cpu);
         }
-        TransferXToA(cpu);
-        cpu->carry = false;
-        Add16Value(cpu, OBJECT_SIZE);
-        TransferAToX(cpu);
-        SetNz16(cpu, StepDirect16(wram, OBJECTS_LEFT, -1));
-    } while (!cpu->zero);
+        next = Sum16(object, OBJECT_SIZE, false);
+        object = next.value;
+        left = StepDirect16(wram, OBJECTS_LEFT, -1);
+    } while (left != 0);
+    cpu->x = object;
+    LeaveSum(cpu, next);
+    LeaveCounter(cpu, left);
     return ExecutionReturned(0x86e350u);
 }
 
@@ -1249,52 +1187,90 @@ enum {
 };
 
 /* The loop of $86:E1B9 that draws all users of one pattern from the block
- * just taken from the pool (X). The users are chained by their next-user
- * field. M0X0 on entry and exit; M0X0 for every object kind but unknown
- * kinds, which hand the original dispatch back. */
+ * just taken from the pool (`slot`). The users are chained by their
+ * next-user field. M0X0 on entry and exit; unknown object kinds hand the
+ * original dispatch back. */
 static Lufia2ExecutionResult DrawSlotUsers(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram,
+    uint16_t slot) {
+    const uint16_t pointer = WramRead16(wram, UPDATE_SLOT_POINTER);
+    const uint16_t users = ReadAbsolute16(wram, SLOT_USERS, pointer);
+    uint16_t tile_block;
+    Word16Result block_address;
+    uint16_t object;
+    uint16_t next_user;
+    uint16_t left;
+
     SetAccumulatorWidth(cpu, 0);
-    LoadY16(cpu, WramRead16(wram, UPDATE_SLOT_POINTER));
-    LoadA16(cpu, ReadAbsolute16(wram, SLOT_USERS, cpu->y));
-    WramWrite16At(wram, SLOT_USERS, cpu->x, cpu->accumulator);
-    WramWrite16(wram, UPDATE_BLOCKS_LEFT, cpu->accumulator);
-    LoadA16(cpu, WramRead16At(wram, SLOT_TILE_BLOCK, cpu->x));
-    WramWrite16(wram, DRAW_TILE, cpu->accumulator);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    Add16Value(cpu, SLOT_BLOCK_BASE);
-    WriteAbsolute16(wram, SLOT_USERS, cpu->y, cpu->accumulator);
-    LoadA16(cpu, ReadAbsolute16(wram, SLOT_PATTERN, cpu->y));
-    WramWrite16At(wram, SLOT_PATTERN, cpu->x, cpu->accumulator);
-    LoadA16(cpu, ReadAbsolute16(wram, SLOT_TILE_BLOCK, cpu->y));
+    cpu->y = pointer;
+    WramWrite16At(wram, SLOT_USERS, slot, users);
+    WramWrite16(wram, UPDATE_BLOCKS_LEFT, users);
+    tile_block = WramRead16At(wram, SLOT_TILE_BLOCK, slot);
+    WramWrite16(wram, DRAW_TILE, tile_block);
+    /* The block address: sixteen bytes a tile block on top of the base, and
+     * the last bit shifted out of the tile block goes in as a carry. */
+    block_address = Sum16((uint16_t)(tile_block << 4), SLOT_BLOCK_BASE,
+        ((tile_block >> 12) & 1u) != 0);
+    WriteAbsolute16(wram, SLOT_USERS, pointer, block_address.value);
+    WramWrite16At(wram, SLOT_PATTERN, slot,
+        ReadAbsolute16(wram, SLOT_PATTERN, pointer));
+    object = ReadAbsolute16(wram, SLOT_TILE_BLOCK, pointer);
     do {
-        WramWrite16(wram, DRAW_OBJECT, cpu->accumulator);
-        TransferAToX(cpu);
-        LoadA16(cpu, WramRead16At(wram, OBJECT_SLOT_INDEX, cpu->x));
-        And16(cpu, 0x00ffu);
-        WriteAbsolute16(wram, SPRITE_COUNTER, 0, cpu->accumulator);
-        LoadA16(cpu, WramRead16At(wram, OBJECT_KIND, cpu->x));
-        And16(cpu, 0x00ffu);
-        AslA16(cpu);
-        TransferAToX(cpu);
-        if (cpu->x >= 2u * KIND_COUNT)
+        uint16_t kind_offset;
+
+        WramWrite16(wram, DRAW_OBJECT, object);
+        WriteAbsolute16(wram, SPRITE_COUNTER, 0,
+            (uint16_t)(WramRead16At(wram, OBJECT_SLOT_INDEX, object) & 0x00ffu));
+        kind_offset = (uint16_t)(
+            (WramRead16At(wram, OBJECT_KIND, object) & 0x00ffu) << 1);
+        if (kind_offset >= 2u * KIND_COUNT) {
+            cpu->x = kind_offset;
+            cpu->carry = false;
+            LeaveWord(cpu, kind_offset);
             return ExecutionHandoff(cpu, 0x86e26bu);
+        }
         SimulateJsrFrame(memory, cpu, 0xe26du);
-        if (cpu->x == 0u)
-            (void)Lufia2WorldMapDrawSprite(memory, cpu);
-        else if (cpu->x == 2u)
-            (void)Lufia2WorldMapDrawSmallSprite(memory, cpu);
-        else
-            (void)Lufia2WorldMapDrawSpritePair(memory, cpu);
+        (void)kObjectKinds[kind_offset >> 1].draw(memory, cpu);
         SimulateRtsFrame(memory, cpu);
-        LoadX16(cpu, WramRead16(wram, DRAW_OBJECT));
-        LoadA16(cpu, WramRead16At(wram, OBJECT_NEXT_USER, cpu->x));
-        SetNz16(cpu, StepDirect16(wram, UPDATE_BLOCKS_LEFT, -1));
-    } while (!cpu->zero);
+        cpu->x = WramRead16(wram, DRAW_OBJECT);
+        next_user = WramRead16At(wram, OBJECT_NEXT_USER, cpu->x);
+        left = StepDirect16(wram, UPDATE_BLOCKS_LEFT, -1);
+        object = next_user;
+    } while (left != 0);
+    LeaveWord(cpu, next_user);
+    LeaveCounter(cpu, left);
     return ExecutionReturned(0x86e274u);
+}
+
+/* Looks in the pool of the slot's object kind for a block nobody uses.
+ * Returns whether one was found and leaves it in `*block`. The last user
+ * count looked at stays in A, and the top bit of the kind byte in the carry,
+ * as the caller leaves them. */
+static bool FindFreeBlock(
+    Lufia2Wram wram, Lufia2CpuState *cpu, uint16_t slot_pointer,
+    uint16_t *block) {
+    const uint16_t owner = ReadAbsolute16(wram, SLOT_TILE_BLOCK, slot_pointer);
+    const uint8_t kind = Read8(wram.memory, Absolute(wram, OBJECT_KIND, owner));
+    const uint8_t pool_index = (uint8_t)(kind << 1);
+    uint16_t candidate = ReadAbsolute16(wram, POOL_STARTS, pool_index);
+    uint16_t left = Read8(wram.memory, Absolute(wram, POOL_SIZES, pool_index));
+    uint8_t users;
+
+    cpu->carry = (kind & 0x80u) != 0;
+    for (;;) {
+        users = WramReadAt(wram, SLOT_USERS, candidate);
+        cpu->accumulator = users;
+        if (users == 0) {
+            *block = candidate;
+            return true;
+        }
+        candidate = (uint16_t)(candidate + 2u);
+        left = (uint16_t)(left - 1u);
+        if (left == 0) {
+            cpu->y = 0;
+            return false;
+        }
+    }
 }
 
 /* $86:E1B9: the whole per-frame object pass of the world map: hides the
@@ -1306,7 +1282,8 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
     Lufia2ExecutionResult result;
-    bool found;
+    uint16_t slot_pointer;
+    uint8_t slots_left;
     bool tilted;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
@@ -1322,24 +1299,15 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
     WriteAbsolute16(wram, VISIBLE_COUNT, 0, 0);
     WriteAbsolute16(wram, SPRITE_COUNTER, 0, 0);
     WriteAbsolute16(wram, SLOT_LIST_COUNT, 0, 0);
-    LoadX16(cpu, UPDATE_OBJECT_COUNT);
-    WramWrite16(wram, OBJECTS_LEFT, cpu->x);
-    LoadX16(cpu, OBJECT_TABLE);
-    LoadY16(cpu, LIST_KEYS);
-    LoadA16(cpu, ReadAbsolute16(wram, VIEW_X, 0));
-    Subtract16(cpu, CAMERA_LEFT);
-    WramWrite16(wram, CAMERA_X, cpu->accumulator);
-    LoadA16(cpu, ReadAbsolute16(wram, VIEW_Y, 0));
-    Subtract16(cpu, CAMERA_TOP);
-    WramWrite16(wram, CAMERA_Y, cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, Absolute(wram, VIEW_MODE_PLAIN, 0)));
-    tilted = false;
-    if (cpu->zero) {
-        LoadA8(cpu, Read8(memory, Absolute(wram, VIEW_MODE_TILTED, 0)));
-        tilted = !cpu->zero;
-    }
-    SetAccumulatorWidth(cpu, 0);
+    WramWrite16(wram, OBJECTS_LEFT, UPDATE_OBJECT_COUNT);
+    cpu->x = OBJECT_TABLE;
+    cpu->y = LIST_KEYS;
+    WramWrite16(wram, CAMERA_X,
+        (uint16_t)(ReadAbsolute16(wram, VIEW_X, 0) - CAMERA_LEFT));
+    WramWrite16(wram, CAMERA_Y,
+        (uint16_t)(ReadAbsolute16(wram, VIEW_Y, 0) - CAMERA_TOP));
+    tilted = Read8(memory, Absolute(wram, VIEW_MODE_PLAIN, 0)) == 0 &&
+             Read8(memory, Absolute(wram, VIEW_MODE_TILTED, 0)) != 0;
     SimulateJsrFrame(memory, cpu, tilted ? 0xe1feu : 0xe1f7u);
     if (tilted)
         (void)Lufia2WorldMapProjectObjects(memory, cpu);
@@ -1355,42 +1323,25 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
         return result;
     SimulateRtsFrame(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, Absolute(wram, SLOT_LIST_COUNT, 0)));
-    if (cpu->zero)
+    slots_left = Read8(memory, Absolute(wram, SLOT_LIST_COUNT, 0));
+    LoadA8(cpu, slots_left);
+    if (slots_left == 0)
         return ExecutionReturned(0x86e280u);
-    WramWrite(wram, UPDATE_SLOTS_LEFT, A8(cpu));
-    LoadX16(cpu, SLOT_LIST);
-    WramWrite16(wram, UPDATE_SLOT_POINTER, cpu->x);
+    WramWrite(wram, UPDATE_SLOTS_LEFT, slots_left);
+    WramWrite16(wram, UPDATE_SLOT_POINTER, SLOT_LIST);
     do {
+        uint16_t block;
+
         SetAccumulatorWidth(cpu, 1);
-        LoadX16(cpu, WramRead16(wram, UPDATE_SLOT_POINTER));
-        LoadY16(cpu, ReadAbsolute16(wram, SLOT_TILE_BLOCK, cpu->x));
+        slot_pointer = WramRead16(wram, UPDATE_SLOT_POINTER);
         cpu->accumulator = 0;
-        LoadA8(cpu, Read8(memory, Absolute(wram, OBJECT_KIND, cpu->y)));
-        AslA8(cpu);
-        TransferAToY(cpu);
-        LoadX16(cpu, ReadAbsolute16(wram, POOL_STARTS, cpu->y));
-        LoadA8(cpu, Read8(memory, Absolute(wram, POOL_SIZES, cpu->y)));
-        TransferAToY(cpu);
-        found = false;
-        for (;;) {
-            LoadA8(cpu, WramReadAt(wram, SLOT_USERS, cpu->x));
-            if (cpu->zero) {
-                found = true;
-                break;
-            }
-            LoadX16(cpu, (uint16_t)(cpu->x + 2u));
-            LoadY16(cpu, (uint16_t)(cpu->y - 1u));
-            if (cpu->zero)
-                break;
-        }
-        if (found) {
-            result = DrawSlotUsers(memory, cpu, wram);
+        if (FindFreeBlock(wram, cpu, slot_pointer, &block)) {
+            result = DrawSlotUsers(memory, cpu, wram, block);
             if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
                 return result;
         } else {
             SetAccumulatorWidth(cpu, 0);
-            LoadX16(cpu, WramRead16(wram, UPDATE_SLOT_POINTER));
+            cpu->x = WramRead16(wram, UPDATE_SLOT_POINTER);
             WramWrite16At(wram, SLOT_USERS, cpu->x, 0);
         }
         WriteModified16(wram, UPDATE_SLOT_POINTER, 0,
@@ -1398,12 +1349,9 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
         WriteModified16(wram, UPDATE_SLOT_POINTER, 0,
             (uint16_t)(WramRead16(wram, UPDATE_SLOT_POINTER) + 1u));
         SetAccumulatorWidth(cpu, 1);
-        {
-            const uint8_t left = (uint8_t)(WramRead(wram, UPDATE_SLOTS_LEFT) - 1u);
-
-            WramWrite(wram, UPDATE_SLOTS_LEFT, left);
-            SetNz8(cpu, left);
-        }
-    } while (!cpu->zero);
+        slots_left = (uint8_t)(WramRead(wram, UPDATE_SLOTS_LEFT) - 1u);
+        WramWrite(wram, UPDATE_SLOTS_LEFT, slots_left);
+        SetNz8(cpu, slots_left);
+    } while (slots_left != 0);
     return ExecutionReturned(0x86e280u);
 }
