@@ -782,6 +782,18 @@ Lufia2ExecutionResult Lufia2BattleWaveBackward(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $85:B26D computes the half-circle profile of the radius at DP $C6 into
+ * $4600. Any entry widths; they are restored. */
+Lufia2ExecutionResult Lufia2BattleCircleProfile(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:B208 rebuilds the circular window scanline table when the radius at
+ * $1B4A changed; M1X0 only (else handed back). */
+Lufia2ExecutionResult Lufia2BattleCircleWindow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

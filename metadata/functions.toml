@@ -3271,3 +3271,20 @@ source = "src/battle/battle_background_wave.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Battle circle window scanline table.
+[[function]]
+address = "85:B208"
+name = "Lufia2BattleCircleWindow"
+source = "src/battle/battle_circle_window.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:B26D"
+name = "Lufia2BattleCircleProfile"
+source = "src/battle/battle_circle_window.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"

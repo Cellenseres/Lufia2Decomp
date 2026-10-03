@@ -350,6 +350,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:ADE1` | `Lufia2BattleWaveBackward` | draft | `src/battle/battle_background_wave.c` |
 | `$85:AE68` | `Lufia2BattleWaveForward` | draft | `src/battle/battle_background_wave.c` |
 | `$85:AEEB` | `Lufia2BattleWaveFill` | draft | `src/battle/battle_background_wave.c` |
+| `$85:B208` | `Lufia2BattleCircleWindow` | draft | `src/battle/battle_circle_window.c` |
+| `$85:B26D` | `Lufia2BattleCircleProfile` | draft | `src/battle/battle_circle_window.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
 | `$85:CCCE` | `Lufia2BattleClearActionWork` | verified | `src/battle/battle_action_work.c` |
 | `$85:CCE3` | `Lufia2BattleClearSavedActionWork` | verified | `src/battle/battle_action_work.c` |
