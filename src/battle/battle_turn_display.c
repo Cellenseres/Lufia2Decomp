@@ -59,14 +59,12 @@ static bool StatusGauge(BattleContext *battle, uint16_t current, uint16_t maximu
     return true;
 }
 
-/* $81:E645: name, symbols, HP, MP and IP for party slot X=0/2/4/6. */
-Lufia2ExecutionResult Lufia2BattlePartyStatusRow(const Lufia2Memory *memory,
-                                                 Lufia2CpuState *cpu,
-                                                 Lufia2PushedChildCall child,
-                                                 void *context) {
-    BattleContext battle = BattleContextCreate(memory, cpu, child, context, 0x81u);
-    PushDataBank(memory, cpu);
-    OpPushX(memory, cpu);
+/* Body of $81:E645 between its register saves and the shared exit; false when
+ * a child call unwinds. */
+static bool PartyStatusRowCore(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpLongX(cpu, 0x818819u));
     PushAccumulator16(memory, cpu);
@@ -88,9 +86,9 @@ Lufia2ExecutionResult Lufia2BattlePartyStatusRow(const Lufia2Memory *memory,
         OpSta(memory, cpu, OpAbs(cpu, 0x09f3u));
         OpLdy(cpu, 0x2150u);
         OpWriteX(memory, cpu, OpAbs(cpu, 0x09f6u), cpu->y);
-        if (!BattleCall(&battle, 0xe674u, 0x81e7d2u, 2u))
-            return BattleChildUnwound(&battle);
-        goto returned;
+        if (!BattleCall(battle, 0xe674u, 0x81e7d2u, 2u))
+            return false;
+        return true;
     }
     OpPushX(memory, cpu);
     PushY(memory, cpu);
@@ -99,8 +97,8 @@ Lufia2ExecutionResult Lufia2BattlePartyStatusRow(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpDp(cpu, 0x12u));
     do {
         OpLda(memory, cpu, OpAbsX(cpu, 0u));
-        if (!BattleCall(&battle, 0xe687u, 0x81e835u, 2u))
-            return BattleChildUnwound(&battle);
+        if (!BattleCall(battle, 0xe687u, 0x81e835u, 2u))
+            return false;
         OpBitValue(cpu, 0xffu);
         if (!cpu->zero) {
             cpu->carry = 1;
@@ -145,9 +143,9 @@ Lufia2ExecutionResult Lufia2BattlePartyStatusRow(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpAbsY(cpu, 1u));
     OpPullY(memory, cpu);
     OpPullX(memory, cpu);
-    if (!StatusGauge(&battle, 0x11u, 0x25u, 0x4au, 1u, 0xe6eeu) ||
-        !StatusGauge(&battle, 0x13u, 0x27u, 0x4cu, 0x16u, 0xe711u))
-        return BattleChildUnwound(&battle);
+    if (!StatusGauge(battle, 0x11u, 0x25u, 0x4au, 1u, 0xe6eeu) ||
+        !StatusGauge(battle, 0x13u, 0x27u, 0x4cu, 0x16u, 0xe711u))
+        return false;
     OpRepWidths(cpu, 0x20u);
     OpTya(cpu);
     cpu->carry = 0;
@@ -164,9 +162,21 @@ Lufia2ExecutionResult Lufia2BattlePartyStatusRow(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpDp(cpu, 0x16u));
     OpLoadA(cpu, 0x2bu);
     OpSta(memory, cpu, OpDp(cpu, 0x15u));
-    if (!BattleCall(&battle, 0xe735u, 0x81e2afu, 2u))
+    if (!BattleCall(battle, 0xe735u, 0x81e2afu, 2u))
+        return false;
+    return true;
+}
+
+/* $81:E645: name, symbols, HP, MP and IP for party slot X=0/2/4/6. */
+Lufia2ExecutionResult Lufia2BattlePartyStatusRow(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu,
+                                                 Lufia2PushedChildCall child,
+                                                 void *context) {
+    BattleContext battle = BattleContextCreate(memory, cpu, child, context, 0x81u);
+    PushDataBank(memory, cpu);
+    OpPushX(memory, cpu);
+    if (!PartyStatusRowCore(&battle))
         return BattleChildUnwound(&battle);
-returned:
     OpPullX(memory, cpu);
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x81e73au);
