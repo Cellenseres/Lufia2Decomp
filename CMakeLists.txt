@@ -142,6 +142,8 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_sprites.c
     src/menu/menu_string.c
     src/menu/menu_window.c
+    src/menu/menu_tilemap.c
+    src/menu/menu_cursor.c
     src/party/capsule.c
     src/party/experience.c
     src/party/level_up.c

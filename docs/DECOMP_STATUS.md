@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-396 functions in `metadata/functions.toml`: 366 verified, 30 draft, 0 identified, 0 disabled.
+403 functions in `metadata/functions.toml`: 366 verified, 37 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -799,6 +799,20 @@ own data bank like the original; the helper keeps the caller's widths. They
 are compared against the original ROM code for CPU state, work RAM, ordered
 writes and stack frames, with radii at both ends of the range and unchanged
 radii.
+
+## Menu tile maps and cursor placement
+
+`$82:838F` (clear both menu layers), `$82:8069` (the 8 x 8 grid of numbered
+tile blocks), its block filler `$82:80A5`, the rectangle recolor `$82:80CA`,
+the 16-bit shift-and-add multiply `$82:8000` and the two cursor placement
+routines `$82:88A0` (list index) and `$82:88CB` (pixel position) are `draft`
+reconstructions. The four that end in a redraw request stop at the frame wait
+`$82:93C2` with their own return pushed, so the wait and the rest of the
+caller run unchanged. Widths that the original does not take are handed back
+at the entry. The multiply keeps X and the status flags and leaves the rotated
+multiplier behind, as the original does. They are compared against the
+original ROM code for CPU state, work RAM, ordered writes and stack frames, at
+every entry width.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
