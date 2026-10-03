@@ -2,9 +2,10 @@
 
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
-#include "system/wram.h"
+#include "core/wram_view.h"
 #include "lufia2/system.h"
 #include "system/system_internal.h"
+#include "system/wram.h"
 
 /* $80:832D: lagged XOR refill, lags 24 and 31. */
 static void RandomRefill(
@@ -133,52 +134,80 @@ void Lufia2CallRandomByte(
     SimulateRtlFrame(memory, cpu);
 }
 
+enum {
+    RANDOM_SEED_SCRATCH = 0x00, /* direct-page byte the seeding borrows */
+    RANDOM_SEED_STRIDE = 21,    /* table step per round */
+    RANDOM_TABLE_SIZE = 55,
+    RANDOM_SEED_ROUNDS = 55,
+    RANDOM_SEED_REFILLS = 3,
+};
+
+/* What the table fill leaves in the registers: the last table index and the
+ * byte the accumulator's high half ends up holding. */
+typedef struct SeedFillResult {
+    uint8_t last_index;
+    uint8_t held;
+} SeedFillResult;
+
+/* Fills the table with a subtractive sequence started from the seed byte. Each
+ * round steps the index by 21 (mod 55), stores the previous scratch value
+ * there and in the seed byte, and keeps `seed - scratch` as the next scratch. */
+static SeedFillResult SeedFillTable(Lufia2Wram wram) {
+    SeedFillResult result = {0u, 0u};
+    uint8_t index = 0u;
+    unsigned round;
+
+    WramWriteAt(wram, WRAM_RANDOM_TABLE, RANDOM_TABLE_SIZE - 1u,
+                WramRead(wram, WRAM_RANDOM_SEED_WORK));
+    WramWrite(wram, RANDOM_SEED_SCRATCH, 1u);
+    for (round = 0; round < RANDOM_SEED_ROUNDS; ++round) {
+        uint8_t difference;
+        uint8_t previous;
+
+        index = (uint8_t)(index + RANDOM_SEED_STRIDE);
+        if (index >= RANDOM_TABLE_SIZE)
+            index = (uint8_t)(index - RANDOM_TABLE_SIZE);
+        difference = (uint8_t)(WramRead(wram, WRAM_RANDOM_SEED_WORK) -
+                               WramRead(wram, RANDOM_SEED_SCRATCH));
+        previous = WramRead(wram, RANDOM_SEED_SCRATCH);
+        WramWrite(wram, WRAM_RANDOM_SEED_WORK, previous);
+        WramWriteAt(wram, WRAM_RANDOM_TABLE, index, previous);
+        WramWrite(wram, RANDOM_SEED_SCRATCH, difference);
+        result.held = previous;
+    }
+    result.last_index = index;
+    return result;
+}
+
+/* $80:82E7: seed the generator from the seed byte, then mix the table three
+ * times. The status, the scratch byte and the stack are restored. */
 Lufia2ExecutionResult Lufia2SeedRandom(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    static const uint16_t refill_returns[RANDOM_SEED_REFILLS] = {0x8321u, 0x8324u,
+                                                                 0x8327u};
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    SeedFillResult fill;
+    unsigned i;
+
     if (cpu->decimal)
         return ExecutionHandoff(cpu, 0x8082e7u);
     Push8(memory, cpu, PackStatus(cpu));
     OpSepWidths(cpu, 0x30u);
-    OpLda(memory, cpu, OpDp(cpu, 0u));
+    LoadA8(cpu, WramRead(wram, RANDOM_SEED_SCRATCH));
     PushAccumulator8(memory, cpu);
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_RANDOM_SEED_WORK));
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_RANDOM_TABLE + 54u));
-    OpLdx(cpu, 1u);
-    OpWriteX(memory, cpu, OpDp(cpu, 0u), cpu->x);
-    OpDex(cpu);
-    OpLdy(cpu, 55u);
-    do {
-        OpTxa(cpu);
-        cpu->carry = 0;
-        OpAdcValue(cpu, 21u);
-        OpCmpValue(cpu, 55u);
-        if (cpu->carry)
-            OpSbcValue(cpu, 55u);
-        OpTax(cpu);
-        OpLda(memory, cpu, OpAbs(cpu, WRAM_RANDOM_SEED_WORK));
-        cpu->carry = 1;
-        OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, 0u)));
-        ExchangeAccumulatorBytes(cpu);
-        OpLda(memory, cpu, OpDp(cpu, 0u));
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_RANDOM_SEED_WORK));
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_RANDOM_TABLE));
-        ExchangeAccumulatorBytes(cpu);
-        OpSta(memory, cpu, OpDp(cpu, 0u));
-        OpDey(cpu);
-    } while (!cpu->zero);
-    OpLoadA(cpu, 54u);
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_RANDOM_NEXT_INDEX));
-    SimulateJsrFrame(memory, cpu, 0x8321u);
-    RandomRefill(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
-    SimulateJsrFrame(memory, cpu, 0x8324u);
-    RandomRefill(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
-    SimulateJsrFrame(memory, cpu, 0x8327u);
-    RandomRefill(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
+    fill = SeedFillTable(wram);
+    cpu->x = fill.last_index;
+    cpu->y = 0u;
+    cpu->accumulator = (uint16_t)((uint16_t)fill.held << 8);
+    LoadA8(cpu, RANDOM_TABLE_SIZE - 1u);
+    WramWrite(wram, WRAM_RANDOM_NEXT_INDEX, A8(cpu));
+    for (i = 0; i < RANDOM_SEED_REFILLS; ++i) {
+        SimulateJsrFrame(memory, cpu, refill_returns[i]);
+        RandomRefill(memory, cpu);
+        SimulateRtsFrame(memory, cpu);
+    }
     LoadA8(cpu, Pull8(memory, cpu));
-    OpSta(memory, cpu, OpDp(cpu, 0u));
+    WramWrite(wram, RANDOM_SEED_SCRATCH, A8(cpu));
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x80832cu);
 }
