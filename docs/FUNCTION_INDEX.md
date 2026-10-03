@@ -406,9 +406,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:8CF5` | `Lufia2SpriteSetAnimation` | verified | `src/menu/menu_sprites.c` |
 | `$86:8DD7` | `Lufia2MenuScreenSetup` | draft | `src/menu/menu_scene_setup.c` |
 | `$86:8E6B` | `Lufia2SpriteClearSlots` | draft | `src/menu/menu_scene_setup.c` |
+| `$86:94D4` | `Lufia2SceneTrackStep` | draft | `src/field/field_scene_tracks.c` |
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:A5A9` | `Lufia2WorldMapDivide32` | draft | `src/world/world_map_objects.c` |
+| `$86:A791` | `Lufia2SceneViewOrigin` | draft | `src/field/field_scene_tracks.c` |
 | `$86:A894` | `Lufia2WorldMapPlane` | draft | `src/world/world_map_plane.c` |
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
 | `$86:E0B9` | `Lufia2WorldMapStartAnimation` | draft | `src/world/world_map_objects.c` |

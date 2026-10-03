@@ -385,6 +385,18 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $86:94D4 steps the five scene value tracks of $1210; carry set when a
+ * script ends. JSR, any M, X16, leaves M8. */
+Lufia2ExecutionResult Lufia2SceneTrackStep(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:A791 screen origin and scroll words from the view position at
+ * $11E8/$11EA. JSR, M8/X16. */
+Lufia2ExecutionResult Lufia2SceneViewOrigin(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
