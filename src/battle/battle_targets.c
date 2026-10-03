@@ -557,7 +557,7 @@ static TargetOutcome TargetHandleInput(BattleContext *battle, uint32_t *return_p
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
 
-    OpLda(memory, cpu, OpDp(cpu, 0xddu));
+    OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
     OpBitValue(cpu, 0xa0u);
     if (!cpu->zero)
         return TargetAccept(battle, return_pc);
@@ -571,7 +571,7 @@ static TargetOutcome TargetHandleInput(BattleContext *battle, uint32_t *return_p
             return TARGET_REDRAW;
         }
     }
-    OpLda(memory, cpu, OpDp(cpu, 0xdeu));
+    OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED_HIGH));
     if (cpu->negative)
         return TargetCancel(battle, return_pc);
     OpRepWidths(cpu, 0x20u);

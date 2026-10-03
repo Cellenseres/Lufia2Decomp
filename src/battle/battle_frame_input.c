@@ -70,7 +70,7 @@ Lufia2ExecutionResult Lufia2BattleFrameInput(
     OpLda(memory, cpu, OpDp(cpu, 0x46u));
     OpAndValue(cpu, OpReadM(memory, cpu, OpDp(cpu, 0x4au)));
     OpTestBits(memory, cpu, OpDp(cpu, 0x4au), 0u);
-    OpSta(memory, cpu, OpDp(cpu, 0xddu));
+    OpSta(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x85ecdau);
 }

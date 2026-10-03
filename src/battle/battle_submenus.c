@@ -328,44 +328,102 @@ static SubmenuOutcome SubmenuSelectEntry(const Lufia2Memory *memory,
     return SUBMENU_REFRESH;
 }
 
+/* Auxiliary button: redraws the title and rows while keeping the cursor
+ * registers, then goes back to polling. */
+static SubmenuOutcome SubmenuAuxiliaryButton(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY)));
+    OpPushX(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN)));
+    OpPushX(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP)));
+    OpPushX(memory, cpu);
+    if (!BattleCall(battle, 0xd259u, 0x859906u, 3u) ||
+        !BattleCall(battle, 0xd25du, 0x81def4u, 2u))
+        return SUBMENU_UNWOUND;
+    OpPullX(memory, cpu);
+    OpWriteX(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP), cpu->x);
+    OpPullX(memory, cpu);
+    OpWriteX(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN), cpu->x);
+    OpPullX(memory, cpu);
+    OpWriteX(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), cpu->x);
+    OpRepWidths(cpu, 0x20u);
+    if (!BattleCall(battle, 0xd26bu, 0x859b67u, 3u))
+        return SUBMENU_UNWOUND;
+    OpSepWidths(cpu, 0x20u);
+    return SUBMENU_POLL;
+}
+
+/* Shoulder button held: moves the cursor a whole page (12 entries) up or down
+ * and scrolls the first visible entry with it. */
+static SubmenuOutcome SubmenuPageMove(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_MOVE_DELTA));
+    OpAndValue(cpu, 0x20u);
+    OpLoadA(cpu, cpu->zero ? 12u : 0xf4u);
+    cpu->carry = false;
+    OpAdc(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
+    OpCmpValue(cpu, 0xe6u);
+    if (cpu->carry) {
+        OpAndValue(cpu, 1u);
+    } else {
+        OpCmp(memory, cpu, OpDp(cpu, SUBMENU_DP_ENTRY_COUNT));
+        if (cpu->carry) {
+            OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_ENTRY_COUNT));
+            OpDecA(cpu);
+            OpBitValue(cpu, 1u);
+            if (!cpu->zero) {
+                ExchangeAccumulatorBytes(cpu);
+                OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
+                OpLsrA(cpu);
+                ExchangeAccumulatorBytes(cpu);
+                OpSbcValue(cpu, 0u);
+            }
+        }
+    }
+    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_PENDING_ENTRY));
+    cpu->carry = true;
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY)));
+    cpu->carry = false;
+    OpAdc(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
+    OpCmpValue(cpu, 0xe6u);
+    if (cpu->carry) {
+        OpStz(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
+        return SUBMENU_REFRESH;
+    }
+    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
+    cpu->carry = false;
+    OpAdcValue(cpu, 12u);
+    OpCmp(memory, cpu, OpDp(cpu, SUBMENU_DP_ENTRY_COUNT));
+    if (cpu->carry) {
+        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_ENTRY_COUNT));
+        cpu->carry = true;
+        OpSbcValue(cpu, 11u);
+        OpAndValue(cpu, 0xfeu);
+        OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
+    }
+    return SUBMENU_REFRESH;
+}
+
 /* Reads the pad: confirm, cancel, the auxiliary button, or a direction. */
 static SubmenuOutcome SubmenuInput(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
     bool listed;
 
-    OpLda(memory, cpu, OpDp(cpu, 0xddu));
+    OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
     OpBitValue(cpu, 0xa0u);
     if (!cpu->zero)
         return SubmenuAccept(battle);
-    OpLda(memory, cpu, OpDp(cpu, 0xdeu));
+    OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED_HIGH));
     if (cpu->negative)
         return SubmenuCancel(battle);
-    OpLda(memory, cpu, OpDp(cpu, 0xddu));
+    OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
     OpBitValue(cpu, 0x40u);
-    if (!cpu->zero) {
-        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY)));
-        OpPushX(memory, cpu);
-        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN)));
-        OpPushX(memory, cpu);
-        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP)));
-        OpPushX(memory, cpu);
-        if (!BattleCall(battle, 0xd259u, 0x859906u, 3u) ||
-            !BattleCall(battle, 0xd25du, 0x81def4u, 2u))
-            return SUBMENU_UNWOUND;
-        OpPullX(memory, cpu);
-        OpWriteX(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP), cpu->x);
-        OpPullX(memory, cpu);
-        OpWriteX(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN), cpu->x);
-        OpPullX(memory, cpu);
-        OpWriteX(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), cpu->x);
-        OpRepWidths(cpu, 0x20u);
-        if (!BattleCall(battle, 0xd26bu, 0x859b67u, 3u))
-            return SUBMENU_UNWOUND;
-        OpSepWidths(cpu, 0x20u);
-        return SUBMENU_POLL;
-    }
-    OpLda(memory, cpu, OpDp(cpu, 0xdeu));
+    if (!cpu->zero)
+        return SubmenuAuxiliaryButton(battle);
+    OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED_HIGH));
     OpAndValue(cpu, 15u);
     OpSepWidths(cpu, 0x10u);
     OpTay(cpu);
@@ -385,51 +443,7 @@ static SubmenuOutcome SubmenuInput(BattleContext *battle) {
         OpLda(memory, cpu, OpDp(cpu, 0x46u));
         OpAndValue(cpu, 0x10u);
         if (!cpu->zero) {
-            OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_MOVE_DELTA));
-            OpAndValue(cpu, 0x20u);
-            OpLoadA(cpu, cpu->zero ? 12u : 0xf4u);
-            cpu->carry = false;
-            OpAdc(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
-            OpCmpValue(cpu, 0xe6u);
-            if (cpu->carry) {
-                OpAndValue(cpu, 1u);
-            } else {
-                OpCmp(memory, cpu, OpDp(cpu, SUBMENU_DP_ENTRY_COUNT));
-                if (cpu->carry) {
-                    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_ENTRY_COUNT));
-                    OpDecA(cpu);
-                    OpBitValue(cpu, 1u);
-                    if (!cpu->zero) {
-                        ExchangeAccumulatorBytes(cpu);
-                        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
-                        OpLsrA(cpu);
-                        ExchangeAccumulatorBytes(cpu);
-                        OpSbcValue(cpu, 0u);
-                    }
-                }
-            }
-            OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_PENDING_ENTRY));
-            cpu->carry = true;
-            OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY)));
-            cpu->carry = false;
-            OpAdc(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
-            OpCmpValue(cpu, 0xe6u);
-            if (cpu->carry) {
-                OpStz(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
-                return SUBMENU_REFRESH;
-            }
-            OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
-            cpu->carry = false;
-            OpAdcValue(cpu, 12u);
-            OpCmp(memory, cpu, OpDp(cpu, SUBMENU_DP_ENTRY_COUNT));
-            if (cpu->carry) {
-                OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_ENTRY_COUNT));
-                cpu->carry = true;
-                OpSbcValue(cpu, 11u);
-                OpAndValue(cpu, 0xfeu);
-                OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
-            }
-            return SUBMENU_REFRESH;
+            return SubmenuPageMove(memory, cpu);
         }
     }
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_MOVE_DELTA));

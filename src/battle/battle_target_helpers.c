@@ -212,11 +212,11 @@ Lufia2ExecutionResult Lufia2BattleConfirmCommand(const Lufia2Memory *memory,
         OpSta(memory, cpu, 0x0012f3u);
         if (!BattleCall(&battle, 0xd9beu, 0x85ec81u, 3u))
             return BattleChildUnwound(&battle);
-        OpLda(memory, cpu, OpDp(cpu, 0xddu));
+        OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
         OpBitValue(cpu, 0xa0u);
         if (!cpu->zero)
             break;
-        OpLda(memory, cpu, OpDp(cpu, 0xdeu));
+        OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED_HIGH));
     } while (!cpu->negative);
     if (!BattleCall(&battle, 0xd9ccu, 0x81e16fu, 2u))
         return BattleChildUnwound(&battle);
