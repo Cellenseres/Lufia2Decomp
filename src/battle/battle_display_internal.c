@@ -300,7 +300,7 @@ bool BattleLoadPresentationAssets(BattleContext *battle) {
         return false;
 
     LoadA8(cpu, 2u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x15abu));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_SPRITE_MODE));
     if (!BattleCall(battle, 0x86e0u, 0x858a39u, 3u))
         return false;
     if (!BattleCommitPalettes(battle))

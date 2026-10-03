@@ -36,6 +36,15 @@ enum {
     BATTLE_SPRITE_REBUILD_REQUEST = 0x0012f3u,
 };
 
+/* Sprite build switches in bank $7E. In mode 1 the $85:8A2F routine builds the
+ * record, single and marker groups, then the party tilemap when $11DE is zero,
+ * otherwise the tile grid unless the hold byte is non-zero. In mode 2 it builds
+ * all four groups including the party sprites. */
+enum {
+    BATTLE_SPRITE_MODE = 0x15abu,
+    BATTLE_TILE_GRID_HOLD = 0x125fu, /* non-zero: leave the tile grid alone */
+};
+
 enum {
     BATTLE_FRAME_STATE = 0x129au,
     BATTLE_SAVED_ENTRY_STACK = 0x1395u,
