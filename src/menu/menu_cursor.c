@@ -61,8 +61,9 @@ Lufia2ExecutionResult Lufia2MenuMultiply(
     for (bits = MULTIPLY_BITS; bits != 0; --bits) {
         carry = RotateRightWord(wram, FACTOR_B, carry);
         if (carry) {
-            const Word16Result sum = Sum16(
-                WramRead16(wram, PRODUCT_HIGH), WramRead16(wram, FACTOR_A), false);
+            const uint16_t high = WramRead16(wram, PRODUCT_HIGH);
+            const Word16Result sum = Sum16Mode(
+                high, WramRead16(wram, FACTOR_A), false, cpu->decimal);
 
             last = sum.value;
             carry = sum.carry;
@@ -90,16 +91,17 @@ Lufia2ExecutionResult Lufia2MenuItemIndex(
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     const uint16_t stride = WramRead16At(wram, ITEM_STRIDE, cpu->x) & 0x00ffu;
-    const uint16_t column = WramRead16At(wram, ITEM_COLUMN, cpu->x) & 0x00ffu;
+    uint16_t column;
     Word16Result index;
 
     SetAccumulatorWidth(cpu, 0);
     WramWrite16(wram, FACTOR_A, stride);
+    column = WramRead16At(wram, ITEM_COLUMN, cpu->x) & 0x00ffu;
     WramWrite16(wram, FACTOR_B, column);
     LeaveWord(cpu, column);
     Multiply(memory, cpu, 0x88b7u);
-    index = Sum16(WramRead16At(wram, ITEM_BASE, cpu->x) & 0x00ffu,
-        WramRead16(wram, PRODUCT_LOW), false);
+    index = Sum16Mode(WramRead16At(wram, ITEM_BASE, cpu->x) & 0x00ffu,
+        WramRead16(wram, PRODUCT_LOW), false, cpu->decimal);
     WramWrite16(wram, PRODUCT_LOW, index.value);
     WramWrite16(wram, ITEM_INDEX, index.value);
     LeaveSum(cpu, index);
@@ -112,18 +114,19 @@ static void PlaceAxis(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram,
     uint32_t size, uint32_t count, uint32_t origin_low, uint32_t origin_high,
     uint32_t out_low, uint32_t out_high, uint16_t return_address) {
-    const uint8_t cells = WramReadAt(wram, count, cpu->x);
+    uint8_t cells;
     Byte8Result sum;
 
     WramWrite16(wram, FACTOR_A, WramReadAt(wram, size, cpu->x));
+    cells = WramReadAt(wram, count, cpu->x);
     WramWrite16(wram, FACTOR_B, cells);
     LoadA8(cpu, cells);
     Multiply(memory, cpu, return_address);
-    sum = Sum8(WramRead(wram, PRODUCT_LOW),
-        WramReadAt(wram, origin_low, cpu->x), false);
+    sum = Sum8Mode(WramRead(wram, PRODUCT_LOW),
+        WramReadAt(wram, origin_low, cpu->x), false, cpu->decimal);
     WramWriteAt(wram, out_low, cpu->x, sum.value);
-    sum = Sum8(WramRead(wram, PRODUCT_LOW + 1u),
-        WramReadAt(wram, origin_high, cpu->x), sum.carry);
+    sum = Sum8Mode(WramRead(wram, PRODUCT_LOW + 1u),
+        WramReadAt(wram, origin_high, cpu->x), sum.carry, cpu->decimal);
     WramWriteAt(wram, out_high, cpu->x, sum.value);
     LeaveByteSum(cpu, sum);
 }

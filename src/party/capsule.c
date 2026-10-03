@@ -149,8 +149,8 @@ static void CapsuleLevelStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     for (i = 0; i < 3u; ++i)
         WramWrite(wram, EXPERIENCE + i, (uint8_t)(experience >> (8u * i)));
     if (experience >= EXPERIENCE_CAP) {
-        WramWrite(wram, EXPERIENCE, (uint8_t)EXPERIENCE_CAP);
-        WramWrite(wram, EXPERIENCE + 1u, (uint8_t)(EXPERIENCE_CAP >> 8));
+        WramWrite(wram, EXPERIENCE, (uint8_t)(EXPERIENCE_CAP & 0xffu));
+        WramWrite(wram, EXPERIENCE + 1u, (uint8_t)((EXPERIENCE_CAP >> 8) & 0xffu));
         WramWrite(wram, EXPERIENCE + 2u, (uint8_t)(EXPERIENCE_CAP >> 16));
     }
 
@@ -195,8 +195,8 @@ static void CapsuleExperience(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, LEVEL, 0);
     Compare8(cpu, A8(cpu), EXPERIENCE_CAP_LEVEL);
     if (cpu->carry) {
-        WramWrite(wram, EXPERIENCE, (uint8_t)EXPERIENCE_CAP);
-        WramWrite(wram, EXPERIENCE + 1u, (uint8_t)(EXPERIENCE_CAP >> 8));
+        WramWrite(wram, EXPERIENCE, (uint8_t)(EXPERIENCE_CAP & 0xffu));
+        WramWrite(wram, EXPERIENCE + 1u, (uint8_t)((EXPERIENCE_CAP >> 8) & 0xffu));
         WramWrite(wram, EXPERIENCE + 2u, (uint8_t)(EXPERIENCE_CAP >> 16));
         LoadA8(cpu, (uint8_t)(EXPERIENCE_CAP >> 16));
         return;

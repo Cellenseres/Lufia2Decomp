@@ -131,7 +131,7 @@ Lufia2ExecutionResult Lufia2PartyExperienceForLevel(
     LoadA8(cpu, WramRead(bus, PARTY_LEVEL));
     Compare8(cpu, A8(cpu), LEVEL_CAP);
     if (cpu->carry) {
-        LoadX16(cpu, (uint16_t)EXPERIENCE_AT_CAP);
+        LoadX16(cpu, (uint16_t)(EXPERIENCE_AT_CAP & 0xffffu));
         WramWrite16(bus, PARTY_EXPERIENCE, cpu->x);
         LoadA8(cpu, (uint8_t)(EXPERIENCE_AT_CAP >> 16));
         WramWrite(bus, PARTY_EXPERIENCE_HIGH, A8(cpu));

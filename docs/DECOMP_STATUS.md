@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-461 functions in `metadata/functions.toml`: 366 verified, 95 draft, 0 identified, 0 disabled.
+461 functions in `metadata/functions.toml`: 370 verified, 91 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -40,6 +40,14 @@ older large modules still step the CPU-state helpers inside their bodies.
 Moving them over is open work and does not change any entry listed above.
 
 ## Current checkpoint
+
+The feature repair verifies `$85:ADE1`, `$85:AE68`, `$85:AEEB` and `$85:AA3D`.
+Their complete M1X0 leaf contracts preserve binary and decimal arithmetic,
+caller DP/DB, flags, stack residue and ordered writes through the original RTS.
+The three wave fills pass every 16-bit phase value with varied caller state;
+all four additionally pass consumer return-frame and entry-guard comparisons.
+Other feature routines remain draft while their contracts and remaining paths
+are reconstructed. See [FEATURE_REPAIR.md](FEATURE_REPAIR.md).
 
 The full Windows Release verifier passes **518 independent jobs**. The normal
 application build also passes. The consumer selects all 366 verified functions,

@@ -150,7 +150,7 @@ Lufia2ExecutionResult Lufia2BattleGaugeBlock(
     IncX2(cpu);
     Store16X(memory, cpu, 0x0000u);
     cpu->carry = 1;
-    Add16Value(cpu, (uint16_t)~0x0005u);
+    Add16Value(cpu, (uint16_t)(0x0005u ^ 0xffffu));
     IncX2(cpu);
     LoadY16(cpu, 0x0004u);
     Write16Direct(memory, cpu, 0x11u, cpu->y);
@@ -193,7 +193,7 @@ Lufia2ExecutionResult Lufia2BattleGaugeColumn(
     IncX2(cpu);
     Store16X(memory, cpu, 0x0000u);
     cpu->carry = 1;
-    Add16Value(cpu, (uint16_t)~0x0004u);
+    Add16Value(cpu, (uint16_t)(0x0004u ^ 0xffffu));
     TransferAToY(cpu);
     LoadA16(cpu, 0x0004u);
     StoreADirect16(memory, cpu, 0x11u);

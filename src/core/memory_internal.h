@@ -4,6 +4,7 @@
 /* Bus access and 65816 address modes. */
 
 #include "lufia2/execution.h"
+#include <stdbool.h>
 
 static inline uint8_t Read8(
     const Lufia2Memory *memory, uint32_t address) {
@@ -20,6 +21,17 @@ static inline void Write8(
 static inline uint32_t DirectAddress(
     const Lufia2CpuState *cpu, uint8_t offset) {
     return (uint16_t)(cpu->direct_page + offset);
+}
+
+/* Native work counters require the bank-zero WRAM mirror. */
+static inline bool DirectWorkByteAvailable(
+    const Lufia2CpuState *cpu, uint8_t offset) {
+    return DirectAddress(cpu, offset) < 0x2000u;
+}
+
+static inline bool DirectWorkWordAvailable(
+    const Lufia2CpuState *cpu, uint8_t offset) {
+    return DirectAddress(cpu, offset) < 0x1fffu;
 }
 
 /* Indexing carries into the next bank. */

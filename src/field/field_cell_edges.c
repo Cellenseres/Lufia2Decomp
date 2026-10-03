@@ -586,7 +586,7 @@ Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
     for (slot = 0x28u; slot-- > 0;) {
-        const uint32_t address = AbsoluteIndexedAddress(cpu, 0x0736u, slot);
+        const uint32_t address = AbsoluteIndexedAddress(cpu, 0x0736u, (uint16_t)slot);
 
         Write8(memory, address, (uint8_t)(Read8(memory, address) & 0xbfu));
     }

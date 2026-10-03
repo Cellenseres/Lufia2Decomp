@@ -68,7 +68,7 @@ static void FillTileBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             tile = (uint16_t)(tile + 1u);
             columns = (uint16_t)(columns - 1u);
         } while (columns != 0);
-        next_row = Sum16(PullStackWord(memory, cpu), ROW_STRIDE, false);
+        next_row = Sum16Mode(PullStackWord(memory, cpu), ROW_STRIDE, false, cpu->decimal);
         position = next_row.value;
         rows_left = WramStep16(wram, WORK_HEIGHT, -1);
     } while (rows_left != 0);
@@ -99,7 +99,7 @@ Lufia2ExecutionResult Lufia2MenuTileGridFill(
 
     if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x828069u);
-    tile = Sum16(GRID_BASE_TILE, WramRead16(wram, GRID_TILE_OFFSET), false);
+    tile = Sum16Mode(GRID_BASE_TILE, WramRead16(wram, GRID_TILE_OFFSET), false, cpu->decimal);
     WramWrite16(wram, WORK_TILE, tile.value);
     WramWrite16(wram, WORK_POSITION, 0);
     WramWrite16(wram, WORK_ROWS, GRID_SIZE);
@@ -109,11 +109,11 @@ Lufia2ExecutionResult Lufia2MenuTileGridFill(
             SimulateJsrFrame(memory, cpu, 0x8082u);
             FillTileBlock(memory, cpu);
             SimulateRtsFrame(memory, cpu);
-            position = Sum16(
-                WramRead16(wram, WORK_POSITION), GRID_BLOCK_STEP, false);
+            position = Sum16Mode(
+                WramRead16(wram, WORK_POSITION), GRID_BLOCK_STEP, false, cpu->decimal);
             WramWrite16(wram, WORK_POSITION, position.value);
         } while (WramStep16(wram, WORK_COLUMNS, -1) != 0);
-        position = Sum16(WramRead16(wram, WORK_POSITION), GRID_ROW_SKIP, false);
+        position = Sum16Mode(WramRead16(wram, WORK_POSITION), GRID_ROW_SKIP, false, cpu->decimal);
         WramWrite16(wram, WORK_POSITION, position.value);
     } while (WramStep16(wram, WORK_ROWS, -1) != 0);
     SetAccumulatorWidth(cpu, 1);
@@ -162,7 +162,7 @@ Lufia2ExecutionResult Lufia2MenuRecolorRect(
             cell = (uint16_t)(cell + 2u);
             columns = (uint16_t)(columns - 1u);
         } while (columns != 0);
-        next_row = Sum16(WramRead16(wram, WORK_POSITION), ROW_STRIDE, false);
+        next_row = Sum16Mode(WramRead16(wram, WORK_POSITION), ROW_STRIDE, false, cpu->decimal);
         WramWrite16(wram, WORK_POSITION, next_row.value);
     } while (WramStep16(wram, WORK_HEIGHT, -1) != 0);
     cpu->x = cell;

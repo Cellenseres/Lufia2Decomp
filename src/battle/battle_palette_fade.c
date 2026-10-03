@@ -108,7 +108,8 @@ Lufia2ExecutionResult Lufia2BattlePaletteBrightness(
     uint16_t offset;
     uint16_t color;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !DirectWorkWordAvailable(cpu, DP_REMAINING))
         return ExecutionHandoff(cpu, 0x81b396u);
     level = WramRead(wram, DP_LEVEL);
     /* The entry number and the high byte of the direct page, as one word. */
@@ -116,7 +117,7 @@ Lufia2ExecutionResult Lufia2BattlePaletteBrightness(
                             (cpu->direct_page >> 8)) >> 3);
     WramWrite16(wram, DP_REMAINING, ENTRY_COUNT);
     if ((level & 0x80u) != 0) {
-        const Byte8Result multiplier = Sum8(level, LEVEL_BASE, false);
+        const Byte8Result multiplier = Sum8Mode(level, LEVEL_BASE, false, cpu->decimal);
 
         WramWrite(wram, SNES_WRMPYA, multiplier.value);
         do {
@@ -129,17 +130,17 @@ Lufia2ExecutionResult Lufia2BattlePaletteBrightness(
         } while (WramStep8(wram, DP_REMAINING, -1) != 0);
         cpu->overflow = multiplier.overflow;
     } else {
-        const Byte8Result multiplier = Difference8(LEVEL_BASE, level);
+        const Byte8Result multiplier = Difference8Mode(LEVEL_BASE, level, cpu->decimal);
         Word16Result lightened;
 
         WramWrite(wram, SNES_WRMPYA, multiplier.value);
         do {
             offset = (uint16_t)(offset + 2u);
-            lightened = Difference16(MAX_COLOR,
-                WramRead16At(wram, SOURCE_PALETTE, offset));
+            lightened = Difference16Mode(MAX_COLOR,
+                WramRead16At(wram, SOURCE_PALETTE, offset), cpu->decimal);
             WramWrite16(wram, DP_COLOR, lightened.value);
             ScaleEntry(memory, cpu, 0xb3e3u);
-            lightened = Difference16(MAX_COLOR, WramRead16(wram, DP_COLOR));
+            lightened = Difference16Mode(MAX_COLOR, WramRead16(wram, DP_COLOR), cpu->decimal);
             WramWrite16At(wram, PALETTE_BUFFER, offset, lightened.value);
         } while (WramStep16(wram, DP_REMAINING, -1) != 0);
         color = lightened.value;

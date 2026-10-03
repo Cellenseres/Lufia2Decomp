@@ -46,22 +46,25 @@ Lufia2ExecutionResult Lufia2BattleCircleWidths(
     uint8_t down = 0;
     uint16_t error = 0;
 
+    if (!DirectWorkWordAvailable(cpu, DP_ERROR) ||
+        !DirectWorkByteAvailable(cpu, DP_WIDTHS_END))
+        return ExecutionHandoff(cpu, 0x85b26du);
     Push8(memory, cpu, PackStatus(cpu));
     WramWrite(wram, DP_ERROR_HIGH, 0);
     across = WramRead(wram, DP_RADIUS);
     do {
         /* One step down: the error falls by twice the row, less one. */
         WramWriteAt(wram, WINDOW_WIDTHS, down, across);
-        error = Sum16((uint16_t)~(uint16_t)(down << 1),
-            WramRead16(wram, DP_ERROR), false).value;
+        error = Sum16Mode((uint16_t)~(uint16_t)(down << 1),
+            WramRead16(wram, DP_ERROR), false, cpu->decimal).value;
         down = (uint8_t)(down + 1u);
         WramWrite16(wram, DP_ERROR, error);
         if ((error & 0x8000u) != 0) {
             /* The edge moved in: one step across, the error grows. */
             across = (uint8_t)(across - 1u);
             WramWriteAt(wram, WINDOW_WIDTHS, across, down);
-            error = Sum16((uint16_t)(across << 1),
-                WramRead16(wram, DP_ERROR), false).value;
+            error = Sum16Mode((uint16_t)(across << 1),
+                WramRead16(wram, DP_ERROR), false, cpu->decimal).value;
             WramWrite16(wram, DP_ERROR, error);
         }
         WramWrite(wram, DP_WIDTHS_END, down);
@@ -88,7 +91,9 @@ Lufia2ExecutionResult Lufia2BattleCircleWindow(
     uint8_t high_byte;
     uint16_t table = 0;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !DirectWorkWordAvailable(cpu, DP_ERROR) ||
+        !DirectWorkByteAvailable(cpu, DP_WIDTHS_END))
         return ExecutionHandoff(cpu, 0x85b208u);
     PushDataBank(memory, cpu);
     PushStackWord(memory, cpu, cpu->x);
@@ -117,8 +122,8 @@ Lufia2ExecutionResult Lufia2BattleCircleWindow(
             WramWrite(wram, DP_RADIUS, Pull8(memory, cpu));
             do {
                 const uint8_t half = WramReadAt(wram, WINDOW_WIDTHS, row);
-                const Byte8Result left = Difference8(WINDOW_HALF, half);
-                const Byte8Result edge = Sum8(WINDOW_RIGHT_BASE, half, false);
+                const Byte8Result left = Difference8Mode(WINDOW_HALF, half, cpu->decimal);
+                const Byte8Result edge = Sum8Mode(WINDOW_RIGHT_BASE, half, false, cpu->decimal);
 
                 overflow = edge.overflow;
                 if (!left.carry)
