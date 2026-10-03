@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
 
@@ -71,15 +72,28 @@ static void StoreWord(
 }
 
 /* One screen coordinate: the half size folded with the actor's base position
- * and its offset (two adds, each without carry in). Leaves the sum in A. */
-static void AddPosition(
-    Lufia2Wram wram, Lufia2CpuState *cpu, uint16_t half, uint16_t record,
-    uint16_t base, uint16_t offset) {
-    LoadA16(cpu, half);
-    cpu->carry = false;
-    Add16Value(cpu, FieldWord(wram, base, record));
-    cpu->carry = false;
-    Add16Value(cpu, FieldWord(wram, offset, record));
+ * and its offset (two adds, each without carry in). The flags of the last
+ * add are the ones a skipped sprite leaves behind. */
+static Word16Result ScreenCoordinate(
+    Lufia2Wram wram, uint16_t half, uint16_t record, uint16_t base,
+    uint16_t offset) {
+    const Word16Result folded =
+        Sum16(half, FieldWord(wram, base, record), false);
+
+    return Sum16(folded.value, FieldWord(wram, offset, record), false);
+}
+
+/* A sprite outside the screen is dropped: both saved words leave the stack,
+ * the second one into X. */
+static uint32_t SkipActorSprite(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, Word16Result last,
+    bool carry) {
+    cpu->accumulator = last.value;
+    cpu->carry = carry;
+    cpu->overflow = last.overflow;
+    (void)PullIndexValue(memory, cpu);
+    cpu->x = PullIndexValue(memory, cpu);
+    return 0x818f90u;
 }
 
 /* $81:8EEA: adds actor Y to its kind's OAM list. Entered with M=0, X=0. A
@@ -88,111 +102,78 @@ static void AddPosition(
 static uint32_t AppendActorSprite(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
     const uint16_t record = cpu->y;
+    /* Kind 2..5 selects the list: its word offset, four bytes a list. */
+    const uint16_t list_offset = (uint16_t)(
+        ((FieldWord(wram, ACTOR_KIND, record) - 2u) & 3u) << 2);
+    const uint16_t list_slot = (uint16_t)(list_offset >> 1);
+    const uint16_t cursor = WramRead16At(wram, LIST_CURSOR_FIRST, list_slot);
     uint16_t half;
-    uint16_t cursor;
+    Word16Result left;
+    Word16Result right;
+    Word16Result top;
+    Word16Result bottom;
+    Word16Result next;
+    uint8_t selector;
+    uint8_t attributes;
+    uint8_t count;
 
-    /* Kind 2..5 selects the list; its pointer slot is pushed twice over. */
-    LoadA16(cpu, FieldWord(wram, ACTOR_KIND, record));
-    LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
-    LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
-    And16(cpu, 3u);
-    AslA16(cpu);
-    AslA16(cpu);
-    PushAccumulator16(memory, cpu);
-    LsrA16(cpu);
-    TransferAToX(cpu);
-    PushIndex(memory, cpu);
-    LoadA16(cpu, WramRead16At(wram, LIST_CURSOR_FIRST, cpu->x));
-    TransferAToX(cpu);
-    cursor = cpu->x;
-    LoadA16(cpu, FieldWord(wram, ACTOR_LARGE, record));
-    And16(cpu, 0x00ffu);
-    half = cpu->zero ? 0xfff8u : 0xfff0u;
-    LoadA16(cpu, half);
+    PushStackWord(memory, cpu, list_offset);
+    PushStackWord(memory, cpu, list_slot);
+    half = (FieldWord(wram, ACTOR_LARGE, record) & 0x00ffu) == 0 ? 0xfff8u
+                                                                  : 0xfff0u;
     WramWrite16(wram, DP_HALF_SIZE, half);
 
     /* Left and top corner are stored first; the far corners must be on
      * screen for the sprite to be kept. */
-    AddPosition(wram, cpu, half, record, ACTOR_BASE_X, ACTOR_OFFSET_X);
-    StoreWord(wram, 0u, cursor, cpu->accumulator);
-    StoreWord(wram, 3u, cursor, cpu->accumulator);
-    LoadA16(cpu, WramRead16(wram, DP_HALF_SIZE));
-    AddPosition(wram, cpu, (uint16_t)~cpu->accumulator, record, ACTOR_BASE_X,
-        ACTOR_OFFSET_X);
-    if (cpu->negative)
-        goto skipped;
-    Compare16(cpu, cpu->accumulator, LIST_LIMIT_X);
-    if (cpu->carry)
-        goto skipped;
+    left = ScreenCoordinate(wram, half, record, ACTOR_BASE_X, ACTOR_OFFSET_X);
+    StoreWord(wram, 0u, cursor, left.value);
+    StoreWord(wram, 3u, cursor, left.value);
+    right = ScreenCoordinate(
+        wram, (uint16_t)~half, record, ACTOR_BASE_X, ACTOR_OFFSET_X);
+    if ((right.value & 0x8000u) != 0)
+        return SkipActorSprite(memory, cpu, right, right.carry);
+    if (right.value >= LIST_LIMIT_X)
+        return SkipActorSprite(memory, cpu, right, true);
 
-    LoadA16(cpu, WramRead16(wram, DP_HALF_SIZE));
-    Add16Value(cpu, FieldWord(wram, ACTOR_BASE_Y, record));
-    cpu->carry = false;
-    Add16Value(cpu, FieldWord(wram, ACTOR_OFFSET_Y, record));
-    StoreWord(wram, 1u, cursor, cpu->accumulator);
-    LoadA16(cpu, WramRead16(wram, DP_HALF_SIZE));
-    AddPosition(wram, cpu, (uint16_t)~cpu->accumulator, record, ACTOR_BASE_Y,
-        ACTOR_OFFSET_Y);
-    if (cpu->negative)
-        goto skipped;
-    Compare16(cpu, cpu->accumulator, LIST_LIMIT_Y);
-    if (cpu->carry)
-        goto skipped;
+    top = ScreenCoordinate(wram, half, record, ACTOR_BASE_Y, ACTOR_OFFSET_Y);
+    StoreWord(wram, 1u, cursor, top.value);
+    bottom = ScreenCoordinate(
+        wram, (uint16_t)~half, record, ACTOR_BASE_Y, ACTOR_OFFSET_Y);
+    if ((bottom.value & 0x8000u) != 0)
+        return SkipActorSprite(memory, cpu, bottom, bottom.carry);
+    if (bottom.value >= LIST_LIMIT_Y)
+        return SkipActorSprite(memory, cpu, bottom, true);
 
-    /* Tile, attributes and the size bit, with 8-bit A. */
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, FieldByte(wram, ACTOR_TILE, record));
-    Write8(memory, Field(wram, 2u, cursor), A8(cpu));
-    LoadA8(cpu, FieldByte(wram, ACTOR_KIND, record));
-    if (cpu->zero) {
-        cpu->carry = false;
-        Adc8(cpu, 2u);
-        Adc8(cpu, FieldByte(wram, ROTATION_PHASE, 0u));
-        And8(cpu, 3u);
-    }
-    AslA8(cpu);
-    AslA8(cpu);
-    AslA8(cpu);
-    AslA8(cpu);
-    Or8(cpu, FieldByte(wram, ACTOR_PALETTE, record));
-    Or8(cpu, FieldByte(wram, ACTOR_PRIORITY, record));
-    Write8(memory, Field(wram, 3u, cursor), A8(cpu));
-    LoadA8(cpu, FieldByte(wram, ACTOR_LARGE, record));
+    /* Tile, attributes and the size bit. A kind of 0 cycles through the four
+     * palettes with the frame counter. */
+    Write8(memory, Field(wram, 2u, cursor), FieldByte(wram, ACTOR_TILE, record));
+    selector = FieldByte(wram, ACTOR_KIND, record);
+    if (selector == 0)
+        selector = (uint8_t)((2u + FieldByte(wram, ROTATION_PHASE, 0u)) & 3u);
+    attributes = (uint8_t)(selector << 4);
+    attributes |= FieldByte(wram, ACTOR_PALETTE, record);
+    attributes |= FieldByte(wram, ACTOR_PRIORITY, record);
+    Write8(memory, Field(wram, 3u, cursor), attributes);
     {
+        const uint8_t large = FieldByte(wram, ACTOR_LARGE, record);
         const uint32_t high = Field(wram, 4u, cursor);
         const uint8_t old = Read8(memory, high);
-        const uint8_t shifted = (uint8_t)(old >> 1);
 
-        cpu->carry = (old & 1u) != 0;
-        Write8(memory, high, shifted);
-        SetNz8(cpu, shifted);
+        Write8(memory, high, (uint8_t)(old >> 1));
+        Write8(memory, Field(wram, 4u, cursor),
+            (uint8_t)((large << 1) | (old & 1u)));
     }
-    RolA8(cpu);
-    Write8(memory, Field(wram, 4u, cursor), A8(cpu));
 
     /* Advance this kind's list cursor and count the sprite. */
-    SetAccumulatorWidth(cpu, 0);
-    TransferXToA(cpu);
-    cpu->carry = false;
-    Add16Value(cpu, 5u);
+    next = Sum16(cursor, 5u, false);
+    WramWrite16At(wram, LIST_CURSOR_FIRST, PullIndexValue(memory, cpu), next.value);
     cpu->x = PullIndexValue(memory, cpu);
-    WramWrite16At(wram, LIST_CURSOR_FIRST, cpu->x, cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
-    cpu->x = PullIndexValue(memory, cpu);
-    {
-        const uint32_t count = Field(wram, LIST_TOTALS, cpu->x);
-        const uint8_t value = (uint8_t)(Read8(memory, count) + 1u);
-
-        Write8(memory, count, value);
-        SetNz8(cpu, value);
-    }
-    SetAccumulatorWidth(cpu, 0);
+    count = (uint8_t)(FieldByte(wram, LIST_TOTALS, cpu->x) + 1u);
+    Write8(memory, Field(wram, LIST_TOTALS, cpu->x), count);
+    cpu->accumulator = next.value;
+    SetSumFlags(cpu, next);
+    SetNz8(cpu, count);
     return 0x818f8du;
-
-skipped:
-    cpu->x = PullIndexValue(memory, cpu);
-    cpu->x = PullIndexValue(memory, cpu);
-    return 0x818f90u;
 }
 
 Lufia2ExecutionResult Lufia2BattleActorSprite(
@@ -210,6 +191,7 @@ Lufia2ExecutionResult Lufia2BattleActorSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
+    uint16_t record;
     unsigned list;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
@@ -221,30 +203,28 @@ Lufia2ExecutionResult Lufia2BattleActorSprites(
     WramWrite16(wram, LIST_CURSOR_FIRST + 2u, FIRST_CURSORS_B);
     WramWrite16(wram, LIST_CURSOR_FIRST + 4u, FIRST_CURSORS_C);
     cpu->x = FIRST_CURSORS_C;
-    cpu->y = ACTOR_FIRST;
     for (list = 0; list < LIST_CURSOR_COUNT; ++list)
         Write8(memory, Field(wram, (uint16_t)(LIST_TOTALS + 4u * list), 0u), 0u);
     SetAccumulatorWidth(cpu, 0);
-    do {
-        LoadA16(cpu, FieldWord(wram, ACTOR_PRESENT, cpu->y));
-        And16(cpu, 0x00ffu);
-        if (!cpu->zero) {
-            LoadA16(cpu, FieldWord(wram, ACTOR_VISIBLE, cpu->y));
-            And16(cpu, 0x00ffu);
-            if (!cpu->zero) {
-                PushY(memory, cpu);
-                SimulateJsrFrame(memory, cpu, 0x8ec7u);
-                (void)AppendActorSprite(memory, cpu, wram);
-                SimulateRtsFrame(memory, cpu);
-                cpu->y = PullIndexValue(memory, cpu);
-            }
-        }
-        LoadA16(cpu, cpu->y);
-        cpu->carry = false;
-        Add16Value(cpu, ACTOR_SIZE);
-        TransferAToY(cpu);
-        Compare16(cpu, cpu->accumulator, ACTOR_END);
-    } while (!cpu->zero);
+    for (record = ACTOR_FIRST; record != ACTOR_END;
+         record = (uint16_t)(record + ACTOR_SIZE)) {
+        cpu->y = record;
+        if ((FieldWord(wram, ACTOR_PRESENT, record) & 0x00ffu) == 0)
+            continue;
+        if ((FieldWord(wram, ACTOR_VISIBLE, record) & 0x00ffu) == 0)
+            continue;
+        PushY(memory, cpu);
+        SimulateJsrFrame(memory, cpu, 0x8ec7u);
+        (void)AppendActorSprite(memory, cpu, wram);
+        SimulateRtsFrame(memory, cpu);
+        cpu->y = PullIndexValue(memory, cpu);
+    }
+    /* The last step to the end of the table neither carries nor overflows;
+     * the compare with the end leaves carry set. */
+    cpu->y = ACTOR_END;
+    cpu->accumulator = ACTOR_END;
+    cpu->carry = true;
+    cpu->overflow = false;
     SetAccumulatorWidth(cpu, 1);
     for (list = 0; list < LIST_CURSOR_COUNT; ++list) {
         LoadA8(cpu, FieldByte(wram, (uint16_t)(LIST_TOTALS + 4u * list), 0u));
