@@ -475,23 +475,36 @@ Lufia2ExecutionResult Lufia2WorldMapNmiUploads(const Lufia2Memory *memory,
     return result;
 }
 
+/* Direct-page fields of the map streaming routines: the camera cell, the
+ * cell offset and block pointer into the map, and loop scratch. */
+enum {
+    STREAM_DP_BLOCK_POINTER = 0x08u,
+    STREAM_DP_CELL_OFFSET = 0x0bu,
+    STREAM_DP_SUBCELL = 0x13u,
+    STREAM_DP_COUNT_LEFT = 0x26u,
+    STREAM_DP_CELL_X = 0x58u,
+    STREAM_DP_CELL_Y = 0x5au,
+    STREAM_ROW_VRAM = 0x001712u,
+    STREAM_COLUMN_VRAM = 0x001714u,
+};
+
 /* $86:ADEE: $0B = map cell offset of ($58, $5A). */
 static void WorldMapCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadADirect16(memory, cpu, 0x5au);                         /* ADEE */
+    LoadADirect16(memory, cpu, STREAM_DP_CELL_Y); /* ADEE */
     And16(cpu, 0x003fu);
     ExchangeAccumulatorBytes(cpu);
     LsrA16(cpu);
-    StoreADirect16(memory, cpu, 0x0bu);
-    LoadADirect16(memory, cpu, 0x58u);
+    StoreADirect16(memory, cpu, STREAM_DP_CELL_OFFSET);
+    LoadADirect16(memory, cpu, STREAM_DP_CELL_X);
     And16(cpu, 0x003fu);
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x0bu));
+    Add16Value(cpu, Read16Direct(memory, cpu, STREAM_DP_CELL_OFFSET));
     AslA16(cpu);
     Add16Value(cpu, 0x0000u);
-    StoreADirect16(memory, cpu, 0x0bu);
+    StoreADirect16(memory, cpu, STREAM_DP_CELL_OFFSET);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -501,19 +514,19 @@ static void WorldMapBlockPointer(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadADirect16(memory, cpu, 0x58u);                         /* AE05 */
+    LoadADirect16(memory, cpu, STREAM_DP_CELL_X); /* AE05 */
     And16(cpu, 0x00ffu);
     LsrA16(cpu);
-    StoreADirect16(memory, cpu, 0x08u);
-    LoadADirect16(memory, cpu, 0x5au);
+    StoreADirect16(memory, cpu, STREAM_DP_BLOCK_POINTER);
+    LoadADirect16(memory, cpu, STREAM_DP_CELL_Y);
     And16(cpu, 0x00ffu);
     LsrA16(cpu);
     ExchangeAccumulatorBytes(cpu);
     LsrA16(cpu);
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x08u));
+    Add16Value(cpu, Read16Direct(memory, cpu, STREAM_DP_BLOCK_POINTER));
     AslA16(cpu);
     Add16Value(cpu, 0x4040u);
-    StoreADirect16(memory, cpu, 0x08u);
+    StoreADirect16(memory, cpu, STREAM_DP_BLOCK_POINTER);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -521,8 +534,10 @@ static void WorldMapBlockPointer(
 static void WorldMapMetatile(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadA16(cpu, Read16Long(memory, ((uint32_t)cpu->data_bank << 16) +
-        Read16Direct(memory, cpu, 0x08u)));                    /* LDA ($08) */
+    LoadA16(cpu, Read16Long(memory,
+                            ((uint32_t)cpu->data_bank << 16) +
+                                Read16Direct(memory, cpu,
+                                             STREAM_DP_BLOCK_POINTER))); /* LDA ($08) */
     AslA16(cpu);
     AslA16(cpu);
     AslA16(cpu);
@@ -535,7 +550,7 @@ static void WorldMapMetatile(
     AslA16(cpu);
     Add16Value(cpu, Read16Direct(memory, cpu, 0x00u));
     TransferAToY(cpu);
-    LoadXDirect16(memory, cpu, 0x0bu);
+    LoadXDirect16(memory, cpu, STREAM_DP_CELL_OFFSET);
 }
 
 /* $86:ACFE: stream one map column into $7F:DF00/$7F:DF80. */
@@ -547,44 +562,44 @@ static void WorldMapStreamColumn(
     SetAccumulatorWidth(cpu, 0);
     WorldMapCellOffset(memory, cpu, 0xad07u);
     WorldMapBlockPointer(memory, cpu, 0xad0au);
-    LoadADirect16(memory, cpu, 0x0bu);
+    LoadADirect16(memory, cpu, STREAM_DP_CELL_OFFSET);
     And16(cpu, 0xc07fu);
-    Write16Long(memory, 0x001714u, cpu->accumulator);
-    LoadADirect16(memory, cpu, 0x58u);
+    Write16Long(memory, STREAM_COLUMN_VRAM, cpu->accumulator);
+    LoadADirect16(memory, cpu, STREAM_DP_CELL_X);
     And16(cpu, 0x0001u);
     AslA16(cpu);
-    StoreADirect16(memory, cpu, 0x13u);
-    LoadADirect16(memory, cpu, 0x5au);
+    StoreADirect16(memory, cpu, STREAM_DP_SUBCELL);
+    LoadADirect16(memory, cpu, STREAM_DP_CELL_Y);
     PushAccumulator16(memory, cpu);
     And16(cpu, 0x003fu);
     AslA16(cpu);
-    StoreADirect16(memory, cpu, 0x0bu);
+    StoreADirect16(memory, cpu, STREAM_DP_CELL_OFFSET);
     LoadA16(cpu, 0x0040u);
-    StoreADirect16(memory, cpu, 0x26u);
+    StoreADirect16(memory, cpu, STREAM_DP_COUNT_LEFT);
     do {
-        LoadADirect16(memory, cpu, 0x5au);                     /* AD2A */
+        LoadADirect16(memory, cpu, STREAM_DP_CELL_Y); /* AD2A */
         And16(cpu, 0x0001u);
         AslA16(cpu);
         AslA16(cpu);
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x13u));
+        Add16Value(cpu, Read16Direct(memory, cpu, STREAM_DP_SUBCELL));
         StoreADirect16(memory, cpu, 0x00u);
         WorldMapMetatile(memory, cpu);
         LoadA16(cpu, Read16IndirectLongY(memory, cpu, 0xe7u));
         StoreAAbsolute16(memory, cpu, 0xdf00u, cpu->x);
         LoadA16(cpu, Read16IndirectLongY(memory, cpu, 0xeau));
         StoreAAbsolute16(memory, cpu, 0xdf80u, cpu->x);
-        LoadADirect16(memory, cpu, 0x0bu);
+        LoadADirect16(memory, cpu, STREAM_DP_CELL_OFFSET);
         IncrementA16(cpu);
         IncrementA16(cpu);
         And16(cpu, 0x007fu);
-        StoreADirect16(memory, cpu, 0x0bu);
+        StoreADirect16(memory, cpu, STREAM_DP_CELL_OFFSET);
         SetAccumulatorWidth(cpu, 1);
-        IncrementDirect8(memory, cpu, 0x5au);
+        IncrementDirect8(memory, cpu, STREAM_DP_CELL_Y);
         if (cpu->zero) {
             SetAccumulatorWidth(cpu, 0);                       /* AD70 */
             WorldMapBlockPointer(memory, cpu, 0xad74u);
         } else {
-            LoadA8(cpu, DirectByte(memory, cpu, 0x5au));
+            LoadA8(cpu, DirectByte(memory, cpu, STREAM_DP_CELL_Y));
             LsrA8(cpu);
             if (!cpu->carry)
                 IncrementDirect8(memory, cpu, 0x09u);
@@ -592,14 +607,14 @@ static void WorldMapStreamColumn(
         SetAccumulatorWidth(cpu, 0);                           /* AD75 */
         {
             const uint16_t left =
-                (uint16_t)(Read16Direct(memory, cpu, 0x26u) - 1u);
+                (uint16_t)(Read16Direct(memory, cpu, STREAM_DP_COUNT_LEFT) - 1u);
 
-            Write16Direct(memory, cpu, 0x26u, left);
+            Write16Direct(memory, cpu, STREAM_DP_COUNT_LEFT, left);
             SetNz16(cpu, left);
         }
     } while (!cpu->zero);
     PullAccumulator16(memory, cpu);
-    StoreADirect16(memory, cpu, 0x58u);
+    StoreADirect16(memory, cpu, STREAM_DP_CELL_X);
     SetAccumulatorWidth(cpu, 1);
     PullDataBank(memory, cpu);
     SimulateRtsFrame(memory, cpu);
@@ -614,23 +629,23 @@ static void WorldMapStreamRow(
     SetAccumulatorWidth(cpu, 0);
     WorldMapCellOffset(memory, cpu, 0xac75u);
     WorldMapBlockPointer(memory, cpu, 0xac78u);
-    LoadADirect16(memory, cpu, 0x0bu);
+    LoadADirect16(memory, cpu, STREAM_DP_CELL_OFFSET);
     And16(cpu, 0xff80u);
-    Write16Long(memory, 0x001712u, cpu->accumulator);
-    LoadADirect16(memory, cpu, 0x5au);
+    Write16Long(memory, STREAM_ROW_VRAM, cpu->accumulator);
+    LoadADirect16(memory, cpu, STREAM_DP_CELL_Y);
     And16(cpu, 0x0001u);
     AslA16(cpu);
     AslA16(cpu);
-    StoreADirect16(memory, cpu, 0x13u);
-    LoadADirect16(memory, cpu, 0x58u);
+    StoreADirect16(memory, cpu, STREAM_DP_SUBCELL);
+    LoadADirect16(memory, cpu, STREAM_DP_CELL_X);
     PushAccumulator16(memory, cpu);
     LoadA16(cpu, 0x0040u);
-    StoreADirect16(memory, cpu, 0x26u);
+    StoreADirect16(memory, cpu, STREAM_DP_COUNT_LEFT);
     do {
-        LoadADirect16(memory, cpu, 0x58u);                     /* AC93 */
+        LoadADirect16(memory, cpu, STREAM_DP_CELL_X); /* AC93 */
         And16(cpu, 0x0001u);
         AslA16(cpu);
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x13u));
+        Add16Value(cpu, Read16Direct(memory, cpu, STREAM_DP_SUBCELL));
         StoreADirect16(memory, cpu, 0x00u);
         WorldMapMetatile(memory, cpu);
         LoadA16(cpu, Read16IndirectLongY(memory, cpu, 0xe7u));
@@ -643,39 +658,39 @@ static void WorldMapStreamRow(
         LoadA8(cpu, Read8IndirectLongY(memory, cpu, 0xedu));
         StoreAAbsolute8(memory, cpu, 0x0081u, cpu->x);
         SetAccumulatorWidth(cpu, 0);                           /* ACCB */
-        LoadADirect16(memory, cpu, 0x0bu);
+        LoadADirect16(memory, cpu, STREAM_DP_CELL_OFFSET);
         IncrementA16(cpu);
         IncrementA16(cpu);
         cpu->zero = (cpu->accumulator & 0x007fu) == 0;
         if (cpu->zero)
             Subtract16(cpu, 0x0080u);
-        StoreADirect16(memory, cpu, 0x0bu);
+        StoreADirect16(memory, cpu, STREAM_DP_CELL_OFFSET);
         SetAccumulatorWidth(cpu, 1);
-        IncrementDirect8(memory, cpu, 0x58u);
+        IncrementDirect8(memory, cpu, STREAM_DP_CELL_X);
         SetAccumulatorWidth(cpu, 0);
         if (cpu->zero) {
             WorldMapBlockPointer(memory, cpu, 0xace6u);
         } else {
-            LoadADirect16(memory, cpu, 0x58u);                 /* ACEA */
+            LoadADirect16(memory, cpu, STREAM_DP_CELL_X); /* ACEA */
             LsrA16(cpu);
             if (!cpu->carry) {
-                uint16_t pointer = Read16Direct(memory, cpu, 0x08u);
+                uint16_t pointer = Read16Direct(memory, cpu, STREAM_DP_BLOCK_POINTER);
 
                 pointer = (uint16_t)(pointer + 2u);
-                Write16Direct(memory, cpu, 0x08u, pointer);
+                Write16Direct(memory, cpu, STREAM_DP_BLOCK_POINTER, pointer);
                 SetNz16(cpu, pointer);
             }
         }
         {
             const uint16_t left =
-                (uint16_t)(Read16Direct(memory, cpu, 0x26u) - 1u);
+                (uint16_t)(Read16Direct(memory, cpu, STREAM_DP_COUNT_LEFT) - 1u);
 
-            Write16Direct(memory, cpu, 0x26u, left);
+            Write16Direct(memory, cpu, STREAM_DP_COUNT_LEFT, left);
             SetNz16(cpu, left);
         }
     } while (!cpu->zero);
     PullAccumulator16(memory, cpu);
-    StoreADirect16(memory, cpu, 0x58u);
+    StoreADirect16(memory, cpu, STREAM_DP_CELL_X);
     SetAccumulatorWidth(cpu, 1);
     PullDataBank(memory, cpu);
     SimulateRtsFrame(memory, cpu);
@@ -713,26 +728,26 @@ Lufia2ExecutionResult Lufia2WorldMapStreamEdges(
     LoadAAbsolute8(memory, cpu, 0x11f4u, 0);
     cpu->carry = 1;
     Sbc8(cpu, 0x20u);
-    StoreADirect8(memory, cpu, 0x5au);
+    StoreADirect8(memory, cpu, STREAM_DP_CELL_Y);
     LoadAAbsolute8(memory, cpu, 0x11f2u, 0);
     cpu->carry = 1;
     Sbc8(cpu, AbsoluteByte(memory, cpu, 0x11f6u, 0));
     if (!cpu->zero) {
         WorldMapEdge(memory, cpu, 0x11f2u);
-        StoreADirect8(memory, cpu, 0x58u);                     /* 99EA */
+        StoreADirect8(memory, cpu, STREAM_DP_CELL_X); /* 99EA */
         WorldMapStreamColumn(memory, cpu);
         StoreAImmediate8(memory, cpu, 0xffu, 0x1711u);
     }
     LoadAAbsolute8(memory, cpu, 0x11f2u, 0);                   /* 99F4 */
     cpu->carry = 1;
     Sbc8(cpu, 0x20u);
-    StoreADirect8(memory, cpu, 0x58u);
+    StoreADirect8(memory, cpu, STREAM_DP_CELL_X);
     LoadAAbsolute8(memory, cpu, 0x11f4u, 0);
     cpu->carry = 1;
     Sbc8(cpu, AbsoluteByte(memory, cpu, 0x11f7u, 0));
     if (!cpu->zero) {
         WorldMapEdge(memory, cpu, 0x11f4u);
-        StoreADirect8(memory, cpu, 0x5au);                     /* 9A1B */
+        StoreADirect8(memory, cpu, STREAM_DP_CELL_Y); /* 9A1B */
         WorldMapStreamRow(memory, cpu);
         StoreAImmediate8(memory, cpu, 0xffu, 0x1710u);
     }
