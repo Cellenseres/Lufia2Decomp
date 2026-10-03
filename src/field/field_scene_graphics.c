@@ -192,6 +192,18 @@ enum {
     OBJECT_FIELD_SOURCE_Y = 0xf003u,
     OBJECT_FIELD_WIDTH = 0xf004u,
     OBJECT_FIELD_HEIGHT = 0xf005u,
+    OBJECT_FIELD_FLAGS_A = 0xf007u,
+    OBJECT_FIELD_FLAGS_B = 0xf008u,
+    OBJECT_USES_TILES_A = 0x0cu,
+    OBJECT_USES_TILES_B = 0x08u,
+    SCENE_TILESET_TABLE = 0xcff81eu,
+    SCENE_TILESET_RESOURCE_BASE = 0x14bu,
+    SCENE_PALETTE_INDEX_TABLE = 0xcffa08u,
+    SCENE_PALETTE_TABLE = 0xcffafau,
+    AUXILIARY_MAP_TABLE = 0xcff90eu,
+    AUXILIARY_RESOURCE_TABLE = 0xcff9feu,
+    AUXILIARY_FIRST_RESOURCE_BASE = 0x15fu,
+    AUXILIARY_TILES_RESOURCE_BASE = 0x164u,
     OBJECT_FLAG_SECOND_LAYER = 0x01u,
     OBJECT_SPRITE_SLOT_COUNTS = 0x83abf4u,
     OBJECT_TILE_SHAPE_WORDS = 0x80f42au,
@@ -359,6 +371,18 @@ static void StartTilesetDma(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     WramWrite(wram, SNES_MDMAEN, DMA_CHANNEL_0);
 }
 
+/* Tests whether the object record at Y has graphics to load: one of the
+ * flag bits $0C in its byte 7, or bit 3 of byte 8. Leaves the result in the
+ * zero flag (clear when it does). */
+static void SceneTestObjectUsesTiles(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbsY(cpu, OBJECT_FIELD_FLAGS_A));
+    OpBitValue(cpu, OBJECT_USES_TILES_A);
+    if (cpu->zero) {
+        OpLda(memory, cpu, OpAbsY(cpu, OBJECT_FIELD_FLAGS_B));
+        OpBitValue(cpu, OBJECT_USES_TILES_B);
+    }
+}
+
 static Lufia2ExecutionResult LoadTilesetAndObjects(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu,
                                                    Lufia2PushedChildCall child,
@@ -382,18 +406,13 @@ static Lufia2ExecutionResult LoadTilesetAndObjects(const Lufia2Memory *memory,
     OpTay(cpu);
     unsigned metatiles_copied = 0;
     for (unsigned records = 0; records < SCENE_OBJECT_BUDGET; ++records) {
-        OpLda(memory, cpu, OpAbsY(cpu, 0xf000u));
+        OpLda(memory, cpu, OpAbsY(cpu, OBJECT_FIELD_SLOT));
         OpCmpValue(cpu, 0xffu);
         if (cpu->zero) {
             PullDataBank(memory, cpu);
             return ExecutionReturned(0x80f1eeu);
         }
-        OpLda(memory, cpu, OpAbsY(cpu, 0xf007u));
-        OpBitValue(cpu, 0x0cu);
-        if (cpu->zero) {
-            OpLda(memory, cpu, OpAbsY(cpu, 0xf008u));
-            OpBitValue(cpu, 0x08u);
-        }
+        SceneTestObjectUsesTiles(memory, cpu);
         if (!cpu->zero) {
             result =
                 AssembleObjectGraphics(memory, cpu, child, context, &metatiles_copied);
@@ -410,36 +429,23 @@ static Lufia2ExecutionResult LoadTilesetAndObjects(const Lufia2Memory *memory,
     return ExecutionHandoff(cpu, 0x80f08eu);
 }
 
-static Lufia2ExecutionResult LoadAuxiliaryGraphics(const Lufia2Memory *memory,
-                                                   Lufia2CpuState *cpu,
-                                                   Lufia2PushedChildCall child,
-                                                   void *context) {
-    OpSepWidths(cpu, 0x20u);
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, WRAM_FIELD_AUXILIARY_TABLE_OFFSET);
-    OpSta(memory, cpu, (WRAM_FIELD_AUXILIARY_TABLE_OFFSET + 1u));
-    OpLoadA(cpu, 0x30u);
-    OpSta(memory, cpu, WRAM_FIELD_PALETTE_SKIP_BYTES);
+/* Loads the map's first auxiliary resource (when its table entry names one)
+ * into $7E:C000 and records where the resource and its table start. */
+static Lufia2ExecutionResult LoadMapAuxiliaryResource(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu,
+                                                      Lufia2PushedChildCall child,
+                                                      void *context) {
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, (WRAM_FIELD_PALETTE_SKIP_BYTES + 1u));
-    OpStz(memory, cpu, OpDp(cpu, AUXILIARY_RESOURCES));
-    OpStz(memory, cpu, OpDp(cpu, AUXILIARY_RESOURCES + 1u));
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS));
-    OpBitValue(cpu, 1u);
-    if (!cpu->zero)
-        return ExecutionReturned(0x80f2b6u);
-    TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0xcff90eu));
+    OpLda(memory, cpu, OpLongX(cpu, AUXILIARY_MAP_TABLE));
     if (!cpu->zero) {
         OpRepWidths(cpu, 0x20u);
         OpAslA(cpu);
         OpTax(cpu);
         OpSepWidths(cpu, 0x20u);
         TransferDirectToA(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0xcff9feu));
+        OpLda(memory, cpu, OpLongX(cpu, AUXILIARY_RESOURCE_TABLE));
         OpSta(memory, cpu, OpDp(cpu, AUXILIARY_RESOURCES));
-        OpLda(memory, cpu, OpLongX(cpu, 0xcff9ffu));
+        OpLda(memory, cpu, OpLongX(cpu, AUXILIARY_RESOURCE_TABLE + 1u));
         OpSta(memory, cpu, OpDp(cpu, AUXILIARY_RESOURCES + 1u));
         OpLda(memory, cpu, OpDp(cpu, AUXILIARY_RESOURCES));
         for (unsigned shift = 0; shift < 4u; ++shift)
@@ -447,7 +453,7 @@ static Lufia2ExecutionResult LoadAuxiliaryGraphics(const Lufia2Memory *memory,
         if (!cpu->zero) {
             OpRepWidths(cpu, 0x20u);
             cpu->carry = 0u;
-            OpAdcValue(cpu, 0x15fu);
+            OpAdcValue(cpu, AUXILIARY_FIRST_RESOURCE_BASE);
             OpSta(memory, cpu, OpDp(cpu, RESOURCE));
             OpSepWidths(cpu, 0x20u);
             OpLdx(cpu, 0xc000u);
@@ -470,13 +476,22 @@ static Lufia2ExecutionResult LoadAuxiliaryGraphics(const Lufia2Memory *memory,
             OpSta(memory, cpu, WRAM_UNK_7FD0C8);
         }
     }
+    return ExecutionReturned(0u);
+}
+
+/* Loads the second auxiliary resource, named by the high byte of the pair,
+ * into the tileset staging area and sends it to video memory. */
+static Lufia2ExecutionResult LoadAuxiliaryTiles(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu,
+                                                Lufia2PushedChildCall child,
+                                                void *context) {
     OpLda(memory, cpu, OpDp(cpu, AUXILIARY_RESOURCES + 1u));
     for (unsigned shift = 0; shift < 4u; ++shift)
         OpLsrA(cpu);
     if (!cpu->zero) {
         OpRepWidths(cpu, 0x20u);
         cpu->carry = 0u;
-        OpAdcValue(cpu, 0x164u);
+        OpAdcValue(cpu, AUXILIARY_TILES_RESOURCE_BASE);
         OpSta(memory, cpu, OpDp(cpu, RESOURCE));
         OpLoadA(cpu, 0x4000u);
         OpSta(memory, cpu, OpDp(cpu, RESOURCE_DESTINATION));
@@ -491,7 +506,82 @@ static Lufia2ExecutionResult LoadAuxiliaryGraphics(const Lufia2Memory *memory,
         OpLoadA(cpu, 0x20u);
         OpSta(memory, cpu, WRAM_FIELD_PALETTE_SKIP_BYTES);
     }
+    return ExecutionReturned(0u);
+}
+
+/* Resets the auxiliary tables, then loads the map's auxiliary resources. */
+static Lufia2ExecutionResult LoadAuxiliaryGraphics(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu,
+                                                   Lufia2PushedChildCall child,
+                                                   void *context) {
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, WRAM_FIELD_AUXILIARY_TABLE_OFFSET);
+    OpSta(memory, cpu, (WRAM_FIELD_AUXILIARY_TABLE_OFFSET + 1u));
+    OpLoadA(cpu, 0x30u);
+    OpSta(memory, cpu, WRAM_FIELD_PALETTE_SKIP_BYTES);
+    TransferDirectToA(cpu);
+    OpSta(memory, cpu, (WRAM_FIELD_PALETTE_SKIP_BYTES + 1u));
+    OpStz(memory, cpu, OpDp(cpu, AUXILIARY_RESOURCES));
+    OpStz(memory, cpu, OpDp(cpu, AUXILIARY_RESOURCES + 1u));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS));
+    OpBitValue(cpu, 1u);
+    if (!cpu->zero)
+        return ExecutionReturned(0x80f2b6u);
+    Lufia2ExecutionResult result =
+        LoadMapAuxiliaryResource(memory, cpu, child, context);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
+    result = LoadAuxiliaryTiles(memory, cpu, child, context);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
     return ExecutionReturned(0x80f2b6u);
+}
+
+/* Names the map's tileset resource in DP $54: the cave generator's choice in
+ * a generated cave, otherwise the map's entry in the ROM table plus the
+ * resource base. Leaves the zero flag set when there is none. */
+static void SceneSelectTileset(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS));
+    OpBitValue(cpu, 1u);
+    if (!cpu->zero)
+        OpLda(memory, cpu, WRAM_CAVE_TILESET_RESOURCE);
+    else {
+        OpLda(memory, cpu, OpLongX(cpu, SCENE_TILESET_TABLE));
+        OpAndValue(cpu, 0xffu);
+        cpu->carry = 0u;
+        OpAdcValue(cpu, SCENE_TILESET_RESOURCE_BASE);
+    }
+    OpSta(memory, cpu, OpDp(cpu, RESOURCE));
+    OpSepWidths(cpu, 0x20u);
+}
+
+/* Picks the palette source: the cave generator's in a generated cave,
+ * otherwise the map's entry in the ROM palette table. */
+static void ScenePickPalette(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpSepWidths(cpu, 0x20u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS));
+    OpBitValue(cpu, 1u);
+    if (!cpu->zero) {
+        OpRepWidths(cpu, 0x20u);
+        OpLoadA(cpu, 0x30u);
+        OpSta(memory, cpu, WRAM_FIELD_PALETTE_SKIP_BYTES);
+        OpLda(memory, cpu, WRAM_CAVE_PALETTE_SOURCE);
+    } else {
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, SCENE_PALETTE_INDEX_TABLE));
+        OpRepWidths(cpu, 0x20u);
+        OpDecA(cpu);
+        OpAslA(cpu);
+        OpTax(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, SCENE_PALETTE_TABLE));
+    }
+    OpSta(memory, cpu, WRAM_FIELD_PALETTE_SOURCE);
+    OpSepWidths(cpu, 0x20u);
 }
 
 Lufia2ExecutionResult Lufia2FieldLoadSceneGraphics(const Lufia2Memory *memory,
@@ -527,20 +617,7 @@ Lufia2ExecutionResult Lufia2FieldLoadSceneGraphics(const Lufia2Memory *memory,
     result = IndexSceneRecords(memory, cpu);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
-    OpRepWidths(cpu, 0x20u);
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS));
-    OpBitValue(cpu, 1u);
-    if (!cpu->zero)
-        OpLda(memory, cpu, WRAM_CAVE_TILESET_RESOURCE);
-    else {
-        OpLda(memory, cpu, OpLongX(cpu, 0xcff81eu));
-        OpAndValue(cpu, 0xffu);
-        cpu->carry = 0u;
-        OpAdcValue(cpu, 0x14bu);
-    }
-    OpSta(memory, cpu, OpDp(cpu, RESOURCE));
-    OpSepWidths(cpu, 0x20u);
+    SceneSelectTileset(memory, cpu);
     if (!cpu->zero) {
         result = LoadTilesetAndObjects(memory, cpu, child, context);
         if (result.flow != LUFIA2_EXECUTION_RETURNED)
@@ -549,26 +626,7 @@ Lufia2ExecutionResult Lufia2FieldLoadSceneGraphics(const Lufia2Memory *memory,
         if (result.flow != LUFIA2_EXECUTION_RETURNED)
             return result;
     }
-    OpSepWidths(cpu, 0x20u);
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS));
-    OpBitValue(cpu, 1u);
-    if (!cpu->zero) {
-        OpRepWidths(cpu, 0x20u);
-        OpLoadA(cpu, 0x30u);
-        OpSta(memory, cpu, WRAM_FIELD_PALETTE_SKIP_BYTES);
-        OpLda(memory, cpu, WRAM_CAVE_PALETTE_SOURCE);
-    } else {
-        TransferDirectToA(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0xcffa08u));
-        OpRepWidths(cpu, 0x20u);
-        OpDecA(cpu);
-        OpAslA(cpu);
-        OpTax(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0xcffafau));
-    }
-    OpSta(memory, cpu, WRAM_FIELD_PALETTE_SOURCE);
-    OpSepWidths(cpu, 0x20u);
+    ScenePickPalette(memory, cpu);
     result =
         CallGraphicsChild(memory, cpu, child, context, 0x80f2e5u, 0x80f338u, 3u, 1u);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
