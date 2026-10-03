@@ -26,6 +26,14 @@ verified checkpoint; [RECOMP_ENTRIES.md](RECOMP_ENTRIES.md) lists, per area,
 the address, call kind and modes of each, which is what a consumer needs to
 bind them.
 
+Most draft routines are checked against the ROM with differential tests, but
+their interiors are not all in the semantic style of `CODE_STYLE.md` yet. The
+world map object and plane code, the menu image, input and cursor code and the
+battle background, circle and palette code still step the CPU-state helpers
+(accumulator, carry and index widths) inside their bodies; the cell edge walk
+in `field_cell_edges.c` is the one file written mostly on plain values. Moving
+the rest over is open work and does not change any entry listed above.
+
 ## Current checkpoint
 
 The full Windows Release verifier passes **518 independent jobs**. The normal
