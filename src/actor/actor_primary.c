@@ -34,6 +34,8 @@
 #define ROM_ACTION_NIBBLE_TABLE_A 0x83d447u
 #define ROM_ACTION_NIBBLE_TABLE_B 0x83d457u
 
+/* Clears flag bits $14 on the actor, loads its primary script pointer, reads
+ * the opcode byte and looks the handler up in the dispatch table. */
 Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -68,6 +70,8 @@ Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
     return result;
 }
 
+/* Interval test on A against the limits in DP $55 and $56; the verdict comes
+ * back in the carry flag. */
 static void PrimaryIntervalCheck(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -98,6 +102,8 @@ static void PrimaryIntervalCheck(
     SimulateRtsFrame(memory, cpu);
 }
 
+/* Reads the next script byte at the cursor (reloaded from DP $2A when asked)
+ * and looks its handler up in the dispatch table, as $83:C85A does. */
 static Lufia2ActorScriptDispatchResult PrimaryRedispatch(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -116,6 +122,7 @@ static Lufia2ActorScriptDispatchResult PrimaryRedispatch(
     return result;
 }
 
+/* Wraps a dispatch result as a step that continues with the next handler. */
 static Lufia2ActorPrimaryScriptStepResult PrimaryStepRedispatched(
     Lufia2ActorScriptDispatchResult dispatch) {
     Lufia2ActorPrimaryScriptStepResult result;
@@ -218,6 +225,9 @@ static Lufia2ActorScriptDispatchResult PrimaryJumpOperand(
         }                                                            \
     } while (0)
 
+/* Calls the shared action core under a pushed JSL frame. Returns false when
+ * the core does not come back through its $D3AE return, so the caller hands
+ * off at resume_pc. */
 static uint8_t PrimaryCallActionCore(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -677,6 +687,8 @@ static uint8_t PrimaryWanderAxis(
     return 1;
 }
 
+/* $83:D416: points the slot's primary script at the script that the actor's
+ * $070A index selects from the ROM offset table. */
 void Lufia2ActorLoadPrimaryScript(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -700,6 +712,8 @@ void Lufia2ActorLoadPrimaryScript(
            A8(cpu));
 }
 
+/* $83:C947: marks map occupancy, adjusts the actor's state and flag bits for a
+ * reset and reloads its primary script. */
 void Lufia2ActorPrimaryReset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -737,6 +751,7 @@ void Lufia2ActorPrimaryReset(
     SimulateRtlFrame(memory, cpu);
 }
 
+/* $83:CB65: sets the five follow-slot bytes to $FF. */
 void Lufia2ActorClearSlotLinks(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -748,6 +763,8 @@ void Lufia2ActorClearSlotLinks(
     } while (!cpu->negative);
 }
 
+/* $83:CA68: unless field control flag $40 is set, flags the blocked-event
+ * object and starts its script from the ROM blocked-event entry. */
 void Lufia2ActorBlockedEvent(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -881,6 +898,8 @@ static uint8_t PrimaryFixedActionId(uint32_t handler_pc) {
     }
 }
 
+/* Runs the action id that PrimaryFixedActionId gives for this opcode through
+ * the action core. */
 static Lufia2ActorPrimaryScriptStepResult PrimaryFixedAction(const Lufia2Memory *memory,
                                                              Lufia2CpuState *cpu,
                                                              uint32_t handler_pc) {
@@ -2039,6 +2058,8 @@ PrimaryJumpIfBlocked(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                                                        PRIMARY_OP_JUMP); /* $83:D091 */
 }
 
+/* The reset opcodes: runs the $83:C947 reset, then the extras particular to
+ * the $C918 and $CAD3 entries. */
 static Lufia2ActorPrimaryScriptStepResult PrimaryResetActor(const Lufia2Memory *memory,
                                                             Lufia2CpuState *cpu,
                                                             uint32_t handler_pc) {
@@ -2549,6 +2570,8 @@ Lufia2ActorPrimaryScriptExecuteKnownHandler(const Lufia2Memory *memory,
     return PrimaryStepStart(entry);
 }
 
+/* $83:C7F8: per-frame update of one actor's primary script: runs the frontend,
+ * then dispatches script opcodes through their handlers. */
 Lufia2ExecutionResult Lufia2ActorPrimaryUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
