@@ -1,10 +1,44 @@
 /* Field object slots and script VM ($83:E03E). */
 
+#include <stdbool.h>
+
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
 #include "actor/actor_internal.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
+
+/* ROM tables: four-byte animation records, sine and cosine. */
+#define OBJECT_PROGRAM_BANK 0x830000u
+
+enum {
+    OBJECT_SPRITE_SLOT_COUNTS = 0x83abf4u,
+    OBJECT_FRAME_DATA_SIZES = 0x83abf8u,
+    OBJECT_ANIMATION_RECORDS = 0x83f388u,
+    OBJECT_SCRIPT_TABLE = 0x8ec7u, /* bank $91, operands are offsets from it */
+    SINE_TABLE = 0x8084edu,
+    COSINE_TABLE = 0x80852du,
+};
+
+/* Opcode $14 spin and zoom state per object slot. */
+enum {
+    OBJECT_SPIN_ANGLE_A = 0x14d9u,
+    OBJECT_SPIN_ANGLE_B = 0x14f9u,
+    OBJECT_PROJECTED_Y = 0x1519u,
+    OBJECT_PROJECTED_X = 0x1539u,
+    OBJECT_ZOOM = 0x1579u,
+    OBJECT_OFFSET_ANGLE = 0x1599u,
+    OBJECT_SPIN_UPDATE = 0x15b9u, /* bits request the recalculations */
+    OBJECT_ZOOM_RATE = 0x15d9u,
+    OBJECT_ZOOM_COUNTER = 0x15f9u,
+    OBJECT_ZOOM_LIMIT = 0x1619u,
+    OBJECT_SPIN_RATE_A = 0x1639u,
+    OBJECT_SPIN_COUNTER_A = 0x1659u,
+    OBJECT_SPIN_LIMIT_A = 0x1679u,
+    OBJECT_SPIN_RATE_B = 0x1699u,
+    OBJECT_SPIN_COUNTER_B = 0x16b9u,
+    OBJECT_SPIN_LIMIT_B = 0x16d9u,
+};
 
 /* $83:E200: sprite frame $54 for object $A7. */
 static void ObjectSetFrame(
@@ -15,40 +49,44 @@ static void ObjectSetFrame(
     PushY(memory, cpu);                                        /* E200 */
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
-    Write8(memory, LongIndexedAddress(0x7fdb2cu, cpu->x), A8(cpu));
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_FRAME, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     And8(cpu, 0x3fu);
     Write8(memory, SNES_WRMPYA, A8(cpu));
     TransferDirectToA(cpu);                                    /* E212 */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe23eu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SIZE, cpu->x)));
     TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83abf8u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(OBJECT_FRAME_DATA_SIZES, cpu->x)));
     Write8(memory, SNES_WRMPYB, A8(cpu));
     LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0732u, 0));
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET); /* E223 */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe0f0u, cpu->x)));
-    Write8(memory, LongIndexedAddress(0x7fd90eu, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress((WRAM_OBJECT_ANIMATION_POINTER + 2u),
+                                                 cpu->x)));
+    Write8(memory, LongIndexedAddress((WRAM_OBJECT_FRAME_POINTER + 2u), cpu->x),
+           A8(cpu));
     LoadA8(cpu, Read8(memory, SNES_RDMPYL));
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, 0x00u);
     SetAccumulatorWidth(cpu, 0);                               /* E234 */
     LsrA16(cpu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fe0eeu, cpu->x)));
-    Write16Long(memory, LongIndexedAddress(0x7fd90cu, cpu->x), cpu->accumulator);
+    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_POINTER,
+                                                          cpu->x)));
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FRAME_POINTER, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* E242 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     AslA8(cpu);
     Adc8(cpu, 0x00u);
     AslA8(cpu);
     Adc8(cpu, 0x00u);
     And8(cpu, 0x03u);
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     LoadAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);              /* E250 */
     And8(cpu, 0xfcu);
-    Or8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    Or8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     Or8(cpu, 0x20u);
     StoreAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
     cpu->y = PullIndexValue(memory, cpu);                      /* E25C */
@@ -80,9 +118,9 @@ static ObjectFlow ObjectAdvance(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);                               /* E11C */
-    Write16Direct(memory, cpu, 0x54u, cpu->y);
+    Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->y);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+    Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
     Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_SCRIPT, cpu->x),
         cpu->accumulator);
@@ -94,7 +132,7 @@ static ObjectFlow ObjectAdvance(
     if (cpu->zero)
         return OBJECT_FLOW_DISPATCH;
     LoadA8(cpu, 0x01u);                                        /* E135 */
-    Write8(memory, LongIndexedAddress(0x7fdfaeu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FDFAE, cpu->x), A8(cpu));
     PullDataBank(memory, cpu);
     return OBJECT_FLOW_RETURN;
 }
@@ -136,13 +174,13 @@ static void ObjectJitter(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);              /* EED8 */
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y); /* EED8 */
     LsrA8(cpu);
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
     Lufia2CallRandomScale(memory, cpu, 0xeee4u);               /* $80:8299 */
     cpu->carry = 1;
-    Sbc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    Sbc8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     Lufia2SignExtendA8(memory, cpu, 0xeeeau);
     SimulateRtsFrame(memory, cpu);
 }
@@ -155,7 +193,7 @@ static uint16_t ObjectSubDispatch(
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     TransferDirectToA(cpu);                                    /* ED63 */
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
     IncrementY16(cpu);
     And8(cpu, 0x0fu);
     AslA8(cpu);
@@ -170,25 +208,25 @@ static void ObjectTakeAnimation(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe286u, cpu->x)));
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe2ceu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_A, cpu->x)));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_B, cpu->x)));
     PushAccumulator8(memory, cpu);
     TransferXToA(cpu);
     PushAccumulator8(memory, cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe1f6u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_FLAGS, cpu->x)));
     ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe23eu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SIZE, cpu->x)));
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    Write8(memory, LongIndexedAddress(0x7fe23eu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SIZE, cpu->x), A8(cpu));
     ExchangeAccumulatorBytes(cpu);
-    Write8(memory, LongIndexedAddress(0x7fe1f6u, cpu->x), A8(cpu));
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
-    Write8(memory, LongIndexedAddress(0x7fe286u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_FLAGS, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_A, cpu->x), A8(cpu));
     LoadA8(cpu, Pull8(memory, cpu));
-    Write8(memory, LongIndexedAddress(0x7fe3a6u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FE3A6, cpu->x), A8(cpu));
     LoadA8(cpu, Pull8(memory, cpu));
-    Write8(memory, LongIndexedAddress(0x7fe2ceu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_B, cpu->x), A8(cpu));
     LoadAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
     And8(cpu, 0xfbu);
     StoreAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
@@ -206,18 +244,19 @@ static void ObjectSpriteSetup(
     LoadAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
     And8(cpu, 0xfbu);
     StoreAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe23eu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SIZE, cpu->x)));
     TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83abf4u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(OBJECT_SPRITE_SLOT_COUNTS, cpu->x)));
     Lufia2SpriteAllocSlots(memory, cpu, 0xecf6u);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* ECF7 */
-    Write8(memory, LongIndexedAddress(0x7fe286u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_A, cpu->x), A8(cpu));
     ExchangeAccumulatorBytes(cpu);
-    Write8(memory, LongIndexedAddress(0x7fe2ceu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_B, cpu->x), A8(cpu));
     Lufia2SpriteVramBase(memory, cpu, 0xed05u);
     SetIndexWidth(cpu, 0);                                     /* ED06 */
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
-    Write16Long(memory, LongIndexedAddress(0x7fe0aeu, cpu->x), cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_VRAM_BASE, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
 }
@@ -229,39 +268,47 @@ static void ObjectAnimationSetup(
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     PushY(memory, cpu);                                        /* EC9C */
-    Write8(memory, LongIndexedAddress(0x7fe1aeu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_ID, cpu->x), A8(cpu));
     SetAccumulatorWidth(cpu, 0);
     AslA16(cpu);
     AslA16(cpu);
     TransferAToX(cpu);
     TransferAToY(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x83f388u, cpu->x)));
+    LoadA16(cpu,
+            Read16Long(memory, LongIndexedAddress(OBJECT_ANIMATION_RECORDS, cpu->x)));
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
-    Write16Long(memory, LongIndexedAddress(0x7fe0eeu, cpu->x), cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_POINTER, cpu->x),
+                cpu->accumulator);
     cpu->x = cpu->y;                                           /* TYX */
     SetNz16(cpu, cpu->x);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83f38au, cpu->x)));
+    LoadA8(cpu,
+           Read8(memory, LongIndexedAddress((OBJECT_ANIMATION_RECORDS + 2u), cpu->x)));
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
-    Write8(memory, LongIndexedAddress(0x7fe0f0u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress((WRAM_OBJECT_ANIMATION_POINTER + 2u), cpu->x),
+           A8(cpu));
     cpu->x = cpu->y;
     SetNz16(cpu, cpu->x);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83f38bu, cpu->x)));
+    LoadA8(cpu,
+           Read8(memory, LongIndexedAddress((OBJECT_ANIMATION_RECORDS + 3u), cpu->x)));
     SetIndexWidth(cpu, 1);                                     /* ECC3 */
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     And8(cpu, 0x0fu);
-    Write8(memory, LongIndexedAddress(0x7fe1f6u, cpu->x), A8(cpu));
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_FLAGS, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     LsrA8(cpu);
     LsrA8(cpu);
     LsrA8(cpu);
     LsrA8(cpu);
-    Write8(memory, LongIndexedAddress(0x7fe23eu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SIZE, cpu->x), A8(cpu));
     ObjectSpriteSetup(memory, cpu);
     cpu->y = PullIndexValue(memory, cpu);                      /* ECDC */
     SimulateRtsFrame(memory, cpu);
 }
+
+/* DP words: child offset, then its fine position. */
+enum { SPAWN_OFFSET_X = 0x5a, SPAWN_OFFSET_Y = 0x63 };
 
 /* $83:E8A6: spawn child object from the operand block at Y. */
 static void ObjectSpawnChild(
@@ -270,25 +317,25 @@ static void ObjectSpawnChild(
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     TransferDirectToA(cpu);                                    /* E8A6 */
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x01u, cpu->y);
     Lufia2SignExtendA8(memory, cpu, 0xe8acu);
-    Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
+    Write16Direct(memory, cpu, SPAWN_OFFSET_X, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     TransferDirectToA(cpu);                                    /* E8B1 */
-    LoadAAbsolute8(memory, cpu, 0x0002u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x02u, cpu->y);
     Lufia2SignExtendA8(memory, cpu, 0xe8b7u);
-    Write16Direct(memory, cpu, 0x63u, cpu->accumulator);
+    Write16Direct(memory, cpu, SPAWN_OFFSET_Y, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* E8BC */
     PushIndex(memory, cpu);
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
     SimulateJslFrame(memory, cpu, 0x83u, 0xe8c5u);
     Lufia2ActorSpawn(memory, cpu);                             /* DF87 */
     SimulateRtlFrame(memory, cpu);
     cpu->y = PullIndexValue(memory, cpu);                      /* E8C6 */
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
-    Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0x00u);
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     StoreYDirect16(memory, cpu, DP_ACTOR_SLOT);
     SimulateJslFrame(memory, cpu, 0x83u, 0xe8d4u);
@@ -298,44 +345,50 @@ static void ObjectSpawnChild(
     cpu->y = cpu->x;                                           /* TXY */
     SetNz16(cpu, cpu->y);
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fddfeu, cpu->x)));
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X, cpu->x)));
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x5au));
-    Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fde8eu, cpu->x)));
+    Add16Value(cpu, Read16Direct(memory, cpu, SPAWN_OFFSET_X));
+    Write16Direct(memory, cpu, SPAWN_OFFSET_X, cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_Y, cpu->x)));
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x63u));
-    Write16Direct(memory, cpu, 0x63u, cpu->accumulator);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fdcdcu, cpu->x)));
+    Add16Value(cpu, Read16Direct(memory, cpu, SPAWN_OFFSET_Y));
+    Write16Direct(memory, cpu, SPAWN_OFFSET_Y, cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory,
+                            LongIndexedAddress(WRAM_OBJECT_DISPLAY_OFFSET_X, cpu->x)));
     PushAccumulator16(memory, cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fdd6cu, cpu->x)));
+    LoadA16(cpu, Read16Long(memory,
+                            LongIndexedAddress(WRAM_OBJECT_DISPLAY_OFFSET_Y, cpu->x)));
     cpu->x = cpu->y;                                           /* TYX */
     SetNz16(cpu, cpu->x);
-    Write16Long(memory, LongIndexedAddress(0x7fdd6cu, cpu->x), cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_DISPLAY_OFFSET_Y, cpu->x),
+                cpu->accumulator);
     PullAccumulator16(memory, cpu);
-    Write16Long(memory, LongIndexedAddress(0x7fdcdcu, cpu->x), cpu->accumulator);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x5au));
-    Write16Long(memory, LongIndexedAddress(0x7fddfeu, cpu->x), cpu->accumulator);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x63u));
-    Write16Long(memory, LongIndexedAddress(0x7fde8eu, cpu->x), cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_DISPLAY_OFFSET_X, cpu->x),
+                cpu->accumulator);
+    LoadA16(cpu, Read16Direct(memory, cpu, SPAWN_OFFSET_X));
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X, cpu->x),
+                cpu->accumulator);
+    LoadA16(cpu, Read16Direct(memory, cpu, SPAWN_OFFSET_Y));
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_Y, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     PushIndex(memory, cpu);                                    /* E90D */
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fda2cu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FDA2C, cpu->x)));
     ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd9ccu, cpu->x)));
-    LoadXDirect(memory, cpu, 0x54u);
-    Write8(memory, LongIndexedAddress(0x7fd9ccu, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FD9CC, cpu->x)));
+    LoadXDirect(memory, cpu, DP_SCRATCH_A);
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FD9CC, cpu->x), A8(cpu));
     ExchangeAccumulatorBytes(cpu);
-    Write8(memory, LongIndexedAddress(0x7fda2cu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FDA2C, cpu->x), A8(cpu));
     TransferDirectToA(cpu);                                    /* E924 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
     if (cpu->carry) {
         TransferAToX(cpu);                                     /* E92B */
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdfaeu, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FDFAE, cpu->x)));
         LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        Write8(memory, LongIndexedAddress(0x7fdfaeu, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(WRAM_UNK_7FDFAE, cpu->x), A8(cpu));
     }
     cpu->x = PullIndexValue(memory, cpu);                      /* E935 */
     SimulateRtsFrame(memory, cpu);
@@ -348,9 +401,10 @@ static uint8_t ObjectSpriteSizeZero(
     uint8_t animation) {
     const uint16_t index =
         (uint16_t)(((cpu->direct_page & 0xff00u) | animation) << 2);
-    const uint8_t shape = Read8(memory, LongIndexedAddress(0x83f38bu, index));
+    const uint8_t shape =
+        Read8(memory, LongIndexedAddress((OBJECT_ANIMATION_RECORDS + 3u), index));
 
-    return Read8(memory, 0x83abf4u + (uint32_t)(shape >> 4)) == 0;
+    return Read8(memory, OBJECT_SPRITE_SLOT_COUNTS + (uint32_t)(shape >> 4)) == 0;
 }
 
 /* $83:F205: despawn object $A7, free its sprite. */
@@ -363,95 +417,98 @@ static void ObjectDespawn(
     StoreAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
     SetIndexWidth(cpu, 1);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe1aeu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_ID, cpu->x)));
     Compare8(cpu, A8(cpu), 0xffu);
     if (!cpu->zero) {
         TransferDirectToA(cpu);                                /* F218 */
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe23eu, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SIZE, cpu->x)));
         Compare8(cpu, A8(cpu), 0xffu);
         if (!cpu->zero) {
             ExchangeAccumulatorBytes(cpu);
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe286u, cpu->x)));
-            Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe2ceu, cpu->x)));
-            Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
+            LoadA8(cpu, Read8(memory,
+                              LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_A, cpu->x)));
+            Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
+            LoadA8(cpu, Read8(memory,
+                              LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_B, cpu->x)));
+            Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
             ExchangeAccumulatorBytes(cpu);
             TransferAToX(cpu);
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83abf4u, cpu->x)));
+            LoadA8(cpu, Read8(memory,
+                              LongIndexedAddress(OBJECT_SPRITE_SLOT_COUNTS, cpu->x)));
             Lufia2SpriteFreeSlots(memory, cpu, 0xf237u);
         }
     }
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* F238 */
     LoadA8(cpu, 0xffu);
-    Write8(memory, LongIndexedAddress(0x7fe1aeu, cpu->x), A8(cpu));
-    Write8(memory, LongIndexedAddress(0x7fdb2cu, cpu->x), A8(cpu));
-    Write8(memory, LongIndexedAddress(0x7fe3a6u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_ID, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_FRAME, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FE3A6, cpu->x), A8(cpu));
     StoreAAbsolute8(memory, cpu, 0x1559u, cpu->x);
-    Write8(memory, LongIndexedAddress(0x7fe286u, cpu->x), A8(cpu));
-    Write8(memory, LongIndexedAddress(0x7fe2ceu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_A, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_B, cpu->x), A8(cpu));
     SetIndexWidth(cpu, 0);
     SimulateRtlFrame(memory, cpu);
 }
 
 /* Object script handlers from $83:F2C8 and its low-nibble tables. */
 enum ObjectOpcodeHandler {
-    OBJECT_OP_0X_DESPAWN = 0xe13d,              /* $0x */
-    OBJECT_OP_2F_COPY_ACTOR0_POSITION = 0xe150, /* $2F */
-    OBJECT_OP_F6_NIBBLE_OFFSETS = 0xe168,       /* $F6 */
-    OBJECT_OP_F7_BYTE_OFFSETS = 0xe191,         /* $F7 */
-    OBJECT_OP_3X_SET_FRAME = 0xe1c5,            /* $3x */
-    OBJECT_OP_2C_SET_FRAME = 0xe1d3,            /* $2C */
-    OBJECT_OP_25_SET_FRAME = 0xe1e6,            /* $25 */
-    OBJECT_OP_FD_SET_FRAME = 0xe1f4,            /* $FD */
-    OBJECT_OP_2E = 0xe270,                      /* $2E */
-    OBJECT_OP_19 = 0xe437,                      /* $19 */
-    OBJECT_OP_8E = 0xe445,                      /* $8E */
-    OBJECT_OP_1A_SPRITE_FRAME = 0xe589,         /* $1A */
-    OBJECT_OP_8F_SET_FRAME = 0xe59f,            /* $8F */
-    OBJECT_OP_1D = 0xe5b5,                      /* $1D */
-    OBJECT_OP_12_NOP = 0xe700,                  /* $12 */
-    OBJECT_OP_13 = 0xe810,                      /* $13 */
-    OBJECT_OP_14_SPIN_ZOOM = 0xe27d,            /* $14 */
-    OBJECT_OP_4X_WAIT = 0xe831,                 /* $4x */
-    OBJECT_OP_5X = 0xe840,                      /* $5x */
-    OBJECT_OP_6X_SPAWN_CHILD = 0xe854,          /* $6x */
-    OBJECT_OP_85 = 0xe860,                      /* $85 */
-    OBJECT_OP_8A = 0xe87c,                      /* $8A */
-    OBJECT_OP_EE = 0xe937,                      /* $EE */
-    OBJECT_OP_20 = 0xe99a,                      /* $20 */
-    OBJECT_OP_22 = 0xea7d,                      /* $22 */
-    OBJECT_OP_23 = 0xea8c,                      /* $23 */
-    OBJECT_OP_8D_OR_FIELD_BITS = 0xea94,        /* $8D */
-    OBJECT_OP_7X_LOOP_START = 0xeab5,           /* $7x */
-    OBJECT_OP_80_LOOP_END = 0xead5,             /* $80 */
-    OBJECT_OP_26 = 0xeaff,                      /* $26 */
-    OBJECT_OP_28 = 0xeb38,                      /* $28 */
-    OBJECT_OP_29 = 0xeb50,                      /* $29 */
-    OBJECT_OP_2B = 0xec6d,                      /* $2B */
-    OBJECT_OP_AX = 0xec8e,                      /* $Ax */
-    OBJECT_OP_CX = 0xed11,                      /* $Cx */
-    OBJECT_OP_DX = 0xed32,                      /* $Dx */
-    OBJECT_OP_8X_TABLE = 0xed45,                /* $8x */
-    OBJECT_OP_1X_TABLE = 0xed4b,                /* $1x */
-    OBJECT_OP_2X_TABLE = 0xed51,                /* $2x */
-    OBJECT_OP_EX_TABLE = 0xed57,                /* $Ex */
-    OBJECT_OP_FX_TABLE = 0xed5d,                /* $Fx */
-    OBJECT_OP_84_SET_FIELD_BIT4 = 0xed9b,       /* $84 */
-    OBJECT_OP_89 = 0xedc2,                      /* $89 */
-    OBJECT_OP_EA = 0xedd7,                      /* $EA */
-    OBJECT_OP_F1 = 0xede6,                      /* $F1 */
-    OBJECT_OP_FB = 0xee48,                      /* $FB */
-    OBJECT_OP_FC = 0xee71,                      /* $FC */
-    OBJECT_OP_F2_RANDOM_JITTER = 0xeeb5,        /* $F2 */
-    OBJECT_OP_F8_SET_STATE_BIT4 = 0xefd1,       /* $F8 */
-    OBJECT_OP_F9_CLEAR_STATE_BIT4 = 0xefde,     /* $F9 */
-    OBJECT_OP_E2 = 0xf0e8,                      /* $E2 */
-    OBJECT_OP_82 = 0xf0fa,                      /* $82 */
-    OBJECT_OP_83 = 0xf10b,                      /* $83 */
-    OBJECT_OP_EB = 0xf11c,                      /* $EB */
-    OBJECT_OP_EC = 0xf137,                      /* $EC */
-    OBJECT_OP_ED = 0xf155,                      /* $ED */
-    OBJECT_OP_E3 = 0xf19f,                      /* $E3 */
+    OBJECT_OP_0X_DESPAWN = 0xe13d,                 /* $0x */
+    OBJECT_OP_2F_COPY_ACTOR0_POSITION = 0xe150,    /* $2F */
+    OBJECT_OP_F6_NIBBLE_OFFSETS = 0xe168,          /* $F6 */
+    OBJECT_OP_F7_BYTE_OFFSETS = 0xe191,            /* $F7 */
+    OBJECT_OP_3X_SET_FRAME = 0xe1c5,               /* $3x */
+    OBJECT_OP_2C_SET_FRAME = 0xe1d3,               /* $2C */
+    OBJECT_OP_25_SET_FRAME = 0xe1e6,               /* $25 */
+    OBJECT_OP_FD_SET_FRAME = 0xe1f4,               /* $FD */
+    OBJECT_OP_SET_DRAW_FLAGS = 0xe270,             /* $2E */
+    OBJECT_OP_19 = 0xe437,                         /* $19 */
+    OBJECT_OP_8E = 0xe445,                         /* $8E */
+    OBJECT_OP_1A_SPRITE_FRAME = 0xe589,            /* $1A */
+    OBJECT_OP_8F_SET_FRAME = 0xe59f,               /* $8F */
+    OBJECT_OP_MARK_BLOCKED_EVENT_OBJECT = 0xe5b5,  /* $1D */
+    OBJECT_OP_12_NOP = 0xe700,                     /* $12 */
+    OBJECT_OP_CENTER_ON_SCREEN = 0xe810,           /* $13 */
+    OBJECT_OP_SPIN_ZOOM = 0xe27d,                  /* $14 */
+    OBJECT_OP_4X_WAIT = 0xe831,                    /* $4x */
+    OBJECT_OP_5X = 0xe840,                         /* $5x */
+    OBJECT_OP_6X_SPAWN_CHILD = 0xe854,             /* $6x */
+    OBJECT_OP_SPAWN_CHILD_WITH_ANIMATION = 0xe860, /* $85 */
+    OBJECT_OP_SPAWN_CHILD_AT_OFFSET = 0xe87c,      /* $8A */
+    OBJECT_OP_SPAWN_REGISTERED_CHILD = 0xe937,     /* $EE */
+    OBJECT_OP_20 = 0xe99a,                         /* $20 */
+    OBJECT_OP_SET_SLOT0_FLAGS = 0xea7d,            /* $22 */
+    OBJECT_OP_SET_FIELD_CONTROL = 0xea8c,          /* $23 */
+    OBJECT_OP_OR_FIELD_CONTROL = 0xea94,           /* $8D */
+    OBJECT_OP_7X_LOOP_START = 0xeab5,              /* $7x */
+    OBJECT_OP_80_LOOP_END = 0xead5,                /* $80 */
+    OBJECT_OP_SET_ANIMATION = 0xeaff,              /* $26 */
+    OBJECT_OP_28 = 0xeb38,                         /* $28 */
+    OBJECT_OP_29 = 0xeb50,                         /* $29 */
+    OBJECT_OP_2B = 0xec6d,                         /* $2B */
+    OBJECT_OP_ANIMATION_FROM_OPERAND = 0xec8e,     /* $Ax */
+    OBJECT_OP_CX = 0xed11,                         /* $Cx */
+    OBJECT_OP_DX = 0xed32,                         /* $Dx */
+    OBJECT_OP_8X_TABLE = 0xed45,                   /* $8x */
+    OBJECT_OP_1X_TABLE = 0xed4b,                   /* $1x */
+    OBJECT_OP_2X_TABLE = 0xed51,                   /* $2x */
+    OBJECT_OP_EX_TABLE = 0xed57,                   /* $Ex */
+    OBJECT_OP_FX_TABLE = 0xed5d,                   /* $Fx */
+    OBJECT_OP_SET_FIELD_CONTROL_BIT4 = 0xed9b,     /* $84 */
+    OBJECT_OP_89 = 0xedc2,                         /* $89 */
+    OBJECT_OP_SET_FLAG_BIT7 = 0xedd7,              /* $EA */
+    OBJECT_OP_TAKE_ANIMATION = 0xede6,             /* $F1 */
+    OBJECT_OP_FB = 0xee48,                         /* $FB */
+    OBJECT_OP_FC = 0xee71,                         /* $FC */
+    OBJECT_OP_F2_RANDOM_JITTER = 0xeeb5,           /* $F2 */
+    OBJECT_OP_F8_SET_STATE_BIT4 = 0xefd1,          /* $F8 */
+    OBJECT_OP_F9_CLEAR_STATE_BIT4 = 0xefde,        /* $F9 */
+    OBJECT_OP_SET_OFFSET_WORD = 0xf0e8,            /* $E2 */
+    OBJECT_OP_COPY_OFFSETS = 0xf0fa,               /* $82 */
+    OBJECT_OP_COPY_OFFSETS_REVERSED = 0xf10b,      /* $83 */
+    OBJECT_OP_NEGATE_OFFSETS = 0xf11c,             /* $EB */
+    OBJECT_OP_EC = 0xf137,                         /* $EC */
+    OBJECT_OP_ED = 0xf155,                         /* $ED */
+    OBJECT_OP_E3 = 0xf19f,                         /* $E3 */
 };
 
 /* $83:E831: object opcode $4x. */
@@ -459,9 +516,9 @@ static ObjectFlow ObjectOp4XWait(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
     And8(cpu, 0x0fu);
-    Write8(memory, LongIndexedAddress(0x7fdfaeu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FDFAE, cpu->x), A8(cpu));
     IncrementY16(cpu);
     return ObjectSaveAndReturn(memory, cpu);
 }
@@ -470,23 +527,23 @@ static ObjectFlow ObjectOp4XWait(
 static ObjectFlow ObjectOpF6NibbleOffsets(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     SimulateJsrFrame(memory, cpu, 0xe16fu);
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                       /* E176 */
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     LsrA8(cpu);
     LsrA8(cpu);
     LsrA8(cpu);
     LsrA8(cpu);
     ObjectSignNibble(memory, cpu, 0xe181u);
-    ObjectAddPosition(memory, cpu, 0x7fdcdcu, 0xe184u);
+    ObjectAddPosition(memory, cpu, WRAM_OBJECT_DISPLAY_OFFSET_X, 0xe184u);
     TransferDirectToA(cpu);                                /* E185 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     And8(cpu, 0x0fu);
     ObjectSignNibble(memory, cpu, 0xe18cu);
-    ObjectAddPosition(memory, cpu, 0x7fdd6cu, 0xe18fu);
+    ObjectAddPosition(memory, cpu, WRAM_OBJECT_DISPLAY_OFFSET_Y, 0xe18fu);
     SimulateRtsFrame(memory, cpu);
     TransferDirectToA(cpu);                                /* E170 */
     LoadA8(cpu, 0x01u);
@@ -501,14 +558,18 @@ static ObjectFlow ObjectOpF2RandomJitter(
     ObjectJitter(memory, cpu, 0xeeb9u);
     IncrementY16(cpu);                                     /* EEBA */
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fdcdcu, cpu->x)));
-    Write16Long(memory, LongIndexedAddress(0x7fdcdcu, cpu->x), cpu->accumulator);
+    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(WRAM_OBJECT_DISPLAY_OFFSET_X,
+                                                          cpu->x)));
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_DISPLAY_OFFSET_X, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     ObjectJitter(memory, cpu, 0xeec8u);
     IncrementY16(cpu);                                     /* EEC9 */
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fdd6cu, cpu->x)));
-    Write16Long(memory, LongIndexedAddress(0x7fdd6cu, cpu->x), cpu->accumulator);
+    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(WRAM_OBJECT_DISPLAY_OFFSET_Y,
+                                                          cpu->x)));
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_DISPLAY_OFFSET_Y, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     return OBJECT_FLOW_DISPATCH;
 }
@@ -518,11 +579,11 @@ static ObjectFlow ObjectOp1ASpriteFrame(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb0cu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_FLAGS, cpu->x)));
     BitImmediate8(cpu, 0x20u);
     if (!cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);      /* E593 */
-        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+        LoadAAbsolute8(memory, cpu, 0x00u, cpu->y); /* E593 */
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
         ObjectSetFrame(memory, cpu, 0xe59au);
     }
     IncrementY16(cpu);                                     /* E59B */
@@ -534,20 +595,22 @@ static ObjectFlow ObjectOp80LoopEnd(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe08eu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_LOOP_COUNTER, cpu->x)));
     DecrementA8(cpu);
-    Write8(memory, LongIndexedAddress(0x7fe08eu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_LOOP_COUNTER, cpu->x), A8(cpu));
     if (cpu->negative) {
         LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));              /* EAE2 */
-        Write8(memory, LongIndexedAddress(0x7fe08eu, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(WRAM_OBJECT_LOOP_COUNTER, cpu->x), A8(cpu));
         return OBJECT_FLOW_DISPATCH;
     }
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);                       /* EAEA */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdfcfu, cpu->x)));
+    LoadA8(cpu,
+           Read8(memory, LongIndexedAddress((WRAM_OBJECT_LOOP_POINTER + 1u), cpu->x)));
     ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdfceu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_LOOP_POINTER, cpu->x)));
     TransferAToY(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdfd0u, cpu->x)));
+    LoadA8(cpu,
+           Read8(memory, LongIndexedAddress((WRAM_OBJECT_LOOP_POINTER + 2u), cpu->x)));
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     return OBJECT_FLOW_DISPATCH;
@@ -560,79 +623,76 @@ static ObjectFlow ObjectOp2FCopyActor0Position(
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, WRAM_ACTOR_FINE_X));
-    Write16Long(memory, LongIndexedAddress(0x7fddfeu, cpu->x), cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X, cpu->x),
+                cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, WRAM_ACTOR_FINE_Y));
-    Write16Long(memory, LongIndexedAddress(0x7fde8eu, cpu->x), cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_Y, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $2E: next script byte to $7F:E33E[slot]. */
-static ObjectFlow ObjectOp2E(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectSetDrawFlags(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-    Write8(memory, LongIndexedAddress(0x7fe33eu, cpu->x), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x), A8(cpu));
     IncrementY16(cpu);
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $1D: slot word offset to $1724/$1725. */
-static ObjectFlow ObjectOp1D(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectMarkBlockedEventObject(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
-    Write8(memory, AbsoluteIndexedAddress(cpu, 0x1724u, 0), (uint8_t)cpu->x);
-    Write8(memory, AbsoluteIndexedAddress(cpu, 0x1725u, 0),
-        (uint8_t)(cpu->x >> 8));
+    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_BLOCKED_EVENT_OBJECT, 0),
+           (uint8_t)cpu->x);
+    Write8(memory, AbsoluteIndexedAddress(cpu, (WRAM_BLOCKED_EVENT_OBJECT + 1u), 0),
+           (uint8_t)(cpu->x >> 8));
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $13: position = scroll $1220/$1228 + (128, 112). */
-static ObjectFlow ObjectOp13(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectCenterOnScreen(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, 0x001220u));
     cpu->carry = 0;
-    Add16Immediate(cpu, 0x0080u);
-    Write16Long(memory, LongIndexedAddress(0x7fda6cu, cpu->x), cpu->accumulator);
+    Add16Immediate(cpu, 0x80u);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_X, cpu->x),
+                cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, 0x001228u));
     cpu->carry = 0;
-    Add16Immediate(cpu, 0x0070u);
-    Write16Long(memory, LongIndexedAddress(0x7fdaacu, cpu->x), cpu->accumulator);
+    Add16Immediate(cpu, 0x70u);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_Y, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $22: $066A[0] = ($066A[0] & $06) | script byte. */
-static ObjectFlow ObjectOp22(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectSetSlot0Flags(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, WRAM_UNK_7E066A, 0);
     And8(cpu, 0x06u);
-    Or8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x0000u, cpu->y)));
+    Or8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x00u, cpu->y)));
     StoreAAbsolute8(memory, cpu, WRAM_UNK_7E066A, 0);
     IncrementY16(cpu);
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $23: $7F:D0A1 = low byte of D. */
-static ObjectFlow ObjectOp23(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectSetFieldControl(const Lufia2Memory *memory,
+                                        Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
     Write8(memory, WRAM_FIELD_CONTROL_FLAGS, A8(cpu));
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $8D: OR the next script byte into $7F:D0A1. */
-static ObjectFlow ObjectOp8DOrFieldBits(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+static ObjectFlow ObjectOrFieldControl(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
     Or8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));
     Write8(memory, WRAM_FIELD_CONTROL_FLAGS, A8(cpu));
     IncrementY16(cpu);
@@ -644,19 +704,21 @@ static ObjectFlow ObjectOp7XLoopStart(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x01u, cpu->y);
     DecrementA8(cpu);
-    Write8(memory, LongIndexedAddress(0x7fe08eu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_LOOP_COUNTER, cpu->x), A8(cpu));
     IncrementY16(cpu);
     IncrementY16(cpu);
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);                       /* EAC1 */
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->y);
-    Write16Long(memory, LongIndexedAddress(0x7fdfceu, cpu->x), cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_LOOP_POINTER, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     PushDataBank(memory, cpu);                             /* EACC */
     LoadA8(cpu, Pull8(memory, cpu));
-    Write8(memory, LongIndexedAddress(0x7fdfd0u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress((WRAM_OBJECT_LOOP_POINTER + 2u), cpu->x),
+           A8(cpu));
     return OBJECT_FLOW_DISPATCH;
 }
 
@@ -672,14 +734,14 @@ static ObjectFlow ObjectOp292BCX(
     uint8_t bit;
 
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
     if (handler == OBJECT_OP_29) {
         set = !cpu->zero;
         target = AbsoluteIndexedAddress(cpu, WRAM_OBJECT_STATE, cpu->x);
         bit = 0x04u;
     } else if (handler == OBJECT_OP_2B) {
         set = cpu->negative;
-        target = LongIndexedAddress(0x7fdb0cu, cpu->x);
+        target = LongIndexedAddress(WRAM_OBJECT_FLAGS, cpu->x);
         bit = 0x40u;
     } else {
         And8(cpu, 0x0fu);
@@ -698,9 +760,8 @@ static ObjectFlow ObjectOp292BCX(
 }
 
 /* Object opcode $84: set bit 4 of $7F:D0A1. */
-static ObjectFlow ObjectOp84SetFieldBit4(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectSetFieldControlBit4(const Lufia2Memory *memory,
+                                            Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));
     Or8(cpu, 0x10u);
     Write8(memory, WRAM_FIELD_CONTROL_FLAGS, A8(cpu));
@@ -713,21 +774,19 @@ static ObjectFlow ObjectOp89(
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadA8(cpu, 0xffu);
-    Write8(memory, LongIndexedAddress(0x7fe23eu, cpu->x), A8(cpu));
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe33eu, cpu->x)));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SIZE, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x)));
     Or8(cpu, 0x80u);
-    Write8(memory, LongIndexedAddress(0x7fe33eu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x), A8(cpu));
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $EA: set bit 7 of $7F:DB0C[slot]. */
-static ObjectFlow ObjectOpEA(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectSetFlagBit7(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb0cu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_FLAGS, cpu->x)));
     Or8(cpu, 0x80u);
-    Write8(memory, LongIndexedAddress(0x7fdb0cu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_FLAGS, cpu->x), A8(cpu));
     return OBJECT_FLOW_DISPATCH;
 }
 
@@ -747,13 +806,12 @@ static ObjectFlow ObjectOpF8F9StateBit4(
 }
 
 /* Object opcode $E2: word operand to $7F:DA6C[slot]. */
-static ObjectFlow ObjectOpE2(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectSetOffsetWord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->y));
-    Write16Long(memory, LongIndexedAddress(0x7fda6cu, cpu->x), cpu->accumulator);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x00u, cpu->y));
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_X, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     IncrementY16(cpu);
     IncrementY16(cpu);
@@ -761,52 +819,48 @@ static ObjectFlow ObjectOpE2(
 }
 
 /* Object opcode $82 $83: copy $7F:DA6C to DAAC ($83: reverse). */
-static ObjectFlow ObjectOp8283(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t handler) {
+static ObjectFlow ObjectCopyOffsets(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                    uint16_t handler) {
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     SetAccumulatorWidth(cpu, 0);
-    if (handler == OBJECT_OP_82)
-        CopyLong16(memory, cpu, 0x7fda6cu, 0x7fdaacu);
+    if (handler == OBJECT_OP_COPY_OFFSETS)
+        CopyLong16(memory, cpu, WRAM_OBJECT_SCREEN_X, WRAM_OBJECT_SCREEN_Y);
     else
-        CopyLong16(memory, cpu, 0x7fdaacu, 0x7fda6cu);
+        CopyLong16(memory, cpu, WRAM_OBJECT_SCREEN_Y, WRAM_OBJECT_SCREEN_X);
     SetAccumulatorWidth(cpu, 1);
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $EB: $7F:DA6C[slot] = -$7F:DAAC[slot], per byte. */
-static ObjectFlow ObjectOpEB(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectNegateOffsets(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned i;
 
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     /* Each byte negated on its own. */
     for (i = 0; i < 2u; ++i) {
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdaacu + i, cpu->x)));
+        LoadA8(cpu,
+               Read8(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_Y + i, cpu->x)));
         LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0xffu));
         LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        Write8(memory, LongIndexedAddress(0x7fda6cu + i, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_X + i, cpu->x), A8(cpu));
     }
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:F137: object opcode $EC. */
-static ObjectFlow ObjectOpEC(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+/* $83:F137: $EC starts a loop with the operand count. */
+static ObjectFlow ObjectOpBeginLoop(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
     cpu->carry = 1;
-    Sbc8(cpu, Read8(memory, LongIndexedAddress(0x7fe08eu, cpu->x)));
+    Sbc8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_LOOP_COUNTER, cpu->x)));
     DecrementA8(cpu);
-    Write8(memory, LongIndexedAddress(0x7fe08eu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_LOOP_COUNTER, cpu->x), A8(cpu));
     IncrementY16(cpu);
     SetAccumulatorWidth(cpu, 0);                           /* F147 */
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
     LoadA16(cpu, cpu->y);
-    Write16Long(memory, LongIndexedAddress(0x7fdfceu, cpu->x), cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_LOOP_POINTER, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     return OBJECT_FLOW_DISPATCH;
 }
@@ -816,24 +870,24 @@ static ObjectFlow ObjectOpED(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->y));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x00u, cpu->y));
     cpu->carry = 0;
-    Add16Immediate(cpu, 0x8ec7u);
-    Write16Long(memory, 0x7fddacu, cpu->accumulator);
+    Add16Immediate(cpu, OBJECT_SCRIPT_TABLE);
+    Write16Long(memory, WRAM_UNK_7FDDAC, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     PushDataBank(memory, cpu);                             /* F164 */
     PushY(memory, cpu);
     LoadA8(cpu, 0x7fu);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
-    LoadX16(cpu, 0x0000u);
+    LoadX16(cpu, 0x00u);
     do {
         TransferDirectToA(cpu);                            /* F16D */
         LoadAAbsolute8(memory, cpu, 0xd0a6u, cpu->x);
         if (!cpu->negative) {
-            Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+            Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
             AslA8(cpu);
-            Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+            Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
             TransferAToY(cpu);
             LoadAAbsolute8(memory, cpu, 0xddacu, 0);
             StoreAAbsolute8(memory, cpu, 0xdeeeu, cpu->y);
@@ -841,7 +895,7 @@ static ObjectFlow ObjectOpED(
             StoreAAbsolute8(memory, cpu, 0xdeefu, cpu->y);
         }
         IncrementX16(cpu);                                 /* F185 */
-        Compare16(cpu, cpu->x, 0x0008u);
+        Compare16(cpu, cpu->x, 0x08u);
     } while (!cpu->zero);
     cpu->y = PullIndexValue(memory, cpu);                  /* F18B */
     PullDataBank(memory, cpu);
@@ -859,34 +913,34 @@ static ObjectFlow ObjectOp3X2C25FD8FSetFrame(
     uint8_t skip_cursor = 0;
 
     if (handler == OBJECT_OP_3X_SET_FRAME) {
-        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
         And8(cpu, 0x0fu);
         back = 0xe1ceu;
     } else if (handler == OBJECT_OP_2C_SET_FRAME) {
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
         cpu->carry = 0;
-        Adc8(cpu, Read8(memory, LongIndexedAddress(0x7fdb2cu, cpu->x)));
+        Adc8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_FRAME, cpu->x)));
         back = 0xe1e1u;
     } else if (handler == OBJECT_OP_25_SET_FRAME) {
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fda2cu, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FDA2C, cpu->x)));
         back = 0xe1f0u;
         skip_cursor = 1;
     } else if (handler == OBJECT_OP_FD_SET_FRAME) {
-        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
         back = 0xe1fbu;
     } else {
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb0cu, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_FLAGS, cpu->x)));
         BitImmediate8(cpu, 0x20u);
         if (cpu->zero)
             return OBJECT_FLOW_DISPATCH;
-        LoadA8(cpu, Read8(memory, 0x7fd4f4u));
+        LoadA8(cpu, Read8(memory, (WRAM_OBJECT_SPAWN_IDS + 1u)));
         back = 0xe5b1u;
         skip_cursor = 1;
     }
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     ObjectSetFrame(memory, cpu, back);
     if (!skip_cursor)
         IncrementY16(cpu);
@@ -894,39 +948,37 @@ static ObjectFlow ObjectOp3X2C25FD8FSetFrame(
 }
 
 /* Object opcode $5x $28 $Dx: script jump to the operand + $8EC7. */
-static ObjectFlow ObjectOp5X28DX(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t handler) {
+static ObjectFlow ObjectJump(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             uint16_t handler) {
     if (handler == OBJECT_OP_5X) {
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd9ccu, cpu->x)));
-        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
-        Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FD9CC, cpu->x)));
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0x00u);
         SetAccumulatorWidth(cpu, 0);                       /* E84A */
         LoadA16(cpu, cpu->y);
         cpu->carry = 0;
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+        Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
         TransferAToY(cpu);
     } else if (handler == OBJECT_OP_28) {
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fda2cu, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FDA2C, cpu->x)));
         AslA8(cpu);
-        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
-        Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0x00u);
         SetAccumulatorWidth(cpu, 0);                       /* EB43 */
         LoadA16(cpu, cpu->y);
         cpu->carry = 0;
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+        Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
         LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
         TransferAToY(cpu);
         SetAccumulatorWidth(cpu, 1);
     }
     SimulateJsrFrame(memory, cpu, 0xed34u);                /* ED32 */
     SetAccumulatorWidth(cpu, 0);                           /* ED38 */
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0001u, cpu->y));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x01u, cpu->y));
     cpu->carry = 0;
-    Add16Immediate(cpu, 0x8ec7u);
+    Add16Immediate(cpu, OBJECT_SCRIPT_TABLE);
     TransferAToY(cpu);
     SetAccumulatorWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
@@ -937,23 +989,23 @@ static ObjectFlow ObjectOp5X28DX(
 static ObjectFlow ObjectOpFB(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     SimulateJsrFrame(memory, cpu, 0xee4fu);
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                       /* EE56 */
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     LsrA8(cpu);
     LsrA8(cpu);
     LsrA8(cpu);
     LsrA8(cpu);
     ObjectSignNibble(memory, cpu, 0xee61u);
-    ObjectAddPosition(memory, cpu, 0x7fddfeu, 0xee64u);
+    ObjectAddPosition(memory, cpu, WRAM_OBJECT_FINE_X, 0xee64u);
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     And8(cpu, 0x0fu);
     ObjectSignNibble(memory, cpu, 0xee6cu);
-    ObjectAddPosition(memory, cpu, 0x7fde8eu, 0xee6fu);
+    ObjectAddPosition(memory, cpu, WRAM_OBJECT_FINE_Y, 0xee6fu);
     SimulateRtsFrame(memory, cpu);
     TransferDirectToA(cpu);                                /* EE50 */
     LoadA8(cpu, 0x01u);
@@ -969,26 +1021,27 @@ static ObjectFlow ObjectOpFCE3(
 
     if (fixed) {
         LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fda6cu, cpu->x)));
-        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fda6du, cpu->x)));
-        Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_X, cpu->x)));
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
+        LoadA8(cpu,
+               Read8(memory, LongIndexedAddress((WRAM_OBJECT_SCREEN_X + 1u), cpu->x)));
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
     } else {
-        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
-        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
-        Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
+        LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
+        LoadAAbsolute8(memory, cpu, 0x01u, cpu->y);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
     }
     SimulateJsrFrame(memory, cpu, fixed ? 0xf1afu : 0xee7du);
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                       /* EE84 */
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     Lufia2SignExtendA8(memory, cpu, 0xee8bu);
-    ObjectAddPosition(memory, cpu, 0x7fddfeu, 0xee8eu);
+    ObjectAddPosition(memory, cpu, WRAM_OBJECT_FINE_X, 0xee8eu);
     TransferDirectToA(cpu);                                /* EE91 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_B)));
     Lufia2SignExtendA8(memory, cpu, 0xee96u);
-    ObjectAddPosition(memory, cpu, 0x7fde8eu, 0xee99u);
+    ObjectAddPosition(memory, cpu, WRAM_OBJECT_FINE_Y, 0xee99u);
     SimulateRtsFrame(memory, cpu);
     TransferDirectToA(cpu);                                /* EE7E/F1B0 */
     if (!fixed)
@@ -1002,13 +1055,13 @@ static ObjectFlow ObjectOpF7ByteOffsets(
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     TransferDirectToA(cpu);
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
     Lufia2SignExtendA8(memory, cpu, 0xe199u);
-    ObjectAddPosition(memory, cpu, 0x7fdcdcu, 0xe19cu);
+    ObjectAddPosition(memory, cpu, WRAM_OBJECT_DISPLAY_OFFSET_X, 0xe19cu);
     TransferDirectToA(cpu);                                /* E19D */
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x01u, cpu->y);
     Lufia2SignExtendA8(memory, cpu, 0xe1a3u);
-    ObjectAddPosition(memory, cpu, 0x7fdd6cu, 0xe1a6u);
+    ObjectAddPosition(memory, cpu, WRAM_OBJECT_DISPLAY_OFFSET_Y, 0xe1a6u);
     TransferDirectToA(cpu);                                /* E1A7 */
     LoadA8(cpu, 0x02u);
     return ObjectAdvance(memory, cpu);
@@ -1021,54 +1074,55 @@ static ObjectFlow ObjectOp20(
     unsigned i;
 
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     IncrementY16(cpu);
     TransferDirectToA(cpu);                                /* E9A2 */
     for (i = 0; i < 2u; ++i) {
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdaacu + i, cpu->x)));
+        LoadA8(cpu,
+               Read8(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_Y + i, cpu->x)));
         if (cpu->zero)
             continue;
         if (cpu->negative) {
             cpu->carry = 0;
-            Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+            Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
         } else {
             cpu->carry = 1;
-            Sbc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+            Sbc8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
         }
         LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0xffu));
         LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        Write8(memory, LongIndexedAddress(0x7fda6cu + i, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_X + i, cpu->x), A8(cpu));
     }
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $F1: take the animation of the slot with this id. */
-static ObjectFlow ObjectOpF1(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectTakeAnimationBySlotId(const Lufia2Memory *memory,
+                                              Lufia2CpuState *cpu) {
     uint8_t found = 0;
 
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
-    LoadX16(cpu, 0x0000u);
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
+    LoadX16(cpu, 0x00u);
     for (;;) {
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe1aeu, cpu->x)));
-        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x54u)));
+        LoadA8(cpu,
+               Read8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_ID, cpu->x)));
+        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
         if (cpu->zero) {
             found = 1;
             break;
         }
         IncrementX16(cpu);                                 /* EDF6 */
-        Compare16(cpu, cpu->x, 0x0020u);
+        Compare16(cpu, cpu->x, 0x20u);
         if (cpu->zero)
             break;
     }
     if (!found) {
         /* No match: the ROM clears slot 32. */
         TransferDirectToA(cpu);                            /* EDFC */
-        Write8(memory, LongIndexedAddress(0x7fe286u, cpu->x), A8(cpu));
-        Write8(memory, LongIndexedAddress(0x7fe2ceu, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_A, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_B, cpu->x), A8(cpu));
     } else {
         ObjectTakeAnimation(memory, cpu, 0xee09u);
     }
@@ -1082,84 +1136,86 @@ static ObjectFlow ObjectOp198E(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler) {
-    const uint8_t animation = handler == OBJECT_OP_19
-        ? Read8(memory, AbsoluteIndexedAddress(cpu, 0x0000u, cpu->y))
-        : Read8(memory, 0x7fd4f3u);
+    const uint8_t animation =
+        handler == OBJECT_OP_19
+            ? Read8(memory, AbsoluteIndexedAddress(cpu, 0x00u, cpu->y))
+            : Read8(memory, WRAM_OBJECT_SPAWN_IDS);
 
     if (ObjectSpriteSizeZero(memory, cpu, animation)) {
-        cpu->resume_pc = 0x830000u | handler;
+        cpu->resume_pc = OBJECT_PROGRAM_BANK | handler;
         return OBJECT_FLOW_BOUNDARY;
     }
     if (handler == OBJECT_OP_19) {
-        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+        LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
         IncrementY16(cpu);
-        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-        Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
+        LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
         IncrementY16(cpu);
     } else {
-        LoadA8(cpu, Read8(memory, 0x7fd4f3u));
-        Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
-        LoadA8(cpu, Read8(memory, 0x7fd4f4u));
-        Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
+        LoadA8(cpu, Read8(memory, WRAM_OBJECT_SPAWN_IDS));
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
+        LoadA8(cpu, Read8(memory, (WRAM_OBJECT_SPAWN_IDS + 1u)));
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
     }
-    LoadX16(cpu, 0x0000u);                                 /* E453 */
+    LoadX16(cpu, 0x00u); /* E453 */
     for (;;) {
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe1aeu, cpu->x)));
-        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x54u)));
+        LoadA8(cpu,
+               Read8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_ID, cpu->x)));
+        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
         if (cpu->zero) {
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb2cu, cpu->x)));
-            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x55u)));
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_FRAME, cpu->x)));
+            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SCRATCH_B)));
             if (cpu->zero) {
                 ObjectTakeAnimation(memory, cpu, 0xe483u); /* E481 */
                 return OBJECT_FLOW_DISPATCH;
             }
         }
         IncrementX16(cpu);                                 /* E466 */
-        Compare16(cpu, cpu->x, 0x0020u);
+        Compare16(cpu, cpu->x, 0x20u);
         if (cpu->zero)
             break;
     }
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* E46C */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdb0cu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_FLAGS, cpu->x)));
     Or8(cpu, 0x20u);
-    Write8(memory, LongIndexedAddress(0x7fdb0cu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_FLAGS, cpu->x), A8(cpu));
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     ObjectAnimationSetup(memory, cpu, 0xe47du);
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $26: set up the animation id of $7F:DA4C[slot]. */
-static ObjectFlow ObjectOp26(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t handler) {
-    if (ObjectSpriteSizeZero(memory, cpu, Read8(memory,
-            LongIndexedAddress(0x7fda4cu, Read16Direct(memory, cpu, DP_ACTOR_SLOT))))) {
-        cpu->resume_pc = 0x830000u | handler;
+static ObjectFlow ObjectSetAnimation(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                     uint16_t handler) {
+    if (ObjectSpriteSizeZero(
+            memory, cpu,
+            Read8(memory,
+                  LongIndexedAddress(WRAM_OBJECT_ANIMATION_REQUEST,
+                                     Read16Direct(memory, cpu, DP_ACTOR_SLOT))))) {
+        cpu->resume_pc = OBJECT_PROGRAM_BANK | handler;
         return OBJECT_FLOW_BOUNDARY;
     }
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fda4cu, cpu->x)));
+    LoadA8(cpu,
+           Read8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_REQUEST, cpu->x)));
     ObjectAnimationSetup(memory, cpu, 0xeb08u);
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $Ax: set up the animation named by the operand. */
-static ObjectFlow ObjectOpAX(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t handler) {
-    if (ObjectSpriteSizeZero(memory, cpu, Read8(memory,
-            AbsoluteIndexedAddress(cpu, 0x0001u, cpu->y)))) {
-        cpu->resume_pc = 0x830000u | handler;
+static ObjectFlow ObjectSetAnimationFromOperand(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu, uint16_t handler) {
+    if (ObjectSpriteSizeZero(
+            memory, cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x01u, cpu->y)))) {
+        cpu->resume_pc = OBJECT_PROGRAM_BANK | handler;
         return OBJECT_FLOW_BOUNDARY;
     }
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     TransferDirectToA(cpu);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x01u, cpu->y);
     ObjectAnimationSetup(memory, cpu, 0xec96u);
     IncrementY16(cpu);
     IncrementY16(cpu);
@@ -1181,20 +1237,19 @@ static ObjectFlow ObjectOp6XSpawnChild(
 }
 
 /* Object opcode $85: spawn a child and take its animation. */
-static ObjectFlow ObjectOp85(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectSpawnChildWithAnimation(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu) {
     PushY(memory, cpu);
     ObjectSpawnChild(memory, cpu, 0xe863u);
     cpu->y = PullIndexValue(memory, cpu);
     TransferDirectToA(cpu);                                /* E865 */
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
-    Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
     TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), A8(cpu));
     ObjectTakeAnimation(memory, cpu, 0xe871u);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_B)));
     Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), A8(cpu));
     IncrementY16(cpu);
     IncrementY16(cpu);
@@ -1203,24 +1258,25 @@ static ObjectFlow ObjectOp85(
 }
 
 /* Object opcode $8A: spawn a child at an offset from the operands. */
-static ObjectFlow ObjectOp8A(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectSpawnChildAtOffset(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu) {
     PushY(memory, cpu);
     ObjectSpawnChild(memory, cpu, 0xe87fu);
     cpu->y = PullIndexValue(memory, cpu);
     TransferDirectToA(cpu);                                /* E881 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     AslA8(cpu);
     TransferAToX(cpu);
-    LoadAAbsolute8(memory, cpu, 0x0003u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x03u, cpu->y);
     Lufia2SignExtendA8(memory, cpu, 0xe88bu);
-    Write16Long(memory, LongIndexedAddress(0x7fdcdcu, cpu->x), cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_DISPLAY_OFFSET_X, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     /* No TDC: B keeps the first high byte. */
-    LoadAAbsolute8(memory, cpu, 0x0004u, cpu->y);
+    LoadAAbsolute8(memory, cpu, 0x04u, cpu->y);
     Lufia2SignExtendA8(memory, cpu, 0xe897u);
-    Write16Long(memory, LongIndexedAddress(0x7fdd6cu, cpu->x), cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_DISPLAY_OFFSET_Y, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     IncrementY16(cpu);
     IncrementY16(cpu);
@@ -1231,9 +1287,8 @@ static ObjectFlow ObjectOp8A(
 }
 
 /* Object opcode $EE: spawn a child and register it in $7F:D0A6. */
-static ObjectFlow ObjectOpEE(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static ObjectFlow ObjectSpawnRegisteredChild(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu) {
     PushY(memory, cpu);
     ObjectSpawnChild(memory, cpu, 0xe93au);
     cpu->y = PullIndexValue(memory, cpu);
@@ -1241,26 +1296,26 @@ static ObjectFlow ObjectOpEE(
     IncrementY16(cpu);
     IncrementY16(cpu);
     TransferDirectToA(cpu);                                /* E93F */
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-    Write8(memory, LongIndexedAddress(0x7fda6cu, cpu->x), A8(cpu));
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
-    Write8(memory, LongIndexedAddress(0x7fda6du, cpu->x), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_X, cpu->x), A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0x01u, cpu->y);
+    Write8(memory, LongIndexedAddress((WRAM_OBJECT_SCREEN_X + 1u), cpu->x), A8(cpu));
     IncrementY16(cpu);
     IncrementY16(cpu);
-    LoadX16(cpu, 0x0000u);                                 /* E950 */
+    LoadX16(cpu, 0x00u); /* E950 */
     for (;;) {
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd0a6u, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FD0A6, cpu->x)));
         if (cpu->negative)
             break;
         IncrementX16(cpu);
-        Compare16(cpu, cpu->x, 0x0008u);
+        Compare16(cpu, cpu->x, 0x08u);
         if (cpu->zero) {
-            LoadX16(cpu, 0x0000u);
+            LoadX16(cpu, 0x00u);
             break;
         }
     }
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u))); /* E962 */
-    Write8(memory, LongIndexedAddress(0x7fd0a6u, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A))); /* E962 */
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FD0A6, cpu->x), A8(cpu));
     return OBJECT_FLOW_DISPATCH;
 }
 
@@ -1308,37 +1363,37 @@ static void ObjectAngleStep(
     StoreZeroAbsolute8(memory, cpu, counter, cpu->x);
     LoadAAbsolute8(memory, cpu, rate, cpu->x);
     ObjectHighNibbleStep(memory, cpu, return_address);
-    StoreADirect8(memory, cpu, 0x55u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_B);
     cpu->carry = 0;
     Adc8(cpu, AbsoluteByte(memory, cpu, angle, cpu->x));
     StoreAAbsolute8(memory, cpu, angle, cpu->x);
     LoadAAbsolute8(memory, cpu, limit, cpu->x);
     if (cpu->negative) {
         AslA8(cpu);
-        StoreADirect8(memory, cpu, 0x54u);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
+        LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
         if (cpu->negative) {
             LoadA8(cpu, (uint8_t)~A8(cpu));
             LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-            StoreADirect8(memory, cpu, 0x55u);
+            StoreADirect8(memory, cpu, DP_SCRATCH_B);
         }
         LoadAAbsolute8(memory, cpu, angle, cpu->x);            /* distance */
         cpu->carry = 1;
-        Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
+        Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
         if (cpu->negative) {
             LoadA8(cpu, (uint8_t)~A8(cpu));
             LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
         }
-        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x55u));
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_B));
         if (!cpu->carry) {
-            LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+            LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
             StoreAAbsolute8(memory, cpu, angle, cpu->x);
             StoreZeroAbsolute8(memory, cpu, rate, cpu->x);
         }
     }
     LoadA8(cpu, 0x01u);
-    Or8(cpu, AbsoluteByte(memory, cpu, 0x15b9u, cpu->x));
-    StoreAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
+    Or8(cpu, AbsoluteByte(memory, cpu, OBJECT_SPIN_UPDATE, cpu->x));
+    StoreAAbsolute8(memory, cpu, OBJECT_SPIN_UPDATE, cpu->x);
 }
 
 /* STA $211B twice: A sign-extended into the multiplicand. */
@@ -1347,12 +1402,12 @@ static void ObjectMultiplicand(
     Lufia2CpuState *cpu,
     uint8_t value) {
     LoadA8(cpu, value);
-    StoreAAbsolute8(memory, cpu, 0x211bu, 0);
+    StoreAAbsolute8(memory, cpu, SNES_M7A, 0);
     if (cpu->negative) {
         LoadA8(cpu, 0xffu);
-        StoreAAbsolute8(memory, cpu, 0x211bu, 0);
+        StoreAAbsolute8(memory, cpu, SNES_M7A, 0);
     } else {
-        StoreZeroAbsolute8(memory, cpu, 0x211bu, 0);
+        StoreZeroAbsolute8(memory, cpu, SNES_M7A, 0);
     }
 }
 
@@ -1361,7 +1416,7 @@ static void ObjectProduct(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x2134u, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_MPYL, 0));
     AslA16(cpu);
     SetAccumulatorWidth(cpu, 1);
     RolA8(cpu);
@@ -1385,65 +1440,81 @@ static void ObjectHalfMagnitude(
     LsrA16(cpu);
 }
 
+/* DP cells of the spin and zoom projection. */
+enum {
+    PROJ_DEPTH = 0x51,
+    PROJ_COS_B = 0x54,
+    PROJ_SIN_B = 0x55,
+    PROJ_SIN_A = 0x56,
+    PROJ_COS_A = 0x57,
+    PROJ_TERM_1 = 0x58,
+    PROJ_TERM_2 = 0x59,
+    PROJ_TERM_3 = 0x5a,
+    PROJ_SCREEN_X = 0x54, /* result words overwrite the cosine and sine */
+    PROJ_SCREEN_Y = 0x56
+};
+
 /* $83:E703: rotate and project the object's offset. */
 static void ObjectProject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadX8(cpu, AbsoluteByte(memory, cpu, 0x14f9u, cpu->y));  /* E703 */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80852du, cpu->x)));
-    StoreADirect8(memory, cpu, 0x54u);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x8084edu, cpu->x)));
-    StoreADirect8(memory, cpu, 0x55u);
-    LoadX8(cpu, AbsoluteByte(memory, cpu, 0x14d9u, cpu->y));
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x8084edu, cpu->x)));
-    StoreADirect8(memory, cpu, 0x56u);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80852du, cpu->x)));
-    StoreADirect8(memory, cpu, 0x57u);
-    ObjectMultiplicand(memory, cpu, AbsoluteByte(memory, cpu, 0x1539u, cpu->y));
-    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));               /* E733 */
-    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    LoadX8(cpu, AbsoluteByte(memory, cpu, OBJECT_SPIN_ANGLE_B, cpu->y)); /* E703 */
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(COSINE_TABLE, cpu->x)));
+    StoreADirect8(memory, cpu, PROJ_COS_B);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(SINE_TABLE, cpu->x)));
+    StoreADirect8(memory, cpu, PROJ_SIN_B);
+    LoadX8(cpu, AbsoluteByte(memory, cpu, OBJECT_SPIN_ANGLE_A, cpu->y));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(SINE_TABLE, cpu->x)));
+    StoreADirect8(memory, cpu, PROJ_SIN_A);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(COSINE_TABLE, cpu->x)));
+    StoreADirect8(memory, cpu, PROJ_COS_A);
+    ObjectMultiplicand(memory, cpu,
+                       AbsoluteByte(memory, cpu, OBJECT_PROJECTED_X, cpu->y));
+    LoadA8(cpu, DirectByte(memory, cpu, PROJ_SIN_B)); /* E733 */
+    StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
     ObjectProduct(memory, cpu);
-    StoreADirect8(memory, cpu, 0x58u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
-    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    StoreADirect8(memory, cpu, PROJ_TERM_1);
+    LoadA8(cpu, DirectByte(memory, cpu, PROJ_COS_B));
+    StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
     ObjectProduct(memory, cpu);
-    StoreADirect8(memory, cpu, 0x59u);
-    ObjectMultiplicand(memory, cpu, AbsoluteByte(memory, cpu, 0x1519u, cpu->y));
+    StoreADirect8(memory, cpu, PROJ_TERM_2);
+    ObjectMultiplicand(memory, cpu,
+                       AbsoluteByte(memory, cpu, OBJECT_PROJECTED_Y, cpu->y));
     ObjectProduct(memory, cpu);                                /* E76B */
     cpu->carry = 1;
-    Sbc8(cpu, DirectByte(memory, cpu, 0x58u));
-    StoreADirect8(memory, cpu, 0x58u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
-    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    Sbc8(cpu, DirectByte(memory, cpu, PROJ_TERM_1));
+    StoreADirect8(memory, cpu, PROJ_TERM_1);
+    LoadA8(cpu, DirectByte(memory, cpu, PROJ_SIN_B));
+    StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
     ObjectProduct(memory, cpu);
-    Adc8(cpu, DirectByte(memory, cpu, 0x59u));
-    StoreADirect8(memory, cpu, 0x59u);
-    ObjectMultiplicand(memory, cpu, DirectByte(memory, cpu, 0x59u));
-    LoadA8(cpu, DirectByte(memory, cpu, 0x56u));               /* E7A2 */
-    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
+    Adc8(cpu, DirectByte(memory, cpu, PROJ_TERM_2));
+    StoreADirect8(memory, cpu, PROJ_TERM_2);
+    ObjectMultiplicand(memory, cpu, DirectByte(memory, cpu, PROJ_TERM_2));
+    LoadA8(cpu, DirectByte(memory, cpu, PROJ_SIN_A)); /* E7A2 */
+    StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
     ObjectProduct(memory, cpu);
-    StoreADirect8(memory, cpu, 0x5au);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
-    StoreAAbsolute8(memory, cpu, 0x211cu, 0);
-    LoadAAbsolute8(memory, cpu, 0x2135u, 0);
+    StoreADirect8(memory, cpu, PROJ_TERM_3);
+    LoadA8(cpu, DirectByte(memory, cpu, PROJ_COS_A));
+    StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
+    LoadAAbsolute8(memory, cpu, SNES_MPYM, 0);
     cpu->carry = 0;
     Adc8(cpu, 0x80u);
-    StoreADirect8(memory, cpu, 0x51u);                         /* depth */
-    ObjectHalfMagnitude(memory, cpu, 0x58u);                   /* E7C2 */
+    StoreADirect8(memory, cpu, PROJ_DEPTH);        /* depth */
+    ObjectHalfMagnitude(memory, cpu, PROJ_TERM_1); /* E7C2 */
     SetIndexWidth(cpu, 0);
-    StoreAAbsolute16(memory, cpu, 0x4204u, 0);
+    StoreAAbsolute16(memory, cpu, SNES_WRDIVL, 0);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x51u));
-    StoreAAbsolute8(memory, cpu, 0x4206u, 0);
-    ObjectHalfMagnitude(memory, cpu, 0x5au);                   /* E7D8 */
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4214u, 0));
-    StoreAAbsolute16(memory, cpu, 0x4204u, 0);
+    LoadA8(cpu, DirectByte(memory, cpu, PROJ_DEPTH));
+    StoreAAbsolute8(memory, cpu, SNES_WRDIVB, 0);
+    ObjectHalfMagnitude(memory, cpu, PROJ_TERM_3); /* E7D8 */
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDDIVL, 0));
+    StoreAAbsolute16(memory, cpu, SNES_WRDIVL, 0);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x51u));
-    StoreAAbsolute8(memory, cpu, 0x4206u, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x58u));               /* E7F1 */
+    LoadA8(cpu, DirectByte(memory, cpu, PROJ_DEPTH));
+    StoreAAbsolute8(memory, cpu, SNES_WRDIVB, 0);
+    LoadA8(cpu, DirectByte(memory, cpu, PROJ_TERM_1)); /* E7F1 */
     AslA8(cpu);
     SetAccumulatorWidth(cpu, 0);
     TransferXToA(cpu);
@@ -1451,134 +1522,143 @@ static void ObjectProject(
         LoadA16(cpu, (uint16_t)~cpu->accumulator);
         IncrementA16(cpu);
     }
-    StoreADirect16(memory, cpu, 0x54u);                        /* screen x */
-    LoadADirect16(memory, cpu, 0x59u);
+    StoreADirect16(memory, cpu, PROJ_SCREEN_X); /* screen x */
+    LoadADirect16(memory, cpu, PROJ_TERM_2);
     AslA16(cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4214u, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDDIVL, 0));
     if (cpu->carry) {
         LoadA16(cpu, (uint16_t)~cpu->accumulator);
         IncrementA16(cpu);
     }
-    StoreADirect16(memory, cpu, 0x56u);                        /* screen y */
+    StoreADirect16(memory, cpu, PROJ_SCREEN_Y); /* screen y */
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:E27D: object opcode $14, spin and zoom. */
-static ObjectFlow ObjectOp14(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* E27D */
-    PushY(memory, cpu);
-    LoadAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
+/* $83:E382: rebuild the spin offset when flagged. */
+static void ObjectSpinOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, OBJECT_SPIN_UPDATE, cpu->x); /* E382 */
+    BitImmediate8(cpu, 0x02u);
+    if (!cpu->zero) {
+        And8(cpu, 0xfdu);
+        StoreAAbsolute8(memory, cpu, OBJECT_SPIN_UPDATE, cpu->x);
+        SetIndexWidth(cpu, 1); /* E38E */
+        LoadYDirect8(memory, cpu, DP_ACTOR_SLOT);
+        LoadAAbsolute8(memory, cpu, OBJECT_ZOOM, cpu->y);
+        StoreAAbsolute8(memory, cpu, SNES_M7A, 0);
+        StoreZeroAbsolute8(memory, cpu, SNES_M7A, 0);
+        LoadX8(cpu, AbsoluteByte(memory, cpu, OBJECT_OFFSET_ANGLE, cpu->y));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(SINE_TABLE, cpu->x)));
+        StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
+        AslAbsolute8(memory, cpu, SNES_MPYL);
+        LoadAAbsolute8(memory, cpu, SNES_MPYM, 0);
+        RolA8(cpu);
+        StoreAAbsolute8(memory, cpu, OBJECT_PROJECTED_X, cpu->y); /* offset x */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(COSINE_TABLE, cpu->x)));
+        StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
+        AslAbsolute8(memory, cpu, SNES_MPYL);
+        LoadAAbsolute8(memory, cpu, SNES_MPYM, 0);
+        RolA8(cpu);
+        StoreAAbsolute8(memory, cpu, OBJECT_PROJECTED_Y, cpu->y); /* offset y */
+        SetIndexWidth(cpu, 0);
+    }
+}
+
+/* Per-frame work of opcode $14; true when despawned. */
+static bool ObjectSpinZoomStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, OBJECT_SPIN_UPDATE, cpu->x);
     BitImmediate8(cpu, 0x08u);
     if (!cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x1579u, cpu->x);
+        LoadAAbsolute8(memory, cpu, OBJECT_ZOOM, cpu->x);
         And8(cpu, 0xfeu);
         if (cpu->zero)
-            goto end;
+            return true;
     }
-    LoadAAbsolute8(memory, cpu, 0x15d9u, cpu->x);              /* E291 zoom */
+    LoadAAbsolute8(memory, cpu, OBJECT_ZOOM_RATE, cpu->x); /* E291 zoom */
     if (!cpu->zero) {
-        StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x15f9u, cpu->x), 1);
+        StepMemory8(memory, cpu,
+                    AbsoluteIndexedAddress(cpu, OBJECT_ZOOM_COUNTER, cpu->x), 1);
         And8(cpu, 0x0fu);
-        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x15f9u, cpu->x));
+        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, OBJECT_ZOOM_COUNTER, cpu->x));
         if (cpu->zero) {
-            StoreZeroAbsolute8(memory, cpu, 0x15f9u, cpu->x);
-            LoadAAbsolute8(memory, cpu, 0x15d9u, cpu->x);
+            StoreZeroAbsolute8(memory, cpu, OBJECT_ZOOM_COUNTER, cpu->x);
+            LoadAAbsolute8(memory, cpu, OBJECT_ZOOM_RATE, cpu->x);
             ObjectHighNibbleStep(memory, cpu, 0xe2a8u);
             cpu->carry = 0;
-            Adc8(cpu, AbsoluteByte(memory, cpu, 0x1579u, cpu->x));
-            StoreAAbsolute8(memory, cpu, 0x1579u, cpu->x);
+            Adc8(cpu, AbsoluteByte(memory, cpu, OBJECT_ZOOM, cpu->x));
+            StoreAAbsolute8(memory, cpu, OBJECT_ZOOM, cpu->x);
             LsrA8(cpu);
-            StoreADirect8(memory, cpu, 0x55u);
-            LoadAAbsolute8(memory, cpu, 0x1619u, cpu->x);
+            StoreADirect8(memory, cpu, DP_SCRATCH_B);
+            LoadAAbsolute8(memory, cpu, OBJECT_ZOOM_LIMIT, cpu->x);
             if (cpu->negative) {
                 uint8_t clamp;
 
                 And8(cpu, 0x7fu);
-                StoreADirect8(memory, cpu, 0x54u);
-                LoadAAbsolute8(memory, cpu, 0x15d9u, cpu->x);
+                StoreADirect8(memory, cpu, DP_SCRATCH_A);
+                LoadAAbsolute8(memory, cpu, OBJECT_ZOOM_RATE, cpu->x);
                 if (cpu->negative) {
-                    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
-                    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x54u));
+                    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
+                    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_A));
                     clamp = cpu->negative;
                 } else {
-                    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
-                    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x54u));
+                    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
+                    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_A));
                     clamp = !cpu->negative;
                 }
                 if (clamp) {
-                    StoreZeroAbsolute8(memory, cpu, 0x15d9u, cpu->x); /* E2CF */
-                    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+                    StoreZeroAbsolute8(memory, cpu, OBJECT_ZOOM_RATE,
+                                       cpu->x); /* E2CF */
+                    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
                     AslA8(cpu);
-                    StoreAAbsolute8(memory, cpu, 0x1579u, cpu->x);
+                    StoreAAbsolute8(memory, cpu, OBJECT_ZOOM, cpu->x);
                 }
             }
             LoadA8(cpu, 0x03u);                                /* E2D8 */
-            Or8(cpu, AbsoluteByte(memory, cpu, 0x15b9u, cpu->x));
-            StoreAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
+            Or8(cpu, AbsoluteByte(memory, cpu, OBJECT_SPIN_UPDATE, cpu->x));
+            StoreAAbsolute8(memory, cpu, OBJECT_SPIN_UPDATE, cpu->x);
         }
     }
-    ObjectAngleStep(memory, cpu, 0x1639u, 0x1659u, 0x14d9u, 0x1679u, 0xe2f7u);
-    ObjectAngleStep(memory, cpu, 0x1699u, 0x16b9u, 0x14f9u, 0x16d9u, 0xe348u);
-    LoadAAbsolute8(memory, cpu, 0x15b9u, cpu->x);              /* E382 */
-    BitImmediate8(cpu, 0x02u);
-    if (!cpu->zero) {
-        And8(cpu, 0xfdu);
-        StoreAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
-        SetIndexWidth(cpu, 1);                                 /* E38E */
-        LoadYDirect8(memory, cpu, DP_ACTOR_SLOT);
-        LoadAAbsolute8(memory, cpu, 0x1579u, cpu->y);
-        StoreAAbsolute8(memory, cpu, 0x211bu, 0);
-        StoreZeroAbsolute8(memory, cpu, 0x211bu, 0);
-        LoadX8(cpu, AbsoluteByte(memory, cpu, 0x1599u, cpu->y));
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x8084edu, cpu->x)));
-        StoreAAbsolute8(memory, cpu, 0x211cu, 0);
-        AslAbsolute8(memory, cpu, 0x2134u);
-        LoadAAbsolute8(memory, cpu, 0x2135u, 0);
-        RolA8(cpu);
-        StoreAAbsolute8(memory, cpu, 0x1539u, cpu->y);         /* offset x */
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80852du, cpu->x)));
-        StoreAAbsolute8(memory, cpu, 0x211cu, 0);
-        AslAbsolute8(memory, cpu, 0x2134u);
-        LoadAAbsolute8(memory, cpu, 0x2135u, 0);
-        RolA8(cpu);
-        StoreAAbsolute8(memory, cpu, 0x1519u, cpu->y);         /* offset y */
-        SetIndexWidth(cpu, 0);
-    }
+    ObjectAngleStep(memory, cpu, OBJECT_SPIN_RATE_A, OBJECT_SPIN_COUNTER_A,
+                    OBJECT_SPIN_ANGLE_A, OBJECT_SPIN_LIMIT_A, 0xe2f7u);
+    ObjectAngleStep(memory, cpu, OBJECT_SPIN_RATE_B, OBJECT_SPIN_COUNTER_B,
+                    OBJECT_SPIN_ANGLE_B, OBJECT_SPIN_LIMIT_B, 0xe348u);
+    ObjectSpinOffset(memory, cpu);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* E3C2 */
-    LoadAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
+    LoadAAbsolute8(memory, cpu, OBJECT_SPIN_UPDATE, cpu->x);
     BitImmediate8(cpu, 0x01u);
     if (cpu->zero)
-        goto next;
+        return false;
     And8(cpu, 0xfeu);
-    StoreAAbsolute8(memory, cpu, 0x15b9u, cpu->x);
+    StoreAAbsolute8(memory, cpu, OBJECT_SPIN_UPDATE, cpu->x);
     SetIndexWidth(cpu, 1);                                     /* E3D3 */
     LoadYDirect8(memory, cpu, DP_ACTOR_SLOT);
     ObjectProject(memory, cpu, 0xe3d9u);
-    LoadAAbsolute8(memory, cpu, 0x15b9u, cpu->y);
+    LoadAAbsolute8(memory, cpu, OBJECT_SPIN_UPDATE, cpu->y);
     BitImmediate8(cpu, 0x04u);
     if (!cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x15d9u, cpu->y);
+        LoadAAbsolute8(memory, cpu, OBJECT_ZOOM_RATE, cpu->y);
         SetIndexWidth(cpu, 0);
         if (cpu->zero) {
             SetAccumulatorWidth(cpu, 0);
-            goto end;
+            return true;
         }
     }
     SetAccumulatorWidth(cpu, 0);                               /* E3EA */
     SetIndexWidth(cpu, 0);
     LoadXDirect16(memory, cpu, DP_SLOT_WORD_OFFSET);
-    LoadADirect16(memory, cpu, 0x54u);
+    LoadADirect16(memory, cpu, DP_SCRATCH_A);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fda6cu, cpu->x)));
-    Write16Long(memory, LongIndexedAddress(0x7fddfeu, cpu->x), cpu->accumulator);
-    LoadADirect16(memory, cpu, 0x56u);
+    Add16Value(cpu,
+               Read16Long(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_X, cpu->x)));
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X, cpu->x),
+                cpu->accumulator);
+    LoadADirect16(memory, cpu, DP_SCRATCH_C);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(0x7fdaacu, cpu->x)));
-    Write16Long(memory, LongIndexedAddress(0x7fde8eu, cpu->x), cpu->accumulator);
+    Add16Value(cpu,
+               Read16Long(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_Y, cpu->x)));
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_Y, cpu->x),
+                cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* E406 */
     LoadA8(cpu, DirectByte(memory, cpu, 0x51u));
@@ -1587,19 +1667,24 @@ static ObjectFlow ObjectOp14(
     LoadA8(cpu, 0x02u);                                        /* behind */
     if (cpu->carry)
         TransferDirectToA(cpu);
-    StoreADirect8(memory, cpu, 0x54u);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe33eu, cpu->x)));
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x)));
     And8(cpu, 0xfdu);
-    Or8(cpu, DirectByte(memory, cpu, 0x54u));
-    Write8(memory, LongIndexedAddress(0x7fe33eu, cpu->x), A8(cpu));
-next:
+    Or8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x), A8(cpu));
+    return false;
+}
+
+/* $83:E27D: object opcode $14, spin and zoom. */
+static ObjectFlow ObjectSpinZoom(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    bool despawn;
+
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT); /* E27D */
+    PushY(memory, cpu);
+    despawn = ObjectSpinZoomStep(memory, cpu);
     SetAccumulatorWidth(cpu, 1);                               /* E421 */
     cpu->y = PullIndexValue(memory, cpu);
-    return OBJECT_FLOW_DISPATCH;
-end:
-    SetAccumulatorWidth(cpu, 1);                               /* E427 */
-    cpu->y = PullIndexValue(memory, cpu);
-    return ObjectOpDespawn(memory, cpu);
+    return despawn ? ObjectOpDespawn(memory, cpu) : OBJECT_FLOW_DISPATCH;
 }
 
 static ObjectFlow ObjectExecute(
@@ -1639,44 +1724,44 @@ static ObjectFlow ObjectExecute(
         return ObjectOp80LoopEnd(memory, cpu);
     case OBJECT_OP_2F_COPY_ACTOR0_POSITION:
         return ObjectOp2FCopyActor0Position(memory, cpu);
-    case OBJECT_OP_2E:
-        return ObjectOp2E(memory, cpu);
-    case OBJECT_OP_1D:
-        return ObjectOp1D(memory, cpu);
+    case OBJECT_OP_SET_DRAW_FLAGS:
+        return ObjectSetDrawFlags(memory, cpu);
+    case OBJECT_OP_MARK_BLOCKED_EVENT_OBJECT:
+        return ObjectMarkBlockedEventObject(memory, cpu);
     case OBJECT_OP_12_NOP:                                         /* no-op */
         return OBJECT_FLOW_DISPATCH;
-    case OBJECT_OP_13:
-        return ObjectOp13(memory, cpu);
-    case OBJECT_OP_22:
-        return ObjectOp22(memory, cpu);
-    case OBJECT_OP_23:
-        return ObjectOp23(memory, cpu);
-    case OBJECT_OP_8D_OR_FIELD_BITS:
-        return ObjectOp8DOrFieldBits(memory, cpu);
+    case OBJECT_OP_CENTER_ON_SCREEN:
+        return ObjectCenterOnScreen(memory, cpu);
+    case OBJECT_OP_SET_SLOT0_FLAGS:
+        return ObjectSetSlot0Flags(memory, cpu);
+    case OBJECT_OP_SET_FIELD_CONTROL:
+        return ObjectSetFieldControl(memory, cpu);
+    case OBJECT_OP_OR_FIELD_CONTROL:
+        return ObjectOrFieldControl(memory, cpu);
     case OBJECT_OP_7X_LOOP_START:
         return ObjectOp7XLoopStart(memory, cpu);
     case OBJECT_OP_29:
     case OBJECT_OP_2B:
     case OBJECT_OP_CX:
         return ObjectOp292BCX(memory, cpu, handler);
-    case OBJECT_OP_84_SET_FIELD_BIT4:
-        return ObjectOp84SetFieldBit4(memory, cpu);
+    case OBJECT_OP_SET_FIELD_CONTROL_BIT4:
+        return ObjectSetFieldControlBit4(memory, cpu);
     case OBJECT_OP_89:
         return ObjectOp89(memory, cpu);
-    case OBJECT_OP_EA:
-        return ObjectOpEA(memory, cpu);
+    case OBJECT_OP_SET_FLAG_BIT7:
+        return ObjectSetFlagBit7(memory, cpu);
     case OBJECT_OP_F8_SET_STATE_BIT4:
     case OBJECT_OP_F9_CLEAR_STATE_BIT4:
         return ObjectOpF8F9StateBit4(memory, cpu, handler);
-    case OBJECT_OP_E2:
-        return ObjectOpE2(memory, cpu);
-    case OBJECT_OP_82:
-    case OBJECT_OP_83:
-        return ObjectOp8283(memory, cpu, handler);
-    case OBJECT_OP_EB:
-        return ObjectOpEB(memory, cpu);
+    case OBJECT_OP_SET_OFFSET_WORD:
+        return ObjectSetOffsetWord(memory, cpu);
+    case OBJECT_OP_COPY_OFFSETS:
+    case OBJECT_OP_COPY_OFFSETS_REVERSED:
+        return ObjectCopyOffsets(memory, cpu, handler);
+    case OBJECT_OP_NEGATE_OFFSETS:
+        return ObjectNegateOffsets(memory, cpu);
     case OBJECT_OP_EC:
-        return ObjectOpEC(memory, cpu);
+        return ObjectOpBeginLoop(memory, cpu);
     case OBJECT_OP_ED:
         return ObjectOpED(memory, cpu);
     case OBJECT_OP_3X_SET_FRAME:
@@ -1688,7 +1773,7 @@ static ObjectFlow ObjectExecute(
     case OBJECT_OP_5X:
     case OBJECT_OP_28:
     case OBJECT_OP_DX:
-        return ObjectOp5X28DX(memory, cpu, handler);
+        return ObjectJump(memory, cpu, handler);
     case OBJECT_OP_FB:
         return ObjectOpFB(memory, cpu);
     case OBJECT_OP_FC:
@@ -1698,29 +1783,29 @@ static ObjectFlow ObjectExecute(
         return ObjectOpF7ByteOffsets(memory, cpu);
     case OBJECT_OP_20:
         return ObjectOp20(memory, cpu);
-    case OBJECT_OP_F1:
-        return ObjectOpF1(memory, cpu);
+    case OBJECT_OP_TAKE_ANIMATION:
+        return ObjectTakeAnimationBySlotId(memory, cpu);
     case OBJECT_OP_19:
     case OBJECT_OP_8E:
         return ObjectOp198E(memory, cpu, handler);
-    case OBJECT_OP_26:
-        return ObjectOp26(memory, cpu, handler);
-    case OBJECT_OP_AX:
-        return ObjectOpAX(memory, cpu, handler);
+    case OBJECT_OP_SET_ANIMATION:
+        return ObjectSetAnimation(memory, cpu, handler);
+    case OBJECT_OP_ANIMATION_FROM_OPERAND:
+        return ObjectSetAnimationFromOperand(memory, cpu, handler);
     case OBJECT_OP_6X_SPAWN_CHILD:
         return ObjectOp6XSpawnChild(memory, cpu);
-    case OBJECT_OP_85:
-        return ObjectOp85(memory, cpu);
-    case OBJECT_OP_8A:
-        return ObjectOp8A(memory, cpu);
-    case OBJECT_OP_EE:
-        return ObjectOpEE(memory, cpu);
+    case OBJECT_OP_SPAWN_CHILD_WITH_ANIMATION:
+        return ObjectSpawnChildWithAnimation(memory, cpu);
+    case OBJECT_OP_SPAWN_CHILD_AT_OFFSET:
+        return ObjectSpawnChildAtOffset(memory, cpu);
+    case OBJECT_OP_SPAWN_REGISTERED_CHILD:
+        return ObjectSpawnRegisteredChild(memory, cpu);
     case OBJECT_OP_0X_DESPAWN:
         return ObjectOpDespawn(memory, cpu);
-    case OBJECT_OP_14_SPIN_ZOOM:
-        return ObjectOp14(memory, cpu);
+    case OBJECT_OP_SPIN_ZOOM:
+        return ObjectSpinZoom(memory, cpu);
     default:
-        cpu->resume_pc = 0x830000u | handler;
+        cpu->resume_pc = OBJECT_PROGRAM_BANK | handler;
         return OBJECT_FLOW_BOUNDARY;
     }
 }
@@ -1734,10 +1819,10 @@ static uint8_t ObjectRunScript(
 
     PushDataBank(memory, cpu);                                 /* E0FC */
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdef0u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress((WRAM_OBJECT_SCRIPT + 2u), cpu->x)));
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fdeefu, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress((WRAM_OBJECT_SCRIPT + 1u), cpu->x)));
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SCRIPT, cpu->x)));
     TransferAToY(cpu);
@@ -1748,7 +1833,7 @@ static uint8_t ObjectRunScript(
 
         ++*dispatches;
         TransferDirectToA(cpu);                                /* E10F */
-        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
+        LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
         LsrA8(cpu);
         LsrA8(cpu);
         LsrA8(cpu);
@@ -1775,16 +1860,17 @@ Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
     result.dispatches = 0;
     SetIndexWidth(cpu, 0);                                     /* E03E */
     TransferDirectToA(cpu);
-    Write8(memory, 0x7fddacu, A8(cpu));
-    Write8(memory, 0x7fddadu, A8(cpu));
-    Write8(memory, AbsoluteIndexedAddress(cpu, 0x09a8u, 0), 0x00u);
-    LoadX16(cpu, 0x0000u);
+    Write8(memory, WRAM_UNK_7FDDAC, A8(cpu));
+    Write8(memory, (WRAM_UNK_7FDDAC + 1u), A8(cpu));
+    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E09A8, 0), 0x00u);
+    LoadX16(cpu, 0x00u);
     do {
         LoadAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);          /* E04F */
         BitImmediate8(cpu, 0x80u);
         if (!cpu->zero) {
-            const uint32_t flags = LongIndexedAddress(0x7fdb0cu, cpu->x);
-            const uint32_t blink = LongIndexedAddress(0x7fe386u, cpu->x);
+            const uint32_t flags = LongIndexedAddress(WRAM_OBJECT_FLAGS, cpu->x);
+            const uint32_t blink =
+                LongIndexedAddress(WRAM_OBJECT_BLINK_COUNTER, cpu->x);
             uint8_t animate = 0;
 
             LoadA8(cpu, Read8(memory, flags));                 /* E059 */
@@ -1802,9 +1888,9 @@ Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
                     LsrA8(cpu);
                     Or8(cpu, Read8(memory, blink));
                     Write8(memory, blink, A8(cpu));
-                    ToggleLong8(
-                        memory, cpu,
-                        LongIndexedAddress(0x7fe33eu, cpu->x), 0x80u);
+                    ToggleLong8(memory, cpu,
+                                LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x),
+                                0x80u);
                 }
             }
             LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);           /* E088 */
@@ -1815,7 +1901,7 @@ Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
                 if (!cpu->zero) {
                     LoadAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
                     LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0xffu));
-                    TestBitsAbsolute8(memory, cpu, 0x09a8u, 1);
+                    TestBitsAbsolute8(memory, cpu, WRAM_UNK_7E09A8, 1);
                 }
                 LoadAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);  /* E09F */
                 BitImmediate8(cpu, 0x08u);
@@ -1829,7 +1915,7 @@ Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
                 }
             }
             if (!animate) {
-                const uint32_t wait = LongIndexedAddress(0x7fdfaeu, cpu->x);
+                const uint32_t wait = LongIndexedAddress(WRAM_UNK_7FDFAE, cpu->x);
 
                 LoadA8(cpu, Read8(memory, wait));              /* E0AF */
                 DecrementA8(cpu);
@@ -1850,7 +1936,8 @@ Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
                     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT); /* E0C3 */
                 }
             } else {
-                const uint32_t step = LongIndexedAddress(0x7fdaecu, cpu->x);
+                const uint32_t step =
+                    LongIndexedAddress(WRAM_OBJECT_STEP_COUNTER, cpu->x);
 
                 LoadA8(cpu, Read8(memory, step));              /* E0C7 */
                 LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
@@ -1863,17 +1950,16 @@ Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
                     SimulateJslFrame(memory, cpu, 0x83u, 0xe0deu);
                     Lufia2ActorRecordOffsets(memory, cpu);
                     SimulateRtlFrame(memory, cpu);
-                    ToggleLong8(
-                        memory, cpu,
-                        LongIndexedAddress(0x7fdb2cu, cpu->x), 0x01u);
-                    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+                    ToggleLong8(memory, cpu,
+                                LongIndexedAddress(WRAM_OBJECT_FRAME, cpu->x), 0x01u);
+                    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
                     ObjectSetFrame(memory, cpu, 0xe0edu);      /* E0EB */
                     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
                 }
             }
         }
         IncrementX16(cpu);                                     /* E0F0 */
-        Compare16(cpu, cpu->x, 0x0020u);
+        Compare16(cpu, cpu->x, 0x20u);
     } while (!cpu->zero);
     SetIndexWidth(cpu, 1);                                     /* E0F9 */
     return result;

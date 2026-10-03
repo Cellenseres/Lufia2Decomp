@@ -66,7 +66,9 @@ developer had written the game logic.
 - Write small, well-named functions.
 - Return results as real return values or out parameters instead of leaving
   them in emulated registers or flags.
-- Prefer structured control flow over `goto` where it is equivalent.
+- Prefer structured control flow over `goto`. The sources contain none; a
+  branch that used to jump to a shared tail becomes a helper that returns
+  early, or a flag the shared code tests.
 - Keep comments short and about intent (why), not ROM-address banners.
 
 The CPU-helper dialect stays allowed for routines that are not converted yet.
@@ -115,6 +117,27 @@ A change is checked by:
 
 Commits that only rename, introduce constants or change comments must produce
 identical object code.
+
+## Naming
+
+Constants carry an area prefix and say what the code does with the address,
+not how it was found.
+
+- Catalogued WRAM fields are the `WRAM_*` constants of `src/system/wram.h`.
+  Fields that are not in the catalog yet are named in the area's shared header
+  (`event_script_internal.h`, `field_internal.h`, `battle_internal.h`,
+  `cave/wram.h`, `menu_sprite_slots.h`, ...) when two files use them, and in an
+  enum at the top of the file when only one does.
+- One address has one name. When the catalog already has a constant, an area
+  header refers to it instead of repeating the number.
+- Direct-page scratch is `DP_*` or a prefixed local enum, since the same byte
+  means different things in different routines.
+- A 24-bit form of a bank-relative name ends in `_LONG`, a table length in
+  `_COUNT`, and a ROM table or routine address starts with `ROM_` (ROM routines
+  that the battle code reaches by child call are `BATTLE_ROUTINE_*`).
+- A field whose purpose is not proven keeps the neutral `<AREA>_UNK_<ADDRESS>`
+  name. Return addresses of call sites and routine targets that are not
+  recovered yet stay literal.
 
 ## Slot views
 

@@ -1,22 +1,38 @@
 /* Glyph buffer and window row upload setup ($80:C56E, C784, C23D). */
-#include "core/cpu_internal.h"
-#include "lufia2/text.h"
-#include "text/text_internal.h"
-#include "actor/actor_internal.h"
-#include "system/wram.h"
+#include <stdbool.h>
 
-/* $80:BF6F: find an actor id, skipping flag $04. */
+#include "actor/actor_internal.h"
+#include "core/cpu_internal.h"
+#include "core/snes_registers.h"
+#include "core/wram_view.h"
+#include "lufia2/text.h"
+#include "system/dp_scratch.h"
+#include "system/wram.h"
+#include "text/text_internal.h"
+
+/* Slots in the actor tables. */
+enum { WINDOW_ACTOR_SLOTS = 40 };
+
+/* Actor state bit that excludes a slot from the search. */
+enum { ACTOR_STATE_EXCLUDED = 0x04 };
+
+/* Scratch for the id being looked up. */
+enum { DP_WINDOW_ACTOR_ID = 0x54 };
+
+/* $80:BF6F: slot of actor A; carry set when none. */
 static void TextFindWindowActor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreADirect8(memory, cpu, 0x54u);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    WramWrite(wram, DP_WINDOW_ACTOR_ID, A8(cpu));
     LoadX16(cpu, 0);
     for (;;) {
-        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-        And8(cpu, 4);
+        LoadA8(cpu, WramReadAt(wram, WRAM_ACTOR_STATE, cpu->x));
+        And8(cpu, ACTOR_STATE_EXCLUDED);
         if (cpu->zero) {
-            LoadAAbsolute8(memory, cpu, WRAM_ACTOR_ID, cpu->x);
-            Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x54u));
+            LoadA8(cpu, WramReadAt(wram, WRAM_ACTOR_ID, cpu->x));
+            Compare8(cpu, A8(cpu), WramRead(wram, DP_WINDOW_ACTOR_ID));
             if (cpu->zero) {
-                StoreXDirect16(memory, cpu, DP_ACTOR_SLOT);
+                WramWrite16(wram, DP_ACTOR_SLOT, cpu->x);
                 SimulateJslFrame(memory, cpu, 0x80u, 0xbf8fu);
                 Lufia2ActorRecordOffsets(memory, cpu);
                 SimulateRtlFrame(memory, cpu);
@@ -25,50 +41,71 @@ static void TextFindWindowActor(const Lufia2Memory *memory, Lufia2CpuState *cpu)
             }
         }
         IncrementX16(cpu);
-        Compare16(cpu, cpu->x, 0x28u);
-        if (cpu->zero) { cpu->carry = 1; return; }
+        Compare16(cpu, cpu->x, WINDOW_ACTOR_SLOTS);
+        if (cpu->zero) {
+            cpu->carry = 1;
+            return;
+        }
     }
 }
 
-/* $80:C557: packed coordinates to a tilemap offset. */
+/* Packed window coordinates and the row they turn into. */
+enum { DP_WINDOW_COORDINATES = 0x4e, DP_WINDOW_ROW_OFFSET = 0x51 };
+
+/* $80:C557: packed position to window tilemap byte offset. */
 static void TextWindowTileOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreADirect16(memory, cpu, 0x4eu);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    WramWrite16(wram, DP_WINDOW_COORDINATES, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     TransferDirectToA(cpu);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x4fu));
+    LoadA8(cpu, WramRead(wram, DP_WINDOW_COORDINATES + 1u));
     ExchangeAccumulatorBytes(cpu);
     SetAccumulatorWidth(cpu, 0);
-    LsrA16(cpu); LsrA16(cpu);
-    StoreADirect16(memory, cpu, 0x51u);
-    LoadADirect16(memory, cpu, 0x4eu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    WramWrite16(wram, DP_WINDOW_ROW_OFFSET, cpu->accumulator);
+    LoadA16(cpu, WramRead16(wram, DP_WINDOW_COORDINATES));
     And16(cpu, 0xffu);
     AslA16(cpu);
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x51u));
+    Add16Value(cpu, WramRead16(wram, DP_WINDOW_ROW_OFFSET));
 }
 
-/* $80:C52C: window border row. */
+/* Border drawing: mirror bit, row width, middle count. */
+enum {
+    TILE_FLIP_X = 0x4000,
+    WINDOW_TILEMAP_ROW_BYTES = 0x40,
+    DP_BORDER_MIDDLE_TILES = 0x63
+};
+
+/* $80:C52C: one window border row at tilemap offset X. */
 static void TextWindowBorderRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
     PushIndex(memory, cpu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1255u, 0));
-    StoreAAbsolute16(memory, cpu, 0x3000u, cpu->x);
-    IncrementX16(cpu); IncrementX16(cpu);
-    LoadY16(cpu, Read16Direct(memory, cpu, 0x63u));
-    IncrementA16(cpu); IncrementA16(cpu);
+    Add16Value(cpu, WramRead16(wram, TEXT_WINDOW_TILE_BASE));
+    WramWrite16At(wram, TEXT_WINDOW_TILEMAP, cpu->x, cpu->accumulator);
+    IncrementX16(cpu);
+    IncrementX16(cpu);
+    LoadY16(cpu, WramRead16(wram, DP_BORDER_MIDDLE_TILES));
+    IncrementA16(cpu);
+    IncrementA16(cpu);
     do {
-        StoreAAbsolute16(memory, cpu, 0x3000u, cpu->x);
+        WramWrite16At(wram, TEXT_WINDOW_TILEMAP, cpu->x, cpu->accumulator);
         LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 1u));
-        IncrementX16(cpu); IncrementX16(cpu);
+        IncrementX16(cpu);
+        IncrementX16(cpu);
         LoadY16(cpu, (uint16_t)(cpu->y - 1u));
     } while (!cpu->zero);
     And16(cpu, 0xfffeu);
     LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
     LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
-    Or16(cpu, 0x4000u);
-    StoreAAbsolute16(memory, cpu, 0x3000u, cpu->x);
+    Or16(cpu, TILE_FLIP_X);
+    WramWrite16At(wram, TEXT_WINDOW_TILEMAP, cpu->x, cpu->accumulator);
     PullAccumulator16(memory, cpu); /* PHX is deliberately consumed by PLA. */
     cpu->carry = 0;
-    Add16Value(cpu, 0x40u);
+    Add16Value(cpu, WINDOW_TILEMAP_ROW_BYTES);
     TransferAToX(cpu);
 }
 
@@ -80,7 +117,7 @@ static void TextWindowActorPosition(const Lufia2Memory *memory, Lufia2CpuState *
     SimulateRtlFrame(memory, cpu);
     LoadAAbsolute8(memory, cpu, 0x125cu, 0);
     AslA8(cpu); Adc8(cpu, 2);
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x)));
@@ -97,25 +134,38 @@ static void TextWindowActorPosition(const Lufia2Memory *memory, Lufia2CpuState *
     SetAccumulatorWidth(cpu, 1);
     StoreADirect8(memory, cpu, 0x5eu);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, 0x0692u, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, cpu->x);
     Compare8(cpu, A8(cpu), 4);
-    if (!cpu->zero) goto above;
-below:                                                       /* C38F */
-    Write8(memory, DirectAddress(cpu, 0x55u), 0);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x5eu));
-    LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-    StoreADirect8(memory, cpu, 0x66u);
-    cpu->carry = 0; Adc8(cpu, DirectByte(memory, cpu, 0x54u));
-    Compare8(cpu, A8(cpu), 0x1cu);
-    if (!cpu->carry) goto horizontal;
-above:                                                       /* C37F */
-    LoadA8(cpu, 0xffu); StoreADirect8(memory, cpu, 0x55u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x5eu));
-    cpu->carry = 1; Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
-    cpu->carry = 1; Sbc8(cpu, 2);
-    StoreADirect8(memory, cpu, 0x66u);
-    if (cpu->negative) goto below;
-horizontal:                                                  /* C39D */
+    {
+        /* Speech tail below for facing 4, else above; swaps. */
+        bool below = cpu->zero;
+
+        for (;;) {
+            if (below) {
+                Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0); /* C38F */
+                LoadA8(cpu, DirectByte(memory, cpu, 0x5eu));
+                LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+                StoreADirect8(memory, cpu, 0x66u);
+                cpu->carry = 0;
+                Adc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+                Compare8(cpu, A8(cpu), 0x1cu);
+                if (!cpu->carry)
+                    break;
+            }
+            LoadA8(cpu, 0xffu);
+            StoreADirect8(memory, cpu, DP_SCRATCH_B); /* C37F */
+            LoadA8(cpu, DirectByte(memory, cpu, 0x5eu));
+            cpu->carry = 1;
+            Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+            cpu->carry = 1;
+            Sbc8(cpu, 2);
+            StoreADirect8(memory, cpu, 0x66u);
+            if (!cpu->negative)
+                break;
+            below = true;
+        }
+    }
+    /* C39D */
     LoadA8(cpu, DirectByte(memory, cpu, 0x63u));
     LsrA8(cpu);
     cpu->carry = 1; Sbc8(cpu, DirectByte(memory, cpu, 0x5du));
@@ -135,7 +185,7 @@ horizontal:                                                  /* C39D */
     }
     LoadA8(cpu, 0xe0u); StoreADirect8(memory, cpu, 0x5bu);
     DecrementDirect8(memory, cpu, 0x5eu);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
     if (!cpu->zero) {
         DecrementDirect8(memory, cpu, 0x5eu);
         DecrementDirect8(memory, cpu, 0x5eu);
@@ -152,7 +202,7 @@ horizontal:                                                  /* C39D */
         IncrementDirect8(memory, cpu, 0x5du);
         IncrementDirect8(memory, cpu, 0x5du);
     }
-    LoadAAbsolute8(memory, cpu, 0x0692u, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, cpu->x);
     Compare8(cpu, A8(cpu), 6);
     if (cpu->zero) {
         LoadA8(cpu, DirectByte(memory, cpu, 0x5du));
@@ -204,8 +254,8 @@ Lufia2ExecutionResult Lufia2TextBuildWindow(
     Write8(memory, DirectAddress(cpu, 0x64u), 0);
     LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
     LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-    StoreADirect8(memory, cpu, 0x56u);
-    Write8(memory, DirectAddress(cpu, 0x57u), 0);
+    StoreADirect8(memory, cpu, DP_SCRATCH_C);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_D), 0);
     TransferDirectToA(cpu); Write8(memory, 0x7fd08au, A8(cpu));
     LoadAAbsolute8(memory, cpu, 0x099cu, 0); And8(cpu, 4);
     if (!cpu->zero) IncrementDirect8(memory, cpu, 0x63u);
@@ -227,7 +277,8 @@ Lufia2ExecutionResult Lufia2TextBuildWindow(
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x7eu); PushAccumulator8(memory, cpu); PullDataBank(memory, cpu);
     TransferDirectToA(cpu); LoadAAbsolute8(memory, cpu, 0x125cu, 0);
-    SetAccumulatorWidth(cpu, 0); StoreADirect16(memory, cpu, 0x58u);
+    SetAccumulatorWidth(cpu, 0);
+    StoreADirect16(memory, cpu, DP_SCRATCH_E);
     LoadADirect16(memory, cpu, 0x60u);
     Write16Long(memory, 0x7fd085u, cpu->accumulator);
     TransferAToX(cpu);
@@ -265,7 +316,7 @@ Lufia2ExecutionResult Lufia2TextBuildWindow(
         IncrementA16(cpu); StoreAAbsolute16(memory, cpu, 0x3040u, cpu->x);
         PullAccumulator16(memory, cpu);
         cpu->carry = 0; Add16Value(cpu, 0x80u); TransferAToX(cpu);
-        Decrement16Direct(memory, cpu, 0x58u);
+        Decrement16Direct(memory, cpu, DP_SCRATCH_E);
     } while (!cpu->zero);
     LoadA16(cpu, 0xa0d6u);
     SimulateJsrFrame(memory, cpu, 0xc4a6u);
@@ -296,124 +347,180 @@ Lufia2ExecutionResult Lufia2TextBuildWindow(
     return ExecutionReturned(0x80c513u);
 }
 
+/* Glyph buffer fill words by glyph attribute. */
+#define TEXT_GLYPH_FILL_TABLE 0x80c7beu
+
+/* $80:C784: reset glyphs and fill the buffer. */
 Lufia2ExecutionResult Lufia2TextClearGlyphBuffer(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram caller = WramViewOfCaller(memory, cpu);
+    Lufia2Wram buffer;
+    uint16_t fill;
+
     Push8(memory, cpu, PackStatus(cpu));                       /* C784 */
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
-    Write16Absolute(memory, cpu, 0x09afu, 0);
-    Write16Absolute(memory, cpu, 0x09b3u, 0);
-    LoadA16(cpu, 0xd000u);
-    StoreAAbsolute16(memory, cpu, 0x09b1u, 0);
-    StoreAAbsolute16(memory, cpu, 0x1250u, 0);
+    WramWrite16(caller, TEXT_GLYPH, 0);
+    WramWrite16(caller, TEXT_GLYPH_STATE, 0);
+    LoadA16(cpu, TEXT_GLYPH_BUFFER);
+    WramWrite16(caller, TEXT_GLYPH_DESTINATION, cpu->accumulator);
+    WramWrite16(caller, TEXT_LINE_START, cpu->accumulator);
     PushDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x7eu);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
+    buffer = WramViewInBank(memory, cpu, cpu->data_bank);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Long(memory, 0x0009adu));
+    LoadA16(cpu, Read16Long(memory, TEXT_GLYPH_ATTRIBUTE));
     And16(cpu, 0x00ffu);
     AslA16(cpu);
     TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x80c7beu, cpu->x)));
-    LoadX16(cpu, 0x0ffcu);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(TEXT_GLYPH_FILL_TABLE, cpu->x)));
+    fill = cpu->accumulator;
+    LoadX16(cpu, TEXT_GLYPH_BUFFER_BYTES - 4u);
     do {                                                     /* C7AF */
-        StoreAAbsolute16(memory, cpu, 0xd000u, cpu->x);
-        StoreAAbsolute16(memory, cpu, 0xd002u, cpu->x);
-        LoadX16(cpu, (uint16_t)(cpu->x - 1u)); LoadX16(cpu, (uint16_t)(cpu->x - 1u));
-        LoadX16(cpu, (uint16_t)(cpu->x - 1u)); LoadX16(cpu, (uint16_t)(cpu->x - 1u));
+        WramWrite16At(buffer, TEXT_GLYPH_BUFFER, cpu->x, fill);
+        WramWrite16At(buffer, TEXT_GLYPH_BUFFER + 2u, cpu->x, fill);
+        LoadX16(cpu, (uint16_t)(cpu->x - 4u));
     } while (!cpu->negative);
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x80c7bdu);
 }
 
-/* $80:C5DD: write both tile rows, retaining the LSR carry for ADC. */
+/* Window row drawing scratch, attributes and row offsets. */
+enum {
+    DP_WINDOW_TILE = 0x54,
+    DP_WINDOW_TILEMAP_OFFSET = 0x56,
+    WINDOW_TILE_ATTRIBUTES = 0x2100,
+    WINDOW_ROW_ONE = TEXT_WINDOW_TILEMAP + 0x42,
+    WINDOW_ROW_TWO = TEXT_WINDOW_TILEMAP + 0x82,
+    WINDOW_UPLOAD_ROWS = TEXT_WINDOW_TILEMAP + 0x40,
+    WINDOW_CENTERED_FLAG = 0x0004
+};
+
+/* $80:C5DD: write the next two rows of window tiles. */
 static void TextWriteWindowRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram work = WramViewLong(memory);
+
     SetAccumulatorWidth(cpu, 1);
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, 0x7fd087u));
+    LoadA8(cpu, WramRead(work, TEXT_WINDOW_ROW_COUNT));
     ExchangeAccumulatorBytes(cpu);
     SetAccumulatorWidth(cpu, 0);
     LsrA16(cpu);
-    StoreADirect16(memory, cpu, 0x54u);
-    Add16Value(cpu, Read16Long(memory, 0x7fd085u));
+    WramWrite16(wram, DP_WINDOW_TILE, cpu->accumulator);
+    Add16Value(cpu, WramRead16(work, TEXT_WINDOW_ROW_ORIGIN));
     TransferAToX(cpu);
-    StoreADirect16(memory, cpu, 0x56u);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x099cu, 0));
-    cpu->zero = (cpu->accumulator & 4u) == 0;
+    WramWrite16(wram, DP_WINDOW_TILEMAP_OFFSET, cpu->accumulator);
+    LoadA16(cpu, WramRead16(wram, TEXT_WINDOW_STATE));
+    cpu->zero = (cpu->accumulator & WINDOW_CENTERED_FLAG) == 0;
     if (!cpu->zero) {
         IncrementX16(cpu);
         IncrementX16(cpu);
     }
-    LoadA16(cpu, Read16Long(memory, 0x7fd089u));
+    LoadA16(cpu, WramRead16(work, TEXT_WINDOW_ROW_WIDTH));
     And16(cpu, 0x00ffu);
     TransferAToY(cpu);
-    LoadADirect16(memory, cpu, 0x54u);
+    LoadADirect16(memory, cpu, DP_WINDOW_TILE);
     LsrA16(cpu);
-    Or16(cpu, 0x2100u);
-    StoreADirect16(memory, cpu, 0x54u);
+    Or16(cpu, WINDOW_TILE_ATTRIBUTES);
+    WramWrite16(wram, DP_WINDOW_TILE, cpu->accumulator);
     do {                                                     /* C60B */
-        Write16Long(memory, LongIndexedAddress(0x7e3042u, cpu->x), cpu->accumulator);
+        WramWrite16At(work, 0x7e0000u | WINDOW_ROW_ONE, cpu->x, cpu->accumulator);
         IncrementA16(cpu);
-        Write16Long(memory, LongIndexedAddress(0x7e3082u, cpu->x), cpu->accumulator);
+        WramWrite16At(work, 0x7e0000u | WINDOW_ROW_TWO, cpu->x, cpu->accumulator);
         IncrementA16(cpu);
-        IncrementX16(cpu); IncrementX16(cpu);
+        IncrementX16(cpu);
+        IncrementX16(cpu);
         LoadY16(cpu, (uint16_t)(cpu->y - 1u));
     } while (!cpu->zero);
     SetAccumulatorWidth(cpu, 1);
 }
 
+/* Window uploads: glyphs on channel 2, rows on 1. */
+enum {
+    WINDOW_TILE_CHANNEL = 2,
+    WINDOW_MAP_CHANNEL = 1,
+    DMA_MODE_WORD = 1,
+    DMA_VRAM_DATA = 0x18,
+    GLYPH_UPLOAD_BYTES = 0x0400,
+    GLYPH_VRAM_BASE = 0x1800,
+    MAP_UPLOAD_BYTES = 0x0080,
+    MAP_VRAM_BASE = 0x0820,
+    DMA_REQUEST = 0x40,
+    WORK_RAM_BANK = 0x7e
+};
+
+/* Window preparation: first upload size, BG3 scroll at -4. */
+enum {
+    WINDOW_FIRST_UPLOAD_BYTES = 0x0c00,
+    WINDOW_SCROLL_RESET = 0xfffc,
+    WINDOW_UPLOAD_FLAG = 0x08,
+    WINDOW_STATE_MASK = 0x10,
+    DP_WINDOW_UPLOAD_FLAGS = 0x74
+};
+
+#define WINDOW_VRAM_DESTINATION(channel) (0x0079u + 2u * (unsigned)(channel))
+#define WINDOW_UPLOAD_REQUEST(channel) (0x75u + (unsigned)(channel))
+
+/* $80:C56E: write two window rows and queue their uploads. */
 Lufia2ExecutionResult Lufia2TextQueueWindowRow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram work = WramViewLong(memory);
+
     Push8(memory, cpu, PackStatus(cpu));                       /* C56E */
     PushY(memory, cpu);
     SimulateJsrFrame(memory, cpu, 0xc572u);
     TextWriteWindowRow(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
-    LoadADirect16(memory, cpu, 0x54u);
+    LoadA16(cpu, WramRead16(wram, DP_WINDOW_TILE));
     And16(cpu, 0x00ffu);
-    AslA16(cpu); AslA16(cpu); AslA16(cpu);
-    StoreADirect16(memory, cpu, 0x54u);
     AslA16(cpu);
-    Add16Value(cpu, 0xd000u);
-    StoreAAbsolute16(memory, cpu, SNES_A1TL(2), 0);
-    LoadADirect16(memory, cpu, 0x54u);
-    Add16Value(cpu, 0x1800u);
-    StoreAAbsolute16(memory, cpu, 0x007du, 0);
-    LoadADirect16(memory, cpu, 0x56u);
+    AslA16(cpu);
+    AslA16(cpu);
+    WramWrite16(wram, DP_WINDOW_TILE, cpu->accumulator);
+    AslA16(cpu);
+    Add16Value(cpu, TEXT_GLYPH_BUFFER);
+    StoreAAbsolute16(memory, cpu, SNES_A1TL(WINDOW_TILE_CHANNEL), 0);
+    LoadA16(cpu, WramRead16(wram, DP_WINDOW_TILE));
+    Add16Value(cpu, GLYPH_VRAM_BASE);
+    StoreAAbsolute16(memory, cpu, WINDOW_VRAM_DESTINATION(WINDOW_TILE_CHANNEL), 0);
+    LoadA16(cpu, WramRead16(wram, DP_WINDOW_TILEMAP_OFFSET));
     cpu->carry = 0;
-    Add16Value(cpu, 0x3040u);
-    StoreAAbsolute16(memory, cpu, SNES_A1TL(1), 0);
-    LoadADirect16(memory, cpu, 0x56u);
+    Add16Value(cpu, WINDOW_UPLOAD_ROWS);
+    StoreAAbsolute16(memory, cpu, SNES_A1TL(WINDOW_MAP_CHANNEL), 0);
+    LoadA16(cpu, WramRead16(wram, DP_WINDOW_TILEMAP_OFFSET));
     LsrA16(cpu);
     cpu->carry = 0;
-    Add16Value(cpu, 0x0820u);
-    StoreAAbsolute16(memory, cpu, 0x007bu, 0);
+    Add16Value(cpu, MAP_VRAM_BASE);
+    StoreAAbsolute16(memory, cpu, WINDOW_VRAM_DESTINATION(WINDOW_MAP_CHANNEL), 0);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, 1);
-    StoreAAbsolute8(memory, cpu, SNES_DMAP(2), 0);
-    StoreAAbsolute8(memory, cpu, SNES_DMAP(1), 0);
-    LoadA8(cpu, 0x7eu);
-    StoreAAbsolute8(memory, cpu, SNES_A1B(2), 0);
-    LoadA8(cpu, 0x7eu);
-    StoreAAbsolute8(memory, cpu, SNES_A1B(1), 0);
-    LoadA8(cpu, 0x18u);
-    StoreAAbsolute8(memory, cpu, SNES_BBAD(2), 0);
-    StoreAAbsolute8(memory, cpu, SNES_BBAD(1), 0);
-    LoadX16(cpu, 0x0400u);
-    Write16Absolute(memory, cpu, SNES_DASL(2), cpu->x);
-    LoadX16(cpu, 0x0080u);
-    Write16Absolute(memory, cpu, SNES_DASL(1), cpu->x);
-    LoadA8(cpu, 0x42u);
-    StoreADirect8(memory, cpu, 0x76u);
-    LoadA8(cpu, 0x44u);
-    StoreADirect8(memory, cpu, 0x77u);
-    LoadA8(cpu, Read8(memory, 0x7fd087u));
+    LoadA8(cpu, DMA_MODE_WORD);
+    StoreAAbsolute8(memory, cpu, SNES_DMAP(WINDOW_TILE_CHANNEL), 0);
+    StoreAAbsolute8(memory, cpu, SNES_DMAP(WINDOW_MAP_CHANNEL), 0);
+    LoadA8(cpu, WORK_RAM_BANK);
+    StoreAAbsolute8(memory, cpu, SNES_A1B(WINDOW_TILE_CHANNEL), 0);
+    LoadA8(cpu, WORK_RAM_BANK);
+    StoreAAbsolute8(memory, cpu, SNES_A1B(WINDOW_MAP_CHANNEL), 0);
+    LoadA8(cpu, DMA_VRAM_DATA);
+    StoreAAbsolute8(memory, cpu, SNES_BBAD(WINDOW_TILE_CHANNEL), 0);
+    StoreAAbsolute8(memory, cpu, SNES_BBAD(WINDOW_MAP_CHANNEL), 0);
+    LoadX16(cpu, GLYPH_UPLOAD_BYTES);
+    Write16Absolute(memory, cpu, SNES_DASL(WINDOW_TILE_CHANNEL), cpu->x);
+    LoadX16(cpu, MAP_UPLOAD_BYTES);
+    Write16Absolute(memory, cpu, SNES_DASL(WINDOW_MAP_CHANNEL), cpu->x);
+    LoadA8(cpu, DMA_REQUEST | (1u << WINDOW_MAP_CHANNEL));
+    WramWrite(wram, WINDOW_UPLOAD_REQUEST(WINDOW_MAP_CHANNEL), A8(cpu));
+    LoadA8(cpu, DMA_REQUEST | (1u << WINDOW_TILE_CHANNEL));
+    WramWrite(wram, WINDOW_UPLOAD_REQUEST(WINDOW_TILE_CHANNEL), A8(cpu));
+    LoadA8(cpu, WramRead(work, TEXT_WINDOW_ROW_COUNT));
     LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-    Write8(memory, 0x7fd087u, A8(cpu));
+    WramWrite(work, TEXT_WINDOW_ROW_COUNT, A8(cpu));
     cpu->y = PullIndexValue(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x80c5dcu);
@@ -423,7 +530,7 @@ Lufia2ExecutionResult Lufia2TextQueueWindowRow(
 Lufia2ExecutionResult Lufia2TextPrepareWindow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, 1);
-    TestBitsAbsolute8(memory, cpu, 0x09a9u, 0);
+    TestBitsAbsolute8(memory, cpu, WRAM_UNK_7E09A9, 0);
     PushY(memory, cpu);
     SimulateJslFrame(memory, cpu, 0x80u, 0xc246u);
     Lufia2TextClearGlyphBuffer(memory, cpu);
@@ -435,32 +542,37 @@ Lufia2ExecutionResult Lufia2TextPrepareWindow(
         SimulateJsrFrame(memory, cpu, 0xc27bu);
         Lufia2TextBuildWindow(memory, cpu);
         SimulateRtsFrame(memory, cpu);
-        LoadA8(cpu, 0x10u); TestBitsAbsolute8(memory, cpu, 0x099cu, 1);
+        LoadA8(cpu, WINDOW_STATE_MASK);
+        TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 1);
         TransferDirectToA(cpu);
-        Write8(memory, 0x7fd087u, A8(cpu));
-        Write8(memory, 0x7fd088u, A8(cpu));
-        LoadX16(cpu, 0xfffcu); Write16Absolute(memory, cpu, 0x059eu, cpu->x);
+        Write8(memory, TEXT_WINDOW_ROW_COUNT, A8(cpu));
+        Write8(memory, TEXT_WINDOW_ROW_MARK, A8(cpu));
+        LoadX16(cpu, WINDOW_SCROLL_RESET);
+        Write16Absolute(memory, cpu, TEXT_BG3_VOFS_SHADOW, cpu->x);
         PullDataBank(memory, cpu);
         cpu->y = PullIndexValue(memory, cpu);
-        LoadA8(cpu, 1); TestBitsAbsolute8(memory, cpu, 0x09a9u, 1);
-        LoadA8(cpu, 8); StoreADirect8(memory, cpu, 0x74u);
-        LoadA8(cpu, 1); TestBitsAbsolute8(memory, cpu, 0x099cu, 1);
+        LoadA8(cpu, 1);
+        TestBitsAbsolute8(memory, cpu, WRAM_UNK_7E09A9, 1);
+        LoadA8(cpu, WINDOW_UPLOAD_FLAG);
+        StoreADirect8(memory, cpu, DP_WINDOW_UPLOAD_FLAGS);
+        LoadA8(cpu, 1);
+        TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 1);
         return ExecutionReturned(0x80c2a0u);
     }
-    LoadA8(cpu, 1);
+    LoadA8(cpu, DMA_MODE_WORD);
     StoreAAbsolute8(memory, cpu, SNES_DMAP(0), 0);
-    LoadX16(cpu, 0xd000u);
+    LoadX16(cpu, TEXT_GLYPH_BUFFER);
     Write16Absolute(memory, cpu, SNES_A1TL(0), cpu->x);
-    LoadX16(cpu, 0x1800u);
-    Write16Absolute(memory, cpu, 0x0079u, cpu->x);
-    LoadA8(cpu, 0x7eu);
+    LoadX16(cpu, GLYPH_VRAM_BASE);
+    Write16Absolute(memory, cpu, WINDOW_VRAM_DESTINATION(0), cpu->x);
+    LoadA8(cpu, WORK_RAM_BANK);
     StoreAAbsolute8(memory, cpu, SNES_A1B(0), 0);
-    LoadA8(cpu, 0x18u);
+    LoadA8(cpu, DMA_VRAM_DATA);
     StoreAAbsolute8(memory, cpu, SNES_BBAD(0), 0);
-    LoadX16(cpu, 0x0c00u);
+    LoadX16(cpu, WINDOW_FIRST_UPLOAD_BYTES);
     Write16Absolute(memory, cpu, SNES_DASL(0), cpu->x);
-    LoadA8(cpu, 0x41u);
-    StoreADirect8(memory, cpu, 0x75u);
+    LoadA8(cpu, DMA_REQUEST | 1u);
+    StoreADirect8(memory, cpu, WINDOW_UPLOAD_REQUEST(0));
     SimulateJsrFrame(memory, cpu, 0xc276u);
     return ExecutionHandoff(cpu, 0x80c2a1u);
 }

@@ -14,42 +14,115 @@ static bool StatusMessage(BattleContext *battle, uint16_t call_site, bool recove
     if (!BattleCall(battle, recovery ? 0x904au : 0x911fu, 0x8595feu, 3u))
         return false;
     if (recovery) {
-        if (!BattleCall(battle, 0x904eu, 0x8591a1u, 3u) ||
+        if (!BattleCall(battle, 0x904eu, BATTLE_ROUTINE_SYNC_STATUS_MARKERS, 3u) ||
             !BattleCall(battle, 0x9052u, 0x81bae8u, 3u))
             return false;
         OpRepWidths(cpu, 0x20u);
-        if (!BattleCall(battle, 0x9058u, 0x859bdau, 3u))
+        if (!BattleCall(battle, 0x9058u, BATTLE_ROUTINE_QUEUE_STATUS_SPRITES, 3u))
             return false;
         OpSepWidths(cpu, 0x20u);
-        if (!BattleCall(battle, 0x905eu, 0x858a2fu, 3u))
+        if (!BattleCall(battle, 0x905eu, BATTLE_ROUTINE_SPRITES, 3u))
             return false;
         OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, 0x0012f3u);
-        if (!BattleCall(battle, 0x9068u, 0x85ec81u, 3u))
+        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+        if (!BattleCall(battle, 0x9068u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return false;
     }
     OpLoadA(cpu, 0x2du);
     do {
         PushAccumulator8(memory, cpu);
-        if (!BattleCall(battle, recovery ? 0x906fu : 0x9126u, 0x858a2fu, 3u))
+        if (!BattleCall(battle, recovery ? 0x906fu : 0x9126u, BATTLE_ROUTINE_SPRITES,
+                        3u))
             return false;
         OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, 0x0012f3u);
-        if (!BattleCall(battle, recovery ? 0x9079u : 0x9130u, 0x85ec81u, 3u))
+        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+        if (!BattleCall(battle, recovery ? 0x9079u : 0x9130u,
+                        BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return false;
         LoadA8(cpu, Pull8(memory, cpu));
         OpDecA(cpu);
     } while (!cpu->zero);
     if (!BattleCall(battle, recovery ? 0x9081u : 0x9138u, 0x859671u, 3u) ||
-        !BattleCall(battle, recovery ? 0x9085u : 0x913cu, 0x858a2fu, 3u))
+        !BattleCall(battle, recovery ? 0x9085u : 0x913cu, BATTLE_ROUTINE_SPRITES, 3u))
         return false;
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(battle, recovery ? 0x908fu : 0x9146u, 0x85ec81u, 3u) ||
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    if (!BattleCall(battle, recovery ? 0x908fu : 0x9146u, BATTLE_ROUTINE_FRAME_INPUT,
+                    3u) ||
         !BattleCall(battle, recovery ? 0x9093u : 0x914au, 0x859abcu, 3u))
         return false;
     OpPullX(memory, cpu);
     SimulateRtsFrame(memory, cpu);
+    return true;
+}
+
+/* Each cured status gets its own roll and message. */
+static bool StatusCureRolls(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    static const struct {
+        uint8_t bit, phrase;
+        uint16_t slot_site, roll_site, name_site, phrase_site, message_site;
+    } cures[] = {
+        {0x20u, 1u, 0x8fc4u, 0x8fcbu, 0x8fdbu, 0x8fe1u, 0x8fe5u},
+        {0x10u, 3u, 0x8fefu, 0x8ff6u, 0x9006u, 0x900cu, 0x9010u},
+        {0x08u, 5u, 0x901au, 0x9021u, 0x9031u, 0x9037u, 0x903bu},
+    };
+    for (unsigned i = 0; i < 3u; ++i) {
+        /* Later BIT instructions deliberately use the child-returned A. */
+        OpBitValue(cpu, cures[i].bit);
+        if (cpu->zero)
+            continue;
+        OpTxy(cpu);
+        OpLda(memory, cpu, OpDp(cpu, 3u));
+        if (!BattleCall(battle, cures[i].slot_site, 0x81b2dbu, 3u))
+            return false;
+        OpTyx(cpu);
+        OpLoadA(cpu, 7u);
+        if (!BattleCall(battle, cures[i].roll_site, 0x808299u, 3u))
+            return false;
+        OpCmpValue(cpu, 4u);
+        if (!cpu->zero)
+            continue;
+        OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+        OpAndValue(cpu, (uint8_t)~cures[i].bit);
+        OpSta(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+        if (!BattleCall(battle, cures[i].name_site, 0x859150u, 3u))
+            return false;
+        OpLoadA(cpu, cures[i].phrase);
+        if (!BattleCall(battle, cures[i].phrase_site, 0x859173u, 3u) ||
+            !StatusMessage(battle, cures[i].message_site, true))
+            return false;
+    }
+    return true;
+}
+
+/* Timed status counts down and clears at zero. */
+static bool StatusExpireCountdown(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpBitValue(cpu, 0x80u);
+    if (cpu->zero)
+        return true;
+    OpTxy(cpu);
+    OpLda(memory, cpu, OpDp(cpu, 3u));
+    if (!BattleCall(battle, 0x90f0u, 0x81b2dbu, 3u))
+        return false;
+    OpLda(memory, cpu, OpAbsX(cpu, 6u));
+    OpDecA(cpu);
+    OpSta(memory, cpu, OpAbsX(cpu, 6u));
+    if (!cpu->zero)
+        return true;
+    OpTyx(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+    OpAndValue(cpu, 0x7fu);
+    OpSta(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+    if (!BattleCall(battle, 0x9106u, 0x859150u, 3u))
+        return false;
+    OpLoadA(cpu, 6u);
+    if (!BattleCall(battle, 0x910cu, 0x859173u, 3u) ||
+        !StatusMessage(battle, 0x9110u, false))
+        return false;
     return true;
 }
 
@@ -75,72 +148,13 @@ static bool StatusTarget(BattleContext *battle, uint16_t call_site, bool recover
     if (!BattleCall(battle, recovery ? 0x8fa7u : 0x90d9u, 0x81b2b5u, 3u))
         return false;
     OpCpx(cpu, 0u);
-    if (cpu->zero)
-        goto returned;
-    OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-    OpBitValue(cpu, 4u);
-    if (!cpu->zero)
-        goto returned;
-    if (recovery) {
-        static const struct {
-            uint8_t bit, phrase;
-            uint16_t slot_site, roll_site, name_site, phrase_site, message_site;
-        } cures[] = {
-            {0x20u, 1u, 0x8fc4u, 0x8fcbu, 0x8fdbu, 0x8fe1u, 0x8fe5u},
-            {0x10u, 3u, 0x8fefu, 0x8ff6u, 0x9006u, 0x900cu, 0x9010u},
-            {0x08u, 5u, 0x901au, 0x9021u, 0x9031u, 0x9037u, 0x903bu},
-        };
-        for (unsigned i = 0; i < 3u; ++i) {
-            /* Later BIT instructions deliberately use the child-returned A. */
-            OpBitValue(cpu, cures[i].bit);
-            if (cpu->zero)
-                continue;
-            OpTxy(cpu);
-            OpLda(memory, cpu, OpDp(cpu, 3u));
-            if (!BattleCall(battle, cures[i].slot_site, 0x81b2dbu, 3u))
-                return false;
-            OpTyx(cpu);
-            OpLoadA(cpu, 7u);
-            if (!BattleCall(battle, cures[i].roll_site, 0x808299u, 3u))
-                return false;
-            OpCmpValue(cpu, 4u);
-            if (!cpu->zero)
-                continue;
-            OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-            OpAndValue(cpu, (uint8_t)~cures[i].bit);
-            OpSta(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-            if (!BattleCall(battle, cures[i].name_site, 0x859150u, 3u))
-                return false;
-            OpLoadA(cpu, cures[i].phrase);
-            if (!BattleCall(battle, cures[i].phrase_site, 0x859173u, 3u) ||
-                !StatusMessage(battle, cures[i].message_site, true))
-                return false;
-        }
-    } else {
-        OpBitValue(cpu, 0x80u);
-        if (cpu->zero)
-            goto returned;
-        OpTxy(cpu);
-        OpLda(memory, cpu, OpDp(cpu, 3u));
-        if (!BattleCall(battle, 0x90f0u, 0x81b2dbu, 3u))
-            return false;
-        OpLda(memory, cpu, OpAbsX(cpu, 6u));
-        OpDecA(cpu);
-        OpSta(memory, cpu, OpAbsX(cpu, 6u));
-        if (!cpu->zero)
-            goto returned;
-        OpTyx(cpu);
+    if (!cpu->zero) {
         OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-        OpAndValue(cpu, 0x7fu);
-        OpSta(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-        if (!BattleCall(battle, 0x9106u, 0x859150u, 3u))
-            return false;
-        OpLoadA(cpu, 6u);
-        if (!BattleCall(battle, 0x910cu, 0x859173u, 3u) ||
-            !StatusMessage(battle, 0x9110u, false))
+        OpBitValue(cpu, 4u);
+        if (cpu->zero &&
+            !(recovery ? StatusCureRolls(battle) : StatusExpireCountdown(battle)))
             return false;
     }
-returned:
     SimulateRtsFrame(memory, cpu);
     return true;
 }

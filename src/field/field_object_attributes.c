@@ -61,48 +61,63 @@ static Lufia2ExecutionResult LocateObjectAttributeRegion(
     return ExecutionReturned(0x838cdcu);
 }
 
+/* Object layer tile words: tile index and attribute bits. */
+enum {
+    OBJECT_TILE_PLANE = 0x7f0000,
+    OBJECT_TILE_HIGH_BITS = 0x03,
+    OBJECT_TILE_PALETTE_MASK = 0x0c,
+    OBJECT_ATTRIBUTE_KEEP_MASK = 0x45,
+    OBJECT_CATALOG_HIGH_NIBBLE = 0xf0,
+};
+
+/* Class bits of a cell attribute from its catalog entry. */
+static uint8_t ObjectCellClass(uint8_t entry) {
+    if (entry & OBJECT_CATALOG_HIGH_NIBBLE)
+        return 0x08;
+    if (entry == 8u)
+        return 0x02;
+    if (entry == 9u)
+        return 0x80;
+    return 0x00;
+}
+
+/* Rebuild the attribute at DB:Y for tile $7F:X, advance both. */
 static void WriteObjectCellAttributes(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const uint32_t tile_word = LongIndexedAddress(OBJECT_TILE_PLANE, cpu->x);
+    const uint16_t cell = cpu->y;
+    uint8_t tile_high;
+    uint8_t tile_low;
+    uint16_t tile;
+    uint8_t entry_class;
+    uint8_t attribute;
+
     PushY(memory, cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7f0001u));
-    OpAndValue(cpu, 3u);
-    ExchangeAccumulatorBytes(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7f0000u));
-    OpTay(cpu);
-    OpStz(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_CLASS_BITS));
-    OpLda(memory, cpu,
-        DirectLongIndirectY(memory, cpu, OBJECT_ATTRIBUTE_CATALOG));
-    OpBitValue(cpu, 0xf0u);
-    if (!cpu->zero) {
-        OpLoadA(cpu, 8u);
-        OpSta(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_CLASS_BITS));
-    } else {
-        OpCmpValue(cpu, 8u);
-        if (cpu->zero) {
-            OpLoadA(cpu, 2u);
-            OpSta(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_CLASS_BITS));
-        } else {
-            OpCmpValue(cpu, 9u);
-            if (cpu->zero) {
-                OpLoadA(cpu, 0x80u);
-                OpSta(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_CLASS_BITS));
-            }
-        }
-    }
-    OpPullY(memory, cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7f0001u));
-    OpAndValue(cpu, 0x0cu);
-    OpAslA(cpu);
-    OpAslA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_TILE_BITS));
-    OpLda(memory, cpu, OpAbsY(cpu, 0u));
-    OpAndValue(cpu, 0x45u);
-    OpOra(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_TILE_BITS));
-    OpOra(memory, cpu, OpDp(cpu, OBJECT_ATTRIBUTE_CLASS_BITS));
-    OpSta(memory, cpu, OpAbsY(cpu, 0u));
-    OpInx(cpu);
-    OpInx(cpu);
-    OpIny(cpu);
+    tile_high = Read8(memory, tile_word + 1u);
+    tile_low = Read8(memory, tile_word);
+    tile = (uint16_t)(((tile_high & OBJECT_TILE_HIGH_BITS) << 8) | tile_low);
+    cpu->y = tile;
+    Write8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_CLASS_BITS), 0u);
+    entry_class = ObjectCellClass(
+        Read8(memory, DirectLongIndirectY(memory, cpu, OBJECT_ATTRIBUTE_CATALOG)));
+    if (entry_class)
+        Write8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_CLASS_BITS), entry_class);
+
+    cpu->y = PullIndexValue(memory, cpu);
+    Write8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_TILE_BITS),
+           (uint8_t)((Read8(memory, tile_word + 1u) & OBJECT_TILE_PALETTE_MASK) << 2));
+    attribute = Read8(memory, AbsoluteIndexedAddress(cpu, 0u, cell));
+    attribute &= OBJECT_ATTRIBUTE_KEEP_MASK;
+    attribute |= Read8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_TILE_BITS));
+    attribute |= Read8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_CLASS_BITS));
+    Write8(memory, AbsoluteIndexedAddress(cpu, 0u, cell), attribute);
+
+    cpu->accumulator =
+        (uint16_t)(((tile_high & OBJECT_TILE_HIGH_BITS) << 8) | attribute);
+    cpu->x = (uint16_t)(cpu->x + 2u);
+    cpu->y = (uint16_t)(cell + 1u);
+    SetNz16(cpu, cpu->y);
+    cpu->carry = 0;
 }
 
 Lufia2ExecutionResult Lufia2FieldRefreshObjectAttributes(

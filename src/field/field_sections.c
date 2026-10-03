@@ -5,10 +5,10 @@
 #include "core/wram_view.h"
 #include "field/field_internal.h"
 #include "lufia2/system.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
-/* Section table in bank $7F, one slot per section (parallel arrays of 16-bit
- * entries; the byte-sized values keep a zero high byte). */
+/* Section table in bank $7F, one slot per section. */
 enum {
     SECTION_RECORD = 0xd000u,         /* address of the section record */
     SECTION_ATTRIBUTE_DATA = 0xd008u, /* address of the attribute cells */
@@ -29,7 +29,7 @@ enum {
     SECTION_DP_PACKED = 0x54u
 };
 
-/* Byte or word of a section record, addressed through the data bank. */
+/* Section record byte or word via the data bank. */
 static uint8_t SectionByte(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
                            uint16_t record, uint16_t offset) {
     return Read8(memory, AbsoluteIndexedAddress(cpu, record, offset));
@@ -40,16 +40,13 @@ static uint16_t SectionWord(const Lufia2Memory *memory, const Lufia2CpuState *cp
     return Read16AbsoluteIndexed(memory, cpu, record, offset);
 }
 
-/* The attribute bits (4-5) of the cell that starts at offset `cell`. */
+/* Attribute bits 4-5 of the cell at offset cell. */
 static uint8_t SectionAttributeBits(const Lufia2Memory *memory,
                                     const Lufia2CpuState *cpu, uint16_t cell) {
     return SectionByte(memory, cpu, 1u, cell) & 0x30u;
 }
 
-/* Read the sections of a map header at the pointer in $5D into the section
- * table at $7F:D000. A record is a word, the width and height in cells, and
- * two bytes of attributes per cell; the pointer ends up behind the last
- * record. Entered with 8-bit A. */
+/* Read the map header's sections into $7F:D000. */
 Lufia2ExecutionResult Lufia2FieldReadSections(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -107,9 +104,7 @@ Lufia2ExecutionResult Lufia2FieldReadSections(
     return ExecutionReturned(0x80ec17u);
 }
 
-/* Pack the two attribute bits (4-5) of every cell of section $05AA, four cells
- * to a byte, into $7F:C000. The cells are two bytes each; the first of a group
- * ends up in the low bits. Entered with 8-bit A and 16-bit indexes. */
+/* Pack section $05AA's attribute bits into $7F:C000. */
 Lufia2ExecutionResult Lufia2FieldPackSectionAttributes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -152,16 +147,14 @@ Lufia2ExecutionResult Lufia2FieldPackSectionAttributes(
         Compare16(cpu, group, WramRead16(wram, SECTION_DP_COUNT));
     } while (!cpu->zero);
 
-    /* Exit registers: the last packed byte in A, the byte count in Y. */
+    /* Exit: last packed byte in A, byte count in Y. */
     cpu->accumulator = (uint16_t)((groups & 0xff00u) | packed);
     cpu->x = cell;
     cpu->y = group;
     return ExecutionReturned(0x80ec77u);
 }
 
-/* Publish the width and height of section $05AA as words at $05B9 and $05BB
- * (the high bytes are cleared with the low byte of the direct page, which is
- * zero). */
+/* Publish section $05AA's size at $05B9 and $05BB. */
 Lufia2ExecutionResult Lufia2FieldSectionSize(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -197,7 +190,7 @@ static void FieldAdvanceDestination(
     OpRepWidths(cpu, 0x20u);                                         /* ECF2 */
     OpLda(memory, cpu, OpDp(cpu, 0x2du));
     cpu->carry = 0;
-    OpAdc(memory, cpu, OpDp(cpu, 0x58u));
+    OpAdc(memory, cpu, OpDp(cpu, DP_SCRATCH_E));
     OpSta(memory, cpu, OpDp(cpu, 0x2du));
     OpSepWidths(cpu, 0x20u);
     SimulateRtsFrame(memory, cpu);                             /* ECFD */
@@ -219,7 +212,7 @@ static void FieldRelativeWord(
 Lufia2ExecutionResult Lufia2FieldDecompressMapData(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));                      /* EC98 */
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A)); /* EC98 */
     OpLda(memory, cpu, OpDp(cpu, 0x2du));
     OpSta(memory, cpu, 0x7fd03au);
     OpSta(memory, cpu, OpDp(cpu, 0x60u));
@@ -244,7 +237,7 @@ Lufia2ExecutionResult Lufia2FieldDecompressMapData(
         OpRepWidths(cpu, 0x20u);
         cpu->carry = 0;
         OpAdcValue(cpu, 0x0166u);
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));
+        OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
         OpLda(memory, cpu, OpDp(cpu, 0x2du));
         OpSta(memory, cpu, OpDp(cpu, 0x60u));
         cpu->carry = 0;

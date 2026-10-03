@@ -8,7 +8,7 @@ Lufia2ExecutionResult Lufia2BattleResultWindowPrepare(const Lufia2Memory *memory
     BattleContext battle =
         BattleContextCreate(memory, cpu, child, child_context, 0x81u);
 
-    if (!BattleCall(&battle, 0xdd7fu, 0x85ec81u, 3u))
+    if (!BattleCall(&battle, 0xdd7fu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return BattleChildUnwound(&battle);
     OpStz(memory, cpu, OpDp(cpu, 0x1eu));
     OpLdx(cpu, 0x151fu);
@@ -17,7 +17,7 @@ Lufia2ExecutionResult Lufia2BattleResultWindowPrepare(const Lufia2Memory *memory
     OpWriteX(memory, cpu, OpAbs(cpu, 0x1249u), cpu->x);
     OpLoadA(cpu, 1u);
     OpSta(memory, cpu, OpAbs(cpu, 0x15b3u));
-    if (!BattleCall(&battle, 0xdd96u, 0x81c2fbu, 2u))
+    if (!BattleCall(&battle, 0xdd96u, BATTLE_ROUTINE_CLEAR_WINDOW_TILEMAP, 2u))
         return BattleChildUnwound(&battle);
     PushDataBank(memory, cpu);
     Push8(memory, cpu, cpu->program_bank);
@@ -51,7 +51,7 @@ Lufia2ExecutionResult Lufia2BattleResultWindowPrepare(const Lufia2Memory *memory
     if (!BattleCall(&battle, 0xdddcu, 0x859b67u, 3u))
         return BattleChildUnwound(&battle);
     OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xdde2u, 0x85ec81u, 3u))
+    if (!BattleCall(&battle, 0xdde2u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81dde6u);
 }
@@ -147,7 +147,7 @@ Lufia2ExecutionResult Lufia2BattleResultWindowScroll(const Lufia2Memory *memory,
         if (cpu->zero)
             break;
         PushAccumulator8(memory, cpu);
-        if (!BattleCall(&battle, 0xde8fu, 0x85ec81u, 3u))
+        if (!BattleCall(&battle, 0xde8fu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return BattleChildUnwound(&battle);
         LoadA8(cpu, Pull8(memory, cpu));
         OpIncA(cpu);
@@ -164,9 +164,9 @@ Lufia2ExecutionResult Lufia2BattleResultWindowWait(const Lufia2Memory *memory,
         BattleContextCreate(memory, cpu, child, child_context, 0x81u);
 
     do {
-        if (!BattleCall(&battle, 0xde9eu, 0x85ec81u, 3u))
+        if (!BattleCall(&battle, 0xde9eu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return BattleChildUnwound(&battle);
-        OpLda(memory, cpu, OpDp(cpu, 0xddu));
+        OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
         OpBitValue(cpu, 0xa0u);
     } while (cpu->zero);
     return ExecutionReturned(0x81dea8u);

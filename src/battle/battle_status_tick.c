@@ -1,34 +1,11 @@
 #include "battle/battle_internal.h"
 #include "core/snes_registers.h"
+#include "system/dp_scratch.h"
 
-/* $81:C652: apply the status-bit-1 HP effect to the staged target. */
-static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
+/* Apply tick damage and queue its presentation. */
+static bool StatusTickApply(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
-    SimulateJsrFrame(memory, cpu, (uint16_t)(call_site + 2u));
-    OpLda(memory, cpu, OpDp(cpu, 0u));
-    OpOra(memory, cpu, OpDp(cpu, 1u));
-    OpSta(memory, cpu, OpDp(cpu, 3u));
-    if (!BattleCall(battle, 0xc658u, 0x85d9c9u, 3u))
-        return false;
-    OpWriteX(memory, cpu, OpAbs(cpu, SNES_WMADDL), cpu->x);
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
-    OpLdx(cpu, 0x1eu);
-    do {
-        OpStz(memory, cpu, OpAbs(cpu, SNES_WMDATA));
-        OpDex(cpu);
-    } while (!cpu->zero);
-    OpLda(memory, cpu, OpDp(cpu, 3u));
-    if (!BattleCall(battle, 0xc66fu, 0x81b2b5u, 3u))
-        return false;
-    OpCpx(cpu, 0u);
-    if (cpu->zero)
-        goto returned;
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
-    OpBitValue(cpu, 1u);
-    if (cpu->zero)
-        goto returned;
     OpTxy(cpu);
     OpLda(memory, cpu, OpDp(cpu, 3u));
     if (!BattleCall(battle, 0xc688u, 0x81b2dbu, 3u))
@@ -49,18 +26,18 @@ static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
     TransferDirectToA(cpu);
     OpAdc(memory, cpu, OpAbs(cpu, SNES_RDDIVL));
     OpPushX(memory, cpu);
-    if (!BattleCall(battle, 0xc6adu, 0x85dceau, 3u))
+    if (!BattleCall(battle, 0xc6adu, BATTLE_ROUTINE_RANDOM_FRACTION, 3u))
         return false;
     OpPullX(memory, cpu);
     OpAslA(cpu);
-    OpAdc(memory, cpu, OpDp(cpu, 0x54u));
+    OpAdc(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpLsrA(cpu);
     if (cpu->zero)
         OpIncA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpLda(memory, cpu, OpAbsX(cpu, 0x11u));
     cpu->carry = true;
-    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, 0x54u)));
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, DP_SCRATCH_A)));
     if (cpu->carry && !cpu->zero) {
         OpSta(memory, cpu, OpAbsX(cpu, 0x11u));
         OpSepWidths(cpu, 0x20u);
@@ -85,13 +62,14 @@ static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
             OpAdc(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EXPERIENCE_REWARD));
             OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EXPERIENCE_REWARD));
             if (cpu->carry)
-                OpStepMem(memory, cpu, OpAbs(cpu, 0x1607u), 1);
+                OpStepMem(memory, cpu, OpAbs(cpu, (WRAM_BATTLE_EXPERIENCE_REWARD + 2u)),
+                          1);
             OpLda(memory, cpu, OpAbs(cpu, 0x09feu));
             cpu->carry = false;
             OpAdc(memory, cpu, OpAbs(cpu, WRAM_BATTLE_GOLD_REWARD));
             OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_GOLD_REWARD));
             if (cpu->carry)
-                OpStepMem(memory, cpu, OpAbs(cpu, 0x160au), 1);
+                OpStepMem(memory, cpu, OpAbs(cpu, (WRAM_BATTLE_GOLD_REWARD + 2u)), 1);
             OpSepWidths(cpu, 0x20u);
         } else {
             OpStz(memory, cpu, OpAbsX(cpu, 0xbcu));
@@ -105,13 +83,43 @@ static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
     OpLoadA(cpu, 4u);
     OpSta(memory, cpu, OpLongX(cpu, 0x7f0002u));
     OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpDp(cpu, 0x54u));
+    OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffffu));
     OpIncA(cpu);
     OpSta(memory, cpu, OpLongX(cpu, 0x7f0004u));
     OpSepWidths(cpu, 0x20u);
     OpStepMem(memory, cpu, OpDp(cpu, 2u), 1);
-returned:
+    return true;
+}
+
+/* $81:C652: apply the status-bit-1 HP effect to the staged target. */
+static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    SimulateJsrFrame(memory, cpu, (uint16_t)(call_site + 2u));
+    OpLda(memory, cpu, OpDp(cpu, 0u));
+    OpOra(memory, cpu, OpDp(cpu, 1u));
+    OpSta(memory, cpu, OpDp(cpu, 3u));
+    if (!BattleCall(battle, 0xc658u, 0x85d9c9u, 3u))
+        return false;
+    OpWriteX(memory, cpu, OpAbs(cpu, SNES_WMADDL), cpu->x);
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
+    OpLdx(cpu, 0x1eu);
+    do {
+        OpStz(memory, cpu, OpAbs(cpu, SNES_WMDATA));
+        OpDex(cpu);
+    } while (!cpu->zero);
+    OpLda(memory, cpu, OpDp(cpu, 3u));
+    if (!BattleCall(battle, 0xc66fu, 0x81b2b5u, 3u))
+        return false;
+    OpCpx(cpu, 0u);
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
+        OpBitValue(cpu, 1u);
+        if (!cpu->zero && !StatusTickApply(battle))
+            return false;
+    }
     SimulateRtsFrame(memory, cpu);
     return true;
 }
@@ -161,7 +169,7 @@ Lufia2ExecutionResult Lufia2BattleStatusTick(
         OpLoadA(cpu, 0xdcu);
         if (!BattleCall(&battle, 0xc644u, 0x81895eu, 3u) ||
             !BattleCall(&battle, 0xc648u, 0x859671u, 3u) ||
-            !BattleCall(&battle, 0xc64cu, 0x85ec81u, 3u))
+            !BattleCall(&battle, 0xc64cu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return BattleChildUnwound(&battle);
     }
     PullDataBank(memory, cpu);

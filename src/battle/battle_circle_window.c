@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
@@ -91,7 +92,7 @@ Lufia2ExecutionResult Lufia2BattleCircleWindow(
         return ExecutionHandoff(cpu, 0x85b208u);
     PushDataBank(memory, cpu);
     PushStackWord(memory, cpu, cpu->x);
-    SelectDataBank(memory, cpu, WINDOW_BANK);
+    OpSetDataBank(memory, cpu, WINDOW_BANK);
     wram = WramViewInBank(memory, cpu, WINDOW_BANK);
     high_byte = (uint8_t)(cpu->direct_page >> 8);
     radius = WramRead(wram, WINDOW_RADIUS);

@@ -5,6 +5,9 @@
 
 #include "lufia2/execution.h"
 
+/* $80:84BF: quarter-turn sine table. */
+#define ROM_QUARTER_SINE_TABLE 0x8084bfu
+
 void Lufia2CallRandomScale(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

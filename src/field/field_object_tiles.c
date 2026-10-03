@@ -24,6 +24,7 @@ enum {
     OBJECT_PENDING_CELL = 0x63,
 };
 
+/* Run target via the pushed-child hook; 0 when unwound. */
 static uint8_t FieldTileChild(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context,
@@ -36,12 +37,14 @@ static uint8_t FieldTileChild(
     return child(context, cpu, target, site, frame_size);
 }
 
+/* Result for a caller whose child unwound past it. */
 static Lufia2ExecutionResult FieldTileUnwound(uint32_t site) {
     Lufia2ExecutionResult result = ExecutionReturned(site);
     result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
     return result;
 }
 
+/* Rewrite cell X's attribute with the $54/$55 masks. */
 Lufia2ExecutionResult Lufia2FieldMarkObjectAttributes(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -86,6 +89,7 @@ Lufia2ExecutionResult Lufia2FieldMarkObjectAttributes(
     return ExecutionReturned(0x83f859u);
 }
 
+/* Write back the tile words saved for the pending object. */
 Lufia2ExecutionResult Lufia2FieldRestoreObjectTiles(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -127,6 +131,7 @@ Lufia2ExecutionResult Lufia2FieldRestoreObjectTiles(
     return ExecutionReturned(0x83f783u);
 }
 
+/* Queue a column upload for the object's rectangle. */
 Lufia2ExecutionResult Lufia2FieldQueueObjectRedraw(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -167,8 +172,7 @@ Lufia2ExecutionResult Lufia2FieldQueueObjectRedraw(
     return ExecutionReturned(0x83f97bu);
 }
 
-/* A map cell word: the low ten bits select the metatile, the rest are
- * attribute bits. */
+/* Map cell word: low ten bits metatile, rest attributes. */
 enum {
     CELL_METATILE_MASK = 0x03ff,
     CELL_ATTRIBUTE_MASK = 0xfc00,
@@ -176,11 +180,10 @@ enum {
     DP_CELL_METATILE = 0x5a,
 };
 
-/* Cells of every layer; offsets into them are 16-bit and wrap. */
+/* Cells of every layer; 16-bit offsets that wrap. */
 #define MAP_LAYER_CELLS 0x7f0000u
 
-/* The cell at offset Y in the data bank takes the metatile number of the cell
- * at offset X and keeps its own attribute bits. */
+/* Cell Y takes cell X's metatile, keeps its attributes. */
 Lufia2ExecutionResult Lufia2FieldCopyCellTile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -203,12 +206,11 @@ enum {
     DP_CLEAR_ROW_SKIP = 0x54,
     DP_CLEAR_COLUMNS_LEFT = 0x56,
     DP_CLEAR_ROWS_LEFT = 0x58,
-    /* A rectangle this large is left to the interpreter at its loop PC. */
+    /* Rectangles this large go to the interpreter. */
     CLEAR_CELL_LIMIT = 262144,
 };
 
-/* The original keeps the running offset in A, so the carry and overflow of
- * the last sum stay visible. */
+/* Offset kept in A keeps the last sum flags. */
 static uint16_t AddKeepingFlags(Lufia2CpuState *cpu, uint16_t base, uint16_t addend) {
     cpu->accumulator = base;
     cpu->carry = 0;
@@ -216,7 +218,7 @@ static uint16_t AddKeepingFlags(Lufia2CpuState *cpu, uint16_t base, uint16_t add
     return cpu->accumulator;
 }
 
-/* Registers of the clearing loop as it stood when the cell limit was hit. */
+/* Clear loop registers at the cell limit. */
 static Lufia2ExecutionResult HandOffClearLoop(Lufia2CpuState *cpu, uint16_t cell,
                                               uint16_t columns_left, bool row_start,
                                               uint16_t last_cell) {
@@ -230,8 +232,7 @@ static Lufia2ExecutionResult HandOffClearLoop(Lufia2CpuState *cpu, uint16_t cell
     return ExecutionHandoff(cpu, 0x838aacu);
 }
 
-/* Removes the metatile numbers from the cells under the pending object's
- * rectangle. A = layer byte offset. */
+/* Clear metatile numbers under the pending object; A = layer. */
 Lufia2ExecutionResult Lufia2FieldClearObjectTileIds(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -259,8 +260,7 @@ Lufia2ExecutionResult Lufia2FieldClearObjectTileIds(
     TransferAToX(cpu);
     cell = cpu->x;
 
-    /* Cells to skip at the end of a row, as a byte offset. The section width
-     * is read through the caller's data bank. */
+    /* Row skip in bytes; width read via the caller's DB. */
     SetAccumulatorWidth(cpu, 1);
     TransferDirectToA(cpu);
     LoadA8(cpu, WramRead(wram, WRAM_FIELD_SECTION_WIDTH));
@@ -273,7 +273,7 @@ Lufia2ExecutionResult Lufia2FieldClearObjectTileIds(
     WramWrite16(wram, DP_CLEAR_ROWS_LEFT, rows_left);
 
     do {
-        /* Clearing can overwrite the width byte, so it is read for every row. */
+        /* Clearing may overwrite the width; reread it per row. */
         bool row_start = true;
 
         columns_left = WramRead(wram, WRAM_FIELD_OBJECT_WIDTH);
@@ -298,6 +298,7 @@ Lufia2ExecutionResult Lufia2FieldClearObjectTileIds(
     return ExecutionReturned(0x838ac8u);
 }
 
+/* Place the pending object and save the tiles beneath it. */
 Lufia2ExecutionResult Lufia2FieldPlacePendingObject(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {

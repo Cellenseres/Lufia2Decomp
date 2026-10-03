@@ -38,12 +38,12 @@ Lufia2ExecutionResult Lufia2BattlePrepareNextFrame(
 
     OpLoadA(cpu, 0x03u);
     OpTestBits(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CONTROL_FLAGS), 1u);
-    if (!BattleCall(&battle, 0xc245u, 0x8591a1u, 3u) ||
-        !BattleCall(&battle, 0xc249u, 0x858a2fu, 3u))
+    if (!BattleCall(&battle, 0xc245u, BATTLE_ROUTINE_SYNC_STATUS_MARKERS, 3u) ||
+        !BattleCall(&battle, 0xc249u, BATTLE_ROUTINE_SPRITES, 3u))
         return BattleChildUnwound(&battle);
 
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
     return ExecutionReturned(0x81c253u);
 }
 

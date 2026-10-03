@@ -1,7 +1,7 @@
-/* Ancient Cave room grid ($7F:EA00, DB = $7F). */
+/* Ancient Cave room grid; bound leaf routines stay op-level. */
 
 #include "cave/cave_internal.h"
-
+#include "system/dp_scratch.h"
 
 /* $83:9B18: clear the visited and corridor bits of every cell. */
 void Lufia2CaveClearVisited(
@@ -59,22 +59,22 @@ void Lufia2CaveCellPosition(
     Lufia2CpuState *cpu,
     uint16_t site) {
     SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));                  /* 9B48 */
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A)); /* 9B48 */
     OpAndValue(cpu, 0x0fu);
     AslA8(cpu);
-    OpSta(memory, cpu, OpDp(cpu, 0x55u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
     AslA8(cpu);
-    OpAdc(memory, cpu, OpDp(cpu, 0x55u));
+    OpAdc(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
     ExchangeAccumulatorBytes(cpu);
-    OpLda(memory, cpu, OpDp(cpu, 0x54u));
+    OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpAndValue(cpu, 0xf0u);
     cpu->carry = 1;
     Sbc8(cpu, 0x10u);
     LsrA8(cpu);
     LsrA8(cpu);
-    OpSta(memory, cpu, OpDp(cpu, 0x55u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
     LsrA8(cpu);
-    OpAdc(memory, cpu, OpDp(cpu, 0x55u));
+    OpAdc(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
     SimulateRtsFrame(memory, cpu);                             /* 9B61 */
 }
 
@@ -92,7 +92,7 @@ static uint8_t CaveSameNeighbour(
     OpLda(memory, cpu, OpAbsX(cpu, offset));
     if (cpu->zero || cpu->negative)
         return 0;
-    OpCmp(memory, cpu, OpDp(cpu, 0x54u));
+    OpCmp(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     return cpu->zero;
 }
 
@@ -117,10 +117,10 @@ void Lufia2CaveLinkRooms(
         OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
         if (cpu->negative)
             continue;
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));
+        OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
         OpLda(memory, cpu, OpAbsX(cpu, 0xe9f0u));          /* 9B7F */
         if (!cpu->zero && !cpu->negative) {
-            OpCmp(memory, cpu, OpDp(cpu, 0x54u));
+            OpCmp(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
             if (!cpu->zero) {
                 OpTxa(cpu);
                 cpu->carry = 1;
@@ -134,7 +134,7 @@ void Lufia2CaveLinkRooms(
         }
         OpLda(memory, cpu, OpAbsX(cpu, 0xea10u));          /* 9B99 */
         if (!cpu->zero && !cpu->negative) {
-            OpCmp(memory, cpu, OpDp(cpu, 0x54u));
+            OpCmp(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
             if (!cpu->zero) {
                 OpTxa(cpu);
                 Lufia2CaveQueueLink(memory, cpu, 0x9ba5u);
@@ -183,7 +183,7 @@ void Lufia2CaveMergeRoom(
     TransferDirectToA(cpu);                                    /* 9BEE */
     OpTxa(cpu);
     OpSta(memory, cpu, OpAbs(cpu, 0x0000u));
-    OpSta(memory, cpu, OpDp(cpu, 0x56u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_C));
     OpStz(memory, cpu, OpDp(cpu, 0x2du));
     OpLdy(cpu, 0x0001u);
     for (;;) {
@@ -196,7 +196,7 @@ void Lufia2CaveMergeRoom(
         OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
         if (cpu->negative)
             continue;
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));
+        OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
         if (CaveSameNeighbour(memory, cpu, 0xe9f0u)) {         /* 9C0C */
             OpTxa(cpu);
             cpu->carry = 1;
@@ -220,7 +220,7 @@ void Lufia2CaveMergeRoom(
             CavePushCell(memory, cpu);
         }
         OpStepMem(memory, cpu, OpDp(cpu, 0x2du), 1);       /* 9C54 */
-        OpLda(memory, cpu, OpDp(cpu, 0x54u));
+        OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
         OpOraValue(cpu, 0x80u);
         OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
     }
@@ -279,15 +279,15 @@ void Lufia2CaveFillRoom(
     do {
         Lufia2CaveCellIndex(memory, cpu, 0x9cacu);             /* 9CAC */
         OpLda(memory, cpu, OpDp(cpu, 0x24u));
-        OpSta(memory, cpu, OpDp(cpu, 0x58u));
+        OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_E));
         do {
             OpLda(memory, cpu, OpLongX(cpu, CAVE_ROOM_GRID_LONG));   /* 9CB3 */
             if (cpu->zero) {
-                OpLda(memory, cpu, OpDp(cpu, 0x54u));
+                OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
                 OpSta(memory, cpu, OpLongX(cpu, CAVE_ROOM_GRID_LONG));
             }
             OpInx(cpu);                                      /* 9CBF */
-            OpStepMem(memory, cpu, OpDp(cpu, 0x58u), -1);
+            OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_E), -1);
         } while (!cpu->zero);
         OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW), 1);       /* 9CC4 */
         OpStepMem(memory, cpu, OpDp(cpu, 0x59u), -1);
@@ -319,14 +319,14 @@ static void CaveTileOffset(
     unsigned shift) {
     for (unsigned i = 0; i < shift; ++i)
         AslA16(cpu);
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     AslA16(cpu);
-    OpAdc(memory, cpu, OpDp(cpu, 0x54u));
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpAdc(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
     OpAndValue(cpu, 0x00ffu);
     AslA16(cpu);
-    OpAdc(memory, cpu, OpDp(cpu, 0x54u));
+    OpAdc(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
 }
 
 /* $83:9CD6: X = $91 * 96 + $8F * 2 (row of $7E:4000 blocks). */
@@ -383,7 +383,7 @@ void Lufia2CavePickCell(
     OpLda(memory, cpu, OpAbs(cpu, 0xe6afu));               /* 9D11 */
     Lufia2CaveRandomBelow(memory, cpu, 0x9d14u);
     OpIncA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     Lufia2CaveFindCell(memory, cpu, 0x9d1au);
     if (!cpu->carry)
         Lufia2CaveFindCell(memory, cpu, 0x9d1fu);
@@ -400,7 +400,7 @@ void Lufia2CaveFindCell(
     do {
         OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
         if (!cpu->zero && !cpu->negative) {
-            OpStepMem(memory, cpu, OpDp(cpu, 0x54u), -1);
+            OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_A), -1);
             if (cpu->zero) {
                 OpTxa(cpu);                                  /* 9D31 */
                 cpu->carry = 1;
@@ -436,10 +436,10 @@ void Lufia2CaveSetUpperTile(
     uint16_t site) {
     SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
     OpAndValue(cpu, 0x03ffu);                                /* 9D46 */
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpLda(memory, cpu, OpAbsY(cpu, 0x3f0eu));
     OpAndValue(cpu, 0xfc00u);
-    OpOra(memory, cpu, OpDp(cpu, 0x54u));
+    OpOra(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpSta(memory, cpu, OpAbsY(cpu, 0x3f0eu));
     SimulateRtsFrame(memory, cpu);                             /* 9D56 */
 }
@@ -464,13 +464,13 @@ void Lufia2CaveDrawBlock(
     OpSta(memory, cpu, OpDp(cpu, 0x5au));
     OpStz(memory, cpu, OpDp(cpu, 0x5bu));
     OpLda(memory, cpu, OpLongX(cpu, 0x93d69eu));
-    OpSta(memory, cpu, OpDp(cpu, 0x56u));
-    OpStz(memory, cpu, OpDp(cpu, 0x57u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_C));
+    OpStz(memory, cpu, OpDp(cpu, DP_SCRATCH_D));
     OpRepWidths(cpu, 0x20u);
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x5du)));  /* 9DAC */
     do {
         OpLda(memory, cpu, OpDp(cpu, 0x5au));              /* 9DAE */
-        OpSta(memory, cpu, OpDp(cpu, 0x58u));
+        OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_E));
         do {
             OpLda(memory, cpu, OpLongX(cpu, 0x7e400au));   /* 9DB2 */
             if (!cpu->zero)
@@ -482,7 +482,7 @@ void Lufia2CaveDrawBlock(
             OpInx(cpu);
             OpIny(cpu);
             OpIny(cpu);
-            OpStepMem(memory, cpu, OpDp(cpu, 0x58u), -1);
+            OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_E), -1);
         } while (!cpu->zero);
         OpLda(memory, cpu, OpDp(cpu, 0x5du));              /* 9DCC */
         cpu->carry = 0;
@@ -493,7 +493,7 @@ void Lufia2CaveDrawBlock(
         OpAdcValue(cpu, 0x00c0u);                            /* no CLC */
         OpSta(memory, cpu, OpDp(cpu, 0x60u));
         OpTay(cpu);
-        OpStepMem(memory, cpu, OpDp(cpu, 0x56u), -1);
+        OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_C), -1);
     } while (!cpu->zero);
     OpSepWidths(cpu, 0x20u);                                       /* 9DE1 */
     SimulateRtsFrame(memory, cpu);

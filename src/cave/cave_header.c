@@ -1,8 +1,19 @@
 /* Ancient Cave room records in the generated map header. */
 
+#include "cave/wram.h"
 #include "core/cpu_ops.h"
 #include "lufia2/ancient_cave.h"
 #include "system/wram.h"
+
+/* Generated map header sections, each ended by $FF. */
+enum {
+    CAVE_HEADER_ENTRANCE = 0xf200u,    /* one ten-byte entry at the stairs */
+    CAVE_HEADER_ROOM_AREAS = 0xf400u,  /* fifteen bytes per linked room */
+    CAVE_HEADER_ROOM_POINTS = 0xf600u, /* eight bytes per room point */
+    CAVE_HEADER_OBJECTS = 0xf800u,     /* four bytes per chest */
+    CAVE_HEADER_OBJECT_FLAGS =
+        0x7fe747u, /* word per chest; bit 6 picks the kind byte */
+};
 
 enum {
     CAVE_HEADER_COUNT = 0x58,
@@ -41,24 +52,24 @@ Lufia2ExecutionResult Lufia2CaveRoomHeaderCoordinates(
 static void CaveHeaderEntrance(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, 0xf200u));
-    OpLda(memory, cpu, 0x7fe6abu);
-    OpSta(memory, cpu, OpAbs(cpu, 0xf201u));
+    OpSta(memory, cpu, OpAbs(cpu, CAVE_HEADER_ENTRANCE));
+    OpLda(memory, cpu, CAVE_STAIR_COLUMN_LONG);
+    OpSta(memory, cpu, OpAbs(cpu, CAVE_HEADER_ENTRANCE + 1));
     OpIncA(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, 0xf203u));
-    OpLda(memory, cpu, 0x7fe6acu);
-    OpSta(memory, cpu, OpAbs(cpu, 0xf202u));
+    OpSta(memory, cpu, OpAbs(cpu, CAVE_HEADER_ENTRANCE + 3));
+    OpLda(memory, cpu, CAVE_STAIR_ROW_LONG);
+    OpSta(memory, cpu, OpAbs(cpu, CAVE_HEADER_ENTRANCE + 2));
     OpIncA(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, 0xf204u));
+    OpSta(memory, cpu, OpAbs(cpu, CAVE_HEADER_ENTRANCE + 4));
     OpLoadA(cpu, 0x00f0u);
-    OpSta(memory, cpu, OpAbs(cpu, 0xf205u));
+    OpSta(memory, cpu, OpAbs(cpu, CAVE_HEADER_ENTRANCE + 5));
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, 0xf206u));
-    OpSta(memory, cpu, OpAbs(cpu, 0xf207u));
+    OpSta(memory, cpu, OpAbs(cpu, CAVE_HEADER_ENTRANCE + 6));
+    OpSta(memory, cpu, OpAbs(cpu, CAVE_HEADER_ENTRANCE + 7));
     OpLoadA(cpu, 0x00f0u);
-    OpSta(memory, cpu, OpAbs(cpu, 0xf208u));
+    OpSta(memory, cpu, OpAbs(cpu, CAVE_HEADER_ENTRANCE + 8));
     OpLoadA(cpu, 0x00ffu);
-    OpSta(memory, cpu, OpAbs(cpu, 0xf209u));
+    OpSta(memory, cpu, OpAbs(cpu, CAVE_HEADER_ENTRANCE + 9));
 }
 
 static void CaveHeaderRoomPoints(
@@ -73,22 +84,22 @@ static void CaveHeaderRoomPoints(
     }
     for (;;) {
         if (!skip_first) {
-            OpLda(memory, cpu, OpLongX(cpu, 0x7fe6b1u));
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_OBJECT_COLUMNS_LONG));
             if (!cpu->zero) {
-                OpSta(memory, cpu, OpAbsY(cpu, 0xf601u));
-                OpLda(memory, cpu, OpLongX(cpu, 0x7fe6d1u));
-                OpSta(memory, cpu, OpAbsY(cpu, 0xf602u));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_POINTS + 1));
+                OpLda(memory, cpu, OpLongX(cpu, CAVE_OBJECT_ROWS_LONG));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_POINTS + 2));
                 OpTxa(cpu);
                 OpIncA(cpu);
-                OpSta(memory, cpu, OpAbsY(cpu, 0xf600u));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_POINTS));
                 TransferDirectToA(cpu);
-                OpSta(memory, cpu, OpAbsY(cpu, 0xf603u));
-                OpSta(memory, cpu, OpAbsY(cpu, 0xf604u));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_POINTS + 3));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_POINTS + 4));
                 OpLoadA(cpu, 0x00ffu);
-                OpSta(memory, cpu, OpAbsY(cpu, 0xf605u));
-                OpSta(memory, cpu, OpAbsY(cpu, 0xf606u));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_POINTS + 5));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_POINTS + 6));
                 TransferDirectToA(cpu);
-                OpSta(memory, cpu, OpAbsY(cpu, 0xf607u));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_POINTS + 7));
                 OpRepWidths(cpu, 0x20u);
                 OpTya(cpu);
                 cpu->carry = 0;
@@ -105,43 +116,43 @@ static void CaveHeaderRoomPoints(
         skip_first = 0;
     }
     OpLoadA(cpu, 0x00ffu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf600u));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_POINTS));
 }
 
 static void CaveHeaderRoomArea(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpTxa(cpu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf400u));
-    OpLda(memory, cpu, OpLongX(cpu, 0x7fe6f1u));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS));
+    OpLda(memory, cpu, OpLongX(cpu, (0x7f0000u | CAVE_LINKS)));
     cpu->carry = 0;
     OpAdcValue(cpu, 0x0010u);
     SimulateJslFrame(memory, cpu, 0x8eu, 0xb8e8u);
     (void)Lufia2CaveRoomHeaderCoordinates(memory, cpu);
     SimulateRtlFrame(memory, cpu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf402u));
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf406u));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 2));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 6));
     OpIncA(cpu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf408u));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 8));
     OpIncA(cpu);
     OpIncA(cpu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf404u));
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf40au));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 4));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 10));
     OpIncA(cpu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf40cu));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 12));
     ExchangeAccumulatorBytes(cpu);
     OpIncA(cpu);
     OpIncA(cpu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf401u));
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf405u));
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf409u));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 1));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 5));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 9));
     OpIncA(cpu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf403u));
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf407u));
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf40bu));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 3));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 7));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 11));
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf40du));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 13));
     OpLoadA(cpu, 0x00ffu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf40eu));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS + 14));
     OpRepWidths(cpu, 0x20u);
     OpTya(cpu);
     cpu->carry = 0;
@@ -160,23 +171,23 @@ static void CaveHeaderObjects(
         if (cpu->carry)
             break;
         OpTxa(cpu);
-        OpSta(memory, cpu, OpAbsY(cpu, 0xf800u));
-        OpLda(memory, cpu, OpLongX(cpu, 0x7fe736u));
-        OpSta(memory, cpu, OpAbsY(cpu, 0xf801u));
-        OpLda(memory, cpu, OpLongX(cpu, 0x7fe73eu));
-        OpSta(memory, cpu, OpAbsY(cpu, 0xf802u));
+        OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_OBJECTS));
+        OpLda(memory, cpu, OpLongX(cpu, CAVE_CHEST_COLUMNS_LONG));
+        OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_OBJECTS + 1));
+        OpLda(memory, cpu, OpLongX(cpu, CAVE_CHEST_ROWS_LONG));
+        OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_OBJECTS + 2));
         OpPushX(memory, cpu);
         TransferDirectToA(cpu);
         OpTxa(cpu);
         OpAslA(cpu);
         OpTax(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0x7fe747u));
+        OpLda(memory, cpu, OpLongX(cpu, CAVE_HEADER_OBJECT_FLAGS));
         OpPullX(memory, cpu);
         OpAndValue(cpu, 0x0040u);
         if (!cpu->zero)
             OpLoadA(cpu, 0x0001u);
         OpIncA(cpu);
-        OpSta(memory, cpu, OpAbsY(cpu, 0xf803u));
+        OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_OBJECTS + 3));
         OpRepWidths(cpu, 0x20u);
         OpTya(cpu);
         cpu->carry = 0;
@@ -186,7 +197,7 @@ static void CaveHeaderObjects(
         OpInx(cpu);
     }
     OpLoadA(cpu, 0x00ffu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf800u));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_OBJECTS));
 }
 
 Lufia2ExecutionResult Lufia2CaveBuildMapHeader(
@@ -202,7 +213,7 @@ Lufia2ExecutionResult Lufia2CaveBuildMapHeader(
     for (;;) {
         if (rooms++ == 0x10000u)
             return ExecutionHandoff(cpu, 0x8eb8d0u);
-        OpLda(memory, cpu, OpLongX(cpu, 0x7fe6f1u));
+        OpLda(memory, cpu, OpLongX(cpu, (0x7f0000u | CAVE_LINKS)));
         if (!cpu->zero) {
             OpCmpValue(cpu, 0x00ffu);
             if (cpu->zero)
@@ -212,7 +223,7 @@ Lufia2ExecutionResult Lufia2CaveBuildMapHeader(
         OpInx(cpu);
     }
     OpLoadA(cpu, 0x00ffu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xf400u));
+    OpSta(memory, cpu, OpAbsY(cpu, CAVE_HEADER_ROOM_AREAS));
     CaveHeaderObjects(memory, cpu);
     OpRepWidths(cpu, 0x20u);
     OpLoadA(cpu, 0x0200u);

@@ -1,6 +1,7 @@
 /* Battle setup. */
 
 #include "battle/battle_lifecycle_internal.h"
+#include "system/wram.h"
 
 enum {
     ENCOUNTER_SELECTOR = 0x7ff8a1u,
@@ -117,7 +118,7 @@ void BattleCopyPartyFormation(BattleContext *battle) {
 
         OpSepWidths(cpu, 0x20u);
         OpLda(memory, cpu, OpAbsY(cpu, 0x000fu));
-        OpSta(memory, cpu, OpAbsX(cpu, 0x1542u));
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_MENU_SHOP_LIST_COUNT));
         TransferDirectToA(cpu);
         OpSta(memory, cpu, OpAbsY(cpu, 0x0010u));
         OpDex(cpu);
@@ -135,8 +136,8 @@ bool BattleInitializeRecords(BattleContext *battle) {
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpAbs(cpu, 0x1104u));
     OpSta(memory, cpu, OpAbs(cpu, 0x10f0u));
-    OpStz(memory, cpu, OpAbs(cpu, 0x160au));
-    OpStz(memory, cpu, OpAbs(cpu, 0x1607u));
+    OpStz(memory, cpu, OpAbs(cpu, (WRAM_BATTLE_GOLD_REWARD + 2u)));
+    OpStz(memory, cpu, OpAbs(cpu, (WRAM_BATTLE_EXPERIENCE_REWARD + 2u)));
     OpRepWidths(cpu, 0x20u);
     OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_GOLD_REWARD));
     OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EXPERIENCE_REWARD));
@@ -163,7 +164,7 @@ bool BattleInitializeRecords(BattleContext *battle) {
         if (cpu->zero) {
             OpIncA(cpu);
             OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_RECORDS));
-            OpSta(memory, cpu, OpAbsY(cpu, 0x0a6fu));
+            OpSta(memory, cpu, OpAbsY(cpu, (WRAM_BATTLE_ENEMY_RECORDS + 1u)));
         } else {
             OpSta(memory, cpu, OpAbs(cpu, 0x09f2u));
             PushY(memory, cpu);
@@ -199,7 +200,7 @@ static void ApplyScenarioLayout(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     }
 
     OpLda(memory, cpu, OpAbs(cpu, layout->first_member));
-    OpSta(memory, cpu, OpAbs(cpu, 0x1542u));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_SHOP_LIST_COUNT));
     OpLda(memory, cpu, OpAbs(cpu, layout->second_member));
     OpSta(memory, cpu, OpAbs(cpu, 0x1543u));
 }
@@ -266,13 +267,13 @@ bool BattleFinalizeSetup(BattleContext *battle) {
         return false;
     if (!BattleRunDisplaySetup(battle))
         return false;
-    if (!BattleCall(battle, 0x81bcu, 0x8591a1u, 3u))
+    if (!BattleCall(battle, 0x81bcu, BATTLE_ROUTINE_SYNC_STATUS_MARKERS, 3u))
         return false;
     if (!BattleBuildSprites(battle))
         return false;
 
     LoadA8(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
     OpLda(memory, cpu, OpDp(cpu, 0x40u));
     OpSta(memory, cpu, OpDp(cpu, 0xd4u));
 
@@ -287,8 +288,8 @@ bool BattleFinalizeSetup(BattleContext *battle) {
         if (!BattleCall(battle, 0x81d6u, 0x81d9d0u, 2u))
             return false;
         LoadA8(cpu, 0xffu);
-        OpSta(memory, cpu, 0x0012f3u);
-        if (!BattleCall(battle, 0x81dfu, 0x85ec81u, 3u))
+        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+        if (!BattleCall(battle, 0x81dfu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return false;
     }
 }

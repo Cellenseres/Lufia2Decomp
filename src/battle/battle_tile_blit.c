@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
@@ -66,7 +67,7 @@ Lufia2ExecutionResult Lufia2BattleBlitTileRows(
     target = last_sum.value;
     source = WramRead16(wram, SOURCE);
     PushDataBank(memory, cpu);
-    SelectDataBank(memory, cpu, WORK_BANK);
+    OpSetDataBank(memory, cpu, WORK_BANK);
     for (;;) {
         WramWrite(wram, ROW_BYTES, ROW_LENGTH);
         do {

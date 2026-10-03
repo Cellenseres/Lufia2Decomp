@@ -62,12 +62,12 @@ Lufia2ExecutionResult Lufia2BattleRunItemScript(const Lufia2Memory *memory,
     BattleContext battle =
         BattleContextCreate(memory, cpu, child, child_context, 0x81u);
     OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, 0x0066u)));
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x0a06u), cpu->y);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID), cpu->y);
     OpPushX(memory, cpu);
     if (!BattleCall(&battle, 0xb1feu, 0x81f1c5u, 3u))
         return BattleChildUnwound(&battle);
     OpPullX(memory, cpu);
-    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x0a09u)));
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_POINTER)));
     if (cpu->zero) {
         OpLdy(cpu, 0u);
         OpWriteX(memory, cpu, OpAbs(cpu, 0x0a42u), cpu->y);

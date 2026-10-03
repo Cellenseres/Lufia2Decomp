@@ -1,7 +1,8 @@
 /* Walk along the edge of a region of the field cell map and mark it. */
 
 #include "core/cpu_internal.h"
-#include "core/hardware_math.h"
+#include "core/cpu_ops.h"
+#include "core/snes_registers.h"
 #include "lufia2/field.h"
 
 enum {
@@ -613,8 +614,15 @@ Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
     Write16Direct(memory, cpu, DP_TWO_ROWS_NEXT_2, (uint16_t)((width << 2) + 4u));
     Write16Direct(memory, cpu, DP_NEXT_COLUMN, (uint16_t)((width << 1) + 2u));
     Write16Direct(memory, cpu, DP_NEXT_COLUMN_2, (uint16_t)((width << 1) + 4u));
-    SelectDataBank(memory, cpu, 0x7fu);
+    OpSetDataBank(memory, cpu, 0x7fu);
     return RunTrace(memory, cpu, FROM_MODE);
+}
+
+static uint16_t CellRowOffset(const Lufia2Memory *memory,
+    uint8_t row, uint8_t width) {
+    Write8(memory, SNES_WRMPYA, row);
+    Write8(memory, SNES_WRMPYB, width);
+    return Read16Long(memory, SNES_RDMPYL);
 }
 
 /* $83:F9D0: pointer into the cell table for the cell whose column is at
@@ -632,7 +640,7 @@ Lufia2ExecutionResult Lufia2FieldCellPointer(
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, DirectByte(memory, cpu, DP_ROW));
     SimulateJsrFrame(memory, cpu, 0xf9dbu);
-    offset = HardwareMultiply8(memory, A8(cpu), Read8(memory, MAP_WIDTH));
+    offset = CellRowOffset(memory, A8(cpu), Read8(memory, MAP_WIDTH));
     LoadA8(cpu, Read8(memory, MAP_WIDTH));
     LoadA8(cpu, 0);
     ExchangeAccumulatorBytes(cpu);

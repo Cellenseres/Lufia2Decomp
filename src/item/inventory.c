@@ -2,18 +2,19 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/item.h"
+#include "system/dp_scratch.h"
 
 /* $82:FB51: possession bits at DB:$091E. */
 static void ItemPossessionBit(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xfb27u);
     And16(cpu, 0x01ffu);
-    StoreADirect16(memory, cpu, 0x54u);
+    StoreADirect16(memory, cpu, DP_SCRATCH_A);
     LoadX16(cpu, 0);
     for (;;) {
         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x97fda0u, cpu->x)));
         Compare16(cpu, cpu->accumulator, 0xffffu);
         if (cpu->zero) break;
-        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_SCRATCH_A));
         if (cpu->zero) {
             LoadA16(cpu, cpu->x);
             for (unsigned i = 0; i < 5u; ++i) LsrA16(cpu);
@@ -48,7 +49,7 @@ static void ItemPossessionBit(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 Lufia2ExecutionResult Lufia2ItemPossessionCount(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     And16(cpu, 0x01ffu);
-    StoreADirect16(memory, cpu, 0x54u);
+    StoreADirect16(memory, cpu, DP_SCRATCH_A);
     PushY(memory, cpu);
     ItemPossessionBit(memory, cpu);
     cpu->y = PullIndexValue(memory, cpu);
@@ -61,7 +62,7 @@ Lufia2ExecutionResult Lufia2ItemPossessionCount(
     do {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a8du, cpu->x));
         And16(cpu, 0x01ffu);
-        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_SCRATCH_A));
         if (cpu->zero) {
             LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0a8eu, cpu->x));
             LsrA16(cpu);

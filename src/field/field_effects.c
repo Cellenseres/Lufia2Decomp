@@ -1,11 +1,80 @@
 /* Field colour and screen effects. */
 
 #include "core/cpu_internal.h"
+#include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "lufia2/system.h"
-#include "field/field_internal.h"
+#include "system/dp_scratch.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
+
+/* Brightness fade and color math step state. */
+enum {
+    FADE_FRAMES_PER_STEP = 0x7fd08fu,
+    FADE_BRIGHTNESS_STEP = 0x7fd090u,
+    FADE_BRIGHTNESS = 0x7fd091u,
+    FADE_FRAME_COUNTER = 0x7fd092u,
+    COLOR_STEP_TIMER = 0x7fd094u,
+    COLOR_MATH_INTENSITY = 0x1271u
+};
+
+/* $83:AF05-$83:AF4C: advance palette cycle X; 0 = cap hit. */
+static uint8_t FieldPaletteAdvance(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                   uint32_t *visits) {
+    SetAccumulatorWidth(cpu, 0); /* AF05 */
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xec00u, cpu->x));
+    IncrementA16(cpu);
+    IncrementA16(cpu);
+    IncrementA16(cpu);
+    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xec00u, cpu->x), cpu->accumulator);
+    cpu->y = cpu->x; /* TXY */
+    SetNz16(cpu, cpu->y);
+    for (;;) {
+        if (*visits >= 0x10000u) {
+            /* Zero-length frames can chain forever. */
+            cpu->resume_pc = 0x83af11u;
+            return 0;
+        }
+        ++*visits;
+        TransferAToX(cpu); /* AF11 */
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0xa10000u, cpu->x)));
+        StoreAAbsolute8(memory, cpu, 0xed01u, cpu->y);
+        SetAccumulatorWidth(cpu, 0);
+        if (!cpu->zero)
+            break;
+        LoadA16(cpu, cpu->y); /* AF1F */
+        cpu->carry = 0;
+        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd0f5u, 0));
+        TransferAToX(cpu);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa10003u, cpu->x)));
+        cpu->carry = 1;
+        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd0f5u, 0));
+        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xec00u, cpu->y),
+                    cpu->accumulator);
+    }
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa10001u, cpu->x)));
+    Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator); /* AF36 */
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xed00u, cpu->y));
+    And16(cpu, 0x00ffu);
+    AslA16(cpu);
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
+    Write16Long(memory, LongIndexedAddress(WRAM_CGRAM_BUFFER, cpu->x),
+                cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    cpu->x = cpu->y; /* TYX */
+    SetNz16(cpu, cpu->x);
+    LoadA8(cpu, 0x01u);
+    {
+        const uint32_t flags = DirectAddress(cpu, DP_NMI_UPLOAD_FLAGS); /* TSB $73 */
+        const uint8_t value = Read8(memory, flags);
+
+        cpu->zero = (value & 0x01u) == 0;
+        Write8(memory, flags, (uint8_t)(value | 0x01u));
+    }
+    return 1;
+}
 
 /* $83:AEED: palette cycles from bank $A1; 0 = cap hit. */
 static uint8_t FieldPaletteCycles(
@@ -20,12 +89,12 @@ static uint8_t FieldPaletteCycles(
         SimulateRtsFrame(memory, cpu);
         return 1;
     }
-    LoadA8(cpu, Read8(memory, 0x7fd0f7u));
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_SCENE_RECORD_COUNT));
     if (cpu->zero) {
         SimulateRtsFrame(memory, cpu);
         return 1;
     }
-    Write8(memory, DirectAddress(cpu, 0x58u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
     LoadX16(cpu, 0x0000u);
     do {
         const uint32_t timer = AbsoluteIndexedAddress(cpu, 0xed01u, cpu->x);
@@ -33,94 +102,37 @@ static uint8_t FieldPaletteCycles(
 
         Write8(memory, timer, left);                           /* AF00 */
         SetNz8(cpu, left);
-        if (!cpu->zero)
-            goto next;
-        SetAccumulatorWidth(cpu, 0);                           /* AF05 */
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xec00u, cpu->x));
-        IncrementA16(cpu);
-        IncrementA16(cpu);
-        IncrementA16(cpu);
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xec00u, cpu->x),
-            cpu->accumulator);
-        cpu->y = cpu->x;                                       /* TXY */
-        SetNz16(cpu, cpu->y);
-        for (;;) {
-            if (*visits >= 0x10000u) {
-                /* Zero-length frames can chain forever. */
-                cpu->resume_pc = 0x83af11u;
-                return 0;
-            }
-            ++*visits;
-            TransferAToX(cpu);                                 /* AF11 */
-            SetAccumulatorWidth(cpu, 1);
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0xa10000u, cpu->x)));
-            StoreAAbsolute8(memory, cpu, 0xed01u, cpu->y);
-            SetAccumulatorWidth(cpu, 0);
-            if (!cpu->zero)
-                break;
-            LoadA16(cpu, cpu->y);                              /* AF1F */
-            cpu->carry = 0;
-            Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd0f5u, 0));
-            TransferAToX(cpu);
-            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa10003u, cpu->x)));
-            cpu->carry = 1;
-            Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd0f5u, 0));
-            Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xec00u, cpu->y),
-                cpu->accumulator);
-        }
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa10001u, cpu->x)));
-        Write16Direct(memory, cpu, 0x54u, cpu->accumulator);   /* AF36 */
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xed00u, cpu->y));
-        And16(cpu, 0x00ffu);
-        AslA16(cpu);
-        TransferAToX(cpu);
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
-        Write16Long(memory, LongIndexedAddress(WRAM_CGRAM_BUFFER, cpu->x),
-            cpu->accumulator);
-        SetAccumulatorWidth(cpu, 1);
-        cpu->x = cpu->y;                                       /* TYX */
-        SetNz16(cpu, cpu->x);
-        LoadA8(cpu, 0x01u);
-        {
-            const uint32_t flags = DirectAddress(cpu, DP_NMI_UPLOAD_FLAGS); /* TSB $73 */
-            const uint8_t value = Read8(memory, flags);
-
-            cpu->zero = (value & 0x01u) == 0;
-            Write8(memory, flags, (uint8_t)(value | 0x01u));
-        }
-next:
+        if (cpu->zero && !FieldPaletteAdvance(memory, cpu, visits))
+            return 0;
         IncrementX16(cpu);                                     /* AF4D */
         IncrementX16(cpu);
-        DecrementDirect8(memory, cpu, 0x58u);
+        DecrementDirect8(memory, cpu, DP_SCRATCH_E);
     } while (!cpu->zero);
     SimulateRtsFrame(memory, cpu);
     return 1;
 }
 
-/* $83:AF54: step the HDMA wave table; set up channel 1. */
-static void FieldWaveTable(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0xaee9u);
+/* Body of $83:AF54 without its JSR frame. */
+static void FieldWaveTableBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0xd0cau, 0);                   /* AF54 */
     Compare8(cpu, A8(cpu), 0xffu);
     if (cpu->zero)
-        goto done;
+        return;
     ExchangeAccumulatorBytes(cpu);
     LoadAAbsolute8(memory, cpu, 0xd0c9u, 0);
     TransferAToX(cpu);
     LoadAAbsolute8(memory, cpu, 0xd0c8u, 0);
     LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-    Write8(memory, 0x7fd0c8u, A8(cpu));
+    Write8(memory, WRAM_UNK_7FD0C8, A8(cpu));
     Compare8(cpu, A8(cpu), Read8(memory, LongIndexedAddress(0x7e0001u, cpu->x)));
     if (!cpu->zero)
-        goto done;
+        return;
     TransferDirectToA(cpu);                                    /* AF6E */
     StoreAAbsolute8(memory, cpu, 0xd0c8u, 0);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e0000u, cpu->x)));
     AslA8(cpu);
-    Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
-    Write8(memory, DirectAddress(cpu, 0x54u), 0x00u);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), 0x00u);
     TransferDirectToA(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e0000u, cpu->x)));
     SetAccumulatorWidth(cpu, 0);
@@ -132,9 +144,9 @@ static void FieldWaveTable(
     LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
     IncrementA16(cpu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+    Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, 0x7fd0c6u));
+    Add16Value(cpu, Read16Long(memory, WRAM_FIELD_AUXILIARY_RESOURCE_OFFSET));
     Write16Long(memory, SNES_A1TL(1), cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     IncrementX16(cpu);                                         /* AF99 */
@@ -160,7 +172,12 @@ static void FieldWaveTable(
     StoreXDirect16(memory, cpu, 0x7bu);
     LoadA8(cpu, 0x42u);
     Write8(memory, DirectAddress(cpu, 0x76u), A8(cpu));
-done:
+}
+
+/* $83:AF54: step the HDMA wave table; set up channel 1. */
+static void FieldWaveTable(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xaee9u);
+    FieldWaveTableBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -223,33 +240,35 @@ static void ScreenShake(
     SimulateJslFrame(memory, cpu, 0x84u, 0x814au);
     Lufia2RandomScale(memory, cpu);
     SimulateRtlFrame(memory, cpu);
-    Compare8(cpu, A8(cpu), Read8(memory, 0x7fd080u));
+    Compare8(cpu, A8(cpu), Read8(memory, FIELD_SHAKE_CHANCE));
     if (!cpu->carry) {
         uint8_t first;
 
-        LoadA8(cpu, Read8(memory, 0x7fd07fu));                 /* 8151 */
+        LoadA8(cpu, Read8(memory, FIELD_SHAKE_AMPLITUDE)); /* 8151 */
         SimulateJslFrame(memory, cpu, 0x84u, 0x8158u);
         Lufia2RandomScale(memory, cpu);
         SimulateRtlFrame(memory, cpu);
-        StoreADirect8(memory, cpu, 0x54u);
-        Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0x00u);
         TransferDirectToA(cpu);
-        LoadA8(cpu, Read8(memory, 0x7fd07fu));
+        LoadA8(cpu, Read8(memory, FIELD_SHAKE_AMPLITUDE));
         SetAccumulatorWidth(cpu, 0);
         LsrA16(cpu);
         cpu->carry = 1;
-        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x54u));
-        Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_A));
+        Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator);
         LoadA16(cpu, 0x0002u);
         SimulateJslFrame(memory, cpu, 0x84u, 0x8170u);
         Lufia2RandomScale(memory, cpu);
         SimulateRtlFrame(memory, cpu);
         LoadA16(cpu, cpu->accumulator);                        /* ORA #0 */
         first = !cpu->zero;
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
-        Write16Long(memory, first ? 0x7fd081u : 0x7fd083u, cpu->accumulator);
+        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
+        Write16Long(memory, first ? FIELD_SCREEN_OFFSET_X : FIELD_SCREEN_OFFSET_Y,
+                    cpu->accumulator);
         TransferDirectToA(cpu);
-        Write16Long(memory, first ? 0x7fd083u : 0x7fd081u, cpu->accumulator);
+        Write16Long(memory, first ? FIELD_SCREEN_OFFSET_Y : FIELD_SCREEN_OFFSET_X,
+                    cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
     }
     SimulateRtsFrame(memory, cpu);
@@ -261,19 +280,19 @@ static void ScreenFade(
     Lufia2CpuState *cpu,
     uint8_t in) {
     SimulateJsrFrame(memory, cpu, in ? 0x8013u : 0x801du);
-    LoadA8(cpu, (uint8_t)(Read8(memory, 0x7fd092u) + 1u));
-    Write8(memory, 0x7fd092u, A8(cpu));
-    Compare8(cpu, A8(cpu), Read8(memory, 0x7fd08fu));
+    LoadA8(cpu, (uint8_t)(Read8(memory, FADE_FRAME_COUNTER) + 1u));
+    Write8(memory, FADE_FRAME_COUNTER, A8(cpu));
+    Compare8(cpu, A8(cpu), Read8(memory, FADE_FRAMES_PER_STEP));
     if (cpu->carry) {
         LoadA8(cpu, 0x00u);
-        Write8(memory, 0x7fd092u, A8(cpu));
-        LoadA8(cpu, Read8(memory, 0x7fd091u));
+        Write8(memory, FADE_FRAME_COUNTER, A8(cpu));
+        LoadA8(cpu, Read8(memory, FADE_BRIGHTNESS));
         cpu->carry = in ? 0u : 1u;
         if (in)
-            Adc8(cpu, Read8(memory, 0x7fd090u));
+            Adc8(cpu, Read8(memory, FADE_BRIGHTNESS_STEP));
         else
-            Sbc8(cpu, Read8(memory, 0x7fd090u));
-        Write8(memory, 0x7fd091u, A8(cpu));
+            Sbc8(cpu, Read8(memory, FADE_BRIGHTNESS_STEP));
+        Write8(memory, FADE_BRIGHTNESS, A8(cpu));
         StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
         if (in) {
             Compare8(cpu, A8(cpu), 0x0fu);
@@ -295,9 +314,9 @@ static void ScreenColorStep(
     Lufia2CpuState *cpu,
     uint8_t down) {
     SimulateJsrFrame(memory, cpu, down ? 0x803fu : 0x8044u);
-    LoadAAbsolute8(memory, cpu, 0x1271u, 0);
+    LoadAAbsolute8(memory, cpu, COLOR_MATH_INTENSITY, 0);
     LoadA8(cpu, (uint8_t)((A8(cpu) + (down ? 0xffu : 0x01u)) | 0xe0u));
-    StoreAAbsolute8(memory, cpu, 0x1271u, 0);
+    StoreAAbsolute8(memory, cpu, COLOR_MATH_INTENSITY, 0);
     Compare8(cpu, A8(cpu), down ? 0xe0u : 0xffu);
     if (cpu->zero) {
         LoadA8(cpu, down ? 0x10u : 0x20u);
@@ -343,8 +362,8 @@ static void ScreenPaletteFade(
         Write16Absolute(memory, cpu, channels[i].level, cpu->accumulator);
         Write16Direct(memory, cpu, channels[i].out, cpu->accumulator);
     }
-    LoadX16(cpu, Read16Long(memory, 0x7fd0f8u));               /* 8E66 */
-    LoadY16(cpu, Read16Long(memory, 0x7fd0fau));
+    LoadX16(cpu, Read16Long(memory, WRAM_FIELD_PALETTE_SOURCE)); /* 8E66 */
+    LoadY16(cpu, Read16Long(memory, WRAM_FIELD_PALETTE_SKIP_BYTES));
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1283u, 0));
     cpu->zero = (cpu->accumulator & 0x0040u) == 0;
     darken = !cpu->zero;
@@ -353,20 +372,20 @@ static void ScreenPaletteFade(
             Read16Long(memory, LongIndexedAddress(0x9b0000u, cpu->x));
 
         LoadA16(cpu, color);
-        Write16Direct(memory, cpu, 0x54u, color);
+        Write16Direct(memory, cpu, DP_SCRATCH_A, color);
         if (darken) {
             LoadA16(cpu, (uint16_t)(color & 0x001fu));         /* 8E78 */
             cpu->carry = 1;
-            Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x58u));
+            Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_E));
             if (!cpu->carry)
                 TransferDirectToA(cpu);
-            Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+            Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
             LoadA16(cpu, (uint16_t)(color & 0x03e0u));
             cpu->carry = 1;
             Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x5au));
             if (cpu->negative)
                 TransferDirectToA(cpu);
-            TestBitsDirect(memory, cpu, 0x56u, 1);
+            TestBitsDirect(memory, cpu, DP_SCRATCH_C, 1);
             LoadA16(cpu, (uint16_t)(color & 0x7c00u));
             cpu->carry = 1;
             Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x63u));
@@ -375,28 +394,28 @@ static void ScreenPaletteFade(
         } else {
             LoadA16(cpu, (uint16_t)(color & 0x001fu));         /* 8EB1 */
             cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, 0x58u));
+            Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_E));
             if (cpu->accumulator & 0x0020u)
                 LoadA16(cpu, 0x001fu);
-            Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+            Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
             LoadA16(cpu, (uint16_t)(color & 0x03e0u));
             cpu->carry = 0;
             Add16Value(cpu, Read16Direct(memory, cpu, 0x5au));
             if (cpu->accumulator & 0x0400u)
                 LoadA16(cpu, 0x03e0u);
-            TestBitsDirect(memory, cpu, 0x56u, 1);
+            TestBitsDirect(memory, cpu, DP_SCRATCH_C, 1);
             LoadA16(cpu, (uint16_t)(color & 0x7c00u));
             cpu->carry = 0;
             Add16Value(cpu, Read16Direct(memory, cpu, 0x63u));
             if (cpu->negative)
                 LoadA16(cpu, 0x7c00u);
         }
-        LoadA16(cpu, (uint16_t)(cpu->accumulator |
-            Read16Direct(memory, cpu, 0x56u)));
+        LoadA16(cpu,
+                (uint16_t)(cpu->accumulator | Read16Direct(memory, cpu, DP_SCRATCH_C)));
         Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_CGRAM_BUFFER, cpu->y),
             (uint8_t)cpu->accumulator);
-        Write8(memory, AbsoluteIndexedAddress(cpu, 0x0321u, cpu->y),
-            (uint8_t)(cpu->accumulator >> 8));
+        Write8(memory, AbsoluteIndexedAddress(cpu, (WRAM_CGRAM_BUFFER + 1u), cpu->y),
+               (uint8_t)(cpu->accumulator >> 8));
         IncrementX16(cpu);
         IncrementX16(cpu);
         IncrementY16(cpu);
@@ -439,11 +458,11 @@ void Lufia2FieldScreenEffects(
     }
     BitImmediate8(cpu, 0x30u);                                 /* 8021 */
     if (!cpu->zero) {
-        LoadA8(cpu, (uint8_t)(Read8(memory, 0x7fd094u) - 1u));
-        Write8(memory, 0x7fd094u, A8(cpu));
+        LoadA8(cpu, (uint8_t)(Read8(memory, COLOR_STEP_TIMER) - 1u));
+        Write8(memory, COLOR_STEP_TIMER, A8(cpu));
         if (cpu->zero) {
             LoadA8(cpu, 0x06u);
-            Write8(memory, 0x7fd094u, A8(cpu));
+            Write8(memory, COLOR_STEP_TIMER, A8(cpu));
             LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
             BitImmediate8(cpu, 0x10u);
             ScreenColorStep(memory, cpu, !cpu->zero);
@@ -456,7 +475,7 @@ void Lufia2FieldScreenEffects(
         LsrA8(cpu);
         LsrA8(cpu);
         LsrA8(cpu);
-        StoreADirect8(memory, cpu, 0x55u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_B);
         LoadAAbsolute8(memory, cpu, 0x1288u, 0);
         cpu->carry = 0;
         Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x1289u, 0)));
@@ -464,32 +483,32 @@ void Lufia2FieldScreenEffects(
         LsrA8(cpu);
         LsrA8(cpu);
         LsrA8(cpu);
-        StoreADirect8(memory, cpu, 0x54u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
         LoadAAbsolute8(memory, cpu, 0x1286u, 0);
         And8(cpu, 0x1fu);
         Compare8(cpu, A8(cpu),
             Read8(memory, AbsoluteIndexedAddress(cpu, 0x1287u, 0)));
         if (cpu->carry) {
             LoadA8(cpu, 0x1fu);                                /* toward black */
-            Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
-            StoreADirect8(memory, cpu, 0x54u);
+            Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+            StoreADirect8(memory, cpu, DP_SCRATCH_A);
             cpu->carry = 1;
             Sbc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x1287u, 0)));
         } else {
             LoadAAbsolute8(memory, cpu, 0x1287u, 0);           /* 807D */
             cpu->carry = 1;
-            Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
+            Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
         }
-        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x55u));
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_B));
         if (!cpu->carry) {
             LoadAAbsolute8(memory, cpu, 0x1287u, 0);           /* 8087 */
-            StoreADirect8(memory, cpu, 0x54u);
+            StoreADirect8(memory, cpu, DP_SCRATCH_A);
             LoadA8(cpu, 0x80u);
             TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
         }
         LoadAAbsolute8(memory, cpu, 0x1286u, 0);               /* 8091 */
         And8(cpu, 0xe0u);
-        Or8(cpu, DirectByte(memory, cpu, 0x54u));
+        Or8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
         StoreAAbsolute8(memory, cpu, SNES_COLDATA, 0);
     }
     LoadAAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0);         /* 809B */

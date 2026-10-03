@@ -2,6 +2,7 @@
 
 #include "core/cpu_ops.h"
 #include "lufia2/field.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 enum {
@@ -175,11 +176,11 @@ Lufia2ExecutionResult Lufia2FieldClaimPlacedObject(
             0x83f422u, 0x83f644u, 3u))
         return ObjectTransitionUnwound(0x83f644u);
     OpLoadA(cpu, 0x00f7u);
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
-    OpStz(memory, cpu, OpDp(cpu, 0x55u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpStz(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
     OpLoadA(cpu, 0x00bfu);
-    OpSta(memory, cpu, OpDp(cpu, 0x56u));
-    OpStz(memory, cpu, OpDp(cpu, 0x57u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_C));
+    OpStz(memory, cpu, OpDp(cpu, DP_SCRATCH_D));
     if (!ObjectTransitionChild(memory, cpu, child, context,
             0x83f80du, 0x83f654u, 2u))
         return ObjectTransitionUnwound(0x83f654u);

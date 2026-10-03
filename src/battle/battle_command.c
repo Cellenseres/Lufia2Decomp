@@ -5,14 +5,14 @@ Lufia2ExecutionResult Lufia2BattleChooseCommand(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context) {
     BattleContext battle = BattleContextCreate(memory, cpu, child, child_context, 0x81u);
-    if (!BattleCall(&battle, 0xcb77u, 0x81df0au, 2u))
+    if (!BattleCall(&battle, 0xcb77u, BATTLE_ROUTINE_PARTY_WINDOWS, 2u))
         return BattleChildUnwound(&battle);
     OpLoadA(cpu, 0x97u);
     OpSta(memory, cpu, OpDp(cpu, 0x24u));
     OpLdy(cpu, 0xfde6u);
     OpLoadA(cpu, 0u);
-    if (!BattleCall(&battle, 0xcb83u, 0x81b974u, 2u) ||
-        !BattleCall(&battle, 0xcb86u, 0x81b9afu, 3u))
+    if (!BattleCall(&battle, 0xcb83u, BATTLE_ROUTINE_LOAD_PALETTE, 2u) ||
+        !BattleCall(&battle, 0xcb86u, BATTLE_ROUTINE_COMMIT_PALETTES, 3u))
         return BattleChildUnwound(&battle);
     OpLoadA(cpu, 1u);
     OpSta(memory, cpu, OpDp(cpu, 2u));
@@ -31,7 +31,7 @@ Lufia2ExecutionResult Lufia2BattleChooseCommand(
             OpSta(memory, cpu, OpDp(cpu, 9u));
             OpInx(cpu); OpInx(cpu); OpInx(cpu);
             OpPushX(memory, cpu);
-            if (!BattleCall(&battle, 0xcbafu, 0x81be58u, 2u))
+            if (!BattleCall(&battle, 0xcbafu, BATTLE_ROUTINE_TILE_BLOCK, 2u))
                 return BattleChildUnwound(&battle);
             OpPullX(memory, cpu);
             OpCpx(cpu, 9u);
@@ -52,13 +52,13 @@ Lufia2ExecutionResult Lufia2BattleChooseCommand(
         OpSta(memory, cpu, OpDp(cpu, 8u));
         OpLda(memory, cpu, OpLongX(cpu, 0x97b560u));
         OpSta(memory, cpu, OpDp(cpu, 9u));
-        if (!BattleCall(&battle, 0xcbddu, 0x81be58u, 2u) ||
+        if (!BattleCall(&battle, 0xcbddu, BATTLE_ROUTINE_TILE_BLOCK, 2u) ||
             !BattleCall(&battle, 0xcbe0u, 0x859dd4u, 3u) ||
             !BattleCall(&battle, 0xcbe4u, 0x81d9d0u, 2u))
             return BattleChildUnwound(&battle);
         OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, 0x0012f3u);
-        if (!BattleCall(&battle, 0xcbedu, 0x85ec81u, 3u))
+        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+        if (!BattleCall(&battle, 0xcbedu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return BattleChildUnwound(&battle);
         OpLda(memory, cpu, OpDp(cpu, 0x46u));
         OpAslA(cpu);
@@ -71,7 +71,7 @@ Lufia2ExecutionResult Lufia2BattleChooseCommand(
                 !BattleCall(&battle, 0xcc03u, 0x849b3eu, 3u))
                 return BattleChildUnwound(&battle);
         }
-        OpLda(memory, cpu, OpDp(cpu, 0xddu));
+        OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
         OpBitValue(cpu, 0xa0u);
         if (!cpu->zero) {
             OpLoadA(cpu, 2u);
