@@ -193,6 +193,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:838F` | `Lufia2MenuClearLayers` | draft | `src/menu/menu_tilemap.c` |
 | `$82:88A0` | `Lufia2MenuItemIndex` | draft | `src/menu/menu_cursor.c` |
 | `$82:88CB` | `Lufia2MenuItemPosition` | draft | `src/menu/menu_cursor.c` |
+| `$82:89FA` | `Lufia2MenuCursorSlide` | draft | `src/menu/menu_cursor_slide.c` |
+| `$82:8AD8` | `Lufia2MenuSlideCorrectX` | draft | `src/menu/menu_cursor_slide.c` |
+| `$82:8AE9` | `Lufia2MenuSlideCorrectY` | draft | `src/menu/menu_cursor_slide.c` |
+| `$82:8AFA` | `Lufia2MenuSlideCount` | draft | `src/menu/menu_cursor_slide.c` |
 | `$82:8B4B` | `Lufia2MenuButtons` | verified | `src/menu/menu.c` |
 | `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |
 | `$82:939C` | `Lufia2MenuNmi` | verified | `src/menu/menu.c` |

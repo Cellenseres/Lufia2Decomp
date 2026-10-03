@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-403 functions in `metadata/functions.toml`: 366 verified, 37 draft, 0 identified, 0 disabled.
+407 functions in `metadata/functions.toml`: 366 verified, 41 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -813,6 +813,19 @@ at the entry. The multiply keeps X and the status flags and leaves the rotated
 multiplier behind, as the original does. They are compared against the
 original ROM code for CPU state, work RAM, ordered writes and stack frames, at
 every entry width.
+
+## Menu cursor slide
+
+`$82:89FA` slides a menu cursor sprite between the positions of two slots in
+straight steps (an error-accumulating line), with the corrections `$82:8AD8`
+and `$82:8AE9` and the step counter `$82:8AFA` that asks for a frame every
+sixteenth step. They are `draft` reconstructions that need M1 (else handed
+back). The counter hands off at its sprite frame call, and the slide passes
+that hand off up with the frames of both routines pushed, so the rest of the
+slide continues in the original code. They are compared against the original
+ROM code for CPU state, work RAM, ordered writes and stack frames, on random
+slot pairs, equal slots, short slides that finish before the first frame and
+long ones that hand off.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
