@@ -7,6 +7,7 @@ enum {
     BATTLE_WORK_CLEAR_END = 0x1c0cu,
 };
 
+/* Clear DP $40 and the work area $11D8-$1C0B. */
 static void ClearBattleWorkArea(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -21,6 +22,7 @@ static void ClearBattleWorkArea(BattleContext *battle) {
     OpSepWidths(cpu, 0x20u);
 }
 
+/* Save DB and P, keep X in $1395, mark active. */
 void BattleBeginSession(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -42,6 +44,7 @@ void BattleBeginSession(BattleContext *battle) {
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_SCRIPT_CONTEXT));
 }
 
+/* Restore the stack pointer saved at session start. */
 void BattleRestoreSessionStack(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
 
@@ -49,6 +52,7 @@ void BattleRestoreSessionStack(BattleContext *battle) {
     cpu->stack = cpu->x;
 }
 
+/* Runs $85:EDBB and then $85:EEA1 after the battle loop. */
 bool BattleRunPostLoopSteps(BattleContext *battle) {
     if (!BattleCall(battle, 0x8859u, 0x85edbbu, 3u))
         return false;
@@ -56,6 +60,7 @@ bool BattleRunPostLoopSteps(BattleContext *battle) {
     return BattleCall(battle, 0x885du, 0x85eea1u, 3u);
 }
 
+/* Clear the context; restore the saved registers. */
 void BattleEndSession(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -69,6 +74,7 @@ void BattleEndSession(BattleContext *battle) {
     PullDataBank(memory, cpu);
 }
 
+/* Normal fade unless result 1 from a special source. */
 static bool UseRegularBattleFade(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
 
@@ -90,6 +96,7 @@ static bool UseRegularBattleFade(BattleContext *battle) {
     return cpu->zero;
 }
 
+/* Runs $85:EE3E and then $85:EDDB before leaving the battle. */
 bool BattlePrepareExit(BattleContext *battle) {
     if (!BattleCall(battle, 0x876bu, 0x85ee3eu, 3u))
         return false;
@@ -97,6 +104,7 @@ bool BattlePrepareExit(BattleContext *battle) {
     return BattleCall(battle, 0x876fu, 0x85eddbu, 3u);
 }
 
+/* Fade out via $81:C321, or $85:EAEF for special results. */
 bool BattleFadeOut(BattleContext *battle) {
     if (UseRegularBattleFade(battle))
         return BattleCall(battle, 0x8793u, 0x81c321u, 2u);
@@ -104,6 +112,7 @@ bool BattleFadeOut(BattleContext *battle) {
     return BattleCall(battle, 0x878du, 0x85eaefu, 3u);
 }
 
+/* Clear tilemaps, NMI and HDMA off, force blank. */
 bool BattleTearDownDisplay(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -118,7 +127,7 @@ bool BattleTearDownDisplay(BattleContext *battle) {
         return false;
     OpSepWidths(cpu, 0x20u);
 
-    if (!BattleCall(battle, 0x87a4u, 0x85ec81u, 3u))
+    if (!BattleCall(battle, 0x87a4u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return false;
 
     Lufia2DisableSceneNmi(memory, cpu);
@@ -126,5 +135,5 @@ bool BattleTearDownDisplay(BattleContext *battle) {
     LoadA8(cpu, BRIGHTNESS_FORCED_BLANK);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
 
-    return BattleCall(battle, 0x87b2u, 0x85ec81u, 3u);
+    return BattleCall(battle, 0x87b2u, BATTLE_ROUTINE_FRAME_INPUT, 3u);
 }

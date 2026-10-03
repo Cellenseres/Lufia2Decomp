@@ -51,7 +51,7 @@ static void RestoreFieldWorkingBuffers(const Lufia2Memory *memory,
 static void ResetFieldPresentationState(const Lufia2Memory *memory,
                                         Lufia2CpuState *cpu) {
     LoadA8(cpu, 1u);
-    OpTestBits(memory, cpu, OpAbs(cpu, 0x09a9u), 0u);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_UNK_7E09A9), 0u);
     LoadA8(cpu, 0x80u);
     OpSta(memory, cpu, OpDp(cpu, DP_NMI_UPLOAD_FLAGS));
 

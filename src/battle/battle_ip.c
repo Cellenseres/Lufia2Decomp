@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "lufia2/battle.h"
 #include "lufia2/item.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 enum {
@@ -24,11 +25,13 @@ static void SkillRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     cpu->carry = 0;
 }
 
+/* Stores A at TABLE + offset + Y. */
 static void StoreTable16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t offset) {
     StoreAAbsolute16(memory, cpu, (uint16_t)(TABLE + offset), cpu->y);
 }
 
+/* Store A's low byte at TABLE + offset + Y. */
 static void StoreTable8(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t offset) {
     StoreAAbsolute8(memory, cpu, (uint16_t)(TABLE + offset), cpu->y);
@@ -42,8 +45,8 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
     int usable;
 
     LoadX16(cpu, TABLE);
-    StoreWordAbsolute(memory, cpu, 0x2181u, cpu->x);          /* WRAM port */
-    StoreZeroAbsolute8(memory, cpu, 0x2183u, 0);
+    StoreWordAbsolute(memory, cpu, SNES_WMADDL, cpu->x); /* WRAM port */
+    StoreZeroAbsolute8(memory, cpu, SNES_WMADDH, 0);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, WRAM_BATTLE_PARTY_SLOT));
     AslA16(cpu);
@@ -67,7 +70,7 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x859e8fu, cpu->x)));   /* C177 */
         StoreTable16(memory, cpu, 0x06u);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, EQUIPMENT, cpu->x));
-        StoreAAbsolute16(memory, cpu, 0x0a06u, 0);
+        StoreAAbsolute16(memory, cpu, WRAM_ITEM_RECORD_ID, 0);
         PushIndex(memory, cpu);
         PushY(memory, cpu);
         SimulateJslFrame(memory, cpu, 0x81u, 0xc189u);
@@ -96,7 +99,7 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
             StoreTable8(memory, cpu, 0x05u);
             PushY(memory, cpu);
             LoadA8(cpu, 0x0du);
-            StoreADirect8(memory, cpu, 0x54u);
+            StoreADirect8(memory, cpu, DP_SCRATCH_A);
             {
                 int ended = 0;
 
@@ -108,7 +111,7 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
                     StoreTable8(memory, cpu, 0x14u);
                     IncrementX16(cpu);
                     IncrementY16(cpu);
-                    DecrementDirect8(memory, cpu, 0x54u);
+                    DecrementDirect8(memory, cpu, DP_SCRATCH_A);
                 } while (!cpu->zero);
             }
         } else {
@@ -119,13 +122,13 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
             StoreTable8(memory, cpu, 0x14u);
             StoreTable8(memory, cpu, 0x15u);
             LoadA8(cpu, 0x0bu);
-            StoreADirect8(memory, cpu, 0x54u);
+            StoreADirect8(memory, cpu, DP_SCRATCH_A);
             do {
                 TransferDirectToA(cpu);
                 StoreTable8(memory, cpu, 0x16u);
                 IncrementX16(cpu);
                 IncrementY16(cpu);
-                DecrementDirect8(memory, cpu, 0x54u);
+                DecrementDirect8(memory, cpu, DP_SCRATCH_A);
             } while (!cpu->zero);
         }
         cpu->y = PullIndexValue(memory, cpu);                  /* C20B */
@@ -217,6 +220,7 @@ Lufia2ExecutionResult Lufia2BattleGlyph(
     return ExecutionReturned(0x81e871u);
 }
 
+/* Two-row tile at Y with attributes; Y += 2. */
 static void TileRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t attribute) {
     StoreAAbsolute8(memory, cpu, 0x0000u, cpu->y);
@@ -229,6 +233,7 @@ static void TileRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     IncrementY16(cpu);
 }
 
+/* Y += bytes (16-bit), leaving the accumulator 8-bit. */
 static void AddY(Lufia2CpuState *cpu, uint16_t bytes) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->y);
@@ -242,15 +247,15 @@ static void AddY(Lufia2CpuState *cpu, uint16_t bytes) {
 static void EntryChars(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t count, uint16_t glyph_return) {
     LoadA8(cpu, count);
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     do {
         LoadAAbsolute8(memory, cpu, TABLE, cpu->x);
         IncrementX16(cpu);
         SimulateJsrFrame(memory, cpu, glyph_return);
         Lufia2BattleGlyph(memory, cpu);
         SimulateRtsFrame(memory, cpu);
-        TileRow(memory, cpu, DirectByte(memory, cpu, 0x55u));
-        DecrementDirect8(memory, cpu, 0x54u);
+        TileRow(memory, cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
+        DecrementDirect8(memory, cpu, DP_SCRATCH_A);
     } while (!cpu->zero);
 }
 
@@ -263,7 +268,7 @@ static int EntryHead(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     AslA8(cpu);
     AslA8(cpu);
     Or8(cpu, 0x20u);
-    StoreADirect8(memory, cpu, 0x55u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_B);
     cpu->x = (uint16_t)(cpu->x + skip);
     LoadAAbsolute8(memory, cpu, TABLE, cpu->x);
     IncrementX16(cpu);
@@ -274,7 +279,7 @@ static int EntryHead(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         StoreAAbsolute8(memory, cpu, 0x0000u, cpu->y);
         ExchangeAccumulatorBytes(cpu);
         StoreAAbsolute8(memory, cpu, 0x0040u, cpu->y);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+        LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
     } else {
         StoreAAbsolute8(memory, cpu, 0x0040u, cpu->y);
         TransferDirectToA(cpu);
@@ -288,6 +293,7 @@ static int EntryHead(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return 1;
 }
 
+/* Pushes the data bank, then sets it to $7E. */
 static void Bank7E(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     LoadA8(cpu, 0x7eu);
@@ -349,11 +355,11 @@ static void BattleListRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned i;
     uint8_t mode;
 
-    StoreWordAbsolute(memory, cpu, 0x2181u, cpu->y);
-    StoreZeroAbsolute8(memory, cpu, 0x2183u, 0);
+    StoreWordAbsolute(memory, cpu, SNES_WMADDL, cpu->y);
+    StoreZeroAbsolute8(memory, cpu, SNES_WMADDH, 0);
     LoadA8(cpu, 0x80u);
     for (i = 0; i < 0x80u; ++i)
-        StoreZeroAbsolute8(memory, cpu, 0x2180u, 0);
+        StoreZeroAbsolute8(memory, cpu, SNES_WMDATA, 0);
     LoadA8(cpu, 0x00u);
     LoadA8(cpu, DirectByte(memory, cpu, 0x1bu));
     mode = A8(cpu);

@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
@@ -55,7 +56,7 @@ static WaveFill FillWaveTable(
 static Lufia2Wram EnterWaveBank(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
-    SelectDataBank(memory, cpu, WAVE_BANK);
+    OpSetDataBank(memory, cpu, WAVE_BANK);
     return WramViewInBank(memory, cpu, WAVE_BANK);
 }
 

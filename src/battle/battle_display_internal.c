@@ -2,36 +2,57 @@
 
 #include "battle/battle_lifecycle_internal.h"
 #include "core/snes_registers.h"
+#include "core/wram_view.h"
+#include "system/dp_scratch.h"
 #include "system/scene_nmi_internal.h"
 #include "system/wram.h"
 
+/* Direct-page bytes of the scene NMI that setup clears first. */
+enum {
+    DISPLAY_PPU_TABLE = 0xb5d3u, /* ROM pairs of PPU register and value */
+    DISPLAY_DP_CLEAR_COUNT = 4,
+    DISPLAY_QUEUE = 0x0594u, /* 16 bytes cleared, then three words set to $FFFF */
+    DISPLAY_QUEUE_BYTES = 16,
+    DISPLAY_QUEUE_WORD_A = 0x0596u,
+    DISPLAY_QUEUE_WORD_B = 0x059au,
+    DISPLAY_QUEUE_WORD_C = 0x059eu,
+    DISPLAY_LAST_FLAG = 0x15b3u,
+};
+
+/* Clear the scene NMI uploads and blank the screen. */
 void BattleResetDisplayWork(BattleContext *battle) {
+    static const uint8_t cleared_dp[DISPLAY_DP_CLEAR_COUNT] = {0x74u, 0x72u, 0x73u,
+                                                               0x71u};
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
-    OpStz(memory, cpu, OpDp(cpu, 0x74u));
-    OpStz(memory, cpu, OpDp(cpu, 0x72u));
-    OpStz(memory, cpu, OpDp(cpu, 0x73u));
-    OpStz(memory, cpu, OpDp(cpu, 0x71u));
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    unsigned i;
 
-    LoadA8(cpu, BRIGHTNESS_FORCED_BLANK);
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
-
-    OpLdx(cpu, 15u);
-    do {
-        OpStz(memory, cpu, OpAbsX(cpu, 0x0594u));
-        OpDex(cpu);
-    } while (!cpu->negative);
-
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x0596u), cpu->x);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x059au), cpu->x);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x059eu), cpu->x);
+    for (i = 0; i < DISPLAY_DP_CLEAR_COUNT; ++i)
+        WramWrite(wram, cleared_dp[i], 0u);
+    WramWrite(wram, WRAM_BRIGHTNESS, BRIGHTNESS_FORCED_BLANK);
+    for (i = DISPLAY_QUEUE_BYTES; i-- > 0u;)
+        WramWriteAt(wram, DISPLAY_QUEUE, (uint16_t)i, 0u);
+    cpu->x = 0xffffu;
+    WramWrite16(wram, DISPLAY_QUEUE_WORD_A, cpu->x);
+    WramWrite16(wram, DISPLAY_QUEUE_WORD_B, cpu->x);
+    WramWrite16(wram, DISPLAY_QUEUE_WORD_C, cpu->x);
     OpTxa(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x15b3u));
+    WramWrite(wram, DISPLAY_LAST_FLAG, A8(cpu));
 }
 
+enum {
+    DISPLAY_RECORD_FIRST = 0x1a8fu, /* 15 records of 6 bytes, first word cleared */
+    DISPLAY_RECORD_STRIDE = 6,
+    DISPLAY_RECORD_END = 90,
+};
+
+/* Clears the four tilemaps and the display records. */
 bool BattleClearDisplayBuffers(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    unsigned offset;
 
     if (!BattleClearBackgroundTilemap(battle))
         return false;
@@ -42,141 +63,150 @@ bool BattleClearDisplayBuffers(BattleContext *battle) {
     if (!BattleClearTilemap3800ForSetup(battle))
         return false;
 
-    OpStz(memory, cpu, OpDp(cpu, 0xd8u));
-    OpStz(memory, cpu, OpDp(cpu, 0xd9u));
-    OpStz(memory, cpu, OpAbs(cpu, BATTLE_FRAME_STATE));
+    WramWrite(wram, 0xd8u, 0u);
+    WramWrite(wram, 0xd9u, 0u);
+    WramWrite(wram, BATTLE_FRAME_STATE, 0u);
 
     OpRepWidths(cpu, 0x20u);
-    OpLdx(cpu, 90u);
-    do {
-        OpStz(memory, cpu, OpAbsX(cpu, 0x1a8fu));
-        for (unsigned i = 0; i < 6u; ++i)
-            OpDex(cpu);
-    } while (!cpu->zero);
+    for (offset = DISPLAY_RECORD_END; offset > 0u; offset -= DISPLAY_RECORD_STRIDE)
+        WramWrite16At(wram, DISPLAY_RECORD_FIRST, (uint16_t)offset, 0u);
+    OpLdx(cpu, 0u);
     OpSepWidths(cpu, 0x20u);
 
     return true;
 }
 
+enum {
+    DISPLAY_PARTY_SLOTS = 4,
+    DISPLAY_PARTY_PORTRAIT_FLAGS = 0xb411u, /* per party id, ROM */
+    DISPLAY_PARTY_STATE = 0x00139cu,        /* 13 bytes per slot */
+    DISPLAY_PARTY_STATE_STRIDE = 13,
+};
+
+/* OR portrait flags into each slot's display state. */
 void BattleBuildPartyDisplayState(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram state = WramViewLong(memory);
+    /* First id widened with the DP high byte in A. */
+    uint16_t high = 0u;
+    unsigned slot;
+
     TransferDirectToA(cpu);
-    OpLdx(cpu, 0u);
-    OpTxy(cpu);
+    high = (uint16_t)(cpu->accumulator & 0xff00u);
+    for (slot = 0; slot < DISPLAY_PARTY_SLOTS; ++slot) {
+        const uint16_t id =
+            (uint16_t)(high | WramReadAt(wram, WRAM_BATTLE_PARTY_IDS, (uint16_t)slot));
+        const uint16_t offset = (uint16_t)(slot * DISPLAY_PARTY_STATE_STRIDE);
+        uint8_t flags;
 
-    do {
-        OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_IDS));
+        /* Slot counter on the stack while Y holds the id. */
+        cpu->y = (uint16_t)slot;
         PushY(memory, cpu);
-        OpTay(cpu);
-
-        OpLda(memory, cpu, OpAbsY(cpu, 0xb411u));
-        OpOra(memory, cpu, OpLongX(cpu, 0x00139cu));
-        OpSta(memory, cpu, OpLongX(cpu, 0x00139cu));
-
-        OpRepWidths(cpu, 0x20u);
-        OpTxa(cpu);
-        cpu->carry = 0;
-        OpAdcValue(cpu, 13u);
-        OpTax(cpu);
-        OpSepWidths(cpu, 0x20u);
-
+        flags = WramReadAt(wram, DISPLAY_PARTY_PORTRAIT_FLAGS, id);
+        WramWriteAt(state, DISPLAY_PARTY_STATE, offset,
+                    (uint8_t)(flags | WramReadAt(state, DISPLAY_PARTY_STATE, offset)));
         OpPullY(memory, cpu);
-        OpIny(cpu);
-        OpCpy(cpu, 4u);
-    } while (!cpu->zero);
+        high = 0u;
+    }
+    cpu->accumulator = (uint16_t)(DISPLAY_PARTY_SLOTS * DISPLAY_PARTY_STATE_STRIDE);
+    cpu->x = cpu->accumulator;
+    cpu->y = DISPLAY_PARTY_SLOTS;
+    cpu->overflow = 0;
+    OpCpy(cpu, DISPLAY_PARTY_SLOTS);
 }
 
+enum {
+    DISPLAY_NAME_ROWS = 11,
+    DISPLAY_CLEAR_AREA = 0x1b17u,
+    DISPLAY_CLEAR_AREA_BYTES = 96,
+    DISPLAY_ROW_COPY_ROM = 0xb2fcu,
+    DISPLAY_FILL_AREA = 0x12e3u,
+    DISPLAY_FILL_BYTES = 16,
+    DISPLAY_ICON_SLOTS_LONG = 0x001be0u, /* four bytes, last slot first */
+};
+
+/* Reset the display records to their opening values. */
 void BattleInitializeDisplayRecords(BattleContext *battle) {
-    const Lufia2Memory *memory = battle->memory;
-    Lufia2CpuState *cpu = battle->cpu;
     static const uint16_t clear_bytes[] = {0x15a8u, 0x15a9u, 0x15c7u, 0x15cbu,
                                            0x15cfu, 0x15d3u, 0x15d7u, 0x15dbu,
                                            0x15dfu, 0x15e3u, 0x15e7u};
     static const uint16_t slot_words[] = {0x48c0u, 0x4910u, 0x4956u, 0x4abeu, 0x4b36u};
     static const uint16_t slot_destinations[] = {0x15c8u, 0x15ccu, 0x15d4u, 0x15d8u,
                                                  0x15e8u};
+    static const uint16_t no_entry_words[] = {0x1321u, 0x1323u, 0x131eu, 0x1320u};
+    static const uint16_t gauge_bytes[] = {0x1475u, 0x1476u, 0x1478u};
+    static const uint8_t icon_slots[] = {0x6cu, 0x71u, 0x76u, 0x7bu};
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram bank0 = WramViewLong(memory);
+    unsigned i;
 
-    for (unsigned i = 0; i < sizeof(clear_bytes) / sizeof(clear_bytes[0]); ++i)
-        OpStz(memory, cpu, OpAbs(cpu, clear_bytes[i]));
+    for (i = 0; i < sizeof(clear_bytes) / sizeof(clear_bytes[0]); ++i)
+        WramWrite(wram, clear_bytes[i], 0u);
+    for (i = 0; i < sizeof(slot_words) / sizeof(slot_words[0]); ++i)
+        WramWrite16(wram, slot_destinations[i], slot_words[i]);
+    for (i = 0; i < sizeof(no_entry_words) / sizeof(no_entry_words[0]); ++i)
+        WramWrite16(wram, no_entry_words[i], 0xffffu);
+    for (i = 0; i < sizeof(gauge_bytes) / sizeof(gauge_bytes[0]); ++i)
+        WramWrite(wram, gauge_bytes[i], 0x30u);
+    WramWrite(wram, 0x1477u, 0x20u);
 
-    for (unsigned i = 0; i < sizeof(slot_words) / sizeof(slot_words[0]); ++i) {
-        OpLdx(cpu, slot_words[i]);
-        OpWriteX(memory, cpu, OpAbs(cpu, slot_destinations[i]), cpu->x);
-    }
+    for (i = DISPLAY_CLEAR_AREA_BYTES; i-- > 0u;)
+        WramWriteAt(wram, DISPLAY_CLEAR_AREA, (uint16_t)i, 0u);
+    WramWrite(wram, 0xdbu, 0u);
+    for (i = DISPLAY_NAME_ROWS; i-- > 0u;)
+        WramWriteAt(wram, WRAM_FIELD_STREAMED_ROW_SOURCE + 1u, (uint16_t)i,
+                    WramReadAt(wram, DISPLAY_ROW_COPY_ROM, (uint16_t)i));
+    for (i = DISPLAY_FILL_BYTES; i-- > 0u;)
+        WramWriteAt(wram, DISPLAY_FILL_AREA, (uint16_t)i, 0xffu);
+    for (i = 0; i < sizeof(icon_slots); ++i)
+        WramWriteAt(bank0, DISPLAY_ICON_SLOTS_LONG, (uint16_t)(2u * (3u - i)),
+                    icon_slots[i]);
 
-    OpLdx(cpu, 0xffffu);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x1321u), cpu->x);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x1323u), cpu->x);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x131eu), cpu->x);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x1320u), cpu->x);
-
-    LoadA8(cpu, 0x30u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x1475u));
-    OpSta(memory, cpu, OpAbs(cpu, 0x1476u));
-    OpSta(memory, cpu, OpAbs(cpu, 0x1478u));
-    LoadA8(cpu, 0x20u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x1477u));
-
-    OpLdx(cpu, 95u);
-    do {
-        OpStz(memory, cpu, OpAbsX(cpu, 0x1b17u));
-        OpDex(cpu);
-    } while (!cpu->negative);
-
-    OpStz(memory, cpu, OpDp(cpu, 0xdbu));
-
-    OpLdx(cpu, 10u);
-    do {
-        OpLda(memory, cpu, OpAbsX(cpu, 0xb2fcu));
-        OpSta(memory, cpu, OpAbsX(cpu, 0x122fu));
-        OpDex(cpu);
-    } while (!cpu->negative);
-
-    OpLdx(cpu, 15u);
-    LoadA8(cpu, 0xffu);
-    do {
-        OpSta(memory, cpu, OpAbsX(cpu, 0x12e3u));
-        OpDex(cpu);
-    } while (!cpu->negative);
-
-    LoadA8(cpu, 0x6cu);
-    OpSta(memory, cpu, 0x001be6u);
-    LoadA8(cpu, 0x71u);
-    OpSta(memory, cpu, 0x001be4u);
-    LoadA8(cpu, 0x76u);
-    OpSta(memory, cpu, 0x001be2u);
-    LoadA8(cpu, 0x7bu);
-    OpSta(memory, cpu, 0x001be0u);
+    cpu->x = 0xffffu;
+    LoadA8(cpu, icon_slots[sizeof(icon_slots) - 1u]);
 }
 
+/* Loads the display defaults, then runs the two record-preparing children. */
 bool BattlePrepareDisplayRecords(BattleContext *battle) {
     if (!BattleLoadDisplayDefaults(battle))
         return false;
     if (!BattleCall(battle, 0x8627u, 0x81e877u, 2u))
         return false;
-    return BattleCall(battle, 0x862au, 0x85ec81u, 3u);
+    return BattleCall(battle, 0x862au, BATTLE_ROUTINE_FRAME_INPUT, 3u);
 }
 
+/* Write the PPU table pairs until bit 7 ends it. */
 void BattleApplyPpuTable(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    bool loaded = false;
+    uint8_t value = 0u;
+    uint8_t index = 0u;
+    uint8_t reg;
+
     OpSepWidths(cpu, 0x30u);
-    OpLdy(cpu, 0u);
-    OpTyx(cpu);
-
     for (;;) {
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, 0xb5d3u)));
-        if (cpu->negative)
-            return;
-
-        OpIny(cpu);
-        OpLda(memory, cpu, OpAbsY(cpu, 0xb5d3u));
-        OpIny(cpu);
-        OpSta(memory, cpu, OpAbsX(cpu, SNES_INIDISP));
+        reg = WramReadAt(wram, DISPLAY_PPU_TABLE, index);
+        if (reg & 0x80u)
+            break;
+        ++index;
+        value = WramReadAt(wram, DISPLAY_PPU_TABLE, index);
+        ++index;
+        WramWriteAt(wram, SNES_INIDISP, reg, value);
+        loaded = true;
     }
+    cpu->y = index;
+    if (loaded)
+        LoadA8(cpu, value);
+    OpLdx(cpu, reg);
 }
 
+/* Install the scene NMI and load the base graphics. */
 bool BattleLoadBaseGraphics(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -189,7 +219,7 @@ bool BattleLoadBaseGraphics(BattleContext *battle) {
     LoadA8(cpu, 0x7eu);
     OpSta(memory, cpu, OpDp(cpu, 0x62u));
     OpLdx(cpu, 0x0190u);
-    OpWriteX(memory, cpu, OpDp(cpu, 0x54u), cpu->x);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_SCRATCH_A), cpu->x);
 
     if (!BattleDecompressResource(battle, 0x865du))
         return false;
@@ -210,6 +240,7 @@ typedef struct BattleVramTransfer {
     uint16_t size;
 } BattleVramTransfer;
 
+/* DMA one tile block to VRAM on channel 0. */
 static void UploadVramBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             const BattleVramTransfer *transfer) {
     OpLdx(cpu, transfer->vram_address);
@@ -228,6 +259,7 @@ static void UploadVramBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpSta(memory, cpu, OpAbs(cpu, SNES_MDMAEN));
 }
 
+/* Uploads the two base tile blocks to VRAM. */
 void BattleUploadBaseTiles(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -240,6 +272,7 @@ void BattleUploadBaseTiles(BattleContext *battle) {
         UploadVramBlock(memory, cpu, &transfers[i]);
 }
 
+/* Load background, palettes and presentation resources. */
 bool BattleLoadPresentationAssets(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -265,14 +298,14 @@ bool BattleLoadPresentationAssets(BattleContext *battle) {
         return false;
 
     LoadA8(cpu, 2u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x15abu));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_SPRITE_MODE));
     if (!BattleCall(battle, 0x86e0u, 0x858a39u, 3u))
         return false;
     if (!BattleCommitPalettes(battle))
         return false;
 
     LoadA8(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
 
     OpRepWidths(cpu, 0x20u);
     for (unsigned i = 0; i < 9u; ++i) {
@@ -283,42 +316,60 @@ bool BattleLoadPresentationAssets(BattleContext *battle) {
     return true;
 }
 
+enum {
+    DISPLAY_ICON_ROWS = 10,
+    DISPLAY_ICON_SOURCE = 0x161bu,
+    DISPLAY_ICON_BLANK = 16,
+    DISPLAY_ICON_COPY_LONG = 0x7ee700u,
+    DISPLAY_SPRITE_STATE_FLAG = 0x40u,
+    DISPLAY_ROW_COUNTER = 0x1bu,
+};
+
+/* Copy the icon ids to $7E:E700; 16 becomes DP low. */
 void BattlePrepareSpriteState(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
-    LoadA8(cpu, 0x40u);
-    OpSta(memory, cpu, OpDp(cpu, 0x72u));
-    OpAslA(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_FRAME_STATE));
+    const Lufia2Wram dp = WramViewOfCaller(memory, cpu);
+    Lufia2Wram work;
+    uint16_t high = (uint16_t)(cpu->accumulator & 0xff00u);
+    uint8_t loaded = 0u;
+    uint8_t stored = 0u;
+    unsigned row;
+
+    WramWrite(dp, 0x72u, DISPLAY_SPRITE_STATE_FLAG);
+    WramWrite(dp, BATTLE_FRAME_STATE, (uint8_t)(DISPLAY_SPRITE_STATE_FLAG << 1));
 
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7eu);
-
-    OpLdy(cpu, 0u);
-    OpTyx(cpu);
-    LoadA8(cpu, 10u);
-    OpSta(memory, cpu, OpDp(cpu, 0x1bu));
-    do {
-        OpLda(memory, cpu, OpAbsY(cpu, 0x161bu));
-        OpCmpValue(cpu, 16u);
-        if (cpu->zero)
-            TransferDirectToA(cpu);
-        OpSta(memory, cpu, OpLongX(cpu, 0x7ee700u));
-        OpIny(cpu);
-        OpInx(cpu);
-        OpStepMem(memory, cpu, OpDp(cpu, 0x1bu), -1);
-    } while (!cpu->zero);
+    work = WramViewOfCaller(memory, cpu);
+    WramWrite(dp, DISPLAY_ROW_COUNTER, DISPLAY_ICON_ROWS);
+    for (row = 0; row < DISPLAY_ICON_ROWS; ++row) {
+        loaded = WramReadAt(work, DISPLAY_ICON_SOURCE, (uint16_t)row);
+        stored = loaded;
+        if (loaded == DISPLAY_ICON_BLANK) {
+            stored = (uint8_t)cpu->direct_page;
+            high = (uint16_t)(cpu->direct_page & 0xff00u);
+        }
+        WramWriteAt(WramViewLong(memory), DISPLAY_ICON_COPY_LONG, (uint16_t)row,
+                    stored);
+        WramStep(dp, DISPLAY_ROW_COUNTER, -1);
+    }
+    cpu->accumulator = (uint16_t)(high | stored);
+    cpu->carry = loaded >= DISPLAY_ICON_BLANK;
+    cpu->x = DISPLAY_ICON_ROWS;
+    cpu->y = DISPLAY_ICON_ROWS;
 
     PullDataBank(memory, cpu);
 }
 
+/* Closing display children, then a 30-frame wait. */
 bool BattleFinishDisplay(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
 
     if (!BattleCall(battle, 0x873eu, 0x85ab5bu, 3u))
         return false;
-    if (!BattleCall(battle, 0x8742u, 0x85ec81u, 3u))
+    if (!BattleCall(battle, 0x8742u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return false;
 
     OpSta(memory, cpu, OpAbs(cpu, 0x123au));

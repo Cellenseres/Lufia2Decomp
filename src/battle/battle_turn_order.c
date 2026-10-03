@@ -48,10 +48,7 @@ static void BattleFindActionRecord(const Lufia2Memory *memory, Lufia2CpuState *c
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $85:9337: insert the staged entry (actor $54, priority $56) into the turn
- * queue, which is kept in descending priority order. Entries of equal
- * priority stay ahead of the new one; an actor byte of zero ends the queue.
- * Runs with 16-bit index registers. */
+/* $85:9337: insert the staged entry by descending priority. */
 static void BattleInsertTurnQueueEntry(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                        uint8_t return_bank, uint16_t return_address) {
     static const uint8_t staged_bytes[BATTLE_TURN_ENTRY_SIZE] = {
@@ -74,7 +71,7 @@ static void BattleInsertTurnQueueEntry(const Lufia2Memory *memory, Lufia2CpuStat
         insert_at = (uint16_t)(insert_at + BATTLE_TURN_ENTRY_SIZE);
     WramWrite16(dp, TURN_DP_INSERT_OFFSET, insert_at);
 
-    /* Make room by moving the entries from the insertion point up by one. */
+    /* Shift later entries up by one. */
     from = (WRAM_BATTLE_TURN_QUEUE_COUNT - 1u) * BATTLE_TURN_ENTRY_SIZE;
     do {
         from = (uint16_t)(from - BATTLE_TURN_ENTRY_SIZE);
@@ -86,7 +83,7 @@ static void BattleInsertTurnQueueEntry(const Lufia2Memory *memory, Lufia2CpuStat
         WramWriteAt(queue, WRAM_BATTLE_TURN_QUEUE + i, insert_at,
                     WramRead(dp, staged_bytes[i]));
 
-    /* Exit registers: the last staged byte in A, both indexes at the entry. */
+    /* Exit: last staged byte in A, indexes at entry. */
     cpu->x = insert_at;
     cpu->y = from;
     cpu->carry = 1;
@@ -95,17 +92,14 @@ static void BattleInsertTurnQueueEntry(const Lufia2Memory *memory, Lufia2CpuStat
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $80:834C: 16x8 product in DP $51-$53, called as a long subroutine. */
+/* $80:834C: 16x8 product into DP $51-$53. */
 static void BattlePriorityProduct(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SimulateJslFrame(memory, cpu, 0x85u, 0xdd27u);
     (void)Lufia2Multiply16By8(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $85:DD19: spread the staged turn priority at $56 by a random amount.
- * The spread is (priority * factor / 256 + 1) with the factor staged in $54;
- * the priority moves by two random draws below that range minus the range
- * itself, and stays within 0..$FFFF. */
+/* $85:DD19: randomize the staged priority within its spread. */
 static void BattleRandomizePriority(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                     uint16_t return_address) {
     const Lufia2Wram dp = WramViewOfCaller(memory, cpu);
@@ -123,7 +117,7 @@ static void BattleRandomizePriority(const Lufia2Memory *memory, Lufia2CpuState *
     WramWrite16(dp, TURN_DP_PRODUCT_SOURCE, priority);
     BattlePriorityProduct(memory, cpu);
 
-    /* Range: the product's upper word plus one, and one more from 2 up. */
+    /* Range: product's upper word plus one, more from 2. */
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, (uint16_t)(WramRead16(dp, TURN_DP_PRODUCT_HIGH) + 1u));
     Compare16(cpu, cpu->accumulator, 2u);
@@ -154,8 +148,7 @@ static void BattleRandomizePriority(const Lufia2Memory *memory, Lufia2CpuState *
     SimulateRtlFrame(memory, cpu);
 }
 
-/* Stage the battler at Y for a turn: its base priority plus bonus in $56 and
- * the spread factor 13 in $54. The accumulator is 8-bit afterwards. */
+/* Stage battler Y: priority plus bonus, spread 13. */
 static void BattleStageRandomizedTurnPriority(const Lufia2Memory *memory,
                                               Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -170,15 +163,14 @@ static void BattleStageRandomizedTurnPriority(const Lufia2Memory *memory,
     WramWrite(wram, TURN_DP_ACTOR_OR_SPREAD, TURN_SPREAD_FACTOR);
 }
 
-/* A battler takes a turn unless it has a status that forbids one. */
+/* A battler takes a turn unless its status forbids. */
 static bool BattlerCanTakeTurn(const Lufia2Wram wram, Lufia2CpuState *cpu) {
     LoadA8(cpu, WramReadAt(wram, BATTLE_BATTLER_STATUS, cpu->y));
     cpu->zero = (A8(cpu) & BATTLE_STATUS_NO_TURN_MASK) == 0;
     return cpu->zero;
 }
 
-/* Queue a turn for every live enemy, one bit of $00 per enemy slot. Runs with
- * 8-bit A and 16-bit index registers. */
+/* Queue a turn for every live enemy. */
 Lufia2ExecutionResult Lufia2BattleQueueEnemyTurns(const Lufia2Memory *memory,
                                                   Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -207,7 +199,7 @@ Lufia2ExecutionResult Lufia2BattleQueueEnemyTurns(const Lufia2Memory *memory,
     return ExecutionReturned(0x81c293u);
 }
 
-/* Queue the capsule monster's turn, if it is out and able. */
+/* Queue the capsule monster's turn when able. */
 Lufia2ExecutionResult Lufia2BattleQueueCapsuleTurn(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);

@@ -1,20 +1,37 @@
 /* Ancient Cave floor entry ($83:9E31) and builder ($83:9013). */
 
 #include "cave/cave_internal.h"
+#include "core/snes_registers.h"
+#include "core/wram_view.h"
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
-#include "party/party_internal.h"
 #include "lufia2/system.h"
+#include "party/party_internal.h"
 #include "system/system_internal.h"
-#include "text/text_internal.h"
 #include "system/wram.h"
+#include "text/text_internal.h"
 
 #define BFAA_HANDOFF 0x80bfbcu
 
 static void CaveRandomByte(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t site) {
     Lufia2CallRandomByte(memory, cpu, (uint16_t)(site + 3u));
+}
+
+/* Random helpers take the limit in A, answer in A. */
+static uint8_t CaveRandomBelowOf(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t site, uint8_t limit) {
+    LoadA8(cpu, limit);
+    Lufia2CaveRandomBelow(memory, cpu, site);
+    return A8(cpu);
+}
+
+static uint8_t CaveRandomMeanOf(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint16_t site, uint8_t limit) {
+    LoadA8(cpu, limit);
+    Lufia2CaveRandomMean(memory, cpu, site);
+    return A8(cpu);
 }
 
 /* JSL to a whole-function RTL body in the decomp library. */
@@ -28,210 +45,233 @@ static void CaveCallLong(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $83:9013-$83:9032: clear the grid to D and the shapes to $1C. */
+/* $83:9013-$83:9032: clear room grid and shape grid. */
 static void CaveClearGrid(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram work = WramViewLong(memory);
+    uint16_t offset;
+
     PushDataBank(memory, cpu);                                 /* 9013 */
     OpSepWidths(cpu, 0x20u);
     OpRepWidths(cpu, 0x10u);
     OpSetDataBank(memory, cpu, 0x7eu);
     OpRepWidths(cpu, 0x20u);
-    OpLdx(cpu, 0x0000u);
-    do {
-        TransferDirectToA(cpu);                                /* 9021 */
-        OpSta(memory, cpu, OpLongX(cpu, CAVE_ROOM_GRID_LONG));
-        LoadA16(cpu, 0x1c1cu);
-        OpSta(memory, cpu, OpLongX(cpu, CAVE_SHAPE_GRID_LONG));
-        OpInx(cpu);
-        OpInx(cpu);
-        OpCpx(cpu, 0x0100u);
-    } while (!cpu->carry);
+    for (offset = 0; offset < CAVE_GRID_BYTES; offset += 2u) {
+        WramWrite16At(work, CAVE_ROOM_GRID_LONG, offset, cpu->direct_page);
+        WramWrite16At(work, CAVE_SHAPE_GRID_LONG, offset, CAVE_BLANK_SHAPE_PAIR);
+    }
+    LoadX16(cpu, CAVE_GRID_BYTES);
+    LoadA16(cpu, CAVE_BLANK_SHAPE_PAIR);
+    OpCpx(cpu, CAVE_GRID_BYTES);
 }
 
-/* $83:9034-$83:90C3: split item records by floor limit. */
+/* $83:9034-$83:90C3: list the field items allowed on this floor. */
 static void CaveCollectItems(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram work = WramViewLong(memory);
+    Lufia2Wram records;
+    uint16_t item;
+
     OpSepWidths(cpu, 0x20u);                                         /* 9034 */
-    OpSetDataBank(memory, cpu, 0x96u);
+    OpSetDataBank(memory, cpu, ITEM_RECORD_BANK);
+    records = WramViewInBank(memory, cpu, ITEM_RECORD_BANK);
     OpRepWidths(cpu, 0x20u);
     OpSepWidths(cpu, 0x20u);
-    OpLdx(cpu, 0x0000u);                                       /* 903E */
-    OpWriteX(memory, cpu, OpDp(cpu, 0x5du), cpu->x);
-    OpLdx(cpu, 0x1000u);
-    OpWriteX(memory, cpu, OpDp(cpu, 0x60u), cpu->x);
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);                             /* 9048 */
-    OpCmpValue(cpu, 0x3cu);
+    LoadX16(cpu, 0); /* 903E */
+    WramWrite16(wram, CAVE_DP_LIST_A_END, cpu->x);
+    LoadX16(cpu, CAVE_ITEM_LIST_B_BASE);
+    WramWrite16(wram, CAVE_DP_LIST_B_END, cpu->x);
+    LoadA8(cpu, WramRead(work, CAVE_FLOOR_LONG)); /* 9048 */
+    OpCmpValue(cpu, CAVE_UNLIMITED_PRICE_FLOOR);
     if (cpu->carry) {
         LoadA8(cpu, 0xffu);
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));
-        OpSta(memory, cpu, OpDp(cpu, 0x55u));
+        WramWrite(wram, CAVE_DP_PRICE_LIMIT, A8(cpu));
+        WramWrite(wram, CAVE_DP_PRICE_LIMIT + 1u, A8(cpu));
     } else {
-        /* Limit = 1000 * (floor + 1) through the PPU multiplier. */
-        LoadA8(cpu, 0xe8u);                                    /* 9058 */
-        OpSta(memory, cpu, OpAbs(cpu, 0x211bu));
-        LoadA8(cpu, 0x03u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x211bu));
-        OpLda(memory, cpu, CAVE_FLOOR_LONG);
+        /* Price limit: 1000 per floor, via the multiplier. */
+        LoadA8(cpu, CAVE_PRICE_PER_FLOOR & 0xffu); /* 9058 */
+        WramWrite(records, SNES_M7A, A8(cpu));
+        LoadA8(cpu, CAVE_PRICE_PER_FLOOR >> 8);
+        WramWrite(records, SNES_M7A, A8(cpu));
+        LoadA8(cpu, WramRead(work, CAVE_FLOOR_LONG));
         OpIncA(cpu);
-        OpSta(memory, cpu, OpAbs(cpu, 0x211cu));
-        OpLda(memory, cpu, OpAbs(cpu, 0x2134u));
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));
-        OpLda(memory, cpu, OpAbs(cpu, 0x2135u));
-        OpSta(memory, cpu, OpDp(cpu, 0x55u));
+        WramWrite(records, SNES_M7B, A8(cpu));
+        LoadA8(cpu, WramRead(records, SNES_MPYL));
+        WramWrite(wram, CAVE_DP_PRICE_LIMIT, A8(cpu));
+        LoadA8(cpu, WramRead(records, SNES_MPYM));
+        WramWrite(wram, CAVE_DP_PRICE_LIMIT + 1u, A8(cpu));
     }
-    OpLdy(cpu, 0x0000u);                                       /* 9074 */
+    cpu->y = 0; /* 9074 */
     do {
-        OpRepWidths(cpu, 0x20u);                                     /* 9077 */
-        OpLda(memory, cpu, OpAbsY(cpu, 0xcf69u));
-        OpTax(cpu);
+        uint16_t record;
+        uint8_t list_end;
+
+        item = cpu->y;
+        OpRepWidths(cpu, 0x20u); /* 9077 */
+        LoadA16(cpu, WramRead16At(records, ITEM_RECORD_TABLE, item));
+        TransferAToX(cpu);
+        record = cpu->x;
         OpSepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbsX(cpu, 0xcf69u));
-        OpBitValue(cpu, 0x02u);
+        LoadA8(cpu, WramReadAt(records, ITEM_RECORD_TABLE + ITEM_RECORD_FLAGS, record));
+        OpBitValue(cpu, ITEM_FLAG_FIELD_USABLE);
         if (cpu->zero)
             goto next;
-        OpBitValue(cpu, 0x20u);
+        OpBitValue(cpu, ITEM_FLAG_EXCLUDED);
         if (!cpu->zero)
             goto next;
-        OpLda(memory, cpu, OpAbsX(cpu, 0xcf6au));
-        OpBitValue(cpu, 0x20u);
+        LoadA8(cpu,
+               WramReadAt(records, ITEM_RECORD_TABLE + ITEM_RECORD_FLAGS2, record));
+        OpBitValue(cpu, ITEM_FLAG_EXCLUDED);
         if (!cpu->zero)
             goto next;
-        OpRepWidths(cpu, 0x20u);                                     /* 9091 */
-        OpLda(memory, cpu, OpAbsX(cpu, 0xcf6eu));
-        OpCmp(memory, cpu, OpDp(cpu, 0x54u));
+        OpRepWidths(cpu, 0x20u); /* 9091 */
+        LoadA16(cpu,
+                WramRead16At(records, ITEM_RECORD_TABLE + ITEM_RECORD_PRICE, record));
+        OpCmp(memory, cpu, OpDp(cpu, CAVE_DP_PRICE_LIMIT));
         if (cpu->carry)
             goto next;
-        OpLda(memory, cpu, OpAbsX(cpu, 0xcf70u));
-        OpBitValue(cpu, 0x0001u);
-        {
-            const uint8_t list = cpu->zero ? 0x60u : 0x5du;    /* 90A2/90B0 */
-
-            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, list)));
-            OpTya(cpu);
-            OpLsrA(cpu);
-            OpSta(memory, cpu, OpLongX(cpu, 0x7f0000u));
-            OpInx(cpu);
-            OpInx(cpu);
-            OpWriteX(memory, cpu, OpDp(cpu, list), cpu->x);
-        }
-next:
+        LoadA16(cpu,
+                WramRead16At(records, ITEM_RECORD_TABLE + ITEM_RECORD_USE, record));
+        OpBitValue(cpu, ITEM_USE_LIST_B);
+        list_end = cpu->zero ? CAVE_DP_LIST_B_END : CAVE_DP_LIST_A_END; /* 90A2/90B0 */
+        LoadX16(cpu, WramRead16(wram, list_end));
+        OpTya(cpu);
+        OpLsrA(cpu);
+        WramWrite16At(work, CAVE_ITEM_LISTS_LONG, cpu->x, cpu->accumulator);
+        OpInx(cpu);
+        OpInx(cpu);
+        WramWrite16(wram, list_end, cpu->x);
+    next:
         OpSepWidths(cpu, 0x20u);                                     /* 90BC */
         OpIny(cpu);
         OpIny(cpu);
-        OpCpy(cpu, 0x03a4u);
+        OpCpy(cpu, ITEM_RECORD_TABLE_BYTES);
     } while (!cpu->carry);
 }
 
-/* $83:90C5-$83:9141: optional first chests; Y = next slot. */
+/* $83:90C5-$83:9141: optional story or scroll chest first. */
 static void CaveFirstChests(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpSetDataBank(memory, cpu, 0x7fu);                         /* 90C5 */
-    OpLdy(cpu, 0x0000u);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram work = WramViewLong(memory);
+    Lufia2Wram cave;
+
+    OpSetDataBank(memory, cpu, 0x7fu); /* 90C5 */
+    cave = WramViewInBank(memory, cpu, 0x7fu);
+    LoadY16(cpu, 0);
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, OpAbs(cpu, 0xe75du));
+    WramWrite(cave, CAVE_STORY_CHEST_STATE, A8(cpu));
     CaveRandomByte(memory, cpu, 0x90d0u);
-    OpCmpValue(cpu, 0x05u);
+    OpCmpValue(cpu, CAVE_STORY_CHEST_ODDS);
     if (!cpu->carry) {
-        LoadA8(cpu, 0x09u);                                    /* 90D8 */
+        LoadA8(cpu, CAVE_STORY_CHEST_KINDS); /* 90D8 */
         Lufia2CaveRandomBelow(memory, cpu, 0x90dau);
-        OpSta(memory, cpu, OpDp(cpu, 0x58u));
+        WramWrite(wram, CAVE_DP_CHEST_KIND, A8(cpu));
         Lufia2EventFlagBitFrom(memory, cpu, 0x83u, 0x90e2u);
-        OpLda(memory, cpu, OpLongX(cpu, 0x7fe75eu));           /* 90E3 */
-        OpBit(memory, cpu, OpDp(cpu, 0x55u));
+        LoadA8(cpu, WramReadAt(work, CAVE_STORY_CHEST_SEEN_LONG, cpu->x)); /* 90E3 */
+        OpBit(memory, cpu, OpDp(cpu, CAVE_DP_CHEST_BIT));
         if (cpu->zero) {
-            OpOra(memory, cpu, OpDp(cpu, 0x55u));
-            OpSta(memory, cpu, OpLongX(cpu, 0x7fe75eu));
-            OpLda(memory, cpu, OpDp(cpu, 0x58u));
+            OpOra(memory, cpu, OpDp(cpu, CAVE_DP_CHEST_BIT));
+            WramWriteAt(work, CAVE_STORY_CHEST_SEEN_LONG, cpu->x, A8(cpu));
+            LoadA8(cpu, WramRead(wram, CAVE_DP_CHEST_KIND));
             cpu->carry = 0;
-            OpAdcValue(cpu, 0xc8u);
+            OpAdcValue(cpu, CAVE_STORY_FLAG_BASE);
             /* JSL $80:BE1A = JSR $80:BE1E; RTL. */
             SimulateJslFrame(memory, cpu, 0x83u, 0x90f9u);     /* 90F6 */
             Lufia2TextTestFlag(memory, cpu, 0xbe1cu);
             SimulateRtlFrame(memory, cpu);
             if (cpu->zero) {
                 TransferDirectToA(cpu);                        /* 90FC */
-                OpLda(memory, cpu, OpDp(cpu, 0x58u));
+                LoadA8(cpu, WramRead(wram, CAVE_DP_CHEST_KIND));
                 OpRepWidths(cpu, 0x20u);
                 OpAslA(cpu);
                 OpTax(cpu);
-                OpLda(memory, cpu, OpLongX(cpu, 0x91ffcau));
-                OpOraValue(cpu, 0x0200u);
-                OpSta(memory, cpu, OpAbs(cpu, 0xe746u));
+                LoadA16(cpu, Read16Long(memory, LongIndexedAddress(
+                                                    CAVE_STORY_CHEST_ITEMS, cpu->x)));
+                OpOraValue(cpu, CAVE_CHEST_ITEM_MARK);
+                WramWrite16(cave, CAVE_CHEST_WORDS, cpu->accumulator);
                 OpSepWidths(cpu, 0x20u);
-                LoadA8(cpu, 0x80u);
-                OpSta(memory, cpu, OpAbs(cpu, 0xe75du));
+                LoadA8(cpu, CAVE_STORY_CHEST_PLACED);
+                WramWrite(cave, CAVE_STORY_CHEST_STATE, A8(cpu));
                 goto take_slot;
             }
         }
     }
-    OpLda(memory, cpu, 0x7fe75bu);                             /* 9116 */
+    LoadA8(cpu, WramRead(work, CAVE_SCROLL_CHEST_STATE_LONG)); /* 9116 */
     if (cpu->negative)
         return;
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, 0x7fe75bu);
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);
-    OpCmpValue(cpu, 0x15u);
+    WramWrite(work, CAVE_SCROLL_CHEST_STATE_LONG, A8(cpu));
+    LoadA8(cpu, WramRead(work, CAVE_FLOOR_LONG));
+    OpCmpValue(cpu, CAVE_SCROLL_CHEST_FLOOR_LIMIT);
     if (!cpu->carry)
         return;
-    LoadA8(cpu, 0x3cu);                                        /* 9129 */
+    LoadA8(cpu, CAVE_SCROLL_CHEST_CHANCE); /* 9129 */
     Lufia2CaveRandomBelow(memory, cpu, 0x912bu);
     OpCmp(memory, cpu, CAVE_FLOOR_LONG);
     if (cpu->carry)
         return;
-    OpLdx(cpu, 0x022du);                                       /* 9134 */
-    OpWriteX(memory, cpu, OpAbs(cpu, 0xe746u), cpu->x);
+    LoadX16(cpu, CAVE_SCROLL_CHEST_WORD); /* 9134 */
+    WramWrite16(cave, CAVE_CHEST_WORDS, cpu->x);
     LoadA8(cpu, 0x01u);
-    OpSta(memory, cpu, 0x7fe75bu);
+    WramWrite(work, CAVE_SCROLL_CHEST_STATE_LONG, A8(cpu));
 take_slot:
-    OpIny(cpu);                                                /* 9140 */
+    OpIny(cpu); /* 9140 */
     OpIny(cpu);
 }
 
-/* Chest word from a ROM table at X. */
+/* Chest word from table[X], high byte flagged. */
 static void CaveChestFromTable(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t table,
     uint8_t high_or) {
-    OpLda(memory, cpu, OpLongX(cpu, table));
-    OpSta(memory, cpu, OpAbsY(cpu, 0xe746u));
-    OpLda(memory, cpu, OpLongX(cpu, table + 1u));
+    const Lufia2Wram cave = WramViewOfCaller(memory, cpu);
+
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(table, cpu->x)));
+    WramWriteAt(cave, CAVE_CHEST_WORDS, cpu->y, A8(cpu));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(table + 1u, cpu->x)));
     if (high_or)
         OpOraValue(cpu, high_or);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xe747u));
+    WramWriteAt(cave, CAVE_CHEST_WORDS + 1u, cpu->y, A8(cpu));
 }
 
-/* $83:91AD: common item from $91:FFDC. */
+/* $83:91AD: common item from the table at $91:FFDC. */
 static void CaveCommonChest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadA8(cpu, 0x09u);                                        /* 91AD */
+    LoadA8(cpu, CAVE_COMMON_ITEM_COUNT); /* 91AD */
     Lufia2CaveRandomMean(memory, cpu, 0x91afu);
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, 0x00u);
     ExchangeAccumulatorBytes(cpu);
     OpAslA(cpu);
     OpTax(cpu);
-    CaveChestFromTable(memory, cpu, 0x91ffdcu, 0);
+    CaveChestFromTable(memory, cpu, CAVE_COMMON_ITEM_TABLE, 0);
 }
 
-/* $83:916F/$83:9176: random word of an item list. */
+/* $83:916F/$83:9176: random entry of a bank $7F list. */
 static void CaveChestFromList(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t base,
     uint8_t end) {
-    OpLdx(cpu, base);
-    OpLda(memory, cpu, OpDp(cpu, end));
-    OpWriteX(memory, cpu, OpDp(cpu, 0x54u), cpu->x);           /* 917B */
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    LoadX16(cpu, base);
+    LoadA8(cpu, WramRead(wram, end));
+    WramWrite16(wram, CAVE_DP_PRICE_LIMIT, cpu->x); /* 917B */
     OpLsrA(cpu);
     Lufia2CaveRandomIndex(memory, cpu, 0x917eu);
     OpRepWidths(cpu, 0x20u);
     OpTxa(cpu);
     cpu->carry = 0;
-    OpAdc(memory, cpu, OpDp(cpu, 0x54u));
+    OpAdc(memory, cpu, OpDp(cpu, CAVE_DP_PRICE_LIMIT));
     OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0000u));
-    OpSta(memory, cpu, OpAbsY(cpu, 0xe746u));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, CAVE_ITEM_LISTS, cpu->x));
+    WramWrite16At(wram, CAVE_CHEST_WORDS, cpu->y, cpu->accumulator);
     OpSepWidths(cpu, 0x20u);
 }
 
-/* $83:9192: spell $00-$22 unless a party member already has it. */
+/* $83:9192: spell scroll, or common item if already known. */
 static void CaveSpellChest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadA8(cpu, 0x23u);                                        /* 9192 */
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    LoadA8(cpu, CAVE_SPELL_COUNT); /* 9192 */
     Lufia2CaveRandomBelow(memory, cpu, 0x9194u);
-    OpSta(memory, cpu, OpDp(cpu, 0x55u));
+    WramWrite(wram, CAVE_DP_CHEST_BIT, A8(cpu));
     PushY(memory, cpu);
     CaveCallLong(memory, cpu, 0x919au, Lufia2PartyListHasEntry);
     OpPullY(memory, cpu);
@@ -239,139 +279,127 @@ static void CaveSpellChest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         CaveCommonChest(memory, cpu);
         return;
     }
-    OpLda(memory, cpu, OpDp(cpu, 0x55u));                      /* 91A1 */
-    OpSta(memory, cpu, OpAbsY(cpu, 0xe746u));
-    LoadA8(cpu, 0x80u);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xe747u));
+    LoadA8(cpu, WramRead(wram, CAVE_DP_CHEST_BIT)); /* 91A1 */
+    WramWriteAt(wram, CAVE_CHEST_WORDS, cpu->y, A8(cpu));
+    LoadA8(cpu, CAVE_SPELL_CHEST_MARK);
+    WramWriteAt(wram, CAVE_CHEST_WORDS + 1u, cpu->y, A8(cpu));
 }
 
-/* $83:9142-$83:91E4: fill the chest words $E746,Y. */
+/* $83:9142-$83:91E4: fill the eight chest words. */
 static void CaveChestContents(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     do {
-        CaveRandomByte(memory, cpu, 0x9142u);                  /* 9142 */
-        OpCmpValue(cpu, 0xaeu);
+        CaveRandomByte(memory, cpu, 0x9142u); /* 9142 */
+        OpCmpValue(cpu, CAVE_ROLL_LIST_A);
         if (cpu->carry) {
-            CaveChestFromList(memory, cpu, 0x0000u, 0x5du);    /* 916F */
+            CaveChestFromList(memory, cpu, 0x0000u, CAVE_DP_LIST_A_END); /* 916F */
             goto next;
         }
-        OpCmpValue(cpu, 0x81u);
+        OpCmpValue(cpu, CAVE_ROLL_LIST_B);
         if (cpu->carry) {
-            CaveChestFromList(memory, cpu, 0x1000u, 0x60u);    /* 9176 */
+            CaveChestFromList(memory, cpu, CAVE_ITEM_LIST_B_BASE,
+                              CAVE_DP_LIST_B_END); /* 9176 */
             goto next;
         }
-        OpCmpValue(cpu, 0x63u);
+        OpCmpValue(cpu, CAVE_ROLL_SPELL);
         if (cpu->carry) {
             CaveSpellChest(memory, cpu);
             goto next;
         }
-        OpCmpValue(cpu, 0x5eu);
+        OpCmpValue(cpu, CAVE_ROLL_EQUIPMENT);
         if (cpu->carry) {
-            LoadA8(cpu, 0x29u);                                /* 91C8 */
+            LoadA8(cpu, CAVE_EQUIPMENT_COUNT); /* 91C8 */
             Lufia2CaveRandomIndex(memory, cpu, 0x91cau);
-            CaveChestFromTable(memory, cpu, 0x94eea0u, 0x40u);
+            CaveChestFromTable(memory, cpu, CAVE_EQUIPMENT_TABLE,
+                               CAVE_CHEST_EQUIPMENT_MARK);
             goto next;
         }
-        OpCmpValue(cpu, 0x24u);
+        OpCmpValue(cpu, CAVE_ROLL_COMMON);
         if (cpu->carry) {
-            CaveCommonChest(memory, cpu);                      /* 91AD */
+            CaveCommonChest(memory, cpu); /* 91AD */
             goto next;
         }
-        LoadA8(cpu, 0x1fu);                                    /* 915A */
+        LoadA8(cpu, CAVE_CONSUMABLE_COUNT); /* 915A */
         Lufia2CaveRandomIndex(memory, cpu, 0x915cu);
-        CaveChestFromTable(memory, cpu, 0x94f13du, 0);
-next:
+        CaveChestFromTable(memory, cpu, CAVE_CONSUMABLE_TABLE, 0);
+    next:
         OpIny(cpu);                                            /* 91DD */
         OpIny(cpu);
-        OpCpy(cpu, 0x0010u);
+        OpCpy(cpu, CAVE_CHEST_WORD_BYTES);
     } while (!cpu->carry);
 }
 
 /* $83:91E7-$83:9265: up to 7 room rectangles. */
 static void CavePlaceRooms(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram dp = WramViewOfCaller(memory, cpu);
+    uint8_t cursor_column = 1u;
+    uint8_t cursor_row = 4u;
+    uint8_t room_count = 0u;
+    uint8_t tallest = 0u;
+    uint8_t width = 0u;
+
     OpSepWidths(cpu, 0x20u);                                         /* 91E7 */
     OpSetDataBank(memory, cpu, 0x83u);
-    LoadA8(cpu, 0x01u);
-    OpSta(memory, cpu, OpDp(cpu, 0x5au));
-    LoadA8(cpu, 0x04u);
-    OpSta(memory, cpu, OpDp(cpu, 0x5bu));
-    OpStz(memory, cpu, OpDp(cpu, 0x56u));
-    OpStz(memory, cpu, OpDp(cpu, 0x63u));
+    WramWrite(dp, CAVE_DP_CURSOR_COLUMN, cursor_column);
+    WramWrite(dp, CAVE_DP_CURSOR_ROW, cursor_row);
+    WramWrite(dp, CAVE_DP_ROOM_COUNT, room_count);
+    WramWrite(dp, CAVE_DP_TALLEST_ROOM, tallest);
     for (;;) {
-        OpLda(memory, cpu, OpDp(cpu, 0x5au));                  /* 91F9 */
-        OpSta(memory, cpu, OpDp(cpu, 0x26u));
-        LoadA8(cpu, 0x03u);
-        Lufia2CaveRandomBelow(memory, cpu, 0x91ffu);
-        OpDecA(cpu);
-        cpu->carry = 0;
-        OpAdc(memory, cpu, OpDp(cpu, 0x5bu));
-        OpSta(memory, cpu, OpDp(cpu, 0x27u));
-        LoadA8(cpu, 0x04u);
-        Lufia2CaveRandomMean(memory, cpu, 0x920au);
-        OpIncA(cpu);
-        OpSta(memory, cpu, OpDp(cpu, 0x24u));
-        cpu->carry = 0;
-        OpAdc(memory, cpu, OpDp(cpu, 0x26u));
-        OpCmpValue(cpu, 0x09u);
-        if (!cpu->carry) {
-            LoadA8(cpu, 0x04u);                                /* 9217 */
-            Lufia2CaveRandomMean(memory, cpu, 0x9219u);
-            OpIncA(cpu);
-            OpSta(memory, cpu, OpDp(cpu, 0x25u));
-            cpu->carry = 0;
-            OpAdc(memory, cpu, OpDp(cpu, 0x27u));
-            OpCmpValue(cpu, 0x0fu);
-            if (!cpu->carry) {
-                OpLda(memory, cpu, OpDp(cpu, 0x25u));          /* 9226 */
-                OpCmp(memory, cpu, OpDp(cpu, 0x63u));
-                if (cpu->carry)
-                    OpSta(memory, cpu, OpDp(cpu, 0x63u));
-                OpLda(memory, cpu, OpDp(cpu, 0x24u));          /* 922E */
-                cpu->carry = 0;
-                OpAdc(memory, cpu, OpDp(cpu, 0x25u));
-                OpCmpValue(cpu, 0x03u);
-                if (!cpu->carry)
-                    OpStepMem(memory, cpu, OpDp(cpu, 0x24u), 1);
-                OpLda(memory, cpu, OpDp(cpu, 0x56u));          /* 9239 */
-                OpIncA(cpu);
-                OpSta(memory, cpu, OpDp(cpu, 0x56u));
-                OpSta(memory, cpu, OpDp(cpu, 0x54u));
-                OpCmpValue(cpu, 0x08u);
-                if (cpu->carry)
+        /* Room must fit the 8x14 area near the cursor row. */
+        const uint8_t column = cursor_column;
+        const uint8_t row =
+            (uint8_t)(CaveRandomBelowOf(memory, cpu, 0x91ffu, 3u) - 1u + cursor_row);
+
+        WramWrite(dp, CAVE_DP_ROOM_COLUMN, column);
+        WramWrite(dp, CAVE_DP_ROOM_ROW, row);
+        width = (uint8_t)(CaveRandomMeanOf(memory, cpu, 0x920au, 4u) + 1u);
+        WramWrite(dp, CAVE_DP_ROOM_WIDTH, width);
+        if ((uint8_t)(width + column) < 9u) {
+            const uint8_t height =
+                (uint8_t)(CaveRandomMeanOf(memory, cpu, 0x9219u, 4u) + 1u);
+
+            WramWrite(dp, CAVE_DP_ROOM_HEIGHT, height);
+            if ((uint8_t)(height + row) < 15u) {
+                if (height >= tallest) {
+                    tallest = height;
+                    WramWrite(dp, CAVE_DP_TALLEST_ROOM, tallest);
+                }
+                /* A room smaller than three cells in all is widened. */
+                if ((uint8_t)(width + height) < 3u) {
+                    ++width;
+                    WramWrite(dp, CAVE_DP_ROOM_WIDTH, width);
+                }
+                ++room_count;
+                WramWrite(dp, CAVE_DP_ROOM_COUNT, room_count);
+                WramWrite(dp, CAVE_DP_FILL_ROOM, room_count);
+                if (room_count >= 8u)
                     return;                                    /* 9266 */
                 Lufia2CaveFillRoom(memory, cpu, 0x9244u);
             }
         }
-        OpLda(memory, cpu, OpDp(cpu, 0x5au));                  /* 9247 */
-        cpu->carry = 0;
-        OpAdc(memory, cpu, OpDp(cpu, 0x24u));
-        OpSta(memory, cpu, OpDp(cpu, 0x5au));
-        OpCmpValue(cpu, 0x09u);
-        if (!cpu->carry)
+        cursor_column = (uint8_t)(cursor_column + width);
+        WramWrite(dp, CAVE_DP_CURSOR_COLUMN, cursor_column);
+        if (cursor_column < 9u)
             continue;
-        LoadA8(cpu, 0x01u);                                    /* 9252 */
-        OpSta(memory, cpu, OpDp(cpu, 0x5au));
-        LoadA8(cpu, 0x04u);
-        Lufia2CaveRandomMean(memory, cpu, 0x9258u);
-        OpIncA(cpu);
-        OpIncA(cpu);
-        cpu->carry = 0;
-        OpAdc(memory, cpu, OpDp(cpu, 0x5bu));
-        OpSta(memory, cpu, OpDp(cpu, 0x5bu));
-        OpCmpValue(cpu, 0x0fu);
-        if (cpu->carry)
+        /* Row full: start the next one a few rows down. */
+        cursor_column = 1u;
+        WramWrite(dp, CAVE_DP_CURSOR_COLUMN, cursor_column);
+        cursor_row =
+            (uint8_t)(CaveRandomMeanOf(memory, cpu, 0x9258u, 4u) + 2u + cursor_row);
+        WramWrite(dp, CAVE_DP_CURSOR_ROW, cursor_row);
+        if (cursor_row >= 15u)
             return;
     }
 }
 
 /* Corridor bit for one cell pair. */
-static void CaveOpenCorridor(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t id_offset,
-    uint16_t opposite, uint16_t pair, uint16_t mark) {
+static void CaveOpenCorridor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             uint8_t id_offset, uint16_t opposite, uint16_t pair,
+                             uint16_t mark) {
     OpSta(memory, cpu, OpDp(cpu, id_offset));
     OpLda(memory, cpu, OpAbsX(cpu, opposite));
     if (cpu->zero) {
         OpLda(memory, cpu, OpDp(cpu, id_offset));
-        OpOraValue(cpu, 0x40u);
+        OpOraValue(cpu, CAVE_CELL_LINKED);
         OpSta(memory, cpu, OpAbsX(cpu, pair));
         OpSta(memory, cpu, OpAbsX(cpu, mark));
     } else if (!cpu->negative) {
@@ -385,188 +413,171 @@ static void CaveOpenCorridor(
 static void CaveLinkFloor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSetDataBank(memory, cpu, 0x7fu);                         /* 9266 */
     LoadA8(cpu, 0x08u);
-    OpSta(memory, cpu, OpDp(cpu, 0x2au));
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_MERGE_PASSES));
     do {
         Lufia2CaveMergeRoom(memory, cpu, 0x926eu);             /* 926E */
-        OpStepMem(memory, cpu, OpDp(cpu, 0x2au), -1);
+        OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_MERGE_PASSES), -1);
     } while (!cpu->zero);
     Lufia2CaveCountCells(memory, cpu, 0x9275u);
     Lufia2CavePickCell(memory, cpu, 0x9278u);
     OpWriteX(memory, cpu, OpAbs(cpu, CAVE_START_COLUMN), cpu->x);
     Lufia2CaveLinkRooms(memory, cpu, 0x927eu);
-    OpLdx(cpu, 0x00ffu);                                       /* 9281 */
+    OpLdx(cpu, 0x00ffu); /* 9281 */
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));              /* 9284 */
+        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID)); /* 9284 */
         if (cpu->zero)
             goto next;
-        OpBitValue(cpu, 0xc0u);
+        OpBitValue(cpu, CAVE_CELL_FLAGS);
         if (!cpu->zero)
             goto next;
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));                  /* 9290 */
-        OpLda(memory, cpu, OpAbsX(cpu, 0xea01u));
+        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE)); /* 9290 */
+        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT));
         if (cpu->zero) {
             /* $92A9: empty right neighbour beside a room below or above. */
-            OpLda(memory, cpu, OpAbsX(cpu, 0xe9f1u));
+            OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_UP_RIGHT));
             if (cpu->zero)
-                OpLda(memory, cpu, OpAbsX(cpu, 0xea11u));
+                OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT));
             if (!cpu->zero) {
-                OpLda(memory, cpu, OpDp(cpu, 0x54u));          /* 92B6 */
-                OpOraValue(cpu, 0x40u);
-                OpSta(memory, cpu, OpAbsX(cpu, 0xea01u));
+                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE)); /* 92B6 */
+                OpOraValue(cpu, CAVE_CELL_LINKED);
+                OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT));
             }
             goto next;
         }
-        OpLda(memory, cpu, OpAbsX(cpu, 0xe9ffu));              /* 9297 */
+        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_LEFT)); /* 9297 */
         if (cpu->zero) {
-            OpLda(memory, cpu, OpAbsX(cpu, 0xe9efu));          /* 92C0 */
+            OpLda(memory, cpu,
+                  OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_UP_LEFT)); /* 92C0 */
             if (cpu->zero)
-                OpLda(memory, cpu, OpAbsX(cpu, 0xea0fu));
+                OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN_LEFT));
             if (!cpu->zero) {
-                OpLda(memory, cpu, OpDp(cpu, 0x54u));          /* 92CD */
-                OpOraValue(cpu, 0x40u);
-                OpSta(memory, cpu, OpAbsX(cpu, 0xe9ffu));
+                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE)); /* 92CD */
+                OpOraValue(cpu, CAVE_CELL_LINKED);
+                OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_LEFT));
             }
             goto next;
         }
-        OpLda(memory, cpu, OpAbsX(cpu, 0xea10u));              /* 929C */
+        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN)); /* 929C */
         if (cpu->zero) {
-            OpTxa(cpu);                                        /* 92D7 */
+            OpTxa(cpu); /* 92D7 */
             OpAndValue(cpu, 0xf0u);
             OpCmpValue(cpu, 0xe0u);
             if (cpu->carry)
                 goto next;
-            OpLda(memory, cpu, OpAbsX(cpu, 0xea01u));
+            OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT));
             if (cpu->negative) {
-                CaveOpenCorridor(memory, cpu, 0x55u, 0xea11u,  /* 9304 */
-                    0xea11u, 0xea10u);
+                CaveOpenCorridor(memory, cpu, 0x55u,
+                                 CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT, /* 9304 */
+                                 CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT,
+                                 CAVE_ROOM_GRID + CAVE_CELL_DOWN);
             } else {
-                OpLda(memory, cpu, OpAbsX(cpu, 0xe9ffu));      /* 92E3 */
+                OpLda(memory, cpu,
+                      OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_LEFT)); /* 92E3 */
                 if (cpu->negative)
-                    CaveOpenCorridor(memory, cpu, 0x55u, 0xea0fu,
-                        0xea0fu, 0xea10u);                     /* 92EA */
+                    CaveOpenCorridor(memory, cpu, 0x55u,
+                                     CAVE_ROOM_GRID + CAVE_CELL_DOWN_LEFT,
+                                     CAVE_ROOM_GRID + CAVE_CELL_DOWN_LEFT,
+                                     CAVE_ROOM_GRID + CAVE_CELL_DOWN); /* 92EA */
             }
             goto next;
         }
-        OpLda(memory, cpu, OpAbsX(cpu, 0xe9f0u));              /* 92A1 */
+        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_UP)); /* 92A1 */
         if (cpu->zero) {
-            OpTxa(cpu);                                        /* 931E */
+            OpTxa(cpu); /* 931E */
             OpAndValue(cpu, 0xf0u);
             OpCmpValue(cpu, 0x30u);
             if (!cpu->carry)
                 goto next;
-            OpLda(memory, cpu, OpAbsX(cpu, 0xea01u));
+            OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT));
             if (cpu->negative) {
-                CaveOpenCorridor(memory, cpu, 0x55u, 0xe9f1u,  /* 934B */
-                    0xe9f1u, 0xe9f0u);
+                CaveOpenCorridor(
+                    memory, cpu, 0x55u, CAVE_ROOM_GRID + CAVE_CELL_UP_RIGHT, /* 934B */
+                    CAVE_ROOM_GRID + CAVE_CELL_UP_RIGHT, CAVE_ROOM_GRID + CAVE_CELL_UP);
             } else {
-                OpLda(memory, cpu, OpAbsX(cpu, 0xe9ffu));      /* 932A */
+                OpLda(memory, cpu,
+                      OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_LEFT)); /* 932A */
                 if (cpu->negative)
-                    CaveOpenCorridor(memory, cpu, 0x55u, 0xe9efu,
-                        0xe9efu, 0xe9f0u);                     /* 9331 */
+                    CaveOpenCorridor(memory, cpu, 0x55u,
+                                     CAVE_ROOM_GRID + CAVE_CELL_UP_LEFT,
+                                     CAVE_ROOM_GRID + CAVE_CELL_UP_LEFT,
+                                     CAVE_ROOM_GRID + CAVE_CELL_UP); /* 9331 */
             }
         }
-next:
-        OpDex(cpu);                                            /* 9363 */
+    next:
+        OpDex(cpu); /* 9363 */
         OpCpx(cpu, 0x0010u);
     } while (cpu->carry);
     Lufia2CaveClearVisited(memory, cpu, 0x936cu);
     Lufia2CaveLinkRooms(memory, cpu, 0x936fu);
-    OpLdx(cpu, 0x00ffu);                                       /* 9372 */
+    OpLdx(cpu, 0x00ffu); /* 9372 */
     do {
         OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
         if (!cpu->zero) {
             if (!cpu->negative)
-                TransferDirectToA(cpu);                        /* 937C */
-            OpAndValue(cpu, 0x3fu);
+                TransferDirectToA(cpu); /* 937C */
+            OpAndValue(cpu, CAVE_CELL_ID_MASK);
             OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
         }
-        OpDex(cpu);                                            /* 9382 */
+        OpDex(cpu); /* 9382 */
         OpCpx(cpu, 0x0010u);
     } while (cpu->carry);
 }
 
 /* $83:9388-$83:940D: keep one random link per room pair. */
 static void CaveDedupeLinks(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLdx(cpu, 0x0000u);                                       /* 9388 */
-    for (;;) {
-        OpCompareIndex(cpu, cpu->x,                            /* 938B */
-            OpReadX(memory, cpu, OpDp(cpu, 0x2du)));
-        if (cpu->carry)
-            break;
-        OpWriteX(memory, cpu, OpDp(cpu, 0x5au), cpu->x);
-        TransferDirectToA(cpu);
-        OpLda(memory, cpu, OpAbsX(cpu, 0xe6f1u));
-        if (!cpu->zero) {
-            OpSta(memory, cpu, OpAbs(cpu, 0x0400u));           /* 9397 */
-            OpTay(cpu);
-            OpLda(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID));
-            OpSta(memory, cpu, OpDp(cpu, 0x54u));
-            OpLda(memory, cpu, OpAbsY(cpu, 0xea10u));
-            OpSta(memory, cpu, OpDp(cpu, 0x55u));
-            LoadA8(cpu, 0x01u);
-            OpSta(memory, cpu, OpDp(cpu, 0x56u));
-            OpStz(memory, cpu, OpDp(cpu, 0x57u));
-            TransferDirectToA(cpu);
-            for (;;) {
-                OpInx(cpu);                                    /* 93AC */
-                OpCompareIndex(cpu, cpu->x,
-                    OpReadX(memory, cpu, OpDp(cpu, 0x2du)));
-                if (cpu->carry)
-                    break;
-                OpLda(memory, cpu, OpAbsX(cpu, 0xe6f1u));
-                OpTay(cpu);
-                OpLda(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID));
-                OpCmp(memory, cpu, OpDp(cpu, 0x54u));
-                if (!cpu->zero)
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint16_t link_count = WramRead16(wram, CAVE_DP_LINK_COUNT);
+    uint16_t index;
+
+    for (index = 0; index < link_count; ++index) {
+        const uint8_t first = WramReadAt(wram, CAVE_LINKS, index);
+
+        WramWrite16(wram, CAVE_DP_LINK_INDEX, index);
+        if (first != 0u) {
+            const uint8_t upper = WramReadAt(wram, CAVE_ROOM_GRID, first);
+            const uint8_t lower =
+                WramReadAt(wram, CAVE_ROOM_GRID + CAVE_CELL_DOWN, first);
+            uint16_t group = 1u;
+            uint16_t other;
+
+            /* Group: this link plus later links between both rooms. */
+            WramWrite(wram, CAVE_LINK_SCRATCH, first);
+            WramWrite(wram, CAVE_DP_LINK_KEY, upper);
+            WramWrite(wram, CAVE_DP_LINK_KEY + 1u, lower);
+            WramWrite16(wram, CAVE_DP_SCRATCH_COUNT, group);
+            for (other = (uint16_t)(index + 1u); other < link_count; ++other) {
+                const uint8_t link = WramReadAt(wram, CAVE_LINKS, other);
+
+                if (WramReadAt(wram, CAVE_ROOM_GRID, link) != upper ||
+                    WramReadAt(wram, CAVE_ROOM_GRID + CAVE_CELL_DOWN, link) != lower)
                     continue;
-                OpLda(memory, cpu, OpAbsY(cpu, 0xea10u));
-                OpCmp(memory, cpu, OpDp(cpu, 0x55u));
-                if (!cpu->zero)
-                    continue;
-                OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x56u)));  /* 93C3 */
-                OpLda(memory, cpu, OpAbsX(cpu, 0xe6f1u));
-                OpSta(memory, cpu, OpAbsY(cpu, 0x0400u));
-                OpIny(cpu);
-                OpWriteX(memory, cpu, OpDp(cpu, 0x56u), cpu->y);
+                WramWriteAt(wram, CAVE_LINK_SCRATCH, group, link);
+                ++group;
+                WramWrite16(wram, CAVE_DP_SCRATCH_COUNT, group);
             }
-            OpLda(memory, cpu, OpDp(cpu, 0x56u));              /* 93D0 */
-            OpCmpValue(cpu, 0x01u);
-            if (!cpu->zero) {
-                Lufia2CaveRandomBelow(memory, cpu, 0x93d6u);
-                ExchangeAccumulatorBytes(cpu);
-                LoadA8(cpu, 0x00u);
-                ExchangeAccumulatorBytes(cpu);
-                OpTax(cpu);
-                LoadA8(cpu, 0xffu);
-                OpSta(memory, cpu, OpAbsX(cpu, 0x0400u));
-                OpLdx(cpu, 0x0000u);                           /* 93E3 */
-                do {
-                    OpLda(memory, cpu, OpAbsX(cpu, 0xe6f1u));
-                    OpLdy(cpu, 0x0000u);
-                    do {
-                        OpCmp(memory, cpu, OpAbsY(cpu, 0x0400u));  /* 93EC */
-                        if (cpu->zero) {
-                            OpStz(memory, cpu, OpAbsX(cpu, 0xe6f1u));
+            if ((uint8_t)group != 1u) {
+                /* Spare one member at random, then clear the rest. */
+                const uint8_t spared =
+                    CaveRandomBelowOf(memory, cpu, 0x93d6u, (uint8_t)group);
+                uint16_t link_slot;
+
+                WramWriteAt(wram, CAVE_LINK_SCRATCH, spared, 0xffu);
+                for (link_slot = 0; link_slot < link_count; ++link_slot) {
+                    const uint8_t link = WramReadAt(wram, CAVE_LINKS, link_slot);
+                    uint16_t member;
+
+                    for (member = 0; member < group; ++member) {
+                        if (link == WramReadAt(wram, CAVE_LINK_SCRATCH, member)) {
+                            WramWriteAt(wram, CAVE_LINKS, link_slot, 0u);
                             break;
                         }
-                        OpIny(cpu);
-                        OpCompareIndex(cpu, cpu->y,
-                            OpReadX(memory, cpu, OpDp(cpu, 0x56u)));
-                    } while (!cpu->carry);
-                    OpInx(cpu);                                /* 93FB */
-                    OpCompareIndex(cpu, cpu->x,
-                        OpReadX(memory, cpu, OpDp(cpu, 0x2du)));
-                } while (!cpu->carry);
+                    }
+                }
             }
         }
-        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x5au)));    /* 9400 */
-        OpInx(cpu);
+        index = WramRead16(wram, CAVE_DP_LINK_INDEX);
     }
-    TransferDirectToA(cpu);                                    /* 9405 */
-    OpLda(memory, cpu, OpDp(cpu, 0x2du));
-    OpTay(cpu);
-    LoadA8(cpu, 0xffu);
-    OpSta(memory, cpu, OpAbsY(cpu, 0xe6f1u));
+    WramWriteAt(wram, CAVE_LINKS, (uint8_t)link_count, 0xffu);
 }
 
 /* $83:940E-$83:949C: start cell, link marks and stairs. */
@@ -584,144 +595,147 @@ static void CavePlaceStart(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpIncA(cpu);
     OpSta(memory, cpu, WRAM_FIELD_DESTINATION_X);
     OpSta(memory, cpu, CAVE_START_COLUMN_LONG);
-    OpLdx(cpu, 0x0000u);                                       /* 942D */
+    OpLdx(cpu, 0x0000u); /* 942D */
     for (;;) {
-        TransferDirectToA(cpu);                                /* 9430 */
-        OpLda(memory, cpu, OpAbsX(cpu, 0xe6f1u));
+        TransferDirectToA(cpu); /* 9430 */
+        OpLda(memory, cpu, OpAbsX(cpu, CAVE_LINKS));
         if (!cpu->zero) {
             OpCmpValue(cpu, 0xffu);
             if (cpu->zero)
                 break;
-            OpTay(cpu);                                        /* 943A */
+            OpTay(cpu); /* 943A */
             OpLda(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID));
             OpOraValue(cpu, 0x80u);
             OpSta(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID));
-            OpLda(memory, cpu, OpAbsY(cpu, 0xea10u));
+            OpLda(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN));
             OpOraValue(cpu, 0x80u);
-            OpSta(memory, cpu, OpAbsY(cpu, 0xea10u));
+            OpSta(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN));
         }
-        OpInx(cpu);                                            /* 944B */
+        OpInx(cpu); /* 944B */
     }
-    Lufia2CavePickCell(memory, cpu, 0x944eu);                  /* 944E */
+    Lufia2CavePickCell(memory, cpu, 0x944eu); /* 944E */
     if (!cpu->carry) {
         Lufia2CaveClearVisited(memory, cpu, 0x9453u);
         Lufia2CavePickCell(memory, cpu, 0x9456u);
     }
-    Lufia2CaveCellPosition(memory, cpu, 0x9459u);              /* 9459 */
+    Lufia2CaveCellPosition(memory, cpu, 0x9459u); /* 9459 */
     Lufia2CaveStairOffset(memory, cpu, 0x945cu);
     OpSta(memory, cpu, CAVE_STAIR_ROW_LONG);
     ExchangeAccumulatorBytes(cpu);
     OpSta(memory, cpu, CAVE_STAIR_COLUMN_LONG);
     LoadA8(cpu, 0xffu);
-    OpSta(memory, cpu, 0x7fe6adu);
-    OpSta(memory, cpu, 0x7fe6aeu);
+    OpSta(memory, cpu, CAVE_LINK_MARK_A_LONG);
+    OpSta(memory, cpu, CAVE_LINK_MARK_B_LONG);
     CaveRandomByte(memory, cpu, 0x9472u);
     OpCmpValue(cpu, 0x10u);
     if (!cpu->carry) {
         Lufia2CavePickCell(memory, cpu, 0x947au);
         if (cpu->carry) {
-            Lufia2CaveCellPosition(memory, cpu, 0x947fu);      /* 947F */
+            Lufia2CaveCellPosition(memory, cpu, 0x947fu); /* 947F */
             Lufia2CaveStairOffset(memory, cpu, 0x9482u);
-            OpSta(memory, cpu, 0x7fe6aeu);
+            OpSta(memory, cpu, CAVE_LINK_MARK_B_LONG);
             ExchangeAccumulatorBytes(cpu);
             OpIncA(cpu);
-            OpSta(memory, cpu, 0x7fe6adu);
+            OpSta(memory, cpu, CAVE_LINK_MARK_A_LONG);
         }
     }
     Lufia2CaveClearVisited(memory, cpu, 0x948fu);              /* 948F */
     OpLdx(cpu, 0x0013u);
     TransferDirectToA(cpu);
     do {
-        OpSta(memory, cpu, OpLongX(cpu, CAVE_OBJECT_COLUMNS_LONG));           /* 9496 */
+        OpSta(memory, cpu, OpLongX(cpu, CAVE_OBJECT_COLUMNS_LONG)); /* 9496 */
         OpDex(cpu);
     } while (!cpu->negative);
 }
 
-/* $83:949D-$83:9514: rare 2x2 treasure room. */
+/* $83:949D-$83:9514: rare 2x2 treasure room with chests. */
 static void CaveTreasureRoom(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     CaveRandomByte(memory, cpu, 0x949du);                      /* 949D */
-    OpCmpValue(cpu, 0x10u);
+    OpCmpValue(cpu, CAVE_TREASURE_ROOM_ODDS);
     if (cpu->carry)
         return;
-    LoadA8(cpu, 0xeau);
-    OpSta(memory, cpu, OpDp(cpu, 0x57u));
-    OpLdy(cpu, 0x0010u);
+    LoadA8(cpu, CAVE_TREASURE_MARK);
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_SCRATCH_COUNT + 1u));
+    OpLdy(cpu, CAVE_FIRST_ROOM_CELL);
     for (;;) {
-        OpLda(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID));              /* 94AC */
+        OpLda(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID)); /* 94AC */
         if (!cpu->zero &&
-            (OpCmp(memory, cpu, OpAbsY(cpu, 0xea01u)), cpu->zero) &&
-            (OpCmp(memory, cpu, OpAbsY(cpu, 0xea10u)), cpu->zero) &&
-            (OpCmp(memory, cpu, OpAbsY(cpu, 0xea11u)), cpu->zero) &&
+            (OpCmp(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT)),
+             cpu->zero) &&
+            (OpCmp(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN)),
+             cpu->zero) &&
+            (OpCmp(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT)),
+             cpu->zero) &&
             (CaveRandomByte(memory, cpu, 0x94c0u),
-             OpCmpValue(cpu, 0x80u), !cpu->carry)) {
-            OpTya(cpu);                                        /* 94C8 */
-            OpSta(memory, cpu, OpAbs(cpu, 0xe6a8u));
+             OpCmpValue(cpu, CAVE_TREASURE_CELL_ODDS), !cpu->carry)) {
+            OpTya(cpu); /* 94C8 */
+            OpSta(memory, cpu, OpAbs(cpu, CAVE_TREASURE_CELL));
             Lufia2CaveCellPosition(memory, cpu, 0x94ccu);
-            OpSta(memory, cpu, OpDp(cpu, 0x5bu));
+            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_CURSOR_ROW));
             ExchangeAccumulatorBytes(cpu);
-            OpSta(memory, cpu, OpDp(cpu, 0x5au));
-            OpLdx(cpu, 0x000cu);
+            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_CURSOR_COLUMN));
+            OpLdx(cpu, CAVE_TREASURE_OBJECTS - 1u);
             do {
-                OpPushX(memory, cpu);                          /* 94D7 */
-                LoadA8(cpu, 0x08u);
+                OpPushX(memory, cpu); /* 94D7 */
+                LoadA8(cpu, CAVE_TREASURE_SPREAD);
                 Lufia2CaveRandomBelow(memory, cpu, 0x94dau);
                 cpu->carry = 0;
-                OpAdc(memory, cpu, OpDp(cpu, 0x5au));
-                OpAdcValue(cpu, 0x01u);
+                OpAdc(memory, cpu, OpDp(cpu, CAVE_DP_CURSOR_COLUMN));
+                OpAdcValue(cpu, CAVE_TREASURE_COLUMN_OFFSET);
                 OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
-                LoadA8(cpu, 0x08u);
+                LoadA8(cpu, CAVE_TREASURE_SPREAD);
                 Lufia2CaveRandomBelow(memory, cpu, 0x94e6u);
                 cpu->carry = 0;
-                OpAdc(memory, cpu, OpDp(cpu, 0x5bu));
-                OpAdcValue(cpu, 0x03u);
+                OpAdc(memory, cpu, OpDp(cpu, CAVE_DP_CURSOR_ROW));
+                OpAdcValue(cpu, CAVE_TREASURE_ROW_OFFSET);
                 OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
                 Lufia2CaveNearStartOrPlaced(memory, cpu, 0x94f0u);
                 if (!cpu->carry)
                     Lufia2CaveAddObject(memory, cpu, 0x94f5u);
-                OpPullX(memory, cpu);                          /* 94F8 */
+                OpPullX(memory, cpu); /* 94F8 */
                 OpDex(cpu);
             } while (!cpu->negative);
-            OpLdx(cpu, 0x0008u);                               /* 94FC */
+            OpLdx(cpu, CAVE_TREASURE_CHESTS); /* 94FC */
             do {
                 OpPushX(memory, cpu);
-                OpLda(memory, cpu, OpAbs(cpu, 0xe6a8u));
+                OpLda(memory, cpu, OpAbs(cpu, CAVE_TREASURE_CELL));
                 Lufia2CaveAddChest(memory, cpu, 0x9503u);
                 OpPullX(memory, cpu);
                 OpDex(cpu);
             } while (!cpu->zero);
             break;
         }
-        OpIny(cpu);                                            /* 950C */
-        OpCpy(cpu, 0x00c0u);
+        OpIny(cpu); /* 950C */
+        OpCpy(cpu, CAVE_TREASURE_LAST_CELL);
         if (cpu->carry)
             break;
     }
     Lufia2CaveClearVisited(memory, cpu, 0x9512u);              /* 9512 */
 }
 
-/* $83:9515-$83:959C: 4-7 random objects, then chests in 2x2 rooms. */
+/* $83:9515-$83:959C: random objects, then chests in 2x2 rooms. */
 static void CaveObjectsAndChests(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadA8(cpu, 0x04u);                                        /* 9515 */
+    LoadA8(cpu, CAVE_EXTRA_ROOM_OBJECTS); /* 9515 */
     Lufia2CaveRandomBelow(memory, cpu, 0x9517u);
     cpu->carry = 0;
-    OpAdcValue(cpu, 0x04u);
-    OpSta(memory, cpu, OpDp(cpu, 0x22u));
-    OpStz(memory, cpu, OpDp(cpu, 0x23u));
+    OpAdcValue(cpu, CAVE_MIN_ROOM_OBJECTS);
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_TARGET));
+    OpStz(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_TARGET + 1u));
     OpLdx(cpu, 0x0000u);
     do {
-        LoadA8(cpu, 0x02u);                                    /* 9524 */
+        LoadA8(cpu, CAVE_OBJECT_JITTER); /* 9524 */
         Lufia2CaveRandomBelow(memory, cpu, 0x9526u);
         OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
-        LoadA8(cpu, 0x02u);
+        LoadA8(cpu, CAVE_OBJECT_JITTER);
         Lufia2CaveRandomBelow(memory, cpu, 0x952du);
         OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
-        OpWriteX(memory, cpu, OpDp(cpu, 0x24u), cpu->x);
+        OpWriteX(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_INDEX), cpu->x);
         Lufia2CavePickCell(memory, cpu, 0x9534u);
-        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x24u)));
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_INDEX)));
         if (cpu->carry) {
-            Lufia2CaveCellPosition(memory, cpu, 0x953bu);      /* 953B */
-            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x24u)));
+            Lufia2CaveCellPosition(memory, cpu, 0x953bu); /* 953B */
+            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_INDEX)));
             cpu->carry = 1;
             OpAdc(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
             OpIncA(cpu);
@@ -735,77 +749,85 @@ static void CaveObjectsAndChests(
             if (!cpu->carry)
                 Lufia2CaveAddObject(memory, cpu, 0x9552u);
         }
-        OpInx(cpu);                                            /* 9555 */
-        OpCompareIndex(cpu, cpu->x, OpReadX(memory, cpu, OpDp(cpu, 0x22u)));
+        OpInx(cpu); /* 9555 */
+        OpCompareIndex(cpu, cpu->x,
+                       OpReadX(memory, cpu, OpDp(cpu, CAVE_DP_OBJECT_TARGET)));
     } while (!cpu->carry);
-    OpLdx(cpu, 0x0010u);                                       /* 955A */
+    OpLdx(cpu, CAVE_FIRST_ROOM_CELL); /* 955A */
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));              /* 955D */
+        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID)); /* 955D */
         if (!cpu->zero && !cpu->negative &&
-            (OpCmp(memory, cpu, OpAbsX(cpu, 0xea01u)), cpu->zero) &&
-            (OpCmp(memory, cpu, OpAbsX(cpu, 0xea10u)), cpu->zero) &&
-            (OpCmp(memory, cpu, OpAbsX(cpu, 0xea11u)), cpu->zero)) {
-            OpOraValue(cpu, 0x80u);                            /* 9573 */
+            (OpCmp(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT)),
+             cpu->zero) &&
+            (OpCmp(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN)),
+             cpu->zero) &&
+            (OpCmp(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT)),
+             cpu->zero)) {
+            OpOraValue(cpu, CAVE_CELL_MARKED); /* 9573 */
             OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
-            OpSta(memory, cpu, OpAbsX(cpu, 0xea01u));
-            OpSta(memory, cpu, OpAbsX(cpu, 0xea10u));
-            OpSta(memory, cpu, OpAbsX(cpu, 0xea11u));
+            OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_RIGHT));
+            OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN));
+            OpSta(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT));
             OpTxa(cpu);
             Lufia2CaveAddChest(memory, cpu, 0x9582u);
             if (!cpu->carry) {
-                OpLda(memory, cpu, OpAbs(cpu, CAVE_CHEST_COUNT));       /* 9587 */
-                OpCmpValue(cpu, 0x08u);
+                OpLda(memory, cpu, OpAbs(cpu, CAVE_CHEST_COUNT)); /* 9587 */
+                OpCmpValue(cpu, CAVE_MAX_CHESTS);
                 if (cpu->carry)
                     break;
                 /* Never ends the loop: $E734 reaches 8 first. */
-                OpLda(memory, cpu, OpDp(cpu, 0x59u));
+                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CHEST_ATTEMPTS));
                 OpIncA(cpu);
-                OpSta(memory, cpu, OpDp(cpu, 0x59u));
-                OpCmpValue(cpu, 0x08u);
+                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_CHEST_ATTEMPTS));
+                OpCmpValue(cpu, CAVE_MAX_CHESTS);
                 if (cpu->carry)
                     break;
             }
         }
-        OpInx(cpu);                                            /* 9597 */
-        OpCpx(cpu, 0x00f0u);
+        OpInx(cpu); /* 9597 */
+        OpCpx(cpu, CAVE_GRID_ROWS_END);
     } while (!cpu->carry);
     Lufia2CaveClearVisited(memory, cpu, 0x959du);              /* 959D */
 }
 
-/* $83:95A0-$83:9653: block shape of each cell. */
+/* $83:95A0-$83:9653: block shape of each occupied cell. */
 static void CaveShapeCells(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint16_t kNeighbours[8] = {
-        0xea11u, 0xea01u, 0xe9f1u, 0xea10u, 0xe9f0u, 0xea0fu, 0xe9ffu, 0xe9efu,
+        CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT, CAVE_ROOM_GRID + CAVE_CELL_RIGHT,
+        CAVE_ROOM_GRID + CAVE_CELL_UP_RIGHT,   CAVE_ROOM_GRID + CAVE_CELL_DOWN,
+        CAVE_ROOM_GRID + CAVE_CELL_UP,         CAVE_ROOM_GRID + CAVE_CELL_DOWN_LEFT,
+        CAVE_ROOM_GRID + CAVE_CELL_LEFT,       CAVE_ROOM_GRID + CAVE_CELL_UP_LEFT,
     };
     static const uint8_t kSide[4] = {0x80u, 0x04u, 0x01u, 0x20u};
     static const uint8_t kCorner[4] = {0x50u, 0x12u, 0x0au, 0x48u};
 
-    LoadA8(cpu, 0x01u);                                        /* 95A0 */
+    LoadA8(cpu, 0x01u); /* 95A0 */
     OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
     OpStz(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
     Lufia2CaveCellIndex(memory, cpu, 0x95a6u);
     OpTxy(cpu);
     do {
-        OpLda(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID));              /* 95AA */
+        OpLda(memory, cpu, OpAbsY(cpu, CAVE_ROOM_GRID)); /* 95AA */
         if (!cpu->zero) {
-            OpSta(memory, cpu, OpDp(cpu, 0x54u));
-            OpStz(memory, cpu, OpDp(cpu, 0x55u));
-            OpLda(memory, cpu, OpDp(cpu, 0x54u));
+            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE));
+            OpStz(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS));
+            OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE));
             for (unsigned i = 0; i < 8; ++i) {
                 if (i == 5)
-                    OpLda(memory, cpu, OpDp(cpu, 0x54u));      /* 95E0 */
+                    OpLda(memory, cpu, OpDp(cpu, CAVE_DP_CELL_VALUE)); /* 95E0 */
                 OpCmp(memory, cpu, OpAbsY(cpu, kNeighbours[i]));
                 if (!cpu->zero)
                     cpu->carry = 0;
-                OpRolMem8(memory, cpu, OpDp(cpu, 0x55u));
+                OpRolMem8(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS));
             }
             for (unsigned i = 0; i < 4; ++i) {
-                OpLda(memory, cpu, OpDp(cpu, 0x55u));          /* 95FA */
+                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS)); /* 95FA */
                 if (i == 0) {
                     if (cpu->negative) {
                         OpAndValue(cpu, kCorner[i]);
                         if (cpu->zero)
-                            OpTestBits(memory, cpu, OpDp(cpu, 0x55u), 0);
+                            OpTestBits(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS),
+                                       0);
                     }
                     continue;
                 }
@@ -813,79 +835,79 @@ static void CaveShapeCells(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                 if (!cpu->zero) {
                     OpAndValue(cpu, kCorner[i]);
                     if (cpu->zero)
-                        OpTestBits(memory, cpu, OpDp(cpu, 0x55u), 0);
+                        OpTestBits(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS), 0);
                 }
             }
-            TransferDirectToA(cpu);                            /* 9628 */
-            OpLda(memory, cpu, OpDp(cpu, 0x55u));
+            TransferDirectToA(cpu); /* 9628 */
+            OpLda(memory, cpu, OpDp(cpu, CAVE_DP_NEIGHBOUR_BITS));
             OpTax(cpu);
-            OpLda(memory, cpu, OpLongX(cpu, 0x93d59bu));
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_SHAPE_TABLE));
             OpSta(memory, cpu, OpAbsY(cpu, CAVE_SHAPE_GRID));
         }
-        OpIny(cpu);                                            /* 9633 */
-        OpCpy(cpu, 0x00f0u);
+        OpIny(cpu); /* 9633 */
+        OpCpy(cpu, CAVE_GRID_ROWS_END);
     } while (!cpu->carry);
-    OpLdy(cpu, 0x0010u);                                       /* 963C */
+    OpLdy(cpu, CAVE_FIRST_ROOM_CELL); /* 963C */
     OpLdx(cpu, 0x0000u);
     do {
         OpTxa(cpu);
         cpu->carry = 0;
-        OpAdcValue(cpu, 0x33u);
+        OpAdcValue(cpu, CAVE_BORDER_SHAPE_BASE);
         OpSta(memory, cpu, OpAbsY(cpu, CAVE_SHAPE_GRID));
         OpTya(cpu);
         cpu->carry = 0;
-        OpAdcValue(cpu, 0x10u);
+        OpAdcValue(cpu, CAVE_GRID_WIDTH);
         OpTay(cpu);
         OpInx(cpu);
-        OpCpx(cpu, 0x0006u);
+        OpCpx(cpu, CAVE_BORDER_SHAPES);
     } while (!cpu->carry);
 }
 
-/* $83:9654-$83:9692: block set, cleared map, templates. */
+/* $83:9654-$83:9692: block set, cleared map, layer headers. */
 static void CaveTileMapBase(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x30u);                                         /* 9654 */
-    OpLda(memory, cpu, OpAbs(cpu, 0xe699u));
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
-    LoadA16(cpu, 0x4000u);
-    OpSta(memory, cpu, OpDp(cpu, 0x60u));
+    OpLda(memory, cpu, OpAbs(cpu, CAVE_BLOCK_SET));
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_RESOURCE));
+    LoadA16(cpu, CAVE_BLOCK_BUFFER);
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_RESOURCE_TARGET));
     OpSepWidths(cpu, 0x20u);
     LoadA8(cpu, 0x7eu);
-    OpSta(memory, cpu, OpDp(cpu, 0x62u));
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_RESOURCE_TARGET + 2u));
     CaveCallLong(memory, cpu, 0x9666u, Lufia2DecompressResource);
     OpRepWidths(cpu, 0x20u);                                         /* 966A */
     OpStz(memory, cpu, OpAbs(cpu, 0x0000u));
     OpLdx(cpu, 0x0000u);
     OpLdy(cpu, 0x0002u);
-    LoadA16(cpu, 0x7e1au);
+    LoadA16(cpu, CAVE_MAP_BYTES - 2u);
     OpMoveNext(memory, cpu, 0x7fu, 0x7fu);
-    OpLdx(cpu, 0x9f3fu);                                       /* 967B */
+    OpLdx(cpu, CAVE_TEMPLATE_A); /* 967B */
     OpLdy(cpu, 0x0000u);
-    LoadA16(cpu, 0x0009u);
+    LoadA16(cpu, CAVE_TEMPLATE_A_BYTES - 1u);
     OpMoveNext(memory, cpu, 0x7fu, 0x83u);
-    OpLdx(cpu, 0x9f45u);                                       /* 9687 */
-    OpLdy(cpu, 0x3f0au);
-    LoadA16(cpu, 0x0003u);
+    OpLdx(cpu, CAVE_TEMPLATE_B); /* 9687 */
+    OpLdy(cpu, CAVE_MAP_LAYER_2_HEADER);
+    LoadA16(cpu, CAVE_TEMPLATE_B_BYTES - 1u);
     OpMoveNext(memory, cpu, 0x7fu, 0x83u);
 }
 
 /* $83:9693-$83:96F4: draw each cell's block, then the link blocks ($39). */
 static void CaveDrawCells(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSepWidths(cpu, 0x20u);                                         /* 9693 */
-    LoadA8(cpu, 0x10u);
-    OpSta(memory, cpu, OpDp(cpu, 0x23u));
-    LoadA8(cpu, 0x0eu);
-    OpSta(memory, cpu, OpDp(cpu, 0x27u));
-    OpLdx(cpu, 0x0010u);
+    LoadA8(cpu, CAVE_GRID_WIDTH);
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_CELL));
+    LoadA8(cpu, CAVE_GRID_ROWS);
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_ROWS));
+    OpLdx(cpu, CAVE_FIRST_ROOM_CELL);
     do {
-        LoadA8(cpu, 0x10u);                                    /* 96A0 */
-        OpSta(memory, cpu, OpDp(cpu, 0x26u));
+        LoadA8(cpu, CAVE_GRID_WIDTH); /* 96A0 */
+        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_COLUMNS));
         do {
-            OpLda(memory, cpu, OpLongX(cpu, CAVE_SHAPE_GRID_LONG));       /* 96A4 */
-            OpCmpValue(cpu, 0x1cu);
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_SHAPE_GRID_LONG)); /* 96A4 */
+            OpCmpValue(cpu, CAVE_BLANK_SHAPE);
             if (!cpu->zero) {
-                OpSta(memory, cpu, OpDp(cpu, 0x22u));
+                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_BLOCK_SHAPE));
                 OpPushX(memory, cpu);
-                OpLda(memory, cpu, OpDp(cpu, 0x23u));
+                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_CELL));
                 Lufia2CaveCellPosition(memory, cpu, 0x96b1u);
                 OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
                 ExchangeAccumulatorBytes(cpu);
@@ -894,35 +916,35 @@ static void CaveDrawCells(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                 Lufia2CaveDrawBlock(memory, cpu, 0x96bcu);
                 OpPullX(memory, cpu);
             }
-            OpStepMem(memory, cpu, OpDp(cpu, 0x23u), 1);       /* 96C0 */
+            OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_CELL), 1); /* 96C0 */
             OpInx(cpu);
-            OpStepMem(memory, cpu, OpDp(cpu, 0x26u), -1);
+            OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_COLUMNS), -1);
         } while (!cpu->zero);
-        OpStepMem(memory, cpu, OpDp(cpu, 0x27u), -1);
+        OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_ROWS), -1);
     } while (!cpu->zero);
-    OpLdx(cpu, 0x0000u);                                       /* 96CB */
+    OpLdx(cpu, 0x0000u); /* 96CB */
     for (;;) {
-        OpLda(memory, cpu, OpAbsX(cpu, 0xe6f1u));              /* 96CE */
+        OpLda(memory, cpu, OpAbsX(cpu, CAVE_LINKS)); /* 96CE */
         if (!cpu->zero) {
             OpCmpValue(cpu, 0xffu);
             if (cpu->zero)
                 break;
-            OpPushX(memory, cpu);                              /* 96D7 */
-            OpLda(memory, cpu, OpAbsX(cpu, 0xe6f1u));
+            OpPushX(memory, cpu); /* 96D7 */
+            OpLda(memory, cpu, OpAbsX(cpu, CAVE_LINKS));
             Lufia2CaveCellPosition(memory, cpu, 0x96dbu);
             cpu->carry = 0;
-            OpAdcValue(cpu, 0x04u);
+            OpAdcValue(cpu, CAVE_LINK_BLOCK_ROW);
             OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
             ExchangeAccumulatorBytes(cpu);
             OpIncA(cpu);
             OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
             Lufia2CaveTileOffsetY2(memory, cpu, 0x96e7u);
-            LoadA8(cpu, 0x39u);
-            OpSta(memory, cpu, OpDp(cpu, 0x22u));
+            LoadA8(cpu, CAVE_LINK_SHAPE);
+            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_BLOCK_SHAPE));
             Lufia2CaveDrawBlock(memory, cpu, 0x96eeu);
             OpPullX(memory, cpu);
         }
-        OpInx(cpu);                                            /* 96F2 */
+        OpInx(cpu); /* 96F2 */
     }
 }
 
@@ -932,61 +954,61 @@ static uint8_t CaveListSearch(
     return Lufia2FieldListSearch(memory, cpu, 0x83u, (uint16_t)(site + 3u));
 }
 
-/* $83:96F5-$83:9752: tile sets of the $0A-key entries. */
+/* $83:96F5-$83:9752: read the four tile sets from list 5. */
 static uint8_t CaveReadTileSets(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLdx(cpu, 0x0000u);                                       /* 96F5 */
-    OpStz(memory, cpu, OpDp(cpu, 0x56u));
-    OpStz(memory, cpu, OpDp(cpu, 0x57u));
+    OpLdx(cpu, 0x0000u); /* 96F5 */
+    OpStz(memory, cpu, OpDp(cpu, CAVE_DP_SET_OFFSET));
+    OpStz(memory, cpu, OpDp(cpu, CAVE_DP_SET_OFFSET + 1u));
     do {
-        OpPushX(memory, cpu);                                  /* 96FC */
-        OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x56u)));
+        OpPushX(memory, cpu); /* 96FC */
+        OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, CAVE_DP_SET_OFFSET)));
         LoadA8(cpu, 0xffu);
-        OpSta(memory, cpu, OpAbsY(cpu, 0xc000u));
-        OpSta(memory, cpu, OpAbsY(cpu, 0xc001u));
-        LoadA8(cpu, 0x05u);
+        OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE));
+        OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE + 1u));
+        LoadA8(cpu, CAVE_LIST_TILE_SETS);
         ExchangeAccumulatorBytes(cpu);
         OpTxa(cpu);
-        OpLdx(cpu, 0x000au);
+        OpLdx(cpu, CAVE_TILE_SET_KEY);
         if (!CaveListSearch(memory, cpu, 0x970eu))
             return 0;
         if (!cpu->carry) {
-            OpLda(memory, cpu, OpLongX(cpu, 0x7ef001u));       /* 9714 */
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_LIST_ENTRY_LONG + 1u)); /* 9714 */
             OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
-            OpLda(memory, cpu, OpLongX(cpu, 0x7ef002u));
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_LIST_ENTRY_LONG + 2u));
             OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
             Lufia2CaveBlockOffsetX(memory, cpu, 0x9720u);
             OpRepWidths(cpu, 0x20u);
-            OpLda(memory, cpu, OpLongX(cpu, 0x7e400cu));
-            OpSta(memory, cpu, OpAbsY(cpu, 0xc100u));
-            OpLda(memory, cpu, OpLongX(cpu, 0x7e400eu));
-            OpSta(memory, cpu, OpAbsY(cpu, 0xc200u));
-            OpLda(memory, cpu, OpLongX(cpu, 0x7e4010u));
-            OpSta(memory, cpu, OpAbsY(cpu, 0xc300u));
-            OpLda(memory, cpu, OpLongX(cpu, 0x7e400au));
-            OpSta(memory, cpu, OpAbsY(cpu, 0xc000u));
-            OpTyx(cpu);                                        /* 9741 */
-            OpSta(memory, cpu, OpLongX(cpu, 0x000022u));
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_BLOCK_BUFFER_LONG + 0x0cu));
+            OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE + 0x100u));
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_BLOCK_BUFFER_LONG + 0x0eu));
+            OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE + 0x200u));
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_BLOCK_BUFFER_LONG + 0x10u));
+            OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE + 0x300u));
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_BLOCK_BUFFER_LONG + 0x0au));
+            OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE));
+            OpTyx(cpu); /* 9741 */
+            OpSta(memory, cpu, OpLongX(cpu, CAVE_TILE_SET_WORDS_LONG));
             OpIny(cpu);
             OpIny(cpu);
-            OpWriteX(memory, cpu, OpDp(cpu, 0x56u), cpu->y);
+            OpWriteX(memory, cpu, OpDp(cpu, CAVE_DP_SET_OFFSET), cpu->y);
             OpSepWidths(cpu, 0x20u);
         }
-        OpPullX(memory, cpu);                                  /* 974C */
+        OpPullX(memory, cpu); /* 974C */
         OpInx(cpu);
-        OpCpx(cpu, 0x0004u);
+        OpCpx(cpu, CAVE_TILE_SET_COUNT);
     } while (!cpu->carry);
     return 1;
 }
 
-/* $83:9753-$83:97E7: apply each cell's tile set. */
+/* $83:9753-$83:97E7: apply the tile sets to each cell. */
 static void CaveApplyTileSets(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLdx(cpu, 0x0010u);                                       /* 9753 */
+    OpLdx(cpu, CAVE_FIRST_ROOM_CELL); /* 9753 */
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));              /* 9756 */
+        OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID)); /* 9756 */
         if (cpu->zero)
             goto next;
-        OpSta(memory, cpu, OpDp(cpu, 0x56u));
+        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT));
         OpPushX(memory, cpu);
         OpTxa(cpu);
         Lufia2CaveCellPosition(memory, cpu, 0x9762u);
@@ -994,267 +1016,272 @@ static void CaveApplyTileSets(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         ExchangeAccumulatorBytes(cpu);
         OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
         Lufia2CaveTileOffsetY(memory, cpu, 0x976au);
-        OpLda(memory, cpu, OpDp(cpu, 0x56u));
-        OpAndValue(cpu, 0x03u);
+        OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT));
+        OpAndValue(cpu, CAVE_CELL_SET_MASK);
         if (!cpu->zero) {
             static const uint8_t kKeys[4] = {0x22u, 0x24u, 0x26u, 0x28u};
             static const uint8_t kTiles[4] = {0x11u, 0x13u, 0x15u, 0x17u};
 
-            ExchangeAccumulatorBytes(cpu);                     /* 9773 */
+            ExchangeAccumulatorBytes(cpu); /* 9773 */
             LoadA8(cpu, 0x00u);
             OpTax(cpu);
             OpRepWidths(cpu, 0x20u);
             for (unsigned i = 0; i < 4; ++i) {
-                OpLda(memory, cpu, OpAbsX(cpu, (uint16_t)(0xc000u + 2u * i)));
+                OpLda(memory, cpu, OpAbsX(cpu, (uint16_t)(CAVE_SET_TABLE + 2u * i)));
                 OpSta(memory, cpu, OpDp(cpu, kTiles[i]));
             }
-            LoadA16(cpu, 0x0006u);
-            OpSta(memory, cpu, OpDp(cpu, 0x58u));
+            LoadA16(cpu, CAVE_BLOCK_TILE_SPAN);
+            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_ROW_COUNT));
             for (;;) {
-                LoadA16(cpu, 0x0006u);                         /* 9792 */
-                OpSta(memory, cpu, OpDp(cpu, 0x56u));
+                LoadA16(cpu, CAVE_BLOCK_TILE_SPAN); /* 9792 */
+                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT));
                 for (;;) {
-                    OpLda(memory, cpu, OpAbsY(cpu, 0x000au));  /* 9797 */
-                    OpAndValue(cpu, 0x03ffu);
+                    OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1)); /* 9797 */
+                    OpAndValue(cpu, CAVE_TILE_INDEX_MASK);
                     for (unsigned i = 0; i < 4; ++i) {
                         OpCmp(memory, cpu, OpDp(cpu, kKeys[i]));
                         if (cpu->zero) {
                             OpLda(memory, cpu, OpDp(cpu, kTiles[i]));
-                            OpSta(memory, cpu, OpDp(cpu, 0x54u));  /* 97BB */
-                            OpLda(memory, cpu, OpAbsY(cpu, 0x000au));
-                            OpAndValue(cpu, 0xfc00u);
-                            OpOra(memory, cpu, OpDp(cpu, 0x54u));
-                            OpSta(memory, cpu, OpAbsY(cpu, 0x000au));
+                            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS)); /* 97BB */
+                            OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1));
+                            OpAndValue(cpu, CAVE_TILE_FLAG_MASK);
+                            OpOra(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS));
+                            OpSta(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1));
                             break;
                         }
                     }
-                    OpStepMem(memory, cpu, OpDp(cpu, 0x56u), -1);  /* 97C8 */
+                    OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT),
+                              -1); /* 97C8 */
                     if (cpu->zero)
                         break;
                     OpIny(cpu);
                     OpIny(cpu);
                 }
-                OpStepMem(memory, cpu, OpDp(cpu, 0x58u), -1);  /* 97D0 */
+                OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_ROW_COUNT), -1); /* 97D0 */
                 if (cpu->zero)
                     break;
                 OpTya(cpu);
                 cpu->carry = 0;
-                OpAdcValue(cpu, 0x00b6u);
+                OpAdcValue(cpu, CAVE_MAP_ROW_SKIP);
                 OpTay(cpu);
                 if (cpu->zero)
                     break;
             }
         }
-        OpSepWidths(cpu, 0x20u);                                     /* 97DC */
+        OpSepWidths(cpu, 0x20u); /* 97DC */
         OpPullX(memory, cpu);
-next:
-        OpInx(cpu);                                            /* 97DF */
-        OpCpx(cpu, 0x00f0u);
+    next:
+        OpInx(cpu); /* 97DF */
+        OpCpx(cpu, CAVE_GRID_ROWS_END);
     } while (!cpu->carry);
 }
 
-/* $83:97E8-$83:9868: decoration sets into $7F:C000. */
+/* $83:97E8-$83:9868: read the five decoration sets from list 10. */
 static uint8_t CaveReadDecorations(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpStz(memory, cpu, OpDp(cpu, 0x56u));                      /* 97E8 */
-    OpStz(memory, cpu, OpDp(cpu, 0x57u));
-    OpLdx(cpu, 0x0003u);
+    OpStz(memory, cpu, OpDp(cpu, CAVE_DP_SET_OFFSET)); /* 97E8 */
+    OpStz(memory, cpu, OpDp(cpu, CAVE_DP_SET_OFFSET + 1u));
+    OpLdx(cpu, CAVE_DECORATION_FIRST_SET);
     do {
-        OpPushX(memory, cpu);                                  /* 97EF */
-        LoadA8(cpu, 0x0au);
+        OpPushX(memory, cpu); /* 97EF */
+        LoadA8(cpu, CAVE_LIST_DECORATIONS);
         ExchangeAccumulatorBytes(cpu);
         OpTxa(cpu);
-        OpLdx(cpu, 0x0004u);
+        OpLdx(cpu, CAVE_DECORATION_KEY);
         if (!CaveListSearch(memory, cpu, 0x97f7u))
             return 0;
-        OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x56u)));    /* 97FB */
+        OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, CAVE_DP_SET_OFFSET))); /* 97FB */
         if (cpu->carry) {
-            OpRepWidths(cpu, 0x20u);                                 /* 97FF */
+            OpRepWidths(cpu, 0x20u); /* 97FF */
             TransferDirectToA(cpu);
-            OpSta(memory, cpu, OpAbsY(cpu, 0xc000u));
+            OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE));
             LoadA16(cpu, 0xffffu);
-            OpSta(memory, cpu, OpAbsY(cpu, 0xc100u));
+            OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE + 0x100u));
         } else {
-            OpLda(memory, cpu, OpLongX(cpu, 0x7ef002u));       /* 980D */
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_LIST_ENTRY_LONG + 2u)); /* 980D */
             OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
-            OpLda(memory, cpu, OpLongX(cpu, 0x7ef003u));
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_LIST_ENTRY_LONG + 3u));
             OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
-            OpLda(memory, cpu, OpLongX(cpu, 0x7ef008u));
-            OpSta(memory, cpu, OpAbsY(cpu, 0xc000u));
-            OpSta(memory, cpu, OpDp(cpu, 0x58u));
-            OpStz(memory, cpu, OpDp(cpu, 0x59u));
-            OpLda(memory, cpu, OpLongX(cpu, 0x7ef009u));
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_LIST_ENTRY_LONG + 8u));
+            OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE));
+            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_ROW_COUNT));
+            OpStz(memory, cpu, OpDp(cpu, CAVE_DP_ROW_COUNT + 1u));
+            OpLda(memory, cpu, OpLongX(cpu, CAVE_LIST_ENTRY_LONG + 9u));
             OpDecA(cpu);
-            OpSta(memory, cpu, OpAbsY(cpu, 0xc001u));
+            OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE + 1u));
             Lufia2CaveBlockOffsetX(memory, cpu, 0x982cu);
             OpRepWidths(cpu, 0x20u);
             do {
-                OpTya(cpu);                                    /* 9831 */
-                OpAdcValue(cpu, 0x0100u);                      /* no CLC */
+                OpTya(cpu);                               /* 9831 */
+                OpAdcValue(cpu, CAVE_SET_VARIANT_STRIDE); /* no CLC */
                 OpTay(cpu);
-                OpLda(memory, cpu, OpLongX(cpu, 0x7e400au));
-                OpSta(memory, cpu, OpAbsY(cpu, 0xc000u));
-                OpLda(memory, cpu, OpLongX(cpu, 0x7e406au));
-                OpSta(memory, cpu, OpAbsY(cpu, 0xc002u));
-                OpLda(memory, cpu, OpLongX(cpu, 0x7e4fceu));
-                OpSta(memory, cpu, OpAbsY(cpu, 0xc004u));
-                OpLda(memory, cpu, OpLongX(cpu, 0x7e502eu));
-                OpSta(memory, cpu, OpAbsY(cpu, 0xc006u));
+                OpLda(memory, cpu, OpLongX(cpu, CAVE_BLOCK_BUFFER_LONG + 0x0au));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE));
+                OpLda(memory, cpu, OpLongX(cpu, CAVE_BLOCK_BUFFER_LONG + 0x6au));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE + 2u));
+                OpLda(memory, cpu, OpLongX(cpu, CAVE_BLOCK_BUFFER_LONG + 0xfceu));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE + 4u));
+                OpLda(memory, cpu, OpLongX(cpu, CAVE_BLOCK_BUFFER_LONG + 0x102eu));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_SET_TABLE + 6u));
                 OpInx(cpu);
                 OpInx(cpu);
-                OpStepMem(memory, cpu, OpDp(cpu, 0x58u), -1);
+                OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_ROW_COUNT), -1);
             } while (!cpu->zero);
         }
-        OpLda(memory, cpu, OpDp(cpu, 0x56u));                  /* 9858 */
+        OpLda(memory, cpu, OpDp(cpu, CAVE_DP_SET_OFFSET)); /* 9858 */
         cpu->carry = 0;
-        OpAdcValue(cpu, 0x0008u);
-        OpSta(memory, cpu, OpDp(cpu, 0x56u));
+        OpAdcValue(cpu, CAVE_SET_SIZE);
+        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_SET_OFFSET));
         OpSepWidths(cpu, 0x20u);
         OpPullX(memory, cpu);
         OpInx(cpu);
-        OpCpx(cpu, 0x0008u);
+        OpCpx(cpu, CAVE_DECORATION_FIRST_SET + CAVE_DECORATION_SETS);
     } while (!cpu->carry);
     return 1;
 }
 
-/* $83:9869-$83:992F: random tile decorations. */
+/* $83:9869-$83:992F: scatter decorations over occupied cells. */
 static void CaveDecorate(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLdx(cpu, 0x0010u);                                       /* 9869 */
+    OpLdx(cpu, CAVE_FIRST_ROOM_CELL); /* 9869 */
     do {
-        OpPushX(memory, cpu);                                  /* 986C */
+        OpPushX(memory, cpu); /* 986C */
         OpLda(memory, cpu, OpAbsX(cpu, CAVE_ROOM_GRID));
         if (cpu->zero)
             goto next;
-        OpTxa(cpu);                                            /* 9875 */
+        OpTxa(cpu); /* 9875 */
         Lufia2CaveCellPosition(memory, cpu, 0x9876u);
         OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
         ExchangeAccumulatorBytes(cpu);
         OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
         Lufia2CaveTileOffsetY(memory, cpu, 0x987eu);
         OpRepWidths(cpu, 0x20u);
-        LoadA16(cpu, 0x0006u);
-        OpSta(memory, cpu, OpDp(cpu, 0x58u));
+        LoadA16(cpu, CAVE_BLOCK_TILE_SPAN);
+        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_ROW_COUNT));
         for (;;) {
-            LoadA16(cpu, 0x0006u);                             /* 9888 */
-            OpSta(memory, cpu, OpDp(cpu, 0x56u));
+            LoadA16(cpu, CAVE_BLOCK_TILE_SPAN); /* 9888 */
+            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT));
             for (;;) {
-                CaveRandomByte(memory, cpu, 0x988du);          /* 988D */
-                OpCmpValue(cpu, 0x0030u);
+                CaveRandomByte(memory, cpu, 0x988du); /* 988D */
+                OpCmpValue(cpu, CAVE_DECORATION_ODDS);
                 if (cpu->carry)
                     goto step;
-                OpLda(memory, cpu, OpAbsY(cpu, 0x3f0eu));
-                OpAndValue(cpu, 0x03ffu);
+                OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_2));
+                OpAndValue(cpu, CAVE_TILE_INDEX_MASK);
                 if (!cpu->zero)
                     goto step;
-                OpLda(memory, cpu, OpAbsY(cpu, 0x000au));      /* 989E */
-                OpAndValue(cpu, 0x03ffu);
-                OpSta(memory, cpu, OpDp(cpu, 0x54u));
+                OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1)); /* 989E */
+                OpAndValue(cpu, CAVE_TILE_INDEX_MASK);
+                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS));
                 OpLdx(cpu, 0x0000u);
                 for (;;) {
-                    OpLda(memory, cpu, OpDp(cpu, 0x54u));      /* 98A9 */
-                    OpCmp(memory, cpu, OpAbsX(cpu, 0xc100u));
+                    OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS)); /* 98A9 */
+                    OpCmp(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE + 0x100u));
                     if (cpu->zero)
                         break;
                     OpTxa(cpu);
                     cpu->carry = 0;
-                    OpAdcValue(cpu, 0x0008u);
+                    OpAdcValue(cpu, CAVE_SET_SIZE);
                     OpTax(cpu);
-                    OpCpx(cpu, 0x0028u);
+                    OpCpx(cpu, CAVE_DECORATION_SETS * CAVE_SET_SIZE);
                     if (cpu->carry)
                         goto step;
                 }
-                OpWriteX(memory, cpu, OpDp(cpu, 0x54u), cpu->x);   /* 98BD */
+                OpWriteX(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS), cpu->x); /* 98BD */
                 OpSepWidths(cpu, 0x20u);
-                OpLda(memory, cpu, OpAbsX(cpu, 0xc001u));
-                OpSta(memory, cpu, OpDp(cpu, 0x5au));
-                OpStz(memory, cpu, OpDp(cpu, 0x5bu));
-                OpLda(memory, cpu, OpAbsX(cpu, 0xc000u));
+                OpLda(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE + 1u));
+                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_EXTRA_ROWS));
+                OpStz(memory, cpu, OpDp(cpu, CAVE_DP_EXTRA_ROWS + 1u));
+                OpLda(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE));
                 Lufia2CaveRandomBelow(memory, cpu, 0x98cbu);
                 OpIncA(cpu);
                 ExchangeAccumulatorBytes(cpu);
                 LoadA8(cpu, 0x00u);
                 OpRepWidths(cpu, 0x20u);
                 cpu->carry = 0;
-                OpAdc(memory, cpu, OpDp(cpu, 0x54u));
+                OpAdc(memory, cpu, OpDp(cpu, CAVE_DP_TILE_BITS));
                 OpTax(cpu);
-                OpLda(memory, cpu, OpAbsY(cpu, 0x000au));      /* 98D8 */
-                OpAndValue(cpu, 0xfc00u);
-                OpOra(memory, cpu, OpAbsX(cpu, 0xc000u));
-                OpSta(memory, cpu, OpAbsY(cpu, 0x000au));
-                OpLda(memory, cpu, OpAbsY(cpu, 0x3f0eu));
-                OpAndValue(cpu, 0xfc00u);
-                OpOra(memory, cpu, OpAbsX(cpu, 0xc004u));
-                OpSta(memory, cpu, OpAbsY(cpu, 0x3f0eu));
-                OpLda(memory, cpu, OpDp(cpu, 0x5au));
+                OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1)); /* 98D8 */
+                OpAndValue(cpu, CAVE_TILE_FLAG_MASK);
+                OpOra(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_1));
+                OpLda(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_2));
+                OpAndValue(cpu, CAVE_TILE_FLAG_MASK);
+                OpOra(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE + 4u));
+                OpSta(memory, cpu, OpAbsY(cpu, CAVE_MAP_LAYER_2));
+                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_EXTRA_ROWS));
                 if (!cpu->zero) {
-                    OpLda(memory, cpu, OpAbsY(cpu, 0x00cau));  /* 98F4 */
-                    OpAndValue(cpu, 0xfc00u);
-                    OpOra(memory, cpu, OpAbsX(cpu, 0xc002u));
-                    OpSta(memory, cpu, OpAbsY(cpu, 0x00cau));
-                    OpLda(memory, cpu, OpAbsY(cpu, 0x3fceu));
-                    OpAndValue(cpu, 0xfc00u);
-                    OpOra(memory, cpu, OpAbsX(cpu, 0xc006u));
-                    OpSta(memory, cpu, OpAbsY(cpu, 0x3fceu));
+                    OpLda(
+                        memory, cpu,
+                        OpAbsY(cpu, CAVE_MAP_LAYER_1 + CAVE_MAP_ROW_BYTES)); /* 98F4 */
+                    OpAndValue(cpu, CAVE_TILE_FLAG_MASK);
+                    OpOra(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE + 2u));
+                    OpSta(memory, cpu,
+                          OpAbsY(cpu, CAVE_MAP_LAYER_1 + CAVE_MAP_ROW_BYTES));
+                    OpLda(memory, cpu,
+                          OpAbsY(cpu, CAVE_MAP_LAYER_2 + CAVE_MAP_ROW_BYTES));
+                    OpAndValue(cpu, CAVE_TILE_FLAG_MASK);
+                    OpOra(memory, cpu, OpAbsX(cpu, CAVE_SET_TABLE + 6u));
+                    OpSta(memory, cpu,
+                          OpAbsY(cpu, CAVE_MAP_LAYER_2 + CAVE_MAP_ROW_BYTES));
                 }
-step:
-                OpStepMem(memory, cpu, OpDp(cpu, 0x56u), -1);  /* 990C */
+            step:
+                OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COUNT), -1); /* 990C */
                 if (cpu->zero)
                     break;
                 OpIny(cpu);
                 OpIny(cpu);
             }
-            OpStepMem(memory, cpu, OpDp(cpu, 0x58u), -1);      /* 9915 */
+            OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_ROW_COUNT), -1); /* 9915 */
             if (cpu->zero)
                 break;
             OpTya(cpu);
             cpu->carry = 0;
-            OpAdcValue(cpu, 0x00b6u);
+            OpAdcValue(cpu, CAVE_MAP_ROW_SKIP);
             OpTay(cpu);
             if (cpu->zero)
                 break;
         }
-next:
-        OpSepWidths(cpu, 0x20u);                                     /* 9924 */
+    next:
+        OpSepWidths(cpu, 0x20u); /* 9924 */
         OpPullX(memory, cpu);
         OpInx(cpu);
-        OpCpx(cpu, 0x00f0u);
+        OpCpx(cpu, CAVE_GRID_ROWS_END);
     } while (!cpu->carry);
 }
 
 /* Upper tile at cell A/B, then $83:9D46. */
-static void CaveMarkTile(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t site,
-    uint16_t upper) {
+static void CaveMarkTile(const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t site,
+                         uint16_t upper) {
     Lufia2CaveTileAt(memory, cpu, site);
     OpLda(memory, cpu, OpAbs(cpu, upper));
     Lufia2CaveSetUpperTile(memory, cpu, (uint16_t)(site + 6u));
     OpSepWidths(cpu, 0x20u);
 }
 
-/* $83:9930-$83:99C7: start, stair and chest tiles, then the sections. */
+/* $83:9930-$83:99C7: mark tiles, then build the map sections. */
 static void CaveFinish(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLda(memory, cpu, OpAbs(cpu, CAVE_START_COLUMN));                   /* 9930 */
+    OpLda(memory, cpu, OpAbs(cpu, CAVE_START_COLUMN)); /* 9930 */
     ExchangeAccumulatorBytes(cpu);
     OpLda(memory, cpu, OpAbs(cpu, CAVE_START_ROW));
     Lufia2CaveTileAt(memory, cpu, 0x9937u);
     TransferDirectToA(cpu);                                    /* 993A */
     Lufia2CaveSetUpperTile(memory, cpu, 0x993bu);
     OpSepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpAbs(cpu, 0xe6adu));                   /* 9940 */
+    OpLda(memory, cpu, OpAbs(cpu, CAVE_LINK_MARK_A)); /* 9940 */
     OpCmpValue(cpu, 0xffu);
     if (!cpu->zero) {
-        OpLda(memory, cpu, OpAbs(cpu, 0xe6adu));
+        OpLda(memory, cpu, OpAbs(cpu, CAVE_LINK_MARK_A));
         ExchangeAccumulatorBytes(cpu);
-        OpLda(memory, cpu, OpAbs(cpu, 0xe6aeu));
-        CaveMarkTile(memory, cpu, 0x994eu, 0x4390u);
+        OpLda(memory, cpu, OpAbs(cpu, CAVE_LINK_MARK_B));
+        CaveMarkTile(memory, cpu, 0x994eu, CAVE_LINK_MARK_TILE);
     }
-    OpLda(memory, cpu, OpAbs(cpu, CAVE_STAIR_COLUMN));                   /* 9959 */
+    OpLda(memory, cpu, OpAbs(cpu, CAVE_STAIR_COLUMN)); /* 9959 */
     ExchangeAccumulatorBytes(cpu);
     OpLda(memory, cpu, OpAbs(cpu, CAVE_STAIR_ROW));
-    CaveMarkTile(memory, cpu, 0x9960u, 0x4458u);
-    OpLdx(cpu, 0x0000u);                                       /* 996B */
+    CaveMarkTile(memory, cpu, 0x9960u, CAVE_STAIR_TILE);
+    OpLdx(cpu, 0x0000u); /* 996B */
     for (;;) {
-        OpTxa(cpu);                                            /* 996E */
+        OpTxa(cpu); /* 996E */
         OpCmp(memory, cpu, OpAbs(cpu, CAVE_CHEST_COUNT));
         if (cpu->carry)
             break;
@@ -1266,24 +1293,25 @@ static void CaveFinish(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         OpTxa(cpu);
         OpAslA(cpu);
         OpTax(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0x7fe746u));
-        OpBitValue(cpu, 0x4000u);
-        OpLda(memory, cpu, OpAbs(cpu, cpu->zero ? 0x474eu : 0x4754u));
+        OpLda(memory, cpu, OpLongX(cpu, 0x7f0000u | CAVE_CHEST_WORDS));
+        OpBitValue(cpu, CAVE_CHEST_ITEM_FLAG);
+        OpLda(memory, cpu,
+              OpAbs(cpu, cpu->zero ? CAVE_CHEST_TILE : CAVE_CHEST_TILE_ITEM));
         Lufia2CaveSetUpperTile(memory, cpu, 0x9993u);
         OpSepWidths(cpu, 0x20u);
         OpPullX(memory, cpu);
         OpInx(cpu);
     }
-    OpStz(memory, cpu, OpAbs(cpu, 0xd038u));                   /* 999C */
-    OpStz(memory, cpu, OpAbs(cpu, 0xd039u));
+    OpStz(memory, cpu, OpAbs(cpu, CAVE_SECTION_COUNT)); /* 999C */
+    OpStz(memory, cpu, OpAbs(cpu, CAVE_SECTION_COUNT + 1u));
     OpLdx(cpu, 0x0000u);
-    OpWriteX(memory, cpu, OpDp(cpu, 0x5du), cpu->x);
+    OpWriteX(memory, cpu, OpDp(cpu, CAVE_DP_SECTION_INDEX), cpu->x);
     CaveCallLong(memory, cpu, 0x99a7u, Lufia2FieldReadSections);
-    OpLdx(cpu, 0x7e0eu);                                       /* 99AB */
-    OpWriteX(memory, cpu, OpDp(cpu, 0x2du), cpu->x);
+    OpLdx(cpu, CAVE_SECTION_BYTES); /* 99AB */
+    OpWriteX(memory, cpu, OpDp(cpu, CAVE_DP_SECTION_SIZE), cpu->x);
     OpRepWidths(cpu, 0x20u);
-    OpStz(memory, cpu, OpDp(cpu, 0x28u));
-    OpLda(memory, cpu, 0x7fe69bu);
+    OpStz(memory, cpu, OpDp(cpu, CAVE_DP_SECTION_FLAGS));
+    OpLda(memory, cpu, CAVE_MAP_RESOURCE_LONG);
     CaveCallLong(memory, cpu, 0x99b8u, Lufia2FieldDecompressMapData);
     CaveCallLong(memory, cpu, 0x99bcu, Lufia2FieldSectionSize);
     OpSepWidths(cpu, 0x20u);
@@ -1325,25 +1353,24 @@ static Lufia2ExecutionResult CaveChildUnwound(uint32_t site) {
 }
 
 /* $83:9E31. */
-Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child,
-    void *child_context) {
+Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu,
+                                                     Lufia2PushedChildCall child,
+                                                     void *child_context) {
     Lufia2ExecutionResult result;
 
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);                             /* 9E31 */
+    OpLda(memory, cpu, CAVE_FLOOR_LONG); /* 9E31 */
     OpCmp(memory, cpu, 0x000b75u);
     if (cpu->carry)
         OpSta(memory, cpu, 0x000b75u);
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);                             /* 9E3F */
+    OpLda(memory, cpu, CAVE_FLOOR_LONG); /* 9E3F */
     OpDecA(cpu);
     OpSta(memory, cpu, 0x004204u);
     TransferDirectToA(cpu);
     OpSta(memory, cpu, 0x004205u);
     LoadA8(cpu, 0x0au);
     OpSta(memory, cpu, 0x004206u);
-    LoadA8(cpu, 0xffu);                                        /* 9E53 */
+    LoadA8(cpu, 0xffu); /* 9E53 */
     OpSta(memory, cpu, 0x7fe6f1u);
     TransferDirectToA(cpu);
     OpSta(memory, cpu, CAVE_OBJECT_COUNT_LONG);
@@ -1351,7 +1378,7 @@ Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(
     OpSta(memory, cpu, CAVE_CHEST_COUNT_LONG);
     OpSta(memory, cpu, 0x7fe735u);
     OpSta(memory, cpu, 0x7fe733u);
-    OpLda(memory, cpu, OpDp(cpu, 0x40u));                      /* 9E6E */
+    OpLda(memory, cpu, OpDp(cpu, 0x40u)); /* 9E6E */
     OpAndValue(cpu, 0x1fu);
     OpIncA(cpu);
     OpSta(memory, cpu, OpDp(cpu, 0x54u));
@@ -1359,31 +1386,31 @@ Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(
         CaveRandomByte(memory, cpu, 0x9e75u);
         OpStepMem(memory, cpu, OpDp(cpu, 0x54u), -1);
     } while (!cpu->zero);
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);                             /* 9E7D */
+    OpLda(memory, cpu, CAVE_FLOOR_LONG); /* 9E7D */
     OpCmpValue(cpu, 0x63u);
     if (cpu->zero) {
-        LoadA8(cpu, 0x0bu);                                    /* 9E85 */
+        LoadA8(cpu, 0x0bu); /* 9E85 */
         OpSta(memory, cpu, WRAM_FIELD_DESTINATION_X);
         LoadA8(cpu, 0x2eu);
         OpSta(memory, cpu, WRAM_FIELD_DESTINATION_Y);
         LoadA8(cpu, 0x40u);
         OpSta(memory, cpu, WRAM_FIELD_DESTINATION_PARAMETERS);
         LoadA8(cpu, 0xf1u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x05acu));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
         LoadA8(cpu, 0x01u);
-        OpTestBits(memory, cpu, OpAbs(cpu, 0x05b6u), 0);
-        return ExecutionReturned(0x839ea1u);                   /* 9EA1 RTL */
+        OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS), 0);
+        return ExecutionReturned(0x839ea1u); /* 9EA1 RTL */
     }
-    TransferDirectToA(cpu);                                    /* 9EA2 */
+    TransferDirectToA(cpu); /* 9EA2 */
     OpSta(memory, cpu, 0x7fe698u);
     TransferDirectToA(cpu);
-    OpLda(memory, cpu, 0x004214u);                             /* (floor-1)/10 */
+    OpLda(memory, cpu, 0x004214u); /* (floor-1)/10 */
     OpTax(cpu);
     OpLda(memory, cpu, OpLongX(cpu, 0x839f4fu));
     OpSta(memory, cpu, 0x7fe697u);
     OpAslA(cpu);
     OpTax(cpu);
-    OpRepWidths(cpu, 0x20u);                                         /* 9EB7 */
+    OpRepWidths(cpu, 0x20u); /* 9EB7 */
     OpLda(memory, cpu, OpLongX(cpu, 0x839f65u));
     OpSta(memory, cpu, OpDp(cpu, 0x56u));
     OpLda(memory, cpu, OpLongX(cpu, 0x839f49u));
@@ -1396,7 +1423,7 @@ Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(
     OpSta(memory, cpu, 0x7fe6a2u);
     OpLda(memory, cpu, OpLongX(cpu, 0x839f7fu));
     OpSta(memory, cpu, OpDp(cpu, 0x54u));
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);                             /* 9EE5 */
+    OpLda(memory, cpu, CAVE_FLOOR_LONG); /* 9EE5 */
     OpAndValue(cpu, 0x0006u);
     OpSta(memory, cpu, OpDp(cpu, 0x58u));
     OpLsrA(cpu);
@@ -1407,19 +1434,19 @@ Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(
     OpSta(memory, cpu, 0x7fe69fu);
     OpLda(memory, cpu, OpLongX(cpu, 0x839f80u));
     OpSta(memory, cpu, 0x7fe6a0u);
-    OpLda(memory, cpu, 0x7fe697u);                             /* 9F04 */
+    OpLda(memory, cpu, 0x7fe697u); /* 9F04 */
     OpAslA(cpu);
     OpAdc(memory, cpu, 0x7fe697u);
     OpTax(cpu);
     OpLda(memory, cpu, OpLongX(cpu, 0x839f73u));
     OpSta(memory, cpu, WRAM_CAVE_MAP_HEADER_POINTER);
-    OpSepWidths(cpu, 0x20u);                                         /* 9F16 */
+    OpSepWidths(cpu, 0x20u); /* 9F16 */
     OpLda(memory, cpu, OpLongX(cpu, 0x839f75u));
     OpSta(memory, cpu, WRAM_CAVE_MAP_HEADER_BANK);
-    OpLda(memory, cpu, OpDp(cpu, 0x56u));                      /* music */
+    OpLda(memory, cpu, OpDp(cpu, 0x56u)); /* music */
     OpCmp(memory, cpu, OpAbs(cpu, 0x099du));
     if (!cpu->zero) {
-        OpSta(memory, cpu, OpAbs(cpu, 0x099du));               /* 9F27 */
+        OpSta(memory, cpu, OpAbs(cpu, 0x099du)); /* 9F27 */
         SimulateJslFrame(memory, cpu, 0x83u, 0x9f2du);
         if (!child(child_context, cpu, 0x8093feu, 0x839f2au, 3u))
             return CaveChildUnwound(0x839f2au);

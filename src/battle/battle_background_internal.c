@@ -1,5 +1,6 @@
 #include "battle/battle_lifecycle_internal.h"
 #include "core/snes_registers.h"
+#include "system/dp_scratch.h"
 
 enum {
     BATTLE_BACKGROUND_DESCRIPTOR = 0x11e2u,
@@ -8,6 +9,7 @@ enum {
     BATTLE_BACKGROUND_TILES = 0x7ec000u,
 };
 
+/* Copy the background's four descriptor bytes to $11E2. */
 static void LoadBackgroundDescriptor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                      uint8_t background_id) {
     OpLoadA(cpu, background_id);
@@ -21,6 +23,7 @@ static void LoadBackgroundDescriptor(const Lufia2Memory *memory, Lufia2CpuState 
     }
 }
 
+/* Decompress the background tiles and tilemap. */
 static bool DecodeBackgroundResources(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
     const Lufia2Memory *memory = battle->memory;
@@ -35,7 +38,7 @@ static bool DecodeBackgroundResources(BattleContext *battle) {
     OpAndValue(cpu, 0x00ffu);
     cpu->carry = 0;
     OpAdcValue(cpu, 0x016cu);
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     if (!BattleDecompressResource(battle, 0xba08u))
         return false;
 
@@ -43,7 +46,7 @@ static bool DecodeBackgroundResources(BattleContext *battle) {
     OpAndValue(cpu, 0x00ffu);
     cpu->carry = 0;
     OpAdcValue(cpu, 0x0179u);
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpSepWidths(cpu, 0x20u);
 
     OpLdx(cpu, 0x2000u);
@@ -53,6 +56,7 @@ static bool DecodeBackgroundResources(BattleContext *battle) {
     return BattleDecompressResource(battle, 0xba23u);
 }
 
+/* Load palettes 2 and 3 from $97:CD58. */
 static bool LoadBackgroundPalettes(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
     const Lufia2Memory *memory = battle->memory;
@@ -78,6 +82,7 @@ static bool LoadBackgroundPalettes(BattleContext *battle) {
     return BattleLoadPalette(battle, 0xba49u);
 }
 
+/* Undo the tilemap's difference coding at $7E:2000. */
 static void DecodeBackgroundTilemap(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7eu);
@@ -98,6 +103,7 @@ static void DecodeBackgroundTilemap(const Lufia2Memory *memory, Lufia2CpuState *
     PullDataBank(memory, cpu);
 }
 
+/* Read the background id; true when blank ($18). */
 bool BattleBackgroundIsBlank(BattleContext *battle, uint8_t *background_id) {
     Lufia2CpuState *cpu = battle->cpu;
 
@@ -108,6 +114,7 @@ bool BattleBackgroundIsBlank(BattleContext *battle, uint8_t *background_id) {
     return cpu->zero;
 }
 
+/* Blank background: clear tiles and fill the tilemap. */
 void BattleClearBackground(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -137,6 +144,7 @@ void BattleClearBackground(BattleContext *battle) {
     PullDataBank(memory, cpu);
 }
 
+/* Load descriptor, tiles, tilemap and palettes; false on unwind. */
 bool BattleLoadBackground(BattleContext *battle, uint8_t background_id) {
     LoadBackgroundDescriptor(battle->memory, battle->cpu, background_id);
 
@@ -149,6 +157,7 @@ bool BattleLoadBackground(BattleContext *battle, uint8_t background_id) {
     return true;
 }
 
+/* Set DP $D9 bit 0; id 0 also calls $85:A701. */
 bool BattleFinishBackground(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;

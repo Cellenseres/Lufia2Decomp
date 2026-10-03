@@ -4,10 +4,10 @@
 #include <stddef.h>
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/party.h"
 
-/* The character record is addressed by its offset in X. Each total is the
- * sum of a base word and one or two modifier words of the record. */
+/* Totals: base word plus one or two modifiers. */
 enum {
     DP_RECORD = 0xc1,
     TOTAL_CAP_LIMIT = 200, /* a total of 200 or more reads as 199 */
@@ -29,7 +29,7 @@ static const StatTotal kStatTotals[] = {
     {0x55, 0x7c, 0x8a, 0x2d, false},
 };
 
-/* Totals that are derived from other totals or replaced by a record word. */
+/* Totals derived from others or overridden by a word. */
 enum {
     TOTAL_2D = 0x2d,
     TOTAL_2F = 0x2f,
@@ -51,7 +51,7 @@ static void SetRecordWord(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
     Write16Long(memory, AbsoluteIndexedAddress(cpu, offset, cpu->x), value);
 }
 
-/* The first modifier's carry feeds the second one, as in the original. */
+/* The first modifier's carry feeds the second. */
 static uint16_t SumStat(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                         const StatTotal *stat) {
     LoadA16(cpu, RecordWord(memory, cpu, stat->base));
@@ -62,7 +62,7 @@ static uint16_t SumStat(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return cpu->accumulator;
 }
 
-/* Replaces a total by a record word when that word is set. */
+/* Replace a total by its record word when set. */
 static void ApplyOverride(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                           uint16_t override_offset, uint16_t total_offset) {
     const uint16_t override = RecordWord(memory, cpu, override_offset);
@@ -72,8 +72,7 @@ static void ApplyOverride(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         SetRecordWord(memory, cpu, total_offset, override);
 }
 
-/* $81:F4ED: totals of the record at [$C1]. The checkpoint is part of the
- * original routine. */
+/* $81:F4ED: totals of the record at [$C1]. */
 static void DerivedStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     uint16_t total = 0;
     size_t i;
@@ -87,7 +86,7 @@ static void DerivedStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         SetRecordWord(memory, cpu, kStatTotals[i].total, total);
     }
 
-    /* $29 continues from the last sum, $2B averages $2F and $2D. */
+    /* $29 continues the last sum; $2B averages $2F and $2D. */
     cpu->carry = 0;
     Add16Value(cpu, RecordWord(memory, cpu, ADDEND_29));
     SetRecordWord(memory, cpu, TOTAL_29, cpu->accumulator);
@@ -142,21 +141,21 @@ Lufia2ExecutionResult Lufia2PartyBaseStats(
     unsigned i;
 
     LoadAAbsolute8(memory, cpu, MEMBER, 0);
-    StoreAAbsolute8(memory, cpu, 0x4202u, 0);
-    StoreA8Absolute(memory, cpu, 0x4203u, 0x0eu);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
+    StoreA8Absolute(memory, cpu, SNES_WRMPYB, 0x0eu);
     PushIndex(memory, cpu);
     PushY(memory, cpu);
     LoadX16(cpu, 0x0000u);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));   /* member * 14 */
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0)); /* member * 14 */
     PushY(memory, cpu);
-    StoreA8Absolute(memory, cpu, 0x4203u, 0x70u);
+    StoreA8Absolute(memory, cpu, SNES_WRMPYB, 0x70u);
     LoadX16(cpu, 0x0001u);
     SetAccumulatorWidth(cpu, 0);
     for (i = 0; i < 7u; ++i)
         Write16Absolute(memory, cpu, (uint16_t)(STATS + 2u * i), 0);
     LoadA16(cpu, 0xb62cu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x4216u, 0));
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     StoreADirect16(memory, cpu, 0xb2u);
     SetAccumulatorWidth(cpu, 1);
     for (;;) {
@@ -476,7 +475,7 @@ Lufia2ExecutionResult Lufia2PartyStatTotalsOfCopy(
     PushY(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     StoreXDirect16(memory, cpu, 0xc1u);
-    SelectDataBank(memory, cpu, 0x7eu);
+    OpSetDataBank(memory, cpu, 0x7eu);
     LoadY16(cpu, 0);
     do {
         LoadA8(cpu, AbsoluteByte(memory, cpu, 0x0000u, cpu->x));

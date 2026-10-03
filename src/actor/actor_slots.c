@@ -37,7 +37,7 @@ static void SecondarySpawnScript(
         cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x91u);
-    Write8(memory, LongIndexedAddress(0x7fdef0u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress((WRAM_OBJECT_SCRIPT + 2u), cpu->x), A8(cpu));
 }
 
 /* $83:DFA5: initialise actor X with spawn id $54. */
@@ -58,11 +58,11 @@ static void SecondarySpawnInit(
     LoadA8(cpu, 0x84u);                                        /* DFAB */
     StoreAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
     LoadA8(cpu, 0x01u);
-    Write8(memory, LongIndexedAddress(0x7fdfaeu, cpu->x), A8(cpu));
-    LoadAAbsolute8(memory, cpu, 0x0692u, 0);
-    Write8(memory, LongIndexedAddress(0x7fd9ccu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FDFAE, cpu->x), A8(cpu));
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, 0);
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FD9CC, cpu->x), A8(cpu));
     LoadA8(cpu, 0x20u);
-    Write8(memory, LongIndexedAddress(0x7fe33eu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x), A8(cpu));
     TransferDirectToA(cpu);                                    /* DFC3 */
     for (i = 0; i < 4u; ++i)
         Write8(memory, LongIndexedAddress(zeroed[i], cpu->x), A8(cpu));
@@ -74,7 +74,7 @@ static void SecondarySpawnInit(
     for (i = 0; i < 4u; ++i)
         Write8(memory, LongIndexedAddress(cleared[i], cpu->x), A8(cpu));
     TransferDirectToA(cpu);                                    /* DFF5 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     SimulateJslFrame(memory, cpu, 0x83u, 0xdffbu);
     SecondarySpawnScript(memory, cpu);
     SimulateRtlFrame(memory, cpu);
@@ -85,7 +85,7 @@ void Lufia2ActorSpawn(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);                                 /* DF87 */
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     Push8(memory, cpu, 0x83u);
     PullDataBank(memory, cpu);
     LoadX16(cpu, 0x0000u);
@@ -93,7 +93,7 @@ void Lufia2ActorSpawn(
         LoadAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);          /* DF8F */
         BitImmediate8(cpu, 0x80u);
         if (cpu->zero) {
-            LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+            LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
             SimulateJsrFrame(memory, cpu, 0xdf9au);
             SecondarySpawnInit(memory, cpu);
             SimulateRtsFrame(memory, cpu);

@@ -1,4 +1,5 @@
 #include "battle/battle_internal.h"
+#include "system/dp_scratch.h"
 
 static Lufia2ExecutionResult TargetCursor(const Lufia2Memory *memory,
                                           Lufia2CpuState *cpu, uint16_t base,
@@ -115,7 +116,7 @@ Lufia2ExecutionResult Lufia2BattleTargetCoordinates(const Lufia2Memory *memory,
     OpLda(memory, cpu, OpAbsX(cpu, 0x50u));
     if (!BattleCall(&battle, 0xb924u, 0x81fbc6u, 3u) ||
         !BattleCall(&battle, 0xb928u, 0x81fb8eu, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpAslA(cpu);
     OpAslA(cpu);
     OpAslA(cpu);
@@ -152,8 +153,6 @@ Lufia2ExecutionResult Lufia2BattleTargetCoordinates(const Lufia2Memory *memory,
         OpLoadA(cpu, 0xffu);
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x81b973u);
-unwound:
-    return BattleChildUnwound(&battle);
 }
 
 Lufia2ExecutionResult Lufia2BattleCommandFrame(const Lufia2Memory *memory,
@@ -164,7 +163,7 @@ Lufia2ExecutionResult Lufia2BattleCommandFrame(const Lufia2Memory *memory,
         BattleContextCreate(memory, cpu, child, child_context, 0x81u);
     if (!BattleCall(&battle, 0xd9d0u, 0x85894au, 3u) ||
         !BattleCall(&battle, 0xd9d4u, 0x859aaau, 3u) ||
-        !BattleCall(&battle, 0xd9d8u, 0x858a2fu, 3u) ||
+        !BattleCall(&battle, 0xd9d8u, BATTLE_ROUTINE_SPRITES, 3u) ||
         !BattleCall(&battle, 0xd9dcu, 0x859abcu, 3u))
         return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81d9e0u);
@@ -176,26 +175,26 @@ Lufia2ExecutionResult Lufia2BattleConfirmCommand(const Lufia2Memory *memory,
                                                  void *child_context) {
     BattleContext battle =
         BattleContextCreate(memory, cpu, child, child_context, 0x81u);
-    if (!BattleCall(&battle, 0xd975u, 0x85ec81u, 3u) ||
+    if (!BattleCall(&battle, 0xd975u, BATTLE_ROUTINE_FRAME_INPUT, 3u) ||
         !BattleCall(&battle, 0xd979u, 0x81def4u, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLdx(cpu, 0xf077u);
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7eu);
     OpLdy(cpu, 0x3006u);
     OpLoadA(cpu, 0x20u);
-    OpSta(memory, cpu, OpDp(cpu, 0x55u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
     for (;;) {
         OpLda(memory, cpu, OpLongX(cpu, 0x850000u));
         if (cpu->zero)
             break;
         OpInx(cpu);
         if (!BattleCall(&battle, 0xd992u, 0x81e835u, 2u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpSta(memory, cpu, OpAbsY(cpu, 0u));
         ExchangeAccumulatorBytes(cpu);
         OpSta(memory, cpu, OpAbsY(cpu, 0x40u));
-        OpLda(memory, cpu, OpDp(cpu, 0x55u));
+        OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
         OpSta(memory, cpu, OpAbsY(cpu, 1u));
         OpSta(memory, cpu, OpAbsY(cpu, 0x41u));
         OpIny(cpu);
@@ -205,24 +204,22 @@ Lufia2ExecutionResult Lufia2BattleConfirmCommand(const Lufia2Memory *memory,
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(&battle, 0xd9abu, 0x859c08u, 3u) ||
         !BattleCall(&battle, 0xd9afu, 0x859b67u, 3u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpSepWidths(cpu, 0x20u);
     do {
         if (!BattleCall(&battle, 0xd9b5u, 0x81d9d0u, 2u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, 0x0012f3u);
-        if (!BattleCall(&battle, 0xd9beu, 0x85ec81u, 3u))
-            goto unwound;
-        OpLda(memory, cpu, OpDp(cpu, 0xddu));
+        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+        if (!BattleCall(&battle, 0xd9beu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
+            return BattleChildUnwound(&battle);
+        OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
         OpBitValue(cpu, 0xa0u);
         if (!cpu->zero)
             break;
-        OpLda(memory, cpu, OpDp(cpu, 0xdeu));
+        OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED_HIGH));
     } while (!cpu->negative);
     if (!BattleCall(&battle, 0xd9ccu, 0x81e16fu, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81d9cfu);
-unwound:
-    return BattleChildUnwound(&battle);
 }

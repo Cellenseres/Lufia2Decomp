@@ -3,6 +3,7 @@
  * script stream pointed to by the long pointer at $C3. */
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
@@ -41,7 +42,7 @@ Lufia2ExecutionResult Lufia2BattleEffectAddToField(
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x81a40bu);
-    SelectDataBank(memory, cpu, WORK_BANK);
+    OpSetDataBank(memory, cpu, WORK_BANK);
     wram = WramViewOfCaller(memory, cpu);
     offset = Read8(memory, DirectLongPointer(memory, cpu, STREAM));
     (void)WramStep16(wram, STREAM, 1);
@@ -67,7 +68,7 @@ Lufia2ExecutionResult Lufia2BattleEffectRepeat(
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x81953fu);
-    SelectDataBank(memory, cpu, WORK_BANK);
+    OpSetDataBank(memory, cpu, WORK_BANK);
     wram = WramViewOfCaller(memory, cpu);
     cpu->x = cpu->y;
     count = (uint8_t)(WramReadAt(wram, SLOT + SLOT_REPEAT, cpu->y) - 1u);
@@ -95,7 +96,7 @@ Lufia2ExecutionResult Lufia2BattleEffectMarkLoop(
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x819169u);
-    SelectDataBank(memory, cpu, WORK_BANK);
+    OpSetDataBank(memory, cpu, WORK_BANK);
     wram = WramViewOfCaller(memory, cpu);
     stream = WramRead16(wram, STREAM);
     WramWrite16At(wram, SLOT + SLOT_LOOP_START, cpu->y, stream);
@@ -117,7 +118,7 @@ Lufia2ExecutionResult Lufia2BattleEffectVelocity(
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x81a598u);
-    SelectDataBank(memory, cpu, WORK_BANK);
+    OpSetDataBank(memory, cpu, WORK_BANK);
     wram = WramViewOfCaller(memory, cpu);
     WramWrite16(wram, ANGLE, WramRead16At(wram, SLOT + SLOT_ANGLE, cpu->y));
     WramWrite16(wram, SPEED, WramRead16At(wram, SLOT + SLOT_SPEED, cpu->y));

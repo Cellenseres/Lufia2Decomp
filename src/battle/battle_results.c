@@ -1,26 +1,33 @@
+#include <stdbool.h>
+
 #include "battle/battle_internal.h"
 
-/* Preserve the original early high-byte clamp and retained accumulator. */
-static void ResultClamp24(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                          uint32_t address) {
+/* 24-bit total over the 9,999,999 cap? */
+static bool ResultOverLimit24(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              uint32_t address) {
     if (cpu->carry)
-        goto limit;
+        return true;
     OpCmpValue(cpu, 0x98u);
     if (cpu->carry)
-        goto limit;
+        return true;
     if (!cpu->zero)
-        return;
+        return false;
     OpLda(memory, cpu, address + 1u);
     OpCmpValue(cpu, 0x96u);
     if (cpu->carry)
-        goto limit;
+        return true;
     if (!cpu->zero)
-        return;
+        return false;
     OpLda(memory, cpu, address);
     OpCmpValue(cpu, 0x7fu);
-    if (!cpu->carry)
+    return cpu->carry;
+}
+
+/* Clamp the 24-bit total at address to the cap. */
+static void ResultClamp24(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                          uint32_t address) {
+    if (!ResultOverLimit24(memory, cpu, address))
         return;
-limit:
     OpLoadA(cpu, 0x98u);
     OpSta(memory, cpu, address + 2u);
     OpLoadA(cpu, 0x96u);
@@ -29,6 +36,7 @@ limit:
     OpSta(memory, cpu, address);
 }
 
+/* Shift a 24-bit value left; carry from the top. */
 static void ResultShift24(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                           uint32_t address) {
     const uint8_t old = Read8(memory, address);
@@ -41,6 +49,7 @@ static void ResultShift24(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpRolMem8(memory, cpu, address + 2u);
 }
 
+/* Double the reward, again without carry, then clamp. */
 static void ResultScaleReward(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                               uint16_t address) {
     const uint32_t base = OpAbs(cpu, address);
@@ -51,6 +60,7 @@ static void ResultScaleReward(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     ResultClamp24(memory, cpu, base);
 }
 
+/* Add a 24-bit reward to the total, then clamp. */
 static void ResultAddReward(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             uint32_t destination, uint16_t reward) {
     unsigned i;
@@ -65,6 +75,7 @@ static void ResultAddReward(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     ResultClamp24(memory, cpu, destination);
 }
 
+/* Print a line, then wait for confirm. */
 static bool ResultShowLineAndWait(BattleContext *battle, uint16_t text_address,
                                   uint16_t line_call_site, uint16_t wait_call_site) {
     OpLdy(battle->cpu, text_address);
@@ -72,6 +83,7 @@ static bool ResultShowLineAndWait(BattleContext *battle, uint16_t text_address,
            BattleCall(battle, wait_call_site, 0x81de9eu, 2u);
 }
 
+/* Show each non-zero stat gain; capsules skip the second. */
 static bool ResultShowStatGains(BattleContext *battle, bool capsule) {
     static const uint16_t texts[] = {0xf118u, 0xf134u, 0xf150u, 0xf169u,
                                      0xf182u, 0xf19bu, 0xf1b4u};
@@ -97,6 +109,7 @@ static bool ResultShowStatGains(BattleContext *battle, bool capsule) {
     return true;
 }
 
+/* Subtract DP $2A-$2C from $2D-$2F (24-bit). */
 static void ResultSubtractExperience(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, 0x2du));
     cpu->carry = 1;
@@ -108,6 +121,7 @@ static void ResultSubtractExperience(const Lufia2Memory *memory, Lufia2CpuState 
     OpSta(memory, cpu, OpDp(cpu, 0x2fu));
 }
 
+/* Award experience to a member and show level-ups. */
 static bool ResultAwardPartyMemberExperience(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -159,6 +173,7 @@ static bool ResultAwardPartyMemberExperience(BattleContext *battle) {
     return true;
 }
 
+/* Award experience to the capsule monster. */
 static bool ResultAwardCapsuleExperience(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -225,12 +240,12 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpAbs(cpu, 0x0562u));
     OpSepWidths(cpu, 0x20u);
     OpStz(memory, cpu, OpAbs(cpu, 0x11deu));
-    if (!BattleCall(&battle, 0xd9f4u, 0x85ec81u, 3u) ||
+    if (!BattleCall(&battle, 0xd9f4u, BATTLE_ROUTINE_FRAME_INPUT, 3u) ||
         !BattleCall(&battle, 0xd9f8u, 0x8591e0u, 3u) ||
-        !BattleCall(&battle, 0xd9fcu, 0x858a2fu, 3u))
-        goto unwound;
+        !BattleCall(&battle, 0xd9fcu, BATTLE_ROUTINE_SPRITES, 3u))
+        return BattleChildUnwound(&battle);
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
     OpLda(memory, cpu, OpAbs(cpu, 0x0b51u));
     OpBitValue(cpu, 3u);
     if (!cpu->zero) {
@@ -239,22 +254,22 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
         ResultScaleReward(memory, cpu, WRAM_BATTLE_GOLD_REWARD);
     }
     if (!BattleCall(&battle, 0xda87u, 0x81dd7fu, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLoadA(cpu, 0x85u);
     OpSta(memory, cpu, OpDp(cpu, 0x5fu));
     if (!ResultShowLineAndWait(&battle, 0xf092u, 0xda91u, 0xda94u) ||
         !ResultShowLineAndWait(&battle, 0xf0a2u, 0xda9au, 0xda9du))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ITEM_REWARD));
     if (!cpu->zero) {
-        OpSta(memory, cpu, OpAbs(cpu, 0x0a06u));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
         OpSepWidths(cpu, 0x20u);
         if (!BattleCall(&battle, 0xdaacu, 0x81f085u, 3u))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         if (!cpu->carry) {
             if (!ResultShowLineAndWait(&battle, 0xf087u, 0xdab5u, 0xdab8u))
-                goto unwound;
+                return BattleChildUnwound(&battle);
             OpSepWidths(cpu, 0x20u);
         }
     } else {
@@ -262,7 +277,7 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
     }
     OpLdy(cpu, 0xf085u);
     if (!BattleCall(&battle, 0xdac0u, 0x81dde7u, 2u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLdy(cpu, 0u);
     do {
         TransferDirectToA(cpu);
@@ -280,18 +295,18 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
         OpWriteX(memory, cpu, OpDp(cpu, 0u), cpu->x);
         OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS)));
         if (!cpu->zero && !ResultAwardPartyMemberExperience(&battle))
-            goto unwound;
+            return BattleChildUnwound(&battle);
         OpIny(cpu);
         OpIny(cpu);
         Compare16(cpu, cpu->y, 8u);
     } while (!cpu->zero);
     if (!ResultAwardCapsuleExperience(&battle))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     ResultAddReward(memory, cpu, OpAbs(cpu, WRAM_GOLD), WRAM_BATTLE_GOLD_REWARD);
     OpLdy(cpu, 0xf085u);
     if (!BattleCall(&battle, 0xdd57u, 0x81dde7u, 2u) ||
         !ResultShowLineAndWait(&battle, 0xf0ebu, 0xdd5du, 0xdd60u))
-        goto unwound;
+        return BattleChildUnwound(&battle);
     OpLda(memory, cpu, 0x7ff8a5u);
     cpu->carry = 0;
     OpAdc(memory, cpu, OpAbs(cpu, 0x0b74u));
@@ -304,6 +319,4 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
     OpSepWidths(cpu, 0x20u);
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x81dd7eu);
-unwound:
-    return BattleChildUnwound(&battle);
 }

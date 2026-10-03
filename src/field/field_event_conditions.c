@@ -1,8 +1,9 @@
 /* Field event script conditions: tests, lists and branches. */
 
-#include "core/cpu_internal.h"
 #include "actor/actor_internal.h"
+#include "core/cpu_internal.h"
 #include "field/event_script_internal.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 /* Operand of the last condition. */
@@ -20,7 +21,7 @@ static void EventStoreResult(
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* E4C5 */
     LoadA8(cpu, Read8(memory, EVENT_CONDITION_OPERAND));
-    Write8(memory, LongIndexedAddress(0x7fd15cu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(EVENT_SLOT_VARIABLES, cpu->x), A8(cpu));
     LoadA8(cpu, Read8(memory, EVENT_CONDITION));
     Write8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x), A8(cpu));
     SimulateRtsFrame(memory, cpu);
@@ -58,7 +59,7 @@ static unsigned EventKeepResult(
     LoadA8(cpu, Read8(memory, EVENT_CONDITION));
     Write8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x), A8(cpu));
     LoadA8(cpu, Read8(memory, EVENT_CONDITION_OPERAND));
-    Write8(memory, LongIndexedAddress(0x7fd15cu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(EVENT_SLOT_VARIABLES, cpu->x), A8(cpu));
     return EVENT_OPCODE_NEXT;
 }
 
@@ -82,12 +83,12 @@ static unsigned EventCompareFlag(
     TransferDirectToA(cpu);                                    /* E3D9 */
     LoadA8(cpu, Read8(memory, EVENT_CONDITION_OPERAND));
     Lufia2EventFlagBit(memory, cpu, 0xe3e1u);
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     And8(cpu, Read8(memory, LongIndexedAddress(EVENT_SCRIPT_FLAGS, cpu->x)));
-    StoreADirect8(memory, cpu, 0x55u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    StoreADirect8(memory, cpu, DP_SCRATCH_B);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
     And8(cpu, Read8(memory, EVENT_CONDITION));
-    LoadA8(cpu, (uint8_t)(A8(cpu) ^ DirectByte(memory, cpu, 0x55u)));
+    LoadA8(cpu, (uint8_t)(A8(cpu) ^ DirectByte(memory, cpu, DP_SCRATCH_B)));
     bit = cpu->zero ? 0x00u : 0x01u;
     LoadA8(cpu, (uint8_t)(Read8(memory, EVENT_CONDITION) & 0x80u));
     if (bit)
@@ -105,10 +106,10 @@ static uint8_t EventLeaderAt(
     SimulateJsrFrame(memory, cpu, return_address);
     if (!Lufia2EventPosition(memory, cpu, 0xe134u, handoff))   /* E132 */
         return 0;
-    Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x06bau, 0));
+    Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, WRAM_ACTOR_TILE_X, 0));
     if (cpu->zero) {
         ExchangeAccumulatorBytes(cpu);
-        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x06e2u, 0));
+        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, WRAM_ACTOR_TILE_Y, 0));
         if (cpu->zero) {
             LoadA8(cpu, 0xffu);
             Write8(memory, EVENT_CONDITION, A8(cpu));
@@ -137,10 +138,10 @@ static uint8_t EventLeaderInArea(
     SimulateJsrFrame(memory, cpu, return_address);
     if (!Lufia2EventArea(memory, cpu, 0xe15cu, handoff))       /* E15A */
         return 0;
-    LoadAAbsolute8(memory, cpu, 0x06bau, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);
     if (EventInRange(cpu, A8(cpu), DirectByte(memory, cpu, 0x9fu),
                      DirectByte(memory, cpu, 0xa1u))) {
-        LoadAAbsolute8(memory, cpu, 0x06e2u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
         if (EventInRange(cpu, A8(cpu), DirectByte(memory, cpu, 0xa0u),
                          DirectByte(memory, cpu, 0xa2u))) {
             cpu->carry = 1;
@@ -176,7 +177,7 @@ static uint8_t EventCellsInArea(
     SetAccumulatorWidth(cpu, 0);
     LoadADirect16(memory, cpu, 0xa1u);
     Subtract16(cpu, Read16Direct(memory, cpu, 0x9fu));
-    StoreADirect16(memory, cpu, 0x58u);                        /* width, height */
+    StoreADirect16(memory, cpu, DP_SCRATCH_E); /* width, height */
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, DirectByte(memory, cpu, 0x9fu));
     ExchangeAccumulatorBytes(cpu);
@@ -185,7 +186,7 @@ static uint8_t EventCellsInArea(
     Lufia2MapCellIndex(memory, cpu, 0xf9abu, 0);               /* $83:F9A9 */
     SimulateRtlFrame(memory, cpu);
     do {
-        CopyDirect8(memory, cpu, 0x58u, 0x55u);                /* E46F */
+        CopyDirect8(memory, cpu, DP_SCRATCH_E, 0x55u); /* E46F */
         StoreXDirect16(memory, cpu, 0x5du);
         do {
             LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES,
@@ -199,7 +200,7 @@ static uint8_t EventCellsInArea(
                 return 1;
             }
             IncrementX16(cpu);
-            DecrementDirect8(memory, cpu, 0x55u);
+            DecrementDirect8(memory, cpu, DP_SCRATCH_B);
         } while (!cpu->zero);
         SetAccumulatorWidth(cpu, 0);                           /* E482 */
         LoadADirect16(memory, cpu, 0x5du);
@@ -298,11 +299,11 @@ uint8_t Lufia2EventFindList(
 
     SimulateJslFrame(memory, cpu, 0x80u, return_address);
     PushDataBank(memory, cpu);                                 /* E78D */
-    Write16Direct(memory, cpu, 0x56u, cpu->y);
-    key = DirectByte(memory, cpu, 0x56u);
+    Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->y);
+    key = DirectByte(memory, cpu, DP_SCRATCH_C);
     cpu->carry = key & 1u;
     key >>= 1;
-    Write8(memory, DirectAddress(cpu, 0x56u), key);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), key);
     SetNz8(cpu, key);
     LoadA8(cpu, Read8(memory, EVENT_SCRIPT_BASE_BANK));
     PushAccumulator8(memory, cpu);
@@ -330,7 +331,7 @@ uint8_t Lufia2EventFindList(
         cpu->carry = 1;
         if (cpu->zero)
             break;
-        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x56u));
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_C));
         if (cpu->zero) {
             Lufia2EventNextWord(memory, cpu, 0xe7ceu);         /* E7CC */
             cpu->carry = 0;
@@ -711,14 +712,14 @@ static uint8_t EventSameTiles(
                 LongIndexedAddress(WRAM_FIELD_LAYER_CELL_BASE, cpu->x)));
             StoreADirect16(memory, cpu, 0x63u);
             cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, 0x58u));
+            Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_E));
             TransferAToX(cpu);
             LoadA16(cpu, (uint16_t)(Read16Long(memory,
                 LongIndexedAddress(0x7f0000u, cpu->x)) & 0x03ffu));
             StoreADirect16(memory, cpu, 0x65u);
             LoadA16(cpu, Read16Direct(memory, cpu, 0x63u));    /* E249 */
             cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, 0x56u));
+            Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
             TransferAToX(cpu);
             LoadA16(cpu, (uint16_t)(Read16Long(memory,
                 LongIndexedAddress(0x7f0000u, cpu->x)) & 0x03ffu));
@@ -773,25 +774,25 @@ static void EventBlockDiffers(
     Write8(memory, DirectAddress(cpu, 0x5bu), 0x00u);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd008u, cpu->x));
-    StoreADirect16(memory, cpu, 0x54u);
+    StoreADirect16(memory, cpu, DP_SCRATCH_A);
     cpu->carry = 0;
     Add16Value(cpu, Read16Direct(memory, cpu, 0x5du));
     TransferAToX(cpu);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
     cpu->carry = 0;
     Add16Value(cpu, Read16Direct(memory, cpu, 0x60u));
     TransferAToY(cpu);
     do {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd04cu, 0));  /* E306 */
         And16(cpu, 0x00ffu);
-        StoreADirect16(memory, cpu, 0x58u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_E);
         do {
             LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
             And16(cpu, 0x03ffu);
-            StoreADirect16(memory, cpu, 0x54u);
+            StoreADirect16(memory, cpu, DP_SCRATCH_A);
             LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->y));
             And16(cpu, 0x03ffu);
-            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_SCRATCH_A));
             if (!cpu->zero) {
                 cpu->carry = 1;                                /* E338 */
                 SetAccumulatorWidth(cpu, 1);
@@ -805,14 +806,14 @@ static void EventBlockDiffers(
             IncrementX16(cpu);
             IncrementY16(cpu);
             IncrementY16(cpu);
-            Decrement16Direct(memory, cpu, 0x58u);
+            Decrement16Direct(memory, cpu, DP_SCRATCH_E);
         } while (!cpu->zero);
         LoadA16(cpu, cpu->x);                                  /* E328 */
         cpu->carry = 0;
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x56u));
+        Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
         TransferAToX(cpu);
         LoadA16(cpu, cpu->y);
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x56u));
+        Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
         TransferAToY(cpu);
         Decrement16Direct(memory, cpu, 0x5au);
     } while (!cpu->zero);
@@ -855,12 +856,12 @@ static uint8_t EventBlockMatches(
     SimulateRtlFrame(memory, cpu);
     StoreXDirect16(memory, cpu, 0x60u);
     TransferDirectToA(cpu);                                    /* E2B8 */
-    LoadAAbsolute8(memory, cpu, 0x05b9u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_FIELD_SECTION_WIDTH, 0);
     cpu->carry = 1;
     Sbc8(cpu, Read8(memory, WRAM_FIELD_OBJECT_WIDTH));
     SetAccumulatorWidth(cpu, 0);
     AslA16(cpu);
-    StoreADirect16(memory, cpu, 0x56u);
+    StoreADirect16(memory, cpu, DP_SCRATCH_C);
     SetAccumulatorWidth(cpu, 1);
     PushDataBank(memory, cpu);                                 /* E2C8 */
     LoadA8(cpu, 0x7fu);
@@ -893,7 +894,7 @@ static uint64_t EventBlockCompares(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu) {
     const uint8_t key = Lufia2EventPeekByte(memory, cpu, 1u);
-    uint16_t x = Read16Long(memory, 0x7ef016u);
+    uint16_t x = Read16Long(memory, WRAM_FIELD_HEADER_OBJECT_RECORDS_OFFSET);
     uint64_t width, height;
     uint8_t layers;
     unsigned steps;
@@ -940,7 +941,7 @@ void Lufia2EventFindActorId(
     SimulateJslFrame(memory, cpu, 0x80u, return_address);
     for (LoadX16(cpu, 0x0000u);;) {                            /* BF92 */
         Compare8(cpu, A8(cpu),
-            Read8(memory, AbsoluteIndexedAddress(cpu, 0x05fau, cpu->x)));
+                 Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_ID, cpu->x)));
         if (cpu->zero) {
             StoreXDirect16(memory, cpu, DP_ACTOR_SLOT);        /* BFA2 */
             SimulateJslFrame(memory, cpu, 0x80u, 0xbfa7u);
@@ -1020,10 +1021,8 @@ static unsigned EventOpCells(
 }
 
 /* $14: goto on script flag n or cell condition. */
-static unsigned EventOp14(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t *handoff) {
+static unsigned EventOpGotoOnFlagOrCell(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                        uint32_t *handoff) {
     uint8_t done;
 
     LoadA8(cpu, 0x09u);                                        /* E3A0 */
@@ -1108,7 +1107,7 @@ unsigned Lufia2EventConditionOpcode(
     case EVENT_OP_FLAG_LEADER_AT:
         return EventOpLeader(memory, cpu, handler, handoff);
     case EVENT_OP_14:
-        return EventOp14(memory, cpu, handoff);
+        return EventOpGotoOnFlagOrCell(memory, cpu, handoff);
     case EVENT_OP_FLAG_OBJECTS:
     case EVENT_OP_GOTO_IF_OBJECTS:
     case EVENT_OP_GOTO_UNLESS_OBJECTS:

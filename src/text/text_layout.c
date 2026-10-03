@@ -1,16 +1,17 @@
 /* Upcoming text dimensions ($80:C652). */
 #include "core/cpu_internal.h"
 #include "lufia2/text.h"
-#include "text/text_internal.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
+#include "text/text_internal.h"
 
 /* $54: maximum width; $55: lines beyond the first; $56: current width. */
 static void TextMeasureLine(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
-    Write8(memory, DirectAddress(cpu, 0x56u), 0);
-    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x54u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_C));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), 0);
+    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_A));
     if (cpu->carry)
-        StoreADirect8(memory, cpu, 0x54u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
 }
 
 /* $80:C701: dictionary index B:A, terminated by a zero byte. */
@@ -29,7 +30,7 @@ static void TextMeasureDictionary(const Lufia2Memory *memory, Lufia2CpuState *cp
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x8eea00u, cpu->x)));
         if (cpu->zero)
             return;
-        IncrementDirect8(memory, cpu, 0x56u);
+        IncrementDirect8(memory, cpu, DP_SCRATCH_C);
         IncrementX16(cpu);
     }
 }
@@ -37,10 +38,10 @@ static void TextMeasureDictionary(const Lufia2Memory *memory, Lufia2CpuState *cp
 Lufia2ExecutionResult Lufia2TextMeasure(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Write16Absolute(memory, cpu, 0x09b7u, cpu->y);             /* C652 */
     LoadAAbsolute8(memory, cpu, WRAM_SCENE_SCRIPT_BANK, 0);
-    StoreADirect8(memory, cpu, 0x57u);
-    Write8(memory, DirectAddress(cpu, 0x54u), 0);
-    Write8(memory, DirectAddress(cpu, 0x55u), 0);
-    Write8(memory, DirectAddress(cpu, 0x56u), 0);
+    StoreADirect8(memory, cpu, DP_SCRATCH_D);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), 0);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), 0);
     for (;;) {
         Lufia2TextNextByte(memory, cpu, 0xc662u);             /* C660 */
         Compare8(cpu, A8(cpu), 0x80u);
@@ -59,7 +60,7 @@ Lufia2ExecutionResult Lufia2TextMeasure(const Lufia2Memory *memory, Lufia2CpuSta
                 LoadAAbsolute8(memory, cpu, 0x0badu, cpu->x);
                 if (cpu->zero)
                     break;
-                IncrementDirect8(memory, cpu, 0x56u);
+                IncrementDirect8(memory, cpu, DP_SCRATCH_C);
                 IncrementX16(cpu);
             }
             continue;
@@ -96,13 +97,13 @@ Lufia2ExecutionResult Lufia2TextMeasure(const Lufia2Memory *memory, Lufia2CpuSta
             LsrA8(cpu); LsrA8(cpu); LsrA8(cpu); LsrA8(cpu);
             cpu->carry = 0;
             Adc8(cpu, 2);
-            Adc8(cpu, DirectByte(memory, cpu, 0x56u));
-            StoreADirect8(memory, cpu, 0x56u);
+            Adc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_C));
+            StoreADirect8(memory, cpu, DP_SCRATCH_C);
             continue;
         }
         Compare8(cpu, A8(cpu), 0x10u);
         if (cpu->carry) {
-            IncrementDirect8(memory, cpu, 0x56u);
+            IncrementDirect8(memory, cpu, DP_SCRATCH_C);
             continue;
         }
         ExchangeAccumulatorBytes(cpu);                      /* C693 */
@@ -118,23 +119,23 @@ Lufia2ExecutionResult Lufia2TextMeasure(const Lufia2Memory *memory, Lufia2CpuSta
         SetAccumulatorWidth(cpu, 1);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80c764u, cpu->x)));
         cpu->carry = 0;
-        Adc8(cpu, DirectByte(memory, cpu, 0x56u));
-        StoreADirect8(memory, cpu, 0x56u);
+        Adc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_C));
+        StoreADirect8(memory, cpu, DP_SCRATCH_C);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80c765u, cpu->x)));
         if (cpu->zero)
             continue;
         cpu->carry = 0;
-        Adc8(cpu, DirectByte(memory, cpu, 0x55u));
-        StoreADirect8(memory, cpu, 0x55u);
+        Adc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
+        StoreADirect8(memory, cpu, DP_SCRATCH_B);
         TextMeasureLine(memory, cpu);
     }
     TextMeasureLine(memory, cpu);                            /* C724 */
-    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
     StoreAAbsolute8(memory, cpu, 0x125bu, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
     LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
     StoreAAbsolute8(memory, cpu, 0x125cu, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_D));
     StoreAAbsolute8(memory, cpu, WRAM_SCENE_SCRIPT_BANK, 0);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);

@@ -4,6 +4,7 @@
 /* Actor subsystem internals shared across modules. */
 
 #include "lufia2/actor.h"
+#include "system/dp_scratch.h"
 
 /* $83:C0EF: leader position to $8F/$91. */
 void Lufia2ActorLeaderToProbe(
@@ -101,5 +102,40 @@ void Lufia2SpriteFreeSlots(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address);
+
+/* Secondary opcode tables; $Fx, $Ex, $Dx use a second table. */
+enum {
+    SECONDARY_NIBBLE_TABLE = 0xdf17,
+    SECONDARY_GROUP_F_TABLE = 0xdf37,
+    SECONDARY_GROUP_E_TABLE = 0xdf57,
+    SECONDARY_GROUP_D_TABLE = 0xdf77,
+    SECONDARY_GROUP_F_HANDLER = 0xd5d4,
+    SECONDARY_GROUP_E_HANDLER = 0xd5e0,
+    SECONDARY_GROUP_D_HANDLER = 0xd5ec
+};
+
+/* Bank of the secondary actor script routines. */
+#define SECONDARY_BANK_83 0x830000u
+
+/* Alternate display offsets: saved by $F9, set $E4, added $E5. */
+#define WRAM_ACTOR_OFFSET_ALT_X 0x7fdbecu
+#define WRAM_ACTOR_OFFSET_ALT_Y 0x7fdc3cu
+
+/* Quarter steps of the current walk, 1..16; indexes the bob. */
+#define WRAM_ACTOR_WALK_PHASE 0x7fe4b6u
+
+/* $83:DD44: vertical bob offsets by walk phase minus 1. */
+#define ROM_ACTOR_WALK_BOB_TABLE 0x83dd44u
+
+/* Second plane that also records blocking actors. */
+#define MAP_BLOCKING_ATTRIBUTES 0x7e4001u
+
+/* Secondary script operand bytes, relative to the opcode byte. */
+enum {
+    SECONDARY_OPCODE_BYTE = 0x0000,
+    SECONDARY_OPERAND_1 = 0x0001,
+    SECONDARY_OPERAND_2 = 0x0002,
+    SECONDARY_OPERAND_3 = 0x0003
+};
 
 #endif

@@ -57,18 +57,26 @@ static uint8_t SetScaledLayerScroll(
     return 1;
 }
 
+static uint8_t ZeroLayerScroll(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpWriteM(memory, cpu, OpAbsX(cpu, WRAM_FIELD_LAYER_SCROLL_X & 0xffffu), 0u);
+    OpWriteM(memory, cpu, OpAbsX(cpu, WRAM_FIELD_LAYER_SCROLL_Y & 0xffffu), 0u);
+    OpSepWidths(cpu, 0x20u);
+    return 1;
+}
+
 static uint8_t SetLayerScroll(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2ExecutionResult *result) {
     OpCmpValue(cpu, 0x01u);
     if (cpu->zero)
-        goto zero_scroll;
+        return ZeroLayerScroll(memory, cpu);
     OpCmpValue(cpu, 0x02u);
     if (cpu->zero)
         return SetScaledLayerScroll(memory, cpu, 1u, result);
     OpCmpValue(cpu, 0x03u);
     if (cpu->zero)
-        goto zero_scroll;
+        return ZeroLayerScroll(memory, cpu);
     OpCmpValue(cpu, 0x04u);
     if (cpu->zero)
         return SetScaledLayerScroll(memory, cpu, 0u, result);
@@ -89,13 +97,6 @@ static uint8_t SetLayerScroll(
     cpu->carry = 1;
     OpSbcValue(cpu, 0x0070u);
     OpSta(memory, cpu, OpAbsX(cpu, WRAM_FIELD_LAYER_SCROLL_Y & 0xffffu));
-    OpSepWidths(cpu, 0x20u);
-    return 1;
-
-zero_scroll:
-    OpRepWidths(cpu, 0x20u);
-    OpWriteM(memory, cpu, OpAbsX(cpu, WRAM_FIELD_LAYER_SCROLL_X & 0xffffu), 0u);
-    OpWriteM(memory, cpu, OpAbsX(cpu, WRAM_FIELD_LAYER_SCROLL_Y & 0xffffu), 0u);
     OpSepWidths(cpu, 0x20u);
     return 1;
 }

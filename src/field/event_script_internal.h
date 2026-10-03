@@ -4,6 +4,7 @@
 /* Field event script VM, shared by its two modules. */
 
 #include "lufia2/execution.h"
+#include "system/wram.h"
 
 /* Eight slots; bit 7 armed, bits 0-6 frames left. */
 #define EVENT_SLOT_TIMERS 0x7fd18cu
@@ -19,21 +20,60 @@
 #define EVENT_POINT_Y 0x7fd1e3u
 #define EVENT_POINT_D223 0x7fd223u
 #define EVENT_POINT_D263 0x7fd263u
+/* Slot s of variable v: base + 8v + s. */
+#define EVENT_SLOT_VARIABLES 0x7fd15cu
+#define EVENT_SLOT_VARIABLES_LOW 0xd15cu
+#define EVENT_SLOT_VARIABLE_STRIDE 0x0008u
+#define EVENT_SLOT_VARIABLE_COUNT 4u
+/* Second per-slot byte next to the slot bits. */
+#define EVENT_UNK_7FD154 0x7fd154u
 /* Script flags, bit n & 7 of byte n >> 3. */
 #define EVENT_SCRIPT_FLAGS 0x7fd100u
 /* Goto targets are relative to this 24-bit base. */
-#define EVENT_SCRIPT_BASE 0x7fd194u
-#define EVENT_SCRIPT_BASE_BANK 0x7fd196u
+#define EVENT_SCRIPT_BASE WRAM_FIELD_EVENT_BASE
+#define EVENT_SCRIPT_BASE_BANK WRAM_FIELD_EVENT_BASE_BANK
 /* Script start and bank of the running slot. */
 #define EVENT_SCRIPT_POINTER 0x7fd197u
 #define EVENT_SCRIPT_BANK 0x7fd199u
 /* Script call frames: 13 x 10 bytes, tag = depth << 4 | slot. */
-#define EVENT_CALL_FRAMES 0x7fd466u
+#define EVENT_CALL_FRAMES WRAM_FIELD_EVENT_CALL_RECORDS
 #define EVENT_CALL_DEPTH 0x7fd4e6u
+#define EVENT_CALL_FRAME_SIZE 0x000au
+#define EVENT_CALL_FRAMES_END 0x0080u
+/* Frame: four saved slot variables, two condition bytes. */
+#define EVENT_CALL_FRAME_VARIABLES (EVENT_CALL_FRAMES + 4u)
+#define EVENT_CALL_FRAME_CONDITION_HIGH (EVENT_CALL_FRAMES + 8u)
+#define EVENT_CALL_FRAME_CONDITION (EVENT_CALL_FRAMES + 9u)
+/* Script banks are LoROM windows starting here. */
+#define EVENT_BANK_WINDOW 0x8000u
+/* The opcode-limit handoff in the ROM. */
+#define EVENT_OPCODE_LIMIT_HANDOFF 0x80cc3fu
 /* Slot variables saved for $FB-$FE call arguments. */
 #define EVENT_SAVED_VARIABLES 0x7fd19cu
 /* Condition result: bit 7 true. */
 #define EVENT_CONDITION 0x7fd19au
+/* Map object list in bank $7E; X selects a record. */
+#define EVENT_LIST_OFFSET 0xf000u
+#define EVENT_LIST_RECORD 0x7ef000u
+/* Position of each event slot: x bytes then y bytes. */
+#define EVENT_SLOT_X 0x7fd17cu
+#define EVENT_SLOT_Y 0x7fd184u
+/* Slot running before an opcode switched actors. */
+#define EVENT_SAVED_SLOT 0x7fd2a3u
+/* Maps a listed actor operand to an actor slot. */
+#define EVENT_LISTED_ACTOR_SLOTS 0x7fd72cu
+/* List search hands off here after its step limit. */
+#define EVENT_SEARCH_HANDOFF 0x80bfbcu
+/* Listed object a push opcode moves, record byte minus $10. */
+#define EVENT_PUSH_OBJECT_INDEX 0x7fd0beu
+#define EVENT_PUSH_OBJECT_ID 0x7fd09fu
+#define EVENT_UNK_7FD0BF 0x7fd0bfu
+#define EVENT_UNK_7FD133 0x7fd133u
+#define EVENT_UNK_7FD296 0x7fd296u
+#define EVENT_UNK_7FD75C 0x7fd75cu
+#define WRAM_EVENT_UNK_05BD 0x05bdu
+#define WRAM_EVENT_UNK_05BE 0x05beu
+#define WRAM_EVENT_UNK_05BF 0x05bfu
 /* Layer redraw requests from the scripts, become $74 bits. */
 #define WRAM_EVENT_REDRAW 0x1273u
 #define WRAM_EVENT_MAP_0692 0x0692u

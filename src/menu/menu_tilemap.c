@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/menu.h"
@@ -188,7 +189,7 @@ Lufia2ExecutionResult Lufia2MenuClearLayers(
     if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x82838fu);
     PushDataBank(memory, cpu);
-    SelectDataBank(memory, cpu, CLEAR_BANK);
+    OpSetDataBank(memory, cpu, CLEAR_BANK);
     do {
         WramWrite16At(wram, LAYER_FRONT, offset, 0);
         WramWrite16At(wram, LAYER_BACK, offset, 0);

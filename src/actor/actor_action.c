@@ -87,9 +87,8 @@ static void PrimaryActionBoundaryHelper(
         cpu->carry = 0;
         if (!cpu->zero) {
             DecrementA8(cpu);
-            Compare8(
-                cpu, A8(cpu),
-                Read8(memory, LongIndexedAddress(0x7fe61eu, cpu->x)));
+            Compare8(cpu, A8(cpu),
+                     Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MIN_Y, cpu->x)));
         }
         break;
 
@@ -99,9 +98,8 @@ static void PrimaryActionBoundaryHelper(
         LoadA8(cpu, coordinate);
         cpu->carry = 0;
         if (!cpu->zero) {
-            LoadA8(
-                cpu,
-                Read8(memory, LongIndexedAddress(0x7fe66eu, cpu->x)));
+            LoadA8(cpu,
+                   Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MAX_Y, cpu->x)));
             DecrementA8(cpu);
             DecrementA8(cpu);
             Compare8(
@@ -119,9 +117,8 @@ static void PrimaryActionBoundaryHelper(
         cpu->carry = 0;
         if (!cpu->zero) {
             DecrementA8(cpu);
-            Compare8(
-                cpu, A8(cpu),
-                Read8(memory, LongIndexedAddress(0x7fe5f6u, cpu->x)));
+            Compare8(cpu, A8(cpu),
+                     Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MIN_X, cpu->x)));
         }
         break;
 
@@ -131,9 +128,8 @@ static void PrimaryActionBoundaryHelper(
         LoadA8(cpu, coordinate);
         cpu->carry = 0;
         if (!cpu->zero) {
-            LoadA8(
-                cpu,
-                Read8(memory, LongIndexedAddress(0x7fe646u, cpu->x)));
+            LoadA8(cpu,
+                   Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MAX_X, cpu->x)));
             DecrementA8(cpu);
             DecrementA8(cpu);
             Compare8(
@@ -169,8 +165,25 @@ void Lufia2ActorInstallSecondaryScript(
         cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x91u);
-    Write8(
-        memory, LongIndexedAddress(0x7fe3f0u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress((WRAM_ACTOR_SECONDARY_SCRIPT + 2u), cpu->x),
+           A8(cpu));
+}
+
+/* $83:D39D: start the secondary script for action $54. */
+static Lufia2ActorPrimaryActionFlow
+ActionInstallSecondaryScript(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* D39D */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A))); /* D39F */
+    SimulateJsrFrame(memory, cpu, 0xd3a3u);                /* D3A1 */
+    Lufia2ActorInstallSecondaryScript(memory, cpu);        /* D3F7 */
+    SimulateRtsFrame(memory, cpu);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT); /* D3A4 */
+    LoadA8(cpu, 0x80u);                      /* D3A6 */
+    Or8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_STATE, cpu->x)));
+    /* D3A8 */
+    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_STATE, cpu->x),
+           A8(cpu)); /* D3AB */
+    return LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE;
 }
 
 Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
@@ -178,11 +191,10 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
     Lufia2CpuState *cpu) {
     uint16_t helper_pc;
 
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));       /* D350 */
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu)); /* D350 */
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* D352 */
-    Write8(
-        memory, LongIndexedAddress(0x7fe466u, cpu->x), A8(cpu));
-                                                               /* D354 */
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FE466, cpu->x), A8(cpu));
+    /* D354 */
     LoadA8(
         cpu, Read8(
             memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x)));
@@ -197,13 +209,13 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
                                                                /* D360 */
     And8(cpu, 0x28u);                                         /* D363 */
     if (!cpu->zero)
-        goto install_secondary_script;                         /* D365 */
+        return ActionInstallSecondaryScript(memory, cpu); /* D365 */
 
     TransferDirectToA(cpu);                                   /* D367 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));     /* D368 */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A))); /* D368 */
     Compare8(cpu, A8(cpu), 0x04u);                            /* D36A */
     if (cpu->carry)
-        goto install_secondary_script;                         /* D36C */
+        return ActionInstallSecondaryScript(memory, cpu); /* D36C */
 
     AslA8(cpu);                                               /* D36E */
     TransferAToX(cpu);                                        /* D36F */
@@ -235,7 +247,7 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
                                                                /* D37C */
     Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));   /* D37F */
     TransferDirectToA(cpu);                                   /* D381 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));     /* D382 */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A))); /* D382 */
     TransferAToX(cpu);                                        /* D384 */
     LoadA8(
         cpu, Read8(memory, LongIndexedAddress(0x83c1b0u, cpu->x)));
@@ -257,28 +269,12 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
 
     Compare8(cpu, A8(cpu), 0x07u);                             /* D391 */
     if (cpu->zero)
-        goto install_secondary_script;
+        return ActionInstallSecondaryScript(memory, cpu);
     Compare8(cpu, A8(cpu), 0x01u);                             /* D395 */
     if (cpu->zero)
-        goto install_secondary_script;
+        return ActionInstallSecondaryScript(memory, cpu);
     Or8(cpu, 0x00u);                                          /* D399 */
     if (!cpu->zero)
         return LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE;         /* D39B */
-
-install_secondary_script:
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* D39D */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));     /* D39F */
-    SimulateJsrFrame(memory, cpu, 0xd3a3u);                   /* D3A1 */
-    Lufia2ActorInstallSecondaryScript(memory, cpu);            /* D3F7 */
-    SimulateRtsFrame(memory, cpu);
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* D3A4 */
-    LoadA8(cpu, 0x80u);                                       /* D3A6 */
-    Or8(
-        cpu,
-        Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_STATE, cpu->x)));
-                                                               /* D3A8 */
-    Write8(
-        memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_STATE, cpu->x),
-        A8(cpu));                                              /* D3AB */
-    return LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE;
+    return ActionInstallSecondaryScript(memory, cpu);
 }

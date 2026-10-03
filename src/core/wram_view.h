@@ -5,17 +5,14 @@
 
 #include "core/memory_internal.h"
 
-/* A view fixes the data bank and direct page that the original code ran with,
- * so a catalogued location resolves to the same bus address it did there.
- * Nothing is cached: every accessor is one bus access per byte, low byte
- * first. */
+/* Bus view with the original DB and DP; no caching. */
 typedef struct Lufia2Wram {
     const Lufia2Memory *memory;
     uint8_t data_bank;
     uint16_t direct_page;
 } Lufia2Wram;
 
-/* System bank whose low half mirrors the first 8 KiB of work RAM. */
+/* Bank whose low half mirrors the first 8 KiB. */
 #define WRAM_MIRROR_BANK 0x80u
 
 /* The view of a routine that keeps its caller's banks. */
@@ -29,8 +26,7 @@ static inline Lufia2Wram WramViewOfCaller(
     return wram;
 }
 
-/* Low work RAM reached by long addresses in bank $00; the direct page does not
- * apply. */
+/* Low WRAM by long address; DP does not apply. */
 static inline Lufia2Wram WramViewLong(const Lufia2Memory *memory) {
     Lufia2Wram wram;
 
@@ -40,7 +36,7 @@ static inline Lufia2Wram WramViewLong(const Lufia2Memory *memory) {
     return wram;
 }
 
-/* The view of a routine that loaded its own data bank. */
+/* View of a routine that set its own data bank. */
 static inline Lufia2Wram WramViewInBank(
     const Lufia2Memory *memory, const Lufia2CpuState *cpu, uint8_t data_bank) {
     Lufia2Wram wram;
@@ -51,9 +47,7 @@ static inline Lufia2Wram WramViewInBank(
     return wram;
 }
 
-/* A location below $100 is a direct-page offset, below $10000 an absolute
- * address in the data bank, anything else a long address. Indexing wraps like
- * the matching 65816 addressing mode. */
+/* Below $100 DP, below $10000 DB, else long. */
 static inline uint32_t WramAddress(
     Lufia2Wram wram, uint32_t location, uint16_t index) {
     if (location < 0x100u)
@@ -117,8 +111,15 @@ static inline void WramWrite16(
     WramWrite16At(wram, location, 0, value);
 }
 
-/* Adds to a word in place and returns the new value. Like the CPU's
- * read-modify-write, the high byte is stored first. */
+/* Add to a byte in place; return the new value. */
+static inline uint8_t WramStep(Lufia2Wram wram, uint32_t location, int delta) {
+    const uint8_t value = (uint8_t)(WramRead(wram, location) + delta);
+
+    WramWrite(wram, location, value);
+    return value;
+}
+
+/* Add to a word in place; high byte stored first. */
 static inline uint16_t WramStep16(Lufia2Wram wram, uint32_t location, int delta) {
     const uint32_t low = WramAddress(wram, location, 0);
     const uint16_t value = (uint16_t)(WramRead16(wram, location) + delta);

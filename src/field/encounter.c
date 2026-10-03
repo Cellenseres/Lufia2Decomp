@@ -137,7 +137,7 @@ Lufia2ExecutionResult Lufia2EncounterBattleSequence(const Lufia2Memory *memory,
 
     OpRepWidths(cpu, 0x10u);
     LoadA8(cpu, 0x01u);
-    OpTestBits(memory, cpu, OpAbs(cpu, 0x09a9u), 0u);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_UNK_7E09A9), 0u);
     OpStz(memory, cpu, OpDp(cpu, 0x6au));
 
     PushDataBank(memory, cpu);

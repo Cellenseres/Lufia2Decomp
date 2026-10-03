@@ -2,6 +2,7 @@
 
 #include "core/cpu_ops.h"
 #include "system/system_internal.h"
+#include "system/wram.h"
 
 /* $82:8000: 16x16 multiply by shift and add. */
 void Lufia2CallMultiply(
@@ -14,17 +15,21 @@ void Lufia2CallMultiply(
     Push8(memory, cpu, PackStatus(cpu));
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x1574u, 0), 0x0000u);
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x1576u, 0), 0x0000u);
+    Write16Long(memory, AbsoluteIndexedAddress(cpu, WRAM_SYSTEM_MULTIPLY_PRODUCT, 0),
+                0x0000u);
+    Write16Long(memory,
+                AbsoluteIndexedAddress(cpu, (WRAM_SYSTEM_MULTIPLY_PRODUCT + 2u), 0),
+                0x0000u);
     LoadX16(cpu, 0x0010u);
     do {
         RorAbsolute16(memory, cpu, 0x1572u);                   /* 800D */
         if (cpu->carry) {
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1576u, 0));
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
+                                               (WRAM_SYSTEM_MULTIPLY_PRODUCT + 2u), 0));
             cpu->carry = 0;
             Add16Value(cpu,
-                Read16AbsoluteIndexed(memory, cpu, 0x1570u, 0));
-            StoreAAbsolute16(memory, cpu, 0x1576u, 0);
+                       Read16AbsoluteIndexed(memory, cpu, WRAM_SYSTEM_MULTIPLY_A, 0));
+            StoreAAbsolute16(memory, cpu, (WRAM_SYSTEM_MULTIPLY_PRODUCT + 2u), 0);
         }
         RorAbsolute16(memory, cpu, 0x1576u);                   /* 801C */
         RorAbsolute16(memory, cpu, 0x1574u);
@@ -37,7 +42,7 @@ void Lufia2CallMultiply(
 
 /* $80:84BF: sine of a quarter turn in 46 steps, $00-$7F. */
 static uint8_t QuarterSine(const Lufia2Memory *memory, uint8_t step) {
-    return Read8(memory, 0x8084bfu + step);
+    return Read8(memory, ROM_QUARTER_SINE_TABLE + step);
 }
 
 /* PHX/PHY/PHP/SEP #$30 */

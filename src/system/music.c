@@ -1,4 +1,6 @@
 /* Original song/sample upload and music-driver command wrappers. */
+#include <stdbool.h>
+
 #include "core/cpu_ops.h"
 #include "lufia2/system.h"
 #include "system/wram.h"
@@ -54,6 +56,40 @@ static uint8_t MusicChild(
             return MusicUnwound(site); \
     } while (0)
 
+/* Send one sample: command $13, handshake, upload. */
+static uint32_t MusicSendSample(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                Lufia2PushedChildCall child, void *context,
+                                uint32_t site, bool load_resource_id) {
+    MusicPushA(memory, cpu);
+    if (load_resource_id)
+        OpLda(memory, cpu, OpDp(cpu, MUSIC_RESOURCE_ID));
+    OpSta(memory, cpu, OpAbs(cpu, MUSIC_APU_PORT));
+    OpLoadA(cpu, 0x13u);
+    if (!MusicChild(memory, cpu, child, context, site, 0x8099fdu, 2u))
+        return site;
+    if (!MusicChild(memory, cpu, child, context, site + 3u, 0x809a0au, 2u))
+        return site + 3u;
+    MusicPullA(memory, cpu);
+    if (!MusicChild(memory, cpu, child, context, site + 7u, 0x809886u, 2u))
+        return site + 7u;
+    return 0u;
+}
+
+/* Mark every cache slot empty and restart the count. */
+static void MusicClearSampleCache(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushIndex(memory, cpu);
+    OpLdx(cpu, 31u);
+    OpLoadA(cpu, 0xffu);
+    do {
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_MUSIC_SAMPLE_CACHE));
+        OpDex(cpu);
+    } while (!cpu->negative);
+    OpPullX(memory, cpu);
+    OpStz(memory, cpu, OpDp(cpu, MUSIC_SAMPLE_COUNT));
+    OpStz(memory, cpu, OpDp(cpu, MUSIC_SAMPLE_COUNT + 1u));
+}
+
+/* Upload fixed resources, then uncached sample values. */
 static Lufia2ExecutionResult MusicLoadSamples(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -65,14 +101,10 @@ static Lufia2ExecutionResult MusicLoadSamples(
         OpBitValue(cpu, 0x80u);
         if (!cpu->zero)
             break;
-        MusicPushA(memory, cpu);
-        OpLda(memory, cpu, OpDp(cpu, MUSIC_RESOURCE_ID));
-        OpSta(memory, cpu, OpAbs(cpu, MUSIC_APU_PORT));
-        OpLoadA(cpu, 0x13u);
-        MUSIC_CALL(0x809496u, 0x8099fdu, 2u);
-        MUSIC_CALL(0x809499u, 0x809a0au, 2u);
-        MusicPullA(memory, cpu);
-        MUSIC_CALL(0x80949du, 0x809886u, 2u);
+        const uint32_t unwound =
+            MusicSendSample(memory, cpu, child, context, 0x809496u, true);
+        if (unwound)
+            return MusicUnwound(unwound);
         OpStepMem(memory, cpu, OpDp(cpu, MUSIC_RESOURCE_ID), 1);
         OpInx(cpu);
         OpCpx(cpu, 32u);
@@ -80,16 +112,7 @@ static Lufia2ExecutionResult MusicLoadSamples(
     if (cpu->zero)
         return ExecutionReturned(0x809506u);
 
-    PushIndex(memory, cpu);
-    OpLdx(cpu, 31u);
-    OpLoadA(cpu, 0xffu);
-    do {
-        OpSta(memory, cpu, OpLongX(cpu, WRAM_MUSIC_SAMPLE_CACHE));
-        OpDex(cpu);
-    } while (!cpu->negative);
-    OpPullX(memory, cpu);
-    OpStz(memory, cpu, OpDp(cpu, MUSIC_SAMPLE_COUNT));
-    OpStz(memory, cpu, OpDp(cpu, MUSIC_SAMPLE_COUNT + 1u));
+    MusicClearSampleCache(memory, cpu);
     do {
         OpLda(memory, cpu, OpLongX(cpu, WRAM_MUSIC_SAMPLE_LIST));
         OpCmpValue(cpu, 0xffu);
@@ -117,13 +140,10 @@ static Lufia2ExecutionResult MusicLoadSamples(
                     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, MUSIC_SAMPLE_COUNT)));
                     OpSta(memory, cpu, OpLongX(cpu, WRAM_MUSIC_SAMPLE_CACHE));
                     OpStepMem(memory, cpu, OpDp(cpu, MUSIC_SAMPLE_COUNT), 1);
-                    MusicPushA(memory, cpu);
-                    OpSta(memory, cpu, OpAbs(cpu, MUSIC_APU_PORT));
-                    OpLoadA(cpu, 0x13u);
-                    MUSIC_CALL(0x8094f5u, 0x8099fdu, 2u);
-                    MUSIC_CALL(0x8094f8u, 0x809a0au, 2u);
-                    MusicPullA(memory, cpu);
-                    MUSIC_CALL(0x8094fcu, 0x809886u, 2u);
+                    const uint32_t unwound =
+                        MusicSendSample(memory, cpu, child, context, 0x8094f5u, false);
+                    if (unwound)
+                        return MusicUnwound(unwound);
                 }
                 break;
             }

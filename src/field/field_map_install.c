@@ -57,9 +57,9 @@ Lufia2ExecutionResult Lufia2FieldInstallMap(
             checkpoint(context, cpu, 0x83b548u);
         MAP_CALL(0x83b548u, 0x80eae7u, 3u);
         OpLda(memory, cpu, WRAM_FIELD_LAYER_WIDTH + 2u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x4202u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
         OpLda(memory, cpu, WRAM_FIELD_LAYER_HEIGHT + 2u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x4203u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
         PushDataBank(memory, cpu);
         TransferDirectToA(cpu);
         OpSta(memory, cpu, WRAM_FIELD_MAP_ATTRIBUTES);
@@ -67,7 +67,7 @@ Lufia2ExecutionResult Lufia2FieldInstallMap(
         OpLdx(cpu, 0x4000u);
         OpTxy(cpu);
         OpIny(cpu);
-        OpLda(memory, cpu, OpAbs(cpu, 0x4216u));
+        OpLda(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
         OpDecA(cpu);
         OpDecA(cpu);
         OpMoveNext(memory, cpu, 0x7eu, 0x7eu);

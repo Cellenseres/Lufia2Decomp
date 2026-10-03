@@ -1,5 +1,6 @@
 #include "core/cpu_ops.h"
 #include "lufia2/ancient_cave.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 enum { CAVE_CARRY_ITEM = 0x54, CAVE_CARRY_COUNT = 0x58 };
@@ -19,9 +20,9 @@ Lufia2ExecutionResult Lufia2AncientCaveCarryBlueItem(
                 OpStepMem(memory, cpu, OpDp(cpu, CAVE_CARRY_COUNT), 1);
                 OpLda(memory, cpu, OpDp(cpu, CAVE_CARRY_ITEM));
                 OpSepWidths(cpu, 0x20u);
-                OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
+                OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
                 ExchangeAccumulatorBytes(cpu);
-                OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
+                OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
                 OpRepWidths(cpu, 0x20u);
                 cpu->carry = 1;
                 return ExecutionReturned(0x848b1fu);
@@ -45,6 +46,7 @@ enum {
     CAVE_CARRY_LOOP_LIMIT = 4096,
 };
 
+/* JSL child in bank $84; reports unwind or handoff. */
 static Lufia2ExecutionResult CaveChild(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context,
@@ -60,6 +62,7 @@ static Lufia2ExecutionResult CaveChild(
     return ExecutionReturned(site + 4u);
 }
 
+/* JSR to the blue item carrier; foreign return hands off. */
 static Lufia2ExecutionResult CarryBlueItem(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t site) {
     uint8_t low, high;
@@ -77,6 +80,7 @@ static Lufia2ExecutionResult CarryBlueItem(
     return result;
 }
 
+/* Test address against mask A, then set or clear. */
 static void CaveTestSetBits(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint32_t address, uint8_t clear) {
@@ -86,15 +90,16 @@ static void CaveTestSetBits(
         clear ? value & (uint16_t)~OpA(cpu) : value | OpA(cpu));
 }
 
+/* Build the carry list: matching items, then blue equipment. */
 static Lufia2ExecutionResult CollectCaveCarryItems(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
     Lufia2ExecutionResult result;
     unsigned steps = 0u;
     OpLdx(cpu, WRAM_ANCIENT_CAVE_CARRY_ITEMS & 0xffffu);
-    OpWrite16(memory, OpAbs(cpu, 0x2181u), cpu->x);
+    OpWrite16(memory, OpAbs(cpu, SNES_WMADDL), cpu->x);
     OpLoadA(cpu, 0x7eu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x2183u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
     OpRepWidths(cpu, 0x20u);
     OpLdy(cpu, 0u);
     OpWrite16(memory, OpDp(cpu, CAVE_CARRY_COUNT), cpu->y);
@@ -110,10 +115,10 @@ static Lufia2ExecutionResult CollectCaveCarryItems(
                 PushIndex(memory, cpu);
                 OpStepMem(memory, cpu, OpDp(cpu, CAVE_CARRY_COUNT), 1);
                 OpSepWidths(cpu, 0x20u);
-                OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
+                OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
                 ExchangeAccumulatorBytes(cpu);
                 OpOraValue(cpu, 2u);
-                OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
+                OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
                 OpTxa(cpu);
                 OpLsrA(cpu);
                 cpu->carry = 0;
@@ -122,7 +127,7 @@ static Lufia2ExecutionResult CollectCaveCarryItems(
                 if (result.flow != LUFIA2_EXECUTION_RETURNED)
                     return result;
                 OpLda(memory, cpu, OpLongX(cpu, WRAM_EVENT_FLAGS));
-                OpOraValue(cpu, OpReadM(memory, cpu, OpDp(cpu, 0x57u)));
+                OpOraValue(cpu, OpReadM(memory, cpu, OpDp(cpu, DP_SCRATCH_D)));
                 OpSta(memory, cpu, OpLongX(cpu, WRAM_EVENT_FLAGS));
                 OpPullX(memory, cpu);
                 OpRepWidths(cpu, 0x20u);
@@ -171,14 +176,15 @@ static Lufia2ExecutionResult CollectCaveCarryItems(
     return ExecutionReturned(0x8489fau);
 }
 
+/* Restore the $7F backup via WMDATA, table $84:8B20. */
 static Lufia2ExecutionResult RestoreCaveBackup(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned steps = 0u;
     OpSepWidths(cpu, 0x20u);
     OpLdx(cpu, WRAM_ANCIENT_CAVE_STATE_BACKUP & 0xffffu);
-    OpWrite16(memory, OpAbs(cpu, 0x2181u), cpu->x);
+    OpWrite16(memory, OpAbs(cpu, SNES_WMADDL), cpu->x);
     OpLoadA(cpu, 0x7fu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x2183u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
     OpLdx(cpu, 0u);
     for (;;) {
         if (++steps > CAVE_LOOP_LIMIT)
@@ -199,7 +205,7 @@ static Lufia2ExecutionResult RestoreCaveBackup(
             uint32_t destination;
             if (++steps > CAVE_LOOP_LIMIT)
                 return ExecutionHandoff(cpu, 0x848a25u);
-            OpLda(memory, cpu, OpAbs(cpu, 0x2180u));
+            OpLda(memory, cpu, OpAbs(cpu, SNES_WMDATA));
             destination = Read16Direct(memory, cpu, CAVE_RESTORE_DESTINATION);
             destination |= (uint32_t)Read8(memory,
                 DirectAddress(cpu, CAVE_RESTORE_BANK)) << 16;
@@ -215,6 +221,7 @@ static Lufia2ExecutionResult RestoreCaveBackup(
     return ExecutionReturned(0x848a38u);
 }
 
+/* Return items via $82:E746: saved list or carry list. */
 static Lufia2ExecutionResult ReturnCaveItems(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {

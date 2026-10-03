@@ -1,8 +1,11 @@
 /* Player controller ($83:C1B4). */
 
+#include <stdbool.h>
+
+#include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
-#include "actor/actor_internal.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 /* $83:867B / $83:8674: pressed-bit test, clear latch on hit. */
@@ -132,7 +135,7 @@ static void PlayerFindActorAt(
                     cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
                 cpu->carry = 1;
                 if (cpu->zero) {
-                    StoreXDirect16(memory, cpu, 0x56u);        /* BB04 */
+                    StoreXDirect16(memory, cpu, DP_SCRATCH_C); /* BB04 */
                     return;
                 }
             }
@@ -159,9 +162,9 @@ static uint8_t PlayerFindTalkTarget(
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
     Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
     Lufia2MapTileHeight(memory, cpu, 0xba14u);
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     TransferDirectToA(cpu);                                    /* BA17 */
-    LoadAAbsolute8(memory, cpu, 0x0692u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, 0);
     TransferAToX(cpu);
     target = Read16ProgramIndexed(memory, cpu, 0xba54u, cpu->x);
     if (target != 0xba5cu && target != 0xba80u &&
@@ -186,7 +189,7 @@ static uint8_t PlayerFindTalkTarget(
                 LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);
                 BitImmediate8(cpu, 0x01u);
                 if (!cpu->zero) {
-                    LoadAAbsolute8(memory, cpu, 0x0692u, 0);   /* BA35 */
+                    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, 0); /* BA35 */
                     Compare8(cpu, A8(cpu), 0x04u);
                     cpu->carry = cpu->zero;
                     same_height = 0;
@@ -198,8 +201,7 @@ static uint8_t PlayerFindTalkTarget(
                 LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
                 Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
                 Lufia2MapTileHeight(memory, cpu, 0xba4cu);
-                Compare8(
-                    cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x54u)));
+                Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
                 cpu->carry = cpu->zero;
             }
         }
@@ -372,16 +374,16 @@ static uint8_t PlayerDoorRegion(
     cpu->program_bank = 0x8eu;
     PushDataBank(memory, cpu);                                 /* B63B */
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);
-    Write8(memory, DirectAddress(cpu, 0x56u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), A8(cpu));
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
-    Write8(memory, DirectAddress(cpu, 0x57u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_D), A8(cpu));
     LoadA8(cpu, 0x7eu);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     SetIndexWidth(cpu, 0);                                     /* B64A */
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xf002u, 0));
     LoadA8(cpu, 0xffu);
-    Write8(memory, DirectAddress(cpu, 0x58u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
     for (entries = 0;; ++entries) {
         /* A table without $FF spins the ROM. */
         if (entries == 0x10000u) {
@@ -394,14 +396,14 @@ static uint8_t PlayerDoorRegion(
             break;
         if (PlayerInsideRect(memory, cpu, 0xf005u)) {
             LoadAAbsolute8(memory, cpu, 0xf00du, cpu->x);      /* B672 */
-            Write8(memory, DirectAddress(cpu, 0x58u), A8(cpu));
+            Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
             break;
         }
         LoadAAbsolute8(memory, cpu, 0xf009u, cpu->x);          /* B679 */
         Compare8(cpu, A8(cpu), 0xffu);
         if (!cpu->zero && PlayerInsideRect(memory, cpu, 0xf009u)) {
             LoadAAbsolute8(memory, cpu, 0xf00du, cpu->x);      /* B698 */
-            Write8(memory, DirectAddress(cpu, 0x58u), A8(cpu));
+            Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
             break;
         }
         SetAccumulatorWidth(cpu, 0);                           /* B69F */
@@ -411,21 +413,20 @@ static uint8_t PlayerDoorRegion(
         TransferAToX(cpu);
         SetAccumulatorWidth(cpu, 1);
     }
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x58u)));     /* B6AB */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_E))); /* B6AB */
     Compare8(cpu, A8(cpu), 0xffu);
     cpu->carry = 0;
     if (!cpu->zero) {
         LoadA8(cpu, Read8(memory, 0x7fd09du));                 /* B6B5 */
         Compare8(cpu, A8(cpu), 0x00u);
         if (cpu->zero) {
-            LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x57u)));
+            LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_D)));
             Compare8(
                 cpu, A8(cpu),
                 Read8(memory, AbsoluteIndexedAddress(cpu, 0xf002u, cpu->x)));
         } else if (Compare8(cpu, A8(cpu), 0x01u), cpu->zero) {
             LoadAAbsolute8(memory, cpu, 0xf002u, cpu->x);      /* B6CD */
-            Compare8(
-                cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x57u)));
+            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SCRATCH_D)));
         } else {
             cpu->carry = 0;                                    /* B6C1 */
         }
@@ -449,13 +450,13 @@ static void PlayerWalkSpeed(
         And8(cpu, Read8(memory, DirectAddress(cpu, 0x47u)));
         if (!cpu->zero) {
             LoadA8(cpu, 0x10u);
-            Write8(memory, 0x7fe4deu, A8(cpu));
+            Write8(memory, WRAM_UNK_7FE4DE, A8(cpu));
         } else {
-            LoadA8(cpu, Read8(memory, 0x7fe4deu));             /* FC7C */
+            LoadA8(cpu, Read8(memory, WRAM_UNK_7FE4DE)); /* FC7C */
             Compare8(cpu, A8(cpu), 0x10u);
             if (cpu->zero) {
                 LoadA8(cpu, 0x08u);
-                Write8(memory, 0x7fe4deu, A8(cpu));
+                Write8(memory, WRAM_UNK_7FE4DE, A8(cpu));
             }
         }
     }
@@ -497,6 +498,8 @@ static uint8_t PlayerCallActionCore(
 Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    bool walk = true;
+
     LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* C1B4 */
     if (cpu->negative)
         return PlayerReturned(0x83c1e2u);
@@ -507,7 +510,7 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
             return PlayerBoundary(cpu, 0);
         if (!cpu->carry)
             return PlayerBoundary(cpu, 0x83c1dcu);             /* $8E:C05F */
-        LoadXDirect(memory, cpu, 0x56u);                       /* C1D5 */
+        LoadXDirect(memory, cpu, DP_SCRATCH_C);                /* C1D5 */
         return PlayerBoundary(cpu, 0x83c1d7u);                 /* BB08 */
     }
     LoadAAbsolute8(memory, cpu, 0x057cu, 0);                   /* C1C0 */
@@ -523,6 +526,8 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
         return PlayerReturned(0x83c1e2u);
     PlayerSkipProbe(memory, cpu);                              /* C1E8 */
     if (!cpu->carry) {
+        bool turn;
+
         SetIndexWidth(cpu, 0);                                 /* C1ED */
         Lufia2ActorLeaderToProbe(memory, cpu, 0xc1f1u);
         PlayerFacingCode(memory, cpu, 0xc1f4u);
@@ -537,8 +542,8 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
             SimulateRtlFrame(memory, cpu);
             cpu->program_bank = 0x83u;
             SetIndexWidth(cpu, 1);                             /* C202 */
-            if (cpu->carry)
-                goto done;
+            walk = false;
+            turn = !cpu->carry;
         } else {
             SetIndexWidth(cpu, 0);                             /* C219 */
             Lufia2ActorLeaderToProbe(memory, cpu, 0xc21du);
@@ -550,41 +555,41 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
             PlayerProbeCell(memory, cpu, 0xc227u);             /* C225 */
             SetIndexWidth(cpu, 1);
             BitImmediate8(cpu, 0x01u);
-            if (cpu->zero)
-                goto walk;
+            turn = !cpu->zero;
         }
-        /* Blocked: turn toward $22 + $18. */
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x22u)));  /* C206 */
-        Write8(memory, 0x7fd09du, A8(cpu));
-        cpu->carry = 0;
-        Adc8(cpu, 0x18u);
-        if (!PlayerCallActionCore(memory, cpu, 0xc212u))
-            return PlayerBoundary(cpu, 0);
-        SimulateJslFrame(memory, cpu, 0x83u, 0xc216u);         /* C213 */
-        if (!PlayerDoorRegion(memory, cpu))
-            return PlayerBoundary(cpu, 0);
-        SimulateRtlFrame(memory, cpu);
-        cpu->program_bank = 0x83u;
-        goto done;
+        if (turn) {
+            /* Blocked: turn toward $22 + $18. */
+            LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x22u))); /* C206 */
+            Write8(memory, 0x7fd09du, A8(cpu));
+            cpu->carry = 0;
+            Adc8(cpu, 0x18u);
+            if (!PlayerCallActionCore(memory, cpu, 0xc212u))
+                return PlayerBoundary(cpu, 0);
+            SimulateJslFrame(memory, cpu, 0x83u, 0xc216u); /* C213 */
+            if (!PlayerDoorRegion(memory, cpu))
+                return PlayerBoundary(cpu, 0);
+            SimulateRtlFrame(memory, cpu);
+            cpu->program_bank = 0x83u;
+            walk = false;
+        }
     }
 
-walk:
-    PlayerWalkSpeed(memory, cpu);                              /* C232 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x22u)));
-    if (!PlayerCallActionCore(memory, cpu, 0xc23au))
-        return PlayerBoundary(cpu, 0);
-    SimulateJsrFrame(memory, cpu, 0xc23du);                    /* C23B */
-    LoadA8(cpu, 0x20u);                                        /* C0FA */
-    TestBitsAbsolute8(memory, cpu, 0x099cu, 0);
-    if (!cpu->zero) {
-        LoadA8(cpu, 0x01u);
-        Write8(memory, 0x7fd0c1u, A8(cpu));
+    if (walk) {
+        PlayerWalkSpeed(memory, cpu); /* C232 */
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x22u)));
+        if (!PlayerCallActionCore(memory, cpu, 0xc23au))
+            return PlayerBoundary(cpu, 0);
+        SimulateJsrFrame(memory, cpu, 0xc23du); /* C23B */
+        LoadA8(cpu, 0x20u);                     /* C0FA */
+        TestBitsAbsolute8(memory, cpu, 0x099cu, 0);
+        if (!cpu->zero) {
+            LoadA8(cpu, 0x01u);
+            Write8(memory, 0x7fd0c1u, A8(cpu));
+        }
+        SimulateRtsFrame(memory, cpu);
+        LoadA8(cpu, 0x08u); /* C23E */
+        TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
     }
-    SimulateRtsFrame(memory, cpu);
-    LoadA8(cpu, 0x08u);                                        /* C23E */
-    TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
-
-done:
     SetIndexWidth(cpu, 1);                                     /* C243 */
     return PlayerReturned(0x83c245u);
 }

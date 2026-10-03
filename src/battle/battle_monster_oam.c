@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
@@ -197,7 +198,7 @@ Lufia2ExecutionResult Lufia2BattleActorSprites(
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x818e92u);
     PushDataBank(memory, cpu);
-    SelectDataBank(memory, cpu, BATTLE_DATA_BANK);
+    OpSetDataBank(memory, cpu, BATTLE_DATA_BANK);
     wram = WramViewOfCaller(memory, cpu);
     WramWrite16(wram, LIST_CURSOR_FIRST, FIRST_CURSORS_A);
     WramWrite16(wram, LIST_CURSOR_FIRST + 2u, FIRST_CURSORS_B);

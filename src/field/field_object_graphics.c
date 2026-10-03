@@ -1,8 +1,9 @@
 /* Field-object origins, tile state and graphics setup. */
 
+#include "actor/actor_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/field.h"
-#include "actor/actor_internal.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 enum {
@@ -10,6 +11,7 @@ enum {
     OBJECT_TILE_NUMBER = 0x54,
 };
 
+/* X = 0, or 2 with object flag bit 1. */
 Lufia2ExecutionResult Lufia2FieldObjectLayer(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, 0x0000u);
@@ -20,6 +22,7 @@ Lufia2ExecutionResult Lufia2FieldObjectLayer(
     return ExecutionReturned(0x83f61fu);
 }
 
+/* Copy the actor tile X and Y to the probe. */
 Lufia2ExecutionResult Lufia2ActorPositionToObjectProbe(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
@@ -30,6 +33,7 @@ Lufia2ExecutionResult Lufia2ActorPositionToObjectProbe(
     return ExecutionReturned(0x83d7b1u);
 }
 
+/* Object origin: probe X, probe Y minus height plus one. */
 Lufia2ExecutionResult Lufia2FieldSetObjectOrigin(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, DP_PROBE_X));
@@ -42,6 +46,7 @@ Lufia2ExecutionResult Lufia2FieldSetObjectOrigin(
     return ExecutionReturned(0x83f434u);
 }
 
+/* Reset the display offsets; Y offset goes to DP $58. */
 Lufia2ExecutionResult Lufia2ActorResetObjectOffsets(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
@@ -55,6 +60,7 @@ Lufia2ExecutionResult Lufia2ActorResetObjectOffsets(
     return ExecutionReturned(0x83f6c5u);
 }
 
+/* Scale X and Y by four; Y +2 when offset. */
 Lufia2ExecutionResult Lufia2FieldPendingTileOffsets(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
@@ -74,6 +80,7 @@ Lufia2ExecutionResult Lufia2FieldPendingTileOffsets(
     return ExecutionReturned(0x83f86au);
 }
 
+/* Store A's low 10 bits as map word X's tile. */
 Lufia2ExecutionResult Lufia2FieldSetMapTileNumber(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpAndValue(cpu, 0x03ffu);
@@ -85,6 +92,7 @@ Lufia2ExecutionResult Lufia2FieldSetMapTileNumber(
     return ExecutionReturned(0x83f794u);
 }
 
+/* Marks the claimed actor id slots as empty ($FF). */
 Lufia2ExecutionResult Lufia2FieldReleaseClaimedActors(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLoadA(cpu, 0x00ffu);
@@ -93,6 +101,7 @@ Lufia2ExecutionResult Lufia2FieldReleaseClaimedActors(
     return ExecutionReturned(0x83f7deu);
 }
 
+/* Copy the object palette to $0500 and flag the upload. */
 Lufia2ExecutionResult Lufia2FieldCopyObjectPalette(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, WRAM_FIELD_OBJECT_PALETTE_POINTER);
@@ -107,6 +116,7 @@ Lufia2ExecutionResult Lufia2FieldCopyObjectPalette(
     return ExecutionReturned(0x83f746u);
 }
 
+/* Vertical offset $FFF0 for height 2; set the origin. */
 Lufia2ExecutionResult Lufia2FieldPrepareObjectOrigin(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, 0xfff0u);
@@ -121,6 +131,7 @@ Lufia2ExecutionResult Lufia2FieldPrepareObjectOrigin(
     return ExecutionReturned(0x83f80cu);
 }
 
+/* Probe from the actor; start a field event X=0, Y=$1C. */
 Lufia2ExecutionResult Lufia2FieldStartObjectEvent(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     (void)Lufia2ActorPositionToObjectProbe(memory, cpu);
@@ -138,26 +149,28 @@ Lufia2ExecutionResult Lufia2FieldStartObjectEvent(
     return ExecutionReturned(0x83f7f7u);
 }
 
+/* DMAs a block to VRAM through channel 0. */
 static void FieldFixedGraphicsDma(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t source_bank, uint16_t source, uint16_t length,
     uint16_t destination) {
     OpLoadA(cpu, 0x0001u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x4300u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_DMAP(0)));
     OpLdx(cpu, source);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x4302u), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, SNES_A1TL(0)), cpu->x);
     OpLoadA(cpu, source_bank);
-    OpSta(memory, cpu, OpAbs(cpu, 0x4304u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_A1B(0)));
     OpLdx(cpu, length);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x4305u), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, SNES_DASL(0)), cpu->x);
     OpLoadA(cpu, 0x0018u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x4301u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_BBAD(0)));
     OpLdx(cpu, destination);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x2116u), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, SNES_VMADDL), cpu->x);
     OpLoadA(cpu, 0x0001u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x420bu));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_MDMAEN));
 }
 
+/* Upload the two fixed field graphics blocks to VRAM. */
 Lufia2ExecutionResult Lufia2FieldUploadFixedGraphics(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (cpu->accumulator_is_8_bit)
@@ -183,13 +196,14 @@ Lufia2ExecutionResult Lufia2FieldUploadFixedGraphics(
     return ExecutionReturned(0x83b061u);
 }
 
+/* Give the claimed object's actor palette, sprites and shape. */
 Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpLongX(cpu, WRAM_ACTOR_CLAIMED_OBJECT_RECORD));
     OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7fd88cu));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_OBJECT_GRAPHICS_PALETTE));
     OpRepWidths(cpu, 0x20u);
     for (unsigned bit = 0; bit < 5u; ++bit)
         OpAslA(cpu);
@@ -204,12 +218,12 @@ Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpLongX(cpu, WRAM_ACTOR_CLAIMED_OBJECT_RECORD));
     OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7fd78cu));
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
-    OpLda(memory, cpu, OpLongX(cpu, 0x7fd80cu));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_OBJECT_SPRITE_ALLOCATION));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_OBJECT_GRAPHICS_SHAPE));
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
     OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE216));
-    OpLda(memory, cpu, OpDp(cpu, 0x54u));
+    OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpSta(memory, cpu, OpLongX(cpu, 0x7fe25eu));
     TransferDirectToA(cpu);
     OpSta(memory, cpu, OpLongX(cpu, 0x7fe2a6u));

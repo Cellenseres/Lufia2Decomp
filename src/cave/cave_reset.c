@@ -4,6 +4,7 @@
 
 enum { CAVE_CLEAR_LENGTH = 0x58, CAVE_INITIAL_ITEM_BYTES = 0x8f };
 
+/* JSL child in bank $84; reports unwind or handoff. */
 static Lufia2ExecutionResult ResetChild(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context,
@@ -19,6 +20,7 @@ static Lufia2ExecutionResult ResetChild(
     return ExecutionReturned(site + 4u);
 }
 
+/* Zero the $84:8B59 ranges, then set $0A8D to $1402. */
 static Lufia2ExecutionResult ClearCaveParty(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned steps = 0;
@@ -31,18 +33,18 @@ static Lufia2ExecutionResult ClearCaveParty(
         OpCmpValue(cpu, 0xffffu);
         if (cpu->zero)
             break;
-        OpSta(memory, cpu, OpAbs(cpu, 0x2181u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDL));
         OpLda(memory, cpu, OpAbsX(cpu, 0x8b5cu));
         OpSta(memory, cpu, OpDp(cpu, CAVE_CLEAR_LENGTH));
         OpSepWidths(cpu, 0x20u);
         OpLda(memory, cpu, OpAbsX(cpu, 0x8b5bu));
-        OpSta(memory, cpu, OpAbs(cpu, 0x2183u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
         OpLdy(cpu, 0u);
         TransferDirectToA(cpu);
         do {
             if (++steps > 65536u)
                 return ExecutionHandoff(cpu, 0x8488acu);
-            OpSta(memory, cpu, OpAbs(cpu, 0x2180u));
+            OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
             OpIny(cpu);
             OpCpy(cpu, OpRead16(memory, OpDp(cpu, CAVE_CLEAR_LENGTH)));
         } while (!cpu->carry);
@@ -55,6 +57,7 @@ static Lufia2ExecutionResult ClearCaveParty(
     return ExecutionReturned(0x8488c3u);
 }
 
+/* Give each saved item via $82:E746: id and quantity. */
 static Lufia2ExecutionResult GiveCaveInitialItems(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -121,6 +124,7 @@ Lufia2ExecutionResult Lufia2AncientCaveResetParty(
     return ExecutionReturned(0x84890au);
 }
 
+/* Test offset against mask A, then set those bits. */
 static void ResetSetBits(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t offset) {
     uint32_t address = OpAbs(cpu, offset);

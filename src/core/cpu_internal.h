@@ -186,17 +186,6 @@ static inline void PullDataBank(
     SetNz8(cpu, cpu->data_bank);
 }
 
-/* LDA #bank, PHA, PLB: A and N/Z follow the bank, which also stays in the
- * stack page. */
-static inline void SelectDataBank(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t bank) {
-    LoadA8(cpu, bank);
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
-}
-
 static inline void LoadXDirect16(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

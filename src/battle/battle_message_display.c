@@ -54,7 +54,7 @@ static void MessageRestoreRegisters(const Lufia2Memory *memory, Lufia2CpuState *
 static void MessageClear(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSetDataBank(memory, cpu, 0x7eu);
     OpLdx(cpu, 1u);
-    OpWriteX(memory, cpu, OpAbs(cpu, 0x1264u), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER), cpu->x);
     OpLda(memory, cpu, OpAbs(cpu, 0x1266u));
     if (!cpu->zero) {
         OpLdx(cpu, 0x100u);
@@ -100,10 +100,10 @@ Lufia2ExecutionResult Lufia2BattleDisplayMessage(const Lufia2Memory *memory,
     OpWriteX(memory, cpu, OpAbs(cpu, 0x1252u), cpu->x);
     if (!BattleCall(&battle, 0x9622u, 0x81e792u, 3u))
         return BattleChildUnwound(&battle);
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x1264u)));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER)));
     if (cpu->negative) {
         OpLdx(cpu, 0x78u);
-        OpWriteX(memory, cpu, OpAbs(cpu, 0x1264u), cpu->x);
+        OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER), cpu->x);
     }
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(&battle, 0x9633u, 0x85ecdbu, 3u))
@@ -123,7 +123,7 @@ Lufia2ExecutionResult Lufia2BattleDisplayMessage(const Lufia2Memory *memory,
     OpLoadA(cpu, 0x100u);
     OpSta(memory, cpu, OpAbsY(cpu, 0x1a8fu));
     OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0x9661u, 0x85ec81u, 3u) ||
+    if (!BattleCall(&battle, 0x9661u, BATTLE_ROUTINE_FRAME_INPUT, 3u) ||
         !BattleCall(&battle, 0x9665u, 0x85aadcu, 3u))
         return BattleChildUnwound(&battle);
     MessageRestoreRegisters(memory, cpu);
