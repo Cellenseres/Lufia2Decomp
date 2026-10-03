@@ -12,6 +12,14 @@
 #include "system/wram.h"
 
 enum {
+    MENU_OWNED_ITEM_LIST = 0x97e0u,     /* (count << 9 | id) words, 0-terminated */
+    MENU_PRICE_TOTAL = 0x09bdu,         /* 24-bit result of the times-200 routine */
+    MENU_PRICE_TOTAL_BANK = 0x09bfu,    /* its third byte */
+    MENU_SCENARIO_ITEM_FLAGS = 0x091eu, /* eight words, one bit per scenario item */
+    ROM_SCENARIO_ITEM_IDS = 0x97fda0u,  /* item id word for each flag bit */
+};
+
+enum {
     /* Shop description word, in the same bytes the battle screen keeps its
      * party ids: bit 0 shows the owned items, bits 1-5 the sale lists, bit 7
      * the extra list. */
@@ -1066,7 +1074,7 @@ static void ShopOwnedItems(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             ExchangeAccumulatorBytes(cpu);
             AslA16(cpu);
             LoadA16(cpu, (uint16_t)(cpu->accumulator | Read16Direct(memory, cpu, 0x00u)));
-            StoreAAbsolute16(memory, cpu, 0x97e0u, cpu->y);
+            StoreAAbsolute16(memory, cpu, MENU_OWNED_ITEM_LIST, cpu->y);
             IncrementY16(cpu);
             IncrementY16(cpu);
         }
@@ -1078,7 +1086,7 @@ static void ShopOwnedItems(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LsrA16(cpu);
     Write16Long(memory, 0x7e93d0u, cpu->accumulator);
     LoadA16(cpu, 0x0000u);
-    StoreAAbsolute16(memory, cpu, 0x97e0u, cpu->y);
+    StoreAAbsolute16(memory, cpu, MENU_OWNED_ITEM_LIST, cpu->y);
     SetAccumulatorWidth(cpu, 1);
     PullDataBank(memory, cpu);
 }
@@ -1262,12 +1270,12 @@ static void ShopPriceTimes200(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint8_t kProducts[3] = {0x54u, 0x56u, 0x58u};
     unsigned i;
 
-    Write16Absolute(memory, cpu, 0x09bdu, cpu->x);
-    StoreZeroAbsolute8(memory, cpu, 0x09bfu, 0);
+    Write16Absolute(memory, cpu, MENU_PRICE_TOTAL, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, MENU_PRICE_TOTAL_BANK, 0);
     StoreA8Absolute(memory, cpu, SNES_WRMPYA, 0xc8u);
     for (i = 0; i < 3u; ++i) {
         if (i < 2u)
-            LoadAAbsolute8(memory, cpu, (uint16_t)(0x09bdu + i), 0);
+            LoadAAbsolute8(memory, cpu, (uint16_t)(MENU_PRICE_TOTAL + i), 0);
         else
             LoadA8(cpu, 0x00u);
         StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
@@ -1283,7 +1291,7 @@ static void ShopPriceTimes200(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreADirect8(memory, cpu, DP_SCRATCH_C);
     for (i = 0; i < 3u; ++i) {
         LoadA8(cpu, DirectByte(memory, cpu, (uint8_t)(0x54u + i)));
-        StoreAAbsolute8(memory, cpu, (uint16_t)(0x09bdu + i), 0);
+        StoreAAbsolute8(memory, cpu, (uint16_t)(MENU_PRICE_TOTAL + i), 0);
     }
 }
 
@@ -1999,7 +2007,8 @@ static void ScenarioItem(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Write16Direct(memory, cpu, DP_SCRATCH_C, 0);
     LoadY16(cpu, 0x0000u);
     do {
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x091eu, cpu->y));
+        LoadA16(cpu,
+                Read16AbsoluteIndexed(memory, cpu, MENU_SCENARIO_ITEM_FLAGS, cpu->y));
         if (!cpu->zero) {
             StoreYDirect16(memory, cpu, DP_SCRATCH_E);
             LoadY16(cpu, 0x0010u);
@@ -2015,7 +2024,9 @@ static void ScenarioItem(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 
                         Write16Direct(memory, cpu, DP_SCRATCH_A, (uint16_t)(n << 1));
                         LoadX16(cpu, (uint16_t)(n << 1));
-                        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x97fda0u, cpu->x)));
+                        LoadA16(cpu,
+                                Read16Long(memory, LongIndexedAddress(
+                                                       ROM_SCENARIO_ITEM_IDS, cpu->x)));
                         cpu->carry = 0;
                         return;
                     }
