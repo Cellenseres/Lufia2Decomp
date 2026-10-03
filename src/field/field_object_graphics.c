@@ -10,6 +10,7 @@ enum {
     OBJECT_TILE_NUMBER = 0x54,
 };
 
+/* X = 0, or 2 when the field object flags have bit 1 set. */
 Lufia2ExecutionResult Lufia2FieldObjectLayer(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, 0x0000u);
@@ -20,6 +21,7 @@ Lufia2ExecutionResult Lufia2FieldObjectLayer(
     return ExecutionReturned(0x83f61fu);
 }
 
+/* Copies the current actor's tile X and Y into the probe position. */
 Lufia2ExecutionResult Lufia2ActorPositionToObjectProbe(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
@@ -30,6 +32,8 @@ Lufia2ExecutionResult Lufia2ActorPositionToObjectProbe(
     return ExecutionReturned(0x83d7b1u);
 }
 
+/* Sets the pending object origin: X from the probe, Y from the probe minus the object
+ * height plus one. */
 Lufia2ExecutionResult Lufia2FieldSetObjectOrigin(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, DP_PROBE_X));
@@ -42,6 +46,8 @@ Lufia2ExecutionResult Lufia2FieldSetObjectOrigin(
     return ExecutionReturned(0x83f434u);
 }
 
+/* Resets the actor's display offsets; the Y offset ends up as the vertical offset in DP
+ * $58. */
 Lufia2ExecutionResult Lufia2ActorResetObjectOffsets(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
@@ -55,6 +61,7 @@ Lufia2ExecutionResult Lufia2ActorResetObjectOffsets(
     return ExecutionReturned(0x83f6c5u);
 }
 
+/* Scales X and Y by four; Y gains two more when a vertical offset is set. */
 Lufia2ExecutionResult Lufia2FieldPendingTileOffsets(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
@@ -74,6 +81,8 @@ Lufia2ExecutionResult Lufia2FieldPendingTileOffsets(
     return ExecutionReturned(0x83f86au);
 }
 
+/* Stores the low 10 bits of A as the tile number of the map word at X, keeping its top
+ * six bits. */
 Lufia2ExecutionResult Lufia2FieldSetMapTileNumber(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpAndValue(cpu, 0x03ffu);
@@ -85,6 +94,7 @@ Lufia2ExecutionResult Lufia2FieldSetMapTileNumber(
     return ExecutionReturned(0x83f794u);
 }
 
+/* Marks the claimed actor id slots as empty ($FF). */
 Lufia2ExecutionResult Lufia2FieldReleaseClaimedActors(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLoadA(cpu, 0x00ffu);
@@ -93,6 +103,8 @@ Lufia2ExecutionResult Lufia2FieldReleaseClaimedActors(
     return ExecutionReturned(0x83f7deu);
 }
 
+/* Copies the 32-byte object palette to the palette buffer at $0500 and flags it for the
+ * NMI upload. */
 Lufia2ExecutionResult Lufia2FieldCopyObjectPalette(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, WRAM_FIELD_OBJECT_PALETTE_POINTER);
@@ -107,6 +119,7 @@ Lufia2ExecutionResult Lufia2FieldCopyObjectPalette(
     return ExecutionReturned(0x83f746u);
 }
 
+/* Picks the vertical offset ($FFF0 for height 2, else 0) and sets the object origin. */
 Lufia2ExecutionResult Lufia2FieldPrepareObjectOrigin(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, 0xfff0u);
@@ -121,6 +134,7 @@ Lufia2ExecutionResult Lufia2FieldPrepareObjectOrigin(
     return ExecutionReturned(0x83f80cu);
 }
 
+/* Sets the probe from the actor and starts a field event with X = 0 and Y = $1C. */
 Lufia2ExecutionResult Lufia2FieldStartObjectEvent(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     (void)Lufia2ActorPositionToObjectProbe(memory, cpu);
@@ -138,6 +152,7 @@ Lufia2ExecutionResult Lufia2FieldStartObjectEvent(
     return ExecutionReturned(0x83f7f7u);
 }
 
+/* DMAs a block to VRAM through channel 0. */
 static void FieldFixedGraphicsDma(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t source_bank, uint16_t source, uint16_t length,
@@ -158,6 +173,7 @@ static void FieldFixedGraphicsDma(
     OpSta(memory, cpu, OpAbs(cpu, SNES_MDMAEN));
 }
 
+/* Uploads the two fixed field graphics blocks to VRAM at $1000 and $1680. */
 Lufia2ExecutionResult Lufia2FieldUploadFixedGraphics(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (cpu->accumulator_is_8_bit)
@@ -183,6 +199,8 @@ Lufia2ExecutionResult Lufia2FieldUploadFixedGraphics(
     return ExecutionReturned(0x83b061u);
 }
 
+/* Gives the claimed object's actor its palette, sprite allocation and shape, and sets
+ * its flag bit 1. */
 Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
