@@ -1,4 +1,6 @@
 /* Glyph buffer and window row upload setup ($80:C56E, C784, C23D). */
+#include <stdbool.h>
+
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
 #include "core/snes_registers.h"
@@ -141,23 +143,37 @@ static void TextWindowActorPosition(const Lufia2Memory *memory, Lufia2CpuState *
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, cpu->x);
     Compare8(cpu, A8(cpu), 4);
-    if (!cpu->zero) goto above;
-below:                                                       /* C38F */
-    Write8(memory, DirectAddress(cpu, 0x55u), 0);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x5eu));
-    LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-    StoreADirect8(memory, cpu, 0x66u);
-    cpu->carry = 0; Adc8(cpu, DirectByte(memory, cpu, 0x54u));
-    Compare8(cpu, A8(cpu), 0x1cu);
-    if (!cpu->carry) goto horizontal;
-above:                                                       /* C37F */
-    LoadA8(cpu, 0xffu); StoreADirect8(memory, cpu, 0x55u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x5eu));
-    cpu->carry = 1; Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
-    cpu->carry = 1; Sbc8(cpu, 2);
-    StoreADirect8(memory, cpu, 0x66u);
-    if (cpu->negative) goto below;
-horizontal:                                                  /* C39D */
+    {
+        /* The speech tail goes below the window for facing 4, above it
+         * otherwise; each side hands over to the other when it does not fit. */
+        bool below = cpu->zero;
+
+        for (;;) {
+            if (below) {
+                Write8(memory, DirectAddress(cpu, 0x55u), 0); /* C38F */
+                LoadA8(cpu, DirectByte(memory, cpu, 0x5eu));
+                LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+                StoreADirect8(memory, cpu, 0x66u);
+                cpu->carry = 0;
+                Adc8(cpu, DirectByte(memory, cpu, 0x54u));
+                Compare8(cpu, A8(cpu), 0x1cu);
+                if (!cpu->carry)
+                    break;
+            }
+            LoadA8(cpu, 0xffu);
+            StoreADirect8(memory, cpu, 0x55u); /* C37F */
+            LoadA8(cpu, DirectByte(memory, cpu, 0x5eu));
+            cpu->carry = 1;
+            Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
+            cpu->carry = 1;
+            Sbc8(cpu, 2);
+            StoreADirect8(memory, cpu, 0x66u);
+            if (!cpu->negative)
+                break;
+            below = true;
+        }
+    }
+    /* C39D */
     LoadA8(cpu, DirectByte(memory, cpu, 0x63u));
     LsrA8(cpu);
     cpu->carry = 1; Sbc8(cpu, DirectByte(memory, cpu, 0x5du));
