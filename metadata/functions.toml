@@ -3601,3 +3601,20 @@ source = "src/world/world_plane_rows.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "draft"
+
+# Battle background wave rows
+[[function]]
+address = "85:A736"
+name = "Lufia2BattleRippleRow"
+source = "src/battle/battle_background_wave.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:AA3D"
+name = "Lufia2BattleRippleWords"
+source = "src/battle/battle_background_wave.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"

@@ -370,6 +370,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9CD7` | `Lufia2BattleQueueActionWindow` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9CEE` | `Lufia2BattleQueueListWindow` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9DD4` | `Lufia2BattleQueueTurnDisplay` | verified | `src/battle/battle_turn_display.c` |
+| `$85:A736` | `Lufia2BattleRippleRow` | draft | `src/battle/battle_background_wave.c` |
+| `$85:AA3D` | `Lufia2BattleRippleWords` | draft | `src/battle/battle_background_wave.c` |
 | `$85:AADC` | `Lufia2BattleStartMessageEffect` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB28` | `Lufia2BattleTickMessageEffect` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB5B` | `Lufia2BattleQueueMessageCleanup` | verified | `src/battle/battle_message_effect.c` |

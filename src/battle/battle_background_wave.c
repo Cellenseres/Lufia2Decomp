@@ -141,3 +141,90 @@ Lufia2ExecutionResult Lufia2BattleWaveBackward(
     LeaveWaveBank(memory, cpu, wram);
     return ExecutionReturned(0x85ae26u);
 }
+
+/* $85:A736: 32 entries of the ripple table at $7E:4400, taken from the
+ * ROM table at $85:9F42 and offset by the scroll at $0594. M8/X16, JSR. */
+Lufia2ExecutionResult Lufia2BattleRippleRow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x85a736u);
+    PushDataBank(memory, cpu);
+    SelectDataBank(memory, cpu, 0x85u);
+    TransferDirectToA(cpu);
+    LoadAAbsolute8(memory, cpu, 0x0596u, 0);
+    AslA8(cpu);
+    cpu->carry = 0;
+    Adc8(cpu, AbsoluteByte(memory, cpu, 0x1b1au, 0));
+    And8(cpu, 0x1fu);
+    TransferAToY(cpu);
+    PushIndex(memory, cpu);
+    LoadX16(cpu, 0);
+    LoadA8(cpu, 0x20u);
+    StoreADirect8(memory, cpu, 0x33u);
+    do {
+        LoadAAbsolute8(memory, cpu, 0x9f42u, cpu->y);
+        cpu->carry = 0;
+        Adc8(cpu, AbsoluteByte(memory, cpu, 0x0594u, 0));
+        Write8(memory, LongIndexedAddress(0x7e4400u, cpu->x), A8(cpu));
+        IncrementY16(cpu);
+        IncrementX16(cpu);
+        DecrementDirect8(memory, cpu, 0x33u);
+    } while (!cpu->zero);
+    cpu->x = PullIndexValue(memory, cpu);
+    StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x1b1au, 0), 1);
+    StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x1b1au, 0), 1);
+    LoadA8(cpu, 0x04u);
+    StoreAAbsolute8(memory, cpu, 0x1b18u, 0);
+    PullDataBank(memory, cpu);
+    return ExecutionReturned(0x85a76du);
+}
+
+/* $85:AA3D: the 84-word table at $7E:40DE, taken from $85:A04B by a base
+ * entry chosen by $1B22; a word repeats while Y counts down. M8/X16, JSR. */
+Lufia2ExecutionResult Lufia2BattleRippleWords(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x85aa3du);
+    LoadAAbsolute8(memory, cpu, 0x1b22u, 0);
+    PushIndex(memory, cpu);
+    SetIndexWidth(cpu, 1);
+    TransferAToX(cpu);
+    And8(cpu, 0x03u);
+    StoreADirect8(memory, cpu, 0x33u);
+    LoadA8(cpu, 0x04u);
+    cpu->carry = 1;
+    Sbc8(cpu, DirectByte(memory, cpu, 0x33u));
+    StoreADirect8(memory, cpu, 0x33u);
+    AslA8(cpu);
+    Adc8(cpu, DirectByte(memory, cpu, 0x33u));
+    TransferAToY(cpu);
+    TransferXToA(cpu);
+    AslA8(cpu);
+    cpu->carry = 0;
+    Adc8(cpu, 0x08u);
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x85a04bu, cpu->x)));
+    LoadX8(cpu, 0);
+    do {
+        Write16Long(memory, LongIndexedAddress(0x7e40deu, cpu->x),
+            cpu->accumulator);
+        LoadY8(cpu, (uint8_t)(cpu->y - 1u));
+        if (cpu->zero) {
+            LoadY8(cpu, 0x0cu);
+            cpu->carry = 0;
+            Add16Value(cpu, 4u);
+        }
+        LoadX8(cpu, (uint8_t)(cpu->x + 1u));
+        LoadX8(cpu, (uint8_t)(cpu->x + 1u));
+        Compare8(cpu, (uint8_t)cpu->x, 0xa8u);
+    } while (!cpu->zero);
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 0);
+    cpu->x = PullIndexValue(memory, cpu);
+    LoadA8(cpu, 0x01u);
+    StoreAAbsolute8(memory, cpu, 0x1b20u, 0);
+    return ExecutionReturned(0x85aa7eu);
+}
