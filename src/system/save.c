@@ -14,6 +14,8 @@ enum {
     SAVE_CHECKSUM_POINTER = 0x5du,
     SAVE_CHECKSUM_POINTER_BANK = 0x5fu,
     SAVE_CHECKSUM = 0x56u,
+    /* Stack offset of the status byte the loader pushed first. */
+    SAVE_SAVED_STATUS = 8u,
 };
 
 /* Save RAM holds one 2 KiB slot per file: a header (state byte, random seed,
@@ -63,6 +65,9 @@ static uint8_t SaveChild(
             return SaveUnwound(site); \
     } while (0)
 
+/* $80:9099: reads save file A through the $80:914B child. If the first buffer
+ * byte has no high-nibble bits two more children run; otherwise carry is set
+ * in the status byte restored for the caller. */
 Lufia2ExecutionResult Lufia2LoadGameFile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
@@ -87,9 +92,9 @@ Lufia2ExecutionResult Lufia2LoadGameFile(
         SAVE_CALL(0x8090b1u, 0x8eb993u, 3u);
         SAVE_CALL(0x8090b5u, 0x85c60eu, 3u);
     } else {
-        OpLda(memory, cpu, OpStack(cpu, 8u));
+        OpLda(memory, cpu, OpStack(cpu, SAVE_SAVED_STATUS));
         OpOraValue(cpu, 1u);
-        OpSta(memory, cpu, OpStack(cpu, 8u));
+        OpSta(memory, cpu, OpStack(cpu, SAVE_SAVED_STATUS));
     }
     OpRepWidths(cpu, 0x30u);
     OpPullY(memory, cpu);
@@ -100,6 +105,8 @@ Lufia2ExecutionResult Lufia2LoadGameFile(
     return ExecutionReturned(0x8090c8u);
 }
 
+/* $80:90C9: runs the two pack children, then the $80:9184 child with the file number.
+ */
 Lufia2ExecutionResult Lufia2SaveGameFile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
