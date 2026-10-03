@@ -5,6 +5,7 @@
 #include "core/wram_view.h"
 #include "field/field_internal.h"
 #include "lufia2/system.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 /* Section table in bank $7F, one slot per section (parallel arrays of 16-bit
@@ -197,7 +198,7 @@ static void FieldAdvanceDestination(
     OpRepWidths(cpu, 0x20u);                                         /* ECF2 */
     OpLda(memory, cpu, OpDp(cpu, 0x2du));
     cpu->carry = 0;
-    OpAdc(memory, cpu, OpDp(cpu, 0x58u));
+    OpAdc(memory, cpu, OpDp(cpu, DP_SCRATCH_E));
     OpSta(memory, cpu, OpDp(cpu, 0x2du));
     OpSepWidths(cpu, 0x20u);
     SimulateRtsFrame(memory, cpu);                             /* ECFD */
@@ -219,7 +220,7 @@ static void FieldRelativeWord(
 Lufia2ExecutionResult Lufia2FieldDecompressMapData(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));                      /* EC98 */
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A)); /* EC98 */
     OpLda(memory, cpu, OpDp(cpu, 0x2du));
     OpSta(memory, cpu, 0x7fd03au);
     OpSta(memory, cpu, OpDp(cpu, 0x60u));
@@ -244,7 +245,7 @@ Lufia2ExecutionResult Lufia2FieldDecompressMapData(
         OpRepWidths(cpu, 0x20u);
         cpu->carry = 0;
         OpAdcValue(cpu, 0x0166u);
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));
+        OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
         OpLda(memory, cpu, OpDp(cpu, 0x2du));
         OpSta(memory, cpu, OpDp(cpu, 0x60u));
         cpu->carry = 0;

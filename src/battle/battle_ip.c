@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "lufia2/battle.h"
 #include "lufia2/item.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 enum {
@@ -98,7 +99,7 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
             StoreTable8(memory, cpu, 0x05u);
             PushY(memory, cpu);
             LoadA8(cpu, 0x0du);
-            StoreADirect8(memory, cpu, 0x54u);
+            StoreADirect8(memory, cpu, DP_SCRATCH_A);
             {
                 int ended = 0;
 
@@ -110,7 +111,7 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
                     StoreTable8(memory, cpu, 0x14u);
                     IncrementX16(cpu);
                     IncrementY16(cpu);
-                    DecrementDirect8(memory, cpu, 0x54u);
+                    DecrementDirect8(memory, cpu, DP_SCRATCH_A);
                 } while (!cpu->zero);
             }
         } else {
@@ -121,13 +122,13 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
             StoreTable8(memory, cpu, 0x14u);
             StoreTable8(memory, cpu, 0x15u);
             LoadA8(cpu, 0x0bu);
-            StoreADirect8(memory, cpu, 0x54u);
+            StoreADirect8(memory, cpu, DP_SCRATCH_A);
             do {
                 TransferDirectToA(cpu);
                 StoreTable8(memory, cpu, 0x16u);
                 IncrementX16(cpu);
                 IncrementY16(cpu);
-                DecrementDirect8(memory, cpu, 0x54u);
+                DecrementDirect8(memory, cpu, DP_SCRATCH_A);
             } while (!cpu->zero);
         }
         cpu->y = PullIndexValue(memory, cpu);                  /* C20B */
@@ -247,15 +248,15 @@ static void AddY(Lufia2CpuState *cpu, uint16_t bytes) {
 static void EntryChars(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t count, uint16_t glyph_return) {
     LoadA8(cpu, count);
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     do {
         LoadAAbsolute8(memory, cpu, TABLE, cpu->x);
         IncrementX16(cpu);
         SimulateJsrFrame(memory, cpu, glyph_return);
         Lufia2BattleGlyph(memory, cpu);
         SimulateRtsFrame(memory, cpu);
-        TileRow(memory, cpu, DirectByte(memory, cpu, 0x55u));
-        DecrementDirect8(memory, cpu, 0x54u);
+        TileRow(memory, cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
+        DecrementDirect8(memory, cpu, DP_SCRATCH_A);
     } while (!cpu->zero);
 }
 
@@ -268,7 +269,7 @@ static int EntryHead(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     AslA8(cpu);
     AslA8(cpu);
     Or8(cpu, 0x20u);
-    StoreADirect8(memory, cpu, 0x55u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_B);
     cpu->x = (uint16_t)(cpu->x + skip);
     LoadAAbsolute8(memory, cpu, TABLE, cpu->x);
     IncrementX16(cpu);
@@ -279,7 +280,7 @@ static int EntryHead(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         StoreAAbsolute8(memory, cpu, 0x0000u, cpu->y);
         ExchangeAccumulatorBytes(cpu);
         StoreAAbsolute8(memory, cpu, 0x0040u, cpu->y);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+        LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
     } else {
         StoreAAbsolute8(memory, cpu, 0x0040u, cpu->y);
         TransferDirectToA(cpu);

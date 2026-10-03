@@ -1,9 +1,10 @@
 /* Field actor OAM ($83:A21A). */
 
-#include "core/cpu_internal.h"
-#include "lufia2/field.h"
 #include "actor/actor_internal.h"
+#include "core/cpu_internal.h"
 #include "field/field_internal.h"
+#include "lufia2/field.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 /* Direct-page fields of the actor sprite builder. The OAM index in DP $58 and
@@ -267,13 +268,13 @@ static void FieldActorFrameUpload(
     LoadYDirect8(memory, cpu, DP_SLOT_WORD_OFFSET);
     cpu->carry = 0;
     Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x13d1u, cpu->y));
-    StoreADirect16(memory, cpu, 0x54u);
+    StoreADirect16(memory, cpu, DP_SCRATCH_A);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x83u);
-    StoreADirect8(memory, cpu, 0x56u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_C);
     LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
-    pointer = Read16Direct(memory, cpu, 0x54u) |
-        ((uint32_t)DirectByte(memory, cpu, 0x56u) << 16);
+    pointer = Read16Direct(memory, cpu, DP_SCRATCH_A) |
+              ((uint32_t)DirectByte(memory, cpu, DP_SCRATCH_C) << 16);
     LoadA8(cpu, Read8(memory, pointer));                       /* LDA [$54] */
     And8(cpu, 0x7fu);
     StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
@@ -284,7 +285,7 @@ static void FieldActorFrameUpload(
     StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
     LoadYDirect8(memory, cpu, DP_SLOT_RECORD_OFFSET);
     LoadAAbsolute8(memory, cpu, 0x12bbu, cpu->y);
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     LoadAAbsolute8(memory, cpu, SNES_RDMPYL, 0);
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, 0x00u);
@@ -292,16 +293,16 @@ static void FieldActorFrameUpload(
     LsrA16(cpu);
     cpu->carry = 0;
     Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x12b9u, cpu->y));
-    StoreADirect16(memory, cpu, 0x56u);
+    StoreADirect16(memory, cpu, DP_SCRATCH_C);
     LoadY8(cpu, AbsoluteByte(memory, cpu, 0x0732u, 0));
     LoadXDirect8(memory, cpu, DP_SLOT_WORD_OFFSET);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1381u, cpu->x));
     StoreAAbsolute16(memory, cpu, 0x11f9u, cpu->y);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1331u, cpu->x));
     StoreAAbsolute16(memory, cpu, 0x11e9u, cpu->y);
-    LoadADirect16(memory, cpu, 0x54u);
+    LoadADirect16(memory, cpu, DP_SCRATCH_A);
     StoreAAbsolute16(memory, cpu, 0x11d9u, cpu->y);
-    LoadADirect16(memory, cpu, 0x56u);
+    LoadADirect16(memory, cpu, DP_SCRATCH_C);
     StoreAAbsolute16(memory, cpu, 0x05c2u, cpu->y);
     LoadY8(cpu, (uint8_t)(cpu->y + 1u));
     LoadY8(cpu, (uint8_t)(cpu->y + 1u));

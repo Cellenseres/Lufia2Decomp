@@ -3,6 +3,7 @@
 #include "battle/battle_lifecycle_internal.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
+#include "system/dp_scratch.h"
 #include "system/scene_nmi_internal.h"
 #include "system/wram.h"
 
@@ -220,7 +221,7 @@ bool BattleLoadBaseGraphics(BattleContext *battle) {
     LoadA8(cpu, 0x7eu);
     OpSta(memory, cpu, OpDp(cpu, 0x62u));
     OpLdx(cpu, 0x0190u);
-    OpWriteX(memory, cpu, OpDp(cpu, 0x54u), cpu->x);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_SCRATCH_A), cpu->x);
 
     if (!BattleDecompressResource(battle, 0x865du))
         return false;

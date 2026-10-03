@@ -2,9 +2,10 @@
 
 #include <stdbool.h>
 
+#include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
-#include "actor/actor_internal.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 /* $83:867B / $83:8674: pressed-bit test, clear latch on hit. */
@@ -375,14 +376,14 @@ static uint8_t PlayerDoorRegion(
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);
     Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), A8(cpu));
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
-    Write8(memory, DirectAddress(cpu, 0x57u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_D), A8(cpu));
     LoadA8(cpu, 0x7eu);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     SetIndexWidth(cpu, 0);                                     /* B64A */
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xf002u, 0));
     LoadA8(cpu, 0xffu);
-    Write8(memory, DirectAddress(cpu, 0x58u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
     for (entries = 0;; ++entries) {
         /* A table without $FF spins the ROM. */
         if (entries == 0x10000u) {
@@ -395,14 +396,14 @@ static uint8_t PlayerDoorRegion(
             break;
         if (PlayerInsideRect(memory, cpu, 0xf005u)) {
             LoadAAbsolute8(memory, cpu, 0xf00du, cpu->x);      /* B672 */
-            Write8(memory, DirectAddress(cpu, 0x58u), A8(cpu));
+            Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
             break;
         }
         LoadAAbsolute8(memory, cpu, 0xf009u, cpu->x);          /* B679 */
         Compare8(cpu, A8(cpu), 0xffu);
         if (!cpu->zero && PlayerInsideRect(memory, cpu, 0xf009u)) {
             LoadAAbsolute8(memory, cpu, 0xf00du, cpu->x);      /* B698 */
-            Write8(memory, DirectAddress(cpu, 0x58u), A8(cpu));
+            Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
             break;
         }
         SetAccumulatorWidth(cpu, 0);                           /* B69F */
@@ -412,21 +413,20 @@ static uint8_t PlayerDoorRegion(
         TransferAToX(cpu);
         SetAccumulatorWidth(cpu, 1);
     }
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x58u)));     /* B6AB */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_E))); /* B6AB */
     Compare8(cpu, A8(cpu), 0xffu);
     cpu->carry = 0;
     if (!cpu->zero) {
         LoadA8(cpu, Read8(memory, 0x7fd09du));                 /* B6B5 */
         Compare8(cpu, A8(cpu), 0x00u);
         if (cpu->zero) {
-            LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x57u)));
+            LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_D)));
             Compare8(
                 cpu, A8(cpu),
                 Read8(memory, AbsoluteIndexedAddress(cpu, 0xf002u, cpu->x)));
         } else if (Compare8(cpu, A8(cpu), 0x01u), cpu->zero) {
             LoadAAbsolute8(memory, cpu, 0xf002u, cpu->x);      /* B6CD */
-            Compare8(
-                cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x57u)));
+            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SCRATCH_D)));
         } else {
             cpu->carry = 0;                                    /* B6C1 */
         }

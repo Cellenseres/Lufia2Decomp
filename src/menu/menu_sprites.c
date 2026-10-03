@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "lufia2/menu.h"
 #include "menu/menu_sprite_slots.h"
+#include "system/dp_scratch.h"
 
 static void LoadIndexed(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t address) {
@@ -204,13 +205,13 @@ static void SpritePieces(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadY16(cpu, 0x0001u);
     LoadA8(cpu, Read8IndirectLongY(memory, cpu, 0x5du));
     AslA8(cpu);
-    StoreADirect8(memory, cpu, 0x56u);                         /* size bit */
-    Write8(memory, DirectAddress(cpu, 0x57u), 0);
+    StoreADirect8(memory, cpu, DP_SCRATCH_C); /* size bit */
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_D), 0);
     IncrementY16(cpu);
     for (;;) {
         SetAccumulatorWidth(cpu, 0);                           /* 8C3B */
         LoadA16(cpu, Read16IndirectLongY(memory, cpu, 0x5du));
-        StoreADirect16(memory, cpu, 0x58u);                    /* y, x offset */
+        StoreADirect16(memory, cpu, DP_SCRATCH_E); /* y, x offset */
         IncrementY16(cpu);
         IncrementY16(cpu);
         SetAccumulatorWidth(cpu, 1);
@@ -223,7 +224,7 @@ static void SpritePieces(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         IncrementY16(cpu);
         LoadAAbsolute8(memory, cpu, MENU_SPRITE_Y_LOW, cpu->x);
         cpu->carry = 1;
-        Sbc8(cpu, DirectByte(memory, cpu, 0x58u));
+        Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_E));
         StoreAAbsolute8(memory, cpu, OAM, cpu->y);
         IncrementY16(cpu);
         StoreYDirect16(memory, cpu, 0x5au);
@@ -238,7 +239,7 @@ static void SpritePieces(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         IncrementY16(cpu);
         IncrementY16(cpu);
         StoreYDirect16(memory, cpu, 0x5au);
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));        /* high table */
+        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A)); /* high table */
         LsrA16(cpu);
         LsrA16(cpu);
         LsrA16(cpu);
@@ -248,7 +249,8 @@ static void SpritePieces(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         TransferAToY(cpu);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, OAM, cpu->y));
         StoreADirect16(memory, cpu, 0x63u);
-        LoadA16(cpu, (uint16_t)((Read16Direct(memory, cpu, 0x54u) & 0x000fu) + 1u));
+        LoadA16(cpu,
+                (uint16_t)((Read16Direct(memory, cpu, DP_SCRATCH_A) & 0x000fu) + 1u));
         StoreADirect16(memory, cpu, 0x65u);
         SetAccumulatorWidth(cpu, 1);
         LoadA8(cpu, DirectByte(memory, cpu, 0x59u));
@@ -271,7 +273,7 @@ static void SpritePieces(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         SetAccumulatorWidth(cpu, 0);
         RolA16(cpu);
         And16(cpu, 0x0001u);
-        Or16(cpu, Read16Direct(memory, cpu, 0x56u));
+        Or16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
         cpu->carry = 0;
         RorA16(cpu);
         do {
@@ -280,8 +282,8 @@ static void SpritePieces(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         } while (!cpu->zero);
         Or16(cpu, Read16Direct(memory, cpu, 0x63u));
         StoreAAbsolute16(memory, cpu, OAM, cpu->y);
-        Increment16Direct(memory, cpu, 0x54u);
-        Increment16Direct(memory, cpu, 0x54u);
+        Increment16Direct(memory, cpu, DP_SCRATCH_A);
+        Increment16Direct(memory, cpu, DP_SCRATCH_A);
         SetAccumulatorWidth(cpu, 1);
         cpu->y = PullIndexValue(memory, cpu);
         LoadA8(cpu, Read8IndirectLongY(memory, cpu, 0x5du));
@@ -300,7 +302,7 @@ Lufia2ExecutionResult Lufia2SpriteBuildOam(
     unsigned pass;
 
     LoadX16(cpu, 0x0000u);
-    StoreXDirect16(memory, cpu, 0x54u);
+    StoreXDirect16(memory, cpu, DP_SCRATCH_A);
     StoreXDirect16(memory, cpu, 0x5au);
     for (pass = 0; pass < 2u; ++pass) {
         LoadX16(cpu, kRanges[pass][0]);

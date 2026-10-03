@@ -1,10 +1,11 @@
 /* Conditional text expressions ($80:A074, opcode $14). */
 
 #include "core/cpu_internal.h"
-#include "lufia2/item.h"
 #include "field/event_script_internal.h"
-#include "text/text_internal.h"
+#include "lufia2/item.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
+#include "text/text_internal.h"
 
 /* $80:A1CC: argument to record offset; DB-relative MMIO. */
 Lufia2ExecutionResult Lufia2TextConditionRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -32,8 +33,8 @@ Lufia2ExecutionResult Lufia2TextConditionItem(const Lufia2Memory *memory, Lufia2
     cpu->y = PullIndexValue(memory, cpu);
     SetNz16(cpu, cpu->y);
     SetAccumulatorWidth(cpu, 1);
-    StoreADirect8(memory, cpu, 0x54u);
-    Write8(memory, DirectAddress(cpu, 0x55u), 0);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0);
     return ExecutionReturned(0x80a1f5u);
 }
 
@@ -64,12 +65,12 @@ static void TextConditionCompare(const Lufia2Memory *memory, Lufia2CpuState *cpu
     if (comparison > 2u) Compare16(cpu, cpu->accumulator, 3u);
     if (comparison > 3u) Compare16(cpu, cpu->accumulator, 4u);
     if (comparison == 3u) {
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x56u));
-        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x54u));
+        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_SCRATCH_A));
     } else {
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
         if (comparison == 4u) LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
-        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x56u));
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_SCRATCH_C));
     }
     passes = comparison == 0u ? cpu->zero : comparison == 1u ? !cpu->zero :
         comparison <= 4u ? cpu->carry : !cpu->carry;
@@ -130,25 +131,25 @@ static int TextConditionSpecial(const Lufia2Memory *memory, Lufia2CpuState *cpu)
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
             kind == 0xc8u ? 0x0011u : 0x0013u, cpu->x));
-        StoreADirect16(memory, cpu, 0x54u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_A);
         SetAccumulatorWidth(cpu, 1);
         break;
     case 0xd8u:
         Lufia2TextNextByte(memory, cpu, 0xa181u); /* discarded byte */
         LoadA8(cpu, 0xffu);
-        StoreADirect8(memory, cpu, 0x54u);
-        StoreADirect8(memory, cpu, 0x57u); /* $55 deliberately remains stale */
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
+        StoreADirect8(memory, cpu, DP_SCRATCH_D); /* $55 deliberately remains stale */
         break;
     case 0xe0u:
         StoreZeroAbsolute8(memory, cpu, 0x1267u, 0);
         TextConditionRecordCall(memory, cpu, 0xa18fu);
         Lufia2TextNextByte(memory, cpu, 0xa192u);
-        StoreADirect8(memory, cpu, 0x54u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
         PushY(memory, cpu);
         LoadY16(cpu, 0x0023u);
         do {
             LoadAAbsolute8(memory, cpu, 0x0096u, cpu->x);
-            Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x54u));
+            Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_A));
             if (cpu->zero) break;
             IncrementX16(cpu);
             LoadY16(cpu, (uint16_t)(cpu->y - 1u));
@@ -163,8 +164,8 @@ static int TextConditionSpecial(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     case 0xe8u:
         TextConditionRecordCall(memory, cpu, 0xa1b1u);
         LoadAAbsolute8(memory, cpu, 0x000eu, cpu->x);
-        StoreADirect8(memory, cpu, 0x54u);
-        Write8(memory, DirectAddress(cpu, 0x55u), 0);
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0);
         byte_operand = 1;
         break;
     case 0xf0u:
@@ -176,8 +177,8 @@ static int TextConditionSpecial(const Lufia2Memory *memory, Lufia2CpuState *cpu)
             LoadA8(cpu, Read8(memory, WRAM_FIELD_DESTINATION_PARAMETERS));
             for (unsigned i = 0; i < 4u; ++i) LsrA8(cpu);
         }
-        StoreADirect8(memory, cpu, 0x54u);
-        Write8(memory, DirectAddress(cpu, 0x55u), 0);
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0);
         byte_operand = 1;
         break;
     case 0xf8u:
@@ -198,13 +199,13 @@ static int TextConditionSpecial(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     }
     if (byte_operand) {
         Lufia2TextNextByte(memory, cpu, 0xa1bbu);
-        StoreADirect8(memory, cpu, 0x56u);
-        Write8(memory, DirectAddress(cpu, 0x57u), 0);
+        StoreADirect8(memory, cpu, DP_SCRATCH_C);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_D), 0);
     } else {
         Lufia2TextNextWord(memory, cpu, 0xa1c4u);
-        StoreADirect8(memory, cpu, 0x56u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_C);
         ExchangeAccumulatorBytes(cpu);
-        StoreADirect8(memory, cpu, 0x57u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_D);
     }
     return 0;
 }
@@ -246,11 +247,11 @@ uint32_t Lufia2TextEvaluateCondition(const Lufia2Memory *memory, Lufia2CpuState 
             ExchangeAccumulatorBytes(cpu);
             TransferAToX(cpu);
             LoadAAbsolute8(memory, cpu, 0x079eu, cpu->x);
-            StoreADirect8(memory, cpu, 0x54u);
-            Write8(memory, DirectAddress(cpu, 0x55u), 0);
+            StoreADirect8(memory, cpu, DP_SCRATCH_A);
+            Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0);
             Lufia2TextNextByte(memory, cpu, 0xa207u);
-            StoreADirect8(memory, cpu, 0x56u);
-            Write8(memory, DirectAddress(cpu, 0x57u), 0);
+            StoreADirect8(memory, cpu, DP_SCRATCH_C);
+            Write8(memory, DirectAddress(cpu, DP_SCRATCH_D), 0);
         }
         TextConditionCompare(memory, cpu);
     }

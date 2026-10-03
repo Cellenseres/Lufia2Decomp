@@ -1,4 +1,5 @@
 #include "battle/battle_internal.h"
+#include "system/dp_scratch.h"
 
 static Lufia2ExecutionResult TargetCursor(const Lufia2Memory *memory,
                                           Lufia2CpuState *cpu, uint16_t base,
@@ -182,7 +183,7 @@ Lufia2ExecutionResult Lufia2BattleConfirmCommand(const Lufia2Memory *memory,
     OpSetDataBank(memory, cpu, 0x7eu);
     OpLdy(cpu, 0x3006u);
     OpLoadA(cpu, 0x20u);
-    OpSta(memory, cpu, OpDp(cpu, 0x55u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
     for (;;) {
         OpLda(memory, cpu, OpLongX(cpu, 0x850000u));
         if (cpu->zero)
@@ -193,7 +194,7 @@ Lufia2ExecutionResult Lufia2BattleConfirmCommand(const Lufia2Memory *memory,
         OpSta(memory, cpu, OpAbsY(cpu, 0u));
         ExchangeAccumulatorBytes(cpu);
         OpSta(memory, cpu, OpAbsY(cpu, 0x40u));
-        OpLda(memory, cpu, OpDp(cpu, 0x55u));
+        OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
         OpSta(memory, cpu, OpAbsY(cpu, 1u));
         OpSta(memory, cpu, OpAbsY(cpu, 0x41u));
         OpIny(cpu);

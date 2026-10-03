@@ -1,8 +1,9 @@
 /* Actor sprite slot allocation. */
 
+#include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
-#include "actor/actor_internal.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 /* $83:ABE9: sprite VRAM base (A.high << 4) + $2000; M=0. */
@@ -415,7 +416,7 @@ Lufia2ExecutionResult Lufia2SpriteGraphicsUpload(
             Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->y);
             Write16Absolute(memory, cpu, SNES_VMADDL, cpu->y);
             LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11f9u, cpu->x));
-            Write16Direct(memory, cpu, 0x58u, cpu->y);
+            Write16Direct(memory, cpu, DP_SCRATCH_E, cpu->y);
             Write16Absolute(memory, cpu, SNES_DASL(0), cpu->y);
             for (i = 0; i < 2u; ++i) {
                 if (i) {
@@ -424,7 +425,7 @@ Lufia2ExecutionResult Lufia2SpriteGraphicsUpload(
                     cpu->carry = 0;
                     Add16Value(cpu, 0x0100u);
                     Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
-                    LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
+                    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_E));
                     Write16Absolute(memory, cpu, SNES_DASL(0), cpu->accumulator);
                     cpu->carry = 0;
                     Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));

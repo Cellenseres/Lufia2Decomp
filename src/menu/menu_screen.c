@@ -7,6 +7,7 @@
 #include "lufia2/system.h"
 #include "menu/menu_sprite_slots.h"
 #include "party/party_internal.h"
+#include "system/dp_scratch.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
 
@@ -98,22 +99,22 @@ static int DrawString(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 
 /* $82:83B5: clear both layers ($7E:2000/$7E:3000) in a rect; M0. */
 static void MenuClearRect(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreADirect16(memory, cpu, 0x54u);
-    Write16Direct(memory, cpu, 0x56u, 0);
-    Write16Direct(memory, cpu, 0x58u, 0);
+    StoreADirect16(memory, cpu, DP_SCRATCH_A);
+    Write16Direct(memory, cpu, DP_SCRATCH_C, 0);
+    Write16Direct(memory, cpu, DP_SCRATCH_E, 0);
     TransferXToA(cpu);
     SetAccumulatorWidth(cpu, 1);
-    StoreADirect8(memory, cpu, 0x58u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_E);
     ExchangeAccumulatorBytes(cpu);
-    StoreADirect8(memory, cpu, 0x56u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_C);
     SetAccumulatorWidth(cpu, 0);
     PushDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     SetBank(memory, cpu, 0x7eu);
     SetAccumulatorWidth(cpu, 0);
     do {
-        LoadY16(cpu, Read16Direct(memory, cpu, 0x56u));
-        LoadX16(cpu, Read16Direct(memory, cpu, 0x54u));
+        LoadY16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
+        LoadX16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
         do {
             Write16Absolute(memory, cpu, (uint16_t)(0x2000u + cpu->x), 0);
             Write16Absolute(memory, cpu, (uint16_t)(0x3000u + cpu->x), 0);
@@ -122,11 +123,11 @@ static void MenuClearRect(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             cpu->y = (uint16_t)(cpu->y - 1u);
             SetNz16(cpu, cpu->y);
         } while (!cpu->zero);
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
         cpu->carry = 0;
         Add16Value(cpu, 0x0040u);
-        StoreADirect16(memory, cpu, 0x54u);
-        Decrement16Direct(memory, cpu, 0x58u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_A);
+        Decrement16Direct(memory, cpu, DP_SCRATCH_E);
     } while (!cpu->zero);
     PullDataBank(memory, cpu);
 }
@@ -437,22 +438,22 @@ Lufia2ExecutionResult Lufia2MenuNameEntryWindows(
 
 /* $82:83EB: clear layer 2 ($7E:3000) in a rect; M0. */
 static void MenuClearRect2(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreADirect16(memory, cpu, 0x54u);
-    Write16Direct(memory, cpu, 0x56u, 0);
-    Write16Direct(memory, cpu, 0x58u, 0);
+    StoreADirect16(memory, cpu, DP_SCRATCH_A);
+    Write16Direct(memory, cpu, DP_SCRATCH_C, 0);
+    Write16Direct(memory, cpu, DP_SCRATCH_E, 0);
     TransferXToA(cpu);
     SetAccumulatorWidth(cpu, 1);
-    StoreADirect8(memory, cpu, 0x58u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_E);
     ExchangeAccumulatorBytes(cpu);
-    StoreADirect8(memory, cpu, 0x56u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_C);
     SetAccumulatorWidth(cpu, 0);
     PushDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     SetBank(memory, cpu, 0x7eu);
     SetAccumulatorWidth(cpu, 0);
     do {
-        LoadY16(cpu, Read16Direct(memory, cpu, 0x56u));
-        LoadX16(cpu, Read16Direct(memory, cpu, 0x54u));
+        LoadY16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
+        LoadX16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
         do {
             Write16Absolute(memory, cpu, (uint16_t)(0x3000u + cpu->x), 0);
             IncrementX16(cpu);
@@ -460,11 +461,11 @@ static void MenuClearRect2(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             cpu->y = (uint16_t)(cpu->y - 1u);
             SetNz16(cpu, cpu->y);
         } while (!cpu->zero);
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
         cpu->carry = 0;
         Add16Value(cpu, 0x0040u);
-        StoreADirect16(memory, cpu, 0x54u);
-        Decrement16Direct(memory, cpu, 0x58u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_A);
+        Decrement16Direct(memory, cpu, DP_SCRATCH_E);
     } while (!cpu->zero);
     PullDataBank(memory, cpu);
 }
@@ -472,18 +473,18 @@ static void MenuClearRect2(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 /* $82:831A: tile block at A, X = w << 8 | h; M0. */
 static void MenuTileBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushAccumulator16(memory, cpu);
-    Write16Direct(memory, cpu, 0x56u, 0);
-    Write16Direct(memory, cpu, 0x58u, 0);
+    Write16Direct(memory, cpu, DP_SCRATCH_C, 0);
+    Write16Direct(memory, cpu, DP_SCRATCH_E, 0);
     TransferXToA(cpu);
     SetAccumulatorWidth(cpu, 1);
-    StoreADirect8(memory, cpu, 0x58u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_E);
     ExchangeAccumulatorBytes(cpu);
-    StoreADirect8(memory, cpu, 0x56u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_C);
     SetAccumulatorWidth(cpu, 0);
     cpu->x = PullIndexValue(memory, cpu);
     LoadA16(cpu, cpu->y);                                      /* TYA */
     do {
-        LoadY16(cpu, Read16Direct(memory, cpu, 0x56u));
+        LoadY16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
         PushIndex(memory, cpu);
         do {
             Write16Long(memory, LongIndexedAddress(WRAM_MUSIC_SAMPLE_CACHE, cpu->x),
@@ -500,7 +501,7 @@ static void MenuTileBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         Add16Value(cpu, 0x0040u);
         TransferAToX(cpu);
         LoadA16(cpu, cpu->y);
-        Decrement16Direct(memory, cpu, 0x58u);
+        Decrement16Direct(memory, cpu, DP_SCRATCH_E);
     } while (!cpu->zero);
 }
 
@@ -1273,13 +1274,13 @@ static void ShopPriceTimes200(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
         StoreXDirect16(memory, cpu, kProducts[i]);
     }
-    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
     cpu->carry = 0;
-    Adc8(cpu, DirectByte(memory, cpu, 0x56u));
-    StoreADirect8(memory, cpu, 0x55u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
-    Adc8(cpu, DirectByte(memory, cpu, 0x58u));
-    StoreADirect8(memory, cpu, 0x56u);
+    Adc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_C));
+    StoreADirect8(memory, cpu, DP_SCRATCH_B);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_D));
+    Adc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_E));
+    StoreADirect8(memory, cpu, DP_SCRATCH_C);
     for (i = 0; i < 3u; ++i) {
         LoadA8(cpu, DirectByte(memory, cpu, (uint8_t)(0x54u + i)));
         StoreAAbsolute8(memory, cpu, (uint16_t)(0x09bdu + i), 0);
@@ -1549,9 +1550,9 @@ Lufia2ExecutionResult Lufia2MenuEquipUpgrade(
 
 /* $82:89C4: two cursor sprites: X (animation $57, or off), $5A. */
 static void MenuCursorPair(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreXDirect16(memory, cpu, 0x58u);
+    StoreXDirect16(memory, cpu, DP_SCRATCH_E);
     StoreYDirect16(memory, cpu, 0x5au);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_D));
     if (cpu->zero) {
         StoreZeroAbsolute8(memory, cpu, MENU_SPRITE_ACTIVE, cpu->x);
     } else {
@@ -1561,12 +1562,12 @@ static void MenuCursorPair(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
     LoadX16(cpu, (uint16_t)(Read16Direct(memory, cpu, 0x5au) - 5u));
     StoreXDirect16(memory, cpu, 0x63u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_C));
     LoadX16(cpu, Read16Direct(memory, cpu, 0x5au));
     Jsr(memory, cpu, 0x89e3u);
     MenuCursorAnimation(memory, cpu);
     Rts(memory, cpu);
-    LoadY16(cpu, Read16Direct(memory, cpu, 0x54u));
+    LoadY16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
     LoadX16(cpu, Read16Direct(memory, cpu, 0x63u));
     Jsr(memory, cpu, 0x89eau);
     MenuCursorPlace(memory, cpu);
@@ -1745,9 +1746,9 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
     Write16Absolute(memory, cpu, WRAM_MENU_SCROLL_ROW, 0);
     Write16Absolute(memory, cpu, WRAM_MENU_LIST_TOP_ROW, 0);
     LoadX16(cpu, 0x003fu);
-    StoreXDirect16(memory, cpu, 0x54u);
+    StoreXDirect16(memory, cpu, DP_SCRATCH_A);
     LoadX16(cpu, 0x0001u);
-    StoreXDirect16(memory, cpu, 0x56u);
+    StoreXDirect16(memory, cpu, DP_SCRATCH_C);
     LoadX16(cpu, 0x0009u);
     LoadY16(cpu, 0x0008u);
     Jsr(memory, cpu, 0x9d23u);
@@ -1994,24 +1995,25 @@ static int SpellRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 /* $82:FC3F: A = item of the Xth set bit of $091E-$0925; carry = none. */
 static void ScenarioItem(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     IncrementX16(cpu);
-    Write16Direct(memory, cpu, 0x54u, 0);
-    Write16Direct(memory, cpu, 0x56u, 0);
+    Write16Direct(memory, cpu, DP_SCRATCH_A, 0);
+    Write16Direct(memory, cpu, DP_SCRATCH_C, 0);
     LoadY16(cpu, 0x0000u);
     do {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x091eu, cpu->y));
         if (!cpu->zero) {
-            StoreYDirect16(memory, cpu, 0x58u);
+            StoreYDirect16(memory, cpu, DP_SCRATCH_E);
             LoadY16(cpu, 0x0010u);
             do {
-                Increment16Direct(memory, cpu, 0x54u);
+                Increment16Direct(memory, cpu, DP_SCRATCH_A);
                 LsrA16(cpu);
                 if (cpu->carry) {
                     cpu->x = (uint16_t)(cpu->x - 1u);
                     SetNz16(cpu, cpu->x);
                     if (cpu->zero) {
-                        const uint16_t n = (uint16_t)(Read16Direct(memory, cpu, 0x54u) - 1u);
+                        const uint16_t n =
+                            (uint16_t)(Read16Direct(memory, cpu, DP_SCRATCH_A) - 1u);
 
-                        Write16Direct(memory, cpu, 0x54u, (uint16_t)(n << 1));
+                        Write16Direct(memory, cpu, DP_SCRATCH_A, (uint16_t)(n << 1));
                         LoadX16(cpu, (uint16_t)(n << 1));
                         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x97fda0u, cpu->x)));
                         cpu->carry = 0;
@@ -2021,13 +2023,13 @@ static void ScenarioItem(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                 cpu->y = (uint16_t)(cpu->y - 1u);
                 SetNz16(cpu, cpu->y);
             } while (!cpu->zero);
-            LoadY16(cpu, Read16Direct(memory, cpu, 0x58u));
+            LoadY16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_E));
         }
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x56u));
+        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
         cpu->carry = 0;
         Add16Value(cpu, 0x0010u);
-        StoreADirect16(memory, cpu, 0x56u);
-        StoreADirect16(memory, cpu, 0x54u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_C);
+        StoreADirect16(memory, cpu, DP_SCRATCH_A);
         IncrementY16(cpu);
         IncrementY16(cpu);
         Compare16(cpu, cpu->y, 0x0008u);
