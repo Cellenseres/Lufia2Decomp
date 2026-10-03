@@ -755,11 +755,11 @@ void Lufia2ActorBlockedEvent(
     BitImmediate8(cpu, 0x40u);
     if (!cpu->zero)
         return;
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_UNK_7E1724, 0));
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_BLOCKED_EVENT_OBJECT, 0));
     LoadA8(cpu, 0x01u);                                        /* CA73 */
     Write8(memory, LongIndexedAddress(WRAM_UNK_7FDFAE, cpu->x), A8(cpu));
     SetAccumulatorWidth(cpu, 0);                               /* CA79 */
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_UNK_7E1724, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_BLOCKED_EVENT_OBJECT, 0));
     Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
     AslA16(cpu);
     Add16Value(cpu, Read16Direct(memory, cpu, 0x56u));         /* CA81 */

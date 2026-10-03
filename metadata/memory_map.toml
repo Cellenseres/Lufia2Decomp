@@ -1032,11 +1032,19 @@ notes = "Upper tile row of the movement box (exclusive)."
 
 [[location]]
 address = "7E:1724"
-name = "unk_7E1724"
+name = "blocked_event_object"
 width = 2
 count = 1
 owner = "actor"
-notes = "Word read by the blocked-tile event ($83:CA68); it indexes the object script table and the flag byte at $7F:DFAE."
+notes = "Word offset of the object slot that reacts when the player bumps a blocked tile: object opcode $1D stores it and $83:CA68 gives that slot a script and wakes it through $7F:DFAE."
+
+[[location]]
+address = "7E:09A8"
+name = "unk_7E09A8"
+width = 1
+count = 1
+owner = "actor"
+notes = "Cleared at the start of the object update ($83:E03E); objects flagged $40 test their inverted state against it while the window is open."
 
 [[location]]
 address = "7E:4000"
