@@ -1,7 +1,12 @@
 /* Scene tracks: five script-driven value tracks that are stepped once per
  * frame and copied to the scene registers. */
 
+#include <stdbool.h>
+#include <stddef.h>
+
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
+#include "core/wram_view.h"
 #include "lufia2/field.h"
 
 enum {
@@ -10,31 +15,59 @@ enum {
     TRACK_TIMERS = 0x121au,
     TRACK_COUNT = 5u,
     POINTER_DIRECT = 0x02u,
-    COUNTER_DIRECT = 0x04u
+    COUNTER_DIRECT = 0x04u,
+    STEP_BYTES = 4u,
+    VIEW_ORIGIN_DIRECT = 0x06u,
+    VIEW_WIDTH_FLAG = 0x11ddu,
+    VIEW_WIDTH_SIGN = 0x11deu,
+    VIEW_X = 0x11e8u,
+    VIEW_Y = 0x11eau,
+    SCROLL_X = 0x11f8u,
+    SCROLL_Y = 0x11fau,
+    SCREEN_X = 0x0594u,
+    SCREEN_Y = 0x0596u,
+    VIEW_WINDOW = 0x0fffu,
+    VIEW_HALF_WIDTH = 0x0080u,
+    VIEW_HALF_HEIGHT = 0x0070u
 };
 
-/* INC/DEC dp, 16-bit: the word is stored high byte first. */
-static void StepDirect16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint8_t offset, int delta) {
-    const uint16_t address = (uint16_t)(cpu->direct_page + offset);
-    const uint16_t value =
-        (uint16_t)(Read16Direct(memory, cpu, offset) + delta);
-
-    Write8(memory, (uint16_t)(address + 1u), (uint8_t)(value >> 8));
-    Write8(memory, address, (uint8_t)value);
-    SetNz16(cpu, value);
+/* An address in the data bank, plus an index that carries into the next
+ * bank. The script words are addressed this way, not by a catalogued
+ * location. */
+static uint32_t DataAddress(Lufia2Wram wram, uint16_t address, uint16_t index) {
+    return (((uint32_t)wram.data_bank << 16) + address + index) & 0x00ffffffu;
 }
 
-/* DEC abs,X, 16-bit, high byte first. */
-static void DecrementTimer(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    const uint32_t low = AbsoluteIndexedAddress(cpu, TRACK_TIMERS, cpu->x);
-    const uint16_t value = (uint16_t)(
-        Read16AbsoluteIndexed(memory, cpu, TRACK_TIMERS, cpu->x) - 1u);
+static uint16_t ReadDataWord(Lufia2Wram wram, uint16_t address, uint16_t index) {
+    const uint32_t low = DataAddress(wram, address, index);
+    const uint8_t low_byte = Read8(wram.memory, low);
 
-    Write8(memory, (low + 1u) & 0x00ffffffu, (uint8_t)(value >> 8));
-    Write8(memory, low, (uint8_t)value);
-    SetNz16(cpu, value);
+    return (uint16_t)(low_byte |
+        ((uint16_t)Read8(wram.memory, (low + 1u) & 0x00ffffffu) << 8));
 }
+
+static void WriteDataWord(
+    Lufia2Wram wram, uint16_t address, uint16_t index, uint16_t value) {
+    const uint32_t low = DataAddress(wram, address, index);
+
+    Write8(wram.memory, low, (uint8_t)value);
+    Write8(wram.memory, (low + 1u) & 0x00ffffffu, (uint8_t)(value >> 8));
+}
+
+/* The track values that go to the scene registers: the address of the track
+ * value and where it is copied. */
+typedef struct {
+    uint16_t source;
+    uint16_t target;
+} SceneCopy;
+
+static const SceneCopy kSceneCopies[] = {
+    { 0x1214u, 0x11fcu },
+    { 0x1216u, 0x11feu },
+    { 0x1210u, 0x1247u },
+    { 0x1212u, 0x1249u },
+    { 0x1218u, 0x1200u }
+};
 
 /* $86:94D4: advances every track by its script step, or fetches the next
  * step when the timer runs out. Carry is set when a script ends. The
@@ -42,59 +75,63 @@ static void DecrementTimer(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 Lufia2ExecutionResult Lufia2SceneTrackStep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t track = 0;
+    uint16_t step = 0;
+    uint16_t last = 0;
+    bool overflow = false;
+    size_t i;
+
     if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x8694d4u);
     SetAccumulatorWidth(cpu, 0);
-    LoadX16(cpu, SCRIPT_POINTERS);
-    StoreXDirect16(memory, cpu, POINTER_DIRECT);
-    LoadX16(cpu, 0);
-    LoadA16(cpu, TRACK_COUNT);
-    StoreADirect16(memory, cpu, COUNTER_DIRECT);
+    WramWrite16(wram, POINTER_DIRECT, SCRIPT_POINTERS);
+    WramWrite16(wram, COUNTER_DIRECT, TRACK_COUNT);
     do {
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
-            Read16Direct(memory, cpu, POINTER_DIRECT), 0));
-        TransferAToY(cpu);
-        DecrementTimer(memory, cpu);
-        if (cpu->negative) {
-            LoadA16(cpu, cpu->y);
-            cpu->carry = 0;
-            Add16Value(cpu, 4u);
-            Write16Long(memory, AbsoluteIndexedAddress(cpu,
-                Read16Direct(memory, cpu, POINTER_DIRECT), 0),
-                cpu->accumulator);
-            TransferAToY(cpu);
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0, cpu->y));
-            if (cpu->zero) {
+        const uint16_t script = WramRead16(wram, POINTER_DIRECT);
+
+        step = ReadDataWord(wram, script, 0);
+        if ((WramStep16At(wram, TRACK_TIMERS, track, -1) & 0x8000u) != 0) {
+            const Word16Result next = Sum16(step, STEP_BYTES, false);
+
+            WriteDataWord(wram, script, 0, next.value);
+            step = next.value;
+            last = ReadDataWord(wram, 0, step);
+            overflow = next.overflow;
+            if (last == 0) {
+                cpu->x = track;
+                cpu->y = step;
+                cpu->accumulator = 0;
+                cpu->carry = true;
+                cpu->overflow = overflow;
+                SetNz16(cpu, 0);
                 SetAccumulatorWidth(cpu, 1);
-                cpu->carry = 1;
                 return ExecutionReturned(0x869536u);
             }
-            StoreAAbsolute16(memory, cpu, TRACK_TIMERS, cpu->x);
+            WramWrite16At(wram, TRACK_TIMERS, track, last);
         } else {
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TRACK_VALUES,
-                cpu->x));
-            cpu->carry = 0;
-            Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 2, cpu->y));
-            StoreAAbsolute16(memory, cpu, TRACK_VALUES, cpu->x);
+            const Word16Result moved = Sum16(
+                WramRead16At(wram, TRACK_VALUES, track),
+                ReadDataWord(wram, 2u, step), false);
+
+            last = moved.value;
+            overflow = moved.overflow;
+            WramWrite16At(wram, TRACK_VALUES, track, last);
         }
-        IncrementX16(cpu);
-        IncrementX16(cpu);
-        StepDirect16(memory, cpu, POINTER_DIRECT, 1);
-        StepDirect16(memory, cpu, POINTER_DIRECT, 1);
-        StepDirect16(memory, cpu, COUNTER_DIRECT, -1);
-    } while (!cpu->zero);
+        track = (uint16_t)(track + 2u);
+        (void)WramStep16(wram, POINTER_DIRECT, 1);
+        (void)WramStep16(wram, POINTER_DIRECT, 1);
+    } while (WramStep16(wram, COUNTER_DIRECT, -1) != 0);
     SetAccumulatorWidth(cpu, 1);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1214u, 0));
-    Write16Absolute(memory, cpu, 0x11fcu, cpu->y);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1216u, 0));
-    Write16Absolute(memory, cpu, 0x11feu, cpu->y);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1210u, 0));
-    Write16Absolute(memory, cpu, 0x1247u, cpu->y);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1212u, 0));
-    Write16Absolute(memory, cpu, 0x1249u, cpu->y);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1218u, 0));
-    Write16Absolute(memory, cpu, 0x1200u, cpu->y);
-    cpu->carry = 0;
+    for (i = 0; i < sizeof(kSceneCopies) / sizeof(kSceneCopies[0]); ++i) {
+        cpu->y = ReadDataWord(wram, kSceneCopies[i].source, 0);
+        WramWrite16(wram, kSceneCopies[i].target, cpu->y);
+    }
+    cpu->x = track;
+    cpu->accumulator = last;
+    SetNz16(cpu, cpu->y);
+    cpu->carry = false;
+    cpu->overflow = overflow;
     return ExecutionReturned(0x869532u);
 }
 
@@ -103,30 +140,33 @@ Lufia2ExecutionResult Lufia2SceneTrackStep(
 Lufia2ExecutionResult Lufia2SceneViewOrigin(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t height = VIEW_HALF_HEIGHT;
+    uint16_t scroll;
+    Word16Result screen;
+
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86a791u);
-    LoadY16(cpu, 0x0070u);
-    LoadAAbsolute8(memory, cpu, 0x11ddu, 0);
-    if (!cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x11deu, 0);
-        if (cpu->negative)
-            LoadY16(cpu, 0);
-    }
-    StoreYDirect16(memory, cpu, 0x06u);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11e8u, 0));
-    And16(cpu, 0x0fffu);
-    StoreAAbsolute16(memory, cpu, 0x11f8u, 0);
-    Subtract16(cpu, 0x0080u);
-    StoreAAbsolute16(memory, cpu, 0x0594u, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11eau, 0));
-    cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x06u));
-    And16(cpu, 0x0fffu);
-    StoreAAbsolute16(memory, cpu, 0x11fau, 0);
-    Subtract16(cpu, Read16Direct(memory, cpu, 0x06u));
-    Subtract16(cpu, 0x0070u);
-    StoreAAbsolute16(memory, cpu, 0x0596u, 0);
-    SetAccumulatorWidth(cpu, 1);
+    if (WramRead(wram, VIEW_WIDTH_FLAG) != 0 &&
+        (WramRead(wram, VIEW_WIDTH_SIGN) & 0x80u) != 0)
+        height = 0;
+    WramWrite16(wram, VIEW_ORIGIN_DIRECT, height);
+    scroll = (uint16_t)(WramRead16(wram, VIEW_X) & VIEW_WINDOW);
+    WramWrite16(wram, SCROLL_X, scroll);
+    WramWrite16(wram, SCREEN_X,
+        Difference16(scroll, VIEW_HALF_WIDTH).value);
+    scroll = (uint16_t)(
+        Sum16(WramRead16(wram, VIEW_Y), WramRead16(wram, VIEW_ORIGIN_DIRECT),
+            false).value & VIEW_WINDOW);
+    WramWrite16(wram, SCROLL_Y, scroll);
+    screen = Difference16(
+        Difference16(scroll, WramRead16(wram, VIEW_ORIGIN_DIRECT)).value,
+        VIEW_HALF_HEIGHT);
+    WramWrite16(wram, SCREEN_Y, screen.value);
+    cpu->y = height;
+    cpu->accumulator = screen.value;
+    cpu->carry = screen.carry;
+    cpu->overflow = screen.overflow;
+    SetNz16(cpu, screen.value);
     return ExecutionReturned(0x86a7cdu);
 }

@@ -128,6 +128,18 @@ static inline uint16_t WramStep16(Lufia2Wram wram, uint32_t location, int delta)
     return value;
 }
 
+/* The same for an indexed word, such as a table entry. */
+static inline uint16_t WramStep16At(
+    Lufia2Wram wram, uint32_t location, uint16_t index, int delta) {
+    const uint32_t low = WramAddress(wram, location, index);
+    const uint16_t value =
+        (uint16_t)(WramRead16At(wram, location, index) + delta);
+
+    Write8(wram.memory, WramNextAddress(location, low), (uint8_t)(value >> 8));
+    Write8(wram.memory, low, (uint8_t)value);
+    return value;
+}
+
 /* Adds to a byte in place and returns the new value. */
 static inline uint8_t WramStep8(Lufia2Wram wram, uint32_t location, int delta) {
     const uint8_t value = (uint8_t)(WramRead(wram, location) + delta);
