@@ -220,7 +220,7 @@ void Lufia2TextWindowClear(
         for (i = 0; i < 8u; i += 2u)
             Write16Absolute(
                 memory, cpu, (uint16_t)(0x3000u + cpu->x + i), 0);
-        Add16Value(cpu, (uint16_t)~0x0008u);
+        Add16Value(cpu, (uint16_t)(0x0008u ^ 0xffffu));
     } while (!cpu->negative);
     SetAccumulatorWidth(cpu, 1);                               /* 8346 */
     LoadAAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);

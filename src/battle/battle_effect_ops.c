@@ -47,11 +47,11 @@ Lufia2ExecutionResult Lufia2BattleEffectAddToField(
     offset = Read8(memory, DirectLongPointer(memory, cpu, STREAM));
     (void)WramStep16(wram, STREAM, 1);
     WramWrite16(wram, SCRATCH, offset);
-    field = Sum16(cpu->y, offset, false).value;
+    field = Sum16Mode(cpu->y, offset, false, cpu->decimal).value;
     amount = Read16Long(memory, DirectLongPointer(memory, cpu, STREAM));
     (void)WramStep16(wram, STREAM, 1);
     (void)WramStep16(wram, STREAM, 1);
-    sum = Sum16(amount, WramRead16At(wram, SLOT + SLOT_FIELDS, field), false);
+    sum = Sum16Mode(amount, WramRead16At(wram, SLOT + SLOT_FIELDS, field), false, cpu->decimal);
     WramWrite16At(wram, SLOT + SLOT_FIELDS, field, sum.value);
     cpu->x = field;
     LeaveSum(cpu, sum);

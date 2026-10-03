@@ -82,7 +82,7 @@ Lufia2ExecutionResult Lufia2SceneTrackStep(
     bool overflow = false;
     size_t i;
 
-    if (cpu->index_is_8_bit)
+    if (cpu->index_is_8_bit || !DirectWorkWordAvailable(cpu, COUNTER_DIRECT))
         return ExecutionHandoff(cpu, 0x8694d4u);
     SetAccumulatorWidth(cpu, 0);
     WramWrite16(wram, POINTER_DIRECT, SCRIPT_POINTERS);
@@ -92,7 +92,7 @@ Lufia2ExecutionResult Lufia2SceneTrackStep(
 
         step = ReadDataWord(wram, script, 0);
         if ((WramStep16At(wram, TRACK_TIMERS, track, -1) & 0x8000u) != 0) {
-            const Word16Result next = Sum16(step, STEP_BYTES, false);
+            const Word16Result next = Sum16Mode(step, STEP_BYTES, false, cpu->decimal);
 
             WriteDataWord(wram, script, 0, next.value);
             step = next.value;
@@ -110,9 +110,9 @@ Lufia2ExecutionResult Lufia2SceneTrackStep(
             }
             WramWrite16At(wram, TRACK_TIMERS, track, last);
         } else {
-            const Word16Result moved = Sum16(
+            const Word16Result moved = Sum16Mode(
                 WramRead16At(wram, TRACK_VALUES, track),
-                ReadDataWord(wram, 2u, step), false);
+                ReadDataWord(wram, 2u, step), false, cpu->decimal);
 
             last = moved.value;
             overflow = moved.overflow;
@@ -154,14 +154,14 @@ Lufia2ExecutionResult Lufia2SceneViewOrigin(
     scroll = (uint16_t)(WramRead16(wram, VIEW_X) & VIEW_WINDOW);
     WramWrite16(wram, SCROLL_X, scroll);
     WramWrite16(wram, SCREEN_X,
-        Difference16(scroll, VIEW_HALF_WIDTH).value);
+        Difference16Mode(scroll, VIEW_HALF_WIDTH, cpu->decimal).value);
     scroll = (uint16_t)(
-        Sum16(WramRead16(wram, VIEW_Y), WramRead16(wram, VIEW_ORIGIN_DIRECT),
-            false).value & VIEW_WINDOW);
+        Sum16Mode(WramRead16(wram, VIEW_Y), WramRead16(wram, VIEW_ORIGIN_DIRECT),
+            false, cpu->decimal).value & VIEW_WINDOW);
     WramWrite16(wram, SCROLL_Y, scroll);
-    screen = Difference16(
-        Difference16(scroll, WramRead16(wram, VIEW_ORIGIN_DIRECT)).value,
-        VIEW_HALF_HEIGHT);
+    screen = Difference16Mode(
+        Difference16Mode(scroll, WramRead16(wram, VIEW_ORIGIN_DIRECT), cpu->decimal).value,
+        VIEW_HALF_HEIGHT, cpu->decimal);
     WramWrite16(wram, SCREEN_Y, screen.value);
     cpu->y = height;
     cpu->accumulator = screen.value;

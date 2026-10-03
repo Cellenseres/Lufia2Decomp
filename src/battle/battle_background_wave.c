@@ -1,6 +1,4 @@
-/* Battle background wave: the table of horizontal scroll offsets that the
- * wave effect streams to the scroll registers, rebuilt every frame from a
- * ripple pattern in ROM and the current base offset. */
+/* Build battle scroll tables from the ROM ripple patterns. */
 
 #include <stdbool.h>
 
@@ -10,7 +8,7 @@
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
 
-/* Absolute work RAM, read through the routine's own data bank ($85). */
+/* Work RAM accessed through the routine's bank. */
 enum {
     WAVE_BANK = 0x85u,
     WAVE_BASE = 0x059eu,
@@ -24,25 +22,23 @@ enum {
     WAVE_TABLE_READY_FLAG = 1u
 };
 
-/* The table is complete and the last entry added; the phase after it. */
+/* Final phase and arithmetic state of the filled table. */
 typedef struct {
     uint16_t phase;
     Word16Result last;
 } WaveFill;
 
-/* Fills the 176-word table: each word is the base offset plus the ripple
- * pattern word at the phase, which advances by one word per entry and wraps at
- * the end of the pattern. */
+/* Advance the repeating ripple phase while adding the base scroll. */
 static WaveFill FillWaveTable(
-    const Lufia2Memory *memory, Lufia2Wram wram, uint16_t phase) {
+    const Lufia2Memory *memory, Lufia2Wram wram, uint16_t phase, bool decimal) {
     WaveFill fill;
     uint16_t offset = 0;
 
     fill.phase = phase;
     do {
-        fill.last = Sum16(
+        fill.last = Sum16Mode(
             Read16Long(memory, LongIndexedAddress(WAVE_PATTERN, fill.phase)),
-            WramRead16(wram, WAVE_BASE), false);
+            WramRead16(wram, WAVE_BASE), false, decimal);
         WramWrite16At(wram, WAVE_TABLE, offset, fill.last.value);
         fill.phase = (uint16_t)(fill.phase + 2u);
         if (fill.phase == WAVE_PATTERN_END)
@@ -52,7 +48,7 @@ static WaveFill FillWaveTable(
     return fill;
 }
 
-/* Enters the routine's data bank the way PHB, LDA #$85, PHA, PLB does. */
+/* Preserve the caller's bank and select the wave bank. */
 static Lufia2Wram EnterWaveBank(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
@@ -60,8 +56,7 @@ static Lufia2Wram EnterWaveBank(
     return WramViewInBank(memory, cpu, WAVE_BANK);
 }
 
-/* Marks the table ready and leaves the data bank. The accumulator keeps the
- * high byte of `accumulator`. */
+/* Publish the table, preserving the accumulator's high byte. */
 static void LeaveWaveBank(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2Wram wram, uint16_t accumulator) {
     cpu->accumulator = accumulator;
@@ -70,8 +65,7 @@ static void LeaveWaveBank(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     PullDataBank(memory, cpu);
 }
 
-/* $85:AEEB: the table from phase 0, without touching the stored phase.
- * M1X0 only (else handed back). Returns before RTS $85AF1C. */
+/* Fill from phase zero without changing the stored phase. */
 Lufia2ExecutionResult Lufia2BattleWaveFill(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -82,7 +76,7 @@ Lufia2ExecutionResult Lufia2BattleWaveFill(
         return ExecutionHandoff(cpu, 0x85aeebu);
     wram = EnterWaveBank(memory, cpu);
     PushStackWord(memory, cpu, cpu->x);
-    fill = FillWaveTable(memory, wram, 0);
+    fill = FillWaveTable(memory, wram, 0, cpu->decimal);
     cpu->x = PullStackWord(memory, cpu);
     cpu->y = fill.phase;
     cpu->carry = true;
@@ -91,8 +85,7 @@ Lufia2ExecutionResult Lufia2BattleWaveFill(
     return ExecutionReturned(0x85af1cu);
 }
 
-/* $85:AE68: the table from the stored phase, then the phase advances one
- * word. M1X0 only (else handed back). Returns before RTS $85AEB0. */
+/* Fill the table and advance its stored phase. */
 Lufia2ExecutionResult Lufia2BattleWaveForward(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -104,7 +97,7 @@ Lufia2ExecutionResult Lufia2BattleWaveForward(
         return ExecutionHandoff(cpu, 0x85ae68u);
     wram = EnterWaveBank(memory, cpu);
     PushStackWord(memory, cpu, cpu->x);
-    fill = FillWaveTable(memory, wram, WramRead16(wram, WAVE_PHASE));
+    fill = FillWaveTable(memory, wram, WramRead16(wram, WAVE_PHASE), cpu->decimal);
     cpu->x = PullStackWord(memory, cpu);
     next = (uint16_t)(WramRead16(wram, WAVE_PHASE) + 2u);
     cpu->carry = next >= WAVE_PATTERN_END;
@@ -117,9 +110,7 @@ Lufia2ExecutionResult Lufia2BattleWaveForward(
     return ExecutionReturned(0x85aeb0u);
 }
 
-/* $85:ADE1: the table from the stored phase, then the phase steps back one
- * word, wrapping to the last. M1X0 only (else handed back). Returns before
- * RTS $85AE26. */
+/* Fill the table and retreat its stored phase. */
 Lufia2ExecutionResult Lufia2BattleWaveBackward(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -131,7 +122,7 @@ Lufia2ExecutionResult Lufia2BattleWaveBackward(
         return ExecutionHandoff(cpu, 0x85ade1u);
     wram = EnterWaveBank(memory, cpu);
     PushStackWord(memory, cpu, cpu->x);
-    fill = FillWaveTable(memory, wram, WramRead16(wram, WAVE_PHASE));
+    fill = FillWaveTable(memory, wram, WramRead16(wram, WAVE_PHASE), cpu->decimal);
     cpu->x = PullStackWord(memory, cpu);
     previous = (uint16_t)(WramRead16(wram, WAVE_PHASE) - 2u);
     if ((previous & 0x8000u) != 0)
@@ -144,8 +135,7 @@ Lufia2ExecutionResult Lufia2BattleWaveBackward(
     return ExecutionReturned(0x85ae26u);
 }
 
-/* Ripple row: scroll bytes and tables. The direct page byte $33 is the
- * counter of both ripple routines. */
+/* Ripple tables share a direct-page counter. */
 enum {
     SCRATCH_COUNTER = 0x33u,
     RIPPLE_FINE_SCROLL = 0x0596u,
@@ -159,8 +149,7 @@ enum {
     RIPPLE_PHASE_MASK = 0x1fu
 };
 
-/* $85:A736: 32 entries of the ripple table at $7E:4400, taken from the
- * ROM table at $85:9F42 and offset by the scroll at $0594. M8/X16, JSR. */
+/* Build byte scroll offsets from the current ripple phase. */
 Lufia2ExecutionResult Lufia2BattleRippleRow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -170,20 +159,20 @@ Lufia2ExecutionResult Lufia2BattleRippleRow(
     uint16_t row = 0;
     uint16_t pattern;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !DirectWorkByteAvailable(cpu, SCRATCH_COUNTER))
         return ExecutionHandoff(cpu, 0x85a736u);
     wram = EnterWaveBank(memory, cpu);
-    start = Sum8((uint8_t)(WramRead(wram, RIPPLE_FINE_SCROLL) << 1),
-        WramRead(wram, RIPPLE_STEP), false);
-    /* The transfer to Y takes the whole accumulator, which still holds the
-     * direct page in its high byte. */
+    start = Sum8Mode((uint8_t)(WramRead(wram, RIPPLE_FINE_SCROLL) << 1),
+        WramRead(wram, RIPPLE_STEP), false, cpu->decimal);
+    /* TAY retains the direct page in the high byte. */
     pattern = (uint16_t)((cpu->direct_page & 0xff00u) |
         (start.value & RIPPLE_PHASE_MASK));
     PushStackWord(memory, cpu, cpu->x);
     WramWrite(wram, SCRATCH_COUNTER, RIPPLE_ROWS);
     do {
-        sum = Sum8(WramReadAt(wram, RIPPLE_PATTERN, pattern),
-            WramRead(wram, RIPPLE_SCROLL), false);
+        sum = Sum8Mode(WramReadAt(wram, RIPPLE_PATTERN, pattern),
+            WramRead(wram, RIPPLE_SCROLL), false, cpu->decimal);
         WramWriteAt(wram, RIPPLE_ROW_TABLE, row, sum.value);
         pattern = (uint16_t)(pattern + 1u);
         row = (uint16_t)(row + 1u);
@@ -201,7 +190,7 @@ Lufia2ExecutionResult Lufia2BattleRippleRow(
     return ExecutionReturned(0x85a76du);
 }
 
-/* Ripple words: the table written, its source in ROM and its geometry. */
+/* Word ripple table geometry and source. */
 enum {
     WORDS_PHASE = 0x1b22u,
     WORDS_READY = 0x1b20u,
@@ -213,8 +202,7 @@ enum {
     WORDS_BASE_OFFSET = 0x08u
 };
 
-/* $85:AA3D: the 84-word table at $7E:40DE, taken from $85:A04B by a base
- * entry chosen by $1B22; a word repeats while Y counts down. M8/X16, JSR. */
+/* Repeat each scroll word for its remaining scanlines. */
 Lufia2ExecutionResult Lufia2BattleRippleWords(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -231,12 +219,13 @@ Lufia2ExecutionResult Lufia2BattleRippleWords(
         return ExecutionHandoff(cpu, 0x85aa3du);
     phase = WramRead(wram, WORDS_PHASE);
     PushStackWord(memory, cpu, cpu->x);
-    /* From here to the end the index registers are eight bits wide. */
+    /* The inner loop uses eight-bit index registers. */
     WramWrite(wram, SCRATCH_COUNTER, phase & 3u);
-    run_left = (uint8_t)(4u - (phase & 3u));
+    run_left = Difference8Mode(4u, WramRead(wram, SCRATCH_COUNTER), cpu->decimal).value;
     WramWrite(wram, SCRATCH_COUNTER, run_left);
-    run_left = (uint8_t)(3u * run_left);
-    base = Sum8((uint8_t)(phase << 1), WORDS_BASE_OFFSET, false);
+    run_left = Sum8Mode((uint8_t)(run_left << 1),
+        WramRead(wram, SCRATCH_COUNTER), (run_left & 0x80u) != 0, cpu->decimal).value;
+    base = Sum8Mode((uint8_t)(phase << 1), WORDS_BASE_OFFSET, false, cpu->decimal);
     source = base.value;
     word = Read16Long(memory, LongIndexedAddress(WORDS_SOURCE, source));
     overflow = base.overflow;
@@ -244,7 +233,7 @@ Lufia2ExecutionResult Lufia2BattleRippleWords(
         WramWrite16At(wram, WORDS_TABLE, index, word);
         run_left = (uint8_t)(run_left - 1u);
         if (run_left == 0) {
-            const Word16Result run = Sum16(word, WORDS_RUN_STEP, false);
+            const Word16Result run = Sum16Mode(word, WORDS_RUN_STEP, false, cpu->decimal);
 
             run_left = WORDS_RUN;
             word = run.value;
