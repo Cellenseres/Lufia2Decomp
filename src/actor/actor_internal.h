@@ -116,6 +116,9 @@ enum {
     SECONDARY_GROUP_D_HANDLER = 0xd5ec
 };
 
+/* Bank of the secondary actor script routines. */
+#define SECONDARY_BANK_83 0x830000u
+
 /* Per-actor words beside the display offsets (40 words each): the alternate
  * display offset pair. $F9 saves the display offsets here, $E4 sets it from
  * two signed operands and $E5 accumulates it. */
