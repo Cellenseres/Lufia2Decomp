@@ -108,6 +108,18 @@ Lufia2ExecutionResult Lufia2MenuCursorSlide(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $82:8720 cursor move from the pressed buttons; carry set when none; M1.
+ * Hands off at the button sound call ($80:953B). */
+Lufia2ExecutionResult Lufia2MenuCursor(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:8B08 one pass of the menu input loop; M1X0. Hands off at the sprite
+ * frame call ($86:8B55 at $82:8B3C). */
+Lufia2ExecutionResult Lufia2MenuInputLoop(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $86:8CF5 sprite slot X plays animation A; M1X0. */
 Lufia2ExecutionResult Lufia2SpriteSetAnimation(
     const Lufia2Memory *memory,

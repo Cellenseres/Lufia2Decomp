@@ -3378,3 +3378,20 @@ source = "src/menu/menu_cursor_slide.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Menu cursor input.
+[[function]]
+address = "82:8720"
+name = "Lufia2MenuCursor"
+source = "src/menu/menu_input.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "82:8B08"
+name = "Lufia2MenuInputLoop"
+source = "src/menu/menu_input.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
