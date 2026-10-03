@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-403 functions in `metadata/functions.toml`: 366 verified, 37 draft, 0 identified, 0 disabled.
+407 functions in `metadata/functions.toml`: 366 verified, 41 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function

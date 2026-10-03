@@ -88,6 +88,26 @@ Lufia2ExecutionResult Lufia2MenuItemPosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $82:8AD8 / $82:8AE9 line slide corrections for slot Y; any width. */
+Lufia2ExecutionResult Lufia2MenuSlideCorrectX(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2MenuSlideCorrectY(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:8AFA slide step count; hands off at the $86:8B55 call (JSL at $82:8B02)
+ * every sixteenth step. */
+Lufia2ExecutionResult Lufia2MenuSlideCount(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:89FA cursor slide between slots Y and X; M1X0. Hands off at the
+ * $82:8AFA frame wait with the frames of both routines pushed. */
+Lufia2ExecutionResult Lufia2MenuCursorSlide(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $86:8CF5 sprite slot X plays animation A; M1X0. */
 Lufia2ExecutionResult Lufia2SpriteSetAnimation(
     const Lufia2Memory *memory,

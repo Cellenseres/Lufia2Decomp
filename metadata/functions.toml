@@ -3345,3 +3345,36 @@ source = "src/menu/menu_cursor.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Menu cursor slide.
+[[function]]
+address = "82:89FA"
+name = "Lufia2MenuCursorSlide"
+source = "src/menu/menu_cursor_slide.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "82:8AD8"
+name = "Lufia2MenuSlideCorrectX"
+source = "src/menu/menu_cursor_slide.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "82:8AE9"
+name = "Lufia2MenuSlideCorrectY"
+source = "src/menu/menu_cursor_slide.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "82:8AFA"
+name = "Lufia2MenuSlideCount"
+source = "src/menu/menu_cursor_slide.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
