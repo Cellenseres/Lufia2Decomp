@@ -81,27 +81,16 @@ enum {
     SCROLL_LAYER_LOW_NIBBLE = 0x000fu,
     SCROLL_SHIFT_MASK = 0x00ffu,
     SCROLL_WRAP_MASK = 0x7fffu,
-    SCROLL_HALF_SCREEN_WIDTH = 0x0080u,
-    SCROLL_HALF_SCREEN_HEIGHT = 0x0070u,
     SCROLL_CELL_PHASE_MASK = 0x000fu,   /* position inside a 16 pixel cell */
     SCROLL_CELL_BOUNDARY_BIT = 0x0010u, /* changes when a cell boundary is crossed */
     SCROLL_MAX_STEP = 0x0100u,
     SCROLL_REGISTER_BIAS = 0x0008u,
     SCREEN_EFFECT_SCRIPTED_CAMERA = 0x08u,   /* byte of WRAM_SCREEN_EFFECTS */
     SCREEN_EFFECT_SCRIPTED_LAYERS = 0x0040u, /* word of WRAM_SCREEN_EFFECTS */
-    WRAM_SCROLL_SPEED = 0x05a8u,             /* per layer; zero snaps to the camera */
     SCROLL_REGISTER_X = 0x0594u, /* scroll register pairs, indexed by slot */
     SCROLL_REGISTER_Y = 0x0596u,
     SCROLL_SHIFT_TABLE = 0x8ebf93u,
     SCROLL_WRAP_TABLE = 0x8ec04du,
-    SCROLL_SCRIPTED_CAMERA_X = 0x7fd08bu,
-    SCROLL_SCRIPTED_CAMERA_Y = 0x7fd08du,
-    SCROLL_SCREEN_OFFSET_X = 0x7fd081u, /* added to the published scroll */
-    SCROLL_SCREEN_OFFSET_Y = 0x7fd083u,
-    FOLLOW_TARGET_X = 0x7fd0ceu, /* per layer, with the speeds below */
-    FOLLOW_TARGET_Y = 0x7fd0d6u,
-    FOLLOW_SPEED_X = 0x7fd0deu,
-    FOLLOW_SPEED_Y = 0x7fd0e6u,
     ROM_STREAM_RIGHT_COLUMN = 0xf4fdu,
     ROM_STREAM_LEFT_COLUMN = 0xf518u,
     ROM_STREAM_TOP_ROW = 0xf589u,
@@ -189,29 +178,31 @@ static void ScrollModeFollow(
     cpu->zero = (cpu->accumulator & SCREEN_EFFECT_SCRIPTED_LAYERS) == 0;
     if (!cpu->zero) {
         LoadXDirect(memory, cpu, STREAM_LAYER); /* BE80 */
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(FOLLOW_TARGET_X, cpu->x)));
+        LoadA16(cpu,
+                Read16Long(memory, LongIndexedAddress(FIELD_FOLLOW_TARGET_X, cpu->x)));
         Write16Direct(memory, cpu, SCROLL_TARGET_X, cpu->accumulator);
         Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, SCROLL_CURRENT_X));
         if (!cpu->zero)
             ScrollStepToward(memory, cpu, SCROLL_CURRENT_X, SCROLL_TARGET_X,
-                             LongIndexedAddress(FOLLOW_SPEED_X, cpu->x));
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(FOLLOW_TARGET_Y, cpu->x)));
+                             LongIndexedAddress(FIELD_FOLLOW_SPEED_X, cpu->x));
+        LoadA16(cpu,
+                Read16Long(memory, LongIndexedAddress(FIELD_FOLLOW_TARGET_Y, cpu->x)));
         Write16Direct(memory, cpu, SCROLL_TARGET_Y, cpu->accumulator); /* BEA2 */
         Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, SCROLL_CURRENT_Y));
         if (!cpu->zero)
             ScrollStepToward(memory, cpu, SCROLL_CURRENT_Y, SCROLL_TARGET_Y,
-                             LongIndexedAddress(FOLLOW_SPEED_Y, cpu->x));
+                             LongIndexedAddress(FIELD_FOLLOW_SPEED_Y, cpu->x));
         return;
     }
     LoadXDirect(memory, cpu, STREAM_LAYER); /* BEC4 */
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_SCROLL_SPEED, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, FIELD_LAYER_SCROLL_SPEED, 0));
     if (cpu->zero) {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, 0));
         Write16Direct(memory, cpu, SCROLL_TARGET_X, cpu->accumulator);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, 0));
         Write16Direct(memory, cpu, SCROLL_TARGET_Y, cpu->accumulator);
     } else {
-        const uint32_t speed = AbsoluteIndexedAddress(cpu, WRAM_SCROLL_SPEED, 0);
+        const uint32_t speed = AbsoluteIndexedAddress(cpu, FIELD_LAYER_SCROLL_SPEED, 0);
 
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, 0));
         Write16Direct(memory, cpu, SCROLL_TARGET_X, cpu->accumulator); /* BED7 */
@@ -242,7 +233,7 @@ static void ScrollModeFollow(
     Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, SCROLL_CURRENT_Y));
     if (!cpu->zero)
         return;
-    Write16Absolute(memory, cpu, WRAM_SCROLL_SPEED, 0x0000u);
+    Write16Absolute(memory, cpu, FIELD_LAYER_SCROLL_SPEED, 0x0000u);
 }
 
 /* $8E:BF25/BF9B tail: camera + $80 unless equal. */
@@ -252,7 +243,7 @@ static void ScrollOffsetTarget(
     uint8_t current,
     uint8_t out) {
     cpu->carry = 0;
-    Add16Value(cpu, SCROLL_HALF_SCREEN_WIDTH);
+    Add16Value(cpu, FIELD_SCREEN_HALF_WIDTH);
     Subtract16(cpu, Read16Direct(memory, cpu, current));
     if (cpu->zero)
         return;
@@ -1634,18 +1625,18 @@ static void ScrollLoadCamera(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     BitImmediate8(cpu, SCREEN_EFFECT_SCRIPTED_CAMERA);
     SetAccumulatorWidth(cpu, 0);
     if (!cpu->zero) {
-        LoadA16(cpu, Read16Long(memory, SCROLL_SCRIPTED_CAMERA_X));
+        LoadA16(cpu, Read16Long(memory, FIELD_SCRIPTED_CAMERA_X));
         Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, cpu->accumulator);
-        LoadA16(cpu, Read16Long(memory, SCROLL_SCRIPTED_CAMERA_Y));
+        LoadA16(cpu, Read16Long(memory, FIELD_SCRIPTED_CAMERA_Y));
         Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, cpu->accumulator);
     } else {
         LoadX8(cpu,
                Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_FIELD_CAMERA_ACTOR, 0)));
         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x)));
-        Subtract16(cpu, SCROLL_HALF_SCREEN_WIDTH);
+        Subtract16(cpu, FIELD_SCREEN_HALF_WIDTH);
         Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_X, cpu->accumulator);
         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x)));
-        Subtract16(cpu, SCROLL_HALF_SCREEN_HEIGHT);
+        Subtract16(cpu, FIELD_SCREEN_HALF_HEIGHT);
         Write16Absolute(memory, cpu, WRAM_FIELD_CAMERA_SCROLL_Y, cpu->accumulator);
     }
 }
@@ -1715,7 +1706,7 @@ static void ScrollPublishX(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferAToY(cpu);
     PullAccumulator16(memory, cpu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, SCROLL_SCREEN_OFFSET_X));
+    Add16Value(cpu, Read16Long(memory, FIELD_SCREEN_OFFSET_X));
     Write16Absolute(memory, cpu, (uint16_t)(SCROLL_REGISTER_X + cpu->y),
                     cpu->accumulator);
 }
@@ -1772,7 +1763,7 @@ static void ScrollPublishY(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferAToY(cpu);
     PullAccumulator16(memory, cpu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, SCROLL_SCREEN_OFFSET_Y));
+    Add16Value(cpu, Read16Long(memory, FIELD_SCREEN_OFFSET_Y));
     Write16Absolute(memory, cpu, (uint16_t)(SCROLL_REGISTER_Y + cpu->y),
                     cpu->accumulator);
 }

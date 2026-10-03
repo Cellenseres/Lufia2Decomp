@@ -19,6 +19,15 @@
 #define EVENT_POINT_Y 0x7fd1e3u
 #define EVENT_POINT_D223 0x7fd223u
 #define EVENT_POINT_D263 0x7fd263u
+/* Four variables of each slot, eight bytes apart: the byte for slot s of
+ * variable v is EVENT_SLOT_VARIABLES + 8 * v + s. The low 16 bits point the
+ * variable pointer at DP $5D. */
+#define EVENT_SLOT_VARIABLES 0x7fd15cu
+#define EVENT_SLOT_VARIABLES_LOW 0xd15cu
+#define EVENT_SLOT_VARIABLE_STRIDE 0x0008u
+#define EVENT_SLOT_VARIABLE_COUNT 4u
+/* Second per-slot byte next to the slot bits. */
+#define EVENT_UNK_7FD154 0x7fd154u
 /* Script flags, bit n & 7 of byte n >> 3. */
 #define EVENT_SCRIPT_FLAGS 0x7fd100u
 /* Goto targets are relative to this 24-bit base. */
@@ -30,6 +39,16 @@
 /* Script call frames: 13 x 10 bytes, tag = depth << 4 | slot. */
 #define EVENT_CALL_FRAMES 0x7fd466u
 #define EVENT_CALL_DEPTH 0x7fd4e6u
+#define EVENT_CALL_FRAME_SIZE 0x000au
+#define EVENT_CALL_FRAMES_END 0x0080u
+/* Within a frame: the four saved slot variables and the two condition bytes. */
+#define EVENT_CALL_FRAME_VARIABLES (EVENT_CALL_FRAMES + 4u)
+#define EVENT_CALL_FRAME_CONDITION_HIGH (EVENT_CALL_FRAMES + 8u)
+#define EVENT_CALL_FRAME_CONDITION (EVENT_CALL_FRAMES + 9u)
+/* Script banks are LoROM windows starting here. */
+#define EVENT_BANK_WINDOW 0x8000u
+/* The opcode-limit handoff in the ROM. */
+#define EVENT_OPCODE_LIMIT_HANDOFF 0x80cc3fu
 /* Slot variables saved for $FB-$FE call arguments. */
 #define EVENT_SAVED_VARIABLES 0x7fd19cu
 /* Condition result: bit 7 true. */

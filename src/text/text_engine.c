@@ -956,11 +956,11 @@ static unsigned TextOpScrollView(
     SetAccumulatorWidth(cpu, 0);                               /* B4D4 */
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_TABLE_OFFSET, 0));
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
-    Compare16(cpu, cpu->accumulator, Read16Long(memory, 0x7fd08bu));
+    Compare16(cpu, cpu->accumulator, Read16Long(memory, FIELD_SCRIPTED_CAMERA_X));
     if (cpu->zero) {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_Y,
             cpu->x));
-        Compare16(cpu, cpu->accumulator, Read16Long(memory, 0x7fd08du));
+        Compare16(cpu, cpu->accumulator, Read16Long(memory, FIELD_SCRIPTED_CAMERA_Y));
         SetAccumulatorWidth(cpu, 1);
         if (cpu->zero)
             return TEXT_OPCODE_NEXT;                           /* B58F */
@@ -1316,7 +1316,7 @@ static unsigned TextOpStartShake(
     TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 1);
     for (i = 0; i < 3u; ++i) {
         Lufia2TextNextByte(memory, cpu, (uint16_t)(0xba23u + 7u * i));
-        Write8(memory, 0x7fd07eu + i, A8(cpu));
+        Write8(memory, FIELD_SHAKE_PARAM_7E + i, A8(cpu));
     }
     return TEXT_OPCODE_NEXT;
 }

@@ -230,18 +230,18 @@ static void ScreenShake(
     SimulateJslFrame(memory, cpu, 0x84u, 0x814au);
     Lufia2RandomScale(memory, cpu);
     SimulateRtlFrame(memory, cpu);
-    Compare8(cpu, A8(cpu), Read8(memory, 0x7fd080u));
+    Compare8(cpu, A8(cpu), Read8(memory, FIELD_SHAKE_CHANCE));
     if (!cpu->carry) {
         uint8_t first;
 
-        LoadA8(cpu, Read8(memory, 0x7fd07fu));                 /* 8151 */
+        LoadA8(cpu, Read8(memory, FIELD_SHAKE_AMPLITUDE)); /* 8151 */
         SimulateJslFrame(memory, cpu, 0x84u, 0x8158u);
         Lufia2RandomScale(memory, cpu);
         SimulateRtlFrame(memory, cpu);
         StoreADirect8(memory, cpu, 0x54u);
         Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
         TransferDirectToA(cpu);
-        LoadA8(cpu, Read8(memory, 0x7fd07fu));
+        LoadA8(cpu, Read8(memory, FIELD_SHAKE_AMPLITUDE));
         SetAccumulatorWidth(cpu, 0);
         LsrA16(cpu);
         cpu->carry = 1;
@@ -254,9 +254,11 @@ static void ScreenShake(
         LoadA16(cpu, cpu->accumulator);                        /* ORA #0 */
         first = !cpu->zero;
         LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
-        Write16Long(memory, first ? 0x7fd081u : 0x7fd083u, cpu->accumulator);
+        Write16Long(memory, first ? FIELD_SCREEN_OFFSET_X : FIELD_SCREEN_OFFSET_Y,
+                    cpu->accumulator);
         TransferDirectToA(cpu);
-        Write16Long(memory, first ? 0x7fd083u : 0x7fd081u, cpu->accumulator);
+        Write16Long(memory, first ? FIELD_SCREEN_OFFSET_Y : FIELD_SCREEN_OFFSET_X,
+                    cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
     }
     SimulateRtsFrame(memory, cpu);
