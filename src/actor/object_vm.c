@@ -851,10 +851,9 @@ static ObjectFlow ObjectNegateOffsets(const Lufia2Memory *memory, Lufia2CpuState
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:F137: object opcode $EC. */
-static ObjectFlow ObjectOpEC(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+/* $83:F137: $EC starts a loop: the counter from the operand, the pointer to the next
+ * byte. */
+static ObjectFlow ObjectOpBeginLoop(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
     cpu->carry = 1;
@@ -1753,7 +1752,7 @@ static ObjectFlow ObjectExecute(
     case OBJECT_OP_NEGATE_OFFSETS:
         return ObjectNegateOffsets(memory, cpu);
     case OBJECT_OP_EC:
-        return ObjectOpEC(memory, cpu);
+        return ObjectOpBeginLoop(memory, cpu);
     case OBJECT_OP_ED:
         return ObjectOpED(memory, cpu);
     case OBJECT_OP_3X_SET_FRAME:

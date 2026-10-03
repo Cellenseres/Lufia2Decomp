@@ -1020,10 +1020,8 @@ static unsigned EventOpCells(
 }
 
 /* $14: goto on script flag n or cell condition. */
-static unsigned EventOp14(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t *handoff) {
+static unsigned EventOpGotoOnFlagOrCell(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                        uint32_t *handoff) {
     uint8_t done;
 
     LoadA8(cpu, 0x09u);                                        /* E3A0 */
@@ -1108,7 +1106,7 @@ unsigned Lufia2EventConditionOpcode(
     case EVENT_OP_FLAG_LEADER_AT:
         return EventOpLeader(memory, cpu, handler, handoff);
     case EVENT_OP_14:
-        return EventOp14(memory, cpu, handoff);
+        return EventOpGotoOnFlagOrCell(memory, cpu, handoff);
     case EVENT_OP_FLAG_OBJECTS:
     case EVENT_OP_GOTO_IF_OBJECTS:
     case EVENT_OP_GOTO_UNLESS_OBJECTS:
