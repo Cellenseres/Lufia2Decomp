@@ -26,7 +26,21 @@ enum {
     DP_TWO_ROWS_NEXT = 0x56u,
     DP_TWO_ROWS_NEXT_2 = 0x24u,
     DP_CORNER = 0x5du,
-    DP_DIRECTION = 0x94u
+    DP_DIRECTION = 0x94u,
+
+    /* Scratch slots of the fold pass, which reuses the same direct page. */
+    FOLD_SEEN = 0x54u,            /* closed cells seen in a row */
+    FOLD_SKIP_COPY = 0x56u,       /* nonzero: leave the first table alone */
+    FOLD_CELLS_LEFT = 0x58u,
+    FOLD_ROW_CELLS = 0x5au,
+    FOLD_BELOW = 0x5du,           /* offset of the cell one row down */
+    FOLD_BELOW_NEXT = 0x60u,
+    FOLD_ROWS_LEFT = 0x63u,
+    FOLD_STYLE = 0x65u,           /* edge bits given to cells not closed */
+
+    /* The edge bits as seen in the high byte of a cell word. */
+    EDGE_HIGH = 0x30u,
+    EDGE_OPEN_HIGH = 0x20u
 };
 
 typedef enum {
@@ -279,13 +293,13 @@ static uint8_t FoldMarks(const Trace *t, uint16_t *table, uint16_t *cell) {
     uint16_t x;
     uint8_t a;
 
-    Write16Direct(memory, cpu, 0x5au, width);
-    Write16Direct(memory, cpu, 0x58u, width);
-    Write16Direct(memory, cpu, 0x5du, (uint16_t)((width << 1) + 1u));
-    Write16Direct(memory, cpu, 0x60u, (uint16_t)((width << 1) + 3u));
-    Write16Direct(memory, cpu, 0x63u,
+    Write16Direct(memory, cpu, FOLD_ROW_CELLS, width);
+    Write16Direct(memory, cpu, FOLD_CELLS_LEFT, width);
+    Write16Direct(memory, cpu, FOLD_BELOW, (uint16_t)((width << 1) + 1u));
+    Write16Direct(memory, cpu, FOLD_BELOW_NEXT, (uint16_t)((width << 1) + 3u));
+    Write16Direct(memory, cpu, FOLD_ROWS_LEFT,
         (uint16_t)(Read16Long(memory, MAP_HEIGHT) - 1u));
-    Write16Direct(memory, cpu, 0x56u,
+    Write16Direct(memory, cpu, FOLD_SKIP_COPY,
         (uint16_t)(Read16Long(memory, CELL_BANK | 0xd020u) & 0x00ffu));
     x = Read16Long(memory, CELL_BANK | 0xd008u);
     row.y = Read16Long(memory, CELL_BANK | 0xd00au);
@@ -299,28 +313,28 @@ static uint8_t FoldMarks(const Trace *t, uint16_t *table, uint16_t *cell) {
         do {
             const uint8_t cell_bits = CellByte(&row, 1u);
 
-            if ((cell_bits & 0x30u) == 0x30u) {
-                a = (uint8_t)((cell_bits & 0xcfu) | 0x20u);
+            if ((cell_bits & EDGE_HIGH) == EDGE_HIGH) {
+                a = (uint8_t)((cell_bits & ~EDGE_HIGH) | EDGE_OPEN_HIGH);
                 SetCellByte(&row, 1u, a);
-                a = DirectByte(memory, cpu, 0x56u);
+                a = DirectByte(memory, cpu, FOLD_SKIP_COPY);
                 if (a == 0) {
-                    a = (uint8_t)((Read8(memory, CELL_BANK + 1u + x) & 0xcfu) |
-                        0x20u);
+                    a = (uint8_t)((Read8(memory, CELL_BANK + 1u + x) & ~EDGE_HIGH) |
+                        EDGE_OPEN_HIGH);
                     Write8(memory, CELL_BANK + 1u + x, a);
                 }
             } else {
-                a = (uint8_t)(cell_bits | 0x30u);
+                a = (uint8_t)(cell_bits | EDGE_HIGH);
                 SetCellByte(&row, 1u, a);
-                a = DirectByte(memory, cpu, 0x56u);
+                a = DirectByte(memory, cpu, FOLD_SKIP_COPY);
                 if (a == 0) {
-                    a = (uint8_t)(Read8(memory, CELL_BANK + 1u + x) | 0x30u);
+                    a = (uint8_t)(Read8(memory, CELL_BANK + 1u + x) | EDGE_HIGH);
                     Write8(memory, CELL_BANK + 1u + x, a);
                 }
             }
             x = (uint16_t)(x + 2u);
             row.y = (uint16_t)(row.y + 2u);
             --count;
-            Write8(memory, DirectAddress(cpu, 0x58u), count);
+            Write8(memory, DirectAddress(cpu, FOLD_CELLS_LEFT), count);
         } while (count != 0);
     }
     row.y = Read16Long(memory, CELL_BANK | 0xd00au);
@@ -330,70 +344,70 @@ static uint8_t FoldMarks(const Trace *t, uint16_t *table, uint16_t *cell) {
     for (;;) {
         uint8_t count;
 
-        a = DirectByte(memory, cpu, 0x5au);
+        a = DirectByte(memory, cpu, FOLD_ROW_CELLS);
         count = a;
-        Write8(memory, DirectAddress(cpu, 0x58u), count);
-        a = 0x30u;
-        Write8(memory, DirectAddress(cpu, 0x65u), a);
+        Write8(memory, DirectAddress(cpu, FOLD_CELLS_LEFT), count);
+        a = EDGE_HIGH;
+        Write8(memory, DirectAddress(cpu, FOLD_STYLE), a);
         do {
-            const uint16_t below = Read16Direct(memory, cpu, 0x5du);
-            const uint16_t below_next = Read16Direct(memory, cpu, 0x60u);
+            const uint16_t below = Read16Direct(memory, cpu, FOLD_BELOW);
+            const uint16_t below_next = Read16Direct(memory, cpu, FOLD_BELOW_NEXT);
 
-            a = (uint8_t)(CellByte(&row, below) & 0x30u);
-            if (a == 0x30u) {
+            a = (uint8_t)(CellByte(&row, below) & EDGE_HIGH);
+            if (a == EDGE_HIGH) {
                 int toggle = 1;
 
-                a = (uint8_t)(CellByte(&row, 1u) & 0x30u);
-                if (a != 0x20u) {
+                a = (uint8_t)(CellByte(&row, 1u) & EDGE_HIGH);
+                if (a != EDGE_OPEN_HIGH) {
                     toggle = 0;
                 } else {
-                    a = (uint8_t)(CellByte(&row, below_next) & 0x30u);
-                    if (a == 0x30u) {
-                        a = (uint8_t)(CellByte(&row, 3u) & 0x30u);
-                        if (a == 0x20u) {
+                    a = (uint8_t)(CellByte(&row, below_next) & EDGE_HIGH);
+                    if (a == EDGE_HIGH) {
+                        a = (uint8_t)(CellByte(&row, 3u) & EDGE_HIGH);
+                        if (a == EDGE_OPEN_HIGH) {
                             const uint8_t seen =
-                                (uint8_t)(DirectByte(memory, cpu, 0x54u) + 1u);
+                                (uint8_t)(DirectByte(memory, cpu, FOLD_SEEN) + 1u);
 
-                            Write8(memory, DirectAddress(cpu, 0x54u), seen);
+                            Write8(memory, DirectAddress(cpu, FOLD_SEEN), seen);
                             a = (uint8_t)(seen - 1u);
                             toggle = a == 0;
                         }
                     }
                 }
                 if (toggle) {
-                    a = (uint8_t)(DirectByte(memory, cpu, 0x65u) ^ 0x30u);
-                    Write8(memory, DirectAddress(cpu, 0x65u), a);
+                    a = (uint8_t)(DirectByte(memory, cpu, FOLD_STYLE) ^ EDGE_HIGH);
+                    Write8(memory, DirectAddress(cpu, FOLD_STYLE), a);
                 }
-                a = (uint8_t)((CellByte(&row, below) & 0xcfu) | 0x20u);
+                a = (uint8_t)((CellByte(&row, below) & ~EDGE_HIGH) | EDGE_OPEN_HIGH);
                 SetCellByte(&row, below, a);
-                a = DirectByte(memory, cpu, 0x56u);
+                a = DirectByte(memory, cpu, FOLD_SKIP_COPY);
                 if (a == 0) {
-                    a = (uint8_t)((Read8(memory, CELL_BANK + 1u + x) & 0xcfu) |
-                        0x20u);
+                    a = (uint8_t)((Read8(memory, CELL_BANK + 1u + x) & ~EDGE_HIGH) |
+                        EDGE_OPEN_HIGH);
                     Write8(memory, CELL_BANK + 1u + x, a);
                 }
             } else {
-                Write8(memory, DirectAddress(cpu, 0x54u), 0);
-                a = (uint8_t)((CellByte(&row, below) & 0xcfu) |
-                    DirectByte(memory, cpu, 0x65u));
+                Write8(memory, DirectAddress(cpu, FOLD_SEEN), 0);
+                a = (uint8_t)((CellByte(&row, below) & ~EDGE_HIGH) |
+                    DirectByte(memory, cpu, FOLD_STYLE));
                 SetCellByte(&row, below, a);
-                a = DirectByte(memory, cpu, 0x56u);
+                a = DirectByte(memory, cpu, FOLD_SKIP_COPY);
                 if (a == 0) {
-                    a = (uint8_t)((Read8(memory, CELL_BANK + 1u + x) & 0xcfu) |
-                        DirectByte(memory, cpu, 0x65u));
+                    a = (uint8_t)((Read8(memory, CELL_BANK + 1u + x) & ~EDGE_HIGH) |
+                        DirectByte(memory, cpu, FOLD_STYLE));
                     Write8(memory, CELL_BANK + 1u + x, a);
                 }
             }
             x = (uint16_t)(x + 2u);
             row.y = (uint16_t)(row.y + 2u);
             --count;
-            Write8(memory, DirectAddress(cpu, 0x58u), count);
+            Write8(memory, DirectAddress(cpu, FOLD_CELLS_LEFT), count);
         } while (count != 0);
         {
             const uint8_t rows_left =
-                (uint8_t)(DirectByte(memory, cpu, 0x63u) - 1u);
+                (uint8_t)(DirectByte(memory, cpu, FOLD_ROWS_LEFT) - 1u);
 
-            Write8(memory, DirectAddress(cpu, 0x63u), rows_left);
+            Write8(memory, DirectAddress(cpu, FOLD_ROWS_LEFT), rows_left);
             if (rows_left == 0)
                 break;
         }
