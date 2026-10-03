@@ -120,6 +120,17 @@ Lufia2ExecutionResult Lufia2MenuInputLoop(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $86:8DD7 select screen video setup and empty layers; M1X0. Hands off at
+ * $86:8B48 with its return pushed. */
+Lufia2ExecutionResult Lufia2MenuScreenSetup(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:8E6B all sprite slot flags off; M1X0. */
+Lufia2ExecutionResult Lufia2SpriteClearSlots(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $86:8CF5 sprite slot X plays animation A; M1X0. */
 Lufia2ExecutionResult Lufia2SpriteSetAnimation(
     const Lufia2Memory *memory,

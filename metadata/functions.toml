@@ -3395,3 +3395,20 @@ source = "src/menu/menu_input.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Select screen setup.
+[[function]]
+address = "86:8DD7"
+name = "Lufia2MenuScreenSetup"
+source = "src/menu/menu_scene_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:8E6B"
+name = "Lufia2SpriteClearSlots"
+source = "src/menu/menu_scene_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
