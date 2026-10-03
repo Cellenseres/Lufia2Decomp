@@ -1,5 +1,7 @@
 /* Field BG scrolling and tile streaming ($8E:BD77). */
 
+#include <stdbool.h>
+
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/field.h"
@@ -1088,16 +1090,14 @@ Lufia2ExecutionResult Lufia2FieldRenderLayerPair(
     return ExecutionReturned(0x838e84u);
 }
 
-Lufia2ExecutionResult Lufia2FieldRenderRegion(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+/* Body of $83:8E85: clip the pending object's rectangle to the visible layer
+ * cells and write each cell as four tiles; false when a child call or the
+ * cell cap leaves the routine through *early without the epilogue. */
+static bool RenderRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             Lufia2ExecutionResult *early) {
     unsigned axis, cells_drawn = 0;
     Lufia2ExecutionResult child_result;
 
-    /* Clip the object rectangle against the visible layer cells. */
-    PushDataBank(memory, cpu);
-    PushIndex(memory, cpu);
-    PushY(memory, cpu);
-    OpSetDataBank(memory, cpu, 0x7fu);
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_PENDING_OBJECT_X & 0xffffu));
     OpSta(memory, cpu, OpDp(cpu, REGION_CLIPPED_FIRST_X));
@@ -1107,27 +1107,35 @@ Lufia2ExecutionResult Lufia2FieldRenderRegion(
     OpSta(memory, cpu, OpDp(cpu, REGION_CLIPPED_LAST_X));
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_X));
     child_result = CheckedRegionCell(memory, cpu, 0x8ea1u, 1u);
-    if (child_result.flow != LUFIA2_EXECUTION_RETURNED)
-        return child_result;
+    if (child_result.flow != LUFIA2_EXECUTION_RETURNED) {
+        *early = child_result;
+        return false;
+    }
     OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_FIRST_X));
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_Y));
     child_result = CheckedRegionCell(memory, cpu, 0x8eaau, 0u);
-    if (child_result.flow != LUFIA2_EXECUTION_RETURNED)
-        return child_result;
+    if (child_result.flow != LUFIA2_EXECUTION_RETURNED) {
+        *early = child_result;
+        return false;
+    }
     OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_FIRST_Y));
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_X));
     cpu->carry = 0;
     OpAdcValue(cpu, 0x0100u);
     child_result = CheckedRegionCell(memory, cpu, 0x8eb7u, 1u);
-    if (child_result.flow != LUFIA2_EXECUTION_RETURNED)
-        return child_result;
+    if (child_result.flow != LUFIA2_EXECUTION_RETURNED) {
+        *early = child_result;
+        return false;
+    }
     OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_LAST_X));
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_Y));
     cpu->carry = 0;
     OpAdcValue(cpu, 0x00ffu);
     child_result = CheckedRegionCell(memory, cpu, 0x8ec4u, 0u);
-    if (child_result.flow != LUFIA2_EXECUTION_RETURNED)
-        return child_result;
+    if (child_result.flow != LUFIA2_EXECUTION_RETURNED) {
+        *early = child_result;
+        return false;
+    }
     OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_LAST_Y));
     OpSepWidths(cpu, 0x20u);
     for (axis = 0; axis < 2u; ++axis) {
@@ -1136,7 +1144,7 @@ Lufia2ExecutionResult Lufia2FieldRenderRegion(
                 axis ? REGION_VISIBLE_LAST_Y : REGION_VISIBLE_LAST_X,
                 (uint8_t)(REGION_CLIPPED_FIRST_X + axis),
                 (uint8_t)(REGION_CLIPPED_LAST_X + axis)))
-            goto done;
+            return true;
     }
     /* Locate the source cells and the two tilemap rows. */
     TransferDirectToA(cpu);
@@ -1169,8 +1177,10 @@ Lufia2ExecutionResult Lufia2FieldRenderRegion(
         uint8_t low = Pull8(memory, cpu);
         uint8_t high = Pull8(memory, cpu);
         uint16_t actual = (uint16_t)(low | ((uint16_t)high << 8));
-        if (actual != 0x8f31u)
-            return ExecutionHandoff(cpu, 0x830000u | (uint16_t)(actual + 1u));
+        if (actual != 0x8f31u) {
+            *early = ExecutionHandoff(cpu, 0x830000u | (uint16_t)(actual + 1u));
+            return false;
+        }
     }
     OpRepWidths(cpu, 0x20u);
     OpTxa(cpu);
@@ -1185,12 +1195,12 @@ Lufia2ExecutionResult Lufia2FieldRenderRegion(
     OpAndValue(cpu, 0x00ffu);
     OpSta(memory, cpu, OpDp(cpu, REGION_COLUMNS));
     if (cpu->zero)
-        goto done;
+        return true;
     OpLda(memory, cpu, OpDp(cpu, REGION_HEIGHT_DELTA));
     OpAndValue(cpu, 0x00ffu);
     OpSta(memory, cpu, OpDp(cpu, REGION_ROWS_REMAINING));
     if (cpu->zero)
-        goto done;
+        return true;
     OpLda(memory, cpu, WRAM_FIELD_SECTION_WIDTH);
     OpAndValue(cpu, 0x00ffu);
     cpu->carry = 1;
@@ -1213,8 +1223,10 @@ Lufia2ExecutionResult Lufia2FieldRenderRegion(
         OpSta(memory, cpu, OpDp(cpu, REGION_BOTTOM_ROW));
         OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, REGION_TILEMAP_COLUMN)));
         for (;;) {
-            if (cells_drawn == 262144u)
-                return ExecutionHandoff(cpu, 0x838f7fu);
+            if (cells_drawn == 262144u) {
+                *early = ExecutionHandoff(cpu, 0x838f7fu);
+                return false;
+            }
             ++cells_drawn;
             RegionWriteMetatile(memory, cpu);
             OpStepMem(memory, cpu, OpDp(cpu, REGION_COLUMNS_REMAINING), -1);
@@ -1247,7 +1259,19 @@ Lufia2ExecutionResult Lufia2FieldRenderRegion(
         OpOra(memory, cpu, OpDp(cpu, REGION_TOP_ROW));
         OpSta(memory, cpu, OpDp(cpu, REGION_TOP_ROW));
     }
-done:
+    return true;
+}
+
+Lufia2ExecutionResult Lufia2FieldRenderRegion(const Lufia2Memory *memory,
+                                              Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult early;
+
+    PushDataBank(memory, cpu);
+    PushIndex(memory, cpu);
+    PushY(memory, cpu);
+    OpSetDataBank(memory, cpu, 0x7fu);
+    if (!RenderRegionCore(memory, cpu, &early))
+        return early;
     OpSepWidths(cpu, 0x20u);
     cpu->y = PullIndexValue(memory, cpu);
     cpu->x = PullIndexValue(memory, cpu);
@@ -1255,22 +1279,12 @@ done:
     return ExecutionReturned(0x838fefu);
 }
 
-
-/* $83:8E85: redraw region $7F:D046 in layer X; M=1. */
-void Lufia2FieldRedrawRegion(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t return_bank,
-    uint16_t return_address) {
+/* Body of $83:8E85: clip region $7F:D046 to the visible cells of layer X and
+ * write each cell as four tiles; returns early where the ROM jumps to its
+ * epilogue. */
+static void RedrawRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned axis;
 
-    SimulateJslFrame(memory, cpu, return_bank, return_address);
-    PushDataBank(memory, cpu);                                 /* 8E85 */
-    PushIndex(memory, cpu);
-    PushY(memory, cpu);
-    LoadA8(cpu, 0x7fu);
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd046u, 0));
     Write16Direct(memory, cpu, 0x9fu, cpu->accumulator);
@@ -1305,13 +1319,13 @@ void Lufia2FieldRedrawRegion(
         if (!cpu->negative) {
             Compare8(cpu, A8(cpu), DirectByte(memory, cpu, high));
             if (!cpu->negative)
-                goto done;
+                return;
             Write8(memory, DirectAddress(cpu, low), A8(cpu));
         } else {
             LoadA8(cpu, DirectByte(memory, cpu, axis ? 0x96u : 0x95u));
             Compare8(cpu, A8(cpu), DirectByte(memory, cpu, low));
             if (cpu->negative)
-                goto done;
+                return;
             Compare8(cpu, A8(cpu), DirectByte(memory, cpu, high));
             if (cpu->negative)
                 Write8(memory, DirectAddress(cpu, high), A8(cpu));
@@ -1356,12 +1370,12 @@ void Lufia2FieldRedrawRegion(
     And16(cpu, 0x00ffu);
     Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
     if (cpu->zero)
-        goto done;
+        return;
     LoadA16(cpu, Read16Direct(memory, cpu, 0x55u));
     And16(cpu, 0x00ffu);
     Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
     if (cpu->zero)
-        goto done;
+        return;
     LoadA16(cpu, Read16Long(memory, WRAM_FIELD_SECTION_WIDTH));
     And16(cpu, 0x00ffu);
     Subtract16(cpu, Read16Direct(memory, cpu, 0x56u));
@@ -1434,7 +1448,19 @@ void Lufia2FieldRedrawRegion(
         LoadA16(cpu, (uint16_t)(cpu->accumulator | Read16Direct(memory, cpu, 0x60u)));
         Write16Direct(memory, cpu, 0x60u, cpu->accumulator);
     }
-done:
+}
+
+/* $83:8E85: redraw region $7F:D046 in layer X; M=1. */
+void Lufia2FieldRedrawRegion(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             uint8_t return_bank, uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, return_bank, return_address);
+    PushDataBank(memory, cpu); /* 8E85 */
+    PushIndex(memory, cpu);
+    PushY(memory, cpu);
+    LoadA8(cpu, 0x7fu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    RedrawRegionCore(memory, cpu);
     SetAccumulatorWidth(cpu, 1);                               /* 8FEA */
     cpu->y = PullIndexValue(memory, cpu);
     cpu->x = PullIndexValue(memory, cpu);
