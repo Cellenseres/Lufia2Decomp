@@ -7,6 +7,65 @@
 #include "system/system_internal.h"
 #include "system/wram.h"
 
+/* $83:AF05-$83:AF4C: advance the palette cycle of entry X after its timer ran
+ * out; 0 = cap hit. */
+static uint8_t FieldPaletteAdvance(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                   uint32_t *visits) {
+    SetAccumulatorWidth(cpu, 0); /* AF05 */
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xec00u, cpu->x));
+    IncrementA16(cpu);
+    IncrementA16(cpu);
+    IncrementA16(cpu);
+    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xec00u, cpu->x), cpu->accumulator);
+    cpu->y = cpu->x; /* TXY */
+    SetNz16(cpu, cpu->y);
+    for (;;) {
+        if (*visits >= 0x10000u) {
+            /* Zero-length frames can chain forever. */
+            cpu->resume_pc = 0x83af11u;
+            return 0;
+        }
+        ++*visits;
+        TransferAToX(cpu); /* AF11 */
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0xa10000u, cpu->x)));
+        StoreAAbsolute8(memory, cpu, 0xed01u, cpu->y);
+        SetAccumulatorWidth(cpu, 0);
+        if (!cpu->zero)
+            break;
+        LoadA16(cpu, cpu->y); /* AF1F */
+        cpu->carry = 0;
+        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd0f5u, 0));
+        TransferAToX(cpu);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa10003u, cpu->x)));
+        cpu->carry = 1;
+        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd0f5u, 0));
+        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xec00u, cpu->y),
+                    cpu->accumulator);
+    }
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa10001u, cpu->x)));
+    Write16Direct(memory, cpu, 0x54u, cpu->accumulator); /* AF36 */
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xed00u, cpu->y));
+    And16(cpu, 0x00ffu);
+    AslA16(cpu);
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+    Write16Long(memory, LongIndexedAddress(WRAM_CGRAM_BUFFER, cpu->x),
+                cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    cpu->x = cpu->y; /* TYX */
+    SetNz16(cpu, cpu->x);
+    LoadA8(cpu, 0x01u);
+    {
+        const uint32_t flags = DirectAddress(cpu, DP_NMI_UPLOAD_FLAGS); /* TSB $73 */
+        const uint8_t value = Read8(memory, flags);
+
+        cpu->zero = (value & 0x01u) == 0;
+        Write8(memory, flags, (uint8_t)(value | 0x01u));
+    }
+    return 1;
+}
+
 /* $83:AEED: palette cycles from bank $A1; 0 = cap hit. */
 static uint8_t FieldPaletteCycles(
     const Lufia2Memory *memory,
@@ -33,62 +92,8 @@ static uint8_t FieldPaletteCycles(
 
         Write8(memory, timer, left);                           /* AF00 */
         SetNz8(cpu, left);
-        if (!cpu->zero)
-            goto next;
-        SetAccumulatorWidth(cpu, 0);                           /* AF05 */
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xec00u, cpu->x));
-        IncrementA16(cpu);
-        IncrementA16(cpu);
-        IncrementA16(cpu);
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xec00u, cpu->x),
-            cpu->accumulator);
-        cpu->y = cpu->x;                                       /* TXY */
-        SetNz16(cpu, cpu->y);
-        for (;;) {
-            if (*visits >= 0x10000u) {
-                /* Zero-length frames can chain forever. */
-                cpu->resume_pc = 0x83af11u;
-                return 0;
-            }
-            ++*visits;
-            TransferAToX(cpu);                                 /* AF11 */
-            SetAccumulatorWidth(cpu, 1);
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0xa10000u, cpu->x)));
-            StoreAAbsolute8(memory, cpu, 0xed01u, cpu->y);
-            SetAccumulatorWidth(cpu, 0);
-            if (!cpu->zero)
-                break;
-            LoadA16(cpu, cpu->y);                              /* AF1F */
-            cpu->carry = 0;
-            Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd0f5u, 0));
-            TransferAToX(cpu);
-            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa10003u, cpu->x)));
-            cpu->carry = 1;
-            Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd0f5u, 0));
-            Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xec00u, cpu->y),
-                cpu->accumulator);
-        }
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa10001u, cpu->x)));
-        Write16Direct(memory, cpu, 0x54u, cpu->accumulator);   /* AF36 */
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xed00u, cpu->y));
-        And16(cpu, 0x00ffu);
-        AslA16(cpu);
-        TransferAToX(cpu);
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
-        Write16Long(memory, LongIndexedAddress(WRAM_CGRAM_BUFFER, cpu->x),
-            cpu->accumulator);
-        SetAccumulatorWidth(cpu, 1);
-        cpu->x = cpu->y;                                       /* TYX */
-        SetNz16(cpu, cpu->x);
-        LoadA8(cpu, 0x01u);
-        {
-            const uint32_t flags = DirectAddress(cpu, DP_NMI_UPLOAD_FLAGS); /* TSB $73 */
-            const uint8_t value = Read8(memory, flags);
-
-            cpu->zero = (value & 0x01u) == 0;
-            Write8(memory, flags, (uint8_t)(value | 0x01u));
-        }
-next:
+        if (cpu->zero && !FieldPaletteAdvance(memory, cpu, visits))
+            return 0;
         IncrementX16(cpu);                                     /* AF4D */
         IncrementX16(cpu);
         DecrementDirect8(memory, cpu, 0x58u);
@@ -97,15 +102,12 @@ next:
     return 1;
 }
 
-/* $83:AF54: step the HDMA wave table; set up channel 1. */
-static void FieldWaveTable(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0xaee9u);
+/* Body of $83:AF54 without its JSR frame; returns where the ROM jumps to RTS. */
+static void FieldWaveTableBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0xd0cau, 0);                   /* AF54 */
     Compare8(cpu, A8(cpu), 0xffu);
     if (cpu->zero)
-        goto done;
+        return;
     ExchangeAccumulatorBytes(cpu);
     LoadAAbsolute8(memory, cpu, 0xd0c9u, 0);
     TransferAToX(cpu);
@@ -114,7 +116,7 @@ static void FieldWaveTable(
     Write8(memory, WRAM_UNK_7FD0C8, A8(cpu));
     Compare8(cpu, A8(cpu), Read8(memory, LongIndexedAddress(0x7e0001u, cpu->x)));
     if (!cpu->zero)
-        goto done;
+        return;
     TransferDirectToA(cpu);                                    /* AF6E */
     StoreAAbsolute8(memory, cpu, 0xd0c8u, 0);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e0000u, cpu->x)));
@@ -160,7 +162,12 @@ static void FieldWaveTable(
     StoreXDirect16(memory, cpu, 0x7bu);
     LoadA8(cpu, 0x42u);
     Write8(memory, DirectAddress(cpu, 0x76u), A8(cpu));
-done:
+}
+
+/* $83:AF54: step the HDMA wave table; set up channel 1. */
+static void FieldWaveTable(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xaee9u);
+    FieldWaveTableBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
