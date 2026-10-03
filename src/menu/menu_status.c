@@ -149,7 +149,6 @@ static void StatusSelectMember(StatusScreen *screen, uint16_t slot_word,
  * member. */
 static Lufia2ExecutionResult StatusDrawPartyRows(StatusScreen *screen) {
     Lufia2CpuState *cpu = screen->cpu;
-    uint8_t slot;
 
     LoadX16(cpu, 0u);
     WramWrite16(screen->wram, STATUS_PARTY_SLOT, 0u);
@@ -161,8 +160,8 @@ static Lufia2ExecutionResult StatusDrawPartyRows(StatusScreen *screen) {
                            0x82a36bu);
         OpSepWidths(cpu, 0x20u);
         STATUS_CALL(screen, 0x82a35cu, 0x8294c0u, 2u);
-        slot = WramStep(screen->wram, STATUS_PARTY_SLOT, 1);
-        LoadA8(cpu, slot);
+        OpStepMem(screen->memory, cpu, OpDp(cpu, STATUS_PARTY_SLOT), 1);
+        OpLda(screen->memory, cpu, OpDp(cpu, STATUS_PARTY_SLOT));
         OpCmp(screen->memory, cpu, OpAbs(cpu, WRAM_MENU_PARTY_MEMBER_COUNT));
     } while (!cpu->zero);
     return StatusFinish(screen);
@@ -184,15 +183,13 @@ static Lufia2ExecutionResult StatusDrawPartyHeader(StatusScreen *screen) {
 static Lufia2ExecutionResult StatusDrawEquipment(StatusScreen *screen) {
     Lufia2CpuState *cpu = screen->cpu;
     const Lufia2Wram wram = screen->wram;
-    uint32_t percent_table;
     uint16_t value;
 
     STATUS_CALL(screen, 0x82a373u, 0x82f9c9u, 2u);
     LoadX16(cpu, STATUS_EQUIPMENT_CHARACTER_LIST);
     STATUS_CALL(screen, 0x82a379u, 0x8294c0u, 2u);
     LoadX16(cpu, WramRead16(wram, STATUS_CHARACTER));
-    percent_table = ((uint32_t)cpu->data_bank << 16) | STATUS_CHARACTER_PERCENT;
-    LoadA8(cpu, WramReadAt(wram, percent_table, cpu->x));
+    OpLda(screen->memory, cpu, OpAbsX(cpu, STATUS_CHARACTER_PERCENT));
     WramWrite(wram, WRAM_SYSTEM_MULTIPLY_A, A8(cpu));
     WramWrite(wram, WRAM_SYSTEM_MULTIPLY_A + 1u, 0u);
     LoadY16(cpu, STATUS_PERCENT_SCALE);
