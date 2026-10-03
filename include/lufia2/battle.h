@@ -262,6 +262,16 @@ Lufia2ExecutionResult Lufia2BattleVelocityOfAngle(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $85:A736 32 entries of the ripple table at $7E:4400; JSR, M8/X16. */
+Lufia2ExecutionResult Lufia2BattleRippleRow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:AA3D 84-word ripple table at $7E:40DE; JSR, M8/X16. */
+Lufia2ExecutionResult Lufia2BattleRippleWords(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $85:ECF0 per-frame battle upkeep. */
 Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     const Lufia2Memory *memory,
