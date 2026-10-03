@@ -36,6 +36,7 @@ add_library(lufia2_decomp STATIC
     src/actor/player_update.c
     src/battle/battle_character.c
     src/battle/battle_frame.c
+    src/battle/battle_frame_setup.c
     src/battle/battle_frame_rows.c
     src/battle/battle_ip.c
     src/battle/battle_popup.c

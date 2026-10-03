@@ -333,6 +333,15 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:8850` | `Lufia2BattleAnimateStatusIcons` | verified | `src/battle/battle_status_icons.c` |
 | `$85:89E5` | `Lufia2BattleClearSpriteOffsets` | verified | `src/battle/battle_loop_children.c` |
 | `$85:8A2F` | `Lufia2BattleSprites` | verified | `src/battle/battle_frame.c` |
+| `$85:8A39` | `Lufia2BattleFrameSetup` | draft | `src/battle/battle_frame_setup.c` |
+| `$85:8AAF` | `Lufia2BattleColorsInit` | draft | `src/battle/battle_frame_setup.c` |
+| `$85:8AF4` | `Lufia2BattleColorsParty` | draft | `src/battle/battle_frame_setup.c` |
+| `$85:8B22` | `Lufia2BattleColorsMonster` | draft | `src/battle/battle_frame_setup.c` |
+| `$85:8B4B` | `Lufia2BattleSpriteRecordsEntry` | draft | `src/battle/battle_frame.c` |
+| `$85:8BC0` | `Lufia2BattleSpriteSingleEntry` | draft | `src/battle/battle_frame.c` |
+| `$85:8C27` | `Lufia2BattleSpriteMarkersEntry` | draft | `src/battle/battle_frame.c` |
+| `$85:8C98` | `Lufia2BattleSpritePartyEntry` | draft | `src/battle/battle_frame.c` |
+| `$85:8D2E` | `Lufia2BattlePartyTilemapEntry` | draft | `src/battle/battle_frame.c` |
 | `$85:8DC5` | `Lufia2BattleNmiUploads` | verified | `src/battle/battle_nmi.c` |
 | `$85:8F67` | `Lufia2BattleRecoverStatuses` | verified | `src/battle/battle_status_recovery.c` |
 | `$85:9099` | `Lufia2BattleExpireStatuses` | verified | `src/battle/battle_status_recovery.c` |
@@ -348,6 +357,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9671` | `Lufia2BattleClearMessage` | verified | `src/battle/battle_message_display.c` |
 | `$85:96A2` | `Lufia2BattleSaveWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
+| `$85:972E` | `Lufia2BattleTileGridEntry` | draft | `src/battle/battle_frame.c` |
+| `$85:9790` | `Lufia2BattleTileRow` | draft | `src/battle/battle_frame_setup.c` |
 | `$85:9A7D` | `Lufia2BattleMeasureMessage` | verified | `src/battle/battle_message_length.c` |
 | `$85:9AAA` | `Lufia2BattleSaveMessageState` | verified | `src/battle/battle_message_display.c` |
 | `$85:9ABC` | `Lufia2BattleRestoreMessageState` | verified | `src/battle/battle_message_display.c` |
