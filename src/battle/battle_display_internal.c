@@ -169,6 +169,7 @@ void BattleInitializeDisplayRecords(BattleContext *battle) {
     LoadA8(cpu, icon_slots[sizeof(icon_slots) - 1u]);
 }
 
+/* Loads the display defaults, then runs the two record-preparing children. */
 bool BattlePrepareDisplayRecords(BattleContext *battle) {
     if (!BattleLoadDisplayDefaults(battle))
         return false;
@@ -205,6 +206,8 @@ void BattleApplyPpuTable(BattleContext *battle) {
     OpLdx(cpu, reg);
 }
 
+/* Installs the scene NMI, decompresses the base resource and loads portraits and the
+ * base tile children. */
 bool BattleLoadBaseGraphics(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -238,6 +241,7 @@ typedef struct BattleVramTransfer {
     uint16_t size;
 } BattleVramTransfer;
 
+/* DMAs one block of tile data to VRAM on channel 0. */
 static void UploadVramBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             const BattleVramTransfer *transfer) {
     OpLdx(cpu, transfer->vram_address);
@@ -256,6 +260,7 @@ static void UploadVramBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpSta(memory, cpu, OpAbs(cpu, SNES_MDMAEN));
 }
 
+/* Uploads the two base tile blocks to VRAM. */
 void BattleUploadBaseTiles(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -268,6 +273,8 @@ void BattleUploadBaseTiles(BattleContext *battle) {
         UploadVramBlock(memory, cpu, &transfers[i]);
 }
 
+/* Loads the battle background, palettes and resource blocks used by the presentation.
+ */
 bool BattleLoadPresentationAssets(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -358,6 +365,8 @@ void BattlePrepareSpriteState(BattleContext *battle) {
     PullDataBank(memory, cpu);
 }
 
+/* Runs the closing display children, then arms a 30-frame wait; control modes 2 and 1
+ * together skip that tail. */
 bool BattleFinishDisplay(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
