@@ -4,6 +4,9 @@
 
 enum { CAVE_CLEAR_LENGTH = 0x58, CAVE_INITIAL_ITEM_BYTES = 0x8f };
 
+/* Runs the child routine at target as a JSL from site in bank $84. Reports an
+ * unwound child, a hand-off when the CPU comes back in an unsupported mode, or
+ * a return at site + 4. */
 static Lufia2ExecutionResult ResetChild(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context,
@@ -19,6 +22,9 @@ static Lufia2ExecutionResult ResetChild(
     return ExecutionReturned(site + 4u);
 }
 
+/* Zeroes the WRAM ranges listed at $84:8B59 through the WRAM data port. Each
+ * entry is five bytes: address, bank, length; a $FFFF address ends the list.
+ * Then $0A8D is set to $1402. */
 static Lufia2ExecutionResult ClearCaveParty(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned steps = 0;
@@ -55,6 +61,9 @@ static Lufia2ExecutionResult ClearCaveParty(
     return ExecutionReturned(0x8488c3u);
 }
 
+/* Gives each saved item through $82:E746, in two-byte entries up to the byte
+ * count in DP $60: the low 9 bits are the item id and the next byte, shifted
+ * right once, is the quantity. */
 static Lufia2ExecutionResult GiveCaveInitialItems(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -121,6 +130,8 @@ Lufia2ExecutionResult Lufia2AncientCaveResetParty(
     return ExecutionReturned(0x84890au);
 }
 
+/* Tests the absolute offset against the mask in A (zero when no bit is set),
+ * then sets those bits. */
 static void ResetSetBits(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t offset) {
     uint32_t address = OpAbs(cpu, offset);

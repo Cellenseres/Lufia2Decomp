@@ -45,6 +45,9 @@ enum {
     CAVE_CARRY_LOOP_LIMIT = 4096,
 };
 
+/* Runs the child routine at target as a JSL from site in bank $84. Reports an
+ * unwound child, a hand-off when the CPU comes back in an unsupported mode, or
+ * a return at site + 4. */
 static Lufia2ExecutionResult CaveChild(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context,
@@ -60,6 +63,8 @@ static Lufia2ExecutionResult CaveChild(
     return ExecutionReturned(site + 4u);
 }
 
+/* Calls Lufia2AncientCaveCarryBlueItem as a JSR from site and hands off when
+ * the return address it leaves on the stack is not the one pushed. */
 static Lufia2ExecutionResult CarryBlueItem(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t site) {
     uint8_t low, high;
@@ -77,6 +82,8 @@ static Lufia2ExecutionResult CarryBlueItem(
     return result;
 }
 
+/* Tests address against the mask in A (zero when no bit is set), then sets
+ * those bits, or clears them when clear is non-zero. */
 static void CaveTestSetBits(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint32_t address, uint8_t clear) {
@@ -86,6 +93,11 @@ static void CaveTestSetBits(
         clear ? value & (uint16_t)~OpA(cpu) : value | OpA(cpu));
 }
 
+/* Builds the list of items that leave the cave with the party. Items from
+ * the $0A8D list that match the table at $91:FFCA are appended to the carry
+ * list and set an event flag ($80:BE1A); blue equipment from that list and
+ * from the equipment words at $0C13 in each party record (stride $BE) is
+ * appended by Lufia2AncientCaveCarryBlueItem. The count is stored last. */
 static Lufia2ExecutionResult CollectCaveCarryItems(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -171,6 +183,9 @@ static Lufia2ExecutionResult CollectCaveCarryItems(
     return ExecutionReturned(0x8489fau);
 }
 
+/* Copies the backup stream in $7F back to the ranges listed at $84:8B20, read
+ * through the WRAM data port. Each entry is five bytes: address, bank, length;
+ * a $FFFF address ends the list. */
 static Lufia2ExecutionResult RestoreCaveBackup(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned steps = 0u;
@@ -215,6 +230,9 @@ static Lufia2ExecutionResult RestoreCaveBackup(
     return ExecutionReturned(0x848a38u);
 }
 
+/* Gives items back through $82:E746. With the inventory mode set it returns
+ * the saved items until an empty entry; otherwise it returns the carry list,
+ * recording each result in a bit of DP $AE. */
 static Lufia2ExecutionResult ReturnCaveItems(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
