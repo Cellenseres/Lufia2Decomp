@@ -3,7 +3,6 @@
 #include "actor/actor_internal.h"
 #include "actor/actor_slot_view.h"
 #include "core/cpu_internal.h"
-#include "core/hardware_math.h"
 #include "core/wram_view.h"
 #include "lufia2/actor.h"
 #include "system/wram.h"
@@ -13,96 +12,64 @@
 enum {
     PROBE_X_HIGH = DP_PROBE_X + 1,
     PROBE_Y_HIGH = DP_PROBE_Y + 1,
-    MAP_CELL_SIZE = 2, /* bytes per cell in a layer */
-    CELL_HEIGHT_SHIFT = 6,
-    CELL_HEIGHT_MASK = 3,
-    CELL_TILE_MASK = 0x03ff, /* low ten bits: metatile number */
+    CELL_TILE_MASK = 0x03ff /* low ten bits: metatile number */
 };
 
 #define MAP_LAYER_CELLS 0x7f0000u /* cell words of every layer */
 
-/* Cell number of a tile in the section: the map is stored row by row. The row
- * offset comes from the hardware multiplier. */
-static uint16_t MapCellIndex(const Lufia2Memory *memory, uint8_t tile_x,
-                             uint8_t tile_y) {
-    const uint8_t width = WramRead(WramViewLong(memory), WRAM_FIELD_SECTION_WIDTH);
-
-    return (uint16_t)(tile_x + HardwareMultiply8(memory, tile_y, width));
-}
-
-/* The original adds the tile column to the row offset in A; the sum and its
- * flags are what the callers see. */
-static uint16_t AddRowOffset(Lufia2CpuState *cpu, uint8_t tile_x, uint16_t index) {
-    cpu->accumulator = tile_x;
-    cpu->carry = 0;
-    Add16Value(cpu, (uint16_t)(index - tile_x));
-    return cpu->accumulator;
-}
-
 /* $83:F9AD / $83:F9B6: X = $8F + $91 * width. */
-void Lufia2MapCellIndex(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                        uint16_t return_address, uint8_t from_probe) {
-    const Lufia2Wram dp = WramViewOfCaller(memory, cpu);
-    uint8_t tile_x = (uint8_t)(cpu->accumulator >> 8);
-    uint8_t tile_y = A8(cpu);
-    uint16_t index;
-
+void Lufia2MapCellIndex(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address,
+    uint8_t from_probe) {
     SimulateJsrFrame(memory, cpu, return_address);
     if (from_probe) {
-        WramWrite(dp, PROBE_X_HIGH, 0);
-        WramWrite(dp, PROBE_Y_HIGH, 0);
-        tile_x = WramRead(dp, DP_PROBE_X);
-        tile_y = WramRead(dp, DP_PROBE_Y);
+        Write8(memory, DirectAddress(cpu, PROBE_X_HIGH), 0x00u);      /* F9AD */
+        Write8(memory, DirectAddress(cpu, PROBE_Y_HIGH), 0x00u);
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
+        ExchangeAccumulatorBytes(cpu);
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
     }
-    index = MapCellIndex(memory, tile_x, tile_y);
-    cpu->accumulator = AddRowOffset(cpu, tile_x, index);
+    Write8(memory, SNES_WRMPYA, A8(cpu));                      /* F9B6 */
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_SECTION_WIDTH));
+    Write8(memory, SNES_WRMPYB, A8(cpu));
+    LoadA8(cpu, 0x00u);
+    ExchangeAccumulatorBytes(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
 }
 
-/* Terrain height class of a layer cell: the top two bits of its high byte. */
-static uint8_t CellHeight(const Lufia2Memory *memory, uint16_t cell_offset) {
-    const uint8_t high_byte =
-        Read8(memory, LongIndexedAddress(MAP_LAYER_CELLS + 1u, cell_offset));
-
-    return (uint8_t)((high_byte >> CELL_HEIGHT_SHIFT) & CELL_HEIGHT_MASK);
-}
-
-/* Start of the selected layer's cell data; the layer is a byte index into
- * the table of layer bases. */
-static uint16_t ReadLayerCellBase(Lufia2Wram wram, uint16_t layer) {
-    return Read16Long(wram.memory,
-                      LongIndexedAddress(WRAM_FIELD_LAYER_CELL_BASE, layer));
-}
-
 /* $83:F988: height bits 7-6 of the map cell at $8F/$91. */
-void Lufia2MapTileHeight(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                         uint16_t return_address) {
-    const Lufia2Wram caller = WramViewOfCaller(memory, cpu);
-    uint16_t cell_offset;
-    uint16_t cell;
-    uint8_t tile_x;
-    uint8_t tile_y;
-    uint8_t height;
-
+void Lufia2MapTileHeight(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     SimulateJsrFrame(memory, cpu, 0xf98au);                    /* F988 */
-    tile_x = WramRead(caller, DP_PROBE_X);
-    tile_y = WramRead(caller, DP_PROBE_Y);
-    cell_offset = (uint16_t)(MapCellIndex(memory, tile_x, tile_y) * MAP_CELL_SIZE);
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X))); /* F9F2 */
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
+    Lufia2MapCellOffset(memory, cpu);             /* F9F7 */
     SimulateRtsFrame(memory, cpu);
-    cell = (uint16_t)(cell_offset +
-                      ReadLayerCellBase(
-                          caller, WramRead16(caller, WRAM_FIELD_LAYER_TABLE_OFFSET)));
-    height = CellHeight(memory, cell);
-    /* Exit: X is the cell, A keeps its high byte, C and V clear, N clear. */
-    cpu->x = cell;
-    cpu->accumulator = (uint16_t)((cell & 0xff00u) | height);
-    cpu->accumulator_is_8_bit = 1;
+    SetAccumulatorWidth(cpu, 0);                               /* F98B */
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_TABLE_OFFSET, 0));
     cpu->carry = 0;
-    cpu->overflow = 0;
-    SetNz8(cpu, height);
+    Add16Value(
+        cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_CELL_BASE,
+            cpu->x)));
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(MAP_LAYER_CELLS + 1u, cpu->x)));
+    AslA8(cpu);                                                /* F99C */
+    Adc8(cpu, 0x00u);
+    AslA8(cpu);
+    Adc8(cpu, 0x00u);
+    And8(cpu, 0x03u);                                          /* F9A2 */
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -373,13 +340,17 @@ void Lufia2ActorMoveFinePosition(
 Lufia2ExecutionResult Lufia2MapCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    const uint8_t tile_x = (uint8_t)(cpu->accumulator >> 8);
-    const uint16_t index = MapCellIndex(memory, tile_x, A8(cpu));
-
-    AddRowOffset(cpu, tile_x, index);
-    AslA16(cpu);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
+    Write8(memory, SNES_WRMPYA, A8(cpu));                      /* $83:F9F7 */
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_SECTION_WIDTH));       /* F9FB */
+    Write8(memory, SNES_WRMPYB, A8(cpu));                      /* $83:F9FF */
+    LoadA8(cpu, 0x00u);                                 /* $83:FA03 */
+    ExchangeAccumulatorBytes(cpu);                      /* $83:FA05 */
+    SetAccumulatorWidth(cpu, 0);                        /* $83:FA06 */
+    cpu->carry = 0;                                     /* $83:FA08 */
+    Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));          /* $83:FA09 */
+    AslA16(cpu);                                        /* $83:FA0D */
+    TransferAToX(cpu);                                  /* $83:FA0E */
+    SetAccumulatorWidth(cpu, 1);                        /* $83:FA0F */
     return ExecutionReturned(0x83fa11u);
 }
 
@@ -432,35 +403,36 @@ uint32_t Lufia2ActorMovementStep(
 Lufia2ExecutionResult Lufia2LayerCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    const Lufia2Wram wram = WramViewLong(memory);
-
     SimulateJsrFrame(memory, cpu, 0xf9dbu);                    /* F9D9 */
     (void)Lufia2MapCellOffset(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
+    {
+        const uint8_t low = Pull8(memory, cpu);
+        const uint8_t high = Pull8(memory, cpu);
+        const uint16_t frame = (uint16_t)(low | ((uint16_t)high << 8));
+        if (frame != 0xf9dbu)
+            return ExecutionHandoff(cpu, 0x830000u | (uint16_t)(frame + 1u));
+    }
+
     SetAccumulatorWidth(cpu, 0);                               /* F9DC */
     PushIndex(memory, cpu);                                    /* F9DE */
-    PullAccumulator16(memory, cpu);
-    cpu->carry = 0;
+    LoadA16(cpu, Read16Long(memory, WRAM_FIELD_LAYER_TABLE_OFFSET));
+    TransferAToX(cpu);                                         /* F9E3 */
+    PullAccumulator16(memory, cpu);                            /* F9E4 */
+    cpu->carry = 0;                                            /* F9E5 */
     Add16Value(
-        cpu, ReadLayerCellBase(wram, WramRead16(wram, WRAM_FIELD_LAYER_TABLE_OFFSET)));
-    TransferAToX(cpu);
+        cpu, Read16Long(
+            memory, LongIndexedAddress(WRAM_FIELD_LAYER_CELL_BASE, cpu->x)));
+    TransferAToX(cpu);                                         /* F9EA */
     SetAccumulatorWidth(cpu, 1);                               /* F9EB */
     return ExecutionReturned(0x83f9edu);
-}
-
-/* A = column:row of the probe position. */
-static void LoadProbeTile(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    const Lufia2Wram dp = WramViewOfCaller(memory, cpu);
-
-    LoadA8(cpu, WramRead(dp, DP_PROBE_X));
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, WramRead(dp, DP_PROBE_Y));
 }
 
 void Lufia2ActorResolveMapCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadProbeTile(memory, cpu); /* F9D4 */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X))); /* F9D4 */
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
     (void)Lufia2LayerCellOffset(memory, cpu);
 }
 
@@ -468,22 +440,23 @@ void Lufia2ActorResolveMapCellOffset(
 void Lufia2ActorReadMapCellValue(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    const Lufia2Wram wram = WramViewLong(memory);
-    uint16_t metatile;
-
     SimulateJsrFrame(memory, cpu, 0xfb73u);                    /* FB71 */
     Lufia2ActorResolveMapCellOffset(memory, cpu);              /* F9D4 */
     SimulateRtsFrame(memory, cpu);
+
     SetAccumulatorWidth(cpu, 0);                               /* FB74 */
-    metatile = Read16Long(memory, LongIndexedAddress(MAP_LAYER_CELLS, cpu->x)) &
-               CELL_TILE_MASK;
-    cpu->accumulator = metatile;
-    cpu->carry = 0;
-    Add16Value(cpu, WramRead16(wram, WRAM_FIELD_METATILE_ATTRIBUTE_BASE));
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
+    LoadA16(
+        cpu, Read16Long(
+            memory, LongIndexedAddress(MAP_LAYER_CELLS, cpu->x)));   /* FB76 */
+    And16(cpu, CELL_TILE_MASK);                                /* FB7A */
+    cpu->carry = 0;                                            /* FB7D */
+    Add16Value(cpu, Read16Long(memory, WRAM_FIELD_METATILE_ATTRIBUTE_BASE)); /* FB7E */
+    TransferAToX(cpu);                                         /* FB82 */
+    SetAccumulatorWidth(cpu, 1);                               /* FB83 */
     TransferDirectToA(cpu);                                    /* FB85 */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(MAP_LAYER_CELLS, cpu->x)));
+    LoadA8(
+        cpu, Read8(
+            memory, LongIndexedAddress(MAP_LAYER_CELLS, cpu->x)));   /* FB86 */
 }
 
 static void ClearCellBit0(
