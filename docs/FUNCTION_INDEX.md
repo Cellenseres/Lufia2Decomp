@@ -176,7 +176,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F404` | `Lufia2SpellRecordByte8` | verified | `src/item/item_records.c` |
 | `$81:F414` | `Lufia2LoadSpellRecord` | verified | `src/item/item_records.c` |
 | `$81:F446` | `Lufia2SpellTextPointer` | verified | `src/item/item_records.c` |
-| `$81:F481` | `Lufia2PartyStatTotalsOfCopy` | draft | `src/party/stats.c` |
+| `$81:F481` | `Lufia2PartyStatTotalsOfCopy` | verified | `src/party/stats.c` |
 | `$81:F4D5` | `Lufia2PartyDerivedStats` | verified | `src/party/stats.c` |
 | `$81:F4E9` | `Lufia2PartyStatTotalsFar` | verified | `src/party/stats.c` |
 | `$81:F4ED` | `Lufia2PartyStatTotals` | verified | `src/party/stats.c` |

@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-461 functions in `metadata/functions.toml`: 384 verified, 77 draft, 0 identified, 0 disabled.
+461 functions in `metadata/functions.toml`: 385 verified, 76 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -62,8 +62,9 @@ row entries remain draft. The menu multiply `$82:8000`, world division
 `$86:A5A9` and the battle angle lookups `$85:DE2A`/`$85:DE1E` are verified
 for any caller widths. The world sprite and slot-flag clears `$86:E650` and
 `$86:E640` are verified too, as are the menu item index and position
-`$82:88A0`/`$82:88CB` for the `$1F00..$1FFC` caller stack. Eighteen feature
-additions are verified and 77 remain draft.
+`$82:88A0`/`$82:88CB` for the `$1F00..$1FFC` caller stack. The copied-member totals `$81:F481` are also verified for DP0 and the same
+caller stack, preserving the shared stat event. Nineteen feature additions
+are verified and 76 remain draft.
 
 The base main checkpoint passed **518 independent jobs**. The normal
 application build also passes. The consumer selects all 366 verified functions,

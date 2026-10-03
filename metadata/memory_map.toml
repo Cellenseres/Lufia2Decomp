@@ -1170,7 +1170,7 @@ name = "save_file_buffer"
 width = 1
 count = 2048
 owner = "system"
-notes = "Plain save slot packed by 8E:BA0D and 85:C954, encrypted by 80:9184 and decrypted by 80:914B. Also the layer-3 32x32 tilemap ring (3800-3FFF) selected by ROM 83:8FF0 and written by 83:8E85."
+notes = "Plain save slot packed by 8E:BA0D and 85:C954, encrypted by 80:9184 and decrypted by 80:914B. Also the layer-3 32x32 tilemap ring (3800-3FFF) selected by ROM 83:8FF0 and written by 83:8E85. 81:F481 also uses 3800-38BD as a temporary member record for derived totals; 3886-3893 receives the member modifier bytes."
 
 [[location]]
 address = "7E:0521"

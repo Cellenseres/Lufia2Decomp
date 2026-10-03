@@ -461,12 +461,57 @@ Lufia2ExecutionResult Lufia2PartyStatTotalsFar(
     return ExecutionReturned(0x81f4ecu);
 }
 
-/* $81:F481: totals of the member record at X, worked out on a copy at
- * $7E:3800 so that the record itself only receives the 14 bytes of totals
- * from offset $37 on; keeps A, X, Y, P and B. JSL. */
+enum {
+    STAT_COPY_RECORD = 0x3800,
+    STAT_COPY_RECORD_BYTES = 0xbe,
+    STAT_COPY_MODIFIERS = 0x3886,
+    STAT_COPY_TOTALS = 0x3829,
+    MEMBER_TOTALS_OFFSET = 0x37,
+    MEMBER_TOTALS_BYTES = 14
+};
+
+/* Copy forwards: a member can overlap the scratch record. */
+static void CopyMemberBytes(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t member_offset, uint16_t scratch, uint16_t length) {
+    uint16_t member = cpu->x;
+    uint8_t last = 0;
+
+    for (uint16_t byte = 0; byte < length; ++byte) {
+        last = AbsoluteByte(memory, cpu, member_offset, member);
+        Write8(memory, AbsoluteIndexedAddress(cpu, scratch, byte), last);
+        member = (uint16_t)(member + 1u);
+    }
+    LoadA8(cpu, last);
+    cpu->x = member;
+    cpu->y = length;
+    Compare16(cpu, length, length);
+}
+
+static void StoreCopiedTotals(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    uint16_t member = cpu->x;
+    uint8_t last = 0;
+
+    for (uint16_t byte = 0; byte < MEMBER_TOTALS_BYTES; ++byte) {
+        last = AbsoluteByte(memory, cpu, STAT_COPY_TOTALS, byte);
+        Write8(memory,
+            AbsoluteIndexedAddress(cpu, MEMBER_TOTALS_OFFSET, member), last);
+        member = (uint16_t)(member + 1u);
+    }
+    LoadA8(cpu, last);
+    cpu->x = member;
+    cpu->y = MEMBER_TOTALS_BYTES;
+    Compare16(cpu, MEMBER_TOTALS_BYTES, MEMBER_TOTALS_BYTES);
+}
+
+/* Calculate on a scratch record, then copy only the derived totals back. */
 Lufia2ExecutionResult Lufia2PartyStatTotalsOfCopy(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    /* Other stacks or DP scratch can overwrite an inlined return frame. */
+    if (cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu || cpu->direct_page)
+        return ExecutionHandoff(cpu, 0x81f481u);
+
     PushDataBank(memory, cpu);
     Push8(memory, cpu, PackStatus(cpu));
     SetAccumulatorWidth(cpu, 0);
@@ -475,41 +520,25 @@ Lufia2ExecutionResult Lufia2PartyStatTotalsOfCopy(
     PushIndex(memory, cpu);
     PushY(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
-    StoreXDirect16(memory, cpu, 0xc1u);
+    StoreXDirect16(memory, cpu, DP_RECORD);
     OpSetDataBank(memory, cpu, 0x7eu);
-    LoadY16(cpu, 0);
-    do {
-        LoadA8(cpu, AbsoluteByte(memory, cpu, 0x0000u, cpu->x));
-        StoreAAbsolute8(memory, cpu, 0x3800u, cpu->y);
-        IncrementX16(cpu);
-        IncrementY16(cpu);
-        Compare16(cpu, cpu->y, 0x00beu);
-    } while (!cpu->zero);
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x00c1u, 0));
+
+    CopyMemberBytes(memory, cpu, 0, STAT_COPY_RECORD, STAT_COPY_RECORD_BYTES);
+    /* The original reloads absolute $C1, independently of direct page. */
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, DP_RECORD, 0));
     PushIndex(memory, cpu);
-    LoadY16(cpu, 0);
-    do {
-        LoadA8(cpu, AbsoluteByte(memory, cpu, 0x0037u, cpu->x));
-        StoreAAbsolute8(memory, cpu, 0x3886u, cpu->y);
-        IncrementY16(cpu);
-        IncrementX16(cpu);
-        Compare16(cpu, cpu->y, 0x000eu);
-    } while (!cpu->zero);
-    LoadX16(cpu, 0x3800u);
-    StoreXDirect16(memory, cpu, 0xc1u);
+    CopyMemberBytes(memory, cpu, MEMBER_TOTALS_OFFSET,
+        STAT_COPY_MODIFIERS, MEMBER_TOTALS_BYTES);
+
+    LoadX16(cpu, STAT_COPY_RECORD);
+    StoreXDirect16(memory, cpu, DP_RECORD);
     SimulateJsrFrame(memory, cpu, 0xf4bbu);
     (void)Lufia2PartyStatTotals(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     cpu->x = PullIndexValue(memory, cpu);
     SetNz16(cpu, cpu->x);
-    LoadY16(cpu, 0);
-    do {
-        LoadA8(cpu, AbsoluteByte(memory, cpu, 0x3829u, cpu->y));
-        StoreAAbsolute8(memory, cpu, 0x0037u, cpu->x);
-        IncrementY16(cpu);
-        IncrementX16(cpu);
-        Compare16(cpu, cpu->y, 0x000eu);
-    } while (!cpu->zero);
+    StoreCopiedTotals(memory, cpu);
+
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
     cpu->y = PullIndexValue(memory, cpu);

@@ -94,7 +94,9 @@ Lufia2ExecutionResult Lufia2PartyStatTotals(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $81:F481 member totals worked out on a copy; keeps A, X, Y, P; JSL. */
+/* $81:F481 copied member totals; native PB81/DP0/S1F00..1FFC, any widths.
+ * Restores A/X/Y/DB/P from their stack slots; PLB supplies N/Z. JSL/RTL.
+ * Shared stat checkpoint $81:F576 remains available before copy-back. */
 Lufia2ExecutionResult Lufia2PartyStatTotalsOfCopy(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
