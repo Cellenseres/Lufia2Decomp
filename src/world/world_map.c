@@ -7,6 +7,49 @@
 #include "lufia2/world_map.h"
 #include "system/wram.h"
 
+/* Direct-page scratch of the tile upload routines. */
+enum {
+    UPLOAD_DP_CHANNELS = 0x05u,
+    UPLOAD_DP_FIRST_SIZE = 0x33u,
+    UPLOAD_DP_SECOND_SIZE = 0x35u,
+    UPLOAD_DP_ROWS_LEFT = 0x37u,
+    UPLOAD_DP_BLOCK_PASS2_LEFT = 0x38u,
+    UPLOAD_DP_VRAM_ADDRESS = 0x39u,
+    UPLOAD_DP_VRAM_ADDRESS_HIGH = 0x3au,
+    UPLOAD_ROW_STRIDE = 0x0100u,
+    UPLOAD_BLOCK_STRIDE = 0x0200u,
+};
+
+/* Sends DP $37 rows to VRAM, one DMA per row, advancing the VRAM address by
+ * $0100 each time. The first pass drives channels 6 and 7 (the channel mask in
+ * DP $05); the second pass only channel 7. */
+static void WorldMapUploadRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               bool first_pass) {
+    cpu->carry = 0;
+    do {
+        SetAccumulatorWidth(cpu, 0);
+        if (first_pass) {
+            LoadADirect16(memory, cpu, UPLOAD_DP_FIRST_SIZE);
+            Write16Absolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
+        }
+        LoadADirect16(memory, cpu, UPLOAD_DP_SECOND_SIZE);
+        Write16Absolute(memory, cpu, SNES_DASL(7), cpu->accumulator);
+        LoadADirect16(memory, cpu, UPLOAD_DP_VRAM_ADDRESS);
+        Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
+        cpu->carry = 0;
+        Add16Value(cpu, UPLOAD_ROW_STRIDE);
+        StoreADirect16(memory, cpu, UPLOAD_DP_VRAM_ADDRESS);
+        SetAccumulatorWidth(cpu, 1);
+        if (first_pass) {
+            LoadA8(cpu, DirectByte(memory, cpu, UPLOAD_DP_CHANNELS));
+            StoreAAbsolute8(memory, cpu, SNES_MDMAEN, 0);
+        } else {
+            StoreAImmediate8(memory, cpu, 0x80u, SNES_MDMAEN);
+        }
+        DecrementDirect8(memory, cpu, UPLOAD_DP_ROWS_LEFT);
+    } while (!cpu->zero);
+}
+
 /* $86:D1E8: tile column upload, rows of $0100 words. */
 static void WorldMapColumnUpload(
     const Lufia2Memory *memory,
@@ -22,57 +65,28 @@ static void WorldMapColumnUpload(
     LoadAAbsolute8(memory, cpu, 0x0005u, cpu->y);
     StoreAAbsolute8(memory, cpu, SNES_A1B(6), 0);
     LoadA8(cpu, 0x40u);
-    StoreADirect8(memory, cpu, 0x05u);
+    StoreADirect8(memory, cpu, UPLOAD_DP_CHANNELS);
     LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
-    StoreADirect8(memory, cpu, 0x33u);
+    StoreADirect8(memory, cpu, UPLOAD_DP_FIRST_SIZE);
     LoadAAbsolute8(memory, cpu, 0xd26bu, cpu->x);
     cpu->carry = 1;
-    Sbc8(cpu, DirectByte(memory, cpu, 0x33u));
-    StoreADirect8(memory, cpu, 0x35u);
+    Sbc8(cpu, DirectByte(memory, cpu, UPLOAD_DP_FIRST_SIZE));
+    StoreADirect8(memory, cpu, UPLOAD_DP_SECOND_SIZE);
     if (!cpu->zero) {
         LoadA8(cpu, 0xc0u);
-        StoreADirect8(memory, cpu, 0x05u);
+        StoreADirect8(memory, cpu, UPLOAD_DP_CHANNELS);
     }
     LoadAAbsolute8(memory, cpu, 0x0002u, cpu->y);              /* D214 */
-    StoreADirect8(memory, cpu, 0x37u);
-    cpu->carry = 0;
-    do {
-        SetAccumulatorWidth(cpu, 0);                           /* D21A */
-        LoadADirect16(memory, cpu, 0x33u);
-        Write16Absolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
-        LoadADirect16(memory, cpu, 0x35u);
-        Write16Absolute(memory, cpu, SNES_DASL(7), cpu->accumulator);
-        LoadADirect16(memory, cpu, 0x39u);
-        Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
-        cpu->carry = 0;
-        Add16Value(cpu, 0x0100u);
-        StoreADirect16(memory, cpu, 0x39u);
-        SetAccumulatorWidth(cpu, 1);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x05u));
-        StoreAAbsolute8(memory, cpu, SNES_MDMAEN, 0);
-        DecrementDirect8(memory, cpu, 0x37u);
-    } while (!cpu->zero);
+    StoreADirect8(memory, cpu, UPLOAD_DP_ROWS_LEFT);
+    WorldMapUploadRows(memory, cpu, true);
     LoadAAbsolute8(memory, cpu, 0xd26cu, cpu->x);              /* D23C */
     cpu->carry = 1;
     Sbc8(cpu, AbsoluteByte(memory, cpu, 0x0002u, cpu->y));
     if (!cpu->zero) {
-        StoreADirect8(memory, cpu, 0x37u);
+        StoreADirect8(memory, cpu, UPLOAD_DP_ROWS_LEFT);
         LoadAAbsolute8(memory, cpu, 0xd26bu, cpu->x);
-        StoreADirect8(memory, cpu, 0x35u);
-        cpu->carry = 0;
-        do {
-            SetAccumulatorWidth(cpu, 0);                       /* D24D */
-            LoadADirect16(memory, cpu, 0x35u);
-            Write16Absolute(memory, cpu, SNES_DASL(7), cpu->accumulator);
-            LoadADirect16(memory, cpu, 0x39u);
-            Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
-            cpu->carry = 0;
-            Add16Value(cpu, 0x0100u);
-            StoreADirect16(memory, cpu, 0x39u);
-            SetAccumulatorWidth(cpu, 1);
-            StoreAImmediate8(memory, cpu, 0x80u, SNES_MDMAEN);
-            DecrementDirect8(memory, cpu, 0x37u);
-        } while (!cpu->zero);
+        StoreADirect8(memory, cpu, UPLOAD_DP_SECOND_SIZE);
+        WorldMapUploadRows(memory, cpu, false);
     }
     SimulateRtsFrame(memory, cpu);
 }
@@ -94,27 +108,28 @@ static void WorldMapBlockUpload(
     LoadAAbsolute8(memory, cpu, 0x0005u, cpu->y);
     StoreAAbsolute8(memory, cpu, SNES_A1B(6), 0);
     LoadAAbsolute8(memory, cpu, 0xd2d0u, cpu->x);
-    StoreADirect8(memory, cpu, 0x33u);
+    StoreADirect8(memory, cpu, UPLOAD_DP_FIRST_SIZE);
     LoadAAbsolute8(memory, cpu, 0xd2d1u, cpu->x);
-    StoreADirect8(memory, cpu, 0x37u);
-    StoreADirect8(memory, cpu, 0x38u);
+    StoreADirect8(memory, cpu, UPLOAD_DP_ROWS_LEFT);
+    StoreADirect8(memory, cpu, UPLOAD_DP_BLOCK_PASS2_LEFT);
     for (pass = 0; pass < 2u; ++pass) {
         if (pass)
-            IncrementDirect8(memory, cpu, 0x3au);              /* D2B0 */
-        LoadXDirect16(memory, cpu, 0x39u);
+            IncrementDirect8(memory, cpu, UPLOAD_DP_VRAM_ADDRESS_HIGH); /* D2B0 */
+        LoadXDirect16(memory, cpu, UPLOAD_DP_VRAM_ADDRESS);
         cpu->carry = 0;
         do {
             SetAccumulatorWidth(cpu, 0);                       /* D295 */
-            LoadADirect16(memory, cpu, 0x33u);
+            LoadADirect16(memory, cpu, UPLOAD_DP_FIRST_SIZE);
             Write16Absolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
             TransferXToA(cpu);
             Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
             cpu->carry = 0;
-            Add16Value(cpu, 0x0200u);
+            Add16Value(cpu, UPLOAD_BLOCK_STRIDE);
             TransferAToX(cpu);
             SetAccumulatorWidth(cpu, 1);
             StoreAImmediate8(memory, cpu, 0x40u, SNES_MDMAEN);
-            DecrementDirect8(memory, cpu, pass ? 0x38u : 0x37u);
+            DecrementDirect8(memory, cpu,
+                             pass ? UPLOAD_DP_BLOCK_PASS2_LEFT : UPLOAD_DP_ROWS_LEFT);
         } while (!cpu->zero);
     }
     SimulateRtsFrame(memory, cpu);
@@ -162,6 +177,21 @@ static void WorldMapTileUploads(
     SimulateRtsFrame(memory, cpu);
 }
 
+/* Writes `count` colours (DP[count_dp]) from the CGRAM buffer at Y to the
+ * colour data port, two bytes each. */
+static void WorldMapCopyColors(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               uint8_t count_dp) {
+    do {
+        LoadAAbsolute8(memory, cpu, WRAM_CGRAM_BUFFER, cpu->y);
+        StoreAAbsolute8(memory, cpu, SNES_CGDATA, 0);
+        IncrementY16(cpu);
+        LoadAAbsolute8(memory, cpu, WRAM_CGRAM_BUFFER, cpu->y);
+        StoreAAbsolute8(memory, cpu, SNES_CGDATA, 0);
+        IncrementY16(cpu);
+        DecrementDirect8(memory, cpu, count_dp);
+    } while (!cpu->zero);
+}
+
 /* $86:CFC0: $16E7 palette cycles, five bytes each at $16E8. */
 static void WorldMapPaletteCycles(
     const Lufia2Memory *memory,
@@ -205,30 +235,14 @@ static void WorldMapPaletteCycles(
             AslA8(cpu);
             Adc8(cpu, DirectByte(memory, cpu, 0x33u));
             TransferAToY(cpu);
-            do {
-                LoadAAbsolute8(memory, cpu, WRAM_CGRAM_BUFFER, cpu->y); /* CFF8 */
-                StoreAAbsolute8(memory, cpu, SNES_CGDATA, 0);
-                IncrementY16(cpu);
-                LoadAAbsolute8(memory, cpu, WRAM_CGRAM_BUFFER, cpu->y);
-                StoreAAbsolute8(memory, cpu, SNES_CGDATA, 0);
-                IncrementY16(cpu);
-                DecrementDirect8(memory, cpu, 0x37u);
-            } while (!cpu->zero);
+            WorldMapCopyColors(memory, cpu, 0x37u); /* CFF8 */
             LoadA8(cpu, DirectByte(memory, cpu, 0x38u));
             if (!cpu->zero) {
                 LoadA8(cpu, Read8(memory,
                     DirectIndexedAddress(cpu, 0x00u, cpu->x)));
                 AslA8(cpu);
                 TransferAToY(cpu);
-                do {
-                    LoadAAbsolute8(memory, cpu, WRAM_CGRAM_BUFFER, cpu->y); /* D012 */
-                    StoreAAbsolute8(memory, cpu, SNES_CGDATA, 0);
-                    IncrementY16(cpu);
-                    LoadAAbsolute8(memory, cpu, WRAM_CGRAM_BUFFER, cpu->y);
-                    StoreAAbsolute8(memory, cpu, SNES_CGDATA, 0);
-                    IncrementY16(cpu);
-                    DecrementDirect8(memory, cpu, 0x38u);
-                } while (!cpu->zero);
+                WorldMapCopyColors(memory, cpu, 0x38u); /* D012 */
             }
         }
         SetAccumulatorWidth(cpu, 0);                           /* D024 */
