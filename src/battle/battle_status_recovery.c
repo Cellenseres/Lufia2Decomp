@@ -14,38 +14,41 @@ static bool StatusMessage(BattleContext *battle, uint16_t call_site, bool recove
     if (!BattleCall(battle, recovery ? 0x904au : 0x911fu, 0x8595feu, 3u))
         return false;
     if (recovery) {
-        if (!BattleCall(battle, 0x904eu, 0x8591a1u, 3u) ||
+        if (!BattleCall(battle, 0x904eu, BATTLE_ROUTINE_SYNC_STATUS_MARKERS, 3u) ||
             !BattleCall(battle, 0x9052u, 0x81bae8u, 3u))
             return false;
         OpRepWidths(cpu, 0x20u);
-        if (!BattleCall(battle, 0x9058u, 0x859bdau, 3u))
+        if (!BattleCall(battle, 0x9058u, BATTLE_ROUTINE_QUEUE_STATUS_SPRITES, 3u))
             return false;
         OpSepWidths(cpu, 0x20u);
-        if (!BattleCall(battle, 0x905eu, 0x858a2fu, 3u))
+        if (!BattleCall(battle, 0x905eu, BATTLE_ROUTINE_SPRITES, 3u))
             return false;
         OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, 0x0012f3u);
-        if (!BattleCall(battle, 0x9068u, 0x85ec81u, 3u))
+        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+        if (!BattleCall(battle, 0x9068u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return false;
     }
     OpLoadA(cpu, 0x2du);
     do {
         PushAccumulator8(memory, cpu);
-        if (!BattleCall(battle, recovery ? 0x906fu : 0x9126u, 0x858a2fu, 3u))
+        if (!BattleCall(battle, recovery ? 0x906fu : 0x9126u, BATTLE_ROUTINE_SPRITES,
+                        3u))
             return false;
         OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, 0x0012f3u);
-        if (!BattleCall(battle, recovery ? 0x9079u : 0x9130u, 0x85ec81u, 3u))
+        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+        if (!BattleCall(battle, recovery ? 0x9079u : 0x9130u,
+                        BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return false;
         LoadA8(cpu, Pull8(memory, cpu));
         OpDecA(cpu);
     } while (!cpu->zero);
     if (!BattleCall(battle, recovery ? 0x9081u : 0x9138u, 0x859671u, 3u) ||
-        !BattleCall(battle, recovery ? 0x9085u : 0x913cu, 0x858a2fu, 3u))
+        !BattleCall(battle, recovery ? 0x9085u : 0x913cu, BATTLE_ROUTINE_SPRITES, 3u))
         return false;
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(battle, recovery ? 0x908fu : 0x9146u, 0x85ec81u, 3u) ||
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    if (!BattleCall(battle, recovery ? 0x908fu : 0x9146u, BATTLE_ROUTINE_FRAME_INPUT,
+                    3u) ||
         !BattleCall(battle, recovery ? 0x9093u : 0x914au, 0x859abcu, 3u))
         return false;
     OpPullX(memory, cpu);

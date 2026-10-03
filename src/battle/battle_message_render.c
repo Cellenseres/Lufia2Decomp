@@ -72,7 +72,7 @@ Lufia2ExecutionResult Lufia2BattleLoadMessageGraphics(const Lufia2Memory *memory
     OpSta(memory, cpu, OpDp(cpu, 0x62u));
     OpLdx(cpu, 0x23fu);
     OpWriteX(memory, cpu, OpDp(cpu, 0x54u), cpu->x);
-    if (!BattleCall(&battle, 0xe7a0u, 0x808e9du, 3u))
+    if (!BattleCall(&battle, 0xe7a0u, BATTLE_ROUTINE_DECOMPRESS_RESOURCE, 3u))
         return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81e7a4u);
 }

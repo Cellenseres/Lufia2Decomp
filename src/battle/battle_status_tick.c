@@ -25,7 +25,7 @@ static bool StatusTickApply(BattleContext *battle) {
     TransferDirectToA(cpu);
     OpAdc(memory, cpu, OpAbs(cpu, SNES_RDDIVL));
     OpPushX(memory, cpu);
-    if (!BattleCall(battle, 0xc6adu, 0x85dceau, 3u))
+    if (!BattleCall(battle, 0xc6adu, BATTLE_ROUTINE_RANDOM_FRACTION, 3u))
         return false;
     OpPullX(memory, cpu);
     OpAslA(cpu);
@@ -168,7 +168,7 @@ Lufia2ExecutionResult Lufia2BattleStatusTick(
         OpLoadA(cpu, 0xdcu);
         if (!BattleCall(&battle, 0xc644u, 0x81895eu, 3u) ||
             !BattleCall(&battle, 0xc648u, 0x859671u, 3u) ||
-            !BattleCall(&battle, 0xc64cu, 0x85ec81u, 3u))
+            !BattleCall(&battle, 0xc64cu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return BattleChildUnwound(&battle);
     }
     PullDataBank(memory, cpu);

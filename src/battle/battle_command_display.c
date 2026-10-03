@@ -166,8 +166,8 @@ Lufia2ExecutionResult Lufia2BattleClearActionWindow(const Lufia2Memory *memory,
     OpSepWidths(cpu, 0x20u);
     OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(&battle, 0xe1b0u, 0x85ec81u, 3u))
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    if (!BattleCall(&battle, 0xe1b0u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81e1b4u);
 }

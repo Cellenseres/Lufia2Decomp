@@ -1,5 +1,6 @@
 /* Battle sprites, tilemap and frame upkeep. */
 
+#include "battle/battle_internal.h"
 #include "core/cpu_internal.h"
 #include "lufia2/battle.h"
 #include "system/wram.h"
@@ -705,7 +706,7 @@ Lufia2ExecutionResult Lufia2BattleSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2ExecutionResult result =
-        BattleFrameEntry(cpu, 0x858a2fu, 0x858a38u);
+        BattleFrameEntry(cpu, BATTLE_ROUTINE_SPRITES, 0x858a38u);
 
     if (result.flow == LUFIA2_EXECUTION_RETURNED)
         result.pc = 0x850000u | BattleSprites(memory, cpu);
@@ -730,7 +731,7 @@ Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     (void)BattleSprites(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     LoadA8(cpu, 0xffu);                                        /* ECF8 */
-    Write8(memory, 0x0012f3u, A8(cpu));
+    Write8(memory, BATTLE_SPRITE_REBUILD_REQUEST, A8(cpu));
     SimulateJslFrame(memory, cpu, 0x85u, 0xed01u);             /* $85:9265 */
     PushAndSetDataBank(memory, cpu, 0x7fu);
     ClearDescendingX16(memory, cpu, 0xf44eu, 0x02fbu);

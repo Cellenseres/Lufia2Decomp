@@ -7,6 +7,35 @@
 #include "lufia2/battle.h"
 #include "system/wram.h"
 
+/* ROM routines the battle code reaches through child calls, named after the
+ * functions recovered for them (see docs/FUNCTION_INDEX.md). */
+enum {
+    BATTLE_ROUTINE_DECOMPRESS_RESOURCE = 0x808e9du,
+    BATTLE_ROUTINE_BUILD_SPRITES = 0x81b5c4u,
+    BATTLE_ROUTINE_LOAD_PALETTE = 0x81b974u,
+    BATTLE_ROUTINE_COMMIT_PALETTES = 0x81b9afu,
+    BATTLE_ROUTINE_TILE_BLOCK = 0x81be58u,
+    BATTLE_ROUTINE_RESET_PARTY_TILEMAP = 0x81c2e3u,
+    BATTLE_ROUTINE_CLEAR_WINDOW_TILEMAP = 0x81c2fbu,
+    BATTLE_ROUTINE_CHOOSE_COMMAND = 0x81cb77u,
+    BATTLE_ROUTINE_CHOOSE_PARTY_ACTION = 0x81cc2eu,
+    BATTLE_ROUTINE_CHOOSE_TARGETS = 0x81d4e0u,
+    BATTLE_ROUTINE_PARTY_WINDOWS = 0x81df0au,
+    BATTLE_ROUTINE_SPRITES = 0x858a2fu,
+    BATTLE_ROUTINE_CLEAR_SPRITE_OFFSETS = 0x8589e5u,
+    BATTLE_ROUTINE_SYNC_STATUS_MARKERS = 0x8591a1u,
+    BATTLE_ROUTINE_QUEUE_STATUS_SPRITES = 0x859bdau,
+    BATTLE_ROUTINE_RANDOM_FRACTION = 0x85dceau,
+    BATTLE_ROUTINE_FRAME_INPUT = 0x85ec81u,
+};
+
+/* Byte in bank $00 mirror of $7E:12F3: set to $FF to ask the next frame
+ * upkeep ($85:EC81 path) to rebuild the battle sprites; the upkeep calls
+ * $81:B5C4 when it is non-zero and then clears it. */
+enum {
+    BATTLE_SPRITE_REBUILD_REQUEST = 0x0012f3u,
+};
+
 enum {
     BATTLE_FRAME_STATE = 0x129au,
     BATTLE_SAVED_ENTRY_STACK = 0x1395u,
@@ -161,11 +190,11 @@ static inline bool BattleLoadPortraits(BattleContext *battle) {
 }
 
 static inline bool BattleLoadPalette(BattleContext *battle, uint16_t site) {
-    return BattleCall(battle, site, 0x81b974u, 2u);
+    return BattleCall(battle, site, BATTLE_ROUTINE_LOAD_PALETTE, 2u);
 }
 
 static inline bool BattleCommitPalettes(BattleContext *battle) {
-    return BattleCall(battle, 0x86e4u, 0x81b9afu, 3u);
+    return BattleCall(battle, 0x86e4u, BATTLE_ROUTINE_COMMIT_PALETTES, 3u);
 }
 
 static inline bool BattleLoadDisplayDefaults(BattleContext *battle) {
@@ -177,11 +206,11 @@ static inline bool BattleClearBackgroundTilemap(BattleContext *battle) {
 }
 
 static inline bool BattleResetPartyTilemap(BattleContext *battle) {
-    return BattleCall(battle, 0x8544u, 0x81c2e3u, 2u);
+    return BattleCall(battle, 0x8544u, BATTLE_ROUTINE_RESET_PARTY_TILEMAP, 2u);
 }
 
 static inline bool BattleClearWindowTilemapForSetup(BattleContext *battle) {
-    return BattleCall(battle, 0x8547u, 0x81c2fbu, 2u);
+    return BattleCall(battle, 0x8547u, BATTLE_ROUTINE_CLEAR_WINDOW_TILEMAP, 2u);
 }
 
 static inline bool BattleClearTilemap3800ForSetup(BattleContext *battle) {
@@ -189,7 +218,7 @@ static inline bool BattleClearTilemap3800ForSetup(BattleContext *battle) {
 }
 
 static inline bool BattleClearWindowTilemapForExit(BattleContext *battle) {
-    return BattleCall(battle, 0x8796u, 0x81c2fbu, 2u);
+    return BattleCall(battle, 0x8796u, BATTLE_ROUTINE_CLEAR_WINDOW_TILEMAP, 2u);
 }
 
 static inline bool BattleClearTilemap3800ForExit(BattleContext *battle) {
@@ -197,7 +226,7 @@ static inline bool BattleClearTilemap3800ForExit(BattleContext *battle) {
 }
 
 static inline bool BattleDecompressResource(BattleContext *battle, uint16_t site) {
-    return BattleCall(battle, site, 0x808e9du, 3u);
+    return BattleCall(battle, site, BATTLE_ROUTINE_DECOMPRESS_RESOURCE, 3u);
 }
 
 static inline bool BattleCreatePartyRecord(BattleContext *battle) {
@@ -205,7 +234,7 @@ static inline bool BattleCreatePartyRecord(BattleContext *battle) {
 }
 
 static inline bool BattleBuildSprites(BattleContext *battle) {
-    return BattleCall(battle, 0x81c0u, 0x858a2fu, 3u);
+    return BattleCall(battle, 0x81c0u, BATTLE_ROUTINE_SPRITES, 3u);
 }
 
 static inline bool BattleRandomScale(BattleContext *battle, uint16_t site) {

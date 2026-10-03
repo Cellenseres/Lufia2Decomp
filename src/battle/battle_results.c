@@ -250,12 +250,12 @@ Lufia2ExecutionResult Lufia2BattleResults(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpAbs(cpu, 0x0562u));
     OpSepWidths(cpu, 0x20u);
     OpStz(memory, cpu, OpAbs(cpu, 0x11deu));
-    if (!BattleCall(&battle, 0xd9f4u, 0x85ec81u, 3u) ||
+    if (!BattleCall(&battle, 0xd9f4u, BATTLE_ROUTINE_FRAME_INPUT, 3u) ||
         !BattleCall(&battle, 0xd9f8u, 0x8591e0u, 3u) ||
-        !BattleCall(&battle, 0xd9fcu, 0x858a2fu, 3u))
+        !BattleCall(&battle, 0xd9fcu, BATTLE_ROUTINE_SPRITES, 3u))
         return BattleChildUnwound(&battle);
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
     OpLda(memory, cpu, OpAbs(cpu, 0x0b51u));
     OpBitValue(cpu, 3u);
     if (!cpu->zero) {

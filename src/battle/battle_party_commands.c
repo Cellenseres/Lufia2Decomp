@@ -64,7 +64,7 @@ static bool BattlePartyCommandDraw(BattleContext *battle) {
         OpInx(cpu);
         OpInx(cpu);
         OpPushX(memory, cpu);
-        if (!BattleCall(battle, 0xccacu, 0x81be58u, 2u))
+        if (!BattleCall(battle, 0xccacu, BATTLE_ROUTINE_TILE_BLOCK, 2u))
             return false;
         OpPullX(memory, cpu);
         OpCpx(cpu, 15u);
@@ -84,7 +84,7 @@ static bool BattlePartyCommandDraw(BattleContext *battle) {
     OpSta(memory, cpu, OpDp(cpu, 8u));
     OpLda(memory, cpu, OpLongX(cpu, 0x97b569u));
     OpSta(memory, cpu, OpDp(cpu, 9u));
-    return BattleCall(battle, 0xccd8u, 0x81be58u, 2u) &&
+    return BattleCall(battle, 0xccd8u, BATTLE_ROUTINE_TILE_BLOCK, 2u) &&
            BattleCall(battle, 0xccdbu, 0x859dd4u, 3u) &&
            BattleCall(battle, 0xccdfu, 0x81d9d0u, 2u);
 }
@@ -154,7 +154,7 @@ static PartyStep PartyAttack(BattleContext *battle, uint32_t *pc) {
         OpLda(memory, cpu, OpAbsX(cpu, 0x1369u));
         ExchangeAccumulatorBytes(cpu);
         OpPushX(memory, cpu);
-        if (!BattleCall(battle, 0xcd90u, 0x81d4e0u, 2u))
+        if (!BattleCall(battle, 0xcd90u, BATTLE_ROUTINE_CHOOSE_TARGETS, 2u))
             return PARTY_UNWOUND;
         OpPullX(memory, cpu);
         OpCmpValue(cpu, 0xffu);
@@ -242,7 +242,8 @@ static PartyPick PartyPickEntryAndTarget(BattleContext *battle,
         TransferDirectToA(cpu);
         OpLda(memory, cpu, OpLongX(cpu, spec->needs_target_long));
         if (!cpu->zero) {
-            if (!BattleCall(battle, spec->target_site, 0x81d4e0u, 2u))
+            if (!BattleCall(battle, spec->target_site, BATTLE_ROUTINE_CHOOSE_TARGETS,
+                            2u))
                 return PICK_UNWOUND;
             OpCmpValue(cpu, 0xffu);
             if (cpu->zero) {
@@ -489,7 +490,7 @@ Lufia2ExecutionResult Lufia2BattleChoosePartyAction(const Lufia2Memory *memory,
     OpLoadA(cpu, BATTLE_ACTION_NONE);
     OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
     if (!BattleCall(&battle, 0xcc35u, 0x8592ceu, 3u) ||
-        !BattleCall(&battle, 0xcc39u, 0x81df0au, 2u) ||
+        !BattleCall(&battle, 0xcc39u, BATTLE_ROUTINE_PARTY_WINDOWS, 2u) ||
         !BattlePartyCommandLabel(&battle, 0xcc46u, 0xcc63u, 0x87c7u, true))
         return BattleChildUnwound(&battle);
     OpRepWidths(cpu, 0x20u);
@@ -512,8 +513,8 @@ Lufia2ExecutionResult Lufia2BattleChoosePartyAction(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpDp(cpu, 0x24u));
     OpLdy(cpu, 0xfe06u);
     TransferDirectToA(cpu);
-    if (!BattleCall(&battle, 0xcc8cu, 0x81b974u, 2u) ||
-        !BattleCall(&battle, 0xcc8fu, 0x81b9afu, 3u))
+    if (!BattleCall(&battle, 0xcc8cu, BATTLE_ROUTINE_LOAD_PALETTE, 2u) ||
+        !BattleCall(&battle, 0xcc8fu, BATTLE_ROUTINE_COMMIT_PALETTES, 3u))
         return BattleChildUnwound(&battle);
     for (;;) {
         PartyStep step;
@@ -521,8 +522,8 @@ Lufia2ExecutionResult Lufia2BattleChoosePartyAction(const Lufia2Memory *memory,
         if (!BattlePartyCommandDraw(&battle))
             return BattleChildUnwound(&battle);
         OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, 0x0012f3u);
-        if (!BattleCall(&battle, 0xcce8u, 0x85ec81u, 3u))
+        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+        if (!BattleCall(&battle, 0xcce8u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return BattleChildUnwound(&battle);
         OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
         OpBitValue(cpu, 0xa0u);

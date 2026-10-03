@@ -118,7 +118,7 @@ bool BattleTearDownDisplay(BattleContext *battle) {
         return false;
     OpSepWidths(cpu, 0x20u);
 
-    if (!BattleCall(battle, 0x87a4u, 0x85ec81u, 3u))
+    if (!BattleCall(battle, 0x87a4u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return false;
 
     Lufia2DisableSceneNmi(memory, cpu);
@@ -126,5 +126,5 @@ bool BattleTearDownDisplay(BattleContext *battle) {
     LoadA8(cpu, BRIGHTNESS_FORCED_BLANK);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
 
-    return BattleCall(battle, 0x87b2u, 0x85ec81u, 3u);
+    return BattleCall(battle, 0x87b2u, BATTLE_ROUTINE_FRAME_INPUT, 3u);
 }

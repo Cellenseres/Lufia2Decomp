@@ -170,7 +170,7 @@ static void TargetPublishSelectionMask(const Lufia2Memory *memory, Lufia2CpuStat
     } while (!cpu->negative);
     OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
 }
 
 /* Draws the cursor for a single target: its name goes into the name buffer and
@@ -281,7 +281,7 @@ static bool TargetDrawSelection(BattleContext *battle) {
     OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
     return true;
 }
 
@@ -609,7 +609,7 @@ static TargetOutcome TargetCancel(BattleContext *battle, uint32_t *return_pc) {
     }
     OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
     OpStz(memory, cpu, OpAbs(cpu, SNES_WRIO));
     OpStz(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
     OpLoadA(cpu, 0xffu);
@@ -668,7 +668,7 @@ Lufia2ExecutionResult Lufia2BattleChooseTargets(const Lufia2Memory *memory,
     uint32_t return_pc = 0u;
 
     PushAccumulator8(memory, cpu);
-    if (!BattleCall(&battle, 0xd4e1u, 0x85ec81u, 3u))
+    if (!BattleCall(&battle, 0xd4e1u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return BattleChildUnwound(&battle);
     LoadA8(cpu, Pull8(memory, cpu));
     OpPushX(memory, cpu);
@@ -696,13 +696,13 @@ Lufia2ExecutionResult Lufia2BattleChooseTargets(const Lufia2Memory *memory,
         if (!BattleCall(&battle, 0xd635u, 0x81d9d0u, 2u))
             return BattleChildUnwound(&battle);
         OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, 0x0012f3u);
+        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
         OpRepWidths(cpu, 0x20u);
         if (!BattleCall(&battle, 0xd640u, 0x859cc0u, 3u) ||
             !BattleCall(&battle, 0xd644u, 0x859c64u, 3u))
             return BattleChildUnwound(&battle);
         OpSepWidths(cpu, 0x20u);
-        if (!BattleCall(&battle, 0xd64au, 0x85ec81u, 3u))
+        if (!BattleCall(&battle, 0xd64au, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return BattleChildUnwound(&battle);
         outcome = TargetHandleInput(&battle, &return_pc);
         if (outcome == TARGET_UNWOUND)

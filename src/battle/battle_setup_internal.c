@@ -267,13 +267,13 @@ bool BattleFinalizeSetup(BattleContext *battle) {
         return false;
     if (!BattleRunDisplaySetup(battle))
         return false;
-    if (!BattleCall(battle, 0x81bcu, 0x8591a1u, 3u))
+    if (!BattleCall(battle, 0x81bcu, BATTLE_ROUTINE_SYNC_STATUS_MARKERS, 3u))
         return false;
     if (!BattleBuildSprites(battle))
         return false;
 
     LoadA8(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
     OpLda(memory, cpu, OpDp(cpu, 0x40u));
     OpSta(memory, cpu, OpDp(cpu, 0xd4u));
 
@@ -288,8 +288,8 @@ bool BattleFinalizeSetup(BattleContext *battle) {
         if (!BattleCall(battle, 0x81d6u, 0x81d9d0u, 2u))
             return false;
         LoadA8(cpu, 0xffu);
-        OpSta(memory, cpu, 0x0012f3u);
-        if (!BattleCall(battle, 0x81dfu, 0x85ec81u, 3u))
+        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+        if (!BattleCall(battle, 0x81dfu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return false;
     }
 }
