@@ -932,7 +932,7 @@ static Lufia2ExecutionResult DrawObject(
 
     SimulateJsrFrame(memory, cpu, 0xe3d0u);
     result = Lufia2WorldMapDrawObjectByKind(memory, cpu);
-    if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
     SimulateRtsFrame(memory, cpu);
     return ExecutionReturned(0x86e3d1u);
@@ -963,7 +963,7 @@ Lufia2ExecutionResult Lufia2WorldMapDrawObjects(
             cpu->x = ReadAbsolute16(wram, LIST_OBJECTS, entry);
             SimulateJsrFrame(memory, cpu, 0xe3bbu);
             result = DrawObject(memory, cpu);
-            if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
+            if (result.flow != LUFIA2_EXECUTION_RETURNED)
                 return result;
             SimulateRtsFrame(memory, cpu);
             entry = (uint16_t)(PullStackWord(memory, cpu) + 2u);
@@ -979,7 +979,7 @@ Lufia2ExecutionResult Lufia2WorldMapDrawObjects(
     if (!IsNegative16(player_y)) {
         SimulateJsrFrame(memory, cpu, 0xe3ccu);
         result = DrawObject(memory, cpu);
-        if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
+        if (result.flow != LUFIA2_EXECUTION_RETURNED)
             return result;
         SimulateRtsFrame(memory, cpu);
     }
@@ -1179,9 +1179,15 @@ Lufia2ExecutionResult Lufia2WorldMapProjectObjects(
         if (IsNegative16(WramRead16At(wram, TILT_WORD, object))) {
             ProjectObject(memory, cpu, wram, object);
         } else {
+            uint16_t return_address;
+
+            cpu->x = object;
             SimulateJsrFrame(memory, cpu, 0xe353u);
             AppendIfOnScreen(wram, cpu, object);
-            SimulateRtsFrame(memory, cpu);
+            return_address = PullStackWord(memory, cpu);
+            if (return_address != 0xe353u)
+                return ExecutionHandoff(cpu,
+                    0x860000u | (uint16_t)(return_address + 1u));
         }
         next = Sum16Mode(object, OBJECT_SIZE, false, cpu->decimal);
         object = next.value;
@@ -1310,14 +1316,21 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
     uint8_t slots_left;
     bool tilted;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !DirectWorkWordAvailable(cpu, OBJECTS_LEFT) ||
+        !DirectWorkByteAvailable(cpu, UPDATE_SLOTS_LEFT) ||
+        !DirectWorkWordAvailable(cpu, UPDATE_BLOCKS_LEFT))
         return ExecutionHandoff(cpu, 0x86e1b9u);
     wram = WramViewOfCaller(memory, cpu);
     SimulateJsrFrame(memory, cpu, 0xe1bbu);
-    (void)Lufia2WorldMapClearSprites(memory, cpu);
+    result = Lufia2WorldMapClearSprites(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
     SimulateRtsFrame(memory, cpu);
     SimulateJsrFrame(memory, cpu, 0xe1beu);
-    (void)Lufia2WorldMapClearSlotFlags(memory, cpu);
+    result = Lufia2WorldMapClearSlotFlags(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
     SimulateRtsFrame(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
     WriteAbsolute16(wram, VISIBLE_COUNT, 0, 0);
@@ -1334,16 +1347,20 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
              Read8(memory, Absolute(wram, VIEW_MODE_TILTED, 0)) != 0;
     SimulateJsrFrame(memory, cpu, tilted ? 0xe1feu : 0xe1f7u);
     if (tilted)
-        (void)Lufia2WorldMapProjectObjects(memory, cpu);
+        result = Lufia2WorldMapProjectObjects(memory, cpu);
     else
-        (void)Lufia2WorldMapTestObjects(memory, cpu);
+        result = Lufia2WorldMapTestObjects(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
     SimulateRtsFrame(memory, cpu);
     SimulateJsrFrame(memory, cpu, 0xe201u);
-    (void)Lufia2WorldMapSortVisible(memory, cpu);
+    result = Lufia2WorldMapSortVisible(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
     SimulateRtsFrame(memory, cpu);
     SimulateJsrFrame(memory, cpu, 0xe204u);
     result = Lufia2WorldMapDrawObjects(memory, cpu);
-    if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
     SimulateRtsFrame(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
@@ -1361,7 +1378,7 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
         cpu->accumulator = 0;
         if (FindFreeBlock(wram, cpu, slot_pointer, &block)) {
             result = DrawSlotUsers(memory, cpu, wram, block);
-            if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
+            if (result.flow != LUFIA2_EXECUTION_RETURNED)
                 return result;
         } else {
             SetAccumulatorWidth(cpu, 0);

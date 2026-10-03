@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
+#include "core/plain_ops.h"
 #include "core/snes_registers.h"
 #include "lufia2/field.h"
 
@@ -70,14 +71,19 @@ typedef struct {
     Lufia2CpuState *cpu;
     uint16_t y;            /* byte offset of the current cell */
     uint16_t budget;       /* remaining steps */
-    uint16_t row;          /* offsets of the neighbours, from the DP */
-    uint16_t two_rows;
-    uint16_t next_column;
-    uint16_t next_column_2;
-    uint16_t two_rows_next;
-    uint16_t two_rows_next_2;
     uint16_t exit_a;       /* accumulator for the early exits */
 } Trace;
+
+static uint16_t TraceOffset(const Trace *trace, uint8_t field) {
+    return Read16Direct(trace->memory, trace->cpu, field);
+}
+
+static uint16_t StepRow(const Trace *trace, uint16_t cell, bool down) {
+    const uint16_t stride = TraceOffset(trace, DP_ROW_STEP);
+
+    return down ? Sum16Mode(cell, stride, false, trace->cpu->decimal).value :
+        Difference16Mode(cell, stride, trace->cpu->decimal).value;
+}
 
 static uint16_t CellWord(const Trace *t, uint16_t offset) {
     return Read16Long(t->memory,
@@ -147,17 +153,17 @@ static int StepsLeftPositive(Trace *t) {
  * the column. */
 static void MarkBend(Trace *t) {
     PushWord(t, t->y);
-    MarkCell(t, t->next_column_2);
-    MarkCell(t, t->row);
+    MarkCell(t, TraceOffset(t, DP_NEXT_COLUMN_2));
+    MarkCell(t, TraceOffset(t, DP_ROW_STEP));
     do {
-        t->y = (uint16_t)(t->y + t->row);
-        MarkCell(t, t->next_column);
-        MarkCell(t, t->next_column_2);
-        MarkCell(t, t->row);
-    } while ((CellWord(t, t->two_rows_next) & EDGE_BITS) == EDGE_OPEN);
-    MarkCell(t, t->two_rows_next_2);
-    MarkCell(t, t->two_rows_next);
-    MarkCell(t, t->two_rows);
+        t->y = StepRow(t, t->y, true);
+        MarkCell(t, TraceOffset(t, DP_NEXT_COLUMN));
+        MarkCell(t, TraceOffset(t, DP_NEXT_COLUMN_2));
+        MarkCell(t, TraceOffset(t, DP_ROW_STEP));
+    } while ((CellWord(t, TraceOffset(t, DP_TWO_ROWS_NEXT)) & EDGE_BITS) == EDGE_OPEN);
+    MarkCell(t, TraceOffset(t, DP_TWO_ROWS_NEXT_2));
+    MarkCell(t, TraceOffset(t, DP_TWO_ROWS_NEXT));
+    MarkCell(t, TraceOffset(t, DP_TWO_ROWS));
     t->y = PullWord(t);
 }
 
@@ -171,20 +177,20 @@ static void CallMarkBend(Trace *t, uint16_t return_address) {
 /* $80:FA15: edge runs upwards. */
 static WalkDirection WalkUp(Trace *t) {
     for (;;) {
-        uint16_t cell = CellWord(t, t->row);
+        uint16_t cell = CellWord(t, TraceOffset(t, DP_ROW_STEP));
         uint16_t beside;
 
         if ((cell & EDGE_BITS) == 0) {
             t->y = (uint16_t)(t->y - 2u);
             return Turn(t, WALK_LEFT);
         }
-        SetCellWord(t, t->row, (uint16_t)(cell | EDGE_BITS));
+        SetCellWord(t, TraceOffset(t, DP_ROW_STEP), (uint16_t)(cell | EDGE_BITS));
         beside = (uint16_t)(CellWord(t, 2u) & EDGE_BITS);
         if (beside == EDGE_OPEN) {
             PushWord(t, t->y);
             do {
-                t->y = (uint16_t)(t->y - t->row);
-                ClearCellEdge(t, t->next_column);
+                t->y = StepRow(t, t->y, false);
+                ClearCellEdge(t, TraceOffset(t, DP_NEXT_COLUMN));
             } while ((CellWord(t, 2u) & EDGE_BITS) != 0);
             MarkCell(t, 2u);
             t->y = PullWord(t);
@@ -194,7 +200,7 @@ static WalkDirection WalkUp(Trace *t) {
             MarkCell(t, 0u);
             return Turn(t, WALK_RIGHT);
         }
-        t->y = (uint16_t)(t->y - t->row);
+        t->y = StepRow(t, t->y, false);
         if (!StepsLeftNonZero(t))
             return WALK_FINISH;
     }
@@ -203,24 +209,24 @@ static WalkDirection WalkUp(Trace *t) {
 /* $80:FA79: edge runs downwards. */
 static WalkDirection WalkDown(Trace *t) {
     for (;;) {
-        const uint16_t cell = CellWord(t, t->next_column_2);
+        const uint16_t cell = CellWord(t, TraceOffset(t, DP_NEXT_COLUMN_2));
         uint16_t below;
 
         if ((cell & EDGE_BITS) == 0) {
             t->y = (uint16_t)(t->y + 2u);
             return Turn(t, WALK_RIGHT);
         }
-        SetCellWord(t, t->next_column_2, (uint16_t)(cell | EDGE_BITS));
-        below = (uint16_t)(CellWord(t, t->two_rows_next) & EDGE_BITS);
+        SetCellWord(t, TraceOffset(t, DP_NEXT_COLUMN_2), (uint16_t)(cell | EDGE_BITS));
+        below = (uint16_t)(CellWord(t, TraceOffset(t, DP_TWO_ROWS_NEXT)) & EDGE_BITS);
         if (below == EDGE_OPEN) {
             CallMarkBend(t, 0xfabau);
             return Turn(t, WALK_UP);
         }
         if (below & EDGE_INSIDE) {
-            MarkCell(t, t->two_rows_next_2);
+            MarkCell(t, TraceOffset(t, DP_TWO_ROWS_NEXT_2));
             return Turn(t, WALK_LEFT);
         }
-        t->y = (uint16_t)(t->y + t->row);
+        t->y = StepRow(t, t->y, true);
         if (!StepsLeftPositive(t))
             return WALK_FINISH;
     }
@@ -229,15 +235,15 @@ static WalkDirection WalkDown(Trace *t) {
 /* $80:FB0D: edge runs to the left. */
 static WalkDirection WalkLeft(Trace *t) {
     for (;;) {
-        const uint16_t cell = CellWord(t, t->two_rows_next);
+        const uint16_t cell = CellWord(t, TraceOffset(t, DP_TWO_ROWS_NEXT));
 
         if ((cell & EDGE_BITS) == 0) {
-            t->y = (uint16_t)(t->y + t->row);
+            t->y = StepRow(t, t->y, true);
             return Turn(t, WALK_DOWN);
         }
-        SetCellWord(t, t->two_rows_next, (uint16_t)(cell | EDGE_BITS));
-        if (CellWord(t, t->row) & EDGE_INSIDE) {
-            MarkCell(t, t->two_rows);
+        SetCellWord(t, TraceOffset(t, DP_TWO_ROWS_NEXT), (uint16_t)(cell | EDGE_BITS));
+        if (CellWord(t, TraceOffset(t, DP_ROW_STEP)) & EDGE_INSIDE) {
+            MarkCell(t, TraceOffset(t, DP_TWO_ROWS));
             return Turn(t, WALK_UP);
         }
         t->y = (uint16_t)(t->y - 2u);
@@ -253,22 +259,26 @@ static WalkDirection WalkRight(Trace *t) {
         uint16_t beside;
 
         if ((cell & EDGE_BITS) == 0) {
-            t->y = (uint16_t)(t->y - t->row);
+            t->y = StepRow(t, t->y, false);
             return Turn(t, WALK_UP);
         }
         SetCellWord(t, 2u, (uint16_t)(cell | EDGE_BITS));
-        beside = (uint16_t)(CellWord(t, t->next_column_2) & EDGE_BITS);
+        beside = (uint16_t)(CellWord(t, TraceOffset(t, DP_NEXT_COLUMN_2)) & EDGE_BITS);
         if (beside == EDGE_OPEN) {
             PushWord(t, t->y);
             t->y = (uint16_t)(t->y + 2u);
             while ((CellWord(t, 2u) & EDGE_BITS) == EDGE_OPEN)
-                t->y = (uint16_t)(t->y - t->row);
+                t->y = StepRow(t, t->y, false);
             MarkCell(t, 2u);
             MarkCell(t, 0u);
             MarkCell(t, 4u);
-            while ((CellWord(t, t->next_column) & EDGE_BITS) != 0) {
-                ClearCellEdge(t, t->next_column);
-                t->y = (uint16_t)(t->y + t->row);
+            for (;;) {
+                const uint16_t marked = CellWord(t, TraceOffset(t, DP_NEXT_COLUMN));
+
+                if ((marked & EDGE_BITS) == 0)
+                    break;
+                SetCellWord(t, TraceOffset(t, DP_NEXT_COLUMN), (uint16_t)(marked & ~EDGE_BITS));
+                t->y = StepRow(t, t->y, true);
             }
             t->y = PullWord(t);
             continue;
@@ -334,7 +344,7 @@ static uint8_t FoldMarks(const Trace *t, uint16_t *table, uint16_t *cell) {
             }
             x = (uint16_t)(x + 2u);
             row.y = (uint16_t)(row.y + 2u);
-            --count;
+            count = (uint8_t)(DirectByte(memory, cpu, FOLD_CELLS_LEFT) - 1u);
             Write8(memory, DirectAddress(cpu, FOLD_CELLS_LEFT), count);
         } while (count != 0);
     }
@@ -401,7 +411,7 @@ static uint8_t FoldMarks(const Trace *t, uint16_t *table, uint16_t *cell) {
             }
             x = (uint16_t)(x + 2u);
             row.y = (uint16_t)(row.y + 2u);
-            --count;
+            count = (uint8_t)(DirectByte(memory, cpu, FOLD_CELLS_LEFT) - 1u);
             Write8(memory, DirectAddress(cpu, FOLD_CELLS_LEFT), count);
         } while (count != 0);
         {
@@ -425,7 +435,7 @@ static WalkDirection StartInside(Trace *t) {
     Lufia2CpuState *cpu = t->cpu;
     uint16_t edge;
 
-    t->y = (uint16_t)(t->y + t->row);
+    t->y = StepRow(t, t->y, true);
     (void)AddToWord(t, DP_ROW, 1);
     for (;;) {
         uint16_t row_index;
@@ -433,7 +443,7 @@ static WalkDirection StartInside(Trace *t) {
         edge = (uint16_t)(CellWord(t, 0u) & EDGE_BITS);
         if (edge != 0)
             break;
-        t->y = (uint16_t)(t->y + t->row);
+        t->y = StepRow(t, t->y, true);
         row_index = (uint16_t)(Read16Direct(memory, cpu, DP_ROW) + 1u);
         Write16Direct(memory, cpu, DP_ROW, row_index);
         if (row_index == Read16Long(memory, MAP_HEIGHT)) {
@@ -442,7 +452,7 @@ static WalkDirection StartInside(Trace *t) {
         }
     }
     PushWord(t, edge);
-    t->y = (uint16_t)(t->y - t->row - t->row - 2u);
+    t->y = (uint16_t)(StepRow(t, StepRow(t, t->y, false), false) - 2u);
     Write16Direct(memory, cpu, DP_CORNER, t->y);
     edge = PullWord(t);
     if (edge == EDGE_OPEN)
@@ -458,7 +468,7 @@ static WalkDirection StartOnEdge(Trace *t) {
 
     (void)AddToWord(t, DP_ROW, 1);
     while ((CellWord(t, 0u) & EDGE_BITS) != 0) {
-        t->y = (uint16_t)(t->y - t->row);
+        t->y = StepRow(t, t->y, false);
         (void)AddToWord(t, DP_ROW, -1);
     }
     for (;;) {
@@ -470,22 +480,22 @@ static WalkDirection StartOnEdge(Trace *t) {
             /* The subtraction below continues without setting the carry,
              * as the original does. */
             for (;;) {
-                uint32_t step;
 
                 cell = CellWord(t, 0u);
                 if ((cell & EDGE_BITS) == 0)
                     break;
                 SetCellWord(t, 0u, (uint16_t)(cell & ~EDGE_BITS));
-                step = (uint32_t)t->row + (carry ? 0u : 1u);
-                carry = t->y >= step;
-                t->y = (uint16_t)(t->y - step);
+                const Word16Result result = ArithmeticValue(t->y,
+                    TraceOffset(t, DP_ROW_STEP), carry != 0, t->cpu->decimal, true, 16u);
+                carry = result.carry;
+                t->y = result.value;
             }
             SetCellWord(t, 0u, (uint16_t)(cell | EDGE_BITS));
             break;
         }
         if (edge & EDGE_INSIDE)
             break;
-        t->y = (uint16_t)(t->y - t->row);
+        t->y = StepRow(t, t->y, false);
         if (AddToWord(t, DP_ROW, -1) == 0) {
             t->exit_a = t->y;
             return WALK_EXIT;
@@ -513,12 +523,6 @@ static Lufia2ExecutionResult RunTrace(
     t.cpu = cpu;
     t.y = cpu->y;
     t.budget = cpu->x;
-    t.row = Read16Direct(memory, cpu, DP_ROW_STEP);
-    t.two_rows = Read16Direct(memory, cpu, DP_TWO_ROWS);
-    t.next_column = Read16Direct(memory, cpu, DP_NEXT_COLUMN);
-    t.next_column_2 = Read16Direct(memory, cpu, DP_NEXT_COLUMN_2);
-    t.two_rows_next = Read16Direct(memory, cpu, DP_TWO_ROWS_NEXT);
-    t.two_rows_next_2 = Read16Direct(memory, cpu, DP_TWO_ROWS_NEXT_2);
     t.exit_a = 0;
 
     switch (entry) {
@@ -585,10 +589,13 @@ Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
     PushDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
+    LoadX16(cpu, 0x27u);
     for (slot = 0x28u; slot-- > 0;) {
-        const uint32_t address = AbsoluteIndexedAddress(cpu, 0x0736u, (uint16_t)slot);
+        const uint32_t address = AbsoluteIndexedAddress(cpu, 0x0736u, cpu->x);
 
-        Write8(memory, address, (uint8_t)(Read8(memory, address) & 0xbfu));
+        LoadA8(cpu, (uint8_t)(Read8(memory, address) & 0xbfu));
+        Write8(memory, address, A8(cpu));
+        LoadX16(cpu, (uint16_t)(cpu->x - 1u));
     }
     SimulateJslFrame(memory, cpu, 0x80u, 0xf838u);
     result = Lufia2FieldUnpackAttributes(memory, cpu);
