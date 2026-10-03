@@ -364,6 +364,18 @@ static SecondaryStep SecondarySaveCursorExit(
     return SecondaryExit();
 }
 
+/* $83:DD09: store the cursor at $2A as the script position and exit. */
+static SecondaryStep SecondarySaveWalkCursor(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu) {
+    LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16Direct(memory, cpu, 0x2au));
+    Write16Long(memory, LongIndexedAddress(WRAM_ACTOR_SECONDARY_SCRIPT, cpu->x),
+                cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    return SecondaryExit();
+}
+
 /* $83:DC45: walk one tile over 16 sub-steps. */
 static SecondaryStep SecondaryWalk(
     const Lufia2Memory *memory,
@@ -415,7 +427,7 @@ static SecondaryStep SecondaryWalk(
     And8(cpu, 0xfcu);                                          /* DC89 */
     Sbc8(cpu, Read8(memory, DirectAddress(cpu, 0x32u)));
     if (cpu->negative)
-        goto save_cursor;                                      /* DC8D */
+        return SecondarySaveWalkCursor(memory, cpu);           /* DC8D */
     LoadA8(cpu, 0x03u);                                        /* DC8F */
     TrbDirect8(memory, cpu, 0x32u);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_WALK_COUNTER, cpu->x)));
@@ -473,15 +485,7 @@ static SecondaryStep SecondaryWalk(
         return SecondaryRedispatched(memory, cpu);
     }
 
-save_cursor:
-    LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET); /* DD09 */
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x2au));
-    Write16Long(
-        memory, LongIndexedAddress(WRAM_ACTOR_SECONDARY_SCRIPT, cpu->x),
-            cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
-    return SecondaryExit();
+    return SecondarySaveWalkCursor(memory, cpu);
 }
 
 /* $83:D5F8: next byte. */
