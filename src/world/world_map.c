@@ -20,6 +20,39 @@ enum {
     UPLOAD_BLOCK_STRIDE = 0x0200u,
 };
 
+/* World map state in bank $7E. The streaming routine stages one row and one
+ * column of tilemap per frame; the NMI sends them to VRAM when the pending
+ * flags are set. Registers the NMI writes from shadow copies sit at the
+ * shadow addresses. */
+enum {
+    WORLD_MAP_UPLOAD_PENDING = 0x11d9u, /* non-zero: the NMI uploads tiles */
+    WORLD_MAP_TILE_UPLOAD_READY = 0x1365u,
+    WORLD_MAP_MOVE_COUNT = 0x11e3u, /* camera cell changes, saturating at $FF */
+    WORLD_MAP_CAMERA_CELL_X = 0x11f2u,
+    WORLD_MAP_CAMERA_CELL_Y = 0x11f4u,
+    WORLD_MAP_STREAMED_CELL_X = 0x11f6u, /* the cell last streamed */
+    WORLD_MAP_STREAMED_CELL_Y = 0x11f7u,
+    WORLD_MAP_MODE7_CENTRE = 0x11f8u,   /* four bytes for M7X and M7Y */
+    WORLD_MAP_SCROLL_SHADOW = 0x0594u,  /* twelve bytes for BG1-3 scroll */
+    WORLD_MAP_PALETTE_INDEX = 0x1701u,  /* pending CGRAM block */
+    WORLD_MAP_PALETTE_LENGTH = 0x1702u, /* bytes, 0 when nothing is pending */
+    WORLD_MAP_PALETTE_SOURCE = 0x1704u,
+    WORLD_MAP_PALETTE_BANK = 0x1706u,
+    WORLD_MAP_MODE7_MATRIX = 0x1707u, /* eight bytes for M7A-M7D */
+    WORLD_MAP_COLOUR_MATH = 0x170fu,  /* CGADSUB value */
+    WORLD_MAP_ROW_PENDING = 0x1710u,  /* set to $FF by the streamer */
+    WORLD_MAP_COLUMN_PENDING = 0x1711u,
+    WORLD_MAP_ROW_STAGE = 0x1712u,    /* source address; low 14 bits are VRAM */
+    WORLD_MAP_COLUMN_STAGE = 0x1714u, /* VRAM address of the column */
+    WORLD_MAP_COLOUR_TABLE = 0x1716u, /* HDMA source for channel 4 */
+    WORLD_MAP_MATRIX_TABLE = 0x1718u, /* HDMA source for channel 0 */
+    WORLD_MAP_STAGE_BANK = 0x7fu,     /* bank of the staged tilemap */
+    WORLD_MAP_VRAM_ADDRESS_MASK = 0x3fffu,
+    WORLD_MAP_ROW_BYTES = 0x0100u,
+    WORLD_MAP_COLUMN_BUFFER = 0xdf00u, /* $7F:DF00, two halves */
+    WORLD_MAP_COLUMN_HALF = 0x80u,
+};
+
 /* Sends DP $37 rows to VRAM, one DMA per row, advancing the VRAM address by
  * $0100 each time. The first pass drives channels 6 and 7 (the channel mask in
  * DP $05); the second pass only channel 7. */
@@ -259,20 +292,20 @@ static void WorldMapPaletteCycles(
 /* DMA the row strip the stream routine staged ($1710 flag, VRAM address and source at
  * $1712). */
 static void WorldMapUploadStreamedRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, 0x1710u, 0);
+    LoadAAbsolute8(memory, cpu, WORLD_MAP_ROW_PENDING, 0);
     if (!cpu->zero) {
         StoreZeroAbsolute8(memory, cpu, SNES_VMAIN, 0);
-        StoreAImmediate8(memory, cpu, 0x7fu, SNES_A1B(7));
+        StoreAImmediate8(memory, cpu, WORLD_MAP_STAGE_BANK, SNES_A1B(7));
         SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1712u, 0));
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WORLD_MAP_ROW_STAGE, 0));
         Write16Absolute(memory, cpu, SNES_A1TL(7), cpu->accumulator);
-        And16(cpu, 0x3fffu);
+        And16(cpu, WORLD_MAP_VRAM_ADDRESS_MASK);
         Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
-        LoadX16(cpu, 0x0100u);
+        LoadX16(cpu, WORLD_MAP_ROW_BYTES);
         Write16Absolute(memory, cpu, SNES_DASL(7), cpu->x);
         StoreAImmediate8(memory, cpu, 0x80u, SNES_MDMAEN);
-        StoreZeroAbsolute8(memory, cpu, 0x1710u, 0);
+        StoreZeroAbsolute8(memory, cpu, WORLD_MAP_ROW_PENDING, 0);
     }
 }
 
@@ -280,18 +313,18 @@ static void WorldMapUploadStreamedRow(const Lufia2Memory *memory, Lufia2CpuState
  * 0x80-byte halves. */
 static void WorldMapUploadStreamedColumn(const Lufia2Memory *memory,
                                          Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, 0x1711u, 0);                   /* CF48 */
+    LoadAAbsolute8(memory, cpu, WORLD_MAP_COLUMN_PENDING, 0); /* CF48 */
     if (!cpu->zero) {
         StoreAImmediate8(memory, cpu, 0x03u, SNES_VMAIN);
-        StoreAImmediate8(memory, cpu, 0x7fu, SNES_A1B(7));
+        StoreAImmediate8(memory, cpu, WORLD_MAP_STAGE_BANK, SNES_A1B(7));
         SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1714u, 0));
-        And16(cpu, 0x3fffu);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WORLD_MAP_COLUMN_STAGE, 0));
+        And16(cpu, WORLD_MAP_VRAM_ADDRESS_MASK);
         Write16Absolute(memory, cpu, SNES_VMADDL, cpu->accumulator);
         IncrementA16(cpu);
         PushAccumulator16(memory, cpu);
         SetAccumulatorWidth(cpu, 1);
-        LoadX16(cpu, 0xdf00u);
+        LoadX16(cpu, WORLD_MAP_COLUMN_BUFFER);
         Write16Absolute(memory, cpu, SNES_A1TL(7), cpu->x);
         LoadX16(cpu, 0x0080u);
         Write16Absolute(memory, cpu, SNES_DASL(7), cpu->x);
@@ -300,7 +333,7 @@ static void WorldMapUploadStreamedColumn(const Lufia2Memory *memory,
         Write16Absolute(memory, cpu, SNES_VMADDL, cpu->y);
         Write16Absolute(memory, cpu, SNES_DASL(7), cpu->x);
         StoreAImmediate8(memory, cpu, 0x80u, SNES_MDMAEN);
-        StoreZeroAbsolute8(memory, cpu, 0x1711u, 0);
+        StoreZeroAbsolute8(memory, cpu, WORLD_MAP_COLUMN_PENDING, 0);
     }
 }
 
@@ -308,22 +341,23 @@ static void WorldMapUploadStreamedColumn(const Lufia2Memory *memory,
  * ($1702 length). */
 static void WorldMapUploadPalette(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreAImmediate8(memory, cpu, 0x80u, SNES_VMAIN);          /* CF86 */
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1702u, 0));
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WORLD_MAP_PALETTE_LENGTH, 0));
     if (!cpu->zero) {
         Write16Absolute(memory, cpu, SNES_DASL(7), cpu->x);
-        CopyAbsolute8(memory, cpu, 0x1701u, SNES_CGADD);
+        CopyAbsolute8(memory, cpu, WORLD_MAP_PALETTE_INDEX, SNES_CGADD);
         SetAccumulatorWidth(cpu, 0);
         And16(cpu, 0x00ffu);
         AslA16(cpu);
-        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1704u, 0));
+        Add16Value(cpu,
+                   Read16AbsoluteIndexed(memory, cpu, WORLD_MAP_PALETTE_SOURCE, 0));
         Write16Absolute(memory, cpu, SNES_A1TL(7), cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
-        CopyAbsolute8(memory, cpu, 0x1706u, SNES_A1B(7));
+        CopyAbsolute8(memory, cpu, WORLD_MAP_PALETTE_BANK, SNES_A1B(7));
         StoreZeroAbsolute8(memory, cpu, SNES_DMAP(7), 0);
         StoreAImmediate8(memory, cpu, 0x22u, SNES_BBAD(7));
         StoreAImmediate8(memory, cpu, 0x80u, SNES_MDMAEN);
         LoadX16(cpu, 0x0000u);
-        Write16Absolute(memory, cpu, 0x1702u, cpu->x);
+        Write16Absolute(memory, cpu, WORLD_MAP_PALETTE_LENGTH, cpu->x);
     }
 }
 
@@ -338,7 +372,8 @@ static void WorldMapSetupHdma(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x11deu, 0);
     if (cpu->zero) {
         for (i = 0; i < 8u; ++i)
-            CopyAbsolute8(memory, cpu, (uint16_t)(0x1707u + i), mode7_regs[i]);
+            CopyAbsolute8(memory, cpu, (uint16_t)(WORLD_MAP_MODE7_MATRIX + i),
+                          mode7_regs[i]);
     } else {
         LoadAAbsolute8(memory, cpu, 0x11dau, 0);               /* D06B */
         if (!cpu->negative) {
@@ -349,7 +384,7 @@ static void WorldMapSetupHdma(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             StoreAImmediate8(memory, cpu, 0x1du, SNES_BBAD(1));
             StoreAImmediate8(memory, cpu, 0x00u, SNES_A1B(0));
             StoreAImmediate8(memory, cpu, 0x00u, SNES_A1B(1));
-            LoadX16(cpu, 0x1718u);
+            LoadX16(cpu, WORLD_MAP_MATRIX_TABLE);
             Write16Absolute(memory, cpu, SNES_A1TL(0), cpu->x);
             LoadX16(cpu, 0x1a9bu);
             Write16Absolute(memory, cpu, SNES_A1TL(1), cpu->x);
@@ -359,11 +394,11 @@ static void WorldMapSetupHdma(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         LoadAAbsolute8(memory, cpu, 0x11ddu, 0);               /* D09C */
         if (cpu->zero) {
             StoreZeroAbsolute8(memory, cpu, SNES_CGWSEL, 0);
-            CopyAbsolute8(memory, cpu, 0x170fu, SNES_CGADSUB);
+            CopyAbsolute8(memory, cpu, WORLD_MAP_COLOUR_MATH, SNES_CGADSUB);
             StoreZeroAbsolute8(memory, cpu, SNES_DMAP(4), 0);
             StoreAImmediate8(memory, cpu, 0x32u, SNES_BBAD(4));
             StoreZeroAbsolute8(memory, cpu, SNES_A1B(4), 0);
-            LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1716u, 0));
+            LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WORLD_MAP_COLOUR_TABLE, 0));
             Write16Absolute(memory, cpu, SNES_A1TL(4), cpu->x);
             LoadA8(cpu, 0x10u);
             TestBitsDirect(memory, cpu, 0x33u, 1);
@@ -426,13 +461,13 @@ static void WorldMapFinishRegisters(const Lufia2Memory *memory, Lufia2CpuState *
         StoreAAbsolute8(memory, cpu, SNES_HDMAEN, 0);
     }
     for (i = 0; i < 4u; ++i)                                   /* D136 */
-        CopyAbsolute8(memory, cpu, (uint16_t)(0x11f8u + i),
-            (uint16_t)(SNES_M7X + (i >> 1)));
-    LoadAAbsolute8(memory, cpu, 0x11d9u, 0);
+        CopyAbsolute8(memory, cpu, (uint16_t)(WORLD_MAP_MODE7_CENTRE + i),
+                      (uint16_t)(SNES_M7X + (i >> 1)));
+    LoadAAbsolute8(memory, cpu, WORLD_MAP_UPLOAD_PENDING, 0);
     if (cpu->zero) {
         for (i = 0; i < 12u; ++i)
-            CopyAbsolute8(memory, cpu, (uint16_t)(0x0594u + i),
-                scroll_regs[i >> 1]);
+            CopyAbsolute8(memory, cpu, (uint16_t)(WORLD_MAP_SCROLL_SHADOW + i),
+                          scroll_regs[i >> 1]);
     }
 }
 
@@ -453,9 +488,9 @@ Lufia2ExecutionResult Lufia2WorldMapNmiUploads(const Lufia2Memory *memory,
     PullDataBank(memory, cpu);
     StoreAImmediate8(memory, cpu, 0x8fu, SNES_INIDISP);
     StoreZeroAbsolute8(memory, cpu, SNES_HDMAEN, 0);
-    LoadAAbsolute8(memory, cpu, 0x11d9u, 0);
+    LoadAAbsolute8(memory, cpu, WORLD_MAP_UPLOAD_PENDING, 0);
     if (!cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x1365u, 0);
+        LoadAAbsolute8(memory, cpu, WORLD_MAP_TILE_UPLOAD_READY, 0);
         if (!cpu->zero)
             WorldMapTileUploads(memory, cpu);
     }
@@ -469,7 +504,7 @@ Lufia2ExecutionResult Lufia2WorldMapNmiUploads(const Lufia2Memory *memory,
         WorldMapPaletteCycles(memory, cpu);
     WorldMapSetupHdma(memory, cpu);
     WorldMapFinishRegisters(memory, cpu);
-    StoreZeroAbsolute8(memory, cpu, 0x11d9u, 0);               /* D19B */
+    StoreZeroAbsolute8(memory, cpu, WORLD_MAP_UPLOAD_PENDING, 0); /* D19B */
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return result;
@@ -585,9 +620,10 @@ static void WorldMapStreamColumn(
         StoreADirect16(memory, cpu, 0x00u);
         WorldMapMetatile(memory, cpu);
         LoadA16(cpu, Read16IndirectLongY(memory, cpu, 0xe7u));
-        StoreAAbsolute16(memory, cpu, 0xdf00u, cpu->x);
+        StoreAAbsolute16(memory, cpu, WORLD_MAP_COLUMN_BUFFER, cpu->x);
         LoadA16(cpu, Read16IndirectLongY(memory, cpu, 0xeau));
-        StoreAAbsolute16(memory, cpu, 0xdf80u, cpu->x);
+        StoreAAbsolute16(memory, cpu, (WORLD_MAP_COLUMN_BUFFER + WORLD_MAP_COLUMN_HALF),
+                         cpu->x);
         LoadADirect16(memory, cpu, STREAM_DP_CELL_OFFSET);
         IncrementA16(cpu);
         IncrementA16(cpu);
@@ -725,48 +761,48 @@ Lufia2ExecutionResult Lufia2WorldMapStreamEdges(
     }
     Write8(memory, DirectAddress(cpu, 0x59u), 0x00u);          /* 99BF */
     Write8(memory, DirectAddress(cpu, 0x5bu), 0x00u);
-    LoadAAbsolute8(memory, cpu, 0x11f4u, 0);
+    LoadAAbsolute8(memory, cpu, WORLD_MAP_CAMERA_CELL_Y, 0);
     cpu->carry = 1;
     Sbc8(cpu, 0x20u);
     StoreADirect8(memory, cpu, STREAM_DP_CELL_Y);
-    LoadAAbsolute8(memory, cpu, 0x11f2u, 0);
+    LoadAAbsolute8(memory, cpu, WORLD_MAP_CAMERA_CELL_X, 0);
     cpu->carry = 1;
-    Sbc8(cpu, AbsoluteByte(memory, cpu, 0x11f6u, 0));
+    Sbc8(cpu, AbsoluteByte(memory, cpu, WORLD_MAP_STREAMED_CELL_X, 0));
     if (!cpu->zero) {
-        WorldMapEdge(memory, cpu, 0x11f2u);
+        WorldMapEdge(memory, cpu, WORLD_MAP_CAMERA_CELL_X);
         StoreADirect8(memory, cpu, STREAM_DP_CELL_X); /* 99EA */
         WorldMapStreamColumn(memory, cpu);
-        StoreAImmediate8(memory, cpu, 0xffu, 0x1711u);
+        StoreAImmediate8(memory, cpu, 0xffu, WORLD_MAP_COLUMN_PENDING);
     }
-    LoadAAbsolute8(memory, cpu, 0x11f2u, 0);                   /* 99F4 */
+    LoadAAbsolute8(memory, cpu, WORLD_MAP_CAMERA_CELL_X, 0); /* 99F4 */
     cpu->carry = 1;
     Sbc8(cpu, 0x20u);
     StoreADirect8(memory, cpu, STREAM_DP_CELL_X);
-    LoadAAbsolute8(memory, cpu, 0x11f4u, 0);
+    LoadAAbsolute8(memory, cpu, WORLD_MAP_CAMERA_CELL_Y, 0);
     cpu->carry = 1;
-    Sbc8(cpu, AbsoluteByte(memory, cpu, 0x11f7u, 0));
+    Sbc8(cpu, AbsoluteByte(memory, cpu, WORLD_MAP_STREAMED_CELL_Y, 0));
     if (!cpu->zero) {
-        WorldMapEdge(memory, cpu, 0x11f4u);
+        WorldMapEdge(memory, cpu, WORLD_MAP_CAMERA_CELL_Y);
         StoreADirect8(memory, cpu, STREAM_DP_CELL_Y); /* 9A1B */
         WorldMapStreamRow(memory, cpu);
-        StoreAImmediate8(memory, cpu, 0xffu, 0x1710u);
+        StoreAImmediate8(memory, cpu, 0xffu, WORLD_MAP_ROW_PENDING);
     }
-    LoadAAbsolute8(memory, cpu, 0x11f2u, 0);                   /* 9A25 */
-    Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x11f6u, 0));
+    LoadAAbsolute8(memory, cpu, WORLD_MAP_CAMERA_CELL_X, 0); /* 9A25 */
+    Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, WORLD_MAP_STREAMED_CELL_X, 0));
     if (cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x11f4u, 0);
-        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x11f7u, 0));
+        LoadAAbsolute8(memory, cpu, WORLD_MAP_CAMERA_CELL_Y, 0);
+        Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, WORLD_MAP_STREAMED_CELL_Y, 0));
     }
     if (!cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x11e3u, 0);               /* 9A35 */
+        LoadAAbsolute8(memory, cpu, WORLD_MAP_MOVE_COUNT, 0); /* 9A35 */
         LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
         Compare8(cpu, A8(cpu), 0xffu);
         if (!cpu->carry)
-            StoreAAbsolute8(memory, cpu, 0x11e3u, 0);
+            StoreAAbsolute8(memory, cpu, WORLD_MAP_MOVE_COUNT, 0);
     }
     SimulateJsrFrame(memory, cpu, 0x9a42u);                    /* 9A44 */
-    CopyAbsolute8(memory, cpu, 0x11f2u, 0x11f6u);
-    CopyAbsolute8(memory, cpu, 0x11f4u, 0x11f7u);
+    CopyAbsolute8(memory, cpu, WORLD_MAP_CAMERA_CELL_X, WORLD_MAP_STREAMED_CELL_X);
+    CopyAbsolute8(memory, cpu, WORLD_MAP_CAMERA_CELL_Y, WORLD_MAP_STREAMED_CELL_Y);
     SimulateRtsFrame(memory, cpu);
     return result;
 }
