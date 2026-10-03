@@ -26,13 +26,18 @@ verified checkpoint; [RECOMP_ENTRIES.md](RECOMP_ENTRIES.md) lists, per area,
 the address, call kind and modes of each, which is what a consumer needs to
 bind them.
 
-Most draft routines are checked against the ROM with differential tests, but
-their interiors are not all in the semantic style of `CODE_STYLE.md` yet. The
-world map object and plane code, the menu image, input and cursor code and the
-battle background, circle and palette code still step the CPU-state helpers
-(accumulator, carry and index widths) inside their bodies; the cell edge walk
-in `field_cell_edges.c` is the one file written mostly on plain values. Moving
-the rest over is open work and does not change any entry listed above.
+Most draft routines are checked against the ROM with differential tests. The
+world map object, plane, scroll and plane row code, the menu image, input,
+cursor, tile map and slide code, the battle background, circle, palette, sprite,
+drift, vector, tile copy and effect code, and the scene track code are written
+on plain values: typed locals, named fields and the helpers in
+`src/core/plain_ops.h` and `src/core/wram_view.h`. They keep only the register,
+flag and stack state that the original leaves for its callers. The cell edge walk
+in `field_cell_edges.c` was already written that way.
+
+The battle frame setup, the select screen setup, the NMI upload code and the
+older large modules still step the CPU-state helpers inside their bodies.
+Moving them over is open work and does not change any entry listed above.
 
 ## Current checkpoint
 
