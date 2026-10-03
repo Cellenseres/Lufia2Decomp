@@ -60,8 +60,7 @@ static void ObjectCopyRectangleOffsets(
     OpSepWidths(cpu, 0x20u);
 }
 
-/* Which bits of a map tile word a layer copy moves from the source to the
- * destination cell. */
+/* Which tile word bits a layer copy moves. */
 typedef enum {
     OBJECT_COPY_ALL_BUT_PRIORITY, /* everything except bits 12-13 */
     OBJECT_COPY_TILE_NUMBER,      /* bits 0-9 */
@@ -86,8 +85,7 @@ static uint32_t ObjectCopyLoopPc(ObjectCopyKind kind) {
     }
 }
 
-/* The copy kind follows the sign of the layer mode word in DP $65: zero copies
- * everything, positive the tile number and negative the attribute bits. */
+/* Copy kind from the sign of DP $65. */
 static ObjectCopyKind ObjectCopySelectKind(const Lufia2Memory *memory,
                                            Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, OBJECT_COPY_MODE));
@@ -96,8 +94,7 @@ static ObjectCopyKind ObjectCopySelectKind(const Lufia2Memory *memory,
     return cpu->negative ? OBJECT_COPY_ATTRIBUTE_BITS : OBJECT_COPY_TILE_NUMBER;
 }
 
-/* Moves the selected bits of the tile word at DB:X into the word at DB:Y and
- * keeps the rest of the destination. */
+/* Move the selected bits from DB:X into DB:Y. */
 static void ObjectCopyTileBits(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                ObjectCopyKind kind) {
     switch (kind) {
@@ -127,8 +124,7 @@ static void ObjectCopyTileBits(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpSta(memory, cpu, OpAbsY(cpu, 0u));
 }
 
-/* A layer takes part when its section word is zero and the object flags
- * contain one of the layer's flag bits. */
+/* Layer copies when its section is zero and flags match. */
 static bool ObjectCopyLayerSelected(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbsX(cpu, (WRAM_FIELD_LAYER_SECTION_WORD & 0xffffu)));
     if (!cpu->zero)
@@ -138,8 +134,7 @@ static bool ObjectCopyLayerSelected(const Lufia2Memory *memory, Lufia2CpuState *
     return !cpu->zero;
 }
 
-/* DP $65 is zero when the object has every flag bit of the layer. Otherwise it
- * is $00FF if the matching bits include one of bits 0-3, else $FFFF. */
+/* DP $65: zero, $00FF or $FFFF from the matching flags. */
 static void ObjectCopySetMode(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpWriteX(memory, cpu, OpDp(cpu, OBJECT_COPY_LAYER), cpu->x);
     OpStz(memory, cpu, OpDp(cpu, OBJECT_COPY_MODE));
@@ -153,7 +148,7 @@ static void ObjectCopySetMode(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         OpStepMem(memory, cpu, OpDp(cpu, OBJECT_COPY_MODE + 1u), -1);
 }
 
-/* Points Y at the destination and X at the source rectangle of the layer. */
+/* Y at destination, X at the layer's source rectangle. */
 static void ObjectCopySetCursors(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbs(cpu, (WRAM_FIELD_OBJECT_HEIGHT & 0xffffu)));
     OpSta(memory, cpu, OpDp(cpu, OBJECT_COPY_ROWS_LEFT));
@@ -169,8 +164,7 @@ static void ObjectCopySetCursors(const Lufia2Memory *memory, Lufia2CpuState *cpu
     OpTax(cpu);
 }
 
-/* Copies the object rectangle row by row. The tile budget bounds the work
- * done before the original routine takes over. */
+/* Copy the rectangle row by row within the tile budget. */
 static Lufia2ExecutionResult ObjectCopyRows(const Lufia2Memory *memory,
                                             Lufia2CpuState *cpu, unsigned *copied) {
     for (;;) {
@@ -196,7 +190,7 @@ static Lufia2ExecutionResult ObjectCopyRows(const Lufia2Memory *memory,
         OpStepMem(memory, cpu, OpDp(cpu, OBJECT_COPY_ROWS_LEFT), -1);
         if (cpu->zero)
             return ExecutionReturned(0);
-        /* The second add takes the carry of the first, as the original does. */
+        /* The second add takes the first add's carry. */
         cpu->carry = 0;
         OpTya(cpu);
         OpAdc(memory, cpu, OpDp(cpu, OBJECT_COPY_ROW_ADVANCE));

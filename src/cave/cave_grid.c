@@ -1,12 +1,4 @@
-/* Ancient Cave room grid ($7F:EA00, DB = $7F).
- *
- * The routines here are bound leaf routines: each is a JSR target in the ROM
- * that runs under whatever register widths its caller set, and the recomp calls
- * it by name with that state. They stay as op-level code on purpose. The
- * accumulator width is part of their behaviour (the tile helpers pass the
- * column in the high byte and the row in the low byte of A), so a shell + core
- * split into plain C would have to model both widths and would no longer match
- * the ROM instruction for instruction. */
+/* Ancient Cave room grid; bound leaf routines stay op-level. */
 
 #include "cave/cave_internal.h"
 #include "system/dp_scratch.h"

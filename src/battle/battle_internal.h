@@ -7,8 +7,7 @@
 #include "lufia2/battle.h"
 #include "system/wram.h"
 
-/* ROM routines the battle code reaches through child calls, named after the
- * functions recovered for them (see docs/FUNCTION_INDEX.md). */
+/* ROM routines reached by battle child calls. */
 enum {
     BATTLE_ROUTINE_DECOMPRESS_RESOURCE = 0x808e9du,
     BATTLE_ROUTINE_BUILD_SPRITES = 0x81b5c4u,
@@ -29,17 +28,12 @@ enum {
     BATTLE_ROUTINE_FRAME_INPUT = 0x85ec81u,
 };
 
-/* Byte in bank $00 mirror of $7E:12F3: set to $FF to ask the next frame
- * upkeep ($85:EC81 path) to rebuild the battle sprites; the upkeep calls
- * $81:B5C4 when it is non-zero and then clears it. */
+/* Set $FF to rebuild battle sprites next frame. */
 enum {
     BATTLE_SPRITE_REBUILD_REQUEST = 0x0012f3u,
 };
 
-/* Sprite build switches in bank $7E. In mode 1 the $85:8A2F routine builds the
- * record, single and marker groups, then the party tilemap when $11DE is zero,
- * otherwise the tile grid unless the hold byte is non-zero. In mode 2 it builds
- * all four groups including the party sprites. */
+/* Sprite build mode and tile grid hold switches. */
 enum {
     BATTLE_SPRITE_MODE = 0x15abu,
     BATTLE_TILE_GRID_HOLD = 0x125fu, /* non-zero: leave the tile grid alone */
@@ -51,8 +45,7 @@ enum {
     BATTLE_SAVED_LOOP_STACK = 0x1397u,
 };
 
-/* Direct-page pad word the battle screens read each frame (masked by the
- * frame-input filter); the high byte holds the direction bits. */
+/* Battle pad word; high byte holds the directions. */
 enum {
     BATTLE_DP_PAD_FILTERED = 0xddu,
     BATTLE_DP_PAD_FILTERED_HIGH = 0xdeu,

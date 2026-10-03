@@ -1,15 +1,14 @@
 #ifndef LUFIA2_CORE_JOYPAD_H
 #define LUFIA2_CORE_JOYPAD_H
 
-/* Joypad words in the direct page: the buttons held and the presses that
- * handlers have not consumed yet. */
+/* Joypad words: held buttons and unconsumed presses. */
 
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
 #include "system/wram.h"
 
-/* Byte of the joypad words: A X L R, then B Y Select Start and the pad. */
+/* Joypad bytes: A X L R, B Y Select Start. */
 enum {
     JOYPAD_LOW_BYTE = 0,
     JOYPAD_HIGH_BYTE = 1,
@@ -33,9 +32,7 @@ enum {
     JOY_HIGH_RIGHT = 0x01,
 };
 
-/* The accumulator holds a button mask. Afterwards it holds the masked buttons
- * that are held, and a held button with a pending press has that press
- * consumed. Returns whether a press was consumed (the zero flag is clear). */
+/* Mask held buttons, consume a pending press; true if consumed. */
 static inline bool TakeButtonPress8(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                     uint8_t joypad_byte) {
     And8(cpu, DirectByte(memory, cpu, (uint8_t)(DP_BUTTONS_HELD + joypad_byte)));

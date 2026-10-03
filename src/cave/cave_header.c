@@ -5,8 +5,7 @@
 #include "lufia2/ancient_cave.h"
 #include "system/wram.h"
 
-/* The generated map header in bank $7E, built from the floor tables in $7F.
- * Each section is a run of fixed-size entries ended by $FF. */
+/* Generated map header sections, each ended by $FF. */
 enum {
     CAVE_HEADER_ENTRANCE = 0xf200u,    /* one ten-byte entry at the stairs */
     CAVE_HEADER_ROOM_AREAS = 0xf400u,  /* fifteen bytes per linked room */

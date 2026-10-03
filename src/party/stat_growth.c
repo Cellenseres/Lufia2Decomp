@@ -43,16 +43,14 @@ enum {
     GROWTH_BOUNDARY_PC = 0x81f87eu,
 };
 
-/* Address of stat word `stat` of the member whose record the pointer in $B2
- * selects. */
+/* Address of stat word stat of the member at $B2. */
 static uint32_t GrowthStat(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
                            unsigned stat) {
     return (OpAbs(cpu, Read16Direct(memory, cpu, GROWTH_DP_STAT_POINTER)) + 2u * stat) &
            0xffffffu;
 }
 
-/* The calibration BRK: a gain that would overshoot the cap by five or more.
- * Leaves the registers as the code did and asks the caller to stop there. */
+/* Calibration BRK: gain overshoots the cap by five or more. */
 static Lufia2ExecutionResult GrowthBoundary(Lufia2CpuState *cpu, uint16_t shortfall,
                                             uint8_t gain, unsigned stat) {
     cpu->accumulator = shortfall;
@@ -68,8 +66,7 @@ static Lufia2ExecutionResult GrowthBoundary(Lufia2CpuState *cpu, uint16_t shortf
     return (Lufia2ExecutionResult){LUFIA2_EXECUTION_BOUNDARY, GROWTH_BOUNDARY_PC, 0u};
 }
 
-/* Pulls each rolled gain back when its stat would pass the cap, and clears the
- * gain of a stat with no cap. Returns false at the BRK. */
+/* Limit gains to the caps; false at the BRK. */
 static bool GrowthLimitGains(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                              Lufia2Wram wram, Lufia2ExecutionResult *boundary) {
     unsigned stat;
@@ -98,9 +95,7 @@ static bool GrowthLimitGains(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return true;
 }
 
-/* Turns each gain into the stat's new value: the gain byte becomes what the
- * stat actually moves by and the stat word becomes gain + cap. The last add
- * leaves its carry and result in the registers. */
+/* Apply the gains: stat becomes gain plus cap. */
 static void GrowthApplyGains(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                              Lufia2Wram wram) {
     unsigned stat;
@@ -151,8 +146,7 @@ Lufia2ExecutionResult Lufia2PartyApplyLevel(const Lufia2Memory *memory,
     return ExecutionReturned(0x81f7eau);
 }
 
-/* $81:F7ED: roll a gain for each of the seven stats, limit them to the caps and
- * apply them, keeping the original calibration BRK. */
+/* $81:F7ED: roll, limit and apply the seven stat gains. */
 Lufia2ExecutionResult Lufia2PartyStatGrowth(const Lufia2Memory *memory,
                                             Lufia2CpuState *cpu,
                                             Lufia2PushedChildCall child,

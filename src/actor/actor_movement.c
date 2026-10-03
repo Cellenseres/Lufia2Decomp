@@ -7,8 +7,7 @@
 #include "lufia2/actor.h"
 #include "system/wram.h"
 
-/* The probe column and row are words whose tile number sits in the low byte;
- * the cell loader clears the high bytes. */
+/* Probe column and row: tile in the low byte. */
 enum {
     PROBE_X_HIGH = DP_PROBE_X + 1,
     PROBE_Y_HIGH = DP_PROBE_Y + 1,
@@ -172,17 +171,16 @@ uint8_t Lufia2ActorStepBlockedBody(
 /* Scratch byte: non-zero when the actor blocks its cell. */
 enum { DP_ACTOR_BLOCKS = 0x9e };
 
-/* Map cell attribute bit that marks a cell as occupied by an actor. */
+/* Cell attribute bit: occupied by an actor. */
 enum { CELL_OCCUPIED = 0x01 };
 
 /* Actors with this state or higher can be solid. */
 enum { ACTOR_SOLID_FROM_STATE = 2 };
 
-/* Sprite ids of actors that never block the cell they stand on. */
+/* Sprite ids that never block their cell. */
 enum { NON_BLOCKING_FIRST = 0x71, NON_BLOCKING_LAST = 0x73 };
 
-/* A = A | CELL_OCCUPIED in the attribute byte of `cell`; the flags are those
- * of the OR. */
+/* OR the occupied bit into the cell; flags from OR. */
 static void SetCellOccupied(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             uint32_t attributes, uint16_t cell) {
     const Lufia2Wram wram = WramViewLong(memory);
@@ -192,7 +190,7 @@ static void SetCellOccupied(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     WramWriteAt(wram, attributes, cell, A8(cpu));
 }
 
-/* $83:FA3F: marks the map cell under the actor in slot [$A7] as occupied. */
+/* $83:FA3F: mark the cell under actor [$A7] occupied. */
 void Lufia2ActorMarkMapOccupancy(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -220,8 +218,7 @@ void Lufia2ActorMarkMapOccupancy(
         SetCellOccupied(memory, cpu, MAP_BLOCKING_ATTRIBUTES, cpu->x);
 }
 
-/* Tile numbers are kept in 1/16 units as well. The accumulator carries the
- * flags of the shifts and, from TDC, the high byte of the direct page. */
+/* Tile to 1/16 units; A keeps the shifts' flags. */
 static uint16_t TileToFine(Lufia2CpuState *cpu, uint8_t tile) {
     unsigned shifts;
 
@@ -231,7 +228,7 @@ static uint16_t TileToFine(Lufia2CpuState *cpu, uint8_t tile) {
     return cpu->accumulator;
 }
 
-/* $83:A746: fine position of the actor = its tile position * 16. */
+/* $83:A746: fine position = tile position * 16. */
 void Lufia2ActorSyncFinePosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -251,8 +248,7 @@ void Lufia2ActorSyncFinePosition(
     SetAccumulatorWidth(cpu, 1);
 }
 
-/* $83:FAFA: sign-extends A.low into the high byte and leaves A 16-bit. A
- * positive value keeps the old high byte. */
+/* $83:FAFA: sign-extend A's low byte; positive keeps high byte. */
 void Lufia2SignExtendA8(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -336,7 +332,7 @@ void Lufia2ActorMoveFinePosition(
     IncrementA16(cpu);
 }
 
-/* $83:F9F7: A = column:row, X = byte offset of the cell in a layer. */
+/* $83:F9F7: A = column:row, X = cell byte offset. */
 Lufia2ExecutionResult Lufia2MapCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -399,7 +395,7 @@ uint32_t Lufia2ActorMovementStep(
     }
 }
 
-/* $83:F9D9: the cell offset of A in the selected layer's cell data. */
+/* $83:F9D9: cell offset of A in the selected layer. */
 Lufia2ExecutionResult Lufia2LayerCellOffset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

@@ -32,8 +32,7 @@ static bool WaitForTransitionFrame(BattleContext *battle, uint16_t site) {
     return BattleCall(battle, site, 0x848d4du, 2u);
 }
 
-/* Fills three $800-byte areas of work RAM, each as two interleaved word
- * sequences, with the direct page address. */
+/* Fill three $800-byte planes with the DP address. */
 static void ClearTransitionPlanes(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint32_t kPlanes[6] = {WRAM_MUSIC_SAMPLE_CACHE,   0x7e2002u,
                                         WRAM_FIELD_LAYER0_TILEMAP, 0x7e2802u,
@@ -59,8 +58,7 @@ static void SeedMosaicTransition(const Lufia2Memory *memory, Lufia2CpuState *cpu
     const uint8_t scroll = (uint8_t)cpu->direct_page;
 
     WramWrite(io, SNES_BGMODE, 0x02u);
-    /* Both background 3 scroll registers take the direct page's low byte, and
-     * so do their shadows. */
+    /* BG3 scroll and shadows take the DP low byte. */
     WramWrite(io, SNES_BG3HOFS, scroll);
     WramWrite(io, SNES_BG3HOFS, scroll);
     WramWrite(io, SHADOW_BG3HOFS, scroll);
@@ -84,11 +82,7 @@ static void SeedMosaicTransition(const Lufia2Memory *memory, Lufia2CpuState *cpu
     LoadA8(cpu, FADE_CONTROL_MOSAIC);
 }
 
-/* Fills the two scanline tables of the swirl. The rim table at $3040 holds one
- * background scroll word per ring; the HDMA table at $3100 holds two runs of
- * 112 words for the upper and the lower half of the screen. Every entry is
- * the hardware product of a sine table value and the current radius, offset by
- * a centre word kept in work RAM. */
+/* Swirl rim and HDMA tables: sine times radius. */
 static void BuildSwirlTilemaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     const Lufia2Wram ppu = WramViewLong(memory);
@@ -121,7 +115,7 @@ static void BuildSwirlTilemaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
 
     WramWrite(ppu, SNES_M7A, WramRead(wram, TRANSITION_RADIUS));
     WramWrite(ppu, SNES_M7A, WramRead(wram, TRANSITION_RADIUS_HI));
-    /* The phase starts from the direct page's high byte and the angle. */
+    /* Phase starts from DP high byte and the angle. */
     phase = (uint16_t)((cpu->direct_page & 0xff00u) | WramRead(wram, TRANSITION_ANGLE));
     y = 0;
     do {
@@ -145,8 +139,7 @@ static void BuildSwirlTilemaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     SetAccumulatorWidth(cpu, 1);
 }
 
-/* Points HDMA channels 0 and 1 at the swirl table in work RAM; they write the
- * horizontal scroll registers of backgrounds 1 and 2 ($210D and $210F). */
+/* HDMA channels 0 and 1 drive BG1/BG2 horizontal scroll. */
 static void ConfigureSwirlHdma(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     const Lufia2Wram io = WramViewLong(memory);

@@ -20,9 +20,7 @@
 #define EVENT_POINT_Y 0x7fd1e3u
 #define EVENT_POINT_D223 0x7fd223u
 #define EVENT_POINT_D263 0x7fd263u
-/* Four variables of each slot, eight bytes apart: the byte for slot s of
- * variable v is EVENT_SLOT_VARIABLES + 8 * v + s. The low 16 bits point the
- * variable pointer at DP $5D. */
+/* Slot s of variable v: base + 8v + s. */
 #define EVENT_SLOT_VARIABLES 0x7fd15cu
 #define EVENT_SLOT_VARIABLES_LOW 0xd15cu
 #define EVENT_SLOT_VARIABLE_STRIDE 0x0008u
@@ -42,7 +40,7 @@
 #define EVENT_CALL_DEPTH 0x7fd4e6u
 #define EVENT_CALL_FRAME_SIZE 0x000au
 #define EVENT_CALL_FRAMES_END 0x0080u
-/* Within a frame: the four saved slot variables and the two condition bytes. */
+/* Frame: four saved slot variables, two condition bytes. */
 #define EVENT_CALL_FRAME_VARIABLES (EVENT_CALL_FRAMES + 4u)
 #define EVENT_CALL_FRAME_CONDITION_HIGH (EVENT_CALL_FRAMES + 8u)
 #define EVENT_CALL_FRAME_CONDITION (EVENT_CALL_FRAMES + 9u)
@@ -54,20 +52,19 @@
 #define EVENT_SAVED_VARIABLES 0x7fd19cu
 /* Condition result: bit 7 true. */
 #define EVENT_CONDITION 0x7fd19au
-/* Map object list in bank $7E; the field list search leaves X at a record
- * and the fields follow from EVENT_LIST_RECORD + X. */
+/* Map object list in bank $7E; X selects a record. */
 #define EVENT_LIST_OFFSET 0xf000u
 #define EVENT_LIST_RECORD 0x7ef000u
 /* Position of each event slot: x bytes then y bytes. */
 #define EVENT_SLOT_X 0x7fd17cu
 #define EVENT_SLOT_Y 0x7fd184u
-/* The slot that was running before an opcode switched to another actor. */
+/* Slot running before an opcode switched actors. */
 #define EVENT_SAVED_SLOT 0x7fd2a3u
 /* Maps a listed actor operand to an actor slot. */
 #define EVENT_LISTED_ACTOR_SLOTS 0x7fd72cu
-/* Where the list search hands off to the ROM after its step limit. */
+/* List search hands off here after its step limit. */
 #define EVENT_SEARCH_HANDOFF 0x80bfbcu
-/* The listed object a push opcode moves, and its record byte minus $10. */
+/* Listed object a push opcode moves, record byte minus $10. */
 #define EVENT_PUSH_OBJECT_INDEX 0x7fd0beu
 #define EVENT_PUSH_OBJECT_ID 0x7fd09fu
 #define EVENT_UNK_7FD0BF 0x7fd0bfu

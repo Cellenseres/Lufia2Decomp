@@ -9,8 +9,7 @@ enum {
     BATTLE_BACKGROUND_TILES = 0x7ec000u,
 };
 
-/* Copies the four descriptor bytes of the background from the table at
- * $97:FD40 (four bytes per id) to $11E2. */
+/* Copy the background's four descriptor bytes to $11E2. */
 static void LoadBackgroundDescriptor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                      uint8_t background_id) {
     OpLoadA(cpu, background_id);
@@ -24,8 +23,7 @@ static void LoadBackgroundDescriptor(const Lufia2Memory *memory, Lufia2CpuState 
     }
 }
 
-/* Decompresses the background's tile resource (descriptor byte 1 + $16C) to
- * $7E:C000 and its tilemap resource (byte 0 + $179) to $7E:2000. */
+/* Decompress the background tiles and tilemap. */
 static bool DecodeBackgroundResources(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
     const Lufia2Memory *memory = battle->memory;
@@ -58,8 +56,7 @@ static bool DecodeBackgroundResources(BattleContext *battle) {
     return BattleDecompressResource(battle, 0xba23u);
 }
 
-/* Loads palettes 2 and 3 from the background's palette block at $97:CD58 +
- * descriptor byte 2 * $40. */
+/* Load palettes 2 and 3 from $97:CD58. */
 static bool LoadBackgroundPalettes(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
     const Lufia2Memory *memory = battle->memory;
@@ -85,9 +82,7 @@ static bool LoadBackgroundPalettes(BattleContext *battle) {
     return BattleLoadPalette(battle, 0xba49u);
 }
 
-/* Starting from the word at $7E:2000, replaces each following word up to
- * $0800 by the running value minus that word, which undoes the difference
- * coding of the stored tilemap. */
+/* Undo the tilemap's difference coding at $7E:2000. */
 static void DecodeBackgroundTilemap(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7eu);
@@ -108,8 +103,7 @@ static void DecodeBackgroundTilemap(const Lufia2Memory *memory, Lufia2CpuState *
     PullDataBank(memory, cpu);
 }
 
-/* Reads the background id into *background_id; true for the blank background
- * ($18). */
+/* Read the background id; true when blank ($18). */
 bool BattleBackgroundIsBlank(BattleContext *battle, uint8_t *background_id) {
     Lufia2CpuState *cpu = battle->cpu;
 
@@ -120,8 +114,7 @@ bool BattleBackgroundIsBlank(BattleContext *battle, uint8_t *background_id) {
     return cpu->zero;
 }
 
-/* Blank background: fills the tile area at $7E:C000 with zero apart from the
- * first eight words ($00FF), and the tilemap at $7E:2000 with $0900. */
+/* Blank background: clear tiles and fill the tilemap. */
 void BattleClearBackground(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -151,8 +144,7 @@ void BattleClearBackground(BattleContext *battle) {
     PullDataBank(memory, cpu);
 }
 
-/* Loads the descriptor, decompresses the tiles and tilemap, loads the
- * palettes and decodes the tilemap. False when a child call unwinds. */
+/* Load descriptor, tiles, tilemap and palettes; false on unwind. */
 bool BattleLoadBackground(BattleContext *battle, uint8_t background_id) {
     LoadBackgroundDescriptor(battle->memory, battle->cpu, background_id);
 
@@ -165,8 +157,7 @@ bool BattleLoadBackground(BattleContext *battle, uint8_t background_id) {
     return true;
 }
 
-/* Sets bit 0 of DP $D9, clears $1B17 and, for background id 0 only, calls
- * $85:A701. False when that child call unwinds. */
+/* Set DP $D9 bit 0; id 0 also calls $85:A701. */
 bool BattleFinishBackground(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;

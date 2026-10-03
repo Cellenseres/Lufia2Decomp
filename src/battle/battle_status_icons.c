@@ -1,7 +1,6 @@
 #include "battle/battle_internal.h"
 
-/* Each party member's status icon cycles through the ailments it has, one
- * animation frame pair at a time. */
+/* Status icons cycle through each member's ailments. */
 enum {
     ICON_CYCLE_LENGTH = 10u,
     ICON_STATUS_MASK = 0x3bu,
@@ -15,9 +14,7 @@ enum {
     ICON_SPRITE_HIDDEN_MASK = 0x7fu,
 };
 
-/* Moves the icon to the next ailment the member has (the cycle wraps at ten
- * entries, two frames per ailment), shows that ailment's tile and marks the
- * sprite as visible. */
+/* Advance the icon to the member's next ailment. */
 static void BattleAdvanceStatusIcon(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpStz(memory, cpu, OpAbs(cpu, BATTLE_ICON_TIMER));
     OpLda(memory, cpu, OpAbs(cpu, BATTLE_ICON_CYCLE_INDEX));
@@ -46,9 +43,7 @@ static void BattleAdvanceStatusIcon(const Lufia2Memory *memory, Lufia2CpuState *
     OpPullY(memory, cpu);
 }
 
-/* Counts the icon's timer up; once it reaches the period of the member's
- * ailment class the icon advances. Returns true when the icon should be hidden:
- * the member is downed or has no icon-worthy ailment. */
+/* Step the icon timer; true when the icon hides. */
 static bool BattleUpdateStatusIconTimer(const Lufia2Memory *memory,
                                         Lufia2CpuState *cpu) {
     OpPushX(memory, cpu);

@@ -1,7 +1,6 @@
 #include "battle/battle_internal.h"
 
-/* Sets $FF at $7E:DF10 through $7E:DFB0 in steps of $10, then points the WRAM
- * data port at $7E:DF00 for the entries that follow. */
+/* Mark list entries $FF, then aim WMDATA at $7E:DF00. */
 static void StartCommandList(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned offset;
 
@@ -13,7 +12,7 @@ static void StartCommandList(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpStz(memory, cpu, OpAbs(cpu, SNES_WMADDH));
 }
 
-/* Streams `count` bytes of $FF through the WRAM data port; an empty entry. */
+/* Stream count $FF bytes: an empty entry. */
 static void CommandListPadding(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                uint16_t count) {
     OpLdy(cpu, count);
@@ -24,8 +23,7 @@ static void CommandListPadding(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     } while (!cpu->zero);
 }
 
-/* Streams `length` bytes (at least one) of the record buffer through the WRAM
- * data port. */
+/* Stream length record bytes through WMDATA. */
 static void CommandListName(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             uint16_t length) {
     OpLdy(cpu, 0u);

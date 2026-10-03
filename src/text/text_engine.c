@@ -840,8 +840,7 @@ static unsigned TextOpMusic(
     return TEXT_OPCODE_HANDOFF;
 }
 
-/* $80:C817 (high joypad byte) / $80:C81E (low byte): whether one of the
- * buttons of `mask` was newly pressed. The press is consumed. */
+/* $80:C817/$80:C81E: was a mask button newly pressed? Consumed. */
 static bool TextButtonPressed(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                               uint16_t return_address, uint8_t mask,
                               uint8_t joypad_byte) {
@@ -854,7 +853,7 @@ static bool TextButtonPressed(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return pressed;
 }
 
-/* The choice cursor is a 2x2 tile block at the selected entry's row. */
+/* Choice cursor: 2x2 tiles at the selected row. */
 enum {
     CHOICE_ROW_BYTES = 0x80, /* one tilemap row */
     CURSOR_TOP_LEFT = 0x20dc,
@@ -1018,7 +1017,7 @@ enum {
 static void TextChoiceWrapCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, TEXT_CHOICE_COUNT, 0);
     DecrementA8(cpu); /* last entry */
-    /* The pair only leaves the sign of the entry in the flags. */
+    /* The pair leaves only the entry's sign in the flags. */
     StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, TEXT_CHOICE_INDEX, 0), 1);
     StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, TEXT_CHOICE_INDEX, 0), -1);
     if (cpu->negative) {
@@ -1063,7 +1062,7 @@ static void TextChoiceJump(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
 }
 
-/* $0B: choice cursor. Up and down move it, A or L confirms, B cancels. */
+/* $0B: choice cursor; up/down move, A/L confirm, B cancels. */
 static unsigned TextOpChoice(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -1602,8 +1601,7 @@ static unsigned TextScriptOpcode(
     }
 }
 
-/* The print delay between glyphs. A TEXT_PRINT_COUNTDOWN below 3 is counted
- * down and ends the step; a larger value is cleared and the step goes on. */
+/* Print delay: below 3 counts down and ends the step. */
 static bool TextStepPrintDelay(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                Lufia2ExecutionResult *result) {
     LoadA8(cpu, Read8(memory, TEXT_PRINT_COUNTDOWN));          /* 9CB8 */
@@ -1621,9 +1619,7 @@ static bool TextStepPrintDelay(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return true;
 }
 
-/* Selects the script bank and loads Y with the script pointer. When a
- * sub-script is queued with a countdown and the countdown just reached zero,
- * the queued return pointer replaces the script position first. */
+/* Select the script bank; resume a finished sub-script. */
 static void TextStepEnterScript(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     for (;;) {
         LoadAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0); /* 9CD9 */
@@ -1652,8 +1648,7 @@ static void TextStepEnterScript(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     }
 }
 
-/* After a printed glyph: queues the window row upload when the window state
- * allows it. */
+/* Queue the window row upload after a printed glyph. */
 static void TextStepQueueRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0); /* BCE4 */
     BitImmediate8(cpu, 0x02u);
@@ -1668,8 +1663,7 @@ static void TextStepQueueRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
 }
 
-/* Moves the script pointer past the glyph (past the opcode byte when the
- * text state asks for it) and uploads the glyph tiles. */
+/* Advance past the glyph and upload its tiles. */
 static void TextStepAdvance(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0); /* BCF5 */
     And8(cpu, 0x10u);
@@ -1681,8 +1675,7 @@ static void TextStepAdvance(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TextGlyphUpload(memory, cpu, 0xbd07u);
 }
 
-/* Starts the print delay and, on every other glyph, plays the typing sound
- * unless the field map flags suppress it. */
+/* Start the print delay; typing sound every other glyph. */
 static void TextStepTypingSound(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0); /* BD08 */
     BitImmediate8(cpu, 0x02u);

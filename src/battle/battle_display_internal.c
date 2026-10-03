@@ -19,7 +19,7 @@ enum {
     DISPLAY_LAST_FLAG = 0x15b3u,
 };
 
-/* Clears the scene NMI's upload bytes and queue, and blanks the screen. */
+/* Clear the scene NMI uploads and blank the screen. */
 void BattleResetDisplayWork(BattleContext *battle) {
     static const uint8_t cleared_dp[DISPLAY_DP_CLEAR_COUNT] = {0x74u, 0x72u, 0x73u,
                                                                0x71u};
@@ -83,13 +83,13 @@ enum {
     DISPLAY_PARTY_STATE_STRIDE = 13,
 };
 
-/* ORs each party member's portrait flags into that slot's display state. */
+/* OR portrait flags into each slot's display state. */
 void BattleBuildPartyDisplayState(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     const Lufia2Wram state = WramViewLong(memory);
-    /* The first id is widened with the direct page's high byte left in A. */
+    /* First id widened with the DP high byte in A. */
     uint16_t high = 0u;
     unsigned slot;
 
@@ -101,7 +101,7 @@ void BattleBuildPartyDisplayState(BattleContext *battle) {
         const uint16_t offset = (uint16_t)(slot * DISPLAY_PARTY_STATE_STRIDE);
         uint8_t flags;
 
-        /* The slot counter waits on the stack while Y holds the id. */
+        /* Slot counter on the stack while Y holds the id. */
         cpu->y = (uint16_t)slot;
         PushY(memory, cpu);
         flags = WramReadAt(wram, DISPLAY_PARTY_PORTRAIT_FLAGS, id);
@@ -127,7 +127,7 @@ enum {
     DISPLAY_ICON_SLOTS_LONG = 0x001be0u, /* four bytes, last slot first */
 };
 
-/* Resets the display record words and flags to their opening values. */
+/* Reset the display records to their opening values. */
 void BattleInitializeDisplayRecords(BattleContext *battle) {
     static const uint16_t clear_bytes[] = {0x15a8u, 0x15a9u, 0x15c7u, 0x15cbu,
                                            0x15cfu, 0x15d3u, 0x15d7u, 0x15dbu,
@@ -179,8 +179,7 @@ bool BattlePrepareDisplayRecords(BattleContext *battle) {
     return BattleCall(battle, 0x862au, BATTLE_ROUTINE_FRAME_INPUT, 3u);
 }
 
-/* Writes the (register, value) pairs of the PPU table, ending at a register
- * number with bit 7 set. */
+/* Write the PPU table pairs until bit 7 ends it. */
 void BattleApplyPpuTable(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -207,8 +206,7 @@ void BattleApplyPpuTable(BattleContext *battle) {
     OpLdx(cpu, reg);
 }
 
-/* Installs the scene NMI, decompresses the base resource and loads portraits and the
- * base tile children. */
+/* Install the scene NMI and load the base graphics. */
 bool BattleLoadBaseGraphics(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -242,7 +240,7 @@ typedef struct BattleVramTransfer {
     uint16_t size;
 } BattleVramTransfer;
 
-/* DMAs one block of tile data to VRAM on channel 0. */
+/* DMA one tile block to VRAM on channel 0. */
 static void UploadVramBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             const BattleVramTransfer *transfer) {
     OpLdx(cpu, transfer->vram_address);
@@ -274,8 +272,7 @@ void BattleUploadBaseTiles(BattleContext *battle) {
         UploadVramBlock(memory, cpu, &transfers[i]);
 }
 
-/* Loads the battle background, palettes and resource blocks used by the presentation.
- */
+/* Load background, palettes and presentation resources. */
 bool BattleLoadPresentationAssets(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -328,8 +325,7 @@ enum {
     DISPLAY_ROW_COUNTER = 0x1bu,
 };
 
-/* Copies the ten icon ids to $7E:E700; an id of 16 is replaced by the direct
- * page's low byte. */
+/* Copy the icon ids to $7E:E700; 16 becomes DP low. */
 void BattlePrepareSpriteState(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -366,8 +362,7 @@ void BattlePrepareSpriteState(BattleContext *battle) {
     PullDataBank(memory, cpu);
 }
 
-/* Runs the closing display children, then arms a 30-frame wait; control modes 2 and 1
- * together skip that tail. */
+/* Closing display children, then a 30-frame wait. */
 bool BattleFinishDisplay(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;

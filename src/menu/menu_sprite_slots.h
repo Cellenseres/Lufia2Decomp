@@ -1,9 +1,7 @@
 #ifndef LUFIA2_MENU_SPRITE_SLOTS_H
 #define LUFIA2_MENU_SPRITE_SLOTS_H
 
-/* The menu sprite slots: 48 slots ($30), each field a byte array in WRAM bank
- * $7E indexed by slot. Used by the animation code in menu_sprites.c and by
- * the menu screens. */
+/* Menu sprite slots: 48 byte arrays in bank $7E. */
 enum {
     MENU_SPRITE_SLOTS = 0x30u,
     MENU_SPRITE_ACTIVE = 0x11d8u,    /* non-zero: slot is in use */

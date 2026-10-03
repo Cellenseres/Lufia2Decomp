@@ -7,9 +7,7 @@
 #include "system/system_internal.h"
 #include "system/wram.h"
 
-/* Title screen state. The three title objects at $C400/$C418/$C430 move on
- * ellipses and shed particles; their records and the particle records share
- * a 13 byte layout for the sprite fields. */
+/* Title objects on ellipses shedding particles. */
 enum {
     TITLE_OBJ_CENTER_X = 0x00u,
     TITLE_OBJ_CENTER_Y = 0x02u,
@@ -102,8 +100,7 @@ Lufia2ExecutionResult Lufia2TitleStateDispatch(
 }
 
 /* $80:9357: DMA channel 6, $700 bytes from $7E:X to VRAM Y. */
-/* Intro state machine ($80:92A4). Direct page $50 is the state, an index into
- * the handler table at $80:92B7, and $4E counts frames within a state. */
+/* Intro state machine at $80:92A4: DP $50 state, $4E frames. */
 enum {
     INTRO_DP_FRAME = 0x4eu,
     INTRO_DP_STATE = 0x50u,
@@ -129,7 +126,7 @@ enum {
     DMA_VRAM_DATA_PORT = 0x18u,
 };
 
-/* $80:9357: DMA $700 bytes from $7E:X to VRAM word address Y on channel 6. */
+/* $80:9357: DMA $700 bytes from $7E:X to VRAM Y. */
 static void IntroVramDma(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -159,7 +156,7 @@ static void IntroLogoUpload(
     Write8(memory, DirectAddress(cpu, INTRO_DP_FRAME), 0x00u);
 }
 
-/* State $92CB: DMA the scroll rows at $7E:4004 plus $4000 to VRAM. */
+/* State $92CB: DMA the scroll rows to VRAM. */
 static void IntroScrollRows(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, INTRO_ROW_SOURCE));
@@ -178,7 +175,7 @@ static void IntroScrollRows(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     IncrementDirect8(memory, cpu, INTRO_DP_STATE);
 }
 
-/* State $930C: brightness follows half the frame count for 32 frames. */
+/* State $930C: fade in over 32 frames. */
 static void IntroFadeIn(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, DirectByte(memory, cpu, INTRO_DP_FRAME));
     LsrA8(cpu);
@@ -192,8 +189,7 @@ static void IntroFadeIn(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
 }
 
-/* State $9320: hold the logo for 120 frames; the fade-out then starts from
- * 32. */
+/* State $9320: hold the logo 120 frames. */
 static void IntroHold(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, INTRO_DP_FRAME) + 1u));
     StoreADirect8(memory, cpu, INTRO_DP_FRAME);
@@ -205,8 +201,7 @@ static void IntroHold(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
 }
 
-/* State $9330: brightness follows half the frame count down to zero, then
- * the screen is blanked. */
+/* State $9330: fade out, then blank the screen. */
 static void IntroFadeOut(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, INTRO_DP_FRAME) - 1u));
     StoreADirect8(memory, cpu, INTRO_DP_FRAME);
@@ -419,7 +414,7 @@ enum {
     TITLE_PARTICLE_SLOTS = 0x18u,
 };
 
-/* Reads the word at an absolute address in the current data bank. */
+/* Word at an absolute address in the data bank. */
 static uint16_t TitleWord(
     const Lufia2Memory *memory, const Lufia2CpuState *cpu, uint16_t at) {
     return Read16AbsoluteIndexed(memory, cpu, at, 0);
@@ -639,7 +634,7 @@ static void TitleNextParticle(Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);
 }
 
-/* $86:85EB: fill the free particle slot at Y from the object and its sprite. */
+/* $86:85EB: fill free particle slot Y from the object. */
 static void TitleStartParticle(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, 0x01u); /* 85EB */
     StoreAAbsolute8(memory, cpu, TITLE_SPRITE_ACTIVE, cpu->y);

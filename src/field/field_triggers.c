@@ -36,8 +36,7 @@ static void FieldEdgeTest(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:B8DF-$83:B93A: whether actor X is awake, solid and overlaps the leader's
- * probe tile; every early exit means "not touching". */
+/* $83:B8DF-$83:B93A: does actor X touch the leader? */
 static bool FieldTouchOverlaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     uint8_t hit = 0;
 

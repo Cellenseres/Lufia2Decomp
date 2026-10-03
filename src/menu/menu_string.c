@@ -65,7 +65,7 @@ static uint32_t MenuVisitCount(MenuVm *vm, uint32_t pc) {
     return 0;
 }
 
-/* DEY: Y -= 1 with the sign and zero flags of the result. */
+/* DEY: Y -= 1 with N and Z. */
 static void DecrementY(Lufia2CpuState *cpu) {
     cpu->y = (uint16_t)(cpu->y - 1u);
     SetNz16(cpu, cpu->y);
@@ -76,7 +76,7 @@ static uint16_t Absolute16(const MenuVm *vm, uint16_t address) {
     return Read16AbsoluteIndexed(vm->memory, vm->cpu, address, 0);
 }
 
-/* Writes A to an absolute address in the current data bank. */
+/* Write A to an absolute address in the data bank. */
 static void StoreAbsolute16(const MenuVm *vm, uint16_t address) {
     Write16Absolute(vm->memory, vm->cpu, address, vm->cpu->accumulator);
 }
@@ -87,7 +87,7 @@ static uint32_t Indirect(const MenuVm *vm, uint8_t offset, uint16_t index) {
         Read16Direct(vm->memory, vm->cpu, offset) + index) & 0x00ffffffu;
 }
 
-/* Byte at (dp),Y: the pointer at the direct page offset plus index. */
+/* Byte at (dp),Y. */
 static uint8_t Indirect8(const MenuVm *vm, uint8_t offset, uint16_t index) {
     return Read8(vm->memory, Indirect(vm, offset, index));
 }

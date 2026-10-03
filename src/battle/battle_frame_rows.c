@@ -22,7 +22,7 @@ static void Store16X(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     StoreAAbsolute16(memory, cpu, offset, cpu->x);
 }
 
-/* Reads the word at an absolute address in the current data bank. */
+/* Word at an absolute address in the data bank. */
 static uint16_t Abs16(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
     uint16_t address) {
     return Read16AbsoluteIndexed(memory, cpu, address, 0);
@@ -335,8 +335,7 @@ Lufia2ExecutionResult Lufia2BattleWindowE3CD(
     return FilledWindow(memory, cpu, 0x2167u, 0x87f9u, 0xe3cdu);
 }
 
-/* Adds delta (+/-) to the word at an absolute address, one step at a time,
- * leaving N/Z from the last step. */
+/* Step a word by delta; N/Z from the last step. */
 static void IncAbs16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t address, int delta) {
     const int step = delta < 0 ? -1 : 1;

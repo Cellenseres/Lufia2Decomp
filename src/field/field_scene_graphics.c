@@ -58,12 +58,7 @@ CallGraphicsChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return ExecutionReturned(next);
 }
 
-/* Copies the offsets and header words of the scene's records into work RAM.
- * The map's record list is a pointer into bank $A1: a count byte at +2 (low
- * seven bits) and then one word per record, which points at the record body.
- * Each record's offset is stored relative to the list, and the first two bytes
- * of the body are kept as its header. The tables end with the direct page's
- * low byte as a marker. */
+/* Copy the scene records' offsets and headers into WRAM. */
 static Lufia2ExecutionResult IndexSceneRecords(const Lufia2Memory *memory,
                                                Lufia2CpuState *cpu) {
     OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));
@@ -132,8 +127,7 @@ static Lufia2ExecutionResult IndexSceneRecords(const Lufia2Memory *memory,
     return ExecutionReturned(0x80f028u);
 }
 
-/* Channel 0 sends the staged object tiles from work RAM to the PPU data port
- * ($2118). */
+/* Channel 0 sends staged object tiles to $2118. */
 static void StartObjectPlaneDma(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLoadA(cpu, WRAM_BANK_7E);
     OpSta(memory, cpu, SNES_A1B(0));
@@ -145,8 +139,7 @@ static void StartObjectPlaneDma(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     OpSta(memory, cpu, SNES_MDMAEN);
 }
 
-/* Sends the assembled object tiles to video memory in two halves: the first
- * plane at the object's address and the second a page further on. */
+/* Upload object tiles in two halves, a page apart. */
 static void UploadObjectGraphics(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, OBJECT_SLOT)));
     OpSepWidths(cpu, 0x20u);
@@ -183,7 +176,7 @@ static void UploadObjectGraphics(const Lufia2Memory *memory, Lufia2CpuState *cpu
     StartObjectPlaneDma(memory, cpu);
 }
 
-/* Fields of an object record in the work list at $7E:F000 (DB-relative). */
+/* Object record fields in the $7E:F000 work list. */
 enum {
     OBJECT_FIELD_SLOT = 0xf000u,
     OBJECT_FIELD_FLAGS = 0xf001u,
@@ -209,9 +202,7 @@ enum {
     OBJECT_MAP_CELLS = 0x7f0000u,
 };
 
-/* Reads the record at Y: slot, width and height. Stores the shape code (height
- * - 1 with width - 1 in the next bit up) for the slot and leaves A at the
- * sprite slot count for that shape, ready for the allocation child. */
+/* Read record Y: slot, size; A = sprite slot count. */
 static void AssembleReadRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushY(memory, cpu);
     TransferDirectToA(cpu);
@@ -236,9 +227,7 @@ static void AssembleReadRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     OpLda(memory, cpu, OpLongX(cpu, OBJECT_SPRITE_SLOT_COUNTS));
 }
 
-/* With the source cell index in Y, picks the layer named by the record flags
- * and leaves X at the object's first map cell and the row stride (section
- * width minus object width, in bytes) in DP $63. */
+/* Locate the object's first map cell and row stride. */
 static void AssembleLocateSource(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbsY(cpu, OBJECT_FIELD_FLAGS));
     OpTxy(cpu);
@@ -259,9 +248,7 @@ static void AssembleLocateSource(const Lufia2Memory *memory, Lufia2CpuState *cpu
     OpStz(memory, cpu, OpDp(cpu, OBJECT_TILE_ATTRIBUTES));
 }
 
-/* Copies the object's metatiles row by row from the map: each cell's metatile
- * is handed to the tile child, and the first cell's attribute word is kept in
- * DP $98. The metatile budget turns a runaway count into a handoff. */
+/* Copy the object's metatiles row by row from the map. */
 static Lufia2ExecutionResult AssembleCopyMetatiles(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu,
                                                    Lufia2PushedChildCall child,
@@ -305,8 +292,7 @@ static Lufia2ExecutionResult AssembleCopyMetatiles(const Lufia2Memory *memory,
     return ExecutionReturned(0u);
 }
 
-/* Builds one object's tile graphics: allocates its sprite slots, assembles the
- * metatiles from the map and uploads the result to video memory. */
+/* Build one object's tiles: allocate, assemble, upload. */
 static Lufia2ExecutionResult AssembleObjectGraphics(const Lufia2Memory *memory,
                                                     Lufia2CpuState *cpu,
                                                     Lufia2PushedChildCall child,
@@ -353,8 +339,7 @@ static Lufia2ExecutionResult AssembleObjectGraphics(const Lufia2Memory *memory,
     return ExecutionReturned(0x80f1e0u);
 }
 
-/* Sends the tileset staged at $7E:4000 to video memory. The length comes from
- * the resource length word unless the caller names one. */
+/* DMA the tileset staged at $7E:4000 to VRAM. */
 static void StartTilesetDma(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             uint16_t vram, uint16_t length) {
     OpLoadA(cpu, DMA_WORD_PAIR);
@@ -376,9 +361,7 @@ static void StartTilesetDma(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpSta(memory, cpu, OpAbs(cpu, SNES_MDMAEN));
 }
 
-/* Tests whether the object record at Y has graphics to load: one of the
- * flag bits $0C in its byte 7, or bit 3 of byte 8. Leaves the result in the
- * zero flag (clear when it does). */
+/* Does object record Y load graphics? Zero flag answers. */
 static void SceneTestObjectUsesTiles(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbsY(cpu, OBJECT_FIELD_FLAGS_A));
     OpBitValue(cpu, OBJECT_USES_TILES_A);
@@ -434,8 +417,7 @@ static Lufia2ExecutionResult LoadTilesetAndObjects(const Lufia2Memory *memory,
     return ExecutionHandoff(cpu, 0x80f08eu);
 }
 
-/* Loads the map's first auxiliary resource (when its table entry names one)
- * into $7E:C000 and records where the resource and its table start. */
+/* Load the map's first auxiliary resource to $7E:C000. */
 static Lufia2ExecutionResult LoadMapAuxiliaryResource(const Lufia2Memory *memory,
                                                       Lufia2CpuState *cpu,
                                                       Lufia2PushedChildCall child,
@@ -484,8 +466,7 @@ static Lufia2ExecutionResult LoadMapAuxiliaryResource(const Lufia2Memory *memory
     return ExecutionReturned(0u);
 }
 
-/* Loads the second auxiliary resource, named by the high byte of the pair,
- * into the tileset staging area and sends it to video memory. */
+/* Load and upload the second auxiliary tile resource. */
 static Lufia2ExecutionResult LoadAuxiliaryTiles(const Lufia2Memory *memory,
                                                 Lufia2CpuState *cpu,
                                                 Lufia2PushedChildCall child,
@@ -544,9 +525,7 @@ static Lufia2ExecutionResult LoadAuxiliaryGraphics(const Lufia2Memory *memory,
     return ExecutionReturned(0x80f2b6u);
 }
 
-/* Names the map's tileset resource in DP $54: the cave generator's choice in
- * a generated cave, otherwise the map's entry in the ROM table plus the
- * resource base. Leaves the zero flag set when there is none. */
+/* Tileset resource in DP $54; zero flag when none. */
 static void SceneSelectTileset(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
     OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));
@@ -564,8 +543,7 @@ static void SceneSelectTileset(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     OpSepWidths(cpu, 0x20u);
 }
 
-/* Picks the palette source: the cave generator's in a generated cave,
- * otherwise the map's entry in the ROM palette table. */
+/* Palette source: cave generator's or the map's ROM entry. */
 static void ScenePickPalette(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSepWidths(cpu, 0x20u);
     OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));

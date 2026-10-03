@@ -34,12 +34,11 @@ enum {
     CAVE_STAIR_COLUMN_LONG = 0x7f0000u | CAVE_STAIR_COLUMN,
     CAVE_STAIR_ROW_LONG = 0x7f0000u | CAVE_STAIR_ROW,
 
-    /* Sizes of the room and shape grids (16 x 16 cells). */
+    /* Room and shape grid sizes: 16 x 16 cells. */
     CAVE_GRID_BYTES = 0x0100,
     CAVE_BLANK_SHAPE_PAIR = 0x1c1c,
 
-    /* Item selection: a table of record pointers in bank $96 whose records
-     * hold the fields below, and the two lists it sorts them into. */
+    /* Item selection: record pointers in bank $96, two lists. */
     ITEM_RECORD_BANK = 0x96,
     ITEM_RECORD_TABLE = 0xcf69,
     ITEM_RECORD_TABLE_BYTES = 0x03a4,
@@ -58,8 +57,7 @@ enum {
     CAVE_DP_PRICE_LIMIT = 0x54,
     CAVE_DP_LIST_B_END = 0x60,
 
-    /* Chest contents: eight words from $7F:E746, filled from the lists above and
-     * the ROM tables below. */
+    /* Chest contents: eight words from $7F:E746. */
     CAVE_CHEST_WORDS = 0xe746,
     CAVE_CHEST_WORD_BYTES = 0x0010,
     CAVE_ITEM_LISTS = 0x0000,
@@ -92,8 +90,7 @@ enum {
     CAVE_DP_CHEST_KIND = 0x58,
     CAVE_DP_CHEST_BIT = 0x55,
 
-    /* Room placement scratch: the next room's corner and the rectangle being
-     * tried. */
+    /* Room placement scratch: next corner and tried rectangle. */
     CAVE_DP_ROOM_WIDTH = 0x24,
     CAVE_DP_ROOM_HEIGHT = 0x25,
     CAVE_DP_ROOM_COLUMN = 0x26,
@@ -117,8 +114,7 @@ enum {
     CAVE_CELL_FLAGS = 0xc0,
     CAVE_CELL_ID_MASK = 0x3f,
 
-    /* Room links: pairs of cells, ended by $FF, and the scratch list the
-     * duplicate pass builds. */
+    /* Room links: cell pairs ended by $FF, plus dedupe scratch. */
     CAVE_LINKS = 0xe6f1,
     CAVE_LINK_SCRATCH = 0x0400,
     CAVE_LINK_MARK_A_LONG = 0x7fe6ad,
@@ -131,7 +127,7 @@ enum {
     CAVE_DP_LINK_KEY = 0x54,
     CAVE_DP_SCRATCH_COUNT = 0x56,
 
-    /* Cell positions in the 16-wide grid; the first row is the border. */
+    /* Cell positions in the 16-wide grid; row 0 is border. */
     CAVE_GRID_WIDTH = 0x10,
     CAVE_GRID_ROWS = 0x0e,
     CAVE_FIRST_ROOM_CELL = 0x10,
@@ -144,8 +140,7 @@ enum {
     CAVE_LINK_SHAPE = 0x39,
     CAVE_LINK_BLOCK_ROW = 4,
 
-    /* The hidden 2x2 treasure room and the objects and chests of ordinary
-     * rooms. */
+    /* Treasure room, objects and chests of ordinary rooms. */
     CAVE_TREASURE_ROOM_ODDS = 0x10,
     CAVE_TREASURE_CELL_ODDS = 0x80,
     CAVE_TREASURE_LAST_CELL = 0xc0,
@@ -165,9 +160,7 @@ enum {
     CAVE_DP_CHEST_ATTEMPTS = 0x59,
     CAVE_DP_NEIGHBOUR_BITS = 0x55,
 
-    /* Block drawing: the decompressed block set at $7E:4000, the tile map in
-     * bank $7F (a header, then two layers of 96-word rows) and the scratch
-     * the passes below share. */
+    /* Block drawing: block set, tile map layers, shared scratch. */
     CAVE_BLOCK_SET = 0xe699,
     CAVE_BLOCK_BUFFER = 0x4000,
     CAVE_BLOCK_BUFFER_LONG = WRAM_FIELD_MAP_ATTRIBUTES,
@@ -192,10 +185,7 @@ enum {
     CAVE_DP_DRAW_ROWS = 0x27,
     CAVE_DP_BLOCK_SHAPE = 0x22,
 
-    /* Tile sets and decorations come from lists searched by key; each found
-     * entry is read from $7E:F000 into eight-byte records at $7F:C000, one
-     * 256-byte block per variant, the first block being the header (variant
-     * count, then rows below the first). */
+    /* Tile sets and decorations: keyed lists into $7F:C000 records. */
     CAVE_LIST_ENTRY_LONG = 0x7ef000,
     CAVE_LIST_TILE_SETS = 0x05,
     CAVE_LIST_DECORATIONS = 0x0a,
@@ -216,7 +206,7 @@ enum {
     CAVE_DP_TILE_BITS = 0x54,
     CAVE_DP_EXTRA_ROWS = 0x5a,
 
-    /* The finishing pass: link, stair and chest tiles, then the map sections. */
+    /* Finishing pass: link, stair and chest tiles, map sections. */
     CAVE_LINK_MARK_A = 0xe6ad,
     CAVE_LINK_MARK_B = 0xe6ae,
     CAVE_LINK_MARK_TILE = 0x4390,

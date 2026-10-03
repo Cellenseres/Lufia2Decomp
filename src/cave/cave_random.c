@@ -6,8 +6,7 @@
 #include "system/dp_scratch.h"
 #include "system/system_internal.h"
 
-/* Random product through the Mode 7 multiplier: M7A takes the random byte and
- * then D's low byte (TDC) as its high half; M7B holds the other factor. */
+/* Random product via the Mode 7 multiplier. */
 static void CaveMultiplyRandom(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,

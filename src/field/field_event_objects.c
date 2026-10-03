@@ -148,10 +148,7 @@ static unsigned EventQueueObjectAnimation(
     return EVENT_OPCODE_NEXT;
 }
 
-/* The two map header lists that EventObjectCoversRow searches. Each is
- * found by its offset in the header (X) and its record size (high byte of A).
- * A placement record gives an object's column, its top row and the key of its
- * shape record, whose row count says how far the object extends down. */
+/* Header lists searched by EventObjectCoversRow. */
 enum {
     OBJECT_PLACEMENT_LIST = 0x0002,
     OBJECT_PLACEMENT_SIZE = 0x0f,
@@ -766,8 +763,7 @@ static void EventCopyTile(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:F8D4-$83:F91B: move the tile bits of the object's source cell onto its
- * destination cell (and the row below when the object is two cells tall). */
+/* $83:F8D4-$83:F91B: move tile bits to the destination cell. */
 static void EventPlaceCopyTiles(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     EventLayerCell(memory, cpu, 0xf8d6u, 1); /* F8D4 */
     LoadY16(cpu, cpu->x);
@@ -1083,9 +1079,7 @@ static void EventSecondaryAtProbe(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:C0B8-$83:C0DB: when the cell below the pushed object is open ground
- * facing the pending object, load the attribute of that object's tile;
- * false when the ground check is skipped. */
+/* $83:C0B8-$83:C0DB: pending object's tile below a pushed object. */
 static bool EventPushPendingTile(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     EventProbeSave(memory, cpu, 0xc0bau, 1); /* C0B8 */
     LoadA8(cpu, DirectByte(memory, cpu, 0x94u));
@@ -1129,8 +1123,7 @@ static bool EventPushPendingTile(const Lufia2Memory *memory, Lufia2CpuState *cpu
     return true;
 }
 
-/* $83:C09B-$83:C0EA: whether a pushed object may step onto a cell that is not
- * marked passable; 0 = handoff. */
+/* $83:C09B-$83:C0EA: may a pushed object enter? 0 = handoff. */
 static uint8_t EventPushGround(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                uint32_t *handoff, bool *allowed) {
     bool tile_checked = true;

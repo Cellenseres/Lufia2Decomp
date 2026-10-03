@@ -35,8 +35,7 @@
 #define TEXT_GLYPH_BUFFER_BYTES 0x1000u
 #define TEXT_WINDOW_TILEMAP 0x3000u   /* $7E: window tilemap rows, 32 tiles each */
 #define TEXT_WINDOW_TILE_BASE 0x1255u /* added to the window border tile numbers */
-#define TEXT_BG3_VOFS_SHADOW 0x059eu  /* BG3 vertical scroll as the NMI will write it  \
-                                       */
+#define TEXT_BG3_VOFS_SHADOW 0x059eu  /* BG3 vertical scroll as the NMI writes it */
 #define TEXT_WINDOW_ROW_ORIGIN 0x7fd085u /* word: tilemap offset of the window */
 #define TEXT_WINDOW_ROW_COUNT 0x7fd087u  /* rows queued so far */
 #define TEXT_WINDOW_ROW_MARK 0x7fd088u

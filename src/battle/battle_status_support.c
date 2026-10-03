@@ -14,8 +14,7 @@ enum {
     EFFECT_RECORD_TABLE = 0x859ed6u,
 };
 
-/* Copies the zero-terminated text at DB:X into the status text buffer at
- * offset Y, terminator included. X and Y stop on the terminator. */
+/* Copy zero-terminated text into the status buffer at Y. */
 static void CopyStatusText(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
 
@@ -37,8 +36,7 @@ Lufia2ExecutionResult Lufia2BattleStatusName(const Lufia2Memory *memory,
     OpPushX(memory, cpu);
     cpu->y = 0;
     CopyStatusText(memory, cpu);
-    /* Blank glyphs before the terminator are overwritten with the direct
-     * page's low byte (zero), walking back from the end. */
+    /* Blank trailing glyphs become zero, walking back. */
     do {
         LoadA8(cpu, WramReadAt(wram, STATUS_TEXT_BUFFER - 1u, cpu->y));
         Compare8(cpu, A8(cpu), TEXT_BLANK_GLYPH);
@@ -93,9 +91,7 @@ Lufia2ExecutionResult Lufia2BattleSyncStatusMarkers(const Lufia2Memory *memory,
             SetAccumulatorWidth(cpu, 0);
             LoadA16(cpu, WramRead16At(wram, WRAM_BATTLE_PARTY_RECORDS, cpu->x));
             if (!cpu->zero) {
-                /* The marker takes the battler's status. A fresh status that
-                 * replaces none starts its timer at $FF; a battler without
-                 * status clears the marker. */
+                /* Marker follows the battler's status; new ones start at $FF. */
                 OpPushX(memory, cpu);
                 TransferAToX(cpu);
                 SetAccumulatorWidth(cpu, 1);
@@ -167,9 +163,7 @@ Lufia2ExecutionResult Lufia2BattleClearStatusMarkers(const Lufia2Memory *memory,
     return ExecutionReturned(0x85920du);
 }
 
-/* $85:D9C9: effect-work pointer for a nonzero target mask. The mask is
- * shifted down until its lowest set bit falls out; that bit's number, plus
- * five for the enemy side, indexes a table of record pointers. */
+/* $85:D9C9: effect record from the target mask's lowest bit. */
 Lufia2ExecutionResult Lufia2BattleEffectRecord(const Lufia2Memory *memory,
                                                Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);

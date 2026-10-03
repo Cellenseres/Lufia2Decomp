@@ -13,11 +13,7 @@ enum {
     PRODUCT_TOP = 0x53u
 };
 
-/* 24-bit product of the word at $4E and the byte at $50, stored at $51. The
- * hardware multiplier only does 8 x 8, so the low and the high byte of the
- * multiplicand are multiplied separately and added with a byte of shift.
- * A, X and the status come back as they were, except that an 8-bit A keeps
- * the high byte of the sum as its hidden half. */
+/* 24-bit product of word $4E and byte $50 at $51. */
 Lufia2ExecutionResult Lufia2Multiply16By8(const Lufia2Memory *memory,
                                           Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);

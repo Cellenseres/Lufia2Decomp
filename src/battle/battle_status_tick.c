@@ -2,7 +2,7 @@
 #include "core/snes_registers.h"
 #include "system/dp_scratch.h"
 
-/* Apply the tick damage to the staged target and queue its presentation. */
+/* Apply tick damage and queue its presentation. */
 static bool StatusTickApply(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;

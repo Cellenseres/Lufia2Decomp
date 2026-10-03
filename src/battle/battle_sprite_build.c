@@ -22,8 +22,7 @@ enum {
     OAM_SOURCE_ATTRIBUTE = 4u,
 };
 
-/* Copies the position and tile words of source sprite `index` (relative to X)
- * into the low OAM entry `index` entries after Y. */
+/* Copy source sprite index into low OAM after Y. */
 static void OamCopySprite(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                           unsigned index) {
     const uint16_t source = (uint16_t)(index * BATTLE_SPRITE_SOURCE_SIZE);
@@ -33,8 +32,7 @@ static void OamCopySprite(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                 Read16Long(memory, OpAbsX(cpu, (uint16_t)(source + 2u))));
 }
 
-/* The high OAM byte for four sprites: the 2-bit attributes of sprites 0..3 in
- * ascending bit pairs. Reads the attribute byte of each source record. */
+/* High OAM byte from four sprites' attributes. */
 static uint8_t OamPackFourAttributes(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     uint8_t packed = Read8(memory, OpAbsX(cpu, 0x13u));
     for (int i = 2; i >= 0; --i)
@@ -45,14 +43,13 @@ static uint8_t OamPackFourAttributes(const Lufia2Memory *memory, Lufia2CpuState 
     return packed;
 }
 
-/* Replaces the 2-bit attribute at `slot` of a high OAM byte. */
+/* Replace one 2-bit attribute in a high OAM byte. */
 static uint8_t OamMergeAttribute(uint8_t old, unsigned slot, uint8_t attribute) {
     const unsigned shift = slot * 2u;
     return (uint8_t)((old & ~(3u << shift)) | ((unsigned)(attribute & 3u) << shift));
 }
 
-/* Appends four source records at once; only valid when the OAM count is a
- * multiple of four. Leaves the registers the way the long form would. */
+/* Append four records; OAM count must be a multiple. */
 static void OamAppendFour(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     for (unsigned i = 0; i < 4u; ++i)
         OamCopySprite(memory, cpu, i);
@@ -78,8 +75,7 @@ static void OamAppendFour(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_OAM_COUNT));
 }
 
-/* Appends one source record: copies its words and merges its attribute bits
- * into the high OAM byte shared by four sprites. */
+/* Append one record and merge its attribute bits. */
 static void OamAppendOne(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OamCopySprite(memory, cpu, 0u);
     OpTya(cpu);
@@ -97,8 +93,7 @@ static void OamAppendOne(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const unsigned slot = Read8(memory, OpDp(cpu, SPRITE_DP_OAM_COUNT)) & 3u;
     Write8(memory, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES), attribute);
     Write8(memory, OpDp(cpu, SPRITE_DP_ATTRIBUTE_SHIFT), (uint8_t)slot);
-    /* The original shifts the attribute scratch byte left in place, two bits
-     * per slot, counting the slot down to $FF; keep those writes. */
+    /* The ROM shifts the scratch byte per slot; keep it. */
     for (unsigned done = 0; done < slot; ++done) {
         Write8(memory, OpDp(cpu, SPRITE_DP_ATTRIBUTE_SHIFT),
                (uint8_t)(slot - 1u - done));
@@ -193,7 +188,7 @@ enum {
     OVERLAY_COUNT_LIMIT = 6u,
 };
 
-/* Lays the overlays' OAM ranges end to end, starting at the first free entry. */
+/* Lay overlay OAM ranges end to end. */
 static void OverlayAssignFirstOamIndices(const Lufia2Memory *memory,
                                          Lufia2CpuState *cpu) {
     SetIndexWidth(cpu, 1);
@@ -209,8 +204,7 @@ static void OverlayAssignFirstOamIndices(const Lufia2Memory *memory,
     SetIndexWidth(cpu, 0);
 }
 
-/* Writes one overlay's sprites into OAM: each source sprite's position plus
- * the overlay offset. X is the overlay number; returns with it restored. */
+/* Write overlay X's sprites into OAM. */
 static void OverlayEmitSprites(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbsX(cpu, OVERLAY_SPRITE_COUNT));
     OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_SPRITES_LEFT));

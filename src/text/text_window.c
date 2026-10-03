@@ -19,10 +19,7 @@ enum { ACTOR_STATE_EXCLUDED = 0x04 };
 /* Scratch for the id being looked up. */
 enum { DP_WINDOW_ACTOR_ID = 0x54 };
 
-/* $80:BF6F: find the slot of the actor whose id is in A. Slots with the
- * excluded state bit are skipped. On success the slot becomes DP_ACTOR_SLOT,
- * its record offsets are computed and the carry is clear; the carry is set when
- * no slot matches. */
+/* $80:BF6F: slot of actor A; carry set when none. */
 static void TextFindWindowActor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
 
@@ -55,8 +52,7 @@ static void TextFindWindowActor(const Lufia2Memory *memory, Lufia2CpuState *cpu)
 /* Packed window coordinates and the row they turn into. */
 enum { DP_WINDOW_COORDINATES = 0x4e, DP_WINDOW_ROW_OFFSET = 0x51 };
 
-/* $80:C557: a packed position (column in the low byte, row in the high byte)
- * to a byte offset in the window tilemap: 64 bytes per row, 2 per column. */
+/* $80:C557: packed position to window tilemap byte offset. */
 static void TextWindowTileOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
 
@@ -75,18 +71,14 @@ static void TextWindowTileOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu
     Add16Value(cpu, WramRead16(wram, DP_WINDOW_ROW_OFFSET));
 }
 
-/* Border drawing: tile word bit that mirrors the tile, the width of a tilemap
- * row, and the scratch holding the number of middle tiles. */
+/* Border drawing: mirror bit, row width, middle count. */
 enum {
     TILE_FLIP_X = 0x4000,
     WINDOW_TILEMAP_ROW_BYTES = 0x40,
     DP_BORDER_MIDDLE_TILES = 0x63
 };
 
-/* $80:C52C: one row of the window border at tilemap offset X. A is the first
- * tile, offset by the window's tile base. The row is the left tile, then the
- * middle tiles alternating between a tile and its neighbour, then the left tile
- * again, mirrored. X advances to the next tilemap row. */
+/* $80:C52C: one window border row at tilemap offset X. */
 static void TextWindowBorderRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
 
@@ -145,8 +137,7 @@ static void TextWindowActorPosition(const Lufia2Memory *memory, Lufia2CpuState *
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, cpu->x);
     Compare8(cpu, A8(cpu), 4);
     {
-        /* The speech tail goes below the window for facing 4, above it
-         * otherwise; each side hands over to the other when it does not fit. */
+        /* Speech tail below for facing 4, else above; swaps. */
         bool below = cpu->zero;
 
         for (;;) {
@@ -356,11 +347,10 @@ Lufia2ExecutionResult Lufia2TextBuildWindow(
     return ExecutionReturned(0x80c513u);
 }
 
-/* Fill words for the glyph buffer, indexed by the glyph attribute. */
+/* Glyph buffer fill words by glyph attribute. */
 #define TEXT_GLYPH_FILL_TABLE 0x80c7beu
 
-/* $80:C784: reset the glyph state and fill the whole glyph buffer with the
- * attribute's background word. */
+/* $80:C784: reset glyphs and fill the buffer. */
 Lufia2ExecutionResult Lufia2TextClearGlyphBuffer(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram caller = WramViewOfCaller(memory, cpu);
@@ -399,8 +389,7 @@ Lufia2ExecutionResult Lufia2TextClearGlyphBuffer(
     return ExecutionReturned(0x80c7bdu);
 }
 
-/* Window row drawing: scratch words, the attribute bits of the window tiles
- * and the tilemap offsets of the two rows written. */
+/* Window row drawing scratch, attributes and row offsets. */
 enum {
     DP_WINDOW_TILE = 0x54,
     DP_WINDOW_TILEMAP_OFFSET = 0x56,
@@ -411,11 +400,7 @@ enum {
     WINDOW_CENTERED_FLAG = 0x0004
 };
 
-/* $80:C5DD: write the next two rows of window tiles. The first tile number comes
- * from the row counter and the tile base, the tilemap position from the window
- * origin (shifted by two when bit 2 of the window state is set), and each pass
- * writes one tile in each of two consecutive tilemap rows for as many columns
- * as the window is wide. The LSR carry is kept for the ADC that follows. */
+/* $80:C5DD: write the next two rows of window tiles. */
 static void TextWriteWindowRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     const Lufia2Wram work = WramViewLong(memory);
@@ -455,10 +440,7 @@ static void TextWriteWindowRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     SetAccumulatorWidth(cpu, 1);
 }
 
-/* Upload channels for the window: glyph tiles on channel 2, the tilemap rows on
- * channel 1. Each channel has a VRAM destination word at $0079 + 2 * channel
- * and a request byte at $75 + channel, which holds the channel's bit and bit 6
- * for the NMI to act on. */
+/* Window uploads: glyphs on channel 2, rows on 1. */
 enum {
     WINDOW_TILE_CHANNEL = 2,
     WINDOW_MAP_CHANNEL = 1,
@@ -472,8 +454,7 @@ enum {
     WORK_RAM_BANK = 0x7e
 };
 
-/* Window preparation: the first upload covers the whole glyph buffer's first
- * rows, and the BG3 scroll is parked at -4. */
+/* Window preparation: first upload size, BG3 scroll at -4. */
 enum {
     WINDOW_FIRST_UPLOAD_BYTES = 0x0c00,
     WINDOW_SCROLL_RESET = 0xfffc,
@@ -485,8 +466,7 @@ enum {
 #define WINDOW_VRAM_DESTINATION(channel) (0x0079u + 2u * (unsigned)(channel))
 #define WINDOW_UPLOAD_REQUEST(channel) (0x75u + (unsigned)(channel))
 
-/* $80:C56E: write a pair of window rows, then queue their uploads: the glyph
- * tiles of the row's first tile and the two tilemap rows. Y is kept. */
+/* $80:C56E: write two window rows and queue their uploads. */
 Lufia2ExecutionResult Lufia2TextQueueWindowRow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
