@@ -442,7 +442,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:A583` | `Lufia2WorldProduct16By8` | draft | `src/world/world_scroll_step.c` |
 | `$86:A5A9` | `Lufia2WorldMapDivide32` | draft | `src/world/world_map_objects.c` |
 | `$86:A791` | `Lufia2SceneViewOrigin` | draft | `src/field/field_scene_tracks.c` |
-| `$86:A894` | `Lufia2WorldMapPlane` | draft | `src/world/world_map_plane.c` |
+| `$86:A894` | `Lufia2WorldMapPlane` | verified | `src/world/world_map_plane.c` |
 | `$86:A9B0` | `Lufia2WorldPlaneRows0` | draft | `src/world/world_plane_rows.c` |
 | `$86:AA5B` | `Lufia2WorldPlaneRows1` | draft | `src/world/world_plane_rows.c` |
 | `$86:AB0E` | `Lufia2WorldPlaneRows2` | draft | `src/world/world_plane_rows.c` |

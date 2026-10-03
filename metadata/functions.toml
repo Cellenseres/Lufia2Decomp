@@ -3040,7 +3040,7 @@ name = "Lufia2WorldMapPlane"
 source = "src/world/world_map_plane.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # NMI child: OAM and palette DMA when requested, then the pad words with
 # their key repeat. Runs with M=1 inside the NMI.

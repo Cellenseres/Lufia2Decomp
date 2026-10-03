@@ -29,7 +29,7 @@ Lufia2ExecutionResult Lufia2WorldSpriteChain(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:A894 world map ground plane matrix tables; entry M1X0. */
+/* $86:A894 ground plane tables; M1X0, PB/DB86, DP0, S1F00..1FFC. */
 Lufia2ExecutionResult Lufia2WorldMapPlane(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

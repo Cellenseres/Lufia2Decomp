@@ -49,12 +49,15 @@ Lufia2ExecutionResult Lufia2BattleBlitTileRows(
     uint8_t plane_byte;
     Word16Result last_sum;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !DirectWorkByteAvailable(cpu, ROW_BYTES) ||
+        !DirectWorkByteAvailable(cpu, ROWS_LEFT))
         return ExecutionHandoff(cpu, 0x81bcccu);
     WramWrite16(wram, HARDWARE_A, WramRead16(wram, SCALE_X));
     position = WramRead16(wram, ROW_COUNT_LOW);
     WramWrite16(wram, COLUMN_SKIP, (uint16_t)(position & 0x0007u));
-    row_sum = (uint16_t)(((position & 0x00f8u) + position) & 0x00ffu);
+    row_sum = Sum16Mode(position & 0x00f8u, position, false,
+        cpu->decimal).value & 0x00ffu;
     target_offset = (uint16_t)(row_sum << 6);
     PushStackWord(memory, cpu, target_offset);
     WramWrite16(wram, TARGET_OFFSET, target_offset);
@@ -62,8 +65,9 @@ Lufia2ExecutionResult Lufia2BattleBlitTileRows(
     WramWrite(wram, ROW_COUNT_HIGH, rows);
     WramWrite(wram, ROWS_LEFT, rows);
     WramWrite(wram, COLUMN_SKIP,
-        Difference8(BLOCK_ROWS, WramRead(wram, COLUMN_SKIP)).value);
-    last_sum = Sum16(PullStackWord(memory, cpu), WramRead16(wram, TARGET), false);
+        Difference8Mode(BLOCK_ROWS, WramRead(wram, COLUMN_SKIP), cpu->decimal).value);
+    target_offset = PullStackWord(memory, cpu);
+    last_sum = Sum16Mode(target_offset, WramRead16(wram, TARGET), false, cpu->decimal);
     target = last_sum.value;
     source = WramRead16(wram, SOURCE);
     PushDataBank(memory, cpu);
@@ -81,12 +85,12 @@ Lufia2ExecutionResult Lufia2BattleBlitTileRows(
         (void)WramStep8(wram, ROW_COUNT_LOW, 1);
         if (WramStep8(wram, ROWS_LEFT, -1) == 0)
             break;
-        last_sum = Sum16(source, PLANE_STEP, false);
+        last_sum = Sum16Mode(source, PLANE_STEP, false, cpu->decimal);
         source = last_sum.value;
         if (WramStep8(wram, COLUMN_SKIP, -1) != 0)
             continue;
         WramWrite(wram, COLUMN_SKIP, BLOCK_ROWS);
-        last_sum = Sum16(target, BLOCK_STEP, false);
+        last_sum = Sum16Mode(target, BLOCK_STEP, false, cpu->decimal);
         target = last_sum.value;
     }
     cpu->x = target;

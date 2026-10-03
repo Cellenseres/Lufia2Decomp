@@ -288,7 +288,8 @@ Lufia2ExecutionResult Lufia2WorldMapPlane(
     BandExit done = {0, 0, 0, 0};
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
-        !DirectWorkWordAvailable(cpu, ROWS_LEFT))
+        cpu->program_bank != 0x86u || cpu->data_bank != 0x86u ||
+        cpu->direct_page != 0 || cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
         return ExecutionHandoff(cpu, 0x86a894u);
     wram = WramViewOfCaller(memory, cpu);
     angle = WramRead(wram, WRAM_WORLD_MAP_VIEW_ANGLE);

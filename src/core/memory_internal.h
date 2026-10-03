@@ -18,6 +18,15 @@ static inline void Write8(
     memory->write_byte(memory->context, address & 0x00ffffffu, value);
 }
 
+/* Separate statements preserve bus order across C compilers. */
+static inline uint16_t Read16Pair(
+    const Lufia2Memory *memory, uint32_t low_address, uint32_t high_address) {
+    const uint8_t low = Read8(memory, low_address);
+    const uint8_t high = Read8(memory, high_address);
+
+    return (uint16_t)(low | ((uint16_t)high << 8));
+}
+
 static inline uint32_t DirectAddress(
     const Lufia2CpuState *cpu, uint8_t offset) {
     return (uint16_t)(cpu->direct_page + offset);
@@ -55,9 +64,7 @@ static inline uint16_t Read16Direct(
     const Lufia2CpuState *cpu,
     uint8_t offset) {
     const uint16_t address = (uint16_t)(cpu->direct_page + offset);
-    return (uint16_t)(
-        Read8(memory, address) |
-        ((uint16_t)Read8(memory, (uint16_t)(address + 1u)) << 8));
+    return Read16Pair(memory, address, (uint16_t)(address + 1u));
 }
 
 static inline void Write16Direct(
@@ -72,9 +79,7 @@ static inline void Write16Direct(
 
 static inline uint16_t Read16Long(
     const Lufia2Memory *memory, uint32_t address) {
-    return (uint16_t)(
-        Read8(memory, address) |
-        ((uint16_t)Read8(memory, (address + 1u) & 0x00ffffffu) << 8));
+    return Read16Pair(memory, address, (address + 1u) & 0x00ffffffu);
 }
 
 static inline uint16_t Read16ProgramIndexed(
@@ -83,10 +88,8 @@ static inline uint16_t Read16ProgramIndexed(
     uint16_t base,
     uint16_t index) {
     const uint16_t address = (uint16_t)(base + index);
-    return (uint16_t)(
-        Read8(memory, ProgramAddress(cpu, address)) |
-        ((uint16_t)Read8(
-             memory, ProgramAddress(cpu, (uint16_t)(address + 1u))) << 8));
+    return Read16Pair(memory, ProgramAddress(cpu, address),
+        ProgramAddress(cpu, (uint16_t)(address + 1u)));
 }
 
 
@@ -97,9 +100,7 @@ static inline uint16_t Read16AbsoluteIndexed(
     uint16_t index) {
     const uint32_t low = AbsoluteIndexedAddress(cpu, address, index);
     const uint32_t high = (low + 1u) & 0x00ffffffu;
-    return (uint16_t)(
-        Read8(memory, low) |
-        ((uint16_t)Read8(memory, high) << 8));
+    return Read16Pair(memory, low, high);
 }
 
 static inline void Write16Long(
@@ -115,9 +116,11 @@ static inline uint32_t DirectLongPointer(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu,
     uint8_t offset) {
-    return Read16Direct(memory, cpu, offset) |
-           ((uint32_t)Read8(memory, DirectAddress(cpu, (uint8_t)(offset + 2u)))
-               << 16);
+    const uint16_t low = Read16Direct(memory, cpu, offset);
+    const uint8_t bank = Read8(memory,
+        DirectAddress(cpu, (uint8_t)(offset + 2u)));
+
+    return low | ((uint32_t)bank << 16);
 }
 
 static inline void Write16Absolute(
@@ -135,10 +138,7 @@ static inline uint32_t DirectLongIndirectY(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu,
     uint8_t offset) {
-    const uint32_t pointer =
-        Read16Direct(memory, cpu, offset) |
-        ((uint32_t)Read8(memory, DirectAddress(cpu, (uint8_t)(offset + 2u)))
-            << 16);
+    const uint32_t pointer = DirectLongPointer(memory, cpu, offset);
     return (pointer + cpu->y) & 0x00ffffffu;
 }
 
@@ -170,8 +170,7 @@ static inline uint16_t Read16DirectIndexed(
     uint16_t index) {
     const uint16_t address = (uint16_t)DirectIndexedAddress(cpu, offset, index);
 
-    return (uint16_t)(Read8(memory, address) |
-        ((uint16_t)Read8(memory, (uint16_t)(address + 1u)) << 8));
+    return Read16Pair(memory, address, (uint16_t)(address + 1u));
 }
 
 /* [dp],Y: 24-bit pointer at dp, 16-bit read. */
@@ -179,8 +178,7 @@ static inline uint16_t Read16IndirectLongY(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu,
     uint8_t offset) {
-    const uint32_t pointer = Read16Direct(memory, cpu, offset) |
-        ((uint32_t)DirectByte(memory, cpu, (uint8_t)(offset + 2u)) << 16);
+    const uint32_t pointer = DirectLongPointer(memory, cpu, offset);
 
     return Read16Long(memory, (pointer + cpu->y) & 0x00ffffffu);
 }
@@ -189,8 +187,7 @@ static inline uint8_t Read8IndirectLongY(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu,
     uint8_t offset) {
-    const uint32_t pointer = Read16Direct(memory, cpu, offset) |
-        ((uint32_t)DirectByte(memory, cpu, (uint8_t)(offset + 2u)) << 16);
+    const uint32_t pointer = DirectLongPointer(memory, cpu, offset);
 
     return Read8(memory, (pointer + cpu->y) & 0x00ffffffu);
 }
@@ -210,10 +207,8 @@ static inline void StoreWordAbsolute(
 static inline uint16_t Read16Bank(
     const Lufia2Memory *memory, uint8_t bank, uint16_t address) {
     const uint32_t base = (uint32_t)bank << 16;
-    const uint8_t low = Read8(memory, base | address);
-    const uint8_t high = Read8(memory, base | (uint16_t)(address + 1u));
 
-    return (uint16_t)(low | (high << 8));
+    return Read16Pair(memory, base | address, base | (uint16_t)(address + 1u));
 }
 
 #endif
