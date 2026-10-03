@@ -102,6 +102,34 @@ Lufia2ExecutionResult Lufia2TitleStateDispatch(
 }
 
 /* $80:9357: DMA channel 6, $700 bytes from $7E:X to VRAM Y. */
+/* Intro state machine ($80:92A4). Direct page $50 is the state, an index into
+ * the handler table at $80:92B7, and $4E counts frames within a state. */
+enum {
+    INTRO_DP_FRAME = 0x4eu,
+    INTRO_DP_STATE = 0x50u,
+    INTRO_DP_FINISHED = 0x6au, /* cleared by the last state */
+    INTRO_HANDLER_TABLE = 0x92b7u,
+    INTRO_HANDLER_SCROLL_ROWS = 0x92cbu,
+    INTRO_HANDLER_FIRST_LOGO = 0x92feu,
+    INTRO_HANDLER_FADE_IN = 0x930cu,
+    INTRO_HANDLER_HOLD = 0x9320u,
+    INTRO_HANDLER_FADE_OUT = 0x9330u,
+    INTRO_HANDLER_SECOND_LOGO = 0x9346u,
+    INTRO_HANDLER_FINISH = 0x9354u,
+    INTRO_FADE_FRAMES = 0x20u,
+    INTRO_HOLD_FRAMES = 0x78u,
+    INTRO_FIRST_LOGO = 0x2000u, /* $7E source of the logo tiles */
+    INTRO_SECOND_LOGO = 0x2800u,
+    INTRO_LOGO_BYTES = 0x0700u,
+    INTRO_VRAM_ROWS = 0x4000u,    /* VRAM word address of the scroll rows */
+    INTRO_ROW_SOURCE = 0x7e4004u, /* words: source offset and byte count */
+    INTRO_ROW_COUNT = 0x7e4006u,
+    DMA_CHANNEL_6 = 0x40u, /* MDMAEN bit */
+    DMA_WORD_TO_VRAM = 0x01u,
+    DMA_VRAM_DATA_PORT = 0x18u,
+};
+
+/* $80:9357: DMA $700 bytes from $7E:X to VRAM word address Y on channel 6. */
 static void IntroVramDma(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -110,11 +138,11 @@ static void IntroVramDma(
     StoreWordAbsolute(memory, cpu, SNES_A1TL(6), cpu->x);      /* 9357 */
     StoreWordAbsolute(memory, cpu, SNES_VMADDL, cpu->y);
     StoreAImmediate8(memory, cpu, 0x7eu, SNES_A1B(6));
-    LoadX16(cpu, 0x0700u);
+    LoadX16(cpu, INTRO_LOGO_BYTES);
     StoreWordAbsolute(memory, cpu, SNES_DASL(6), cpu->x);
-    StoreAImmediate8(memory, cpu, 0x01u, SNES_DMAP(6));
-    StoreAImmediate8(memory, cpu, 0x18u, SNES_BBAD(6));
-    StoreAImmediate8(memory, cpu, 0x40u, SNES_MDMAEN);
+    StoreAImmediate8(memory, cpu, DMA_WORD_TO_VRAM, SNES_DMAP(6));
+    StoreAImmediate8(memory, cpu, DMA_VRAM_DATA_PORT, SNES_BBAD(6));
+    StoreAImmediate8(memory, cpu, DMA_CHANNEL_6, SNES_MDMAEN);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -127,8 +155,69 @@ static void IntroLogoUpload(
     LoadX16(cpu, source);
     LoadY16(cpu, 0x0000u);
     IntroVramDma(memory, cpu, return_address);
-    IncrementDirect8(memory, cpu, 0x50u);
-    Write8(memory, DirectAddress(cpu, 0x4eu), 0x00u);
+    IncrementDirect8(memory, cpu, INTRO_DP_STATE);
+    Write8(memory, DirectAddress(cpu, INTRO_DP_FRAME), 0x00u);
+}
+
+/* State $92CB: DMA the scroll rows at $7E:4004 plus $4000 to VRAM. */
+static void IntroScrollRows(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16Long(memory, INTRO_ROW_SOURCE));
+    cpu->carry = 0;
+    Add16Value(cpu, INTRO_VRAM_ROWS);
+    StoreWordAbsolute(memory, cpu, SNES_A1TL(6), cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, INTRO_ROW_COUNT));
+    StoreWordAbsolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadX16(cpu, INTRO_VRAM_ROWS);
+    StoreWordAbsolute(memory, cpu, SNES_VMADDL, cpu->x);
+    StoreAImmediate8(memory, cpu, 0x7eu, SNES_A1B(6));
+    StoreAImmediate8(memory, cpu, DMA_WORD_TO_VRAM, SNES_DMAP(6));
+    StoreAImmediate8(memory, cpu, DMA_VRAM_DATA_PORT, SNES_BBAD(6));
+    StoreAImmediate8(memory, cpu, DMA_CHANNEL_6, SNES_MDMAEN);
+    IncrementDirect8(memory, cpu, INTRO_DP_STATE);
+}
+
+/* State $930C: brightness follows half the frame count for 32 frames. */
+static void IntroFadeIn(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, DirectByte(memory, cpu, INTRO_DP_FRAME));
+    LsrA8(cpu);
+    StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
+    LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, INTRO_DP_FRAME) + 1u));
+    StoreADirect8(memory, cpu, INTRO_DP_FRAME);
+    Compare8(cpu, A8(cpu), INTRO_FADE_FRAMES);
+    if (cpu->carry) {
+        IncrementDirect8(memory, cpu, INTRO_DP_STATE);
+        Write8(memory, DirectAddress(cpu, INTRO_DP_FRAME), 0x00u);
+    }
+}
+
+/* State $9320: hold the logo for 120 frames; the fade-out then starts from
+ * 32. */
+static void IntroHold(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, INTRO_DP_FRAME) + 1u));
+    StoreADirect8(memory, cpu, INTRO_DP_FRAME);
+    Compare8(cpu, A8(cpu), INTRO_HOLD_FRAMES);
+    if (cpu->carry) {
+        LoadA8(cpu, INTRO_FADE_FRAMES);
+        StoreADirect8(memory, cpu, INTRO_DP_FRAME);
+        IncrementDirect8(memory, cpu, INTRO_DP_STATE);
+    }
+}
+
+/* State $9330: brightness follows half the frame count down to zero, then
+ * the screen is blanked. */
+static void IntroFadeOut(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, INTRO_DP_FRAME) - 1u));
+    StoreADirect8(memory, cpu, INTRO_DP_FRAME);
+    if (cpu->negative) {
+        Write8(memory, DirectAddress(cpu, INTRO_DP_FRAME), 0x00u);
+        IncrementDirect8(memory, cpu, INTRO_DP_STATE);
+        StoreAImmediate8(memory, cpu, BRIGHTNESS_FORCED_BLANK, WRAM_BRIGHTNESS);
+    } else {
+        LsrA8(cpu);
+        StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
+    }
 }
 
 /* $80:92A4: intro NMI, state $50 through the table $80:92B7. */
@@ -144,78 +233,42 @@ Lufia2ExecutionResult Lufia2IntroNmi(
     Push8(memory, cpu, cpu->program_bank);
     PullDataBank(memory, cpu);
     TransferDirectToA(cpu);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x50u));
+    LoadA8(cpu, DirectByte(memory, cpu, INTRO_DP_STATE));
     AslA8(cpu);
     TransferAToX(cpu);
-    handler = (uint16_t)(
-        Read8(memory, ProgramAddress(cpu, (uint16_t)(0x92b7u + cpu->x))) |
-        (Read8(memory, ProgramAddress(cpu, (uint16_t)(0x92b8u + cpu->x)))
-            << 8));
-    if (handler != 0x92cbu && handler != 0x92feu && handler != 0x930cu &&
-        handler != 0x9320u && handler != 0x9330u && handler != 0x9346u &&
-        handler != 0x9354u)
+    handler =
+        (uint16_t)(Read8(memory, ProgramAddress(
+                                     cpu, (uint16_t)(INTRO_HANDLER_TABLE + cpu->x))) |
+                   (Read8(memory, ProgramAddress(cpu, (uint16_t)(INTRO_HANDLER_TABLE +
+                                                                 1u + cpu->x)))
+                    << 8));
+    if (handler != INTRO_HANDLER_SCROLL_ROWS && handler != INTRO_HANDLER_FIRST_LOGO &&
+        handler != INTRO_HANDLER_FADE_IN && handler != INTRO_HANDLER_HOLD &&
+        handler != INTRO_HANDLER_FADE_OUT && handler != INTRO_HANDLER_SECOND_LOGO &&
+        handler != INTRO_HANDLER_FINISH)
         return ExecutionHandoff(cpu, 0x8092b1u);
     SimulateJsrFrame(memory, cpu, 0x92b3u);
     switch (handler) {
-    case 0x92cbu:                                  /* scroll row upload */
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, Read16Long(memory, 0x7e4004u));
-        cpu->carry = 0;
-        Add16Value(cpu, 0x4000u);
-        StoreWordAbsolute(memory, cpu, SNES_A1TL(6), cpu->accumulator);
-        LoadA16(cpu, Read16Long(memory, 0x7e4006u));
-        StoreWordAbsolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
-        SetAccumulatorWidth(cpu, 1);
-        LoadX16(cpu, 0x4000u);
-        StoreWordAbsolute(memory, cpu, SNES_VMADDL, cpu->x);
-        StoreAImmediate8(memory, cpu, 0x7eu, SNES_A1B(6));
-        StoreAImmediate8(memory, cpu, 0x01u, SNES_DMAP(6));
-        StoreAImmediate8(memory, cpu, 0x18u, SNES_BBAD(6));
-        StoreAImmediate8(memory, cpu, 0x40u, SNES_MDMAEN);
-        IncrementDirect8(memory, cpu, 0x50u);
+    case INTRO_HANDLER_SCROLL_ROWS:
+        IntroScrollRows(memory, cpu);
         break;
-    case 0x92feu:
-        IntroLogoUpload(memory, cpu, 0x2000u, 0x9306u);
+    case INTRO_HANDLER_FIRST_LOGO:
+        IntroLogoUpload(memory, cpu, INTRO_FIRST_LOGO, 0x9306u);
         break;
-    case 0x930cu:                                  /* fade in over 32 */
-        LoadA8(cpu, DirectByte(memory, cpu, 0x4eu));
-        LsrA8(cpu);
-        StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
-        LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x4eu) + 1u));
-        StoreADirect8(memory, cpu, 0x4eu);
-        Compare8(cpu, A8(cpu), 0x20u);
-        if (cpu->carry) {
-            IncrementDirect8(memory, cpu, 0x50u);
-            Write8(memory, DirectAddress(cpu, 0x4eu), 0x00u);
-        }
+    case INTRO_HANDLER_FADE_IN:
+        IntroFadeIn(memory, cpu);
         break;
-    case 0x9320u:                                  /* hold 120 frames */
-        LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x4eu) + 1u));
-        StoreADirect8(memory, cpu, 0x4eu);
-        Compare8(cpu, A8(cpu), 0x78u);
-        if (cpu->carry) {
-            LoadA8(cpu, 0x20u);
-            StoreADirect8(memory, cpu, 0x4eu);
-            IncrementDirect8(memory, cpu, 0x50u);
-        }
+    case INTRO_HANDLER_HOLD:
+        IntroHold(memory, cpu);
         break;
-    case 0x9330u:                                  /* fade out */
-        LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x4eu) - 1u));
-        StoreADirect8(memory, cpu, 0x4eu);
-        if (cpu->negative) {
-            Write8(memory, DirectAddress(cpu, 0x4eu), 0x00u);
-            IncrementDirect8(memory, cpu, 0x50u);
-            StoreAImmediate8(memory, cpu, BRIGHTNESS_FORCED_BLANK, WRAM_BRIGHTNESS);
-        } else {
-            LsrA8(cpu);
-            StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
-        }
+    case INTRO_HANDLER_FADE_OUT:
+        IntroFadeOut(memory, cpu);
         break;
-    case 0x9346u:
-        IntroLogoUpload(memory, cpu, 0x2800u, 0x934eu);
+    case INTRO_HANDLER_SECOND_LOGO:
+        IntroLogoUpload(memory, cpu, INTRO_SECOND_LOGO, 0x934eu);
         break;
     default:                                       /* 9354 */
-        Write8(memory, DirectAddress(cpu, 0x6au), 0x00u);
+        Write8(memory, DirectAddress(cpu, INTRO_DP_FINISHED), 0x00u);
         break;
     }
     SimulateRtsFrame(memory, cpu);
