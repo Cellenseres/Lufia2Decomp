@@ -2,7 +2,10 @@
  * numbers, and recoloring a rectangle. Each of the three that wait for a
  * redraw stops at the frame wait of $82:93C2. */
 
+#include <stdbool.h>
+
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/menu.h"
 
@@ -19,6 +22,9 @@ enum {
     GRID_ROW_SKIP = 0x00c0u,
     GRID_BLOCK_STEP = 0x0008u,
     COLOR_KEEP = 0xe3ffu,
+    REDRAW_REQUEST = 0x20u,
+    CLEAR_REDRAW = 0x88u,
+    CLEAR_BANK = 0x7eu,
     WORK_POSITION = 0x54u,
     WORK_WIDTH = 0x56u,
     WORK_HEIGHT = 0x58u,
@@ -29,11 +35,6 @@ enum {
     REDRAW_WAIT = 0x8293c2u
 };
 
-/* Decrements a direct-page word the way a read-modify-write does. */
-static void DecrementWork(Lufia2Wram wram, Lufia2CpuState *cpu, uint32_t location) {
-    SetNz16(cpu, WramStep16(wram, location, -1));
-}
-
 /* Stops at the frame wait with the routine's own return pushed. */
 static Lufia2ExecutionResult WaitForRedraw(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t return_address) {
@@ -42,34 +43,39 @@ static Lufia2ExecutionResult WaitForRedraw(
 }
 
 /* $82:80A5: the 4 x 4 block at position $54 receives the tile number $5A
- * counting up along each row and carrying on into the next. M0X0. */
+ * counting up along each row and carrying on into the next. M0X0. Leaves the
+ * tile in A and Y, the start of the row after the block in X. */
 static void FillTileBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t position;
+    uint16_t tile;
+    uint16_t rows_left;
+    Word16Result next_row;
 
-    LoadX16(cpu, BLOCK_SIZE);
-    StoreXDirect16(memory, cpu, WORK_WIDTH);
-    StoreXDirect16(memory, cpu, WORK_HEIGHT);
-    LoadXDirect16(memory, cpu, WORK_POSITION);
-    LoadADirect16(memory, cpu, WORK_TILE);
+    WramWrite16(wram, WORK_WIDTH, BLOCK_SIZE);
+    WramWrite16(wram, WORK_HEIGHT, BLOCK_SIZE);
+    position = WramRead16(wram, WORK_POSITION);
+    tile = WramRead16(wram, WORK_TILE);
     do {
-        LoadYDirect16(memory, cpu, WORK_WIDTH);
-        PushIndex(memory, cpu);
+        uint16_t columns = WramRead16(wram, WORK_WIDTH);
+        uint16_t cell = position;
+
+        PushStackWord(memory, cpu, position);
         do {
-            Write16Long(memory, LongIndexedAddress(TILEMAP, cpu->x),
-                cpu->accumulator);
-            IncrementX16(cpu);
-            IncrementX16(cpu);
-            IncrementA16(cpu);
-            LoadY16(cpu, (uint16_t)(cpu->y - 1u));
-        } while (!cpu->zero);
-        TransferAToY(cpu);
-        PullAccumulator16(memory, cpu);
-        cpu->carry = 0;
-        Add16Value(cpu, ROW_STRIDE);
-        TransferAToX(cpu);
-        LoadA16(cpu, cpu->y);
-        DecrementWork(wram, cpu, WORK_HEIGHT);
-    } while (!cpu->zero);
+            WramWrite16At(wram, TILEMAP, cell, tile);
+            cell = (uint16_t)(cell + 2u);
+            tile = (uint16_t)(tile + 1u);
+            columns = (uint16_t)(columns - 1u);
+        } while (columns != 0);
+        next_row = Sum16(PullStackWord(memory, cpu), ROW_STRIDE, false);
+        position = next_row.value;
+        rows_left = WramStep16(wram, WORK_HEIGHT, -1);
+    } while (rows_left != 0);
+    cpu->x = position;
+    cpu->y = tile;
+    cpu->accumulator = tile;
+    SetSumFlags(cpu, next_row);
+    SetNz16(cpu, rows_left);
 }
 
 Lufia2ExecutionResult Lufia2MenuTileBlockFill(
@@ -87,39 +93,33 @@ Lufia2ExecutionResult Lufia2MenuTileGridFill(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    Word16Result tile;
+    Word16Result position;
 
     if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x828069u);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, GRID_BASE_TILE);
-    cpu->carry = 0;
-    Add16Value(cpu, WramRead16(wram, GRID_TILE_OFFSET));
-    StoreADirect16(memory, cpu, WORK_TILE);
-    Write16Direct(memory, cpu, WORK_POSITION, 0);
-    LoadX16(cpu, GRID_SIZE);
-    StoreXDirect16(memory, cpu, WORK_ROWS);
+    tile = Sum16(GRID_BASE_TILE, WramRead16(wram, GRID_TILE_OFFSET), false);
+    WramWrite16(wram, WORK_TILE, tile.value);
+    WramWrite16(wram, WORK_POSITION, 0);
+    WramWrite16(wram, WORK_ROWS, GRID_SIZE);
     do {
-        LoadX16(cpu, GRID_SIZE);
-        StoreXDirect16(memory, cpu, WORK_COLUMNS);
+        WramWrite16(wram, WORK_COLUMNS, GRID_SIZE);
         do {
             SimulateJsrFrame(memory, cpu, 0x8082u);
             FillTileBlock(memory, cpu);
             SimulateRtsFrame(memory, cpu);
-            LoadADirect16(memory, cpu, WORK_POSITION);
-            cpu->carry = 0;
-            Add16Value(cpu, GRID_BLOCK_STEP);
-            StoreADirect16(memory, cpu, WORK_POSITION);
-            DecrementWork(wram, cpu, WORK_COLUMNS);
-        } while (!cpu->zero);
-        LoadADirect16(memory, cpu, WORK_POSITION);
-        cpu->carry = 0;
-        Add16Value(cpu, GRID_ROW_SKIP);
-        StoreADirect16(memory, cpu, WORK_POSITION);
-        DecrementWork(wram, cpu, WORK_ROWS);
-    } while (!cpu->zero);
+            position = Sum16(
+                WramRead16(wram, WORK_POSITION), GRID_BLOCK_STEP, false);
+            WramWrite16(wram, WORK_POSITION, position.value);
+        } while (WramStep16(wram, WORK_COLUMNS, -1) != 0);
+        position = Sum16(WramRead16(wram, WORK_POSITION), GRID_ROW_SKIP, false);
+        WramWrite16(wram, WORK_POSITION, position.value);
+    } while (WramStep16(wram, WORK_ROWS, -1) != 0);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, 0x20u);
-    StoreADirect8(memory, cpu, REDRAW_FLAGS);
+    cpu->accumulator = position.value;
+    SetSumFlags(cpu, position);
+    LoadA8(cpu, REDRAW_REQUEST);
+    WramWrite(wram, REDRAW_FLAGS, REDRAW_REQUEST);
     return WaitForRedraw(memory, cpu, 0x80a3u);
 }
 
@@ -129,46 +129,50 @@ Lufia2ExecutionResult Lufia2MenuRecolorRect(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t cell;
+    uint16_t attributes;
+    uint16_t position;
+    Word16Result next_row;
+    uint8_t redraw;
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x8280cau);
-    StoreADirect16(memory, cpu, WORK_POSITION);
-    Write16Direct(memory, cpu, WORK_WIDTH, 0);
-    Write16Direct(memory, cpu, WORK_HEIGHT, 0);
-    LoadA16(cpu, cpu->y);
-    ExchangeAccumulatorBytes(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    StoreADirect16(memory, cpu, WORK_TILE);
-    TransferXToA(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    StoreADirect8(memory, cpu, WORK_HEIGHT);
-    ExchangeAccumulatorBytes(cpu);
-    StoreADirect8(memory, cpu, WORK_WIDTH);
-    SetAccumulatorWidth(cpu, 0);
+    position = cpu->accumulator;
+    WramWrite16(wram, WORK_POSITION, position);
+    WramWrite16(wram, WORK_WIDTH, 0);
+    WramWrite16(wram, WORK_HEIGHT, 0);
+    /* The palette number moves from the low byte to the high byte of the
+     * attribute word, two places up. */
+    attributes = (uint16_t)((((cpu->y & 0x00ffu) << 8) | (cpu->y >> 8)) << 2);
+    WramWrite16(wram, WORK_TILE, attributes);
+    WramWrite(wram, WORK_HEIGHT, (uint8_t)cpu->x);
+    WramWrite(wram, WORK_WIDTH, (uint8_t)(cpu->x >> 8));
     do {
-        LoadYDirect16(memory, cpu, WORK_WIDTH);
-        LoadXDirect16(memory, cpu, WORK_POSITION);
+        uint16_t columns = WramRead16(wram, WORK_WIDTH);
+
+        position = WramRead16(wram, WORK_POSITION);
+        cell = position;
         do {
-            LoadA16(cpu, Read16Long(memory,
-                LongIndexedAddress(TILEMAP, cpu->x)));
-            And16(cpu, COLOR_KEEP);
-            Or16(cpu, Read16Direct(memory, cpu, WORK_TILE));
-            Write16Long(memory, LongIndexedAddress(TILEMAP, cpu->x),
-                cpu->accumulator);
-            IncrementX16(cpu);
-            IncrementX16(cpu);
-            LoadY16(cpu, (uint16_t)(cpu->y - 1u));
-        } while (!cpu->zero);
-        LoadADirect16(memory, cpu, WORK_POSITION);
-        cpu->carry = 0;
-        Add16Value(cpu, ROW_STRIDE);
-        StoreADirect16(memory, cpu, WORK_POSITION);
-        DecrementWork(wram, cpu, WORK_HEIGHT);
-    } while (!cpu->zero);
+            const uint16_t old = Read16Long(memory,
+                LongIndexedAddress(TILEMAP, cell));
+
+            WramWrite16At(wram, TILEMAP, cell,
+                (uint16_t)((old & COLOR_KEEP) | WramRead16(wram, WORK_TILE)));
+            cell = (uint16_t)(cell + 2u);
+            columns = (uint16_t)(columns - 1u);
+        } while (columns != 0);
+        next_row = Sum16(WramRead16(wram, WORK_POSITION), ROW_STRIDE, false);
+        WramWrite16(wram, WORK_POSITION, next_row.value);
+    } while (WramStep16(wram, WORK_HEIGHT, -1) != 0);
+    cpu->x = cell;
+    cpu->y = 0;
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, 0x20u);
-    TestBitsDirect(memory, cpu, REDRAW_FLAGS, 1);
+    cpu->accumulator = next_row.value;
+    SetSumFlags(cpu, next_row);
+    LoadA8(cpu, REDRAW_REQUEST);
+    redraw = WramRead(wram, REDRAW_FLAGS);
+    WramWrite(wram, REDRAW_FLAGS, (uint8_t)(redraw | REDRAW_REQUEST));
+    cpu->zero = (redraw & REDRAW_REQUEST) == 0;
     return WaitForRedraw(memory, cpu, 0x810au);
 }
 
@@ -178,26 +182,23 @@ Lufia2ExecutionResult Lufia2MenuRecolorRect(
 Lufia2ExecutionResult Lufia2MenuClearLayers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t offset = 0;
+
     if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x82838fu);
-    SetAccumulatorWidth(cpu, 0);
     PushDataBank(memory, cpu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, 0x7eu);
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadX16(cpu, 0);
+    SelectDataBank(memory, cpu, CLEAR_BANK);
     do {
-        Write16Long(memory, LongIndexedAddress(LAYER_FRONT, cpu->x), 0);
-        Write16Long(memory, LongIndexedAddress(LAYER_BACK, cpu->x), 0);
-        IncrementX16(cpu);
-        IncrementX16(cpu);
-        Compare16(cpu, cpu->x, LAYER_END);
-    } while (!cpu->zero);
+        WramWrite16At(wram, LAYER_FRONT, offset, 0);
+        WramWrite16At(wram, LAYER_BACK, offset, 0);
+        offset = (uint16_t)(offset + 2u);
+    } while (offset != LAYER_END);
     PullDataBank(memory, cpu);
+    cpu->x = offset;
+    cpu->carry = true;
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, 0x88u);
-    StoreADirect8(memory, cpu, REDRAW_FLAGS);
+    LoadA8(cpu, CLEAR_REDRAW);
+    WramWrite(wram, REDRAW_FLAGS, CLEAR_REDRAW);
     return WaitForRedraw(memory, cpu, 0x83b3u);
 }
