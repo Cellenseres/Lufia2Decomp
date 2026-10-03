@@ -1462,102 +1462,168 @@ static Lufia2ExecutionResult CaveChildUnwound(uint32_t site) {
     return result;
 }
 
-/* $83:9E31. */
-Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child,
-    void *child_context) {
-    Lufia2ExecutionResult result;
+/* Cave parameter storage and the per-band ROM tables read by the prelude.
+ * Floors are grouped in bands of ten; the band's group index (twice that for
+ * word tables) selects its parameters. */
+enum {
+    CAVE_DEEPEST_FLOOR = 0x000b75u,
+    CAVE_UNK_7FE697 = 0x7fe697u,
+    CAVE_UNK_7FE698 = 0x7fe698u,
+    CAVE_UNK_7FE699 = 0x7fe699u,
+    CAVE_UNK_7FE69B = 0x7fe69bu,
+    CAVE_UNK_7FE6F1 = 0x7fe6f1u,
+    CAVE_UNK_7FE732 = 0x7fe732u,
+    CAVE_UNK_7FE733 = 0x7fe733u,
+    CAVE_UNK_7FE735 = 0x7fe735u,
+    CAVE_MUSIC_ID = 0x099du,
+    CAVE_DP_PALETTE_BASE = 0x54u,
+    CAVE_DP_MUSIC = 0x56u,
+    CAVE_DP_FLOOR_BITS = 0x58u,
+    CAVE_DP_SPIN_COUNT = 0x54u,
+    CAVE_FINAL_FLOOR = 0x63u,
+    CAVE_BAND_FLOORS = 10u,
+    ROM_CAVE_BAND_WORD_B = 0x839f49u,
+    ROM_CAVE_BAND_GROUP = 0x839f4fu,
+    ROM_CAVE_BAND_WORD_C = 0x839f59u,
+    ROM_CAVE_BAND_TILESET = 0x839f5fu,
+    ROM_CAVE_BAND_MUSIC = 0x839f65u,
+    ROM_CAVE_BAND_SCENES = 0x839f6bu,
+    ROM_CAVE_HEADER_POINTERS = 0x839f73u,
+    ROM_CAVE_HEADER_BANKS = 0x839f75u,
+    ROM_CAVE_PALETTES = 0x839f7fu,
+};
 
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);                             /* 9E31 */
-    OpCmp(memory, cpu, 0x000b75u);
+/* $83:9E31: remembers the deepest floor reached so far. */
+static void CaveRecordDeepestFloor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, CAVE_FLOOR_LONG);
+    OpCmp(memory, cpu, CAVE_DEEPEST_FLOOR);
     if (cpu->carry)
-        OpSta(memory, cpu, 0x000b75u);
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);                             /* 9E3F */
+        OpSta(memory, cpu, CAVE_DEEPEST_FLOOR);
+}
+
+/* $83:9E3F: starts the hardware divide of (floor - 1) by 10, whose quotient
+ * is the floor's band number. */
+static void CaveStartBandDivide(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, CAVE_FLOOR_LONG);
     OpDecA(cpu);
-    OpSta(memory, cpu, 0x004204u);
+    OpSta(memory, cpu, SNES_WRDIVL);
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, 0x004205u);
-    LoadA8(cpu, 0x0au);
-    OpSta(memory, cpu, 0x004206u);
-    LoadA8(cpu, 0xffu);                                        /* 9E53 */
-    OpSta(memory, cpu, 0x7fe6f1u);
+    OpSta(memory, cpu, SNES_WRDIVH);
+    LoadA8(cpu, CAVE_BAND_FLOORS);
+    OpSta(memory, cpu, SNES_WRDIVB);
+}
+
+/* $83:9E53: sets the per-floor counters to empty. */
+static void CaveResetFloorState(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, 0xffu);
+    OpSta(memory, cpu, CAVE_UNK_7FE6F1);
     TransferDirectToA(cpu);
     OpSta(memory, cpu, CAVE_OBJECT_COUNT_LONG);
-    OpSta(memory, cpu, 0x7fe732u);
+    OpSta(memory, cpu, CAVE_UNK_7FE732);
     OpSta(memory, cpu, CAVE_CHEST_COUNT_LONG);
-    OpSta(memory, cpu, 0x7fe735u);
-    OpSta(memory, cpu, 0x7fe733u);
-    OpLda(memory, cpu, OpDp(cpu, 0x40u));                      /* 9E6E */
+    OpSta(memory, cpu, CAVE_UNK_7FE735);
+    OpSta(memory, cpu, CAVE_UNK_7FE733);
+}
+
+/* $83:9E6E: advances the random generator a variable number of times (1 to
+ * 32, taken from DP $40). */
+static void CaveSpinRandom(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, 0x40u));
     OpAndValue(cpu, 0x1fu);
     OpIncA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_SPIN_COUNT));
     do {
         CaveRandomByte(memory, cpu, 0x9e75u);
-        OpStepMem(memory, cpu, OpDp(cpu, 0x54u), -1);
+        OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_SPIN_COUNT), -1);
     } while (!cpu->zero);
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);                             /* 9E7D */
-    OpCmpValue(cpu, 0x63u);
-    if (cpu->zero) {
-        LoadA8(cpu, 0x0bu);                                    /* 9E85 */
-        OpSta(memory, cpu, WRAM_FIELD_DESTINATION_X);
-        LoadA8(cpu, 0x2eu);
-        OpSta(memory, cpu, WRAM_FIELD_DESTINATION_Y);
-        LoadA8(cpu, 0x40u);
-        OpSta(memory, cpu, WRAM_FIELD_DESTINATION_PARAMETERS);
-        LoadA8(cpu, 0xf1u);
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
-        LoadA8(cpu, 0x01u);
-        OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS), 0);
-        return ExecutionReturned(0x839ea1u);                   /* 9EA1 RTL */
-    }
-    TransferDirectToA(cpu);                                    /* 9EA2 */
-    OpSta(memory, cpu, 0x7fe698u);
+}
+
+/* $83:9E85: the last floor has a fixed arrival point and no generated map. */
+static void CaveEnterFinalFloor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, 0x0bu);
+    OpSta(memory, cpu, WRAM_FIELD_DESTINATION_X);
+    LoadA8(cpu, 0x2eu);
+    OpSta(memory, cpu, WRAM_FIELD_DESTINATION_Y);
+    LoadA8(cpu, 0x40u);
+    OpSta(memory, cpu, WRAM_FIELD_DESTINATION_PARAMETERS);
+    LoadA8(cpu, 0xf1u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
+    LoadA8(cpu, 0x01u);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS), 0);
+}
+
+/* Copies the word the band's table holds (index in X) to a WRAM field. */
+static void CaveCopyBandWord(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             uint32_t table, uint32_t destination) {
+    OpLda(memory, cpu, OpLongX(cpu, table));
+    OpSta(memory, cpu, destination);
+}
+
+/* $83:9EA2: loads the band's parameters from the ROM tables: group, music,
+ * tileset, palette, scene list and the map header pointer. */
+static void CaveLoadBandParameters(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
-    OpLda(memory, cpu, 0x004214u);                             /* (floor-1)/10 */
+    OpSta(memory, cpu, CAVE_UNK_7FE698);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, SNES_RDDIVL); /* (floor-1)/10 */
     OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x839f4fu));
-    OpSta(memory, cpu, 0x7fe697u);
+    OpLda(memory, cpu, OpLongX(cpu, ROM_CAVE_BAND_GROUP));
+    OpSta(memory, cpu, CAVE_UNK_7FE697);
     OpAslA(cpu);
     OpTax(cpu);
-    OpRepWidths(cpu, 0x20u);                                         /* 9EB7 */
-    OpLda(memory, cpu, OpLongX(cpu, 0x839f65u));
-    OpSta(memory, cpu, OpDp(cpu, 0x56u));
-    OpLda(memory, cpu, OpLongX(cpu, 0x839f49u));
-    OpSta(memory, cpu, 0x7fe69bu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x839f5fu));
-    OpSta(memory, cpu, 0x7fe69du);
-    OpLda(memory, cpu, OpLongX(cpu, 0x839f59u));
-    OpSta(memory, cpu, 0x7fe699u);
-    OpLda(memory, cpu, OpLongX(cpu, 0x839f6bu));
-    OpSta(memory, cpu, 0x7fe6a2u);
-    OpLda(memory, cpu, OpLongX(cpu, 0x839f7fu));
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
-    OpLda(memory, cpu, CAVE_FLOOR_LONG);                             /* 9EE5 */
+    OpRepWidths(cpu, 0x20u); /* 9EB7 */
+    OpLda(memory, cpu, OpLongX(cpu, ROM_CAVE_BAND_MUSIC));
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_MUSIC));
+    CaveCopyBandWord(memory, cpu, ROM_CAVE_BAND_WORD_B, CAVE_UNK_7FE69B);
+    CaveCopyBandWord(memory, cpu, ROM_CAVE_BAND_TILESET, WRAM_CAVE_TILESET_RESOURCE);
+    CaveCopyBandWord(memory, cpu, ROM_CAVE_BAND_WORD_C, CAVE_UNK_7FE699);
+    CaveCopyBandWord(memory, cpu, ROM_CAVE_BAND_SCENES, WRAM_CAVE_SCENE_RECORD_LIST);
+    OpLda(memory, cpu, OpLongX(cpu, ROM_CAVE_PALETTES));
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_PALETTE_BASE));
+    OpLda(memory, cpu, CAVE_FLOOR_LONG); /* 9EE5 */
     OpAndValue(cpu, 0x0006u);
-    OpSta(memory, cpu, OpDp(cpu, 0x58u));
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_FLOOR_BITS));
     OpLsrA(cpu);
-    OpAdc(memory, cpu, OpDp(cpu, 0x58u));
-    OpAdc(memory, cpu, OpDp(cpu, 0x54u));
+    OpAdc(memory, cpu, OpDp(cpu, CAVE_DP_FLOOR_BITS));
+    OpAdc(memory, cpu, OpDp(cpu, CAVE_DP_PALETTE_BASE));
     OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x839f7fu));
-    OpSta(memory, cpu, 0x7fe69fu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x839f80u));
-    OpSta(memory, cpu, 0x7fe6a0u);
-    OpLda(memory, cpu, 0x7fe697u);                             /* 9F04 */
+    OpLda(memory, cpu, OpLongX(cpu, ROM_CAVE_PALETTES));
+    OpSta(memory, cpu, WRAM_CAVE_PALETTE_SOURCE);
+    OpLda(memory, cpu, OpLongX(cpu, ROM_CAVE_PALETTES + 1u));
+    OpSta(memory, cpu, WRAM_CAVE_PALETTE_SOURCE + 1u);
+    OpLda(memory, cpu, CAVE_UNK_7FE697); /* 9F04 */
     OpAslA(cpu);
-    OpAdc(memory, cpu, 0x7fe697u);
+    OpAdc(memory, cpu, CAVE_UNK_7FE697);
     OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x839f73u));
+    OpLda(memory, cpu, OpLongX(cpu, ROM_CAVE_HEADER_POINTERS));
     OpSta(memory, cpu, WRAM_CAVE_MAP_HEADER_POINTER);
-    OpSepWidths(cpu, 0x20u);                                         /* 9F16 */
-    OpLda(memory, cpu, OpLongX(cpu, 0x839f75u));
+    OpSepWidths(cpu, 0x20u); /* 9F16 */
+    OpLda(memory, cpu, OpLongX(cpu, ROM_CAVE_HEADER_BANKS));
     OpSta(memory, cpu, WRAM_CAVE_MAP_HEADER_BANK);
-    OpLda(memory, cpu, OpDp(cpu, 0x56u));                      /* music */
-    OpCmp(memory, cpu, OpAbs(cpu, 0x099du));
+}
+
+/* $83:9E31. */
+Lufia2ExecutionResult Lufia2AncientCaveGenerateFloor(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu,
+                                                     Lufia2PushedChildCall child,
+                                                     void *child_context) {
+    Lufia2ExecutionResult result;
+
+    CaveRecordDeepestFloor(memory, cpu);
+    CaveStartBandDivide(memory, cpu);
+    CaveResetFloorState(memory, cpu);
+    CaveSpinRandom(memory, cpu);
+    OpLda(memory, cpu, CAVE_FLOOR_LONG); /* 9E7D */
+    OpCmpValue(cpu, CAVE_FINAL_FLOOR);
+    if (cpu->zero) {
+        CaveEnterFinalFloor(memory, cpu);
+        return ExecutionReturned(0x839ea1u); /* 9EA1 RTL */
+    }
+    CaveLoadBandParameters(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, CAVE_DP_MUSIC)); /* music */
+    OpCmp(memory, cpu, OpAbs(cpu, CAVE_MUSIC_ID));
     if (!cpu->zero) {
-        OpSta(memory, cpu, OpAbs(cpu, 0x099du));               /* 9F27 */
+        OpSta(memory, cpu, OpAbs(cpu, CAVE_MUSIC_ID)); /* 9F27 */
         SimulateJslFrame(memory, cpu, 0x83u, 0x9f2du);
         if (!child(child_context, cpu, 0x8093feu, 0x839f2au, 3u))
             return CaveChildUnwound(0x839f2au);
