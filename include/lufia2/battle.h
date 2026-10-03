@@ -609,7 +609,7 @@ Lufia2ExecutionResult Lufia2BattleFadeColor(
     Lufia2CpuState *cpu);
 
 /* $81:B444 palette $11 grayed and faded by $13 to CGRAM buffer; M1X0. */
-Lufia2ExecutionResult Lufia2BattlePaletteBrightness(
+Lufia2ExecutionResult Lufia2BattlePaletteFade(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
