@@ -128,6 +128,26 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $86:A9B0 plane scanline rows, quadrant 0; JSR, M16/X16 only. */
+Lufia2ExecutionResult Lufia2WorldPlaneRows0(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:AA5B plane scanline rows, quadrant 1; JSR, M16/X16 only. */
+Lufia2ExecutionResult Lufia2WorldPlaneRows1(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:AB0E plane scanline rows, quadrant 2; JSR, M16/X16 only. */
+Lufia2ExecutionResult Lufia2WorldPlaneRows2(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:ABC1 plane scanline rows, quadrant 3; JSR, M16/X16 only. */
+Lufia2ExecutionResult Lufia2WorldPlaneRows3(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

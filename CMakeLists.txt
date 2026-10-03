@@ -174,6 +174,7 @@ add_library(lufia2_decomp STATIC
     src/title/title.c
     src/world/world_map.c
     src/world/world_map_plane.c
+    src/world/world_plane_rows.c
     src/world/world_map_objects.c)
 add_library(Lufia2::Decomp ALIAS lufia2_decomp)
 target_link_libraries(lufia2_decomp PUBLIC Lufia2::ResourceFormat)
