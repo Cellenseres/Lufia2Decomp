@@ -208,9 +208,6 @@ enum { DP_ACTOR_BLOCKS = 0x9e };
 /* Map cell attribute bit that marks a cell as occupied by an actor. */
 enum { CELL_OCCUPIED = 0x01 };
 
-/* Second plane the occupancy of blocking actors is also recorded in. */
-#define MAP_BLOCKING_ATTRIBUTES 0x7e4001u
-
 /* Actors with this state or higher can be solid. */
 enum { ACTOR_SOLID_FROM_STATE = 2 };
 

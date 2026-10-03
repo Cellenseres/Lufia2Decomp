@@ -49,11 +49,14 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
     LsrA8(cpu);
     LsrA8(cpu);
     TransferAToX(cpu);
-    first_handler = JumpProgramTable(memory, cpu, 0xdf17u);
+    first_handler = JumpProgramTable(memory, cpu, SECONDARY_NIBBLE_TABLE);
 
-    if (first_handler == (((uint32_t)cpu->program_bank << 16) | 0xd5d4u) ||
-        first_handler == (((uint32_t)cpu->program_bank << 16) | 0xd5e0u) ||
-        first_handler == (((uint32_t)cpu->program_bank << 16) | 0xd5ecu)) {
+    if (first_handler ==
+            (((uint32_t)cpu->program_bank << 16) | SECONDARY_GROUP_F_HANDLER) ||
+        first_handler ==
+            (((uint32_t)cpu->program_bank << 16) | SECONDARY_GROUP_E_HANDLER) ||
+        first_handler ==
+            (((uint32_t)cpu->program_bank << 16) | SECONDARY_GROUP_D_HANDLER)) {
         uint16_t table;
 
         LoadXDirect16(memory, cpu, 0x2au);
@@ -62,12 +65,12 @@ Lufia2ActorScriptDispatchResult Lufia2ActorSecondaryScriptDispatch(
         AslA8(cpu);
         TransferAToX(cpu);
 
-        if ((uint16_t)first_handler == 0xd5d4u)
-            table = 0xdf37u;
-        else if ((uint16_t)first_handler == 0xd5e0u)
-            table = 0xdf57u;
+        if ((uint16_t)first_handler == SECONDARY_GROUP_F_HANDLER)
+            table = SECONDARY_GROUP_F_TABLE;
+        else if ((uint16_t)first_handler == SECONDARY_GROUP_E_HANDLER)
+            table = SECONDARY_GROUP_E_TABLE;
         else
-            table = 0xdf77u;
+            table = SECONDARY_GROUP_D_TABLE;
         result.handler_pc = JumpProgramTable(memory, cpu, table);
     } else {
         result.handler_pc = first_handler;
@@ -92,10 +95,15 @@ static Lufia2ActorScriptDispatchResult SecondaryRedispatch(
     LsrA8(cpu);
     LsrA8(cpu);
     TransferAToX(cpu);
-    first = JumpProgramTable(memory, cpu, 0xdf17u);            /* D5D1 */
-    if (first == 0x83d5d4u || first == 0x83d5e0u || first == 0x83d5ecu) {
-        const uint16_t table = first == 0x83d5d4u ? 0xdf37u :
-                               first == 0x83d5e0u ? 0xdf57u : 0xdf77u;
+    first = JumpProgramTable(memory, cpu, SECONDARY_NIBBLE_TABLE); /* D5D1 */
+    if (first == (0x830000u | SECONDARY_GROUP_F_HANDLER) ||
+        first == (0x830000u | SECONDARY_GROUP_E_HANDLER) ||
+        first == (0x830000u | SECONDARY_GROUP_D_HANDLER)) {
+        const uint16_t table = first == (0x830000u | SECONDARY_GROUP_F_HANDLER)
+                                   ? SECONDARY_GROUP_F_TABLE
+                               : first == (0x830000u | SECONDARY_GROUP_E_HANDLER)
+                                   ? SECONDARY_GROUP_E_TABLE
+                                   : SECONDARY_GROUP_D_TABLE;
         LoadXDirect16(memory, cpu, 0x2au);
         (void)LoadScriptByteX(memory, cpu);
         And8(cpu, 0x0fu);
@@ -208,8 +216,8 @@ static void SecondaryOccupancy(
     uint8_t set) {
     Lufia2MapCellIndex(memory, cpu, return_address, 1);
     for (uint8_t column = 0; column < 2u; ++column) {
-        const uint32_t cell =
-            LongIndexedAddress(column ? 0x7e4001u : 0x7e4000u, cpu->x);
+        const uint32_t cell = LongIndexedAddress(
+            column ? MAP_BLOCKING_ATTRIBUTES : WRAM_FIELD_MAP_ATTRIBUTES, cpu->x);
 
         if (column) {
             LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x9au)));
@@ -258,14 +266,14 @@ static uint8_t SecondaryCommitStep(
     LoadAAbsolute8(memory, cpu, WRAM_UNK_7E070A, cpu->y); /* DA28 */
     Compare8(cpu, A8(cpu), 0x03u);
     if (cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x09a6u, 0);               /* DA2F */
+        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E09A6, 0); /* DA2F */
         BitImmediate8(cpu, 0x01u);
         if (cpu->zero) {
             /* Shift the follower trail in $09A1.. by one. */
             LoadX16(cpu, 0x0003u);                             /* DA36 */
             do {
                 LoadAAbsolute8(memory, cpu, WRAM_FOLLOW_SLOTS, cpu->x);
-                StoreAAbsolute8(memory, cpu, 0x09a2u, cpu->x);
+                StoreAAbsolute8(memory, cpu, (WRAM_FOLLOW_SLOTS + 1u), cpu->x);
                 LoadX16(cpu, (uint16_t)(cpu->x - 1u));
             } while (!cpu->negative);
             LoadXDirect(memory, cpu, DP_ACTOR_SLOT);           /* DA42 */
@@ -436,8 +444,8 @@ static SecondaryStep SecondaryWalk(
     LsrA8(cpu);
     Write8(memory, DirectAddress(cpu, 0x32u), A8(cpu));
     cpu->carry = 0;                                            /* DC9D */
-    Adc8(cpu, Read8(memory, LongIndexedAddress(0x7fe4b6u, cpu->x)));
-    Write8(memory, LongIndexedAddress(0x7fe4b6u, cpu->x), A8(cpu));
+    Adc8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_WALK_PHASE, cpu->x)));
+    Write8(memory, LongIndexedAddress(WRAM_ACTOR_WALK_PHASE, cpu->x), A8(cpu));
     Compare8(cpu, A8(cpu), 0x04u);                             /* DCA6 */
     if (cpu->zero || (Compare8(cpu, A8(cpu), 0x0cu), cpu->zero)) {
         const int delta = A8(cpu) == 0x04u ? 1 : -1;
@@ -458,10 +466,11 @@ static SecondaryStep SecondaryWalk(
     if (!cpu->zero) {
         /* Bob offset from $83:DD44. */
         TransferDirectToA(cpu);                                /* DCD9 */
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe4b6u, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_WALK_PHASE, cpu->x)));
         DecrementA8(cpu);
         TransferAToX(cpu);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83dd44u, cpu->x)));
+        LoadA8(cpu,
+               Read8(memory, LongIndexedAddress(ROM_ACTOR_WALK_BOB_TABLE, cpu->x)));
         Lufia2SignExtendA8(memory, cpu, 0xdce6u);
         LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                       /* DCE7 */
         cpu->carry = 0;
@@ -474,7 +483,7 @@ static SecondaryStep SecondaryWalk(
         SetAccumulatorWidth(cpu, 1);
         LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* DCF4 */
     }
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe4b6u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_WALK_PHASE, cpu->x)));
     Compare8(cpu, A8(cpu), 0x10u);                             /* DCFA */
     if (cpu->zero) {
         SetAccumulatorWidth(cpu, 0);                           /* DCFE */
@@ -521,11 +530,11 @@ static void SecondaryAddDisplayOffset(
     SimulateJsrFrame(memory, cpu, return_address);
     LoadYDirect16(memory, cpu, 0x2au);
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
-    Lufia2ActorAddSignedPair(memory, cpu, WRAM_ACTOR_DISPLAY_OFFSET_X, 0x0001u,
-        0xd9a9u);
+    Lufia2ActorAddSignedPair(memory, cpu, WRAM_ACTOR_DISPLAY_OFFSET_X,
+                             SECONDARY_OPERAND_1, 0xd9a9u);
     SetAccumulatorWidth(cpu, 1);
-    Lufia2ActorAddSignedPair(memory, cpu, WRAM_ACTOR_DISPLAY_OFFSET_Y, 0x0002u,
-        0xd9bbu);
+    Lufia2ActorAddSignedPair(memory, cpu, WRAM_ACTOR_DISPLAY_OFFSET_Y,
+                             SECONDARY_OPERAND_2, 0xd9bbu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -572,7 +581,7 @@ static void SecondaryWave(
             negative = 0;
         }
     }
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x8084bfu, index)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(ROM_QUARTER_SINE_TABLE, index)));
     if (negative)
         Or8(cpu, 0x80u);
     UnpackStatus(cpu, Pull8(memory, cpu));                     /* PLP */
@@ -623,17 +632,17 @@ static void SecondaryOrbitOffsets(
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect(memory, cpu, 0x2au);                           /* DE76 */
-    LoadAAbsolute8(memory, cpu, 0x0003u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_3, cpu->x);
     ExchangeAccumulatorBytes(cpu);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     LsrA8(cpu);
     SecondaryWave(memory, cpu, 0, 0xde83u);
     SecondaryScaleRadius(memory, cpu, 0xde86u);
     Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);                               /* DE89 */
-    LoadAAbsolute8(memory, cpu, 0x0002u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_2, cpu->x);
     ExchangeAccumulatorBytes(cpu);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     LsrA8(cpu);
     SecondaryWave(memory, cpu, 1, 0xde96u);
     SecondaryScaleRadius(memory, cpu, 0xde99u);
@@ -650,7 +659,7 @@ static void SecondarySignedOperand(
     SimulateJsrFrame(memory, cpu, return_address);
     SetAccumulatorWidth(cpu, 1);                               /* FAF4 */
     TransferDirectToA(cpu);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     Or8(cpu, 0x00u);                                           /* FAFA */
     if (cpu->negative) {
         ExchangeAccumulatorBytes(cpu);
@@ -689,7 +698,7 @@ static void SecondarySpawnChild(
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT))); /* D67A */
     PushAccumulator8(memory, cpu);
     LoadXDirect(memory, cpu, 0x2au);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     SimulateJslFrame(memory, cpu, 0x83u, 0xd685u);
     Lufia2ActorSpawn(memory, cpu);
     SimulateRtlFrame(memory, cpu);
@@ -808,8 +817,7 @@ static SecondaryStep SecondaryOpFBJump(
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* D615 */
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(
-        cpu, Read16AbsoluteIndexed(memory, cpu, 0x0001u, cpu->x));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, SECONDARY_OPERAND_1, cpu->x));
     cpu->carry = 0;
     Add16Immediate(cpu, 0x8000u);
     TransferAToX(cpu);
@@ -824,8 +832,7 @@ static SecondaryStep SecondaryOpFCSet066A(
     LoadXDirect(memory, cpu, 0x2au);                       /* D626 */
     LoadAAbsolute8(memory, cpu, WRAM_UNK_7E066A, cpu->y);
     And8(cpu, 0x06u);
-    Or8(
-        cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x0001u, cpu->x)));
+    Or8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, SECONDARY_OPERAND_1, cpu->x)));
     StoreAAbsolute8(memory, cpu, WRAM_UNK_7E066A, cpu->y);
     IncrementX16(cpu);
     IncrementX16(cpu);
@@ -881,7 +888,7 @@ static SecondaryStep SecondaryOpD7AssignStateBit1(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* D6EF */
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LsrA8(cpu);
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
@@ -902,7 +909,7 @@ static SecondaryStep SecondaryOp1X(
     Lufia2CpuState *cpu) {
     LoadYDirect16(memory, cpu, 0x2au);                     /* D833 */
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->y);
     Write8(memory, LongIndexedAddress(WRAM_UNK_7FE4DE, cpu->x), A8(cpu));
     TransferYToX(cpu);
     IncrementX16(cpu);
@@ -918,7 +925,7 @@ static SecondaryStep SecondaryOp2X(
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->y);
     BitImmediate8(cpu, 0x02u);
     if (cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);      /* D84D */
+        LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x); /* D84D */
         StoreAAbsolute8(memory, cpu, WRAM_UNK_7E066A, cpu->y);
     }
     IncrementX16(cpu);
@@ -932,11 +939,11 @@ static SecondaryStep SecondaryOp5X(
     Lufia2CpuState *cpu) {
     LoadYDirect16(memory, cpu, 0x2au);                     /* DA9A */
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->y);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, cpu->x);
     TransferDirectToA(cpu);                                /* DAA4 */
     Write8(memory, LongIndexedAddress(WRAM_ACTOR_WALK_COUNTER, cpu->x), A8(cpu));
-    Write8(memory, LongIndexedAddress(0x7fe4b6u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_ACTOR_WALK_PHASE, cpu->x), A8(cpu));
     TransferYToX(cpu);
     IncrementX16(cpu);
     IncrementX16(cpu);
@@ -947,13 +954,13 @@ static SecondaryStep SecondaryOp5X(
 static SecondaryStep SecondaryOp9XWait(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    const uint32_t wait = 0x7fe48eu;
+    const uint32_t wait = WRAM_ACTOR_WALK_COUNTER;
 
     LoadYDirect16(memory, cpu, 0x2au);                     /* DEE9 */
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(wait, cpu->x)));
     if (!cpu->negative) {
-        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);      /* DEF3 */
+        LoadAAbsolute8(memory, cpu, SECONDARY_OPCODE_BYTE, cpu->y); /* DEF3 */
         And8(cpu, 0x0fu);
         Or8(cpu, 0x80u);
         Write8(memory, LongIndexedAddress(wait, cpu->x), A8(cpu));
@@ -977,7 +984,7 @@ static SecondaryStep SecondaryOpE2LoopStart(
     Lufia2CpuState *cpu) {
     LoadYDirect16(memory, cpu, 0x2au);                     /* D7B2 */
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->y);
     Write8(memory, LongIndexedAddress(WRAM_ACTOR_SCRATCH_A, cpu->x), A8(cpu));
     SetAccumulatorWidth(cpu, 0);                           /* D7BD */
     LoadA16(cpu, cpu->y);
@@ -1014,13 +1021,13 @@ static SecondaryStep SecondaryOpE5(
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                       /* D80E */
     TransferDirectToA(cpu);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(
-        cpu, Read16Long(memory, LongIndexedAddress(0x7fdbecu, cpu->x)));
+    LoadA16(cpu,
+            Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_OFFSET_ALT_X, cpu->x)));
     cpu->carry = 0;
-    Add16Value(
-        cpu, Read16Long(memory, LongIndexedAddress(0x7fdc3cu, cpu->x)));
-    Write16Long(
-        memory, LongIndexedAddress(0x7fdbecu, cpu->x), cpu->accumulator);
+    Add16Value(cpu,
+               Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_OFFSET_ALT_Y, cpu->x)));
+    Write16Long(memory, LongIndexedAddress(WRAM_ACTOR_OFFSET_ALT_X, cpu->x),
+                cpu->accumulator);
     LsrA16(cpu);                                           /* D820 */
     LsrA16(cpu);
     cpu->carry = 0;
@@ -1042,10 +1049,11 @@ static SecondaryStep SecondaryOpE6(
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     SetAccumulatorWidth(cpu, 0);
     for (uint8_t i = 0; i < 2u; ++i) {
-        const uint32_t pair = i ? 0x7fdd1cu : 0x7fdc8cu;
-        LoadA16(
-            cpu, Read16AbsoluteIndexed(
-                memory, cpu, i ? 0x0003u : 0x0001u, cpu->y));
+        const uint32_t pair =
+            i ? WRAM_ACTOR_DISPLAY_OFFSET_Y : WRAM_ACTOR_DISPLAY_OFFSET_X;
+        LoadA16(cpu, Read16AbsoluteIndexed(
+                         memory, cpu, i ? SECONDARY_OPERAND_3 : SECONDARY_OPERAND_1,
+                         cpu->y));
         cpu->carry = 0;
         Add16Value(
             cpu, Read16Long(memory, LongIndexedAddress(pair, cpu->x)));
@@ -1064,7 +1072,7 @@ static SecondaryStep SecondaryOpE6(
 static SecondaryStep SecondaryOpSetActorFlagBit1(const Lufia2Memory *memory,
                                                  Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* DB77 */
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     {
         const uint8_t clear = !cpu->zero;
         LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->y);
@@ -1084,7 +1092,7 @@ static SecondaryStep SecondaryOpSetActorFlagBit1(const Lufia2Memory *memory,
 static SecondaryStep SecondaryOpSetTimerAndBlink(const Lufia2Memory *memory,
                                                  Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* DBDC */
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     Write8(memory, LongIndexedAddress(WRAM_ACTOR_SECONDARY_TIMER, cpu->x), A8(cpu));
     Or8(cpu, 0x00u);
@@ -1123,7 +1131,7 @@ static SecondaryStep SecondaryOpSkipByte(const Lufia2Memory *memory,
 static SecondaryStep SecondaryOpSetBit7FromOperand(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* DAC9 */
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     Compare8(cpu, A8(cpu), 0x01u);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE316, cpu->x)));
@@ -1142,7 +1150,7 @@ static SecondaryStep SecondaryOpF1(
     LoadXDirect(memory, cpu, 0x2au);                       /* DD54 */
     cpu->y = cpu->x;                                       /* TXY */
     SetNz16(cpu, cpu->y);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     Write8(memory, LongIndexedAddress(0x7fe2eeu, cpu->x), A8(cpu));
     LoadAAbsolute8(memory, cpu, WRAM_UNK_7E066A, cpu->x);
@@ -1161,8 +1169,8 @@ static SecondaryStep SecondaryOpSavePositionScratch(const Lufia2Memory *memory,
     SetAccumulatorWidth(cpu, 0);
     CopyLong16(memory, cpu, WRAM_ACTOR_FINE_X, WRAM_ACTOR_SCRATCH_A);
     CopyLong16(memory, cpu, WRAM_ACTOR_FINE_Y, WRAM_ACTOR_SCRATCH_B);
-    CopyLong16(memory, cpu, WRAM_ACTOR_DISPLAY_OFFSET_X, 0x7fdbecu);
-    CopyLong16(memory, cpu, WRAM_ACTOR_DISPLAY_OFFSET_Y, 0x7fdc3cu);
+    CopyLong16(memory, cpu, WRAM_ACTOR_DISPLAY_OFFSET_X, WRAM_ACTOR_OFFSET_ALT_X);
+    CopyLong16(memory, cpu, WRAM_ACTOR_DISPLAY_OFFSET_Y, WRAM_ACTOR_OFFSET_ALT_Y);
     SetAccumulatorWidth(cpu, 1);
     return SecondaryNextByte(memory, cpu, 1);
 }
@@ -1199,7 +1207,7 @@ static SecondaryStep SecondaryOpFEPlaySound(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* D760 */
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     SimulateJslFrame(memory, cpu, 0x83u, 0xd768u);
     Lufia2QueueDeferredSound(memory, cpu);
     SimulateRtlFrame(memory, cpu);
@@ -1215,11 +1223,13 @@ static SecondaryStep SecondaryOpE4SignedOperand(
     LoadYDirect16(memory, cpu, 0x2au);                     /* D7EB */
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     for (uint8_t i = 0; i < 2u; ++i) {
-        LoadAAbsolute8(memory, cpu, i ? 0x0002u : 0x0001u, cpu->y);
+        LoadAAbsolute8(memory, cpu, i ? SECONDARY_OPERAND_2 : SECONDARY_OPERAND_1,
+                       cpu->y);
         Lufia2SignExtendA8(memory, cpu, i ? 0xd800u : 0xd7f4u);
-        Write16Long(
-            memory, LongIndexedAddress(i ? 0x7fdc3cu : 0x7fdbecu, cpu->x),
-            cpu->accumulator);
+        Write16Long(memory,
+                    LongIndexedAddress(
+                        i ? WRAM_ACTOR_OFFSET_ALT_Y : WRAM_ACTOR_OFFSET_ALT_X, cpu->x),
+                    cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
     }
     IncrementY16(cpu);                                     /* D807 */
@@ -1249,7 +1259,7 @@ static SecondaryStep SecondaryOpEESyncFinePosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* DC04 */
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     {
         const uint8_t restore = !cpu->zero;
         uint32_t flags;
@@ -1391,7 +1401,7 @@ static SecondaryStep SecondaryOpF2SignedOffset(
     AddLong16(memory, cpu, WRAM_ACTOR_FINE_X);
     cpu->y = PullIndexValue(memory, cpu);                  /* DDA5 */
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0001u, cpu->x));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, SECONDARY_OPERAND_1, cpu->x));
     /* JSR $FAFA with M=0: ORA/TSB/LDA. */
     SimulateJsrFrame(memory, cpu, 0xddaeu);
     LoadA16(cpu, (uint16_t)(cpu->accumulator | 0x1000u));
@@ -1410,7 +1420,7 @@ static SecondaryStep SecondaryOpF2SignedOffset(
     IncrementX16(cpu);
     SetAccumulatorWidth(cpu, 1);
     TransferDirectToA(cpu);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     Lufia2SignExtendA8(memory, cpu, 0xddbcu);
     Write16Long(
         memory, LongIndexedAddress(WRAM_ACTOR_DISPLAY_OFFSET_Y, cpu->x),
@@ -1457,8 +1467,8 @@ static SecondaryStep SecondaryOpF7Orbit(
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
     cpu->carry = 0;
-    Add16Value(
-        cpu, Read16Long(memory, LongIndexedAddress(0x7fdc3cu, cpu->x)));
+    Add16Value(cpu,
+               Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_OFFSET_ALT_Y, cpu->x)));
     Write16Long(
         memory, LongIndexedAddress(WRAM_ACTOR_DISPLAY_OFFSET_Y, cpu->x),
             cpu->accumulator);
@@ -1488,7 +1498,7 @@ static SecondaryStep SecondaryOpCXSpawn(
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT))); /* D70C */
     PushAccumulator8(memory, cpu);
     LoadXDirect(memory, cpu, 0x2au);
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
     SimulateJslFrame(memory, cpu, 0x83u, 0xd717u);
     Lufia2ActorSpawn(memory, cpu);                         /* DF87 */
     SimulateRtlFrame(memory, cpu);
@@ -1551,7 +1561,7 @@ static SecondaryStep SecondaryOpD4SpawnAtActorSkip(
     SetAccumulatorWidth(cpu, 0);
     if (!cpu->carry)
         LoadA16(cpu, 0xfff8u);                             /* D64F */
-    AddLong16(memory, cpu, 0x7fddfeu);
+    AddLong16(memory, cpu, WRAM_OBJECT_FINE_X);
     SimulateJsrFrame(memory, cpu, 0xd65du);
     SecondarySkipOperand(memory, cpu);
     SimulateRtsFrame(memory, cpu);

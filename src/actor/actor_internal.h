@@ -102,4 +102,42 @@ void Lufia2SpriteFreeSlots(
     Lufia2CpuState *cpu,
     uint16_t return_address);
 
+/* Secondary actor script opcode tables in bank $83. The high nibble of the
+ * opcode indexes SECONDARY_NIBBLE_TABLE; the groups $Fx, $Ex and $Dx are
+ * entered through the group handlers and pick their routine from a second
+ * table by the low nibble. */
+enum {
+    SECONDARY_NIBBLE_TABLE = 0xdf17,
+    SECONDARY_GROUP_F_TABLE = 0xdf37,
+    SECONDARY_GROUP_E_TABLE = 0xdf57,
+    SECONDARY_GROUP_D_TABLE = 0xdf77,
+    SECONDARY_GROUP_F_HANDLER = 0xd5d4,
+    SECONDARY_GROUP_E_HANDLER = 0xd5e0,
+    SECONDARY_GROUP_D_HANDLER = 0xd5ec
+};
+
+/* Per-actor words beside the display offsets (40 words each): the alternate
+ * display offset pair. $F9 saves the display offsets here, $E4 sets it from
+ * two signed operands and $E5 accumulates it. */
+#define WRAM_ACTOR_OFFSET_ALT_X 0x7fdbecu
+#define WRAM_ACTOR_OFFSET_ALT_Y 0x7fdc3cu
+
+/* Per-actor byte (40 entries): completed quarter steps of the current walk,
+ * counting 1..16. It indexes the bob table and ends the walk opcode at 16. */
+#define WRAM_ACTOR_WALK_PHASE 0x7fe4b6u
+
+/* $83:DD44: signed vertical bob offsets, indexed by the walk phase minus 1. */
+#define ROM_ACTOR_WALK_BOB_TABLE 0x83dd44u
+
+/* Second plane the occupancy of blocking actors is also recorded in. */
+#define MAP_BLOCKING_ATTRIBUTES 0x7e4001u
+
+/* Secondary script operand bytes, relative to the opcode byte. */
+enum {
+    SECONDARY_OPCODE_BYTE = 0x0000,
+    SECONDARY_OPERAND_1 = 0x0001,
+    SECONDARY_OPERAND_2 = 0x0002,
+    SECONDARY_OPERAND_3 = 0x0003
+};
+
 #endif
