@@ -123,7 +123,7 @@ static unsigned EventQueueObjectAnimation(
             }
         }
         IncrementX16(cpu);                                     /* F592 */
-        Compare16(cpu, cpu->x, 0x0008u);
+        Compare16(cpu, cpu->x, EVENT_ANIMATION_SLOT_COUNT);
         if (cpu->carry)
             break;
     }
@@ -133,7 +133,7 @@ static unsigned EventQueueObjectAnimation(
         if (!cpu->negative)
             break;
         IncrementX16(cpu);
-        Compare16(cpu, cpu->x, 0x0008u);
+        Compare16(cpu, cpu->x, EVENT_ANIMATION_SLOT_COUNT);
         if (cpu->zero) {
             LoadX16(cpu, 0x0000u);
             break;
@@ -147,40 +147,63 @@ static unsigned EventQueueObjectAnimation(
     return EVENT_OPCODE_NEXT;
 }
 
+/* The two map header lists that EventObjectCoversRow searches. Each is
+ * found by its offset in the header (X) and its record size (high byte of A).
+ * A placement record gives an object's column, its top row and the key of its
+ * shape record, whose row count says how far the object extends down. */
+enum {
+    OBJECT_PLACEMENT_LIST = 0x0002,
+    OBJECT_PLACEMENT_SIZE = 0x0f,
+    OBJECT_PLACEMENT_COLUMN = 1,
+    OBJECT_PLACEMENT_ROW = 2,
+    OBJECT_PLACEMENT_SHAPE = 0x0d,
+    OBJECT_SHAPE_LIST = 0x0004,
+    OBJECT_SHAPE_SIZE = 0x0a,
+    OBJECT_SHAPE_ROWS = 5
+};
+
 /* $80:CCDB: carry set when object $7F:D04E's rows cover $06E2. */
 static unsigned EventObjectCoversRow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint32_t *handoff) {
     SimulateJsrFrame(memory, cpu, 0xccc8u);
-    LoadA8(cpu, 0x0fu);                                        /* CCDB */
+    LoadA8(cpu, OBJECT_PLACEMENT_SIZE); /* CCDB */
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, Read8(memory, EVENT_OBJECT_OPERAND));
-    LoadX16(cpu, 0x0002u);
+    LoadX16(cpu, OBJECT_PLACEMENT_LIST);
     if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xcce8u)) {
         *handoff = EVENT_SEARCH_HANDOFF;
         return EVENT_OPCODE_HANDOFF;
     }
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef001u, cpu->x)));
+    LoadA8(cpu,
+           Read8(memory, LongIndexedAddress(EVENT_LIST_RECORD + OBJECT_PLACEMENT_COLUMN,
+                                            cpu->x)));
     Compare8(cpu, A8(cpu),
         Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, 0)));
     cpu->carry = 0;
     if (cpu->zero) {
-        LoadA8(cpu, (uint8_t)(Read8(memory,
-            LongIndexedAddress(0x7ef002u, cpu->x)) - 1u));     /* CCF3 */
+        LoadA8(cpu, (uint8_t)(Read8(memory, LongIndexedAddress(EVENT_LIST_RECORD +
+                                                                   OBJECT_PLACEMENT_ROW,
+                                                               cpu->x)) -
+                              1u)); /* CCF3 */
         Compare8(cpu, A8(cpu),
             Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, 0)));
         if (!cpu->carry) {
             StoreADirect8(memory, cpu, 0x56u);
-            LoadA8(cpu, 0x0au);
+            LoadA8(cpu, OBJECT_SHAPE_SIZE);
             ExchangeAccumulatorBytes(cpu);
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef00du, cpu->x)));
-            LoadX16(cpu, 0x0004u);
+            LoadA8(cpu, Read8(memory,
+                              LongIndexedAddress(
+                                  EVENT_LIST_RECORD + OBJECT_PLACEMENT_SHAPE, cpu->x)));
+            LoadX16(cpu, OBJECT_SHAPE_LIST);
             if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xcd0cu)) {
                 *handoff = EVENT_SEARCH_HANDOFF;
                 return EVENT_OPCODE_HANDOFF;
             }
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef005u, cpu->x)));
+            LoadA8(cpu,
+                   Read8(memory, LongIndexedAddress(
+                                     EVENT_LIST_RECORD + OBJECT_SHAPE_ROWS, cpu->x)));
             cpu->carry = 0;
             Adc8(cpu, DirectByte(memory, cpu, 0x56u));
             Compare8(cpu, A8(cpu),
@@ -308,9 +331,11 @@ static void EventObjectClearAttributes(
         LoadA8(cpu, Read8(memory, WRAM_FIELD_OBJECT_WIDTH));
         Compare8(cpu, A8(cpu), 0x02u);
         if (cpu->zero) {
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e4001u, cpu->x)));
+            LoadA8(cpu,
+                   Read8(memory, LongIndexedAddress(MAP_BLOCKING_ATTRIBUTES, cpu->x)));
             And8(cpu, keep);
-            Write8(memory, LongIndexedAddress(0x7e4001u, cpu->x), A8(cpu));
+            Write8(memory, LongIndexedAddress(MAP_BLOCKING_ATTRIBUTES, cpu->x),
+                   A8(cpu));
         }
         if (!bit) {
             SetAccumulatorWidth(cpu, 0);                       /* F472 */
@@ -361,10 +386,10 @@ static void EventObjectClearTiles(
         And16(cpu, 0x00ffu);
         StoreADirect16(memory, cpu, 0x56u);
         do {
-            const uint32_t tile = LongIndexedAddress(0x7f0000u, cpu->x);
+            const uint32_t tile = LongIndexedAddress(FIELD_BANK_7F, cpu->x);
 
             LoadA16(cpu, Read16Long(memory, tile));
-            And16(cpu, 0xfc00u);
+            And16(cpu, FIELD_TILE_FLAGS_MASK);
             Write16Long(memory, tile, cpu->accumulator);
             IncrementX16(cpu);
             IncrementX16(cpu);
@@ -415,10 +440,10 @@ static void EventTileWord(
     const uint32_t cell = AbsoluteIndexedAddress(cpu, 0x0000u, cpu->x);
 
     SimulateJsrFrame(memory, cpu, return_address);
-    And16(cpu, 0x03ffu);                                       /* F784 */
+    And16(cpu, FIELD_TILE_INDEX_MASK); /* F784 */
     StoreADirect16(memory, cpu, 0x54u);
     LoadA16(cpu, Read16Long(memory, cell));
-    And16(cpu, 0xfc00u);
+    And16(cpu, FIELD_TILE_FLAGS_MASK);
     LoadA16(cpu, (uint16_t)(cpu->accumulator | Read16Direct(memory, cpu, 0x54u)));
     Write16Long(memory, cell, cpu->accumulator);
     SimulateRtsFrame(memory, cpu);
@@ -531,7 +556,7 @@ static uint8_t EventObjectTiles(
                 break;
         }
         IncrementX16(cpu);                                     /* D36A */
-        Compare16(cpu, cpu->x, 0x0030u);
+        Compare16(cpu, cpu->x, EVENT_OBJECT_RECORD_COUNT);
         if (cpu->zero) {
             unsigned width, height;
 
@@ -649,7 +674,7 @@ static void EventFindPending(
             }
         }
         IncrementX16(cpu);                                     /* FBB2 */
-        Compare16(cpu, cpu->x, 0x0030u);
+        Compare16(cpu, cpu->x, EVENT_OBJECT_RECORD_COUNT);
         if (cpu->zero) {
             TransferDirectToA(cpu);
             cpu->carry = 1;
@@ -928,7 +953,7 @@ unsigned Lufia2EventOpPlaceObject(
         if (!cpu->negative)
             break;
         IncrementX16(cpu);
-        Compare16(cpu, cpu->x, 0x0030u);
+        Compare16(cpu, cpu->x, EVENT_OBJECT_RECORD_COUNT);
         if (cpu->zero) {
             LoadX16(cpu, 0x0000u);
             break;
@@ -1090,13 +1115,13 @@ static bool EventPushPendingTile(const Lufia2Memory *memory, Lufia2CpuState *cpu
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_PENDING_OBJECT_TILES,
                                                        cpu->x)));
     SimulateJslFrame(memory, cpu, 0x83u, 0xc0d7u);
-    And16(cpu, 0x03ffu); /* FB7A */
+    And16(cpu, FIELD_TILE_INDEX_MASK); /* FB7A */
     cpu->carry = 0;
     Add16Value(cpu, Read16Long(memory, WRAM_FIELD_METATILE_ATTRIBUTE_BASE));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7f0000u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(FIELD_BANK_7F, cpu->x)));
     SimulateRtlFrame(memory, cpu);
     SetNz8(cpu, A8(cpu)); /* C0D8 */
     return true;
