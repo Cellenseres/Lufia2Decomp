@@ -16,10 +16,12 @@ enum {
     MENU_SHOP_FLAGS = 0x1540u,
 };
 
+/* Pushes the JSR return frame for the given address. */
 static void Jsr(const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t ret) {
     SimulateJsrFrame(memory, cpu, ret);
 }
 
+/* Pops the RTS frame pushed by Jsr. */
 static void Rts(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SimulateRtsFrame(memory, cpu);
 }
@@ -31,6 +33,8 @@ static uint16_t Indirect16At(const Lufia2Memory *memory,
         Read16Direct(memory, cpu, offset) + index) & 0x00ffffffu);
 }
 
+/* Loads the data bank register with the given bank through A, as the ROM
+ * does with LDA/PHA/PLB. */
 static void SetBank(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t bank) {
     LoadA8(cpu, bank);
@@ -38,6 +42,7 @@ static void SetBank(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     PullDataBank(memory, cpu);
 }
 
+/* Stores A at the absolute address indexed by X. */
 static void StoreIndexed(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t address) {
     StoreAAbsolute8(memory, cpu, address, cpu->x);
@@ -245,6 +250,7 @@ Lufia2ExecutionResult Lufia2MenuEquipCommands(
     return ExecutionReturned(0x829fafu);
 }
 
+/* Draws a window through the ROM window routine, position in A and size in X. */
 static void Window(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t position, uint16_t size, uint16_t return_address) {
     LoadA16(cpu, position);
@@ -580,6 +586,8 @@ static void MenuPartyStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);
 }
 
+/* Test-and-set bits in a direct-page byte: A takes the bits, zero reports
+ * whether any were already set. */
 static void TsbDirect(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t offset, uint8_t bits) {
     const uint8_t old = DirectByte(memory, cpu, offset);
@@ -845,6 +853,7 @@ static void CapsuleSkillName(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);
 }
 
+/* JSL $80:8878 with the string at $8E:Y; 1 when it handed off. */
 static int String8E(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t string, uint16_t return_address, Lufia2ExecutionResult *out) {
     LoadA8(cpu, 0x8eu);
@@ -1744,11 +1753,13 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
     return ExecutionReturned(0x829d54u);
 }
 
+/* Sets the text attribute (the menu draw mode) for the next string. */
 static void SetAttribute(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t attribute) {
     StoreA8Absolute(memory, cpu, WRAM_MENU_DRAW_MODE, attribute);
 }
 
+/* JSL into the bank $81 reader of the first record byte of item $0A06. */
 static void ItemByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x82u, return_address);
@@ -1816,6 +1827,8 @@ static void ItemAttribute(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreAAbsolute8(memory, cpu, WRAM_MENU_DRAW_MODE, 0);
 }
 
+/* JSL into the bank $81 spell record byte reader; the C variant reads the
+ * record's offset-$0C byte, the other the offset-$08 byte. */
 static void SpellByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     int twelve, uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x82u, return_address);
