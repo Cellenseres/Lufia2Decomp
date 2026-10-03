@@ -3618,3 +3618,36 @@ source = "src/battle/battle_background_wave.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Battle effect interpreter operations
+[[function]]
+address = "81:A40B"
+name = "Lufia2BattleEffectAddToField"
+source = "src/battle/battle_effect_ops.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "81:953F"
+name = "Lufia2BattleEffectRepeat"
+source = "src/battle/battle_effect_ops.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "81:9169"
+name = "Lufia2BattleEffectMarkLoop"
+source = "src/battle/battle_effect_ops.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "81:A598"
+name = "Lufia2BattleEffectVelocity"
+source = "src/battle/battle_effect_ops.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
