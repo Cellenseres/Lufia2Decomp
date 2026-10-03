@@ -179,72 +179,97 @@ static bool EmitSpriteGroup(BattleContext *battle, const BattleSpriteGroup *grou
     return BattleCall(battle, group->call_site, 0x81b705u, 2u);
 }
 
+/* Per-overlay tables in work RAM, indexed by overlay number. */
+enum {
+    OVERLAY_COUNT = 0x154eu,
+    OVERLAY_ENABLED = 0x1534u,
+    OVERLAY_SOURCE_ID = WRAM_SYSTEM_MULTIPLY_PRODUCT + 3u,
+    OVERLAY_SPRITE_COUNT = 0x157fu,
+    OVERLAY_OFFSET_X = 0x158fu,
+    OVERLAY_OFFSET_Y = 0x1597u,
+    OVERLAY_FIRST_OAM = 0x15bbu,
+    OVERLAY_SPRITE_SOURCE = 0x7e4956u,
+    OVERLAY_SPRITE_STRIDE = 5u,
+    OVERLAY_COUNT_LIMIT = 6u,
+};
+
+/* Lays the overlays' OAM ranges end to end, starting at the first free entry. */
+static void OverlayAssignFirstOamIndices(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu) {
+    SetIndexWidth(cpu, 1);
+    OpLdx(cpu, 0u);
+    OpLda(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_FIRST_OAM));
+    do {
+        OpSta(memory, cpu, OpAbsX(cpu, OVERLAY_FIRST_OAM));
+        cpu->carry = 0;
+        OpAdc(memory, cpu, OpAbsX(cpu, OVERLAY_SPRITE_COUNT));
+        OpInx(cpu);
+        OpCpx(cpu, OpReadX(memory, cpu, OpAbs(cpu, OVERLAY_COUNT)));
+    } while (!cpu->zero);
+    SetIndexWidth(cpu, 0);
+}
+
+/* Writes one overlay's sprites into OAM: each source sprite's position plus
+ * the overlay offset. X is the overlay number; returns with it restored. */
+static void OverlayEmitSprites(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbsX(cpu, OVERLAY_SPRITE_COUNT));
+    OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_SPRITES_LEFT));
+    OpLda(memory, cpu, OpAbsX(cpu, OVERLAY_OFFSET_X));
+    OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_X));
+    OpLda(memory, cpu, OpAbsX(cpu, OVERLAY_OFFSET_Y));
+    OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_Y));
+    OpLda(memory, cpu, OpAbsX(cpu, OVERLAY_FIRST_OAM));
+    OpPushX(memory, cpu);
+    SetAccumulatorWidth(cpu, 0);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpTay(cpu); /* Y: OAM byte offset of the overlay's first entry */
+    OpLda(memory, cpu, OpAbsX(cpu, OVERLAY_SOURCE_ID));
+    OpAndValue(cpu, 0xffu);
+    OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_SOURCE_OFFSET));
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAdc(memory, cpu, OpDp(cpu, SPRITE_DP_SOURCE_OFFSET));
+    OpTax(cpu); /* X: source id * 5 into the sprite source records */
+    SetAccumulatorWidth(cpu, 1);
+    do {
+        OpLda(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_X));
+        cpu->carry = 0;
+        OpAdc(memory, cpu, OpLongX(cpu, OVERLAY_SPRITE_SOURCE));
+        OpSta(memory, cpu, OpAbsY(cpu, OAM_LOW_TABLE));
+        OpInx(cpu);
+        OpIny(cpu);
+        OpLda(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_Y));
+        cpu->carry = 0;
+        OpAdc(memory, cpu, OpLongX(cpu, OVERLAY_SPRITE_SOURCE));
+        OpSta(memory, cpu, OpAbsY(cpu, OAM_LOW_TABLE));
+        for (unsigned i = 0; i < OVERLAY_SPRITE_STRIDE - 1u; ++i)
+            OpInx(cpu);
+        for (unsigned i = 0; i < BATTLE_OAM_ENTRY_SIZE - 1u; ++i)
+            OpIny(cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_SPRITES_LEFT), -1);
+    } while (!cpu->zero);
+    OpPullX(memory, cpu);
+}
+
+/* Appends the enabled position overlays' sprites after the regular groups. */
 static bool BattleApplySpritePositionOverlays(const Lufia2Memory *memory,
                                               Lufia2CpuState *cpu) {
-    OpLda(memory, cpu, OpAbs(cpu, 0x154eu));
+    OpLda(memory, cpu, OpAbs(cpu, OVERLAY_COUNT));
     if (!cpu->zero) {
-        SetIndexWidth(cpu, 1);
-        OpLdx(cpu, 0u);
-        OpLda(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_FIRST_OAM));
-        do {
-            OpSta(memory, cpu, OpAbsX(cpu, 0x15bbu));
-            cpu->carry = 0;
-            OpAdc(memory, cpu, OpAbsX(cpu, 0x157fu));
-            OpInx(cpu);
-            OpCpx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x154eu)));
-        } while (!cpu->zero);
-        SetIndexWidth(cpu, 0);
-        OpLda(memory, cpu, OpAbs(cpu, 0x154eu));
+        OverlayAssignFirstOamIndices(memory, cpu);
+        OpLda(memory, cpu, OpAbs(cpu, OVERLAY_COUNT));
         if (cpu->zero)
             return false;
         OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAYS_LEFT));
         OpLdx(cpu, 0u);
         do {
-            OpLda(memory, cpu, OpAbsX(cpu, 0x1534u));
-            if (!cpu->zero) {
-                OpLda(memory, cpu, OpAbsX(cpu, 0x157fu));
-                OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_SPRITES_LEFT));
-                OpLda(memory, cpu, OpAbsX(cpu, 0x158fu));
-                OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_X));
-                OpLda(memory, cpu, OpAbsX(cpu, 0x1597u));
-                OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_Y));
-                OpLda(memory, cpu, OpAbsX(cpu, 0x15bbu));
-                OpPushX(memory, cpu);
-                SetAccumulatorWidth(cpu, 0);
-                OpAndValue(cpu, 0xffu);
-                OpAslA(cpu);
-                OpAslA(cpu);
-                OpTay(cpu);
-                OpLda(memory, cpu, OpAbsX(cpu, (WRAM_SYSTEM_MULTIPLY_PRODUCT + 3u)));
-                OpAndValue(cpu, 0xffu);
-                OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_SOURCE_OFFSET));
-                OpAslA(cpu);
-                OpAslA(cpu);
-                OpAdc(memory, cpu, OpDp(cpu, SPRITE_DP_SOURCE_OFFSET));
-                OpTax(cpu);
-                SetAccumulatorWidth(cpu, 1);
-                do {
-                    OpLda(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_X));
-                    cpu->carry = 0;
-                    OpAdc(memory, cpu, OpLongX(cpu, 0x7e4956u));
-                    OpSta(memory, cpu, OpAbsY(cpu, 0x100u));
-                    OpInx(cpu);
-                    OpIny(cpu);
-                    OpLda(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_Y));
-                    cpu->carry = 0;
-                    OpAdc(memory, cpu, OpLongX(cpu, 0x7e4956u));
-                    OpSta(memory, cpu, OpAbsY(cpu, 0x100u));
-                    for (unsigned i = 0; i < 4u; ++i)
-                        OpInx(cpu);
-                    for (unsigned i = 0; i < 3u; ++i)
-                        OpIny(cpu);
-                    OpStepMem(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAY_SPRITES_LEFT),
-                              -1);
-                } while (!cpu->zero);
-                OpPullX(memory, cpu);
-            }
+            OpLda(memory, cpu, OpAbsX(cpu, OVERLAY_ENABLED));
+            if (!cpu->zero)
+                OverlayEmitSprites(memory, cpu);
             OpInx(cpu);
-            OpCpx(cpu, 6u);
+            OpCpx(cpu, OVERLAY_COUNT_LIMIT);
             /* Original DEC $55 replaces CPX's flags before the loop branch. */
             OpStepMem(memory, cpu, OpDp(cpu, SPRITE_DP_OVERLAYS_LEFT), -1);
         } while (!cpu->zero);
