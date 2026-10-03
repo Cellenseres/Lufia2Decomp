@@ -236,6 +236,16 @@ Lufia2ExecutionResult Lufia2BattleTileRow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $85:8F4A shifts the random register at $122F left by one; JSR, M8. */
+Lufia2ExecutionResult Lufia2BattleRandomBit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:894A drifts the offsets of the six party records; JSL, M8/X16. */
+Lufia2ExecutionResult Lufia2BattleDriftRecords(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $85:ECF0 per-frame battle upkeep. */
 Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     const Lufia2Memory *memory,
