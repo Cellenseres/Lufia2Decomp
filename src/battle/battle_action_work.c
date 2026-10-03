@@ -1,5 +1,7 @@
 #include "battle/battle_internal.h"
 
+/* Fills an action work area with the direct-page value (words, or bytes for the
+ * records), keeping A, X and flags. */
 static Lufia2ExecutionResult ClearActionWork(const Lufia2Memory *memory,
                                              Lufia2CpuState *cpu, uint32_t base,
                                              uint16_t last, bool bytes,
@@ -26,21 +28,25 @@ static Lufia2ExecutionResult ClearActionWork(const Lufia2Memory *memory,
     return ExecutionReturned(return_pc);
 }
 
+/* Clears the 0x84-byte action work area at $7F:F452. */
 Lufia2ExecutionResult Lufia2BattleClearActionWork(const Lufia2Memory *memory,
                                                   Lufia2CpuState *cpu) {
     return ClearActionWork(memory, cpu, 0x7ff452u, 0x82u, false, 0x85cce2u);
 }
 
+/* Clears the saved copy of the action work area at $7F:F4DA. */
 Lufia2ExecutionResult Lufia2BattleClearSavedActionWork(const Lufia2Memory *memory,
                                                        Lufia2CpuState *cpu) {
     return ClearActionWork(memory, cpu, 0x7ff4dau, 0x82u, false, 0x85ccf7u);
 }
 
+/* Clears the 0x14A-byte action record area at $7F:F60C. */
 Lufia2ExecutionResult Lufia2BattleClearActionRecords(const Lufia2Memory *memory,
                                                      Lufia2CpuState *cpu) {
     return ClearActionWork(memory, cpu, 0x7ff60cu, 0x149u, true, 0x85cd0fu);
 }
 
+/* Copies the action work area to its saved copy, or back when restoring. */
 static Lufia2ExecutionResult CopyActionWork(const Lufia2Memory *memory,
                                             Lufia2CpuState *cpu, bool restore) {
     OpLdx(cpu, 0x87u);
@@ -52,11 +58,13 @@ static Lufia2ExecutionResult CopyActionWork(const Lufia2Memory *memory,
     return ExecutionReturned(restore ? 0x85cda9u : 0x85cd9au);
 }
 
+/* Saves the action work area. */
 Lufia2ExecutionResult Lufia2BattleSaveActionWork(const Lufia2Memory *memory,
                                                  Lufia2CpuState *cpu) {
     return CopyActionWork(memory, cpu, false);
 }
 
+/* Restores the action work area from the saved copy. */
 Lufia2ExecutionResult Lufia2BattleRestoreActionWork(const Lufia2Memory *memory,
                                                     Lufia2CpuState *cpu) {
     return CopyActionWork(memory, cpu, true);
@@ -91,6 +99,8 @@ Lufia2ExecutionResult Lufia2BattleActionRecordPointer(const Lufia2Memory *memory
     return ExecutionReturned(0x85ce20u);
 }
 
+/* Pushes flags, data bank and A/X/Y for the record loaders and switches DB to the
+ * program bank. */
 static void SaveActionRegisters(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Push8(memory, cpu, PackStatus(cpu));
     PushDataBank(memory, cpu);
@@ -103,6 +113,7 @@ static void SaveActionRegisters(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     PullDataBank(memory, cpu);
 }
 
+/* Pops what SaveActionRegisters pushed. */
 static void RestoreActionRegisters(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x30u);
     OpPullY(memory, cpu);
@@ -112,6 +123,7 @@ static void RestoreActionRegisters(const Lufia2Memory *memory, Lufia2CpuState *c
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
+/* Copies 12 bytes from $7F:0000+X into the turn or action record the pointer names. */
 static Lufia2ExecutionResult LoadActionRecord(const Lufia2Memory *memory,
                                               Lufia2CpuState *cpu,
                                               Lufia2PushedChildCall child,
@@ -140,6 +152,7 @@ static Lufia2ExecutionResult LoadActionRecord(const Lufia2Memory *memory,
     return ExecutionReturned(action ? 0x85cdf9u : 0x85cdcfu);
 }
 
+/* Loads a turn record through the pointer at DP $B5. */
 Lufia2ExecutionResult Lufia2BattleLoadTurnRecord(const Lufia2Memory *memory,
                                                  Lufia2CpuState *cpu,
                                                  Lufia2PushedChildCall child,
@@ -147,6 +160,8 @@ Lufia2ExecutionResult Lufia2BattleLoadTurnRecord(const Lufia2Memory *memory,
     return LoadActionRecord(memory, cpu, child, child_context, false);
 }
 
+/* Runs the $85:CCCE child, then loads an action record through the pointer at DP $B8.
+ */
 Lufia2ExecutionResult Lufia2BattleLoadActionRecord(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu,
                                                    Lufia2PushedChildCall child,
