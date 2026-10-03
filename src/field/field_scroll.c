@@ -676,24 +676,28 @@ static void StreamRow(
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
+/* $80:F4FD: streams the layer's column at its right edge; returns to $80:F580. */
 Lufia2ExecutionResult Lufia2FieldStreamRightColumn(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StreamColumn(memory, cpu, 1);
     return ExecutionReturned(0x80f580u);
 }
 
+/* $80:F518: streams the layer's column at its left edge; returns to $80:F580. */
 Lufia2ExecutionResult Lufia2FieldStreamLeftColumn(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StreamColumn(memory, cpu, 0);
     return ExecutionReturned(0x80f580u);
 }
 
+/* $80:F589: streams the layer's row at its top edge; returns to $80:F5EC. */
 Lufia2ExecutionResult Lufia2FieldStreamTopRow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StreamRow(memory, cpu, 0);
     return ExecutionReturned(0x80f5ecu);
 }
 
+/* Streams the layer's row at its bottom edge; returns to $80:F5EC. */
 Lufia2ExecutionResult Lufia2FieldStreamBottomRow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StreamRow(memory, cpu, 1);
@@ -842,12 +846,14 @@ static void RedrawLayerBody(
         PullAccumulator16(memory, cpu);
 }
 
+/* Redraws the layer selected by X and returns to $80:F4EC. */
 Lufia2ExecutionResult Lufia2FieldRedrawLayer(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     RedrawLayerBody(memory, cpu);
     return ExecutionReturned(0x80f4ecu);
 }
 
+/* Redraws layers 3 to 0 (X = 6, 4, 2, 0) and returns to $83:8E75. */
 Lufia2ExecutionResult Lufia2FieldRedrawAllLayers(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Push8(memory, cpu, PackStatus(cpu));
@@ -873,6 +879,8 @@ void Lufia2FieldRedrawLayers(
     SimulateRtlFrame(memory, cpu);
 }
 
+/* $83:9004: pixel coordinate in A to cell index, A / 16; an entry with the
+ * negative flag set uses the direct-page register in place of A. */
 Lufia2ExecutionResult Lufia2FieldPixelCellFloor(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     (void)memory;
@@ -886,6 +894,7 @@ Lufia2ExecutionResult Lufia2FieldPixelCellFloor(
     return ExecutionReturned(0x83900bu);
 }
 
+/* $83:9000: like the floor variant but adds 15 first, so it rounds up. */
 Lufia2ExecutionResult Lufia2FieldPixelCellCeiling(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     cpu->carry = 0;
@@ -907,6 +916,8 @@ static void RegionCell(
     SimulateRtsFrame(memory, cpu);
 }
 
+/* Runs the cell conversion under a pushed JSR frame and hands off to the ROM if
+ * the frame comes back changed. */
 static Lufia2ExecutionResult CheckedRegionCell(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t frame, uint8_t round_up) {
@@ -1002,6 +1013,9 @@ enum {
     REGION_TILEMAP_COLUMN = 0x65,
 };
 
+/* Clips one axis of the region: raises the lower bound to the first cell or
+ * lowers the upper bound to the last. Returns 0 when the region lies wholly
+ * outside the bounds. */
 static uint8_t RegionClipAxis(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t first, uint8_t last, uint8_t minimum, uint8_t maximum) {
@@ -1024,6 +1038,9 @@ static uint8_t RegionClipAxis(
     return 1;
 }
 
+/* Writes the four tile words of the metatile for the cell at X into the top
+ * and bottom row buffers at Y; cells with both bits $3000 set take the
+ * layer's cell base instead. */
 static void RegionWriteMetatile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpWriteX(memory, cpu, OpDp(cpu, REGION_SOURCE_CELL), cpu->x);
@@ -1056,6 +1073,8 @@ static void RegionWriteMetatile(
     OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, REGION_BOTTOM_ROW));
 }
 
+/* $83:8E79: renders the pending object region into layers 0 and 2, handing off
+ * if a callee leaves an unexpected return frame or after 4096 calls. */
 Lufia2ExecutionResult Lufia2FieldRenderLayerPair(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned calls = 0;
@@ -1262,6 +1281,8 @@ static bool RenderRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return true;
 }
 
+/* $83:8E85: renders the pending object region into layer X, wrapping the core
+ * with the saved data bank and index registers. */
 Lufia2ExecutionResult Lufia2FieldRenderRegion(const Lufia2Memory *memory,
                                               Lufia2CpuState *cpu) {
     Lufia2ExecutionResult early;
@@ -1512,6 +1533,9 @@ static Lufia2ExecutionResult ScrollBoundary(
     return result;
 }
 
+/* $8E:BD77: per-frame field scroll. Takes the camera scroll from the screen
+ * effect override or from the camera actor, then runs each active layer's
+ * scroll mode and streams any column or row that came into view. */
 Lufia2ExecutionResult Lufia2FieldScrollUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
