@@ -181,6 +181,73 @@ static PartyStep PartyAttack(BattleContext *battle, uint32_t *pc) {
     return PARTY_DONE;
 }
 
+/* The entry/target choice shared by spells, items and IP attacks: where the
+ * child calls sit, how big one list record is, and which table says whether an
+ * entry needs a target. */
+typedef struct PartyPickSpec {
+    uint16_t cancel_site;
+    uint16_t window_site;
+    uint16_t target_site;
+    uint16_t retry_site;
+    uint8_t record_size;
+    uint8_t window_kind;       /* written to $129E, unless it comes from a table */
+    uint32_t window_kind_long; /* table byte for the kind, 0 if constant */
+    uint32_t needs_target_long;
+} PartyPickSpec;
+
+static const PartyPickSpec PARTY_PICK_SPELL = {0xce35u, 0xce53u, 0xce5eu, 0xce2eu,
+                                               16u,     2u,      0u,      0x7edf0fu};
+static const PartyPickSpec PARTY_PICK_ITEM = {0xceffu, 0xcf1du, 0xcf28u, 0xcef8u,
+                                              16u,     3u,      0u,      0x7edf13u};
+static const PartyPickSpec PARTY_PICK_IP = {0xcfd6u, 0xcff6u, 0xd001u,   0xcfcfu,
+                                            24u,     0u,      0x7edf03u, 0x7edf04u};
+
+typedef enum { PICK_CANCELLED, PICK_UNWOUND, PICK_CHOSEN } PartyPick;
+
+/* Loops until the player picks an entry (and, if it needs one, a target) or
+ * backs out. The selection comes back in DP $12 and A. */
+static PartyPick PartyPickEntryAndTarget(BattleContext *battle,
+                                         const PartyPickSpec *spec) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    for (;;) {
+        OpCmpValue(cpu, 0u);
+        if (!cpu->zero) {
+            if (!BattleCall(battle, spec->cancel_site, 0x81e16fu, 2u))
+                return PICK_UNWOUND;
+            OpPullX(memory, cpu);
+            return PICK_CANCELLED;
+        }
+        OpLda(memory, cpu, OpDp(cpu, 0x12u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+        OpLoadA(cpu, spec->record_size);
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
+        OpPushX(memory, cpu);
+        if (spec->window_kind_long != 0u)
+            OpLda(memory, cpu, OpLongX(cpu, spec->window_kind_long));
+        else
+            OpLoadA(cpu, spec->window_kind);
+        OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
+        if (!BattleCall(battle, spec->window_site, 0x81e16fu, 2u))
+            return PICK_UNWOUND;
+        OpPullX(memory, cpu);
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, spec->needs_target_long));
+        if (!cpu->zero) {
+            if (!BattleCall(battle, spec->target_site, 0x81d4e0u, 2u))
+                return PICK_UNWOUND;
+            OpCmpValue(cpu, 0xffu);
+            if (cpu->zero) {
+                if (!BattleCall(battle, spec->retry_site, 0x81d19au, 2u))
+                    return PICK_UNWOUND;
+                continue;
+            }
+        }
+        return PICK_CHOSEN;
+    }
+}
+
 /* Spell: asks for the spell, then for its target. */
 static PartyStep PartySpell(BattleContext *battle, uint32_t *pc) {
     const Lufia2Memory *memory = battle->memory;
@@ -198,37 +265,12 @@ static PartyStep PartySpell(BattleContext *battle, uint32_t *pc) {
     OpLoadA(cpu, 1u);
     if (!BattleCall(battle, 0xce29u, 0x81d12fu, 2u))
         return PARTY_UNWOUND;
-    for (;;) {
-        OpCmpValue(cpu, 0u);
-        if (!cpu->zero) {
-            if (!BattleCall(battle, 0xce35u, 0x81e16fu, 2u))
-                return PARTY_UNWOUND;
-            OpPullX(memory, cpu);
-            return PARTY_POLL;
-        }
-        OpLda(memory, cpu, OpDp(cpu, 0x12u));
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-        OpLoadA(cpu, 16u);
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
-        OpPushX(memory, cpu);
-        OpLoadA(cpu, 2u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
-        if (!BattleCall(battle, 0xce53u, 0x81e16fu, 2u))
-            return PARTY_UNWOUND;
-        OpPullX(memory, cpu);
-        TransferDirectToA(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0x7edf0fu));
-        if (!cpu->zero) {
-            if (!BattleCall(battle, 0xce5eu, 0x81d4e0u, 2u))
-                return PARTY_UNWOUND;
-            OpCmpValue(cpu, 0xffu);
-            if (cpu->zero) {
-                if (!BattleCall(battle, 0xce2eu, 0x81d19au, 2u))
-                    return PARTY_UNWOUND;
-                continue;
-            }
-        }
+    switch (PartyPickEntryAndTarget(battle, &PARTY_PICK_SPELL)) {
+    case PICK_CANCELLED:
+        return PARTY_POLL;
+    case PICK_UNWOUND:
+        return PARTY_UNWOUND;
+    case PICK_CHOSEN:
         break;
     }
     PushAccumulator8(memory, cpu);
@@ -272,37 +314,12 @@ static PartyStep PartyItem(BattleContext *battle, uint32_t *pc) {
     TransferDirectToA(cpu);
     if (!BattleCall(battle, 0xcef3u, 0x81d12fu, 2u))
         return PARTY_UNWOUND;
-    for (;;) {
-        OpCmpValue(cpu, 0u);
-        if (!cpu->zero) {
-            if (!BattleCall(battle, 0xceffu, 0x81e16fu, 2u))
-                return PARTY_UNWOUND;
-            OpPullX(memory, cpu);
-            return PARTY_POLL;
-        }
-        OpLda(memory, cpu, OpDp(cpu, 0x12u));
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-        OpLoadA(cpu, 16u);
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
-        OpPushX(memory, cpu);
-        OpLoadA(cpu, 3u);
-        OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
-        if (!BattleCall(battle, 0xcf1du, 0x81e16fu, 2u))
-            return PARTY_UNWOUND;
-        OpPullX(memory, cpu);
-        TransferDirectToA(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0x7edf13u));
-        if (!cpu->zero) {
-            if (!BattleCall(battle, 0xcf28u, 0x81d4e0u, 2u))
-                return PARTY_UNWOUND;
-            OpCmpValue(cpu, 0xffu);
-            if (cpu->zero) {
-                if (!BattleCall(battle, 0xcef8u, 0x81d19au, 2u))
-                    return PARTY_UNWOUND;
-                continue;
-            }
-        }
+    switch (PartyPickEntryAndTarget(battle, &PARTY_PICK_ITEM)) {
+    case PICK_CANCELLED:
+        return PARTY_POLL;
+    case PICK_UNWOUND:
+        return PARTY_UNWOUND;
+    case PICK_CHOSEN:
         break;
     }
     PushAccumulator8(memory, cpu);
@@ -350,37 +367,12 @@ static PartyStep PartyIp(BattleContext *battle, uint32_t *pc) {
     OpLoadA(cpu, 2u);
     if (!BattleCall(battle, 0xcfcau, 0x81d12fu, 2u))
         return PARTY_UNWOUND;
-    for (;;) {
-        OpCmpValue(cpu, 0u);
-        if (!cpu->zero) {
-            if (!BattleCall(battle, 0xcfd6u, 0x81e16fu, 2u))
-                return PARTY_UNWOUND;
-            OpPullX(memory, cpu);
-            return PARTY_POLL;
-        }
-        OpLda(memory, cpu, OpDp(cpu, 0x12u));
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-        OpLoadA(cpu, 24u);
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
-        OpPushX(memory, cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0x7edf03u));
-        OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
-        if (!BattleCall(battle, 0xcff6u, 0x81e16fu, 2u))
-            return PARTY_UNWOUND;
-        OpPullX(memory, cpu);
-        TransferDirectToA(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, 0x7edf04u));
-        if (!cpu->zero) {
-            if (!BattleCall(battle, 0xd001u, 0x81d4e0u, 2u))
-                return PARTY_UNWOUND;
-            OpCmpValue(cpu, 0xffu);
-            if (cpu->zero) {
-                if (!BattleCall(battle, 0xcfcfu, 0x81d19au, 2u))
-                    return PARTY_UNWOUND;
-                continue;
-            }
-        }
+    switch (PartyPickEntryAndTarget(battle, &PARTY_PICK_IP)) {
+    case PICK_CANCELLED:
+        return PARTY_POLL;
+    case PICK_UNWOUND:
+        return PARTY_UNWOUND;
+    case PICK_CHOSEN:
         break;
     }
     PushAccumulator8(memory, cpu);
