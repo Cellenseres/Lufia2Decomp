@@ -44,44 +44,303 @@ static bool BattleDrawSubmenuTitle(BattleContext *battle) {
     return true;
 }
 
-static Lufia2ExecutionResult BattleRunActionSubmenu(BattleContext *battle) {
+/* What the menu does after a pad press. */
+typedef enum {
+    SUBMENU_REFRESH,
+    SUBMENU_MOVE_CURSOR,
+    SUBMENU_POLL,
+    SUBMENU_ACCEPTED,
+    SUBMENU_CANCELLED,
+    SUBMENU_UNWOUND
+} SubmenuOutcome;
+
+/* Draws the visible rows starting at the first entry. */
+static bool SubmenuDrawRows(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
-    if (!BattleCall(battle, 0xd19au, 0x85ec81u, 3u))
-        return BattleChildUnwound(battle);
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+    if (!BattleCall(battle, 0xd340u, 0x81dfa2u, 2u))
+        return false;
+    OpRepWidths(cpu, 0x20u);
+    if (!BattleCall(battle, 0xd345u, 0x859c08u, 3u))
+        return false;
+    OpSepWidths(cpu, 0x20u);
+    return true;
+}
+
+/* Turns the selected entry into the cursor's row and column. */
+static void SubmenuPlaceCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_PENDING_ENTRY));
+    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
+    cpu->carry = true;
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY)));
+    OpLsrA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_ROW));
     OpLoadA(cpu, 0u);
-    if (!BattleCall(battle, 0xd1a0u, 0x81bebcu, 3u) ||
-        !BattleCall(battle, 0xd1a4u, 0x81beedu, 3u))
-        return BattleChildUnwound(battle);
-    OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xd1aau, 0x859c64u, 3u))
-        return BattleChildUnwound(battle);
-    OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xd1b0u, 0x81def4u, 2u))
-        return BattleChildUnwound(battle);
-    if (!BattleDrawSubmenuTitle(battle))
-        return BattleChildUnwound(battle);
-    OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xd21bu, 0x859b67u, 3u))
-        return BattleChildUnwound(battle);
-    OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xd221u, 0x85ec81u, 3u))
-        return BattleChildUnwound(battle);
+    OpLoadA(cpu, cpu->carry ? 1u : 0u);
+    cpu->carry = false;
+    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN));
+}
+
+/* Writes the cursor sprite for the cursor's row and column; a few menus add a
+ * second sprite, the page arrow. */
+static void SubmenuDrawCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN));
+    if (!cpu->zero)
+        OpLoadA(cpu, 0x70u);
+    cpu->carry = false;
+    OpAdcValue(cpu, 8u);
+    OpSta(memory, cpu, 0x7e4abeu);
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_ROW));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+    OpLoadA(cpu, 12u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+    OpLoadA(cpu, 0x4eu);
+    OpSta(memory, cpu, 0x7e4ac0u);
+    OpLoadA(cpu, 0x20u);
+    OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
+    OpSta(memory, cpu, 0x7e4abfu);
+    OpLoadA(cpu, 0x30u);
+    OpSta(memory, cpu, 0x7e4ac1u);
+    TransferDirectToA(cpu);
+    OpSta(memory, cpu, 0x7e4ac2u);
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
+    OpCmpValue(cpu, 2u);
+    if (cpu->zero)
+        return;
+    OpLoadA(cpu, 0xecu);
+    OpSta(memory, cpu, 0x7e4ac3u);
+    OpLoadA(cpu, 0x4au);
+    OpSta(memory, cpu, 0x7e4ac5u);
+    OpLoadA(cpu, 0x30u);
+    OpSta(memory, cpu, 0x7e4ac6u);
+    TransferDirectToA(cpu);
+    OpSta(memory, cpu, 0x7e4ac7u);
     OpLoadA(cpu, 2u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_CGWSEL));
-    OpLoadA(cpu, 0x1fu);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_TM));
-    OpLoadA(cpu, 0x11u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_TS));
-    goto draw_rows;
-input:
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
+    OpCmpValue(cpu, 1u);
+    if (cpu->zero) {
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
+        OpTax(cpu);
+        if (!cpu->zero) {
+            OpCmpValue(cpu, 0x18u);
+            if (!cpu->zero) {
+                OpLoadA(cpu, 0x4cu);
+                OpSta(memory, cpu, 0x7e4ac5u);
+            }
+        }
+        OpLda(memory, cpu, OpLongX(cpu, 0xa5db00u));
+    } else {
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
+        OpTax(cpu);
+        if (!cpu->zero) {
+            OpCmpValue(cpu, 0xb4u);
+            if (!cpu->zero) {
+                OpLoadA(cpu, 0x4cu);
+                OpSta(memory, cpu, 0x7e4ac5u);
+            }
+        }
+        OpLda(memory, cpu, OpLongX(cpu, 0xa5d700u));
+    }
+    OpSta(memory, cpu, 0x7e4ac4u);
+}
+
+/* Presents the frame and the scroll phase. */
+static bool SubmenuDrawFrame(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpRepWidths(cpu, 0x20u);
+    if (!BattleCall(battle, 0xd444u, 0x859ca9u, 3u))
+        return false;
+    OpLda(memory, cpu, OpDp(cpu, 0x46u));
+    OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffffu));
+    OpSta(memory, cpu, OpDp(cpu, 0x4au));
+    OpSepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
+    OpSta(memory, cpu, OpAbs(cpu, 0x1b22u));
+    OpStz(memory, cpu, OpAbs(cpu, 0x1b23u));
+    if (!BattleCall(battle, 0xd459u, 0x81d9d0u, 2u))
+        return false;
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, 0x0012f3u);
+    if (!BattleCall(battle, 0xd462u, 0x85ec81u, 3u))
+        return false;
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
+    return true;
+}
+
+/* Brings the screen up to date. A change of the first entry redraws the rows
+ * and runs the scroll animation, a plain cursor move only repositions the
+ * cursor. While a scroll is running every second frame leaves the cursor
+ * where it is. */
+static bool SubmenuRefresh(BattleContext *battle, bool redraw_rows) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    bool tick = redraw_rows;
+
+    if (redraw_rows && !SubmenuDrawRows(battle))
+        return false;
+    for (;;) {
+        bool move_cursor = true;
+
+        if (tick) {
+            OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
+            cpu->carry = false;
+            OpAdc(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP));
+            OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
+            OpAndValue(cpu, 1u);
+            move_cursor = cpu->zero;
+        }
+        if (move_cursor)
+            SubmenuPlaceCursor(memory, cpu);
+        SubmenuDrawCursor(memory, cpu);
+        if (!SubmenuDrawFrame(battle))
+            return false;
+        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
+        if (cpu->zero)
+            break;
+        tick = true;
+    }
+    OpStz(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP));
+    return true;
+}
+
+/* Runs the child that polls for the next frame's input. */
+static bool SubmenuPoll(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    if (!BattleCall(battle, 0xd472u, 0x81d9d0u, 2u))
+        return false;
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, 0x0012f3u);
+    if (!BattleCall(battle, 0xd47bu, 0x85ec81u, 3u))
+        return false;
+    return true;
+}
+
+/* The confirm button: an entry that is not available only polls again,
+ * otherwise the choice is stored for the party member. */
+static SubmenuOutcome SubmenuAccept(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
+    OpCmpValue(cpu, 2u);
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
+        OpRepWidths(cpu, 0x20u);
+        OpAslA(cpu);
+        OpAslA(cpu);
+        OpAslA(cpu);
+        OpAslA(cpu);
+        OpTax(cpu);
+        OpSepWidths(cpu, 0x20u);
+    } else {
+        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
+        OpRepWidths(cpu, 0x20u);
+        OpAslA(cpu);
+        OpAslA(cpu);
+        OpAslA(cpu);
+        PushAccumulator16(memory, cpu);
+        OpAslA(cpu);
+        OpAdc(memory, cpu, OpStack(cpu, 1u));
+        OpTax(cpu);
+        PullAccumulator16(memory, cpu);
+        OpSepWidths(cpu, 0x20u);
+    }
+    OpLda(memory, cpu, OpLongX(cpu, 0x7edf00u));
+    OpCmpValue(cpu, 0u);
+    if (!cpu->zero)
+        return SUBMENU_POLL;
+    OpLoadA(cpu, 2u);
+    if (!BattleCall(battle, 0xd4afu, 0x80953bu, 3u))
+        return SUBMENU_UNWOUND;
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_IDS));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+    OpLoadA(cpu, 7u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
+    OpAslA(cpu);
+    OpRepWidths(cpu, 0x20u);
+    OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
+    OpSta(memory, cpu, OpAbsX(cpu, 0x1363u));
+    OpSepWidths(cpu, 0x20u);
+    TransferDirectToA(cpu);
+    return SUBMENU_ACCEPTED;
+}
+
+/* The cancel button. */
+static SubmenuOutcome SubmenuCancel(BattleContext *battle) {
+    Lufia2CpuState *cpu = battle->cpu;
+    OpLoadA(cpu, 1u);
+    if (!BattleCall(battle, 0xd4d9u, 0x80953bu, 3u))
+        return SUBMENU_UNWOUND;
+    OpLoadA(cpu, 1u);
+    return SUBMENU_CANCELLED;
+}
+
+/* The selected entry takes the candidate in A as its new value; the first entry
+ * follows when the cursor would leave the visible rows. */
+static SubmenuOutcome SubmenuSelectEntry(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu) {
+    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_PENDING_ENTRY));
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
+    OpCmp(memory, cpu, OpDp(cpu, SUBMENU_DP_PENDING_ENTRY));
+    if (cpu->zero)
+        return SUBMENU_MOVE_CURSOR;
+    if (cpu->carry) {
+        OpLoadA(cpu, 4u);
+        OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP));
+        OpStepMem(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), -1);
+        OpStepMem(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), -1);
+        return SUBMENU_REFRESH;
+    }
+    cpu->carry = false;
+    OpAdcValue(cpu, 12u);
+    OpCmp(memory, cpu, OpDp(cpu, SUBMENU_DP_PENDING_ENTRY));
+    if (!cpu->zero && cpu->carry)
+        return SUBMENU_MOVE_CURSOR;
+    OpLoadA(cpu, 0xfcu);
+    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP));
+    OpStepMem(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), 1);
+    OpStepMem(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), 1);
+    return SUBMENU_REFRESH;
+}
+
+/* Reads the pad: confirm, cancel, the auxiliary button, or a direction. */
+static SubmenuOutcome SubmenuInput(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    bool listed;
+
     OpLda(memory, cpu, OpDp(cpu, 0xddu));
     OpBitValue(cpu, 0xa0u);
     if (!cpu->zero)
-        goto accept;
+        return SubmenuAccept(battle);
     OpLda(memory, cpu, OpDp(cpu, 0xdeu));
     if (cpu->negative)
-        goto cancel;
+        return SubmenuCancel(battle);
     OpLda(memory, cpu, OpDp(cpu, 0xddu));
     OpBitValue(cpu, 0x40u);
     if (!cpu->zero) {
@@ -93,7 +352,7 @@ input:
         OpPushX(memory, cpu);
         if (!BattleCall(battle, 0xd259u, 0x859906u, 3u) ||
             !BattleCall(battle, 0xd25du, 0x81def4u, 2u))
-            return BattleChildUnwound(battle);
+            return SUBMENU_UNWOUND;
         OpPullX(memory, cpu);
         OpWriteX(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP), cpu->x);
         OpPullX(memory, cpu);
@@ -102,24 +361,21 @@ input:
         OpWriteX(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), cpu->x);
         OpRepWidths(cpu, 0x20u);
         if (!BattleCall(battle, 0xd26bu, 0x859b67u, 3u))
-            return BattleChildUnwound(battle);
+            return SUBMENU_UNWOUND;
         OpSepWidths(cpu, 0x20u);
-        goto poll;
+        return SUBMENU_POLL;
     }
     OpLda(memory, cpu, OpDp(cpu, 0xdeu));
     OpAndValue(cpu, 15u);
     OpSepWidths(cpu, 0x10u);
     OpTay(cpu);
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
-    if (!cpu->zero) {
+    listed = !cpu->zero;
+    if (listed) {
         OpCmpValue(cpu, 2u);
-        if (!cpu->zero) {
-            OpLda(memory, cpu, OpAbsY(cpu, 0xb58au));
-            goto direction;
-        }
+        listed = !cpu->zero;
     }
-    OpLda(memory, cpu, OpAbsY(cpu, 0xb59au));
-direction:
+    OpLda(memory, cpu, OpAbsY(cpu, listed ? 0xb58au : 0xb59au));
     OpRepWidths(cpu, 0x10u);
     OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_MOVE_DELTA));
     OpCmpValue(cpu, 2u);
@@ -160,7 +416,7 @@ direction:
             OpCmpValue(cpu, 0xe6u);
             if (cpu->carry) {
                 OpStz(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
-                goto draw_rows;
+                return SUBMENU_REFRESH;
             }
             OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
             cpu->carry = false;
@@ -173,7 +429,7 @@ direction:
                 OpAndValue(cpu, 0xfeu);
                 OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
             }
-            goto draw_rows;
+            return SUBMENU_REFRESH;
         }
     }
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_MOVE_DELTA));
@@ -183,226 +439,72 @@ direction:
     if (!cpu->carry) {
         OpCmp(memory, cpu, OpDp(cpu, SUBMENU_DP_ENTRY_COUNT));
         if (!cpu->carry)
-            goto selection;
+            return SubmenuSelectEntry(memory, cpu);
         OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
         OpAndValue(cpu, 1u);
         if (!cpu->zero) {
             OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_ENTRY_COUNT));
             OpDecA(cpu);
-            goto selection;
+            return SubmenuSelectEntry(memory, cpu);
         }
     }
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
-selection:
-    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_PENDING_ENTRY));
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
-    OpCmp(memory, cpu, OpDp(cpu, SUBMENU_DP_PENDING_ENTRY));
-    if (cpu->zero)
-        goto cursor;
-    if (cpu->carry) {
-        OpLoadA(cpu, 4u);
-        OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
-        OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP));
-        OpStepMem(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), -1);
-        OpStepMem(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), -1);
-        goto draw_rows;
-    }
-    cpu->carry = false;
-    OpAdcValue(cpu, 12u);
-    OpCmp(memory, cpu, OpDp(cpu, SUBMENU_DP_PENDING_ENTRY));
-    if (!cpu->zero && cpu->carry)
-        goto cursor;
-    OpLoadA(cpu, 0xfcu);
-    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP));
-    OpStepMem(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), 1);
-    OpStepMem(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY), 1);
-draw_rows:
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
-    OpRepWidths(cpu, 0x20u);
-    OpAndValue(cpu, 0xffu);
-    OpTax(cpu);
-    OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xd340u, 0x81dfa2u, 2u))
+    return SubmenuSelectEntry(memory, cpu);
+}
+
+static Lufia2ExecutionResult BattleRunActionSubmenu(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    if (!BattleCall(battle, 0xd19au, 0x85ec81u, 3u))
         return BattleChildUnwound(battle);
-    OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xd345u, 0x859c08u, 3u))
-        return BattleChildUnwound(battle);
-    OpSepWidths(cpu, 0x20u);
-scroll:
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
-    cpu->carry = false;
-    OpAdc(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP));
-    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
-    OpAndValue(cpu, 1u);
-    if (!cpu->zero)
-        goto draw_cursor;
-cursor:
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_PENDING_ENTRY));
-    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
-    cpu->carry = true;
-    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY)));
-    OpLsrA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_ROW));
     OpLoadA(cpu, 0u);
-    OpLoadA(cpu, cpu->carry ? 1u : 0u);
-    cpu->carry = false;
-    OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN));
-draw_cursor:
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN));
-    if (!cpu->zero)
-        OpLoadA(cpu, 0x70u);
-    cpu->carry = false;
-    OpAdcValue(cpu, 8u);
-    OpSta(memory, cpu, 0x7e4abeu);
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_ROW));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-    OpLoadA(cpu, 12u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-    OpLoadA(cpu, 0x4eu);
-    OpSta(memory, cpu, 0x7e4ac0u);
-    OpLoadA(cpu, 0x20u);
-    OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
-    OpSta(memory, cpu, 0x7e4abfu);
-    OpLoadA(cpu, 0x30u);
-    OpSta(memory, cpu, 0x7e4ac1u);
-    TransferDirectToA(cpu);
-    OpSta(memory, cpu, 0x7e4ac2u);
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
-    OpCmpValue(cpu, 2u);
-    if (cpu->zero)
-        goto draw_frame;
-    OpLoadA(cpu, 0xecu);
-    OpSta(memory, cpu, 0x7e4ac3u);
-    OpLoadA(cpu, 0x4au);
-    OpSta(memory, cpu, 0x7e4ac5u);
-    OpLoadA(cpu, 0x30u);
-    OpSta(memory, cpu, 0x7e4ac6u);
-    TransferDirectToA(cpu);
-    OpSta(memory, cpu, 0x7e4ac7u);
-    OpLoadA(cpu, 2u);
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
-    OpCmpValue(cpu, 1u);
-    if (cpu->zero) {
-        TransferDirectToA(cpu);
-        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
-        OpTax(cpu);
-        if (!cpu->zero) {
-            OpCmpValue(cpu, 0x18u);
-            if (!cpu->zero) {
-                OpLoadA(cpu, 0x4cu);
-                OpSta(memory, cpu, 0x7e4ac5u);
-            }
-        }
-        OpLda(memory, cpu, OpLongX(cpu, 0xa5db00u));
-    } else {
-        TransferDirectToA(cpu);
-        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
-        OpTax(cpu);
-        if (!cpu->zero) {
-            OpCmpValue(cpu, 0xb4u);
-            if (!cpu->zero) {
-                OpLoadA(cpu, 0x4cu);
-                OpSta(memory, cpu, 0x7e4ac5u);
-            }
-        }
-        OpLda(memory, cpu, OpLongX(cpu, 0xa5d700u));
-    }
-    OpSta(memory, cpu, 0x7e4ac4u);
-draw_frame:
+    if (!BattleCall(battle, 0xd1a0u, 0x81bebcu, 3u) ||
+        !BattleCall(battle, 0xd1a4u, 0x81beedu, 3u))
+        return BattleChildUnwound(battle);
     OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xd444u, 0x859ca9u, 3u))
+    if (!BattleCall(battle, 0xd1aau, 0x859c64u, 3u))
         return BattleChildUnwound(battle);
-    OpLda(memory, cpu, OpDp(cpu, 0x46u));
-    OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffffu));
-    OpSta(memory, cpu, OpDp(cpu, 0x4au));
     OpSepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
-    OpSta(memory, cpu, OpAbs(cpu, 0x1b22u));
-    OpStz(memory, cpu, OpAbs(cpu, 0x1b23u));
-    if (!BattleCall(battle, 0xd459u, 0x81d9d0u, 2u))
+    if (!BattleCall(battle, 0xd1b0u, 0x81def4u, 2u))
         return BattleChildUnwound(battle);
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(battle, 0xd462u, 0x85ec81u, 3u))
+    if (!BattleDrawSubmenuTitle(battle))
         return BattleChildUnwound(battle);
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_PHASE));
-    if (!cpu->zero)
-        goto scroll;
-    OpStz(memory, cpu, OpDp(cpu, SUBMENU_DP_SCROLL_STEP));
-    goto input;
-poll:
-    if (!BattleCall(battle, 0xd472u, 0x81d9d0u, 2u))
-        return BattleChildUnwound(battle);
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(battle, 0xd47bu, 0x85ec81u, 3u))
-        return BattleChildUnwound(battle);
-    goto input;
-accept:
-    TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
-    OpCmpValue(cpu, 2u);
-    if (!cpu->zero) {
-        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
-        OpRepWidths(cpu, 0x20u);
-        OpAslA(cpu);
-        OpAslA(cpu);
-        OpAslA(cpu);
-        OpAslA(cpu);
-        OpTax(cpu);
-        OpSepWidths(cpu, 0x20u);
-    } else {
-        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_SELECTED_ENTRY));
-        OpRepWidths(cpu, 0x20u);
-        OpAslA(cpu);
-        OpAslA(cpu);
-        OpAslA(cpu);
-        PushAccumulator16(memory, cpu);
-        OpAslA(cpu);
-        OpAdc(memory, cpu, OpStack(cpu, 1u));
-        OpTax(cpu);
-        PullAccumulator16(memory, cpu);
-        OpSepWidths(cpu, 0x20u);
-    }
-    OpLda(memory, cpu, OpLongX(cpu, 0x7edf00u));
-    OpCmpValue(cpu, 0u);
-    if (!cpu->zero)
-        goto poll;
-    OpLoadA(cpu, 2u);
-    if (!BattleCall(battle, 0xd4afu, 0x80953bu, 3u))
-        return BattleChildUnwound(battle);
-    TransferDirectToA(cpu);
-    OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
-    OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_IDS));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-    OpLoadA(cpu, 7u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-    TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
-    OpAslA(cpu);
     OpRepWidths(cpu, 0x20u);
-    OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
-    OpTax(cpu);
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
-    OpSta(memory, cpu, OpAbsX(cpu, 0x1363u));
-    OpSepWidths(cpu, 0x20u);
-    TransferDirectToA(cpu);
-    return ExecutionReturned(0x81d4d6u);
-cancel:
-    OpLoadA(cpu, 1u);
-    if (!BattleCall(battle, 0xd4d9u, 0x80953bu, 3u))
+    if (!BattleCall(battle, 0xd21bu, 0x859b67u, 3u))
         return BattleChildUnwound(battle);
-    OpLoadA(cpu, 1u);
-    return ExecutionReturned(0x81d4dfu);
+    OpSepWidths(cpu, 0x20u);
+    if (!BattleCall(battle, 0xd221u, 0x85ec81u, 3u))
+        return BattleChildUnwound(battle);
+    OpLoadA(cpu, 2u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_CGWSEL));
+    OpLoadA(cpu, 0x1fu);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_TM));
+    OpLoadA(cpu, 0x11u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_TS));
+    if (!SubmenuRefresh(battle, true))
+        return BattleChildUnwound(battle);
+    for (;;) {
+        switch (SubmenuInput(battle)) {
+        case SUBMENU_REFRESH:
+            if (!SubmenuRefresh(battle, true))
+                return BattleChildUnwound(battle);
+            break;
+        case SUBMENU_MOVE_CURSOR:
+            if (!SubmenuRefresh(battle, false))
+                return BattleChildUnwound(battle);
+            break;
+        case SUBMENU_POLL:
+            if (!SubmenuPoll(battle))
+                return BattleChildUnwound(battle);
+            break;
+        case SUBMENU_ACCEPTED:
+            return ExecutionReturned(0x81d4d6u);
+        case SUBMENU_CANCELLED:
+            return ExecutionReturned(0x81d4dfu);
+        case SUBMENU_UNWOUND:
+            return BattleChildUnwound(battle);
+        }
+    }
 }
 
 Lufia2ExecutionResult Lufia2BattleActionSubmenuResume(const Lufia2Memory *memory,
