@@ -21,6 +21,10 @@ the metadata, not these counts.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
+The routines that are still `draft` are the ones reconstructed after the last
+verified checkpoint; [RECOMP_ENTRIES.md](RECOMP_ENTRIES.md) lists, per area,
+the address, call kind and modes of each, which is what a consumer needs to
+bind them.
 
 ## Current checkpoint
 
