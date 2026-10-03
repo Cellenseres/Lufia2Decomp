@@ -96,14 +96,15 @@ static Lufia2ActorScriptDispatchResult SecondaryRedispatch(
     LsrA8(cpu);
     TransferAToX(cpu);
     first = JumpProgramTable(memory, cpu, SECONDARY_NIBBLE_TABLE); /* D5D1 */
-    if (first == (0x830000u | SECONDARY_GROUP_F_HANDLER) ||
-        first == (0x830000u | SECONDARY_GROUP_E_HANDLER) ||
-        first == (0x830000u | SECONDARY_GROUP_D_HANDLER)) {
-        const uint16_t table = first == (0x830000u | SECONDARY_GROUP_F_HANDLER)
-                                   ? SECONDARY_GROUP_F_TABLE
-                               : first == (0x830000u | SECONDARY_GROUP_E_HANDLER)
-                                   ? SECONDARY_GROUP_E_TABLE
-                                   : SECONDARY_GROUP_D_TABLE;
+    if (first == (SECONDARY_BANK_83 | SECONDARY_GROUP_F_HANDLER) ||
+        first == (SECONDARY_BANK_83 | SECONDARY_GROUP_E_HANDLER) ||
+        first == (SECONDARY_BANK_83 | SECONDARY_GROUP_D_HANDLER)) {
+        const uint16_t table =
+            first == (SECONDARY_BANK_83 | SECONDARY_GROUP_F_HANDLER)
+                ? SECONDARY_GROUP_F_TABLE
+            : first == (SECONDARY_BANK_83 | SECONDARY_GROUP_E_HANDLER)
+                ? SECONDARY_GROUP_E_TABLE
+                : SECONDARY_GROUP_D_TABLE;
         LoadXDirect16(memory, cpu, 0x2au);
         (void)LoadScriptByteX(memory, cpu);
         And8(cpu, 0x0fu);
@@ -305,12 +306,20 @@ static uint8_t SecondaryFineStep(
     target = Read16ProgramIndexed(memory, cpu, 0xdd18u, cpu->x);
     SimulateJsrFrame(memory, cpu, 0xdccfu);                    /* DCCD */
     switch (target) {
-    case 0xdd24u: pair = 0x7fde3eu; break;
-    case 0xdd20u: pair = 0x7fde3eu; break;
-    case 0xdd32u: pair = 0x7fddaeu; break;
-    case 0xdd36u: pair = 0x7fddaeu; break;
+    case 0xdd24u:
+        pair = WRAM_ACTOR_FINE_Y;
+        break;
+    case 0xdd20u:
+        pair = WRAM_ACTOR_FINE_Y;
+        break;
+    case 0xdd32u:
+        pair = WRAM_ACTOR_FINE_X;
+        break;
+    case 0xdd36u:
+        pair = WRAM_ACTOR_FINE_X;
+        break;
     default:
-        cpu->resume_pc = 0x830000u | target;
+        cpu->resume_pc = SECONDARY_BANK_83 | target;
         return 0;
     }
     if (target == 0xdd20u || target == 0xdd32u) {
