@@ -7,6 +7,9 @@ enum {
     COMMAND_DP_MIN_PRIORITY = 0x24u,
     COMMAND_DP_PALETTE_BANK = 0x24u,
     COMMAND_DP_CURSOR_POSITION = 0x26u,
+    COMMAND_DP_STAGED_ACTION = 0x54u,
+    COMMAND_DP_BATTLER_OFFSET = 0xd5u,
+    COMMAND_STAGED_ACTIONS = 0x96ffecu,
     FORMATION_CURSOR_POSITIONS = 0xb576u,
     FORMATION_LAYOUT = 0x97b55eu,
     FORMATION_MEMBER_VALUES = 0xb411u,
@@ -514,6 +517,26 @@ static CommandStep BattleSwapPartyOrder(BattleContext *battle, uint32_t *handoff
     return COMMAND_SELECT;
 }
 
+/* Makes the party slot in X the current one: stores it, finds the member's
+ * battler offset (kept in DP $D5 when asked) and tests its status for
+ * conditions that stop it from taking a command. The zero flag is set when the
+ * member can act. */
+static void CommandSelectPartySlot(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                   bool store_offset) {
+    OpRepWidths(cpu, 0x20u);
+    OpTxa(cpu);
+    OpSta(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
+    OpAslA(cpu);
+    OpTay(cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS));
+    if (store_offset)
+        OpSta(memory, cpu, OpDp(cpu, COMMAND_DP_BATTLER_OFFSET));
+    OpTay(cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
+    OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND_MASK);
+    OpSepWidths(cpu, 0x20u);
+}
+
 /* Asks every party member in turn for a command. Backing out of a member's
  * menu returns to the previous member that can still act; backing out of the
  * first returns to the command menu. */
@@ -526,17 +549,7 @@ static CommandStep BattlePartyCommands(BattleContext *battle) {
         bool back;
 
         OpPushX(memory, cpu);
-        OpRepWidths(cpu, 0x20u);
-        OpTxa(cpu);
-        OpSta(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
-        OpAslA(cpu);
-        OpTay(cpu);
-        OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS));
-        OpSta(memory, cpu, OpDp(cpu, 0xd5u));
-        OpTay(cpu);
-        OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
-        OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND_MASK);
-        OpSepWidths(cpu, 0x20u);
+        CommandSelectPartySlot(memory, cpu, true);
         if (!cpu->zero) {
             /* This member cannot act. */
             OpPullX(memory, cpu);
@@ -545,9 +558,9 @@ static CommandStep BattlePartyCommands(BattleContext *battle) {
             TransferDirectToA(cpu);
             OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
             OpTax(cpu);
-            OpLda(memory, cpu, OpLongX(cpu, 0x96ffecu));
+            OpLda(memory, cpu, OpLongX(cpu, COMMAND_STAGED_ACTIONS));
             OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_STAGED_ACTION));
-            OpSta(memory, cpu, OpDp(cpu, 0x54u));
+            OpSta(memory, cpu, OpDp(cpu, COMMAND_DP_STAGED_ACTION));
             OpPushX(memory, cpu);
             if (!BattleCall(battle, 0xcab8u, 0x85937du, 3u))
                 return COMMAND_UNWOUND;
@@ -563,16 +576,7 @@ static CommandStep BattlePartyCommands(BattleContext *battle) {
                 OpDex(cpu);
                 if (cpu->negative)
                     return COMMAND_RESTART;
-                OpRepWidths(cpu, 0x20u);
-                OpTxa(cpu);
-                OpSta(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
-                OpAslA(cpu);
-                OpTay(cpu);
-                OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS));
-                OpTay(cpu);
-                OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
-                OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND_MASK);
-                OpSepWidths(cpu, 0x20u);
+                CommandSelectPartySlot(memory, cpu, false);
                 if (cpu->zero)
                     break;
             }
