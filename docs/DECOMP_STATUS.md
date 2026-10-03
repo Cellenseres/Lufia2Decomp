@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-382 functions in `metadata/functions.toml`: 366 verified, 16 draft, 0 identified, 0 disabled.
+391 functions in `metadata/functions.toml`: 366 verified, 25 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -759,6 +759,24 @@ reconstructions in the same file, entered with M0X0 only. They are compared
 on random objects, counters near the byte boundary of the high table and
 several data banks, including the stack frames of the helper's indirect
 call.
+
+The rest of the world map object pass is `draft` as well, so the whole
+per-frame pass `$86:E1B9` (hide the sprites, clear the slot flags, build the
+visible list, sort it, draw it and then draw the later users of each shared
+tile block pattern) runs natively: `$86:E686` (insertion sort of the visible
+list), `$86:E3AB` with its dispatch `$86:E3D2` (the objects in sorted order,
+then the player object), `$86:E430` (find or add the sprite pattern slot of an
+object), `$86:E479` and `$86:E4E7` (the single-sprite variants of the pair
+writer), `$86:E2D2` (the visibility test of the tilted map view) and
+`$86:A5A9` (the 32-bit by 16-bit division it uses). They need M0X0, except
+`$86:E1B9` which needs M1X0, and the division, which keeps the caller's
+widths; other entry states are handed back. An object kind beyond the three
+known ones hands the original indirect dispatch back at its call, with the
+stack frames of the routines above it already in place, so the original code
+finishes the pass. They are compared against the original ROM code for CPU
+state, work RAM, ordered writes and stack frames, on random object tables, slot
+pools near their limits, camera positions at the screen edge and the horizon
+limit of the tilted view.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary

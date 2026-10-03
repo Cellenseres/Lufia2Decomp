@@ -3173,3 +3173,76 @@ source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "draft"
+
+# World map object list: sorting, pattern slots and drawing by kind.
+[[function]]
+address = "86:E479"
+name = "Lufia2WorldMapDrawSprite"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:E4E7"
+name = "Lufia2WorldMapDrawSmallSprite"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:E686"
+name = "Lufia2WorldMapSortVisible"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:E430"
+name = "Lufia2WorldMapAssignSlot"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:E3D2"
+name = "Lufia2WorldMapDrawObjectByKind"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:E3AB"
+name = "Lufia2WorldMapDrawObjects"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:A5A9"
+name = "Lufia2WorldMapDivide32"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:E2D2"
+name = "Lufia2WorldMapProjectObjects"
+source = "src/world/world_map_objects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:E1B9"
+name = "Lufia2WorldMapUpdateObjects"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
