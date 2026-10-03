@@ -68,6 +68,46 @@ static void CaveClearGrid(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpCpx(cpu, CAVE_GRID_BYTES);
 }
 
+/* $83:9077-$83:90BB: file item Y into list A or B when it qualifies. */
+static void CaveListItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                         Lufia2Wram wram, Lufia2Wram work, Lufia2Wram records) {
+    const uint16_t item = cpu->y;
+    uint16_t record;
+    uint8_t list_end;
+
+    OpRepWidths(cpu, 0x20u); /* 9077 */
+    LoadA16(cpu, WramRead16At(records, ITEM_RECORD_TABLE, item));
+    TransferAToX(cpu);
+    record = cpu->x;
+    OpSepWidths(cpu, 0x20u);
+    LoadA8(cpu, WramReadAt(records, ITEM_RECORD_TABLE + ITEM_RECORD_FLAGS, record));
+    OpBitValue(cpu, ITEM_FLAG_FIELD_USABLE);
+    if (cpu->zero)
+        return;
+    OpBitValue(cpu, ITEM_FLAG_EXCLUDED);
+    if (!cpu->zero)
+        return;
+    LoadA8(cpu, WramReadAt(records, ITEM_RECORD_TABLE + ITEM_RECORD_FLAGS2, record));
+    OpBitValue(cpu, ITEM_FLAG_EXCLUDED);
+    if (!cpu->zero)
+        return;
+    OpRepWidths(cpu, 0x20u); /* 9091 */
+    LoadA16(cpu, WramRead16At(records, ITEM_RECORD_TABLE + ITEM_RECORD_PRICE, record));
+    OpCmp(memory, cpu, OpDp(cpu, CAVE_DP_PRICE_LIMIT));
+    if (cpu->carry)
+        return;
+    LoadA16(cpu, WramRead16At(records, ITEM_RECORD_TABLE + ITEM_RECORD_USE, record));
+    OpBitValue(cpu, ITEM_USE_LIST_B);
+    list_end = cpu->zero ? CAVE_DP_LIST_B_END : CAVE_DP_LIST_A_END; /* 90A2/90B0 */
+    LoadX16(cpu, WramRead16(wram, list_end));
+    OpTya(cpu);
+    OpLsrA(cpu);
+    WramWrite16At(work, CAVE_ITEM_LISTS_LONG, cpu->x, cpu->accumulator);
+    OpInx(cpu);
+    OpInx(cpu);
+    WramWrite16(wram, list_end, cpu->x);
+}
+
 /* $83:9034-$83:90C3: sort the item records that are allowed on this floor into
  * two lists in bank $7F. A record qualifies when it is a field item, is not
  * excluded, and its price is below the floor's limit (1000 per floor up to
@@ -77,7 +117,6 @@ static void CaveCollectItems(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     const Lufia2Wram work = WramViewLong(memory);
     Lufia2Wram records;
-    uint16_t item;
 
     OpSepWidths(cpu, 0x20u);                                         /* 9034 */
     OpSetDataBank(memory, cpu, ITEM_RECORD_BANK);
@@ -111,45 +150,7 @@ static void CaveCollectItems(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
     cpu->y = 0; /* 9074 */
     do {
-        uint16_t record;
-        uint8_t list_end;
-
-        item = cpu->y;
-        OpRepWidths(cpu, 0x20u);                                     /* 9077 */
-        LoadA16(cpu, WramRead16At(records, ITEM_RECORD_TABLE, item));
-        TransferAToX(cpu);
-        record = cpu->x;
-        OpSepWidths(cpu, 0x20u);
-        LoadA8(cpu, WramReadAt(records, ITEM_RECORD_TABLE + ITEM_RECORD_FLAGS, record));
-        OpBitValue(cpu, ITEM_FLAG_FIELD_USABLE);
-        if (cpu->zero)
-            goto next;
-        OpBitValue(cpu, ITEM_FLAG_EXCLUDED);
-        if (!cpu->zero)
-            goto next;
-        LoadA8(cpu,
-               WramReadAt(records, ITEM_RECORD_TABLE + ITEM_RECORD_FLAGS2, record));
-        OpBitValue(cpu, ITEM_FLAG_EXCLUDED);
-        if (!cpu->zero)
-            goto next;
-        OpRepWidths(cpu, 0x20u);                                     /* 9091 */
-        LoadA16(cpu,
-                WramRead16At(records, ITEM_RECORD_TABLE + ITEM_RECORD_PRICE, record));
-        OpCmp(memory, cpu, OpDp(cpu, CAVE_DP_PRICE_LIMIT));
-        if (cpu->carry)
-            goto next;
-        LoadA16(cpu,
-                WramRead16At(records, ITEM_RECORD_TABLE + ITEM_RECORD_USE, record));
-        OpBitValue(cpu, ITEM_USE_LIST_B);
-        list_end = cpu->zero ? CAVE_DP_LIST_B_END : CAVE_DP_LIST_A_END; /* 90A2/90B0 */
-        LoadX16(cpu, WramRead16(wram, list_end));
-        OpTya(cpu);
-        OpLsrA(cpu);
-        WramWrite16At(work, CAVE_ITEM_LISTS_LONG, cpu->x, cpu->accumulator);
-        OpInx(cpu);
-        OpInx(cpu);
-        WramWrite16(wram, list_end, cpu->x);
-next:
+        CaveListItem(memory, cpu, wram, work, records);
         OpSepWidths(cpu, 0x20u);                                     /* 90BC */
         OpIny(cpu);
         OpIny(cpu);
@@ -157,21 +158,10 @@ next:
     } while (!cpu->carry);
 }
 
-/* $83:90C5-$83:9141: the optional first chests. Y is the next chest slot (two
- * bytes each) and is advanced when a chest is placed.
- *
- * A one in five roll may place a story item chest: a random one of nine, once
- * per game (tracked in the seen bits) and only while its game flag is clear. Failing
- * that, the first time on a floor below 21 a chest with the spell scroll
- * (word $022D) may appear, with a chance that falls as the floor rises. */
-static void CaveFirstChests(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    const Lufia2Wram work = WramViewLong(memory);
-    Lufia2Wram cave;
-
-    OpSetDataBank(memory, cpu, 0x7fu);                         /* 90C5 */
-    cave = WramViewInBank(memory, cpu, 0x7fu);
-    LoadY16(cpu, 0);
+/* $83:90C5-$83:9115: try to place one of the story chests; true when it took
+ * the chest slot. */
+static bool CaveStoryChest(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                           Lufia2Wram wram, Lufia2Wram work, Lufia2Wram cave) {
     TransferDirectToA(cpu);
     WramWrite(cave, CAVE_STORY_CHEST_STATE, A8(cpu));
     CaveRandomByte(memory, cpu, 0x90d0u);
@@ -206,30 +196,57 @@ static void CaveFirstChests(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                 OpSepWidths(cpu, 0x20u);
                 LoadA8(cpu, CAVE_STORY_CHEST_PLACED);
                 WramWrite(cave, CAVE_STORY_CHEST_STATE, A8(cpu));
-                goto take_slot;
+                return true;
             }
         }
     }
+    return false;
+}
+
+/* $83:9116-$83:913F: the spell-scroll chest on low floors; true when it took
+ * the chest slot. */
+static bool CaveScrollChest(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            Lufia2Wram work, Lufia2Wram cave) {
     LoadA8(cpu, WramRead(work, CAVE_SCROLL_CHEST_STATE_LONG)); /* 9116 */
     if (cpu->negative)
-        return;
+        return false;
     TransferDirectToA(cpu);
     WramWrite(work, CAVE_SCROLL_CHEST_STATE_LONG, A8(cpu));
     LoadA8(cpu, WramRead(work, CAVE_FLOOR_LONG));
     OpCmpValue(cpu, CAVE_SCROLL_CHEST_FLOOR_LIMIT);
     if (!cpu->carry)
-        return;
+        return false;
     LoadA8(cpu, CAVE_SCROLL_CHEST_CHANCE); /* 9129 */
     Lufia2CaveRandomBelow(memory, cpu, 0x912bu);
     OpCmp(memory, cpu, CAVE_FLOOR_LONG);
     if (cpu->carry)
-        return;
+        return false;
     LoadX16(cpu, CAVE_SCROLL_CHEST_WORD); /* 9134 */
     WramWrite16(cave, CAVE_CHEST_WORDS, cpu->x);
     LoadA8(cpu, 0x01u);
     WramWrite(work, CAVE_SCROLL_CHEST_STATE_LONG, A8(cpu));
-take_slot:
-    OpIny(cpu);                                                /* 9140 */
+    return true;
+}
+
+/* $83:90C5-$83:9141: the optional first chests. Y is the next chest slot (two
+ * bytes each) and is advanced when a chest is placed.
+ *
+ * A one in five roll may place a story item chest: a random one of nine, once
+ * per game (tracked in the seen bits) and only while its game flag is clear. Failing
+ * that, the first time on a floor below 21 a chest with the spell scroll
+ * (word $022D) may appear, with a chance that falls as the floor rises. */
+static void CaveFirstChests(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram work = WramViewLong(memory);
+    Lufia2Wram cave;
+
+    OpSetDataBank(memory, cpu, 0x7fu); /* 90C5 */
+    cave = WramViewInBank(memory, cpu, 0x7fu);
+    LoadY16(cpu, 0);
+    if (!CaveStoryChest(memory, cpu, wram, work, cave) &&
+        !CaveScrollChest(memory, cpu, work, cave))
+        return;
+    OpIny(cpu); /* 9140 */
     OpIny(cpu);
 }
 
@@ -303,46 +320,51 @@ static void CaveSpellChest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     WramWriteAt(wram, CAVE_CHEST_WORDS + 1u, cpu->y, A8(cpu));
 }
 
+/* One chest roll: draw a byte and fill the chest word for the first kind it
+ * reaches. */
+static void CaveChestRoll(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    CaveRandomByte(memory, cpu, 0x9142u); /* 9142 */
+    OpCmpValue(cpu, CAVE_ROLL_LIST_A);
+    if (cpu->carry) {
+        CaveChestFromList(memory, cpu, 0x0000u, CAVE_DP_LIST_A_END); /* 916F */
+        return;
+    }
+    OpCmpValue(cpu, CAVE_ROLL_LIST_B);
+    if (cpu->carry) {
+        CaveChestFromList(memory, cpu, CAVE_ITEM_LIST_B_BASE,
+                          CAVE_DP_LIST_B_END); /* 9176 */
+        return;
+    }
+    OpCmpValue(cpu, CAVE_ROLL_SPELL);
+    if (cpu->carry) {
+        CaveSpellChest(memory, cpu);
+        return;
+    }
+    OpCmpValue(cpu, CAVE_ROLL_EQUIPMENT);
+    if (cpu->carry) {
+        LoadA8(cpu, CAVE_EQUIPMENT_COUNT); /* 91C8 */
+        Lufia2CaveRandomIndex(memory, cpu, 0x91cau);
+        CaveChestFromTable(memory, cpu, CAVE_EQUIPMENT_TABLE,
+                           CAVE_CHEST_EQUIPMENT_MARK);
+        return;
+    }
+    OpCmpValue(cpu, CAVE_ROLL_COMMON);
+    if (cpu->carry) {
+        CaveCommonChest(memory, cpu); /* 91AD */
+        return;
+    }
+    LoadA8(cpu, CAVE_CONSUMABLE_COUNT); /* 915A */
+    Lufia2CaveRandomIndex(memory, cpu, 0x915cu);
+    CaveChestFromTable(memory, cpu, CAVE_CONSUMABLE_TABLE, 0);
+}
+
 /* $83:9142-$83:91E4: fill the eight chest words. Each draws a random byte and
  * takes the first matching kind: the top rolls pick from the two item lists,
  * then a spell scroll, a piece of equipment, a common item, and last a
  * consumable. */
 static void CaveChestContents(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     do {
-        CaveRandomByte(memory, cpu, 0x9142u);                  /* 9142 */
-        OpCmpValue(cpu, CAVE_ROLL_LIST_A);
-        if (cpu->carry) {
-            CaveChestFromList(memory, cpu, 0x0000u, CAVE_DP_LIST_A_END); /* 916F */
-            goto next;
-        }
-        OpCmpValue(cpu, CAVE_ROLL_LIST_B);
-        if (cpu->carry) {
-            CaveChestFromList(memory, cpu, CAVE_ITEM_LIST_B_BASE,
-                              CAVE_DP_LIST_B_END); /* 9176 */
-            goto next;
-        }
-        OpCmpValue(cpu, CAVE_ROLL_SPELL);
-        if (cpu->carry) {
-            CaveSpellChest(memory, cpu);
-            goto next;
-        }
-        OpCmpValue(cpu, CAVE_ROLL_EQUIPMENT);
-        if (cpu->carry) {
-            LoadA8(cpu, CAVE_EQUIPMENT_COUNT); /* 91C8 */
-            Lufia2CaveRandomIndex(memory, cpu, 0x91cau);
-            CaveChestFromTable(memory, cpu, CAVE_EQUIPMENT_TABLE,
-                               CAVE_CHEST_EQUIPMENT_MARK);
-            goto next;
-        }
-        OpCmpValue(cpu, CAVE_ROLL_COMMON);
-        if (cpu->carry) {
-            CaveCommonChest(memory, cpu);                      /* 91AD */
-            goto next;
-        }
-        LoadA8(cpu, CAVE_CONSUMABLE_COUNT); /* 915A */
-        Lufia2CaveRandomIndex(memory, cpu, 0x915cu);
-        CaveChestFromTable(memory, cpu, CAVE_CONSUMABLE_TABLE, 0);
-next:
+        CaveChestRoll(memory, cpu);
         OpIny(cpu);                                            /* 91DD */
         OpIny(cpu);
         OpCpy(cpu, CAVE_CHEST_WORD_BYTES);
@@ -1167,6 +1189,77 @@ static uint8_t CaveReadDecorations(
     return 1;
 }
 
+/* One tile of a decorated block. With odds of 48 in 256 a tile that matches a
+ * set's source tile is swapped for a random variant of that set; the
+ * accumulator is left as the code left it on every path. */
+static void CaveDecorateTile(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             Lufia2Wram wram, uint32_t layer1, uint32_t layer2,
+                             uint16_t tile) {
+    uint16_t index;
+    uint16_t set;
+
+    /* The accumulator keeps whatever the previous tile left
+     * in its high byte, and the 16-bit odds comparison
+     * sees it, so every path below leaves it as the code
+     * did. */
+    cpu->y = tile;
+    CaveRandomByte(memory, cpu, 0x988du);
+    if (cpu->accumulator >= CAVE_DECORATION_ODDS)
+        return;
+    index = WramRead16At(wram, layer2, tile) & CAVE_TILE_INDEX_MASK;
+    if (index != 0u) {
+        cpu->accumulator = index;
+        return;
+    }
+    index = WramRead16At(wram, layer1, tile) & CAVE_TILE_INDEX_MASK;
+    WramWrite16(wram, CAVE_DP_TILE_BITS, index);
+    for (set = 0; index != WramRead16At(wram, CAVE_SET_TABLE + 0x100u, set);
+         set = (uint16_t)(set + CAVE_SET_SIZE)) {
+        if (set + CAVE_SET_SIZE >= CAVE_DECORATION_SETS * CAVE_SET_SIZE) {
+            cpu->accumulator = (uint16_t)(set + CAVE_SET_SIZE);
+            cpu->x = cpu->accumulator;
+            return;
+        }
+    }
+    cpu->x = set;
+    {
+        /* A random variant of the set: its first byte is the
+         * variant count, its second the extra rows. */
+        uint8_t variant;
+
+        WramWrite16(wram, CAVE_DP_TILE_BITS, set);
+        OpSepWidths(cpu, 0x20u);
+        WramWrite(wram, CAVE_DP_EXTRA_ROWS, WramReadAt(wram, CAVE_SET_TABLE + 1u, set));
+        WramWrite(wram, CAVE_DP_EXTRA_ROWS + 1u, 0u);
+        variant = (uint8_t)(CaveRandomBelowOf(memory, cpu, 0x98cbu,
+                                              WramReadAt(wram, CAVE_SET_TABLE, set)) +
+                            1u);
+        OpRepWidths(cpu, 0x20u);
+        set = (uint16_t)((variant << 8) + set);
+        cpu->x = set;
+    }
+    WramWrite16At(wram, layer1, tile,
+                  (uint16_t)((WramRead16At(wram, layer1, tile) & CAVE_TILE_FLAG_MASK) |
+                             WramRead16At(wram, CAVE_SET_TABLE, set)));
+    WramWrite16At(wram, layer2, tile,
+                  (uint16_t)((WramRead16At(wram, layer2, tile) & CAVE_TILE_FLAG_MASK) |
+                             WramRead16At(wram, CAVE_SET_TABLE + 4u, set)));
+    if (WramRead16(wram, CAVE_DP_EXTRA_ROWS) == 0u) {
+        cpu->accumulator = 0u;
+    } else {
+        WramWrite16At(
+            wram, layer1 + CAVE_MAP_ROW_BYTES, tile,
+            (uint16_t)((WramRead16At(wram, layer1 + CAVE_MAP_ROW_BYTES, tile) &
+                        CAVE_TILE_FLAG_MASK) |
+                       WramRead16At(wram, CAVE_SET_TABLE + 2u, set)));
+        cpu->accumulator =
+            (uint16_t)((WramRead16At(wram, layer2 + CAVE_MAP_ROW_BYTES, tile) &
+                        CAVE_TILE_FLAG_MASK) |
+                       WramRead16At(wram, CAVE_SET_TABLE + 6u, set));
+        WramWrite16At(wram, layer2 + CAVE_MAP_ROW_BYTES, tile, cpu->accumulator);
+    }
+}
+
 /* $83:9869-$83:992F: scatter decorations over every occupied cell's block. A
  * tile that matches a set's source tile is, with odds of 48 in 256, swapped
  * for a random variant of that set, on both map layers and on the row below
@@ -1199,83 +1292,10 @@ static void CaveDecorate(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                 LoadA16(cpu, CAVE_BLOCK_TILE_SPAN);
                 WramWrite16(wram, CAVE_DP_TILE_COUNT, CAVE_BLOCK_TILE_SPAN);
                 for (;;) {
-                    uint16_t index;
-                    uint16_t set;
-
-                    /* The accumulator keeps whatever the previous tile left
-                     * in its high byte, and the 16-bit odds comparison
-                     * sees it, so every path below leaves it as the code
-                     * did. */
-                    cpu->y = tile;
-                    CaveRandomByte(memory, cpu, 0x988du);
-                    if (cpu->accumulator >= CAVE_DECORATION_ODDS)
-                        goto step;
-                    index = WramRead16At(wram, layer2, tile) & CAVE_TILE_INDEX_MASK;
-                    if (index != 0u) {
-                        cpu->accumulator = index;
-                        goto step;
-                    }
-                    index = WramRead16At(wram, layer1, tile) & CAVE_TILE_INDEX_MASK;
-                    WramWrite16(wram, CAVE_DP_TILE_BITS, index);
-                    for (set = 0;
-                         index != WramRead16At(wram, CAVE_SET_TABLE + 0x100u, set);
-                         set = (uint16_t)(set + CAVE_SET_SIZE)) {
-                        if (set + CAVE_SET_SIZE >=
-                            CAVE_DECORATION_SETS * CAVE_SET_SIZE) {
-                            cpu->accumulator = (uint16_t)(set + CAVE_SET_SIZE);
-                            cpu->x = cpu->accumulator;
-                            goto step;
-                        }
-                    }
-                    cpu->x = set;
-                    {
-                        /* A random variant of the set: its first byte is the
-                         * variant count, its second the extra rows. */
-                        uint8_t variant;
-
-                        WramWrite16(wram, CAVE_DP_TILE_BITS, set);
-                        OpSepWidths(cpu, 0x20u);
-                        WramWrite(wram, CAVE_DP_EXTRA_ROWS,
-                                  WramReadAt(wram, CAVE_SET_TABLE + 1u, set));
-                        WramWrite(wram, CAVE_DP_EXTRA_ROWS + 1u, 0u);
-                        variant = (uint8_t)(CaveRandomBelowOf(
-                                                memory, cpu, 0x98cbu,
-                                                WramReadAt(wram, CAVE_SET_TABLE, set)) +
-                                            1u);
-                        OpRepWidths(cpu, 0x20u);
-                        set = (uint16_t)((variant << 8) + set);
-                        cpu->x = set;
-                    }
-                    WramWrite16At(wram, layer1, tile,
-                                  (uint16_t)((WramRead16At(wram, layer1, tile) &
-                                              CAVE_TILE_FLAG_MASK) |
-                                             WramRead16At(wram, CAVE_SET_TABLE, set)));
-                    WramWrite16At(
-                        wram, layer2, tile,
-                        (uint16_t)((WramRead16At(wram, layer2, tile) &
-                                    CAVE_TILE_FLAG_MASK) |
-                                   WramRead16At(wram, CAVE_SET_TABLE + 4u, set)));
-                    if (WramRead16(wram, CAVE_DP_EXTRA_ROWS) == 0u) {
-                        cpu->accumulator = 0u;
-                    } else {
-                        WramWrite16At(
-                            wram, layer1 + CAVE_MAP_ROW_BYTES, tile,
-                            (uint16_t)((WramRead16At(wram, layer1 + CAVE_MAP_ROW_BYTES,
-                                                     tile) &
-                                        CAVE_TILE_FLAG_MASK) |
-                                       WramRead16At(wram, CAVE_SET_TABLE + 2u, set)));
-                        cpu->accumulator =
-                            (uint16_t)((WramRead16At(wram, layer2 + CAVE_MAP_ROW_BYTES,
-                                                     tile) &
-                                        CAVE_TILE_FLAG_MASK) |
-                                       WramRead16At(wram, CAVE_SET_TABLE + 6u, set));
-                        WramWrite16At(wram, layer2 + CAVE_MAP_ROW_BYTES, tile,
-                                      cpu->accumulator);
-                    }
-step:
-    if (WramStep16(wram, CAVE_DP_TILE_COUNT, -1) == 0u)
-        break;
-    tile = (uint16_t)(tile + 2u);
+                    CaveDecorateTile(memory, cpu, wram, layer1, layer2, tile);
+                    if (WramStep16(wram, CAVE_DP_TILE_COUNT, -1) == 0u)
+                        break;
+                    tile = (uint16_t)(tile + 2u);
 }
 if (WramStep16(wram, CAVE_DP_ROW_COUNT, -1) == 0u)
     break;
