@@ -94,6 +94,11 @@ Lufia2ExecutionResult Lufia2PartyStatTotals(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:F481 member totals worked out on a copy; keeps A, X, Y, P; JSL. */
+Lufia2ExecutionResult Lufia2PartyStatTotalsOfCopy(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $81:F4E9 far call of $81:F4ED; M1X0. */
 Lufia2ExecutionResult Lufia2PartyStatTotalsFar(
     const Lufia2Memory *memory,

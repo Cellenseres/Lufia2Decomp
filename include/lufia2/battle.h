@@ -292,6 +292,12 @@ Lufia2ExecutionResult Lufia2BattleEffectVelocity(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:BCCC copies tile rows into the two buffers at $7E:X and $7E:X+$200;
+ * M8/X16, JSL. */
+Lufia2ExecutionResult Lufia2BattleBlitTileRows(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $85:ECF0 per-frame battle upkeep. */
 Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     const Lufia2Memory *memory,

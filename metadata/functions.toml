@@ -3764,3 +3764,44 @@ source = "src/field/field_object_flags.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# World scroll step, tile blit and member totals copy
+[[function]]
+address = "86:A583"
+name = "Lufia2WorldProduct16By8"
+source = "src/world/world_scroll_step.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:A417"
+name = "Lufia2WorldStepOffsets"
+source = "src/world/world_scroll_step.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:995B"
+name = "Lufia2WorldScrollAdvance"
+source = "src/world/world_scroll_step.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "81:BCCC"
+name = "Lufia2BattleBlitTileRows"
+source = "src/battle/battle_tile_blit.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "81:F481"
+name = "Lufia2PartyStatTotalsOfCopy"
+source = "src/party/stats.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"

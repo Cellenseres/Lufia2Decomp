@@ -56,6 +56,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_background_internal.c
     src/battle/battle_background_wave.c
     src/battle/battle_effect_ops.c
+    src/battle/battle_tile_blit.c
     src/menu/menu_image_load.c
     src/field/field_object_flags.c
     src/system/block_move.c
@@ -179,6 +180,7 @@ add_library(lufia2_decomp STATIC
     src/world/world_map.c
     src/world/world_map_plane.c
     src/world/world_plane_rows.c
+    src/world/world_scroll_step.c
     src/world/world_map_objects.c)
 add_library(Lufia2::Decomp ALIAS lufia2_decomp)
 target_link_libraries(lufia2_decomp PUBLIC Lufia2::ResourceFormat)
