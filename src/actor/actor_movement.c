@@ -355,12 +355,12 @@ void Lufia2ActorMoveFinePosition(
     Write16Long(
         memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x), cpu->accumulator);
     PrimaryFineToTile(cpu);                                    /* FA95 */
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     Lufia2ActorAddSignedPair(memory, cpu, WRAM_ACTOR_FINE_Y, 0x0002u, 0xfaa6u);
     PrimaryFineToTile(cpu);                                    /* FAB0 */
     LoadYDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* FAB9 */
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->y);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->y);
     SetAccumulatorWidth(cpu, 0);                               /* FAC3 */
     LoadA16(cpu, Read16Direct(memory, cpu, 0x2au));

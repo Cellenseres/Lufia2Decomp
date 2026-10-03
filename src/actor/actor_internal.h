@@ -135,6 +135,10 @@ enum {
 /* Second plane the occupancy of blocking actors is also recorded in. */
 #define MAP_BLOCKING_ATTRIBUTES 0x7e4001u
 
+/* Direct page scratch bytes the actor and object routines use to hold an
+ * operand, a coordinate or an intermediate result within one handler. */
+enum { DP_SCRATCH_A = 0x54, DP_SCRATCH_B = 0x55, DP_SCRATCH_C = 0x56 };
+
 /* Secondary script operand bytes, relative to the opcode byte. */
 enum {
     SECONDARY_OPCODE_BYTE = 0x0000,
