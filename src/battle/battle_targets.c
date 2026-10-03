@@ -25,9 +25,9 @@ enum {
                                (BATTLE_ENEMY_COUNT - 2u) * BATTLE_TARGET_RECORD_SIZE,
 };
 
-static bool TargetBuildSelectionRecords(BattleContext *battle) {
-    const Lufia2Memory *memory = battle->memory;
-    Lufia2CpuState *cpu = battle->cpu;
+/* Clears every selection record, then fills the party records from the party
+ * table and marks the capsule record unavailable. */
+static void TargetBuildPartyRecords(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
     OpLdx(cpu, 0u);
     OpLoadA(cpu, BATTLE_PARTY_TARGET_COUNT + 1u + BATTLE_ENEMY_COUNT);
@@ -62,6 +62,13 @@ static bool TargetBuildSelectionRecords(BattleContext *battle) {
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, OpAbs(cpu, TARGET_CAPSULE_UNAVAILABLE));
     TransferDirectToA(cpu);
+}
+
+/* Fills the enemy records: each unavailable flag is the complement of the child's
+ * result, the two bytes after it are copied from DP $22/$23. */
+static bool TargetBuildEnemyRecords(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
     OpLdx(cpu, 0u);
     OpTxy(cpu);
     do {
@@ -88,6 +95,11 @@ static bool TargetBuildSelectionRecords(BattleContext *battle) {
         OpCmpValue(cpu, BATTLE_ENEMY_COUNT);
     } while (!cpu->zero);
     return true;
+}
+
+static bool TargetBuildSelectionRecords(BattleContext *battle) {
+    TargetBuildPartyRecords(battle->memory, battle->cpu);
+    return TargetBuildEnemyRecords(battle);
 }
 
 static void TargetClearName(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -157,6 +169,83 @@ static void TargetPublishSelectionMask(const Lufia2Memory *memory, Lufia2CpuStat
     OpSta(memory, cpu, 0x0012f3u);
 }
 
+/* Draws the cursor for a single target: its name goes into the name buffer and
+ * the pointer position is staged in the hardware registers the original used
+ * as scratch. */
+static bool TargetPlaceCursor(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    if (!BattleCall(battle, 0xd5b4u, 0x81d920u, 2u))
+        return false;
+    OpPushX(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+    OpAslA(cpu);
+    OpTax(cpu);
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpLongX(cpu, 0x859ec8u));
+    OpTay(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, 0x4abeu));
+    OpAndValue(cpu, 0xffu);
+    OpLsrA(cpu);
+    OpLsrA(cpu);
+    OpCmpValue(cpu, 38u);
+    if (cpu->carry)
+        OpLoadA(cpu, 36u);
+    cpu->carry = false;
+    OpAdcValue(cpu, 0x3840u);
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpDp(cpu, 0x5fu));
+    OpLoadA(cpu, 0x20u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
+    if (!BattleCall(battle, 0xd5e3u, 0x808878u, 3u))
+        return false;
+    OpLda(memory, cpu, OpAbs(cpu, 0x4abeu));
+    OpCmpValue(cpu, 0x98u);
+    if (cpu->carry)
+        OpLoadA(cpu, 0x90u);
+    OpDecA(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_NMITIMEN));
+    OpDecA(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+    cpu->carry = false;
+    OpAdcValue(cpu, 0x68u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRIO));
+    OpIncA(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+    OpPullX(memory, cpu);
+    return true;
+}
+
+/* On the visible blink phase, calls the marker child for every selected
+ * available record. */
+static bool TargetDrawMarkers(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
+    if (cpu->zero) {
+        OpLdy(cpu, 0u);
+        OpLoadA(cpu, BATTLE_PARTY_TARGET_COUNT + 1u + BATTLE_ENEMY_COUNT);
+        OpSta(memory, cpu, OpDp(cpu, TARGET_DP_RECORDS_LEFT));
+        do {
+            OpLda(memory, cpu, OpAbsY(cpu, TARGET_PARTY_UNAVAILABLE));
+            if (cpu->zero) {
+                OpLda(memory, cpu, OpAbsY(cpu, TARGET_PARTY_SELECTED));
+                if (!cpu->zero && !BattleCall(battle, 0xd618u, 0x81d948u, 2u))
+                    return false;
+            }
+            OpIny(cpu);
+            OpIny(cpu);
+            OpIny(cpu);
+            OpIny(cpu);
+            OpStepMem(memory, cpu, OpDp(cpu, TARGET_DP_RECORDS_LEFT), -1);
+        } while (!cpu->zero);
+    }
+    return true;
+}
+
+/* Redraws the target cursor and markers for the current selection. */
 static bool TargetDrawSelection(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -177,66 +266,11 @@ static bool TargetDrawSelection(BattleContext *battle) {
         if (!BattleCall(battle, 0xd5afu, 0x81d92cu, 2u))
             return false;
     } else {
-        if (!BattleCall(battle, 0xd5b4u, 0x81d920u, 2u))
+        if (!TargetPlaceCursor(battle))
             return false;
-        OpPushX(memory, cpu);
-        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-        OpAslA(cpu);
-        OpTax(cpu);
-        OpRepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpLongX(cpu, 0x859ec8u));
-        OpTay(cpu);
-        OpLda(memory, cpu, OpAbs(cpu, 0x4abeu));
-        OpAndValue(cpu, 0xffu);
-        OpLsrA(cpu);
-        OpLsrA(cpu);
-        OpCmpValue(cpu, 38u);
-        if (cpu->carry)
-            OpLoadA(cpu, 36u);
-        cpu->carry = false;
-        OpAdcValue(cpu, 0x3840u);
-        OpTax(cpu);
-        OpSepWidths(cpu, 0x20u);
-        OpLoadA(cpu, 0x7eu);
-        OpSta(memory, cpu, OpDp(cpu, 0x5fu));
-        OpLoadA(cpu, 0x20u);
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
-        if (!BattleCall(battle, 0xd5e3u, 0x808878u, 3u))
-            return false;
-        OpLda(memory, cpu, OpAbs(cpu, 0x4abeu));
-        OpCmpValue(cpu, 0x98u);
-        if (cpu->carry)
-            OpLoadA(cpu, 0x90u);
-        OpDecA(cpu);
-        OpSta(memory, cpu, OpAbs(cpu, SNES_NMITIMEN));
-        OpDecA(cpu);
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-        cpu->carry = false;
-        OpAdcValue(cpu, 0x68u);
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRIO));
-        OpIncA(cpu);
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-        OpPullX(memory, cpu);
     }
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
-    if (cpu->zero) {
-        OpLdy(cpu, 0u);
-        OpLoadA(cpu, BATTLE_PARTY_TARGET_COUNT + 1u + BATTLE_ENEMY_COUNT);
-        OpSta(memory, cpu, OpDp(cpu, TARGET_DP_RECORDS_LEFT));
-        do {
-            OpLda(memory, cpu, OpAbsY(cpu, TARGET_PARTY_UNAVAILABLE));
-            if (cpu->zero) {
-                OpLda(memory, cpu, OpAbsY(cpu, TARGET_PARTY_SELECTED));
-                if (!cpu->zero && !BattleCall(battle, 0xd618u, 0x81d948u, 2u))
-                    return false;
-            }
-            OpIny(cpu);
-            OpIny(cpu);
-            OpIny(cpu);
-            OpIny(cpu);
-            OpStepMem(memory, cpu, OpDp(cpu, TARGET_DP_RECORDS_LEFT), -1);
-        } while (!cpu->zero);
-    }
+    if (!TargetDrawMarkers(battle))
+        return false;
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
     OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffu));
     OpSta(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
