@@ -3283,7 +3283,7 @@ status = "draft"
 
 [[function]]
 address = "85:B26D"
-name = "Lufia2BattleCircleProfile"
+name = "Lufia2BattleCircleWidths"
 source = "src/battle/battle_circle_window.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
