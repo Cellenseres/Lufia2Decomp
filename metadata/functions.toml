@@ -3518,3 +3518,20 @@ source = "src/battle/battle_drift.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Scene tracks
+[[function]]
+address = "86:94D4"
+name = "Lufia2SceneTrackStep"
+source = "src/field/field_scene_tracks.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:A791"
+name = "Lufia2SceneViewOrigin"
+source = "src/field/field_scene_tracks.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
