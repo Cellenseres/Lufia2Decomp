@@ -1,7 +1,11 @@
 /* Battle party sprite drift: the random bit source and the per-record
  * wobble that updates the two offset words of each party record. */
 
+#include <stdbool.h>
+
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
+#include "core/wram_view.h"
 #include "lufia2/battle.h"
 
 enum {
@@ -15,20 +19,47 @@ enum {
     ACTIVE_FLAG = 0x129au,
     BIT_SHAKE = 0x01u,
     BIT_FLIP = 0x02u,
-    BIT_RANDOM = 0x20u
+    BIT_RANDOM = 0x20u,
+    STATE_ACTIVE = 0x80u,
+    RANDOM_WORD_COUNT = 5,
+    SHAKE_STEP_MASK = 0xfeu,
+    SHAKE_TIMER_START = 0x3fu,
+    FLIP_TIMER_START = 0x02u,
+    RANDOM_TIMER_START = 0x0cu,
+    DRIFT_BANK = 0x85u,
+    OFFSET_X = 0x09u,
+    OFFSET_Y = 0x0bu
 };
 
-/* ROL abs, 16-bit: the word is stored high byte first. */
-static void RolAbsolute16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t address) {
-    const uint32_t low = AbsoluteIndexedAddress(cpu, address, 0);
-    const uint16_t old = Read16AbsoluteIndexed(memory, cpu, address, 0);
-    const uint16_t value = (uint16_t)((old << 1) | (cpu->carry ? 1u : 0u));
+/* A word rotated left through the carry; the high byte is stored first. */
+static bool RotateWordLeft(Lufia2Wram wram, uint32_t location, bool carry) {
+    const uint16_t old = WramRead16(wram, location);
+    const uint16_t value = (uint16_t)((old << 1) | (carry ? 1u : 0u));
+    const uint32_t low = WramAddress(wram, location, 0);
 
-    cpu->carry = (old & 0x8000u) != 0;
-    Write8(memory, (low + 1u) & 0x00ffffffu, (uint8_t)(value >> 8));
-    Write8(memory, low, (uint8_t)value);
-    SetNz16(cpu, value);
+    Write8(wram.memory, WramNextAddress(location, low), (uint8_t)(value >> 8));
+    Write8(wram.memory, low, (uint8_t)value);
+    return (old & 0x8000u) != 0;
+}
+
+/* The 88-bit register at $122F moves left by one bit: bit 0 of its first
+ * byte enters at the far end, and the bit that comes out of the far end
+ * becomes bit 0 of the new first byte. The original forms that byte by
+ * rotating the low byte of the direct page register (zero in the game) with
+ * the carry. Returns the byte stored; `carry` receives the bit rotated out of
+ * the direct page byte. */
+static uint8_t ShiftRandomRegister(Lufia2Wram wram, bool *carry) {
+    bool shifted = (WramRead(wram, RANDOM_TOP) & 1u) != 0;
+    uint8_t top;
+    int word;
+
+    for (word = RANDOM_WORD_COUNT - 1; word >= 0; --word)
+        shifted = RotateWordLeft(
+            wram, RANDOM_WORDS + 2u * (uint32_t)word, shifted);
+    top = (uint8_t)((wram.direct_page << 1) | (shifted ? 1u : 0u));
+    WramWrite(wram, RANDOM_TOP, top);
+    *carry = (wram.direct_page & 0x80u) != 0;
+    return top;
 }
 
 /* $85:8F4A: shifts the 88-bit register at $122F left by one through the
@@ -36,46 +67,50 @@ static void RolAbsolute16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 Lufia2ExecutionResult Lufia2BattleRandomBit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    int word;
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    bool carry;
+    uint8_t top;
 
     if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x858f4au);
-    LoadAAbsolute8(memory, cpu, RANDOM_TOP, 0);
-    LsrA8(cpu);
-    SetAccumulatorWidth(cpu, 0);
-    for (word = 4; word >= 0; --word)
-        RolAbsolute16(memory, cpu, (uint16_t)(RANDOM_WORDS + 2 * word));
-    SetAccumulatorWidth(cpu, 1);
-    TransferDirectToA(cpu);
-    RolA8(cpu);
-    StoreAAbsolute8(memory, cpu, RANDOM_TOP, 0);
+    top = ShiftRandomRegister(wram, &carry);
+    cpu->accumulator = (uint16_t)((cpu->direct_page & 0xff00u) | top);
+    cpu->carry = carry;
+    SetNz8(cpu, top);
     return ExecutionReturned(0x858f66u);
 }
 
-/* One JSR to the random bit routine at the given last byte. */
-static int RandomBit(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t return_address, Lufia2ExecutionResult *result) {
-    Lufia2ExecutionResult child;
+/* One JSR to the random bit routine; the offset word it yields is all ones
+ * unless the byte stored came out zero, when only the direct page's high
+ * byte is left. */
+static uint16_t RandomOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2Wram wram, uint16_t return_address) {
+    bool carry;
+    uint8_t top;
 
     SimulateJsrFrame(memory, cpu, return_address);
-    child = Lufia2BattleRandomBit(memory, cpu);
-    if (child.flow != LUFIA2_EXECUTION_RETURNED) {
-        *result = child;
-        return 0;
-    }
+    top = ShiftRandomRegister(wram, &carry);
     SimulateRtsFrame(memory, cpu);
-    return 1;
+    return top == 0 ? (uint16_t)(wram.direct_page & 0xff00u) : 0xffffu;
 }
 
-/* Z selects between the accumulator and all ones; stores a word. */
-static void StoreRandomWord(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t field) {
-    SetAccumulatorWidth(cpu, 0);
-    if (!cpu->zero)
-        LoadA16(cpu, 0xffffu);
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, field, cpu->y),
-        cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
+/* Counts a record's timer down; returns the new value. */
+static uint8_t StepTimer(Lufia2Wram wram, uint16_t slot) {
+    const uint8_t value = (uint8_t)(WramReadAt(wram, TIMERS, slot) - 1u);
+
+    WramWriteAt(wram, TIMERS, slot, value);
+    return value;
+}
+
+/* The shake table is read at the timer's step; the direct page's high byte
+ * is part of the index (the game keeps it zero). */
+static uint16_t ShakeOffset(
+    const Lufia2Memory *memory, const Lufia2Wram wram, uint16_t slot) {
+    const uint8_t step = (uint8_t)(
+        (WramReadAt(wram, TIMERS, slot) >> 2) & SHAKE_STEP_MASK);
+    const uint16_t index = (uint16_t)((wram.direct_page & 0xff00u) | step);
+
+    return WramRead16At(WramViewLong(memory), SHAKE_TABLE, index);
 }
 
 /* $85:894A: updates the offsets of the six party records at $13DA. The
@@ -85,91 +120,62 @@ Lufia2ExecutionResult Lufia2BattleDriftRecords(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2ExecutionResult result = ExecutionReturned(0x8589e4u);
+    Lufia2Wram wram;
+    uint16_t slot = 0;
+    uint16_t record;
+    uint16_t offset;
+    uint8_t active;
 
     result.dispatches = 0;
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x85894au);
     PushDataBank(memory, cpu);
-    Push8(memory, cpu, 0x85u);
+    Push8(memory, cpu, DRIFT_BANK);
     PullDataBank(memory, cpu);
-    LoadAAbsolute8(memory, cpu, ACTIVE_FLAG, 0);
-    if (!cpu->negative) {
+    wram = WramViewOfCaller(memory, cpu);
+    active = WramRead(wram, ACTIVE_FLAG);
+    if ((active & STATE_ACTIVE) == 0) {
+        LoadA8(cpu, active);
         PullDataBank(memory, cpu);
         return result;
     }
-    LoadY16(cpu, 0);
-    TransferYToX(cpu);
-    do {
-        LoadAAbsolute8(memory, cpu, RECORDS + 1u, cpu->y);
-        if (!cpu->negative)
-            goto next;
-        LoadAAbsolute8(memory, cpu, RECORDS, cpu->y);
-        BitImmediate8(cpu, BIT_SHAKE);
-        if (!cpu->zero) {
-            StepMemory8(memory, cpu,
-                AbsoluteIndexedAddress(cpu, TIMERS, cpu->x), -1);
-            if (cpu->negative) {
-                LoadA8(cpu, 0x3fu);
-                StoreAAbsolute8(memory, cpu, TIMERS, cpu->x);
+    for (record = 0; record != RECORD_END;
+         record = (uint16_t)(record + RECORD_SIZE), ++slot) {
+        const uint8_t mode = WramReadAt(wram, RECORDS, record);
+
+        if ((WramReadAt(wram, RECORDS + 1u, record) & STATE_ACTIVE) == 0)
+            continue;
+        if ((mode & BIT_SHAKE) != 0) {
+            if ((StepTimer(wram, slot) & 0x80u) != 0)
+                WramWriteAt(wram, TIMERS, slot, SHAKE_TIMER_START);
+            PushStackWord(memory, cpu, slot);
+            offset = ShakeOffset(memory, wram, slot);
+            (void)PullStackWord(memory, cpu);
+            WramWrite16At(wram, RECORDS + OFFSET_Y, record, offset);
+        } else if ((mode & BIT_FLIP) != 0) {
+            if (StepTimer(wram, slot) == 0) {
+                WramWriteAt(wram, TIMERS, slot, FLIP_TIMER_START);
+                WramWrite16At(wram, RECORDS + OFFSET_X, record,
+                    (uint16_t)(WramRead16At(wram, RECORDS + OFFSET_X, record) ^
+                        0xffffu));
             }
-            TransferDirectToA(cpu);
-            LoadAAbsolute8(memory, cpu, TIMERS, cpu->x);
-            LsrA8(cpu);
-            LsrA8(cpu);
-            And8(cpu, 0xfeu);
-            SetAccumulatorWidth(cpu, 0);
-            PushIndex(memory, cpu);
-            TransferAToX(cpu);
-            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(SHAKE_TABLE,
-                cpu->x)));
-            cpu->x = PullIndexValue(memory, cpu);
-            Write16Long(memory, AbsoluteIndexedAddress(cpu, RECORDS + 0xbu,
-                cpu->y), cpu->accumulator);
-            SetAccumulatorWidth(cpu, 1);
-            goto next;
+        } else if ((mode & BIT_RANDOM) != 0) {
+            if (StepTimer(wram, slot) != 0)
+                continue;
+            WramWriteAt(wram, TIMERS, slot, RANDOM_TIMER_START);
+            WramWrite16At(wram, RECORDS + OFFSET_X, record,
+                RandomOffset(memory, cpu, wram, 0x8979u));
+            WramWrite16At(wram, RECORDS + OFFSET_Y, record,
+                RandomOffset(memory, cpu, wram, 0x8988u));
         }
-        BitImmediate8(cpu, BIT_FLIP);
-        if (!cpu->zero) {
-            StepMemory8(memory, cpu,
-                AbsoluteIndexedAddress(cpu, TIMERS, cpu->x), -1);
-            if (cpu->zero) {
-                LoadA8(cpu, 0x02u);
-                StoreAAbsolute8(memory, cpu, TIMERS, cpu->x);
-                SetAccumulatorWidth(cpu, 0);
-                LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
-                    RECORDS + 9u, cpu->y));
-                LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
-                Write16Long(memory, AbsoluteIndexedAddress(cpu,
-                    RECORDS + 9u, cpu->y), cpu->accumulator);
-                SetAccumulatorWidth(cpu, 1);
-            }
-            goto next;
-        }
-        BitImmediate8(cpu, BIT_RANDOM);
-        if (cpu->zero)
-            goto next;
-        StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, TIMERS, cpu->x),
-            -1);
-        if (!cpu->zero)
-            goto next;
-        LoadA8(cpu, 0x0cu);
-        StoreAAbsolute8(memory, cpu, TIMERS, cpu->x);
-        if (!RandomBit(memory, cpu, 0x8979u, &result))
-            return result;
-        StoreRandomWord(memory, cpu, RECORDS + 9u);
-        if (!RandomBit(memory, cpu, 0x8988u, &result))
-            return result;
-        StoreRandomWord(memory, cpu, RECORDS + 0xbu);
-next:
-        IncrementX16(cpu);
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, cpu->y);
-        cpu->carry = 0;
-        Add16Value(cpu, RECORD_SIZE);
-        TransferAToY(cpu);
-        SetAccumulatorWidth(cpu, 1);
-        Compare16(cpu, cpu->y, RECORD_END);
-    } while (!cpu->zero);
+    }
+    /* The step to the end of the table neither overflows nor leaves a
+     * carry; the compare with the end sets it. */
+    cpu->x = slot;
+    cpu->y = RECORD_END;
+    cpu->accumulator = RECORD_END;
+    cpu->carry = true;
+    cpu->overflow = false;
     PullDataBank(memory, cpu);
     return result;
 }
