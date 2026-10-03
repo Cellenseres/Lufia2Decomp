@@ -97,4 +97,13 @@ Lufia2ExecutionResult Lufia2FieldDecompressMapData(
 #define FIELD_SCREEN_HALF_WIDTH 0x0080u
 #define FIELD_SCREEN_HALF_HEIGHT 0x0070u
 
+/* Pending object records: 48 entries (WRAM_FIELD_PENDING_RECORD_X/Y). */
+#define EVENT_OBJECT_RECORD_COUNT 0x0030u
+#define EVENT_ANIMATION_SLOT_COUNT 0x0008u
+/* A map tile word: the low ten bits pick the tile, the rest are its flags. */
+#define FIELD_TILE_INDEX_MASK 0x03ffu
+#define FIELD_TILE_FLAGS_MASK 0xfc00u
+/* Bank $7F base for offsets into the tile and attribute planes. */
+#define FIELD_BANK_7F 0x7f0000u
+
 #endif
