@@ -34,6 +34,26 @@
 #define EVENT_SAVED_VARIABLES 0x7fd19cu
 /* Condition result: bit 7 true. */
 #define EVENT_CONDITION 0x7fd19au
+/* Map object list in bank $7E; the field list search leaves X at a record
+ * and the fields follow from EVENT_LIST_RECORD + X. */
+#define EVENT_LIST_OFFSET 0xf000u
+#define EVENT_LIST_RECORD 0x7ef000u
+/* Position of each event slot: x bytes then y bytes. */
+#define EVENT_SLOT_X 0x7fd17cu
+#define EVENT_SLOT_Y 0x7fd184u
+/* The slot that was running before an opcode switched to another actor. */
+#define EVENT_SAVED_SLOT 0x7fd2a3u
+/* Maps a listed actor operand to an actor slot. */
+#define EVENT_LISTED_ACTOR_SLOTS 0x7fd72cu
+/* Where the list search hands off to the ROM after its step limit. */
+#define EVENT_SEARCH_HANDOFF 0x80bfbcu
+#define EVENT_UNK_7FD0BF 0x7fd0bfu
+#define EVENT_UNK_7FD133 0x7fd133u
+#define EVENT_UNK_7FD296 0x7fd296u
+#define EVENT_UNK_7FD75C 0x7fd75cu
+#define WRAM_EVENT_UNK_05BD 0x05bdu
+#define WRAM_EVENT_UNK_05BE 0x05beu
+#define WRAM_EVENT_UNK_05BF 0x05bfu
 /* Layer redraw requests from the scripts, become $74 bits. */
 #define WRAM_EVENT_REDRAW 0x1273u
 #define WRAM_EVENT_MAP_0692 0x0692u
