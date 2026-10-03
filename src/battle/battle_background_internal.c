@@ -1,5 +1,6 @@
 #include "battle/battle_lifecycle_internal.h"
 #include "core/snes_registers.h"
+#include "system/dp_scratch.h"
 
 enum {
     BATTLE_BACKGROUND_DESCRIPTOR = 0x11e2u,
@@ -39,7 +40,7 @@ static bool DecodeBackgroundResources(BattleContext *battle) {
     OpAndValue(cpu, 0x00ffu);
     cpu->carry = 0;
     OpAdcValue(cpu, 0x016cu);
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     if (!BattleDecompressResource(battle, 0xba08u))
         return false;
 
@@ -47,7 +48,7 @@ static bool DecodeBackgroundResources(BattleContext *battle) {
     OpAndValue(cpu, 0x00ffu);
     cpu->carry = 0;
     OpAdcValue(cpu, 0x0179u);
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpSepWidths(cpu, 0x20u);
 
     OpLdx(cpu, 0x2000u);

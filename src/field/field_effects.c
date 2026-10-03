@@ -1,9 +1,10 @@
 /* Field colour and screen effects. */
 
 #include "core/cpu_internal.h"
+#include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "lufia2/system.h"
-#include "field/field_internal.h"
+#include "system/dp_scratch.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
 
@@ -44,12 +45,12 @@ static uint8_t FieldPaletteAdvance(const Lufia2Memory *memory, Lufia2CpuState *c
                     cpu->accumulator);
     }
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xa10001u, cpu->x)));
-    Write16Direct(memory, cpu, 0x54u, cpu->accumulator); /* AF36 */
+    Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator); /* AF36 */
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xed00u, cpu->y));
     And16(cpu, 0x00ffu);
     AslA16(cpu);
     TransferAToX(cpu);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
     Write16Long(memory, LongIndexedAddress(WRAM_CGRAM_BUFFER, cpu->x),
                 cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
@@ -84,7 +85,7 @@ static uint8_t FieldPaletteCycles(
         SimulateRtsFrame(memory, cpu);
         return 1;
     }
-    Write8(memory, DirectAddress(cpu, 0x58u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
     LoadX16(cpu, 0x0000u);
     do {
         const uint32_t timer = AbsoluteIndexedAddress(cpu, 0xed01u, cpu->x);
@@ -96,7 +97,7 @@ static uint8_t FieldPaletteCycles(
             return 0;
         IncrementX16(cpu);                                     /* AF4D */
         IncrementX16(cpu);
-        DecrementDirect8(memory, cpu, 0x58u);
+        DecrementDirect8(memory, cpu, DP_SCRATCH_E);
     } while (!cpu->zero);
     SimulateRtsFrame(memory, cpu);
     return 1;
@@ -121,8 +122,8 @@ static void FieldWaveTableBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     StoreAAbsolute8(memory, cpu, 0xd0c8u, 0);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e0000u, cpu->x)));
     AslA8(cpu);
-    Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
-    Write8(memory, DirectAddress(cpu, 0x54u), 0x00u);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), 0x00u);
     TransferDirectToA(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7e0000u, cpu->x)));
     SetAccumulatorWidth(cpu, 0);
@@ -134,7 +135,7 @@ static void FieldWaveTableBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
     IncrementA16(cpu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+    Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
     cpu->carry = 0;
     Add16Value(cpu, Read16Long(memory, WRAM_FIELD_AUXILIARY_RESOURCE_OFFSET));
     Write16Long(memory, SNES_A1TL(1), cpu->accumulator);
@@ -238,22 +239,22 @@ static void ScreenShake(
         SimulateJslFrame(memory, cpu, 0x84u, 0x8158u);
         Lufia2RandomScale(memory, cpu);
         SimulateRtlFrame(memory, cpu);
-        StoreADirect8(memory, cpu, 0x54u);
-        Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0x00u);
         TransferDirectToA(cpu);
         LoadA8(cpu, Read8(memory, FIELD_SHAKE_AMPLITUDE));
         SetAccumulatorWidth(cpu, 0);
         LsrA16(cpu);
         cpu->carry = 1;
-        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x54u));
-        Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_A));
+        Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator);
         LoadA16(cpu, 0x0002u);
         SimulateJslFrame(memory, cpu, 0x84u, 0x8170u);
         Lufia2RandomScale(memory, cpu);
         SimulateRtlFrame(memory, cpu);
         LoadA16(cpu, cpu->accumulator);                        /* ORA #0 */
         first = !cpu->zero;
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
         Write16Long(memory, first ? FIELD_SCREEN_OFFSET_X : FIELD_SCREEN_OFFSET_Y,
                     cpu->accumulator);
         TransferDirectToA(cpu);
@@ -362,20 +363,20 @@ static void ScreenPaletteFade(
             Read16Long(memory, LongIndexedAddress(0x9b0000u, cpu->x));
 
         LoadA16(cpu, color);
-        Write16Direct(memory, cpu, 0x54u, color);
+        Write16Direct(memory, cpu, DP_SCRATCH_A, color);
         if (darken) {
             LoadA16(cpu, (uint16_t)(color & 0x001fu));         /* 8E78 */
             cpu->carry = 1;
-            Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x58u));
+            Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_E));
             if (!cpu->carry)
                 TransferDirectToA(cpu);
-            Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+            Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
             LoadA16(cpu, (uint16_t)(color & 0x03e0u));
             cpu->carry = 1;
             Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x5au));
             if (cpu->negative)
                 TransferDirectToA(cpu);
-            TestBitsDirect(memory, cpu, 0x56u, 1);
+            TestBitsDirect(memory, cpu, DP_SCRATCH_C, 1);
             LoadA16(cpu, (uint16_t)(color & 0x7c00u));
             cpu->carry = 1;
             Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x63u));
@@ -384,24 +385,24 @@ static void ScreenPaletteFade(
         } else {
             LoadA16(cpu, (uint16_t)(color & 0x001fu));         /* 8EB1 */
             cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, 0x58u));
+            Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_E));
             if (cpu->accumulator & 0x0020u)
                 LoadA16(cpu, 0x001fu);
-            Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+            Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
             LoadA16(cpu, (uint16_t)(color & 0x03e0u));
             cpu->carry = 0;
             Add16Value(cpu, Read16Direct(memory, cpu, 0x5au));
             if (cpu->accumulator & 0x0400u)
                 LoadA16(cpu, 0x03e0u);
-            TestBitsDirect(memory, cpu, 0x56u, 1);
+            TestBitsDirect(memory, cpu, DP_SCRATCH_C, 1);
             LoadA16(cpu, (uint16_t)(color & 0x7c00u));
             cpu->carry = 0;
             Add16Value(cpu, Read16Direct(memory, cpu, 0x63u));
             if (cpu->negative)
                 LoadA16(cpu, 0x7c00u);
         }
-        LoadA16(cpu, (uint16_t)(cpu->accumulator |
-            Read16Direct(memory, cpu, 0x56u)));
+        LoadA16(cpu,
+                (uint16_t)(cpu->accumulator | Read16Direct(memory, cpu, DP_SCRATCH_C)));
         Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_CGRAM_BUFFER, cpu->y),
             (uint8_t)cpu->accumulator);
         Write8(memory, AbsoluteIndexedAddress(cpu, (WRAM_CGRAM_BUFFER + 1u), cpu->y),
@@ -465,7 +466,7 @@ void Lufia2FieldScreenEffects(
         LsrA8(cpu);
         LsrA8(cpu);
         LsrA8(cpu);
-        StoreADirect8(memory, cpu, 0x55u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_B);
         LoadAAbsolute8(memory, cpu, 0x1288u, 0);
         cpu->carry = 0;
         Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x1289u, 0)));
@@ -473,32 +474,32 @@ void Lufia2FieldScreenEffects(
         LsrA8(cpu);
         LsrA8(cpu);
         LsrA8(cpu);
-        StoreADirect8(memory, cpu, 0x54u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
         LoadAAbsolute8(memory, cpu, 0x1286u, 0);
         And8(cpu, 0x1fu);
         Compare8(cpu, A8(cpu),
             Read8(memory, AbsoluteIndexedAddress(cpu, 0x1287u, 0)));
         if (cpu->carry) {
             LoadA8(cpu, 0x1fu);                                /* toward black */
-            Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
-            StoreADirect8(memory, cpu, 0x54u);
+            Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+            StoreADirect8(memory, cpu, DP_SCRATCH_A);
             cpu->carry = 1;
             Sbc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x1287u, 0)));
         } else {
             LoadAAbsolute8(memory, cpu, 0x1287u, 0);           /* 807D */
             cpu->carry = 1;
-            Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
+            Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
         }
-        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x55u));
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_B));
         if (!cpu->carry) {
             LoadAAbsolute8(memory, cpu, 0x1287u, 0);           /* 8087 */
-            StoreADirect8(memory, cpu, 0x54u);
+            StoreADirect8(memory, cpu, DP_SCRATCH_A);
             LoadA8(cpu, 0x80u);
             TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
         }
         LoadAAbsolute8(memory, cpu, 0x1286u, 0);               /* 8091 */
         And8(cpu, 0xe0u);
-        Or8(cpu, DirectByte(memory, cpu, 0x54u));
+        Or8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
         StoreAAbsolute8(memory, cpu, SNES_COLDATA, 0);
     }
     LoadAAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0);         /* 809B */

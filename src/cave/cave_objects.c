@@ -1,6 +1,7 @@
 /* Ancient Cave objects and chests ($83:99C8-$83:9B17). */
 
 #include "cave/cave_internal.h"
+#include "system/dp_scratch.h"
 
 /* $83:99C8: $91 = A, $8F = B, Y = tile offset; returns M0. */
 void Lufia2CaveTileAt(
@@ -99,11 +100,11 @@ void Lufia2CaveAddObject(
         OpLda(memory, cpu, OpAbs(cpu, CAVE_FLOOR));           /* 9A30 */
         OpDecA(cpu);
         OpAslA(cpu);
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));
+        OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
         LoadA8(cpu, 0x06u);
         Lufia2CaveRandomBelow(memory, cpu, 0x9a39u);
         cpu->carry = 0;
-        OpAdc(memory, cpu, OpDp(cpu, 0x54u));
+        OpAdc(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
         OpSepWidths(cpu, 0x30u);                                   /* 9A3F */
         OpTax(cpu);
         OpLda(memory, cpu, OpLongX(cpu, 0x94d95cu));
@@ -130,31 +131,31 @@ void Lufia2CaveAddObject(
 /* Probe the centre cell, then the neighbours, stopping at the first chest. */
 static void CaveNearChestBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));                  /* 9A6B */
-    OpSta(memory, cpu, OpDp(cpu, 0x55u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
     OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     Lufia2CaveChestAt(memory, cpu, 0x9a73u);
     if (cpu->carry)
         return;
-    OpStepMem(memory, cpu, OpDp(cpu, 0x54u), -1);          /* 9A78 */
+    OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_A), -1); /* 9A78 */
     Lufia2CaveChestAt(memory, cpu, 0x9a7au);
     if (cpu->carry)
         return;
-    OpStepMem(memory, cpu, OpDp(cpu, 0x54u), 1);           /* 9A7F */
-    OpStepMem(memory, cpu, OpDp(cpu, 0x54u), 1);
-    OpStepMem(memory, cpu, OpDp(cpu, 0x54u), 1);
+    OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_A), 1); /* 9A7F */
+    OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_A), 1);
+    OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_A), 1);
     Lufia2CaveChestAt(memory, cpu, 0x9a85u);
     if (cpu->carry)
         return;
     OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));                  /* 9A8A */
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
-    OpStepMem(memory, cpu, OpDp(cpu, 0x55u), -1);
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_B), -1);
     Lufia2CaveChestAt(memory, cpu, 0x9a90u);
     if (cpu->carry)
         return;
-    OpStepMem(memory, cpu, OpDp(cpu, 0x55u), 1);           /* 9A95 */
-    OpStepMem(memory, cpu, OpDp(cpu, 0x55u), 1);
-    OpStepMem(memory, cpu, OpDp(cpu, 0x55u), 1);
+    OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_B), 1); /* 9A95 */
+    OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_B), 1);
+    OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_B), 1);
     Lufia2CaveChestAt(memory, cpu, 0x9a9bu);
 }
 
@@ -181,10 +182,10 @@ void Lufia2CaveChestAt(
             break;
         }
         OpLda(memory, cpu, OpAbsX(cpu, CAVE_CHEST_COLUMNS));
-        OpCmp(memory, cpu, OpDp(cpu, 0x54u));
+        OpCmp(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
         if (cpu->zero) {
             OpLda(memory, cpu, OpAbsX(cpu, CAVE_CHEST_ROWS));
-            OpCmp(memory, cpu, OpDp(cpu, 0x55u));
+            OpCmp(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
             if (cpu->zero) {
                 cpu->carry = 1;                                /* 9AB5 */
                 break;

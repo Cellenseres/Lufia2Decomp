@@ -3,6 +3,7 @@
 #include "cave/cave_internal.h"
 #include "core/snes_registers.h"
 #include "lufia2/system.h"
+#include "system/dp_scratch.h"
 #include "system/system_internal.h"
 
 /* Random product through the Mode 7 multiplier: M7A takes the random byte and
@@ -52,10 +53,10 @@ void Lufia2CaveRandomMean(
     SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
     Write8(memory, SNES_M7B, A8(cpu));                         /* 9DE4 */
     CaveMultiplyRandom(memory, cpu, 0x9debu);                  /* 9DE8 */
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));        /* 9DF9 */
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu)); /* 9DF9 */
     CaveMultiplyRandom(memory, cpu, 0x9dfeu);                  /* 9DFB */
     cpu->carry = 0;                                            /* 9E0C */
-    OpAdc(memory, cpu, OpDp(cpu, 0x54u));
+    OpAdc(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     LsrA8(cpu);
     SimulateRtsFrame(memory, cpu);                             /* 9E10 */
 }

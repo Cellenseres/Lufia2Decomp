@@ -2,6 +2,7 @@
 
 #include "battle/battle_internal.h"
 #include "lufia2/system.h"
+#include "system/dp_scratch.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
 
@@ -267,7 +268,7 @@ static void BattleScriptOperands(
     uint16_t opcode) {
     BattleScriptByte(memory, cpu, (uint16_t)(opcode + 2u));
     BattleScriptRead(memory, cpu, (uint16_t)(opcode + 5u));
-    Write16Direct(memory, cpu, 0x54u, cpu->x);
+    Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->x);
     BattleScriptValue(memory, cpu, (uint16_t)(opcode + 10u));
 }
 
@@ -276,10 +277,10 @@ static void BattleScriptCompare(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
-    Write16Direct(memory, cpu, 0x54u, cpu->x);
+    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
+    Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->x);
     cpu->carry = 1;
-    Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x54u));
+    Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_A));
 }
 
 /* Store binary result X into the destination variable. */
@@ -332,24 +333,24 @@ static void BattleMultiplyBody(
     Push8(memory, cpu, PackStatus(cpu));                       /* DCA3 */
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x56u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_C));
     StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
     StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_D));
     ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     SetAccumulatorWidth(cpu, 0);
     StoreWordAbsolute(memory, cpu, SNES_WRMPYA, cpu->accumulator);
     Write16Direct(memory, cpu, 0x63u, cpu->x);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
     SetAccumulatorWidth(cpu, 0);
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     StoreWordAbsolute(memory, cpu, SNES_WRMPYA, cpu->accumulator);
     Write16Direct(memory, cpu, 0x65u, cpu->x);
-    LoadX16(cpu, Read16Direct(memory, cpu, 0x55u));
+    LoadX16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_B));
     cpu->carry = 0;
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     StoreWordAbsolute(memory, cpu, SNES_WRMPYA, cpu->x);
@@ -391,7 +392,7 @@ static void BattleDivide(
     PullDataBank(memory, cpu);
     LoadX16(cpu, Read16Direct(memory, cpu, 0x5eu));
     StoreWordAbsolute(memory, cpu, SNES_WRDIVL, cpu->x);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
     StoreAAbsolute8(memory, cpu, SNES_WRDIVB, 0);
     PushIndex(memory, cpu);
     cpu->x = PullIndexValue(memory, cpu);
@@ -402,7 +403,7 @@ static void BattleDivide(
     ExchangeAccumulatorBytes(cpu);
     LoadY16(cpu, cpu->accumulator);
     StoreWordAbsolute(memory, cpu, SNES_WRDIVL, cpu->y);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
     StoreAAbsolute8(memory, cpu, SNES_WRDIVB, 0);
     LoadA8(cpu, (uint8_t)cpu->x);
     ExchangeAccumulatorBytes(cpu);
@@ -432,9 +433,9 @@ static void BattleRandomFractionBody(
     Push8(memory, cpu, 0x85u);
     PullDataBank(memory, cpu);
     if (cpu->accumulator_is_8_bit)
-        StoreADirect8(memory, cpu, 0x54u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
     else
-        Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+        Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     for (i = 0; i < 3u; ++i) {
         LoadA8(cpu, rolls[i].limit);
@@ -505,12 +506,11 @@ static void BattleLongDivide(
         LoadA16(cpu, (uint16_t)((a << 1) | (high >> 15)));
         cpu->carry = a >> 15;
         if (!cpu->carry) {
-            Compare16(cpu, cpu->accumulator,
-                Read16Direct(memory, cpu, 0x58u));
+            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_SCRATCH_E));
             if (!cpu->carry)
                 continue;
         }
-        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x58u));
+        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_E));
         Write16Direct(memory, cpu, 0x63u,
             (uint16_t)(Read16Direct(memory, cpu, 0x63u) + 1u));
     }
@@ -674,13 +674,13 @@ static void BattleOpRandomJump(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     BattleScriptByte(memory, cpu, 0xb584u);
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     LoadA8(cpu, 0xffu);
     SimulateJslFrame(memory, cpu, 0x85u, 0xb58cu);
     Lufia2RandomScale(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     cpu->carry = 1;
-    Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
+    Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
     if (!cpu->carry)
         BattleScriptJump(memory, cpu);
     else
@@ -693,7 +693,7 @@ static void BattleOpJumpIfEqual(
     Lufia2CpuState *cpu,
     uint16_t handler) {
     BattleScriptOperands(memory, cpu, handler);
-    Compare16(cpu, cpu->x, Read16Direct(memory, cpu, 0x54u));
+    Compare16(cpu, cpu->x, Read16Direct(memory, cpu, DP_SCRATCH_A));
     if (cpu->zero == (handler == BATTLE_OP_JUMP_IF_EQUAL))
         BattleScriptJump(memory, cpu);
     else
@@ -746,12 +746,12 @@ static void BattleOpAddSubtract(
     if (handler == BATTLE_OP_ADD) {
         LoadA16(cpu, cpu->x);
         cpu->carry = 0;
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+        Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
     } else {
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
-        Write16Direct(memory, cpu, 0x54u, cpu->x);
+        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
+        Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->x);
         cpu->carry = 1;
-        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x54u));
+        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_A));
     }
     BattleScriptStoreBinary(memory, cpu, cpu->accumulator,
         handler == BATTLE_OP_ADD ? 0xb694u : 0xb6b3u);
@@ -767,10 +767,10 @@ static void BattleOpBitwise(
     BattleScriptByte(memory, cpu, (uint16_t)(handler + 2u));
     PushAccumulator8(memory, cpu);
     BattleScriptRead(memory, cpu, (uint16_t)(handler + 6u));
-    Write16Direct(memory, cpu, 0x54u, cpu->x);
+    Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->x);
     BattleScriptValue(memory, cpu, (uint16_t)(handler + 11u));
     SetAccumulatorWidth(cpu, 0);
-    value = Read16Direct(memory, cpu, 0x54u);
+    value = Read16Direct(memory, cpu, DP_SCRATCH_A);
     value = handler == BATTLE_OP_AND ? (uint16_t)(cpu->x & value)
         : handler == BATTLE_OP_OR ? (uint16_t)(cpu->x | value)
         : (uint16_t)(cpu->x ^ value);
@@ -1002,7 +1002,7 @@ static void BattleOpPartyFlagCount(
     if (cpu->negative) {
         LoadX16(cpu, 0x0000u);
     } else {
-        Write8(memory, DirectAddress(cpu, 0x54u), 0x00u);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), 0x00u);
         LoadY16(cpu, 0x0008u);
         do {
             LoadX16(cpu, Read16AbsoluteIndexed(
@@ -1011,13 +1011,13 @@ static void BattleOpPartyFlagCount(
                 LoadAAbsolute8(memory, cpu, 0x000fu, cpu->x);
                 BitImmediate8(cpu, 0x04u);
                 if (!cpu->zero)
-                    IncrementDirect8(memory, cpu, 0x54u);
+                    IncrementDirect8(memory, cpu, DP_SCRATCH_A);
             }
             cpu->y = (uint16_t)(cpu->y - 2u);
             SetNz16(cpu, cpu->y);
         } while (!cpu->negative);
         TransferDirectToA(cpu);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+        LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
         TransferAToX(cpu);
     }
     BattleScriptByte(memory, cpu, 0xbb77u);
@@ -1055,11 +1055,11 @@ static void BattleOpSet0A62IfF42E(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     BattleScriptByte(memory, cpu, 0xbcdau);
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, BATTLE_CONDITION));
     if (!cpu->zero) {
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
         Write16Absolute(memory, cpu, BATTLE_SCRIPT_UNK_0A62, cpu->accumulator);
     }
 }
@@ -1092,7 +1092,7 @@ static void BattleOpMultiply(
     Lufia2CpuState *cpu,
     uint16_t handler) {
     BattleScriptOperands(memory, cpu, handler);
-    Write16Direct(memory, cpu, 0x56u, cpu->x);
+    Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->x);
     PushAccumulator8(memory, cpu);
     BattleMultiply(memory, cpu, 0xb6c8u);
     LoadA8(cpu, Pull8(memory, cpu));
@@ -1118,7 +1118,7 @@ static void BattleOpDivide(
     SetAccumulatorWidth(cpu, 1);
     BattleScriptValue(memory, cpu, negative ? 0xb701u : 0xb6e4u);
     LoadA8(cpu, (uint8_t)cpu->x);
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     Write8(memory, DirectAddress(cpu, 0x5fu), 0x00u);
     BattleDivide(memory, cpu, negative ? 0xb70au : 0xb6edu);
     if (negative) {
@@ -1156,7 +1156,7 @@ static void BattleOpLongDivide(
     BattleScriptByte(memory, cpu, 0xb755u);
     BattleScriptRead(memory, cpu, 0xb758u);
     PushAccumulator8(memory, cpu);
-    Write16Direct(memory, cpu, 0x58u, cpu->x);
+    Write16Direct(memory, cpu, DP_SCRATCH_E, cpu->x);
     BattleScriptByte(memory, cpu, 0xb75eu);
     BattleScriptRead(memory, cpu, 0xb761u);
     Write16Direct(memory, cpu, 0x65u, cpu->x);

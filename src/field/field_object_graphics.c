@@ -1,8 +1,9 @@
 /* Field-object origins, tile state and graphics setup. */
 
+#include "actor/actor_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/field.h"
-#include "actor/actor_internal.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 enum {
@@ -223,11 +224,11 @@ Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     OpLda(memory, cpu, OpLongX(cpu, WRAM_ACTOR_CLAIMED_OBJECT_RECORD));
     OpTax(cpu);
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_OBJECT_SPRITE_ALLOCATION));
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_OBJECT_GRAPHICS_SHAPE));
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
     OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE216));
-    OpLda(memory, cpu, OpDp(cpu, 0x54u));
+    OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpSta(memory, cpu, OpLongX(cpu, 0x7fe25eu));
     TransferDirectToA(cpu);
     OpSta(memory, cpu, OpLongX(cpu, 0x7fe2a6u));

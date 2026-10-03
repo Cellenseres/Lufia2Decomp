@@ -1,10 +1,11 @@
 /* Map cell attributes at map load ($80:ED9C). */
 
-#include "core/cpu_internal.h"
-#include "lufia2/field.h"
 #include "actor/actor_internal.h"
+#include "core/cpu_internal.h"
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
+#include "lufia2/field.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 enum {
@@ -156,7 +157,7 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     LoadA16(cpu, Read16Long(memory, 0x004216u));
     cpu->carry = 0;
     Add16Value(cpu, 0x0100u);
-    StoreADirect16(memory, cpu, 0x54u);                        /* cell count */
+    StoreADirect16(memory, cpu, DP_SCRATCH_A); /* cell count */
     SetAccumulatorWidth(cpu, 1);
     for (;;) {
         uint8_t class_bits;
@@ -167,7 +168,7 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
         ExchangeAccumulatorBytes(cpu);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7f0000u, cpu->x)));
         TransferAToY(cpu);                                     /* metatile */
-        Write8(memory, DirectAddress(cpu, 0x56u), 0x00u);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), 0x00u);
         LoadA8(cpu, Read8IndirectLongY(memory, cpu, 0x60u));
         class_bits = 0;
         if (A8(cpu) & 0xf0u) {
@@ -186,22 +187,22 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
         }
         if (class_bits) {
             LoadA8(cpu, class_bits);
-            StoreADirect8(memory, cpu, 0x56u);
+            StoreADirect8(memory, cpu, DP_SCRATCH_C);
         }
         cpu->y = PullIndexValue(memory, cpu);                  /* EE17 */
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7f0001u, cpu->x)));
         And8(cpu, 0x0cu);
         AslA8(cpu);
         AslA8(cpu);
-        Or8(cpu, DirectByte(memory, cpu, 0x56u));
+        Or8(cpu, DirectByte(memory, cpu, DP_SCRATCH_C));
         StoreAAbsolute8(memory, cpu, 0x4000u, cpu->y);
         IncrementY16(cpu);
         IncrementX16(cpu);
         IncrementX16(cpu);
-        DecrementDirect8(memory, cpu, 0x54u);
+        DecrementDirect8(memory, cpu, DP_SCRATCH_A);
         if (!cpu->zero)
             continue;
-        DecrementDirect8(memory, cpu, 0x55u);
+        DecrementDirect8(memory, cpu, DP_SCRATCH_B);
         if (cpu->zero)
             break;
     }
@@ -263,10 +264,10 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
             Or8(cpu, Read8(memory, LongIndexedAddress(0x7ef008u, cpu->x)));
             if (!cpu->zero) {
                 LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef005u, cpu->x)));
-                StoreADirect8(memory, cpu, 0x54u);             /* size */
+                StoreADirect8(memory, cpu, DP_SCRATCH_A); /* size */
                 LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
                 cpu->carry = 1;
-                Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
+                Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
                 LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
                 StoreADirect8(memory, cpu, DP_PROBE_Y);
                 SimulateJslFrame(memory, cpu, 0x80u, 0xeeb8u);
@@ -274,7 +275,7 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
                 Lufia2MapCellIndex(memory, cpu, 0xf9a7u, 1);   /* $83:F9A5 */
                 cpu->program_bank = 0x80u;
                 SimulateRtlFrame(memory, cpu);
-                LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+                LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
                 Compare8(cpu, A8(cpu), 0x02u);
                 if (cpu->zero) {
                     AttributeSet(memory, cpu, ATTRIBUTES, 0x40u);

@@ -3,10 +3,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
 #include "lufia2/system.h"
-#include "actor/actor_internal.h"
+#include "system/dp_scratch.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
 
@@ -457,7 +458,7 @@ static PrimaryListSearch PrimaryApproachListedPoint(
     uint32_t guard;
 
     SimulateJsrFrame(memory, cpu, return_address);
-    Write8(memory, DirectAddress(cpu, 0x58u), A8(cpu));        /* D0AA */
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu)); /* D0AA */
     Write8(memory, DirectAddress(cpu, 0x59u), 0x00u);          /* D0AC */
     PushIndex(memory, cpu);                                    /* D0AE */
     LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x01u, cpu->y)));
@@ -505,7 +506,7 @@ static PrimaryListSearch PrimaryApproachListedPoint(
         SetAccumulatorWidth(cpu, 0);                           /* D0E8 */
         LoadA16(cpu, cpu->x);
         cpu->carry = 0;
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x58u));
+        Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_E));
         TransferAToX(cpu);
         SetAccumulatorWidth(cpu, 1);
     }

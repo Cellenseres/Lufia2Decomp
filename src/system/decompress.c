@@ -3,6 +3,7 @@
 #include "core/cpu_ops.h"
 #include "lufia2/resource_format.h"
 #include "lufia2/system.h"
+#include "system/dp_scratch.h"
 
 enum {
     STREAM = 0x5du,                     /* [$5D],Y: compressed bytes */
@@ -172,9 +173,9 @@ Lufia2ExecutionResult Lufia2DecompressResource(
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
     PushDataBank(memory, cpu);
-    LoadADirect16(memory, cpu, 0x54u);
+    LoadADirect16(memory, cpu, DP_SCRATCH_A);
     AslA16(cpu);
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+    Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
     TransferAToX(cpu);                                         /* entry * 3 */
     Write16Direct(memory, cpu, STREAM, 0x0000u);
     LoadA16(cpu, Read16Long(memory,
@@ -201,7 +202,7 @@ Lufia2ExecutionResult Lufia2DecompressResource(
     Add16Value(cpu, Read16Direct(memory, cpu, LENGTH));
     StoreADirect16(memory, cpu, DEST_END);
     SetAccumulatorWidth(cpu, 1);
-    Write8(memory, DirectAddress(cpu, 0x57u), 0x00u);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_D), 0x00u);
     LoadA8(cpu, DirectByte(memory, cpu, 0x62u));
     Or8(cpu, 0x7eu);
     PushAccumulator8(memory, cpu);

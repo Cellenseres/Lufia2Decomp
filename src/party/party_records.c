@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "lufia2/party.h"
 #include "party/party_internal.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 /* Copy a word within each active party record ($0A80). */
@@ -102,7 +103,7 @@ Lufia2ExecutionResult Lufia2PartyListHasEntry(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);                                 /* C652 */
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     LoadA8(cpu, 0x00u);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
@@ -120,13 +121,15 @@ Lufia2ExecutionResult Lufia2PartyListHasEntry(
                 memory, LongIndexedAddress(0x859ebau, cpu->x)));
             cpu->carry = 0;
             Add16Value(cpu, 0x0096u);
-            Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+            Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
             SetAccumulatorWidth(cpu, 1);
             LoadY16(cpu, 0x0000u);                             /* C675 */
             do {
-                LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
-                Compare8(cpu, A8(cpu), Read8(memory, AbsoluteIndexedAddress(
-                    cpu, Read16Direct(memory, cpu, 0x56u), cpu->y)));
+                LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+                Compare8(cpu, A8(cpu),
+                         Read8(memory, AbsoluteIndexedAddress(
+                                           cpu, Read16Direct(memory, cpu, DP_SCRATCH_C),
+                                           cpu->y)));
                 if (cpu->zero) {
                     cpu->y = PullIndexValue(memory, cpu);      /* C68E */
                     PullDataBank(memory, cpu);

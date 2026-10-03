@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "lufia2/item.h"
 #include "lufia2/menu.h"
+#include "system/dp_scratch.h"
 
 enum {
     STRING = 0x5du,                     /* [$5D],Y */
@@ -431,11 +432,11 @@ static int MenuOpNumber(MenuVm *vm) {
     StoreAAbsolute8(memory, cpu, FORMAT, 0);
     IncrementY16(cpu);
     StringByte(vm);
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     IncrementY16(cpu);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, StringWord(vm));
-    StoreADirect16(memory, cpu, 0x56u);
+    StoreADirect16(memory, cpu, DP_SCRATCH_C);
     SkipWord(cpu);
     SetAccumulatorWidth(cpu, 1);
     LoadAAbsolute8(memory, cpu, FORMAT, 0);
@@ -444,15 +445,15 @@ static int MenuOpNumber(MenuVm *vm) {
     if (cpu->zero) {
         SetAccumulatorWidth(cpu, 0);                           /* 890C */
         LoadA16(cpu, Indirect16(vm, 0x56u));
-        StoreADirect16(memory, cpu, 0x56u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_C);
         SetAccumulatorWidth(cpu, 1);
         StringByte(vm);
         cpu->carry = 0;
-        Adc8(cpu, DirectByte(memory, cpu, 0x56u));
-        StoreADirect8(memory, cpu, 0x56u);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
+        Adc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_C));
+        StoreADirect8(memory, cpu, DP_SCRATCH_C);
+        LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_D));
         Adc8(cpu, 0x00u);
-        StoreADirect8(memory, cpu, 0x57u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_D);
         IncrementY16(cpu);
     }
     if (vm->checkpoint)
@@ -461,7 +462,7 @@ static int MenuOpNumber(MenuVm *vm) {
     Jsr(vm, 0x8925u);
     MenuLoadNumber(vm);
     Rts(vm);
-    Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0x00u);
     LoadAAbsolute8(memory, cpu, FORMAT, 0);
     And8(cpu, 0x04u);
     if (!cpu->zero) {
@@ -474,7 +475,7 @@ static int MenuOpNumber(MenuVm *vm) {
             StoreAbsolute16(vm, NUMBER);
             SetAccumulatorWidth(cpu, 1);
             LoadA8(cpu, 0xffu);
-            StoreADirect8(memory, cpu, 0x55u);
+            StoreADirect8(memory, cpu, DP_SCRATCH_B);
         }
     }
     Jsr(vm, 0x894bu);                                          /* 8949 */
@@ -495,7 +496,7 @@ static int MenuOpNumber(MenuVm *vm) {
             Compare16(cpu, cpu->y, 0x0007u);
         } while (!cpu->zero);
     }
-    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));               /* 8968 */
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B)); /* 8968 */
     if (!cpu->zero) {
         LoadY16(cpu, 0x0007u);
         for (;;) {
@@ -524,7 +525,7 @@ static int MenuOpNumber(MenuVm *vm) {
     } else {
         LoadA8(cpu, 0x00u);                                    /* 8991 */
         ExchangeAccumulatorBytes(cpu);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+        LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
         SetAccumulatorWidth(cpu, 0);
         cpu->carry = 0;
         Add16Value(cpu, DIGITS);
@@ -562,12 +563,12 @@ static void MenuPointerOffset(const MenuVm *vm) {
     StoreADirect16(memory, cpu, 0x60u);
     SkipWord(cpu);
     LoadA16(cpu, StringWord(vm));
-    StoreADirect16(memory, cpu, 0x56u);
+    StoreADirect16(memory, cpu, DP_SCRATCH_C);
     SkipWord(cpu);
     LoadA16(cpu, Indirect16(vm, 0x60u));
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x56u));
-    StoreADirect16(memory, cpu, 0x56u);
+    Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
+    StoreADirect16(memory, cpu, DP_SCRATCH_C);
     SetAccumulatorWidth(cpu, 1);
 }
 
@@ -691,7 +692,7 @@ static int MenuOpString(MenuVm *vm) {
     case 1:                                                    /* 8AAD */
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, StringWord(vm));
-        StoreADirect16(memory, cpu, 0x56u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_C);
         SkipWord(cpu);
         LoadA16(cpu, Indirect16(vm, 0x56u));
         StoreADirect16(memory, cpu, 0x60u);
@@ -714,7 +715,7 @@ static int MenuOpString(MenuVm *vm) {
     case 3:                                                    /* 8ADA */
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, StringWord(vm));
-        StoreADirect16(memory, cpu, 0x56u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_C);
         SkipWord(cpu);
         PushY(memory, cpu);
         LoadA16(cpu, Indirect16(vm, 0x56u));
@@ -763,34 +764,34 @@ static void MenuOperands(const MenuVm *vm) {
 
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, StringWord(vm));
-    StoreADirect16(memory, cpu, 0x54u);
+    StoreADirect16(memory, cpu, DP_SCRATCH_A);
     LoadA16(cpu, Indirect16(vm, 0x54u));
-    StoreADirect16(memory, cpu, 0x54u);
+    StoreADirect16(memory, cpu, DP_SCRATCH_A);
     SkipWord(cpu);
     LoadA16(cpu, StringWord(vm));
-    StoreADirect16(memory, cpu, 0x56u);
+    StoreADirect16(memory, cpu, DP_SCRATCH_C);
     SkipWord(cpu);
     SetAccumulatorWidth(cpu, 1);
     LoadAAbsolute8(memory, cpu, FORMAT, 0);
     BitImmediate8(cpu, 0x08u);
     if (!cpu->zero) {
         SetAccumulatorWidth(cpu, 0);                           /* 8CB9 */
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
         cpu->carry = 0;
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x56u));
-        StoreADirect16(memory, cpu, 0x54u);
+        Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
+        StoreADirect16(memory, cpu, DP_SCRATCH_A);
         LoadA16(cpu, Indirect16(vm, 0x54u));
-        StoreADirect16(memory, cpu, 0x54u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_A);
         LoadA16(cpu, StringWord(vm));
-        StoreADirect16(memory, cpu, 0x56u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_C);
         SkipWord(cpu);
         LoadA16(cpu, Indirect16(vm, 0x56u));
         cpu->carry = 0;
         Add16Value(cpu, StringWord(vm));
         SkipWord(cpu);
-        StoreADirect16(memory, cpu, 0x56u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_C);
         LoadA16(cpu, Indirect16(vm, 0x56u));
-        StoreADirect16(memory, cpu, 0x56u);
+        StoreADirect16(memory, cpu, DP_SCRATCH_C);
         SetAccumulatorWidth(cpu, 1);
     } else {
         BitImmediate8(cpu, 0x40u);                             /* 8CDD */
@@ -799,7 +800,7 @@ static void MenuOperands(const MenuVm *vm) {
             if (!cpu->zero) {
                 SetAccumulatorWidth(cpu, 0);
                 LoadA16(cpu, Indirect16(vm, 0x56u));
-                StoreADirect16(memory, cpu, 0x56u);
+                StoreADirect16(memory, cpu, DP_SCRATCH_C);
                 SetAccumulatorWidth(cpu, 1);
             }
         }
@@ -807,8 +808,8 @@ static void MenuOperands(const MenuVm *vm) {
     LoadAAbsolute8(memory, cpu, FORMAT, 0);                    /* 8CF0 */
     BitImmediate8(cpu, 0x80u);
     if (cpu->zero) {
-        Write8(memory, DirectAddress(cpu, 0x55u), 0x00u);
-        Write8(memory, DirectAddress(cpu, 0x57u), 0x00u);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0x00u);
+        Write8(memory, DirectAddress(cpu, DP_SCRATCH_D), 0x00u);
     }
 }
 
@@ -849,9 +850,9 @@ static int MenuOpBranch(MenuVm *vm) {
             BitImmediate8(cpu, 0x10u);
             any_bit = !cpu->zero;
             SetAccumulatorWidth(cpu, 0);
-            LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+            LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
             if (any_bit) {
-                const uint16_t mask = Read16Direct(memory, cpu, 0x56u);
+                const uint16_t mask = Read16Direct(memory, cpu, DP_SCRATCH_C);
 
                 cpu->zero = (cpu->accumulator & mask) == 0;    /* BIT $56 */
                 cpu->negative = (mask & 0x8000u) != 0;
@@ -859,14 +860,14 @@ static int MenuOpBranch(MenuVm *vm) {
                 take = !cpu->zero;
             } else {
                 Compare16(cpu, cpu->accumulator,
-                    Read16Direct(memory, cpu, 0x56u));
+                          Read16Direct(memory, cpu, DP_SCRATCH_C));
                 take = cpu->zero;
             }
             SetAccumulatorWidth(cpu, 1);
         } else {
             SetAccumulatorWidth(cpu, 0);
-            LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
-            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x56u));
+            LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
+            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_SCRATCH_C));
             SetAccumulatorWidth(cpu, 1);
             take = kind == 1u ? cpu->carry : !cpu->carry;
         }
@@ -1024,10 +1025,10 @@ static int MenuRun(MenuVm *vm) {
         case 0xd:                                              /* 8D2B table[(p)] */
             SetAccumulatorWidth(cpu, 0);
             LoadA16(cpu, StringWord(vm));
-            StoreADirect16(memory, cpu, 0x56u);
+            StoreADirect16(memory, cpu, DP_SCRATCH_C);
             SkipWord(cpu);
             LoadA16(cpu, StringWord(vm));
-            StoreADirect16(memory, cpu, 0x58u);
+            StoreADirect16(memory, cpu, DP_SCRATCH_E);
             SkipWord(cpu);
             SetAccumulatorWidth(cpu, 1);
             PushY(memory, cpu);
@@ -1045,7 +1046,7 @@ static int MenuRun(MenuVm *vm) {
         case 0xe:                                              /* 8D4B (p) */
             SetAccumulatorWidth(cpu, 0);
             LoadA16(cpu, StringWord(vm));
-            StoreADirect16(memory, cpu, 0x56u);
+            StoreADirect16(memory, cpu, DP_SCRATCH_C);
             SkipWord(cpu);
             SetAccumulatorWidth(cpu, 1);
             LoadA8(cpu, Indirect8(vm, 0x56u, 0));

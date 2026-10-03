@@ -1,5 +1,6 @@
 #include "battle/battle_internal.h"
 #include "core/snes_registers.h"
+#include "system/dp_scratch.h"
 
 /* $81:E73B: prepare the message tilemap and render the encoded byte string. */
 Lufia2ExecutionResult Lufia2BattleRenderMessage(const Lufia2Memory *memory,
@@ -71,7 +72,7 @@ Lufia2ExecutionResult Lufia2BattleLoadMessageGraphics(const Lufia2Memory *memory
     OpLoadA(cpu, 0x7eu);
     OpSta(memory, cpu, OpDp(cpu, 0x62u));
     OpLdx(cpu, 0x23fu);
-    OpWriteX(memory, cpu, OpDp(cpu, 0x54u), cpu->x);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_SCRATCH_A), cpu->x);
     if (!BattleCall(&battle, 0xe7a0u, BATTLE_ROUTINE_DECOMPRESS_RESOURCE, 3u))
         return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81e7a4u);

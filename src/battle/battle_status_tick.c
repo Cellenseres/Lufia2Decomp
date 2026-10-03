@@ -1,5 +1,6 @@
 #include "battle/battle_internal.h"
 #include "core/snes_registers.h"
+#include "system/dp_scratch.h"
 
 /* Apply the tick damage to the staged target and queue its presentation. */
 static bool StatusTickApply(BattleContext *battle) {
@@ -29,14 +30,14 @@ static bool StatusTickApply(BattleContext *battle) {
         return false;
     OpPullX(memory, cpu);
     OpAslA(cpu);
-    OpAdc(memory, cpu, OpDp(cpu, 0x54u));
+    OpAdc(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpLsrA(cpu);
     if (cpu->zero)
         OpIncA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpLda(memory, cpu, OpAbsX(cpu, 0x11u));
     cpu->carry = true;
-    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, 0x54u)));
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, DP_SCRATCH_A)));
     if (cpu->carry && !cpu->zero) {
         OpSta(memory, cpu, OpAbsX(cpu, 0x11u));
         OpSepWidths(cpu, 0x20u);
@@ -82,7 +83,7 @@ static bool StatusTickApply(BattleContext *battle) {
     OpLoadA(cpu, 4u);
     OpSta(memory, cpu, OpLongX(cpu, 0x7f0002u));
     OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpDp(cpu, 0x54u));
+    OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
     OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffffu));
     OpIncA(cpu);
     OpSta(memory, cpu, OpLongX(cpu, 0x7f0004u));

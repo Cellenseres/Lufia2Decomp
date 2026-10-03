@@ -1,5 +1,6 @@
 #include "core/cpu_ops.h"
 #include "lufia2/ancient_cave.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 enum { CAVE_CARRY_ITEM = 0x54, CAVE_CARRY_COUNT = 0x58 };
@@ -134,7 +135,7 @@ static Lufia2ExecutionResult CollectCaveCarryItems(
                 if (result.flow != LUFIA2_EXECUTION_RETURNED)
                     return result;
                 OpLda(memory, cpu, OpLongX(cpu, WRAM_EVENT_FLAGS));
-                OpOraValue(cpu, OpReadM(memory, cpu, OpDp(cpu, 0x57u)));
+                OpOraValue(cpu, OpReadM(memory, cpu, OpDp(cpu, DP_SCRATCH_D)));
                 OpSta(memory, cpu, OpLongX(cpu, WRAM_EVENT_FLAGS));
                 OpPullX(memory, cpu);
                 OpRepWidths(cpu, 0x20u);

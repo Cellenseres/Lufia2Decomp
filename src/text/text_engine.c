@@ -9,6 +9,7 @@
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
 #include "lufia2/text.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
 
@@ -92,7 +93,7 @@ static void TextDrawGlyph(
     LoadAAbsolute8(memory, cpu, TEXT_GLYPH_ATTRIBUTE, 0);
     TransferAToX(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(TEXT_ATTRIBUTE_TABLE, cpu->x)));
-    StoreADirect8(memory, cpu, 0x57u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_D);
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_GLYPH, 0));
@@ -116,16 +117,16 @@ static void TextDrawGlyph(
         PushAccumulator8(memory, cpu);
         PullDataBank(memory, cpu);
         LoadA8(cpu, 0x10u);
-        StoreADirect8(memory, cpu, 0x58u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_E);
         for (row = 0; row < 16u; ++row) {
             LoadA8(cpu, Read8(memory, LongIndexedAddress(TEXT_FONT, cpu->x)));
             StoreAAbsolute8(memory, cpu, 0x0000u, cpu->y);     /* C7FC */
-            LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
+            LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_D));
             StoreAAbsolute8(memory, cpu, 0x0001u, cpu->y);
             IncrementX16(cpu);
             IncrementY16(cpu);
             IncrementY16(cpu);
-            DecrementDirect8(memory, cpu, 0x58u);
+            DecrementDirect8(memory, cpu, DP_SCRATCH_E);
         }
         SetAccumulatorWidth(cpu, 0);                           /* C80B */
         LoadA16(cpu, cpu->y);
@@ -311,16 +312,16 @@ static void TextFlagBit(
     SimulateJsrFrame(memory, cpu, return_address);
     SetAccumulatorWidth(cpu, 1);                               /* BE30 */
     SetIndexWidth(cpu, 1);
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     LsrA8(cpu);
     LsrA8(cpu);
     LsrA8(cpu);
-    StoreADirect8(memory, cpu, 0x56u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    StoreADirect8(memory, cpu, DP_SCRATCH_C);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
     And8(cpu, 0x07u);
     TransferAToX(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80be45u, cpu->x)));
-    StoreADirect8(memory, cpu, 0x57u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_D);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -425,10 +426,10 @@ static void TextGold(
             }
         }
     } else {
-        Write16Direct(memory, cpu, 0x54u, cpu->accumulator);   /* BF46 */
+        Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator); /* BF46 */
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_GOLD, 0));
         cpu->carry = 1;
-        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x54u));
+        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_A));
         Write16Absolute(memory, cpu, WRAM_GOLD, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
         LoadAAbsolute8(memory, cpu, (WRAM_GOLD + 2u), 0);
@@ -440,7 +441,7 @@ static void TextGold(
             SetAccumulatorWidth(cpu, 0);                       /* undo */
             LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_GOLD, 0));
             cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+            Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
             Write16Absolute(memory, cpu, WRAM_GOLD, cpu->accumulator);
             SetAccumulatorWidth(cpu, 1);
             high = (uint8_t)(Read8(memory,
@@ -787,7 +788,7 @@ static unsigned TextOpHideActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2TextNextByte(memory, cpu, 0xa67bu);                        /* A679 */
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     Lufia2EventFindActorId(memory, cpu, 0xa681u);
     if (cpu->carry)
         return TEXT_OPCODE_NEXT;
@@ -800,7 +801,7 @@ static unsigned TextOpHideActor(
     Lufia2ActorClearMapOccupancy(memory, cpu);                 /* $83:FA12 */
     cpu->program_bank = 0x80u;
     SimulateRtlFrame(memory, cpu);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));               /* A692 */
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A)); /* A692 */
     Compare8(cpu, A8(cpu), 0x10u);
     if (!cpu->carry)
         return TEXT_OPCODE_NEXT;
@@ -808,7 +809,7 @@ static unsigned TextOpHideActor(
     if (cpu->carry)
         return TEXT_OPCODE_NEXT;
     TransferDirectToA(cpu);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
     cpu->carry = 1;
     Sbc8(cpu, 0x10u);
     TransferAToX(cpu);
@@ -942,10 +943,10 @@ static unsigned TextOpScrollView(
     Lufia2CpuState *cpu,
     uint32_t *handoff) {
     Lufia2TextNextByte(memory, cpu, 0xb4c6u);                        /* B4C4 */
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     Lufia2TextNextByte(memory, cpu, 0xb4cbu);
-    StoreADirect8(memory, cpu, 0x55u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+    StoreADirect8(memory, cpu, DP_SCRATCH_B);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
     Compare8(cpu, A8(cpu), 0xffu);
     if (!cpu->zero) {
         *handoff = 0x80b4feu;
@@ -1197,10 +1198,10 @@ void Lufia2TextTestFlag(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     PushY(memory, cpu);                                    /* BE1E */
     Push8(memory, cpu, PackStatus(cpu));
     TextFlagBit(memory, cpu, 0xbe22u);
-    cpu->x = DirectByte(memory, cpu, 0x56u);
+    cpu->x = DirectByte(memory, cpu, DP_SCRATCH_C);
     SetNz8(cpu, (uint8_t)cpu->x);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_EVENT_FLAGS, cpu->x)));
-    And8(cpu, DirectByte(memory, cpu, 0x57u));
+    And8(cpu, DirectByte(memory, cpu, DP_SCRATCH_D));
     UnpackStatus(cpu, Pull8(memory, cpu));
     cpu->y = PullIndexValue(memory, cpu);
     LoadA8(cpu, A8(cpu));
@@ -1215,11 +1216,11 @@ static unsigned TextOpChangeFlag(
     LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
     PushY(memory, cpu);
     TextFlagBit(memory, cpu, (uint16_t)(handler + 6u));
-    cpu->x = DirectByte(memory, cpu, 0x56u);
+    cpu->x = DirectByte(memory, cpu, DP_SCRATCH_C);
     SetNz8(cpu, (uint8_t)cpu->x);
     if (handler == TEXT_OP_SET_FLAG) {
         LoadAAbsolute8(memory, cpu, WRAM_EVENT_FLAGS, cpu->x);
-        Or8(cpu, DirectByte(memory, cpu, 0x57u));
+        Or8(cpu, DirectByte(memory, cpu, DP_SCRATCH_D));
     } else {
         LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0xffu));
         LoadA8(cpu, (uint8_t)(A8(cpu) & Read8(memory,

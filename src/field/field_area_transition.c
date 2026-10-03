@@ -1,5 +1,6 @@
 #include "core/cpu_ops.h"
 #include "lufia2/field.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 
 static Lufia2ExecutionResult AreaChild(
@@ -37,10 +38,10 @@ static void PrepareAreaDestination(
         OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E066A));
         for (unsigned shift = 0; shift < 4u; ++shift)
             OpAslA(cpu);
-        OpSta(memory, cpu, OpDp(cpu, 0x54u));
+        OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
         OpLda(memory, cpu, WRAM_FIELD_DESTINATION_PARAMETERS);
         OpAndValue(cpu, 0x0fu);
-        OpOra(memory, cpu, OpDp(cpu, 0x54u));
+        OpOra(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
         OpSta(memory, cpu, WRAM_FIELD_DESTINATION_PARAMETERS);
     }
     OpLda(memory, cpu, WRAM_FIELD_FLAGS);

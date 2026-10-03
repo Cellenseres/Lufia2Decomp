@@ -6,6 +6,7 @@
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
 #include "lufia2/text.h"
+#include "system/dp_scratch.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
 
@@ -124,7 +125,7 @@ static void TextWindowActorPosition(const Lufia2Memory *memory, Lufia2CpuState *
     SimulateRtlFrame(memory, cpu);
     LoadAAbsolute8(memory, cpu, 0x125cu, 0);
     AslA8(cpu); Adc8(cpu, 2);
-    StoreADirect8(memory, cpu, 0x54u);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x)));
@@ -150,21 +151,21 @@ static void TextWindowActorPosition(const Lufia2Memory *memory, Lufia2CpuState *
 
         for (;;) {
             if (below) {
-                Write8(memory, DirectAddress(cpu, 0x55u), 0); /* C38F */
+                Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0); /* C38F */
                 LoadA8(cpu, DirectByte(memory, cpu, 0x5eu));
                 LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
                 StoreADirect8(memory, cpu, 0x66u);
                 cpu->carry = 0;
-                Adc8(cpu, DirectByte(memory, cpu, 0x54u));
+                Adc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
                 Compare8(cpu, A8(cpu), 0x1cu);
                 if (!cpu->carry)
                     break;
             }
             LoadA8(cpu, 0xffu);
-            StoreADirect8(memory, cpu, 0x55u); /* C37F */
+            StoreADirect8(memory, cpu, DP_SCRATCH_B); /* C37F */
             LoadA8(cpu, DirectByte(memory, cpu, 0x5eu));
             cpu->carry = 1;
-            Sbc8(cpu, DirectByte(memory, cpu, 0x54u));
+            Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
             cpu->carry = 1;
             Sbc8(cpu, 2);
             StoreADirect8(memory, cpu, 0x66u);
@@ -193,7 +194,7 @@ static void TextWindowActorPosition(const Lufia2Memory *memory, Lufia2CpuState *
     }
     LoadA8(cpu, 0xe0u); StoreADirect8(memory, cpu, 0x5bu);
     DecrementDirect8(memory, cpu, 0x5eu);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x55u));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
     if (!cpu->zero) {
         DecrementDirect8(memory, cpu, 0x5eu);
         DecrementDirect8(memory, cpu, 0x5eu);
@@ -262,8 +263,8 @@ Lufia2ExecutionResult Lufia2TextBuildWindow(
     Write8(memory, DirectAddress(cpu, 0x64u), 0);
     LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
     LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-    StoreADirect8(memory, cpu, 0x56u);
-    Write8(memory, DirectAddress(cpu, 0x57u), 0);
+    StoreADirect8(memory, cpu, DP_SCRATCH_C);
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_D), 0);
     TransferDirectToA(cpu); Write8(memory, 0x7fd08au, A8(cpu));
     LoadAAbsolute8(memory, cpu, 0x099cu, 0); And8(cpu, 4);
     if (!cpu->zero) IncrementDirect8(memory, cpu, 0x63u);
@@ -285,7 +286,8 @@ Lufia2ExecutionResult Lufia2TextBuildWindow(
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x7eu); PushAccumulator8(memory, cpu); PullDataBank(memory, cpu);
     TransferDirectToA(cpu); LoadAAbsolute8(memory, cpu, 0x125cu, 0);
-    SetAccumulatorWidth(cpu, 0); StoreADirect16(memory, cpu, 0x58u);
+    SetAccumulatorWidth(cpu, 0);
+    StoreADirect16(memory, cpu, DP_SCRATCH_E);
     LoadADirect16(memory, cpu, 0x60u);
     Write16Long(memory, 0x7fd085u, cpu->accumulator);
     TransferAToX(cpu);
@@ -323,7 +325,7 @@ Lufia2ExecutionResult Lufia2TextBuildWindow(
         IncrementA16(cpu); StoreAAbsolute16(memory, cpu, 0x3040u, cpu->x);
         PullAccumulator16(memory, cpu);
         cpu->carry = 0; Add16Value(cpu, 0x80u); TransferAToX(cpu);
-        Decrement16Direct(memory, cpu, 0x58u);
+        Decrement16Direct(memory, cpu, DP_SCRATCH_E);
     } while (!cpu->zero);
     LoadA16(cpu, 0xa0d6u);
     SimulateJsrFrame(memory, cpu, 0xc4a6u);

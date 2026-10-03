@@ -4,6 +4,7 @@
 /* Actor subsystem internals shared across modules. */
 
 #include "lufia2/actor.h"
+#include "system/dp_scratch.h"
 
 /* $83:C0EF: leader position to $8F/$91. */
 void Lufia2ActorLeaderToProbe(
@@ -134,10 +135,6 @@ enum {
 
 /* Second plane the occupancy of blocking actors is also recorded in. */
 #define MAP_BLOCKING_ATTRIBUTES 0x7e4001u
-
-/* Direct page scratch bytes the actor and object routines use to hold an
- * operand, a coordinate or an intermediate result within one handler. */
-enum { DP_SCRATCH_A = 0x54, DP_SCRATCH_B = 0x55, DP_SCRATCH_C = 0x56 };
 
 /* Secondary script operand bytes, relative to the opcode byte. */
 enum {
