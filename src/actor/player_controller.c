@@ -1,5 +1,7 @@
 /* Player controller ($83:C1B4). */
 
+#include <stdbool.h>
+
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
 #include "actor/actor_internal.h"
@@ -497,6 +499,8 @@ static uint8_t PlayerCallActionCore(
 Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    bool walk = true;
+
     LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* C1B4 */
     if (cpu->negative)
         return PlayerReturned(0x83c1e2u);
@@ -523,6 +527,8 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
         return PlayerReturned(0x83c1e2u);
     PlayerSkipProbe(memory, cpu);                              /* C1E8 */
     if (!cpu->carry) {
+        bool turn;
+
         SetIndexWidth(cpu, 0);                                 /* C1ED */
         Lufia2ActorLeaderToProbe(memory, cpu, 0xc1f1u);
         PlayerFacingCode(memory, cpu, 0xc1f4u);
@@ -537,8 +543,8 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
             SimulateRtlFrame(memory, cpu);
             cpu->program_bank = 0x83u;
             SetIndexWidth(cpu, 1);                             /* C202 */
-            if (cpu->carry)
-                goto done;
+            walk = false;
+            turn = !cpu->carry;
         } else {
             SetIndexWidth(cpu, 0);                             /* C219 */
             Lufia2ActorLeaderToProbe(memory, cpu, 0xc21du);
@@ -550,41 +556,41 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
             PlayerProbeCell(memory, cpu, 0xc227u);             /* C225 */
             SetIndexWidth(cpu, 1);
             BitImmediate8(cpu, 0x01u);
-            if (cpu->zero)
-                goto walk;
+            turn = !cpu->zero;
         }
-        /* Blocked: turn toward $22 + $18. */
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x22u)));  /* C206 */
-        Write8(memory, 0x7fd09du, A8(cpu));
-        cpu->carry = 0;
-        Adc8(cpu, 0x18u);
-        if (!PlayerCallActionCore(memory, cpu, 0xc212u))
-            return PlayerBoundary(cpu, 0);
-        SimulateJslFrame(memory, cpu, 0x83u, 0xc216u);         /* C213 */
-        if (!PlayerDoorRegion(memory, cpu))
-            return PlayerBoundary(cpu, 0);
-        SimulateRtlFrame(memory, cpu);
-        cpu->program_bank = 0x83u;
-        goto done;
+        if (turn) {
+            /* Blocked: turn toward $22 + $18. */
+            LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x22u))); /* C206 */
+            Write8(memory, 0x7fd09du, A8(cpu));
+            cpu->carry = 0;
+            Adc8(cpu, 0x18u);
+            if (!PlayerCallActionCore(memory, cpu, 0xc212u))
+                return PlayerBoundary(cpu, 0);
+            SimulateJslFrame(memory, cpu, 0x83u, 0xc216u); /* C213 */
+            if (!PlayerDoorRegion(memory, cpu))
+                return PlayerBoundary(cpu, 0);
+            SimulateRtlFrame(memory, cpu);
+            cpu->program_bank = 0x83u;
+            walk = false;
+        }
     }
 
-walk:
-    PlayerWalkSpeed(memory, cpu);                              /* C232 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x22u)));
-    if (!PlayerCallActionCore(memory, cpu, 0xc23au))
-        return PlayerBoundary(cpu, 0);
-    SimulateJsrFrame(memory, cpu, 0xc23du);                    /* C23B */
-    LoadA8(cpu, 0x20u);                                        /* C0FA */
-    TestBitsAbsolute8(memory, cpu, 0x099cu, 0);
-    if (!cpu->zero) {
-        LoadA8(cpu, 0x01u);
-        Write8(memory, 0x7fd0c1u, A8(cpu));
+    if (walk) {
+        PlayerWalkSpeed(memory, cpu); /* C232 */
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x22u)));
+        if (!PlayerCallActionCore(memory, cpu, 0xc23au))
+            return PlayerBoundary(cpu, 0);
+        SimulateJsrFrame(memory, cpu, 0xc23du); /* C23B */
+        LoadA8(cpu, 0x20u);                     /* C0FA */
+        TestBitsAbsolute8(memory, cpu, 0x099cu, 0);
+        if (!cpu->zero) {
+            LoadA8(cpu, 0x01u);
+            Write8(memory, 0x7fd0c1u, A8(cpu));
+        }
+        SimulateRtsFrame(memory, cpu);
+        LoadA8(cpu, 0x08u); /* C23E */
+        TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
     }
-    SimulateRtsFrame(memory, cpu);
-    LoadA8(cpu, 0x08u);                                        /* C23E */
-    TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
-
-done:
     SetIndexWidth(cpu, 1);                                     /* C243 */
     return PlayerReturned(0x83c245u);
 }
