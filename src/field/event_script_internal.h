@@ -47,6 +47,9 @@
 #define EVENT_LISTED_ACTOR_SLOTS 0x7fd72cu
 /* Where the list search hands off to the ROM after its step limit. */
 #define EVENT_SEARCH_HANDOFF 0x80bfbcu
+/* The listed object a push opcode moves, and its record byte minus $10. */
+#define EVENT_PUSH_OBJECT_INDEX 0x7fd0beu
+#define EVENT_PUSH_OBJECT_ID 0x7fd09fu
 #define EVENT_UNK_7FD0BF 0x7fd0bfu
 #define EVENT_UNK_7FD133 0x7fd133u
 #define EVENT_UNK_7FD296 0x7fd296u

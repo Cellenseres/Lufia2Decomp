@@ -111,9 +111,11 @@ static unsigned EventQueueObjectAnimation(
         return EVENT_OPCODE_HANDOFF;
     }
     for (LoadX16(cpu, 0x0000u);;) {                            /* F581 */
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd057u, cpu->x)));
+        LoadA8(cpu,
+               Read8(memory, LongIndexedAddress(EVENT_ANIMATION_SLOT_STATE, cpu->x)));
         if (cpu->negative) {
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd04fu, cpu->x)));
+            LoadA8(cpu, Read8(memory,
+                              LongIndexedAddress(EVENT_ANIMATION_SLOT_OBJECT, cpu->x)));
             Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x57u));
             if (cpu->zero) {
                 SimulateRtlFrame(memory, cpu);
@@ -126,7 +128,8 @@ static unsigned EventQueueObjectAnimation(
             break;
     }
     for (LoadX16(cpu, 0x0000u);;) {                            /* F598 */
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd057u, cpu->x)));
+        LoadA8(cpu,
+               Read8(memory, LongIndexedAddress(EVENT_ANIMATION_SLOT_STATE, cpu->x)));
         if (!cpu->negative)
             break;
         IncrementX16(cpu);
@@ -137,9 +140,9 @@ static unsigned EventQueueObjectAnimation(
         }
     }
     LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x56u) | 0x90u));  /* F5AA */
-    Write8(memory, LongIndexedAddress(0x7fd057u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(EVENT_ANIMATION_SLOT_STATE, cpu->x), A8(cpu));
     LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
-    Write8(memory, LongIndexedAddress(0x7fd04fu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(EVENT_ANIMATION_SLOT_OBJECT, cpu->x), A8(cpu));
     SimulateRtlFrame(memory, cpu);
     return EVENT_OPCODE_NEXT;
 }
@@ -152,10 +155,10 @@ static unsigned EventObjectCoversRow(
     SimulateJsrFrame(memory, cpu, 0xccc8u);
     LoadA8(cpu, 0x0fu);                                        /* CCDB */
     ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Read8(memory, 0x7fd04eu));
+    LoadA8(cpu, Read8(memory, EVENT_OBJECT_OPERAND));
     LoadX16(cpu, 0x0002u);
     if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xcce8u)) {
-        *handoff = 0x80bfbcu;
+        *handoff = EVENT_SEARCH_HANDOFF;
         return EVENT_OPCODE_HANDOFF;
     }
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef001u, cpu->x)));
@@ -174,7 +177,7 @@ static unsigned EventObjectCoversRow(
             LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef00du, cpu->x)));
             LoadX16(cpu, 0x0004u);
             if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xcd0cu)) {
-                *handoff = 0x80bfbcu;
+                *handoff = EVENT_SEARCH_HANDOFF;
                 return EVENT_OPCODE_HANDOFF;
             }
             LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef005u, cpu->x)));
@@ -224,13 +227,13 @@ unsigned Lufia2EventOpObjectBit(
             kReturns[kind][2]);
         return EVENT_OPCODE_NEXT;
     }
-    Write8(memory, 0x7fd04eu, A8(cpu));
+    Write8(memory, EVENT_OBJECT_OPERAND, A8(cpu));
     EventObjectBit(memory, cpu, EVENT_OBJECT_BIT_TEST, kReturns[kind][2]);
     if (cpu->zero != (kind == 0u))
         return EVENT_OPCODE_NEXT;
     LoadAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
     if (cpu->negative) {
-        LoadA8(cpu, Read8(memory, 0x7fd04eu));
+        LoadA8(cpu, Read8(memory, EVENT_OBJECT_OPERAND));
         EventObjectBit(memory, cpu,
             kind == 0u ? EVENT_OBJECT_BIT_SET : EVENT_OBJECT_BIT_CLEAR,
             kind == 0u ? 0xcc94u : 0xccc3u);
@@ -242,7 +245,7 @@ unsigned Lufia2EventOpObjectBit(
         if (cpu->carry)
             return EVENT_OPCODE_NEXT;
     }
-    LoadA8(cpu, Read8(memory, 0x7fd04eu));
+    LoadA8(cpu, Read8(memory, EVENT_OBJECT_OPERAND));
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, kind == 0u ? 0x00u : 0x40u);
     PushY(memory, cpu);
@@ -453,7 +456,9 @@ static void EventObjectSetTiles(
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd5dcu, cpu->y));
+    LoadA16(cpu, Read16AbsoluteIndexed(
+                     memory, cpu,
+                     ((uint16_t)(WRAM_FIELD_PENDING_OBJECT_TILES & 0xffffu)), cpu->y));
     EventTileWord(memory, cpu, 0xf762u);
     LoadA16(cpu, Read16Long(memory, WRAM_FIELD_OBJECT_HEIGHT));
     And16(cpu, 0x00ffu);
@@ -464,7 +469,10 @@ static void EventObjectSetTiles(
         Add16Value(cpu, Read16Long(memory, WRAM_FIELD_SECTION_WIDTH));
         Add16Value(cpu, Read16Long(memory, WRAM_FIELD_SECTION_WIDTH));
         TransferAToX(cpu);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd5deu, cpu->y));
+        LoadA16(cpu, Read16AbsoluteIndexed(
+                         memory, cpu,
+                         ((uint16_t)((WRAM_FIELD_PENDING_OBJECT_TILES + 2u) & 0xffffu)),
+                         cpu->y));
         EventTileWord(memory, cpu, 0xf77fu);
     }
     PullDataBank(memory, cpu);                                 /* F780 */
@@ -495,7 +503,7 @@ static uint8_t EventObjectRedraw(
     ++run->region_redraws[run->depth];
     Lufia2FieldRedrawRegion(memory, cpu, 0x80u, 0xd3cfu);      /* $83:8E85 */
     LoadA8(cpu, 0x02u);
-    redraw = AbsoluteIndexedAddress(cpu, 0x1273u, 0);          /* TSB */
+    redraw = AbsoluteIndexedAddress(cpu, WRAM_EVENT_REDRAW, 0); /* TSB */
     value = Read8(memory, redraw);
     cpu->zero = (value & A8(cpu)) == 0;
     Write8(memory, redraw, (uint8_t)(value | A8(cpu)));
@@ -564,7 +572,7 @@ static uint8_t EventObjectTiles(
     Write8(memory, LongIndexedAddress(WRAM_FIELD_PENDING_RECORD_X, cpu->x), A8(cpu));
     Write8(memory, LongIndexedAddress(WRAM_FIELD_PENDING_RECORD_Y, cpu->x), A8(cpu));
     TransferDirectToA(cpu);
-    Write8(memory, LongIndexedAddress(0x7fd75cu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(EVENT_UNK_7FD75C, cpu->x), A8(cpu));
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_PENDING_OBJECT_RECORD,
         cpu->x)));
     cpu->carry = 1;
@@ -752,7 +760,11 @@ static void EventPlaceCopyTiles(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     AslA16(cpu);
     StoreADirect16(memory, cpu, 0x54u);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->y));
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xd5dcu, cpu->x), cpu->accumulator);
+    Write16Long(
+        memory,
+        AbsoluteIndexedAddress(
+            cpu, ((uint16_t)(WRAM_FIELD_PENDING_OBJECT_TILES & 0xffffu)), cpu->x),
+        cpu->accumulator);
     LoadXDirect(memory, cpu, 0x63u);
     EventCopyTile(memory, cpu, 0xf901u);
     LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
@@ -763,7 +775,11 @@ static void EventPlaceCopyTiles(const Lufia2Memory *memory, Lufia2CpuState *cpu)
         TransferAToY(cpu);
         LoadXDirect(memory, cpu, 0x56u);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->y));
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xd5deu, cpu->x),
+        Write16Long(memory,
+                    AbsoluteIndexedAddress(
+                        cpu,
+                        ((uint16_t)((WRAM_FIELD_PENDING_OBJECT_TILES + 2u) & 0xffffu)),
+                        cpu->x),
                     cpu->accumulator);
         LoadA16(cpu, Read16Direct(memory, cpu, 0x63u));
         cpu->carry = 0;
@@ -791,9 +807,11 @@ static void EventPlacePending(
     LoadA8(cpu, DirectByte(memory, cpu, 0x65u));
     TransferAToX(cpu);
     LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
-    StoreAAbsolute8(memory, cpu, 0xd69cu, cpu->x);
+    StoreAAbsolute8(memory, cpu, ((uint16_t)(WRAM_FIELD_PENDING_RECORD_X & 0xffffu)),
+                    cpu->x);
     LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
-    StoreAAbsolute8(memory, cpu, 0xd6ccu, cpu->x);
+    StoreAAbsolute8(memory, cpu, ((uint16_t)(WRAM_FIELD_PENDING_RECORD_Y & 0xffffu)),
+                    cpu->x);
     LoadA8(cpu, 0xffu);
     StoreADirect8(memory, cpu, 0x54u);
     StoreADirect8(memory, cpu, 0x56u);
@@ -819,21 +837,34 @@ static void EventPlacePending(
         SetNz8(cpu, row);
         EventFindPending(memory, cpu, 0xf8a4u);
         EventPendingOffsets(memory, cpu, 0xf8a7u);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd5dcu, cpu->x));
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xd5dcu, cpu->y),
+        LoadA16(cpu,
+                Read16AbsoluteIndexed(
+                    memory, cpu,
+                    ((uint16_t)(WRAM_FIELD_PENDING_OBJECT_TILES & 0xffffu)), cpu->x));
+        Write16Long(
+            memory,
+            AbsoluteIndexedAddress(
+                cpu, ((uint16_t)(WRAM_FIELD_PENDING_OBJECT_TILES & 0xffffu)), cpu->y),
             cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);                           /* F8AE */
         LoadY16(cpu, cpu->x);
-        LoadAAbsolute8(memory, cpu, 0xd04au, 0);
+        LoadAAbsolute8(memory, cpu, ((uint16_t)(WRAM_FIELD_OBJECT_SOURCE_X & 0xffffu)),
+                       0);
         ExchangeAccumulatorBytes(cpu);
-        LoadAAbsolute8(memory, cpu, 0xd04bu, 0);
+        LoadAAbsolute8(memory, cpu, ((uint16_t)(WRAM_FIELD_OBJECT_SOURCE_Y & 0xffffu)),
+                       0);
         cpu->carry = 0;
-        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0xd04du, 0)));
+        Adc8(cpu, Read8(memory,
+                        AbsoluteIndexedAddress(
+                            cpu, ((uint16_t)(WRAM_FIELD_OBJECT_HEIGHT & 0xffffu)), 0)));
         DecrementA8(cpu);
         EventLayerCell(memory, cpu, 0xf8bfu, 0);
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0xd5dcu, cpu->y),
+        Write16Long(
+            memory,
+            AbsoluteIndexedAddress(
+                cpu, ((uint16_t)(WRAM_FIELD_PENDING_OBJECT_TILES & 0xffffu)), cpu->y),
             cpu->accumulator);
         LoadA16(cpu, Read16Direct(memory, cpu, 0x58u));
         if (!cpu->zero) {
@@ -893,7 +924,7 @@ unsigned Lufia2EventOpPlaceObject(
         return EVENT_OPCODE_HANDOFF;
     SimulateJsrFrame(memory, cpu, 0xd3e3u);
     for (LoadX16(cpu, 0x0000u);;) {                            /* D426 */
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd75cu, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_UNK_7FD75C, cpu->x)));
         if (!cpu->negative)
             break;
         IncrementX16(cpu);
@@ -910,7 +941,7 @@ unsigned Lufia2EventOpPlaceObject(
     LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
     Write8(memory, LongIndexedAddress(WRAM_FIELD_PENDING_RECORD_Y, cpu->x), A8(cpu));
     LoadA8(cpu, 0x80u);
-    Write8(memory, LongIndexedAddress(0x7fd75cu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(EVENT_UNK_7FD75C, cpu->x), A8(cpu));
     Lufia2EventNextByte(memory, cpu, 0xd3fau);
     PushY(memory, cpu);
     cpu->carry = 0;
@@ -922,7 +953,7 @@ unsigned Lufia2EventOpPlaceObject(
     if (!Lufia2EventMapObject(memory, cpu, 0xd409u, handoff))
         return EVENT_OPCODE_HANDOFF;
     {
-        const uint32_t redraw = AbsoluteIndexedAddress(cpu, 0x1273u, 0);
+        const uint32_t redraw = AbsoluteIndexedAddress(cpu, WRAM_EVENT_REDRAW, 0);
         const uint8_t value = Read8(memory, redraw);
 
         LoadA8(cpu, Read8(memory, WRAM_FIELD_OBJECT_FLAGS));                 /* D40A */
@@ -1162,13 +1193,13 @@ unsigned Lufia2EventOpPushObject(
     StoreADirect8(memory, cpu, 0x23u);                         /* DCC0 */
     Lufia2EventNextByte(memory, cpu, 0xdcc4u);
     Lufia2EventValue(memory, cpu, 0xdcc7u);
-    Write8(memory, 0x7fd0beu, A8(cpu));
+    Write8(memory, EVENT_PUSH_OBJECT_INDEX, A8(cpu));
     Lufia2EventNextByte(memory, cpu, 0xdcceu);
     StoreADirect8(memory, cpu, 0x22u);
     PushY(memory, cpu);
     SimulateJslFrame(memory, cpu, 0x80u, 0xdcd5u);
     TransferDirectToA(cpu);                                    /* DCDA */
-    LoadA8(cpu, Read8(memory, 0x7fd0beu));
+    LoadA8(cpu, Read8(memory, EVENT_PUSH_OBJECT_INDEX));
     TransferAToX(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_PENDING_RECORD_X, cpu->x)));
     StoreADirect8(memory, cpu, 0x9fu);
@@ -1180,7 +1211,7 @@ unsigned Lufia2EventOpPushObject(
         cpu->x)));
     cpu->carry = 1;
     Sbc8(cpu, 0x10u);
-    Write8(memory, 0x7fd09fu, A8(cpu));
+    Write8(memory, EVENT_PUSH_OBJECT_ID, A8(cpu));
     PushY(memory, cpu);
     LoadA8(cpu, DirectByte(memory, cpu, 0x23u));
     if (!EventPushAllowed(memory, cpu, 0xdd01u, handoff))
@@ -1190,10 +1221,10 @@ unsigned Lufia2EventOpPushObject(
     if (allowed) {
         Lufia2EventClaimActor(memory, cpu, 0xdd09u);                 /* DD06 */
         TransferDirectToA(cpu);
-        LoadA8(cpu, Read8(memory, 0x7fd0beu));
+        LoadA8(cpu, Read8(memory, EVENT_PUSH_OBJECT_INDEX));
         TransferAToX(cpu);
         LoadA8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));
-        Write8(memory, LongIndexedAddress(0x7fd72cu, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(EVENT_LISTED_ACTOR_SLOTS, cpu->x), A8(cpu));
         LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
         LoadA8(cpu, 0x01u);
         Write8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x), A8(cpu));

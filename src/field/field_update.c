@@ -29,7 +29,8 @@ void Lufia2FieldIdleBody(
         return;
     LoadX8(cpu, 0x00u);                                        /* 80F5 */
     do {
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd057u, cpu->x)));
+        LoadA8(cpu,
+               Read8(memory, LongIndexedAddress(EVENT_ANIMATION_SLOT_STATE, cpu->x)));
         if (cpu->negative)
             return;
         LoadX8(cpu, (uint8_t)(cpu->x + 1u));                   /* 80FD */
@@ -59,7 +60,7 @@ Lufia2ExecutionResult Lufia2FieldIdleTest(
 Lufia2ExecutionResult Lufia2FieldAnimationTicks(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    const uint32_t slots = 0x7fd057u;
+    const uint32_t slots = EVENT_ANIMATION_SLOT_STATE;
     Lufia2ExecutionResult result;
 
     result.flow = LUFIA2_EXECUTION_RETURNED;
@@ -96,9 +97,10 @@ Lufia2ExecutionResult Lufia2FieldAnimationTicks(
                 if (!cpu->zero)
                     TransferDirectToA(cpu);                    /* 86C3 */
                 Write8(memory, LongIndexedAddress(slots, cpu->x), A8(cpu));
-                LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd04fu, cpu->x)));
-                Write8(memory, 0x7fd04eu, A8(cpu));
-                LoadA8(cpu, Read8(memory, 0x7fd04eu));
+                LoadA8(cpu, Read8(memory, LongIndexedAddress(
+                                              EVENT_ANIMATION_SLOT_OBJECT, cpu->x)));
+                Write8(memory, EVENT_OBJECT_OPERAND, A8(cpu));
+                LoadA8(cpu, Read8(memory, EVENT_OBJECT_OPERAND));
                 /* The slot handlers $83:8783/87CC stay LLE. */
                 result.flow = LUFIA2_EXECUTION_BOUNDARY;
                 result.pc = cpu->resume_pc =

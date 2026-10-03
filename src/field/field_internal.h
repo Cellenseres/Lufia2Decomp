@@ -66,4 +66,12 @@ Lufia2ExecutionResult Lufia2FieldDecompressMapData(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* Object animation slots, eight entries in bank $7F ($83:8682 ticks them).
+ * The state byte's bit 7 marks a slot in use; the object byte is the object
+ * the slot animates. */
+#define EVENT_ANIMATION_SLOT_STATE 0x7fd057u
+#define EVENT_ANIMATION_SLOT_OBJECT 0x7fd04fu
+/* The object index the running object opcode or animation slot works on. */
+#define EVENT_OBJECT_OPERAND 0x7fd04eu
+
 #endif
