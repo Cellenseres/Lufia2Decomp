@@ -242,38 +242,9 @@ static void WorldMapPaletteCycles(
     } while (!cpu->zero);
 }
 
-/* $86:CEF6: world map NMI via the $00:0067 vector. */
-Lufia2ExecutionResult Lufia2WorldMapNmiUploads(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    static const uint16_t mode7_regs[8] = {
-        SNES_M7A, SNES_M7A, SNES_M7B, SNES_M7B, SNES_M7C, SNES_M7C, SNES_M7D,
-        SNES_M7D};
-    static const uint16_t scroll_regs[6] = {
-        SNES_BG1HOFS, SNES_BG1VOFS, SNES_BG2HOFS, SNES_BG2VOFS, SNES_BG3HOFS, SNES_BG3VOFS};
-    Lufia2ExecutionResult result;
-    unsigned i;
-
-    result.flow = LUFIA2_EXECUTION_RETURNED;
-    result.pc = 0x86d1a0u;
-    result.dispatches = 0;
-    Push8(memory, cpu, PackStatus(cpu));                       /* CEF6 */
-    PushDataBank(memory, cpu);
-    SetAccumulatorWidth(cpu, 1);
-    SetIndexWidth(cpu, 0);
-    LoadA8(cpu, 0x86u);
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
-    StoreAImmediate8(memory, cpu, 0x8fu, SNES_INIDISP);
-    StoreZeroAbsolute8(memory, cpu, SNES_HDMAEN, 0);
-    LoadAAbsolute8(memory, cpu, 0x11d9u, 0);
-    if (!cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x1365u, 0);
-        if (!cpu->zero)
-            WorldMapTileUploads(memory, cpu);
-    }
-    StoreZeroAbsolute8(memory, cpu, SNES_DMAP(7), 0);          /* CF15 */
-    StoreAImmediate8(memory, cpu, 0x18u, SNES_BBAD(7));
+/* DMA the row strip the stream routine staged ($1710 flag, VRAM address and source at
+ * $1712). */
+static void WorldMapUploadStreamedRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x1710u, 0);
     if (!cpu->zero) {
         StoreZeroAbsolute8(memory, cpu, SNES_VMAIN, 0);
@@ -289,6 +260,12 @@ Lufia2ExecutionResult Lufia2WorldMapNmiUploads(
         StoreAImmediate8(memory, cpu, 0x80u, SNES_MDMAEN);
         StoreZeroAbsolute8(memory, cpu, 0x1710u, 0);
     }
+}
+
+/* $86:CF48: DMA the column strip staged by the stream routine ($1711 flag) as two
+ * 0x80-byte halves. */
+static void WorldMapUploadStreamedColumn(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x1711u, 0);                   /* CF48 */
     if (!cpu->zero) {
         StoreAImmediate8(memory, cpu, 0x03u, SNES_VMAIN);
@@ -311,6 +288,11 @@ Lufia2ExecutionResult Lufia2WorldMapNmiUploads(
         StoreAImmediate8(memory, cpu, 0x80u, SNES_MDMAEN);
         StoreZeroAbsolute8(memory, cpu, 0x1711u, 0);
     }
+}
+
+/* $86:CF86: restore the VRAM increment mode, then DMA the pending CGRAM palette block
+ * ($1702 length). */
+static void WorldMapUploadPalette(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreAImmediate8(memory, cpu, 0x80u, SNES_VMAIN);          /* CF86 */
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1702u, 0));
     if (!cpu->zero) {
@@ -329,9 +311,15 @@ Lufia2ExecutionResult Lufia2WorldMapNmiUploads(
         LoadX16(cpu, 0x0000u);
         Write16Absolute(memory, cpu, 0x1702u, cpu->x);
     }
-    LoadAAbsolute8(memory, cpu, 0x16e7u, 0);                   /* CFC0 */
-    if (!cpu->zero)
-        WorldMapPaletteCycles(memory, cpu);
+}
+
+/* $86:D032: copy the mode 7 registers or set up the HDMA channels the scene flags
+ * select; builds the channel mask in DP $33. */
+static void WorldMapSetupHdma(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    static const uint16_t mode7_regs[8] = {SNES_M7A, SNES_M7A, SNES_M7B, SNES_M7B,
+                                           SNES_M7C, SNES_M7C, SNES_M7D, SNES_M7D};
+    unsigned i;
+
     Write8(memory, DirectAddress(cpu, 0x33u), 0x00u);          /* D032 */
     LoadAAbsolute8(memory, cpu, 0x11deu, 0);
     if (cpu->zero) {
@@ -409,6 +397,15 @@ Lufia2ExecutionResult Lufia2WorldMapNmiUploads(
         Write16Absolute(memory, cpu, SNES_WH0, cpu->y);
         Write16Absolute(memory, cpu, SNES_WH2, cpu->y);
     }
+}
+
+/* $86:D12C: enable the HDMA channels, copy the mode 7 centre and, when $11D9 is clear,
+ * the BG scroll registers. */
+static void WorldMapFinishRegisters(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    static const uint16_t scroll_regs[6] = {SNES_BG1HOFS, SNES_BG1VOFS, SNES_BG2HOFS,
+                                            SNES_BG2VOFS, SNES_BG3HOFS, SNES_BG3VOFS};
+    unsigned i;
+
     LoadAAbsolute8(memory, cpu, 0x11d8u, 0);                   /* D12C */
     if (!cpu->zero) {
         LoadA8(cpu, DirectByte(memory, cpu, 0x33u));
@@ -423,6 +420,41 @@ Lufia2ExecutionResult Lufia2WorldMapNmiUploads(
             CopyAbsolute8(memory, cpu, (uint16_t)(0x0594u + i),
                 scroll_regs[i >> 1]);
     }
+}
+
+/* $86:CEF6: world map NMI via the $00:0067 vector. */
+Lufia2ExecutionResult Lufia2WorldMapNmiUploads(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result;
+
+    result.flow = LUFIA2_EXECUTION_RETURNED;
+    result.pc = 0x86d1a0u;
+    result.dispatches = 0;
+    Push8(memory, cpu, PackStatus(cpu)); /* CEF6 */
+    PushDataBank(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 0);
+    LoadA8(cpu, 0x86u);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    StoreAImmediate8(memory, cpu, 0x8fu, SNES_INIDISP);
+    StoreZeroAbsolute8(memory, cpu, SNES_HDMAEN, 0);
+    LoadAAbsolute8(memory, cpu, 0x11d9u, 0);
+    if (!cpu->zero) {
+        LoadAAbsolute8(memory, cpu, 0x1365u, 0);
+        if (!cpu->zero)
+            WorldMapTileUploads(memory, cpu);
+    }
+    StoreZeroAbsolute8(memory, cpu, SNES_DMAP(7), 0); /* CF15 */
+    StoreAImmediate8(memory, cpu, 0x18u, SNES_BBAD(7));
+    WorldMapUploadStreamedRow(memory, cpu);
+    WorldMapUploadStreamedColumn(memory, cpu);
+    WorldMapUploadPalette(memory, cpu);
+    LoadAAbsolute8(memory, cpu, 0x16e7u, 0); /* CFC0 */
+    if (!cpu->zero)
+        WorldMapPaletteCycles(memory, cpu);
+    WorldMapSetupHdma(memory, cpu);
+    WorldMapFinishRegisters(memory, cpu);
     StoreZeroAbsolute8(memory, cpu, 0x11d9u, 0);               /* D19B */
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
