@@ -491,6 +491,70 @@ static void BattleSpriteParty(
     PullDataBank(memory, cpu);                                 /* 8D2C */
 }
 
+/* Direct-page inputs of the tile block routine ($81:BE58) and the party
+ * tilemap loop. */
+enum {
+    TILE_BLOCK_DP_TILE = 0x00u,
+    TILE_BLOCK_DP_CELLS = 0x02u, /* word: cells per row, then rows ($03) */
+    TILE_BLOCK_DP_ATTRIBUTES = 0x04u,
+    TILE_BLOCK_DP_DESTINATION = 0x08u, /* word: tilemap offset in $7E */
+    PARTY_TILEMAP_DP_RECORDS_LEFT = 0x05u,
+    BATTLE_PARTY_TILEMAP = 0x2800u, /* $7E:2800, the party's tilemap copy */
+};
+
+/* Places the tile block for the in-use party record at Y into the tilemap
+ * copy at $7E:2800: the block's cell comes from the record's position, its
+ * size from the extra word, and its attributes from the palette phase. */
+static void BattlePlacePartyTiles(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushY(memory, cpu);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(
+                     memory, cpu, (BATTLE_PARTY_SPRITES + PARTY_SPRITE_EXTRA), cpu->y));
+    Write16Direct(memory, cpu, TILE_BLOCK_DP_CELLS, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadAAbsolute8(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_Y_A), cpu->y); /* 8D6A */
+    ExchangeAccumulatorBytes(cpu);
+    LoadAAbsolute8(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_X_A), cpu->y);
+    SetAccumulatorWidth(cpu, 0);
+    cpu->carry = 0;
+    Add16Value(cpu, 0x0100u);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    And16(cpu, 0x1f1fu);
+    SetAccumulatorWidth(cpu, 1);
+    ExchangeAccumulatorBytes(cpu); /* 8D7F */
+    Write8(memory, SNES_WRMPYA, A8(cpu));
+    LoadA8(cpu, 0x40u);
+    Write8(memory, SNES_WRMPYB, A8(cpu));
+    LoadA8(cpu, 0x00u);
+    ExchangeAccumulatorBytes(cpu);
+    AslA8(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));
+    Add16Value(cpu, BATTLE_PARTY_TILEMAP);
+    Write16Direct(memory, cpu, TILE_BLOCK_DP_DESTINATION, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadAAbsolute8(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_PALETTE_STEP),
+                   cpu->y); /* 8D9C */
+    cpu->carry = 0;
+    Adc8(cpu, AbsoluteByte(memory, cpu, BATTLE_PALETTE_PHASE_PARTY, 0));
+    And8(cpu, 0x07u);
+    AslA8(cpu);
+    AslA8(cpu);
+    Or8(cpu, 0x23u);
+    StoreADirect8(memory, cpu, TILE_BLOCK_DP_ATTRIBUTES);
+    LoadAAbsolute8(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_TILE), cpu->y);
+    StoreADirect8(memory, cpu, TILE_BLOCK_DP_TILE);
+    SimulateJslFrame(memory, cpu, 0x85u, 0x8db3u); /* $81:BE54 */
+    SimulateJsrFrame(memory, cpu, 0xbe56u);
+    BattleTileBlock(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    cpu->y = PullIndexValue(memory, cpu);
+}
+
 /* $85:8D2E: party tilemap at $7E:2800 instead of sprites. */
 static void BattlePartyTilemap(
     const Lufia2Memory *memory,
@@ -499,7 +563,7 @@ static void BattlePartyTilemap(
     Push8(memory, cpu, 0x85u);                                 /* PHK */
     PullDataBank(memory, cpu);
     StoreZeroAbsolute8(memory, cpu, 0x15d3u, 0);               /* 8D31 */
-    LoadX16(cpu, 0x2800u);
+    LoadX16(cpu, BATTLE_PARTY_TILEMAP);
     LoadY16(cpu, 0x0200u);
     Write16Absolute(memory, cpu, SNES_WMADDL, cpu->x);
     StoreZeroAbsolute8(memory, cpu, SNES_WMADDH, 0);
@@ -512,69 +576,17 @@ static void BattlePartyTilemap(
     LoadAAbsolute8(memory, cpu, 0x154eu, 0);                   /* 8D4B */
     if (!cpu->zero) {
         LoadA8(cpu, 0x06u);
-        StoreADirect8(memory, cpu, 0x05u);
+        StoreADirect8(memory, cpu, PARTY_TILEMAP_DP_RECORDS_LEFT);
         LoadA8(cpu, 0x7eu);
         PushAccumulator8(memory, cpu);
         PullDataBank(memory, cpu);
         LoadY16(cpu, 0x0000u);
         do {
             LoadAAbsolute8(memory, cpu, BATTLE_PARTY_SPRITES, cpu->y); /* 8D5B */
-            if (cpu->negative) {
-                PushY(memory, cpu);
-                SetAccumulatorWidth(cpu, 0);
-                LoadA16(cpu, Read16AbsoluteIndexed(
-                                 memory, cpu,
-                                 (BATTLE_PARTY_SPRITES + PARTY_SPRITE_EXTRA), cpu->y));
-                Write16Direct(memory, cpu, 0x02u, cpu->accumulator);
-                SetAccumulatorWidth(cpu, 1);
-                LoadAAbsolute8(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_Y_A),
-                               cpu->y); /* 8D6A */
-                ExchangeAccumulatorBytes(cpu);
-                LoadAAbsolute8(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_X_A),
-                               cpu->y);
-                SetAccumulatorWidth(cpu, 0);
-                cpu->carry = 0;
-                Add16Value(cpu, 0x0100u);
-                LsrA16(cpu);
-                LsrA16(cpu);
-                LsrA16(cpu);
-                And16(cpu, 0x1f1fu);
-                SetAccumulatorWidth(cpu, 1);
-                ExchangeAccumulatorBytes(cpu);                 /* 8D7F */
-                Write8(memory, SNES_WRMPYA, A8(cpu));
-                LoadA8(cpu, 0x40u);
-                Write8(memory, SNES_WRMPYB, A8(cpu));
-                LoadA8(cpu, 0x00u);
-                ExchangeAccumulatorBytes(cpu);
-                AslA8(cpu);
-                SetAccumulatorWidth(cpu, 0);
-                cpu->carry = 0;
-                Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));
-                Add16Value(cpu, 0x2800u);
-                Write16Direct(memory, cpu, 0x08u, cpu->accumulator);
-                SetAccumulatorWidth(cpu, 1);
-                LoadAAbsolute8(memory, cpu,
-                               (BATTLE_PARTY_SPRITES + SPRITE_PALETTE_STEP),
-                               cpu->y); /* 8D9C */
-                cpu->carry = 0;
-                Adc8(cpu, AbsoluteByte(memory, cpu, BATTLE_PALETTE_PHASE_PARTY, 0));
-                And8(cpu, 0x07u);
-                AslA8(cpu);
-                AslA8(cpu);
-                Or8(cpu, 0x23u);
-                StoreADirect8(memory, cpu, 0x04u);
-                LoadAAbsolute8(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_TILE),
-                               cpu->y);
-                StoreADirect8(memory, cpu, 0x00u);
-                SimulateJslFrame(memory, cpu, 0x85u, 0x8db3u); /* $81:BE54 */
-                SimulateJsrFrame(memory, cpu, 0xbe56u);
-                BattleTileBlock(memory, cpu);
-                SimulateRtsFrame(memory, cpu);
-                SimulateRtlFrame(memory, cpu);
-                cpu->y = PullIndexValue(memory, cpu);
-            }
+            if (cpu->negative)
+                BattlePlacePartyTiles(memory, cpu);
             BattleNextRecord(cpu, 0x000fu);                    /* 8DB5 */
-            DecrementDirect8(memory, cpu, 0x05u);
+            DecrementDirect8(memory, cpu, PARTY_TILEMAP_DP_RECORDS_LEFT);
         } while (!cpu->zero);
     }
     PullDataBank(memory, cpu);                                 /* 8DC3 */
