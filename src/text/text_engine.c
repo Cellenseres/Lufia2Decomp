@@ -12,6 +12,52 @@
 #include "system/wram.h"
 #include "text/text_internal.h"
 
+/* Text engine state beyond text_internal.h. */
+enum {
+    TEXT_VARIABLES = 0x079eu,    /* one byte per script variable */
+    TEXT_OBJECT_FLAGS = 0x081eu, /* per object id less $10; bit 7: hidden */
+    TEXT_UNK_085D = 0x085du,
+    TEXT_UNK_089D = 0x089du,
+    TEXT_UNK_0563 = 0x0563u,
+    TEXT_UNK_0B62 = 0x0b62u,
+    TEXT_NAME_BUFFER = 0x0badu,
+    TEXT_MUSIC_TRACK = 0x099du, /* last track a script asked for */
+    TEXT_SCRIPT_BASE = 0x099eu, /* word: goto targets are offsets from it */
+    TEXT_SCRIPT_BASE_BANK = 0x09a0u,
+    TEXT_SPEAKER_ACTOR = 0x09abu,
+    TEXT_SPEAKER_REQUEST = 0x09acu, /* $FF: none */
+    TEXT_PROMPT_ELAPSED = 0x1266u,  /* counts up to TEXT_PROMPT_TIMER */
+    TEXT_UNK_125D = 0x125du,        /* word, cleared with the window */
+    TEXT_UNK_125E = 0x125eu,
+    TEXT_WAIT_SECONDS_COUNT = 0x125fu,
+    TEXT_FADE_COLOR_FIRST = 0x1286u,
+    TEXT_FADE_COLOR_SECOND = 0x1287u,
+    TEXT_FADE_STEP = 0x1288u, /* word: the division result of the fade setup */
+    TEXT_ENTITY_X = 0x120au,  /* position found by the entity search */
+    TEXT_ENTITY_Y = 0x120bu,
+    TEXT_ENTITY_UNK_120C = 0x120cu,
+    TEXT_ENTITY_WORD_120E = 0x120eu,
+    TEXT_ENTITY_WORD_1210 = 0x1210u,
+    TEXT_ENTITY_BYTE_1212 = 0x001212u,
+    TEXT_BG3_HOFS_SHADOW = 0x059cu, /* BG3 scroll pair at $059C/$059E */
+    TEXT_FONT = 0x9af970u,          /* 16 bytes per glyph from glyph $20 */
+    TEXT_ATTRIBUTE_TABLE = 0x80c815u,
+    TEXT_SUBSCRIPT_TABLE = 0x8eea00u, /* offsets of the sub-scripts */
+    TEXT_SUBSCRIPT_BASE = 0xea00u,
+    TEXT_SUBSCRIPT_BANK = 0x8eu,
+    TEXT_GLYPH_VRAM = 0x0079u, /* VRAM word address of the glyph upload */
+    TEXT_GLYPH_VRAM_BASE = 0x1800u,
+    TEXT_GLYPH_FIRST = 0x0020u, /* tile data starts at this glyph number */
+    TEXT_GLYPH_BLANK = 0x0010u, /* drawn as the first glyph */
+    TEXT_LINE_BYTES = 0x0400u,
+    TEXT_MUSIC_COPY = 0x7fd0fdu,
+    TEXT_WAIT_FRAMES = 0x7fd0fcu,
+    TEXT_UNK_7FD100 = 0x7fd100u,
+    TEXT_UNK_7FD4F7 = 0x7fd4f7u,
+    GOLD_CAP_LOW = 0x967fu, /* $98967F is 9,999,999 */
+    GOLD_CAP_HIGH = 0x98u,
+};
+
 /* $80:C0B7: next text byte from DB:Y; Y past $FFFF moves the bank. */
 void Lufia2TextNextByte(
     const Lufia2Memory *memory,
@@ -46,15 +92,15 @@ static void TextDrawGlyph(
     TransferDirectToA(cpu);
     LoadAAbsolute8(memory, cpu, TEXT_GLYPH_ATTRIBUTE, 0);
     TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80c815u, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(TEXT_ATTRIBUTE_TABLE, cpu->x)));
     StoreADirect8(memory, cpu, 0x57u);
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_GLYPH, 0));
-    Compare16(cpu, cpu->accumulator, 0x0010u);
+    Compare16(cpu, cpu->accumulator, TEXT_GLYPH_BLANK);
     if (cpu->zero)
-        LoadA16(cpu, 0x0020u);
-    Subtract16(cpu, 0x0020u);                                  /* C7DC */
+        LoadA16(cpu, TEXT_GLYPH_FIRST);
+    Subtract16(cpu, TEXT_GLYPH_FIRST); /* C7DC */
     if (cpu->carry) {
         unsigned row;
 
@@ -73,7 +119,7 @@ static void TextDrawGlyph(
         LoadA8(cpu, 0x10u);
         StoreADirect8(memory, cpu, 0x58u);
         for (row = 0; row < 16u; ++row) {
-            LoadA8(cpu, Read8(memory, LongIndexedAddress(0x9af970u, cpu->x)));
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(TEXT_FONT, cpu->x)));
             StoreAAbsolute8(memory, cpu, 0x0000u, cpu->y);     /* C7FC */
             LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
             StoreAAbsolute8(memory, cpu, 0x0001u, cpu->y);
@@ -84,7 +130,7 @@ static void TextDrawGlyph(
         }
         SetAccumulatorWidth(cpu, 0);                           /* C80B */
         LoadA16(cpu, cpu->y);
-        Write16Long(memory, 0x0009b1u, cpu->accumulator);
+        Write16Long(memory, TEXT_GLYPH_DESTINATION, cpu->accumulator);
     }
     PullDataBank(memory, cpu);                                 /* C812 */
     UnpackStatus(cpu, Pull8(memory, cpu));
@@ -102,11 +148,11 @@ static void TextGlyphUpload(
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_GLYPH_UPLOAD, 0));
     Write16Absolute(memory, cpu, SNES_A1TL(0), cpu->accumulator);
-    Subtract16(cpu, 0xd000u);
+    Subtract16(cpu, TEXT_GLYPH_BUFFER);
     LsrA16(cpu);
     cpu->carry = 0;
-    Add16Value(cpu, 0x1800u);
-    Write16Absolute(memory, cpu, 0x0079u, cpu->accumulator);
+    Add16Value(cpu, TEXT_GLYPH_VRAM_BASE);
+    Write16Absolute(memory, cpu, TEXT_GLYPH_VRAM, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     StoreAImmediate8(memory, cpu, 0x7eu, SNES_A1B(0));
     LoadX16(cpu, 0x0020u);
@@ -180,10 +226,10 @@ void Lufia2TextWindowClear(
     LoadAAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
     And8(cpu, 0xfeu);
     StoreAAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x059cu, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x059du, 0);
-    StoreAImmediate8(memory, cpu, 0xfcu, 0x059eu);
-    StoreAImmediate8(memory, cpu, 0xffu, 0x059fu);
+    StoreZeroAbsolute8(memory, cpu, TEXT_BG3_HOFS_SHADOW, 0);
+    StoreZeroAbsolute8(memory, cpu, (TEXT_BG3_HOFS_SHADOW + 1u), 0);
+    StoreAImmediate8(memory, cpu, 0xfcu, TEXT_BG3_VOFS_SHADOW);
+    StoreAImmediate8(memory, cpu, 0xffu, (TEXT_BG3_VOFS_SHADOW + 1u));
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     SimulateRtlFrame(memory, cpu);
@@ -201,8 +247,8 @@ static void TextCloseWindow(
         LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);
         BitImmediate8(cpu, 0x02u);
         if (cpu->zero) {
-            StoreZeroAbsolute8(memory, cpu, 0x125du, 0);
-            StoreZeroAbsolute8(memory, cpu, 0x125eu, 0);
+            StoreZeroAbsolute8(memory, cpu, TEXT_UNK_125D, 0);
+            StoreZeroAbsolute8(memory, cpu, TEXT_UNK_125E, 0);
             Lufia2TextWindowClear(memory, cpu, 0xc214u);
             LoadA8(cpu, 0x08u);                                /* C215 */
             StoreADirect8(memory, cpu, 0x74u);
@@ -215,7 +261,7 @@ static void TextCloseWindow(
 static void TextSubScript(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    StoreAAbsolute8(memory, cpu, 0x09b0u, 0);                  /* 9E54 */
+    StoreAAbsolute8(memory, cpu, (TEXT_GLYPH + 1u), 0); /* 9E54 */
     ExchangeAccumulatorBytes(cpu);
     StoreAAbsolute8(memory, cpu, TEXT_GLYPH, 0);
     Write16Absolute(memory, cpu, TEXT_CALLER_POINTER, cpu->y);
@@ -225,13 +271,13 @@ static void TextSubScript(
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_GLYPH, 0));
     AslA16(cpu);
     TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x8eea00u, cpu->x)));
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(TEXT_SUBSCRIPT_TABLE, cpu->x)));
     cpu->carry = 0;
-    Add16Value(cpu, 0xea00u);
+    Add16Value(cpu, TEXT_SUBSCRIPT_BASE);
     Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->accumulator);
     LoadY16(cpu, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, 0x8eu);
+    LoadA8(cpu, TEXT_SUBSCRIPT_BANK);
     StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
@@ -246,7 +292,7 @@ static void TextNewLine(
     SetAccumulatorWidth(cpu, 0);                               /* 9DDB */
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_LINE_START, 0));
     cpu->carry = 0;
-    Add16Value(cpu, 0x0400u);
+    Add16Value(cpu, TEXT_LINE_BYTES);
     Write16Absolute(memory, cpu, TEXT_LINE_START, cpu->accumulator);
     Write16Absolute(memory, cpu, TEXT_GLYPH_DESTINATION, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
@@ -325,11 +371,11 @@ static void TextGoto(
     Lufia2TextNextWord(memory, cpu, 0xa3c8u);                        /* A3C6 */
     SetAccumulatorWidth(cpu, 0);
     PushAccumulator16(memory, cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09a0u, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_SCRIPT_BASE_BANK, 0));
     Write16Absolute(memory, cpu, TEXT_SCRIPT_BANK, cpu->accumulator);
     PullAccumulator16(memory, cpu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x099eu, 0));
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_SCRIPT_BASE, 0));
     Lufia2TextSetScriptPointer(memory, cpu, 0xa3d9u);
     SetAccumulatorWidth(cpu, 1);                               /* A3DA */
 }
@@ -338,18 +384,17 @@ static void TextGoto(
 static const struct {
     uint16_t handler;
     uint32_t address;
-} kTextByteStores[11] = {
-    {0xb7e6u, 0x1255u},               /* $47 */
-    {0xb837u, TEXT_PROMPT_TIMER},                              /* $49 prompt timer */
-    {0xb840u, TEXT_GLYPH_ATTRIBUTE},                           /* $4A glyph attribute */
-    {0xb900u, TEXT_TYPING_SOUND},                              /* $52 typing sound */
-    {0xbd6cu, 0x09dfu},               /* $7C */
-    {0xbd75u, 0x09eeu},               /* $7D */
-    {0xbd7eu, 0x09e0u},               /* $7E */
-    {0xbd87u, 0x09e1u},               /* $7F */
-    {0xbd90u, 0x09e2u},               /* $80 */
-    {0xb696u, TEXT_PRINT_DELAY},                               /* $CB print delay */
-    {0xb2a7u, 0x7ff8a0u}};            /* $74 */
+} kTextByteStores[11] = {{0xb7e6u, TEXT_WINDOW_TILE_BASE}, /* $47 */
+                         {0xb837u, TEXT_PROMPT_TIMER},     /* $49 prompt timer */
+                         {0xb840u, TEXT_GLYPH_ATTRIBUTE},  /* $4A glyph attribute */
+                         {0xb900u, TEXT_TYPING_SOUND},     /* $52 typing sound */
+                         {0xbd6cu, 0x09dfu},               /* $7C */
+                         {0xbd75u, 0x09eeu},               /* $7D */
+                         {0xbd7eu, 0x09e0u},               /* $7E */
+                         {0xbd87u, 0x09e1u},               /* $7F */
+                         {0xbd90u, 0x09e2u},               /* $80 */
+                         {0xb696u, TEXT_PRINT_DELAY},      /* $CB print delay */
+                         {0xb2a7u, 0x7ff8a0u}};            /* $74 */
 
 /* $80:BF12/$80:BF43: gold $0A8A-$0A8C +/- A, capped/undone. */
 static void TextGold(
@@ -368,16 +413,16 @@ static void TextGold(
         LoadAAbsolute8(memory, cpu, (WRAM_GOLD + 2u), 0);
         Adc8(cpu, 0x00u);
         StoreAAbsolute8(memory, cpu, (WRAM_GOLD + 2u), 0);
-        Compare8(cpu, A8(cpu), 0x98u);
+        Compare8(cpu, A8(cpu), GOLD_CAP_HIGH);
         if (cpu->carry) {
             SetAccumulatorWidth(cpu, 0);
             LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_GOLD, 0));
-            Compare16(cpu, cpu->accumulator, 0x967fu);
+            Compare16(cpu, cpu->accumulator, GOLD_CAP_LOW);
             if (cpu->carry) {
-                LoadA16(cpu, 0x967fu);                         /* 9,999,999 */
+                LoadA16(cpu, GOLD_CAP_LOW); /* 9,999,999 */
                 Write16Absolute(memory, cpu, WRAM_GOLD, cpu->accumulator);
                 SetAccumulatorWidth(cpu, 1);
-                StoreAImmediate8(memory, cpu, 0x98u, 0x0a8cu);
+                StoreAImmediate8(memory, cpu, GOLD_CAP_HIGH, WRAM_GOLD + 2u);
             }
         }
     } else {
@@ -419,16 +464,16 @@ static void TextColorFade(
     StoreAAbsolute8(memory, cpu, SNES_CGADSUB, 0);             /* AF77 */
     StoreAImmediate8(memory, cpu, 0xe0u, SNES_COLDATA);
     Lufia2TextNextByte(memory, cpu, 0xaf81u);
-    StoreAAbsolute8(memory, cpu, 0x1286u, 0);
+    StoreAAbsolute8(memory, cpu, TEXT_FADE_COLOR_FIRST, 0);
     StoreAAbsolute8(memory, cpu, SNES_COLDATA, 0);
     Lufia2TextNextByte(memory, cpu, 0xaf8au);
-    StoreAAbsolute8(memory, cpu, 0x1287u, 0);
-    LoadAAbsolute8(memory, cpu, 0x1286u, 0);
+    StoreAAbsolute8(memory, cpu, TEXT_FADE_COLOR_SECOND, 0);
+    LoadAAbsolute8(memory, cpu, TEXT_FADE_COLOR_FIRST, 0);
     And8(cpu, 0x1fu);
     Compare8(cpu, A8(cpu),
-        Read8(memory, AbsoluteIndexedAddress(cpu, 0x1287u, 0)));
+             Read8(memory, AbsoluteIndexedAddress(cpu, TEXT_FADE_COLOR_SECOND, 0)));
     if (!cpu->carry) {
-        LoadAAbsolute8(memory, cpu, 0x1287u, 0);
+        LoadAAbsolute8(memory, cpu, TEXT_FADE_COLOR_SECOND, 0);
         And8(cpu, 0x1fu);
     }
     AslA8(cpu);                                                /* AF9D */
@@ -441,9 +486,9 @@ static void TextColorFade(
     StoreAImmediate8(memory, cpu, 0x00u, SNES_CGWSEL);
     LoadA8(cpu, 0x80u);
     TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 1);
-    StoreZeroAbsolute8(memory, cpu, 0x1288u, 0);
+    StoreZeroAbsolute8(memory, cpu, TEXT_FADE_STEP, 0);
     LoadAAbsolute8(memory, cpu, SNES_RDDIVH, 0);
-    StoreAAbsolute8(memory, cpu, 0x1289u, 0);
+    StoreAAbsolute8(memory, cpu, (TEXT_FADE_STEP + 1u), 0);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -657,22 +702,26 @@ static uint8_t TextEntityPosition(
     if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xc027u))
         return 0;
     if (cpu->carry) {
-        Write8(memory, AbsoluteIndexedAddress(cpu, 0x120au, 0), 0x00u);
-        Write8(memory, AbsoluteIndexedAddress(cpu, 0x120bu, 0), 0x00u);
-        Write8(memory, AbsoluteIndexedAddress(cpu, 0x120bu, 0), 0x00u);
-        Write8(memory, AbsoluteIndexedAddress(cpu, 0x120cu, 0), 0x00u);
+        Write8(memory, AbsoluteIndexedAddress(cpu, TEXT_ENTITY_X, 0), 0x00u);
+        Write8(memory, AbsoluteIndexedAddress(cpu, TEXT_ENTITY_Y, 0), 0x00u);
+        Write8(memory, AbsoluteIndexedAddress(cpu, TEXT_ENTITY_Y, 0), 0x00u);
+        Write8(memory, AbsoluteIndexedAddress(cpu, TEXT_ENTITY_UNK_120C, 0), 0x00u);
         cpu->carry = 1;
     } else {
         SetAccumulatorWidth(cpu, 0);                           /* C039 */
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ef001u, cpu->x)));
-        Write16Absolute(memory, cpu, 0x120au, cpu->accumulator);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ef003u, cpu->x)));
-        Write16Absolute(memory, cpu, 0x120eu, cpu->accumulator);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ef005u, cpu->x)));
-        Write16Absolute(memory, cpu, 0x1210u, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory,
+                                LongIndexedAddress((EVENT_LIST_RECORD + 1u), cpu->x)));
+        Write16Absolute(memory, cpu, TEXT_ENTITY_X, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory,
+                                LongIndexedAddress((EVENT_LIST_RECORD + 3u), cpu->x)));
+        Write16Absolute(memory, cpu, TEXT_ENTITY_WORD_120E, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory,
+                                LongIndexedAddress((EVENT_LIST_RECORD + 5u), cpu->x)));
+        Write16Absolute(memory, cpu, TEXT_ENTITY_WORD_1210, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef007u, cpu->x)));
-        Write8(memory, 0x001212u, A8(cpu));
+        LoadA8(cpu,
+               Read8(memory, LongIndexedAddress((EVENT_LIST_RECORD + 7u), cpu->x)));
+        Write8(memory, TEXT_ENTITY_BYTE_1212, A8(cpu));
         cpu->carry = 0;
     }
     SimulateRtlFrame(memory, cpu);
@@ -705,9 +754,9 @@ static uint8_t TextPlaceActor(
     And8(cpu, 0xfbu);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, 0x120au, 0);
+    LoadAAbsolute8(memory, cpu, TEXT_ENTITY_X, 0);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);
-    LoadAAbsolute8(memory, cpu, 0x120bu, 0);
+    LoadAAbsolute8(memory, cpu, TEXT_ENTITY_Y, 0);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
     SimulateRtlFrame(memory, cpu);
     SimulateRtsFrame(memory, cpu);
@@ -764,9 +813,9 @@ static unsigned TextOpHideActor(
     cpu->carry = 1;
     Sbc8(cpu, 0x10u);
     TransferAToX(cpu);
-    LoadAAbsolute8(memory, cpu, 0x081eu, cpu->x);
+    LoadAAbsolute8(memory, cpu, TEXT_OBJECT_FLAGS, cpu->x);
     Or8(cpu, 0x80u);
-    StoreAAbsolute8(memory, cpu, 0x081eu, cpu->x);
+    StoreAAbsolute8(memory, cpu, TEXT_OBJECT_FLAGS, cpu->x);
     return TEXT_OPCODE_NEXT;
 }
 
@@ -777,16 +826,16 @@ static unsigned TextOpMusic(
     uint32_t *handoff) {
     Lufia2TextNextByte(memory, cpu, 0xb84bu);                        /* B849 */
     Compare8(cpu, A8(cpu),
-        Read8(memory, AbsoluteIndexedAddress(cpu, 0x099du, 0)));
+             Read8(memory, AbsoluteIndexedAddress(cpu, TEXT_MUSIC_TRACK, 0)));
     if (cpu->zero)
         return TEXT_OPCODE_NEXT;
-    StoreAAbsolute8(memory, cpu, 0x099du, 0);
-    Write8(memory, 0x7fd0fdu, A8(cpu));
+    StoreAAbsolute8(memory, cpu, TEXT_MUSIC_TRACK, 0);
+    Write8(memory, TEXT_MUSIC_COPY, A8(cpu));
     LoadAAbsolute8(memory, cpu, 0x099cu, 0);
     BitImmediate8(cpu, 0x40u);
     if (!cpu->zero)
         return TEXT_OPCODE_NEXT;
-    LoadAAbsolute8(memory, cpu, 0x099du, 0);                   /* B85F */
+    LoadAAbsolute8(memory, cpu, TEXT_MUSIC_TRACK, 0);          /* B85F */
     *handoff = 0x80b862u;                                      /* JSL $80:93FE */
     return TEXT_OPCODE_HANDOFF;
 }
@@ -866,10 +915,10 @@ static unsigned TextOpWaitSeconds(
     TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 1);
     if (cpu->zero) {
         Write8(memory, DirectAddress(cpu, DP_FRAME_COUNTER), 0x00u);
-        StoreZeroAbsolute8(memory, cpu, 0x125fu, 0);
+        StoreZeroAbsolute8(memory, cpu, TEXT_WAIT_SECONDS_COUNT, 0);
     }
     for (;;) {
-        LoadAAbsolute8(memory, cpu, 0x125fu, 0);               /* B318 */
+        LoadAAbsolute8(memory, cpu, TEXT_WAIT_SECONDS_COUNT, 0); /* B318 */
         Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x0000u, cpu->y));
         if (cpu->carry)
             break;
@@ -880,7 +929,8 @@ static unsigned TextOpWaitSeconds(
             return TEXT_OPCODE_EXIT;
         }
         Write8(memory, DirectAddress(cpu, DP_FRAME_COUNTER), 0x00u);      /* B32C */
-        StepMemory8(memory, cpu, AbsoluteIndexedAddress(cpu, 0x125fu, 0), 1);
+        StepMemory8(memory, cpu,
+                    AbsoluteIndexedAddress(cpu, TEXT_WAIT_SECONDS_COUNT, 0), 1);
     }
     Lufia2TextNextByte(memory, cpu, 0xb335u);                        /* B333 */
     LoadA8(cpu, 0x20u);
@@ -926,18 +976,18 @@ static unsigned TextOpScrollView(
 static unsigned TextOpWaitForButton(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    StoreZeroAbsolute8(memory, cpu, 0x1266u, 0);               /* 9DB3 */
+    StoreZeroAbsolute8(memory, cpu, TEXT_PROMPT_ELAPSED, 0); /* 9DB3 */
     Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y);
     LoadA8(cpu, 0x02u);
     TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 1);
     LoadA8(cpu, 0x01u);
     TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
-    LoadAAbsolute8(memory, cpu, 0x09acu, 0);
+    LoadAAbsolute8(memory, cpu, TEXT_SPEAKER_REQUEST, 0);
     Compare8(cpu, A8(cpu), 0xffu);
     if (!cpu->zero)
-        StoreAAbsolute8(memory, cpu, 0x09abu, 0);
+        StoreAAbsolute8(memory, cpu, TEXT_SPEAKER_ACTOR, 0);
     SimulateJslFrame(memory, cpu, 0x80u, 0x9dd0u);
-    LoadAAbsolute8(memory, cpu, 0x09abu, 0);                   /* C1DF */
+    LoadAAbsolute8(memory, cpu, TEXT_SPEAKER_ACTOR, 0); /* C1DF */
     Compare8(cpu, A8(cpu), 0xffu);
     if (!cpu->zero) {
         Lufia2EventFindActorId(memory, cpu, 0xc1e9u);
@@ -998,10 +1048,10 @@ static void TextChoiceJump(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Lufia2TextNextWord(memory, cpu, 0x9fa4u); /* target offset */
     SetAccumulatorWidth(cpu, 0);
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x099eu, 0));
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_SCRIPT_BASE, 0));
     PushAccumulator16(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
-    LoadAAbsolute8(memory, cpu, 0x09a0u, 0);
+    LoadAAbsolute8(memory, cpu, TEXT_SCRIPT_BASE_BANK, 0);
     StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
     SetAccumulatorWidth(cpu, 0);
     PullAccumulator16(memory, cpu);
@@ -1021,7 +1071,7 @@ static unsigned TextOpChoice(
     bool moved = true;
 
     LoadA8(cpu, 0x0fu);                                        /* 9F37 */
-    StoreAAbsolute8(memory, cpu, 0x0563u, 0);
+    StoreAAbsolute8(memory, cpu, TEXT_UNK_0563, 0);
     LoadA8(cpu, TEXT_WINDOW_CHOICE_SHOWN);
     TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 1);
     if (cpu->zero) {
@@ -1120,7 +1170,7 @@ static unsigned TextOpPunctuationNewLine(
                 : handler == TEXT_OP_COMMA_NEW_LINE       ? ','
                                                           : '.');
     StoreAAbsolute8(memory, cpu, TEXT_GLYPH, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x09b0u, 0);
+    StoreZeroAbsolute8(memory, cpu, (TEXT_GLYPH + 1u), 0);
     Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y);
     TextGlyphUpload(memory, cpu, 0x9f09u);
     TextNewLine(memory, cpu, 0x9f0cu);
@@ -1200,7 +1250,7 @@ static unsigned TextOpSetVariable(
     Lufia2TextNextByte(memory, cpu, 0xa3e2u);
     TransferAToX(cpu);
     Lufia2TextNextByte(memory, cpu, 0xa3e6u);
-    StoreAAbsolute8(memory, cpu, 0x079eu, cpu->x);
+    StoreAAbsolute8(memory, cpu, TEXT_VARIABLES, cpu->x);
     return TEXT_OPCODE_NEXT;
 }
 
@@ -1252,7 +1302,7 @@ static unsigned TextOpStoreD4F3(
     Lufia2TextNextByte(memory, cpu, 0xb119u);
     Write8(memory, WRAM_OBJECT_SPAWN_IDS, A8(cpu));
     Lufia2TextNextByte(memory, cpu, 0xb120u);
-    Write8(memory, 0x7fd4f4u, A8(cpu));
+    Write8(memory, (WRAM_OBJECT_SPAWN_IDS + 1u), A8(cpu));
     return TEXT_OPCODE_NEXT;
 }
 
@@ -1301,8 +1351,8 @@ static unsigned TextOpStopColorFades(
 static unsigned TextOpB5(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    StoreZeroAbsolute8(memory, cpu, 0x089du, 0);
-    StoreAImmediate8(memory, cpu, 0xffu, 0x085du);
+    StoreZeroAbsolute8(memory, cpu, TEXT_UNK_089D, 0);
+    StoreAImmediate8(memory, cpu, 0xffu, TEXT_UNK_085D);
     return TEXT_OPCODE_NEXT;
 }
 
@@ -1322,8 +1372,8 @@ static unsigned TextOpWaitForEffects(
 static unsigned TextOpWaitD0FC(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadA8(cpu, (uint8_t)(Read8(memory, 0x7fd0fcu) - 1u));
-    Write8(memory, 0x7fd0fcu, A8(cpu));
+    LoadA8(cpu, (uint8_t)(Read8(memory, TEXT_WAIT_FRAMES) - 1u));
+    Write8(memory, TEXT_WAIT_FRAMES, A8(cpu));
     if (!cpu->zero) {
         TextPrevByte(memory, cpu, 0xb8adu);
         return TEXT_OPCODE_EXIT;
@@ -1352,8 +1402,8 @@ static unsigned TextOpClearD100(
     Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
     TransferDirectToA(cpu);
-    Write16Long(memory, 0x7fd100u, cpu->accumulator);
-    Write16Long(memory, 0x7fd102u, cpu->accumulator);
+    Write16Long(memory, TEXT_UNK_7FD100, cpu->accumulator);
+    Write16Long(memory, (TEXT_UNK_7FD100 + 2u), cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     return TEXT_OPCODE_NEXT;
 }
@@ -1362,13 +1412,13 @@ static unsigned TextOpClearD100(
 static unsigned TextOpRaise0B62(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, 0x0b62u, 0);
+    LoadAAbsolute8(memory, cpu, TEXT_UNK_0B62, 0);
     if (cpu->zero) {
-        LoadA8(cpu, Read8(memory, 0x7fd4f7u));
+        LoadA8(cpu, Read8(memory, TEXT_UNK_7FD4F7));
         Compare8(cpu, A8(cpu),
-            Read8(memory, AbsoluteIndexedAddress(cpu, 0x0b62u, 0)));
+                 Read8(memory, AbsoluteIndexedAddress(cpu, TEXT_UNK_0B62, 0)));
         if (cpu->carry)
-            StoreAAbsolute8(memory, cpu, 0x0b62u, 0);
+            StoreAAbsolute8(memory, cpu, TEXT_UNK_0B62, 0);
     }
     return TEXT_OPCODE_NEXT;
 }
@@ -1394,8 +1444,8 @@ static unsigned TextOpAddVariable(
     TransferAToX(cpu);
     Lufia2TextNextByte(memory, cpu, 0xa3f4u);
     cpu->carry = 0;
-    Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x079eu, cpu->x)));
-    StoreAAbsolute8(memory, cpu, 0x079eu, cpu->x);
+    Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, TEXT_VARIABLES, cpu->x)));
+    StoreAAbsolute8(memory, cpu, TEXT_VARIABLES, cpu->x);
     return TEXT_OPCODE_NEXT;
 }
 
@@ -1408,7 +1458,7 @@ static unsigned TextOpPrintName(
     StoreAAbsolute8(memory, cpu, TEXT_CALLER_BANK, 0);
     LoadA8(cpu, 0x10u);
     TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 1);
-    LoadY16(cpu, 0x0badu);
+    LoadY16(cpu, TEXT_NAME_BUFFER);
     Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y);
     StoreZeroAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
     return TEXT_OPCODE_RELOAD;
@@ -1578,8 +1628,8 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(
     Push8(memory, cpu, PackStatus(cpu));
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x125du, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x125eu, 0);
+    StoreZeroAbsolute8(memory, cpu, TEXT_UNK_125D, 0);
+    StoreZeroAbsolute8(memory, cpu, TEXT_UNK_125E, 0);
     opcodes = 0;
     do {
         for (;;) {
@@ -1614,7 +1664,7 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(
             uint32_t handoff = 0x809d3bu;
 
             Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y); /* 9D00 */
-            StoreZeroAbsolute8(memory, cpu, 0x0563u, 0);
+            StoreZeroAbsolute8(memory, cpu, TEXT_UNK_0563, 0);
             TransferDirectToA(cpu);
             LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
             And8(cpu, 0x01u);
@@ -1625,7 +1675,7 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(
                 Compare8(cpu, A8(cpu), 0x10u);
                 if (cpu->carry) {
                     StoreAAbsolute8(memory, cpu, TEXT_GLYPH, 0);
-                    StoreZeroAbsolute8(memory, cpu, 0x09b0u, 0);
+                    StoreZeroAbsolute8(memory, cpu, (TEXT_GLYPH + 1u), 0);
                     Compare8(cpu, A8(cpu), 0x80u);
                     if (!cpu->carry)
                         break; /* BCE4 */
@@ -1695,7 +1745,7 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(
     if (cpu->zero) {
         LoadAAbsolute8(memory, cpu, TEXT_PRINT_DELAY, 0);
         Write8(memory, TEXT_PRINT_COUNTDOWN, A8(cpu));
-        LoadAAbsolute8(memory, cpu, 0x1255u, 0);
+        LoadAAbsolute8(memory, cpu, TEXT_WINDOW_TILE_BASE, 0);
         Compare8(cpu, A8(cpu), 0x10u);
         if (!cpu->zero) {
             LoadAAbsolute8(memory, cpu, TEXT_TYPING_SOUND, 0);
@@ -1746,7 +1796,7 @@ Lufia2ExecutionResult Lufia2TextPromptTick(
     Lufia2ExecutionResult result) {
     LoadAAbsolute8(memory, cpu, TEXT_PROMPT_TIMER, 0);         /* 9C80 */
     if (!cpu->zero) {
-        const uint32_t timer = AbsoluteIndexedAddress(cpu, 0x1266u, 0);
+        const uint32_t timer = AbsoluteIndexedAddress(cpu, TEXT_PROMPT_ELAPSED, 0);
         const uint8_t count = (uint8_t)(Read8(memory, timer) + 1u);
 
         Write8(memory, timer, count);
