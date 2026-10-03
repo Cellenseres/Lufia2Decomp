@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
 #include "actor/actor_slot_view.h"
@@ -54,28 +56,25 @@ Lufia2ActorPrimaryFlow Lufia2ActorPrimaryUpdateFrontend(
 
     LoadAAbsolute(memory, cpu, WRAM_WINDOW_MODE);    /* $83:C80E */
     BitImmediate8(cpu, 0x01u);                       /* $83:C811 */
-    if (cpu->zero)                                   /* $83:C813 */
-        goto timer;
+    if (!cpu->zero) {                                /* $83:C813 */
+        LoadAAbsolute(memory, cpu, WRAM_TEXT_WAIT_ACTOR); /* $83:C815 */
+        if (cpu->negative) {                              /* $83:C818 */
+            LoadADirect(memory, cpu, DP_ACTOR_SLOT);      /* $83:C81A */
+            if (cpu->zero)                                /* $83:C81C */
+                return LUFIA2_ACTOR_PRIMARY_CONTINUE_C83C;
 
-    LoadAAbsolute(memory, cpu, WRAM_TEXT_WAIT_ACTOR); /* $83:C815 */
-    if (!cpu->negative)                              /* $83:C818 */
-        goto timer;
+            LoadA8(cpu, Lufia2ActorSlotState(&slot)); /* $83:C81E */
+            BitImmediate8(cpu, 0x08u);                /* $83:C821 */
+            if (cpu->zero) {                          /* $83:C823 */
+                BitImmediate8(cpu, 0x40u);            /* $83:C825 */
+                if (cpu->zero)                        /* $83:C827 */
+                    return LUFIA2_ACTOR_PRIMARY_RETURN;
+                And8(cpu, 0xbfu);                        /* $83:C829 */
+                Lufia2ActorSlotSetState(&slot, A8(cpu)); /* $83:C82B */
+            }
+        }
+    }
 
-    LoadADirect(memory, cpu, DP_ACTOR_SLOT);         /* $83:C81A */
-    if (cpu->zero)                                   /* $83:C81C */
-        return LUFIA2_ACTOR_PRIMARY_CONTINUE_C83C;
-
-    LoadA8(cpu, Lufia2ActorSlotState(&slot));        /* $83:C81E */
-    BitImmediate8(cpu, 0x08u);                       /* $83:C821 */
-    if (!cpu->zero)                                  /* $83:C823 */
-        goto timer;
-    BitImmediate8(cpu, 0x40u);                       /* $83:C825 */
-    if (cpu->zero)                                   /* $83:C827 */
-        return LUFIA2_ACTOR_PRIMARY_RETURN;
-    And8(cpu, 0xbfu);                                /* $83:C829 */
-    Lufia2ActorSlotSetState(&slot, A8(cpu));         /* $83:C82B */
-
-timer:
     LoadA8(cpu, Lufia2ActorSlotPrimaryTimer(&slot)); /* $83:C82E */
     if (cpu->zero)                                   /* $83:C832 */
         return LUFIA2_ACTOR_PRIMARY_CONTINUE_C83C;
@@ -126,51 +125,49 @@ Lufia2ActorSecondaryFlow Lufia2ActorSecondaryUpdateFrontend(
 
     LoadAAbsolute(memory, cpu, WRAM_WINDOW_MODE);    /* $83:D540 */
     BitImmediate8(cpu, 0x01u);                       /* $83:D543 */
-    if (cpu->zero)                                   /* $83:D545 */
-        goto final_gate;
+    if (!cpu->zero) {                                /* $83:D545 */
+        bool count_walk;                             /* reach $83:D564 */
 
-    LoadA8(cpu, (uint8_t)cpu->x);                    /* $83:D547 */
-    if (!cpu->zero)                                  /* $83:D548 */
-        goto state_gate;
+        LoadA8(cpu, (uint8_t)cpu->x); /* $83:D547 */
+        if (!cpu->zero) {             /* $83:D548 */
+            LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_ACTOR_FLAGS));
+            /* $83:D552 */
+            BitImmediate8(cpu, 0x42u); /* $83:D555 */
+            if (!cpu->zero) {          /* $83:D557 */
+                count_walk = false;
+            } else {
+                LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_UNK_7E05D2));
+                /* $83:D559 */
+                Compare8(cpu, A8(cpu), 0x80u); /* $83:D55C */
+                if (!cpu->carry) {             /* $83:D55E */
+                    count_walk = false;
+                } else {
+                    Compare8(cpu, A8(cpu), 0xa4u); /* $83:D560 */
+                    count_walk = !cpu->zero;       /* $83:D562 */
+                }
+            }
+        } else {
+            LoadALong(memory, cpu, WRAM_UNK_7FD0FE); /* $83:D54A */
+            count_walk = !cpu->zero;                 /* $83:D54E */
+        }
 
-    LoadALong(memory, cpu, WRAM_UNK_7FD0FE);         /* $83:D54A */
-    if (cpu->zero)                                   /* $83:D54E */
-        goto final_gate;
-    goto walk_counter;                               /* $83:D550 */
+        if (count_walk) {
+            LoadA8(cpu, Lufia2ActorSlotWalkCounter(&slot));    /* $83:D564 */
+            IncrementA8(cpu);                                  /* $83:D568 */
+            Lufia2ActorSlotSetWalkCounter(&slot, A8(cpu));     /* $83:D569 */
+            Compare8(cpu, A8(cpu), 0x20u);                     /* $83:D56D */
+            if (cpu->zero) {                                   /* $83:D56F */
+                TransferDirectToA(cpu);                        /* $83:D571 */
+                Lufia2ActorSlotSetWalkCounter(&slot, A8(cpu)); /* $83:D572 */
+                LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_UNK_7E066A));
+                /* $83:D576 */
+                ExclusiveOr8(cpu, 0x01u); /* $83:D579 */
+                Lufia2ActorSlotWriteMirrored(&slot, WRAM_UNK_7E066A, A8(cpu));
+                /* $83:D57B */
+            }
+        }
+    }
 
-state_gate:
-    LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_ACTOR_FLAGS));
-                                                     /* $83:D552 */
-    BitImmediate8(cpu, 0x42u);                       /* $83:D555 */
-    if (!cpu->zero)                                  /* $83:D557 */
-        goto final_gate;
-
-    LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_UNK_7E05D2));
-                                                     /* $83:D559 */
-    Compare8(cpu, A8(cpu), 0x80u);                   /* $83:D55C */
-    if (!cpu->carry)                                 /* $83:D55E */
-        goto final_gate;
-    Compare8(cpu, A8(cpu), 0xa4u);                   /* $83:D560 */
-    if (cpu->zero)                                   /* $83:D562 */
-        goto final_gate;
-
-walk_counter:
-    LoadA8(cpu, Lufia2ActorSlotWalkCounter(&slot));  /* $83:D564 */
-    IncrementA8(cpu);                                /* $83:D568 */
-    Lufia2ActorSlotSetWalkCounter(&slot, A8(cpu));   /* $83:D569 */
-    Compare8(cpu, A8(cpu), 0x20u);                   /* $83:D56D */
-    if (!cpu->zero)                                  /* $83:D56F */
-        goto final_gate;
-
-    TransferDirectToA(cpu);                          /* $83:D571 */
-    Lufia2ActorSlotSetWalkCounter(&slot, A8(cpu));   /* $83:D572 */
-    LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_UNK_7E066A));
-                                                     /* $83:D576 */
-    ExclusiveOr8(cpu, 0x01u);                        /* $83:D579 */
-    Lufia2ActorSlotWriteMirrored(&slot, WRAM_UNK_7E066A, A8(cpu));
-                                                     /* $83:D57B */
-
-final_gate:
     LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_ACTOR_FLAGS));
                                                      /* $83:D57E */
     BitImmediate8(cpu, 0x04u);                       /* $83:D581 */
