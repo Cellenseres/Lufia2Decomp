@@ -3246,3 +3246,28 @@ source = "src/world/world_map_objects.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Battle background wave scroll table.
+[[function]]
+address = "85:ADE1"
+name = "Lufia2BattleWaveBackward"
+source = "src/battle/battle_background_wave.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:AE68"
+name = "Lufia2BattleWaveForward"
+source = "src/battle/battle_background_wave.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:AEEB"
+name = "Lufia2BattleWaveFill"
+source = "src/battle/battle_background_wave.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"

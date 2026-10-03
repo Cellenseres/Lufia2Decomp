@@ -764,6 +764,24 @@ Lufia2ExecutionResult Lufia2BattlePaletteBrightness(
 Lufia2ExecutionResult Lufia2BattleScaleColor(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $85:AEEB fills the wave scroll table from phase 0; M1X0 only (else handed
+ * back). */
+Lufia2ExecutionResult Lufia2BattleWaveFill(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:AE68 fills the wave scroll table from the stored phase and advances
+ * it; M1X0 only (else handed back). */
+Lufia2ExecutionResult Lufia2BattleWaveForward(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:ADE1 fills the wave scroll table from the stored phase and steps it
+ * back; M1X0 only (else handed back). */
+Lufia2ExecutionResult Lufia2BattleWaveBackward(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
