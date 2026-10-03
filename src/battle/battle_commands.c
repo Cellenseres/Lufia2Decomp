@@ -8,6 +8,13 @@ enum {
     COMMAND_DP_PALETTE_BANK = 0x24u,
     COMMAND_DP_CURSOR_POSITION = 0x26u,
     COMMAND_DP_STAGED_ACTION = 0x54u,
+    /* Arguments of the resource decompressor at $80:8E9D: the resource table
+     * entry in $54 and the destination pointer in $60/$62. */
+    COMMAND_DP_RESOURCE_ENTRY = 0x54u,
+    COMMAND_DP_DESTINATION = 0x60u,
+    COMMAND_DP_DESTINATION_BANK = 0x62u,
+    COMMAND_SETUP_RESOURCE_ENTRY = 0x18fu,
+    COMMAND_SETUP_DESTINATION = 0xdf00u,
     COMMAND_DP_BATTLER_OFFSET = 0xd5u,
     COMMAND_STAGED_ACTIONS = 0x96ffecu,
     FORMATION_CURSOR_POSITIONS = 0xb576u,
@@ -370,12 +377,12 @@ static bool BattleCommandsSetup(BattleContext *battle) {
     OpSta(memory, cpu, 0x0012f3u);
     if (!BattleCall(battle, 0xc7d4u, 0x85ec81u, 3u))
         return false;
-    OpLdx(cpu, 0xdf00u);
-    OpWriteX(memory, cpu, OpDp(cpu, 0x60u), cpu->x);
+    OpLdx(cpu, COMMAND_SETUP_DESTINATION);
+    OpWriteX(memory, cpu, OpDp(cpu, COMMAND_DP_DESTINATION), cpu->x);
     OpLoadA(cpu, 0x7eu);
-    OpSta(memory, cpu, OpDp(cpu, 0x62u));
-    OpLdx(cpu, 0x18fu);
-    OpWriteX(memory, cpu, OpDp(cpu, 0x54u), cpu->x);
+    OpSta(memory, cpu, OpDp(cpu, COMMAND_DP_DESTINATION_BANK));
+    OpLdx(cpu, COMMAND_SETUP_RESOURCE_ENTRY);
+    OpWriteX(memory, cpu, OpDp(cpu, COMMAND_DP_RESOURCE_ENTRY), cpu->x);
     if (!BattleCall(battle, 0xc7e6u, 0x808e9du, 3u))
         return false;
     OpRepWidths(cpu, 0x20u);
