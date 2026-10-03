@@ -13,6 +13,19 @@ enum {
     SUBMENU_DP_KIND = 0x1bu,
     SUBMENU_DP_TITLE = 0x1cu,
     SUBMENU_DP_MOVE_DELTA = 0xcau,
+    SUBMENU_CURSOR_RECORD = 0x7e4abeu,
+    SUBMENU_ARROW_RECORD = 0x7e4ac3u,
+    SUBMENU_AVAILABILITY_TABLE = 0x7edf00u,
+    SUBMENU_CHOICE_TABLE = 0x1363u,
+};
+
+/* Byte offsets inside the five-byte cursor sprite records at $7E:4ABE. */
+enum {
+    SPRITE_X = 0,
+    SPRITE_Y = 1,
+    SPRITE_TILE = 2,
+    SPRITE_ATTRIBUTES = 3,
+    SPRITE_OWNER = 4,
 };
 
 static bool BattleDrawSubmenuTitle(BattleContext *battle) {
@@ -86,43 +99,17 @@ static void SubmenuPlaceCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN));
 }
 
-/* Writes the cursor sprite for the cursor's row and column; a few menus add a
- * second sprite, the page arrow. */
-static void SubmenuDrawCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN));
-    if (!cpu->zero)
-        OpLoadA(cpu, 0x70u);
-    cpu->carry = false;
-    OpAdcValue(cpu, 8u);
-    OpSta(memory, cpu, 0x7e4abeu);
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_ROW));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-    OpLoadA(cpu, 12u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-    OpLoadA(cpu, 0x4eu);
-    OpSta(memory, cpu, 0x7e4ac0u);
-    OpLoadA(cpu, 0x20u);
-    OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
-    OpSta(memory, cpu, 0x7e4abfu);
-    OpLoadA(cpu, 0x30u);
-    OpSta(memory, cpu, 0x7e4ac1u);
-    TransferDirectToA(cpu);
-    OpSta(memory, cpu, 0x7e4ac2u);
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
-    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
-    OpCmpValue(cpu, 2u);
-    if (cpu->zero)
-        return;
+/* Writes the page-arrow sprite beside the cursor: x $EC, y from a per-menu table
+ * indexed by the first entry, and the second cursor slot is enabled. */
+static void SubmenuDrawPageArrow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLoadA(cpu, 0xecu);
-    OpSta(memory, cpu, 0x7e4ac3u);
+    OpSta(memory, cpu, SUBMENU_ARROW_RECORD + SPRITE_X);
     OpLoadA(cpu, 0x4au);
-    OpSta(memory, cpu, 0x7e4ac5u);
+    OpSta(memory, cpu, SUBMENU_ARROW_RECORD + SPRITE_TILE);
     OpLoadA(cpu, 0x30u);
-    OpSta(memory, cpu, 0x7e4ac6u);
+    OpSta(memory, cpu, SUBMENU_ARROW_RECORD + SPRITE_ATTRIBUTES);
     TransferDirectToA(cpu);
-    OpSta(memory, cpu, 0x7e4ac7u);
+    OpSta(memory, cpu, SUBMENU_ARROW_RECORD + SPRITE_OWNER);
     OpLoadA(cpu, 2u);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
@@ -136,7 +123,7 @@ static void SubmenuDrawCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             OpCmpValue(cpu, 0x18u);
             if (!cpu->zero) {
                 OpLoadA(cpu, 0x4cu);
-                OpSta(memory, cpu, 0x7e4ac5u);
+                OpSta(memory, cpu, SUBMENU_ARROW_RECORD + SPRITE_TILE);
             }
         }
         OpLda(memory, cpu, OpLongX(cpu, 0xa5db00u));
@@ -148,12 +135,44 @@ static void SubmenuDrawCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             OpCmpValue(cpu, 0xb4u);
             if (!cpu->zero) {
                 OpLoadA(cpu, 0x4cu);
-                OpSta(memory, cpu, 0x7e4ac5u);
+                OpSta(memory, cpu, SUBMENU_ARROW_RECORD + SPRITE_TILE);
             }
         }
         OpLda(memory, cpu, OpLongX(cpu, 0xa5d700u));
     }
-    OpSta(memory, cpu, 0x7e4ac4u);
+    OpSta(memory, cpu, SUBMENU_ARROW_RECORD + SPRITE_Y);
+}
+
+/* Writes the cursor sprite for the cursor's row and column; every menu kind
+ * but 2 adds a second sprite, the page arrow. */
+static void SubmenuDrawCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN));
+    if (!cpu->zero)
+        OpLoadA(cpu, 0x70u);
+    cpu->carry = false;
+    OpAdcValue(cpu, 8u);
+    OpSta(memory, cpu, SUBMENU_CURSOR_RECORD + SPRITE_X);
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_ROW));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+    OpLoadA(cpu, 12u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+    OpLoadA(cpu, 0x4eu);
+    OpSta(memory, cpu, SUBMENU_CURSOR_RECORD + SPRITE_TILE);
+    OpLoadA(cpu, 0x20u);
+    OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
+    OpSta(memory, cpu, SUBMENU_CURSOR_RECORD + SPRITE_Y);
+    OpLoadA(cpu, 0x30u);
+    OpSta(memory, cpu, SUBMENU_CURSOR_RECORD + SPRITE_ATTRIBUTES);
+    TransferDirectToA(cpu);
+    OpSta(memory, cpu, SUBMENU_CURSOR_RECORD + SPRITE_OWNER);
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
+    OpCmpValue(cpu, 2u);
+    if (cpu->zero)
+        return;
+    SubmenuDrawPageArrow(memory, cpu);
 }
 
 /* Presents the frame and the scroll phase. */
@@ -229,11 +248,9 @@ static bool SubmenuPoll(BattleContext *battle) {
     return true;
 }
 
-/* The confirm button: an entry that is not available only polls again,
- * otherwise the choice is stored for the party member. */
-static SubmenuOutcome SubmenuAccept(BattleContext *battle) {
-    const Lufia2Memory *memory = battle->memory;
-    Lufia2CpuState *cpu = battle->cpu;
+/* Leaves X = selected entry * 16 (* 24 for menu kind 2), the index into the
+ * availability table. */
+static void SubmenuEntryTableIndex(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
     OpCmpValue(cpu, 2u);
@@ -259,13 +276,11 @@ static SubmenuOutcome SubmenuAccept(BattleContext *battle) {
         PullAccumulator16(memory, cpu);
         OpSepWidths(cpu, 0x20u);
     }
-    OpLda(memory, cpu, OpLongX(cpu, 0x7edf00u));
-    OpCmpValue(cpu, 0u);
-    if (!cpu->zero)
-        return SUBMENU_POLL;
-    OpLoadA(cpu, 2u);
-    if (!BattleCall(battle, 0xd4afu, 0x80953bu, 3u))
-        return SUBMENU_UNWOUND;
+}
+
+/* Records the first visible entry as the acting party member's choice for this
+ * menu kind (seven bytes per member, one word per kind). */
+static void SubmenuStoreChoice(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
     OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
     OpTax(cpu);
@@ -280,9 +295,25 @@ static SubmenuOutcome SubmenuAccept(BattleContext *battle) {
     OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
     OpTax(cpu);
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
-    OpSta(memory, cpu, OpAbsX(cpu, 0x1363u));
+    OpSta(memory, cpu, OpAbsX(cpu, SUBMENU_CHOICE_TABLE));
     OpSepWidths(cpu, 0x20u);
     TransferDirectToA(cpu);
+}
+
+/* The confirm button: an entry that is not available only polls again,
+ * otherwise the choice is stored for the party member. */
+static SubmenuOutcome SubmenuAccept(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    SubmenuEntryTableIndex(memory, cpu);
+    OpLda(memory, cpu, OpLongX(cpu, SUBMENU_AVAILABILITY_TABLE));
+    OpCmpValue(cpu, 0u);
+    if (!cpu->zero)
+        return SUBMENU_POLL;
+    OpLoadA(cpu, 2u);
+    if (!BattleCall(battle, 0xd4afu, 0x80953bu, 3u))
+        return SUBMENU_UNWOUND;
+    SubmenuStoreChoice(memory, cpu);
     return SUBMENU_ACCEPTED;
 }
 
@@ -578,7 +609,7 @@ Lufia2ExecutionResult Lufia2BattleActionSubmenuStart(const Lufia2Memory *memory,
         OpRepWidths(cpu, 0x20u);
         OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
         OpTax(cpu);
-        OpLda(memory, cpu, OpAbsX(cpu, 0x1363u));
+        OpLda(memory, cpu, OpAbsX(cpu, SUBMENU_CHOICE_TABLE));
         OpSepWidths(cpu, 0x20u);
         OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_FIRST_ENTRY));
         ExchangeAccumulatorBytes(cpu);
