@@ -53,6 +53,76 @@ static bool StatusMessage(BattleContext *battle, uint16_t call_site, bool recove
     return true;
 }
 
+/* Each cured status bit gets its own roll, clear and message. */
+static bool StatusCureRolls(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    static const struct {
+        uint8_t bit, phrase;
+        uint16_t slot_site, roll_site, name_site, phrase_site, message_site;
+    } cures[] = {
+        {0x20u, 1u, 0x8fc4u, 0x8fcbu, 0x8fdbu, 0x8fe1u, 0x8fe5u},
+        {0x10u, 3u, 0x8fefu, 0x8ff6u, 0x9006u, 0x900cu, 0x9010u},
+        {0x08u, 5u, 0x901au, 0x9021u, 0x9031u, 0x9037u, 0x903bu},
+    };
+    for (unsigned i = 0; i < 3u; ++i) {
+        /* Later BIT instructions deliberately use the child-returned A. */
+        OpBitValue(cpu, cures[i].bit);
+        if (cpu->zero)
+            continue;
+        OpTxy(cpu);
+        OpLda(memory, cpu, OpDp(cpu, 3u));
+        if (!BattleCall(battle, cures[i].slot_site, 0x81b2dbu, 3u))
+            return false;
+        OpTyx(cpu);
+        OpLoadA(cpu, 7u);
+        if (!BattleCall(battle, cures[i].roll_site, 0x808299u, 3u))
+            return false;
+        OpCmpValue(cpu, 4u);
+        if (!cpu->zero)
+            continue;
+        OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+        OpAndValue(cpu, (uint8_t)~cures[i].bit);
+        OpSta(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+        if (!BattleCall(battle, cures[i].name_site, 0x859150u, 3u))
+            return false;
+        OpLoadA(cpu, cures[i].phrase);
+        if (!BattleCall(battle, cures[i].phrase_site, 0x859173u, 3u) ||
+            !StatusMessage(battle, cures[i].message_site, true))
+            return false;
+    }
+    return true;
+}
+
+/* A timed status (bit 7) counts down and clears when it reaches zero. */
+static bool StatusExpireCountdown(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpBitValue(cpu, 0x80u);
+    if (cpu->zero)
+        return true;
+    OpTxy(cpu);
+    OpLda(memory, cpu, OpDp(cpu, 3u));
+    if (!BattleCall(battle, 0x90f0u, 0x81b2dbu, 3u))
+        return false;
+    OpLda(memory, cpu, OpAbsX(cpu, 6u));
+    OpDecA(cpu);
+    OpSta(memory, cpu, OpAbsX(cpu, 6u));
+    if (!cpu->zero)
+        return true;
+    OpTyx(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+    OpAndValue(cpu, 0x7fu);
+    OpSta(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+    if (!BattleCall(battle, 0x9106u, 0x859150u, 3u))
+        return false;
+    OpLoadA(cpu, 6u);
+    if (!BattleCall(battle, 0x910cu, 0x859173u, 3u) ||
+        !StatusMessage(battle, 0x9110u, false))
+        return false;
+    return true;
+}
+
 /* Each target clears its original 30-byte effect-work record first. */
 static bool StatusTarget(BattleContext *battle, uint16_t call_site, bool recovery) {
     const Lufia2Memory *memory = battle->memory;
@@ -75,72 +145,13 @@ static bool StatusTarget(BattleContext *battle, uint16_t call_site, bool recover
     if (!BattleCall(battle, recovery ? 0x8fa7u : 0x90d9u, 0x81b2b5u, 3u))
         return false;
     OpCpx(cpu, 0u);
-    if (cpu->zero)
-        goto returned;
-    OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-    OpBitValue(cpu, 4u);
-    if (!cpu->zero)
-        goto returned;
-    if (recovery) {
-        static const struct {
-            uint8_t bit, phrase;
-            uint16_t slot_site, roll_site, name_site, phrase_site, message_site;
-        } cures[] = {
-            {0x20u, 1u, 0x8fc4u, 0x8fcbu, 0x8fdbu, 0x8fe1u, 0x8fe5u},
-            {0x10u, 3u, 0x8fefu, 0x8ff6u, 0x9006u, 0x900cu, 0x9010u},
-            {0x08u, 5u, 0x901au, 0x9021u, 0x9031u, 0x9037u, 0x903bu},
-        };
-        for (unsigned i = 0; i < 3u; ++i) {
-            /* Later BIT instructions deliberately use the child-returned A. */
-            OpBitValue(cpu, cures[i].bit);
-            if (cpu->zero)
-                continue;
-            OpTxy(cpu);
-            OpLda(memory, cpu, OpDp(cpu, 3u));
-            if (!BattleCall(battle, cures[i].slot_site, 0x81b2dbu, 3u))
-                return false;
-            OpTyx(cpu);
-            OpLoadA(cpu, 7u);
-            if (!BattleCall(battle, cures[i].roll_site, 0x808299u, 3u))
-                return false;
-            OpCmpValue(cpu, 4u);
-            if (!cpu->zero)
-                continue;
-            OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-            OpAndValue(cpu, (uint8_t)~cures[i].bit);
-            OpSta(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-            if (!BattleCall(battle, cures[i].name_site, 0x859150u, 3u))
-                return false;
-            OpLoadA(cpu, cures[i].phrase);
-            if (!BattleCall(battle, cures[i].phrase_site, 0x859173u, 3u) ||
-                !StatusMessage(battle, cures[i].message_site, true))
-                return false;
-        }
-    } else {
-        OpBitValue(cpu, 0x80u);
-        if (cpu->zero)
-            goto returned;
-        OpTxy(cpu);
-        OpLda(memory, cpu, OpDp(cpu, 3u));
-        if (!BattleCall(battle, 0x90f0u, 0x81b2dbu, 3u))
-            return false;
-        OpLda(memory, cpu, OpAbsX(cpu, 6u));
-        OpDecA(cpu);
-        OpSta(memory, cpu, OpAbsX(cpu, 6u));
-        if (!cpu->zero)
-            goto returned;
-        OpTyx(cpu);
+    if (!cpu->zero) {
         OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-        OpAndValue(cpu, 0x7fu);
-        OpSta(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-        if (!BattleCall(battle, 0x9106u, 0x859150u, 3u))
-            return false;
-        OpLoadA(cpu, 6u);
-        if (!BattleCall(battle, 0x910cu, 0x859173u, 3u) ||
-            !StatusMessage(battle, 0x9110u, false))
+        OpBitValue(cpu, 4u);
+        if (cpu->zero &&
+            !(recovery ? StatusCureRolls(battle) : StatusExpireCountdown(battle)))
             return false;
     }
-returned:
     SimulateRtsFrame(memory, cpu);
     return true;
 }

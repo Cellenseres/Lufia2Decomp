@@ -1,34 +1,10 @@
 #include "battle/battle_internal.h"
 #include "core/snes_registers.h"
 
-/* $81:C652: apply the status-bit-1 HP effect to the staged target. */
-static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
+/* Apply the tick damage to the staged target and queue its presentation. */
+static bool StatusTickApply(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
-    SimulateJsrFrame(memory, cpu, (uint16_t)(call_site + 2u));
-    OpLda(memory, cpu, OpDp(cpu, 0u));
-    OpOra(memory, cpu, OpDp(cpu, 1u));
-    OpSta(memory, cpu, OpDp(cpu, 3u));
-    if (!BattleCall(battle, 0xc658u, 0x85d9c9u, 3u))
-        return false;
-    OpWriteX(memory, cpu, OpAbs(cpu, SNES_WMADDL), cpu->x);
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
-    OpLdx(cpu, 0x1eu);
-    do {
-        OpStz(memory, cpu, OpAbs(cpu, SNES_WMDATA));
-        OpDex(cpu);
-    } while (!cpu->zero);
-    OpLda(memory, cpu, OpDp(cpu, 3u));
-    if (!BattleCall(battle, 0xc66fu, 0x81b2b5u, 3u))
-        return false;
-    OpCpx(cpu, 0u);
-    if (cpu->zero)
-        goto returned;
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
-    OpBitValue(cpu, 1u);
-    if (cpu->zero)
-        goto returned;
     OpTxy(cpu);
     OpLda(memory, cpu, OpDp(cpu, 3u));
     if (!BattleCall(battle, 0xc688u, 0x81b2dbu, 3u))
@@ -112,7 +88,37 @@ static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
     OpSta(memory, cpu, OpLongX(cpu, 0x7f0004u));
     OpSepWidths(cpu, 0x20u);
     OpStepMem(memory, cpu, OpDp(cpu, 2u), 1);
-returned:
+    return true;
+}
+
+/* $81:C652: apply the status-bit-1 HP effect to the staged target. */
+static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    SimulateJsrFrame(memory, cpu, (uint16_t)(call_site + 2u));
+    OpLda(memory, cpu, OpDp(cpu, 0u));
+    OpOra(memory, cpu, OpDp(cpu, 1u));
+    OpSta(memory, cpu, OpDp(cpu, 3u));
+    if (!BattleCall(battle, 0xc658u, 0x85d9c9u, 3u))
+        return false;
+    OpWriteX(memory, cpu, OpAbs(cpu, SNES_WMADDL), cpu->x);
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
+    OpLdx(cpu, 0x1eu);
+    do {
+        OpStz(memory, cpu, OpAbs(cpu, SNES_WMDATA));
+        OpDex(cpu);
+    } while (!cpu->zero);
+    OpLda(memory, cpu, OpDp(cpu, 3u));
+    if (!BattleCall(battle, 0xc66fu, 0x81b2b5u, 3u))
+        return false;
+    OpCpx(cpu, 0u);
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpAbsX(cpu, 0x0fu));
+        OpBitValue(cpu, 1u);
+        if (!cpu->zero && !StatusTickApply(battle))
+            return false;
+    }
     SimulateRtsFrame(memory, cpu);
     return true;
 }
