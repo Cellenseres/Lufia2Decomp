@@ -58,6 +58,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:F518` | `Lufia2FieldStreamLeftColumn` | verified | `src/field/field_scroll.c` |
 | `$80:F589` | `Lufia2FieldStreamTopRow` | verified | `src/field/field_scroll.c` |
 | `$80:F5A2` | `Lufia2FieldStreamBottomRow` | verified | `src/field/field_scroll.c` |
+| `$80:F821` | `Lufia2FieldTraceCellEdges` | draft | `src/field/field_cell_edges.c` |
 | `$81:8000` | `Lufia2BattleSetup` | verified | `src/battle/battle_setup.c` |
 | `$81:851E` | `Lufia2BattleDisplaySetup` | verified | `src/battle/battle_display_setup.c` |
 | `$81:876B` | `Lufia2BattleExit` | verified | `src/battle/battle_exit.c` |
@@ -324,6 +325,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:F91F` | `Lufia2FieldCopyCellTile` | verified | `src/field/field_object_tiles.c` |
 | `$83:F933` | `Lufia2FieldQueueObjectRedraw` | verified | `src/field/field_object_tiles.c` |
 | `$83:F9AD` | `Lufia2FieldObjectAttributeCell` | verified | `src/field/field_object_lookup.c` |
+| `$83:F9D0` | `Lufia2FieldCellPointer` | draft | `src/field/field_cell_edges.c` |
 | `$83:F9D4` | `Lufia2ActorResolveMapCellOffset` | verified | `src/actor/actor_movement.c` |
 | `$83:F9D9` | `Lufia2LayerCellOffset` | verified | `src/actor/actor_movement.c` |
 | `$83:F9F7` | `Lufia2MapCellOffset` | verified | `src/actor/actor_movement.c` |

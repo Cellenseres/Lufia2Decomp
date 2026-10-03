@@ -408,6 +408,17 @@ Lufia2ExecutionResult Lufia2FieldMarkObjectSlots(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:F821 traces the edge of the walkable region from the party cell and
+ * folds the marks into the attribute bytes; any width, JSL. */
+Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $83:F9D0 table pointer of the cell at column $8F, row $91; M8/X16, JSL. */
+Lufia2ExecutionResult Lufia2FieldCellPointer(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

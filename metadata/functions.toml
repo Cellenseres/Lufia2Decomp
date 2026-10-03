@@ -3805,3 +3805,20 @@ source = "src/party/stats.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Field cell edge walk and cell pointer
+[[function]]
+address = "80:F821"
+name = "Lufia2FieldTraceCellEdges"
+source = "src/field/field_cell_edges.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "83:F9D0"
+name = "Lufia2FieldCellPointer"
+source = "src/field/field_cell_edges.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
