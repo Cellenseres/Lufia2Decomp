@@ -1603,27 +1603,127 @@ static unsigned TextScriptOpcode(
     }
 }
 
-/* $80:9CB8 text step: plain characters native, the rest on LLE. */
-Lufia2ExecutionResult Lufia2TextEngineStepBody(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    Lufia2ExecutionResult result) {
-    unsigned opcodes;
-    unsigned words = 0;
-    bool reload;
-
+/* The print delay between glyphs. A TEXT_PRINT_COUNTDOWN below 3 is counted
+ * down and ends the step; a larger value is cleared and the step goes on. */
+static bool TextStepPrintDelay(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               Lufia2ExecutionResult *result) {
     LoadA8(cpu, Read8(memory, TEXT_PRINT_COUNTDOWN));          /* 9CB8 */
     if (!cpu->zero) {
         Compare8(cpu, A8(cpu), 0x03u);
         if (!cpu->carry) {
             DecrementA8(cpu);
             Write8(memory, TEXT_PRINT_COUNTDOWN, A8(cpu));
-            result.pc = 0x809cc7u;
-            return result;
+            result->pc = 0x809cc7u;
+            return false;
         }
         TransferDirectToA(cpu);                                /* 9CC8 */
         Write8(memory, TEXT_PRINT_COUNTDOWN, A8(cpu));
     }
+    return true;
+}
+
+/* Selects the script bank and loads Y with the script pointer. When a
+ * sub-script is queued with a countdown and the countdown just reached zero,
+ * the queued return pointer replaces the script position first. */
+static void TextStepEnterScript(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    for (;;) {
+        LoadAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0); /* 9CD9 */
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_SCRIPT_POINTER, 0));
+        LoadAAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
+        if (cpu->zero)
+            break;
+        {
+            const uint32_t count = AbsoluteIndexedAddress(cpu, TEXT_RETURN_COUNT, 0);
+            const uint8_t left = (uint8_t)(Read8(memory, count) - 1u);
+
+            Write8(memory, count, left);
+            SetNz8(cpu, left);
+        }
+        if (!cpu->zero)
+            break;
+        SetAccumulatorWidth(cpu, 0); /* 9CEB */
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_RETURN_POINTER, 0));
+        Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        LoadAAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
+        StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
+        StoreZeroAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
+    }
+}
+
+/* After a printed glyph: queues the window row upload when the window state
+ * allows it. */
+static void TextStepQueueRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0); /* BCE4 */
+    BitImmediate8(cpu, 0x02u);
+    if (cpu->zero) {
+        LoadA8(cpu, 0x10u);
+        TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
+        if (!cpu->zero) {
+            SimulateJsrFrame(memory, cpu, 0xbcf4u); /* BCF2 */
+            Lufia2TextQueueWindowRow(memory, cpu);
+            SimulateRtsFrame(memory, cpu);
+        }
+    }
+}
+
+/* Moves the script pointer past the glyph (past the opcode byte when the
+ * text state asks for it) and uploads the glyph tiles. */
+static void TextStepAdvance(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0); /* BCF5 */
+    And8(cpu, 0x10u);
+    if (!cpu->zero)
+        IncrementY16(cpu);
+    else
+        Lufia2TextNextByte(memory, cpu, 0xbd01u);
+    Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y); /* BD02 */
+    TextGlyphUpload(memory, cpu, 0xbd07u);
+}
+
+/* Starts the print delay and, on every other glyph, plays the typing sound
+ * unless the field map flags suppress it. */
+static void TextStepTypingSound(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0); /* BD08 */
+    BitImmediate8(cpu, 0x02u);
+    if (cpu->zero) {
+        LoadAAbsolute8(memory, cpu, TEXT_PRINT_DELAY, 0);
+        Write8(memory, TEXT_PRINT_COUNTDOWN, A8(cpu));
+        LoadAAbsolute8(memory, cpu, TEXT_WINDOW_TILE_BASE, 0);
+        Compare8(cpu, A8(cpu), 0x10u);
+        if (!cpu->zero) {
+            LoadAAbsolute8(memory, cpu, TEXT_TYPING_SOUND, 0);
+            if (!cpu->zero) {
+                LoadA8(cpu, (uint8_t)(Read8(memory, TEXT_TYPING_SOUND_PHASE) ^ 0x01u));
+                Write8(memory, TEXT_TYPING_SOUND_PHASE, A8(cpu));
+                if (!cpu->zero) {
+                    LoadAAbsolute8(memory, cpu, TEXT_TYPING_SOUND, 0);
+                    SimulateJslFrame(memory, cpu, 0x80u, 0xbd34u);
+                    ExchangeAccumulatorBytes(cpu); /* $84:8766 */
+                    LoadA8(cpu, Read8(memory, WRAM_FIELD_MAP_FLAGS));
+                    BitImmediate8(cpu, 0x02u);
+                    if (cpu->zero) {
+                        ExchangeAccumulatorBytes(cpu);
+                        Write8(memory, WRAM_SOUND_COMMAND, A8(cpu));
+                    }
+                    SimulateRtlFrame(memory, cpu);
+                }
+            }
+        }
+    }
+}
+
+/* $80:9CB8 text step: plain characters native, the rest on LLE. */
+Lufia2ExecutionResult Lufia2TextEngineStepBody(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu,
+                                               Lufia2ExecutionResult result) {
+    unsigned opcodes;
+    unsigned words = 0;
+    bool reload;
+
+    if (!TextStepPrintDelay(memory, cpu, &result))
+        return result;
     PushDataBank(memory, cpu);                                 /* 9CCD */
     Push8(memory, cpu, PackStatus(cpu));
     SetAccumulatorWidth(cpu, 1);
@@ -1632,32 +1732,7 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(
     StoreZeroAbsolute8(memory, cpu, TEXT_UNK_125E, 0);
     opcodes = 0;
     do {
-        for (;;) {
-            LoadAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0); /* 9CD9 */
-            PushAccumulator8(memory, cpu);
-            PullDataBank(memory, cpu);
-            LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_SCRIPT_POINTER, 0));
-            LoadAAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
-            if (cpu->zero)
-                break;
-            {
-                const uint32_t count =
-                    AbsoluteIndexedAddress(cpu, TEXT_RETURN_COUNT, 0);
-                const uint8_t left = (uint8_t)(Read8(memory, count) - 1u);
-
-                Write8(memory, count, left);
-                SetNz8(cpu, left);
-            }
-            if (!cpu->zero)
-                break;
-            SetAccumulatorWidth(cpu, 0); /* 9CEB */
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_RETURN_POINTER, 0));
-            Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->accumulator);
-            SetAccumulatorWidth(cpu, 1);
-            LoadAAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
-            StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
-            StoreZeroAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
-        }
+        TextStepEnterScript(memory, cpu);
         reload = false;
         for (;;) {
             uint16_t handler;
@@ -1721,52 +1796,9 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(
                 break;
         }
     } while (reload);
-    LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);                   /* BCE4 */
-    BitImmediate8(cpu, 0x02u);
-    if (cpu->zero) {
-        LoadA8(cpu, 0x10u);
-        TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
-        if (!cpu->zero) {
-            SimulateJsrFrame(memory, cpu, 0xbcf4u);           /* BCF2 */
-            Lufia2TextQueueWindowRow(memory, cpu);
-            SimulateRtsFrame(memory, cpu);
-        }
-    }
-    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* BCF5 */
-    And8(cpu, 0x10u);
-    if (!cpu->zero)
-        IncrementY16(cpu);
-    else
-        Lufia2TextNextByte(memory, cpu, 0xbd01u);
-    Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y); /* BD02 */
-    TextGlyphUpload(memory, cpu, 0xbd07u);
-    LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);                   /* BD08 */
-    BitImmediate8(cpu, 0x02u);
-    if (cpu->zero) {
-        LoadAAbsolute8(memory, cpu, TEXT_PRINT_DELAY, 0);
-        Write8(memory, TEXT_PRINT_COUNTDOWN, A8(cpu));
-        LoadAAbsolute8(memory, cpu, TEXT_WINDOW_TILE_BASE, 0);
-        Compare8(cpu, A8(cpu), 0x10u);
-        if (!cpu->zero) {
-            LoadAAbsolute8(memory, cpu, TEXT_TYPING_SOUND, 0);
-            if (!cpu->zero) {
-                LoadA8(cpu, (uint8_t)(Read8(memory, TEXT_TYPING_SOUND_PHASE) ^ 0x01u));
-                Write8(memory, TEXT_TYPING_SOUND_PHASE, A8(cpu));
-                if (!cpu->zero) {
-                    LoadAAbsolute8(memory, cpu, TEXT_TYPING_SOUND, 0);
-                    SimulateJslFrame(memory, cpu, 0x80u, 0xbd34u);
-                    ExchangeAccumulatorBytes(cpu);             /* $84:8766 */
-                    LoadA8(cpu, Read8(memory, WRAM_FIELD_MAP_FLAGS));
-                    BitImmediate8(cpu, 0x02u);
-                    if (cpu->zero) {
-                        ExchangeAccumulatorBytes(cpu);
-                        Write8(memory, WRAM_SOUND_COMMAND, A8(cpu));
-                    }
-                    SimulateRtlFrame(memory, cpu);
-                }
-            }
-        }
-    }
+    TextStepQueueRow(memory, cpu);
+    TextStepAdvance(memory, cpu);
+    TextStepTypingSound(memory, cpu);
     return TextEngineExit(memory, cpu, result);
 }
 
