@@ -20,7 +20,7 @@ static void EventStoreResult(
     SimulateJsrFrame(memory, cpu, return_address);
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* E4C5 */
     LoadA8(cpu, Read8(memory, EVENT_CONDITION_OPERAND));
-    Write8(memory, LongIndexedAddress(0x7fd15cu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(EVENT_SLOT_VARIABLES, cpu->x), A8(cpu));
     LoadA8(cpu, Read8(memory, EVENT_CONDITION));
     Write8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x), A8(cpu));
     SimulateRtsFrame(memory, cpu);
@@ -58,7 +58,7 @@ static unsigned EventKeepResult(
     LoadA8(cpu, Read8(memory, EVENT_CONDITION));
     Write8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x), A8(cpu));
     LoadA8(cpu, Read8(memory, EVENT_CONDITION_OPERAND));
-    Write8(memory, LongIndexedAddress(0x7fd15cu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(EVENT_SLOT_VARIABLES, cpu->x), A8(cpu));
     return EVENT_OPCODE_NEXT;
 }
 

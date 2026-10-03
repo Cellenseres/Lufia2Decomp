@@ -74,4 +74,27 @@ Lufia2ExecutionResult Lufia2FieldDecompressMapData(
 /* The object index the running object opcode or animation slot works on. */
 #define EVENT_OBJECT_OPERAND 0x7fd04eu
 
+/* Scripted camera target (x, y words) used while SCREEN_EFFECT_SCRIPTED_CAMERA
+ * is set. */
+#define FIELD_SCRIPTED_CAMERA_X 0x7fd08bu
+#define FIELD_SCRIPTED_CAMERA_Y 0x7fd08du
+/* Screen shake offsets added to the published scroll. */
+#define FIELD_SCREEN_OFFSET_X 0x7fd081u
+#define FIELD_SCREEN_OFFSET_Y 0x7fd083u
+/* Screen shake parameters; the first is only set, the second is the
+ * amplitude and the third the chance threshold compared with a random byte. */
+#define FIELD_SHAKE_PARAM_7E 0x7fd07eu
+#define FIELD_SHAKE_AMPLITUDE 0x7fd07fu
+#define FIELD_SHAKE_CHANCE 0x7fd080u
+/* Per-layer scroll follow state: target words and speed words. */
+#define FIELD_FOLLOW_TARGET_X 0x7fd0ceu
+#define FIELD_FOLLOW_TARGET_Y 0x7fd0d6u
+#define FIELD_FOLLOW_SPEED_X 0x7fd0deu
+#define FIELD_FOLLOW_SPEED_Y 0x7fd0e6u
+/* Per-layer scroll speed; zero snaps the layer to the camera. */
+#define FIELD_LAYER_SCROLL_SPEED 0x05a8u
+/* Half of the screen size: a centred camera sits this far from its origin. */
+#define FIELD_SCREEN_HALF_WIDTH 0x0080u
+#define FIELD_SCREEN_HALF_HEIGHT 0x0070u
+
 #endif
