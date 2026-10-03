@@ -1,122 +1,97 @@
 /* Item and spell records ($81:F1C5, $81:F414). */
 
 #include "core/cpu_internal.h"
-#include "core/wram_view.h"
 #include "lufia2/item.h"
-#include "system/wram.h"
 
 enum {
+    ITEM = 0x0a06u,
+    ITEM_RECORD = 0x0a09u,              /* pointer into bank $96 */
+    SPELL = 0x0a0bu,
+    SPELL_RECORD = 0x0a0du,             /* pointer into bank $95 */
     MASKS = 0x09fcu,                    /* 4 bytes: which words follow */
     MASK_BITS = 0x0a00u,
+    NAME = 0x0b77u,
     FIELDS = 0x0b84u,
-    ITEM_NAME_LENGTH = 12,
-    ITEM_ID_MASK = 0x01ff,
-    CHAR_END = 0x00,
-    CHAR_SPACE = 0x20,
-    ITEM_RECORD_TABLE_BASE = 0xcf69,    /* low half of the table address */
-    SPELL_ID_MASK = 0x00ff,
-    SPELL_RECORD_TABLE_BASE = 0xfa5b,
 };
-
-#define SYSTEM_BANK_9E 0x9eu
-#define ROM_ITEM_NAME_TABLE 0x9ec7e8u   /* 12 characters per item */
-#define ROM_ITEM_RECORD_TABLE 0x96cf69u /* one offset word per item */
-#define ROM_SPELL_RECORD_TABLE 0x95fa5bu /* one offset word per spell */
 
 static void DecrementX(Lufia2CpuState *cpu) {
     cpu->x = (uint16_t)(cpu->x - 1u);
     SetNz16(cpu, cpu->x);
 }
 
-/* Exit CPU state is part of the verified contract. */
+/* STA abs,X with a 16-bit accumulator. */
+static void StoreA16Indexed(
+    const Lufia2Memory *memory,
+    const Lufia2CpuState *cpu,
+    uint16_t address) {
+    const uint32_t low = AbsoluteIndexedAddress(cpu, address, cpu->x);
 
-/* Copy the item's name; return the last word copied. */
-static uint16_t CopyItemName(Lufia2Wram wram, uint16_t item) {
-    const uint16_t name_offset = (uint16_t)(item * ITEM_NAME_LENGTH);
-    uint16_t last_word = 0;
-    uint16_t i;
-
-    for (i = 0; i < ITEM_NAME_LENGTH; i += 2) {
-        last_word = Read16Long(wram.memory,
-            LongIndexedAddress(ROM_ITEM_NAME_TABLE, (uint16_t)(name_offset + i)));
-        WramWrite16At(wram, WRAM_RECORD_BUFFER, i, last_word);
-    }
-    return last_word;
-}
-
-typedef struct ItemNameTrim {
-    uint16_t cursor;    /* index the scan stopped at, 0xffff past the first byte */
-    uint8_t last_char;  /* last character examined */
-} ItemNameTrim;
-
-/* Trailing spaces of the name become end markers. */
-static ItemNameTrim TrimItemName(Lufia2Wram wram) {
-    ItemNameTrim trim = {ITEM_NAME_LENGTH, 0};
-
-    WramWriteAt(wram, WRAM_RECORD_BUFFER, ITEM_NAME_LENGTH, CHAR_END);
-    for (trim.cursor = ITEM_NAME_LENGTH; trim.cursor != 0xffffu; --trim.cursor) {
-        trim.last_char = WramReadAt(wram, WRAM_RECORD_BUFFER, trim.cursor);
-        if (trim.last_char == CHAR_SPACE)
-            WramWriteAt(wram, WRAM_RECORD_BUFFER, trim.cursor, CHAR_END);
-        else if (trim.last_char != CHAR_END)
-            break;
-    }
-    return trim;
-}
-
-/* Pushed DB and offset stay in the stack page. */
-static void LeaveItemNameStackBytes(
-    const Lufia2Memory *memory, const Lufia2CpuState *cpu, uint16_t item) {
-    const uint16_t scaled = (uint16_t)(item * 4u);
-
-    Write8(memory, cpu->stack, cpu->data_bank);
-    Write8(memory, (uint16_t)(cpu->stack - 1u), (uint8_t)(scaled >> 8));
-    Write8(memory, (uint16_t)(cpu->stack - 2u), (uint8_t)scaled);
+    Write8(memory, low, (uint8_t)cpu->accumulator);
+    Write8(memory, (low + 1u) & 0x00ffffffu,
+        (uint8_t)(cpu->accumulator >> 8));
 }
 
 /* $81:F2A9: 12-character item name, trailing spaces cleared. */
 static void ItemName(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    const Lufia2Wram wram = WramViewInBank(memory, cpu, SYSTEM_BANK_9E);
-    const uint16_t item = WramRead16(wram, WRAM_ITEM_RECORD_ID) & ITEM_ID_MASK;
-    const uint16_t last_word = CopyItemName(wram, item);
-    const ItemNameTrim trim = TrimItemName(wram);
-
-    LeaveItemNameStackBytes(memory, cpu, item);
-    cpu->accumulator = (uint16_t)((last_word & 0xff00u) | trim.last_char);
-    cpu->x = trim.cursor;
-    cpu->y = (uint16_t)(item * ITEM_NAME_LENGTH + ITEM_NAME_LENGTH);
-    /* Exit flags: N/Z from DB, C from the last compare. */
-    SetNz8(cpu, cpu->data_bank);
-    cpu->carry = trim.last_char == CHAR_END || trim.last_char >= CHAR_SPACE;
-    cpu->overflow = 0;
-    cpu->accumulator_is_8_bit = 1;
-}
-
-/* Record pointer: table base plus the item's offset word. */
-static uint16_t ReadItemRecordPointer(Lufia2Wram wram, uint16_t item) {
-    const uint16_t offset = Read16Long(wram.memory,
-        LongIndexedAddress(ROM_ITEM_RECORD_TABLE, (uint16_t)(item * 2u)));
-
-    return (uint16_t)(offset + ITEM_RECORD_TABLE_BASE);
+    PushDataBank(memory, cpu);
+    LoadA8(cpu, 0x9eu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    SetAccumulatorWidth(cpu, 0);                               /* F2AE */
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, ITEM, 0));
+    And16(cpu, 0x01ffu);
+    AslA16(cpu);
+    AslA16(cpu);
+    PushAccumulator16(memory, cpu);
+    AslA16(cpu);
+    cpu->carry = 0;
+    Add16Value(cpu, (uint16_t)(Read8(memory, (uint16_t)(cpu->stack + 1u)) |
+        (Read8(memory, (uint16_t)(cpu->stack + 2u)) << 8)));   /* ADC $01,s */
+    cpu->y = PullIndexValue(memory, cpu);
+    TransferAToY(cpu);                                         /* item * 12 */
+    LoadX16(cpu, 0x0000u);
+    do {
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xc7e8u, cpu->y));
+        StoreA16Indexed(memory, cpu, NAME);
+        IncrementY16(cpu);
+        IncrementY16(cpu);
+        IncrementX16(cpu);
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x000cu);
+    } while (!cpu->zero);
+    SetAccumulatorWidth(cpu, 1);
+    StoreZeroAbsolute8(memory, cpu, NAME, cpu->x);             /* F2D3 */
+    do {
+        LoadAAbsolute8(memory, cpu, NAME, cpu->x);
+        if (!cpu->zero) {
+            Compare8(cpu, A8(cpu), 0x20u);
+            if (!cpu->zero)
+                break;
+            StoreZeroAbsolute8(memory, cpu, NAME, cpu->x);
+        }
+        DecrementX(cpu);                                       /* F2E2 */
+    } while (!cpu->negative);
+    PullDataBank(memory, cpu);
 }
 
 /* $81:F291: item record pointer, $96:CF69 table. */
 static void ItemRecordAddress(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    const uint16_t item = WramRead16(wram, WRAM_ITEM_RECORD_ID) & ITEM_ID_MASK;
-    const uint16_t pointer = ReadItemRecordPointer(wram, item);
-
-    Write8(memory, cpu->stack, PackStatus(cpu));
-    WramWrite16(wram, WRAM_ITEM_RECORD_POINTER, pointer);
-    /* P restored; A and X keep their last values. */
-    cpu->accumulator = pointer;
-    cpu->x = (uint16_t)(item * 2u);
-    if (cpu->index_is_8_bit)
-        cpu->x &= 0x00ffu;
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, ITEM, 0));
+    And16(cpu, 0x01ffu);
+    AslA16(cpu);
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x96cf69u, cpu->x)));
+    cpu->carry = 0;
+    Add16Value(cpu, 0xcf69u);
+    Write16Absolute(memory, cpu, ITEM_RECORD, cpu->accumulator);
+    UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
 /* $81:F1C5: name, 9 bytes, then masked words. */
@@ -133,7 +108,7 @@ Lufia2ExecutionResult Lufia2LoadItemRecord(
     do {
         DecrementX(cpu);
         StoreZeroAbsolute8(memory, cpu, 0x0000u, cpu->x);
-        Compare16(cpu, cpu->x, WRAM_RECORD_BUFFER);
+        Compare16(cpu, cpu->x, NAME);
     } while (!cpu->zero);
     SimulateJslFrame(memory, cpu, 0x81u, 0xf1dau);
     ItemName(memory, cpu);
@@ -144,7 +119,7 @@ Lufia2ExecutionResult Lufia2LoadItemRecord(
     SimulateJslFrame(memory, cpu, 0x81u, 0xf1e2u);
     ItemRecordAddress(memory, cpu);
     SimulateRtlFrame(memory, cpu);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_ITEM_RECORD_POINTER, 0));
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, ITEM_RECORD, 0));
     LoadX16(cpu, 0x0000u);
     do {
         LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
@@ -196,28 +171,20 @@ Lufia2ExecutionResult Lufia2LoadItemRecord(
     return ExecutionReturned(0x81f290u);
 }
 
-/* Record pointer: table base plus the spell's offset word. */
-static uint16_t ReadSpellRecordOffset(Lufia2Wram wram, uint16_t spell) {
-    return Read16Long(wram.memory,
-        LongIndexedAddress(ROM_SPELL_RECORD_TABLE, (uint16_t)(spell * 2u)));
-}
-
 /* $81:F446: spell record pointer, $95:FA5B table. */
 static void SpellRecordAddress(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    const uint16_t spell =
-        WramRead16(wram, WRAM_MENU_SPELL_RECORD_ID) & SPELL_ID_MASK;
-    const uint16_t offset = ReadSpellRecordOffset(wram, spell);
-
-    /* The add's pointer and flags are the exit state. */
-    cpu->accumulator = offset;
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, SPELL, 0));
+    And16(cpu, 0x00ffu);
+    AslA16(cpu);
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x95fa5bu, cpu->x)));
     cpu->carry = 0;
-    Add16Value(cpu, SPELL_RECORD_TABLE_BASE);
-    WramWrite16(wram, WRAM_SPELL_RECORD_POINTER, cpu->accumulator);
-    cpu->x = (uint16_t)(spell * 2u);
-    cpu->accumulator_is_8_bit = 1;
+    Add16Value(cpu, 0xfa5bu);
+    Write16Absolute(memory, cpu, SPELL_RECORD, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
 }
 
 /* $81:F414: name, D low byte as terminator, 11 bytes. */
@@ -231,21 +198,21 @@ Lufia2ExecutionResult Lufia2LoadSpellRecord(
     SimulateJsrFrame(memory, cpu, 0xf41bu);
     SpellRecordAddress(memory, cpu);
     SimulateRtsFrame(memory, cpu);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_SPELL_RECORD_POINTER, 0));
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SPELL_RECORD, 0));
     LoadX16(cpu, 0x0000u);
     do {
         LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-        Write8(memory, LongIndexedAddress(WRAM_RECORD_BUFFER, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(NAME, cpu->x), A8(cpu));
         IncrementY16(cpu);
         IncrementX16(cpu);
         Compare16(cpu, cpu->x, 0x0008u);
     } while (!cpu->zero);
     TransferDirectToA(cpu);                                    /* TDC */
-    Write8(memory, LongIndexedAddress(WRAM_RECORD_BUFFER, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(NAME, cpu->x), A8(cpu));
     IncrementX16(cpu);
     do {
         LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-        Write8(memory, LongIndexedAddress(WRAM_RECORD_BUFFER, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(NAME, cpu->x), A8(cpu));
         IncrementY16(cpu);
         IncrementX16(cpu);
         Compare16(cpu, cpu->x, 0x0014u);
@@ -264,7 +231,7 @@ Lufia2ExecutionResult Lufia2ItemRecordByte(
     SimulateJslFrame(memory, cpu, 0x81u, 0xf19cu);
     ItemRecordAddress(memory, cpu);
     SimulateRtlFrame(memory, cpu);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_ITEM_RECORD_POINTER, 0));
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, ITEM_RECORD, 0));
     PushDataBank(memory, cpu);
     LoadA8(cpu, 0x96u);
     PushAccumulator8(memory, cpu);
@@ -281,7 +248,7 @@ static Lufia2ExecutionResult SpellRecordAt(const Lufia2Memory *memory,
     SimulateJsrFrame(memory, cpu, return_address);
     SpellRecordAddress(memory, cpu);
     SimulateRtsFrame(memory, cpu);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_SPELL_RECORD_POINTER, 0));
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SPELL_RECORD, 0));
     PushDataBank(memory, cpu);
     LoadA8(cpu, 0x95u);
     PushAccumulator8(memory, cpu);
