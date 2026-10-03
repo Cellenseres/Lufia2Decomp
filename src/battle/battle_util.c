@@ -1,7 +1,6 @@
 /* Small battle helpers of bank $81. */
 
 #include "core/cpu_internal.h"
-#include "core/wram_view.h"
 #include "lufia2/battle.h"
 #include "system/wram.h"
 
@@ -165,62 +164,60 @@ enum {
     COLOR_WORK_SCRATCH = 0x17
 };
 
-enum { COLOR_CHANNEL_MASK = 0x1f, COLOR_GREEN_SHIFT = 5, COLOR_BLUE_SHIFT = 10 };
+enum { COLOR_CHANNEL_MASK = 0x1f };
 
-/* One product of the hardware multiplier, addressed through the data bank. */
-static uint16_t ChannelProduct(Lufia2Wram bus, uint8_t channel, uint8_t weight) {
-    WramWrite(bus, SNES_WRMPYA, channel);
-    WramWrite(bus, SNES_WRMPYB, weight);
-    return WramRead16(bus, SNES_RDMPYL);
-}
-
-/* Replaces the BGR555 colour at $15 by the gray of the same brightness:
- * (0.30 red + 0.59 green + 0.11 blue), the same level in all three channels.
- * Leaves the accumulator 16-bit; the exit registers are the ones the
- * original routine produced. */
+/* $81:B54A: replaces the colour at $15 by the gray of the same brightness
+ * (0.30 red + 0.59 green + 0.11 blue); exits with a 16-bit accumulator. */
 Lufia2ExecutionResult Lufia2ColorToGray(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    const Lufia2Wram bus = WramViewOfCaller(memory, cpu);
-    uint8_t red, green, blue, gray;
-    uint16_t red_part, green_part, blue_part, brightness, color, old_color;
-
-    red = WramRead(bus, COLOR_WORK_COLOR) & COLOR_CHANNEL_MASK;
-    WramWrite(bus, SNES_WRMPYA, red);
-    WramWrite(bus, SNES_WRMPYB, GRAY_WEIGHT_RED);
-    /* The product is read back once the green channel is split off. */
-    green =
-        (WramRead16(bus, COLOR_WORK_COLOR) >> COLOR_GREEN_SHIFT) & COLOR_CHANNEL_MASK;
-    red_part = WramRead16(bus, SNES_RDMPYL);
-
-    WramWrite(bus, SNES_WRMPYA, green);
-    WramWrite(bus, SNES_WRMPYB, GRAY_WEIGHT_GREEN);
-    WramWrite16(bus, COLOR_WORK_SCRATCH, red_part);
-    blue = (WramRead(bus, COLOR_WORK_COLOR_HIGH) >> 2) & COLOR_CHANNEL_MASK;
-    green_part = WramRead16(bus, SNES_RDMPYL);
-
-    blue_part = ChannelProduct(bus, blue, GRAY_WEIGHT_BLUE);
-    brightness =
-        (uint16_t)(green_part + WramRead16(bus, COLOR_WORK_SCRATCH) + blue_part);
-    gray = (uint8_t)(brightness >> 8); /* at most 31 */
-
-    WramWrite(bus, COLOR_WORK_SCRATCH, gray);
-    WramWrite(bus, COLOR_WORK_COLOR, gray);
-    WramWrite(bus, COLOR_WORK_COLOR_HIGH, (uint8_t)(gray << 2));
-    color = (uint16_t)(gray << COLOR_GREEN_SHIFT);
-    old_color = WramRead16(bus, COLOR_WORK_COLOR);
-    WramWrite16(bus, COLOR_WORK_COLOR, (uint16_t)(old_color | color));
-
-    /* Exit state: sixteen-bit A holds the green field, Y the green product.
-     * No carry or overflow can occur with five-bit channels; Z is the result
-     * of the final bit test. */
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, DirectByte(memory, cpu, COLOR_WORK_COLOR));
+    And8(cpu, COLOR_CHANNEL_MASK);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
+    LoadA8(cpu, GRAY_WEIGHT_RED);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
     SetAccumulatorWidth(cpu, 0);
-    cpu->accumulator = color;
-    LoadY16(cpu, green_part);
+    LoadA16(cpu, (uint16_t)(Read16Direct(memory, cpu, COLOR_WORK_COLOR) >> 5));
+    cpu->carry = (Read16Direct(memory, cpu, COLOR_WORK_COLOR) >> 4) & 1u;
+    SetAccumulatorWidth(cpu, 1);
+    And8(cpu, COLOR_CHANNEL_MASK);
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
+    LoadA8(cpu, GRAY_WEIGHT_GREEN);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
+    Write16Direct(memory, cpu, COLOR_WORK_SCRATCH, cpu->y);
+    LoadA8(cpu, DirectByte(memory, cpu, COLOR_WORK_COLOR_HIGH));
+    cpu->carry = (A8(cpu) >> 1) & 1u;
+    LoadA8(cpu, (uint8_t)(A8(cpu) >> 2));
+    And8(cpu, COLOR_CHANNEL_MASK);
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
+    LoadA8(cpu, GRAY_WEIGHT_BLUE);
+    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, cpu->y);
     cpu->carry = 0;
-    cpu->overflow = 0;
-    cpu->negative = 0;
-    cpu->zero = (old_color & color) == 0;
+    Add16Value(cpu, Read16Direct(memory, cpu, COLOR_WORK_SCRATCH));
+    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, 0x00u);
+    ExchangeAccumulatorBytes(cpu);
+    StoreADirect8(memory, cpu, COLOR_WORK_SCRATCH);
+    StoreADirect8(memory, cpu, COLOR_WORK_COLOR);
+    AslA8(cpu);
+    AslA8(cpu);
+    StoreADirect8(memory, cpu, COLOR_WORK_COLOR_HIGH);
+    SetAccumulatorWidth(cpu, 0);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    {
+        const uint16_t old = Read16Direct(memory, cpu, COLOR_WORK_COLOR);
+
+        cpu->zero = (old & cpu->accumulator) == 0;
+        Write16Direct(memory, cpu, COLOR_WORK_COLOR, (uint16_t)(old | cpu->accumulator));
+    }
     return ExecutionReturned(0x81b5a2u);
 }
 
