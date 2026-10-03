@@ -1,5 +1,6 @@
 #include "battle/battle_internal.h"
 
+/* Loads the value at DP $40, then spins until it changes. */
 static void WaitForBattleFrame(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, 0x40u));
     do {

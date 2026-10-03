@@ -10,16 +10,19 @@ enum {
     FRAME_COUNT = 0x0a3cu,
 };
 
+/* Stores A at absolute offset + Y. */
 static void Store16Y(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t offset) {
     StoreAAbsolute16(memory, cpu, offset, cpu->y);
 }
 
+/* Stores A at absolute offset + X. */
 static void Store16X(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t offset) {
     StoreAAbsolute16(memory, cpu, offset, cpu->x);
 }
 
+/* Reads the word at an absolute address in the current data bank. */
 static uint16_t Abs16(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
     uint16_t address) {
     return Read16AbsoluteIndexed(memory, cpu, address, 0);
@@ -35,11 +38,13 @@ static uint16_t DecAbs16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return value;
 }
 
+/* Y += 2. */
 static void IncY2(Lufia2CpuState *cpu) {
     IncrementY16(cpu);
     IncrementY16(cpu);
 }
 
+/* X += 2. */
 static void IncX2(Lufia2CpuState *cpu) {
     IncrementX16(cpu);
     IncrementX16(cpu);
@@ -212,12 +217,14 @@ Lufia2ExecutionResult Lufia2BattleGaugeColumn(
     return ExecutionReturned(0x81e639u);
 }
 
+/* Sets the data bank to $7E through the stack. */
 static void SetBank7E(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, 0x7eu);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
 }
 
+/* X += count. */
 static void IncX(Lufia2CpuState *cpu, unsigned count) {
     while (count--)
         IncrementX16(cpu);
@@ -328,6 +335,8 @@ Lufia2ExecutionResult Lufia2BattleWindowE3CD(
     return FilledWindow(memory, cpu, 0x2167u, 0x87f9u, 0xe3cdu);
 }
 
+/* Adds delta (+/-) to the word at an absolute address, one step at a time,
+ * leaving N/Z from the last step. */
 static void IncAbs16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t address, int delta) {
     const int step = delta < 0 ? -1 : 1;
@@ -341,6 +350,7 @@ static void IncAbs16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     }
 }
 
+/* Calls one frame part as a JSR returning to ret. */
 static void FrameCall(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2ExecutionResult (*part)(const Lufia2Memory *, Lufia2CpuState *),
     uint16_t ret) {
