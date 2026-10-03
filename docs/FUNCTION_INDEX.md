@@ -428,11 +428,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9009` | `Lufia2MenuCopyImageRow256` | draft | `src/menu/menu_image_load.c` |
 | `$86:9022` | `Lufia2MenuLoadImageGrid` | draft | `src/menu/menu_image_load.c` |
 | `$86:906A` | `Lufia2MenuCopyImageRow128` | draft | `src/menu/menu_image_load.c` |
-| `$86:90C0` | `Lufia2MenuLoadPalette0` | draft | `src/menu/menu_image_load.c` |
-| `$86:90D3` | `Lufia2MenuLoadPalette1` | draft | `src/menu/menu_image_load.c` |
-| `$86:90E6` | `Lufia2MenuLoadPalette2` | draft | `src/menu/menu_image_load.c` |
-| `$86:90F9` | `Lufia2MenuLoadPalette3` | draft | `src/menu/menu_image_load.c` |
-| `$86:910C` | `Lufia2MenuLoadPalette4` | draft | `src/menu/menu_image_load.c` |
+| `$86:90C0` | `Lufia2MenuLoadPalette0` | verified | `src/menu/menu_image_load.c` |
+| `$86:90D3` | `Lufia2MenuLoadPalette1` | verified | `src/menu/menu_image_load.c` |
+| `$86:90E6` | `Lufia2MenuLoadPalette2` | verified | `src/menu/menu_image_load.c` |
+| `$86:90F9` | `Lufia2MenuLoadPalette3` | verified | `src/menu/menu_image_load.c` |
+| `$86:910C` | `Lufia2MenuLoadPalette4` | verified | `src/menu/menu_image_load.c` |
 | `$86:911F` | `Lufia2MenuLoadSlotPalettes` | draft | `src/menu/menu_image_load.c` |
 | `$86:94D4` | `Lufia2SceneTrackStep` | draft | `src/field/field_scene_tracks.c` |
 | `$86:995B` | `Lufia2WorldScrollAdvance` | draft | `src/world/world_scroll_step.c` |

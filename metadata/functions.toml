@@ -3715,7 +3715,7 @@ name = "Lufia2MenuLoadPalette0"
 source = "src/menu/menu_image_load.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:90D3"
@@ -3723,7 +3723,7 @@ name = "Lufia2MenuLoadPalette1"
 source = "src/menu/menu_image_load.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:90E6"
@@ -3731,7 +3731,7 @@ name = "Lufia2MenuLoadPalette2"
 source = "src/menu/menu_image_load.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:90F9"
@@ -3739,7 +3739,7 @@ name = "Lufia2MenuLoadPalette3"
 source = "src/menu/menu_image_load.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:910C"
@@ -3747,7 +3747,7 @@ name = "Lufia2MenuLoadPalette4"
 source = "src/menu/menu_image_load.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:911F"

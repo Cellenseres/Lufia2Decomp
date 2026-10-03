@@ -1,6 +1,4 @@
-/* Menu tile map buffers: clearing both layers, filling a block of rising tile
- * numbers, and recoloring a rectangle. Each of the three that wait for a
- * redraw stops at the frame wait of $82:93C2. */
+/* Menu tile buffers; redraw waits remain explicit continuations. */
 
 #include <stdbool.h>
 
@@ -43,9 +41,7 @@ static Lufia2ExecutionResult WaitForRedraw(
     return ExecutionHandoff(cpu, REDRAW_WAIT);
 }
 
-/* $82:80A5: the 4 x 4 block at position $54 receives the tile number $5A
- * counting up along each row and carrying on into the next. M0X0. Leaves the
- * tile in A and Y, the start of the row after the block in X. */
+/* $82:80A5: consecutive tile numbers in a 4 x 4 block; M0X0. */
 static void FillTileBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     uint16_t position;
@@ -82,14 +78,14 @@ static void FillTileBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 Lufia2ExecutionResult Lufia2MenuTileBlockFill(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !DirectWorkWordAvailable(cpu, WORK_HEIGHT))
         return ExecutionHandoff(cpu, 0x8280a5u);
     FillTileBlock(memory, cpu);
     return ExecutionReturned(0x8280c9u);
 }
 
-/* $82:8069: the 8 x 8 blocks of the picture grid, each numbered from the base
- * tile plus the tile offset, then the redraw wait; any M, X16. */
+/* $82:8069: fill the picture grid before its redraw wait. */
 Lufia2ExecutionResult Lufia2MenuTileGridFill(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -97,7 +93,9 @@ Lufia2ExecutionResult Lufia2MenuTileGridFill(
     Word16Result tile;
     Word16Result position;
 
-    if (cpu->index_is_8_bit)
+    if (cpu->index_is_8_bit || !DirectWorkWordAvailable(cpu, WORK_HEIGHT) ||
+        !DirectWorkWordAvailable(cpu, WORK_COLUMNS) ||
+        !DirectWorkWordAvailable(cpu, WORK_ROWS))
         return ExecutionHandoff(cpu, 0x828069u);
     tile = Sum16Mode(GRID_BASE_TILE, WramRead16(wram, GRID_TILE_OFFSET), false, cpu->decimal);
     WramWrite16(wram, WORK_TILE, tile.value);
@@ -124,8 +122,7 @@ Lufia2ExecutionResult Lufia2MenuTileGridFill(
     return WaitForRedraw(memory, cpu, 0x80a3u);
 }
 
-/* $82:80CA: the rectangle at A, X = width << 8 | rows, takes the palette
- * number in Y; then the redraw wait. M0X0. */
+/* $82:80CA: recolor the packed-size rectangle before its redraw wait. */
 Lufia2ExecutionResult Lufia2MenuRecolorRect(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -136,14 +133,14 @@ Lufia2ExecutionResult Lufia2MenuRecolorRect(
     Word16Result next_row;
     uint8_t redraw;
 
-    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !DirectWorkWordAvailable(cpu, WORK_HEIGHT))
         return ExecutionHandoff(cpu, 0x8280cau);
     position = cpu->accumulator;
     WramWrite16(wram, WORK_POSITION, position);
     WramWrite16(wram, WORK_WIDTH, 0);
     WramWrite16(wram, WORK_HEIGHT, 0);
-    /* The palette number moves from the low byte to the high byte of the
-     * attribute word, two places up. */
+    /* Palette bits occupy the high byte of the tile attributes. */
     attributes = (uint16_t)((((cpu->y & 0x00ffu) << 8) | (cpu->y >> 8)) << 2);
     WramWrite16(wram, WORK_TILE, attributes);
     WramWrite(wram, WORK_HEIGHT, (uint8_t)cpu->x);
@@ -177,9 +174,7 @@ Lufia2ExecutionResult Lufia2MenuRecolorRect(
     return WaitForRedraw(memory, cpu, 0x810au);
 }
 
-/* $82:838F: zeroes both menu layers, then the redraw wait with $74 = $88;
- * any M, X16. The layers are written through the bank $7E data bank the
- * original enters and leaves. */
+/* $82:838F: clear both layers through bank $7E, then request redraw. */
 Lufia2ExecutionResult Lufia2MenuClearLayers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
