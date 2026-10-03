@@ -1,7 +1,7 @@
 /* Battle sprites, tilemap and frame upkeep. */
 
 #include "battle/battle_internal.h"
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/battle.h"
 #include "system/wram.h"
 
@@ -41,7 +41,7 @@ static void BattleNextRecord(Lufia2CpuState *cpu, uint16_t step) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->y);
     cpu->carry = 0;
-    Add16Value(cpu, step);
+    OpAdcValue(cpu, step);
     TransferAToY(cpu);
     SetAccumulatorWidth(cpu, 1);
 }
@@ -59,13 +59,13 @@ static void BattleOamStrips(
         AslA8(cpu);
         AslA8(cpu);
         AslA8(cpu);
-        Adc8(cpu, DirectByte(memory, cpu, 0x06u));
+        OpAdcValue(cpu, DirectByte(memory, cpu, 0x06u));
         StoreADirect8(memory, cpu, 0x06u);
     }
     Write8(memory, DirectAddress(cpu, 0x15u), 0x00u);
     TransferDirectToA(cpu);
     cpu->carry = 1;
-    Sbc8(cpu, DirectByte(memory, cpu, 0x07u));
+    OpSbcValue(cpu, DirectByte(memory, cpu, 0x07u));
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, DirectByte(memory, cpu, 0x06u));
     TransferAToY(cpu);
@@ -75,7 +75,7 @@ static void BattleOamStrips(
     AslA8(cpu);
     StoreADirect8(memory, cpu, 0x11u);
     And8(cpu, 0xf0u);
-    Adc8(cpu, DirectByte(memory, cpu, 0x11u));
+    OpAdcValue(cpu, DirectByte(memory, cpu, 0x11u));
     StoreADirect8(memory, cpu, 0x11u);
     LoadA8(cpu, DirectByte(memory, cpu, 0x05u));
     DecrementA8(cpu);
@@ -101,25 +101,26 @@ static void BattleOamStrips(
             SetAccumulatorWidth(cpu, 0);
             LoadA16(cpu, Read16Direct(memory, cpu, 0x17u));
             if (mirrored) {
-                Subtract16(cpu, 0x0010u);
+                cpu->carry = 1;
+                OpSbcValue(cpu, 0x0010u);
             } else {
                 cpu->carry = 0;
-                Add16Value(cpu, 0x0010u);
+                OpAdcValue(cpu, 0x0010u);
             }
             Write16Direct(memory, cpu, 0x17u, cpu->accumulator);
             SetAccumulatorWidth(cpu, 1);
             LoadA8(cpu, DirectByte(memory, cpu, 0x11u));
             cpu->carry = 0;
-            Adc8(cpu, 0x02u);
+            OpAdcValue(cpu, 0x02u);
             BitImmediate8(cpu, 0x0fu);
             if (cpu->zero)
-                Adc8(cpu, 0x10u);
+                OpAdcValue(cpu, 0x10u);
             StoreADirect8(memory, cpu, 0x11u);
             DecrementDirect8(memory, cpu, 0x13u);
         } while (!cpu->zero);
         LoadA8(cpu, DirectByte(memory, cpu, 0x16u));           /* BDB3 */
         cpu->carry = 0;
-        Adc8(cpu, 0x10u);
+        OpAdcValue(cpu, 0x10u);
         StoreADirect8(memory, cpu, 0x16u);
         LoadYDirect16(memory, cpu, 0x1cu);
         StoreYDirect16(memory, cpu, 0x17u);
@@ -152,7 +153,7 @@ static void BattleTileBlock(
     AslA8(cpu);
     StoreADirect8(memory, cpu, 0x11u);
     And8(cpu, 0xf0u);
-    Adc8(cpu, DirectByte(memory, cpu, 0x11u));
+    OpAdcValue(cpu, DirectByte(memory, cpu, 0x11u));
     StoreADirect8(memory, cpu, 0x11u);
     LoadXDirect16(memory, cpu, 0x08u);
     StoreXDirect16(memory, cpu, 0x19u);
@@ -174,17 +175,17 @@ static void BattleTileBlock(
                 cpu->accumulator);
             LoadA16(cpu, cpu->y);
             cpu->carry = 0;
-            Add16Value(cpu, 0x0010u);
+            OpAdcValue(cpu, 0x0010u);
             Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x0040u, cpu->x),
                 cpu->accumulator);
             IncrementA16(cpu);
             Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x0042u, cpu->x),
                 cpu->accumulator);
             LoadA16(cpu, cpu->y);
-            Add16Value(cpu, 0x0002u);
+            OpAdcValue(cpu, 0x0002u);
             cpu->zero = (cpu->accumulator & 0x000fu) == 0;
             if (cpu->zero)
-                Add16Value(cpu, 0x0010u);
+                OpAdcValue(cpu, 0x0010u);
             SetAccumulatorWidth(cpu, 1);
             IncrementX16(cpu);
             IncrementX16(cpu);
@@ -199,7 +200,7 @@ static void BattleTileBlock(
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, Read16Direct(memory, cpu, 0x19u));
         cpu->carry = 0;
-        Add16Value(cpu, 0x0080u);
+        OpAdcValue(cpu, 0x0080u);
         Write16Direct(memory, cpu, 0x19u, cpu->accumulator);
         TransferAToX(cpu);
         SetAccumulatorWidth(cpu, 1);
@@ -236,7 +237,7 @@ static void BattleSpriteYSum(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                              uint16_t base, uint16_t index) {
     LoadAAbsolute8(memory, cpu, (uint16_t)(base + SPRITE_Y_B), index);
     cpu->carry = 0;
-    Adc8(cpu, AbsoluteByte(memory, cpu, (uint16_t)(base + SPRITE_Y_A), index));
+    OpAdcValue(cpu, AbsoluteByte(memory, cpu, (uint16_t)(base + SPRITE_Y_A), index));
 }
 
 /* A = record x word B plus x word A. */
@@ -245,7 +246,7 @@ static void BattleSpriteXSum(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     LoadA16(cpu,
             Read16AbsoluteIndexed(memory, cpu, (uint16_t)(base + SPRITE_X_B), index));
     cpu->carry = 0;
-    Add16Value(
+    OpAdcValue(
         cpu, Read16AbsoluteIndexed(memory, cpu, (uint16_t)(base + SPRITE_X_A), index));
 }
 
@@ -265,7 +266,7 @@ static void BattleDrawRecordSprite(const Lufia2Memory *memory, Lufia2CpuState *c
     SetAccumulatorWidth(cpu, 1);
     LoadAAbsolute8(memory, cpu, BATTLE_PALETTE_PHASE_RECORDS, 0); /* 8B8D */
     cpu->carry = 0;
-    Adc8(cpu, AbsoluteByte(memory, cpu, (BATTLE_SPRITE_RECORDS + SPRITE_PALETTE_STEP),
+    OpAdcValue(cpu, AbsoluteByte(memory, cpu, (BATTLE_SPRITE_RECORDS + SPRITE_PALETTE_STEP),
                            cpu->y));
     And8(cpu, OAM_PALETTE_MASK);
     AslA8(cpu);
@@ -277,7 +278,7 @@ static void BattleDrawRecordSprite(const Lufia2Memory *memory, Lufia2CpuState *c
     StoreADirect8(memory, cpu, OAM_DP_TILE);
     BattleCallOamStrips(memory, cpu, 0, 0x8ba7u);
     cpu->carry = 0;
-    Adc8(cpu, AbsoluteByte(memory, cpu, BATTLE_OAM_COUNT_RECORDS, 0));
+    OpAdcValue(cpu, AbsoluteByte(memory, cpu, BATTLE_OAM_COUNT_RECORDS, 0));
     StoreAAbsolute8(memory, cpu, BATTLE_OAM_COUNT_RECORDS, 0);
     cpu->y = PullIndexValue(memory, cpu);
 }
@@ -324,7 +325,7 @@ static void BattleDrawSingleSprite(const Lufia2Memory *memory, Lufia2CpuState *c
     SetAccumulatorWidth(cpu, 1);
     LoadAAbsolute8(memory, cpu, BATTLE_PALETTE_PHASE_SINGLE, 0); /* 8BF7 */
     cpu->carry = 0;
-    Adc8(cpu,
+    OpAdcValue(cpu,
          AbsoluteByte(memory, cpu, (BATTLE_SINGLE_SPRITE + SPRITE_PALETTE_STEP), 0));
     And8(cpu, OAM_PALETTE_MASK);
     Or8(cpu, AbsoluteByte(memory, cpu, BATTLE_SINGLE_SPRITE, 0));
@@ -369,13 +370,13 @@ static void BattleDrawMarkerSprite(const Lufia2Memory *memory, Lufia2CpuState *c
     SetAccumulatorWidth(cpu, 0);
     BattleSpriteXSum(memory, cpu, BATTLE_SPRITE_RECORDS, cpu->y);
     cpu->carry = 0;
-    Add16Value(cpu, OAM_MARKER_X_OFFSET);
+    OpAdcValue(cpu, OAM_MARKER_X_OFFSET);
     And16(cpu, OAM_X_MASK);
     Write16Direct(memory, cpu, OAM_DP_X, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadAAbsolute8(memory, cpu, BATTLE_GROUP_ATTRIBUTES_MARKERS, 0); /* 8C64 */
     cpu->carry = 0;
-    Adc8(cpu, 0x08u);
+    OpAdcValue(cpu, 0x08u);
     Or8(cpu,
         AbsoluteByte(memory, cpu, (BATTLE_MARKER_RECORDS + SPRITE_ATTRIBUTES), cpu->y));
     Or8(cpu, 0x01u);
@@ -384,7 +385,7 @@ static void BattleDrawMarkerSprite(const Lufia2Memory *memory, Lufia2CpuState *c
     StoreADirect8(memory, cpu, OAM_DP_TILE);
     BattleCallOamStrips(memory, cpu, 0, 0x8c79u);
     cpu->carry = 0;
-    Adc8(cpu, AbsoluteByte(memory, cpu, BATTLE_OAM_COUNT_MARKERS, 0));
+    OpAdcValue(cpu, AbsoluteByte(memory, cpu, BATTLE_OAM_COUNT_MARKERS, 0));
     StoreAAbsolute8(memory, cpu, BATTLE_OAM_COUNT_MARKERS, 0);
     cpu->y = PullIndexValue(memory, cpu);
 }
@@ -431,7 +432,7 @@ static void BattleDrawPartySprite(const Lufia2Memory *memory, Lufia2CpuState *cp
     SetAccumulatorWidth(cpu, 1);
     LoadAAbsolute8(memory, cpu, BATTLE_PALETTE_PHASE_PARTY, 0); /* 8CE4 */
     cpu->carry = 0;
-    Adc8(cpu, AbsoluteByte(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_PALETTE_STEP),
+    OpAdcValue(cpu, AbsoluteByte(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_PALETTE_STEP),
                            cpu->y));
     And8(cpu, OAM_PALETTE_MASK);
     Or8(cpu, AbsoluteByte(memory, cpu, BATTLE_PARTY_SPRITES, cpu->y));
@@ -449,7 +450,7 @@ static void BattleDrawPartySprite(const Lufia2Memory *memory, Lufia2CpuState *cp
     StoreAAbsolute8(memory, cpu, 0x157fu, cpu->y);
     IncrementDirect8(memory, cpu, OAM_DP_PARTY_INDEX);
     cpu->carry = 0;
-    Adc8(cpu, AbsoluteByte(memory, cpu, BATTLE_OAM_COUNT_PARTY, 0));
+    OpAdcValue(cpu, AbsoluteByte(memory, cpu, BATTLE_OAM_COUNT_PARTY, 0));
     StoreAAbsolute8(memory, cpu, BATTLE_OAM_COUNT_PARTY, 0);
     StoreAAbsolute8(memory, cpu, 0x1578u, cpu->y);
     cpu->y = PullIndexValue(memory, cpu);
@@ -507,7 +508,7 @@ static void BattlePlacePartyTiles(const Lufia2Memory *memory, Lufia2CpuState *cp
     LoadAAbsolute8(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_X_A), cpu->y);
     SetAccumulatorWidth(cpu, 0);
     cpu->carry = 0;
-    Add16Value(cpu, 0x0100u);
+    OpAdcValue(cpu, 0x0100u);
     LsrA16(cpu);
     LsrA16(cpu);
     LsrA16(cpu);
@@ -522,14 +523,14 @@ static void BattlePlacePartyTiles(const Lufia2Memory *memory, Lufia2CpuState *cp
     AslA8(cpu);
     SetAccumulatorWidth(cpu, 0);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));
-    Add16Value(cpu, BATTLE_PARTY_TILEMAP);
+    OpAdcValue(cpu, Read16Long(memory, SNES_RDMPYL));
+    OpAdcValue(cpu, BATTLE_PARTY_TILEMAP);
     Write16Direct(memory, cpu, TILE_BLOCK_DP_DESTINATION, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadAAbsolute8(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_PALETTE_STEP),
                    cpu->y); /* 8D9C */
     cpu->carry = 0;
-    Adc8(cpu, AbsoluteByte(memory, cpu, BATTLE_PALETTE_PHASE_PARTY, 0));
+    OpAdcValue(cpu, AbsoluteByte(memory, cpu, BATTLE_PALETTE_PHASE_PARTY, 0));
     And8(cpu, 0x07u);
     AslA8(cpu);
     AslA8(cpu);

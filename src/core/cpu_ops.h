@@ -105,10 +105,7 @@ static inline void OpCmp(
 }
 
 static inline void OpAdcValue(Lufia2CpuState *cpu, uint16_t value) {
-    if (cpu->accumulator_is_8_bit)
-        Adc8(cpu, (uint8_t)value);
-    else
-        Add16Value(cpu, value);
+    AccumulatorArithmetic(cpu, value, false);
 }
 
 static inline void OpAdc(
@@ -117,10 +114,7 @@ static inline void OpAdc(
 }
 
 static inline void OpSbcValue(Lufia2CpuState *cpu, uint16_t value) {
-    if (cpu->accumulator_is_8_bit)
-        Sbc8(cpu, (uint8_t)value);
-    else
-        Add16Value(cpu, (uint16_t)~value);
+    AccumulatorArithmetic(cpu, value, true);
 }
 
 static inline void OpAndValue(Lufia2CpuState *cpu, uint16_t value) {

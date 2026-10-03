@@ -78,6 +78,11 @@ its own differential check.
 | `$86:E650` | `Lufia2WorldMapClearSprites` | JSR / RTS | M1X0 | M1X0 |
 | `$86:E686` | `Lufia2WorldMapSortVisible` | JSR / RTS | M0X0 | M0X0 |
 
+The `$86:A894` world-plane entry additionally requires PB/DB `$86`, DP `$0000`
+and S in `$1F00..1FFC`. Unsupported entries return an unchanged handoff before
+any memory access. Its complete caller contract and ABI evidence are recorded
+in `FEATURE_REPAIR.md`.
+
 ## System (`system.h`)
 
 | Address | Function | Call | Entry | Exit |

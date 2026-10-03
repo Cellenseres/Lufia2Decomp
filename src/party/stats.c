@@ -56,9 +56,9 @@ static uint16_t SumStat(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                         const StatTotal *stat) {
     LoadA16(cpu, RecordWord(memory, cpu, stat->base));
     cpu->carry = 0;
-    Add16Value(cpu, RecordWord(memory, cpu, stat->modifier));
+    OpAdcValue(cpu, RecordWord(memory, cpu, stat->modifier));
     if (stat->second_modifier)
-        Add16Value(cpu, RecordWord(memory, cpu, stat->second_modifier));
+        OpAdcValue(cpu, RecordWord(memory, cpu, stat->second_modifier));
     return cpu->accumulator;
 }
 
@@ -88,14 +88,15 @@ static void DerivedStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 
     /* $29 continues the last sum; $2B averages $2F and $2D. */
     cpu->carry = 0;
-    Add16Value(cpu, RecordWord(memory, cpu, ADDEND_29));
+    OpAdcValue(cpu, RecordWord(memory, cpu, ADDEND_29));
     SetRecordWord(memory, cpu, TOTAL_29, cpu->accumulator);
     ApplyOverride(memory, cpu, OVERRIDE_29, TOTAL_29);
-    total = (uint16_t)(RecordWord(memory, cpu, TOTAL_2F) +
-                       RecordWord(memory, cpu, TOTAL_2D));
-    cpu->accumulator = (uint16_t)(total >> 1);
+    LoadA16(cpu, RecordWord(memory, cpu, TOTAL_2F));
     cpu->carry = 0;
-    Add16Value(cpu, RecordWord(memory, cpu, ADDEND_2B));
+    OpAdcValue(cpu, RecordWord(memory, cpu, TOTAL_2D));
+    LsrA16(cpu);
+    cpu->carry = 0;
+    OpAdcValue(cpu, RecordWord(memory, cpu, ADDEND_2B));
     SetRecordWord(memory, cpu, TOTAL_2B, cpu->accumulator);
     ApplyOverride(memory, cpu, OVERRIDE_2B, TOTAL_2B);
     SetAccumulatorWidth(cpu, 1);

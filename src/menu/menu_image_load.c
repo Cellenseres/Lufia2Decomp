@@ -242,14 +242,18 @@ Lufia2ExecutionResult Lufia2MenuLoadImageGrid(
  * set target, each moved on by a step. */
 static void SetBlockPositions(Lufia2CpuState *cpu, Lufia2Wram wram,
     uint16_t source_step, uint16_t target_step) {
-    const Word16Result source =
-        Sum16(WramRead16(wram, IMAGE_BASE), source_step, false);
+    const uint16_t source_base = WramRead16(wram, IMAGE_BASE);
+    const uint16_t source = source_step == 0 ? source_base :
+        Sum16Mode(source_base, source_step, false, cpu->decimal).value;
     Word16Result target;
 
-    WramWrite16(wram, ROW_SOURCE, source.value);
-    target = Sum16(WramRead16(wram, SET_TARGET), target_step, false);
+    WramWrite16(wram, ROW_SOURCE, source);
+    target.value = WramRead16(wram, SET_TARGET);
+    if (target_step != 0)
+        target = Sum16Mode(target.value, target_step, false, cpu->decimal);
     WramWrite16(wram, ROW_TARGET, target.value);
-    SetSumFlags(cpu, target);
+    if (target_step != 0)
+        SetSumFlags(cpu, target);
 }
 
 /* $86:8F6F: three image blocks per entry of the list at $0A7B, taken from
@@ -269,16 +273,18 @@ Lufia2ExecutionResult Lufia2MenuLoadImageSet(
     WramWrite(wram, SET_INDEX + 1u, 0);
     do {
         /* Three table bytes per image: the offset is a byte quantity. */
-        const uint8_t image_entry = (uint8_t)(3u *
-            WramReadAt(wram, LIST_ENTRIES, WramRead16(wram, SET_INDEX)));
+        const uint16_t list_index = WramRead16(wram, SET_INDEX);
+        const uint8_t doubled = (uint8_t)(2u * WramReadAt(wram, LIST_ENTRIES, list_index));
+        const uint8_t image_entry = Sum8Mode(doubled,
+            WramReadAt(wram, LIST_ENTRIES, list_index), false, cpu->decimal).value;
         Word16Result image;
         Word16Result next_target;
 
         WramWrite(wram, IMAGE_BANK,
             Read8(memory, LongIndexedAddress(IMAGE_TABLE + 2u, image_entry)));
-        image = Sum16(Read16Long(memory,
+        image = Sum16Mode(Read16Long(memory,
                           LongIndexedAddress(IMAGE_TABLE, image_entry)),
-            0x0200u, false);
+            0x0200u, false, cpu->decimal);
         WramWrite16(wram, IMAGE_BASE, image.value);
         SetBlockPositions(cpu, wram, 0, 0);
         SetSumFlags(cpu, image);
@@ -293,7 +299,8 @@ Lufia2ExecutionResult Lufia2MenuLoadImageSet(
         if (!CallSubroutine(memory, cpu, Lufia2MenuCopyImageBlock, 0x8fcau,
                 &result))
             return result;
-        next_target = Sum16(WramRead16(wram, SET_TARGET), 0x0800u, false);
+        next_target = Sum16Mode(WramRead16(wram, SET_TARGET), 0x0800u,
+            false, cpu->decimal);
         WramWrite16(wram, SET_TARGET, next_target.value);
         StepDirect8(wram, SET_INDEX);
         done = WramRead(wram, SET_INDEX);
@@ -348,26 +355,28 @@ Lufia2ExecutionResult Lufia2MenuLoadSlotPalettes(
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     uint16_t remaining;
 
-    if (cpu->index_is_8_bit)
+    if (cpu->index_is_8_bit || !DirectWorkWordAvailable(cpu, SLOTS_LEFT))
         return ExecutionHandoff(cpu, 0x86911fu);
     SetAccumulatorWidth(cpu, 0);
     WramWrite16(wram, SLOT_TARGET, SLOT_PALETTES);
     WramWrite16(wram, SLOTS_LEFT, WramRead(wram, LIST_COUNT));
     WramWrite16(wram, SLOT_INDEX, 0);
     do {
-        const uint8_t entry =
-            WramReadAt(wram, LIST_ENTRIES, WramRead16(wram, SLOT_INDEX));
-        const uint8_t block =
-            Read8(memory, LongIndexedAddress(CLASS_TABLE, entry));
+        const uint8_t entry = (uint8_t)WramRead16At(WramViewOfCaller(memory, cpu), LIST_ENTRIES,
+            WramRead16(wram, SLOT_INDEX));
+        uint8_t block;
         Word16Result next;
 
         PushDataBank(memory, cpu);
-        cpu->x = (uint16_t)((block * SLOT_BLOCK_SIZE) + SLOT_BLOCKS);
+        block = Read8(memory, LongIndexedAddress(CLASS_TABLE, entry));
+        cpu->x = Sum16Mode((uint16_t)(block * SLOT_BLOCK_SIZE), SLOT_BLOCKS,
+            false, cpu->decimal).value;
         cpu->y = WramRead16(wram, SLOT_TARGET);
         cpu->accumulator = SLOT_BLOCK_SIZE - 1u;
         OpMoveNext(memory, cpu, PALETTE_DESTINATION_BANK, SLOT_SOURCE_BANK);
         PullDataBank(memory, cpu);
-        next = Sum16(WramRead16(wram, SLOT_TARGET), SLOT_BLOCK_SIZE, false);
+        next = Sum16Mode(WramRead16(wram, SLOT_TARGET), SLOT_BLOCK_SIZE,
+            false, cpu->decimal);
         WramWrite16(wram, SLOT_TARGET, next.value);
         (void)WramStep16(wram, SLOT_INDEX, 1);
         remaining = WramStep16(wram, SLOTS_LEFT, -1);

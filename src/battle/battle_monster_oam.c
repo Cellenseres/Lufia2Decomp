@@ -60,8 +60,7 @@ static uint8_t FieldByte(const Lufia2Wram wram, uint16_t offset, uint16_t index)
 static uint16_t FieldWord(const Lufia2Wram wram, uint16_t offset, uint16_t index) {
     const uint32_t low = Field(wram, offset, index);
 
-    return (uint16_t)(Read8(wram.memory, low) |
-                      ((uint16_t)Read8(wram.memory, (low + 1u) & 0x00ffffffu) << 8));
+    return Read16Long(wram.memory, low);
 }
 
 static void StoreWord(
@@ -77,11 +76,11 @@ static void StoreWord(
  * add are the ones a skipped sprite leaves behind. */
 static Word16Result ScreenCoordinate(
     Lufia2Wram wram, uint16_t half, uint16_t record, uint16_t base,
-    uint16_t offset) {
+    uint16_t offset, bool decimal) {
     const Word16Result folded =
-        Sum16(half, FieldWord(wram, base, record), false);
+        Sum16Mode(half, FieldWord(wram, base, record), false, decimal);
 
-    return Sum16(folded.value, FieldWord(wram, offset, record), false);
+    return Sum16Mode(folded.value, FieldWord(wram, offset, record), false, decimal);
 }
 
 /* A sprite outside the screen is dropped: both saved words leave the stack,
@@ -94,6 +93,7 @@ static uint32_t SkipActorSprite(
     cpu->overflow = last.overflow;
     (void)PullIndexValue(memory, cpu);
     cpu->x = PullIndexValue(memory, cpu);
+    SetNz16(cpu, cpu->x);
     return 0x818f90u;
 }
 
@@ -107,7 +107,7 @@ static uint32_t AppendActorSprite(
     const uint16_t list_offset = (uint16_t)(
         ((FieldWord(wram, ACTOR_KIND, record) - 2u) & 3u) << 2);
     const uint16_t list_slot = (uint16_t)(list_offset >> 1);
-    const uint16_t cursor = WramRead16At(wram, LIST_CURSOR_FIRST, list_slot);
+    uint16_t cursor;
     uint16_t half;
     Word16Result left;
     Word16Result right;
@@ -120,26 +120,30 @@ static uint32_t AppendActorSprite(
 
     PushStackWord(memory, cpu, list_offset);
     PushStackWord(memory, cpu, list_slot);
+    cursor = WramRead16At(wram, LIST_CURSOR_FIRST, list_slot);
     half = (FieldWord(wram, ACTOR_LARGE, record) & 0x00ffu) == 0 ? 0xfff8u
                                                                   : 0xfff0u;
     WramWrite16(wram, DP_HALF_SIZE, half);
 
     /* Left and top corner are stored first; the far corners must be on
      * screen for the sprite to be kept. */
-    left = ScreenCoordinate(wram, half, record, ACTOR_BASE_X, ACTOR_OFFSET_X);
+    left = ScreenCoordinate(wram, half, record, ACTOR_BASE_X, ACTOR_OFFSET_X, cpu->decimal);
     StoreWord(wram, 0u, cursor, left.value);
     StoreWord(wram, 3u, cursor, left.value);
     right = ScreenCoordinate(
-        wram, (uint16_t)~half, record, ACTOR_BASE_X, ACTOR_OFFSET_X);
+        wram, (uint16_t)~WramRead16(wram, DP_HALF_SIZE), record,
+        ACTOR_BASE_X, ACTOR_OFFSET_X, cpu->decimal);
     if ((right.value & 0x8000u) != 0)
         return SkipActorSprite(memory, cpu, right, right.carry);
     if (right.value >= LIST_LIMIT_X)
         return SkipActorSprite(memory, cpu, right, true);
 
-    top = ScreenCoordinate(wram, half, record, ACTOR_BASE_Y, ACTOR_OFFSET_Y);
+    top = ScreenCoordinate(wram, WramRead16(wram, DP_HALF_SIZE), record,
+        ACTOR_BASE_Y, ACTOR_OFFSET_Y, cpu->decimal);
     StoreWord(wram, 1u, cursor, top.value);
     bottom = ScreenCoordinate(
-        wram, (uint16_t)~half, record, ACTOR_BASE_Y, ACTOR_OFFSET_Y);
+        wram, (uint16_t)~WramRead16(wram, DP_HALF_SIZE), record,
+        ACTOR_BASE_Y, ACTOR_OFFSET_Y, cpu->decimal);
     if ((bottom.value & 0x8000u) != 0)
         return SkipActorSprite(memory, cpu, bottom, bottom.carry);
     if (bottom.value >= LIST_LIMIT_Y)
@@ -150,7 +154,8 @@ static uint32_t AppendActorSprite(
     Write8(memory, Field(wram, 2u, cursor), FieldByte(wram, ACTOR_TILE, record));
     selector = FieldByte(wram, ACTOR_KIND, record);
     if (selector == 0)
-        selector = (uint8_t)((2u + FieldByte(wram, ROTATION_PHASE, 0u)) & 3u);
+        selector = Sum8Mode(2u, FieldByte(wram, ROTATION_PHASE, 0u),
+            false, cpu->decimal).value & 3u;
     attributes = (uint8_t)(selector << 4);
     attributes |= FieldByte(wram, ACTOR_PALETTE, record);
     attributes |= FieldByte(wram, ACTOR_PRIORITY, record);
@@ -166,7 +171,7 @@ static uint32_t AppendActorSprite(
     }
 
     /* Advance this kind's list cursor and count the sprite. */
-    next = Sum16(cursor, 5u, false);
+    next = Sum16Mode(cursor, 5u, false, cpu->decimal);
     WramWrite16At(wram, LIST_CURSOR_FIRST, PullIndexValue(memory, cpu), next.value);
     cpu->x = PullIndexValue(memory, cpu);
     count = (uint8_t)(FieldByte(wram, LIST_TOTALS, cpu->x) + 1u);

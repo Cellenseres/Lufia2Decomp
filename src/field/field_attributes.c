@@ -324,6 +324,8 @@ static void AttributeField(
 Lufia2ExecutionResult Lufia2FieldUnpackAttributes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    if (!DirectWorkWordAvailable(cpu, 0x58u))
+        return ExecutionHandoff(cpu, 0x80ed0eu);
     PushDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
@@ -340,7 +342,7 @@ Lufia2ExecutionResult Lufia2FieldUnpackAttributes(
     TransferAToX(cpu);
     LoadA16(cpu, Read16Long(memory, SNES_RDMPYL));
     cpu->carry = 0;
-    Add16Value(cpu, 3u);
+    OpAdcValue(cpu, 3u);
     LsrA16(cpu);
     LsrA16(cpu);
     StoreADirect16(memory, cpu, 0x58u);

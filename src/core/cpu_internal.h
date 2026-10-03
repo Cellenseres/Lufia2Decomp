@@ -4,6 +4,7 @@
 /* 65816 register, flag and stack semantics. */
 
 #include "core/memory_internal.h"
+#include "core/arithmetic_value.h"
 #include "core/snes_registers.h"
 
 static inline void SetNz8(Lufia2CpuState *cpu, uint8_t value) {
@@ -29,6 +30,23 @@ static inline void LoadA8(Lufia2CpuState *cpu, uint8_t value) {
 static inline void LoadA16(Lufia2CpuState *cpu, uint16_t value) {
     cpu->accumulator = value;
     SetNz16(cpu, value);
+}
+
+/* ADC/SBC share value arithmetic; the active M width selects the CPU result. */
+static inline void AccumulatorArithmetic(
+    Lufia2CpuState *cpu, uint16_t operand, bool subtract) {
+    const unsigned bits = cpu->accumulator_is_8_bit ? 8u : 16u;
+    const uint16_t left = cpu->accumulator_is_8_bit ? A8(cpu) : cpu->accumulator;
+    const uint16_t right = cpu->accumulator_is_8_bit ? (uint8_t)operand : operand;
+    const Word16Result result = ArithmeticValue(left, right,
+        cpu->carry, cpu->decimal, subtract, bits);
+
+    cpu->carry = result.carry;
+    cpu->overflow = result.overflow;
+    if (cpu->accumulator_is_8_bit)
+        LoadA8(cpu, (uint8_t)result.value);
+    else
+        LoadA16(cpu, result.value);
 }
 
 static inline void LoadX16(Lufia2CpuState *cpu, uint16_t value) {

@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-461 functions in `metadata/functions.toml`: 375 verified, 86 draft, 0 identified, 0 disabled.
+461 functions in `metadata/functions.toml`: 376 verified, 85 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -56,9 +56,11 @@ are reconstructed. See [FEATURE_REPAIR.md](FEATURE_REPAIR.md).
 The five fixed menu palette copies `$86:90C0` through `$86:910C` are also
 verified through RTL, accepting either accumulator width with X16. Consumer
 ABI comparisons cover native calls, rejected entries and output/stack overlap.
-The repaired feature has nine verified additions and 86 remaining drafts.
+The world perspective plane `$86:A894` is also verified through RTS.
+Its fixed-band child calls are covered by the parent contract; the independent
+row entries remain draft. Ten feature additions are verified and 85 remain draft.
 
-The full Windows Release verifier passes **518 independent jobs**. The normal
+The base main checkpoint passed **518 independent jobs**. The normal
 application build also passes. The consumer selects all 366 verified functions,
 including song-load and fade-out after the MSU migration. The generated CFG
 contains 1,451 nodes, and every prior native entry remains covered.

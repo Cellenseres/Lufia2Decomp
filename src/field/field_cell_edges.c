@@ -618,21 +618,12 @@ Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
     return RunTrace(memory, cpu, FROM_MODE);
 }
 
-static uint16_t CellRowOffset(const Lufia2Memory *memory,
-    uint8_t row, uint8_t width) {
-    Write8(memory, SNES_WRMPYA, row);
-    Write8(memory, SNES_WRMPYB, width);
-    return Read16Long(memory, SNES_RDMPYL);
-}
-
 /* $83:F9D0: pointer into the cell table for the cell whose column is at
  * $8F and row at $91: twice (column + row * width) plus the table entry of
  * the current map. M8/X16, JSL; result in X. */
 Lufia2ExecutionResult Lufia2FieldCellPointer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    uint16_t offset;
-
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x83f9d0u);
     SimulateJsrFrame(memory, cpu, 0xf9d2u);
@@ -640,13 +631,14 @@ Lufia2ExecutionResult Lufia2FieldCellPointer(
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, DirectByte(memory, cpu, DP_ROW));
     SimulateJsrFrame(memory, cpu, 0xf9dbu);
-    offset = CellRowOffset(memory, A8(cpu), Read8(memory, MAP_WIDTH));
+    Write8(memory, SNES_WRMPYA, A8(cpu));
     LoadA8(cpu, Read8(memory, MAP_WIDTH));
+    Write8(memory, SNES_WRMPYB, A8(cpu));
     LoadA8(cpu, 0);
     ExchangeAccumulatorBytes(cpu);
     SetAccumulatorWidth(cpu, 0);
     cpu->carry = 0;
-    Add16Value(cpu, offset);
+    OpAdcValue(cpu, Read16Long(memory, SNES_RDMPYL));
     AslA16(cpu);
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
@@ -657,7 +649,7 @@ Lufia2ExecutionResult Lufia2FieldCellPointer(
     TransferAToX(cpu);
     PullAccumulator16(memory, cpu);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, CELL_BASE + cpu->x));
+    OpAdcValue(cpu, Read16Long(memory, CELL_BASE + cpu->x));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
