@@ -128,4 +128,12 @@ static inline uint16_t WramStep16(Lufia2Wram wram, uint32_t location, int delta)
     return value;
 }
 
+/* Adds to a byte in place and returns the new value. */
+static inline uint8_t WramStep8(Lufia2Wram wram, uint32_t location, int delta) {
+    const uint8_t value = (uint8_t)(WramRead(wram, location) + delta);
+
+    WramWrite(wram, location, value);
+    return value;
+}
+
 #endif
