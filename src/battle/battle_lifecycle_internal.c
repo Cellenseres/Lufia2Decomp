@@ -7,6 +7,7 @@ enum {
     BATTLE_WORK_CLEAR_END = 0x1c0cu,
 };
 
+/* Clears DP $40 and zero-fills the battle work area from $11D8 up to $1C0B. */
 static void ClearBattleWorkArea(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -21,6 +22,8 @@ static void ClearBattleWorkArea(BattleContext *battle) {
     OpSepWidths(cpu, 0x20u);
 }
 
+/* Saves the data bank and flags, keeps X (the caller's stack pointer) in
+ * $1395 and marks the battle script context active ($FF). */
 void BattleBeginSession(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -42,6 +45,7 @@ void BattleBeginSession(BattleContext *battle) {
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_SCRIPT_CONTEXT));
 }
 
+/* Sets the stack pointer back to the one saved by BattleBeginSession. */
 void BattleRestoreSessionStack(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
 
@@ -49,6 +53,7 @@ void BattleRestoreSessionStack(BattleContext *battle) {
     cpu->stack = cpu->x;
 }
 
+/* Runs $85:EDBB and then $85:EEA1 after the battle loop. */
 bool BattleRunPostLoopSteps(BattleContext *battle) {
     if (!BattleCall(battle, 0x8859u, 0x85edbbu, 3u))
         return false;
@@ -56,6 +61,8 @@ bool BattleRunPostLoopSteps(BattleContext *battle) {
     return BattleCall(battle, 0x885du, 0x85eea1u, 3u);
 }
 
+/* Clears the script context and restores Y, X, A, the flags and the data bank
+ * saved by BattleBeginSession. */
 void BattleEndSession(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -69,6 +76,8 @@ void BattleEndSession(BattleContext *battle) {
     PullDataBank(memory, cpu);
 }
 
+/* True for the normal fade: any result but 1, or a result of 1 from a source
+ * with bit 7 set while $7F:F8A4 is 11 or 37. */
 static bool UseRegularBattleFade(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
 
@@ -90,6 +99,7 @@ static bool UseRegularBattleFade(BattleContext *battle) {
     return cpu->zero;
 }
 
+/* Runs $85:EE3E and then $85:EDDB before leaving the battle. */
 bool BattlePrepareExit(BattleContext *battle) {
     if (!BattleCall(battle, 0x876bu, 0x85ee3eu, 3u))
         return false;
@@ -97,6 +107,7 @@ bool BattlePrepareExit(BattleContext *battle) {
     return BattleCall(battle, 0x876fu, 0x85eddbu, 3u);
 }
 
+/* Fades out with $81:C321 for the normal fade, otherwise with $85:EAEF. */
 bool BattleFadeOut(BattleContext *battle) {
     if (UseRegularBattleFade(battle))
         return BattleCall(battle, 0x8793u, 0x81c321u, 2u);
@@ -104,6 +115,8 @@ bool BattleFadeOut(BattleContext *battle) {
     return BattleCall(battle, 0x878du, 0x85eaefu, 3u);
 }
 
+/* Clears the window and $3800 tilemaps, runs $85:9BC3, waits a frame, turns
+ * the scene NMI and HDMA off and forces blank, then waits another frame. */
 bool BattleTearDownDisplay(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
