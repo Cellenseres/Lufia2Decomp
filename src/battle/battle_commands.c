@@ -223,12 +223,21 @@ static bool BattleRedrawFormation(BattleContext *battle) {
 }
 
 /* $81:C739: complete caller body; exceptional exits remain exact handoffs. */
-Lufia2ExecutionResult Lufia2BattleCollectCommands(const Lufia2Memory *memory,
-                                                  Lufia2CpuState *cpu,
-                                                  Lufia2PushedChildCall child,
-                                                  void *child_context) {
-    BattleContext battle =
-        BattleContextCreate(memory, cpu, child, child_context, 0x81u);
+/* What the command loop does after a step. */
+typedef enum {
+    COMMAND_SELECT,
+    COMMAND_RESTART,
+    COMMAND_FINISH,
+    COMMAND_UNWOUND,
+    COMMAND_HANDOFF
+} CommandStep;
+
+/* Clears the staging area, draws the battle screen and the command window, and
+ * starts the menu. */
+static bool BattleCommandsSetup(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, OpAbs(cpu, 0x125fu));
     OpLdx(cpu, 0xbfu);
@@ -237,31 +246,31 @@ Lufia2ExecutionResult Lufia2BattleCollectCommands(const Lufia2Memory *memory,
         OpSta(memory, cpu, OpLongX(cpu, WRAM_SAVE_FILE_BUFFER));
         OpDex(cpu);
     } while (!cpu->negative);
-    if (!BattleCall(&battle, 0xc749u, 0x81c2e3u, 2u) ||
-        !BattleCall(&battle, 0xc74cu, 0x8597d1u, 3u) ||
-        !BattleCall(&battle, 0xc750u, 0x81b9afu, 3u) ||
-        !BattleCall(&battle, 0xc754u, 0x8591a1u, 3u) ||
-        !BattleCall(&battle, 0xc758u, 0x858905u, 3u) ||
-        !BattleCall(&battle, 0xc75cu, 0x85ec81u, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc749u, 0x81c2e3u, 2u) ||
+        !BattleCall(battle, 0xc74cu, 0x8597d1u, 3u) ||
+        !BattleCall(battle, 0xc750u, 0x81b9afu, 3u) ||
+        !BattleCall(battle, 0xc754u, 0x8591a1u, 3u) ||
+        !BattleCall(battle, 0xc758u, 0x858905u, 3u) ||
+        !BattleCall(battle, 0xc75cu, 0x85ec81u, 3u))
+        return false;
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x0012f3u);
     OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xc768u, 0x859b67u, 3u) ||
-        !BattleCall(&battle, 0xc76cu, 0x859c7bu, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc768u, 0x859b67u, 3u) ||
+        !BattleCall(battle, 0xc76cu, 0x859c7bu, 3u))
+        return false;
     OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xc772u, 0x85ec81u, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc772u, 0x85ec81u, 3u))
+        return false;
     OpLoadA(cpu, 10u);
     OpSta(memory, cpu, OpAbs(cpu, SNES_BG3SC));
     OpLoadA(cpu, 0x97u);
     OpSta(memory, cpu, OpDp(cpu, COMMAND_DP_PALETTE_BANK));
     OpLdy(cpu, 0xfe46u);
     OpLoadA(cpu, 1u);
-    if (!BattleCall(&battle, 0xc784u, 0x81b974u, 2u) ||
-        !BattleCall(&battle, 0xc787u, 0x81b9afu, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc784u, 0x81b974u, 2u) ||
+        !BattleCall(battle, 0xc787u, 0x81b9afu, 3u))
+        return false;
     OpLdx(cpu, 0x151fu);
     OpWriteX(memory, cpu, OpAbs(cpu, 0x1245u), cpu->x);
     OpLdx(cpu, 0x4202u);
@@ -270,74 +279,49 @@ Lufia2ExecutionResult Lufia2BattleCollectCommands(const Lufia2Memory *memory,
     OpTestBits(memory, cpu, OpDp(cpu, 0xd9u), 0u);
     OpTestBits(memory, cpu, OpDp(cpu, 0xdbu), 0u);
     OpSta(memory, cpu, OpAbs(cpu, 0x15b3u));
-    if (!BattleCall(&battle, 0xc7a0u, 0x85a804u, 3u) ||
-        !BattleCall(&battle, 0xc7a4u, 0x81e872u, 2u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc7a0u, 0x85a804u, 3u) ||
+        !BattleCall(battle, 0xc7a4u, 0x81e872u, 2u))
+        return false;
     OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xc7a9u, 0x859b0bu, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc7a9u, 0x859b0bu, 3u))
+        return false;
     OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xc7afu, 0x85ec81u, 3u) ||
-        !BattleCall(&battle, 0xc7b3u, 0x81eb93u, 3u) ||
-        !BattleCall(&battle, 0xc7b7u, 0x858a2fu, 3u) ||
-        !BattleCall(&battle, 0xc7bbu, 0x85ec81u, 3u) ||
-        !BattleCall(&battle, 0xc7bfu, 0x81dea9u, 2u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc7afu, 0x85ec81u, 3u) ||
+        !BattleCall(battle, 0xc7b3u, 0x81eb93u, 3u) ||
+        !BattleCall(battle, 0xc7b7u, 0x858a2fu, 3u) ||
+        !BattleCall(battle, 0xc7bbu, 0x85ec81u, 3u) ||
+        !BattleCall(battle, 0xc7bfu, 0x81dea9u, 2u))
+        return false;
     OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xc7c4u, 0x859b67u, 3u) ||
-        !BattleCall(&battle, 0xc7c8u, 0x859c08u, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc7c4u, 0x859b67u, 3u) ||
+        !BattleCall(battle, 0xc7c8u, 0x859c08u, 3u))
+        return false;
     OpSepWidths(cpu, 0x20u);
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(&battle, 0xc7d4u, 0x85ec81u, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc7d4u, 0x85ec81u, 3u))
+        return false;
     OpLdx(cpu, 0xdf00u);
     OpWriteX(memory, cpu, OpDp(cpu, 0x60u), cpu->x);
     OpLoadA(cpu, 0x7eu);
     OpSta(memory, cpu, OpDp(cpu, 0x62u));
     OpLdx(cpu, 0x18fu);
     OpWriteX(memory, cpu, OpDp(cpu, 0x54u), cpu->x);
-    if (!BattleCall(&battle, 0xc7e6u, 0x808e9du, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc7e6u, 0x808e9du, 3u))
+        return false;
     OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xc7ecu, 0x859c92u, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc7ecu, 0x859c92u, 3u))
+        return false;
     OpSepWidths(cpu, 0x20u);
-restart_selection:
-    OpLoadA(cpu, 0u);
-    if (!BattleCall(&battle, 0xc7f4u, 0x859326u, 3u))
-        return BattleChildUnwound(&battle);
-select_command:
-    if (!BattleCall(&battle, 0xc7f8u, 0x81cb77u, 2u))
-        return BattleChildUnwound(&battle);
-    OpDecA(cpu);
-    if (cpu->zero) {
-        if (!BattleQueueCollectiveCommand(&battle))
-            return BattleChildUnwound(&battle);
-        goto finish;
-    }
-    OpDecA(cpu);
-    if (cpu->zero)
-        goto party_commands;
-    OpDecA(cpu);
-    if (cpu->zero)
-        goto swap_command;
-    ExchangeAccumulatorBytes(cpu);
-    OpLda(memory, cpu, OpAbs(cpu, 0x057cu));
-    if (cpu->zero)
-        goto select_command;
-    ExchangeAccumulatorBytes(cpu);
-    OpDecA(cpu);
-    OpDecA(cpu);
-    if (!cpu->zero) {
-        OpDecA(cpu);
-        if (!cpu->zero) {
-            OpDecA(cpu);
-            if (!cpu->zero)
-                goto select_command;
-        }
-    }
+    return true;
+}
+
+/* Marks the seven battle slots empty and sets the field battle result to
+ * zero, for the menu entries that leave the battle. */
+static void BattleLeave(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, OpAbs(cpu, 0x0c69u));
     OpSta(memory, cpu, OpAbs(cpu, 0x0d27u));
@@ -348,21 +332,28 @@ select_command:
     OpSta(memory, cpu, OpAbs(cpu, 0x10ddu));
     OpLoadA(cpu, 0u);
     OpSta(memory, cpu, WRAM_FIELD_BATTLE_RESULT);
-    return ExecutionHandoff(cpu, 0x818855u);
-swap_command:
+}
+
+/* Swaps two party members' places: the menu asks for the other member, then
+ * their ids, records and status icons trade slots and the formation is drawn
+ * again. */
+static CommandStep BattleSwapPartyOrder(BattleContext *battle, uint32_t *handoff) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
     OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_COUNT));
     OpCmpValue(cpu, 1u);
     if (cpu->zero)
-        goto select_command;
+        return COMMAND_SELECT;
     OpLoadA(cpu, 4u);
     OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
     TransferDirectToA(cpu);
     OpLoadA(cpu, 0x23u);
-    if (!BattleCall(&battle, 0xc89eu, 0x81d4e0u, 2u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xc89eu, 0x81d4e0u, 2u))
+        return COMMAND_UNWOUND;
     OpCmpValue(cpu, 0xffu);
     if (cpu->zero)
-        goto select_command;
+        return COMMAND_SELECT;
     OpSta(memory, cpu, OpAbs(cpu, 0x09f2u));
     OpLdy(cpu, 0u);
     OpLdx(cpu, 4u);
@@ -378,8 +369,10 @@ swap_command:
                 break;
             OpIncA(cpu);
             OpDex(cpu);
-            if (cpu->zero)
-                return ExecutionHandoff(cpu, 0x81c8bcu);
+            if (cpu->zero) {
+                *handoff = 0x81c8bcu;
+                return COMMAND_HANDOFF;
+            }
         }
         OpSta(memory, cpu, OpAbsY(cpu, 0x09f4u));
         OpIncA(cpu);
@@ -430,84 +423,155 @@ swap_command:
     OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_STATUS_ICON_RECORDS));
     OpSepWidths(cpu, 0x20u);
     BattleSwapFormationBlocks(memory, cpu);
-    if (!BattleRedrawFormation(&battle))
-        return BattleChildUnwound(&battle);
-    goto select_command;
-party_commands:
+    if (!BattleRedrawFormation(battle))
+        return COMMAND_UNWOUND;
+    return COMMAND_SELECT;
+    return COMMAND_SELECT;
+}
+
+/* Asks every party member in turn for a command. Backing out of a member's
+ * menu returns to the previous member that can still act; backing out of the
+ * first returns to the command menu. */
+static CommandStep BattlePartyCommands(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
     OpLdx(cpu, 0u);
-next_party_command:
-    OpPushX(memory, cpu);
-    OpRepWidths(cpu, 0x20u);
-    OpTxa(cpu);
-    OpSta(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
-    OpAslA(cpu);
-    OpTay(cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS));
-    OpSta(memory, cpu, OpDp(cpu, 0xd5u));
-    OpTay(cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
-    OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND_MASK);
-    OpSepWidths(cpu, 0x20u);
-    if (!cpu->zero) {
-        OpPullX(memory, cpu);
-        goto advance_party;
+    for (;;) {
+        bool back;
+
+        OpPushX(memory, cpu);
+        OpRepWidths(cpu, 0x20u);
+        OpTxa(cpu);
+        OpSta(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
+        OpAslA(cpu);
+        OpTay(cpu);
+        OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS));
+        OpSta(memory, cpu, OpDp(cpu, 0xd5u));
+        OpTay(cpu);
+        OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
+        OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND_MASK);
+        OpSepWidths(cpu, 0x20u);
+        if (!cpu->zero) {
+            /* This member cannot act. */
+            OpPullX(memory, cpu);
+            back = false;
+        } else {
+            TransferDirectToA(cpu);
+            OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
+            OpTax(cpu);
+            OpLda(memory, cpu, OpLongX(cpu, 0x96ffecu));
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_STAGED_ACTION));
+            OpSta(memory, cpu, OpDp(cpu, 0x54u));
+            OpPushX(memory, cpu);
+            if (!BattleCall(battle, 0xcab8u, 0x85937du, 3u))
+                return COMMAND_UNWOUND;
+            OpPullX(memory, cpu);
+            if (!BattleCall(battle, 0xcabdu, 0x81cc2eu, 2u))
+                return COMMAND_UNWOUND;
+            OpPullX(memory, cpu);
+            OpCmpValue(cpu, 0u);
+            back = !cpu->zero;
+        }
+        if (back) {
+            for (;;) {
+                OpDex(cpu);
+                if (cpu->negative)
+                    return COMMAND_RESTART;
+                OpRepWidths(cpu, 0x20u);
+                OpTxa(cpu);
+                OpSta(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
+                OpAslA(cpu);
+                OpTay(cpu);
+                OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS));
+                OpTay(cpu);
+                OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
+                OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND_MASK);
+                OpSepWidths(cpu, 0x20u);
+                if (cpu->zero)
+                    break;
+            }
+            if (!BattleCall(battle, 0xcae2u, 0x8596beu, 3u))
+                return COMMAND_UNWOUND;
+            continue;
+        }
+        OpInx(cpu);
+        OpTxa(cpu);
+        OpCmp(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_COUNT));
+        if (cpu->zero)
+            return COMMAND_FINISH;
     }
-    TransferDirectToA(cpu);
-    OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
-    OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x96ffecu));
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_STAGED_ACTION));
-    OpSta(memory, cpu, OpDp(cpu, 0x54u));
-    OpPushX(memory, cpu);
-    if (!BattleCall(&battle, 0xcab8u, 0x85937du, 3u))
-        return BattleChildUnwound(&battle);
-    OpPullX(memory, cpu);
-    if (!BattleCall(&battle, 0xcabdu, 0x81cc2eu, 2u))
-        return BattleChildUnwound(&battle);
-    OpPullX(memory, cpu);
-    OpCmpValue(cpu, 0u);
-    if (cpu->zero)
-        goto advance_party;
-previous_party:
-    OpDex(cpu);
-    if (cpu->negative)
-        goto restart_selection;
-    OpRepWidths(cpu, 0x20u);
-    OpTxa(cpu);
-    OpSta(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
-    OpAslA(cpu);
-    OpTay(cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS));
-    OpTay(cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, BATTLE_BATTLER_STATUS));
-    OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND_MASK);
-    OpSepWidths(cpu, 0x20u);
-    if (!cpu->zero)
-        goto previous_party;
-    if (!BattleCall(&battle, 0xcae2u, 0x8596beu, 3u))
-        return BattleChildUnwound(&battle);
-    goto next_party_command;
-advance_party:
-    OpInx(cpu);
-    OpTxa(cpu);
-    OpCmp(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_COUNT));
-    if (!cpu->zero)
-        goto next_party_command;
-finish:
-    if (!BattleCall(&battle, 0xcaf3u, 0x81df0au, 2u) ||
-        !BattleDrawCommands(&battle, true) ||
-        !BattleCall(&battle, 0xcb18u, 0x81c2e3u, 2u) ||
-        !BattleCall(&battle, 0xcb1bu, 0x81c2fbu, 2u))
-        return BattleChildUnwound(&battle);
+}
+
+/* Runs the command menu until it ends the collection or sends it back to the
+ * start. The menu answer is 1 for a command for the whole party, 2 for
+ * member-by-member commands, 3 for swapping places and 5 to 7 for leaving the
+ * battle (when that is allowed). */
+static CommandStep BattleChooseCommand(BattleContext *battle, uint32_t *handoff) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
+    for (;;) {
+        CommandStep step;
+
+        if (!BattleCall(battle, 0xc7f8u, 0x81cb77u, 2u))
+            return COMMAND_UNWOUND;
+        OpDecA(cpu);
+        if (cpu->zero) {
+            if (!BattleQueueCollectiveCommand(battle))
+                return COMMAND_UNWOUND;
+            return COMMAND_FINISH;
+        }
+        OpDecA(cpu);
+        if (cpu->zero)
+            return BattlePartyCommands(battle);
+        OpDecA(cpu);
+        if (cpu->zero) {
+            step = BattleSwapPartyOrder(battle, handoff);
+            if (step != COMMAND_SELECT)
+                return step;
+            continue;
+        }
+        ExchangeAccumulatorBytes(cpu);
+        OpLda(memory, cpu, OpAbs(cpu, 0x057cu));
+        if (cpu->zero)
+            continue;
+        ExchangeAccumulatorBytes(cpu);
+        OpDecA(cpu);
+        OpDecA(cpu);
+        if (!cpu->zero) {
+            OpDecA(cpu);
+            if (!cpu->zero) {
+                OpDecA(cpu);
+                if (!cpu->zero)
+                    continue;
+            }
+        }
+        BattleLeave(battle);
+        *handoff = 0x818855u;
+        return COMMAND_HANDOFF;
+    }
+}
+
+/* Draws the finished commands and the battle screen again. */
+static bool BattleCommandsFinish(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
+    if (!BattleCall(battle, 0xcaf3u, 0x81df0au, 2u) ||
+        !BattleDrawCommands(battle, true) ||
+        !BattleCall(battle, 0xcb18u, 0x81c2e3u, 2u) ||
+        !BattleCall(battle, 0xcb1bu, 0x81c2fbu, 2u))
+        return false;
     OpStz(memory, cpu, OpAbs(cpu, 0x125fu));
     OpLoadA(cpu, 2u);
     OpSta(memory, cpu, OpAbs(cpu, 0x15abu));
-    if (!BattleCall(&battle, 0xcb26u, 0x858a39u, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xcb26u, 0x858a39u, 3u))
+        return false;
     OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xcb2cu, 0x859b67u, 3u) ||
-        !BattleCall(&battle, 0xcb30u, 0x859c08u, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xcb2cu, 0x859b67u, 3u) ||
+        !BattleCall(battle, 0xcb30u, 0x859c08u, 3u))
+        return false;
     OpSepWidths(cpu, 0x20u);
     OpLoadA(cpu, 2u);
     OpTestBits(memory, cpu, OpDp(cpu, 0xdbu), 0u);
@@ -515,25 +579,59 @@ finish:
     OpTestBits(memory, cpu, OpDp(cpu, 0xd9u), 0u);
     OpStz(memory, cpu, OpAbs(cpu, 0x1b1fu));
     OpStz(memory, cpu, OpAbs(cpu, 0x124au));
-    if (!BattleCall(&battle, 0xcb44u, 0x85ec81u, 3u) ||
-        !BattleCall(&battle, 0xcb48u, 0x81e877u, 2u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xcb44u, 0x85ec81u, 3u) ||
+        !BattleCall(battle, 0xcb48u, 0x81e877u, 2u))
+        return false;
     OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xcb4du, 0x859b0bu, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xcb4du, 0x859b0bu, 3u))
+        return false;
     OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(&battle, 0xcb53u, 0x85ec81u, 3u) ||
-        !BattleCall(&battle, 0xcb57u, 0x81ebf4u, 3u) ||
-        !BattleCall(&battle, 0xcb5bu, 0x858a2fu, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xcb53u, 0x85ec81u, 3u) ||
+        !BattleCall(battle, 0xcb57u, 0x81ebf4u, 3u) ||
+        !BattleCall(battle, 0xcb5bu, 0x858a2fu, 3u))
+        return false;
     OpLoadA(cpu, 2u);
     OpSta(memory, cpu, OpAbs(cpu, 0x15abu));
-    if (!BattleCall(&battle, 0xcb64u, 0x858a39u, 3u) ||
-        !BattleCall(&battle, 0xcb68u, 0x8589e5u, 3u))
-        return BattleChildUnwound(&battle);
+    if (!BattleCall(battle, 0xcb64u, 0x858a39u, 3u) ||
+        !BattleCall(battle, 0xcb68u, 0x8589e5u, 3u))
+        return false;
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(&battle, 0xcb72u, 0x85ec81u, 3u))
+    if (!BattleCall(battle, 0xcb72u, 0x85ec81u, 3u))
+        return false;
+    return true;
+}
+
+Lufia2ExecutionResult Lufia2BattleCollectCommands(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu,
+                                                  Lufia2PushedChildCall child,
+                                                  void *child_context) {
+    BattleContext battle =
+        BattleContextCreate(memory, cpu, child, child_context, 0x81u);
+    uint32_t handoff = 0u;
+    bool restart = true;
+
+    if (!BattleCommandsSetup(&battle))
+        return BattleChildUnwound(&battle);
+    for (;;) {
+        CommandStep step;
+
+        if (restart) {
+            OpLoadA(cpu, 0u);
+            if (!BattleCall(&battle, 0xc7f4u, 0x859326u, 3u))
+                return BattleChildUnwound(&battle);
+            restart = false;
+        }
+        step = BattleChooseCommand(&battle, &handoff);
+        if (step == COMMAND_UNWOUND)
+            return BattleChildUnwound(&battle);
+        if (step == COMMAND_HANDOFF)
+            return ExecutionHandoff(cpu, handoff);
+        if (step == COMMAND_FINISH)
+            break;
+        restart = true;
+    }
+    if (!BattleCommandsFinish(&battle))
         return BattleChildUnwound(&battle);
     return ExecutionReturned(0x81cb76u);
 }
