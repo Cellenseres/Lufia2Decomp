@@ -66,7 +66,9 @@ developer had written the game logic.
 - Write small, well-named functions.
 - Return results as real return values or out parameters instead of leaving
   them in emulated registers or flags.
-- Prefer structured control flow over `goto` where it is equivalent.
+- Prefer structured control flow over `goto`. The sources contain none; a
+  branch that used to jump to a shared tail becomes a helper that returns
+  early, or a flag the shared code tests.
 - Keep comments short and about intent (why), not ROM-address banners.
 
 The CPU-helper dialect stays allowed for routines that are not converted yet.
