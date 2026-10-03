@@ -166,7 +166,7 @@ Lufia2ExecutionResult Lufia2BattleResultWindowWait(const Lufia2Memory *memory,
     do {
         if (!BattleCall(&battle, 0xde9eu, 0x85ec81u, 3u))
             return BattleChildUnwound(&battle);
-        OpLda(memory, cpu, OpDp(cpu, 0xddu));
+        OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
         OpBitValue(cpu, 0xa0u);
     } while (cpu->zero);
     return ExecutionReturned(0x81dea8u);

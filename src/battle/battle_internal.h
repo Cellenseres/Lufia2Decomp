@@ -13,6 +13,13 @@ enum {
     BATTLE_SAVED_LOOP_STACK = 0x1397u,
 };
 
+/* Direct-page pad word the battle screens read each frame (masked by the
+ * frame-input filter); the high byte holds the direction bits. */
+enum {
+    BATTLE_DP_PAD_FILTERED = 0xddu,
+    BATTLE_DP_PAD_FILTERED_HIGH = 0xdeu,
+};
+
 enum {
     BATTLE_CONTROL_MODE_1 = 0x01u,
     BATTLE_CONTROL_MODE_2 = 0x02u,

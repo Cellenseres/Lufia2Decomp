@@ -71,7 +71,7 @@ Lufia2ExecutionResult Lufia2BattleChooseCommand(
                 !BattleCall(&battle, 0xcc03u, 0x849b3eu, 3u))
                 return BattleChildUnwound(&battle);
         }
-        OpLda(memory, cpu, OpDp(cpu, 0xddu));
+        OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
         OpBitValue(cpu, 0xa0u);
         if (!cpu->zero) {
             OpLoadA(cpu, 2u);
