@@ -375,7 +375,7 @@ Lufia2ExecutionResult Lufia2FieldStairRects(
     TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
     LoadAAbsolute8(memory, cpu, 0xf001u, cpu->x);
     StoreAAbsolute8(memory, cpu, 0x05bdu, 0);
-    CopyAbsolute8(memory, cpu, 0x0692u, 0x05bfu);
+    CopyAbsolute8(memory, cpu, WRAM_ACTOR_FACING, 0x05bfu);
 store:
     LoadA8(cpu, Read8(memory, 0x7fd0bfu));                     /* B704 */
     And8(cpu, 0x80u);
@@ -418,7 +418,7 @@ Lufia2ExecutionResult Lufia2FieldAreaRects(
     And8(cpu, 0x0fu);
     Compare8(cpu, A8(cpu), 0x02u);
     if (cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x0692u, 0);
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, 0);
         Compare8(cpu, A8(cpu), 0x04u);
         if (!cpu->zero)
             return ExecutionReturned(0x83b76du);

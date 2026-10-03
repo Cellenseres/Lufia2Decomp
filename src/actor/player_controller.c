@@ -161,7 +161,7 @@ static uint8_t PlayerFindTalkTarget(
     Lufia2MapTileHeight(memory, cpu, 0xba14u);
     Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
     TransferDirectToA(cpu);                                    /* BA17 */
-    LoadAAbsolute8(memory, cpu, 0x0692u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, 0);
     TransferAToX(cpu);
     target = Read16ProgramIndexed(memory, cpu, 0xba54u, cpu->x);
     if (target != 0xba5cu && target != 0xba80u &&
@@ -186,7 +186,7 @@ static uint8_t PlayerFindTalkTarget(
                 LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);
                 BitImmediate8(cpu, 0x01u);
                 if (!cpu->zero) {
-                    LoadAAbsolute8(memory, cpu, 0x0692u, 0);   /* BA35 */
+                    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, 0); /* BA35 */
                     Compare8(cpu, A8(cpu), 0x04u);
                     cpu->carry = cpu->zero;
                     same_height = 0;
@@ -449,13 +449,13 @@ static void PlayerWalkSpeed(
         And8(cpu, Read8(memory, DirectAddress(cpu, 0x47u)));
         if (!cpu->zero) {
             LoadA8(cpu, 0x10u);
-            Write8(memory, 0x7fe4deu, A8(cpu));
+            Write8(memory, WRAM_UNK_7FE4DE, A8(cpu));
         } else {
-            LoadA8(cpu, Read8(memory, 0x7fe4deu));             /* FC7C */
+            LoadA8(cpu, Read8(memory, WRAM_UNK_7FE4DE)); /* FC7C */
             Compare8(cpu, A8(cpu), 0x10u);
             if (cpu->zero) {
                 LoadA8(cpu, 0x08u);
-                Write8(memory, 0x7fe4deu, A8(cpu));
+                Write8(memory, WRAM_UNK_7FE4DE, A8(cpu));
             }
         }
     }

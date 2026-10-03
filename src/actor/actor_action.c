@@ -87,9 +87,8 @@ static void PrimaryActionBoundaryHelper(
         cpu->carry = 0;
         if (!cpu->zero) {
             DecrementA8(cpu);
-            Compare8(
-                cpu, A8(cpu),
-                Read8(memory, LongIndexedAddress(0x7fe61eu, cpu->x)));
+            Compare8(cpu, A8(cpu),
+                     Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MIN_Y, cpu->x)));
         }
         break;
 
@@ -99,9 +98,8 @@ static void PrimaryActionBoundaryHelper(
         LoadA8(cpu, coordinate);
         cpu->carry = 0;
         if (!cpu->zero) {
-            LoadA8(
-                cpu,
-                Read8(memory, LongIndexedAddress(0x7fe66eu, cpu->x)));
+            LoadA8(cpu,
+                   Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MAX_Y, cpu->x)));
             DecrementA8(cpu);
             DecrementA8(cpu);
             Compare8(
@@ -119,9 +117,8 @@ static void PrimaryActionBoundaryHelper(
         cpu->carry = 0;
         if (!cpu->zero) {
             DecrementA8(cpu);
-            Compare8(
-                cpu, A8(cpu),
-                Read8(memory, LongIndexedAddress(0x7fe5f6u, cpu->x)));
+            Compare8(cpu, A8(cpu),
+                     Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MIN_X, cpu->x)));
         }
         break;
 
@@ -131,9 +128,8 @@ static void PrimaryActionBoundaryHelper(
         LoadA8(cpu, coordinate);
         cpu->carry = 0;
         if (!cpu->zero) {
-            LoadA8(
-                cpu,
-                Read8(memory, LongIndexedAddress(0x7fe646u, cpu->x)));
+            LoadA8(cpu,
+                   Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MAX_X, cpu->x)));
             DecrementA8(cpu);
             DecrementA8(cpu);
             Compare8(
@@ -180,9 +176,8 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
 
     Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));       /* D350 */
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* D352 */
-    Write8(
-        memory, LongIndexedAddress(0x7fe466u, cpu->x), A8(cpu));
-                                                               /* D354 */
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FE466, cpu->x), A8(cpu));
+    /* D354 */
     LoadA8(
         cpu, Read8(
             memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x)));

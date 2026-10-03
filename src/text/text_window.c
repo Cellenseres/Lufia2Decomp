@@ -139,7 +139,7 @@ static void TextWindowActorPosition(const Lufia2Memory *memory, Lufia2CpuState *
     SetAccumulatorWidth(cpu, 1);
     StoreADirect8(memory, cpu, 0x5eu);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, 0x0692u, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, cpu->x);
     Compare8(cpu, A8(cpu), 4);
     if (!cpu->zero) goto above;
 below:                                                       /* C38F */
@@ -194,7 +194,7 @@ horizontal:                                                  /* C39D */
         IncrementDirect8(memory, cpu, 0x5du);
         IncrementDirect8(memory, cpu, 0x5du);
     }
-    LoadAAbsolute8(memory, cpu, 0x0692u, cpu->x);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, cpu->x);
     Compare8(cpu, A8(cpu), 6);
     if (cpu->zero) {
         LoadA8(cpu, DirectByte(memory, cpu, 0x5du));
