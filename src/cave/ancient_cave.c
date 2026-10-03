@@ -890,60 +890,64 @@ static void CaveTileMapBase(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 
 /* $83:9693-$83:96F4: draw each cell's block, then the link blocks ($39). */
 static void CaveDrawCells(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram work = WramViewLong(memory);
+    uint16_t cell;
+    uint16_t link;
+    uint8_t entry;
+
     OpSepWidths(cpu, 0x20u);                                         /* 9693 */
-    LoadA8(cpu, CAVE_GRID_WIDTH);
-    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_CELL));
-    LoadA8(cpu, CAVE_GRID_ROWS);
-    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_ROWS));
-    OpLdx(cpu, CAVE_FIRST_ROOM_CELL);
+    WramWrite(wram, CAVE_DP_DRAW_CELL, CAVE_GRID_WIDTH);
+    WramWrite(wram, CAVE_DP_DRAW_ROWS, CAVE_GRID_ROWS);
+    cell = CAVE_FIRST_ROOM_CELL;
     do {
-        LoadA8(cpu, CAVE_GRID_WIDTH); /* 96A0 */
-        OpSta(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_COLUMNS));
+        WramWrite(wram, CAVE_DP_DRAW_COLUMNS, CAVE_GRID_WIDTH); /* 96A0 */
         do {
-            OpLda(memory, cpu, OpLongX(cpu, CAVE_SHAPE_GRID_LONG));       /* 96A4 */
-            OpCmpValue(cpu, CAVE_BLANK_SHAPE);
-            if (!cpu->zero) {
-                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_BLOCK_SHAPE));
+            const uint8_t shape = WramReadAt(work, CAVE_SHAPE_GRID_LONG, cell);
+
+            if (shape != CAVE_BLANK_SHAPE) {
+                uint8_t column;
+                uint8_t row;
+
+                WramWrite(wram, CAVE_DP_BLOCK_SHAPE, shape);
+                cpu->x = cell;
                 OpPushX(memory, cpu);
-                OpLda(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_CELL));
-                Lufia2CaveCellPosition(memory, cpu, 0x96b1u);
-                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
-                ExchangeAccumulatorBytes(cpu);
-                OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
+                CaveCellOrigin(memory, cpu, 0x96b1u, WramRead(wram, CAVE_DP_DRAW_CELL),
+                               &column, &row);
+                WramWrite(wram, CAVE_DP_TILE_ROW, row);
+                WramWrite(wram, CAVE_DP_TILE_COLUMN, column);
                 Lufia2CaveTileOffsetY2(memory, cpu, 0x96b9u);
                 Lufia2CaveDrawBlock(memory, cpu, 0x96bcu);
                 OpPullX(memory, cpu);
             }
-            OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_CELL), 1); /* 96C0 */
-            OpInx(cpu);
-            OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_COLUMNS), -1);
-        } while (!cpu->zero);
-        OpStepMem(memory, cpu, OpDp(cpu, CAVE_DP_DRAW_ROWS), -1);
-    } while (!cpu->zero);
-    OpLdx(cpu, 0x0000u);                                       /* 96CB */
-    for (;;) {
-        OpLda(memory, cpu, OpAbsX(cpu, CAVE_LINKS)); /* 96CE */
-        if (!cpu->zero) {
-            OpCmpValue(cpu, 0xffu);
-            if (cpu->zero)
-                break;
-            OpPushX(memory, cpu);                              /* 96D7 */
-            OpLda(memory, cpu, OpAbsX(cpu, CAVE_LINKS));
-            Lufia2CaveCellPosition(memory, cpu, 0x96dbu);
-            cpu->carry = 0;
-            OpAdcValue(cpu, CAVE_LINK_BLOCK_ROW);
-            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));
-            ExchangeAccumulatorBytes(cpu);
-            OpIncA(cpu);
-            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
+            WramStep(wram, CAVE_DP_DRAW_CELL, 1); /* 96C0 */
+            ++cell;
+        } while (WramStep(wram, CAVE_DP_DRAW_COLUMNS, -1) != 0u);
+    } while (WramStep(wram, CAVE_DP_DRAW_ROWS, -1) != 0u);
+
+    /* The links are drawn one block row below their cell, one column in. */
+    for (link = 0;; ++link) {
+        entry = WramReadAt(wram, CAVE_LINKS, link); /* 96CE */
+        if (entry == 0xffu)
+            break;
+        if (entry != 0u) {
+            uint8_t column;
+            uint8_t row;
+
+            cpu->x = link;
+            OpPushX(memory, cpu); /* 96D7 */
+            CaveCellOrigin(memory, cpu, 0x96dbu, entry, &column, &row);
+            WramWrite(wram, CAVE_DP_TILE_ROW, (uint8_t)(row + CAVE_LINK_BLOCK_ROW));
+            WramWrite(wram, CAVE_DP_TILE_COLUMN, (uint8_t)(column + 1u));
             Lufia2CaveTileOffsetY2(memory, cpu, 0x96e7u);
-            LoadA8(cpu, CAVE_LINK_SHAPE);
-            OpSta(memory, cpu, OpDp(cpu, CAVE_DP_BLOCK_SHAPE));
+            WramWrite(wram, CAVE_DP_BLOCK_SHAPE, CAVE_LINK_SHAPE);
             Lufia2CaveDrawBlock(memory, cpu, 0x96eeu);
             OpPullX(memory, cpu);
         }
-        OpInx(cpu);                                            /* 96F2 */
     }
+    cpu->x = link;
+    LoadA8(cpu, entry);
+    OpCmpValue(cpu, 0xffu);
 }
 
 /* JSL $80:BFAA from bank $83; 0 = handoff at $80:BFBC. */

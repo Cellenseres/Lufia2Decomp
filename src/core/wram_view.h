@@ -117,6 +117,14 @@ static inline void WramWrite16(
     WramWrite16At(wram, location, 0, value);
 }
 
+/* Adds to a byte in place and returns the new value. */
+static inline uint8_t WramStep(Lufia2Wram wram, uint32_t location, int delta) {
+    const uint8_t value = (uint8_t)(WramRead(wram, location) + delta);
+
+    WramWrite(wram, location, value);
+    return value;
+}
+
 /* Adds to a word in place and returns the new value. Like the CPU's
  * read-modify-write, the high byte is stored first. */
 static inline uint16_t WramStep16(Lufia2Wram wram, uint32_t location, int delta) {
