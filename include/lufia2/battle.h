@@ -272,6 +272,26 @@ Lufia2ExecutionResult Lufia2BattleRippleWords(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:A40B adds a stream word to a slot field; M8/X16, JSR. */
+Lufia2ExecutionResult Lufia2BattleEffectAddToField(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:953F repeat counter of an effect slot; M8/X16, JSR. */
+Lufia2ExecutionResult Lufia2BattleEffectRepeat(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:9169 loop start of an effect slot; M8/X16, continues at $81:8C58. */
+Lufia2ExecutionResult Lufia2BattleEffectMarkLoop(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $81:A598 slot velocity from angle and speed; M8/X16, JSR. */
+Lufia2ExecutionResult Lufia2BattleEffectVelocity(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $85:ECF0 per-frame battle upkeep. */
 Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     const Lufia2Memory *memory,

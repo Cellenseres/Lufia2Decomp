@@ -64,6 +64,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:890A` | `Lufia2BattleExecuteTurns` | verified | `src/battle/battle_actions.c` |
 | `$81:8E92` | `Lufia2BattleActorSprites` | draft | `src/battle/battle_monster_oam.c` |
 | `$81:8EEA` | `Lufia2BattleActorSprite` | draft | `src/battle/battle_monster_oam.c` |
+| `$81:9169` | `Lufia2BattleEffectMarkLoop` | draft | `src/battle/battle_effect_ops.c` |
+| `$81:953F` | `Lufia2BattleEffectRepeat` | draft | `src/battle/battle_effect_ops.c` |
+| `$81:A40B` | `Lufia2BattleEffectAddToField` | draft | `src/battle/battle_effect_ops.c` |
+| `$81:A598` | `Lufia2BattleEffectVelocity` | draft | `src/battle/battle_effect_ops.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |
 | `$81:B1A3` | `Lufia2BattleRunConfiguredScript` | verified | `src/battle/battle_action_script.c` |
 | `$81:B1C9` | `Lufia2BattleRunBattlerScript` | verified | `src/battle/battle_action_script.c` |
