@@ -184,24 +184,37 @@ static void UploadObjectGraphics(const Lufia2Memory *memory, Lufia2CpuState *cpu
     StartObjectPlaneDma(memory, cpu);
 }
 
-static Lufia2ExecutionResult AssembleObjectGraphics(const Lufia2Memory *memory,
-                                                    Lufia2CpuState *cpu,
-                                                    Lufia2PushedChildCall child,
-                                                    void *context,
-                                                    unsigned *metatiles_copied) {
+/* Fields of an object record in the work list at $7E:F000 (DB-relative). */
+enum {
+    OBJECT_FIELD_SLOT = 0xf000u,
+    OBJECT_FIELD_FLAGS = 0xf001u,
+    OBJECT_FIELD_SOURCE_X = 0xf002u,
+    OBJECT_FIELD_SOURCE_Y = 0xf003u,
+    OBJECT_FIELD_WIDTH = 0xf004u,
+    OBJECT_FIELD_HEIGHT = 0xf005u,
+    OBJECT_FLAG_SECOND_LAYER = 0x01u,
+    OBJECT_SPRITE_SLOT_COUNTS = 0x83abf4u,
+    OBJECT_TILE_SHAPE_WORDS = 0x80f42au,
+    OBJECT_MAP_CELLS = 0x7f0000u,
+};
+
+/* Reads the record at Y: slot, width and height. Stores the shape code (height
+ * - 1 with width - 1 in the next bit up) for the slot and leaves A at the
+ * sprite slot count for that shape, ready for the allocation child. */
+static void AssembleReadRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushY(memory, cpu);
     TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, 0xf000u));
+    OpLda(memory, cpu, OpAbsY(cpu, OBJECT_FIELD_SLOT));
     OpTax(cpu);
     OpWriteX(memory, cpu, OpDp(cpu, OBJECT_SLOT), cpu->x);
-    OpLda(memory, cpu, OpAbsY(cpu, 0xf004u));
+    OpLda(memory, cpu, OpAbsY(cpu, OBJECT_FIELD_WIDTH));
     OpSta(memory, cpu, OpDp(cpu, OBJECT_WIDTH));
     OpStz(memory, cpu, OpDp(cpu, OBJECT_WIDTH + 1u));
     OpDecA(cpu);
     OpAslA(cpu);
     OpSta(memory, cpu, OpDp(cpu, RESOURCE));
     TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, 0xf005u));
+    OpLda(memory, cpu, OpAbsY(cpu, OBJECT_FIELD_HEIGHT));
     OpSta(memory, cpu, OpDp(cpu, OBJECT_ROWS_REMAINING));
     OpStz(memory, cpu, OpDp(cpu, OBJECT_ROWS_REMAINING + 1u));
     OpDecA(cpu);
@@ -209,7 +222,86 @@ static Lufia2ExecutionResult AssembleObjectGraphics(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpLongX(cpu, WRAM_FIELD_OBJECT_GRAPHICS_SHAPE));
     OpWriteX(memory, cpu, OpDp(cpu, OBJECT_RECORD), cpu->y);
     OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x83abf4u));
+    OpLda(memory, cpu, OpLongX(cpu, OBJECT_SPRITE_SLOT_COUNTS));
+}
+
+/* With the source cell index in Y, picks the layer named by the record flags
+ * and leaves X at the object's first map cell and the row stride (section
+ * width minus object width, in bytes) in DP $63. */
+static void AssembleLocateSource(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbsY(cpu, OBJECT_FIELD_FLAGS));
+    OpTxy(cpu);
+    OpLdx(cpu, 0u);
+    OpBitValue(cpu, OBJECT_FLAG_SECOND_LAYER);
+    OpRepWidths(cpu, 0x20u);
+    if (cpu->zero)
+        OpLdx(cpu, 2u);
+    OpTya(cpu);
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_CELL_BASE));
+    OpTax(cpu);
+    OpLda(memory, cpu, WRAM_FIELD_SECTION_WIDTH);
+    cpu->carry = 1u;
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, OBJECT_WIDTH)));
+    OpAslA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, OBJECT_ROW_STRIDE));
+    OpStz(memory, cpu, OpDp(cpu, OBJECT_TILE_ATTRIBUTES));
+}
+
+/* Copies the object's metatiles row by row from the map: each cell's metatile
+ * is handed to the tile child, and the first cell's attribute word is kept in
+ * DP $98. The metatile budget turns a runaway count into a handoff. */
+static Lufia2ExecutionResult AssembleCopyMetatiles(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu,
+                                                   Lufia2PushedChildCall child,
+                                                   void *context,
+                                                   unsigned *metatiles_copied) {
+    Lufia2ExecutionResult result;
+
+    do {
+        OpLda(memory, cpu, OpDp(cpu, OBJECT_WIDTH));
+        OpSta(memory, cpu, OpDp(cpu, OBJECT_COLUMNS_REMAINING));
+        do {
+            if ((*metatiles_copied)++ == SCENE_METATILE_BUDGET)
+                return ExecutionHandoff(cpu, 0x80f130u);
+            OpLda(memory, cpu, OpLongX(cpu, OBJECT_MAP_CELLS));
+            OpPushX(memory, cpu);
+            OpAndValue(cpu, 0x3ffu);
+            for (unsigned shift = 0; shift < 3u; ++shift)
+                OpAslA(cpu);
+            OpAdc(memory, cpu, WRAM_FIELD_METATILE_BASE);
+            OpTax(cpu);
+            OpLda(memory, cpu, OpDp(cpu, OBJECT_TILE_ATTRIBUTES));
+            if (cpu->zero) {
+                OpLda(memory, cpu, OpLongX(cpu, OBJECT_MAP_CELLS));
+                OpSta(memory, cpu, OpDp(cpu, OBJECT_TILE_ATTRIBUTES));
+            }
+            result = CallGraphicsChild(memory, cpu, child, context, 0x80f14au,
+                                       0x80f35bu, 2u, 0u);
+            if (result.flow != LUFIA2_EXECUTION_RETURNED)
+                return result;
+            OpPullX(memory, cpu);
+            OpInx(cpu);
+            OpInx(cpu);
+            OpStepMem(memory, cpu, OpDp(cpu, OBJECT_COLUMNS_REMAINING), -1);
+        } while (!cpu->zero);
+        OpTxa(cpu);
+        cpu->carry = 0u;
+        OpAdc(memory, cpu, OpDp(cpu, OBJECT_ROW_STRIDE));
+        OpTax(cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, OBJECT_ROWS_REMAINING), -1);
+    } while (!cpu->zero);
+    return ExecutionReturned(0u);
+}
+
+/* Builds one object's tile graphics: allocates its sprite slots, assembles the
+ * metatiles from the map and uploads the result to video memory. */
+static Lufia2ExecutionResult AssembleObjectGraphics(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu,
+                                                    Lufia2PushedChildCall child,
+                                                    void *context,
+                                                    unsigned *metatiles_copied) {
+    AssembleReadRecord(memory, cpu);
     OpSepWidths(cpu, 0x10u);
     Lufia2ExecutionResult result =
         CallGraphicsChild(memory, cpu, child, context, 0x80f0d4u, 0x83ab7cu, 3u, 1u);
@@ -230,67 +322,21 @@ static Lufia2ExecutionResult AssembleObjectGraphics(const Lufia2Memory *memory,
     OpAndValue(cpu, 0xffu);
     OpAslA(cpu);
     OpTax(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x80f42au));
+    OpLda(memory, cpu, OpLongX(cpu, OBJECT_TILE_SHAPE_WORDS));
     OpSta(memory, cpu, OpDp(cpu, RESOURCE));
     OpSepWidths(cpu, 0x20u);
     OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, OBJECT_RECORD)));
-    OpLda(memory, cpu, OpAbsY(cpu, 0xf002u));
+    OpLda(memory, cpu, OpAbsY(cpu, OBJECT_FIELD_SOURCE_X));
     ExchangeAccumulatorBytes(cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, 0xf003u));
+    OpLda(memory, cpu, OpAbsY(cpu, OBJECT_FIELD_SOURCE_Y));
     result =
         CallGraphicsChild(memory, cpu, child, context, 0x80f105u, 0x83f9eeu, 3u, 1u);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
-    OpLda(memory, cpu, OpAbsY(cpu, 0xf001u));
-    OpTxy(cpu);
-    OpLdx(cpu, 0u);
-    OpBitValue(cpu, 1u);
-    OpRepWidths(cpu, 0x20u);
-    if (cpu->zero)
-        OpLdx(cpu, 2u);
-    OpTya(cpu);
-    cpu->carry = 0u;
-    OpAdc(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_CELL_BASE));
-    OpTax(cpu);
-    OpLda(memory, cpu, WRAM_FIELD_SECTION_WIDTH);
-    cpu->carry = 1u;
-    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, OBJECT_WIDTH)));
-    OpAslA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, OBJECT_ROW_STRIDE));
-    OpStz(memory, cpu, OpDp(cpu, OBJECT_TILE_ATTRIBUTES));
-    do {
-        OpLda(memory, cpu, OpDp(cpu, OBJECT_WIDTH));
-        OpSta(memory, cpu, OpDp(cpu, OBJECT_COLUMNS_REMAINING));
-        do {
-            if ((*metatiles_copied)++ == SCENE_METATILE_BUDGET)
-                return ExecutionHandoff(cpu, 0x80f130u);
-            OpLda(memory, cpu, OpLongX(cpu, 0x7f0000u));
-            OpPushX(memory, cpu);
-            OpAndValue(cpu, 0x3ffu);
-            for (unsigned shift = 0; shift < 3u; ++shift)
-                OpAslA(cpu);
-            OpAdc(memory, cpu, WRAM_FIELD_METATILE_BASE);
-            OpTax(cpu);
-            OpLda(memory, cpu, OpDp(cpu, OBJECT_TILE_ATTRIBUTES));
-            if (cpu->zero) {
-                OpLda(memory, cpu, OpLongX(cpu, 0x7f0000u));
-                OpSta(memory, cpu, OpDp(cpu, OBJECT_TILE_ATTRIBUTES));
-            }
-            result = CallGraphicsChild(memory, cpu, child, context, 0x80f14au,
-                                       0x80f35bu, 2u, 0u);
-            if (result.flow != LUFIA2_EXECUTION_RETURNED)
-                return result;
-            OpPullX(memory, cpu);
-            OpInx(cpu);
-            OpInx(cpu);
-            OpStepMem(memory, cpu, OpDp(cpu, OBJECT_COLUMNS_REMAINING), -1);
-        } while (!cpu->zero);
-        OpTxa(cpu);
-        cpu->carry = 0u;
-        OpAdc(memory, cpu, OpDp(cpu, OBJECT_ROW_STRIDE));
-        OpTax(cpu);
-        OpStepMem(memory, cpu, OpDp(cpu, OBJECT_ROWS_REMAINING), -1);
-    } while (!cpu->zero);
+    AssembleLocateSource(memory, cpu);
+    result = AssembleCopyMetatiles(memory, cpu, child, context, metatiles_copied);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
     UploadObjectGraphics(memory, cpu);
     OpPullY(memory, cpu);
     return ExecutionReturned(0x80f1e0u);
