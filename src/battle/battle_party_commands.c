@@ -106,6 +106,365 @@ static bool BattleCommitPartyCommand(BattleContext *battle, uint16_t record_site
     return true;
 }
 
+/* What the party action loop does after a command was confirmed. */
+typedef enum { PARTY_POLL, PARTY_DONE, PARTY_HANDOFF, PARTY_UNWOUND } PartyStep;
+
+/* Attack: with a weapon that needs a target the target menu runs first. */
+static PartyStep PartyAttack(BattleContext *battle, uint32_t *pc) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    bool targeted = true;
+
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbsX(cpu, 0x66u));
+    OpAndValue(cpu, 0x01ffu);
+    if (!cpu->zero) {
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
+        OpSepWidths(cpu, 0x20u);
+        if (!BattleCall(battle, 0xcd5eu, 0x81f291u, 3u))
+            return PARTY_UNWOUND;
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_POINTER)));
+        PushDataBank(memory, cpu);
+        OpSetDataBank(memory, cpu, 0x96u);
+        OpLda(memory, cpu, OpAbsX(cpu, 2u));
+        PullDataBank(memory, cpu);
+        OpCmpValue(cpu, 0u);
+        targeted = !cpu->zero;
+    } else {
+        OpSepWidths(cpu, 0x20u);
+        OpLoadA(cpu, 0x82u);
+    }
+    if (targeted) {
+        ExchangeAccumulatorBytes(cpu);
+        OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+        OpLoadA(cpu, 7u);
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
+        OpLda(memory, cpu, OpAbsX(cpu, 0x1369u));
+        ExchangeAccumulatorBytes(cpu);
+        OpPushX(memory, cpu);
+        if (!BattleCall(battle, 0xcd90u, 0x81d4e0u, 2u))
+            return PARTY_UNWOUND;
+        OpPullX(memory, cpu);
+        OpCmpValue(cpu, 0xffu);
+        if (cpu->zero)
+            return PARTY_POLL;
+        PushAccumulator8(memory, cpu);
+        ExchangeAccumulatorBytes(cpu);
+        OpLda(memory, cpu, OpDp(cpu, 0x24u));
+        OpCmpValue(cpu, 0x82u);
+        if (cpu->zero) {
+            ExchangeAccumulatorBytes(cpu);
+            OpBitValue(cpu, 0x80u);
+            if (!cpu->zero)
+                OpSta(memory, cpu, OpAbsX(cpu, 0x1369u));
+        }
+    } else {
+        PushAccumulator8(memory, cpu);
+    }
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLoadA(cpu, BATTLE_ACTION_ATTACK);
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TARGET_MASK));
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbsX(cpu, 0x66u));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_PARAMETER));
+    BattlePartyCommandPriority(memory, cpu);
+    if (!BattleCommitPartyCommand(battle, 0xcdcbu, 0xcdcfu, 0xcddbu, 0xcdf8u, false))
+        return PARTY_UNWOUND;
+    *pc = 0x81ce0cu;
+    return PARTY_DONE;
+}
+
+/* Spell: asks for the spell, then for its target. */
+static PartyStep PartySpell(BattleContext *battle, uint32_t *pc) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpPushX(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
+    OpBitValue(cpu, 2u);
+    if (!cpu->zero) {
+        if (!BattleCall(battle, 0xce20u, 0x81d975u, 2u))
+            return PARTY_UNWOUND;
+        OpPullX(memory, cpu);
+        return PARTY_POLL;
+    }
+    OpLoadA(cpu, 1u);
+    if (!BattleCall(battle, 0xce29u, 0x81d12fu, 2u))
+        return PARTY_UNWOUND;
+    for (;;) {
+        OpCmpValue(cpu, 0u);
+        if (!cpu->zero) {
+            if (!BattleCall(battle, 0xce35u, 0x81e16fu, 2u))
+                return PARTY_UNWOUND;
+            OpPullX(memory, cpu);
+            return PARTY_POLL;
+        }
+        OpLda(memory, cpu, OpDp(cpu, 0x12u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+        OpLoadA(cpu, 16u);
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
+        OpPushX(memory, cpu);
+        OpLoadA(cpu, 2u);
+        OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
+        if (!BattleCall(battle, 0xce53u, 0x81e16fu, 2u))
+            return PARTY_UNWOUND;
+        OpPullX(memory, cpu);
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, 0x7edf0fu));
+        if (!cpu->zero) {
+            if (!BattleCall(battle, 0xce5eu, 0x81d4e0u, 2u))
+                return PARTY_UNWOUND;
+            OpCmpValue(cpu, 0xffu);
+            if (cpu->zero) {
+                if (!BattleCall(battle, 0xce2eu, 0x81d19au, 2u))
+                    return PARTY_UNWOUND;
+                continue;
+            }
+        }
+        break;
+    }
+    PushAccumulator8(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLoadA(cpu, BATTLE_ACTION_SPELL);
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TARGET_MASK));
+    OpRepWidths(cpu, 0x20u);
+    BattlePartyCommandPriority(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    PushDataBank(memory, cpu);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    OpLda(memory, cpu, OpDp(cpu, 0x12u));
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpTay(cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, 0xdf01u));
+    OpTay(cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, 0x96u));
+    OpSepWidths(cpu, 0x20u);
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_PARAMETER));
+    OpStz(memory, cpu, OpAbs(cpu, (BATTLE_ACTION_PARAMETER + 1u)));
+    PullDataBank(memory, cpu);
+    OpRepWidths(cpu, 0x20u);
+    if (!BattleCommitPartyCommand(battle, 0xcea5u, 0xcea9u, 0xceb5u, 0xced2u, true))
+        return PARTY_UNWOUND;
+    *pc = 0x81cee7u;
+    return PARTY_DONE;
+}
+
+/* Item: asks for the item, then for its target. */
+static PartyStep PartyItem(BattleContext *battle, uint32_t *pc) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpPushX(memory, cpu);
+    TransferDirectToA(cpu);
+    if (!BattleCall(battle, 0xcef3u, 0x81d12fu, 2u))
+        return PARTY_UNWOUND;
+    for (;;) {
+        OpCmpValue(cpu, 0u);
+        if (!cpu->zero) {
+            if (!BattleCall(battle, 0xceffu, 0x81e16fu, 2u))
+                return PARTY_UNWOUND;
+            OpPullX(memory, cpu);
+            return PARTY_POLL;
+        }
+        OpLda(memory, cpu, OpDp(cpu, 0x12u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+        OpLoadA(cpu, 16u);
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
+        OpPushX(memory, cpu);
+        OpLoadA(cpu, 3u);
+        OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
+        if (!BattleCall(battle, 0xcf1du, 0x81e16fu, 2u))
+            return PARTY_UNWOUND;
+        OpPullX(memory, cpu);
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, 0x7edf13u));
+        if (!cpu->zero) {
+            if (!BattleCall(battle, 0xcf28u, 0x81d4e0u, 2u))
+                return PARTY_UNWOUND;
+            OpCmpValue(cpu, 0xffu);
+            if (cpu->zero) {
+                if (!BattleCall(battle, 0xcef8u, 0x81d19au, 2u))
+                    return PARTY_UNWOUND;
+                continue;
+            }
+        }
+        break;
+    }
+    PushAccumulator8(memory, cpu);
+    OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLoadA(cpu, BATTLE_ACTION_ITEM);
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
+    LoadA8(cpu, Pull8(memory, cpu));
+    if (cpu->zero)
+        OpLoadA(cpu, 0x81u);
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TARGET_MASK));
+    OpLda(memory, cpu, OpDp(cpu, 0x12u));
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, 0x0a8du));
+    OpAndValue(cpu, 0x1ffu);
+    OpOraValue(cpu, 0x200u);
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_PARAMETER));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
+    OpSepWidths(cpu, 0x20u);
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_POINTER));
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpRepWidths(cpu, 0x20u);
+    BattlePartyCommandPriority(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 1u);
+    if (!BattleCall(battle, 0xcf70u, 0x81f15bu, 3u))
+        return PARTY_UNWOUND;
+    OpCmpValue(cpu, 0u);
+    if (cpu->zero) {
+        *pc = 0x81cf78u;
+        return PARTY_HANDOFF;
+    }
+    if (!BattleCommitPartyCommand(battle, 0xcf79u, 0xcf7du, 0xcf8bu, 0xcfa8u, true))
+        return PARTY_UNWOUND;
+    *pc = 0x81cfbdu;
+    return PARTY_DONE;
+}
+
+/* IP attack: asks for the skill, then for its target. */
+static PartyStep PartyIp(BattleContext *battle, uint32_t *pc) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpPushX(memory, cpu);
+    OpLoadA(cpu, 2u);
+    if (!BattleCall(battle, 0xcfcau, 0x81d12fu, 2u))
+        return PARTY_UNWOUND;
+    for (;;) {
+        OpCmpValue(cpu, 0u);
+        if (!cpu->zero) {
+            if (!BattleCall(battle, 0xcfd6u, 0x81e16fu, 2u))
+                return PARTY_UNWOUND;
+            OpPullX(memory, cpu);
+            return PARTY_POLL;
+        }
+        OpLda(memory, cpu, OpDp(cpu, 0x12u));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+        OpLoadA(cpu, 24u);
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
+        OpPushX(memory, cpu);
+        OpLda(memory, cpu, OpLongX(cpu, 0x7edf03u));
+        OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
+        if (!BattleCall(battle, 0xcff6u, 0x81e16fu, 2u))
+            return PARTY_UNWOUND;
+        OpPullX(memory, cpu);
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, 0x7edf04u));
+        if (!cpu->zero) {
+            if (!BattleCall(battle, 0xd001u, 0x81d4e0u, 2u))
+                return PARTY_UNWOUND;
+            OpCmpValue(cpu, 0xffu);
+            if (cpu->zero) {
+                if (!BattleCall(battle, 0xcfcfu, 0x81d19au, 2u))
+                    return PARTY_UNWOUND;
+                continue;
+            }
+        }
+        break;
+    }
+    PushAccumulator8(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLoadA(cpu, BATTLE_ACTION_IP);
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TARGET_MASK));
+    OpRepWidths(cpu, 0x20u);
+    BattlePartyCommandPriority(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    PushDataBank(memory, cpu);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    OpLda(memory, cpu, OpDp(cpu, 0x12u));
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    PushAccumulator16(memory, cpu);
+    OpAslA(cpu);
+    OpAdc(memory, cpu, OpStack(cpu, 1u));
+    OpTay(cpu);
+    PullAccumulator16(memory, cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, 0xdf01u));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_PARAMETER));
+    PullDataBank(memory, cpu);
+    if (!BattleCommitPartyCommand(battle, 0xd03eu, 0xd042u, 0xd04eu, 0xd06bu, true))
+        return PARTY_UNWOUND;
+    *pc = 0x81d080u;
+    return PARTY_DONE;
+}
+
+/* Defend. */
+static PartyStep PartyDefend(BattleContext *battle, uint32_t *pc) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
+    OpLoadA(cpu, BATTLE_ACTION_DEFEND);
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
+    OpLoadA(cpu, 0x81u);
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TARGET_MASK));
+    OpRepWidths(cpu, 0x20u);
+    BattlePartyCommandPriority(memory, cpu);
+    if (!BattleCommitPartyCommand(battle, 0xd0e7u, 0xd0ebu, 0xd0f7u, 0xd114u, false))
+        return PARTY_UNWOUND;
+    *pc = 0x81d128u;
+    return PARTY_DONE;
+}
+
+/* A command was confirmed: runs the part that belongs to the command picked in
+ * the menu. */
+static PartyStep PartyAccepted(BattleContext *battle, uint32_t *pc) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
+    OpLoadA(cpu, 2u);
+    if (!BattleCall(battle, 0xcd3bu, 0x80953bu, 3u))
+        return PARTY_UNWOUND;
+    OpLda(memory, cpu, OpDp(cpu, 0x26u));
+    OpCmpValue(cpu, BATTLE_PARTY_COMMAND_ATTACK);
+    if (cpu->zero)
+        return PartyAttack(battle, pc);
+    OpLda(memory, cpu, OpDp(cpu, 0x26u));
+    OpCmpValue(cpu, BATTLE_PARTY_COMMAND_SPELL);
+    if (cpu->zero)
+        return PartySpell(battle, pc);
+    OpLda(memory, cpu, OpDp(cpu, 0x26u));
+    OpCmpValue(cpu, BATTLE_PARTY_COMMAND_ITEM);
+    if (cpu->zero)
+        return PartyItem(battle, pc);
+    OpLda(memory, cpu, OpDp(cpu, 0x26u));
+    OpCmpValue(cpu, BATTLE_PARTY_COMMAND_IP);
+    if (cpu->zero)
+        return PartyIp(battle, pc);
+    OpLda(memory, cpu, OpDp(cpu, 0x26u));
+    OpCmpValue(cpu, BATTLE_PARTY_COMMAND_DEFEND);
+    if (!cpu->zero) {
+        *pc = 0x81d12cu;
+        return PARTY_HANDOFF;
+    }
+    return PartyDefend(battle, pc);
+}
+
 /* $81:CC2E: individual action selection with exact cancellation boundaries. */
 Lufia2ExecutionResult Lufia2BattleChoosePartyAction(const Lufia2Memory *memory,
                                                     Lufia2CpuState *cpu,
@@ -113,6 +472,7 @@ Lufia2ExecutionResult Lufia2BattleChoosePartyAction(const Lufia2Memory *memory,
                                                     void *child_context) {
     BattleContext battle =
         BattleContextCreate(memory, cpu, child, child_context, 0x81u);
+    uint32_t pc = 0u;
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
     OpLoadA(cpu, BATTLE_ACTION_NONE);
     OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
@@ -143,335 +503,36 @@ Lufia2ExecutionResult Lufia2BattleChoosePartyAction(const Lufia2Memory *memory,
     if (!BattleCall(&battle, 0xcc8cu, 0x81b974u, 2u) ||
         !BattleCall(&battle, 0xcc8fu, 0x81b9afu, 3u))
         return BattleChildUnwound(&battle);
-poll:
-    if (!BattlePartyCommandDraw(&battle))
-        return BattleChildUnwound(&battle);
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, 0x0012f3u);
-    if (!BattleCall(&battle, 0xcce8u, 0x85ec81u, 3u))
-        return BattleChildUnwound(&battle);
-    OpLda(memory, cpu, OpDp(cpu, 0xddu));
-    OpBitValue(cpu, 0xa0u);
-    if (!cpu->zero)
-        goto accepted;
-    OpLda(memory, cpu, OpDp(cpu, 0xdeu));
-    if (!cpu->negative)
-        goto poll;
-    if (!BattlePartyCommandLabel(&battle, 0xcd00u, 0xcd1du, 0x87b7u, false))
-        return BattleChildUnwound(&battle);
-    BattlePartyCommandTextDimensions(memory, cpu);
-    OpLoadA(cpu, 1u);
-    if (!BattleCall(&battle, 0xcd32u, 0x80953bu, 3u))
-        return BattleChildUnwound(&battle);
-    OpLoadA(cpu, 0xffu);
-    return ExecutionReturned(0x81cd38u);
-accepted:
-    OpLoadA(cpu, 2u);
-    if (!BattleCall(&battle, 0xcd3bu, 0x80953bu, 3u))
-        return BattleChildUnwound(&battle);
-    OpLda(memory, cpu, OpDp(cpu, 0x26u));
-    OpCmpValue(cpu, BATTLE_PARTY_COMMAND_ATTACK);
-    if (!cpu->zero)
-        goto choose_spell;
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
-    OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpAbsX(cpu, 0x66u));
-    OpAndValue(cpu, 0x01ffu);
-    if (!cpu->zero) {
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
-        OpSepWidths(cpu, 0x20u);
-        if (!BattleCall(&battle, 0xcd5eu, 0x81f291u, 3u))
+    for (;;) {
+        PartyStep step;
+
+        if (!BattlePartyCommandDraw(&battle))
             return BattleChildUnwound(&battle);
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_POINTER)));
-        PushDataBank(memory, cpu);
-        OpSetDataBank(memory, cpu, 0x96u);
-        OpLda(memory, cpu, OpAbsX(cpu, 2u));
-        PullDataBank(memory, cpu);
-        OpCmpValue(cpu, 0u);
-        if (cpu->zero)
-            goto attack_without_target;
-    } else {
-        OpSepWidths(cpu, 0x20u);
-        OpLoadA(cpu, 0x82u);
-    }
-    ExchangeAccumulatorBytes(cpu);
-    OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-    OpLoadA(cpu, 7u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
-    OpLda(memory, cpu, OpAbsX(cpu, 0x1369u));
-    ExchangeAccumulatorBytes(cpu);
-    OpPushX(memory, cpu);
-    if (!BattleCall(&battle, 0xcd90u, 0x81d4e0u, 2u))
-        return BattleChildUnwound(&battle);
-    OpPullX(memory, cpu);
-    OpCmpValue(cpu, 0xffu);
-    if (cpu->zero)
-        goto poll;
-    PushAccumulator8(memory, cpu);
-    ExchangeAccumulatorBytes(cpu);
-    OpLda(memory, cpu, OpDp(cpu, 0x24u));
-    OpCmpValue(cpu, 0x82u);
-    if (cpu->zero) {
-        ExchangeAccumulatorBytes(cpu);
-        OpBitValue(cpu, 0x80u);
-        if (!cpu->zero)
-            OpSta(memory, cpu, OpAbsX(cpu, 0x1369u));
-    }
-    goto stage_attack;
-attack_without_target:
-    PushAccumulator8(memory, cpu);
-stage_attack:
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
-    OpLoadA(cpu, BATTLE_ACTION_ATTACK);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
-    LoadA8(cpu, Pull8(memory, cpu));
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TARGET_MASK));
-    OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpAbsX(cpu, 0x66u));
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_PARAMETER));
-    BattlePartyCommandPriority(memory, cpu);
-    if (!BattleCommitPartyCommand(&battle, 0xcdcbu, 0xcdcfu, 0xcddbu, 0xcdf8u, false))
-        return BattleChildUnwound(&battle);
-    return ExecutionReturned(0x81ce0cu);
-choose_spell:
-    OpLda(memory, cpu, OpDp(cpu, 0x26u));
-    OpCmpValue(cpu, BATTLE_PARTY_COMMAND_SPELL);
-    if (!cpu->zero)
-        goto choose_item;
-    OpPushX(memory, cpu);
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
-    OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-    OpBitValue(cpu, 2u);
-    if (!cpu->zero) {
-        if (!BattleCall(&battle, 0xce20u, 0x81d975u, 2u))
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, 0x0012f3u);
+        if (!BattleCall(&battle, 0xcce8u, 0x85ec81u, 3u))
             return BattleChildUnwound(&battle);
-        OpPullX(memory, cpu);
-        goto poll;
-    }
-    OpLoadA(cpu, 1u);
-    if (!BattleCall(&battle, 0xce29u, 0x81d12fu, 2u))
-        return BattleChildUnwound(&battle);
-    goto spell_selection;
-spell_retry:
-    if (!BattleCall(&battle, 0xce2eu, 0x81d19au, 2u))
-        return BattleChildUnwound(&battle);
-spell_selection:
-    OpCmpValue(cpu, 0u);
-    if (!cpu->zero) {
-        if (!BattleCall(&battle, 0xce35u, 0x81e16fu, 2u))
+        OpLda(memory, cpu, OpDp(cpu, 0xddu));
+        OpBitValue(cpu, 0xa0u);
+        if (cpu->zero) {
+            OpLda(memory, cpu, OpDp(cpu, 0xdeu));
+            if (!cpu->negative)
+                continue;
+            if (!BattlePartyCommandLabel(&battle, 0xcd00u, 0xcd1du, 0x87b7u, false))
+                return BattleChildUnwound(&battle);
+            BattlePartyCommandTextDimensions(memory, cpu);
+            OpLoadA(cpu, 1u);
+            if (!BattleCall(&battle, 0xcd32u, 0x80953bu, 3u))
+                return BattleChildUnwound(&battle);
+            OpLoadA(cpu, 0xffu);
+            return ExecutionReturned(0x81cd38u);
+        }
+        step = PartyAccepted(&battle, &pc);
+        if (step == PARTY_UNWOUND)
             return BattleChildUnwound(&battle);
-        OpPullX(memory, cpu);
-        goto poll;
+        if (step == PARTY_DONE)
+            return ExecutionReturned(pc);
+        if (step == PARTY_HANDOFF)
+            return ExecutionHandoff(cpu, pc);
     }
-    OpLda(memory, cpu, OpDp(cpu, 0x12u));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-    OpLoadA(cpu, 16u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
-    OpPushX(memory, cpu);
-    OpLoadA(cpu, 2u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
-    if (!BattleCall(&battle, 0xce53u, 0x81e16fu, 2u))
-        return BattleChildUnwound(&battle);
-    OpPullX(memory, cpu);
-    TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7edf0fu));
-    if (!cpu->zero) {
-        if (!BattleCall(&battle, 0xce5eu, 0x81d4e0u, 2u))
-            return BattleChildUnwound(&battle);
-        OpCmpValue(cpu, 0xffu);
-        if (cpu->zero)
-            goto spell_retry;
-    }
-    PushAccumulator8(memory, cpu);
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
-    OpLoadA(cpu, BATTLE_ACTION_SPELL);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
-    LoadA8(cpu, Pull8(memory, cpu));
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TARGET_MASK));
-    OpRepWidths(cpu, 0x20u);
-    BattlePartyCommandPriority(memory, cpu);
-    OpSepWidths(cpu, 0x20u);
-    PushDataBank(memory, cpu);
-    OpSetDataBank(memory, cpu, 0x7eu);
-    OpLda(memory, cpu, OpDp(cpu, 0x12u));
-    OpRepWidths(cpu, 0x20u);
-    OpAndValue(cpu, 0xffu);
-    OpAslA(cpu);
-    OpAslA(cpu);
-    OpAslA(cpu);
-    OpAslA(cpu);
-    OpTay(cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, 0xdf01u));
-    OpTay(cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, 0x96u));
-    OpSepWidths(cpu, 0x20u);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_PARAMETER));
-    OpStz(memory, cpu, OpAbs(cpu, (BATTLE_ACTION_PARAMETER + 1u)));
-    PullDataBank(memory, cpu);
-    OpRepWidths(cpu, 0x20u);
-    if (!BattleCommitPartyCommand(&battle, 0xcea5u, 0xcea9u, 0xceb5u, 0xced2u, true))
-        return BattleChildUnwound(&battle);
-    return ExecutionReturned(0x81cee7u);
-choose_item:
-    OpLda(memory, cpu, OpDp(cpu, 0x26u));
-    OpCmpValue(cpu, BATTLE_PARTY_COMMAND_ITEM);
-    if (!cpu->zero)
-        goto choose_ip;
-    OpPushX(memory, cpu);
-    TransferDirectToA(cpu);
-    if (!BattleCall(&battle, 0xcef3u, 0x81d12fu, 2u))
-        return BattleChildUnwound(&battle);
-    goto item_selection;
-item_retry:
-    if (!BattleCall(&battle, 0xcef8u, 0x81d19au, 2u))
-        return BattleChildUnwound(&battle);
-item_selection:
-    OpCmpValue(cpu, 0u);
-    if (!cpu->zero) {
-        if (!BattleCall(&battle, 0xceffu, 0x81e16fu, 2u))
-            return BattleChildUnwound(&battle);
-        OpPullX(memory, cpu);
-        goto poll;
-    }
-    OpLda(memory, cpu, OpDp(cpu, 0x12u));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-    OpLoadA(cpu, 16u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
-    OpPushX(memory, cpu);
-    OpLoadA(cpu, 3u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
-    if (!BattleCall(&battle, 0xcf1du, 0x81e16fu, 2u))
-        return BattleChildUnwound(&battle);
-    OpPullX(memory, cpu);
-    TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7edf13u));
-    if (!cpu->zero) {
-        if (!BattleCall(&battle, 0xcf28u, 0x81d4e0u, 2u))
-            return BattleChildUnwound(&battle);
-        OpCmpValue(cpu, 0xffu);
-        if (cpu->zero)
-            goto item_retry;
-    }
-    PushAccumulator8(memory, cpu);
-    OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
-    OpLoadA(cpu, BATTLE_ACTION_ITEM);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
-    LoadA8(cpu, Pull8(memory, cpu));
-    if (cpu->zero)
-        OpLoadA(cpu, 0x81u);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TARGET_MASK));
-    OpLda(memory, cpu, OpDp(cpu, 0x12u));
-    OpRepWidths(cpu, 0x20u);
-    OpAndValue(cpu, 0xffu);
-    OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0a8du));
-    OpAndValue(cpu, 0x1ffu);
-    OpOraValue(cpu, 0x200u);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_PARAMETER));
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
-    OpSepWidths(cpu, 0x20u);
-    OpStz(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_POINTER));
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
-    OpRepWidths(cpu, 0x20u);
-    BattlePartyCommandPriority(memory, cpu);
-    OpSepWidths(cpu, 0x20u);
-    OpLoadA(cpu, 1u);
-    if (!BattleCall(&battle, 0xcf70u, 0x81f15bu, 3u))
-        return BattleChildUnwound(&battle);
-    OpCmpValue(cpu, 0u);
-    if (cpu->zero)
-        return ExecutionHandoff(cpu, 0x81cf78u);
-    if (!BattleCommitPartyCommand(&battle, 0xcf79u, 0xcf7du, 0xcf8bu, 0xcfa8u, true))
-        return BattleChildUnwound(&battle);
-    return ExecutionReturned(0x81cfbdu);
-choose_ip:
-    OpLda(memory, cpu, OpDp(cpu, 0x26u));
-    OpCmpValue(cpu, BATTLE_PARTY_COMMAND_IP);
-    if (!cpu->zero)
-        goto choose_defend;
-    OpPushX(memory, cpu);
-    OpLoadA(cpu, 2u);
-    if (!BattleCall(&battle, 0xcfcau, 0x81d12fu, 2u))
-        return BattleChildUnwound(&battle);
-    goto ip_selection;
-ip_retry:
-    if (!BattleCall(&battle, 0xcfcfu, 0x81d19au, 2u))
-        return BattleChildUnwound(&battle);
-ip_selection:
-    OpCmpValue(cpu, 0u);
-    if (!cpu->zero) {
-        if (!BattleCall(&battle, 0xcfd6u, 0x81e16fu, 2u))
-            return BattleChildUnwound(&battle);
-        OpPullX(memory, cpu);
-        goto poll;
-    }
-    OpLda(memory, cpu, OpDp(cpu, 0x12u));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-    OpLoadA(cpu, 24u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
-    OpPushX(memory, cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7edf03u));
-    OpSta(memory, cpu, OpAbs(cpu, 0x129eu));
-    if (!BattleCall(&battle, 0xcff6u, 0x81e16fu, 2u))
-        return BattleChildUnwound(&battle);
-    OpPullX(memory, cpu);
-    TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpLongX(cpu, 0x7edf04u));
-    if (!cpu->zero) {
-        if (!BattleCall(&battle, 0xd001u, 0x81d4e0u, 2u))
-            return BattleChildUnwound(&battle);
-        OpCmpValue(cpu, 0xffu);
-        if (cpu->zero)
-            goto ip_retry;
-    }
-    PushAccumulator8(memory, cpu);
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
-    OpLoadA(cpu, BATTLE_ACTION_IP);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
-    LoadA8(cpu, Pull8(memory, cpu));
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TARGET_MASK));
-    OpRepWidths(cpu, 0x20u);
-    BattlePartyCommandPriority(memory, cpu);
-    OpSepWidths(cpu, 0x20u);
-    PushDataBank(memory, cpu);
-    OpSetDataBank(memory, cpu, 0x7eu);
-    OpLda(memory, cpu, OpDp(cpu, 0x12u));
-    OpRepWidths(cpu, 0x20u);
-    OpAndValue(cpu, 0xffu);
-    OpAslA(cpu);
-    OpAslA(cpu);
-    OpAslA(cpu);
-    PushAccumulator16(memory, cpu);
-    OpAslA(cpu);
-    OpAdc(memory, cpu, OpStack(cpu, 1u));
-    OpTay(cpu);
-    PullAccumulator16(memory, cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, 0xdf01u));
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_PARAMETER));
-    PullDataBank(memory, cpu);
-    if (!BattleCommitPartyCommand(&battle, 0xd03eu, 0xd042u, 0xd04eu, 0xd06bu, true))
-        return BattleChildUnwound(&battle);
-    return ExecutionReturned(0x81d080u);
-choose_defend:
-    OpLda(memory, cpu, OpDp(cpu, 0x26u));
-    OpCmpValue(cpu, BATTLE_PARTY_COMMAND_DEFEND);
-    if (!cpu->zero)
-        return ExecutionHandoff(cpu, 0x81d12cu);
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xd5u)));
-    OpLoadA(cpu, BATTLE_ACTION_DEFEND);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TYPE));
-    OpLoadA(cpu, 0x81u);
-    OpSta(memory, cpu, OpAbs(cpu, BATTLE_ACTION_TARGET_MASK));
-    OpRepWidths(cpu, 0x20u);
-    BattlePartyCommandPriority(memory, cpu);
-    if (!BattleCommitPartyCommand(&battle, 0xd0e7u, 0xd0ebu, 0xd0f7u, 0xd114u, false))
-        return BattleChildUnwound(&battle);
-    return ExecutionReturned(0x81d128u);
 }
