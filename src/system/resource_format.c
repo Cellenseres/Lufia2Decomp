@@ -22,6 +22,12 @@ Lufia2ResourceStatus Lufia2ResourceDecodedSize(const uint8_t *stream,
     return LUFIA2_RESOURCE_OK;
 }
 
+static Lufia2ResourceStatus ResourceDecodeFinished(size_t *consumed, size_t position) {
+    if (consumed)
+        *consumed = position;
+    return LUFIA2_RESOURCE_OK;
+}
+
 Lufia2ResourceStatus Lufia2ResourceDecode(const uint8_t *stream, size_t stream_size,
                                           uint8_t *output, size_t output_size,
                                           size_t *consumed) {
@@ -56,7 +62,7 @@ Lufia2ResourceStatus Lufia2ResourceDecode(const uint8_t *stream, size_t stream_s
                 /* A plain literal uses no control bit. */
                 output[written++] = token;
                 if (written == length)
-                    goto done;
+                    return ResourceDecodeFinished(consumed, position);
                 ++flags_left;
                 continue;
             }
@@ -99,13 +105,9 @@ Lufia2ResourceStatus Lufia2ResourceDecode(const uint8_t *stream, size_t stream_s
                 }
             }
             if (written == length) /* $80:8F14 */
-                goto done;
+                return ResourceDecodeFinished(consumed, position);
         }
     }
-done:
-    if (consumed)
-        *consumed = position;
-    return LUFIA2_RESOURCE_OK;
 }
 
 const char *Lufia2ResourceStatusName(Lufia2ResourceStatus status) {
