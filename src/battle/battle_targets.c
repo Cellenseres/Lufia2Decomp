@@ -473,6 +473,67 @@ static TargetOutcome TargetFinishEnemies(const Lufia2Memory *memory,
     return TARGET_DONE;
 }
 
+/* Mode 2: the cursor's target alone is the choice, on either side. */
+static TargetOutcome TargetAcceptLone(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                      uint32_t *return_pc) {
+    TargetLoadSide(memory, cpu);
+    if (!cpu->zero) {
+        TargetLoadCursorRecordOffset(memory, cpu);
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
+        return TargetFinishEnemies(memory, cpu, return_pc);
+    }
+    TargetLoadCursorRecordOffset(memory, cpu);
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
+    return TargetFinishParty(memory, cpu, return_pc);
+}
+
+/* Mode 3: marks the cursor's party member, then finishes only if the selected bytes of
+ * the four party records add up to $FE (8-bit). */
+static TargetOutcome TargetAcceptParty(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                       uint32_t *return_pc) {
+    TargetLoadCursorRecordOffset(memory, cpu);
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
+    TransferDirectToA(cpu);
+    OpLdx(cpu, 12u);
+    do {
+        cpu->carry = false;
+        OpAdc(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
+        OpDex(cpu);
+        OpDex(cpu);
+        OpDex(cpu);
+        OpDex(cpu);
+    } while (!cpu->negative);
+    OpCmpValue(cpu, 0xfeu);
+    if (!cpu->zero)
+        return TARGET_REDRAW;
+    return TargetFinishParty(memory, cpu, return_pc);
+}
+
+/* Other modes: the first press marks the target, the second one confirms it. */
+static TargetOutcome TargetAcceptMarked(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                        uint32_t *return_pc) {
+    TargetLoadSide(memory, cpu);
+    if (!cpu->zero) {
+        TargetLoadCursorRecordOffset(memory, cpu);
+        OpLda(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
+        if (!cpu->zero)
+            return TargetFinishEnemies(memory, cpu, return_pc);
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
+        return TARGET_REDRAW;
+    }
+    TargetLoadCursorRecordOffset(memory, cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
+    if (!cpu->zero)
+        return TargetFinishParty(memory, cpu, return_pc);
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
+    return TARGET_REDRAW;
+}
+
 /* The confirm button. What counts as a complete choice depends on the mode
  * (low two bits of the mode byte): a lone target of either side (2), the whole
  * party (3), or one target that is marked first and confirmed on the second
@@ -492,56 +553,12 @@ static TargetOutcome TargetAccept(BattleContext *battle, uint32_t *return_pc) {
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
     OpAndValue(cpu, 3u);
     OpCmpValue(cpu, 2u);
-    if (cpu->zero) {
-        TargetLoadSide(memory, cpu);
-        if (!cpu->zero) {
-            TargetLoadCursorRecordOffset(memory, cpu);
-            OpLoadA(cpu, 0xffu);
-            OpSta(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
-            return TargetFinishEnemies(memory, cpu, return_pc);
-        }
-        TargetLoadCursorRecordOffset(memory, cpu);
-        OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
-        return TargetFinishParty(memory, cpu, return_pc);
-    }
+    if (cpu->zero)
+        return TargetAcceptLone(memory, cpu, return_pc);
     OpCmpValue(cpu, 3u);
-    if (cpu->zero) {
-        TargetLoadCursorRecordOffset(memory, cpu);
-        OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
-        TransferDirectToA(cpu);
-        OpLdx(cpu, 12u);
-        do {
-            cpu->carry = false;
-            OpAdc(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
-            OpDex(cpu);
-            OpDex(cpu);
-            OpDex(cpu);
-            OpDex(cpu);
-        } while (!cpu->negative);
-        OpCmpValue(cpu, 0xfeu);
-        if (!cpu->zero)
-            return TARGET_REDRAW;
-        return TargetFinishParty(memory, cpu, return_pc);
-    }
-    TargetLoadSide(memory, cpu);
-    if (!cpu->zero) {
-        TargetLoadCursorRecordOffset(memory, cpu);
-        OpLda(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
-        if (!cpu->zero)
-            return TargetFinishEnemies(memory, cpu, return_pc);
-        OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
-        return TARGET_REDRAW;
-    }
-    TargetLoadCursorRecordOffset(memory, cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
-    if (!cpu->zero)
-        return TargetFinishParty(memory, cpu, return_pc);
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
-    return TARGET_REDRAW;
+    if (cpu->zero)
+        return TargetAcceptParty(memory, cpu, return_pc);
+    return TargetAcceptMarked(memory, cpu, return_pc);
 }
 
 /* The cancel button: takes back the mark under the cursor, or when there is
