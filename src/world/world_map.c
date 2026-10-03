@@ -25,6 +25,7 @@ enum {
  * flags are set. Registers the NMI writes from shadow copies sit at the
  * shadow addresses. */
 enum {
+    WORLD_MAP_HDMA_ENABLE = 0x11d8u,    /* non-zero: DP $33 enables the HDMA channels */
     WORLD_MAP_UPLOAD_PENDING = 0x11d9u, /* non-zero: the NMI uploads tiles */
     WORLD_MAP_TILE_UPLOAD_READY = 0x1365u,
     WORLD_MAP_MOVE_COUNT = 0x11e3u, /* camera cell changes, saturating at $FF */
@@ -46,7 +47,11 @@ enum {
     WORLD_MAP_COLUMN_STAGE = 0x1714u, /* VRAM address of the column */
     WORLD_MAP_COLOUR_TABLE = 0x1716u, /* HDMA source for channel 4 */
     WORLD_MAP_MATRIX_TABLE = 0x1718u, /* HDMA source for channel 0 */
-    WORLD_MAP_STAGE_BANK = 0x7fu,     /* bank of the staged tilemap */
+    WORLD_MAP_SHAKE_X = 0x1e50u,      /* sprite chain shake, x then y words */
+    WORLD_MAP_SHAKE_Y = 0x1e52u,
+    WORLD_MAP_SHAKE_DECAY_X = 0x1e54u, /* shake decay words, 4 and 1 per frame */
+    WORLD_MAP_SHAKE_DECAY_Y = 0x1e56u,
+    WORLD_MAP_STAGE_BANK = 0x7fu, /* bank of the staged tilemap */
     WORLD_MAP_VRAM_ADDRESS_MASK = 0x3fffu,
     WORLD_MAP_ROW_BYTES = 0x0100u,
     WORLD_MAP_COLUMN_BUFFER = 0xdf00u, /* $7F:DF00, two halves */
@@ -448,14 +453,14 @@ static void WorldMapSetupHdma(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
 }
 
-/* $86:D12C: enable the HDMA channels, copy the mode 7 centre and, when $11D9 is clear,
- * the BG scroll registers. */
+/* $86:D12C: when $11D8 is set enable the HDMA channels in DP $33, then copy the
+ * mode 7 centre and, when $11D9 is clear, the BG scroll registers. */
 static void WorldMapFinishRegisters(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint16_t scroll_regs[6] = {SNES_BG1HOFS, SNES_BG1VOFS, SNES_BG2HOFS,
                                             SNES_BG2VOFS, SNES_BG3HOFS, SNES_BG3VOFS};
     unsigned i;
 
-    LoadAAbsolute8(memory, cpu, 0x11d8u, 0);                   /* D12C */
+    LoadAAbsolute8(memory, cpu, WORLD_MAP_HDMA_ENABLE, 0); /* D12C */
     if (!cpu->zero) {
         LoadA8(cpu, DirectByte(memory, cpu, 0x33u));
         StoreAAbsolute8(memory, cpu, SNES_HDMAEN, 0);
@@ -1084,12 +1089,12 @@ Lufia2ExecutionResult Lufia2WorldSpriteChain(
         return ExecutionHandoff(cpu, 0x86e8ceu);
     SetAccumulatorWidth(cpu, 0);                               /* E8CE */
     for (axis = 0; axis < 2u; ++axis) {
-        const uint16_t shake = axis ? 0x1e52u : 0x1e50u;
+        const uint16_t shake = axis ? WORLD_MAP_SHAKE_Y : WORLD_MAP_SHAKE_X;
 
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, shake, 0));
         if (!cpu->zero) {
-            Subtract16(cpu, Read16AbsoluteIndexed(
-                memory, cpu, (uint16_t)(shake + 4u), 0));
+            Subtract16(cpu, Read16AbsoluteIndexed(memory, cpu, (uint16_t)(shake + 4u),
+                                                  0)); /* decay word of the axis */
             if (!cpu->carry)
                 LoadA16(cpu, 0x0000u);
         }
@@ -1098,10 +1103,11 @@ Lufia2ExecutionResult Lufia2WorldSpriteChain(
         And16(cpu, 0x00ffu);
         StoreADirect16(memory, cpu, axis ? 0x17u : 0x15u);
     }
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1e54u, 0)); /* E8FE */
+    LoadA16(cpu,
+            Read16AbsoluteIndexed(memory, cpu, WORLD_MAP_SHAKE_DECAY_X, 0)); /* E8FE */
     Subtract16(cpu, 0x0004u);
-    StoreAAbsolute16(memory, cpu, 0x1e54u, 0);
-    StepAbsolute16(memory, cpu, 0x1e56u, -1);
+    StoreAAbsolute16(memory, cpu, WORLD_MAP_SHAKE_DECAY_X, 0);
+    StepAbsolute16(memory, cpu, WORLD_MAP_SHAKE_DECAY_Y, -1);
     LoadADirect16(memory, cpu, DP_FRAME_COUNTER);
     Subtract16(cpu, 0x04aau);
     SetAccumulatorWidth(cpu, 1);
