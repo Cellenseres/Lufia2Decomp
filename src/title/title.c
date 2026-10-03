@@ -1,5 +1,7 @@
 /* Intro logos and title state flow. */
 
+#include <stdbool.h>
+
 #include "core/cpu_internal.h"
 #include "lufia2/title.h"
 #include "system/system_internal.h"
@@ -530,6 +532,39 @@ static void TitleNextParticle(Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);
 }
 
+/* $86:85EB: fill the free particle slot at Y from the object and its sprite. */
+static void TitleStartParticle(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, 0x01u); /* 85EB */
+    StoreAAbsolute8(memory, cpu, 0x0001u, cpu->y);
+    LoadX16(cpu, TitleWord(memory, cpu, TITLE_OBJECT));
+    LoadAAbsolute8(memory, cpu, 0x0017u, cpu->x);
+    StoreAAbsolute8(memory, cpu, 0x0002u, cpu->y);
+    SetAccumulatorWidth(cpu, 0);
+    And16(cpu, 0x00ffu);
+    AslA16(cpu);
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x868a87u, cpu->x)));
+    StoreAAbsolute16(memory, cpu, 0x0003u, cpu->y);
+    LoadX16(cpu, TitleWord(memory, cpu, TITLE_OBJECT_SPRITE));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0005u, cpu->x));
+    StoreAAbsolute16(memory, cpu, 0x0005u, cpu->y);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0007u, cpu->x));
+    StoreAAbsolute16(memory, cpu, 0x0007u, cpu->y);
+    SetAccumulatorWidth(cpu, 1);
+    LoadAAbsolute8(memory, cpu, 0x15b9u, 0); /* palette */
+    AslA8(cpu);
+    StoreAAbsolute8(memory, cpu, 0x000bu, cpu->y);
+    LoadX16(cpu, TitleWord(memory, cpu, TITLE_OBJECT_SPRITE));
+    LoadAAbsolute8(memory, cpu, 0x000cu, cpu->x);
+    StoreAAbsolute8(memory, cpu, 0x000cu, cpu->y);
+    LoadA8(cpu, 0x02u);
+    StoreAAbsolute8(memory, cpu, 0x000au, cpu->y); /* frame delay */
+    LoadA8(cpu, 0x18u);
+    cpu->carry = 1;
+    Sbc8(cpu, 0x03u);
+    StoreAAbsolute8(memory, cpu, 0x0009u, cpu->y); /* lifetime */
+}
+
 /* $86:85C2: start one particle at the sprite. */
 static void TitleObjectSpawn(
     const Lufia2Memory *memory,
@@ -540,6 +575,8 @@ static void TitleObjectSpawn(
     LoadX16(cpu, TitleWord(memory, cpu, TITLE_OBJECT_SPRITE));
     LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
     if (!cpu->zero) {
+        bool free_slot = true;
+
         LoadY16(cpu, TitleWord(memory, cpu, TITLE_OBJECT_PARTICLES));
         LoadA8(cpu, TITLE_PARTICLE_SLOTS);
         StoreADirect8(memory, cpu, 0x04u);
@@ -549,40 +586,14 @@ static void TitleObjectSpawn(
                 break;
             TitleNextParticle(cpu);
             DecrementDirect8(memory, cpu, 0x04u);
-            if (cpu->zero)
-                goto done;
+            if (cpu->zero) {
+                free_slot = false;
+                break;
+            }
         }
-        LoadA8(cpu, 0x01u);                                    /* 85EB */
-        StoreAAbsolute8(memory, cpu, 0x0001u, cpu->y);
-        LoadX16(cpu, TitleWord(memory, cpu, TITLE_OBJECT));
-        LoadAAbsolute8(memory, cpu, 0x0017u, cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x0002u, cpu->y);
-        SetAccumulatorWidth(cpu, 0);
-        And16(cpu, 0x00ffu);
-        AslA16(cpu);
-        TransferAToX(cpu);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x868a87u, cpu->x)));
-        StoreAAbsolute16(memory, cpu, 0x0003u, cpu->y);
-        LoadX16(cpu, TitleWord(memory, cpu, TITLE_OBJECT_SPRITE));
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0005u, cpu->x));
-        StoreAAbsolute16(memory, cpu, 0x0005u, cpu->y);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0007u, cpu->x));
-        StoreAAbsolute16(memory, cpu, 0x0007u, cpu->y);
-        SetAccumulatorWidth(cpu, 1);
-        LoadAAbsolute8(memory, cpu, 0x15b9u, 0);               /* palette */
-        AslA8(cpu);
-        StoreAAbsolute8(memory, cpu, 0x000bu, cpu->y);
-        LoadX16(cpu, TitleWord(memory, cpu, TITLE_OBJECT_SPRITE));
-        LoadAAbsolute8(memory, cpu, 0x000cu, cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x000cu, cpu->y);
-        LoadA8(cpu, 0x02u);
-        StoreAAbsolute8(memory, cpu, 0x000au, cpu->y);         /* frame delay */
-        LoadA8(cpu, 0x18u);
-        cpu->carry = 1;
-        Sbc8(cpu, 0x03u);
-        StoreAAbsolute8(memory, cpu, 0x0009u, cpu->y);         /* lifetime */
+        if (free_slot)
+            TitleStartParticle(memory, cpu);
     }
-done:
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
