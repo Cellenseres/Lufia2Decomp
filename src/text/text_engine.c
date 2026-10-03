@@ -52,7 +52,6 @@ enum {
     TEXT_LINE_BYTES = 0x0400u,
     TEXT_MUSIC_COPY = 0x7fd0fdu,
     TEXT_WAIT_FRAMES = 0x7fd0fcu,
-    TEXT_UNK_7FD100 = 0x7fd100u,
     TEXT_UNK_7FD4F7 = 0x7fd4f7u,
     GOLD_CAP_LOW = 0x967fu, /* $98967F is 9,999,999 */
     GOLD_CAP_HIGH = 0x98u,
@@ -865,7 +864,6 @@ enum {
     CURSOR_BLANK_RIGHT = 0x20d7,
     CURSOR_DRAWN_FLAG = 0x08, /* stored at $74 after drawing */
 };
-#define TEXT_TILEMAP_ROW_ORIGIN 0x7fd085u /* word: tilemap offset of entry 0 */
 #define TEXT_CURSOR_TOP 0x7e3040u         /* tilemap rows of the cursor */
 #define TEXT_CURSOR_BOTTOM 0x7e3080u
 
@@ -884,7 +882,7 @@ static void TextChoiceCursor(
     SetAccumulatorWidth(cpu, 0);
     cpu->accumulator = (uint16_t)(choice * CHOICE_ROW_BYTES);
     cpu->carry = 0;
-    Add16Value(cpu, WramRead16(wram, TEXT_TILEMAP_ROW_ORIGIN));
+    Add16Value(cpu, WramRead16(wram, TEXT_WINDOW_ROW_ORIGIN));
     TransferAToX(cpu);
     row = cpu->x;
     if (draw) {
@@ -1402,8 +1400,8 @@ static unsigned TextOpClearD100(
     Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
     TransferDirectToA(cpu);
-    Write16Long(memory, TEXT_UNK_7FD100, cpu->accumulator);
-    Write16Long(memory, (TEXT_UNK_7FD100 + 2u), cpu->accumulator);
+    Write16Long(memory, EVENT_SCRIPT_FLAGS, cpu->accumulator);
+    Write16Long(memory, (EVENT_SCRIPT_FLAGS + 2u), cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     return TEXT_OPCODE_NEXT;
 }

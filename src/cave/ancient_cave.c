@@ -1470,7 +1470,6 @@ enum {
     CAVE_UNK_7FE697 = 0x7fe697u,
     CAVE_UNK_7FE698 = 0x7fe698u,
     CAVE_UNK_7FE699 = 0x7fe699u,
-    CAVE_UNK_7FE69B = 0x7fe69bu,
     CAVE_UNK_7FE6F1 = 0x7fe6f1u,
     CAVE_UNK_7FE732 = 0x7fe732u,
     CAVE_UNK_7FE733 = 0x7fe733u,
@@ -1574,7 +1573,7 @@ static void CaveLoadBandParameters(const Lufia2Memory *memory, Lufia2CpuState *c
     OpRepWidths(cpu, 0x20u); /* 9EB7 */
     OpLda(memory, cpu, OpLongX(cpu, ROM_CAVE_BAND_MUSIC));
     OpSta(memory, cpu, OpDp(cpu, CAVE_DP_MUSIC));
-    CaveCopyBandWord(memory, cpu, ROM_CAVE_BAND_WORD_B, CAVE_UNK_7FE69B);
+    CaveCopyBandWord(memory, cpu, ROM_CAVE_BAND_WORD_B, CAVE_MAP_RESOURCE_LONG);
     CaveCopyBandWord(memory, cpu, ROM_CAVE_BAND_TILESET, WRAM_CAVE_TILESET_RESOURCE);
     CaveCopyBandWord(memory, cpu, ROM_CAVE_BAND_WORD_C, CAVE_UNK_7FE699);
     CaveCopyBandWord(memory, cpu, ROM_CAVE_BAND_SCENES, WRAM_CAVE_SCENE_RECORD_LIST);
