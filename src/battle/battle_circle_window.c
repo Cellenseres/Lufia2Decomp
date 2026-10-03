@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
 
@@ -39,43 +40,34 @@ enum {
 Lufia2ExecutionResult Lufia2BattleCircleWidths(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint8_t across;
+    uint8_t down = 0;
+    uint16_t error = 0;
 
     Push8(memory, cpu, PackStatus(cpu));
-    SetAccumulatorWidth(cpu, 1);
-    SetIndexWidth(cpu, 1);
     WramWrite(wram, DP_ERROR_HIGH, 0);
-    cpu->x = WramRead(wram, DP_RADIUS);
-    SetNz8(cpu, (uint8_t)cpu->x);
-    cpu->y = 0;
-    SetNz8(cpu, 0);
+    across = WramRead(wram, DP_RADIUS);
     do {
-        TransferXToA(cpu);
-        SetAccumulatorWidth(cpu, 1);
-        WramWriteAt(wram, WINDOW_WIDTHS, cpu->y, A8(cpu));
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, cpu->y);
-        cpu->y = (uint8_t)(cpu->y + 1u);
-        SetNz8(cpu, (uint8_t)cpu->y);
-        AslA16(cpu);
-        LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
-        Add16Value(cpu, WramRead16(wram, DP_ERROR));
-        WramWrite16(wram, DP_ERROR, cpu->accumulator);
-        if (cpu->negative) {
-            LoadA16(cpu, cpu->y);
-            cpu->x = (uint8_t)(cpu->x - 1u);
-            SetNz8(cpu, (uint8_t)cpu->x);
-            SetAccumulatorWidth(cpu, 1);
-            WramWriteAt(wram, WINDOW_WIDTHS, cpu->x, A8(cpu));
-            SetAccumulatorWidth(cpu, 0);
-            LoadA16(cpu, cpu->x);
-            AslA16(cpu);
-            Add16Value(cpu, WramRead16(wram, DP_ERROR));
-            WramWrite16(wram, DP_ERROR, cpu->accumulator);
+        /* One step down: the error falls by twice the row, less one. */
+        WramWriteAt(wram, WINDOW_WIDTHS, down, across);
+        error = Sum16((uint16_t)~(uint16_t)(down << 1),
+            WramRead16(wram, DP_ERROR), false).value;
+        down = (uint8_t)(down + 1u);
+        WramWrite16(wram, DP_ERROR, error);
+        if ((error & 0x8000u) != 0) {
+            /* The edge moved in: one step across, the error grows. */
+            across = (uint8_t)(across - 1u);
+            WramWriteAt(wram, WINDOW_WIDTHS, across, down);
+            error = Sum16((uint16_t)(across << 1),
+                WramRead16(wram, DP_ERROR), false).value;
+            WramWrite16(wram, DP_ERROR, error);
         }
-        WramWrite(wram, DP_WIDTHS_END, (uint8_t)cpu->y);
-        Compare8(cpu, (uint8_t)cpu->x, WramRead(wram, DP_WIDTHS_END));
-    } while (cpu->carry);
+        WramWrite(wram, DP_WIDTHS_END, down);
+    } while (across >= WramRead(wram, DP_WIDTHS_END));
+    cpu->x = across;
+    cpu->y = down;
+    cpu->accumulator = error;
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x85b2a0u);
 }
@@ -83,82 +75,77 @@ Lufia2ExecutionResult Lufia2BattleCircleWidths(
 /* $85:B208: rebuilds the window table when the radius at $1B4A changed: for
  * each row the left edge ($7F less the half width, at least 0) and
  * the right edge ($80 plus it, at most $FF); rows beyond the radius are left
- * open ($FF, 0). M1X0 only (else handed back). Returns before RTS $85B26C. */
+ * open ($FF, 0). M1X0 only (else handed back). Returns before RTS $85B26C.
+ * The carry leaves set on every path; the accumulator keeps the high byte
+ * of whatever last filled it. */
 Lufia2ExecutionResult Lufia2BattleCircleWindow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
-    bool fill_first;
+    uint8_t radius;
+    uint8_t last_radius;
+    uint8_t high_byte;
+    uint16_t table = 0;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x85b208u);
     PushDataBank(memory, cpu);
-    PushIndex(memory, cpu);
-    LoadA8(cpu, WINDOW_BANK);
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
+    PushStackWord(memory, cpu, cpu->x);
+    SelectDataBank(memory, cpu, WINDOW_BANK);
     wram = WramViewInBank(memory, cpu, WINDOW_BANK);
-    TransferDirectToA(cpu);
-    LoadA8(cpu, WramRead(wram, WINDOW_RADIUS));
-    Compare8(cpu, A8(cpu), WramRead(wram, WINDOW_LAST_RADIUS));
-    if (!cpu->zero) {
-        WramWrite(wram, WINDOW_LAST_RADIUS, A8(cpu));
-        TransferAToX(cpu);
-        fill_first = cpu->zero;
-        if (!fill_first) {
-            WramWrite16(wram, DP_RADIUS, cpu->x);
-            PushAccumulator8(memory, cpu);
+    high_byte = (uint8_t)(cpu->direct_page >> 8);
+    radius = WramRead(wram, WINDOW_RADIUS);
+    last_radius = WramRead(wram, WINDOW_LAST_RADIUS);
+    if (radius != last_radius) {
+        const uint16_t extent = (uint16_t)((high_byte << 8) | radius);
+        bool overflow = cpu->overflow;
+
+        WramWrite(wram, WINDOW_LAST_RADIUS, radius);
+        if (extent != 0) {
+            uint16_t row = 0;
+
+            WramWrite16(wram, DP_RADIUS, extent);
+            /* The width routine pushes these flags. */
+            cpu->carry = radius >= last_radius;
+            SetNz16(cpu, extent);
+            Push8(memory, cpu, radius);
             SimulateJsrFrame(memory, cpu, WIDTHS_CALL_RETURN);
             (void)Lufia2BattleCircleWidths(memory, cpu);
             SimulateRtsFrame(memory, cpu);
-            LoadA8(cpu, Pull8(memory, cpu));
-            WramWrite(wram, DP_RADIUS, A8(cpu));
-            LoadX16(cpu, 0);
-            cpu->y = cpu->x;
-            SetNz16(cpu, cpu->y);
+            high_byte = (uint8_t)(cpu->accumulator >> 8);
+            WramWrite(wram, DP_RADIUS, Pull8(memory, cpu));
             do {
-                uint8_t rows;
+                const uint8_t half = WramReadAt(wram, WINDOW_WIDTHS, row);
+                const Byte8Result left = Difference8(WINDOW_HALF, half);
+                const Byte8Result edge = Sum8(WINDOW_RIGHT_BASE, half, false);
 
-                LoadA8(cpu, WINDOW_HALF);
-                cpu->carry = true;
-                Sbc8(cpu, WramReadAt(wram, WINDOW_WIDTHS, cpu->y));
-                if (!cpu->carry)
-                    TransferDirectToA(cpu);
-                WramWriteAt(wram, WINDOW_TABLE, cpu->x, A8(cpu));
-                LoadX16(cpu, (uint16_t)(cpu->x + 1u));
-                LoadA8(cpu, WINDOW_RIGHT_BASE);
-                cpu->carry = false;
-                Adc8(cpu, WramReadAt(wram, WINDOW_WIDTHS, cpu->y));
-                if (cpu->carry)
-                    LoadA8(cpu, WINDOW_OPEN);
-                WramWriteAt(wram, WINDOW_TABLE, cpu->x, A8(cpu));
-                LoadX16(cpu, (uint16_t)(cpu->x + 1u));
-                LoadY16(cpu, (uint16_t)(cpu->y + 1u));
-                rows = (uint8_t)(WramRead(wram, DP_RADIUS) - 1u);
-                WramWrite(wram, DP_RADIUS, rows);
-                SetNz8(cpu, rows);
-            } while (!cpu->zero);
-            LoadA8(cpu, WINDOW_OPEN);
-            Compare16(cpu, cpu->x, WINDOW_TABLE_END);
-        } else {
-            LoadX16(cpu, 0);
-            LoadA8(cpu, WINDOW_OPEN);
+                overflow = edge.overflow;
+                if (!left.carry)
+                    high_byte = (uint8_t)(cpu->direct_page >> 8);
+                WramWriteAt(wram, WINDOW_TABLE, table,
+                    left.carry ? left.value : (uint8_t)cpu->direct_page);
+                table = (uint16_t)(table + 1u);
+                WramWriteAt(wram, WINDOW_TABLE, table,
+                    edge.carry ? WINDOW_OPEN : edge.value);
+                table = (uint16_t)(table + 1u);
+                row = (uint16_t)(row + 1u);
+            } while (WramStep8(wram, DP_RADIUS, -1) != 0);
+            cpu->y = row;
         }
         /* The rest of the table is open: $FF, then 0, for every row. */
-        while (fill_first || !cpu->zero) {
-            fill_first = false;
-            WramWriteAt(wram, WINDOW_TABLE, cpu->x, A8(cpu));
-            LoadX16(cpu, (uint16_t)(cpu->x + 1u));
-            WramWriteAt(wram, WINDOW_TABLE, cpu->x, 0);
-            LoadX16(cpu, (uint16_t)(cpu->x + 1u));
-            Compare16(cpu, cpu->x, WINDOW_TABLE_END);
+        while (table != WINDOW_TABLE_END) {
+            WramWriteAt(wram, WINDOW_TABLE, table, WINDOW_OPEN);
+            table = (uint16_t)(table + 1u);
+            WramWriteAt(wram, WINDOW_TABLE, table, 0);
+            table = (uint16_t)(table + 1u);
         }
+        cpu->overflow = overflow;
     }
-    LoadA8(cpu, 1u);
-    WramWrite(wram, WINDOW_READY, A8(cpu));
-    LoadA8(cpu, WINDOW_BANK);
-    WramWrite(wram, WINDOW_ENABLE_BANK, A8(cpu));
-    cpu->x = PullIndexValue(memory, cpu);
+    WramWrite(wram, WINDOW_READY, 1u);
+    WramWrite(wram, WINDOW_ENABLE_BANK, WINDOW_BANK);
+    cpu->x = PullStackWord(memory, cpu);
+    cpu->carry = true;
+    cpu->accumulator = (uint16_t)((high_byte << 8) | WINDOW_BANK);
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x85b26cu);
 }
