@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-407 functions in `metadata/functions.toml`: 366 verified, 41 draft, 0 identified, 0 disabled.
+409 functions in `metadata/functions.toml`: 366 verified, 43 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -826,6 +826,19 @@ slide continues in the original code. They are compared against the original
 ROM code for CPU state, work RAM, ordered writes and stack frames, on random
 slot pairs, equal slots, short slides that finish before the first frame and
 long ones that hand off.
+
+## Menu cursor input
+
+`$82:8720` moves the cursor of a menu item from the buttons just pressed
+(rows and columns with wrap, the edge flags, the item limit through the list
+index, and the action codes 2 to 9) and `$82:8B08` is one pass of the menu
+input loop around it (button edges, the window request, the cursor blink).
+They are `draft` reconstructions that need M1 (else handed back). The moves
+that play a button sound and the sprite frame at the end of the loop hand off
+at that call, with the state exactly as the original has it there. They are
+compared against the original ROM code for CPU state, work RAM, ordered writes
+and stack frames, on random item tables, every button, rows at both edges,
+items with and without a limit and flagged items.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
