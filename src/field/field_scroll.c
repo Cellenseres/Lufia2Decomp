@@ -36,6 +36,23 @@ enum {
     STREAM_BUFFER_MASK = 0x07ffu,
     STREAM_CELL_SHARED_FLAGS = 0x3000u,
     STREAM_CELL_METATILE_MASK = 0x03ffu,
+    STREAM_BUFFER_ROW_BYTES = 0x0040u,    /* one tilemap row of 32 tiles */
+    STREAM_BUFFER_COLUMN_BYTES = 0x003eu, /* column offset within a row */
+    STREAM_BUFFER_ROW_MASK = 0xffc0u,
+    STREAM_BUFFER_COLUMN_MASK = 0x003fu,
+    STREAM_RIGHT_EDGE = 0x0100u,  /* pixels from the scroll to the right edge */
+    STREAM_BOTTOM_EDGE = 0x00f0u, /* to the last visible cell row */
+    VIEW_LAST_ROW = 0x00ffu,      /* pixels from the scroll to the last visible row */
+    STREAM_TOP_EDGE = 0x0010u,    /* one cell row above the screen */
+    STREAM_CELL_ALIGN_MASK = 0xfff0u,
+    STREAM_COORDINATE_SIGN = 0x0800u,
+    STREAM_COORDINATE_SIGN_EXTEND = 0xf000u,
+    STREAM_FIRST_ALTERNATE_LAYER = 0x0004u, /* layer index times two */
+    /* Tile entries of a metatile, stored column by column. */
+    METATILE_TOP_LEFT = 0x0000u,
+    METATILE_BOTTOM_LEFT = 0x0002u,
+    METATILE_TOP_RIGHT = 0x0004u,
+    METATILE_BOTTOM_RIGHT = 0x0006u,
     COLUMN_STAGING_TABLE = 0x80f581u, /* per-layer column buffer addresses */
     LAYER_BUFFER_TABLE = 0x838ff0u,   /* per-layer tilemap buffer addresses */
     REDRAW_X = 0x11u,
@@ -375,9 +392,9 @@ static void StreamWrap(
     uint16_t negative_return,
     uint16_t positive_return,
     uint8_t short_cut) {
-    cpu->zero = (cpu->accumulator & 0x0800u) == 0;
+    cpu->zero = (cpu->accumulator & STREAM_COORDINATE_SIGN) == 0;
     if (!cpu->zero) {
-        LoadA16(cpu, (uint16_t)(cpu->accumulator | 0xf000u));
+        LoadA16(cpu, (uint16_t)(cpu->accumulator | STREAM_COORDINATE_SIGN_EXTEND));
         LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
         IncrementA16(cpu);
         Write16Long(memory, SNES_WRDIVL, cpu->accumulator);
@@ -425,7 +442,7 @@ static void StreamLocate(
     LoadA16(cpu, Read16Direct(memory, cpu, STREAM_CELL_ADDRESS));
     AslA16(cpu);
     AslA16(cpu);
-    And16(cpu, 0x003eu);
+    And16(cpu, STREAM_BUFFER_COLUMN_BYTES);
     Write16Direct(memory, cpu, STREAM_BUFFER_COLUMN, cpu->accumulator);
     LoadA16(cpu, cpu->y);
     LsrA16(cpu);
@@ -465,7 +482,7 @@ static void StreamLocate(
     Write16Direct(memory, cpu, STREAM_CELL_ADDRESS, cpu->accumulator);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_METATILE_BASE & 0xffffu), 0));
     Write16Direct(memory, cpu, STREAM_METATILE_BASE, cpu->accumulator);
-    Compare16(cpu, cpu->x, 0x0004u);
+    Compare16(cpu, cpu->x, STREAM_FIRST_ALTERNATE_LAYER);
     if (cpu->carry) {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_ALTERNATE_METATILE_BASE & 0xffffu), 0));
         Write16Direct(memory, cpu, STREAM_METATILE_BASE, cpu->accumulator);
@@ -511,24 +528,24 @@ static void StreamMetatile(
     AslA16(cpu);
     Add16Value(cpu, Read16Direct(memory, cpu, STREAM_METATILE_BASE));
     TransferAToX(cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, METATILE_TOP_LEFT, cpu->x));
     Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_BUFFER),
                 cpu->accumulator);
     IncrementY16(cpu);
     IncrementY16(cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0004u, cpu->x));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, METATILE_TOP_RIGHT, cpu->x));
     Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_BUFFER),
                 cpu->accumulator);
     LoadA16(cpu, cpu->y);
     cpu->carry = 0;
-    Add16Value(cpu, 0x003eu);
+    Add16Value(cpu, STREAM_TILE_ROW_STEP);
     TransferAToY(cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0002u, cpu->x));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, METATILE_BOTTOM_LEFT, cpu->x));
     Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_BUFFER),
                 cpu->accumulator);
     IncrementY16(cpu);
     IncrementY16(cpu);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0006u, cpu->x));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, METATILE_BOTTOM_RIGHT, cpu->x));
     Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_BUFFER),
                 cpu->accumulator);
 }
@@ -627,7 +644,7 @@ static void StreamColumn(
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_X, cpu->x)));
     if (right) {
         cpu->carry = 0;
-        Add16Value(cpu, 0x0100u);
+        Add16Value(cpu, STREAM_RIGHT_EDGE);
     }
     StreamLocate(memory, cpu, 0xf52fu);                        /* F52D */
     PushIndex(memory, cpu);
@@ -659,11 +676,12 @@ static void StreamColumn(
         IncrementY16(cpu);
         LoadA16(cpu,
                 Read16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_BUFFER)));
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x0040u, cpu->x),
-            cpu->accumulator);
+        Write16Long(memory,
+                    AbsoluteIndexedAddress(cpu, STREAM_BUFFER_ROW_BYTES, cpu->x),
+                    cpu->accumulator);
         LoadA16(cpu, cpu->y);
         cpu->carry = 0;
-        Add16Value(cpu, 0x003eu);
+        Add16Value(cpu, STREAM_TILE_ROW_STEP);
         TransferAToY(cpu);
         IncrementX16(cpu);
         IncrementX16(cpu);
@@ -689,15 +707,15 @@ static void StreamRow(
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_Y, cpu->x)));
     if (down) {
         cpu->carry = 0;
-        Add16Value(cpu, 0x00f0u);
+        Add16Value(cpu, STREAM_BOTTOM_EDGE);
     } else {
-        Subtract16(cpu, 0x0010u);
+        Subtract16(cpu, STREAM_TOP_EDGE);
     }
-    And16(cpu, 0xfff0u);
+    And16(cpu, STREAM_CELL_ALIGN_MASK);
     TransferAToY(cpu);                                         /* F5B9 */
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_X, cpu->x)));
     StreamLocate(memory, cpu, 0xf5c0u);
-    LoadA16(cpu, 0x0040u);                                     /* F5C1 */
+    LoadA16(cpu, STREAM_BUFFER_ROW_BYTES); /* F5C1 */
     Subtract16(cpu, Read16Direct(memory, cpu, STREAM_BUFFER_COLUMN));
     LsrA16(cpu);
     LsrA16(cpu);
@@ -761,15 +779,15 @@ static void StreamRowBuffers(
     LoadA16(cpu, STREAM_RUN_LENGTH); /* F6C6 */
     Write16Direct(memory, cpu, STREAM_ROW_TILES_LEFT, cpu->accumulator);
     LoadA16(cpu, cpu->y);
-    And16(cpu, 0xffc0u);
+    And16(cpu, STREAM_BUFFER_ROW_MASK);
     cpu->carry = 0;
     Add16Value(cpu, Read16Direct(memory, cpu, STREAM_BUFFER));
     Write16Direct(memory, cpu, STREAM_ROW_POINTER, cpu->accumulator);
     cpu->carry = 0;
-    Add16Value(cpu, 0x0040u);
+    Add16Value(cpu, STREAM_BUFFER_ROW_BYTES);
     Write16Direct(memory, cpu, STREAM_ROW_POINTER_NEXT, cpu->accumulator);
     LoadA16(cpu, cpu->y);
-    And16(cpu, 0x003fu);
+    And16(cpu, STREAM_BUFFER_COLUMN_MASK);
     TransferAToY(cpu);
     do {
         PushIndex(memory, cpu);                                /* F6DF */
@@ -785,24 +803,24 @@ static void StreamRowBuffers(
         AslA16(cpu);
         Add16Value(cpu, Read16Direct(memory, cpu, STREAM_METATILE_BASE));
         TransferAToX(cpu);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, METATILE_TOP_LEFT, cpu->x));
         Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_ROW_POINTER),
                     cpu->accumulator);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0002u, cpu->x));
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, METATILE_BOTTOM_LEFT, cpu->x));
         Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_ROW_POINTER_NEXT),
                     cpu->accumulator);
         LoadA16(cpu, (uint16_t)(cpu->y + 2u));
-        And16(cpu, 0x003fu);
+        And16(cpu, STREAM_BUFFER_COLUMN_MASK);
         TransferAToY(cpu);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0004u, cpu->x));
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, METATILE_TOP_RIGHT, cpu->x));
         Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_ROW_POINTER),
                     cpu->accumulator);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0006u, cpu->x));
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, METATILE_BOTTOM_RIGHT, cpu->x));
         Write16Long(memory, DirectLongIndirectY(memory, cpu, STREAM_ROW_POINTER_NEXT),
                     cpu->accumulator);
         cpu->x = PullIndexValue(memory, cpu);                  /* F715 */
         LoadA16(cpu, (uint16_t)(cpu->y + 2u));
-        And16(cpu, 0x003fu);
+        And16(cpu, STREAM_BUFFER_COLUMN_MASK);
         TransferAToY(cpu);
         IncrementX16(cpu);
         IncrementX16(cpu);
@@ -1015,8 +1033,8 @@ uint32_t Lufia2FieldRegionCells(
 
         first[0] = (uint8_t)RegionCellValue(cpu, x, 1);
         first[1] = (uint8_t)RegionCellValue(cpu, y, 0);
-        last[0] = (uint8_t)RegionCellValue(cpu, (uint16_t)(x + 0x0100u), 1);
-        last[1] = (uint8_t)RegionCellValue(cpu, (uint16_t)(y + 0x00ffu), 0);
+        last[0] = (uint8_t)RegionCellValue(cpu, (uint16_t)(x + STREAM_RIGHT_EDGE), 1);
+        last[1] = (uint8_t)RegionCellValue(cpu, (uint16_t)(y + VIEW_LAST_ROW), 0);
     }
     low[0] = (uint8_t)origin;
     low[1] = (uint8_t)(origin >> 8);
@@ -1107,19 +1125,19 @@ static void RegionWriteMetatile(
     OpAslA(cpu);
     OpAdc(memory, cpu, WRAM_FIELD_METATILE_BASE);
     OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0000u));
+    OpLda(memory, cpu, OpAbsX(cpu, METATILE_TOP_LEFT));
     OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, REGION_TOP_ROW));
     OpIny(cpu);
     OpIny(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0004u));
+    OpLda(memory, cpu, OpAbsX(cpu, METATILE_TOP_RIGHT));
     OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, REGION_TOP_ROW));
     OpDey(cpu);
     OpDey(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0002u));
+    OpLda(memory, cpu, OpAbsX(cpu, METATILE_BOTTOM_LEFT));
     OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, REGION_BOTTOM_ROW));
     OpIny(cpu);
     OpIny(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, 0x0006u));
+    OpLda(memory, cpu, OpAbsX(cpu, METATILE_BOTTOM_RIGHT));
     OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, REGION_BOTTOM_ROW));
 }
 
@@ -1190,7 +1208,7 @@ static bool RenderRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_FIRST_Y));
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_X));
     cpu->carry = 0;
-    OpAdcValue(cpu, 0x0100u);
+    OpAdcValue(cpu, STREAM_RIGHT_EDGE);
     child_result = CheckedRegionCell(memory, cpu, 0x8eb7u, 1u);
     if (child_result.flow != LUFIA2_EXECUTION_RETURNED) {
         *early = child_result;
@@ -1199,7 +1217,7 @@ static bool RenderRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpSta(memory, cpu, OpDp(cpu, REGION_VISIBLE_LAST_X));
     OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_LAYER_SCROLL_Y));
     cpu->carry = 0;
-    OpAdcValue(cpu, 0x00ffu);
+    OpAdcValue(cpu, VIEW_LAST_ROW);
     child_result = CheckedRegionCell(memory, cpu, 0x8ec4u, 0u);
     if (child_result.flow != LUFIA2_EXECUTION_RETURNED) {
         *early = child_result;
@@ -1229,7 +1247,7 @@ static bool RenderRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpAslA(cpu);
     OpAdc(memory, cpu, OpDp(cpu, REGION_TILEMAP_ORIGIN));
     cpu->carry = 0;
-    OpAdc(memory, cpu, OpLongX(cpu, 0x838ff0u));
+    OpAdc(memory, cpu, OpLongX(cpu, LAYER_BUFFER_TABLE));
     OpSta(memory, cpu, OpDp(cpu, REGION_TILEMAP_ORIGIN));
     OpLda(memory, cpu, OpAbsX(cpu, WRAM_FIELD_LAYER_CELL_BASE & 0xffffu));
     OpSta(memory, cpu, OpDp(cpu, REGION_LAYER_CELL_BASE));
@@ -1277,10 +1295,10 @@ static bool RenderRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpAslA(cpu);
     OpSta(memory, cpu, OpDp(cpu, REGION_SOURCE_ROW_SKIP));
     OpTya(cpu);
-    OpAndValue(cpu, 0xffc0u);
+    OpAndValue(cpu, STREAM_BUFFER_ROW_MASK);
     OpSta(memory, cpu, OpDp(cpu, REGION_TOP_ROW));
     OpTya(cpu);
-    OpAndValue(cpu, 0x003fu);
+    OpAndValue(cpu, STREAM_BUFFER_COLUMN_MASK);
     OpSta(memory, cpu, OpDp(cpu, REGION_TILEMAP_COLUMN));
     /* Write each cell as four tiles, preserving the tilemap ring wrap. */
     for (;;) {
@@ -1288,7 +1306,7 @@ static bool RenderRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         OpSta(memory, cpu, OpDp(cpu, REGION_COLUMNS_REMAINING));
         OpLda(memory, cpu, OpDp(cpu, REGION_TOP_ROW));
         cpu->carry = 0;
-        OpAdcValue(cpu, 0x0040u);
+        OpAdcValue(cpu, STREAM_BUFFER_ROW_BYTES);
         OpSta(memory, cpu, OpDp(cpu, REGION_BOTTOM_ROW));
         OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, REGION_TILEMAP_COLUMN)));
         for (;;) {
@@ -1304,7 +1322,7 @@ static bool RenderRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu,
             OpTya(cpu);
             OpIncA(cpu);
             OpIncA(cpu);
-            OpAndValue(cpu, 0x003fu);
+            OpAndValue(cpu, STREAM_BUFFER_COLUMN_MASK);
             OpTay(cpu);
             OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, REGION_SOURCE_CELL)));
             OpInx(cpu);
@@ -1357,12 +1375,14 @@ static void RedrawRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned axis;
 
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd046u, 0));
-    Write16Direct(memory, cpu, 0x9fu, cpu->accumulator);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd04cu, 0));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
+                                       (WRAM_FIELD_PENDING_OBJECT_X & 0xffffu), 0));
+    Write16Direct(memory, cpu, REGION_CLIPPED_FIRST_X, cpu->accumulator);
+    LoadA16(cpu,
+            Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_OBJECT_WIDTH & 0xffffu), 0));
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x9fu));
-    Write16Direct(memory, cpu, 0xa1u, cpu->accumulator);
+    Add16Value(cpu, Read16Direct(memory, cpu, REGION_CLIPPED_FIRST_X));
+    Write16Direct(memory, cpu, REGION_CLIPPED_LAST_X, cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_X, cpu->x)));
     RegionCell(memory, cpu, 0x8ea1u, 1);
     Write16Direct(memory, cpu, DP_PROBE_X, cpu->accumulator);
@@ -1371,21 +1391,22 @@ static void RedrawRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Write16Direct(memory, cpu, DP_PROBE_Y, cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_X, cpu->x)));
     cpu->carry = 0;
-    Add16Value(cpu, 0x0100u);
+    Add16Value(cpu, STREAM_RIGHT_EDGE);
     RegionCell(memory, cpu, 0x8eb7u, 1);
-    Write16Direct(memory, cpu, 0x95u, cpu->accumulator);
+    Write16Direct(memory, cpu, REGION_VISIBLE_LAST_X, cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_SCROLL_Y, cpu->x)));
     cpu->carry = 0;
-    Add16Value(cpu, 0x00ffu);
+    Add16Value(cpu, VIEW_LAST_ROW);
     RegionCell(memory, cpu, 0x8ec4u, 0);
-    Write16Direct(memory, cpu, 0x96u, cpu->accumulator);
+    Write16Direct(memory, cpu, REGION_VISIBLE_LAST_Y, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     /* Clip x ($9F-$A1), then y ($A0-$A2), to the visible cells. */
     for (axis = 0; axis < 2u; ++axis) {
-        const uint8_t low = (uint8_t)(0x9fu + axis);
-        const uint8_t high = (uint8_t)(0xa1u + axis);
+        const uint8_t low = (uint8_t)(REGION_CLIPPED_FIRST_X + axis);
+        const uint8_t high = (uint8_t)(REGION_CLIPPED_LAST_X + axis);
 
-        LoadA8(cpu, DirectByte(memory, cpu, axis ? 0x91u : 0x8fu));
+        LoadA8(cpu, DirectByte(memory, cpu,
+                               axis ? REGION_VISIBLE_FIRST_Y : REGION_VISIBLE_FIRST_X));
         Compare8(cpu, A8(cpu), DirectByte(memory, cpu, low));
         if (!cpu->negative) {
             Compare8(cpu, A8(cpu), DirectByte(memory, cpu, high));
@@ -1393,7 +1414,9 @@ static void RedrawRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                 return;
             Write8(memory, DirectAddress(cpu, low), A8(cpu));
         } else {
-            LoadA8(cpu, DirectByte(memory, cpu, axis ? 0x96u : 0x95u));
+            LoadA8(cpu,
+                   DirectByte(memory, cpu,
+                              axis ? REGION_VISIBLE_LAST_Y : REGION_VISIBLE_LAST_X));
             Compare8(cpu, A8(cpu), DirectByte(memory, cpu, low));
             if (cpu->negative)
                 return;
@@ -1403,71 +1426,71 @@ static void RedrawRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         }
     }
     TransferDirectToA(cpu);                                    /* 8F02 */
-    LoadA8(cpu, DirectByte(memory, cpu, 0xa0u));
+    LoadA8(cpu, DirectByte(memory, cpu, REGION_CLIPPED_FIRST_Y));
     And8(cpu, 0x0fu);
     ExchangeAccumulatorBytes(cpu);
     SetAccumulatorWidth(cpu, 0);
     LsrA16(cpu);
-    Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x9fu));
+    Write16Direct(memory, cpu, REGION_TILEMAP_ORIGIN, cpu->accumulator);
+    LoadA16(cpu, Read16Direct(memory, cpu, REGION_CLIPPED_FIRST_X));
     And16(cpu, 0x000fu);
     AslA16(cpu);
     AslA16(cpu);
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x54u));
+    Add16Value(cpu, Read16Direct(memory, cpu, REGION_TILEMAP_ORIGIN));
     cpu->carry = 0;
     Add16Value(cpu, Read16Long(memory, LongIndexedAddress(LAYER_BUFFER_TABLE, cpu->x)));
-    Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+    Write16Direct(memory, cpu, REGION_TILEMAP_ORIGIN, cpu->accumulator);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (WRAM_FIELD_LAYER_CELL_BASE & 0xffffu), cpu->x));
-    Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+    Write16Direct(memory, cpu, REGION_LAYER_CELL_BASE, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x7eu);
-    Write8(memory, DirectAddress(cpu, 0x62u), A8(cpu));
-    Write8(memory, DirectAddress(cpu, 0x5fu), A8(cpu));
-    LoadA8(cpu, DirectByte(memory, cpu, 0x9fu));
+    Write8(memory, DirectAddress(cpu, REGION_TOP_ROW_BANK), A8(cpu));
+    Write8(memory, DirectAddress(cpu, REGION_BOTTOM_ROW_BANK), A8(cpu));
+    LoadA8(cpu, DirectByte(memory, cpu, REGION_CLIPPED_FIRST_X));
     ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, DirectByte(memory, cpu, 0xa0u));
+    LoadA8(cpu, DirectByte(memory, cpu, REGION_CLIPPED_FIRST_Y));
     SimulateJsrFrame(memory, cpu, 0x8f31u);
     Lufia2MapCellOffset(memory, cpu);                          /* $83:F9F7 */
     SimulateRtsFrame(memory, cpu);
     SetAccumulatorWidth(cpu, 0);                               /* 8F32 */
     LoadA16(cpu, cpu->x);
     cpu->carry = 0;
-    Add16Value(cpu, Read16Direct(memory, cpu, 0x56u));
+    Add16Value(cpu, Read16Direct(memory, cpu, REGION_LAYER_CELL_BASE));
     TransferAToX(cpu);
-    LoadY16(cpu, Read16Direct(memory, cpu, 0x54u));
-    LoadA16(cpu, Read16Direct(memory, cpu, 0xa1u));
-    Subtract16(cpu, Read16Direct(memory, cpu, 0x9fu));
-    Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+    LoadY16(cpu, Read16Direct(memory, cpu, REGION_TILEMAP_ORIGIN));
+    LoadA16(cpu, Read16Direct(memory, cpu, REGION_CLIPPED_LAST_X));
+    Subtract16(cpu, Read16Direct(memory, cpu, REGION_CLIPPED_FIRST_X));
+    Write16Direct(memory, cpu, REGION_SIZE_DELTA, cpu->accumulator);
     And16(cpu, 0x00ffu);
-    Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+    Write16Direct(memory, cpu, REGION_COLUMNS, cpu->accumulator);
     if (cpu->zero)
         return;
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x55u));
+    LoadA16(cpu, Read16Direct(memory, cpu, REGION_HEIGHT_DELTA));
     And16(cpu, 0x00ffu);
-    Write16Direct(memory, cpu, 0x5au, cpu->accumulator);
+    Write16Direct(memory, cpu, REGION_ROWS_REMAINING, cpu->accumulator);
     if (cpu->zero)
         return;
     LoadA16(cpu, Read16Long(memory, WRAM_FIELD_SECTION_WIDTH));
     And16(cpu, 0x00ffu);
-    Subtract16(cpu, Read16Direct(memory, cpu, 0x56u));
+    Subtract16(cpu, Read16Direct(memory, cpu, REGION_COLUMNS));
     AslA16(cpu);
-    Write16Direct(memory, cpu, 0x63u, cpu->accumulator);
+    Write16Direct(memory, cpu, REGION_SOURCE_ROW_SKIP, cpu->accumulator);
     LoadA16(cpu, cpu->y);
-    And16(cpu, 0xffc0u);
-    Write16Direct(memory, cpu, 0x60u, cpu->accumulator);
+    And16(cpu, STREAM_BUFFER_ROW_MASK);
+    Write16Direct(memory, cpu, REGION_TOP_ROW, cpu->accumulator);
     LoadA16(cpu, cpu->y);
-    And16(cpu, 0x003fu);
-    Write16Direct(memory, cpu, 0x65u, cpu->accumulator);
+    And16(cpu, STREAM_BUFFER_COLUMN_MASK);
+    Write16Direct(memory, cpu, REGION_TILEMAP_COLUMN, cpu->accumulator);
     for (;;) {
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x56u));       /* 8F71 */
-        Write16Direct(memory, cpu, 0x58u, cpu->accumulator);
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x60u));
+        LoadA16(cpu, Read16Direct(memory, cpu, REGION_COLUMNS)); /* 8F71 */
+        Write16Direct(memory, cpu, REGION_COLUMNS_REMAINING, cpu->accumulator);
+        LoadA16(cpu, Read16Direct(memory, cpu, REGION_TOP_ROW));
         cpu->carry = 0;
-        Add16Value(cpu, 0x0040u);
-        Write16Direct(memory, cpu, 0x5du, cpu->accumulator);
-        LoadY16(cpu, Read16Direct(memory, cpu, 0x65u));
+        Add16Value(cpu, STREAM_BUFFER_ROW_BYTES);
+        Write16Direct(memory, cpu, REGION_BOTTOM_ROW, cpu->accumulator);
+        LoadY16(cpu, Read16Direct(memory, cpu, REGION_TILEMAP_COLUMN));
         for (;;) {
-            StoreXDirect16(memory, cpu, 0x54u);                /* 8F7F */
+            StoreXDirect16(memory, cpu, REGION_SOURCE_CELL); /* 8F7F */
             LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
             And16(cpu, 0x3000u);
             Compare16(cpu, cpu->accumulator, 0x3000u);
@@ -1480,44 +1503,52 @@ static void RedrawRegionCore(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             AslA16(cpu);
             Add16Value(cpu, Read16Long(memory, WRAM_FIELD_METATILE_BASE));
             TransferAToX(cpu);
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
-            Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x60u), cpu->accumulator);
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, METATILE_TOP_LEFT, cpu->x));
+            Write16Long(memory, DirectLongIndirectY(memory, cpu, REGION_TOP_ROW),
+                        cpu->accumulator);
             LoadY16(cpu, (uint16_t)(cpu->y + 2u));
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0004u, cpu->x));
-            Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x60u), cpu->accumulator);
+            LoadA16(cpu,
+                    Read16AbsoluteIndexed(memory, cpu, METATILE_TOP_RIGHT, cpu->x));
+            Write16Long(memory, DirectLongIndirectY(memory, cpu, REGION_TOP_ROW),
+                        cpu->accumulator);
             LoadY16(cpu, (uint16_t)(cpu->y - 2u));
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0002u, cpu->x));
-            Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x5du), cpu->accumulator);
+            LoadA16(cpu,
+                    Read16AbsoluteIndexed(memory, cpu, METATILE_BOTTOM_LEFT, cpu->x));
+            Write16Long(memory, DirectLongIndirectY(memory, cpu, REGION_BOTTOM_ROW),
+                        cpu->accumulator);
             LoadY16(cpu, (uint16_t)(cpu->y + 2u));
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0006u, cpu->x));
-            Write16Long(memory, DirectLongIndirectY(memory, cpu, 0x5du), cpu->accumulator);
-            OpStepMem(memory, cpu, OpDp(cpu, 0x58u), -1);
+            LoadA16(cpu,
+                    Read16AbsoluteIndexed(memory, cpu, METATILE_BOTTOM_RIGHT, cpu->x));
+            Write16Long(memory, DirectLongIndirectY(memory, cpu, REGION_BOTTOM_ROW),
+                        cpu->accumulator);
+            OpStepMem(memory, cpu, OpDp(cpu, REGION_COLUMNS_REMAINING), -1);
             if (cpu->zero)
                 break;
             LoadA16(cpu, (uint16_t)(cpu->y + 2u));             /* 8FBB */
-            And16(cpu, 0x003fu);
+            And16(cpu, STREAM_BUFFER_COLUMN_MASK);
             TransferAToY(cpu);
-            LoadXDirect(memory, cpu, 0x54u);
+            LoadXDirect(memory, cpu, REGION_SOURCE_CELL);
             IncrementX16(cpu);
             IncrementX16(cpu);
         }
-        OpStepMem(memory, cpu, OpDp(cpu, 0x5au), -1);                 /* 8FC8 */
+        OpStepMem(memory, cpu, OpDp(cpu, REGION_ROWS_REMAINING), -1); /* 8FC8 */
         if (cpu->zero)
             break;
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+        LoadA16(cpu, Read16Direct(memory, cpu, REGION_SOURCE_CELL));
         cpu->carry = 0;
-        Add16Value(cpu, Read16Direct(memory, cpu, 0x63u));
+        Add16Value(cpu, Read16Direct(memory, cpu, REGION_SOURCE_ROW_SKIP));
         Add16Value(cpu, 0x0002u);
         TransferAToX(cpu);
-        LoadA16(cpu, Read16Direct(memory, cpu, 0x60u));
+        LoadA16(cpu, Read16Direct(memory, cpu, REGION_TOP_ROW));
         TransferAToY(cpu);
         Add16Value(cpu, 0x0080u);
         And16(cpu, 0x07ffu);
-        Write16Direct(memory, cpu, 0x60u, cpu->accumulator);
+        Write16Direct(memory, cpu, REGION_TOP_ROW, cpu->accumulator);
         LoadA16(cpu, cpu->y);
         And16(cpu, 0xf800u);
-        LoadA16(cpu, (uint16_t)(cpu->accumulator | Read16Direct(memory, cpu, 0x60u)));
-        Write16Direct(memory, cpu, 0x60u, cpu->accumulator);
+        LoadA16(cpu, (uint16_t)(cpu->accumulator |
+                                Read16Direct(memory, cpu, REGION_TOP_ROW)));
+        Write16Direct(memory, cpu, REGION_TOP_ROW, cpu->accumulator);
     }
 }
 
