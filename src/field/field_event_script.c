@@ -355,9 +355,8 @@ static void EventLoadSlotBits(
 }
 
 /* $19: goto unless slot bit 7. */
-static unsigned EventOp19(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static unsigned EventOpGotoUnlessSlotBit7(const Lufia2Memory *memory,
+                                          Lufia2CpuState *cpu) {
     EventLoadSlotBits(memory, cpu);                            /* E4EB */
     if (cpu->negative)
         Lufia2EventSkipWord(memory, cpu);
@@ -367,9 +366,7 @@ static unsigned EventOp19(
 }
 
 /* $1E: bit 0 clear -> first target, else $19 on the second. */
-static unsigned EventOp1E(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static unsigned EventOpGotoOnSlotBit0(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     EventLoadSlotBits(memory, cpu);                            /* E4D8 */
     BitImmediate8(cpu, 0x01u);
     if (cpu->zero) {
@@ -378,13 +375,12 @@ static unsigned EventOp1E(
     }
     Lufia2EventNextByte(memory, cpu, 0xe4e7u);                       /* E4E5 */
     Lufia2EventNextByte(memory, cpu, 0xe4eau);
-    return EventOp19(memory, cpu);
+    return EventOpGotoUnlessSlotBit7(memory, cpu);
 }
 
 /* $2B: skip only when bit 0 is set and bit 7 clear. */
-static unsigned EventOp2B(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static unsigned EventOpSkipOnSlotBit0Only(const Lufia2Memory *memory,
+                                          Lufia2CpuState *cpu) {
     EventLoadSlotBits(memory, cpu);                            /* E4F9 */
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero && !cpu->negative)
@@ -1282,11 +1278,11 @@ static unsigned EventScriptOpcode(
     case EVENT_OP_GOTO_UNLESS_0692:
         return EventOpGotoIf0692(memory, cpu, handler);
     case EVENT_OP_19:
-        return EventOp19(memory, cpu);
+        return EventOpGotoUnlessSlotBit7(memory, cpu);
     case EVENT_OP_1E:
-        return EventOp1E(memory, cpu);
+        return EventOpGotoOnSlotBit0(memory, cpu);
     case EVENT_OP_2B:
-        return EventOp2B(memory, cpu);
+        return EventOpSkipOnSlotBit0Only(memory, cpu);
     case EVENT_OP_WRITE_PPU:
         return EventOpWritePpu(memory, cpu);
     case EVENT_OP_START_SHAKE:

@@ -832,10 +832,9 @@ static SecondaryStep SecondaryOpFCSet066A(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:D6AD: secondary opcode $D5. */
-static SecondaryStep SecondaryOpD5(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+/* $83:D6AD: $D5 stores the probe position in the claimed pending object's record. */
+static SecondaryStep SecondaryOpStoreProbeInPendingObject(const Lufia2Memory *memory,
+                                                          Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* D6AD */
     TransferDirectToA(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_PENDING_OBJECT,
@@ -1061,10 +1060,9 @@ static SecondaryStep SecondaryOpE6(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:DB77: secondary opcode $EA. */
-static SecondaryStep SecondaryOpEA(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+/* $83:DB77: $EA sets or clears bit 1 of the actor's flags from the operand. */
+static SecondaryStep SecondaryOpSetActorFlagBit1(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* DB77 */
     LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
     {
@@ -1081,10 +1079,10 @@ static SecondaryStep SecondaryOpEA(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:DBDC: secondary opcode $ED. */
-static SecondaryStep SecondaryOpED(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+/* $83:DBDC: $ED sets the secondary timer from the operand; a non-zero operand also sets
+ * the blink bit. */
+static SecondaryStep SecondaryOpSetTimerAndBlink(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* DBDC */
     LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
@@ -1114,17 +1112,16 @@ static SecondaryStep SecondaryOpEF(
     return SecondaryNextByte(memory, cpu, 1);
 }
 
-/* $83:DAC3: secondary opcode $D0. */
-static SecondaryStep SecondaryOpD0(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+/* $83:DAC3: $D0 skips its operand byte. */
+static SecondaryStep SecondaryOpSkipByte(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu) {
     return SecondaryNextByte(memory, cpu, 1);             /* DAC3 */
 }
 
-/* $83:DAC9: secondary opcode $D1. */
-static SecondaryStep SecondaryOpD1(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+/* $83:DAC9: $D1 sets bit 7 of $7F:E316[slot] when the operand is non-zero, else clears
+ * it. */
+static SecondaryStep SecondaryOpSetBit7FromOperand(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* DAC9 */
     LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
     Compare8(cpu, A8(cpu), 0x01u);
@@ -1157,10 +1154,9 @@ static SecondaryStep SecondaryOpF1(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:DEBD: secondary opcode $F9. */
-static SecondaryStep SecondaryOpF9(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+/* $83:DEBD: $F9 copies the fine position and display offsets to the scratch words. */
+static SecondaryStep SecondaryOpSavePositionScratch(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                       /* DEBD */
     SetAccumulatorWidth(cpu, 0);
     CopyLong16(memory, cpu, WRAM_ACTOR_FINE_X, WRAM_ACTOR_SCRATCH_A);
@@ -1623,7 +1619,7 @@ static SecondaryStep SecondaryExecuteHandler(
     case SECONDARY_OP_FC_SET_066A:
         return SecondaryOpFCSet066A(memory, cpu);
     case SECONDARY_OP_D5:
-        return SecondaryOpD5(memory, cpu);
+        return SecondaryOpStoreProbeInPendingObject(memory, cpu);
     case SECONDARY_OP_D6:
         return SecondaryOpD6(memory, cpu);
     case SECONDARY_OP_D7_ASSIGN_STATE_BIT1:
@@ -1645,19 +1641,19 @@ static SecondaryStep SecondaryExecuteHandler(
     case SECONDARY_OP_E6:
         return SecondaryOpE6(memory, cpu);
     case SECONDARY_OP_EA:
-        return SecondaryOpEA(memory, cpu);
+        return SecondaryOpSetActorFlagBit1(memory, cpu);
     case SECONDARY_OP_ED:
-        return SecondaryOpED(memory, cpu);
+        return SecondaryOpSetTimerAndBlink(memory, cpu);
     case SECONDARY_OP_EF:
         return SecondaryOpEF(memory, cpu);
     case SECONDARY_OP_D0:
-        return SecondaryOpD0(memory, cpu);
+        return SecondaryOpSkipByte(memory, cpu);
     case SECONDARY_OP_D1:
-        return SecondaryOpD1(memory, cpu);
+        return SecondaryOpSetBit7FromOperand(memory, cpu);
     case SECONDARY_OP_F1:
         return SecondaryOpF1(memory, cpu);
     case SECONDARY_OP_F9:
-        return SecondaryOpF9(memory, cpu);
+        return SecondaryOpSavePositionScratch(memory, cpu);
     case SECONDARY_OP_7X:
     case SECONDARY_OP_AX_MOVE_FINE:
         return SecondaryOp7XAXMoveFine(memory, cpu, handler_pc);
