@@ -25,6 +25,16 @@ enum {
  * when a screen starts. */
 enum {
     MENU_CURSOR_SPRITE_BASE = 5,
+    MENU_SPRITE_SCROLL_THUMB = 11, /* sprite slot of the scrollbar thumb */
+    /* Item ids whose use is decided by a bit of the window mode ($09A7) rather
+     * than the item record: bit $10 for the first, bit $08 for the others. */
+    MENU_ITEM_USE_BIT_10 = 0x2au,
+    MENU_ITEM_USE_BIT_08_A = 0x29u,
+    MENU_ITEM_USE_BIT_08_B = 0x2du,
+    /* Byte selecting how ItemAttribute reads a row: 1 and 2 read the item
+     * record byte at $8460 or $846A, 0 decides from the item id. Set by the
+     * list mode in ListByMode. */
+    MENU_ROW_ATTRIBUTE_KIND = 0x153eu,
     MENU_SPRITE_SLOT_SCRATCH = 0x14a9u,  /* word: slot kept across a lookup */
     MENU_CURSOR_LAYOUT_14C1 = 0x14c1u,   /* last layout byte, purpose unknown */
     MENU_CURSOR_LAYOUT_14C7 = 0x14c7u,   /* cleared with the layout */
@@ -1568,13 +1578,13 @@ static void MenuScrollThumb(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->y);
     SetAccumulatorWidth(cpu, 1);
-    LoadX16(cpu, 0x000bu);
-    StoreAAbsolute8(memory, cpu, 0x13e8u, cpu->x);
+    LoadX16(cpu, MENU_SPRITE_SCROLL_THUMB);
+    StoreAAbsolute8(memory, cpu, MENU_SPRITE_Y_LOW, cpu->x);
     StoreAAbsolute8(memory, cpu, (WRAM_MENU_SCROLL_THUMB_Y + 1u), 0);
     ExchangeAccumulatorBytes(cpu);
-    StoreAAbsolute8(memory, cpu, 0x1388u, cpu->x);
-    StoreZeroAbsolute8(memory, cpu, 0x1418u, cpu->x);
-    StoreZeroAbsolute8(memory, cpu, 0x13b8u, cpu->x);
+    StoreAAbsolute8(memory, cpu, MENU_SPRITE_X_LOW, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, MENU_SPRITE_Y_HIGH, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, MENU_SPRITE_X_HIGH, cpu->x);
     StoreZeroAbsolute8(memory, cpu, WRAM_MENU_SCROLL_THUMB_Y, 0);
     StoreZeroAbsolute8(memory, cpu, MENU_SPRITE_FRAME_INDEX, cpu->x);
     LoadA8(cpu, 0x04u);
@@ -1600,13 +1610,13 @@ static void MenuScrollStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         Write16Absolute(memory, cpu, WRAM_MENU_SCROLL_STEP, cpu->x);
         LoadA8(cpu, 0x01u);
     }
-    LoadX16(cpu, 0x000bu);
+    LoadX16(cpu, MENU_SPRITE_SCROLL_THUMB);
     StoreAAbsolute8(memory, cpu, MENU_SPRITE_ACTIVE, cpu->x);
 }
 
 /* $82:8C43: thumb y = $1509 + row * step; frame 4 at the ends. */
 static void MenuScrollPlace(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadX16(cpu, 0x000bu);
+    LoadX16(cpu, MENU_SPRITE_SCROLL_THUMB);
     LoadAAbsolute8(memory, cpu, MENU_SPRITE_ACTIVE, cpu->x);
     if (cpu->zero)
         return;
@@ -1617,14 +1627,14 @@ static void MenuScrollPlace(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_STEP, 0));
     Write16Absolute(memory, cpu, WRAM_SYSTEM_MULTIPLY_B, cpu->x);
     Lufia2CallMultiply(memory, cpu, 0x82u, 0x8c5cu);
-    LoadX16(cpu, 0x000bu);
+    LoadX16(cpu, MENU_SPRITE_SCROLL_THUMB);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_THUMB_Y, 0));
     cpu->carry = 0;
     Add16Value(cpu,
                Read16AbsoluteIndexed(memory, cpu, WRAM_SYSTEM_MULTIPLY_PRODUCT, 0));
     SetAccumulatorWidth(cpu, 1);
     ExchangeAccumulatorBytes(cpu);
-    StoreAAbsolute8(memory, cpu, 0x13e8u, cpu->x);
+    StoreAAbsolute8(memory, cpu, MENU_SPRITE_Y_LOW, cpu->x);
     LoadA8(cpu, 0x04u);
     LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_ROW, 0));
     if (!cpu->zero) {
@@ -1808,7 +1818,7 @@ static void ItemAttribute(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     uint8_t mode;
     uint8_t attribute;
 
-    LoadAAbsolute8(memory, cpu, 0x153eu, 0);
+    LoadAAbsolute8(memory, cpu, MENU_ROW_ATTRIBUTE_KIND, 0);
     mode = A8(cpu);
     if (mode == 1u || mode == 2u) {
         Compare8(cpu, mode, 0x01u);
@@ -1834,19 +1844,20 @@ static void ItemAttribute(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         }
 
         LoadX16(cpu, item);
-        Compare16(cpu, item, 0x002au);
-        if (item == 0x002au || item == 0x0029u || item == 0x002du) {
-            if (item != 0x002au) {
-                Compare16(cpu, item, 0x0029u);
-                if (item != 0x0029u)
-                    Compare16(cpu, item, 0x002du);
+        Compare16(cpu, item, MENU_ITEM_USE_BIT_10);
+        if (item == MENU_ITEM_USE_BIT_10 || item == MENU_ITEM_USE_BIT_08_A ||
+            item == MENU_ITEM_USE_BIT_08_B) {
+            if (item != MENU_ITEM_USE_BIT_10) {
+                Compare16(cpu, item, MENU_ITEM_USE_BIT_08_A);
+                if (item != MENU_ITEM_USE_BIT_08_A)
+                    Compare16(cpu, item, MENU_ITEM_USE_BIT_08_B);
             }
             LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);
-            BitImmediate8(cpu, item == 0x002au ? 0x10u : 0x08u);
+            BitImmediate8(cpu, item == MENU_ITEM_USE_BIT_10 ? 0x10u : 0x08u);
             attribute = cpu->zero ? 0x20u : 0x24u;
         } else {
-            Compare16(cpu, item, 0x0029u);
-            Compare16(cpu, item, 0x002du);
+            Compare16(cpu, item, MENU_ITEM_USE_BIT_08_A);
+            Compare16(cpu, item, MENU_ITEM_USE_BIT_08_B);
             ItemByte(memory, cpu, 0x8440u);
             BitImmediate8(cpu, 0x20u);
             if (!cpu->zero) {
@@ -2106,12 +2117,12 @@ static int ListByMode(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     LoadAAbsolute8(memory, cpu, WRAM_MENU_LIST_MODE, 0);
     switch (A8(cpu)) {
     case 0x02u:
-        StoreZeroAbsolute8(memory, cpu, 0x153eu, 0);
+        StoreZeroAbsolute8(memory, cpu, MENU_ROW_ATTRIBUTE_KIND, 0);
         kind = 1u;
         ret = returns[1];
         break;
     case 0x04u:
-        StoreA8Absolute(memory, cpu, 0x153eu, 0x01u);
+        StoreA8Absolute(memory, cpu, MENU_ROW_ATTRIBUTE_KIND, 0x01u);
         ret = returns[2];
         break;
     case 0x07u:
@@ -2119,11 +2130,11 @@ static int ListByMode(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         ret = returns[3];
         break;
     case 0xffu:
-        StoreA8Absolute(memory, cpu, 0x153eu, 0x02u);
+        StoreA8Absolute(memory, cpu, MENU_ROW_ATTRIBUTE_KIND, 0x02u);
         ret = returns[4];
         break;
     default:
-        StoreZeroAbsolute8(memory, cpu, 0x153eu, 0);
+        StoreZeroAbsolute8(memory, cpu, MENU_ROW_ATTRIBUTE_KIND, 0);
         ret = returns[0];
         break;
     }
