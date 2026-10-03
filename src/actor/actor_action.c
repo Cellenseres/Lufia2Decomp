@@ -169,6 +169,23 @@ void Lufia2ActorInstallSecondaryScript(
            A8(cpu));
 }
 
+/* $83:D39D: start the secondary script for the action in $54 and mark the slot. */
+static Lufia2ActorPrimaryActionFlow
+ActionInstallSecondaryScript(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* D39D */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u))); /* D39F */
+    SimulateJsrFrame(memory, cpu, 0xd3a3u);                /* D3A1 */
+    Lufia2ActorInstallSecondaryScript(memory, cpu);        /* D3F7 */
+    SimulateRtsFrame(memory, cpu);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT); /* D3A4 */
+    LoadA8(cpu, 0x80u);                      /* D3A6 */
+    Or8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_STATE, cpu->x)));
+    /* D3A8 */
+    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_STATE, cpu->x),
+           A8(cpu)); /* D3AB */
+    return LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE;
+}
+
 Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -192,13 +209,13 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
                                                                /* D360 */
     And8(cpu, 0x28u);                                         /* D363 */
     if (!cpu->zero)
-        goto install_secondary_script;                         /* D365 */
+        return ActionInstallSecondaryScript(memory, cpu); /* D365 */
 
     TransferDirectToA(cpu);                                   /* D367 */
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));     /* D368 */
     Compare8(cpu, A8(cpu), 0x04u);                            /* D36A */
     if (cpu->carry)
-        goto install_secondary_script;                         /* D36C */
+        return ActionInstallSecondaryScript(memory, cpu); /* D36C */
 
     AslA8(cpu);                                               /* D36E */
     TransferAToX(cpu);                                        /* D36F */
@@ -252,28 +269,12 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
 
     Compare8(cpu, A8(cpu), 0x07u);                             /* D391 */
     if (cpu->zero)
-        goto install_secondary_script;
+        return ActionInstallSecondaryScript(memory, cpu);
     Compare8(cpu, A8(cpu), 0x01u);                             /* D395 */
     if (cpu->zero)
-        goto install_secondary_script;
+        return ActionInstallSecondaryScript(memory, cpu);
     Or8(cpu, 0x00u);                                          /* D399 */
     if (!cpu->zero)
         return LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE;         /* D39B */
-
-install_secondary_script:
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* D39D */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));     /* D39F */
-    SimulateJsrFrame(memory, cpu, 0xd3a3u);                   /* D3A1 */
-    Lufia2ActorInstallSecondaryScript(memory, cpu);            /* D3F7 */
-    SimulateRtsFrame(memory, cpu);
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* D3A4 */
-    LoadA8(cpu, 0x80u);                                       /* D3A6 */
-    Or8(
-        cpu,
-        Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_STATE, cpu->x)));
-                                                               /* D3A8 */
-    Write8(
-        memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_STATE, cpu->x),
-        A8(cpu));                                              /* D3AB */
-    return LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE;
+    return ActionInstallSecondaryScript(memory, cpu);
 }
