@@ -3501,3 +3501,20 @@ source = "src/battle/battle_frame.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Battle party drift
+[[function]]
+address = "85:894A"
+name = "Lufia2BattleDriftRecords"
+source = "src/battle/battle_drift.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:8F4A"
+name = "Lufia2BattleRandomBit"
+source = "src/battle/battle_drift.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"

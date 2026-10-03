@@ -331,6 +331,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:8B9C` | `Lufia2AncientCaveDefeat` | verified | `src/cave/cave_reset.c` |
 | `$84:8BC7` | `Lufia2BattleVisualTransition` | verified | `src/battle/battle_transition.c` |
 | `$85:8850` | `Lufia2BattleAnimateStatusIcons` | verified | `src/battle/battle_status_icons.c` |
+| `$85:894A` | `Lufia2BattleDriftRecords` | draft | `src/battle/battle_drift.c` |
 | `$85:89E5` | `Lufia2BattleClearSpriteOffsets` | verified | `src/battle/battle_loop_children.c` |
 | `$85:8A2F` | `Lufia2BattleSprites` | verified | `src/battle/battle_frame.c` |
 | `$85:8A39` | `Lufia2BattleFrameSetup` | draft | `src/battle/battle_frame_setup.c` |
@@ -343,6 +344,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:8C98` | `Lufia2BattleSpritePartyEntry` | draft | `src/battle/battle_frame.c` |
 | `$85:8D2E` | `Lufia2BattlePartyTilemapEntry` | draft | `src/battle/battle_frame.c` |
 | `$85:8DC5` | `Lufia2BattleNmiUploads` | verified | `src/battle/battle_nmi.c` |
+| `$85:8F4A` | `Lufia2BattleRandomBit` | draft | `src/battle/battle_drift.c` |
 | `$85:8F67` | `Lufia2BattleRecoverStatuses` | verified | `src/battle/battle_status_recovery.c` |
 | `$85:9099` | `Lufia2BattleExpireStatuses` | verified | `src/battle/battle_status_recovery.c` |
 | `$85:9150` | `Lufia2BattleStatusName` | verified | `src/battle/battle_status_support.c` |
