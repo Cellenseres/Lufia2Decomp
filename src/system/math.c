@@ -42,7 +42,7 @@ void Lufia2CallMultiply(
 
 /* $80:84BF: sine of a quarter turn in 46 steps, $00-$7F. */
 static uint8_t QuarterSine(const Lufia2Memory *memory, uint8_t step) {
-    return Read8(memory, 0x8084bfu + step);
+    return Read8(memory, ROM_QUARTER_SINE_TABLE + step);
 }
 
 /* PHX/PHY/PHP/SEP #$30 */
