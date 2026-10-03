@@ -64,15 +64,18 @@ static uint32_t MenuVisitCount(MenuVm *vm, uint32_t pc) {
     return 0;
 }
 
+/* DEY: Y -= 1 with the sign and zero flags of the result. */
 static void DecrementY(Lufia2CpuState *cpu) {
     cpu->y = (uint16_t)(cpu->y - 1u);
     SetNz16(cpu, cpu->y);
 }
 
+/* Word at an absolute address in the current data bank. */
 static uint16_t Absolute16(const MenuVm *vm, uint16_t address) {
     return Read16AbsoluteIndexed(vm->memory, vm->cpu, address, 0);
 }
 
+/* Writes A to an absolute address in the current data bank. */
 static void StoreAbsolute16(const MenuVm *vm, uint16_t address) {
     Write16Absolute(vm->memory, vm->cpu, address, vm->cpu->accumulator);
 }
@@ -83,10 +86,12 @@ static uint32_t Indirect(const MenuVm *vm, uint8_t offset, uint16_t index) {
         Read16Direct(vm->memory, vm->cpu, offset) + index) & 0x00ffffffu;
 }
 
+/* Byte at (dp),Y: the pointer at the direct page offset plus index. */
 static uint8_t Indirect8(const MenuVm *vm, uint8_t offset, uint16_t index) {
     return Read8(vm->memory, Indirect(vm, offset, index));
 }
 
+/* Word at (dp),0. */
 static uint16_t Indirect16(const MenuVm *vm, uint8_t offset) {
     return Read16Long(vm->memory, Indirect(vm, offset, 0));
 }
@@ -96,19 +101,23 @@ static void StringByte(const MenuVm *vm) {
     LoadA8(vm->cpu, Read8IndirectLongY(vm->memory, vm->cpu, STRING));
 }
 
+/* Word at [STRING],Y. */
 static uint16_t StringWord(const MenuVm *vm) {
     return Read16IndirectLongY(vm->memory, vm->cpu, STRING);
 }
 
+/* Skips a two-byte operand in the string. */
 static void SkipWord(Lufia2CpuState *cpu) {
     IncrementY16(cpu);
     IncrementY16(cpu);
 }
 
+/* Pushes a JSR frame for return_address. */
 static void Jsr(const MenuVm *vm, uint16_t return_address) {
     SimulateJsrFrame(vm->memory, vm->cpu, return_address);
 }
 
+/* Pops the frame pushed by Jsr. */
 static void Rts(const MenuVm *vm) {
     SimulateRtsFrame(vm->memory, vm->cpu);
 }
