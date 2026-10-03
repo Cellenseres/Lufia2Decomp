@@ -1,22 +1,21 @@
 /* World map scroll step: a distance and an angle become signed offsets, and
  * the offsets move the scroll position. */
 
+#include <stdbool.h>
+
 #include "core/cpu_ops.h"
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
+#include "core/wram_view.h"
 #include "lufia2/world_map.h"
 
+/* Direct page: the multiplication, and the step that is worked out. */
 enum {
     MULTIPLICAND = 0x4eu,
     MULTIPLIER = 0x50u,
     PRODUCT = 0x51u,
     PRODUCT_MIDDLE = 0x52u,
     PRODUCT_TOP = 0x53u,
-    ANGLE = 0x1248u,
-    DISTANCE = 0x1249u,
-    SCALE_TABLE = 0x97b226u,
-    HARDWARE_A = 0x4202u,
-    HARDWARE_B = 0x4203u,
-    HARDWARE_PRODUCT = 0x4216u,
     SAVED_SCALE = 0x0eu,
     QUADRANT = 0x10u,
     STEP_X_LOW = 0x08u,
@@ -26,177 +25,201 @@ enum {
     STEP_ANGLE = 0x05u
 };
 
+/* Absolute addresses of the data bank, and the scale table in ROM. */
+enum {
+    ANGLE = 0x1248u,
+    DISTANCE = 0x1249u,
+    SCALE_TABLE = 0x97b226u,
+    HARDWARE_A = 0x4202u,
+    HARDWARE_B = 0x4203u,
+    HARDWARE_PRODUCT = 0x4216u
+};
+
+/* The angle byte: six bits of angle, then the quadrant. */
+enum {
+    ANGLE_BITS = 6u,
+    ANGLE_MASK = 0x3fu,
+    ANGLE_FULL = 0x40u
+};
+
+/* Scroll state: 24-bit offsets (a fraction byte, then a word), positions in
+ * 12 bits, and the positions divided by 16. */
+enum {
+    OFFSET_X = 0x11ecu,
+    OFFSET_Y = 0x11efu,
+    POSITION_X = 0x11e8u,
+    POSITION_Y = 0x11eau,
+    TILE_X = 0x11f2u,
+    TILE_Y = 0x11f4u,
+    SAVED_POSITION_X = 0x04u,
+    SAVED_POSITION_Y = 0x06u,
+    POSITION_MASK = 0x0fffu,
+    TILE_SHIFT = 4u
+};
+
 /* $86:A583: 24-bit product of the word at $4E and the byte at $50 stored
  * from $51; the multiplier is fed one byte of the word at a time. M8/X16. */
 Lufia2ExecutionResult Lufia2WorldProduct16By8(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t low_product;
+    uint8_t high_byte;
+    Word16Result middle;
+
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86a583u);
-    LoadA8(cpu, DirectByte(memory, cpu, MULTIPLIER));
-    StoreAAbsolute8(memory, cpu, HARDWARE_A, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, MULTIPLICAND));
-    StoreAAbsolute8(memory, cpu, HARDWARE_B, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, MULTIPLICAND + 1u));
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, HARDWARE_PRODUCT, 0));
-    StoreXDirect16(memory, cpu, PRODUCT);
-    StoreAAbsolute8(memory, cpu, HARDWARE_B, 0);
-    Write8(memory, DirectAddress(cpu, PRODUCT_TOP), 0);
-    SetAccumulatorWidth(cpu, 0);
-    LoadADirect16(memory, cpu, PRODUCT_MIDDLE);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, HARDWARE_PRODUCT, 0));
-    StoreADirect16(memory, cpu, PRODUCT_MIDDLE);
-    SetAccumulatorWidth(cpu, 1);
+    WramWrite(wram, HARDWARE_A, WramRead(wram, MULTIPLIER));
+    WramWrite(wram, HARDWARE_B, WramRead(wram, MULTIPLICAND));
+    high_byte = WramRead(wram, MULTIPLICAND + 1u);
+    low_product = WramRead16(wram, HARDWARE_PRODUCT);
+    WramWrite16(wram, PRODUCT, low_product);
+    WramWrite(wram, HARDWARE_B, high_byte);
+    WramWrite(wram, PRODUCT_TOP, 0);
+    middle = Sum16(WramRead16(wram, PRODUCT_MIDDLE),
+        WramRead16(wram, HARDWARE_PRODUCT), false);
+    WramWrite16(wram, PRODUCT_MIDDLE, middle.value);
+    cpu->x = low_product;
+    LeaveSum(cpu, middle);
     return ExecutionReturned(0x86a5a8u);
 }
 
-/* JSR $A583 from the step routine. */
-static int Scale(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t last_byte, Lufia2ExecutionResult *result) {
+/* JSR $A583 from the step routine, with the multiplier taken from the scale
+ * table at the given index. Both of its entry widths are met here. */
+static void ScaleBy(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2Wram wram, uint16_t index, uint16_t last_byte) {
+    WramWrite(wram, MULTIPLIER,
+        Read8(memory, LongIndexedAddress(SCALE_TABLE, index)));
     SimulateJsrFrame(memory, cpu, last_byte);
-    *result = Lufia2WorldProduct16By8(memory, cpu);
-    if (result->flow != LUFIA2_EXECUTION_RETURNED)
-        return 0;
+    (void)Lufia2WorldProduct16By8(memory, cpu);
     SimulateRtsFrame(memory, cpu);
-    return 1;
 }
 
-/* 16-bit negation as EOR #$FFFF, INC A. */
-static void Negate16(Lufia2CpuState *cpu) {
-    LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
-    IncrementA16(cpu);
+/* The sign extension byte of a negated word: $FF unless it came out zero. */
+static uint8_t SignByte(uint16_t negated) {
+    return negated == 0 ? 0u : 0xffu;
 }
 
-/* Stores the sign extension byte of a negated word: $FF unless the
- * negation came out as zero. Flags come from the INC before it. */
-static void StoreSignByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint8_t offset) {
-    SetAccumulatorWidth(cpu, 1);
-    if (!cpu->zero)
+/* A negated word is in the accumulator and its sign byte has been stored:
+ * the low byte holds $FF unless the word is zero, and the flags describe
+ * that byte. */
+static void LeaveNegation(Lufia2CpuState *cpu, uint16_t negated) {
+    cpu->accumulator = negated;
+    if (negated != 0)
         LoadA8(cpu, 0xffu);
-    StoreADirect8(memory, cpu, offset);
+    else
+        SetNz16(cpu, 0);
 }
 
 /* The four quadrant handlers selected through the table at $A46B. */
-static void QuadrantOffsets(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+static void QuadrantOffsets(Lufia2CpuState *cpu, Lufia2Wram wram,
     unsigned quadrant) {
+    uint16_t negated;
+
     switch (quadrant) {
     case 0:
-        LoadADirect16(memory, cpu, SAVED_SCALE);
-        Negate16(cpu);
-        StoreADirect16(memory, cpu, STEP_X_LOW);
-        StoreSignByte(memory, cpu, STEP_X_HIGH);
-        SetAccumulatorWidth(cpu, 0);
-        LoadADirect16(memory, cpu, PRODUCT_MIDDLE);
-        Negate16(cpu);
-        StoreADirect16(memory, cpu, STEP_Y_LOW);
-        StoreSignByte(memory, cpu, STEP_Y_HIGH);
+        negated = (uint16_t)(0u - WramRead16(wram, SAVED_SCALE));
+        WramWrite16(wram, STEP_X_LOW, negated);
+        WramWrite(wram, STEP_X_HIGH, SignByte(negated));
+        negated = (uint16_t)(0u - WramRead16(wram, PRODUCT_MIDDLE));
+        WramWrite16(wram, STEP_Y_LOW, negated);
+        WramWrite(wram, STEP_Y_HIGH, SignByte(negated));
+        LeaveNegation(cpu, negated);
         break;
     case 1:
-        LoadADirect16(memory, cpu, SAVED_SCALE);
-        StoreADirect16(memory, cpu, STEP_Y_LOW);
-        LoadADirect16(memory, cpu, PRODUCT_MIDDLE);
-        Negate16(cpu);
-        StoreADirect16(memory, cpu, STEP_X_LOW);
-        StoreSignByte(memory, cpu, STEP_X_HIGH);
-        Write8(memory, DirectAddress(cpu, STEP_Y_HIGH), 0);
+        WramWrite16(wram, STEP_Y_LOW, WramRead16(wram, SAVED_SCALE));
+        negated = (uint16_t)(0u - WramRead16(wram, PRODUCT_MIDDLE));
+        WramWrite16(wram, STEP_X_LOW, negated);
+        WramWrite(wram, STEP_X_HIGH, SignByte(negated));
+        WramWrite(wram, STEP_Y_HIGH, 0);
+        LeaveNegation(cpu, negated);
         break;
     case 2:
-        LoadADirect16(memory, cpu, SAVED_SCALE);
-        StoreADirect16(memory, cpu, STEP_X_LOW);
-        LoadADirect16(memory, cpu, PRODUCT_MIDDLE);
-        StoreADirect16(memory, cpu, STEP_Y_LOW);
-        SetAccumulatorWidth(cpu, 1);
-        Write8(memory, DirectAddress(cpu, STEP_X_HIGH), 0);
-        Write8(memory, DirectAddress(cpu, STEP_Y_HIGH), 0);
+        WramWrite16(wram, STEP_X_LOW, WramRead16(wram, SAVED_SCALE));
+        WramWrite16(wram, STEP_Y_LOW, WramRead16(wram, PRODUCT_MIDDLE));
+        WramWrite(wram, STEP_X_HIGH, 0);
+        WramWrite(wram, STEP_Y_HIGH, 0);
+        LeaveWord(cpu, WramRead16(wram, PRODUCT_MIDDLE));
         break;
     default:
-        LoadADirect16(memory, cpu, PRODUCT_MIDDLE);
-        StoreADirect16(memory, cpu, STEP_X_LOW);
-        LoadADirect16(memory, cpu, SAVED_SCALE);
-        Negate16(cpu);
-        StoreADirect16(memory, cpu, STEP_Y_LOW);
-        StoreSignByte(memory, cpu, STEP_Y_HIGH);
-        Write8(memory, DirectAddress(cpu, STEP_X_HIGH), 0);
+        WramWrite16(wram, STEP_X_LOW, WramRead16(wram, PRODUCT_MIDDLE));
+        negated = (uint16_t)(0u - WramRead16(wram, SAVED_SCALE));
+        WramWrite16(wram, STEP_Y_LOW, negated);
+        WramWrite(wram, STEP_Y_HIGH, SignByte(negated));
+        WramWrite(wram, STEP_X_HIGH, 0);
+        LeaveNegation(cpu, negated);
         break;
     }
 }
 
 /* $86:A417: signed offsets $08/$0A (horizontal) and $0B/$0D (vertical) for
  * the distance at $1249 in the direction $1248 (angle in the low six
- * bits, quadrant in the top two). M8/X16. */
+ * bits, quadrant in the top two). M8/X16. The overflow flag is that of the
+ * last multiplication, or the caller's when the angle is zero; the carry
+ * leaves clear. */
 Lufia2ExecutionResult Lufia2WorldStepOffsets(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2ExecutionResult result;
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t distance;
+    uint8_t angle;
+    unsigned index;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86a417u);
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, DISTANCE, 0));
-    StoreXDirect16(memory, cpu, MULTIPLICAND);
-    LoadA8(cpu, AbsoluteByte(memory, cpu, ANGLE, 0));
-    LsrA8(cpu);
-    LsrA8(cpu);
-    LsrA8(cpu);
-    LsrA8(cpu);
-    LsrA8(cpu);
-    LsrA8(cpu);
-    StoreADirect8(memory, cpu, QUADRANT);
-    LoadA8(cpu, 0x00u);
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, AbsoluteByte(memory, cpu, ANGLE, 0));
-    And8(cpu, 0x3fu);
-    if (!cpu->zero) {
-        StoreADirect8(memory, cpu, STEP_ANGLE);
-        AslA8(cpu);
-        TransferAToX(cpu);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(SCALE_TABLE, cpu->x)));
-        StoreADirect8(memory, cpu, MULTIPLIER);
-        if (!Scale(memory, cpu, 0xa43du, &result))
-            return result;
-        LoadXDirect16(memory, cpu, PRODUCT_MIDDLE);
-        StoreXDirect16(memory, cpu, SAVED_SCALE);
-        LoadA8(cpu, 0x00u);
-        ExchangeAccumulatorBytes(cpu);
-        LoadA8(cpu, 0x40u);
-        cpu->carry = 1;
-        Sbc8(cpu, DirectByte(memory, cpu, STEP_ANGLE));
-        AslA8(cpu);
-        TransferAToX(cpu);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(SCALE_TABLE, cpu->x)));
-        StoreADirect8(memory, cpu, MULTIPLIER);
-        if (!Scale(memory, cpu, 0xa454u, &result))
-            return result;
+    distance = WramRead16(wram, DISTANCE);
+    WramWrite16(wram, MULTIPLICAND, distance);
+    WramWrite(wram, QUADRANT, WramRead(wram, ANGLE) >> ANGLE_BITS);
+    angle = WramRead(wram, ANGLE) & ANGLE_MASK;
+    if (angle != 0) {
+        WramWrite(wram, STEP_ANGLE, angle);
+        ScaleBy(memory, cpu, wram, (uint16_t)(angle << 1), 0xa43du);
+        WramWrite16(wram, SAVED_SCALE, WramRead16(wram, PRODUCT_MIDDLE));
+        ScaleBy(memory, cpu, wram,
+            (uint16_t)((ANGLE_FULL - WramRead(wram, STEP_ANGLE)) << 1),
+            0xa454u);
     } else {
-        StoreXDirect16(memory, cpu, PRODUCT_MIDDLE);
-        LoadX16(cpu, 0);
-        StoreXDirect16(memory, cpu, SAVED_SCALE);
+        WramWrite16(wram, PRODUCT_MIDDLE, distance);
+        WramWrite16(wram, SAVED_SCALE, 0);
     }
-    LoadA8(cpu, DirectByte(memory, cpu, QUADRANT));
-    AslA8(cpu);
-    SetAccumulatorWidth(cpu, 0);
-    And16(cpu, 0x0006u);
-    TransferAToX(cpu);
+    index = (unsigned)((WramRead(wram, QUADRANT) << 1) & 0x06u);
     SimulateJsrFrame(memory, cpu, 0xa460u);
-    QuadrantOffsets(memory, cpu, cpu->x >> 1);
-    SetAccumulatorWidth(cpu, 1);
+    QuadrantOffsets(cpu, wram, index >> 1);
     SimulateRtsFrame(memory, cpu);
+    cpu->x = (uint16_t)index;
+    cpu->carry = false;
     return ExecutionReturned(0x86a461u);
 }
 
-/* Adds a 24-bit amount to the scroll fraction and position words. */
-static void AddStepWord(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t address, uint8_t step_low, uint8_t step_high) {
-    SetAccumulatorWidth(cpu, 0);
-    LoadADirect16(memory, cpu, step_low);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, address, 0));
-    StoreAAbsolute16(memory, cpu, address, 0);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, DirectByte(memory, cpu, step_high));
-    Adc8(cpu, AbsoluteByte(memory, cpu, (uint16_t)(address + 2u), 0));
-    StoreAAbsolute8(memory, cpu, (uint16_t)(address + 2u), 0);
+/* Adds a 24-bit step to a 24-bit scroll offset; the word above the
+ * fraction byte is cleared first. */
+static void AddStep(Lufia2Wram wram, uint16_t offset, uint8_t step_low,
+    uint8_t step_high) {
+    Word16Result word;
+    Byte8Result top;
+
+    WramWrite16(wram, offset + 1u, 0);
+    word = Sum16(WramRead16(wram, step_low), WramRead16(wram, offset), false);
+    WramWrite16(wram, offset, word.value);
+    top = Sum8(WramRead(wram, step_high), WramRead(wram, offset + 2u),
+        word.carry);
+    WramWrite(wram, offset + 2u, top.value);
+}
+
+/* Wraps a position by its offset to 12 bits and stores it divided by 16.
+ * The sum is returned for the flags it leaves. */
+static Word16Result MovePosition(Lufia2Wram wram, uint16_t position,
+    uint8_t saved, uint16_t offset, uint16_t tile) {
+    Word16Result sum;
+    uint16_t wrapped;
+
+    WramWrite16(wram, saved, WramRead16(wram, position));
+    sum = Sum16(WramRead16(wram, position), WramRead16(wram, offset + 1u),
+        false);
+    wrapped = sum.value & POSITION_MASK;
+    WramWrite16(wram, position, wrapped);
+    WramWrite16(wram, tile, wrapped >> TILE_SHIFT);
+    return sum;
 }
 
 /* $86:995B: applies the step of $86:A417 to the 24-bit scroll offsets at
@@ -205,44 +228,24 @@ static void AddStepWord(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 Lufia2ExecutionResult Lufia2WorldScrollAdvance(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2ExecutionResult result;
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    Word16Result sum;
+    uint16_t tile;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86995bu);
     SimulateJsrFrame(memory, cpu, 0x995du);
-    result = Lufia2WorldStepOffsets(memory, cpu);
-    if (result.flow != LUFIA2_EXECUTION_RETURNED)
-        return result;
+    (void)Lufia2WorldStepOffsets(memory, cpu);
     SimulateRtsFrame(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    Write16Absolute(memory, cpu, 0x11edu, 0);
-    AddStepWord(memory, cpu, 0x11ecu, STEP_X_LOW, STEP_X_HIGH);
-    SetAccumulatorWidth(cpu, 0);
-    Write16Absolute(memory, cpu, 0x11f0u, 0);
-    AddStepWord(memory, cpu, 0x11efu, STEP_Y_LOW, STEP_Y_HIGH);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11e8u, 0));
-    StoreADirect16(memory, cpu, 0x04u);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11edu, 0));
-    And16(cpu, 0x0fffu);
-    StoreAAbsolute16(memory, cpu, 0x11e8u, 0);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    StoreAAbsolute16(memory, cpu, 0x11f2u, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11eau, 0));
-    StoreADirect16(memory, cpu, 0x06u);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x11f0u, 0));
-    And16(cpu, 0x0fffu);
-    StoreAAbsolute16(memory, cpu, 0x11eau, 0);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    StoreAAbsolute16(memory, cpu, 0x11f4u, 0);
-    SetAccumulatorWidth(cpu, 1);
+    AddStep(wram, OFFSET_X, STEP_X_LOW, STEP_X_HIGH);
+    AddStep(wram, OFFSET_Y, STEP_Y_LOW, STEP_Y_HIGH);
+    (void)MovePosition(wram, POSITION_X, SAVED_POSITION_X, OFFSET_X, TILE_X);
+    sum = MovePosition(wram, POSITION_Y, SAVED_POSITION_Y, OFFSET_Y, TILE_Y);
+    /* The last shift down leaves the bit shifted out in the carry. */
+    tile = (uint16_t)((sum.value & POSITION_MASK) >> TILE_SHIFT);
+    cpu->carry = ((sum.value >> (TILE_SHIFT - 1u)) & 1u) != 0;
+    cpu->overflow = sum.overflow;
+    cpu->accumulator = tile;
+    SetNz16(cpu, tile);
     return ExecutionReturned(0x8699beu);
 }
