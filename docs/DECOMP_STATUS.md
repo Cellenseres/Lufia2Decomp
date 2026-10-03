@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-394 functions in `metadata/functions.toml`: 366 verified, 28 draft, 0 identified, 0 disabled.
+396 functions in `metadata/functions.toml`: 366 verified, 30 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -788,6 +788,17 @@ back) and switch to their own data bank the way the original does, so the
 stack bytes of the bank save and restore are reproduced. They are compared
 against the original ROM code for CPU state, work RAM, ordered writes and
 stack frames, with phases at both ends of the pattern.
+
+## Battle circle window
+
+`$85:B208` (the scanline edge table of the circular window, rebuilt when the
+radius changes, with open rows beyond it) and its helper `$85:B26D` (the
+half-circle profile of the radius by the midpoint rule) are `draft`
+reconstructions. `$85:B208` needs M1X0 (else handed back) and switches to its
+own data bank like the original; the helper keeps the caller's widths. They
+are compared against the original ROM code for CPU state, work RAM, ordered
+writes and stack frames, with radii at both ends of the range and unchanged
+radii.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
