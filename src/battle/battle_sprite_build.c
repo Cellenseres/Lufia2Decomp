@@ -14,14 +14,113 @@ enum {
     SPRITE_DP_OVERLAY_FIRST_OAM = 0x5fu,
 };
 
-static void SpriteShiftByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                            uint8_t offset) {
-    const uint32_t address = OpDp(cpu, offset);
-    const uint8_t attributes = Read8(memory, address);
-    const uint8_t shifted_attributes = (uint8_t)(attributes << 1);
-    cpu->carry = (attributes & 0x80u) != 0u;
-    Write8(memory, address, shifted_attributes);
-    SetNz8(cpu, shifted_attributes);
+enum {
+    OAM_LOW_TABLE = 0x100u,
+    OAM_HIGH_TABLE = 0x300u,
+    OAM_FOUR_SPRITE_SOURCE_STEP = 4u * BATTLE_SPRITE_SOURCE_SIZE,
+    OAM_FOUR_SPRITE_OAM_STEP = 4u * BATTLE_OAM_ENTRY_SIZE,
+    OAM_SOURCE_ATTRIBUTE = 4u,
+};
+
+/* Copies the position and tile words of source sprite `index` (relative to X)
+ * into the low OAM entry `index` entries after Y. */
+static void OamCopySprite(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                          unsigned index) {
+    const uint16_t source = (uint16_t)(index * BATTLE_SPRITE_SOURCE_SIZE);
+    const uint16_t entry = (uint16_t)(OAM_LOW_TABLE + index * BATTLE_OAM_ENTRY_SIZE);
+    Write16Long(memory, OpAbsY(cpu, entry), Read16Long(memory, OpAbsX(cpu, source)));
+    Write16Long(memory, OpAbsY(cpu, (uint16_t)(entry + 2u)),
+                Read16Long(memory, OpAbsX(cpu, (uint16_t)(source + 2u))));
+}
+
+/* The high OAM byte for four sprites: the 2-bit attributes of sprites 0..3 in
+ * ascending bit pairs. Reads the attribute byte of each source record. */
+static uint8_t OamPackFourAttributes(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    uint8_t packed = Read8(memory, OpAbsX(cpu, 0x13u));
+    for (int i = 2; i >= 0; --i)
+        packed = (uint8_t)((uint8_t)(packed << 2) |
+                           Read8(memory,
+                                 OpAbsX(cpu, (uint16_t)(i * BATTLE_SPRITE_SOURCE_SIZE +
+                                                        OAM_SOURCE_ATTRIBUTE))));
+    return packed;
+}
+
+/* Replaces the 2-bit attribute at `slot` of a high OAM byte. */
+static uint8_t OamMergeAttribute(uint8_t old, unsigned slot, uint8_t attribute) {
+    const unsigned shift = slot * 2u;
+    return (uint8_t)((old & ~(3u << shift)) | ((unsigned)(attribute & 3u) << shift));
+}
+
+/* Appends four source records at once; only valid when the OAM count is a
+ * multiple of four. Leaves the registers the way the long form would. */
+static void OamAppendFour(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    for (unsigned i = 0; i < 4u; ++i)
+        OamCopySprite(memory, cpu, i);
+    OpTya(cpu);
+    cpu->carry = 0;
+    OpAdcValue(cpu, OAM_FOUR_SPRITE_OAM_STEP);
+    PushAccumulator16(memory, cpu);
+    for (unsigned i = 0; i < 4u; ++i)
+        OpLsrA(cpu);
+    OpTay(cpu);
+    OpTxa(cpu);
+    cpu->carry = 0;
+    OpAdcValue(cpu, OAM_FOUR_SPRITE_SOURCE_STEP);
+    PushAccumulator16(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, OamPackFourAttributes(memory, cpu));
+    OpSta(memory, cpu, OpAbsY(cpu, OAM_HIGH_TABLE - 1u));
+    OpPullX(memory, cpu);
+    OpPullY(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, SPRITE_DP_OAM_COUNT));
+    cpu->carry = 0;
+    OpAdcValue(cpu, 4u);
+    OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_OAM_COUNT));
+}
+
+/* Appends one source record: copies its words and merges its attribute bits
+ * into the high OAM byte shared by four sprites. */
+static void OamAppendOne(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OamCopySprite(memory, cpu, 0u);
+    OpTya(cpu);
+    PushAccumulator16(memory, cpu);
+    for (unsigned i = 0; i < 4u; ++i)
+        OpLsrA(cpu);
+    OpTay(cpu);
+    OpTxa(cpu);
+    cpu->carry = 0;
+    OpAdcValue(cpu, BATTLE_SPRITE_SOURCE_SIZE);
+    PushAccumulator16(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    const uint8_t attribute =
+        (uint8_t)(Read8(memory, OpAbsX(cpu, OAM_SOURCE_ATTRIBUTE)) & 3u);
+    const unsigned slot = Read8(memory, OpDp(cpu, SPRITE_DP_OAM_COUNT)) & 3u;
+    Write8(memory, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES), attribute);
+    Write8(memory, OpDp(cpu, SPRITE_DP_ATTRIBUTE_SHIFT), (uint8_t)slot);
+    /* The original shifts the attribute scratch byte left in place, two bits
+     * per slot, counting the slot down to $FF; keep those writes. */
+    for (unsigned done = 0; done < slot; ++done) {
+        Write8(memory, OpDp(cpu, SPRITE_DP_ATTRIBUTE_SHIFT),
+               (uint8_t)(slot - 1u - done));
+        Write8(memory, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES),
+               (uint8_t)(attribute << (2u * done + 1u)));
+        Write8(memory, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES),
+               (uint8_t)(attribute << (2u * done + 2u)));
+    }
+    Write8(memory, OpDp(cpu, SPRITE_DP_ATTRIBUTE_SHIFT), 0xffu);
+    const uint8_t merged =
+        OamMergeAttribute(Read8(memory, OpAbsY(cpu, OAM_HIGH_TABLE)), slot, attribute);
+    LoadA8(cpu, merged);
+    OpSta(memory, cpu, OpAbsY(cpu, OAM_HIGH_TABLE));
+    OpPullX(memory, cpu);
+    OpPullY(memory, cpu);
+    SetAccumulatorWidth(cpu, 0);
+    OpTya(cpu);
+    cpu->carry = 0;
+    OpAdcValue(cpu, BATTLE_OAM_ENTRY_SIZE);
+    OpTay(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    OpStepMem(memory, cpu, OpDp(cpu, SPRITE_DP_OAM_COUNT), 1);
 }
 
 /* $81:B705: append A.low five-byte source records at DB:X into OAM at DB:Y. */
@@ -41,91 +140,14 @@ Lufia2ExecutionResult Lufia2BattleAppendOamSprites(const Lufia2Memory *memory,
         }
         SetAccumulatorWidth(cpu, 0);
         if (pack_four_sprites) {
-            for (unsigned i = 0; i < 4u; ++i) {
-                OpLda(memory, cpu,
-                      OpAbsX(cpu, (uint16_t)(i * BATTLE_SPRITE_SOURCE_SIZE)));
-                OpSta(memory, cpu,
-                      OpAbsY(cpu, (uint16_t)(0x100u + i * BATTLE_OAM_ENTRY_SIZE)));
-                OpLda(memory, cpu,
-                      OpAbsX(cpu, (uint16_t)(i * BATTLE_SPRITE_SOURCE_SIZE + 2u)));
-                OpSta(memory, cpu,
-                      OpAbsY(cpu, (uint16_t)(0x102u + i * BATTLE_OAM_ENTRY_SIZE)));
-            }
-            OpTya(cpu);
-            cpu->carry = 0;
-            OpAdcValue(cpu, 0x10u);
-            PushAccumulator16(memory, cpu);
-            for (unsigned i = 0; i < 4u; ++i)
-                OpLsrA(cpu);
-            OpTay(cpu);
-            OpTxa(cpu);
-            cpu->carry = 0;
-            OpAdcValue(cpu, 0x14u);
-            PushAccumulator16(memory, cpu);
-            SetAccumulatorWidth(cpu, 1);
-            OpLda(memory, cpu, OpAbsX(cpu, 0x13u));
-            for (int i = 2; i >= 0; --i) {
-                OpAslA(cpu);
-                OpAslA(cpu);
-                OpOra(memory, cpu,
-                      OpAbsX(cpu, (uint16_t)(i * BATTLE_SPRITE_SOURCE_SIZE + 4u)));
-            }
-            OpSta(memory, cpu, OpAbsY(cpu, 0x2ffu));
-            OpPullX(memory, cpu);
-            OpPullY(memory, cpu);
-            OpLda(memory, cpu, OpDp(cpu, SPRITE_DP_OAM_COUNT));
-            cpu->carry = 0;
-            OpAdcValue(cpu, 4u);
-            OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_OAM_COUNT));
+            OamAppendFour(memory, cpu);
             OpLda(memory, cpu, OpDp(cpu, SPRITE_DP_REMAINING_COUNT));
             cpu->carry = 1;
             OpSbcValue(cpu, 4u);
             if (cpu->zero)
                 return ExecutionReturned(0x81b77fu);
         } else {
-            OpLda(memory, cpu, OpAbsX(cpu, 0u));
-            OpSta(memory, cpu, OpAbsY(cpu, 0x100u));
-            OpLda(memory, cpu, OpAbsX(cpu, 2u));
-            OpSta(memory, cpu, OpAbsY(cpu, 0x102u));
-            OpTya(cpu);
-            PushAccumulator16(memory, cpu);
-            for (unsigned i = 0; i < 4u; ++i)
-                OpLsrA(cpu);
-            OpTay(cpu);
-            OpTxa(cpu);
-            cpu->carry = 0;
-            OpAdcValue(cpu, 5u);
-            PushAccumulator16(memory, cpu);
-            SetAccumulatorWidth(cpu, 1);
-            OpLda(memory, cpu, OpAbsX(cpu, 4u));
-            OpAndValue(cpu, 3u);
-            OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES));
-            OpLda(memory, cpu, OpDp(cpu, SPRITE_DP_OAM_COUNT));
-            OpAndValue(cpu, 3u);
-            OpSta(memory, cpu, OpDp(cpu, SPRITE_DP_ATTRIBUTE_SHIFT));
-            OpLoadA(cpu, 0xfcu);
-            for (;;) {
-                OpStepMem(memory, cpu, OpDp(cpu, SPRITE_DP_ATTRIBUTE_SHIFT), -1);
-                if (cpu->negative)
-                    break;
-                SpriteShiftByte(memory, cpu, 0x5bu);
-                SpriteShiftByte(memory, cpu, 0x5bu);
-                OpAslA(cpu);
-                OpAslA(cpu);
-                OpOraValue(cpu, 3u);
-            }
-            OpAndValue(cpu, OpReadM(memory, cpu, OpAbsY(cpu, 0x300u)));
-            OpOra(memory, cpu, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES));
-            OpSta(memory, cpu, OpAbsY(cpu, 0x300u));
-            OpPullX(memory, cpu);
-            OpPullY(memory, cpu);
-            SetAccumulatorWidth(cpu, 0);
-            OpTya(cpu);
-            cpu->carry = 0;
-            OpAdcValue(cpu, 4u);
-            OpTay(cpu);
-            SetAccumulatorWidth(cpu, 1);
-            OpStepMem(memory, cpu, OpDp(cpu, SPRITE_DP_OAM_COUNT), 1);
+            OamAppendOne(memory, cpu);
             OpLda(memory, cpu, OpDp(cpu, SPRITE_DP_REMAINING_COUNT));
             OpDecA(cpu);
             if (cpu->zero)
