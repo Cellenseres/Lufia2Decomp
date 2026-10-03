@@ -1560,6 +1560,7 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(
     Lufia2ExecutionResult result) {
     unsigned opcodes;
     unsigned words = 0;
+    bool reload;
 
     LoadA8(cpu, Read8(memory, TEXT_PRINT_COUNTDOWN));          /* 9CB8 */
     if (!cpu->zero) {
@@ -1580,90 +1581,96 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(
     StoreZeroAbsolute8(memory, cpu, 0x125du, 0);
     StoreZeroAbsolute8(memory, cpu, 0x125eu, 0);
     opcodes = 0;
-reload:
-    for (;;) {
-        LoadAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);      /* 9CD9 */
-        PushAccumulator8(memory, cpu);
-        PullDataBank(memory, cpu);
-        LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_SCRIPT_POINTER, 0));
-        LoadAAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
-        if (cpu->zero)
-            break;
-        {
-            const uint32_t count = AbsoluteIndexedAddress(cpu, TEXT_RETURN_COUNT, 0);
-            const uint8_t left = (uint8_t)(Read8(memory, count) - 1u);
+    do {
+        for (;;) {
+            LoadAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0); /* 9CD9 */
+            PushAccumulator8(memory, cpu);
+            PullDataBank(memory, cpu);
+            LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_SCRIPT_POINTER, 0));
+            LoadAAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
+            if (cpu->zero)
+                break;
+            {
+                const uint32_t count =
+                    AbsoluteIndexedAddress(cpu, TEXT_RETURN_COUNT, 0);
+                const uint8_t left = (uint8_t)(Read8(memory, count) - 1u);
 
-            Write8(memory, count, left);
-            SetNz8(cpu, left);
-        }
-        if (!cpu->zero)
-            break;
-        SetAccumulatorWidth(cpu, 0);                           /* 9CEB */
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_RETURN_POINTER, 0));
-        Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->accumulator);
-        SetAccumulatorWidth(cpu, 1);
-        LoadAAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
-        StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
-        StoreZeroAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
-    }
-    for (;;) {
-        uint16_t handler;
-        uint32_t handoff = 0x809d3bu;
-
-        Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y); /* 9D00 */
-        StoreZeroAbsolute8(memory, cpu, 0x0563u, 0);
-        TransferDirectToA(cpu);
-        LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
-        And8(cpu, 0x01u);
-        if (cpu->zero) {
-            TextCloseWindow(memory, cpu, 0x9d30u);             /* 9D2E */
-        } else {
-            LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);      /* 9D0E */
-            Compare8(cpu, A8(cpu), 0x10u);
-            if (cpu->carry) {
-                StoreAAbsolute8(memory, cpu, TEXT_GLYPH, 0);
-                StoreZeroAbsolute8(memory, cpu, 0x09b0u, 0);
-                Compare8(cpu, A8(cpu), 0x80u);
-                if (!cpu->carry)
-                    break;                                     /* BCE4 */
-                if (words >= 4096u) {
-                    result = ExecutionHandoff(cpu, 0x809d22u);
-                    result.dispatches = words;
-                    return result;
-                }
-                ++words;
-                Lufia2TextNextByte(memory, cpu, 0x9d24u);            /* 9D22 */
-                cpu->carry = 1;
-                Sbc8(cpu, 0x80u);
-                ExchangeAccumulatorBytes(cpu);
-                LoadA8(cpu, 0x02u);
-                TextSubScript(memory, cpu);
-                continue;
+                Write8(memory, count, left);
+                SetNz8(cpu, left);
             }
+            if (!cpu->zero)
+                break;
+            SetAccumulatorWidth(cpu, 0); /* 9CEB */
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_RETURN_POINTER, 0));
+            Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->accumulator);
+            SetAccumulatorWidth(cpu, 1);
+            LoadAAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
+            StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
+            StoreZeroAbsolute8(memory, cpu, TEXT_RETURN_BANK, 0);
         }
-        TransferDirectToA(cpu);                                /* 9D31 */
-        Lufia2TextNextByte(memory, cpu, 0x9d34u);
-        SetAccumulatorWidth(cpu, 0);
-        AslA16(cpu);
-        TransferAToX(cpu);
-        SetAccumulatorWidth(cpu, 1);
-        handler = Read16Bank(memory, 0x80u, (uint16_t)(0xca14u + cpu->x));
-        switch (TextScriptOpcode(memory, cpu,
-                    opcodes < 4096u ? handler : 0u, &handoff)) {
-        case TEXT_OPCODE_NEXT:                                 /* 9D00 */
-            ++opcodes;
-            continue;
-        case TEXT_OPCODE_RELOAD:                               /* 9CD9 */
-            ++opcodes;
-            goto reload;
-        case TEXT_OPCODE_EXIT:                                 /* 9DB0 */
-            return TextEngineExit(memory, cpu, result);
-        default:                                               /* 9D3B */
-            result = ExecutionHandoff(cpu, handoff);
-            result.dispatches = handoff == 0x809d3bu ? opcodes : 0;
-            return result;
+        reload = false;
+        for (;;) {
+            uint16_t handler;
+            uint32_t handoff = 0x809d3bu;
+
+            Write16Absolute(memory, cpu, TEXT_SCRIPT_POINTER, cpu->y); /* 9D00 */
+            StoreZeroAbsolute8(memory, cpu, 0x0563u, 0);
+            TransferDirectToA(cpu);
+            LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
+            And8(cpu, 0x01u);
+            if (cpu->zero) {
+                TextCloseWindow(memory, cpu, 0x9d30u); /* 9D2E */
+            } else {
+                LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y); /* 9D0E */
+                Compare8(cpu, A8(cpu), 0x10u);
+                if (cpu->carry) {
+                    StoreAAbsolute8(memory, cpu, TEXT_GLYPH, 0);
+                    StoreZeroAbsolute8(memory, cpu, 0x09b0u, 0);
+                    Compare8(cpu, A8(cpu), 0x80u);
+                    if (!cpu->carry)
+                        break; /* BCE4 */
+                    if (words >= 4096u) {
+                        result = ExecutionHandoff(cpu, 0x809d22u);
+                        result.dispatches = words;
+                        return result;
+                    }
+                    ++words;
+                    Lufia2TextNextByte(memory, cpu, 0x9d24u); /* 9D22 */
+                    cpu->carry = 1;
+                    Sbc8(cpu, 0x80u);
+                    ExchangeAccumulatorBytes(cpu);
+                    LoadA8(cpu, 0x02u);
+                    TextSubScript(memory, cpu);
+                    continue;
+                }
+            }
+            TransferDirectToA(cpu); /* 9D31 */
+            Lufia2TextNextByte(memory, cpu, 0x9d34u);
+            SetAccumulatorWidth(cpu, 0);
+            AslA16(cpu);
+            TransferAToX(cpu);
+            SetAccumulatorWidth(cpu, 1);
+            handler = Read16Bank(memory, 0x80u, (uint16_t)(0xca14u + cpu->x));
+            switch (TextScriptOpcode(memory, cpu, opcodes < 4096u ? handler : 0u,
+                                     &handoff)) {
+            case TEXT_OPCODE_NEXT: /* 9D00 */
+                ++opcodes;
+                continue;
+            case TEXT_OPCODE_RELOAD: /* 9CD9 */
+                ++opcodes;
+                reload = true;
+                break;
+            case TEXT_OPCODE_EXIT: /* 9DB0 */
+                return TextEngineExit(memory, cpu, result);
+            default: /* 9D3B */
+                result = ExecutionHandoff(cpu, handoff);
+                result.dispatches = handoff == 0x809d3bu ? opcodes : 0;
+                return result;
+            }
+            if (reload)
+                break;
         }
-    }
+    } while (reload);
     LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);                   /* BCE4 */
     BitImmediate8(cpu, 0x02u);
     if (cpu->zero) {
