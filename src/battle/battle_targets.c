@@ -7,6 +7,10 @@ enum {
     TARGET_DP_SIDE_OR_MASK = 0x27u,
     TARGET_DP_BLINK_PHASE = 0x28u,
     TARGET_DP_MOVE_DELTA = 0x29u,
+    TARGET_CURSOR_SPRITE_X = 0x4abeu,
+    TARGET_NEIGHBOUR_DOWN = 0x97b5bau,
+    TARGET_NEIGHBOUR_UP = 0x97b5bfu,
+    TARGET_NEIGHBOUR_UP_MODE20 = 0x97b5c4u,
 };
 
 enum {
@@ -184,7 +188,7 @@ static bool TargetPlaceCursor(BattleContext *battle) {
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpLongX(cpu, 0x859ec8u));
     OpTay(cpu);
-    OpLda(memory, cpu, OpAbs(cpu, 0x4abeu));
+    OpLda(memory, cpu, OpAbs(cpu, TARGET_CURSOR_SPRITE_X));
     OpAndValue(cpu, 0xffu);
     OpLsrA(cpu);
     OpLsrA(cpu);
@@ -201,7 +205,7 @@ static bool TargetPlaceCursor(BattleContext *battle) {
     OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
     if (!BattleCall(battle, 0xd5e3u, 0x808878u, 3u))
         return false;
-    OpLda(memory, cpu, OpAbs(cpu, 0x4abeu));
+    OpLda(memory, cpu, OpAbs(cpu, TARGET_CURSOR_SPRITE_X));
     OpCmpValue(cpu, 0x98u);
     if (cpu->carry)
         OpLoadA(cpu, 0x90u);
@@ -371,6 +375,47 @@ static void TargetSwitchToParty(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     TargetSettleCursor(memory, cpu);
 }
 
+/* Walks down the party neighbour table from the cursor until it rests on a
+ * target that can be chosen. Returns false when the table ends first. */
+static bool TargetWalkDown(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    do {
+        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+        OpTax(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, TARGET_NEIGHBOUR_DOWN));
+        if (cpu->negative)
+            return false;
+        OpSta(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+        OpAslA(cpu);
+        OpAslA(cpu);
+        OpTax(cpu);
+        OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_UNAVAILABLE));
+    } while (!cpu->zero);
+    return true;
+}
+
+/* Walks up the party neighbour table (mode $20 uses its own table) from the
+ * cursor until it rests on a target that can be chosen. Returns false when
+ * the table ends first. */
+static bool TargetWalkUp(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    do {
+        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+        OpTax(cpu);
+        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
+        OpAndValue(cpu, 0x20u);
+        OpLda(
+            memory, cpu,
+            OpLongX(cpu, cpu->zero ? TARGET_NEIGHBOUR_UP : TARGET_NEIGHBOUR_UP_MODE20));
+        if (cpu->negative)
+            return false;
+        OpSta(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+        OpAslA(cpu);
+        OpAslA(cpu);
+        OpTax(cpu);
+        OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_UNAVAILABLE));
+    } while (!cpu->zero);
+    return true;
+}
+
 /* A pad direction up or down, the delta already stored. On the party side
  * the cursor follows the neighbour tables until it finds a target that can be
  * chosen; running off either end switches to the enemy list. */
@@ -389,41 +434,16 @@ static void TargetMoveVertical(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     OpBitValue(cpu, 0x80u);
     down = cpu->zero;
     TransferDirectToA(cpu);
-    if (down) {
-        /* Down. */
-        do {
-            OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-            OpTax(cpu);
-            OpLda(memory, cpu, OpLongX(cpu, 0x97b5bau));
-            if (cpu->negative) {
-                TargetSwitchToEnemies(memory, cpu);
-                return;
-            }
-            OpSta(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-            OpAslA(cpu);
-            OpAslA(cpu);
-            OpTax(cpu);
-            OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_UNAVAILABLE));
-        } while (!cpu->zero);
-        return;
-    }
-    /* Up. */
-    do {
-        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-        OpTax(cpu);
-        OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
-        OpAndValue(cpu, 0x20u);
-        OpLda(memory, cpu, OpLongX(cpu, cpu->zero ? 0x97b5bfu : 0x97b5c4u));
-        if (cpu->negative) {
-            TargetSwitchToEnemies(memory, cpu);
-            return;
-        }
-        OpSta(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-        OpAslA(cpu);
-        OpAslA(cpu);
-        OpTax(cpu);
-        OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_UNAVAILABLE));
-    } while (!cpu->zero);
+    if (!(down ? TargetWalkDown(memory, cpu) : TargetWalkUp(memory, cpu)))
+        TargetSwitchToEnemies(memory, cpu);
+}
+
+/* Stores A into every selected byte from first to last, one record apart. */
+static void TargetFillSelection(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint16_t first, uint16_t last) {
+    for (uint16_t address = first; address <= last;
+         address += BATTLE_TARGET_RECORD_SIZE)
+        OpSta(memory, cpu, OpAbs(cpu, address));
 }
 
 /* The "select all" button: flips every record of the cursor's side to the
@@ -438,17 +458,13 @@ static void TargetToggleAll(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (cpu->zero) {
         OpLda(memory, cpu, OpAbsX(cpu, TARGET_PARTY_SELECTED));
         OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffu));
-        for (uint16_t address = TARGET_PARTY_SELECTED;
-             address <= TARGET_PARTY_LAST_SELECTED;
-             address += BATTLE_TARGET_RECORD_SIZE)
-            OpSta(memory, cpu, OpAbs(cpu, address));
+        TargetFillSelection(memory, cpu, TARGET_PARTY_SELECTED,
+                            TARGET_PARTY_LAST_SELECTED);
     } else {
         OpLda(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_SELECTED));
         OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffu));
-        for (uint16_t address = TARGET_ENEMY_SELECTED;
-             address <= TARGET_ENEMY_LAST_SELECTED;
-             address += BATTLE_TARGET_RECORD_SIZE)
-            OpSta(memory, cpu, OpAbs(cpu, address));
+        TargetFillSelection(memory, cpu, TARGET_ENEMY_SELECTED,
+                            TARGET_ENEMY_LAST_SELECTED);
     }
 }
 
