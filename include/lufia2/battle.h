@@ -246,12 +246,12 @@ Lufia2ExecutionResult Lufia2BattleDriftRecords(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $85:DE2A table word of the angle in $54 into A and $63; any width, JSL. */
+/* $85:DE2A sine of the angle in $54 into A and $63; any widths. */
 Lufia2ExecutionResult Lufia2BattleSineOfAngle(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $85:DE1E the same for the angle plus a quarter turn; any width, JSL. */
+/* $85:DE1E cosine: the angle plus a quarter turn; any widths. */
 Lufia2ExecutionResult Lufia2BattleCosineOfAngle(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

@@ -78,6 +78,10 @@ its own differential check.
 | `$86:E650` | `Lufia2WorldMapClearSprites` | JSR / RTS | M1X0 | M1X0 |
 | `$86:E686` | `Lufia2WorldMapSortVisible` | JSR / RTS | M0X0 | M0X0 |
 
+`$86:A5A9`, `$82:8000`, `$85:DE2A` and `$85:DE1E` accept any M/X, D and DB
+and restore the caller widths. `$86:E650` accepts any widths; `$86:E640`
+requires M1X0. Their contracts are recorded in `FEATURE_REPAIR.md`.
+
 The `$86:A894` world-plane entry additionally requires PB/DB `$86`, DP `$0000`
 and S in `$1F00..1FFC`. Unsupported entries return an unchanged handoff before
 any memory access. Its complete caller contract and ABI evidence are recorded

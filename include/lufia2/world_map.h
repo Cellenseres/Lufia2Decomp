@@ -51,8 +51,7 @@ Lufia2ExecutionResult Lufia2WorldMapClearSlotFlags(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:E650 hides all hardware sprites and clears the OAM high table.
- * Any entry widths, restored on exit. */
+/* $86:E650 hides all sprites, clears the OAM high table; any widths. */
 Lufia2ExecutionResult Lufia2WorldMapClearSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
@@ -114,8 +113,7 @@ Lufia2ExecutionResult Lufia2WorldMapDrawObjects(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:A5A9 divides the 32-bit value at $00/$02 by the word at $04; the
- * remainder is left in A. Any entry widths; they are restored. */
+/* $86:A5A9 (JSR) $00/$02 / $04, remainder in A; any widths. */
 Lufia2ExecutionResult Lufia2WorldMapDivide32(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
