@@ -397,6 +397,12 @@ Lufia2ExecutionResult Lufia2SceneViewOrigin(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:ED0E unpacks the 2-bit cell fields at $7F:C000 into the attribute
+ * bytes. JSL, any width, leaves M8/X16. */
+Lufia2ExecutionResult Lufia2FieldUnpackAttributes(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

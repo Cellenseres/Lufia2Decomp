@@ -43,6 +43,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:E722` | `Lufia2FieldStartEvent` | verified | `src/field/field_event_script.c` |
 | `$80:E844` | `Lufia2FieldInitializeMapEvents` | verified | `src/field/field_map_load.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |
+| `$80:ED0E` | `Lufia2FieldUnpackAttributes` | draft | `src/field/field_attributes.c` |
 | `$80:ED9C` | `Lufia2FieldBuildAttributes` | verified | `src/field/field_attributes.c` |
 | `$80:EF8E` | `Lufia2FieldLoadSceneGraphics` | verified | `src/field/field_scene_graphics.c` |
 | `$80:F2F3` | `Lufia2FieldSetSceneDisplay` | verified | `src/field/field_scene_display.c` |
@@ -390,6 +391,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
 | `$85:DCA3` | `Lufia2BattleMultiply` | verified | `src/battle/battle_script.c` |
 | `$85:DCEA` | `Lufia2BattleRandomFraction` | verified | `src/battle/battle_script.c` |
+| `$85:DD63` | `Lufia2BattleVelocityOfAngle` | draft | `src/battle/battle_vector.c` |
+| `$85:DE1E` | `Lufia2BattleCosineOfAngle` | draft | `src/battle/battle_vector.c` |
+| `$85:DE2A` | `Lufia2BattleSineOfAngle` | draft | `src/battle/battle_vector.c` |
 | `$85:EC81` | `Lufia2BattleFrameInput` | verified | `src/battle/battle_frame_input.c` |
 | `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
 | `$85:ECF0` | `Lufia2BattleFrameUpkeep` | verified | `src/battle/battle_frame.c` |

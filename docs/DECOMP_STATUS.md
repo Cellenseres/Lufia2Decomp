@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-426 functions in `metadata/functions.toml`: 366 verified, 60 draft, 0 identified, 0 disabled.
+430 functions in `metadata/functions.toml`: 366 verified, 64 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -869,6 +869,12 @@ The battle party records at `$13DA` (six records of 15 bytes) carry two offset w
 `$86:94D4` steps five value tracks that are driven by small scripts: the cells at `$1206` hold the current script position, the timers at `$121A` count the frames of a step, and the values at `$1210` grow by the step delta each frame. When a timer runs out the next step is fetched (position moved by four), and a zero length ends the script with carry set. After a full pass the values are copied to the scene registers (`$11FC`, `$11FE`, `$1247`, `$1249`, `$1200`) and carry is cleared. It accepts any accumulator width and needs 16-bit index registers, and it leaves the accumulator 8-bit.
 
 `$86:A791` derives the screen origin from the view position: `$11F8` and `$11FA` get the position masked to 12 bits, and `$0594` and `$0596` the scroll values relative to the screen centre. It needs M8/X16.
+
+## Attribute unpack and angle vectors
+
+`$80:ED0E` unpacks the cell fields stored two bits each at `$7F:C000`: every source byte feeds four cells, and each field replaces bits 4 and 5 of the attribute byte at `$7F:0001,X` before X moves on by two. The number of source bytes is `(a * b + 3) / 4`, with the two factors taken from the table at `$7F:D010` and `$7F:D018` for the map selected in `$05AA` and multiplied through the hardware unit. It forces M8/X16 whatever the entry width.
+
+`$85:DE2A` and `$85:DE1E` look up the quarter-wave table at `$97:B226` for the angle in `$54` (the second adds a quarter turn, which gives the cosine) and leave the word in A and in `$63`/`$64`; the second half-turn carries the sign in bit 15. They save and restore the status and accept any width. `$85:DD63` turns an angle and a speed (`$5A`) into the two velocity words `$56` and `$58`, either by the four axis cases or by multiplying the speed with both table words through `$80:834C`. It needs M8/X16 and a zero direct page, like the multiply routine.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
