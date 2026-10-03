@@ -93,6 +93,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:BAE8` | `Lufia2BattlePortraits` | verified | `src/battle/battle_portrait.c` |
 | `$81:BAFB` | `Lufia2BattlePortrait` | verified | `src/battle/battle_portrait.c` |
 | `$81:BB75` | `Lufia2BattlePortraitUpload` | verified | `src/battle/battle_portrait.c` |
+| `$81:BCCC` | `Lufia2BattleBlitTileRows` | draft | `src/battle/battle_tile_blit.c` |
 | `$81:BD47` | `Lufia2BattleSpriteBlockFar` | verified | `src/battle/battle_util.c` |
 | `$81:BD4B` | `Lufia2BattleSpriteBlock` | verified | `src/battle/battle_util.c` |
 | `$81:BE54` | `Lufia2BattleTileBlockFar` | verified | `src/battle/battle_util.c` |
@@ -174,6 +175,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F404` | `Lufia2SpellRecordByte8` | verified | `src/item/item_records.c` |
 | `$81:F414` | `Lufia2LoadSpellRecord` | verified | `src/item/item_records.c` |
 | `$81:F446` | `Lufia2SpellTextPointer` | verified | `src/item/item_records.c` |
+| `$81:F481` | `Lufia2PartyStatTotalsOfCopy` | draft | `src/party/stats.c` |
 | `$81:F4D5` | `Lufia2PartyDerivedStats` | verified | `src/party/stats.c` |
 | `$81:F4E9` | `Lufia2PartyStatTotalsFar` | verified | `src/party/stats.c` |
 | `$81:F4ED` | `Lufia2PartyStatTotals` | verified | `src/party/stats.c` |
@@ -431,8 +433,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:910C` | `Lufia2MenuLoadPalette4` | draft | `src/menu/menu_image_load.c` |
 | `$86:911F` | `Lufia2MenuLoadSlotPalettes` | draft | `src/menu/menu_image_load.c` |
 | `$86:94D4` | `Lufia2SceneTrackStep` | draft | `src/field/field_scene_tracks.c` |
+| `$86:995B` | `Lufia2WorldScrollAdvance` | draft | `src/world/world_scroll_step.c` |
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
+| `$86:A417` | `Lufia2WorldStepOffsets` | draft | `src/world/world_scroll_step.c` |
+| `$86:A583` | `Lufia2WorldProduct16By8` | draft | `src/world/world_scroll_step.c` |
 | `$86:A5A9` | `Lufia2WorldMapDivide32` | draft | `src/world/world_map_objects.c` |
 | `$86:A791` | `Lufia2SceneViewOrigin` | draft | `src/field/field_scene_tracks.c` |
 | `$86:A894` | `Lufia2WorldMapPlane` | draft | `src/world/world_map_plane.c` |

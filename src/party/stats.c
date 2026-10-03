@@ -460,3 +460,62 @@ Lufia2ExecutionResult Lufia2PartyStatTotalsFar(
     SimulateRtsFrame(memory, cpu);
     return ExecutionReturned(0x81f4ecu);
 }
+
+/* $81:F481: totals of the member record at X, worked out on a copy at
+ * $7E:3800 so that the record itself only receives the 14 bytes of totals
+ * from offset $37 on; keeps A, X, Y, P and B. JSL. */
+Lufia2ExecutionResult Lufia2PartyStatTotalsOfCopy(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    PushDataBank(memory, cpu);
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    PushAccumulator16(memory, cpu);
+    PushIndex(memory, cpu);
+    PushY(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    StoreXDirect16(memory, cpu, 0xc1u);
+    SelectDataBank(memory, cpu, 0x7eu);
+    LoadY16(cpu, 0);
+    do {
+        LoadA8(cpu, AbsoluteByte(memory, cpu, 0x0000u, cpu->x));
+        StoreAAbsolute8(memory, cpu, 0x3800u, cpu->y);
+        IncrementX16(cpu);
+        IncrementY16(cpu);
+        Compare16(cpu, cpu->y, 0x00beu);
+    } while (!cpu->zero);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x00c1u, 0));
+    PushIndex(memory, cpu);
+    LoadY16(cpu, 0);
+    do {
+        LoadA8(cpu, AbsoluteByte(memory, cpu, 0x0037u, cpu->x));
+        StoreAAbsolute8(memory, cpu, 0x3886u, cpu->y);
+        IncrementY16(cpu);
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->y, 0x000eu);
+    } while (!cpu->zero);
+    LoadX16(cpu, 0x3800u);
+    StoreXDirect16(memory, cpu, 0xc1u);
+    SimulateJsrFrame(memory, cpu, 0xf4bbu);
+    (void)Lufia2PartyStatTotals(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    cpu->x = PullIndexValue(memory, cpu);
+    SetNz16(cpu, cpu->x);
+    LoadY16(cpu, 0);
+    do {
+        LoadA8(cpu, AbsoluteByte(memory, cpu, 0x3829u, cpu->y));
+        StoreAAbsolute8(memory, cpu, 0x0037u, cpu->x);
+        IncrementY16(cpu);
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->y, 0x000eu);
+    } while (!cpu->zero);
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
+    cpu->y = PullIndexValue(memory, cpu);
+    cpu->x = PullIndexValue(memory, cpu);
+    PullAccumulator16(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    PullDataBank(memory, cpu);
+    return ExecutionReturned(0x81f4d4u);
+}

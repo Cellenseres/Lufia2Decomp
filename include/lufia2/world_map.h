@@ -148,6 +148,22 @@ Lufia2ExecutionResult Lufia2WorldPlaneRows3(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $86:A583 24-bit product of the word at $4E and the byte at $50; M8/X16. */
+Lufia2ExecutionResult Lufia2WorldProduct16By8(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:A417 signed step offsets for the distance $1249 in direction $1248;
+ * M8/X16. */
+Lufia2ExecutionResult Lufia2WorldStepOffsets(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:995B applies the step to the scroll position; M8/X16. */
+Lufia2ExecutionResult Lufia2WorldScrollAdvance(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
