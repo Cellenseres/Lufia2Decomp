@@ -191,8 +191,7 @@ Lufia2ExecutionResult Lufia2WorldMapClearSlotFlags(
     return ExecutionReturned(0x86e64fu);
 }
 
-/* $86:E650: hides all 128 hardware sprites (Y = $E0) and clears the high
- * table of the OAM buffer. Any entry widths; they are restored. */
+/* $86:E650: hides all 128 sprites, clears the OAM high table. */
 Lufia2ExecutionResult Lufia2WorldMapClearSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -995,10 +994,8 @@ enum {
     DIVISION_BITS = 32u
 };
 
-/* $86:A5A9: unsigned 32-bit by 16-bit division of $00/$02 by $04, one bit
- * at a time: quotient to $00/$02, remainder in A. A remainder that carries
- * out of 16 bits counts as not less than the divisor, so a zero divisor
- * yields an all-ones quotient. Any entry widths; they are restored. */
+/* $86:A5A9: restoring division; quotient replaces the dividend. */
+/* A zero divisor yields an all-ones quotient. */
 Lufia2ExecutionResult Lufia2WorldMapDivide32(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

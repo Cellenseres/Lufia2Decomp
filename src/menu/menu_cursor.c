@@ -43,9 +43,8 @@ static bool RotateRightWord(
     return (old & 1u) != 0;
 }
 
-/* $82:8000 (JSL): $1574/$1576 = $1570 * $1572 by shift and add. The
- * multiplier word is rotated away (the incoming carry enters its top), and X
- * and P are kept. */
+/* $82:8000: shift-and-add product; keeps X and P. */
+/* The incoming carry rotates into $1572. */
 Lufia2ExecutionResult Lufia2MenuMultiply(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

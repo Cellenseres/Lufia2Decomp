@@ -73,7 +73,7 @@ Lufia2ExecutionResult Lufia2MenuClearLayers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $82:8000 (JSL) $1574/$1576 = $1570 * $1572; any width. */
+/* $82:8000 (JSL) $1574/$1576 = $1570 * $1572; any widths. */
 Lufia2ExecutionResult Lufia2MenuMultiply(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

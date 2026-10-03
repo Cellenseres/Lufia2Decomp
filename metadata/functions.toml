@@ -3130,7 +3130,7 @@ name = "Lufia2WorldMapClearSlotFlags"
 source = "src/world/world_map_objects.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:E650"
@@ -3138,7 +3138,7 @@ name = "Lufia2WorldMapClearSprites"
 source = "src/world/world_map_objects.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # World map object animation: start and per-frame step.
 [[function]]
@@ -3229,7 +3229,7 @@ name = "Lufia2WorldMapDivide32"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:E2D2"
@@ -3328,7 +3328,7 @@ name = "Lufia2MenuMultiply"
 source = "src/menu/menu_cursor.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "82:88A0"
@@ -3551,7 +3551,7 @@ name = "Lufia2BattleSineOfAngle"
 source = "src/battle/battle_vector.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:DE1E"
@@ -3559,7 +3559,7 @@ name = "Lufia2BattleCosineOfAngle"
 source = "src/battle/battle_vector.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:DD63"

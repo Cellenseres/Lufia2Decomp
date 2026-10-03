@@ -195,7 +195,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:FBDB` | `Lufia2CharacterSpriteBox` | verified | `src/battle/battle_character.c` |
 | `$81:FC0B` | `Lufia2PartyNewRecord` | verified | `src/party/level_up.c` |
 | `$81:FCE2` | `Lufia2CharacterSpritePointer` | verified | `src/battle/battle_character.c` |
-| `$82:8000` | `Lufia2MenuMultiply` | draft | `src/menu/menu_cursor.c` |
+| `$82:8000` | `Lufia2MenuMultiply` | verified | `src/menu/menu_cursor.c` |
 | `$82:8044` | `Lufia2MenuQueueVideoWrite` | draft | `src/menu/menu_image_load.c` |
 | `$82:8069` | `Lufia2MenuTileGridFill` | draft | `src/menu/menu_tilemap.c` |
 | `$82:80A5` | `Lufia2MenuTileBlockFill` | draft | `src/menu/menu_tilemap.c` |
@@ -405,8 +405,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:DCA3` | `Lufia2BattleMultiply` | verified | `src/battle/battle_script.c` |
 | `$85:DCEA` | `Lufia2BattleRandomFraction` | verified | `src/battle/battle_script.c` |
 | `$85:DD63` | `Lufia2BattleVelocityOfAngle` | draft | `src/battle/battle_vector.c` |
-| `$85:DE1E` | `Lufia2BattleCosineOfAngle` | draft | `src/battle/battle_vector.c` |
-| `$85:DE2A` | `Lufia2BattleSineOfAngle` | draft | `src/battle/battle_vector.c` |
+| `$85:DE1E` | `Lufia2BattleCosineOfAngle` | verified | `src/battle/battle_vector.c` |
+| `$85:DE2A` | `Lufia2BattleSineOfAngle` | verified | `src/battle/battle_vector.c` |
 | `$85:EC81` | `Lufia2BattleFrameInput` | verified | `src/battle/battle_frame_input.c` |
 | `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
 | `$85:ECF0` | `Lufia2BattleFrameUpkeep` | verified | `src/battle/battle_frame.c` |
@@ -440,7 +440,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:A417` | `Lufia2WorldStepOffsets` | draft | `src/world/world_scroll_step.c` |
 | `$86:A583` | `Lufia2WorldProduct16By8` | draft | `src/world/world_scroll_step.c` |
-| `$86:A5A9` | `Lufia2WorldMapDivide32` | draft | `src/world/world_map_objects.c` |
+| `$86:A5A9` | `Lufia2WorldMapDivide32` | verified | `src/world/world_map_objects.c` |
 | `$86:A791` | `Lufia2SceneViewOrigin` | draft | `src/field/field_scene_tracks.c` |
 | `$86:A894` | `Lufia2WorldMapPlane` | verified | `src/world/world_map_plane.c` |
 | `$86:A9B0` | `Lufia2WorldPlaneRows0` | draft | `src/world/world_plane_rows.c` |
@@ -461,8 +461,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:E4E7` | `Lufia2WorldMapDrawSmallSprite` | draft | `src/world/world_map_objects.c` |
 | `$86:E555` | `Lufia2WorldMapDrawSpritePair` | draft | `src/world/world_map_objects.c` |
 | `$86:E5BB` | `Lufia2WorldMapStoreHighBits` | draft | `src/world/world_map_objects.c` |
-| `$86:E640` | `Lufia2WorldMapClearSlotFlags` | draft | `src/world/world_map_objects.c` |
-| `$86:E650` | `Lufia2WorldMapClearSprites` | draft | `src/world/world_map_objects.c` |
+| `$86:E640` | `Lufia2WorldMapClearSlotFlags` | verified | `src/world/world_map_objects.c` |
+| `$86:E650` | `Lufia2WorldMapClearSprites` | verified | `src/world/world_map_objects.c` |
 | `$86:E686` | `Lufia2WorldMapSortVisible` | draft | `src/world/world_map_objects.c` |
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
