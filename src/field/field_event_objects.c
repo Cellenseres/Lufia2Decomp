@@ -1185,14 +1185,14 @@ unsigned Lufia2EventOpPushObject(
         LoadA8(cpu, DirectByte(memory, cpu, 0x23u));
         StoreAAbsolute8(memory, cpu, WRAM_EVENT_MAP_0692, cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, 0x22u));
-        Write8(memory, LongIndexedAddress(0x7fe4deu, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(WRAM_UNK_7FE4DE, cpu->x), A8(cpu));
         LoadA8(cpu, 0x01u);
         Write8(memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_TIMER, cpu->x), A8(cpu));
         LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
         And8(cpu, 0xf7u);
         StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
         LoadA8(cpu, 0x09u);
-        StoreAAbsolute8(memory, cpu, 0x070au, cpu->x);
+        StoreAAbsolute8(memory, cpu, WRAM_UNK_7E070A, cpu->x);
         SimulateJslFrame(memory, cpu, 0x80u, 0xdd53u);
         Lufia2ActorLoadPrimaryScript(memory, cpu);             /* $83:D416 */
         SimulateRtlFrame(memory, cpu);

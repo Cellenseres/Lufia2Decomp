@@ -95,7 +95,7 @@ Lufia2ExecutionResult Lufia2FieldApplyAreaTransition(
             if (result.flow != LUFIA2_EXECUTION_RETURNED)
                 return result;
             TransferDirectToA(cpu);
-            OpLda(memory, cpu, OpAbs(cpu, 0x0692u));
+            OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_FACING));
             TransferAToX(cpu);
             OpLda(memory, cpu, OpLongX(cpu, 0x83c1a5u));
             cpu->carry = 0;

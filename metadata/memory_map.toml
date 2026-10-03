@@ -934,6 +934,111 @@ owner = "field"
 notes = "Pending object slot held by each actor."
 
 [[location]]
+address = "7E:0692"
+name = "actor_facing"
+width = 1
+count = 40
+owner = "actor"
+notes = "Facing 0-7 per slot; primary opcode $3C turns it by two and $3D compares it with the leader's through the facing helper."
+aliases = ["WRAM_EVENT_MAP_0692"]
+
+[[location]]
+address = "7E:070A"
+name = "unk_7E070A"
+width = 1
+count = 40
+owner = "actor"
+notes = "Receives $09 when primary opcode $0F restarts a script while the window mode is open."
+
+[[location]]
+address = "7E:09A6"
+name = "unk_7E09A6"
+width = 1
+count = 1
+owner = "actor"
+notes = "Single byte after the follow slots; bit 0 is tested by the actor reset and the conditional action, primary opcode $19."
+
+[[location]]
+address = "7F:DB4C"
+name = "actor_scratch_a"
+width = 2
+count = 40
+owner = "actor"
+notes = "Word per slot (index 2 * slot). Primary opcode $44 stores the actor it found, the secondary loop opcodes keep their repeat count, and the fine position copy uses it."
+
+[[location]]
+address = "7F:DB9C"
+name = "actor_scratch_b"
+width = 2
+count = 40
+owner = "actor"
+notes = "Word per slot (index 2 * slot). Primary opcode $42 records the probe position here and the secondary loop opcodes keep the loop start."
+
+[[location]]
+address = "7F:E466"
+name = "unk_7FE466"
+width = 1
+count = 40
+owner = "actor"
+notes = "Secondary script id; primary opcode $08 stores operand + $18 before it installs the secondary script."
+
+[[location]]
+address = "7F:E4DE"
+name = "unk_7FE4DE"
+width = 1
+count = 40
+owner = "actor"
+notes = "Per-slot byte: primary opcode $0C stores its operand and the resets store $08 or $04."
+
+[[location]]
+address = "7F:E57E"
+name = "unk_7FE57E"
+width = 1
+count = 40
+owner = "actor"
+notes = "Per-slot script mask: primary opcodes $23 and $24 OR and AND the operand into it, $21 jumps unless it matches."
+
+[[location]]
+address = "7F:E5F6"
+name = "actor_box_min_x"
+width = 1
+count = 40
+owner = "actor"
+notes = "Lower tile column of the movement box; $83:CEA8 limits the wander walk to it and opcodes $41 and $46 test against it."
+
+[[location]]
+address = "7F:E61E"
+name = "actor_box_min_y"
+width = 1
+count = 40
+owner = "actor"
+notes = "Lower tile row of the movement box."
+
+[[location]]
+address = "7F:E646"
+name = "actor_box_max_x"
+width = 1
+count = 40
+owner = "actor"
+notes = "Upper tile column of the movement box (exclusive)."
+
+[[location]]
+address = "7F:E66E"
+name = "actor_box_max_y"
+width = 1
+count = 40
+owner = "actor"
+notes = "Upper tile row of the movement box (exclusive)."
+
+[[location]]
+address = "7E:1724"
+name = "unk_7E1724"
+width = 2
+count = 1
+owner = "actor"
+notes = "Word read by the blocked-tile event ($83:CA68); it indexes the object script table and the flag byte at $7F:DFAE."
+
+[[location]]
 address = "7E:4000"
 name = "field_map_attributes"
 width = 1

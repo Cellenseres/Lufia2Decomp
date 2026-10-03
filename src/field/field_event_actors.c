@@ -647,7 +647,7 @@ static uint8_t EventPlaceActorAt(
     Or8(cpu, 0x12u);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     LoadA8(cpu, 0x09u);
-    StoreAAbsolute8(memory, cpu, 0x070au, cpu->x);
+    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E070A, cpu->x);
     SimulateJslFrame(memory, cpu, 0x80u, 0xe002u);
     Lufia2ActorLoadPrimaryScript(memory, cpu);                 /* $83:D416 */
     SimulateRtlFrame(memory, cpu);
@@ -667,7 +667,7 @@ static uint8_t EventPlaceActor(
         return 0;
     Lufia2EventNextByte(memory, cpu, 0xdfbau);                       /* DFB8 */
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
-    Write8(memory, LongIndexedAddress(0x7fe4deu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FE4DE, cpu->x), A8(cpu));
     SimulateRtsFrame(memory, cpu);
     return 1;
 }
@@ -817,7 +817,7 @@ static unsigned EventOpMoveActor(
         return EVENT_OPCODE_HANDOFF;
     Lufia2EventNextByte(memory, cpu, 0xdfa0u);
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
-    Write8(memory, LongIndexedAddress(0x7fe4deu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FE4DE, cpu->x), A8(cpu));
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
     Or8(cpu, 0x10u);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
@@ -962,7 +962,7 @@ static unsigned EventOpLeaderAction(
     if (facing) {
         LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);             /* D45A */
         LoadA8(cpu, 0x08u);
-        Write8(memory, LongIndexedAddress(0x7fe4deu, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(WRAM_UNK_7FE4DE, cpu->x), A8(cpu));
         LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
         And8(cpu, 0x87u);
         Or8(cpu, 0x20u);
@@ -1330,7 +1330,7 @@ static unsigned EventOpStepActor(
     Write8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_PENDING_OBJECT, cpu->x),
         A8(cpu));
     LoadA8(cpu, 0x20u);
-    StoreAAbsolute8(memory, cpu, 0x070au, cpu->x);
+    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E070A, cpu->x);
     LoadA8(cpu, 0x00u);
     Write8(memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_TIMER, cpu->x), A8(cpu));
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
@@ -1626,7 +1626,7 @@ static unsigned EventOpMoveActorTo(
     Compare16(cpu, cpu->x, 0x0008u);
     if (cpu->carry) {
         LoadA8(cpu, 0x09u);                                    /* A785 */
-        StoreAAbsolute8(memory, cpu, 0x070au, cpu->x);
+        StoreAAbsolute8(memory, cpu, WRAM_UNK_7E070A, cpu->x);
         SimulateJslFrame(memory, cpu, 0x80u, 0xa78du);
         cpu->program_bank = 0x83u;
         Lufia2ActorLoadPrimaryScript(memory, cpu);             /* $83:D416 */

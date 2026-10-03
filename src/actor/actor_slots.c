@@ -59,7 +59,7 @@ static void SecondarySpawnInit(
     StoreAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
     LoadA8(cpu, 0x01u);
     Write8(memory, LongIndexedAddress(WRAM_UNK_7FDFAE, cpu->x), A8(cpu));
-    LoadAAbsolute8(memory, cpu, 0x0692u, 0);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, 0);
     Write8(memory, LongIndexedAddress(WRAM_UNK_7FD9CC, cpu->x), A8(cpu));
     LoadA8(cpu, 0x20u);
     Write8(memory, LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x), A8(cpu));
