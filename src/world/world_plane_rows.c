@@ -4,8 +4,12 @@
  * when the factor has no fractional part, and counts the angle in $22/$24
  * down by the step in $00/$02. */
 
+#include <stdbool.h>
+
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
 #include "core/snes_registers.h"
+#include "core/wram_view.h"
 #include "lufia2/world_map.h"
 
 enum {
@@ -22,169 +26,126 @@ enum {
     TABLE_A = 0x1718u,
     TABLE_A_MIRROR = 0x1a9du,
     TABLE_B = 0x171au,
-    TABLE_B_MIRROR = 0x1a9bu
+    TABLE_B_MIRROR = 0x1a9bu,
+    ROW_BYTES = 4u
 };
 
 typedef struct {
-    int negate_a;             /* the first value is stored negated */
-    int mirror_first;         /* the second value goes to the mirror table first */
+    bool negate_a;            /* the first value is stored negated */
+    bool mirror_first;        /* the second value goes to the mirror table first */
     uint32_t exit_scaled;
     uint32_t exit_plain;
 } Quadrant;
 
-/* DEC dp, 16-bit, high byte first. */
-static void DecrementDirect16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint8_t offset) {
-    const uint16_t address = (uint16_t)(cpu->direct_page + offset);
-    const uint16_t value = (uint16_t)(Read16Direct(memory, cpu, offset) - 1u);
+/* A factor scaled by the row's reciprocal: ($58 or $5A) * $4E / 256 through
+ * the multiply unit (reached through the data bank). The high byte of the
+ * first product is read, then the second product is added to it. */
+typedef struct {
+    Word16Result sum;
+    uint16_t high_read;       /* the 16-bit read of the high product byte */
+} ScaledFactor;
 
-    Write8(memory, (uint16_t)(address + 1u), (uint8_t)(value >> 8));
-    Write8(memory, address, (uint8_t)value);
-    SetNz16(cpu, value);
-}
+static ScaledFactor ScaleFactor(Lufia2Wram wram, uint8_t factor) {
+    ScaledFactor scaled;
 
-static void Negate16(Lufia2CpuState *cpu) {
-    LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
-    LoadA16(cpu, (uint16_t)(cpu->accumulator + 1u));
-}
-
-static void StoreRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t address) {
-    StoreAAbsolute16(memory, cpu, address, cpu->y);
-}
-
-/* The 4 x DEY that move to the previous row. */
-static void PreviousRow(Lufia2CpuState *cpu) {
-    int i;
-
-    for (i = 0; i < 4; ++i)
-        LoadY16(cpu, (uint16_t)(cpu->y - 1u));
-}
-
-/* ($58 or $5A) * $4E / 256 through the multiply unit (reached through the
- * data bank): the high byte of the low product plus the product of the high
- * byte. The first write of the
- * high byte follows the read of the product, as in the original. */
-static void ScaledFactor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint8_t factor, int nop_first) {
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, DirectByte(memory, cpu, factor));
-    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
-    LoadA8(cpu, DirectByte(memory, cpu, SCALE));
-    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
-    if (nop_first) {
-        LoadA8(cpu, DirectByte(memory, cpu, SCALE_HIGH));
-        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYH, 0));
-    } else {
-        PreviousRow(cpu);
-        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYH, 0));
-        LoadA8(cpu, DirectByte(memory, cpu, SCALE_HIGH));
-    }
-    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
-    SetAccumulatorWidth(cpu, 0);
-    TransferXToA(cpu);
-    And16(cpu, 0x00ffu);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
-}
-
-static void NextAngle(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadA16(cpu, Read16Direct(memory, cpu, ANGLE_LOW));
-    Subtract16(cpu, Read16Direct(memory, cpu, ANGLE_STEP_LOW));
-    StoreADirect16(memory, cpu, ANGLE_LOW);
-    LoadA16(cpu, Read16Direct(memory, cpu, ANGLE_HIGH));
-    Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, ANGLE_STEP_HIGH));
-    StoreADirect16(memory, cpu, ANGLE_HIGH);
-    DecrementDirect16(memory, cpu, ROWS_LEFT);
-}
-
-static void ScaleIndex(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadA16(cpu, Read16Direct(memory, cpu, ANGLE_HIGH));
-    AslA16(cpu);
-    TransferAToX(cpu);
-}
-
-/* The rows when a factor has a fractional part. */
-static void ScaledRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    const Quadrant *q) {
-    do {
-        ScaleIndex(memory, cpu);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, SCALE_TABLE, cpu->x));
-        StoreADirect16(memory, cpu, SCALE);
-        ScaledFactor(memory, cpu, FACTOR_A, 0);
-        if (q->negate_a)
-            Negate16(cpu);
-        StoreRow(memory, cpu, TABLE_A);
-        StoreRow(memory, cpu, TABLE_A_MIRROR);
-        ScaledFactor(memory, cpu, FACTOR_B, 1);
-        if (q->mirror_first) {
-            StoreRow(memory, cpu, TABLE_B_MIRROR);
-            Negate16(cpu);
-            StoreRow(memory, cpu, TABLE_B);
-        } else {
-            StoreRow(memory, cpu, TABLE_B);
-            Negate16(cpu);
-            StoreRow(memory, cpu, TABLE_B_MIRROR);
-        }
-        NextAngle(memory, cpu);
-    } while (!cpu->zero);
+    WramWrite(wram, SNES_WRMPYA, WramRead(wram, factor));
+    WramWrite(wram, SNES_WRMPYB, WramRead(wram, SCALE));
+    scaled.high_read = WramRead16(wram, SNES_RDMPYH);
+    WramWrite(wram, SNES_WRMPYB, WramRead(wram, SCALE_HIGH));
+    scaled.sum = Sum16(
+        (uint16_t)(scaled.high_read & 0x00ffu), WramRead16(wram, SNES_RDMPYL),
+        false);
+    return scaled;
 }
 
 /* The table entry itself, or zero for a zero factor. */
-static void TableOrZero(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint8_t factor) {
-    LoadA16(cpu, Read16Direct(memory, cpu, factor));
-    if (!cpu->zero)
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, SCALE_TABLE, cpu->x));
+static uint16_t TableOrZero(Lufia2Wram wram, uint8_t factor, uint16_t index) {
+    if (WramRead16(wram, factor) == 0)
+        return 0;
+    return WramRead16At(wram, SCALE_TABLE, index);
 }
 
-static void PlainRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    const Quadrant *q) {
-    do {
-        PreviousRow(cpu);
-        ScaleIndex(memory, cpu);
-        TableOrZero(memory, cpu, FACTOR_A);
-        if (q->negate_a)
-            Negate16(cpu);
-        StoreRow(memory, cpu, TABLE_A);
-        StoreRow(memory, cpu, TABLE_A_MIRROR);
-        TableOrZero(memory, cpu, FACTOR_B);
-        if (q->mirror_first) {
-            StoreRow(memory, cpu, TABLE_B_MIRROR);
-            Negate16(cpu);
-            StoreRow(memory, cpu, TABLE_B);
-        } else {
-            StoreRow(memory, cpu, TABLE_B);
-            Negate16(cpu);
-            StoreRow(memory, cpu, TABLE_B_MIRROR);
-        }
-        NextAngle(memory, cpu);
-    } while (!cpu->zero);
+static uint16_t Negated(uint16_t value) {
+    return (uint16_t)(~value + 1u);
+}
+
+static void StoreRow(
+    Lufia2Wram wram, uint32_t table, uint16_t row, uint16_t value) {
+    WramWrite16At(wram, table, row, value);
+}
+
+/* The angle counts down by the step; the carry of the low word runs into
+ * the high word. Returns the high word's sum. */
+static Word16Result NextAngle(Lufia2Wram wram) {
+    const Word16Result low = Difference16(
+        WramRead16(wram, ANGLE_LOW), WramRead16(wram, ANGLE_STEP_LOW));
+    Word16Result high;
+
+    WramWrite16(wram, ANGLE_LOW, low.value);
+    high = Sum16(WramRead16(wram, ANGLE_HIGH),
+        (uint16_t)~WramRead16(wram, ANGLE_STEP_HIGH), low.carry);
+    WramWrite16(wram, ANGLE_HIGH, high.value);
+    return high;
 }
 
 static Lufia2ExecutionResult Rows(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, const Quadrant *q, uint32_t entry) {
-    Lufia2ExecutionResult result;
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const bool scaled = (WramRead16(wram, FACTOR_A) & 0x00ffu) != 0;
+    uint16_t row = cpu->y;
+    uint16_t index;
+    uint16_t read_back = 0;
+    Word16Result angle;
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, entry);
-    LoadA16(cpu, Read16Direct(memory, cpu, FACTOR_A));
-    And16(cpu, 0x00ffu);
-    if (cpu->zero) {
-        PlainRows(memory, cpu, q);
-        result = ExecutionReturned(q->exit_plain);
-    } else {
-        ScaledRows(memory, cpu, q);
-        result = ExecutionReturned(q->exit_scaled);
-    }
-    return result;
+    do {
+        uint16_t first;
+        uint16_t second;
+        ScaledFactor product;
+
+        row = (uint16_t)(row - ROW_BYTES);
+        index = (uint16_t)(WramRead16(wram, ANGLE_HIGH) << 1);
+        if (scaled) {
+            WramWrite16(wram, SCALE, WramRead16At(wram, SCALE_TABLE, index));
+            product = ScaleFactor(wram, FACTOR_A);
+            first = product.sum.value;
+        } else {
+            first = TableOrZero(wram, FACTOR_A, index);
+        }
+        if (q->negate_a)
+            first = Negated(first);
+        StoreRow(wram, TABLE_A, row, first);
+        StoreRow(wram, TABLE_A_MIRROR, row, first);
+        if (scaled) {
+            product = ScaleFactor(wram, FACTOR_B);
+            second = product.sum.value;
+            read_back = product.high_read;
+        } else {
+            second = TableOrZero(wram, FACTOR_B, index);
+        }
+        if (q->mirror_first) {
+            StoreRow(wram, TABLE_B_MIRROR, row, second);
+            StoreRow(wram, TABLE_B, row, Negated(second));
+        } else {
+            StoreRow(wram, TABLE_B, row, second);
+            StoreRow(wram, TABLE_B_MIRROR, row, Negated(second));
+        }
+        angle = NextAngle(wram);
+    } while (WramStep16(wram, ROWS_LEFT, -1) != 0);
+    cpu->y = row;
+    cpu->x = scaled ? read_back : index;
+    cpu->accumulator = angle.value;
+    SetSumFlags(cpu, angle);
+    SetNz16(cpu, 0);
+    return ExecutionReturned(scaled ? q->exit_scaled : q->exit_plain);
 }
 
 static const Quadrant QUADRANT[4] = {
-    {0, 0, 0x86aa22u, 0x86aa5au},
-    {1, 0, 0x86aad1u, 0x86ab0du},
-    {1, 1, 0x86ab84u, 0x86abc0u},
-    {0, 1, 0x86ac33u, 0x86ac6bu}
+    {false, false, 0x86aa22u, 0x86aa5au},
+    {true, false, 0x86aad1u, 0x86ab0du},
+    {true, true, 0x86ab84u, 0x86abc0u},
+    {false, true, 0x86ac33u, 0x86ac6bu}
 };
 
 static const uint32_t ENTRY[4] = {0x86a9b0u, 0x86aa5bu, 0x86ab0eu, 0x86abc1u};
