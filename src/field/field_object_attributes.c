@@ -88,30 +88,31 @@ static uint8_t ObjectCellClass(uint8_t entry) {
 static void WriteObjectCellAttributes(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const uint32_t tile_word = LongIndexedAddress(OBJECT_TILE_PLANE, cpu->x);
-    const uint8_t tile_high = Read8(memory, tile_word + 1u);
-    const uint8_t tile_low = Read8(memory, tile_word);
-    const uint16_t tile =
-        (uint16_t)(((tile_high & OBJECT_TILE_HIGH_BITS) << 8) | tile_low);
     const uint16_t cell = cpu->y;
+    uint8_t tile_high;
+    uint8_t tile_low;
+    uint16_t tile;
     uint8_t entry_class;
     uint8_t attribute;
 
     PushY(memory, cpu);
+    tile_high = Read8(memory, tile_word + 1u);
+    tile_low = Read8(memory, tile_word);
+    tile = (uint16_t)(((tile_high & OBJECT_TILE_HIGH_BITS) << 8) | tile_low);
     cpu->y = tile;
+    Write8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_CLASS_BITS), 0u);
     entry_class = ObjectCellClass(
         Read8(memory, DirectLongIndirectY(memory, cpu, OBJECT_ATTRIBUTE_CATALOG)));
-    Write8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_CLASS_BITS), 0u);
     if (entry_class)
         Write8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_CLASS_BITS), entry_class);
 
     cpu->y = PullIndexValue(memory, cpu);
     Write8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_TILE_BITS),
            (uint8_t)((Read8(memory, tile_word + 1u) & OBJECT_TILE_PALETTE_MASK) << 2));
-    attribute =
-        (uint8_t)((Read8(memory, AbsoluteIndexedAddress(cpu, 0u, cell)) &
-                   OBJECT_ATTRIBUTE_KEEP_MASK) |
-                  Read8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_TILE_BITS)) |
-                  Read8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_CLASS_BITS)));
+    attribute = Read8(memory, AbsoluteIndexedAddress(cpu, 0u, cell));
+    attribute &= OBJECT_ATTRIBUTE_KEEP_MASK;
+    attribute |= Read8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_TILE_BITS));
+    attribute |= Read8(memory, DirectAddress(cpu, OBJECT_ATTRIBUTE_CLASS_BITS));
     Write8(memory, AbsoluteIndexedAddress(cpu, 0u, cell), attribute);
 
     cpu->accumulator =
