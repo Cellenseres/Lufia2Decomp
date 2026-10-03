@@ -403,6 +403,11 @@ Lufia2ExecutionResult Lufia2FieldUnpackAttributes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:C195 sets bit 0 of the object slot flags 5 to $27; M8/X16, JSL. */
+Lufia2ExecutionResult Lufia2FieldMarkObjectSlots(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

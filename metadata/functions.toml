@@ -3651,3 +3651,116 @@ source = "src/battle/battle_effect_ops.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Menu image loaders and RAM block move
+[[function]]
+address = "00:057D"
+name = "Lufia2RamBlockMove"
+source = "src/system/block_move.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "82:8044"
+name = "Lufia2MenuQueueVideoWrite"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:9009"
+name = "Lufia2MenuCopyImageRow256"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:906A"
+name = "Lufia2MenuCopyImageRow128"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:8FF6"
+name = "Lufia2MenuCopyImageBlock"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "86:9022"
+name = "Lufia2MenuLoadImageGrid"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:8F6F"
+name = "Lufia2MenuLoadImageSet"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:90C0"
+name = "Lufia2MenuLoadPalette0"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:90D3"
+name = "Lufia2MenuLoadPalette1"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:90E6"
+name = "Lufia2MenuLoadPalette2"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:90F9"
+name = "Lufia2MenuLoadPalette3"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:910C"
+name = "Lufia2MenuLoadPalette4"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "86:911F"
+name = "Lufia2MenuLoadSlotPalettes"
+source = "src/menu/menu_image_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "80:C195"
+name = "Lufia2FieldMarkObjectSlots"
+source = "src/field/field_object_flags.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
