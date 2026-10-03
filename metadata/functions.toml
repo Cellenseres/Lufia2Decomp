@@ -3288,3 +3288,60 @@ source = "src/battle/battle_circle_window.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Menu tile map buffers and cursor placement.
+[[function]]
+address = "82:838F"
+name = "Lufia2MenuClearLayers"
+source = "src/menu/menu_tilemap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "82:8069"
+name = "Lufia2MenuTileGridFill"
+source = "src/menu/menu_tilemap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "82:80A5"
+name = "Lufia2MenuTileBlockFill"
+source = "src/menu/menu_tilemap.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "draft"
+
+[[function]]
+address = "82:80CA"
+name = "Lufia2MenuRecolorRect"
+source = "src/menu/menu_tilemap.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "82:8000"
+name = "Lufia2MenuMultiply"
+source = "src/menu/menu_cursor.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "82:88A0"
+name = "Lufia2MenuItemIndex"
+source = "src/menu/menu_cursor.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "82:88CB"
+name = "Lufia2MenuItemPosition"
+source = "src/menu/menu_cursor.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"

@@ -50,6 +50,44 @@ Lufia2ExecutionResult Lufia2MenuDrawWindow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $82:80A5 4 x 4 tile block at $54 counting up from $5A; M0X0. */
+Lufia2ExecutionResult Lufia2MenuTileBlockFill(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:8069 8 x 8 grid of tile blocks, then the redraw wait; any M, X16.
+ * Hands off at $82:93C2 with its return pushed. */
+Lufia2ExecutionResult Lufia2MenuTileGridFill(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:80CA palette number Y into the rectangle at A, X = width << 8 | rows,
+ * then the redraw wait; M0X0. Hands off at $82:93C2 with its return pushed. */
+Lufia2ExecutionResult Lufia2MenuRecolorRect(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:838F clears both menu layers, then the redraw wait; any M, X16. Hands
+ * off at $82:93C2 with its return pushed. */
+Lufia2ExecutionResult Lufia2MenuClearLayers(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:8000 (JSL) $1574/$1576 = $1570 * $1572; any width. */
+Lufia2ExecutionResult Lufia2MenuMultiply(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:88A0 list index of menu item X into $14B3; any width. */
+Lufia2ExecutionResult Lufia2MenuItemIndex(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $82:88CB pixel position of menu item X; M1. */
+Lufia2ExecutionResult Lufia2MenuItemPosition(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $86:8CF5 sprite slot X plays animation A; M1X0. */
 Lufia2ExecutionResult Lufia2SpriteSetAnimation(
     const Lufia2Memory *memory,

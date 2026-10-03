@@ -185,7 +185,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:FBDB` | `Lufia2CharacterSpriteBox` | verified | `src/battle/battle_character.c` |
 | `$81:FC0B` | `Lufia2PartyNewRecord` | verified | `src/party/level_up.c` |
 | `$81:FCE2` | `Lufia2CharacterSpritePointer` | verified | `src/battle/battle_character.c` |
+| `$82:8000` | `Lufia2MenuMultiply` | draft | `src/menu/menu_cursor.c` |
+| `$82:8069` | `Lufia2MenuTileGridFill` | draft | `src/menu/menu_tilemap.c` |
+| `$82:80A5` | `Lufia2MenuTileBlockFill` | draft | `src/menu/menu_tilemap.c` |
+| `$82:80CA` | `Lufia2MenuRecolorRect` | draft | `src/menu/menu_tilemap.c` |
 | `$82:810E` | `Lufia2MenuDrawWindow` | verified | `src/menu/menu_window.c` |
+| `$82:838F` | `Lufia2MenuClearLayers` | draft | `src/menu/menu_tilemap.c` |
+| `$82:88A0` | `Lufia2MenuItemIndex` | draft | `src/menu/menu_cursor.c` |
+| `$82:88CB` | `Lufia2MenuItemPosition` | draft | `src/menu/menu_cursor.c` |
 | `$82:8B4B` | `Lufia2MenuButtons` | verified | `src/menu/menu.c` |
 | `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |
 | `$82:939C` | `Lufia2MenuNmi` | verified | `src/menu/menu.c` |
