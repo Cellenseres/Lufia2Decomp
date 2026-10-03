@@ -82,6 +82,52 @@ Lufia2ExecutionResult Lufia2WorldMapStoreHighBits(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $86:E479 writes one 16-pixel-wide sprite of the object at $02 and its x bits. M0X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapDrawSprite(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:E4E7 writes one 8-pixel-wide sprite of the object at $02 and its x bits. M0X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapDrawSmallSprite(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:E686 sorts the visible object list by its key words. M0X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapSortVisible(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:E430 finds or adds the sprite pattern slot of the object at $02; carry reports a new use. M0X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapAssignSlot(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:E3D2 draws the object at X by its kind; an unknown kind hands the original dispatch back. M0X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapDrawObjectByKind(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:E3AB draws the sorted visible objects and the player object. M0X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapDrawObjects(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:A5A9 divides the 32-bit value at $00/$02 by the word at $04; the
+ * remainder is left in A. Any entry widths; they are restored. */
+Lufia2ExecutionResult Lufia2WorldMapDivide32(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:E2D2 tests object visibility for the tilted map view. M0X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapProjectObjects(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $86:E1B9 runs the per-frame object pass of the world map. M1X0 only. */
+Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
