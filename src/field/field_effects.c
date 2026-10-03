@@ -8,10 +8,7 @@
 #include "system/system_internal.h"
 #include "system/wram.h"
 
-/* State of the brightness fade and the color math step, bank $7F and bank
- * $7E. The fade moves the brightness by FADE_BRIGHTNESS_STEP every
- * FADE_FRAMES_PER_STEP frames; the color math intensity changes every 6
- * frames. */
+/* Brightness fade and color math step state. */
 enum {
     FADE_FRAMES_PER_STEP = 0x7fd08fu,
     FADE_BRIGHTNESS_STEP = 0x7fd090u,
@@ -21,8 +18,7 @@ enum {
     COLOR_MATH_INTENSITY = 0x1271u
 };
 
-/* $83:AF05-$83:AF4C: advance the palette cycle of entry X after its timer ran
- * out; 0 = cap hit. */
+/* $83:AF05-$83:AF4C: advance palette cycle X; 0 = cap hit. */
 static uint8_t FieldPaletteAdvance(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                    uint32_t *visits) {
     SetAccumulatorWidth(cpu, 0); /* AF05 */
@@ -116,7 +112,7 @@ static uint8_t FieldPaletteCycles(
     return 1;
 }
 
-/* Body of $83:AF54 without its JSR frame; returns where the ROM jumps to RTS. */
+/* Body of $83:AF54 without its JSR frame. */
 static void FieldWaveTableBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0xd0cau, 0);                   /* AF54 */
     Compare8(cpu, A8(cpu), 0xffu);

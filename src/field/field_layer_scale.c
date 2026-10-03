@@ -41,8 +41,7 @@ Lufia2ExecutionResult Lufia2FieldPrepareCoordinateScale(
     return ExecutionReturned(0x838e43u);
 }
 
-/* $83:8E0B / $83:8E1C: shifts A right (arithmetic) or left by the count that
- * PrepareCoordinateScale derives from the layer scale mode. */
+/* $83:8E0B/$83:8E1C: scale shift right or left. */
 static Lufia2ExecutionResult ShiftCoordinate(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t right) {
     unsigned shifts = 0u;

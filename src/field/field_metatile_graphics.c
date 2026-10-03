@@ -10,7 +10,7 @@ enum {
     ROWS_REMAINING = 0x91,
 };
 
-/* Reverses the bit order of a byte: a horizontal flip of one bitplane row. */
+/* Reverse a byte's bits: one bitplane row flipped. */
 static uint8_t MirrorBits(uint8_t value) {
     value = (uint8_t)(((value & 0x55u) << 1) | ((value >> 1) & 0x55u));
     value = (uint8_t)(((value & 0x33u) << 2) | ((value >> 2) & 0x33u));
@@ -29,8 +29,7 @@ Lufia2ExecutionResult Lufia2FieldMirrorPlaneByte(const Lufia2Memory *memory,
     return ExecutionReturned(0x80f429u);
 }
 
-/* Finishes a simulated JSR: pops the return address and hands off to the ROM
- * unless it is the expected one. */
+/* Finish a simulated JSR; hand off on a foreign return. */
 static Lufia2ExecutionResult CompleteLocalCall(const Lufia2Memory *memory,
                                                Lufia2CpuState *cpu, uint16_t expected) {
     const uint8_t low = Pull8(memory, cpu);
@@ -70,8 +69,7 @@ Lufia2ExecutionResult Lufia2FieldMirrorPlaneWord(const Lufia2Memory *memory,
     return ExecutionReturned(0x80f409u);
 }
 
-/* Copies the word at offset from the source index X to the destination
- * index Y, mirroring both bitplane bytes first when mirror is set. */
+/* Copy one plane word, mirrored when asked. */
 static Lufia2ExecutionResult CopyPlaneWord(const Lufia2Memory *memory,
                                            Lufia2CpuState *cpu, uint16_t offset,
                                            uint16_t frame, uint8_t mirror) {
@@ -89,8 +87,7 @@ static Lufia2ExecutionResult CopyPlaneWord(const Lufia2Memory *memory,
     return ExecutionReturned(0);
 }
 
-/* Shifts the tile attribute word in DP $65 left; carry gets its old bit 15
- * (vertical flip) and the sign gets the old bit 14 (horizontal flip). */
+/* Shift DP $65 left: carry vertical flip, sign horizontal. */
 static void ShiftTileAttributes(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const uint32_t address = OpDp(cpu, TILE_ATTRIBUTES);
     const uint16_t original = OpRead16(memory, address);
@@ -101,9 +98,7 @@ static void ShiftTileAttributes(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     SetNz16(cpu, shifted);
 }
 
-/* Copies one 8x8 4bpp tile whose attributes ask for a flip. Vertical copies
- * walk the rows bottom-up, two bitplane words per row; horizontal copies
- * mirror each bitplane word. */
+/* Copy one flipped 8x8 4bpp tile. */
 static Lufia2ExecutionResult CopyFlippedTile(const Lufia2Memory *memory,
                                              Lufia2CpuState *cpu, uint8_t vertical) {
     uint8_t horizontal = 1u;

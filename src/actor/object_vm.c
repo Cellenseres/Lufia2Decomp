@@ -8,10 +8,7 @@
 #include "system/system_internal.h"
 #include "system/wram.h"
 
-/* Tables in ROM. The animation records are four bytes: a data pointer word,
- * the pointer bank, and a byte whose halves are the animation flags and the
- * sprite size. The sine and cosine tables hold a 0-127 magnitude per angle
- * step. */
+/* ROM tables: four-byte animation records, sine and cosine. */
 #define OBJECT_PROGRAM_BANK 0x830000u
 
 enum {
@@ -23,11 +20,7 @@ enum {
     COSINE_TABLE = 0x80852du,
 };
 
-/* Spin and zoom state of object opcode $14, one byte per object slot in
- * $7E:14D9-$7E:16F8. The region is shared with the menus and the battle
- * screen, which use it at other times. The zoom and the two spin angles each
- * step every (rate & 15) frames by the signed high nibble of the rate, up to
- * a limit. */
+/* Opcode $14 spin and zoom state per object slot. */
 enum {
     OBJECT_SPIN_ANGLE_A = 0x14d9u,
     OBJECT_SPIN_ANGLE_B = 0x14f9u,
@@ -314,8 +307,7 @@ static void ObjectAnimationSetup(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* Direct page words that hold the signed offset of a spawned child from the
- * parent, then its resulting fine position. */
+/* DP words: child offset, then its fine position. */
 enum { SPAWN_OFFSET_X = 0x5a, SPAWN_OFFSET_Y = 0x63 };
 
 /* $83:E8A6: spawn child object from the operand block at Y. */
@@ -855,8 +847,7 @@ static ObjectFlow ObjectNegateOffsets(const Lufia2Memory *memory, Lufia2CpuState
     return OBJECT_FLOW_DISPATCH;
 }
 
-/* $83:F137: $EC starts a loop: the counter from the operand, the pointer to the next
- * byte. */
+/* $83:F137: $EC starts a loop with the operand count. */
 static ObjectFlow ObjectOpBeginLoop(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
@@ -1449,9 +1440,7 @@ static void ObjectHalfMagnitude(
     LsrA16(cpu);
 }
 
-/* Direct page cells of the projection: the cosines and sines of the two spin
- * angles, three intermediate terms, the resulting screen offsets and the
- * depth scale. */
+/* DP cells of the spin and zoom projection. */
 enum {
     PROJ_DEPTH = 0x51,
     PROJ_COS_B = 0x54,
@@ -1547,7 +1536,7 @@ static void ObjectProject(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:E382: rebuild the spin offset when its update bit is set. */
+/* $83:E382: rebuild the spin offset when flagged. */
 static void ObjectSpinOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, OBJECT_SPIN_UPDATE, cpu->x); /* E382 */
     BitImmediate8(cpu, 0x02u);
@@ -1576,7 +1565,7 @@ static void ObjectSpinOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
 }
 
-/* The per-frame work of opcode $14; true when the object despawns. */
+/* Per-frame work of opcode $14; true when despawned. */
 static bool ObjectSpinZoomStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, OBJECT_SPIN_UPDATE, cpu->x);
     BitImmediate8(cpu, 0x08u);

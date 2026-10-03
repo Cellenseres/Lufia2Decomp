@@ -20,10 +20,7 @@ enum {
     UPLOAD_BLOCK_STRIDE = 0x0200u,
 };
 
-/* World map state in bank $7E. The streaming routine stages one row and one
- * column of tilemap per frame; the NMI sends them to VRAM when the pending
- * flags are set. Registers the NMI writes from shadow copies sit at the
- * shadow addresses. */
+/* World map streaming state and register shadows. */
 enum {
     WORLD_MAP_HDMA_ENABLE = 0x11d8u,    /* non-zero: DP $33 enables the HDMA channels */
     WORLD_MAP_UPLOAD_PENDING = 0x11d9u, /* non-zero: the NMI uploads tiles */
@@ -58,9 +55,7 @@ enum {
     WORLD_MAP_COLUMN_HALF = 0x80u,
 };
 
-/* Sends DP $37 rows to VRAM, one DMA per row, advancing the VRAM address by
- * $0100 each time. The first pass drives channels 6 and 7 (the channel mask in
- * DP $05); the second pass only channel 7. */
+/* DMA DP $37 rows to VRAM, one per row. */
 static void WorldMapUploadRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                bool first_pass) {
     cpu->carry = 0;
@@ -215,8 +210,7 @@ static void WorldMapTileUploads(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* Writes `count` colours (DP[count_dp]) from the CGRAM buffer at Y to the
- * colour data port, two bytes each. */
+/* Write count colours from the CGRAM buffer at Y. */
 static void WorldMapCopyColors(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                uint8_t count_dp) {
     do {
@@ -294,8 +288,7 @@ static void WorldMapPaletteCycles(
     } while (!cpu->zero);
 }
 
-/* DMA the row strip the stream routine staged ($1710 flag, VRAM address and source at
- * $1712). */
+/* DMA the staged row strip. */
 static void WorldMapUploadStreamedRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, WORLD_MAP_ROW_PENDING, 0);
     if (!cpu->zero) {
@@ -314,8 +307,7 @@ static void WorldMapUploadStreamedRow(const Lufia2Memory *memory, Lufia2CpuState
     }
 }
 
-/* $86:CF48: DMA the column strip staged by the stream routine ($1711 flag) as two
- * 0x80-byte halves. */
+/* $86:CF48: DMA the staged column strip in two halves. */
 static void WorldMapUploadStreamedColumn(const Lufia2Memory *memory,
                                          Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, WORLD_MAP_COLUMN_PENDING, 0); /* CF48 */
@@ -342,8 +334,7 @@ static void WorldMapUploadStreamedColumn(const Lufia2Memory *memory,
     }
 }
 
-/* $86:CF86: restore the VRAM increment mode, then DMA the pending CGRAM palette block
- * ($1702 length). */
+/* $86:CF86: restore VRAM increment, DMA the pending palette. */
 static void WorldMapUploadPalette(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreAImmediate8(memory, cpu, 0x80u, SNES_VMAIN);          /* CF86 */
     LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WORLD_MAP_PALETTE_LENGTH, 0));
@@ -366,8 +357,7 @@ static void WorldMapUploadPalette(const Lufia2Memory *memory, Lufia2CpuState *cp
     }
 }
 
-/* $86:D032: copy the mode 7 registers or set up the HDMA channels the scene flags
- * select; builds the channel mask in DP $33. */
+/* $86:D032: mode 7 registers or HDMA channels by scene flags. */
 static void WorldMapSetupHdma(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint16_t mode7_regs[8] = {SNES_M7A, SNES_M7A, SNES_M7B, SNES_M7B,
                                            SNES_M7C, SNES_M7C, SNES_M7D, SNES_M7D};
@@ -453,8 +443,7 @@ static void WorldMapSetupHdma(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
 }
 
-/* $86:D12C: when $11D8 is set enable the HDMA channels in DP $33, then copy the
- * mode 7 centre and, when $11D9 is clear, the BG scroll registers. */
+/* $86:D12C: enable HDMA, copy mode 7 centre and scroll. */
 static void WorldMapFinishRegisters(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint16_t scroll_regs[6] = {SNES_BG1HOFS, SNES_BG1VOFS, SNES_BG2HOFS,
                                             SNES_BG2VOFS, SNES_BG3HOFS, SNES_BG3VOFS};
@@ -515,8 +504,7 @@ Lufia2ExecutionResult Lufia2WorldMapNmiUploads(const Lufia2Memory *memory,
     return result;
 }
 
-/* Direct-page fields of the map streaming routines: the camera cell, the
- * cell offset and block pointer into the map, and loop scratch. */
+/* DP fields of the map streaming routines. */
 enum {
     STREAM_DP_BLOCK_POINTER = 0x08u,
     STREAM_DP_CELL_OFFSET = 0x0bu,
@@ -824,8 +812,7 @@ enum {
     REGION_ENTRY_MAX_Y = 4u,
 };
 
-/* Points DB at the region list of the map in $09EB and leaves X at its first
- * entry. */
+/* DB at the map region list, X at entry one. */
 static void WorldMapRegionList(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
     LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, REGION_INDEX, 0));
@@ -844,8 +831,7 @@ static void WorldMapRegionList(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     cpu->carry = 0;
 }
 
-/* Tests the point ($58, $5A) against the bounds of the entry at X, in the
- * order min X, max X, min Y, max Y. Leaves the flags of the last compare. */
+/* Is point ($58, $5A) inside region X? */
 static bool WorldMapRegionContains(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint8_t bounds[4] = {REGION_ENTRY_MIN_X, REGION_ENTRY_MAX_X,
                                       REGION_ENTRY_MIN_Y, REGION_ENTRY_MAX_Y};
@@ -899,9 +885,7 @@ Lufia2ExecutionResult Lufia2WorldMapRegionSearch(const Lufia2Memory *memory,
     return ExecutionReturned(0x869f12u);
 }
 
-/* Direct-page and work-RAM fields of the polar offset routine: it turns the
- * angle and radius at $1248/$1249 into signed 24-bit x and y offsets at
- * $08 and $0B. */
+/* Polar offset fields: angle and radius to x, y. */
 enum {
     POLAR_ANGLE = 0x1248u,
     POLAR_RADIUS = 0x1249u,

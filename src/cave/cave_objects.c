@@ -128,7 +128,7 @@ void Lufia2CaveAddObject(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* Probe the centre cell, then the neighbours, stopping at the first chest. */
+/* Probe the centre, then neighbours, until a chest. */
 static void CaveNearChestBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));                  /* 9A6B */
     OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
@@ -196,7 +196,7 @@ void Lufia2CaveChestAt(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* Roll a position and keep it unless it is rejected; carry set = rejected. */
+/* Roll a position; carry set means rejected. */
 static void CaveAddChestBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSta(memory, cpu, OpAbs(cpu, 0xe6a8u));               /* 9ABC */
     OpLda(memory, cpu, OpAbs(cpu, CAVE_CHEST_COUNT));

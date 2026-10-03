@@ -113,10 +113,10 @@ static bool BattleCommitPartyCommand(BattleContext *battle, uint16_t record_site
     return true;
 }
 
-/* What the party action loop does after a command was confirmed. */
+/* Next step after a confirmed party command. */
 typedef enum { PARTY_POLL, PARTY_DONE, PARTY_HANDOFF, PARTY_UNWOUND } PartyStep;
 
-/* Attack: with a weapon that needs a target the target menu runs first. */
+/* Attack: targeted weapons run the target menu first. */
 static PartyStep PartyAttack(BattleContext *battle, uint32_t *pc) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -188,9 +188,7 @@ static PartyStep PartyAttack(BattleContext *battle, uint32_t *pc) {
     return PARTY_DONE;
 }
 
-/* The entry/target choice shared by spells, items and IP attacks: where the
- * child calls sit, how big one list record is, and which table says whether an
- * entry needs a target. */
+/* Shared entry and target choice for spells, items, IP. */
 typedef struct PartyPickSpec {
     uint16_t cancel_site;
     uint16_t window_site;
@@ -211,8 +209,7 @@ static const PartyPickSpec PARTY_PICK_IP = {0xcfd6u, 0xcff6u, 0xd001u,   0xcfcfu
 
 typedef enum { PICK_CANCELLED, PICK_UNWOUND, PICK_CHOSEN } PartyPick;
 
-/* Loops until the player picks an entry (and, if it needs one, a target) or
- * backs out. The selection comes back in DP $12 and A. */
+/* Loop until an entry and target are picked or cancelled. */
 static PartyPick PartyPickEntryAndTarget(BattleContext *battle,
                                          const PartyPickSpec *spec) {
     const Lufia2Memory *memory = battle->memory;
@@ -256,9 +253,7 @@ static PartyPick PartyPickEntryAndTarget(BattleContext *battle,
     }
 }
 
-/* Takes the chosen entry's value from the submenu table (16 bytes per entry),
- * maps it through the byte table at $7E:0096 and stores it as the action
- * parameter. */
+/* Store the chosen spell's mapped value as the parameter. */
 static void PartyStoreSpellParameter(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7eu);
@@ -374,8 +369,7 @@ static PartyStep PartyItem(BattleContext *battle, uint32_t *pc) {
     return PARTY_DONE;
 }
 
-/* Copies the chosen IP skill's word from the submenu table (24 bytes per
- * entry) into the action parameter. */
+/* Store the chosen IP skill's word as the parameter. */
 static void PartyStoreIpParameter(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7eu);
@@ -444,8 +438,7 @@ static PartyStep PartyDefend(BattleContext *battle, uint32_t *pc) {
     return PARTY_DONE;
 }
 
-/* A command was confirmed: runs the part that belongs to the command picked in
- * the menu. */
+/* Run the confirmed command's part. */
 static PartyStep PartyAccepted(BattleContext *battle, uint32_t *pc) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;

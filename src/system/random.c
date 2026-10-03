@@ -12,8 +12,7 @@ enum {
     RANDOM_SHORT_LAG = 24, /* second pass mixes in the entry 24 behind */
 };
 
-/* $80:832D: lagged XOR refill of the whole table. Leaves X at the table size
- * and the accumulator holding the last entry written. */
+/* $80:832D: lagged XOR refill; X size, A last entry. */
 static void RandomRefill(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -93,7 +92,7 @@ void Lufia2RandomByte(
     RandomLeave(memory, cpu);                                  /* 82E2 */
 }
 
-/* $80:8299: A = the next byte scaled to 0..A-1 through the hardware multiplier. */
+/* $80:8299: next byte scaled to 0..A-1. */
 void Lufia2RandomScale(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -143,16 +142,13 @@ enum {
     RANDOM_SEED_REFILLS = 3,
 };
 
-/* What the table fill leaves in the registers: the last table index and the
- * byte the accumulator's high half ends up holding. */
+/* Table fill exit: last index, A's high byte. */
 typedef struct SeedFillResult {
     uint8_t last_index;
     uint8_t held;
 } SeedFillResult;
 
-/* Fills the table with a subtractive sequence started from the seed byte. Each
- * round steps the index by 21 (mod 55), stores the previous scratch value
- * there and in the seed byte, and keeps `seed - scratch` as the next scratch. */
+/* Subtractive fill from the seed byte, step 21 mod 55. */
 static SeedFillResult SeedFillTable(Lufia2Wram wram) {
     SeedFillResult result = {0u, 0u};
     uint8_t index = 0u;
@@ -180,8 +176,7 @@ static SeedFillResult SeedFillTable(Lufia2Wram wram) {
     return result;
 }
 
-/* $80:82E7: seed the generator from the seed byte, then mix the table three
- * times. The status, the scratch byte and the stack are restored. */
+/* $80:82E7: seed the generator, mix the table three times. */
 Lufia2ExecutionResult Lufia2SeedRandom(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint16_t refill_returns[RANDOM_SEED_REFILLS] = {0x8321u, 0x8324u,

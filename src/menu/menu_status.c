@@ -39,8 +39,7 @@ static uint16_t StatusDispatchTarget(
     return Read16Bank(memory, 0u, STATUS_TARGET);
 }
 
-/* Handler entry points in the inline jump table at $82:A323, selected by the
- * accumulator on entry. */
+/* Handler entries of the jump table at $82:A323. */
 enum {
     STATUS_MODE_PARTY_HEADER = 0xa32c,
     STATUS_MODE_PARTY_ROWS = 0xa345,
@@ -62,7 +61,7 @@ enum {
     STATUS_WORK_FLAG = 0x08
 };
 
-/* Text blocks, as $80:8878 string pointers in the menu text bank. */
+/* Text blocks as $80:8878 string pointers. */
 enum {
     STATUS_TEXT_PARTY_TITLE = 0xd1e9,
     STATUS_TEXT_PARTY_LABELS = 0xd4de,
@@ -72,8 +71,7 @@ enum {
     STATUS_TEXT_EQUIPMENT_D = 0xd591
 };
 
-/* One run of the screen: the callbacks it was given and the bound counter
- * that stops a party loop that never finishes. */
+/* One screen run: callbacks and the party loop bound. */
 typedef struct {
     const Lufia2Memory *memory;
     Lufia2CpuState *cpu;
@@ -114,8 +112,7 @@ static void StatusSelectTextBank(StatusScreen *screen) {
         STATUS_CALL(screen, site, 0x808878u, 3u);                                      \
     } while (0)
 
-/* Puts the draw mode back to idle and the tile cursor at the equipment
- * panel. */
+/* Draw mode idle, tile cursor at the equipment panel. */
 static void StatusEquipmentPanel(StatusScreen *screen) {
     LoadA8(screen->cpu, STATUS_DRAW_MODE_IDLE);
     WramWrite(screen->wram, WRAM_MENU_DRAW_MODE, STATUS_DRAW_MODE_IDLE);
@@ -130,8 +127,7 @@ static Lufia2ExecutionResult StatusFinish(StatusScreen *screen) {
     return ExecutionReturned(0x82a431u);
 }
 
-/* Loads the character of party slot `slot` (a word, as the original reads
- * it) and points X at that character's entry of the table at `table`. */
+/* Load party slot's character; X at its table entry. */
 static void StatusSelectMember(StatusScreen *screen, uint16_t slot_word,
                                uint32_t table) {
     Lufia2CpuState *cpu = screen->cpu;
@@ -145,8 +141,7 @@ static void StatusSelectMember(StatusScreen *screen, uint16_t slot_word,
     TransferAToX(cpu);
 }
 
-/* Mode 1 (and the tail of mode 0): the party rows, one child draw per
- * member. */
+/* Mode 1 and mode 0's tail: one row per member. */
 static Lufia2ExecutionResult StatusDrawPartyRows(StatusScreen *screen) {
     Lufia2CpuState *cpu = screen->cpu;
 
@@ -167,7 +162,7 @@ static Lufia2ExecutionResult StatusDrawPartyRows(StatusScreen *screen) {
     return StatusFinish(screen);
 }
 
-/* Mode 0: the title and label texts, then the party rows. */
+/* Mode 0: title and labels, then the party rows. */
 static Lufia2ExecutionResult StatusDrawPartyHeader(StatusScreen *screen) {
     StatusSelectTextBank(screen);
     STATUS_TEXT(screen, 0x82a333u, STATUS_TEXT_PARTY_TITLE);
@@ -178,8 +173,7 @@ static Lufia2ExecutionResult StatusDrawPartyHeader(StatusScreen *screen) {
     return StatusDrawPartyRows(screen);
 }
 
-/* Mode 2: the equipment screen, with the character's percentage stat (scaled
- * by the hardware multiplier) printed as a number. */
+/* Mode 2: equipment screen with the scaled percentage stat. */
 static Lufia2ExecutionResult StatusDrawEquipment(StatusScreen *screen) {
     Lufia2CpuState *cpu = screen->cpu;
     const Lufia2Wram wram = screen->wram;
@@ -230,7 +224,7 @@ static Lufia2ExecutionResult StatusRefreshEquipment(StatusScreen *screen) {
     return ExecutionReturned(0x82a402u);
 }
 
-/* Mode 4: the detail page of every party member in turn. */
+/* Mode 4: each party member's detail page. */
 static Lufia2ExecutionResult StatusDrawPartyDetails(StatusScreen *screen) {
     Lufia2CpuState *cpu = screen->cpu;
 

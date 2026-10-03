@@ -23,9 +23,7 @@
 #define BATTLE_GLOBAL_VARIABLES 0x7ff40eu
 #define BATTLE_CONDITION 0x7ff42eu
 #define BATTLE_ACTION_CODE 0x7ff454u
-/* Battler records addressed by the script: the two battlers the script is
- * working on come first, then the action code and its arguments. Opcodes
- * $24-$27 reach fields through the ROM offset tables below. */
+/* Script battler records: two battlers, then action arguments. */
 #define BATTLE_SCRIPT_RECORD 0x7ff44eu
 #define BATTLE_BATTLER_A BATTLE_SCRIPT_RECORD
 #define BATTLE_BATTLER_B 0x7ff450u
@@ -366,7 +364,7 @@ static void BattleMultiplyBody(
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
-/* Runs the $85:DCA3 multiply as a JSL call returning to return_address. */
+/* $85:DCA3 multiply as a JSL to return_address. */
 static void BattleMultiply(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x85u, return_address);
@@ -462,8 +460,7 @@ static void BattleRandomFractionBody(
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
-/* Runs the $85:DCEA random fraction as a JSL call returning to
- * return_address. */
+/* $85:DCEA random fraction as a JSL to return_address. */
 void BattleCallRandomFraction(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x85u, return_address);

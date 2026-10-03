@@ -19,7 +19,7 @@ static void CaveRandomByte(
     Lufia2CallRandomByte(memory, cpu, (uint16_t)(site + 3u));
 }
 
-/* The cave random helpers take their limit in A and answer in A. */
+/* Random helpers take the limit in A, answer in A. */
 static uint8_t CaveRandomBelowOf(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                  uint16_t site, uint8_t limit) {
     LoadA8(cpu, limit);
@@ -45,9 +45,7 @@ static void CaveCallLong(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $83:9013-$83:9032: clear the room grid to the direct page's value and fill
- * the shape grid with the blank shape. Leaves the registers as the compare
- * that ends the original loop did. */
+/* $83:9013-$83:9032: clear room grid and shape grid. */
 static void CaveClearGrid(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram work = WramViewLong(memory);
     uint16_t offset;
@@ -66,11 +64,7 @@ static void CaveClearGrid(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpCpx(cpu, CAVE_GRID_BYTES);
 }
 
-/* $83:9034-$83:90C3: sort the item records that are allowed on this floor into
- * two lists in bank $7F. A record qualifies when it is a field item, is not
- * excluded, and its price is below the floor's limit (1000 per floor up to
- * floor 59, unlimited after). Bit 0 of its use word picks the list; the lists
- * are written at $7F:0000 and $7F:1000, each entry the item number. */
+/* $83:9034-$83:90C3: list the field items allowed on this floor. */
 static void CaveCollectItems(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     const Lufia2Wram work = WramViewLong(memory);
@@ -93,8 +87,7 @@ static void CaveCollectItems(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         WramWrite(wram, CAVE_DP_PRICE_LIMIT, A8(cpu));
         WramWrite(wram, CAVE_DP_PRICE_LIMIT + 1u, A8(cpu));
     } else {
-        /* Limit = 1000 * (floor + 1) through the PPU multiplier, reached
-         * through the data bank's mirror of the registers. */
+        /* Price limit: 1000 per floor, via the multiplier. */
         LoadA8(cpu, CAVE_PRICE_PER_FLOOR & 0xffu); /* 9058 */
         WramWrite(records, SNES_M7A, A8(cpu));
         LoadA8(cpu, CAVE_PRICE_PER_FLOOR >> 8);
@@ -155,13 +148,7 @@ static void CaveCollectItems(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     } while (!cpu->carry);
 }
 
-/* $83:90C5-$83:9141: the optional first chests. Y is the next chest slot (two
- * bytes each) and is advanced when a chest is placed.
- *
- * A one in five roll may place a story item chest: a random one of nine, once
- * per game (tracked in the seen bits) and only while its game flag is clear. Failing
- * that, the first time on a floor below 21 a chest with the spell scroll
- * (word $022D) may appear, with a chance that falls as the floor rises. */
+/* $83:90C5-$83:9141: optional story or scroll chest first. */
 static void CaveFirstChests(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     const Lufia2Wram work = WramViewLong(memory);
@@ -231,8 +218,7 @@ take_slot:
     OpIny(cpu);
 }
 
-/* Copies the word at table[X] to the chest word at Y, setting bits in its high
- * byte. */
+/* Chest word from table[X], high byte flagged. */
 static void CaveChestFromTable(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t table,
     uint8_t high_or) {
@@ -246,7 +232,7 @@ static void CaveChestFromTable(
     WramWriteAt(cave, CAVE_CHEST_WORDS + 1u, cpu->y, A8(cpu));
 }
 
-/* $83:91AD: a common item, drawn from the middle of the table at $91:FFDC. */
+/* $83:91AD: common item from the table at $91:FFDC. */
 static void CaveCommonChest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, CAVE_COMMON_ITEM_COUNT); /* 91AD */
     Lufia2CaveRandomMean(memory, cpu, 0x91afu);
@@ -258,8 +244,7 @@ static void CaveCommonChest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     CaveChestFromTable(memory, cpu, CAVE_COMMON_ITEM_TABLE, 0);
 }
 
-/* $83:916F/$83:9176: a random entry of the item list that starts at `base` in
- * bank $7F and ends at the direct-page pointer `end`. */
+/* $83:916F/$83:9176: random entry of a bank $7F list. */
 static void CaveChestFromList(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t base,
     uint8_t end) {
@@ -280,8 +265,7 @@ static void CaveChestFromList(
     OpSepWidths(cpu, 0x20u);
 }
 
-/* $83:9192: a spell scroll, or a common item when a party member already knows
- * the spell. */
+/* $83:9192: spell scroll, or common item if already known. */
 static void CaveSpellChest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
 
@@ -301,10 +285,7 @@ static void CaveSpellChest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     WramWriteAt(wram, CAVE_CHEST_WORDS + 1u, cpu->y, A8(cpu));
 }
 
-/* $83:9142-$83:91E4: fill the eight chest words. Each draws a random byte and
- * takes the first matching kind: the top rolls pick from the two item lists,
- * then a spell scroll, a piece of equipment, a common item, and last a
- * consumable. */
+/* $83:9142-$83:91E4: fill the eight chest words. */
 static void CaveChestContents(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     do {
         CaveRandomByte(memory, cpu, 0x9142u); /* 9142 */
@@ -363,8 +344,7 @@ static void CavePlaceRooms(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     WramWrite(dp, CAVE_DP_ROOM_COUNT, room_count);
     WramWrite(dp, CAVE_DP_TALLEST_ROOM, tallest);
     for (;;) {
-        /* A room starts at the cursor column, up to one row above or below
-         * the cursor row, and must fit inside the 8-column, 14-row area. */
+        /* Room must fit the 8x14 area near the cursor row. */
         const uint8_t column = cursor_column;
         const uint8_t row =
             (uint8_t)(CaveRandomBelowOf(memory, cpu, 0x91ffu, 3u) - 1u + cursor_row);
@@ -400,7 +380,7 @@ static void CavePlaceRooms(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         WramWrite(dp, CAVE_DP_CURSOR_COLUMN, cursor_column);
         if (cursor_column < 9u)
             continue;
-        /* The row is full: start the next one a few rows down. */
+        /* Row full: start the next one a few rows down. */
         cursor_column = 1u;
         WramWrite(dp, CAVE_DP_CURSOR_COLUMN, cursor_column);
         cursor_row =
@@ -543,11 +523,7 @@ static void CaveLinkFloor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     } while (cpu->carry);
 }
 
-/* $83:9388-$83:940D: keep one random link per room pair. The link list holds
- * cell numbers; links whose cell and cell below hold the same pair of room
- * numbers join the same two rooms. All but one random member of each such
- * group are cleared, and the list is closed with $FF. The direct page is the
- * zero page here, as on every call of the original. */
+/* $83:9388-$83:940D: keep one random link per room pair. */
 static void CaveDedupeLinks(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     const uint16_t link_count = WramRead16(wram, CAVE_DP_LINK_COUNT);
@@ -564,8 +540,7 @@ static void CaveDedupeLinks(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             uint16_t group = 1u;
             uint16_t other;
 
-            /* Collect the group: this link first, then every later link
-             * between the same two rooms. */
+            /* Group: this link plus later links between both rooms. */
             WramWrite(wram, CAVE_LINK_SCRATCH, first);
             WramWrite(wram, CAVE_DP_LINK_KEY, upper);
             WramWrite(wram, CAVE_DP_LINK_KEY + 1u, lower);
@@ -673,10 +648,7 @@ static void CavePlaceStart(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     } while (!cpu->negative);
 }
 
-/* $83:949D-$83:9514: one floor in sixteen gets a 2x2 treasure room. The first
- * 2x2 block of identical cells (searched from the second row, then thinned out
- * by a coin flip per candidate) becomes the room: thirteen objects are
- * scattered within eight tiles of its corner and eight chests are added. */
+/* $83:949D-$83:9514: rare 2x2 treasure room with chests. */
 static void CaveTreasureRoom(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     CaveRandomByte(memory, cpu, 0x949du);                      /* 949D */
     OpCmpValue(cpu, CAVE_TREASURE_ROOM_ODDS);
@@ -741,8 +713,7 @@ static void CaveTreasureRoom(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Lufia2CaveClearVisited(memory, cpu, 0x9512u);              /* 9512 */
 }
 
-/* $83:9515-$83:959C: four to seven objects at random cells, then a chest in
- * each unmarked 2x2 room until the chest limit is reached. */
+/* $83:9515-$83:959C: random objects, then chests in 2x2 rooms. */
 static void CaveObjectsAndChests(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, CAVE_EXTRA_ROOM_OBJECTS); /* 9515 */
@@ -819,10 +790,7 @@ static void CaveObjectsAndChests(
     Lufia2CaveClearVisited(memory, cpu, 0x959du);              /* 959D */
 }
 
-/* $83:95A0-$83:9653: pick the block shape of each occupied cell. The eight
- * neighbours that hold the same room value form a bit mask; the corner bits
- * are dropped when an adjacent side is open, and the result indexes the shape
- * table. The first column then gets the border shapes. */
+/* $83:95A0-$83:9653: block shape of each occupied cell. */
 static void CaveShapeCells(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint16_t kNeighbours[8] = {
         CAVE_ROOM_GRID + CAVE_CELL_DOWN_RIGHT, CAVE_ROOM_GRID + CAVE_CELL_RIGHT,
@@ -895,8 +863,7 @@ static void CaveShapeCells(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     } while (!cpu->carry);
 }
 
-/* $83:9654-$83:9692: unpack the floor's block set to $7E:4000, clear the tile
- * map and copy the two layer headers into it. */
+/* $83:9654-$83:9692: block set, cleared map, layer headers. */
 static void CaveTileMapBase(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x30u);                                         /* 9654 */
     OpLda(memory, cpu, OpAbs(cpu, CAVE_BLOCK_SET));
@@ -987,8 +954,7 @@ static uint8_t CaveListSearch(
     return Lufia2FieldListSearch(memory, cpu, 0x83u, (uint16_t)(site + 3u));
 }
 
-/* $83:96F5-$83:9752: read the four tile sets from list 5 into the record
- * table. Returns 0 when the list search hands off. */
+/* $83:96F5-$83:9752: read the four tile sets from list 5. */
 static uint8_t CaveReadTileSets(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, 0x0000u); /* 96F5 */
@@ -1035,9 +1001,7 @@ static uint8_t CaveReadTileSets(
     return 1;
 }
 
-/* $83:9753-$83:97E7: for every occupied cell, replace the tile indices of its
- * 6x6 block that match a set's keys with the set's tiles, keeping the flag
- * bits. */
+/* $83:9753-$83:97E7: apply the tile sets to each cell. */
 static void CaveApplyTileSets(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, CAVE_FIRST_ROOM_CELL); /* 9753 */
     do {
@@ -1112,9 +1076,7 @@ static void CaveApplyTileSets(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     } while (!cpu->carry);
 }
 
-/* $83:97E8-$83:9868: read the five decoration sets from list 10 into the
- * record table, one 256-byte block per variant. Returns 0 when the list
- * search hands off. */
+/* $83:97E8-$83:9868: read the five decoration sets from list 10. */
 static uint8_t CaveReadDecorations(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpStz(memory, cpu, OpDp(cpu, CAVE_DP_SET_OFFSET)); /* 97E8 */
@@ -1178,10 +1140,7 @@ static uint8_t CaveReadDecorations(
     return 1;
 }
 
-/* $83:9869-$83:992F: scatter decorations over every occupied cell's block. A
- * tile that matches a set's source tile is, with odds of 48 in 256, swapped
- * for a random variant of that set, on both map layers and on the row below
- * when the set is two tiles tall. */
+/* $83:9869-$83:992F: scatter decorations over occupied cells. */
 static void CaveDecorate(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, CAVE_FIRST_ROOM_CELL); /* 9869 */
     do {
@@ -1299,8 +1258,7 @@ static void CaveMarkTile(const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16
     OpSepWidths(cpu, 0x20u);
 }
 
-/* $83:9930-$83:99C7: mark the start, link, stair and chest tiles, then build
- * the map sections and their attributes. */
+/* $83:9930-$83:99C7: mark tiles, then build the map sections. */
 static void CaveFinish(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbs(cpu, CAVE_START_COLUMN)); /* 9930 */
     ExchangeAccumulatorBytes(cpu);

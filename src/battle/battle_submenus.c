@@ -100,8 +100,7 @@ static void SubmenuPlaceCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN));
 }
 
-/* Writes the page-arrow sprite beside the cursor: x $EC, y from a per-menu table
- * indexed by the first entry, and the second cursor slot is enabled. */
+/* Page-arrow sprite beside the cursor. */
 static void SubmenuDrawPageArrow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLoadA(cpu, 0xecu);
     OpSta(memory, cpu, SUBMENU_ARROW_RECORD + SPRITE_X);
@@ -144,8 +143,7 @@ static void SubmenuDrawPageArrow(const Lufia2Memory *memory, Lufia2CpuState *cpu
     OpSta(memory, cpu, SUBMENU_ARROW_RECORD + SPRITE_Y);
 }
 
-/* Writes the cursor sprite for the cursor's row and column; every menu kind
- * but 2 adds a second sprite, the page arrow. */
+/* Cursor sprite; all kinds but 2 add the page arrow. */
 static void SubmenuDrawCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_CURSOR_COLUMN));
     if (!cpu->zero)
@@ -200,10 +198,7 @@ static bool SubmenuDrawFrame(BattleContext *battle) {
     return true;
 }
 
-/* Brings the screen up to date. A change of the first entry redraws the rows
- * and runs the scroll animation, a plain cursor move only repositions the
- * cursor. While a scroll is running every second frame leaves the cursor
- * where it is. */
+/* Redraw rows or move the cursor; scrolls hold it. */
 static bool SubmenuRefresh(BattleContext *battle, bool redraw_rows) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -249,8 +244,7 @@ static bool SubmenuPoll(BattleContext *battle) {
     return true;
 }
 
-/* Leaves X = selected entry * 16 (* 24 for menu kind 2), the index into the
- * availability table. */
+/* X = selected entry * 16 (kind 2: * 24). */
 static void SubmenuEntryTableIndex(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
@@ -279,8 +273,7 @@ static void SubmenuEntryTableIndex(const Lufia2Memory *memory, Lufia2CpuState *c
     }
 }
 
-/* Records the first visible entry as the acting party member's choice for this
- * menu kind (seven bytes per member, one word per kind). */
+/* Store the first visible entry as the member's choice. */
 static void SubmenuStoreChoice(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
     OpLda(memory, cpu, WRAM_BATTLE_PARTY_SLOT);
@@ -301,8 +294,7 @@ static void SubmenuStoreChoice(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     TransferDirectToA(cpu);
 }
 
-/* The confirm button: an entry that is not available only polls again,
- * otherwise the choice is stored for the party member. */
+/* Confirm: store the choice unless unavailable. */
 static SubmenuOutcome SubmenuAccept(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -328,8 +320,7 @@ static SubmenuOutcome SubmenuCancel(BattleContext *battle) {
     return SUBMENU_CANCELLED;
 }
 
-/* The selected entry takes the candidate in A as its new value; the first entry
- * follows when the cursor would leave the visible rows. */
+/* Select candidate A; scroll when it leaves the rows. */
 static SubmenuOutcome SubmenuSelectEntry(const Lufia2Memory *memory,
                                          Lufia2CpuState *cpu) {
     OpSta(memory, cpu, OpDp(cpu, SUBMENU_DP_PENDING_ENTRY));
@@ -360,8 +351,7 @@ static SubmenuOutcome SubmenuSelectEntry(const Lufia2Memory *memory,
     return SUBMENU_REFRESH;
 }
 
-/* Auxiliary button: redraws the title and rows while keeping the cursor
- * registers, then goes back to polling. */
+/* Auxiliary button: redraw title and rows, keep cursor. */
 static SubmenuOutcome SubmenuAuxiliaryButton(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -388,8 +378,7 @@ static SubmenuOutcome SubmenuAuxiliaryButton(BattleContext *battle) {
     return SUBMENU_POLL;
 }
 
-/* Shoulder button held: moves the cursor a whole page (12 entries) up or down
- * and scrolls the first visible entry with it. */
+/* Shoulder button: move the cursor a whole page. */
 static SubmenuOutcome SubmenuPageMove(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_MOVE_DELTA));
     OpAndValue(cpu, 0x20u);
@@ -438,7 +427,7 @@ static SubmenuOutcome SubmenuPageMove(const Lufia2Memory *memory, Lufia2CpuState
     return SUBMENU_REFRESH;
 }
 
-/* Reads the pad: confirm, cancel, the auxiliary button, or a direction. */
+/* Read the pad: confirm, cancel, auxiliary or direction. */
 static SubmenuOutcome SubmenuInput(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;

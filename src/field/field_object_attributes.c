@@ -61,8 +61,7 @@ static Lufia2ExecutionResult LocateObjectAttributeRegion(
     return ExecutionReturned(0x838cdcu);
 }
 
-/* Tile words of the object layer in bank $7F: low ten bits pick the tile, bits
- * 10-11 are copied into the cell attribute. */
+/* Object layer tile words: tile index and attribute bits. */
 enum {
     OBJECT_TILE_PLANE = 0x7f0000,
     OBJECT_TILE_HIGH_BITS = 0x03,
@@ -71,7 +70,7 @@ enum {
     OBJECT_CATALOG_HIGH_NIBBLE = 0xf0,
 };
 
-/* Class bits of a cell attribute from the metatile's catalog entry. */
+/* Class bits of a cell attribute from its catalog entry. */
 static uint8_t ObjectCellClass(uint8_t entry) {
     if (entry & OBJECT_CATALOG_HIGH_NIBBLE)
         return 0x08;
@@ -82,9 +81,7 @@ static uint8_t ObjectCellClass(uint8_t entry) {
     return 0x00;
 }
 
-/* Rebuilds the attribute byte at DB:Y for the tile word at $7F:X, then moves
- * both on by one cell. The remaining register state is that of the original
- * routine: the accumulator keeps the two high tile bits in its high byte. */
+/* Rebuild the attribute at DB:Y for tile $7F:X, advance both. */
 static void WriteObjectCellAttributes(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const uint32_t tile_word = LongIndexedAddress(OBJECT_TILE_PLANE, cpu->x);

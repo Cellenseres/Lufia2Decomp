@@ -154,10 +154,10 @@ Lufia2ExecutionResult Lufia2BattleBlend(
     return ExecutionReturned(0x81b52eu);
 }
 
-/* Weights of the colour channels in the gray level, out of 256. */
+/* Gray weights of the colour channels, out of 256. */
 enum { GRAY_WEIGHT_RED = 0x4d, GRAY_WEIGHT_GREEN = 0x97, GRAY_WEIGHT_BLUE = 0x1c };
 
-/* Colour work area: the BGR555 colour being converted and a scratch word. */
+/* Colour work: the BGR555 colour and a scratch word. */
 enum {
     COLOR_WORK_COLOR = 0x15,
     COLOR_WORK_COLOR_HIGH = 0x16,
@@ -166,8 +166,7 @@ enum {
 
 enum { COLOR_CHANNEL_MASK = 0x1f };
 
-/* $81:B54A: replaces the colour at $15 by the gray of the same brightness
- * (0.30 red + 0.59 green + 0.11 blue); exits with a 16-bit accumulator. */
+/* $81:B54A: replace the colour at $15 by its gray. */
 Lufia2ExecutionResult Lufia2ColorToGray(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

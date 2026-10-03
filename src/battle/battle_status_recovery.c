@@ -56,7 +56,7 @@ static bool StatusMessage(BattleContext *battle, uint16_t call_site, bool recove
     return true;
 }
 
-/* Each cured status bit gets its own roll, clear and message. */
+/* Each cured status gets its own roll and message. */
 static bool StatusCureRolls(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -97,7 +97,7 @@ static bool StatusCureRolls(BattleContext *battle) {
     return true;
 }
 
-/* A timed status (bit 7) counts down and clears when it reaches zero. */
+/* Timed status counts down and clears at zero. */
 static bool StatusExpireCountdown(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;

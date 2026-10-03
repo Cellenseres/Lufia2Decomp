@@ -31,7 +31,7 @@ static void StoreTable16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     StoreAAbsolute16(memory, cpu, (uint16_t)(TABLE + offset), cpu->y);
 }
 
-/* Stores the low byte of A at TABLE + offset + Y. */
+/* Store A's low byte at TABLE + offset + Y. */
 static void StoreTable8(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t offset) {
     StoreAAbsolute8(memory, cpu, (uint16_t)(TABLE + offset), cpu->y);
@@ -220,8 +220,7 @@ Lufia2ExecutionResult Lufia2BattleGlyph(
     return ExecutionReturned(0x81e871u);
 }
 
-/* Writes a two-row tile at Y: the low byte of A then the high byte one
- * tilemap row ($40) below, each followed by attribute. Y advances by 2. */
+/* Two-row tile at Y with attributes; Y += 2. */
 static void TileRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t attribute) {
     StoreAAbsolute8(memory, cpu, 0x0000u, cpu->y);

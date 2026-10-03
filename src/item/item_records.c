@@ -28,10 +28,9 @@ static void DecrementX(Lufia2CpuState *cpu) {
     SetNz16(cpu, cpu->x);
 }
 
-/* Where the original routine leaves the CPU is part of the contract the
- * callers were verified against; the record logic itself is in the helpers. */
+/* Exit CPU state is part of the verified contract. */
 
-/* Copies the item's name from the ROM table; returns the last word copied. */
+/* Copy the item's name; return the last word copied. */
 static uint16_t CopyItemName(Lufia2Wram wram, uint16_t item) {
     const uint16_t name_offset = (uint16_t)(item * ITEM_NAME_LENGTH);
     uint16_t last_word = 0;
@@ -50,7 +49,7 @@ typedef struct ItemNameTrim {
     uint8_t last_char;  /* last character examined */
 } ItemNameTrim;
 
-/* Blanks the trailing spaces of the name: they become end markers. */
+/* Trailing spaces of the name become end markers. */
 static ItemNameTrim TrimItemName(Lufia2Wram wram) {
     ItemNameTrim trim = {ITEM_NAME_LENGTH, 0};
 
@@ -65,8 +64,7 @@ static ItemNameTrim TrimItemName(Lufia2Wram wram) {
     return trim;
 }
 
-/* The routine pushes the data bank and the item offset; nothing reads them
- * back, but the bytes stay in the stack page. */
+/* Pushed DB and offset stay in the stack page. */
 static void LeaveItemNameStackBytes(
     const Lufia2Memory *memory, const Lufia2CpuState *cpu, uint16_t item) {
     const uint16_t scaled = (uint16_t)(item * 4u);
@@ -89,15 +87,14 @@ static void ItemName(
     cpu->accumulator = (uint16_t)((last_word & 0xff00u) | trim.last_char);
     cpu->x = trim.cursor;
     cpu->y = (uint16_t)(item * ITEM_NAME_LENGTH + ITEM_NAME_LENGTH);
-    /* The restored data bank sets N and Z; the last compare left C set unless
-     * it met a control character; the offset sum cannot overflow. */
+    /* Exit flags: N/Z from DB, C from the last compare. */
     SetNz8(cpu, cpu->data_bank);
     cpu->carry = trim.last_char == CHAR_END || trim.last_char >= CHAR_SPACE;
     cpu->overflow = 0;
     cpu->accumulator_is_8_bit = 1;
 }
 
-/* The record pointer is the table base plus the item's offset word. */
+/* Record pointer: table base plus the item's offset word. */
 static uint16_t ReadItemRecordPointer(Lufia2Wram wram, uint16_t item) {
     const uint16_t offset = Read16Long(wram.memory,
         LongIndexedAddress(ROM_ITEM_RECORD_TABLE, (uint16_t)(item * 2u)));
@@ -115,7 +112,7 @@ static void ItemRecordAddress(
 
     Write8(memory, cpu->stack, PackStatus(cpu));
     WramWrite16(wram, WRAM_ITEM_RECORD_POINTER, pointer);
-    /* The status register is restored; A and X keep the last values. */
+    /* P restored; A and X keep their last values. */
     cpu->accumulator = pointer;
     cpu->x = (uint16_t)(item * 2u);
     if (cpu->index_is_8_bit)
@@ -199,7 +196,7 @@ Lufia2ExecutionResult Lufia2LoadItemRecord(
     return ExecutionReturned(0x81f290u);
 }
 
-/* The record pointer is the table base plus the spell's offset word. */
+/* Record pointer: table base plus the spell's offset word. */
 static uint16_t ReadSpellRecordOffset(Lufia2Wram wram, uint16_t spell) {
     return Read16Long(wram.memory,
         LongIndexedAddress(ROM_SPELL_RECORD_TABLE, (uint16_t)(spell * 2u)));
@@ -214,7 +211,7 @@ static void SpellRecordAddress(
         WramRead16(wram, WRAM_MENU_SPELL_RECORD_ID) & SPELL_ID_MASK;
     const uint16_t offset = ReadSpellRecordOffset(wram, spell);
 
-    /* The add leaves its pointer in A and N, Z, C and V as the routine exits. */
+    /* The add's pointer and flags are the exit state. */
     cpu->accumulator = offset;
     cpu->carry = 0;
     Add16Value(cpu, SPELL_RECORD_TABLE_BASE);

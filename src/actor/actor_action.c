@@ -169,7 +169,7 @@ void Lufia2ActorInstallSecondaryScript(
            A8(cpu));
 }
 
-/* $83:D39D: start the secondary script for the action in $54 and mark the slot. */
+/* $83:D39D: start the secondary script for action $54. */
 static Lufia2ActorPrimaryActionFlow
 ActionInstallSecondaryScript(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* D39D */

@@ -21,13 +21,13 @@
 #define ROM_PRIMARY_SCRIPT_OFFSETS 0x91a1d4u /* script offset word per actor id */
 #define ROM_BLOCKED_EVENT_SCRIPT 0x918f2bu
 #define BLOCKED_EVENT_SCRIPT_BASE 0x8ec7u
-/* Section header at $7E:F000: records of a flag byte (terminator $FF), x and y. */
+/* Section header at $7E:F000: flag, x, y records; $FF ends. */
 #define PRIMARY_MAP_LIST 0x7ef000u
 #define PRIMARY_MAP_LIST_X 0x7ef001u
 #define PRIMARY_MAP_LIST_Y 0x7ef002u
-/* Second byte of the map cell word found by the cell lookup. */
+/* Second byte of the looked-up map cell word. */
 #define PRIMARY_MAP_CELL_ATTRIBUTES 0x7f0001u
-/* Step tables in the program bank, indexed by direction or facing. */
+/* Step tables in the program bank, by direction or facing. */
 #define ROM_FLEE_ACTION_TABLE 0x83cd2au
 #define ROM_FACING_ACTION_TABLE 0x83c1a5u
 #define ROM_FACING_STEP_TABLE 0x83c1b0u
@@ -35,9 +35,7 @@
 #define ROM_ACTION_NIBBLE_TABLE_A 0x83d447u
 #define ROM_ACTION_NIBBLE_TABLE_B 0x83d457u
 
-/* Direct page cells the primary script handlers use. DP $54-$56 are shared
- * scratch bytes whose meaning depends on the helper; only the helpers with a
- * single clear reading are named here. */
+/* Primary handler DP cells; $54-$56 are shared scratch. */
 enum {
     DP_SCRIPT_CURSOR = 0x2a,   /* offset of the next script byte */
     DP_RADIUS = 0x54,          /* half extent of a search box */
@@ -51,8 +49,7 @@ enum {
     DP_SEARCH_MAX_Y = 0xa2
 };
 
-/* Clears flag bits $14 on the actor, loads its primary script pointer, reads
- * the opcode byte and looks the handler up in the dispatch table. */
+/* Clear flags $14, load the script, dispatch its opcode. */
 Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -87,8 +84,7 @@ Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
     return result;
 }
 
-/* Interval test on A against the limits in DP $55 and $56; the verdict comes
- * back in the carry flag. */
+/* Interval test on A against DP $55/$56; carry answers. */
 static void PrimaryIntervalCheck(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -117,8 +113,7 @@ static void PrimaryIntervalCheck(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* Reads the next script byte at the cursor (reloaded from DP $2A when asked)
- * and looks its handler up in the dispatch table, as $83:C85A does. */
+/* Read the next script byte and dispatch, like $83:C85A. */
 static Lufia2ActorScriptDispatchResult PrimaryRedispatch(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -137,7 +132,7 @@ static Lufia2ActorScriptDispatchResult PrimaryRedispatch(
     return result;
 }
 
-/* Wraps a dispatch result as a step that continues with the next handler. */
+/* Dispatch result as a step that continues. */
 static Lufia2ActorPrimaryScriptStepResult PrimaryStepRedispatched(
     Lufia2ActorScriptDispatchResult dispatch) {
     Lufia2ActorPrimaryScriptStepResult result;
@@ -240,9 +235,7 @@ static Lufia2ActorScriptDispatchResult PrimaryJumpOperand(
         }                                                            \
     } while (0)
 
-/* Calls the shared action core under a pushed JSL frame. Returns false when
- * the core does not come back through its $D3AE return, so the caller hands
- * off at resume_pc. */
+/* Action core under a JSL frame; false hands off. */
 static uint8_t PrimaryCallActionCore(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -390,8 +383,7 @@ static void PrimaryApproachProbe(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:D0CB-$83:D0EB: whether the listed point at X lies inside the search box
- * kept in $9F-$A2. */
+/* $83:D0CB-$83:D0EB: listed point X inside the search box? */
 static bool PrimaryListedPointInBox(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, LongIndexedAddress(PRIMARY_MAP_LIST_X, cpu->x)));
     Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MIN_X)));
@@ -412,8 +404,7 @@ static bool PrimaryListedPointInBox(const Lufia2Memory *memory, Lufia2CpuState *
     return true;
 }
 
-/* $83:CFE0-$83:D004: whether actor X is a live actor other than the running one
- * and stands inside the search box kept in $9F-$A2. */
+/* $83:CFE0-$83:D004: another live actor inside the search box? */
 static bool PrimaryActorInSearchBox(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_UNK_7E05D2, cpu->x)));
     Compare8(cpu, A8(cpu), 0xffu); /* $83:CFE3 */
@@ -702,8 +693,7 @@ static uint8_t PrimaryWanderAxis(
     return 1;
 }
 
-/* $83:D416: points the slot's primary script at the script that the actor's
- * $070A index selects from the ROM offset table. */
+/* $83:D416: point the primary script at the actor's $070A entry. */
 void Lufia2ActorLoadPrimaryScript(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -727,8 +717,7 @@ void Lufia2ActorLoadPrimaryScript(
            A8(cpu));
 }
 
-/* $83:C947: marks map occupancy, adjusts the actor's state and flag bits for a
- * reset and reloads its primary script. */
+/* $83:C947: mark occupancy, reset flags, reload the script. */
 void Lufia2ActorPrimaryReset(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -778,8 +767,7 @@ void Lufia2ActorClearSlotLinks(
     } while (!cpu->negative);
 }
 
-/* $83:CA68: unless field control flag $40 is set, flags the blocked-event
- * object and starts its script from the ROM blocked-event entry. */
+/* $83:CA68: start the blocked-event script unless control bit $40. */
 void Lufia2ActorBlockedEvent(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -881,7 +869,7 @@ enum PrimaryOpcodeHandler {
     PRIMARY_OP_JUMP_F000 = 0x83d340,               /* $29: operand + $F000 */
 };
 
-/* Result of a handler that stopped before its end: unknown path at handler_pc. */
+/* Handler stopped early: unknown path at handler_pc. */
 static Lufia2ActorPrimaryScriptStepResult PrimaryStepStart(uint32_t handler_pc) {
     Lufia2ActorPrimaryScriptStepResult result;
 
@@ -913,8 +901,7 @@ static uint8_t PrimaryFixedActionId(uint32_t handler_pc) {
     }
 }
 
-/* Runs the action id that PrimaryFixedActionId gives for this opcode through
- * the action core. */
+/* Run this opcode's fixed action id through the action core. */
 static Lufia2ActorPrimaryScriptStepResult PrimaryFixedAction(const Lufia2Memory *memory,
                                                              Lufia2CpuState *cpu,
                                                              uint32_t handler_pc) {
@@ -2075,8 +2062,7 @@ PrimaryJumpIfBlocked(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                                                        PRIMARY_OP_JUMP); /* $83:D091 */
 }
 
-/* The reset opcodes: runs the $83:C947 reset, then the extras particular to
- * the $C918 and $CAD3 entries. */
+/* Reset opcodes: $83:C947, then the $C918/$CAD3 extras. */
 static Lufia2ActorPrimaryScriptStepResult PrimaryResetActor(const Lufia2Memory *memory,
                                                             Lufia2CpuState *cpu,
                                                             uint32_t handler_pc) {
@@ -2587,8 +2573,7 @@ Lufia2ActorPrimaryScriptExecuteKnownHandler(const Lufia2Memory *memory,
     return PrimaryStepStart(entry);
 }
 
-/* $83:C7F8: per-frame update of one actor's primary script: runs the frontend,
- * then dispatches script opcodes through their handlers. */
+/* $83:C7F8: per-frame primary script update of one actor. */
 Lufia2ExecutionResult Lufia2ActorPrimaryUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {

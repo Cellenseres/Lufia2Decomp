@@ -5,9 +5,7 @@
 #include "lufia2/battle.h"
 #include "system/wram.h"
 
-/* Battle sprite groups. Each record starts with a flag byte (bit 7: in use)
- * and holds the sprite's position as two sums: the words at offsets 4 and 8
- * for x, the bytes at offsets 6 and 10 for y. */
+/* Sprite group records: in-use flag, x and y sums. */
 enum {
     SPRITE_FLAGS = 0,
     SPRITE_ATTRIBUTES = 1,
@@ -209,8 +207,7 @@ static void BattleTileBlock(
     PullDataBank(memory, cpu);
 }
 
-/* Direct-page inputs of the OAM strip routines ($81:BD4B, $81:BDCC) and the
- * sprite group loops that feed them. */
+/* DP inputs of the OAM strip routines. */
 enum {
     OAM_DP_TILE = 0x00u,
     OAM_DP_CELLS = 0x02u, /* word: cells per row, then rows ($03) */
@@ -234,8 +231,7 @@ enum {
     BATTLE_SPRITE_RECORD_SIZE = 13u,
 };
 
-/* A = the y byte B plus y byte A of the record at base + index, carry clear
- * going in. */
+/* A = record y byte B plus y byte A. */
 static void BattleSpriteYSum(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                              uint16_t base, uint16_t index) {
     LoadAAbsolute8(memory, cpu, (uint16_t)(base + SPRITE_Y_B), index);
@@ -243,7 +239,7 @@ static void BattleSpriteYSum(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Adc8(cpu, AbsoluteByte(memory, cpu, (uint16_t)(base + SPRITE_Y_A), index));
 }
 
-/* A (16-bit) = the x word B plus x word A of the record at base + index. */
+/* A = record x word B plus x word A. */
 static void BattleSpriteXSum(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                              uint16_t base, uint16_t index) {
     LoadA16(cpu,
@@ -253,8 +249,7 @@ static void BattleSpriteXSum(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         cpu, Read16AbsoluteIndexed(memory, cpu, (uint16_t)(base + SPRITE_X_A), index));
 }
 
-/* Hands the 2x2 sprite of the in-use record at Y in $139A to the OAM strips
- * and adds the entries it used to the group's count. */
+/* Draw the 2x2 sprite of record Y in $139A. */
 static void BattleDrawRecordSprite(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushY(memory, cpu);
     TransferDirectToA(cpu);
@@ -312,7 +307,7 @@ static void BattleSpriteRecords(
     PullDataBank(memory, cpu);
 }
 
-/* Draws the single 3x3 sprite, mirrored when its attributes ask for it. */
+/* Draw the single 3x3 sprite, mirrored when flagged. */
 static void BattleDrawSingleSprite(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, 0xffu); /* 8BD2 */
     StoreAAbsolute8(memory, cpu, BATTLE_OAM_COUNT_SINGLE, 0);
@@ -363,8 +358,7 @@ static void BattleSpriteSingle(
     PullDataBank(memory, cpu);                                 /* 8C25 */
 }
 
-/* Draws the 1x1 marker for the in-use record at Y in $1435, placed from the
- * position of the same-numbered record at $139A (x shifted by 16). */
+/* Draw the 1x1 marker beside record Y's position. */
 static void BattleDrawMarkerSprite(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushY(memory, cpu);
     TransferDirectToA(cpu);
@@ -418,8 +412,7 @@ static void BattleSpriteMarkers(
     PullDataBank(memory, cpu);
 }
 
-/* Draws the party sprite of the in-use record at Y in $13DB, mirrored when its
- * attributes ask for it, and remembers the OAM index it started at. */
+/* Draw party sprite Y in $13DB; remember its OAM start. */
 static void BattleDrawPartySprite(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     uint8_t mirrored;
 
@@ -491,8 +484,7 @@ static void BattleSpriteParty(
     PullDataBank(memory, cpu);                                 /* 8D2C */
 }
 
-/* Direct-page inputs of the tile block routine ($81:BE58) and the party
- * tilemap loop. */
+/* DP inputs of the tile block routine $81:BE58. */
 enum {
     TILE_BLOCK_DP_TILE = 0x00u,
     TILE_BLOCK_DP_CELLS = 0x02u, /* word: cells per row, then rows ($03) */
@@ -502,9 +494,7 @@ enum {
     BATTLE_PARTY_TILEMAP = 0x2800u, /* $7E:2800, the party's tilemap copy */
 };
 
-/* Places the tile block for the in-use party record at Y into the tilemap
- * copy at $7E:2800: the block's cell comes from the record's position, its
- * size from the extra word, and its attributes from the palette phase. */
+/* Place party record Y's tile block at $7E:2800. */
 static void BattlePlacePartyTiles(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushY(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
@@ -716,8 +706,7 @@ static void BattleSlotStates(
     PullDataBank(memory, cpu);
 }
 
-/* Returns through exit when the CPU is in the native M=1 X=0 mode, otherwise
- * stops at entry so the original code runs. */
+/* Native M=1 X=0 runs here; otherwise hand off. */
 static Lufia2ExecutionResult BattleFrameEntry(
     Lufia2CpuState *cpu, uint32_t entry, uint32_t exit) {
     Lufia2ExecutionResult result;

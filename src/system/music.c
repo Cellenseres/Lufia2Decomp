@@ -56,9 +56,7 @@ static uint8_t MusicChild(
             return MusicUnwound(site); \
     } while (0)
 
-/* Sends one sample to the sound driver: command $13 with the sample value in
- * A, the two handshake children, then the upload child. Returns 0, or the
- * call site of the child that unwound. */
+/* Send one sample: command $13, handshake, upload. */
 static uint32_t MusicSendSample(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                 Lufia2PushedChildCall child, void *context,
                                 uint32_t site, bool load_resource_id) {
@@ -77,7 +75,7 @@ static uint32_t MusicSendSample(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return 0u;
 }
 
-/* Marks every cache slot empty ($FF) and restarts the sample count. */
+/* Mark every cache slot empty and restart the count. */
 static void MusicClearSampleCache(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushIndex(memory, cpu);
     OpLdx(cpu, 31u);
@@ -91,8 +89,7 @@ static void MusicClearSampleCache(const Lufia2Memory *memory, Lufia2CpuState *cp
     OpStz(memory, cpu, OpDp(cpu, MUSIC_SAMPLE_COUNT + 1u));
 }
 
-/* Uploads the song's sample list: first the fixed resources that the list
- * flags with bit 7, then each distinct sample value that is not cached yet. */
+/* Upload fixed resources, then uncached sample values. */
 static Lufia2ExecutionResult MusicLoadSamples(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {

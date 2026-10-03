@@ -2,10 +2,7 @@
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
 
-/* The message effect drives HDMA channel 4 (a two-register indirect transfer
- * to $2110) through the channel record at $1B03; its cleanup sets up channel
- * 3 (a direct transfer to $2101) through the record at $1AFE. The records
- * share one layout, and a request bit in $DA latches each channel. */
+/* Message effect HDMA records: channel 4, cleanup channel 3. */
 enum {
     HDMA_REQUESTS = 0xdau,
     TIMER_REQUESTS = 0xdbu,
@@ -34,8 +31,7 @@ enum {
 
 static const uint16_t kMessagePositions[3] = {0x1258u, 0x125au, 0x125cu};
 
-/* Sets the bits in a direct-page byte (TSB); only the zero flag follows the
- * old value. */
+/* TSB on a DP byte; Z follows the old value. */
 static void SetRequestBits(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                            uint8_t location, uint8_t bits) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -113,8 +109,7 @@ Lufia2ExecutionResult Lufia2BattleQueueMessageCleanup(const Lufia2Memory *memory
                                                       Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
 
-    /* The first byte is the direct page's low byte, which the original uses
-     * as a zero. */
+    /* First byte is the DP low byte, used as zero. */
     TransferDirectToA(cpu);
     WramWrite(wram, HDMA_CHANNEL_3_RECORD + HDMA_RECORD_MODE, A8(cpu));
     WramWrite(wram, HDMA_CHANNEL_3_RECORD + HDMA_RECORD_REGISTER, 1u);

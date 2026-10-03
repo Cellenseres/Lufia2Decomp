@@ -7,10 +7,7 @@
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
-/* Direct-page fields of the actor sprite builder. The OAM index in DP $58 and
- * the next-entry counter in DP $5F count 4-byte entries; the size flags in
- * DP $90 and the high-table mask in DP $55 are scratch for the 2-bit
- * size/high-X fields at $0300. */
+/* DP fields of the actor sprite builder. */
 enum {
     OAM_DP_SIZE_MASK = 0x55u,
     OAM_DP_INDEX = 0x58u,
@@ -30,10 +27,8 @@ enum {
     SPRITE_DP_ACTOR_COUNT = 0x60u,
 };
 
-/* A sprite entry of the OAM buffer is four bytes (x, y, tile, attributes);
- * the macros give the offset of a field of entry n from the entry address
- * that is held in X. */
-/* Two-bit size and high-X fields of the OAM entries, four entries per byte. */
+/* OAM entry field offsets from the entry in X. */
+/* OAM high table: size and high-X bits, four per byte. */
 #define OAM_HIGH_TABLE 0x0300u
 #define OAM_ENTRY_SIZE 4u
 #define OAM_X(n) ((n) * OAM_ENTRY_SIZE + 0u)
@@ -420,9 +415,7 @@ static void FieldSortVisible(
     } while (!cpu->zero);
 }
 
-/* $83:A34F: build the draw state for a field-object actor (slot >= $28):
- * reload its sprite tiles if needed, then compute its screen position and
- * attribute bits. */
+/* $83:A34F: draw state of a field-object actor. */
 static void FieldObjectActorSetup(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x0732u, 0); /* A34F */
     Compare8(cpu, A8(cpu), 0x10u);
@@ -483,9 +476,7 @@ static void FieldObjectActorSetup(const Lufia2Memory *memory, Lufia2CpuState *cp
     TestBitsDirect(memory, cpu, OAM_DP_ATTRIBUTES, 1);
 }
 
-/* $83:A3BB: build the draw state for an ordinary actor (slot < $28):
- * refresh its frame upload when the pose changed, then compute its screen
- * position and attribute bits. */
+/* $83:A3BB: draw state of an ordinary actor. */
 static void FieldActorSetup(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, WRAM_UNK_7E066A, cpu->x); /* A3BB */
     Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0x1471u, cpu->x));

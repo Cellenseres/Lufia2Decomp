@@ -381,7 +381,7 @@ static SecondaryStep SecondarySaveCursorExit(
     return SecondaryExit();
 }
 
-/* $83:DD09: store the cursor at $2A as the script position and exit. */
+/* $83:DD09: store cursor $2A as the script position. */
 static SecondaryStep SecondarySaveWalkCursor(const Lufia2Memory *memory,
                                              Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
@@ -848,7 +848,7 @@ static SecondaryStep SecondaryOpFCSet066A(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:D6AD: $D5 stores the probe position in the claimed pending object's record. */
+/* $83:D6AD: $D5 stores the probe in the pending object. */
 static SecondaryStep SecondaryOpStoreProbeInPendingObject(const Lufia2Memory *memory,
                                                           Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* D6AD */
@@ -1077,7 +1077,7 @@ static SecondaryStep SecondaryOpE6(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:DB77: $EA sets or clears bit 1 of the actor's flags from the operand. */
+/* $83:DB77: $EA sets or clears actor flag bit 1. */
 static SecondaryStep SecondaryOpSetActorFlagBit1(const Lufia2Memory *memory,
                                                  Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* DB77 */
@@ -1096,8 +1096,7 @@ static SecondaryStep SecondaryOpSetActorFlagBit1(const Lufia2Memory *memory,
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:DBDC: $ED sets the secondary timer from the operand; a non-zero operand also sets
- * the blink bit. */
+/* $83:DBDC: $ED sets the timer; non-zero also blinks. */
 static SecondaryStep SecondaryOpSetTimerAndBlink(const Lufia2Memory *memory,
                                                  Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* DBDC */
@@ -1135,8 +1134,7 @@ static SecondaryStep SecondaryOpSkipByte(const Lufia2Memory *memory,
     return SecondaryNextByte(memory, cpu, 1);             /* DAC3 */
 }
 
-/* $83:DAC9: $D1 sets bit 7 of $7F:E316[slot] when the operand is non-zero, else clears
- * it. */
+/* $83:DAC9: $D1 sets $7F:E316 bit 7 from the operand. */
 static SecondaryStep SecondaryOpSetBit7FromOperand(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                       /* DAC9 */
@@ -1171,7 +1169,7 @@ static SecondaryStep SecondaryOpF1(
     return SecondaryRedispatched(memory, cpu);
 }
 
-/* $83:DEBD: $F9 copies the fine position and display offsets to the scratch words. */
+/* $83:DEBD: $F9 saves position and display offsets. */
 static SecondaryStep SecondaryOpSavePositionScratch(const Lufia2Memory *memory,
                                                     Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                       /* DEBD */

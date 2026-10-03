@@ -12,14 +12,13 @@ enum {
     PARTY_EXPERIENCE_HIGH = 0x0a2cu
 };
 
-/* Level cap of the curve and the experience reported from there on. */
+/* Curve level cap and the experience from there on. */
 enum {
     LEVEL_CAP = 0x62u,
     EXPERIENCE_AT_CAP = 0x98967fu /* 9,999,999 */
 };
 
-/* Tables in bank $97: a row of growth factors per member (a new factor every
- * eight levels) and the first growth step of each member. */
+/* Bank $97 growth factor rows and first steps. */
 enum {
     GROWTH_TABLE = 0xb633u,
     GROWTH_ROW_SIZE = 0x70u,
@@ -37,10 +36,7 @@ enum {
     DP_PRODUCT_TOP = 0x57u
 };
 
-/* Step = step + step * factor / 256 on the 32-bit step at $58, with the
- * factor already in the multiplier. The multiplier unit works on bytes, so the
- * four step bytes are multiplied one by one and the partial products are
- * added with carries between the 16-bit halves. */
+/* Step += step * factor / 256 via byte products. */
 static void PartyGrowStep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -62,7 +58,7 @@ static void PartyGrowStep(
     WramWrite(bus, SNES_WRMPYB, WramRead(dp, DP_STEP));
     byte0_product = WramRead16(bus, SNES_RDMPYL);
 
-    /* The low byte of the direct page rides along as the lowest addend. */
+    /* DP low byte is the lowest addend. */
     sum = (((uint32_t)WramRead(dp, DP_PRODUCT_LOW) << 8) |
            ((cpu->direct_page >> 8) & 0xffu)) +
           byte0_product;
@@ -85,7 +81,7 @@ static void PartyGrowStep(
     cpu->x = PullIndexValue(memory, cpu);
 }
 
-/* The growth factor of the row at Y, plus one, into the multiplier. */
+/* Growth factor of row Y, plus one, into the multiplier. */
 static void SelectGrowthFactor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram bus = WramViewOfCaller(memory, cpu);
 
@@ -93,9 +89,7 @@ static void SelectGrowthFactor(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     WramWrite(bus, SNES_WRMPYA, A8(cpu));
 }
 
-/* $81:F9E9: experience needed for level $09FE of member $09FA. The step grows
- * by a member-specific factor every level, and the sum of the steps (less ten
- * after scaling) is the requirement; the curve stops at the level cap. */
+/* $81:F9E9: experience needed for level $09FE of $09FA. */
 Lufia2ExecutionResult Lufia2PartyExperienceForLevel(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -111,7 +105,7 @@ Lufia2ExecutionResult Lufia2PartyExperienceForLevel(
     PushIndex(memory, cpu);
     bus = WramViewOfCaller(memory, cpu);
 
-    /* Y = growth row of the member, X = member * 2. */
+    /* Y = member's growth row, X = member * 2. */
     LoadA8(cpu, GROWTH_ROW_SIZE);
     WramWrite(bus, SNES_WRMPYA, A8(cpu));
     TransferDirectToA(cpu);
@@ -173,7 +167,7 @@ Lufia2ExecutionResult Lufia2PartyExperienceForLevel(
             PartyGrowStep(memory, cpu);
             IncrementX16(cpu);
         }
-        /* Requirement: the 24 bits above the low byte of the sum, minus ten. */
+        /* Requirement: sum above the low byte, minus ten. */
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, WramRead16(dp, DP_SUM + 1u));
         Subtract16(cpu, 0x000au);

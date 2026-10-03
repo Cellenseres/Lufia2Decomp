@@ -29,8 +29,7 @@ enum {
                                (BATTLE_ENEMY_COUNT - 2u) * BATTLE_TARGET_RECORD_SIZE,
 };
 
-/* Clears every selection record, then fills the party records from the party
- * table and marks the capsule record unavailable. */
+/* Clear selections, fill party records, capsule unavailable. */
 static void TargetBuildPartyRecords(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
     OpLdx(cpu, 0u);
@@ -68,8 +67,7 @@ static void TargetBuildPartyRecords(const Lufia2Memory *memory, Lufia2CpuState *
     TransferDirectToA(cpu);
 }
 
-/* Fills the enemy records: each unavailable flag is the complement of the child's
- * result, the two bytes after it are copied from DP $22/$23. */
+/* Fill enemy records from the child's results. */
 static bool TargetBuildEnemyRecords(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -173,9 +171,7 @@ static void TargetPublishSelectionMask(const Lufia2Memory *memory, Lufia2CpuStat
     OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
 }
 
-/* Draws the cursor for a single target: its name goes into the name buffer and
- * the pointer position is staged in the hardware registers the original used
- * as scratch. */
+/* Single target cursor: name buffer and pointer position. */
 static bool TargetPlaceCursor(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -222,8 +218,7 @@ static bool TargetPlaceCursor(BattleContext *battle) {
     return true;
 }
 
-/* On the visible blink phase, calls the marker child for every selected
- * available record. */
+/* On the visible phase, mark every selected record. */
 static bool TargetDrawMarkers(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -288,13 +283,12 @@ static bool TargetDrawSelection(BattleContext *battle) {
 /* What the main loop does after a handler ran. */
 typedef enum { TARGET_REDRAW, TARGET_UNWOUND, TARGET_DONE } TargetOutcome;
 
-/* Loads the side flag: zero for the party list, $80 for the enemy list. */
+/* Side flag: 0 for party, $80 for enemies. */
 static void TargetLoadSide(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
 }
 
-/* Steps the cursor by the move delta. Running off the front wraps to the end
- * of the list, running off the end wraps to the front. */
+/* Step the cursor, wrapping at both ends. */
 static void TargetStepCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     bool party;
 
@@ -317,8 +311,7 @@ static void TargetStepCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         OpLoadA(cpu, 0u);
 }
 
-/* Takes the candidate cursor from A, makes it the cursor, and tells whether
- * that target can be chosen. */
+/* Make candidate A the cursor; can it be chosen? */
 static bool TargetCursorAvailable(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     bool party;
 
@@ -338,8 +331,7 @@ static bool TargetCursorAvailable(const Lufia2Memory *memory, Lufia2CpuState *cp
     return cpu->zero;
 }
 
-/* Keeps stepping from the candidate in A until the cursor rests on a target
- * that can be chosen. */
+/* Step until the cursor rests on a valid target. */
 static void TargetSettleCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     while (!TargetCursorAvailable(memory, cpu))
         TargetStepCursor(memory, cpu);
@@ -351,7 +343,7 @@ static void TargetMoveAcross(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TargetSettleCursor(memory, cpu);
 }
 
-/* Moving past the last party member leads to the first enemy. */
+/* Past the last party member: first enemy. */
 static void TargetSwitchToEnemies(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TargetClearParty(memory, cpu);
     OpStz(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
@@ -364,7 +356,7 @@ static void TargetSwitchToEnemies(const Lufia2Memory *memory, Lufia2CpuState *cp
     TargetSettleCursor(memory, cpu);
 }
 
-/* Moving back from the enemies leads to the first party member. */
+/* Back from the enemies: first party member. */
 static void TargetSwitchToParty(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TargetClearEnemies(memory, cpu);
     OpStz(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
@@ -375,8 +367,7 @@ static void TargetSwitchToParty(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     TargetSettleCursor(memory, cpu);
 }
 
-/* Walks down the party neighbour table from the cursor until it rests on a
- * target that can be chosen. Returns false when the table ends first. */
+/* Walk down the party neighbour table; false at end. */
 static bool TargetWalkDown(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     do {
         OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
@@ -393,9 +384,7 @@ static bool TargetWalkDown(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     return true;
 }
 
-/* Walks up the party neighbour table (mode $20 uses its own table) from the
- * cursor until it rests on a target that can be chosen. Returns false when
- * the table ends first. */
+/* Walk up the party neighbour table; false at end. */
 static bool TargetWalkUp(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     do {
         OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
@@ -416,9 +405,7 @@ static bool TargetWalkUp(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     return true;
 }
 
-/* A pad direction up or down, the delta already stored. On the party side
- * the cursor follows the neighbour tables until it finds a target that can be
- * chosen; running off either end switches to the enemy list. */
+/* Up or down move; off either end switches sides. */
 static void TargetMoveVertical(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     bool down;
 
@@ -438,7 +425,7 @@ static void TargetMoveVertical(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
         TargetSwitchToEnemies(memory, cpu);
 }
 
-/* Stores A into every selected byte from first to last, one record apart. */
+/* Store A into each selected byte, first to last. */
 static void TargetFillSelection(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                 uint16_t first, uint16_t last) {
     for (uint16_t address = first; address <= last;
@@ -446,8 +433,7 @@ static void TargetFillSelection(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         OpSta(memory, cpu, OpAbs(cpu, address));
 }
 
-/* The "select all" button: flips every record of the cursor's side to the
- * opposite of the record under the cursor. */
+/* Select all: flip the side opposite the cursor record. */
 static void TargetToggleAll(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
@@ -489,7 +475,7 @@ static TargetOutcome TargetFinishEnemies(const Lufia2Memory *memory,
     return TARGET_DONE;
 }
 
-/* Mode 2: the cursor's target alone is the choice, on either side. */
+/* Mode 2: the cursor's target alone is chosen. */
 static TargetOutcome TargetAcceptLone(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                       uint32_t *return_pc) {
     TargetLoadSide(memory, cpu);
@@ -505,8 +491,7 @@ static TargetOutcome TargetAcceptLone(const Lufia2Memory *memory, Lufia2CpuState
     return TargetFinishParty(memory, cpu, return_pc);
 }
 
-/* Mode 3: marks the cursor's party member, then finishes only if the selected bytes of
- * the four party records add up to $FE (8-bit). */
+/* Mode 3: mark, finish when the party adds to $FE. */
 static TargetOutcome TargetAcceptParty(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                        uint32_t *return_pc) {
     TargetLoadCursorRecordOffset(memory, cpu);
@@ -528,7 +513,7 @@ static TargetOutcome TargetAcceptParty(const Lufia2Memory *memory, Lufia2CpuStat
     return TargetFinishParty(memory, cpu, return_pc);
 }
 
-/* Other modes: the first press marks the target, the second one confirms it. */
+/* Other modes: first press marks, second confirms. */
 static TargetOutcome TargetAcceptMarked(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                         uint32_t *return_pc) {
     TargetLoadSide(memory, cpu);
@@ -550,10 +535,7 @@ static TargetOutcome TargetAcceptMarked(const Lufia2Memory *memory, Lufia2CpuSta
     return TARGET_REDRAW;
 }
 
-/* The confirm button. What counts as a complete choice depends on the mode
- * (low two bits of the mode byte): a lone target of either side (2), the whole
- * party (3), or one target that is marked first and confirmed on the second
- * press. */
+/* Confirm: complete choice depends on the mode. */
 static TargetOutcome TargetAccept(BattleContext *battle, uint32_t *return_pc) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -577,8 +559,7 @@ static TargetOutcome TargetAccept(BattleContext *battle, uint32_t *return_pc) {
     return TargetAcceptMarked(memory, cpu, return_pc);
 }
 
-/* The cancel button: takes back the mark under the cursor, or when there is
- * none leaves without a choice. */
+/* Cancel: unmark the cursor's target, or leave. */
 static TargetOutcome TargetCancel(BattleContext *battle, uint32_t *return_pc) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -617,9 +598,7 @@ static TargetOutcome TargetCancel(BattleContext *battle, uint32_t *return_pc) {
     return TARGET_DONE;
 }
 
-/* Reads the pad: confirm, select all, cancel, or a direction. The direction
- * table at $97:B5AA has bit 0 set for left/right and is zero for no
- * direction. */
+/* Read the pad: confirm, select all, cancel, direction. */
 static TargetOutcome TargetHandleInput(BattleContext *battle, uint32_t *return_pc) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;

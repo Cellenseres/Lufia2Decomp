@@ -20,29 +20,19 @@ enum {
 };
 
 enum {
-    /* Shop description word, in the same bytes the battle screen keeps its
-     * party ids: bit 0 shows the owned items, bits 1-5 the sale lists, bit 7
-     * the extra list. */
+    /* Shop flags: owned items, sale lists, extra list. */
     MENU_SHOP_FLAGS = 0x1540u,
 };
 
-/* Menu cursors. Each cursor index is a six-entry byte array per field ($14C1
- * to $1508, six bytes apart). A cursor's position is origin + spacing * index
- * on each axis, written into sprite slot MENU_CURSOR_SPRITE_BASE + cursor.
- * The layout bytes are read from $A6:F518 + Y; $14D3, $14E5 and $14C7 are
- * cleared whenever a layout is placed, and the two index arrays are cleared
- * when a screen starts. */
+/* Menu cursors: origin + spacing * index per axis. */
 enum {
     MENU_CURSOR_SPRITE_BASE = 5,
     MENU_SPRITE_SCROLL_THUMB = 11, /* sprite slot of the scrollbar thumb */
-    /* Item ids whose use is decided by a bit of the window mode ($09A7) rather
-     * than the item record: bit $10 for the first, bit $08 for the others. */
+    /* Items whose use depends on a window mode bit. */
     MENU_ITEM_USE_BIT_10 = 0x2au,
     MENU_ITEM_USE_BIT_08_A = 0x29u,
     MENU_ITEM_USE_BIT_08_B = 0x2du,
-    /* Byte selecting how ItemAttribute reads a row: 1 and 2 read the item
-     * record byte at $8460 or $846A, 0 decides from the item id. Set by the
-     * list mode in ListByMode. */
+    /* How ItemAttribute reads a row; set by ListByMode. */
     MENU_ROW_ATTRIBUTE_KIND = 0x153eu,
     MENU_SPRITE_SLOT_SCRATCH = 0x14a9u,  /* word: slot kept across a lookup */
     MENU_CURSOR_LAYOUT_14C1 = 0x14c1u,   /* last layout byte, purpose unknown */
@@ -54,8 +44,7 @@ enum {
     MENU_CURSOR_Y_ORIGIN_HIGH = 0x14e5u,
     MENU_CURSOR_Y_INDEX = 0x14ebu,   /* row the cursor is on */
     MENU_CURSOR_COLUMNS = 0x14f1u,   /* layout byte 2 */
-    MENU_CURSOR_ROWS = 0x14f7u,      /* layout byte 3; the shop sets it to
-                                        the list length */
+    MENU_CURSOR_ROWS = 0x14f7u,      /* layout byte 3; the shop sets the list length */
     MENU_CURSOR_X_SPACING = 0x14fdu, /* layout byte 4 */
     MENU_CURSOR_Y_SPACING = 0x1503u, /* layout byte 5 */
 };
@@ -77,8 +66,7 @@ static uint16_t Indirect16At(const Lufia2Memory *memory,
         Read16Direct(memory, cpu, offset) + index) & 0x00ffffffu);
 }
 
-/* Loads the data bank register with the given bank through A, as the ROM
- * does with LDA/PHA/PLB. */
+/* LDA/PHA/PLB: set the data bank through A. */
 static void SetBank(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t bank) {
     LoadA8(cpu, bank);
@@ -140,8 +128,7 @@ static void MenuClearRect(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PullDataBank(memory, cpu);
 }
 
-/* $82:88CB: cursor index X's sprite position: origin + spacing * index on
- * each axis (x, then y). */
+/* $82:88CB: cursor X sprite position, origin + spacing * index. */
 static void MenuCursorPosition(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint16_t kIn[2][2] = {{MENU_CURSOR_X_SPACING, MENU_CURSOR_X_INDEX},
                                        {MENU_CURSOR_Y_SPACING, MENU_CURSOR_Y_INDEX}};
@@ -173,7 +160,7 @@ static void MenuCursorPosition(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     }
 }
 
-/* $82:891E: cursor index X takes the seven-byte layout at $A6:F518 + Y. */
+/* $82:891E: cursor X takes the layout at $A6:F518 + Y. */
 static void MenuCursorPlace(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     static const uint16_t kFields[7] = {MENU_CURSOR_X_ORIGIN,   MENU_CURSOR_Y_ORIGIN,
                                         MENU_CURSOR_COLUMNS,    MENU_CURSOR_ROWS,
@@ -303,7 +290,7 @@ Lufia2ExecutionResult Lufia2MenuEquipCommands(
     return ExecutionReturned(0x829fafu);
 }
 
-/* Draws a window through the ROM window routine, position in A and size in X. */
+/* Draw a window via the ROM: A position, X size. */
 static void Window(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t position, uint16_t size, uint16_t return_address) {
     LoadA16(cpu, position);
@@ -639,8 +626,7 @@ static void MenuPartyStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);
 }
 
-/* Test-and-set bits in a direct-page byte: A takes the bits, zero reports
- * whether any were already set. */
+/* TSB on a DP byte; zero reports already-set bits. */
 static void TsbDirect(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t offset, uint8_t bits) {
     const uint8_t old = DirectByte(memory, cpu, offset);
@@ -906,7 +892,7 @@ static void CapsuleSkillName(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);
 }
 
-/* JSL $80:8878 with the string at $8E:Y; 1 when it handed off. */
+/* JSL $80:8878 with string $8E:Y; 1 when handed off. */
 static int String8E(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t string, uint16_t return_address, Lufia2ExecutionResult *out) {
     LoadA8(cpu, 0x8eu);
@@ -1806,13 +1792,13 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
     return ExecutionReturned(0x829d54u);
 }
 
-/* Sets the text attribute (the menu draw mode) for the next string. */
+/* Text attribute (menu draw mode) for the next string. */
 static void SetAttribute(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t attribute) {
     StoreA8Absolute(memory, cpu, WRAM_MENU_DRAW_MODE, attribute);
 }
 
-/* JSL into the bank $81 reader of the first record byte of item $0A06. */
+/* JSL to bank $81: first record byte of item $0A06. */
 static void ItemByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x82u, return_address);
@@ -1881,8 +1867,7 @@ static void ItemAttribute(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreAAbsolute8(memory, cpu, WRAM_MENU_DRAW_MODE, 0);
 }
 
-/* JSL into the bank $81 spell record byte reader; the C variant reads the
- * record's offset-$0C byte, the other the offset-$08 byte. */
+/* JSL to bank $81: spell byte at $0C or $08. */
 static void SpellByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     int twelve, uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x82u, return_address);

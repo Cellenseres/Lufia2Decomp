@@ -18,8 +18,7 @@ enum {
     SAVE_SAVED_STATUS = 8u,
 };
 
-/* Save RAM holds one 2 KiB slot per file: a header (state byte, random seed,
- * checksum word) followed by the encrypted game data. */
+/* Save RAM: one 2 KiB slot per file. */
 enum {
     SAVE_SRAM_BANK = 0x70u,
     SAVE_SLOT_SHIFT = 11,
@@ -65,9 +64,7 @@ static uint8_t SaveChild(
             return SaveUnwound(site); \
     } while (0)
 
-/* $80:9099: reads save file A through the $80:914B child. If the first buffer
- * byte has no high-nibble bits two more children run; otherwise carry is set
- * in the status byte restored for the caller. */
+/* $80:9099: read save file A via $80:914B. */
 Lufia2ExecutionResult Lufia2LoadGameFile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
@@ -105,8 +102,7 @@ Lufia2ExecutionResult Lufia2LoadGameFile(
     return ExecutionReturned(0x8090c8u);
 }
 
-/* $80:90C9: runs the two pack children, then the $80:9184 child with the file number.
- */
+/* $80:90C9: pack, then write the file via $80:9184. */
 Lufia2ExecutionResult Lufia2SaveGameFile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
@@ -135,14 +131,13 @@ Lufia2ExecutionResult Lufia2SaveGameFile(
     return ExecutionReturned(0x8090e4u);
 }
 
-/* Byte offset of save slot A (8-bit accumulator) in save RAM, returned in A
- * and X. */
+/* Offset of save slot A, returned in A and X. */
 Lufia2ExecutionResult Lufia2ResolveSaveFileAddress(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const uint8_t slot = A8(cpu);
 
     (void)memory;
-    /* The last bit shifted out of the slot number ends up in the carry. */
+    /* The last bit shifted out ends up in carry. */
     cpu->carry = (uint16_t)(slot << (SAVE_SLOT_SHIFT - 1)) >> 15;
     cpu->accumulator = (uint16_t)(slot << SAVE_SLOT_SHIFT);
     TransferAToX(cpu);
@@ -167,9 +162,7 @@ static int AddOverflows(uint8_t a, uint8_t b) {
     return (~(a ^ b) & (a ^ sum) & 0x80u) != 0;
 }
 
-/* Checksum of the slot named by A: the words after the header added onto a
- * fixed seed (the carry is dropped); stored at $56. Needs M8, X16; the direct
- * page must lie in work RAM. */
+/* Checksum of slot A into $56; needs M8 X16. */
 Lufia2ExecutionResult Lufia2SaveFileChecksum(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -192,8 +185,7 @@ Lufia2ExecutionResult Lufia2SaveFileChecksum(
         sum = (uint16_t)total;
     }
     WramWrite16(wram, SAVE_CHECKSUM, sum);
-    /* Exit: A = checksum, Y = end of slot, flags of the last add and of the
-     * loop's final comparison. */
+    /* Exit: A checksum, Y slot end, last flags. */
     cpu->accumulator = sum;
     cpu->y = SAVE_SLOT_SIZE;
     cpu->carry = 1;
@@ -203,9 +195,7 @@ Lufia2ExecutionResult Lufia2SaveFileChecksum(
     return ExecutionReturned(0x80911bu);
 }
 
-/* Reads save slot A into the file buffer, decrypting it with the random
- * stream seeded from the slot's second byte. Needs M8, X16; the direct page
- * must lie in work RAM. */
+/* Read and decrypt save slot A into the buffer. */
 Lufia2ExecutionResult Lufia2ReadGameFile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
@@ -250,9 +240,7 @@ Lufia2ExecutionResult Lufia2ReadGameFile(
     return ExecutionReturned(0x809183u);
 }
 
-/* Writes the file buffer to save slot A, encrypted with the random stream,
- * then stores the checksum. Needs M8, X16; the direct page must lie in work
- * RAM. */
+/* Encrypt the buffer into slot A, store the checksum. */
 Lufia2ExecutionResult Lufia2WriteGameFile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -295,7 +283,7 @@ Lufia2ExecutionResult Lufia2WriteGameFile(
     SAVE_CALL(0x8091b9u, 0x8090fcu, 2u);
     checksum = WramRead16(wram, SAVE_CHECKSUM);
     Write16Long(memory, SaveByteAddress(slot_offset, SAVE_CHECKSUM_OFFSET), checksum);
-    /* The first byte carries the low nibble of the save RAM's status byte. */
+    /* First byte keeps the save RAM status low nibble. */
     status = Read8(memory, SAVE_RAM_STATUS) & 0x0fu;
     Write8(memory, SaveByteAddress(slot_offset, 0u), status);
     cpu->accumulator = (uint16_t)((checksum & 0xff00u) | status);

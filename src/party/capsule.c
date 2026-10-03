@@ -154,8 +154,7 @@ static void CapsuleLevelStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         WramWrite(wram, EXPERIENCE + 2u, (uint8_t)(EXPERIENCE_CAP >> 16));
     }
 
-    /* The step grows by step * factor / 256, where the factor comes from a
-     * table with one entry per 8 levels. */
+    /* Step grows by step*factor/256; factor per 8 levels. */
     factor =
         (uint8_t)(Read8(memory,
                         LongIndexedAddress(
@@ -186,8 +185,7 @@ static void CapsuleLevelStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     WramWrite(wram, STEP + 3u, A8(cpu));
 }
 
-/* $82:CE52: experience for the level, minus 10. The level is counted up from
- * zero, one step per level, and the monster's level byte ends up zero. */
+/* $82:CE52: experience for the level, minus 10. */
 static void CapsuleExperience(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     uint8_t remaining;
@@ -237,8 +235,7 @@ static void ClearBonuses(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 
     LoadX16(cpu, WramRead16(wram, 0x2au));
     for (i = 0; i < words; ++i) {
-        /* The bonus words sit at absolute addresses below $100, so the
-         * index is added without the direct page. */
+        /* Bonus words below $100: index added without DP. */
         const uint32_t at = AbsoluteIndexedAddress(
             cpu, (uint16_t)(first + 2u * i), cpu->x);
 
@@ -272,10 +269,7 @@ static void ShiftWordRight(Lufia2Wram wram, uint32_t location) {
     Write8(wram.memory, low, (uint8_t)value);
 }
 
-/* $82:D31C: growth of a stat over the levels, / 16. The stat's growth rate is
- * taken from the table at $A6:F420 in steps of 16 levels; a level at or past
- * the form number only counts a half or a quarter. The running values live in
- * direct-page scratch. */
+/* $82:D31C: a stat's growth over the levels, / 16. */
 static void CapsuleGrowth(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     const uint16_t level = WramRead16(wram, LEVEL) & 0x00ffu;
@@ -318,7 +312,7 @@ static void CapsuleGrowth(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 
 /* $82:D283: base stats plus growth into the block. */
 static void CapsuleStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    /* Per stat: the record offset of its growth input and of its base value. */
+    /* Per stat: offsets of its growth input and base. */
     static const uint8_t kRecordOffsets[6][2] = {{0x1du, 0x15u}, {0x1eu, 0x18u},
                                                  {0x1fu, 0x19u}, {0x20u, 0x1au},
                                                  {0x21u, 0x1bu}, {0x22u, 0x1cu}};

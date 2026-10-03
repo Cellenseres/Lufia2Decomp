@@ -19,11 +19,7 @@ enum {
     EVENT_SCRIPT_BANK_ORIGIN = 0x8f,
 };
 
-/* $80:E844: clears the event call records, loads the map's parameter word,
- * and points the script base at the map's script block. A map whose offset
- * entry is $FFFF has no script block: the base keeps the $FFFF offset and the
- * accumulator's low byte as bank, as the original does. Registers on return
- * (A holds the bank, X the map's offset entry index) are part of the contract. */
+/* $80:E844: clear call records, point at the map's script block. */
 Lufia2ExecutionResult Lufia2FieldInitializeMapEvents(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);

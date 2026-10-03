@@ -59,8 +59,7 @@ static bool StatusGauge(BattleContext *battle, uint16_t current, uint16_t maximu
     return true;
 }
 
-/* Body of $81:E645 between its register saves and the shared exit; false when
- * a child call unwinds. */
+/* Body of $81:E645; false when a child unwinds. */
 static bool PartyStatusRowCore(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;

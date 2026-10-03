@@ -8,8 +8,7 @@ enum {
     COMMAND_DP_PALETTE_BANK = 0x24u,
     COMMAND_DP_CURSOR_POSITION = 0x26u,
     COMMAND_DP_STAGED_ACTION = 0x54u,
-    /* Arguments of the resource decompressor at $80:8E9D: the resource table
-     * entry in $54 and the destination pointer in $60/$62. */
+    /* Decompressor arguments: entry in $54, destination $60/$62. */
     COMMAND_DP_RESOURCE_ENTRY = 0x54u,
     COMMAND_DP_DESTINATION = 0x60u,
     COMMAND_DP_DESTINATION_BANK = 0x62u,
@@ -50,15 +49,13 @@ static bool BattleDrawCommands(BattleContext *battle, bool after_selection) {
     return true;
 }
 
-/* A word of the battler record that X points to, in the data bank. */
+/* Word of the battler record at X. */
 static uint16_t BattlerWord(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
                             uint16_t field) {
     return Read16Long(memory, OpAbsX(cpu, field));
 }
 
-/* Finds the lowest and highest priority among the party members that can still
- * take a command, into the two words at $22 and $24. Leaves the last member
- * record in X and Y below zero, as the loop did. */
+/* Lowest and highest priority of members able to act. */
 static void BattleCollectPartyPriorityBounds(const Lufia2Memory *memory,
                                              Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -136,9 +133,7 @@ enum {
     FORMATION_STATE_BYTES = 13,
 };
 
-/* Swaps the two picked members' rows of a table. The row offsets come from
- * the hardware multiplier, so its registers are written and read in the
- * original order. */
+/* Swap two members' table rows; multiplier order kept. */
 static void SwapFormationRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                               Lufia2Wram wram, uint16_t table, uint8_t row_bytes) {
     uint8_t pick_b;
@@ -168,8 +163,7 @@ static void SwapFormationRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     } while (!cpu->zero);
 }
 
-/* Swaps the two picked members' rows in both formation tables and their
- * 13-byte state records. */
+/* Swap the picked members' formation rows and state records. */
 static void BattleSwapFormationBlocks(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     uint16_t high;
@@ -203,8 +197,7 @@ static void BattleSwapFormationBlocks(const Lufia2Memory *memory, Lufia2CpuState
     cpu->y = to;
 }
 
-/* Picks the cursor position from the held up/down bits (stored in DP $26) and
- * loads the matching layout triple into DP $00, $08 and $09. */
+/* Cursor layout from the held up/down bits. */
 static void FormationLoadCursorLayout(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSepWidths(cpu, 0x10u);
     OpLda(memory, cpu, OpDp(cpu, DP_BUTTONS_HELD + 1u));
@@ -225,8 +218,7 @@ static void FormationLoadCursorLayout(const Lufia2Memory *memory, Lufia2CpuState
     OpSta(memory, cpu, OpDp(cpu, 9u));
 }
 
-/* Copies the per-member value for each of the four party ids into the table at
- * $00:139C, 13 bytes apart. */
+/* Stage each party member's value at $00:139C. */
 static void FormationStageMembers(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
     OpTax(cpu);
@@ -310,8 +302,7 @@ typedef enum {
     COMMAND_HANDOFF
 } CommandStep;
 
-/* Clears the staging area, draws the battle screen and the command window, and
- * starts the menu. */
+/* Clear staging, draw the screen and command window. */
 static bool BattleCommandsSetup(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -394,8 +385,7 @@ static bool BattleCommandsSetup(BattleContext *battle) {
     return true;
 }
 
-/* Marks the seven battle slots empty and sets the field battle result to
- * zero, for the menu entries that leave the battle. */
+/* Mark the battle slots empty; field result zero. */
 static void BattleLeave(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -412,10 +402,7 @@ static void BattleLeave(BattleContext *battle) {
     OpSta(memory, cpu, WRAM_FIELD_BATTLE_RESULT);
 }
 
-/* Reads the two picked members out of the bitmask in $09F2: the positions of its
- * two lowest set bits among the four slots, into $09F4/$09F5. When it holds
- * fewer, the original goes on elsewhere, so the registers are left as the
- * search left them and the caller hands off. */
+/* Two picked members from the $09F2 bitmask; else hand off. */
 static bool BattlePickSwapMembers(Lufia2CpuState *cpu, Lufia2Wram wram,
                                   uint32_t *handoff) {
     unsigned picked = 0u;
@@ -446,9 +433,7 @@ static bool BattlePickSwapMembers(Lufia2CpuState *cpu, Lufia2Wram wram,
     return true;
 }
 
-/* Swaps the two picked members' ids, member records and status-icon records,
- * trading through the stack as the original did. The offsets carry the direct
- * page's high byte, which rides along in A. */
+/* Swap ids, records and icons via the stack. */
 static void BattleSwapPartyEntries(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                    Lufia2Wram wram) {
     uint16_t from;
@@ -494,9 +479,7 @@ static void BattleSwapPartyEntries(const Lufia2Memory *memory, Lufia2CpuState *c
     WramWrite16At(wram, WRAM_BATTLE_STATUS_ICON_RECORDS, to, cpu->accumulator);
 }
 
-/* Swaps two party members' places: the menu asks for the other member, then
- * their ids, records and status icons trade slots and the formation is drawn
- * again. */
+/* Swap two members' places and redraw the formation. */
 static CommandStep BattleSwapPartyOrder(BattleContext *battle, uint32_t *handoff) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -526,10 +509,7 @@ static CommandStep BattleSwapPartyOrder(BattleContext *battle, uint32_t *handoff
     return COMMAND_SELECT;
 }
 
-/* Makes the party slot in X the current one: stores it, finds the member's
- * battler offset (kept in DP $D5 when asked) and tests its status for
- * conditions that stop it from taking a command. The zero flag is set when the
- * member can act. */
+/* Select party slot X; zero flag when it can act. */
 static void CommandSelectPartySlot(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                    bool store_offset) {
     OpRepWidths(cpu, 0x20u);
@@ -546,9 +526,7 @@ static void CommandSelectPartySlot(const Lufia2Memory *memory, Lufia2CpuState *c
     OpSepWidths(cpu, 0x20u);
 }
 
-/* Asks every party member in turn for a command. Backing out of a member's
- * menu returns to the previous member that can still act; backing out of the
- * first returns to the command menu. */
+/* Ask each member in turn for a command. */
 static CommandStep BattlePartyCommands(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -601,10 +579,7 @@ static CommandStep BattlePartyCommands(BattleContext *battle) {
     }
 }
 
-/* Runs the command menu until it ends the collection or sends it back to the
- * start. The menu answer is 1 for a command for the whole party, 2 for
- * member-by-member commands, 3 for swapping places and 5 to 7 for leaving the
- * battle (when that is allowed). */
+/* Command menu: 1 party, 2 members, 3 swap, 5-7 leave. */
 static CommandStep BattleChooseCommand(BattleContext *battle, uint32_t *handoff) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
