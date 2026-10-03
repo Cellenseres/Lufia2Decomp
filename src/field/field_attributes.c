@@ -302,3 +302,77 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
         PullAccumulator16(memory, cpu);
     return result;
 }
+
+/* One attribute pair: bits 4-5 of the byte at $0001,X take the field. */
+static void AttributeField(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    And8(cpu, 0xcfu);
+    Or8(cpu, DirectByte(memory, cpu, 0x55u));
+    StoreAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+    IncrementX16(cpu);
+    IncrementX16(cpu);
+}
+
+/* $80:ED0E: unpacks 2-bit fields from $7F:C000 into the attribute bits 4-5
+ * of every second byte at $7F:0001,X, four cells per source byte. The
+ * cell count comes from the product of two table bytes. Any width, JSL;
+ * leaves M8/X16. */
+Lufia2ExecutionResult Lufia2FieldUnpackAttributes(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    PushDataBank(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 0);
+    SelectDataBank(memory, cpu, 0x7fu);
+    TransferDirectToA(cpu);
+    LoadA8(cpu, Read8(memory, 0x0005aau));
+    TransferAToX(cpu);
+    LoadAAbsolute8(memory, cpu, 0xd010u, cpu->x);
+    Write8(memory, SNES_WRMPYA, A8(cpu));
+    LoadAAbsolute8(memory, cpu, 0xd018u, cpu->x);
+    Write8(memory, SNES_WRMPYB, A8(cpu));
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd008u, cpu->x));
+    TransferAToX(cpu);
+    LoadA16(cpu, Read16Long(memory, SNES_RDMPYL));
+    cpu->carry = 0;
+    Add16Value(cpu, 3u);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    StoreADirect16(memory, cpu, 0x58u);
+    SetAccumulatorWidth(cpu, 1);
+    LoadY16(cpu, 0);
+    do {
+        LoadAAbsolute8(memory, cpu, 0xc000u, cpu->y);
+        StoreADirect8(memory, cpu, 0x54u);
+        And8(cpu, 0x03u);
+        AslA8(cpu);
+        AslA8(cpu);
+        AslA8(cpu);
+        AslA8(cpu);
+        StoreADirect8(memory, cpu, 0x55u);
+        AttributeField(memory, cpu);
+        LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+        And8(cpu, 0x0cu);
+        AslA8(cpu);
+        AslA8(cpu);
+        StoreADirect8(memory, cpu, 0x55u);
+        AttributeField(memory, cpu);
+        LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+        And8(cpu, 0x30u);
+        StoreADirect8(memory, cpu, 0x55u);
+        AttributeField(memory, cpu);
+        LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
+        And8(cpu, 0xc0u);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        StoreADirect8(memory, cpu, 0x55u);
+        AttributeField(memory, cpu);
+        IncrementY16(cpu);
+        Compare16(cpu, cpu->y, Read16Direct(memory, cpu, 0x58u));
+    } while (!cpu->zero);
+    PullDataBank(memory, cpu);
+    return ExecutionReturned(0x80ed9bu);
+}

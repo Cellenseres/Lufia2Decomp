@@ -3535,3 +3535,36 @@ source = "src/field/field_scene_tracks.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "draft"
+
+# Attribute unpack and angle vectors
+[[function]]
+address = "80:ED0E"
+name = "Lufia2FieldUnpackAttributes"
+source = "src/field/field_attributes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:DE2A"
+name = "Lufia2BattleSineOfAngle"
+source = "src/battle/battle_vector.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:DE1E"
+name = "Lufia2BattleCosineOfAngle"
+source = "src/battle/battle_vector.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "85:DD63"
+name = "Lufia2BattleVelocityOfAngle"
+source = "src/battle/battle_vector.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"

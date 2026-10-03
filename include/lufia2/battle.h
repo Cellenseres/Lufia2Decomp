@@ -246,6 +246,22 @@ Lufia2ExecutionResult Lufia2BattleDriftRecords(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $85:DE2A table word of the angle in $54 into A and $63; any width, JSL. */
+Lufia2ExecutionResult Lufia2BattleSineOfAngle(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:DE1E the same for the angle plus a quarter turn; any width, JSL. */
+Lufia2ExecutionResult Lufia2BattleCosineOfAngle(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
+/* $85:DD63 velocity words $56/$58 from the angle $54 and speed $5A;
+ * M8/X16, DP zero, JSL. */
+Lufia2ExecutionResult Lufia2BattleVelocityOfAngle(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu);
+
 /* $85:ECF0 per-frame battle upkeep. */
 Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     const Lufia2Memory *memory,
