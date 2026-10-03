@@ -38,6 +38,8 @@ static void ResultClamp24(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpSta(memory, cpu, address);
 }
 
+/* Shifts the 24-bit value at address left by one; carry is the bit shifted
+ * out of the top byte. */
 static void ResultShift24(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                           uint32_t address) {
     const uint8_t old = Read8(memory, address);
@@ -50,6 +52,8 @@ static void ResultShift24(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpRolMem8(memory, cpu, address + 2u);
 }
 
+/* Shifts the 24-bit reward at the absolute address left once, and a second
+ * time when the first shift did not carry out, then clamps it. */
 static void ResultScaleReward(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                               uint16_t address) {
     const uint32_t base = OpAbs(cpu, address);
@@ -60,6 +64,8 @@ static void ResultScaleReward(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     ResultClamp24(memory, cpu, base);
 }
 
+/* Adds the 24-bit reward at the absolute address reward to the 24-bit total at
+ * destination, then clamps the total. */
 static void ResultAddReward(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             uint32_t destination, uint16_t reward) {
     unsigned i;
@@ -74,6 +80,8 @@ static void ResultAddReward(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     ResultClamp24(memory, cpu, destination);
 }
 
+/* Prints the text at text_address ($81:DDE7), then waits for the confirm
+ * ($81:DE9E). False when a child call unwinds. */
 static bool ResultShowLineAndWait(BattleContext *battle, uint16_t text_address,
                                   uint16_t line_call_site, uint16_t wait_call_site) {
     OpLdy(battle->cpu, text_address);
@@ -81,6 +89,8 @@ static bool ResultShowLineAndWait(BattleContext *battle, uint16_t text_address,
            BattleCall(battle, wait_call_site, 0x81de9eu, 2u);
 }
 
+/* Prints a gain line for each of the seven stat gains at $0A38 that is
+ * non-zero. The capsule list has no entry for the second stat. */
 static bool ResultShowStatGains(BattleContext *battle, bool capsule) {
     static const uint16_t texts[] = {0xf118u, 0xf134u, 0xf150u, 0xf169u,
                                      0xf182u, 0xf19bu, 0xf1b4u};
@@ -106,6 +116,7 @@ static bool ResultShowStatGains(BattleContext *battle, bool capsule) {
     return true;
 }
 
+/* Subtracts the 24-bit value at DP $2A-$2C from the one at $2D-$2F in place. */
 static void ResultSubtractExperience(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, 0x2du));
     cpu->carry = 1;
@@ -117,6 +128,9 @@ static void ResultSubtractExperience(const Lufia2Memory *memory, Lufia2CpuState 
     OpSta(memory, cpu, OpDp(cpu, 0x2fu));
 }
 
+/* Adds the experience reward to a party member that is not downed, shows the
+ * level-up line and stat gains for each level reached, then shows the
+ * $F0B3 line after a 24-bit subtraction of the member's fields. */
 static bool ResultAwardPartyMemberExperience(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -168,6 +182,8 @@ static bool ResultAwardPartyMemberExperience(BattleContext *battle) {
     return true;
 }
 
+/* The same for the capsule monster: reward, level-up lines, then the $F0B3
+ * line after the subtraction. */
 static bool ResultAwardCapsuleExperience(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;

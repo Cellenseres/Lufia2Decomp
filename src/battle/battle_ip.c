@@ -24,11 +24,13 @@ static void SkillRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     cpu->carry = 0;
 }
 
+/* Stores A at TABLE + offset + Y. */
 static void StoreTable16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t offset) {
     StoreAAbsolute16(memory, cpu, (uint16_t)(TABLE + offset), cpu->y);
 }
 
+/* Stores the low byte of A at TABLE + offset + Y. */
 static void StoreTable8(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t offset) {
     StoreAAbsolute8(memory, cpu, (uint16_t)(TABLE + offset), cpu->y);
@@ -217,6 +219,8 @@ Lufia2ExecutionResult Lufia2BattleGlyph(
     return ExecutionReturned(0x81e871u);
 }
 
+/* Writes a two-row tile at Y: the low byte of A then the high byte one
+ * tilemap row ($40) below, each followed by attribute. Y advances by 2. */
 static void TileRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t attribute) {
     StoreAAbsolute8(memory, cpu, 0x0000u, cpu->y);
@@ -229,6 +233,7 @@ static void TileRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     IncrementY16(cpu);
 }
 
+/* Y += bytes (16-bit), leaving the accumulator 8-bit. */
 static void AddY(Lufia2CpuState *cpu, uint16_t bytes) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->y);
@@ -288,6 +293,7 @@ static int EntryHead(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return 1;
 }
 
+/* Pushes the data bank, then sets it to $7E. */
 static void Bank7E(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     LoadA8(cpu, 0x7eu);
