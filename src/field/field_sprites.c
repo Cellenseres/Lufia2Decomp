@@ -30,6 +30,17 @@ enum {
     SPRITE_DP_ACTOR_COUNT = 0x60u,
 };
 
+/* A sprite entry of the OAM buffer is four bytes (x, y, tile, attributes);
+ * the macros give the offset of a field of entry n from the entry address
+ * that is held in X. */
+/* Two-bit size and high-X fields of the OAM entries, four entries per byte. */
+#define OAM_HIGH_TABLE 0x0300u
+#define OAM_ENTRY_SIZE 4u
+#define OAM_X(n) ((n) * OAM_ENTRY_SIZE + 0u)
+#define OAM_Y(n) ((n) * OAM_ENTRY_SIZE + 1u)
+#define OAM_TILE(n) ((n) * OAM_ENTRY_SIZE + 2u)
+#define OAM_ATTRIBUTES(n) ((n) * OAM_ENTRY_SIZE + 3u)
+
 /* $83:A669: set the size bit for OAM entry $58, then $58++. */
 static void FieldOamHighBit(
     const Lufia2Memory *memory,
@@ -48,9 +59,9 @@ static void FieldOamHighBit(
     LsrA8(cpu);
     And8(cpu, 0x1fu);
     TransferAToX(cpu);
-    LoadAAbsolute8(memory, cpu, 0x0300u, cpu->x);
+    LoadAAbsolute8(memory, cpu, OAM_HIGH_TABLE, cpu->x);
     Or8(cpu, DirectByte(memory, cpu, OAM_DP_SIZE_MASK));
-    StoreAAbsolute8(memory, cpu, 0x0300u, cpu->x);
+    StoreAAbsolute8(memory, cpu, OAM_HIGH_TABLE, cpu->x);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -72,19 +83,19 @@ static void FieldOamQuad(
         StoreAAbsolute8(memory, cpu, order[i], cpu->x);
     }
     LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
-    StoreAAbsolute8(memory, cpu, (layout & 2u) ? 0x0009u : 0x0001u, cpu->x);
-    StoreAAbsolute8(memory, cpu, (layout & 2u) ? 0x000du : 0x0005u, cpu->x);
+    StoreAAbsolute8(memory, cpu, (layout & 2u) ? OAM_Y(2) : OAM_Y(0), cpu->x);
+    StoreAAbsolute8(memory, cpu, (layout & 2u) ? OAM_Y(3) : OAM_Y(1), cpu->x);
     cpu->carry = 0;
     Adc8(cpu, 0x10u);
-    StoreAAbsolute8(memory, cpu, (layout & 2u) ? 0x0001u : 0x0009u, cpu->x);
-    StoreAAbsolute8(memory, cpu, (layout & 2u) ? 0x0005u : 0x000du, cpu->x);
+    StoreAAbsolute8(memory, cpu, (layout & 2u) ? OAM_Y(0) : OAM_Y(2), cpu->x);
+    StoreAAbsolute8(memory, cpu, (layout & 2u) ? OAM_Y(1) : OAM_Y(3), cpu->x);
     LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
-    StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x);
-    StoreAAbsolute8(memory, cpu, 0x0008u, cpu->x);
+    StoreAAbsolute8(memory, cpu, OAM_X(0), cpu->x);
+    StoreAAbsolute8(memory, cpu, OAM_X(2), cpu->x);
     cpu->carry = 0;
     Adc8(cpu, 0x10u);
-    StoreAAbsolute8(memory, cpu, 0x0004u, cpu->x);
-    StoreAAbsolute8(memory, cpu, 0x000cu, cpu->x);
+    StoreAAbsolute8(memory, cpu, OAM_X(1), cpu->x);
+    StoreAAbsolute8(memory, cpu, OAM_X(3), cpu->x);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -97,37 +108,37 @@ static void FieldOamEntries(
     LoadX16(cpu, cpu->y);                                      /* TYX */
     if (size == 0) {
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_TILE)); /* A4A2 */
-        StoreAAbsolute8(memory, cpu, 0x0002u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_TILE(0), cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_ATTRIBUTES));
-        StoreAAbsolute8(memory, cpu, 0x0003u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_ATTRIBUTES(0), cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
-        StoreAAbsolute8(memory, cpu, 0x0001u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_Y(0), cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
-        StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_X(0), cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_SIZE_FLAGS));
         if (!cpu->zero)
             FieldOamHighBit(memory, cpu, 0xa4bdu);
     } else if (size == 1) {
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_TILE)); /* A4BF */
-        StoreAAbsolute8(memory, cpu, 0x0002u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_TILE(0), cpu->x);
         LoadA8(cpu, (uint8_t)(A8(cpu) + 2u));
-        StoreAAbsolute8(memory, cpu, 0x0006u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_TILE(1), cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_ATTRIBUTES));
-        StoreAAbsolute8(memory, cpu, 0x0003u, cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x0007u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_ATTRIBUTES(0), cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_ATTRIBUTES(1), cpu->x);
         BitImmediate8(cpu, 0x80u);
         {
-            const uint16_t top = cpu->zero ? 0x0001u : 0x0005u;
+            const uint16_t top = cpu->zero ? OAM_Y(0) : OAM_Y(1);
 
             LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
             StoreAAbsolute8(memory, cpu, top, cpu->x);
             cpu->carry = 0;
             Adc8(cpu, 0x10u);
-            StoreAAbsolute8(memory, cpu, top ^ 0x0004u, cpu->x);
+            StoreAAbsolute8(memory, cpu, top ^ OAM_X(1), cpu->x);
         }
         LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));           /* A4EE */
-        StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x0004u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_X(0), cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_X(1), cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_SIZE_FLAGS));
         if (!cpu->zero) {
             FieldOamHighBit(memory, cpu, 0xa4fcu);
@@ -135,20 +146,20 @@ static void FieldOamEntries(
         }
     } else if (size == 2) {
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_TILE)); /* A501 */
-        StoreAAbsolute8(memory, cpu, 0x0002u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_TILE(0), cpu->x);
         LoadA8(cpu, (uint8_t)(A8(cpu) + 2u));
-        StoreAAbsolute8(memory, cpu, 0x0006u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_TILE(1), cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
-        StoreAAbsolute8(memory, cpu, 0x0001u, cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x0005u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_Y(0), cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_Y(1), cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_ATTRIBUTES));
-        StoreAAbsolute8(memory, cpu, 0x0003u, cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x0007u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_ATTRIBUTES(0), cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_ATTRIBUTES(1), cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
-        StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_X(0), cpu->x);
         cpu->carry = 0;
         Adc8(cpu, 0x10u);
-        StoreAAbsolute8(memory, cpu, 0x0004u, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_X(1), cpu->x);
         if (!cpu->carry)
             LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_SIZE_FLAGS));
         if (cpu->carry || !cpu->zero) {
@@ -158,10 +169,10 @@ static void FieldOamEntries(
     } else {
         TransferDirectToA(cpu);                                /* A534 */
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_ATTRIBUTES));
-        StoreAAbsolute8(memory, cpu, 0x0003u, cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x0007u, cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x000bu, cpu->x);
-        StoreAAbsolute8(memory, cpu, 0x000fu, cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_ATTRIBUTES(0), cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_ATTRIBUTES(1), cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_ATTRIBUTES(2), cpu->x);
+        StoreAAbsolute8(memory, cpu, OAM_ATTRIBUTES(3), cpu->x);
         SetAccumulatorWidth(cpu, 0);
         AslA16(cpu);
         AslA16(cpu);
@@ -618,8 +629,10 @@ Lufia2ExecutionResult Lufia2FieldActorSpritesWithVisibility(
         } while (!cpu->negative);
         SetIndexWidth(cpu, 1);
         for (i = 0; i < 8u; ++i)
-            Write16Long(memory, AbsoluteIndexedAddress(
-                cpu, (uint16_t)(0x0302u + 2u * i), 0), 0x0000u);
+            Write16Long(memory,
+                        AbsoluteIndexedAddress(
+                            cpu, (uint16_t)(OAM_HIGH_TABLE + 2u + 2u * i), 0),
+                        0x0000u);
     }
     SetAccumulatorWidth(cpu, 0);                               /* A253 */
     SetIndexWidth(cpu, 1);
