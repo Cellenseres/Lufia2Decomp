@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
 #include "lufia2/system.h"
@@ -76,6 +78,8 @@ Lufia2ExecutionResult Lufia2BattleStatusGauge(const Lufia2Memory *memory,
 /* $81:E2C8: clamped three-digit value with blank leading zero tiles. */
 Lufia2ExecutionResult Lufia2BattleStatusDigits(const Lufia2Memory *memory,
                                                Lufia2CpuState *cpu) {
+    bool show_tens;
+
     PushY(memory, cpu);
     OpLda(memory, cpu, OpDp(cpu, 0x16u));
     OpSta(memory, cpu, OpAbsY(cpu, 0u));
@@ -97,11 +101,12 @@ Lufia2ExecutionResult Lufia2BattleStatusDigits(const Lufia2Memory *memory,
         OpAdcValue(cpu, 0x40u);
         OpSta(memory, cpu, OpAbsY(cpu, 4u));
         OpLda(memory, cpu, OpDp(cpu, 0xb3u));
-        goto tens;
+        show_tens = true;
+    } else {
+        OpLda(memory, cpu, OpDp(cpu, 0xb3u));
+        show_tens = !cpu->zero;
     }
-    OpLda(memory, cpu, OpDp(cpu, 0xb3u));
-    if (!cpu->zero) {
-    tens:
+    if (show_tens) {
         cpu->carry = 0;
         OpAdcValue(cpu, 0x40u);
         OpSta(memory, cpu, OpAbsY(cpu, 6u));

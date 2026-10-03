@@ -147,6 +147,8 @@ Lufia2ExecutionResult Lufia2BattleSpellCommands(const Lufia2Memory *memory,
         if (cpu->zero) {
             CommandListPadding(memory, cpu, 16u);
         } else {
+            bool unavailable;
+
             OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_SPELL_RECORD_ID));
             OpPushX(memory, cpu);
             if (!BattleCall(&battle, 0xc093u, 0x81f414u, 3u))
@@ -154,20 +156,21 @@ Lufia2ExecutionResult Lufia2BattleSpellCommands(const Lufia2Memory *memory,
             OpPullX(memory, cpu);
             OpLda(memory, cpu, OpAbs(cpu, 0x0b80u));
             OpAndValue(cpu, 0x80u);
-            if (cpu->zero)
-                goto unavailable;
-            OpLda(memory, cpu, OpDp(cpu, 0x1bu));
-            OpCmpValue(cpu, 2u);
-            if (cpu->zero)
-                OpStz(memory, cpu, OpAbs(cpu, 0x0b84u));
-            OpLda(memory, cpu, OpAbs(cpu, 0x0b84u));
-            OpCmp(memory, cpu, OpDp(cpu, 0xcau));
-            if (!cpu->zero && cpu->carry) {
-            unavailable:
-                OpLoadA(cpu, 1u);
+            if (cpu->zero) {
+                unavailable = true;
             } else {
-                TransferDirectToA(cpu);
+                OpLda(memory, cpu, OpDp(cpu, 0x1bu));
+                OpCmpValue(cpu, 2u);
+                if (cpu->zero)
+                    OpStz(memory, cpu, OpAbs(cpu, 0x0b84u));
+                OpLda(memory, cpu, OpAbs(cpu, 0x0b84u));
+                OpCmp(memory, cpu, OpDp(cpu, 0xcau));
+                unavailable = !cpu->zero && cpu->carry;
             }
+            if (unavailable)
+                OpLoadA(cpu, 1u);
+            else
+                TransferDirectToA(cpu);
             OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
             OpRepWidths(cpu, 0x20u);
             OpTxa(cpu);

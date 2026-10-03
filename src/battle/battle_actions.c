@@ -52,6 +52,41 @@ Lufia2ExecutionResult Lufia2BattleExecuteTurns(const Lufia2Memory *memory,
     return ExecutionReturned(0x81895du);
 }
 
+/* Route the staged action id to its execution children. */
+static bool ActionRoute(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
+    OpLda(memory, cpu, 0x7ff44eu);
+    if (cpu->negative) {
+        PushAccumulator8(memory, cpu);
+        if (!BattleCall(battle, 0xa815u, 0x85cdd0u, 3u))
+            return false;
+        OpLoadA(cpu, Pull8(memory, cpu));
+        OpSta(memory, cpu, 0x7ff44eu);
+        OpLoadA(cpu, 0xe0u);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
+        if (!BattleCall(battle, 0xa823u, 0x81b1c9u, 3u))
+            return false;
+    } else {
+        OpCmpValue(cpu, 0x10u);
+        if (cpu->zero) {
+            PushAccumulator8(memory, cpu);
+            if (!BattleCall(battle, 0xa800u, 0x85cdd0u, 3u))
+                return false;
+            OpLoadA(cpu, Pull8(memory, cpu));
+            OpSta(memory, cpu, 0x7ff44eu);
+            OpLoadA(cpu, 0xf0u);
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
+            if (!BattleCall(battle, 0xa80eu, 0x81b1a3u, 3u))
+                return false;
+        } else if (!BattleCall(battle, 0xa7f9u, 0x85cdd0u, 3u)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /* $81:A79A: stage an action and route its original execution children. */
 Lufia2ExecutionResult Lufia2BattlePrepareAction(const Lufia2Memory *memory,
                                                 Lufia2CpuState *cpu,
@@ -59,6 +94,8 @@ Lufia2ExecutionResult Lufia2BattlePrepareAction(const Lufia2Memory *memory,
                                                 void *child_context) {
     BattleContext battle =
         BattleContextCreate(memory, cpu, child, child_context, 0x81u);
+    bool route = true;
+
     if (!BattleCall(&battle, 0xa79au, 0x85ccceu, 3u))
         return BattleChildUnwound(&battle);
     OpLdx(cpu, 0x100u);
@@ -94,37 +131,11 @@ Lufia2ExecutionResult Lufia2BattlePrepareAction(const Lufia2Memory *memory,
         if (!cpu->zero) {
             OpLoadA(cpu, 0x0fu);
             OpSta(memory, cpu, 0x7ff454u);
-            goto execute_action;
+            route = false;
         }
     }
-    OpLda(memory, cpu, 0x7ff44eu);
-    if (cpu->negative) {
-        PushAccumulator8(memory, cpu);
-        if (!BattleCall(&battle, 0xa815u, 0x85cdd0u, 3u))
-            return BattleChildUnwound(&battle);
-        OpLoadA(cpu, Pull8(memory, cpu));
-        OpSta(memory, cpu, 0x7ff44eu);
-        OpLoadA(cpu, 0xe0u);
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
-        if (!BattleCall(&battle, 0xa823u, 0x81b1c9u, 3u))
-            return BattleChildUnwound(&battle);
-    } else {
-        OpCmpValue(cpu, 0x10u);
-        if (cpu->zero) {
-            PushAccumulator8(memory, cpu);
-            if (!BattleCall(&battle, 0xa800u, 0x85cdd0u, 3u))
-                return BattleChildUnwound(&battle);
-            OpLoadA(cpu, Pull8(memory, cpu));
-            OpSta(memory, cpu, 0x7ff44eu);
-            OpLoadA(cpu, 0xf0u);
-            OpSta(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
-            if (!BattleCall(&battle, 0xa80eu, 0x81b1a3u, 3u))
-                return BattleChildUnwound(&battle);
-        } else if (!BattleCall(&battle, 0xa7f9u, 0x85cdd0u, 3u)) {
-            return BattleChildUnwound(&battle);
-        }
-    }
-execute_action:
+    if (route && !ActionRoute(&battle))
+        return BattleChildUnwound(&battle);
     OpLda(memory, cpu, OpAbs(cpu, 0x0a5bu));
     if (cpu->zero && !BattleCall(&battle, 0xa82cu, 0x81a832u, 3u))
         return BattleChildUnwound(&battle);
