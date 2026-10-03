@@ -24,6 +24,9 @@ enum {
     OBJECT_PENDING_CELL = 0x63,
 };
 
+/* Runs the routine at `target` through the pushed-child hook. The return
+ * address left on the stack is the call site plus `frame_size` (2 for a JSR,
+ * 3 for a JSL). Returns 0 when the child unwound the caller's frame. */
 static uint8_t FieldTileChild(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context,
@@ -36,12 +39,17 @@ static uint8_t FieldTileChild(
     return child(context, cpu, target, site, frame_size);
 }
 
+/* The result for a caller whose child call unwound past it. */
 static Lufia2ExecutionResult FieldTileUnwound(uint32_t site) {
     Lufia2ExecutionResult result = ExecutionReturned(site);
     result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
     return result;
 }
 
+/* Rewrites the attribute byte of the map cell at X: it is masked with the
+ * mask in direct page $54 and combined with the bits in $55. The probe Y is
+ * moved up by the object height, and a two-row object also rewrites the cell
+ * one row further on using $56/$57. Returns the original attribute in A. */
 Lufia2ExecutionResult Lufia2FieldMarkObjectAttributes(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -86,6 +94,8 @@ Lufia2ExecutionResult Lufia2FieldMarkObjectAttributes(
     return ExecutionReturned(0x83f859u);
 }
 
+/* Writes back the map tile words that the pending object saved for its slot:
+ * one word, plus the second row's word when the object is two rows high. */
 Lufia2ExecutionResult Lufia2FieldRestoreObjectTiles(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -127,6 +137,9 @@ Lufia2ExecutionResult Lufia2FieldRestoreObjectTiles(
     return ExecutionReturned(0x83f783u);
 }
 
+/* Appends a column upload request for the object's rectangle: VRAM
+ * destination, source address and row count, taken from the column offset of
+ * the object's Y position. Advances the request byte count by two. */
 Lufia2ExecutionResult Lufia2FieldQueueObjectRedraw(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -298,6 +311,10 @@ Lufia2ExecutionResult Lufia2FieldClearObjectTileIds(
     return ExecutionReturned(0x838ac8u);
 }
 
+/* Records the probe position for the pending slot, marks the cell attributes
+ * and saves the tile words under the object so Lufia2FieldRestoreObjectTiles
+ * can put them back. A cell already covered by another object keeps the
+ * tiles that object saved. */
 Lufia2ExecutionResult Lufia2FieldPlacePendingObject(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
