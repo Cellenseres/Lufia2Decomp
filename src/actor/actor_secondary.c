@@ -647,7 +647,7 @@ static void SecondaryOrbitOffsets(
     LsrA8(cpu);
     SecondaryWave(memory, cpu, 0, 0xde83u);
     SecondaryScaleRadius(memory, cpu, 0xde86u);
-    Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+    Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);                               /* DE89 */
     LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_2, cpu->x);
     ExchangeAccumulatorBytes(cpu);
@@ -655,7 +655,7 @@ static void SecondaryOrbitOffsets(
     LsrA8(cpu);
     SecondaryWave(memory, cpu, 1, 0xde96u);
     SecondaryScaleRadius(memory, cpu, 0xde99u);
-    Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+    Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     SimulateRtsFrame(memory, cpu);
 }
@@ -1399,14 +1399,14 @@ static SecondaryStep SecondaryOpF2SignedOffset(
         memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x), cpu->accumulator);
     LoadXDirect(memory, cpu, 0x2au);                       /* DD82 */
     SecondarySignedOperand(memory, cpu, 0xdd86u);
-    Write16Direct(memory, cpu, 0x54u, cpu->accumulator);
+    Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator);
     IncrementX16(cpu);
     SecondarySignedOperand(memory, cpu, 0xdd8cu);
     IncrementX16(cpu);
     PushIndex(memory, cpu);                                /* DD8E */
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     AddLong16(memory, cpu, WRAM_ACTOR_FINE_Y);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));        /* DD9A */
+    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A)); /* DD9A */
     AddLong16(memory, cpu, WRAM_ACTOR_FINE_X);
     cpu->y = PullIndexValue(memory, cpu);                  /* DDA5 */
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
@@ -1442,11 +1442,11 @@ static SecondaryStep SecondaryOpF6Orbit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SecondaryOrbitOffsets(memory, cpu, 0xde13u);           /* DE11 */
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
     Write16Long(
         memory, LongIndexedAddress(WRAM_ACTOR_DISPLAY_OFFSET_Y, cpu->x),
             cpu->accumulator);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x56u));
+    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
     Write16Long(
         memory, LongIndexedAddress(WRAM_ACTOR_DISPLAY_OFFSET_X, cpu->x),
             cpu->accumulator);
@@ -1458,7 +1458,7 @@ static SecondaryStep SecondaryOpF7Orbit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SecondaryOrbitOffsets(memory, cpu, 0xde2bu);           /* DE29 */
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x56u));
+    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
     cpu->carry = 0;
     Add16Value(cpu,
                Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_SCRATCH_B, cpu->x)));
@@ -1474,7 +1474,7 @@ static SecondaryStep SecondaryOpF7Orbit(
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
     SetAccumulatorWidth(cpu, 0);                           /* DE45 */
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
+    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
     cpu->carry = 0;
     Add16Value(cpu,
                Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_OFFSET_ALT_Y, cpu->x)));
@@ -1489,9 +1489,9 @@ static SecondaryStep SecondaryOpF8Orbit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SecondaryOrbitOffsets(memory, cpu, 0xde5fu);           /* DE5D */
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x56u));
+    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
     cpu->carry = 1;
-    Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x54u));
+    Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_A));
     LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
     IncrementA16(cpu);
     Write16Long(
@@ -1512,9 +1512,9 @@ static SecondaryStep SecondaryOpCXSpawn(
     Lufia2ActorSpawn(memory, cpu);                         /* DF87 */
     SimulateRtlFrame(memory, cpu);
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);                       /* D718 */
-    StoreXDirect16(memory, cpu, 0x54u);
+    StoreXDirect16(memory, cpu, DP_SCRATCH_A);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    StoreXDirect16(memory, cpu, 0x56u);
+    StoreXDirect16(memory, cpu, DP_SCRATCH_C);
     LoadA8(cpu, Pull8(memory, cpu));
     Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), A8(cpu));
     SimulateJslFrame(memory, cpu, 0x83u, 0xd726u);
@@ -1526,19 +1526,19 @@ static SecondaryStep SecondaryOpCXSpawn(
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_PENDING_OBJECT,
         cpu->x)));
-    LoadXDirect(memory, cpu, 0x56u);
+    LoadXDirect(memory, cpu, DP_SCRATCH_C);
     Write8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_REQUEST, cpu->x), A8(cpu));
     ExchangeAccumulatorBytes(cpu);
     Write8(memory, LongIndexedAddress(WRAM_UNK_7FDA2C, cpu->x), A8(cpu));
     SetAccumulatorWidth(cpu, 0);                           /* D73D */
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_X, cpu->x)));
-    Write16Direct(memory, cpu, 0x56u, cpu->accumulator);
+    Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_FINE_Y, cpu->x)));
-    LoadXDirect(memory, cpu, 0x54u);
+    LoadXDirect(memory, cpu, DP_SCRATCH_A);
     Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_Y, cpu->x),
                 cpu->accumulator);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x56u));
+    LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
     Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X, cpu->x),
                 cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);

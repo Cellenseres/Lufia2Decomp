@@ -134,7 +134,7 @@ static void PlayerFindActorAt(
                     cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
                 cpu->carry = 1;
                 if (cpu->zero) {
-                    StoreXDirect16(memory, cpu, 0x56u);        /* BB04 */
+                    StoreXDirect16(memory, cpu, DP_SCRATCH_C); /* BB04 */
                     return;
                 }
             }
@@ -161,7 +161,7 @@ static uint8_t PlayerFindTalkTarget(
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
     Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
     Lufia2MapTileHeight(memory, cpu, 0xba14u);
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     TransferDirectToA(cpu);                                    /* BA17 */
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, 0);
     TransferAToX(cpu);
@@ -200,8 +200,7 @@ static uint8_t PlayerFindTalkTarget(
                 LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
                 Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
                 Lufia2MapTileHeight(memory, cpu, 0xba4cu);
-                Compare8(
-                    cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x54u)));
+                Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
                 cpu->carry = cpu->zero;
             }
         }
@@ -374,7 +373,7 @@ static uint8_t PlayerDoorRegion(
     cpu->program_bank = 0x8eu;
     PushDataBank(memory, cpu);                                 /* B63B */
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);
-    Write8(memory, DirectAddress(cpu, 0x56u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), A8(cpu));
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
     Write8(memory, DirectAddress(cpu, 0x57u), A8(cpu));
     LoadA8(cpu, 0x7eu);
@@ -511,7 +510,7 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
             return PlayerBoundary(cpu, 0);
         if (!cpu->carry)
             return PlayerBoundary(cpu, 0x83c1dcu);             /* $8E:C05F */
-        LoadXDirect(memory, cpu, 0x56u);                       /* C1D5 */
+        LoadXDirect(memory, cpu, DP_SCRATCH_C);                /* C1D5 */
         return PlayerBoundary(cpu, 0x83c1d7u);                 /* BB08 */
     }
     LoadAAbsolute8(memory, cpu, 0x057cu, 0);                   /* C1C0 */

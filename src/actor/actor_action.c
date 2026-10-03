@@ -173,7 +173,7 @@ void Lufia2ActorInstallSecondaryScript(
 static Lufia2ActorPrimaryActionFlow
 ActionInstallSecondaryScript(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);               /* D39D */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u))); /* D39F */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A))); /* D39F */
     SimulateJsrFrame(memory, cpu, 0xd3a3u);                /* D3A1 */
     Lufia2ActorInstallSecondaryScript(memory, cpu);        /* D3F7 */
     SimulateRtsFrame(memory, cpu);
@@ -191,7 +191,7 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
     Lufia2CpuState *cpu) {
     uint16_t helper_pc;
 
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));       /* D350 */
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu)); /* D350 */
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* D352 */
     Write8(memory, LongIndexedAddress(WRAM_UNK_7FE466, cpu->x), A8(cpu));
     /* D354 */
@@ -212,7 +212,7 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
         return ActionInstallSecondaryScript(memory, cpu); /* D365 */
 
     TransferDirectToA(cpu);                                   /* D367 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));     /* D368 */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A))); /* D368 */
     Compare8(cpu, A8(cpu), 0x04u);                            /* D36A */
     if (cpu->carry)
         return ActionInstallSecondaryScript(memory, cpu); /* D36C */
@@ -247,7 +247,7 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
                                                                /* D37C */
     Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));   /* D37F */
     TransferDirectToA(cpu);                                   /* D381 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));     /* D382 */
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A))); /* D382 */
     TransferAToX(cpu);                                        /* D384 */
     LoadA8(
         cpu, Read8(memory, LongIndexedAddress(0x83c1b0u, cpu->x)));
