@@ -203,8 +203,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:810E` | `Lufia2MenuDrawWindow` | verified | `src/menu/menu_window.c` |
 | `$82:838F` | `Lufia2MenuClearLayers` | draft | `src/menu/menu_tilemap.c` |
 | `$82:8720` | `Lufia2MenuCursor` | draft | `src/menu/menu_input.c` |
-| `$82:88A0` | `Lufia2MenuItemIndex` | draft | `src/menu/menu_cursor.c` |
-| `$82:88CB` | `Lufia2MenuItemPosition` | draft | `src/menu/menu_cursor.c` |
+| `$82:88A0` | `Lufia2MenuItemIndex` | verified | `src/menu/menu_cursor.c` |
+| `$82:88CB` | `Lufia2MenuItemPosition` | verified | `src/menu/menu_cursor.c` |
 | `$82:89FA` | `Lufia2MenuCursorSlide` | draft | `src/menu/menu_cursor_slide.c` |
 | `$82:8AD8` | `Lufia2MenuSlideCorrectX` | draft | `src/menu/menu_cursor_slide.c` |
 | `$82:8AE9` | `Lufia2MenuSlideCorrectY` | draft | `src/menu/menu_cursor_slide.c` |

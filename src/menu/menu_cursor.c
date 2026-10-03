@@ -77,6 +77,11 @@ Lufia2ExecutionResult Lufia2MenuMultiply(
     return ExecutionReturned(0x828027u);
 }
 
+/* The multiply's frame stays clear of its work words. */
+static bool CallerStack(const Lufia2CpuState *cpu) {
+    return cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+}
+
 static void Multiply(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x82u, return_address);
@@ -89,10 +94,13 @@ Lufia2ExecutionResult Lufia2MenuItemIndex(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    const uint16_t stride = WramRead16At(wram, ITEM_STRIDE, cpu->x) & 0x00ffu;
+    uint16_t stride;
     uint16_t column;
     Word16Result index;
 
+    if (!CallerStack(cpu))
+        return ExecutionHandoff(cpu, 0x8288a0u);
+    stride = WramRead16At(wram, ITEM_STRIDE, cpu->x) & 0x00ffu;
     SetAccumulatorWidth(cpu, 0);
     WramWrite16(wram, FACTOR_A, stride);
     column = WramRead16At(wram, ITEM_COLUMN, cpu->x) & 0x00ffu;
@@ -137,7 +145,7 @@ Lufia2ExecutionResult Lufia2MenuItemPosition(
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
 
-    if (!cpu->accumulator_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || !CallerStack(cpu))
         return ExecutionHandoff(cpu, 0x8288cbu);
     PlaceAxis(memory, cpu, wram, CELL_WIDTH, ITEM_BASE, ORIGIN_X_LOW,
         ORIGIN_X_HIGH, PIXEL_X_LOW, PIXEL_X_HIGH, 0x88e0u);

@@ -78,12 +78,12 @@ Lufia2ExecutionResult Lufia2MenuMultiply(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $82:88A0 list index of menu item X into $14B3; any width. */
+/* $82:88A0 list index of item X into $14B3; S $1F00..$1FFC. */
 Lufia2ExecutionResult Lufia2MenuItemIndex(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $82:88CB pixel position of menu item X; M1. */
+/* $82:88CB pixel position of item X; M1, S $1F00..$1FFC. */
 Lufia2ExecutionResult Lufia2MenuItemPosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
