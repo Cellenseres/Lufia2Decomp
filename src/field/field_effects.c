@@ -8,6 +8,19 @@
 #include "system/system_internal.h"
 #include "system/wram.h"
 
+/* State of the brightness fade and the color math step, bank $7F and bank
+ * $7E. The fade moves the brightness by FADE_BRIGHTNESS_STEP every
+ * FADE_FRAMES_PER_STEP frames; the color math intensity changes every 6
+ * frames. */
+enum {
+    FADE_FRAMES_PER_STEP = 0x7fd08fu,
+    FADE_BRIGHTNESS_STEP = 0x7fd090u,
+    FADE_BRIGHTNESS = 0x7fd091u,
+    FADE_FRAME_COUNTER = 0x7fd092u,
+    COLOR_STEP_TIMER = 0x7fd094u,
+    COLOR_MATH_INTENSITY = 0x1271u
+};
+
 /* $83:AF05-$83:AF4C: advance the palette cycle of entry X after its timer ran
  * out; 0 = cap hit. */
 static uint8_t FieldPaletteAdvance(const Lufia2Memory *memory, Lufia2CpuState *cpu,
@@ -271,19 +284,19 @@ static void ScreenFade(
     Lufia2CpuState *cpu,
     uint8_t in) {
     SimulateJsrFrame(memory, cpu, in ? 0x8013u : 0x801du);
-    LoadA8(cpu, (uint8_t)(Read8(memory, 0x7fd092u) + 1u));
-    Write8(memory, 0x7fd092u, A8(cpu));
-    Compare8(cpu, A8(cpu), Read8(memory, 0x7fd08fu));
+    LoadA8(cpu, (uint8_t)(Read8(memory, FADE_FRAME_COUNTER) + 1u));
+    Write8(memory, FADE_FRAME_COUNTER, A8(cpu));
+    Compare8(cpu, A8(cpu), Read8(memory, FADE_FRAMES_PER_STEP));
     if (cpu->carry) {
         LoadA8(cpu, 0x00u);
-        Write8(memory, 0x7fd092u, A8(cpu));
-        LoadA8(cpu, Read8(memory, 0x7fd091u));
+        Write8(memory, FADE_FRAME_COUNTER, A8(cpu));
+        LoadA8(cpu, Read8(memory, FADE_BRIGHTNESS));
         cpu->carry = in ? 0u : 1u;
         if (in)
-            Adc8(cpu, Read8(memory, 0x7fd090u));
+            Adc8(cpu, Read8(memory, FADE_BRIGHTNESS_STEP));
         else
-            Sbc8(cpu, Read8(memory, 0x7fd090u));
-        Write8(memory, 0x7fd091u, A8(cpu));
+            Sbc8(cpu, Read8(memory, FADE_BRIGHTNESS_STEP));
+        Write8(memory, FADE_BRIGHTNESS, A8(cpu));
         StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
         if (in) {
             Compare8(cpu, A8(cpu), 0x0fu);
@@ -305,9 +318,9 @@ static void ScreenColorStep(
     Lufia2CpuState *cpu,
     uint8_t down) {
     SimulateJsrFrame(memory, cpu, down ? 0x803fu : 0x8044u);
-    LoadAAbsolute8(memory, cpu, 0x1271u, 0);
+    LoadAAbsolute8(memory, cpu, COLOR_MATH_INTENSITY, 0);
     LoadA8(cpu, (uint8_t)((A8(cpu) + (down ? 0xffu : 0x01u)) | 0xe0u));
-    StoreAAbsolute8(memory, cpu, 0x1271u, 0);
+    StoreAAbsolute8(memory, cpu, COLOR_MATH_INTENSITY, 0);
     Compare8(cpu, A8(cpu), down ? 0xe0u : 0xffu);
     if (cpu->zero) {
         LoadA8(cpu, down ? 0x10u : 0x20u);
@@ -449,11 +462,11 @@ void Lufia2FieldScreenEffects(
     }
     BitImmediate8(cpu, 0x30u);                                 /* 8021 */
     if (!cpu->zero) {
-        LoadA8(cpu, (uint8_t)(Read8(memory, 0x7fd094u) - 1u));
-        Write8(memory, 0x7fd094u, A8(cpu));
+        LoadA8(cpu, (uint8_t)(Read8(memory, COLOR_STEP_TIMER) - 1u));
+        Write8(memory, COLOR_STEP_TIMER, A8(cpu));
         if (cpu->zero) {
             LoadA8(cpu, 0x06u);
-            Write8(memory, 0x7fd094u, A8(cpu));
+            Write8(memory, COLOR_STEP_TIMER, A8(cpu));
             LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
             BitImmediate8(cpu, 0x10u);
             ScreenColorStep(memory, cpu, !cpu->zero);
