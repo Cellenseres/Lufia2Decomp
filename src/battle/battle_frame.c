@@ -587,7 +587,7 @@ static void BattleTileGrid(
 static uint16_t BattleSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, 0x15abu, 0);
+    LoadAAbsolute8(memory, cpu, BATTLE_SPRITE_MODE, 0);
     DecrementA8(cpu);
     if (cpu->zero) {
         SimulateJslFrame(memory, cpu, 0x85u, 0x8a6fu);
@@ -606,7 +606,7 @@ static uint16_t BattleSprites(
             SimulateRtlFrame(memory, cpu);
             return 0x8a95u;
         }
-        LoadAAbsolute8(memory, cpu, 0x125fu, 0);               /* 8A83 */
+        LoadAAbsolute8(memory, cpu, BATTLE_TILE_GRID_HOLD, 0); /* 8A83 */
         if (!cpu->zero)
             return 0x8a95u;
         StoreZeroAbsolute8(memory, cpu, 0x15d3u, 0);

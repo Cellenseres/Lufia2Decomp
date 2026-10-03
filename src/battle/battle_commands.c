@@ -317,7 +317,7 @@ static bool BattleCommandsSetup(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
 
     OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, OpAbs(cpu, 0x125fu));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_TILE_GRID_HOLD));
     OpLdx(cpu, 0xbfu);
     TransferDirectToA(cpu);
     do {
@@ -661,9 +661,9 @@ static bool BattleCommandsFinish(BattleContext *battle) {
         !BattleCall(battle, 0xcb18u, BATTLE_ROUTINE_RESET_PARTY_TILEMAP, 2u) ||
         !BattleCall(battle, 0xcb1bu, BATTLE_ROUTINE_CLEAR_WINDOW_TILEMAP, 2u))
         return false;
-    OpStz(memory, cpu, OpAbs(cpu, 0x125fu));
+    OpStz(memory, cpu, OpAbs(cpu, BATTLE_TILE_GRID_HOLD));
     OpLoadA(cpu, 2u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x15abu));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_SPRITE_MODE));
     if (!BattleCall(battle, 0xcb26u, 0x858a39u, 3u))
         return false;
     OpRepWidths(cpu, 0x20u);
@@ -689,7 +689,7 @@ static bool BattleCommandsFinish(BattleContext *battle) {
         !BattleCall(battle, 0xcb5bu, BATTLE_ROUTINE_SPRITES, 3u))
         return false;
     OpLoadA(cpu, 2u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x15abu));
+    OpSta(memory, cpu, OpAbs(cpu, BATTLE_SPRITE_MODE));
     if (!BattleCall(battle, 0xcb64u, 0x858a39u, 3u) ||
         !BattleCall(battle, 0xcb68u, BATTLE_ROUTINE_CLEAR_SPRITE_OFFSETS, 3u))
         return false;
