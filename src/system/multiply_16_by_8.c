@@ -1,4 +1,5 @@
 #include "core/cpu_ops.h"
+#include "core/arithmetic_value.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
 #include "lufia2/system.h"
@@ -18,6 +19,7 @@ Lufia2ExecutionResult Lufia2Multiply16By8(const Lufia2Memory *memory,
                                           Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     uint16_t low_product, high_product, middle;
+    uint8_t high_byte, multiplier;
 
     if (cpu->accumulator_is_8_bit)
         PushAccumulator8(memory, cpu);
@@ -29,14 +31,15 @@ Lufia2ExecutionResult Lufia2Multiply16By8(const Lufia2Memory *memory,
     WramWrite(wram, PRODUCT_TOP, 0);
     WramWrite(wram, SNES_WRMPYA, WramRead(wram, MULTIPLIER));
     WramWrite(wram, SNES_WRMPYB, WramRead(wram, MULTIPLICAND_LOW));
+    high_byte = WramRead(wram, MULTIPLICAND_HIGH);
+    multiplier = WramRead(wram, MULTIPLIER);
     low_product = WramRead16(wram, SNES_RDMPYL);
-
-    WramWrite(wram, SNES_WRMPYA, WramRead(wram, MULTIPLIER));
-    WramWrite(wram, SNES_WRMPYB, WramRead(wram, MULTIPLICAND_HIGH));
+    WramWrite16(wram, SNES_WRMPYA,
+        (uint16_t)(multiplier | ((uint16_t)high_byte << 8)));
     WramWrite16(wram, PRODUCT, low_product);
     middle = WramRead16(wram, PRODUCT_MIDDLE);
     high_product = WramRead16(wram, SNES_RDMPYL);
-    cpu->accumulator = (uint16_t)(middle + high_product);
+    cpu->accumulator = Sum16Mode(middle, high_product, false, cpu->decimal).value;
     WramWrite16(wram, PRODUCT_MIDDLE, cpu->accumulator);
 
     UnpackStatus(cpu, Pull8(memory, cpu));

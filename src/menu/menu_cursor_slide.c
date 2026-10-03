@@ -1,6 +1,4 @@
-/* Menu cursor slide: a sprite is moved from its own position to the position
- * of another slot along a straight line, one step at a time, with a frame wait
- * after every sixteen steps. */
+/* Cursor interpolation, yielding a frame every sixteen steps. */
 
 #include <stdbool.h>
 
@@ -30,22 +28,22 @@ enum {
     SLIDE_DONE = 0x828b07u
 };
 
-/* One correction step along an axis: the slot takes a step in its
- * direction and the error of the other axis grows by that axis' span. */
+/* Move one axis and grow the other axis error. */
 static void CorrectStep(Lufia2Wram wram, Lufia2CpuState *cpu, uint32_t slots,
     uint32_t direction, uint32_t error, uint32_t span) {
-    const Byte8Result moved = Sum8(
-        WramReadAt(wram, slots, cpu->y), WramRead(wram, direction), false);
+    Byte8Result moved;
     Byte8Result grown;
 
+    moved.value = WramReadAt(wram, slots, cpu->y);
+    moved = Sum8Mode(moved.value, WramRead(wram, direction), false, cpu->decimal);
     WramWriteAt(wram, slots, cpu->y, moved.value);
-    grown = Sum8(WramRead(wram, error), WramRead(wram, span), false);
+    grown.value = WramRead(wram, error);
+    grown = Sum8Mode(grown.value, WramRead(wram, span), false, cpu->decimal);
     WramWrite(wram, error, grown.value);
     LeaveByteSum(cpu, grown);
 }
 
-/* $82:8AD8: the slot's horizontal position takes one step and the vertical
- * error grows by the destination's vertical distance. */
+/* $82:8AD8: horizontal correction step. */
 Lufia2ExecutionResult Lufia2MenuSlideCorrectX(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -67,8 +65,7 @@ Lufia2ExecutionResult Lufia2MenuSlideCorrectY(
     return ExecutionReturned(0x828af9u);
 }
 
-/* $82:8AFA: counts a step; every sixteenth step the sprites are shown for a
- * frame, which stays with the caller (the hand off is the JSL). */
+/* $82:8AFA: yield before the frame-wait JSL every sixteenth step. */
 Lufia2ExecutionResult Lufia2MenuSlideCount(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -84,10 +81,7 @@ Lufia2ExecutionResult Lufia2MenuSlideCount(
     return ExecutionHandoff(cpu, 0x828b02u);
 }
 
-/* One step of the loop, as a JSR to $82:8AFA. The carry flag is that of the
- * position test before it, the overflow flag that of the step. True when the
- * count asks for the frame wait, which stops the slide with the count's
- * frame pushed. */
+/* A frame wait retains the count routine's pushed return. */
 static bool SlideStep(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     bool overflow, uint16_t return_address, Lufia2ExecutionResult *result) {
     cpu->overflow = overflow;
@@ -108,16 +102,15 @@ static void Correct(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     SimulateRtsFrame(memory, cpu);
 }
 
-/* Absolute difference of two work bytes as the original forms it: the
- * larger minus the smaller, with a direction of 1, or -1 when the
- * destination is larger. Only the overflow flag outlives it. */
+/* Direction is negative when the destination exceeds the start. */
 static void Distance(Lufia2Wram wram, Lufia2CpuState *cpu, uint32_t from,
     uint32_t to, uint32_t delta, uint32_t direction) {
     const uint8_t start = WramRead(wram, from);
     const uint8_t end = WramRead(wram, to);
     const bool backwards = start < end;
     const Byte8Result gap =
-        backwards ? Difference8(end, start) : Difference8(start, end);
+        backwards ? Difference8Mode(end, start, cpu->decimal)
+                  : Difference8Mode(start, end, cpu->decimal);
 
     WramWrite(wram, delta, gap.value);
     WramWrite(wram, direction, backwards ? DIRECTION_BACK : 1u);
@@ -125,37 +118,36 @@ static void Distance(Lufia2Wram wram, Lufia2CpuState *cpu, uint32_t from,
 }
 
 /* A step of a slot position along or against its direction. */
-static Byte8Result SlideAdd(Lufia2Wram wram, uint16_t slot, uint32_t table,
+static Byte8Result SlideAdd(Lufia2Wram wram, bool decimal, uint16_t slot, uint32_t table,
     uint32_t direction) {
-    const Byte8Result moved =
-        Sum8(WramReadAt(wram, table, slot), WramRead(wram, direction), false);
+    Byte8Result moved;
 
+    moved.value = WramReadAt(wram, table, slot);
+    moved = Sum8Mode(moved.value, WramRead(wram, direction), false, decimal);
     WramWriteAt(wram, table, slot, moved.value);
     return moved;
 }
 
-static void SlideSubtract(Lufia2Wram wram, uint16_t slot, uint32_t table,
+static void SlideSubtract(Lufia2Wram wram, bool decimal, uint16_t slot, uint32_t table,
     uint32_t direction) {
-    const Byte8Result moved = Difference8(
-        WramReadAt(wram, table, slot), WramRead(wram, direction));
+    Byte8Result moved;
 
+    moved.value = WramReadAt(wram, table, slot);
+    moved = Difference8Mode(moved.value, WramRead(wram, direction), decimal);
     WramWriteAt(wram, table, slot, moved.value);
 }
 
-/* Error step: the error drops by the other axis' distance; true when it ran
- * out (a borrow), which asks for a correction step. */
-static bool ErrorRunsOut(Lufia2Wram wram, uint32_t error, uint32_t other) {
-    const Byte8Result left =
-        Difference8(WramRead(wram, error), WramRead(wram, other));
+/* Borrow from the error subtraction requests an axis correction. */
+static bool ErrorRunsOut(Lufia2Wram wram, bool decimal, uint32_t error, uint32_t other) {
+    Byte8Result left;
 
+    left.value = WramRead(wram, error);
+    left = Difference8Mode(left.value, WramRead(wram, other), decimal);
     WramWrite(wram, error, left.value);
     return !left.carry;
 }
 
-/* $82:89FA: a sprite slides between the positions of slots Y and X. With
- * A = 0 slot X slides to the position of slot Y; otherwise slot Y is put at
- * the position of slot X and slides back to where it was. M1X0. Every sixteenth
- * step hands off at the frame wait of $82:8AFA. */
+/* $82:89FA: slide between slots, preserving the frame-wait continuation. */
 Lufia2ExecutionResult Lufia2MenuCursorSlide(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -188,11 +180,11 @@ Lufia2ExecutionResult Lufia2MenuCursorSlide(
     LoadA8(cpu, WramRead(wram, DELTA_X));
     Compare8(cpu, A8(cpu), WramRead(wram, DELTA_Y));
     if (!cpu->carry) {
-        SlideSubtract(wram, slot, SLOT_Y, DIRECTION_Y);
+        SlideSubtract(wram, cpu->decimal, slot, SLOT_Y, DIRECTION_Y);
         for (;;) {
-            if (ErrorRunsOut(wram, DELTA_Y, DELTA_X))
+            if (ErrorRunsOut(wram, cpu->decimal, DELTA_Y, DELTA_X))
                 Correct(memory, cpu, false, 0x8a80u);
-            moved = SlideAdd(wram, slot, SLOT_Y, DIRECTION_Y);
+            moved = SlideAdd(wram, cpu->decimal, slot, SLOT_Y, DIRECTION_Y);
             LoadA8(cpu, moved.value);
             Compare8(cpu, moved.value, WramRead(wram, FROM_Y));
             if (cpu->zero) {
@@ -207,11 +199,11 @@ Lufia2ExecutionResult Lufia2MenuCursorSlide(
                 return result;
         }
     }
-    SlideSubtract(wram, slot, SLOT_X, DIRECTION_X);
+    SlideSubtract(wram, cpu->decimal, slot, SLOT_X, DIRECTION_X);
     for (;;) {
-        if (ErrorRunsOut(wram, DELTA_X, DELTA_Y))
+        if (ErrorRunsOut(wram, cpu->decimal, DELTA_X, DELTA_Y))
             Correct(memory, cpu, true, 0x8ab1u);
-        moved = SlideAdd(wram, slot, SLOT_X, DIRECTION_X);
+        moved = SlideAdd(wram, cpu->decimal, slot, SLOT_X, DIRECTION_X);
         WramWrite(wram, SCRATCH_SLOT, moved.value);
         WramWrite(wram, SCRATCH_ROW, WramReadAt(wram, SLOT_Y, slot));
         position = WramReadAt(wram, SLOT_X, slot);

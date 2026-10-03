@@ -1,5 +1,4 @@
-/* Battle vectors: the sine table lookup for an angle in $54 and the
- * conversion of an angle and speed into the two velocity words. */
+/* Angle lookup and signed battle velocity components. */
 
 #include <stdbool.h>
 
@@ -29,8 +28,7 @@ enum {
     PRODUCT_BANK = 0x85u
 };
 
-/* Looks the angle in A up in the quarter-wave table; the sign bit tells
- * the second half. Both entries pull the status they pushed. */
+/* The quarter-wave table stores magnitude and a separate sign bit. */
 static Lufia2ExecutionResult SineLookup(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, Lufia2Wram wram, uint8_t angle) {
     uint8_t index;
@@ -41,7 +39,8 @@ static Lufia2ExecutionResult SineLookup(const Lufia2Memory *memory,
         index = (uint8_t)(angle << 1);
         second_half = false;
     } else if (angle < 2 * QUARTER) {
-        index = (uint8_t)((2 * QUARTER - angle) << 1);
+        index = (uint8_t)(Difference8Mode(2 * QUARTER,
+            WramRead(wram, ANGLE_WORK), cpu->decimal).value << 1);
         second_half = false;
     } else if (angle < 3 * QUARTER) {
         index = (uint8_t)((angle & 0x3fu) << 1);
@@ -67,28 +66,28 @@ static void SineEntry(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetIndexWidth(cpu, 1);
 }
 
-/* $85:DE2A: the table word for the angle in $54, flagged negative in the
- * second half-turn, in A and $63. Any width, JSL; the status is restored. */
+/* $85:DE2A: sine lookup, restoring the saved status. */
 Lufia2ExecutionResult Lufia2BattleSineOfAngle(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    const uint8_t angle = WramRead(wram, ANGLE);
+    uint8_t angle;
 
     SineEntry(memory, cpu);
+    angle = WramRead(wram, ANGLE);
     WramWrite(wram, ANGLE_WORK, angle);
     return SineLookup(memory, cpu, wram, angle);
 }
 
-/* $85:DE1E: the same lookup for the angle in $54 plus a quarter turn, the
- * cosine. Any width, JSL; the status is restored. */
+/* $85:DE1E: cosine lookup, restoring the saved status. */
 Lufia2ExecutionResult Lufia2BattleCosineOfAngle(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    const uint8_t angle = (uint8_t)(WramRead(wram, ANGLE) + QUARTER);
+    uint8_t angle;
 
     SineEntry(memory, cpu);
+    angle = Sum8Mode(WramRead(wram, ANGLE), QUARTER, false, cpu->decimal).value;
     WramWrite(wram, ANGLE_WORK, angle);
     return SineLookup(memory, cpu, wram, angle);
 }
@@ -106,13 +105,12 @@ static bool CallSine(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return true;
 }
 
-/* One component: the speed times the table word, with the sign of the
- * word, or the speed itself when bit 0 of $64 is set. */
+/* The sign word selects a product or the unscaled speed. */
 static bool Component(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2Wram wram, uint8_t target, uint16_t multiply_return,
     Lufia2ExecutionResult *result) {
     const uint8_t signs = WramRead(wram, SIGNS);
-    const uint16_t speed = WramRead16(wram, SPEED);
+    uint16_t speed;
     uint16_t value;
 
     LoadA8(cpu, SIGN_LOW_BIT);
@@ -120,12 +118,14 @@ static bool Component(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     cpu->negative = (signs & SIGN_NEGATIVE) != 0;
     cpu->overflow = (signs & SIGN_OVERFLOW) != 0;
     if ((signs & SIGN_LOW_BIT) != 0) {
+        speed = WramRead16(wram, SPEED);
         LoadX16(cpu, speed);
         WramWrite16(wram, target, speed);
         return true;
     }
     LoadA8(cpu, WramRead(wram, SINE));
     WramWrite(wram, FACTOR_BYTE, A8(cpu));
+    speed = WramRead16(wram, SPEED);
     LoadX16(cpu, speed);
     WramWrite16(wram, FACTOR_LOW, speed);
     PushDataBank(memory, cpu);
@@ -139,7 +139,7 @@ static bool Component(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     PullDataBank(memory, cpu);
     LoadA8(cpu, WramRead(wram, SIGNS));
     value = WramRead16(wram, PRODUCT);
-    if ((signs & SIGN_NEGATIVE) != 0) {
+    if ((A8(cpu) & SIGN_NEGATIVE) != 0) {
         value = (uint16_t)(~value + 1u);
         LoadA16(cpu, value);
     } else {
@@ -149,8 +149,7 @@ static bool Component(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return true;
 }
 
-/* Stores the speed, negated or not, in a velocity word and clears the
- * other, for the four axis-aligned angles. */
+/* Axis-aligned angles need no multiplication. */
 typedef struct {
     uint8_t target;
     uint8_t cleared;
@@ -165,9 +164,7 @@ static const AxisAngle kAxisAngles[4] = {
     { VELOCITY_A, VELOCITY_B, true, 0x85dd87u }
 };
 
-/* $85:DD63: the velocity words $56 and $58 for the angle in $54 and the
- * speed in $5A, speed times sine and cosine of the angle. The direct page
- * must be zero for the product routine. M8/X16, JSL. */
+/* $85:DD63: signed velocity from angle and speed; M1X0, RTL. */
 Lufia2ExecutionResult Lufia2BattleVelocityOfAngle(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -192,7 +189,7 @@ Lufia2ExecutionResult Lufia2BattleVelocityOfAngle(
         unsigned turn;
 
         for (turn = 0; turn < turns; ++turn)
-            steps = Difference8(steps.value, QUARTER);
+            steps = Difference8Mode(steps.value, QUARTER, cpu->decimal);
         cpu->carry = steps.carry;
         cpu->overflow = steps.overflow;
         WramWrite16(wram, axis->target, value);

@@ -1,8 +1,4 @@
-/* World map plane rows: the four quadrant variants that fill the scanline
- * tables at $1718/$1A9B from a rotating scale value. Each variant scales
- * the table entry at $D3B7 by the two factors in $58 and $5A, or copies it
- * when the factor has no fractional part, and counts the angle in $22/$24
- * down by the step in $00/$02. */
+/* Four sign variants build the world-map perspective scanlines. */
 
 #include <stdbool.h>
 
@@ -37,24 +33,28 @@ typedef struct {
     uint32_t exit_plain;
 } Quadrant;
 
-/* A factor scaled by the row's reciprocal: ($58 or $5A) * $4E / 256 through
- * the multiply unit (reached through the data bank). The high byte of the
- * first product is read, then the second product is added to it. */
+/* The hardware products combine the reciprocal low and high bytes. */
 typedef struct {
     Word16Result sum;
     uint16_t high_read;       /* the 16-bit read of the high product byte */
 } ScaledFactor;
 
-static ScaledFactor ScaleFactor(Lufia2Wram wram, uint8_t factor) {
+static ScaledFactor ScaleFactor(Lufia2Wram wram, bool decimal,
+    uint8_t factor, bool second) {
     ScaledFactor scaled;
+    uint8_t high = 0;
 
     WramWrite(wram, SNES_WRMPYA, WramRead(wram, factor));
     WramWrite(wram, SNES_WRMPYB, WramRead(wram, SCALE));
+    if (second)
+        high = WramRead(wram, SCALE_HIGH);
     scaled.high_read = WramRead16(wram, SNES_RDMPYH);
-    WramWrite(wram, SNES_WRMPYB, WramRead(wram, SCALE_HIGH));
-    scaled.sum = Sum16(
+    if (!second)
+        high = WramRead(wram, SCALE_HIGH);
+    WramWrite(wram, SNES_WRMPYB, high);
+    scaled.sum = Sum16Mode(
         (uint16_t)(scaled.high_read & 0x00ffu), WramRead16(wram, SNES_RDMPYL),
-        false);
+        false, decimal);
     return scaled;
 }
 
@@ -74,16 +74,17 @@ static void StoreRow(
     WramWrite16At(wram, table, row, value);
 }
 
-/* The angle counts down by the step; the carry of the low word runs into
- * the high word. Returns the high word's sum. */
-static Word16Result NextAngle(Lufia2Wram wram) {
-    const Word16Result low = Difference16(
-        WramRead16(wram, ANGLE_LOW), WramRead16(wram, ANGLE_STEP_LOW));
+/* The low-word subtraction carry enters the high-word subtraction. */
+static Word16Result NextAngle(Lufia2Wram wram, bool decimal) {
+    Word16Result low;
     Word16Result high;
 
+    low.value = WramRead16(wram, ANGLE_LOW);
+    low = Difference16Mode(low.value, WramRead16(wram, ANGLE_STEP_LOW), decimal);
     WramWrite16(wram, ANGLE_LOW, low.value);
-    high = Sum16(WramRead16(wram, ANGLE_HIGH),
-        (uint16_t)~WramRead16(wram, ANGLE_STEP_HIGH), low.carry);
+    high.value = WramRead16(wram, ANGLE_HIGH);
+    high = ArithmeticValue(high.value, WramRead16(wram, ANGLE_STEP_HIGH),
+        low.carry, decimal, true, 16);
     WramWrite16(wram, ANGLE_HIGH, high.value);
     return high;
 }
@@ -91,14 +92,16 @@ static Word16Result NextAngle(Lufia2Wram wram) {
 static Lufia2ExecutionResult Rows(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, const Quadrant *q, uint32_t entry) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    const bool scaled = (WramRead16(wram, FACTOR_A) & 0x00ffu) != 0;
+    bool scaled;
     uint16_t row = cpu->y;
     uint16_t index;
     uint16_t read_back = 0;
     Word16Result angle;
 
-    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !DirectWorkWordAvailable(cpu, ROWS_LEFT))
         return ExecutionHandoff(cpu, entry);
+    scaled = (WramRead16(wram, FACTOR_A) & 0x00ffu) != 0;
     do {
         uint16_t first;
         uint16_t second;
@@ -108,7 +111,7 @@ static Lufia2ExecutionResult Rows(const Lufia2Memory *memory,
         index = (uint16_t)(WramRead16(wram, ANGLE_HIGH) << 1);
         if (scaled) {
             WramWrite16(wram, SCALE, WramRead16At(wram, SCALE_TABLE, index));
-            product = ScaleFactor(wram, FACTOR_A);
+            product = ScaleFactor(wram, cpu->decimal, FACTOR_A, false);
             first = product.sum.value;
         } else {
             first = TableOrZero(wram, FACTOR_A, index);
@@ -118,7 +121,7 @@ static Lufia2ExecutionResult Rows(const Lufia2Memory *memory,
         StoreRow(wram, TABLE_A, row, first);
         StoreRow(wram, TABLE_A_MIRROR, row, first);
         if (scaled) {
-            product = ScaleFactor(wram, FACTOR_B);
+            product = ScaleFactor(wram, cpu->decimal, FACTOR_B, true);
             second = product.sum.value;
             read_back = product.high_read;
         } else {
@@ -131,7 +134,7 @@ static Lufia2ExecutionResult Rows(const Lufia2Memory *memory,
             StoreRow(wram, TABLE_B, row, second);
             StoreRow(wram, TABLE_B_MIRROR, row, Negated(second));
         }
-        angle = NextAngle(wram);
+        angle = NextAngle(wram, cpu->decimal);
     } while (WramStep16(wram, ROWS_LEFT, -1) != 0);
     cpu->y = row;
     cpu->x = scaled ? read_back : index;

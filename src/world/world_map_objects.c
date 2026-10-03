@@ -988,28 +988,32 @@ Lufia2ExecutionResult Lufia2WorldMapDivide32(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    const uint16_t divisor = WramRead16(wram, DIVISOR);
     uint16_t low;
     uint16_t high;
     uint16_t remainder = 0;
     unsigned bit;
 
     Push8(memory, cpu, PackStatus(cpu));
-    low = WramRead16(wram, DIVIDEND_LOW);
-    high = WramRead16(wram, DIVIDEND_HIGH);
+    SetAccumulatorWidth(cpu, 0);
+    SetIndexWidth(cpu, 0);
     for (bit = 0; bit < DIVISION_BITS; ++bit) {
-        const bool low_out = (low >> 15) != 0u;
-        const bool shifted_out = (high >> 15) != 0u;
+        bool low_out;
+        bool shifted_out;
         const bool carry = (remainder >> 15) != 0u;
 
+        low = WramRead16(wram, DIVIDEND_LOW);
+        low_out = (low >> 15) != 0u;
         low = (uint16_t)(low << 1);
         WriteModified16(wram, DIVIDEND_LOW, 0, low);
+        high = WramRead16(wram, DIVIDEND_HIGH);
+        shifted_out = (high >> 15) != 0u;
         high = (uint16_t)((high << 1) | (low_out ? 1u : 0u));
         WriteModified16(wram, DIVIDEND_HIGH, 0, high);
         remainder = (uint16_t)((remainder << 1) | (shifted_out ? 1u : 0u));
-        if (carry || remainder >= divisor) {
-            remainder = (uint16_t)(remainder - divisor);
-            low = (uint16_t)(low + 1u);
+        if (carry || remainder >= WramRead16(wram, DIVISOR)) {
+            remainder = Difference16Mode(remainder,
+                WramRead16(wram, DIVISOR), cpu->decimal).value;
+            low = (uint16_t)(WramRead16(wram, DIVIDEND_LOW) + 1u);
             WriteModified16(wram, DIVIDEND_LOW, 0, low);
         }
     }
