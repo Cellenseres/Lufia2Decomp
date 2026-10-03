@@ -5,6 +5,7 @@
 #include "lufia2/menu.h"
 #include "lufia2/party.h"
 #include "lufia2/system.h"
+#include "menu/menu_sprite_slots.h"
 #include "party/party_internal.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
@@ -14,6 +15,30 @@ enum {
      * party ids: bit 0 shows the owned items, bits 1-5 the sale lists, bit 7
      * the extra list. */
     MENU_SHOP_FLAGS = 0x1540u,
+};
+
+/* Menu cursors. Each cursor index is a six-entry byte array per field ($14C1
+ * to $1508, six bytes apart). A cursor's position is origin + spacing * index
+ * on each axis, written into sprite slot MENU_CURSOR_SPRITE_BASE + cursor.
+ * The layout bytes are read from $A6:F518 + Y; $14D3, $14E5 and $14C7 are
+ * cleared whenever a layout is placed, and the two index arrays are cleared
+ * when a screen starts. */
+enum {
+    MENU_CURSOR_SPRITE_BASE = 5,
+    MENU_SPRITE_SLOT_SCRATCH = 0x14a9u,  /* word: slot kept across a lookup */
+    MENU_CURSOR_LAYOUT_14C1 = 0x14c1u,   /* last layout byte, purpose unknown */
+    MENU_CURSOR_LAYOUT_14C7 = 0x14c7u,   /* cleared with the layout */
+    MENU_CURSOR_X_ORIGIN = 0x14cdu,      /* layout byte 0, low byte of x */
+    MENU_CURSOR_X_ORIGIN_HIGH = 0x14d3u, /* high byte, cleared on placement */
+    MENU_CURSOR_X_INDEX = 0x14d9u,       /* column the cursor is on */
+    MENU_CURSOR_Y_ORIGIN = 0x14dfu,      /* layout byte 1 */
+    MENU_CURSOR_Y_ORIGIN_HIGH = 0x14e5u,
+    MENU_CURSOR_Y_INDEX = 0x14ebu,   /* row the cursor is on */
+    MENU_CURSOR_COLUMNS = 0x14f1u,   /* layout byte 2 */
+    MENU_CURSOR_ROWS = 0x14f7u,      /* layout byte 3; the shop sets it to
+                                        the list length */
+    MENU_CURSOR_X_SPACING = 0x14fdu, /* layout byte 4 */
+    MENU_CURSOR_Y_SPACING = 0x1503u, /* layout byte 5 */
 };
 
 /* Pushes the JSR return frame for the given address. */
@@ -96,11 +121,18 @@ static void MenuClearRect(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PullDataBank(memory, cpu);
 }
 
-/* $82:88CB: cursor sprite position from row/column steps. */
+/* $82:88CB: cursor index X's sprite position: origin + spacing * index on
+ * each axis (x, then y). */
 static void MenuCursorPosition(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    static const uint16_t kIn[2][2] = {{0x14fdu, 0x14d9u}, {0x1503u, 0x14ebu}};
-    static const uint16_t kBase[2][2] = {{0x14cdu, 0x14d3u}, {0x14dfu, 0x14e5u}};
-    static const uint16_t kOut[2][2] = {{0x138du, 0x13bdu}, {0x13edu, 0x141du}};
+    static const uint16_t kIn[2][2] = {{MENU_CURSOR_X_SPACING, MENU_CURSOR_X_INDEX},
+                                       {MENU_CURSOR_Y_SPACING, MENU_CURSOR_Y_INDEX}};
+    static const uint16_t kBase[2][2] = {
+        {MENU_CURSOR_X_ORIGIN, MENU_CURSOR_X_ORIGIN_HIGH},
+        {MENU_CURSOR_Y_ORIGIN, MENU_CURSOR_Y_ORIGIN_HIGH}};
+    static const uint16_t kOut[2][2] = {{MENU_SPRITE_X_LOW + MENU_CURSOR_SPRITE_BASE,
+                                         MENU_SPRITE_X_HIGH + MENU_CURSOR_SPRITE_BASE},
+                                        {MENU_SPRITE_Y_LOW + MENU_CURSOR_SPRITE_BASE,
+                                         MENU_SPRITE_Y_HIGH + MENU_CURSOR_SPRITE_BASE}};
     static const uint16_t kReturn[2] = {0x88e0u, 0x8909u};
     unsigned i;
 
@@ -122,10 +154,12 @@ static void MenuCursorPosition(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     }
 }
 
-/* $82:891E: cursor slot X from the $A6:F518 layout Y. */
+/* $82:891E: cursor index X takes the seven-byte layout at $A6:F518 + Y. */
 static void MenuCursorPlace(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    static const uint16_t kFields[7] = {
-        0x14cdu, 0x14dfu, 0x14f1u, 0x14f7u, 0x14fdu, 0x1503u, 0x14c1u};
+    static const uint16_t kFields[7] = {MENU_CURSOR_X_ORIGIN,   MENU_CURSOR_Y_ORIGIN,
+                                        MENU_CURSOR_COLUMNS,    MENU_CURSOR_ROWS,
+                                        MENU_CURSOR_X_SPACING,  MENU_CURSOR_Y_SPACING,
+                                        MENU_CURSOR_LAYOUT_14C1};
     unsigned i;
 
     PushDataBank(memory, cpu);
@@ -134,9 +168,9 @@ static void MenuCursorPlace(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         LoadAAbsolute8(memory, cpu, (uint16_t)(0xf518u + i), cpu->y);
         StoreIndexed(memory, cpu, kFields[i]);
         if (i == 1u) {
-            StoreZeroAbsolute8(memory, cpu, 0x14d3u, cpu->x);
-            StoreZeroAbsolute8(memory, cpu, 0x14e5u, cpu->x);
-            StoreZeroAbsolute8(memory, cpu, 0x14c7u, cpu->x);
+            StoreZeroAbsolute8(memory, cpu, MENU_CURSOR_X_ORIGIN_HIGH, cpu->x);
+            StoreZeroAbsolute8(memory, cpu, MENU_CURSOR_Y_ORIGIN_HIGH, cpu->x);
+            StoreZeroAbsolute8(memory, cpu, MENU_CURSOR_LAYOUT_14C7, cpu->x);
         }
     }
     PullDataBank(memory, cpu);
@@ -148,7 +182,7 @@ static void MenuCursorPlace(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 /* $82:895B: sprite slot X shows cursor animation A. */
 static void MenuCursorAnimation(const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Write16Absolute(memory, cpu, 0x14a9u, cpu->x);
+    Write16Absolute(memory, cpu, MENU_SPRITE_SLOT_SCRATCH, cpu->x);
     SetAccumulatorWidth(cpu, 0);
     And16(cpu, 0x00ffu);
     LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
@@ -156,10 +190,10 @@ static void MenuCursorAnimation(const Lufia2Memory *memory,
     TransferAToX(cpu);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x82897du, cpu->x)));
     SetAccumulatorWidth(cpu, 1);
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x14a9u, 0));
-    StoreIndexed(memory, cpu, 0x1448u);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, MENU_SPRITE_SLOT_SCRATCH, 0));
+    StoreIndexed(memory, cpu, MENU_SPRITE_FRAME_INDEX);
     LoadA8(cpu, 0x01u);
-    StoreIndexed(memory, cpu, 0x11d8u);
+    StoreIndexed(memory, cpu, MENU_SPRITE_ACTIVE);
     ExchangeAccumulatorBytes(cpu);
     SimulateJslFrame(memory, cpu, 0x82u, 0x897bu);
     (void)Lufia2SpriteSetAnimation(memory, cpu);
@@ -361,7 +395,7 @@ Lufia2ExecutionResult Lufia2MenuNameEntryWindows(
     SetAccumulatorWidth(cpu, 0);
     LoadX16(cpu, 0xffffu);
     SimulateJslFrame(memory, cpu, 0x82u, 0xf0aau);
-    MenuClearSlots(memory, cpu, 0x11d8u);
+    MenuClearSlots(memory, cpu, MENU_SPRITE_ACTIVE);
     SimulateRtlFrame(memory, cpu);
     LoadX16(cpu, 0xffffu);
     SimulateJslFrame(memory, cpu, 0x82u, 0xf0b1u);
@@ -605,7 +639,7 @@ Lufia2ExecutionResult Lufia2MenuShopParty(
 
     LoadX16(cpu, 0xf7f0u);
     SimulateJslFrame(memory, cpu, 0x82u, 0xd74fu);
-    MenuClearSlots(memory, cpu, 0x11d8u);
+    MenuClearSlots(memory, cpu, MENU_SPRITE_ACTIVE);
     SimulateRtlFrame(memory, cpu);
     if (Text8E(memory, cpu, 0xccfdu, 0xd75fu, &text))
         return text;
@@ -629,10 +663,10 @@ Lufia2ExecutionResult Lufia2MenuShopParty(
     MenuCursorPlace(memory, cpu);
     Rts(memory, cpu);
     LoadAAbsolute8(memory, cpu, WRAM_MENU_SHOP_LIST_COUNT, 0);
-    StoreAAbsolute8(memory, cpu, 0x14f7u, 0);
+    StoreAAbsolute8(memory, cpu, MENU_CURSOR_ROWS, 0);
     LoadX16(cpu, 0x0001u);
-    StoreZeroAbsolute8(memory, cpu, 0x14d9u, cpu->x);
-    StoreZeroAbsolute8(memory, cpu, 0x14ebu, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, MENU_CURSOR_X_INDEX, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, MENU_CURSOR_Y_INDEX, cpu->x);
     LoadA8(cpu, 0x0au);
     Jsr(memory, cpu, 0xd797u);
     MenuWindowHdma(memory, cpu);
@@ -1160,7 +1194,7 @@ static void ShopMemberPose(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         pose = A8(cpu) == 0x02u ? 0x03u : A8(cpu) == 0x01u ? 0x00u : 0x02u;
     }
     LoadA8(cpu, pose);
-    StoreZeroAbsolute8(memory, cpu, 0x1448u, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, MENU_SPRITE_FRAME_INDEX, cpu->x);
     SimulateJslFrame(memory, cpu, 0x82u, 0xe685u);
     (void)Lufia2SpriteSetAnimation(memory, cpu);
     SimulateRtlFrame(memory, cpu);
@@ -1509,7 +1543,7 @@ static void MenuCursorPair(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreYDirect16(memory, cpu, 0x5au);
     LoadA8(cpu, DirectByte(memory, cpu, 0x57u));
     if (cpu->zero) {
-        StoreZeroAbsolute8(memory, cpu, 0x11d8u, cpu->x);
+        StoreZeroAbsolute8(memory, cpu, MENU_SPRITE_ACTIVE, cpu->x);
     } else {
         Jsr(memory, cpu, 0x89d3u);
         MenuCursorAnimation(memory, cpu);
@@ -1542,7 +1576,7 @@ static void MenuScrollThumb(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreZeroAbsolute8(memory, cpu, 0x1418u, cpu->x);
     StoreZeroAbsolute8(memory, cpu, 0x13b8u, cpu->x);
     StoreZeroAbsolute8(memory, cpu, WRAM_MENU_SCROLL_THUMB_Y, 0);
-    StoreZeroAbsolute8(memory, cpu, 0x1448u, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, MENU_SPRITE_FRAME_INDEX, cpu->x);
     LoadA8(cpu, 0x04u);
     SimulateJslFrame(memory, cpu, 0x82u, 0x8cbfu);
     (void)Lufia2SpriteSetAnimation(memory, cpu);
@@ -1567,13 +1601,13 @@ static void MenuScrollStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         LoadA8(cpu, 0x01u);
     }
     LoadX16(cpu, 0x000bu);
-    StoreAAbsolute8(memory, cpu, 0x11d8u, cpu->x);
+    StoreAAbsolute8(memory, cpu, MENU_SPRITE_ACTIVE, cpu->x);
 }
 
 /* $82:8C43: thumb y = $1509 + row * step; frame 4 at the ends. */
 static void MenuScrollPlace(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadX16(cpu, 0x000bu);
-    LoadAAbsolute8(memory, cpu, 0x11d8u, cpu->x);
+    LoadAAbsolute8(memory, cpu, MENU_SPRITE_ACTIVE, cpu->x);
     if (cpu->zero)
         return;
     SetAccumulatorWidth(cpu, 0);
@@ -1674,7 +1708,7 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
 
     LoadX16(cpu, 0xffb0u);
     SimulateJslFrame(memory, cpu, 0x82u, 0x9cb8u);
-    MenuClearSlots(memory, cpu, 0x11d8u);
+    MenuClearSlots(memory, cpu, MENU_SPRITE_ACTIVE);
     SimulateRtlFrame(memory, cpu);
     StoreA8Absolute(memory, cpu, 0x153fu, 0x01u);
     SetAccumulatorWidth(cpu, 0);
@@ -1689,8 +1723,8 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
     if (Text8E(memory, cpu, 0xd045u, 0x9cecu, &text))
         return text;
     LoadX16(cpu, 0x0003u);
-    StoreZeroAbsolute8(memory, cpu, 0x14d9u, cpu->x);
-    StoreZeroAbsolute8(memory, cpu, 0x14ebu, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, MENU_CURSOR_X_INDEX, cpu->x);
+    StoreZeroAbsolute8(memory, cpu, MENU_CURSOR_Y_INDEX, cpu->x);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_MENU_SCROLL_ROW, 0));
     Write16Long(memory, 0x7e93c0u, cpu->accumulator);

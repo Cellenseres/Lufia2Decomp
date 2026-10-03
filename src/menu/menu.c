@@ -1,7 +1,8 @@
 /* Menu NMI, input and window animation. */
 
-#include "core/cpu_internal.h"
 #include "lufia2/menu.h"
+#include "core/cpu_internal.h"
+#include "menu/menu_sprite_slots.h"
 #include "system/wram.h"
 
 /* Menu WRAM. */
@@ -269,24 +270,24 @@ static void MenuSpriteSteps(
     Write8(memory, DirectAddress(cpu, 0x33u), 0x00u);
     LoadX16(cpu, 0x0010u);
     do {
-        LoadAAbsolute8(memory, cpu, 0x11d8u, cpu->x);          /* 97B1 */
+        LoadAAbsolute8(memory, cpu, MENU_SPRITE_ACTIVE, cpu->x); /* 97B1 */
         if (!cpu->zero) {
             cpu->y = Read8(memory,
-                AbsoluteIndexedAddress(cpu, 0x1208u, cpu->x));
+                           AbsoluteIndexedAddress(cpu, MENU_SPRITE_ANIMATION, cpu->x));
             SetNz8(cpu, (uint8_t)cpu->y);
             LoadAAbsolute8(memory, cpu, 0xe4d8u, cpu->y);
             Compare8(cpu, A8(cpu), 0xaau);
             if (cpu->zero) {
-                StoreZeroAbsolute8(memory, cpu, 0x11d8u, cpu->x);
+                StoreZeroAbsolute8(memory, cpu, MENU_SPRITE_ACTIVE, cpu->x);
             } else {
                 const uint32_t step =
-                    AbsoluteIndexedAddress(cpu, 0x1208u, cpu->x);
+                    AbsoluteIndexedAddress(cpu, MENU_SPRITE_ANIMATION, cpu->x);
                 uint8_t next;
 
                 cpu->carry = 0;                                /* 97C5 */
-                Adc8(cpu, Read8(memory,
-                    AbsoluteIndexedAddress(cpu, 0x13e8u, cpu->x)));
-                StoreAAbsolute8(memory, cpu, 0x13e8u, cpu->x);
+                Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, MENU_SPRITE_Y_LOW,
+                                                               cpu->x)));
+                StoreAAbsolute8(memory, cpu, MENU_SPRITE_Y_LOW, cpu->x);
                 next = (uint8_t)(Read8(memory, step) + 1u);
                 Write8(memory, step, next);
                 SetNz8(cpu, next);

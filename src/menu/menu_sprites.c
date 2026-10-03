@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/menu.h"
+#include "menu/menu_sprite_slots.h"
 
 static void LoadIndexed(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t address) {
@@ -31,24 +32,25 @@ Lufia2ExecutionResult Lufia2SpriteSetAnimation(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     PushY(memory, cpu);
-    StoreAAbsolute8(memory, cpu, 0x1208u, cpu->x);
+    StoreAAbsolute8(memory, cpu, MENU_SPRITE_ANIMATION, cpu->x);
     SetAccumulatorWidth(cpu, 0);
     And16(cpu, 0x00ffu);
     AslA16(cpu);
     TransferAToY(cpu);
     SetAccumulatorWidth(cpu, 1);
-    PointerFrom(memory, cpu, 0x1268u, 0x1298u);
-    LoadIndexed(memory, cpu, 0x1238u);
+    PointerFrom(memory, cpu, MENU_SPRITE_LIST_LOW, MENU_SPRITE_LIST_HIGH);
+    LoadIndexed(memory, cpu, MENU_SPRITE_BANK);
     StoreADirect8(memory, cpu, 0x5fu);
-    PointerPair(memory, cpu, 0x12c8u, 0x12f8u);                /* animation */
-    PointerFrom(memory, cpu, 0x12c8u, 0x12f8u);
-    LoadIndexed(memory, cpu, 0x1448u);
+    PointerPair(memory, cpu, MENU_SPRITE_SCRIPT_LOW,
+                MENU_SPRITE_SCRIPT_HIGH); /* animation */
+    PointerFrom(memory, cpu, MENU_SPRITE_SCRIPT_LOW, MENU_SPRITE_SCRIPT_HIGH);
+    LoadIndexed(memory, cpu, MENU_SPRITE_FRAME_INDEX);
     AslA8(cpu);
     TransferAToY(cpu);
-    PointerPair(memory, cpu, 0x1328u, 0x1358u);                /* frame */
-    PointerFrom(memory, cpu, 0x1328u, 0x1358u);
+    PointerPair(memory, cpu, MENU_SPRITE_FRAME_LOW, MENU_SPRITE_FRAME_HIGH); /* frame */
+    PointerFrom(memory, cpu, MENU_SPRITE_FRAME_LOW, MENU_SPRITE_FRAME_HIGH);
     LoadA8(cpu, Read8(memory, DirectLongPointer(memory, cpu, 0x5du)));
-    StoreAAbsolute8(memory, cpu, 0x1478u, cpu->x);
+    StoreAAbsolute8(memory, cpu, MENU_SPRITE_TIMER, cpu->x);
     cpu->y = PullIndexValue(memory, cpu);
     return ExecutionReturned(0x868d46u);
 }
@@ -62,17 +64,16 @@ Lufia2ExecutionResult Lufia2SpriteSetTable(
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     LoadAAbsolute8(memory, cpu, 0xd9a9u, cpu->y);
-    Write8(memory, LongIndexedAddress(0x001268u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(MENU_SPRITE_LIST_LOW, cpu->x), A8(cpu));
     LoadAAbsolute8(memory, cpu, 0xd9aau, cpu->y);
-    Write8(memory, LongIndexedAddress(0x001298u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(MENU_SPRITE_LIST_HIGH, cpu->x), A8(cpu));
     LoadA8(cpu, 0x8eu);
-    Write8(memory, LongIndexedAddress(0x001238u, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(MENU_SPRITE_BANK, cpu->x), A8(cpu));
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x868cf4u);
 }
 
 enum {
-    SPRITE_SLOTS = 0x30u,
     OAM = 0x0100u,                      /* 128 entries, then 32 high bytes */
 };
 
@@ -92,35 +93,36 @@ static void StoreAAbsolute16Zero(const Lufia2Memory *memory,
 
 /* $86:8B87: slot X timer; at 0 the next frame ($FE holds, $FF loops). */
 static void SpriteStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    const uint32_t timer = AbsoluteIndexedAddress(cpu, 0x1478u, cpu->x);
+    const uint32_t timer = AbsoluteIndexedAddress(cpu, MENU_SPRITE_TIMER, cpu->x);
     uint8_t value = (uint8_t)(Read8(memory, timer) - 1u);
 
     Write8(memory, timer, value);
     SetNz8(cpu, value);
     if (value != 0)
         return;
-    LoadAAbsolute8(memory, cpu, 0x12c8u, cpu->x);
+    LoadAAbsolute8(memory, cpu, MENU_SPRITE_SCRIPT_LOW, cpu->x);
     StoreADirect8(memory, cpu, 0x5du);
-    LoadAAbsolute8(memory, cpu, 0x12f8u, cpu->x);
+    LoadAAbsolute8(memory, cpu, MENU_SPRITE_SCRIPT_HIGH, cpu->x);
     StoreADirect8(memory, cpu, 0x5eu);
-    LoadAAbsolute8(memory, cpu, 0x1238u, cpu->x);
+    LoadAAbsolute8(memory, cpu, MENU_SPRITE_BANK, cpu->x);
     StoreADirect8(memory, cpu, 0x5fu);
     StoreADirect8(memory, cpu, 0x62u);
     {
-        const uint32_t frame = AbsoluteIndexedAddress(cpu, 0x1448u, cpu->x);
+        const uint32_t frame =
+            AbsoluteIndexedAddress(cpu, MENU_SPRITE_FRAME_INDEX, cpu->x);
 
         Write8(memory, frame, (uint8_t)(Read8(memory, frame) + 1u));
         for (;;) {
-            LoadAAbsolute8(memory, cpu, 0x1448u, cpu->x);      /* 8BA1 */
+            LoadAAbsolute8(memory, cpu, MENU_SPRITE_FRAME_INDEX, cpu->x); /* 8BA1 */
             AslA8(cpu);
             TransferAToY(cpu);
             for (;;) {
                 LoadA8(cpu, Read8IndirectLongY(memory, cpu, 0x5du));   /* 8BA6 */
-                StoreAAbsolute8(memory, cpu, 0x1328u, cpu->x);
+                StoreAAbsolute8(memory, cpu, MENU_SPRITE_FRAME_LOW, cpu->x);
                 StoreADirect8(memory, cpu, 0x60u);
                 IncrementY8(cpu);
                 LoadA8(cpu, Read8IndirectLongY(memory, cpu, 0x5du));
-                StoreAAbsolute8(memory, cpu, 0x1358u, cpu->x);
+                StoreAAbsolute8(memory, cpu, MENU_SPRITE_FRAME_HIGH, cpu->x);
                 StoreADirect8(memory, cpu, 0x61u);
                 LoadA8(cpu, Read8(memory, DirectLongPointer(memory, cpu, 0x60u)));
                 Compare8(cpu, A8(cpu), 0xfeu);
@@ -128,10 +130,11 @@ static void SpriteStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                     break;
                 Compare8(cpu, A8(cpu), 0xffu);
                 if (!cpu->zero) {
-                    StoreAAbsolute8(memory, cpu, 0x1478u, cpu->x);
+                    StoreAAbsolute8(memory, cpu, MENU_SPRITE_TIMER, cpu->x);
                     return;
                 }
-                StoreZeroAbsolute8(memory, cpu, 0x1448u, cpu->x);  /* 8BC8 */
+                StoreZeroAbsolute8(memory, cpu, MENU_SPRITE_FRAME_INDEX,
+                                   cpu->x); /* 8BC8 */
                 LoadY8(cpu, 0x00u);
             }
             Write8(memory, frame, (uint8_t)(Read8(memory, frame) - 1u));  /* 8BC3 */
@@ -146,14 +149,14 @@ Lufia2ExecutionResult Lufia2SpriteAnimateAll(
     SetIndexWidth(cpu, 1);
     LoadX8(cpu, 0x00u);
     do {
-        LoadAAbsolute8(memory, cpu, 0x11d8u, cpu->x);
+        LoadAAbsolute8(memory, cpu, MENU_SPRITE_ACTIVE, cpu->x);
         if (!cpu->zero) {
             SimulateJsrFrame(memory, cpu, 0x8b7eu);
             SpriteStep(memory, cpu);
             SimulateRtsFrame(memory, cpu);
         }
         cpu->x = (uint8_t)(cpu->x + 1u);
-        Compare8(cpu, (uint8_t)cpu->x, SPRITE_SLOTS);
+        Compare8(cpu, (uint8_t)cpu->x, MENU_SPRITE_SLOTS);
     } while (!cpu->zero);
     SetIndexWidth(cpu, 0);
     return ExecutionReturned(0x868b86u);
@@ -192,11 +195,11 @@ Lufia2ExecutionResult Lufia2SpriteClearOam(
 /* $86:8C1F: OAM pieces of slot X from frame [$1328/$1358]. */
 static void SpritePieces(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);
-    LoadAAbsolute8(memory, cpu, 0x1328u, cpu->x);
+    LoadAAbsolute8(memory, cpu, MENU_SPRITE_FRAME_LOW, cpu->x);
     StoreADirect8(memory, cpu, 0x5du);
-    LoadAAbsolute8(memory, cpu, 0x1358u, cpu->x);
+    LoadAAbsolute8(memory, cpu, MENU_SPRITE_FRAME_HIGH, cpu->x);
     StoreADirect8(memory, cpu, 0x5eu);
-    LoadAAbsolute8(memory, cpu, 0x1238u, cpu->x);
+    LoadAAbsolute8(memory, cpu, MENU_SPRITE_BANK, cpu->x);
     StoreADirect8(memory, cpu, 0x5fu);
     LoadY16(cpu, 0x0001u);
     LoadA8(cpu, Read8IndirectLongY(memory, cpu, 0x5du));
@@ -213,12 +216,12 @@ static void SpritePieces(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         SetAccumulatorWidth(cpu, 1);
         PushY(memory, cpu);
         LoadY16(cpu, Read16Direct(memory, cpu, 0x5au));
-        LoadAAbsolute8(memory, cpu, 0x1388u, cpu->x);
+        LoadAAbsolute8(memory, cpu, MENU_SPRITE_X_LOW, cpu->x);
         cpu->carry = 1;
         Sbc8(cpu, DirectByte(memory, cpu, 0x59u));
         StoreAAbsolute8(memory, cpu, OAM, cpu->y);
         IncrementY16(cpu);
-        LoadAAbsolute8(memory, cpu, 0x13e8u, cpu->x);
+        LoadAAbsolute8(memory, cpu, MENU_SPRITE_Y_LOW, cpu->x);
         cpu->carry = 1;
         Sbc8(cpu, DirectByte(memory, cpu, 0x58u));
         StoreAAbsolute8(memory, cpu, OAM, cpu->y);
@@ -251,16 +254,16 @@ static void SpritePieces(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         LoadA8(cpu, DirectByte(memory, cpu, 0x59u));
         And8(cpu, 0x80u);
         if (cpu->zero) {
-            LoadAAbsolute8(memory, cpu, 0x1388u, cpu->x);
+            LoadAAbsolute8(memory, cpu, MENU_SPRITE_X_LOW, cpu->x);
             cpu->carry = 1;
             Sbc8(cpu, DirectByte(memory, cpu, 0x59u));
-            LoadAAbsolute8(memory, cpu, 0x13b8u, cpu->x);
+            LoadAAbsolute8(memory, cpu, MENU_SPRITE_X_HIGH, cpu->x);
             Sbc8(cpu, 0x00u);
         } else {
             LoadA8(cpu, (uint8_t)((DirectByte(memory, cpu, 0x59u) ^ 0xffu) + 1u));
             cpu->carry = 0;
-            Adc8(cpu, AbsoluteByte(memory, cpu, 0x1388u, cpu->x));
-            LoadAAbsolute8(memory, cpu, 0x13b8u, cpu->x);
+            Adc8(cpu, AbsoluteByte(memory, cpu, MENU_SPRITE_X_LOW, cpu->x));
+            LoadAAbsolute8(memory, cpu, MENU_SPRITE_X_HIGH, cpu->x);
             Adc8(cpu, 0x00u);
         }
         cpu->carry = 0;
@@ -302,7 +305,7 @@ Lufia2ExecutionResult Lufia2SpriteBuildOam(
     for (pass = 0; pass < 2u; ++pass) {
         LoadX16(cpu, kRanges[pass][0]);
         do {
-            LoadAAbsolute8(memory, cpu, 0x11d8u, cpu->x);
+            LoadAAbsolute8(memory, cpu, MENU_SPRITE_ACTIVE, cpu->x);
             if (!cpu->zero) {
                 SimulateJsrFrame(memory, cpu, kReturns[pass]);
                 SpritePieces(memory, cpu);
