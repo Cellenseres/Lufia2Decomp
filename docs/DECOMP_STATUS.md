@@ -793,7 +793,7 @@ stack frames, with phases at both ends of the pattern.
 
 `$85:B208` (the scanline edge table of the circular window, rebuilt when the
 radius changes, with open rows beyond it) and its helper `$85:B26D` (the
-half-circle profile of the radius by the midpoint rule) are `draft`
+half-width table of the circle of the radius by the midpoint rule) are `draft`
 reconstructions. `$85:B208` needs M1X0 (else handed back) and switches to its
 own data bank like the original; the helper keeps the caller's widths. They
 are compared against the original ROM code for CPU state, work RAM, ordered

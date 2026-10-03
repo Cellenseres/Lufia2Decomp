@@ -782,9 +782,9 @@ Lufia2ExecutionResult Lufia2BattleWaveBackward(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $85:B26D computes the half-circle profile of the radius at DP $C6 into
+/* $85:B26D computes the half widths of the circle of the radius at DP $C6 into
  * $4600. Any entry widths; they are restored. */
-Lufia2ExecutionResult Lufia2BattleCircleProfile(
+Lufia2ExecutionResult Lufia2BattleCircleWidths(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
