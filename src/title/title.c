@@ -419,6 +419,7 @@ enum {
     TITLE_PARTICLE_SLOTS = 0x18u,
 };
 
+/* Reads the word at an absolute address in the current data bank. */
 static uint16_t TitleWord(
     const Lufia2Memory *memory, const Lufia2CpuState *cpu, uint16_t at) {
     return Read16AbsoluteIndexed(memory, cpu, at, 0);

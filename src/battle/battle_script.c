@@ -365,6 +365,7 @@ static void BattleMultiplyBody(
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
+/* Runs the $85:DCA3 multiply as a JSL call returning to return_address. */
 static void BattleMultiply(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x85u, return_address);
@@ -372,6 +373,7 @@ static void BattleMultiply(
     SimulateRtlFrame(memory, cpu);
 }
 
+/* $85:DCA3: native entry for the multiply, returns to $85:DCE9. */
 Lufia2ExecutionResult Lufia2BattleMultiply(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     BattleMultiplyBody(memory, cpu);
@@ -459,6 +461,8 @@ static void BattleRandomFractionBody(
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
+/* Runs the $85:DCEA random fraction as a JSL call returning to
+ * return_address. */
 void BattleCallRandomFraction(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x85u, return_address);
@@ -466,6 +470,7 @@ void BattleCallRandomFraction(
     SimulateRtlFrame(memory, cpu);
 }
 
+/* $85:DCEA: native entry for the random fraction, returns to $85:DD18. */
 Lufia2ExecutionResult Lufia2BattleRandomFraction(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     BattleRandomFractionBody(memory, cpu);

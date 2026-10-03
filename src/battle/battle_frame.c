@@ -683,6 +683,8 @@ static void BattleSlotStates(
     PullDataBank(memory, cpu);
 }
 
+/* Returns through exit when the CPU is in the native M=1 X=0 mode, otherwise
+ * stops at entry so the original code runs. */
 static Lufia2ExecutionResult BattleFrameEntry(
     Lufia2CpuState *cpu, uint32_t entry, uint32_t exit) {
     Lufia2ExecutionResult result;
