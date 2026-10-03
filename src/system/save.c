@@ -2,7 +2,6 @@
 
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
-#include "core/wram_view.h"
 #include "lufia2/system.h"
 #include "system/wram.h"
 
@@ -14,20 +13,6 @@ enum {
     SAVE_CHECKSUM_POINTER = 0x5du,
     SAVE_CHECKSUM_POINTER_BANK = 0x5fu,
     SAVE_CHECKSUM = 0x56u,
-    /* Stack offset of the status byte the loader pushed first. */
-    SAVE_SAVED_STATUS = 8u,
-};
-
-/* Save RAM: one 2 KiB slot per file. */
-enum {
-    SAVE_SRAM_BANK = 0x70u,
-    SAVE_SLOT_SHIFT = 11,
-    SAVE_SLOT_SIZE = 0x800u,
-    SAVE_SEED_OFFSET = 1u,
-    SAVE_CHECKSUM_OFFSET = 2u,
-    SAVE_HEADER_SIZE = 4u,
-    SAVE_CHECKSUM_SEED = 0x6502u,
-    SAVE_RAM_STATUS = 0x700000u
 };
 
 static void SavePushA(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -64,7 +49,6 @@ static uint8_t SaveChild(
             return SaveUnwound(site); \
     } while (0)
 
-/* $80:9099: read save file A via $80:914B. */
 Lufia2ExecutionResult Lufia2LoadGameFile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
@@ -89,9 +73,9 @@ Lufia2ExecutionResult Lufia2LoadGameFile(
         SAVE_CALL(0x8090b1u, 0x8eb993u, 3u);
         SAVE_CALL(0x8090b5u, 0x85c60eu, 3u);
     } else {
-        OpLda(memory, cpu, OpStack(cpu, SAVE_SAVED_STATUS));
+        OpLda(memory, cpu, OpStack(cpu, 8u));
         OpOraValue(cpu, 1u);
-        OpSta(memory, cpu, OpStack(cpu, SAVE_SAVED_STATUS));
+        OpSta(memory, cpu, OpStack(cpu, 8u));
     }
     OpRepWidths(cpu, 0x30u);
     OpPullY(memory, cpu);
@@ -102,7 +86,6 @@ Lufia2ExecutionResult Lufia2LoadGameFile(
     return ExecutionReturned(0x8090c8u);
 }
 
-/* $80:90C9: pack, then write the file via $80:9184. */
 Lufia2ExecutionResult Lufia2SaveGameFile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
@@ -131,164 +114,122 @@ Lufia2ExecutionResult Lufia2SaveGameFile(
     return ExecutionReturned(0x8090e4u);
 }
 
-/* Offset of save slot A, returned in A and X. */
 Lufia2ExecutionResult Lufia2ResolveSaveFileAddress(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    const uint8_t slot = A8(cpu);
-
     (void)memory;
-    /* The last bit shifted out ends up in carry. */
-    cpu->carry = (uint16_t)(slot << (SAVE_SLOT_SHIFT - 1)) >> 15;
-    cpu->accumulator = (uint16_t)(slot << SAVE_SLOT_SHIFT);
-    TransferAToX(cpu);
+    ExchangeAccumulatorBytes(cpu);
+    OpLoadA(cpu, 0u);
+    OpRepWidths(cpu, 0x20u);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
     return ExecutionReturned(0x8091deu);
 }
 
-static uint32_t SaveByteAddress(uint16_t slot_offset, uint16_t index) {
-    return ((((uint32_t)SAVE_SRAM_BANK << 16) | slot_offset) + index) & 0x00ffffffu;
-}
-
-/* Signed overflow of a - b. */
-static int SubtractOverflows(uint8_t a, uint8_t b) {
-    const uint8_t difference = (uint8_t)(a - b);
-
-    return ((a ^ b) & (a ^ difference) & 0x80u) != 0;
-}
-
-/* Signed overflow of a + b. */
-static int AddOverflows(uint8_t a, uint8_t b) {
-    const uint8_t sum = (uint8_t)(a + b);
-
-    return (~(a ^ b) & (a ^ sum) & 0x80u) != 0;
-}
-
-/* Checksum of slot A into $56; needs M8 X16. */
 Lufia2ExecutionResult Lufia2SaveFileChecksum(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    uint16_t slot_offset, sum = SAVE_CHECKSUM_SEED, index;
-    int overflow = 0;
-
     if (!child || cpu->decimal || !cpu->accumulator_is_8_bit ||
         cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x8090fcu);
     SAVE_CALL(0x8090fcu, 0x8091d3u, 2u);
-    slot_offset = cpu->x;
-    WramWrite(wram, SAVE_CHECKSUM_POINTER_BANK, SAVE_SRAM_BANK);
-    WramWrite16(wram, SAVE_CHECKSUM_POINTER, slot_offset);
-    for (index = SAVE_HEADER_SIZE; index != SAVE_SLOT_SIZE; index += 2u) {
-        const uint16_t word = Read16Long(memory, SaveByteAddress(slot_offset, index));
-        const uint32_t total = (uint32_t)sum + word;
-
-        overflow = ((~(sum ^ word) & (sum ^ total)) & 0x8000u) != 0;
-        sum = (uint16_t)total;
-    }
-    WramWrite16(wram, SAVE_CHECKSUM, sum);
-    /* Exit: A checksum, Y slot end, last flags. */
-    cpu->accumulator = sum;
-    cpu->y = SAVE_SLOT_SIZE;
-    cpu->carry = 1;
-    cpu->zero = 1;
-    cpu->negative = 0;
-    cpu->overflow = (uint8_t)overflow;
+    OpLoadA(cpu, 0x70u);
+    OpSta(memory, cpu, OpDp(cpu, SAVE_CHECKSUM_POINTER_BANK));
+    OpRepWidths(cpu, 0x20u);
+    OpWriteX(memory, cpu, OpDp(cpu, SAVE_CHECKSUM_POINTER), cpu->x);
+    OpLdy(cpu, 4u);
+    OpLoadA(cpu, 0x6502u);
+    cpu->carry = 0;
+    do {
+        OpAdc(memory, cpu, DirectLongIndirectY(memory, cpu, SAVE_CHECKSUM_POINTER));
+        OpIny(cpu);
+        OpIny(cpu);
+        OpCpy(cpu, 0x800u);
+    } while (!cpu->zero);
+    OpSta(memory, cpu, OpDp(cpu, SAVE_CHECKSUM));
+    OpSepWidths(cpu, 0x20u);
     return ExecutionReturned(0x80911bu);
 }
 
-/* Read and decrypt save slot A into the buffer. */
 Lufia2ExecutionResult Lufia2ReadGameFile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, Lufia2ExecutionCheckpoint checkpoint,
     void *context) {
-    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    uint16_t slot_offset, index;
-    uint8_t seed;
-
     if (!child || cpu->decimal || !cpu->accumulator_is_8_bit ||
         cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x80914bu);
     if (checkpoint)
         checkpoint(context, cpu, 0x80914bu);
-    WramWrite(wram, SAVE_FILE_INDEX, A8(cpu));
+    OpSta(memory, cpu, OpDp(cpu, SAVE_FILE_INDEX));
     SAVE_CALL(0x80914du, 0x8091d3u, 2u);
-    slot_offset = cpu->x;
-    WramWrite16(wram, SAVE_FILE_POINTER, slot_offset);
-    WramWrite(wram, SAVE_FILE_POINTER_BANK, SAVE_SRAM_BANK);
-    LoadY16(cpu, 1u);
-    seed = Read8(memory, SaveByteAddress(slot_offset, SAVE_SEED_OFFSET));
-    LoadA8(cpu, seed);
-    WramWrite(wram, WRAM_RANDOM_SEED_WORK, seed);
+    OpWriteX(memory, cpu, OpDp(cpu, SAVE_FILE_POINTER), cpu->x);
+    OpLoadA(cpu, 0x70u);
+    OpSta(memory, cpu, OpDp(cpu, SAVE_FILE_POINTER_BANK));
+    OpLdy(cpu, 1u);
+    OpLda(memory, cpu, DirectLongIndirectY(memory, cpu, SAVE_FILE_POINTER));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_RANDOM_SEED_WORK));
     SAVE_CALL(0x80915eu, 0x8082e7u, 3u);
-    for (index = SAVE_HEADER_SIZE; index != SAVE_SLOT_SIZE; ++index) {
-        uint8_t stream, stored;
-
-        cpu->x = index;
-        cpu->y = index;
-        LoadA8(cpu, 0xffu);
+    OpLdx(cpu, 4u);
+    OpTxy(cpu);
+    do {
+        OpLoadA(cpu, 0xffu);
         SAVE_CALL(0x809168u, 0x808299u, 3u);
-        stream = A8(cpu);
-        stored = Read8(memory, SaveByteAddress(slot_offset, index));
-        Write8(memory, WRAM_SAVE_FILE_BUFFER + index, (uint8_t)(stored - stream));
-        cpu->overflow = (uint8_t)SubtractOverflows(stream, stored);
-        cpu->x = (uint16_t)(index + 1u);
-        cpu->y = cpu->x;
-        Compare16(cpu, cpu->y, SAVE_SLOT_SIZE);
-    }
-    /* The first byte is stored in the clear. */
-    LoadA8(cpu, Read8(memory, SaveByteAddress(slot_offset, 0u)));
-    Write8(memory, WRAM_SAVE_FILE_BUFFER, A8(cpu));
+        cpu->carry = 1;
+        OpSbcValue(cpu, OpReadM(memory, cpu,
+            DirectLongIndirectY(memory, cpu, SAVE_FILE_POINTER)));
+        OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffu));
+        OpIncA(cpu);
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_SAVE_FILE_BUFFER));
+        OpInx(cpu);
+        OpIny(cpu);
+        OpCpy(cpu, 0x800u);
+    } while (!cpu->zero);
+    OpLda(memory, cpu, DirectLongPointer(memory, cpu, SAVE_FILE_POINTER));
+    OpSta(memory, cpu, WRAM_SAVE_FILE_BUFFER);
     return ExecutionReturned(0x809183u);
 }
 
-/* Encrypt the buffer into slot A, store the checksum. */
 Lufia2ExecutionResult Lufia2WriteGameFile(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    uint16_t slot_offset, index, checksum;
-    uint8_t seed, status;
-
     if (!child || cpu->decimal || !cpu->accumulator_is_8_bit ||
         cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x809184u);
-    WramWrite(wram, SAVE_FILE_INDEX, A8(cpu));
+    OpSta(memory, cpu, OpDp(cpu, SAVE_FILE_INDEX));
     SAVE_CALL(0x809186u, 0x8091d3u, 2u);
-    slot_offset = cpu->x;
-    WramWrite16(wram, SAVE_FILE_POINTER, slot_offset);
-    LoadA8(cpu, SAVE_SRAM_BANK);
-    WramWrite(wram, SAVE_FILE_POINTER_BANK, SAVE_SRAM_BANK);
-    LoadY16(cpu, 1u);
+    OpWriteX(memory, cpu, OpDp(cpu, SAVE_FILE_POINTER), cpu->x);
+    OpLoadA(cpu, 0x70u);
+    OpSta(memory, cpu, OpDp(cpu, SAVE_FILE_POINTER_BANK));
+    OpLdy(cpu, 1u);
     SAVE_CALL(0x809192u, 0x808299u, 3u);
-    seed = A8(cpu);
-    Write8(memory, SaveByteAddress(slot_offset, SAVE_SEED_OFFSET), seed);
-    WramWrite(wram, WRAM_RANDOM_SEED_WORK, seed);
+    OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, SAVE_FILE_POINTER));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_RANDOM_SEED_WORK));
     SAVE_CALL(0x80919bu, 0x8082e7u, 3u);
-    for (index = SAVE_HEADER_SIZE; index != SAVE_SLOT_SIZE; ++index) {
-        uint8_t stream, plain, sum;
-
-        cpu->x = index;
-        cpu->y = index;
-        LoadA8(cpu, 0xffu);
+    OpLdx(cpu, 4u);
+    OpTxy(cpu);
+    do {
+        OpLoadA(cpu, 0xffu);
         SAVE_CALL(0x8091a5u, 0x808299u, 3u);
-        stream = A8(cpu);
-        plain = Read8(memory, WRAM_SAVE_FILE_BUFFER + index);
-        sum = (uint8_t)(stream + plain);
-        Write8(memory, SaveByteAddress(slot_offset, index), sum);
-        cpu->overflow = (uint8_t)AddOverflows(stream, plain);
-        cpu->x = (uint16_t)(index + 1u);
-        cpu->y = cpu->x;
-        Compare16(cpu, cpu->y, SAVE_SLOT_SIZE);
-    }
-    LoadA8(cpu, WramRead(wram, SAVE_FILE_INDEX));
+        cpu->carry = 0;
+        OpAdc(memory, cpu, OpLongX(cpu, WRAM_SAVE_FILE_BUFFER));
+        OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, SAVE_FILE_POINTER));
+        OpInx(cpu);
+        OpIny(cpu);
+        OpCpy(cpu, 0x800u);
+    } while (!cpu->zero);
+    OpLda(memory, cpu, OpDp(cpu, SAVE_FILE_INDEX));
     SAVE_CALL(0x8091b9u, 0x8090fcu, 2u);
-    checksum = WramRead16(wram, SAVE_CHECKSUM);
-    Write16Long(memory, SaveByteAddress(slot_offset, SAVE_CHECKSUM_OFFSET), checksum);
-    /* First byte keeps the save RAM status low nibble. */
-    status = Read8(memory, SAVE_RAM_STATUS) & 0x0fu;
-    Write8(memory, SaveByteAddress(slot_offset, 0u), status);
-    cpu->accumulator = (uint16_t)((checksum & 0xff00u) | status);
-    LoadY16(cpu, 0u);
-    cpu->negative = 0;
-    cpu->zero = status == 0;
+    OpRepWidths(cpu, 0x20u);
+    OpLdy(cpu, 2u);
+    OpLda(memory, cpu, OpDp(cpu, SAVE_CHECKSUM));
+    OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, SAVE_FILE_POINTER));
+    OpSepWidths(cpu, 0x20u);
+    OpLdy(cpu, 0u);
+    OpLda(memory, cpu, 0x700000u);
+    OpAndValue(cpu, 0x0fu);
+    OpSta(memory, cpu, DirectLongIndirectY(memory, cpu, SAVE_FILE_POINTER));
     return ExecutionReturned(0x8091d2u);
 }
+
