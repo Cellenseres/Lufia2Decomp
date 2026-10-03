@@ -1,6 +1,7 @@
 /* World map ground plane: the Mode 7 matrix tables of the perspective view. */
 
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
 #include "lufia2/world_map.h"
@@ -71,75 +72,51 @@ static uint16_t SineTableWord(
 }
 
 /* The two angle terms are a magnitude byte and a sign byte at $58 and $5A;
- * the value 1.0 is the pair 0, 1. The routines keep their original shape
- * because they leave flags, work bytes and stack residue for the caller. */
+ * the value 1.0 is the pair 0, 1. They are built in $00/$01. The routines
+ * leave their flags and stack residue to the caller, and the pushed status
+ * byte shows them, so the flags are kept as the original left them. */
 
-/* $86:A4FA: cosine term of angle A into $00. */
-static void CosineTerm(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
-    const uint8_t angle = A8(cpu);
-    uint8_t quadrant;
-
-    Push8(memory, cpu, angle);
-    BitImmediate8(cpu, 0x40u);
-    if (!cpu->zero) {
-        And8(cpu, 0x3fu);
-        LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0xffu));
-        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        cpu->carry = 0;
-        Adc8(cpu, 0x40u);
-    }
-    SetAccumulatorWidth(cpu, 0);
-    And16(cpu, 0x007fu);
-    LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
-    IncrementA16(cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, 0x0040u);
-    AslA16(cpu);
-    TransferAToX(cpu);
-    LoadA16(cpu, SineTableWord(memory, cpu->x));
-    WramWrite16(wram, WORK_VALUE, cpu->accumulator);
-    LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
-    IncrementA16(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Pull8(memory, cpu));
-    And8(cpu, 0xc0u);
-    quadrant = A8(cpu);
-    if (quadrant == 0x00u)
-        return;
-    Compare8(cpu, quadrant, 0xc0u);
-    if (cpu->zero)
-        return;
-    ExchangeAccumulatorBytes(cpu);
-    WramWrite(wram, WORK_QUOTIENT_BYTE, A8(cpu));
+/* An angle folded into the first quarter of the wave. */
+static uint8_t FoldIntoQuarter(uint8_t angle) {
+    return (angle & 0x40u) != 0 ? (uint8_t)(0x40u - (angle & 0x3fu)) : angle;
 }
 
-/* $86:A4D3: sine term of angle A into $00. */
+/* $86:A4FA: cosine term of angle A into $00. Quarters 1 and 2 are negative.
+ * The carry is left set exactly for the last quarter, the overflow clear. */
+static void CosineTerm(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram,
+    uint8_t angle) {
+    const uint16_t steps = FoldIntoQuarter(angle) & 0x7fu;
+    const uint16_t magnitude =
+        SineTableWord(memory, (uint16_t)((0x40u - steps) << 1));
+    const uint8_t negative_high = (uint8_t)((uint16_t)(0u - magnitude) >> 8);
+    const uint8_t quarter = angle & 0xc0u;
+
+    Push8(memory, cpu, angle);
+    WramWrite16(wram, WORK_VALUE, magnitude);
+    (void)Pull8(memory, cpu);
+    cpu->carry = quarter == 0xc0u;
+    cpu->overflow = false;
+    if (quarter != 0x00u && quarter != 0xc0u)
+        WramWrite(wram, WORK_QUOTIENT_BYTE, negative_high);
+}
+
+/* $86:A4D3: sine term of angle A into $00. Angles from 128 on are negative.
+ * The flags come back as they were, except the zero flag. */
 static void SineTerm(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
-    BitImmediate8(cpu, 0x80u);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram,
+    uint8_t angle) {
+    const uint16_t steps = FoldIntoQuarter(angle) & 0x7fu;
+    const uint16_t magnitude = SineTableWord(memory, (uint16_t)(steps << 1));
+    const bool negative = (angle & 0x80u) != 0;
+
+    cpu->zero = !negative;
     Push8(memory, cpu, PackStatus(cpu));
-    BitImmediate8(cpu, 0x40u);
-    if (!cpu->zero) {
-        And8(cpu, 0x3fu);
-        LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0xffu));
-        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        cpu->carry = 0;
-        Adc8(cpu, 0x40u);
-    }
-    SetAccumulatorWidth(cpu, 0);
-    And16(cpu, 0x007fu);
-    AslA16(cpu);
-    TransferAToX(cpu);
-    LoadA16(cpu, SineTableWord(memory, cpu->x));
-    WramWrite16(wram, WORK_VALUE, cpu->accumulator);
-    LoadA16(cpu, (uint16_t)(cpu->accumulator ^ 0xffffu));
-    IncrementA16(cpu);
-    UnpackStatus(cpu, Pull8(memory, cpu));
-    if (cpu->zero)
-        return;
-    ExchangeAccumulatorBytes(cpu);
-    WramWrite(wram, WORK_QUOTIENT_BYTE, A8(cpu));
+    WramWrite16(wram, WORK_VALUE, magnitude);
+    (void)Pull8(memory, cpu);
+    if (negative)
+        WramWrite(wram, WORK_QUOTIENT_BYTE,
+            (uint8_t)((uint16_t)(0u - magnitude) >> 8));
 }
 
 /* $86:A52F: 32-bit product of the words at $00 and $04 into $00. */
@@ -180,125 +157,90 @@ static void MultiplyWords(
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
-/* $86:A5A9: restoring division of the 32-bit value at $00 by the word at $04;
- * the quotient replaces the value and the remainder is left in A. */
-static void DivideLong(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
-    uint16_t remainder = 0;
-    unsigned bit;
-
-    Push8(memory, cpu, PackStatus(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    SetIndexWidth(cpu, 0);
-    for (bit = 0; bit < 32u; ++bit) {
-        uint16_t low = WramRead16(wram, WORK_VALUE);
-        uint16_t high;
-        uint8_t carry = (uint8_t)(low >> 15);
-        uint8_t overflow;
-
-        low = (uint16_t)(low << 1);
-        Write8(memory, WramAddress(wram, WORK_QUOTIENT_BYTE, 0), (uint8_t)(low >> 8));
-        Write8(memory, WramAddress(wram, WORK_VALUE, 0), (uint8_t)low);
-        high = WramRead16(wram, WORK_HIGH_WORD);
-        {
-            const uint16_t shifted = (uint16_t)((high << 1) | carry);
-
-            carry = (uint8_t)(high >> 15);
-            Write8(memory, WramAddress(wram, WORK_HIGH_BYTE, 0), (uint8_t)(shifted >> 8));
-            Write8(memory, WramAddress(wram, WORK_HIGH_WORD, 0), (uint8_t)shifted);
-        }
-        overflow = (uint8_t)(remainder >> 15);
-        remainder = (uint16_t)((remainder << 1) | carry);
-        if (overflow || remainder >= WramRead16(wram, WORK_OPERAND)) {
-            remainder = (uint16_t)(remainder - WramRead16(wram, WORK_OPERAND));
-            (void)WramStep16(wram, WORK_VALUE, 1);
-        }
-    }
-    cpu->accumulator = remainder;
-    UnpackStatus(cpu, Pull8(memory, cpu));
+/* $86:A5A9 on the work words: the 32-bit value at $00 divided by the word
+ * at $04; the shared division routine of the world map. */
+static void DivideWork(Lufia2Wram wram, Lufia2CpuState *cpu, uint16_t return_address) {
+    SimulateJsrFrame(wram.memory, cpu, return_address);
+    (void)Lufia2WorldMapDivide32(wram.memory, cpu);
+    SimulateRtsFrame(wram.memory, cpu);
 }
 
-/* $86:A913: row step from the tilt table, for a non-zero mode. */
+/* $86:A913: row step from the tilt table, for a non-zero mode. Tilts of 64
+ * and up leave the step at zero. */
 static void RowStepFromTiltTable(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
+    const uint16_t tilt = WramRead16(wram, PLANE_TILT) & 0x00ffu;
+    uint16_t sine;
+    uint16_t start_row;
+    Word16Result remaining;
+    uint16_t divisor;
+
     WramWrite16(wram, WORK_VALUE, 0);
     WramWrite16(wram, WORK_HIGH_WORD, 0);
-    LoadA16(cpu, WramRead16(wram, PLANE_TILT));
-    And16(cpu, 0x00ffu);
-    Compare16(cpu, cpu->accumulator, 0x0040u);
-    if (cpu->carry)
+    if (tilt >= 0x0040u)
         return;
-    AslA16(cpu);
-    TransferAToX(cpu);
-    LoadA16(cpu, SineTableWord(memory, cpu->x));
-    PushAccumulator16(memory, cpu);
-    WramWrite16(wram, WORK_OPERAND, cpu->accumulator);
-    LoadA16(cpu, WramRead16(wram, PLANE_START_ROW));
-    WramWrite16(wram, WORK_VALUE, cpu->accumulator);
+    sine = SineTableWord(memory, (uint16_t)(tilt << 1));
+    PushStackWord(memory, cpu, sine);
+    WramWrite16(wram, WORK_OPERAND, sine);
+    start_row = WramRead16(wram, PLANE_START_ROW);
+    WramWrite16(wram, WORK_VALUE, start_row);
+    cpu->carry = false;
+    SetNz16(cpu, start_row);
     SimulateJsrFrame(memory, cpu, 0xa932u);
     MultiplyWords(memory, cpu, wram);
     SimulateRtsFrame(memory, cpu);
-    PullAccumulator16(memory, cpu);
-    SetAccumulatorWidth(cpu, 1);
-    WramWrite(wram, SNES_WRMPYA, A8(cpu));
-    LoadA8(cpu, 0xe0u);
-    WramWrite(wram, SNES_WRMPYB, A8(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, WramRead16(wram, PLANE_START_ROW));
-    cpu->carry = 1;
-    Add16Value(cpu, (uint16_t)~WramRead16(wram, WORK_QUOTIENT_BYTE));
-    WramWrite16(wram, WORK_HIGH_WORD, cpu->accumulator);
+    sine = PullStackWord(memory, cpu);
+    WramWrite(wram, SNES_WRMPYA, (uint8_t)sine);
+    WramWrite(wram, SNES_WRMPYB, 0xe0u);
+    remaining = Difference16(WramRead16(wram, PLANE_START_ROW),
+        WramRead16(wram, WORK_QUOTIENT_BYTE));
+    WramWrite16(wram, WORK_HIGH_WORD, remaining.value);
     WramWrite16(wram, WORK_VALUE, 0);
-    LoadA16(cpu, WramRead16(wram, SNES_RDMPYH));
-    And16(cpu, 0x00ffu);
-    WramWrite16(wram, WORK_OPERAND, cpu->accumulator);
-    SimulateJsrFrame(memory, cpu, 0xa954u);
-    DivideLong(memory, cpu, wram);
-    SimulateRtsFrame(memory, cpu);
+    divisor = WramRead16(wram, SNES_RDMPYH) & 0x00ffu;
+    WramWrite16(wram, WORK_OPERAND, divisor);
+    cpu->carry = remaining.carry;
+    cpu->overflow = remaining.overflow;
+    SetNz16(cpu, divisor);
+    DivideWork(wram, cpu, 0xa954u);
 }
 
 /* $86:A956: row step from the difference of two sine entries. */
 static void RowStepFromSineDifference(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
+    const uint8_t tilt = WramRead(wram, PLANE_TILT);
+    const uint16_t start_row = cpu->x;
+    uint8_t complement_sine;
+    Byte8Result difference;
+    uint16_t quotient;
+    Word16Result remaining;
+
     WramWrite16(wram, WORK_HIGH_WORD, 0);
     WramWrite16(wram, WORK_VALUE, 0);
-    LoadA16(cpu, 0x0000u);
     SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, 0x40u);
-    cpu->carry = 1;
-    Sbc8(cpu, WramRead(wram, PLANE_TILT));
-    if (cpu->zero || !cpu->carry)
+    if (tilt >= 0x40u)
         return;
-    WramWrite16(wram, WORK_HIGH_WORD, cpu->x);
-    AslA8(cpu);
-    TransferAToX(cpu);
-    LoadA8(cpu, SineTableByte(memory, cpu->x));
-    WramWrite(wram, WORK_LIMIT, A8(cpu));
-    LoadA8(cpu, WramRead(wram, PLANE_TILT));
-    AslA8(cpu);
-    TransferAToX(cpu);
-    LoadA8(cpu, SineTableByte(memory, cpu->x));
-    cpu->carry = 1;
-    Sbc8(cpu, WramRead(wram, WORK_LIMIT));
-    WramWrite(wram, WORK_OPERAND, A8(cpu));
+    WramWrite16(wram, WORK_HIGH_WORD, start_row);
+    complement_sine = SineTableByte(memory, (uint16_t)((0x40u - tilt) << 1));
+    WramWrite(wram, WORK_LIMIT, complement_sine);
+    difference = Difference8(SineTableByte(memory, (uint16_t)(tilt << 1)),
+        WramRead(wram, WORK_LIMIT));
+    WramWrite(wram, WORK_OPERAND, difference.value);
     WramWrite(wram, WORK_OPERAND_HIGH, 0);
-    SimulateJsrFrame(memory, cpu, 0xa985u);
-    DivideLong(memory, cpu, wram);
-    SimulateRtsFrame(memory, cpu);
-    LoadX16(cpu, WramRead16(wram, WORK_QUOTIENT_BYTE));
-    WramWrite16(wram, WORK_OPERAND, cpu->x);
-    LoadX16(cpu, 0x0000u);
-    WramWrite16(wram, WORK_VALUE, cpu->x);
-    LoadX16(cpu, 0x0001u);
-    WramWrite16(wram, WORK_HIGH_WORD, cpu->x);
-    SimulateJsrFrame(memory, cpu, 0xa996u);
-    DivideLong(memory, cpu, wram);
-    SimulateRtsFrame(memory, cpu);
+    cpu->carry = difference.carry;
+    cpu->overflow = difference.overflow;
+    SetNz8(cpu, difference.value);
+    DivideWork(wram, cpu, 0xa985u);
+    quotient = WramRead16(wram, WORK_QUOTIENT_BYTE);
+    WramWrite16(wram, WORK_OPERAND, quotient);
+    WramWrite16(wram, WORK_VALUE, 0);
+    WramWrite16(wram, WORK_HIGH_WORD, 1u);
+    cpu->zero = false;
+    cpu->negative = false;
+    DivideWork(wram, cpu, 0xa996u);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, WramRead16(wram, PLANE_START_ROW));
-    cpu->carry = 1;
-    Add16Value(cpu, (uint16_t)~WramRead16(wram, WORK_VALUE));
-    WramWrite16(wram, WORK_QUOTIENT_BYTE, cpu->accumulator);
+    remaining = Difference16(WramRead16(wram, PLANE_START_ROW),
+        WramRead16(wram, WORK_VALUE));
+    WramWrite16(wram, WORK_QUOTIENT_BYTE, remaining.value);
     SetAccumulatorWidth(cpu, 1);
     WramWrite(wram, WORK_VALUE, 0);
     WramWrite(wram, WORK_HIGH_BYTE, 0);
@@ -443,25 +385,23 @@ Lufia2ExecutionResult Lufia2WorldMapPlane(
     Lufia2Wram wram;
     unsigned quadrant;
     unsigned band;
+    uint8_t angle;
     BandExit done = {0, 0, 0, 0};
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86a894u);
     wram = WramViewOfCaller(memory, cpu);
-    LoadA8(cpu, WramRead(wram, WRAM_WORLD_MAP_VIEW_ANGLE));
+    angle = WramRead(wram, WRAM_WORLD_MAP_VIEW_ANGLE);
     SimulateJsrFrame(memory, cpu, 0xa899u);
-    CosineTerm(memory, cpu, wram);
+    CosineTerm(memory, cpu, wram, angle);
     SimulateRtsFrame(memory, cpu);
-    LoadX16(cpu, WramRead16(wram, WORK_VALUE));
-    WramWrite16(wram, COSINE_TERM, cpu->x);
-    LoadA8(cpu, WramRead(wram, WRAM_WORLD_MAP_VIEW_ANGLE));
+    WramWrite16(wram, COSINE_TERM, WramRead16(wram, WORK_VALUE));
+    SetNz8(cpu, angle);
     SimulateJsrFrame(memory, cpu, 0xa8a3u);
-    SineTerm(memory, cpu, wram);
+    SineTerm(memory, cpu, wram, angle);
     SimulateRtsFrame(memory, cpu);
-    LoadX16(cpu, WramRead16(wram, WORK_VALUE));
-    WramWrite16(wram, SINE_TERM, cpu->x);
-    LoadY16(cpu, TABLE_END);
-    LoadA8(cpu, 0x00u);
+    WramWrite16(wram, SINE_TERM, WramRead16(wram, WORK_VALUE));
+    cpu->y = TABLE_END;
     WramWriteAt(wram, MATRIX_AB_TABLE, cpu->y, 0);
     WramWriteAt(wram, MATRIX_CD_TABLE, cpu->y, 0);
     /* The sign bytes pick one of four sign patterns for the bands. */
@@ -472,12 +412,9 @@ Lufia2ExecutionResult Lufia2WorldMapPlane(
     RotateByteIn(wram, BAND_QUADRANT, 0);
     SetAccumulatorWidth(cpu, 0);
     WramWrite16(wram, ROW_POSITION, 0);
-    LoadA16(cpu, WramRead16(wram, PLANE_START_ROW));
-    WramWrite16(wram, ROW_WHOLE, cpu->accumulator);
-    TransferAToX(cpu);
-    LoadA16(cpu, WramRead16(wram, PLANE_MODE));
-    And16(cpu, 0x00ffu);
-    if (!cpu->zero) {
+    cpu->x = WramRead16(wram, PLANE_START_ROW);
+    WramWrite16(wram, ROW_WHOLE, cpu->x);
+    if ((WramRead16(wram, PLANE_MODE) & 0x00ffu) != 0) {
         SimulateJsrFrame(memory, cpu, 0xa8d7u);
         RowStepFromTiltTable(memory, cpu, wram);
     } else {
@@ -486,26 +423,28 @@ Lufia2ExecutionResult Lufia2WorldMapPlane(
     }
     SimulateRtsFrame(memory, cpu);
     for (band = 0; band < 2u; ++band) {
+        uint16_t rows;
+        uint8_t header;
+
         SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, BAND_ROWS);
-        PushAccumulator16(memory, cpu);
-        WramWrite16(wram, ROWS_LEFT, cpu->accumulator);
-        LoadX16(cpu, WramRead16(wram, BAND_QUADRANT));
-        quadrant = (cpu->x >> 1) & 3u;
+        PushStackWord(memory, cpu, BAND_ROWS);
+        WramWrite16(wram, ROWS_LEFT, BAND_ROWS);
+        quadrant = (WramRead16(wram, BAND_QUADRANT) >> 1) & 3u;
         SimulateJsrFrame(memory, cpu, band ? 0xa902u : 0xa8e9u);
         done = BuildBand(wram, cpu->y, quadrant);
         SimulateRtsFrame(memory, cpu);
+        rows = PullStackWord(memory, cpu);
+        /* Each band ends with a repeat-count header byte in both tables. */
+        header = (uint8_t)(rows | BAND_HEADER);
+        cpu->y = (uint16_t)(done.table_index - 1u);
+        WramWriteAt(wram, MATRIX_AB_TABLE, cpu->y, header);
+        WramWriteAt(wram, MATRIX_CD_TABLE, cpu->y, header);
         cpu->x = done.last_index;
-        cpu->y = done.table_index;
+        cpu->accumulator = (uint16_t)((rows & 0xff00u) | header);
         cpu->carry = done.carry;
         cpu->overflow = done.overflow;
-        PullAccumulator16(memory, cpu);
+        SetNz8(cpu, header);
         SetAccumulatorWidth(cpu, 1);
-        cpu->y = (uint16_t)(cpu->y - 1u);
-        SetNz16(cpu, cpu->y);
-        Or8(cpu, BAND_HEADER);
-        WramWriteAt(wram, MATRIX_AB_TABLE, cpu->y, A8(cpu));
-        WramWriteAt(wram, MATRIX_CD_TABLE, cpu->y, A8(cpu));
     }
     WramWrite(wram, PLANE_REFRESH, 0);
     return ExecutionReturned(0x86a912u);
