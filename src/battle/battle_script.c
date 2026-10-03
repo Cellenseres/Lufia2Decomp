@@ -22,6 +22,27 @@
 #define BATTLE_GLOBAL_VARIABLES 0x7ff40eu
 #define BATTLE_CONDITION 0x7ff42eu
 #define BATTLE_ACTION_CODE 0x7ff454u
+/* Battler records addressed by the script: the two battlers the script is
+ * working on come first, then the action code and its arguments. Opcodes
+ * $24-$27 reach fields through the ROM offset tables below. */
+#define BATTLE_SCRIPT_RECORD 0x7ff44eu
+#define BATTLE_BATTLER_A BATTLE_SCRIPT_RECORD
+#define BATTLE_BATTLER_B 0x7ff450u
+#define BATTLE_ACTION_ARGUMENT 0x7ff456u
+#define BATTLE_RECORD_F45A 0x7ff45au
+#define BATTLE_RECORD_F45C 0x7ff45cu
+#define BATTLE_RECORD_F45E 0x7ff45eu
+#define BATTLE_RECORD_F460 0x7ff460u
+#define BATTLE_RECORD_F462 0x7ff462u
+#define BATTLE_RECORD_F464 0x7ff464u
+#define BATTLE_RECORD_WORD_OFFSETS 0x859f04u
+#define BATTLE_RECORD_BYTE_OFFSETS 0x859f0fu
+#define BATTLE_BATTLER_MASKS 0x0a5du /* per side; negative: none */
+#define BATTLE_SCRIPT_UNK_0A62 0x0a62u
+#define BATTLE_BASES_CONTEXT_SET 0x0a64u  /* variable bases per battler */
+#define BATTLE_BASES_CONTEXT_ZERO 0x0a80u /* when the script context is 0 */
+#define BATTLE_SLOT_BITS 0x09fbu          /* scratch of the battler lookup */
+#define BATTLE_SLOT_BASE 0x09fau
 
 /* $85:C168: battler byte A to its variable base in X. */
 static void BattleScriptSlot(
@@ -29,16 +50,16 @@ static void BattleScriptSlot(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    StoreAAbsolute8(memory, cpu, 0x09fbu, 0);                  /* C168 */
+    StoreAAbsolute8(memory, cpu, BATTLE_SLOT_BITS, 0); /* C168 */
     BitImmediate8(cpu, 0x3fu);
     if (!cpu->zero) {
         And8(cpu, 0x80u);
         if (!cpu->zero)
             LoadA8(cpu, 0x05u);
-        StoreAAbsolute8(memory, cpu, 0x09fau, 0);
+        StoreAAbsolute8(memory, cpu, BATTLE_SLOT_BASE, 0);
         LoadA8(cpu, 0xffu);
         do {
-            const uint32_t bits = AbsoluteIndexedAddress(cpu, 0x09fbu, 0);
+            const uint32_t bits = AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BITS, 0);
             const uint8_t value = Read8(memory, bits);
 
             LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));              /* C17A */
@@ -47,7 +68,7 @@ static void BattleScriptSlot(
             SetNz8(cpu, (uint8_t)(value >> 1));
         } while (!cpu->carry);
         cpu->carry = 0;
-        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x09fau, 0)));
+        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BASE, 0)));
     }
     SetAccumulatorWidth(cpu, 0);                               /* C184 */
     And16(cpu, 0x00ffu);
@@ -56,7 +77,9 @@ static void BattleScriptSlot(
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_BATTLE_SCRIPT_CONTEXT, 0));
     And16(cpu, 0x00ffu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
-        cpu->zero ? 0x0a80u : 0x0a64u, cpu->x));
+                                       cpu->zero ? BATTLE_BASES_CONTEXT_ZERO
+                                                 : BATTLE_BASES_CONTEXT_SET,
+                                       cpu->x));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
@@ -67,10 +90,10 @@ static void BattleScriptBases(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xb462u);
-    LoadA8(cpu, Read8(memory, 0x7ff450u));                     /* C4DE */
+    LoadA8(cpu, Read8(memory, BATTLE_BATTLER_B)); /* C4DE */
     BattleScriptSlot(memory, cpu, 0xc4e4u);
     Write16Direct(memory, cpu, BATTLE_DP_LOCALS_F450, cpu->x);
-    LoadA8(cpu, Read8(memory, 0x7ff44eu));
+    LoadA8(cpu, Read8(memory, BATTLE_BATTLER_A));
     BattleScriptSlot(memory, cpu, 0xc4edu);
     Write16Direct(memory, cpu, BATTLE_DP_LOCALS_F44E, cpu->x);
     SimulateRtsFrame(memory, cpu);
@@ -543,16 +566,17 @@ static void BattleActiveMask(
     const uint8_t enemies = (uint8_t)(A8(cpu) & 0x80u);
 
     SimulateJsrFrame(memory, cpu, return_address);
-    StoreZeroAbsolute8(memory, cpu, 0x09fau, 0);               /* C117 */
+    StoreZeroAbsolute8(memory, cpu, BATTLE_SLOT_BASE, 0); /* C117 */
     cpu->zero = enemies == 0;
     SetAccumulatorWidth(cpu, 0);
     LoadX16(cpu, enemies ? 0x000au : 0x0008u);
     do {
-        const uint32_t mask = AbsoluteIndexedAddress(cpu, 0x09fau, 0);
+        const uint32_t mask = AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BASE, 0);
         uint16_t bits;
 
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
-            enemies ? 0x0a6eu : 0x0a64u, cpu->x));
+                                           enemies ? 0x0a6eu : BATTLE_BASES_CONTEXT_SET,
+                                           cpu->x));
         cpu->carry = 0;
         if (!cpu->zero) {
             LoadY16(cpu, cpu->accumulator);
@@ -560,8 +584,10 @@ static void BattleActiveMask(
             cpu->zero = (cpu->accumulator & 0x0004u) == 0;
             cpu->carry = cpu->zero;
         }
-        bits = (uint16_t)(Read8(memory, mask) |
-            (Read8(memory, AbsoluteIndexedAddress(cpu, 0x09fbu, 0)) << 8));
+        bits =
+            (uint16_t)(Read8(memory, mask) |
+                       (Read8(memory, AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BITS, 0))
+                        << 8));
         {
             const uint8_t out = (uint8_t)(bits >> 15);
 
@@ -569,14 +595,14 @@ static void BattleActiveMask(
             cpu->carry = out;
         }
         Write8(memory, mask, (uint8_t)bits);
-        Write8(memory, AbsoluteIndexedAddress(cpu, 0x09fbu, 0),
-            (uint8_t)(bits >> 8));
+        Write8(memory, AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BITS, 0),
+               (uint8_t)(bits >> 8));
         SetNz16(cpu, bits);
         cpu->x = (uint16_t)(cpu->x - 2u);
         SetNz16(cpu, cpu->x);
     } while (!cpu->negative);
     SetAccumulatorWidth(cpu, 1);
-    LoadAAbsolute8(memory, cpu, 0x09fau, 0);
+    LoadAAbsolute8(memory, cpu, BATTLE_SLOT_BASE, 0);
     if (enemies)
         Or8(cpu, 0x80u);
     SimulateRtsFrame(memory, cpu);
@@ -763,7 +789,7 @@ static void BattleOpSetF45C(
     BattleScriptWord(memory, cpu, 0xb921u);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->x);
-    Write16Long(memory, 0x7ff45cu, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F45C, cpu->accumulator);
 }
 
 /* $20: bytes into $7F:F45E/F460. */
@@ -771,9 +797,9 @@ static void BattleOpSetF45E(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     BattleScriptByte(memory, cpu, 0xb92eu);
-    Write8(memory, 0x7ff45eu, A8(cpu));
+    Write8(memory, BATTLE_RECORD_F45E, A8(cpu));
     BattleScriptByte(memory, cpu, 0xb935u);
-    Write8(memory, 0x7ff460u, A8(cpu));
+    Write8(memory, BATTLE_RECORD_F460, A8(cpu));
 }
 
 /* $04: jump when $7F:F42E is set. */
@@ -821,16 +847,16 @@ static void BattleOpMoveSetup(
     BattleScriptWord(memory, cpu, 0xb93fu);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->x);
-    Write16Long(memory, 0x7ff45cu, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F45C, cpu->accumulator);
     LoadA16(cpu, 0x0020u);
-    Write16Long(memory, 0x7ff45au, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F45A, cpu->accumulator);
     LoadA16(cpu, 0x0005u);
     Write16Long(memory, BATTLE_ACTION_CODE, cpu->accumulator);
     BattleScriptValue(memory, cpu, 0xb957u);
     LoadA16(cpu, (uint16_t)(0u - cpu->x));
-    Write16Long(memory, 0x7ff462u, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F462, cpu->accumulator);
     LoadA16(cpu, 0x0020u);
-    Write16Long(memory, 0x7ff464u, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F464, cpu->accumulator);
     BattleScriptByte(memory, cpu, 0xb96au);
 }
 
@@ -841,10 +867,10 @@ static void BattleOpStepSetup(
     BattleScriptWord(memory, cpu, 0xb9bau);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, (uint16_t)(0u - cpu->x));
-    Write16Long(memory, 0x7ff462u, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F462, cpu->accumulator);
     LoadA16(cpu, 0x0020u);
-    Write16Long(memory, 0x7ff464u, cpu->accumulator);
-    Write16Long(memory, 0x7ff45au, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F464, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F45A, cpu->accumulator);
     LoadA16(cpu, 0x0005u);
 }
 
@@ -856,19 +882,20 @@ static void BattleOpRecordWordByte(
     SetAccumulatorWidth(cpu, 0);
     And16(cpu, 0x00ffu);
     TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x859f04u, cpu->x)));
+    LoadA16(cpu,
+            Read16Long(memory, LongIndexedAddress(BATTLE_RECORD_WORD_OFFSETS, cpu->x)));
     And16(cpu, 0x00ffu);
     PushAccumulator16(memory, cpu);
     BattleScriptValue(memory, cpu, 0xb9edu);
     LoadA16(cpu, cpu->x);
     cpu->x = PullIndexValue(memory, cpu);
-    Write16Long(memory, LongIndexedAddress(0x7ff44eu, cpu->x),
-        cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(BATTLE_SCRIPT_RECORD, cpu->x),
+                cpu->accumulator);
     IncrementX16(cpu);
     IncrementX16(cpu);
     SetAccumulatorWidth(cpu, 1);
     BattleScriptByte(memory, cpu, 0xb9fau);
-    Write8(memory, LongIndexedAddress(0x7ff44eu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(BATTLE_SCRIPT_RECORD, cpu->x), A8(cpu));
 }
 
 /* $25: battler record byte, cleared. */
@@ -879,19 +906,20 @@ static void BattleOpRecordByteClear(
     SetAccumulatorWidth(cpu, 0);
     And16(cpu, 0x00ffu);
     TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x859f04u, cpu->x)));
+    LoadA16(cpu,
+            Read16Long(memory, LongIndexedAddress(BATTLE_RECORD_WORD_OFFSETS, cpu->x)));
     And16(cpu, 0x00ffu);
     cpu->carry = 0;
     Add16Value(cpu, 0x0004u);
     TransferAToX(cpu);
     BattleScriptByte(memory, cpu, 0xba19u);
-    Write16Long(memory, LongIndexedAddress(0x7ff44eu, cpu->x),
-        cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(BATTLE_SCRIPT_RECORD, cpu->x),
+                cpu->accumulator);
     cpu->x = (uint16_t)(cpu->x - 2u);
     SetNz16(cpu, cpu->x);
     TransferDirectToA(cpu);
-    Write16Long(memory, LongIndexedAddress(0x7ff44eu, cpu->x),
-        cpu->accumulator);
+    Write16Long(memory, LongIndexedAddress(BATTLE_SCRIPT_RECORD, cpu->x),
+                cpu->accumulator);
 }
 
 /* $26/$27: battler record byte. */
@@ -903,7 +931,8 @@ static void BattleOpRecordByte(
     SetAccumulatorWidth(cpu, 0);
     And16(cpu, 0x00ffu);
     TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x859f0fu, cpu->x)));
+    LoadA16(cpu,
+            Read16Long(memory, LongIndexedAddress(BATTLE_RECORD_BYTE_OFFSETS, cpu->x)));
     And16(cpu, 0x00ffu);
     if (handler == BATTLE_OP_RECORD_BYTE_26)
         LoadA16(cpu, (uint16_t)(cpu->accumulator + 2u));
@@ -911,7 +940,7 @@ static void BattleOpRecordByte(
     SetAccumulatorWidth(cpu, 1);
     BattleScriptByte(memory, cpu,
         handler == BATTLE_OP_RECORD_BYTE_26 ? 0xba3fu : 0xba5cu);
-    Write8(memory, LongIndexedAddress(0x7ff44eu, cpu->x), A8(cpu));
+    Write8(memory, LongIndexedAddress(BATTLE_SCRIPT_RECORD, cpu->x), A8(cpu));
 }
 
 /* $28: action code 1. */
@@ -922,7 +951,7 @@ static void BattleOpAction1(
     LoadA16(cpu, 0x0001u);
     Write16Long(memory, BATTLE_ACTION_CODE, cpu->accumulator);
     LoadA16(cpu, 0x0000u);
-    Write16Long(memory, 0x7ff456u, cpu->accumulator);
+    Write16Long(memory, BATTLE_ACTION_ARGUMENT, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     StoreAImmediate8(memory, cpu, 0xffu, WRAM_PALETTE_FADE);
     StoreZeroAbsolute8(memory, cpu, WRAM_TEXT_WAIT_ACTOR, 0);
@@ -947,7 +976,7 @@ static void BattleOpAction3(
     BattleScriptWord(memory, cpu, 0xba9bu);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->x);
-    Write16Long(memory, 0x7ff456u, cpu->accumulator);
+    Write16Long(memory, BATTLE_ACTION_ARGUMENT, cpu->accumulator);
 }
 
 /* $3E: action code 11. */
@@ -957,14 +986,14 @@ static void BattleOpAction11(
     LoadA8(cpu, 0x0bu);
     Write8(memory, BATTLE_ACTION_CODE, A8(cpu));
     BattleScriptByte(memory, cpu, 0xbd66u);
-    Write8(memory, 0x7ff456u, A8(cpu));
+    Write8(memory, BATTLE_ACTION_ARGUMENT, A8(cpu));
 }
 
 /* $2F: count battlers with bit 2 set. */
 static void BattleOpPartyFlagCount(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadA8(cpu, Read8(memory, 0x7ff450u));
+    LoadA8(cpu, Read8(memory, BATTLE_BATTLER_B));
     if (cpu->negative) {
         LoadX16(cpu, 0x0000u);
     } else {
@@ -995,7 +1024,7 @@ static void BattleOpSideLeader(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, 0x7ff44eu));
+    LoadA8(cpu, Read8(memory, BATTLE_BATTLER_A));
     if (cpu->negative) {
         LoadAAbsolute8(memory, cpu, 0x15feu, 0);
     } else {
@@ -1013,7 +1042,7 @@ static void BattleOpSet0A62(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     BattleScriptByte(memory, cpu, 0xbcd1u);
-    StoreAAbsolute8(memory, cpu, 0x0a62u, 0);
+    StoreAAbsolute8(memory, cpu, BATTLE_SCRIPT_UNK_0A62, 0);
 }
 
 /* $36: byte into $0A62 when $7F:F42E. */
@@ -1026,7 +1055,7 @@ static void BattleOpSet0A62IfF42E(
     LoadA16(cpu, Read16Long(memory, BATTLE_CONDITION));
     if (!cpu->zero) {
         LoadA16(cpu, Read16Direct(memory, cpu, 0x54u));
-        Write16Absolute(memory, cpu, 0x0a62u, cpu->accumulator);
+        Write16Absolute(memory, cpu, BATTLE_SCRIPT_UNK_0A62, cpu->accumulator);
     }
 }
 
@@ -1042,12 +1071,13 @@ static void BattleOpSetTimer(
 static void BattleOpF450Mask(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, 0x0a5du, 0);
+    LoadAAbsolute8(memory, cpu, BATTLE_BATTLER_MASKS, 0);
     if (!cpu->negative) {
-        LoadA8(cpu, (uint8_t)(Read8(memory, 0x7ff450u) | 0xefu));
-        LoadA8(cpu, (uint8_t)(A8(cpu) & Read8(memory,
-            AbsoluteIndexedAddress(cpu, 0x0a5du, 0))));
-        Write8(memory, 0x7ff450u, A8(cpu));
+        LoadA8(cpu, (uint8_t)(Read8(memory, BATTLE_BATTLER_B) | 0xefu));
+        LoadA8(cpu,
+               (uint8_t)(A8(cpu) & Read8(memory, AbsoluteIndexedAddress(
+                                                     cpu, BATTLE_BATTLER_MASKS, 0))));
+        Write8(memory, BATTLE_BATTLER_B, A8(cpu));
     }
 }
 
@@ -1143,9 +1173,9 @@ static void BattleOpMoveByStats(
     BattleScriptWord(memory, cpu, 0xb970u);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->x);
-    Write16Long(memory, 0x7ff45cu, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F45C, cpu->accumulator);
     LoadA16(cpu, 0x01dcu);
-    Write16Long(memory, 0x7ff45au, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F45A, cpu->accumulator);
     LoadA16(cpu, 0x000au);
     Write16Long(memory, BATTLE_ACTION_CODE, cpu->accumulator);
     BattleScriptValue(memory, cpu, 0xb988u);
@@ -1163,9 +1193,9 @@ static void BattleOpMoveByStats(
     Add16Value(cpu, Read16Direct(memory, cpu, 0xcau));
     Write16Direct(memory, cpu, 0xcau, cpu->accumulator);
     LoadA16(cpu, (uint16_t)(0u - cpu->accumulator));
-    Write16Long(memory, 0x7ff462u, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F462, cpu->accumulator);
     LoadA16(cpu, 0x0020u);
-    Write16Long(memory, 0x7ff464u, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F464, cpu->accumulator);
     BattleScriptByte(memory, cpu, 0xb9b4u);
 }
 
@@ -1177,8 +1207,8 @@ static void BattleOpJumpBack(
     LoadA16(cpu, 0x0001u);
     Write16Long(memory, BATTLE_ACTION_CODE, cpu->accumulator);
     TransferDirectToA(cpu);
-    Write16Long(memory, 0x7ff456u, cpu->accumulator);
-    LoadA16(cpu, Read16Long(memory, 0x7ff462u));
+    Write16Long(memory, BATTLE_ACTION_ARGUMENT, cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, BATTLE_RECORD_F462));
     if (cpu->zero) {
         LoadA16(cpu, 0x0004u);
         BattleStat(memory, cpu, 0xbd06u);
@@ -1194,11 +1224,11 @@ static void BattleOpJumpBack(
             Read8(memory, (uint16_t)(cpu->stack + 1u)) |
             (Read8(memory, (uint16_t)(cpu->stack + 2u)) << 8)));
         LoadA16(cpu, (uint16_t)(0u - cpu->accumulator));
-        Write16Long(memory, 0x7ff462u, cpu->accumulator);
+        Write16Long(memory, BATTLE_RECORD_F462, cpu->accumulator);
         PullAccumulator16(memory, cpu);
     }
     LoadA16(cpu, 0x0040u);                             /* BD21 */
-    Write16Long(memory, 0x7ff464u, cpu->accumulator);
+    Write16Long(memory, BATTLE_RECORD_F464, cpu->accumulator);
 }
 
 /* $3C: extended jump. */
@@ -1209,7 +1239,7 @@ static void BattleOpExtendJump(
     BattleStat(memory, cpu, 0xbd30u);
     Write16Direct(memory, cpu, 0xcau, cpu->x);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Long(memory, 0x7ff462u));
+    LoadA16(cpu, Read16Long(memory, BATTLE_RECORD_F462));
     if (!cpu->zero) {
         if (cpu->negative) {
             LoadA16(cpu, (uint16_t)(0u - cpu->accumulator));
@@ -1220,7 +1250,7 @@ static void BattleOpExtendJump(
             cpu->carry = 0;
             Add16Value(cpu, Read16Direct(memory, cpu, 0xcau));
         }
-        Write16Long(memory, 0x7ff462u, cpu->accumulator);
+        Write16Long(memory, BATTLE_RECORD_F462, cpu->accumulator);
     }
 }
 
@@ -1228,10 +1258,10 @@ static void BattleOpExtendJump(
 static void BattleOpLivingMask(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadA8(cpu, Read8(memory, 0x7ff450u));
+    LoadA8(cpu, Read8(memory, BATTLE_BATTLER_B));
     BattleActiveMask(memory, cpu, 0xbe5cu);
-    LoadA8(cpu, (uint8_t)(A8(cpu) & Read8(memory, 0x7ff450u)));
-    Write8(memory, 0x7ff450u, A8(cpu));
+    LoadA8(cpu, (uint8_t)(A8(cpu) & Read8(memory, BATTLE_BATTLER_B)));
+    Write8(memory, BATTLE_BATTLER_B, A8(cpu));
 }
 
 /* $42: call a sub-script from $96:FADD. */
