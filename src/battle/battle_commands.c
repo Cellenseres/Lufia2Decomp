@@ -1,5 +1,6 @@
 #include "battle/battle_internal.h"
 #include "core/snes_registers.h"
+#include "core/wram_view.h"
 
 enum {
     COMMAND_DP_MAX_PRIORITY_OR_RANDOM = 0x22u,
@@ -32,33 +33,45 @@ static bool BattleDrawCommands(BattleContext *battle, bool after_selection) {
     return true;
 }
 
+/* A word of the battler record that X points to, in the data bank. */
+static uint16_t BattlerWord(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
+                            uint16_t field) {
+    return Read16Long(memory, OpAbsX(cpu, field));
+}
+
+/* Finds the lowest and highest priority among the party members that can still
+ * take a command, into the two words at $22 and $24. Leaves the last member
+ * record in X and Y below zero, as the loop did. */
 static void BattleCollectPartyPriorityBounds(const Lufia2Memory *memory,
                                              Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    unsigned slot;
+
     OpRepWidths(cpu, 0x20u);
-    OpStz(memory, cpu, OpDp(cpu, COMMAND_DP_MAX_PRIORITY_OR_RANDOM));
-    OpLoadA(cpu, 0xffffu);
-    OpSta(memory, cpu, OpDp(cpu, COMMAND_DP_MIN_PRIORITY));
-    OpLdy(cpu, 6u);
-    do {
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS)));
-        if (!cpu->zero) {
-            OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-            OpBitValue(cpu, BATTLE_STATUS_NO_COMMAND_MASK);
-            if (cpu->zero) {
-                OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_BASE_PRIORITY));
-                cpu->carry = false;
-                OpAdc(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_PRIORITY_BONUS));
-                OpCmp(memory, cpu, OpDp(cpu, COMMAND_DP_MAX_PRIORITY_OR_RANDOM));
-                if (cpu->carry)
-                    OpSta(memory, cpu, OpDp(cpu, COMMAND_DP_MAX_PRIORITY_OR_RANDOM));
-                OpCmp(memory, cpu, OpDp(cpu, COMMAND_DP_MIN_PRIORITY));
-                if (!cpu->carry)
-                    OpSta(memory, cpu, OpDp(cpu, COMMAND_DP_MIN_PRIORITY));
-            }
+    WramWrite16(wram, COMMAND_DP_MAX_PRIORITY_OR_RANDOM, 0u);
+    WramWrite16(wram, COMMAND_DP_MIN_PRIORITY, 0xffffu);
+    for (slot = BATTLE_PARTY_SIZE; slot-- > 0u;) {
+        const uint16_t record =
+            WramRead16At(wram, WRAM_BATTLE_PARTY_RECORDS, (uint16_t)(2u * slot));
+
+        cpu->x = record;
+        if (record == 0u)
+            continue;
+        if (BattlerWord(memory, cpu, BATTLE_BATTLER_STATUS) &
+            BATTLE_STATUS_NO_COMMAND_MASK)
+            continue;
+        {
+            const uint16_t priority =
+                (uint16_t)(BattlerWord(memory, cpu, BATTLE_BATTLER_BASE_PRIORITY) +
+                           BattlerWord(memory, cpu, BATTLE_BATTLER_PRIORITY_BONUS));
+
+            if (priority >= WramRead16(wram, COMMAND_DP_MAX_PRIORITY_OR_RANDOM))
+                WramWrite16(wram, COMMAND_DP_MAX_PRIORITY_OR_RANDOM, priority);
+            if (priority < WramRead16(wram, COMMAND_DP_MIN_PRIORITY))
+                WramWrite16(wram, COMMAND_DP_MIN_PRIORITY, priority);
         }
-        OpDey(cpu);
-        OpDey(cpu);
-    } while (!cpu->negative);
+    }
+    cpu->y = 0xfffeu;
 }
 
 /* $C826: priority bounds and two random fractions for the collective action. */
@@ -94,57 +107,83 @@ static bool BattleQueueCollectiveCommand(BattleContext *battle) {
     return true;
 }
 
-/* Formation copies use multiplier reads and keep the original swap order. */
-static void BattleSwapFormationBlocks(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    const uint16_t bases[] = {0x1499u, 0x14e6u};
-    const uint8_t lengths[] = {7u, 6u};
-    for (unsigned block = 0; block < 2u; ++block) {
-        OpLoadA(cpu, lengths[block]);
-        OpSta(memory, cpu, OpAbs(cpu, 0x09f2u));
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-        OpLda(memory, cpu, OpAbs(cpu, 0x09f4u));
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-        OpLda(memory, cpu, OpAbs(cpu, 0x09f5u));
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-        PushAccumulator8(memory, cpu);
-        LoadA8(cpu, Pull8(memory, cpu));
-        OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
-        do {
-            OpLda(memory, cpu, OpAbsX(cpu, bases[block]));
-            ExchangeAccumulatorBytes(cpu);
-            OpLda(memory, cpu, OpAbsY(cpu, bases[block]));
-            OpSta(memory, cpu, OpAbsX(cpu, bases[block]));
-            ExchangeAccumulatorBytes(cpu);
-            OpSta(memory, cpu, OpAbsY(cpu, bases[block]));
-            OpInx(cpu);
-            OpIny(cpu);
-            OpStepMem(memory, cpu, OpAbs(cpu, 0x09f2u), -1);
-        } while (!cpu->zero);
-    }
-    OpLoadA(cpu, 13u);
-    OpSta(memory, cpu, OpAbs(cpu, 0x09f2u));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-    OpLda(memory, cpu, OpAbs(cpu, 0x09f4u));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-    TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
-    OpTax(cpu);
-    OpLda(memory, cpu, OpAbs(cpu, 0x09f5u));
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
-    OpLda(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
-    OpTay(cpu);
+enum {
+    FORMATION_COUNTER = 0x09f2u, /* bytes left to swap */
+    FORMATION_PICK_A = 0x09f4u,  /* the two members being swapped */
+    FORMATION_PICK_B = 0x09f5u,
+    FORMATION_BLOCK_A = 0x1499u, /* 7 bytes per member */
+    FORMATION_BLOCK_A_BYTES = 7,
+    FORMATION_BLOCK_B = 0x14e6u, /* 6 bytes per member */
+    FORMATION_BLOCK_B_BYTES = 6,
+    FORMATION_STATE = 0x1434u, /* 13 bytes per member */
+    FORMATION_STATE_BYTES = 13,
+};
+
+/* Swaps the two picked members' rows of a table. The row offsets come from
+ * the hardware multiplier, so its registers are written and read in the
+ * original order. */
+static void SwapFormationRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              Lufia2Wram wram, uint16_t table, uint8_t row_bytes) {
+    uint8_t pick_b;
+    uint16_t from;
+    uint16_t to;
+
+    LoadA8(cpu, row_bytes);
+    WramWrite(wram, FORMATION_COUNTER, row_bytes);
+    WramWrite(wram, SNES_WRMPYA, row_bytes);
+    WramWrite(wram, SNES_WRMPYB, WramRead(wram, FORMATION_PICK_A));
+    pick_b = WramRead(wram, FORMATION_PICK_B);
+    from = WramRead16(wram, SNES_RDMPYL);
+    WramWrite(wram, SNES_WRMPYB, pick_b);
+    LoadA8(cpu, pick_b);
+    PushAccumulator8(memory, cpu);
+    LoadA8(cpu, Pull8(memory, cpu));
+    to = WramRead16(wram, SNES_RDMPYL);
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, 0x1434u));
-        PushAccumulator8(memory, cpu);
-        OpLda(memory, cpu, OpAbsY(cpu, 0x1434u));
-        OpSta(memory, cpu, OpAbsX(cpu, 0x1434u));
-        LoadA8(cpu, Pull8(memory, cpu));
-        OpSta(memory, cpu, OpAbsY(cpu, 0x1434u));
-        OpInx(cpu);
-        OpIny(cpu);
-        OpStepMem(memory, cpu, OpAbs(cpu, 0x09f2u), -1);
+        const uint8_t first = WramReadAt(wram, table, from);
+        const uint8_t second = WramReadAt(wram, table, to);
+
+        WramWriteAt(wram, table, from, second);
+        WramWriteAt(wram, table, to, first);
+        ++from;
+        ++to;
+        OpStepMem(memory, cpu, OpAbs(cpu, FORMATION_COUNTER), -1);
     } while (!cpu->zero);
+}
+
+/* Swaps the two picked members' rows in both formation tables and their
+ * 13-byte state records. */
+static void BattleSwapFormationBlocks(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t high;
+    uint16_t from;
+    uint16_t to;
+
+    SwapFormationRows(memory, cpu, wram, FORMATION_BLOCK_A, FORMATION_BLOCK_A_BYTES);
+    SwapFormationRows(memory, cpu, wram, FORMATION_BLOCK_B, FORMATION_BLOCK_B_BYTES);
+
+    LoadA8(cpu, FORMATION_STATE_BYTES);
+    WramWrite(wram, FORMATION_COUNTER, FORMATION_STATE_BYTES);
+    WramWrite(wram, SNES_WRMPYA, FORMATION_STATE_BYTES);
+    WramWrite(wram, SNES_WRMPYB, WramRead(wram, FORMATION_PICK_A));
+    /* The direct page's high byte rides along in the offsets. */
+    TransferDirectToA(cpu);
+    high = (uint16_t)(cpu->accumulator & 0xff00u);
+    from = (uint16_t)(high | WramRead(wram, SNES_RDMPYL));
+    WramWrite(wram, SNES_WRMPYB, WramRead(wram, FORMATION_PICK_B));
+    to = (uint16_t)(high | WramRead(wram, SNES_RDMPYL));
+    do {
+        LoadA8(cpu, WramReadAt(wram, FORMATION_STATE, from));
+        PushAccumulator8(memory, cpu);
+        WramWriteAt(wram, FORMATION_STATE, from, WramReadAt(wram, FORMATION_STATE, to));
+        LoadA8(cpu, Pull8(memory, cpu));
+        WramWriteAt(wram, FORMATION_STATE, to, A8(cpu));
+        ++from;
+        ++to;
+        OpStepMem(memory, cpu, OpAbs(cpu, FORMATION_COUNTER), -1);
+    } while (!cpu->zero);
+    cpu->x = from;
+    cpu->y = to;
 }
 
 static bool BattleRedrawFormation(BattleContext *battle) {
@@ -334,12 +373,95 @@ static void BattleLeave(BattleContext *battle) {
     OpSta(memory, cpu, WRAM_FIELD_BATTLE_RESULT);
 }
 
+/* Reads the two picked members out of the bitmask in $09F2: the positions of its
+ * two lowest set bits among the four slots, into $09F4/$09F5. When it holds
+ * fewer, the original goes on elsewhere, so the registers are left as the
+ * search left them and the caller hands off. */
+static bool BattlePickSwapMembers(Lufia2CpuState *cpu, Lufia2Wram wram,
+                                  uint32_t *handoff) {
+    unsigned picked = 0u;
+    unsigned remaining = BATTLE_PARTY_SIZE;
+    uint8_t position = 0u;
+
+    while (picked < 2u) {
+        const uint8_t mask = WramRead(wram, FORMATION_COUNTER);
+        const bool set = (mask & 1u) != 0;
+
+        WramWrite(wram, FORMATION_COUNTER, (uint8_t)(mask >> 1));
+        if (set) {
+            WramWriteAt(wram, FORMATION_PICK_A, (uint16_t)picked, position);
+            ++position;
+            ++picked;
+            continue;
+        }
+        ++position;
+        if (--remaining == 0u) {
+            cpu->carry = 0;
+            cpu->y = (uint16_t)picked;
+            LoadA8(cpu, position);
+            OpLdx(cpu, 0u);
+            *handoff = 0x81c8bcu;
+            return false;
+        }
+    }
+    return true;
+}
+
+/* Swaps the two picked members' ids, member records and status-icon records,
+ * trading through the stack as the original did. The offsets carry the direct
+ * page's high byte, which rides along in A. */
+static void BattleSwapPartyEntries(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                   Lufia2Wram wram) {
+    uint16_t from;
+    uint16_t to;
+
+    TransferDirectToA(cpu);
+    {
+        const uint16_t high = (uint16_t)(cpu->accumulator & 0xff00u);
+        const uint8_t pick_a = WramRead(wram, FORMATION_PICK_A);
+        const uint8_t pick_b = WramRead(wram, FORMATION_PICK_B);
+
+        from = (uint16_t)(high | pick_a);
+        to = (uint16_t)(high | pick_b);
+        LoadA8(cpu, WramReadAt(wram, WRAM_BATTLE_PARTY_IDS, from));
+        PushAccumulator8(memory, cpu);
+        WramWriteAt(wram, WRAM_BATTLE_PARTY_IDS, from,
+                    WramReadAt(wram, WRAM_BATTLE_PARTY_IDS, to));
+        LoadA8(cpu, Pull8(memory, cpu));
+        WramWriteAt(wram, WRAM_BATTLE_PARTY_IDS, to, A8(cpu));
+        from = (uint16_t)(high | (uint8_t)(WramRead(wram, FORMATION_PICK_A) << 1));
+        to = (uint16_t)(high | (uint8_t)(WramRead(wram, FORMATION_PICK_B) << 1));
+    }
+    OpRepWidths(cpu, 0x20u);
+    LoadA16(cpu, WramRead16At(wram, WRAM_BATTLE_PARTY_RECORDS, from));
+    PushAccumulator16(memory, cpu);
+    WramWrite16At(wram, WRAM_BATTLE_PARTY_RECORDS, from,
+                  WramRead16At(wram, WRAM_BATTLE_PARTY_RECORDS, to));
+    PullAccumulator16(memory, cpu);
+    WramWrite16At(wram, WRAM_BATTLE_PARTY_RECORDS, to, cpu->accumulator);
+    from = (uint16_t)(from << 1);
+    to = (uint16_t)(to << 1);
+    LoadA16(cpu, WramRead16At(wram, WRAM_BATTLE_STATUS_ICON_RECORDS, from));
+    PushAccumulator16(memory, cpu);
+    LoadA16(cpu, WramRead16At(wram, BATTLE_ICON_RECORD_TIMER, from));
+    PushAccumulator16(memory, cpu);
+    WramWrite16At(wram, WRAM_BATTLE_STATUS_ICON_RECORDS, from,
+                  WramRead16At(wram, WRAM_BATTLE_STATUS_ICON_RECORDS, to));
+    WramWrite16At(wram, BATTLE_ICON_RECORD_TIMER, from,
+                  WramRead16At(wram, BATTLE_ICON_RECORD_TIMER, to));
+    PullAccumulator16(memory, cpu);
+    WramWrite16At(wram, BATTLE_ICON_RECORD_TIMER, to, cpu->accumulator);
+    PullAccumulator16(memory, cpu);
+    WramWrite16At(wram, WRAM_BATTLE_STATUS_ICON_RECORDS, to, cpu->accumulator);
+}
+
 /* Swaps two party members' places: the menu asks for the other member, then
  * their ids, records and status icons trade slots and the formation is drawn
  * again. */
 static CommandStep BattleSwapPartyOrder(BattleContext *battle, uint32_t *handoff) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
 
     OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_COUNT));
     OpCmpValue(cpu, 1u);
@@ -354,78 +476,14 @@ static CommandStep BattleSwapPartyOrder(BattleContext *battle, uint32_t *handoff
     OpCmpValue(cpu, 0xffu);
     if (cpu->zero)
         return COMMAND_SELECT;
-    OpSta(memory, cpu, OpAbs(cpu, 0x09f2u));
-    OpLdy(cpu, 0u);
-    OpLdx(cpu, 4u);
-    OpLoadA(cpu, 0u);
-    do {
-        for (;;) {
-            const uint32_t address = OpAbs(cpu, 0x09f2u);
-            const uint8_t value = Read8(memory, address);
-            cpu->carry = (value & 1u) != 0;
-            Write8(memory, address, (uint8_t)(value >> 1));
-            SetNz8(cpu, (uint8_t)(value >> 1));
-            if (cpu->carry)
-                break;
-            OpIncA(cpu);
-            OpDex(cpu);
-            if (cpu->zero) {
-                *handoff = 0x81c8bcu;
-                return COMMAND_HANDOFF;
-            }
-        }
-        OpSta(memory, cpu, OpAbsY(cpu, 0x09f4u));
-        OpIncA(cpu);
-        OpIny(cpu);
-        OpCpy(cpu, 2u);
-    } while (!cpu->zero);
-    TransferDirectToA(cpu);
-    OpLda(memory, cpu, OpAbs(cpu, 0x09f4u));
-    OpTax(cpu);
-    OpLda(memory, cpu, OpAbs(cpu, 0x09f5u));
-    OpTay(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_IDS));
-    PushAccumulator8(memory, cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_IDS));
-    OpSta(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_IDS));
-    LoadA8(cpu, Pull8(memory, cpu));
-    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_IDS));
-    OpLda(memory, cpu, OpAbs(cpu, 0x09f4u));
-    OpAslA(cpu);
-    OpTax(cpu);
-    OpLda(memory, cpu, OpAbs(cpu, 0x09f5u));
-    OpAslA(cpu);
-    OpTay(cpu);
-    OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_RECORDS));
-    PushAccumulator16(memory, cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS));
-    OpSta(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_RECORDS));
-    PullAccumulator16(memory, cpu);
-    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_RECORDS));
-    OpTxa(cpu);
-    OpAslA(cpu);
-    OpTax(cpu);
-    OpTya(cpu);
-    OpAslA(cpu);
-    OpTay(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_STATUS_ICON_RECORDS));
-    PushAccumulator16(memory, cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, BATTLE_ICON_RECORD_TIMER));
-    PushAccumulator16(memory, cpu);
-    OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_STATUS_ICON_RECORDS));
-    OpSta(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_STATUS_ICON_RECORDS));
-    OpLda(memory, cpu, OpAbsY(cpu, BATTLE_ICON_RECORD_TIMER));
-    OpSta(memory, cpu, OpAbsX(cpu, BATTLE_ICON_RECORD_TIMER));
-    PullAccumulator16(memory, cpu);
-    OpSta(memory, cpu, OpAbsY(cpu, BATTLE_ICON_RECORD_TIMER));
-    PullAccumulator16(memory, cpu);
-    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_STATUS_ICON_RECORDS));
+    WramWrite(wram, FORMATION_COUNTER, A8(cpu));
+    if (!BattlePickSwapMembers(cpu, wram, handoff))
+        return COMMAND_HANDOFF;
+    BattleSwapPartyEntries(memory, cpu, wram);
     OpSepWidths(cpu, 0x20u);
     BattleSwapFormationBlocks(memory, cpu);
     if (!BattleRedrawFormation(battle))
         return COMMAND_UNWOUND;
-    return COMMAND_SELECT;
     return COMMAND_SELECT;
 }
 
