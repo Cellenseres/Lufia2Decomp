@@ -4,6 +4,7 @@
 /* Field event script VM, shared by its two modules. */
 
 #include "lufia2/execution.h"
+#include "system/wram.h"
 
 /* Eight slots; bit 7 armed, bits 0-6 frames left. */
 #define EVENT_SLOT_TIMERS 0x7fd18cu
@@ -31,13 +32,13 @@
 /* Script flags, bit n & 7 of byte n >> 3. */
 #define EVENT_SCRIPT_FLAGS 0x7fd100u
 /* Goto targets are relative to this 24-bit base. */
-#define EVENT_SCRIPT_BASE 0x7fd194u
-#define EVENT_SCRIPT_BASE_BANK 0x7fd196u
+#define EVENT_SCRIPT_BASE WRAM_FIELD_EVENT_BASE
+#define EVENT_SCRIPT_BASE_BANK WRAM_FIELD_EVENT_BASE_BANK
 /* Script start and bank of the running slot. */
 #define EVENT_SCRIPT_POINTER 0x7fd197u
 #define EVENT_SCRIPT_BANK 0x7fd199u
 /* Script call frames: 13 x 10 bytes, tag = depth << 4 | slot. */
-#define EVENT_CALL_FRAMES 0x7fd466u
+#define EVENT_CALL_FRAMES WRAM_FIELD_EVENT_CALL_RECORDS
 #define EVENT_CALL_DEPTH 0x7fd4e6u
 #define EVENT_CALL_FRAME_SIZE 0x000au
 #define EVENT_CALL_FRAMES_END 0x0080u
