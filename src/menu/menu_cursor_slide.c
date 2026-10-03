@@ -24,7 +24,6 @@ enum {
     WAIT_COUNT = 0xedu,
     WAIT_EVERY = 0x10u,
     DIRECTION_BACK = 0xffu,
-    SPRITE_FRAME = 0x868b55u,
     SLIDE_DONE = 0x828b07u
 };
 

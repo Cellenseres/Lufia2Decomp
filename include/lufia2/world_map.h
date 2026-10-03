@@ -97,12 +97,14 @@ Lufia2ExecutionResult Lufia2WorldMapSortVisible(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:E430 finds or adds the sprite pattern slot of the object at $02; carry reports a new use. M0X0 only. */
+/* $86:E430 finds or adds the sprite pattern slot of the object at $02; carry
+ * reports a new use. M0X0 only. */
 Lufia2ExecutionResult Lufia2WorldMapAssignSlot(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:E3D2 draws the object at X by its kind; an unknown kind hands the original dispatch back. M0X0 only. */
+/* $86:E3D2 draws the object at X by its kind; an unknown kind hands the
+ * original dispatch back. M0X0 only. */
 Lufia2ExecutionResult Lufia2WorldMapDrawObjectByKind(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
