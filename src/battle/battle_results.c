@@ -1,26 +1,35 @@
+#include <stdbool.h>
+
 #include "battle/battle_internal.h"
 
-/* Preserve the original early high-byte clamp and retained accumulator. */
-static void ResultClamp24(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                          uint32_t address) {
+/* Whether the 24-bit total at address is over the cap of 9,999,999
+ * ($98967F). The ROM tests the retained accumulator first, which settles every
+ * case but equality; the following byte compares are kept as written. */
+static bool ResultOverLimit24(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              uint32_t address) {
     if (cpu->carry)
-        goto limit;
+        return true;
     OpCmpValue(cpu, 0x98u);
     if (cpu->carry)
-        goto limit;
+        return true;
     if (!cpu->zero)
-        return;
+        return false;
     OpLda(memory, cpu, address + 1u);
     OpCmpValue(cpu, 0x96u);
     if (cpu->carry)
-        goto limit;
+        return true;
     if (!cpu->zero)
-        return;
+        return false;
     OpLda(memory, cpu, address);
     OpCmpValue(cpu, 0x7fu);
-    if (!cpu->carry)
+    return cpu->carry;
+}
+
+/* Clamp the 24-bit total at address to the cap. */
+static void ResultClamp24(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                          uint32_t address) {
+    if (!ResultOverLimit24(memory, cpu, address))
         return;
-limit:
     OpLoadA(cpu, 0x98u);
     OpSta(memory, cpu, address + 2u);
     OpLoadA(cpu, 0x96u);
