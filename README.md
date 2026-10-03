@@ -116,6 +116,8 @@ with `-DLUFIA2_DECOMP_ROOT=<path>`.
 - [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md): naming and promotion rules.
 - [docs/CODE_STYLE.md](docs/CODE_STYLE.md): the CPU helper layers and how
   reconstructed code uses them.
+- [docs/RECOMP_ENTRIES.md](docs/RECOMP_ENTRIES.md): the entries a consumer
+  provides for the routines that are still `draft`.
 - [docs/MEMORY_MAP.md](docs/MEMORY_MAP.md): address notation, the WRAM
   catalog `metadata/memory_map.toml` and its generated constants.
 - [docs/EXTERNAL_RESEARCH.md](docs/EXTERNAL_RESEARCH.md): vetted external
