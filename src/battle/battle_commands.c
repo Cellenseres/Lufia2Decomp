@@ -6,6 +6,12 @@ enum {
     COMMAND_DP_MAX_PRIORITY_OR_RANDOM = 0x22u,
     COMMAND_DP_MIN_PRIORITY = 0x24u,
     COMMAND_DP_PALETTE_BANK = 0x24u,
+    COMMAND_DP_CURSOR_POSITION = 0x26u,
+    FORMATION_CURSOR_POSITIONS = 0xb576u,
+    FORMATION_LAYOUT = 0x97b55eu,
+    FORMATION_MEMBER_VALUES = 0xb411u,
+    FORMATION_MEMBER_STAGE = 0x00139cu,
+    FORMATION_MEMBER_STRIDE = 13u,
 };
 
 /* The two drawing loops use different tables and exact child callsites. */
@@ -186,40 +192,31 @@ static void BattleSwapFormationBlocks(const Lufia2Memory *memory, Lufia2CpuState
     cpu->y = to;
 }
 
-static bool BattleRedrawFormation(BattleContext *battle) {
-    const Lufia2Memory *memory = battle->memory;
-    Lufia2CpuState *cpu = battle->cpu;
-    if (!BattleCall(battle, 0xc9bbu, 0x81e872u, 2u) ||
-        !BattleCall(battle, 0xc9beu, 0x81dea9u, 2u) ||
-        !BattleCall(battle, 0xc9c1u, 0x81df0au, 2u) ||
-        !BattleDrawCommands(battle, false))
-        return false;
+/* Picks the cursor position from the held up/down bits (stored in DP $26) and
+ * loads the matching layout triple into DP $00, $08 and $09. */
+static void FormationLoadCursorLayout(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSepWidths(cpu, 0x10u);
-    OpLda(memory, cpu, OpDp(cpu, 0x47u));
+    OpLda(memory, cpu, OpDp(cpu, DP_BUTTONS_HELD + 1u));
     OpLsrA(cpu);
     OpLsrA(cpu);
     OpAndValue(cpu, 3u);
     OpTay(cpu);
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, 0xb576u)));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, FORMATION_CURSOR_POSITIONS)));
     OpRepWidths(cpu, 0x10u);
-    OpWriteX(memory, cpu, OpDp(cpu, 0x26u), cpu->x);
-    OpLda(memory, cpu, OpLongX(cpu, 0x97b55eu));
+    OpWriteX(memory, cpu, OpDp(cpu, COMMAND_DP_CURSOR_POSITION), cpu->x);
+    OpLda(memory, cpu, OpLongX(cpu, FORMATION_LAYOUT));
     cpu->carry = true;
     OpSbcValue(cpu, 8u);
     OpSta(memory, cpu, OpDp(cpu, 0u));
-    OpLda(memory, cpu, OpLongX(cpu, 0x97b55fu));
+    OpLda(memory, cpu, OpLongX(cpu, FORMATION_LAYOUT + 1u));
     OpSta(memory, cpu, OpDp(cpu, 8u));
-    OpLda(memory, cpu, OpLongX(cpu, 0x97b560u));
+    OpLda(memory, cpu, OpLongX(cpu, FORMATION_LAYOUT + 2u));
     OpSta(memory, cpu, OpDp(cpu, 9u));
-    if (!BattleCall(battle, 0xca0bu, 0x81be58u, 2u))
-        return false;
-    OpRepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xca10u, 0x859b22u, 3u) ||
-        !BattleCall(battle, 0xca14u, 0x859b67u, 3u))
-        return false;
-    OpSepWidths(cpu, 0x20u);
-    if (!BattleCall(battle, 0xca1au, 0x85ec81u, 3u))
-        return false;
+}
+
+/* Copies the per-member value for each of the four party ids into the table at
+ * $00:139C, 13 bytes apart. */
+static void FormationStageMembers(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
     OpTax(cpu);
     OpTxy(cpu);
@@ -227,21 +224,25 @@ static bool BattleRedrawFormation(BattleContext *battle) {
         OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_IDS));
         PushY(memory, cpu);
         OpTay(cpu);
-        OpLda(memory, cpu, OpAbsY(cpu, 0xb411u));
-        OpSta(memory, cpu, OpLongX(cpu, 0x00139cu));
+        OpLda(memory, cpu, OpAbsY(cpu, FORMATION_MEMBER_VALUES));
+        OpSta(memory, cpu, OpLongX(cpu, FORMATION_MEMBER_STAGE));
         OpRepWidths(cpu, 0x20u);
         OpTxa(cpu);
         cpu->carry = false;
-        OpAdcValue(cpu, 13u);
+        OpAdcValue(cpu, FORMATION_MEMBER_STRIDE);
         OpTax(cpu);
         OpSepWidths(cpu, 0x20u);
         OpPullY(memory, cpu);
         OpIny(cpu);
         OpCpy(cpu, 4u);
     } while (!cpu->zero);
-    if (!BattleCall(battle, 0xca3eu, 0x8591a1u, 3u) ||
-        !BattleCall(battle, 0xca42u, 0x858a2fu, 3u))
-        return false;
+}
+
+/* Draws the four party members through the member child. */
+static bool FormationDrawMembers(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
     TransferDirectToA(cpu);
     do {
         PushAccumulator8(memory, cpu);
@@ -251,6 +252,32 @@ static bool BattleRedrawFormation(BattleContext *battle) {
         OpIncA(cpu);
         OpCmpValue(cpu, 4u);
     } while (!cpu->zero);
+    return true;
+}
+
+/* Redraws the formation screen after two members swapped places. */
+static bool BattleRedrawFormation(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    if (!BattleCall(battle, 0xc9bbu, 0x81e872u, 2u) ||
+        !BattleCall(battle, 0xc9beu, 0x81dea9u, 2u) ||
+        !BattleCall(battle, 0xc9c1u, 0x81df0au, 2u) ||
+        !BattleDrawCommands(battle, false))
+        return false;
+    FormationLoadCursorLayout(memory, cpu);
+    if (!BattleCall(battle, 0xca0bu, 0x81be58u, 2u))
+        return false;
+    OpRepWidths(cpu, 0x20u);
+    if (!BattleCall(battle, 0xca10u, 0x859b22u, 3u) ||
+        !BattleCall(battle, 0xca14u, 0x859b67u, 3u))
+        return false;
+    OpSepWidths(cpu, 0x20u);
+    if (!BattleCall(battle, 0xca1au, 0x85ec81u, 3u))
+        return false;
+    FormationStageMembers(memory, cpu);
+    if (!BattleCall(battle, 0xca3eu, 0x8591a1u, 3u) ||
+        !BattleCall(battle, 0xca42u, 0x858a2fu, 3u) || !FormationDrawMembers(battle))
+        return false;
     OpSepWidths(cpu, 0x20u);
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x0012f3u);
