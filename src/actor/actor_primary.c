@@ -34,6 +34,22 @@
 #define ROM_ACTION_NIBBLE_TABLE_A 0x83d447u
 #define ROM_ACTION_NIBBLE_TABLE_B 0x83d457u
 
+/* Direct page cells the primary script handlers use. DP $54-$56 are shared
+ * scratch bytes whose meaning depends on the helper; only the helpers with a
+ * single clear reading are named here. */
+enum {
+    DP_SCRIPT_CURSOR = 0x2a,   /* offset of the next script byte */
+    DP_RADIUS = 0x54,          /* half extent of a search box */
+    DP_DIAMETER = 0x55,        /* full extent, twice the radius */
+    DP_INTERVAL_VALUE = 0x54,  /* interval test: the value under test */
+    DP_INTERVAL_START = 0x55,  /* interval test: lower limit */
+    DP_INTERVAL_LENGTH = 0x56, /* interval test: width of the accepted range */
+    DP_SEARCH_MIN_X = 0x9f,    /* search box corners, tile coordinates */
+    DP_SEARCH_MIN_Y = 0xa0,
+    DP_SEARCH_MAX_X = 0xa1,
+    DP_SEARCH_MAX_Y = 0xa2
+};
+
 /* Clears flag bits $14 on the actor, loads its primary script pointer, reads
  * the opcode byte and looks the handler up in the dispatch table. */
 Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
@@ -57,11 +73,11 @@ Lufia2ActorScriptDispatchResult Lufia2ActorPrimaryScriptDispatch(
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_SCRIPT,
         actor_record)));
-    Write16Direct(memory, cpu, 0x2au, cpu->accumulator);
+    Write16Direct(memory, cpu, DP_SCRIPT_CURSOR, cpu->accumulator);
     TransferAToY(cpu);
     SetAccumulatorWidth(cpu, 1);
-    LoadYDirect16(memory, cpu, 0x2au);
-    StoreYDirect16(memory, cpu, 0x2au);
+    LoadYDirect16(memory, cpu, DP_SCRIPT_CURSOR);
+    StoreYDirect16(memory, cpu, DP_SCRIPT_CURSOR);
     TransferDirectToA(cpu);
     result.opcode = LoadScriptByteY(memory, cpu);
     AslA8(cpu);
@@ -78,22 +94,20 @@ static void PrimaryIntervalCheck(
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
 
-    Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu)); /* $83:CCC1 */
+    Write8(memory, DirectAddress(cpu, DP_INTERVAL_VALUE), A8(cpu)); /* $83:CCC1 */
     cpu->carry = 0;                                     /* $83:CCC3 */
-    Sbc8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));
-                                                         /* $83:CCC4 */
-    Compare8(
-        cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x56u)));
-                                                         /* $83:CCC6 */
+    Sbc8(cpu, Read8(memory, DirectAddress(cpu, DP_INTERVAL_START)));
+    /* $83:CCC4 */
+    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_INTERVAL_LENGTH)));
+    /* $83:CCC6 */
     if (!cpu->carry) {
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
-                                                         /* $83:CCCA */
+        LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_INTERVAL_VALUE)));
+        /* $83:CCCA */
         cpu->carry = 0;                                 /* $83:CCCC */
-        Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));
-                                                         /* $83:CCCD */
-        Compare8(
-            cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x56u)));
-                                                         /* $83:CCCF */
+        Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_INTERVAL_START)));
+        /* $83:CCCD */
+        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_INTERVAL_LENGTH)));
+        /* $83:CCCF */
         cpu->carry = cpu->carry ? 0u : 1u;             /* CLC/SEC */
     } else {
         cpu->carry = 1;                                /* $83:CCD5 SEC */
@@ -111,8 +125,8 @@ static Lufia2ActorScriptDispatchResult PrimaryRedispatch(
     Lufia2ActorScriptDispatchResult result;
 
     if (reload_y)
-        LoadYDirect16(memory, cpu, 0x2au);            /* $83:C85A */
-    StoreYDirect16(memory, cpu, 0x2au);               /* $83:C85C */
+        LoadYDirect16(memory, cpu, DP_SCRIPT_CURSOR); /* $83:C85A */
+    StoreYDirect16(memory, cpu, DP_SCRIPT_CURSOR);    /* $83:C85C */
     TransferDirectToA(cpu);                           /* $83:C85E */
     result.opcode = LoadScriptByteY(memory, cpu);     /* $83:C85F */
     AslA8(cpu);                                       /* $83:C862 */
@@ -144,12 +158,12 @@ static uint8_t PrimaryLeaderWithinRadius(
             memory,
             AbsoluteIndexedAddress(cpu, coordinate_base, cpu->x)));
     cpu->carry = 0;
-    Sbc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    Sbc8(cpu, Read8(memory, DirectAddress(cpu, DP_RADIUS)));
     Compare8(cpu, A8(cpu), Read8(memory, leader));
     if (cpu->carry)
         return 0;
     cpu->carry = 1;
-    Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));
+    Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_DIAMETER)));
     Compare8(cpu, A8(cpu), Read8(memory, leader));
     return cpu->carry;
 }
@@ -211,7 +225,7 @@ static Lufia2ActorScriptDispatchResult PrimaryJumpOperand(
         cpu, Read16AbsoluteIndexed(memory, cpu, operand_offset, cpu->y));
     cpu->carry = 0;
     Add16Immediate(cpu, PRIMARY_JUMP_BASE);
-    Write16Direct(memory, cpu, 0x2au, cpu->accumulator);
+    Write16Direct(memory, cpu, DP_SCRIPT_CURSOR, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     return PrimaryRedispatch(memory, cpu, 1);
 }
@@ -279,18 +293,18 @@ static void PrimaryProbeBox(
     uint8_t y_offset) {
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, x_offset)));
     cpu->carry = 1;
-    Sbc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
-    Write8(memory, DirectAddress(cpu, 0x9fu), A8(cpu));
+    Sbc8(cpu, Read8(memory, DirectAddress(cpu, DP_RADIUS)));
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MIN_X), A8(cpu));
     cpu->carry = 0;
-    Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));
-    Write8(memory, DirectAddress(cpu, 0xa1u), A8(cpu));
+    Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_DIAMETER)));
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MAX_X), A8(cpu));
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, y_offset)));
     cpu->carry = 1;
-    Sbc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
-    Write8(memory, DirectAddress(cpu, 0xa0u), A8(cpu));
+    Sbc8(cpu, Read8(memory, DirectAddress(cpu, DP_RADIUS)));
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MIN_Y), A8(cpu));
     cpu->carry = 0;
-    Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));
-    Write8(memory, DirectAddress(cpu, 0xa2u), A8(cpu));
+    Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_DIAMETER)));
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MAX_Y), A8(cpu));
 }
 
 /* $83:C9A7: radius box around $8F/$91. */
@@ -299,9 +313,9 @@ static void PrimaryRadiusBox(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_RADIUS)));
     AslA8(cpu);
-    Write8(memory, DirectAddress(cpu, 0x55u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_DIAMETER), A8(cpu));
     PrimaryProbeBox(memory, cpu, DP_PROBE_X, DP_PROBE_Y);
     SimulateRtsFrame(memory, cpu);
 }
@@ -379,18 +393,18 @@ static void PrimaryApproachProbe(
  * kept in $9F-$A2. */
 static bool PrimaryListedPointInBox(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, LongIndexedAddress(PRIMARY_MAP_LIST_X, cpu->x)));
-    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x9fu)));
+    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MIN_X)));
     if (!cpu->carry)
         return false;
-    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0xa1u)));
+    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MAX_X)));
     if (cpu->carry)
         return false;
     LoadA8(cpu, Read8(memory, LongIndexedAddress(PRIMARY_MAP_LIST_Y, cpu->x)));
-    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0xa0u)));
+    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MIN_Y)));
     if (!cpu->carry)
         return false;
     DecrementA8(cpu); /* D0E3 */
-    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0xa2u)));
+    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MAX_Y)));
     if (cpu->carry)
         return false;
 
@@ -411,18 +425,18 @@ static bool PrimaryActorInSearchBox(const Lufia2Memory *memory, Lufia2CpuState *
     if (cpu->zero) /* $83:CFEB */
         return false;
     LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_X, cpu->x)));
-    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x9fu)));
+    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MIN_X)));
     if (!cpu->carry)
         return false;
-    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0xa1u)));
+    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MAX_X)));
     if (cpu->carry)
         return false;
     LoadA8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_TILE_Y, cpu->x)));
-    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0xa0u)));
+    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MIN_Y)));
     if (!cpu->carry)
         return false;
     DecrementA8(cpu); /* $83:D001 */
-    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0xa2u)));
+    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MAX_Y)));
     if (cpu->carry)
         return false;
 
@@ -542,17 +556,17 @@ static uint8_t PrimaryMeasureRun(
             return 0;
         SimulateRtlFrame(memory, cpu);
         LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X))); /* CE1B */
-        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0x9fu)));
+        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MIN_X)));
         if (!cpu->carry)
             break;
-        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0xa1u)));
+        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MAX_X)));
         if (cpu->carry)
             break;
         LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
-        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0xa0u)));
+        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MIN_Y)));
         if (!cpu->carry)
             break;
-        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, 0xa2u)));
+        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SEARCH_MAX_Y)));
         if (cpu->carry)
             break;
         Lufia2MapTileHeight(memory, cpu, 0xce31u);             /* CE2F */
@@ -635,13 +649,13 @@ static uint8_t PrimaryWanderAxis(
     Write8(memory, DirectAddress(cpu, 0x54u), A8(cpu));        /* CEA8 */
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MIN_X, cpu->x)));
-    Write8(memory, DirectAddress(cpu, 0x9fu), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MIN_X), A8(cpu));
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MIN_Y, cpu->x)));
-    Write8(memory, DirectAddress(cpu, 0xa0u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MIN_Y), A8(cpu));
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MAX_X, cpu->x)));
-    Write8(memory, DirectAddress(cpu, 0xa1u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MAX_X), A8(cpu));
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_BOX_MAX_Y, cpu->x)));
-    Write8(memory, DirectAddress(cpu, 0xa2u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MAX_Y), A8(cpu));
     LoadA8(cpu, 0x02u);                                        /* CEC4 */
     Lufia2CallRandomScale(memory, cpu, 0xcec9u);
     AslA8(cpu);                                                /* CECA */
@@ -1102,7 +1116,7 @@ static Lufia2ActorPrimaryScriptStepResult PrimaryJump(const Lufia2Memory *memory
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x01u, cpu->y)); /* $83:D2B6 */
     cpu->carry = 0;                                                  /* $83:D2B9 CLC */
     Add16Immediate(cpu, PRIMARY_JUMP_BASE);                          /* $83:D2BA */
-    Write16Direct(memory, cpu, 0x2au, cpu->accumulator);             /* $83:D2BD */
+    Write16Direct(memory, cpu, DP_SCRIPT_CURSOR, cpu->accumulator);  /* $83:D2BD */
     SetAccumulatorWidth(cpu, 1);                                     /* $83:D2BF */
     dispatch = PrimaryRedispatch(memory, cpu, 1);                    /* $83:C85A */
     return PrimaryStepRedispatched(dispatch);
@@ -1113,7 +1127,7 @@ static Lufia2ActorPrimaryScriptStepResult PrimaryJumpAlias(const Lufia2Memory *m
                                                            Lufia2CpuState *cpu) {
     Lufia2ActorScriptDispatchResult dispatch;
 
-    Write8(memory, DirectAddress(cpu, 0x2au), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRIPT_CURSOR), A8(cpu));
     /* $83:D2BD */
     SetAccumulatorWidth(cpu, 1);                  /* $83:D2BF */
     dispatch = PrimaryRedispatch(memory, cpu, 1); /* $83:C85A */
@@ -1427,7 +1441,7 @@ static Lufia2ActorPrimaryScriptStepResult PrimaryRandomJump(const Lufia2Memory *
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x02u, cpu->y)); /* $83:D332 */
     cpu->carry = 0;                                                  /* $83:D335 */
     Add16Immediate(cpu, PRIMARY_JUMP_BASE);                          /* $83:D336 */
-    Write16Direct(memory, cpu, 0x2au, cpu->accumulator);
+    Write16Direct(memory, cpu, DP_SCRIPT_CURSOR, cpu->accumulator);
     /* $83:D339 */
     SetAccumulatorWidth(cpu, 1);                  /* $83:D33B */
     dispatch = PrimaryRedispatch(memory, cpu, 1); /* $83:C85A */
@@ -1443,7 +1457,7 @@ static Lufia2ActorPrimaryScriptStepResult PrimaryJumpF000(const Lufia2Memory *me
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x01u, cpu->y)); /* $83:D342 */
     cpu->carry = 0;                                                  /* $83:D345 */
     Add16Immediate(cpu, PRIMARY_JUMP_BASE_HIGH);                     /* $83:D346 */
-    Write16Direct(memory, cpu, 0x2au, cpu->accumulator);
+    Write16Direct(memory, cpu, DP_SCRIPT_CURSOR, cpu->accumulator);
     /* $83:D349 */
     SetAccumulatorWidth(cpu, 1);                  /* $83:D34B */
     dispatch = PrimaryRedispatch(memory, cpu, 1); /* $83:C85A */
@@ -1792,10 +1806,12 @@ PrimaryFindActorInRadius(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                                       cpu->x)));
         cpu->carry = 1;
         Sbc8(cpu, Read8(memory, DirectAddress(cpu, 0x54u)));
-        Write8(memory, DirectAddress(cpu, axis ? 0xa0u : 0x9fu), A8(cpu));
+        Write8(memory, DirectAddress(cpu, axis ? DP_SEARCH_MIN_Y : DP_SEARCH_MIN_X),
+               A8(cpu));
         cpu->carry = 0;
         Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x55u)));
-        Write8(memory, DirectAddress(cpu, axis ? 0xa2u : 0xa1u), A8(cpu));
+        Write8(memory, DirectAddress(cpu, axis ? DP_SEARCH_MAX_Y : DP_SEARCH_MAX_X),
+               A8(cpu));
     }
     LoadX16(cpu, 0x00u); /* $83:CFDD */
     do {
@@ -1962,11 +1978,11 @@ PrimaryWalkAheadOfLeader(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferAToX(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(ROM_AHEAD_STEP_TABLE, cpu->x)));
     Write8(memory, DirectAddress(cpu, 0x94u), A8(cpu));
-    Write8(memory, DirectAddress(cpu, 0x9fu), 0x00u); /* $83:CDC8 */
-    Write8(memory, DirectAddress(cpu, 0xa0u), 0x00u);
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MIN_X), 0x00u); /* $83:CDC8 */
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MIN_Y), 0x00u);
     LoadA8(cpu, 0xffu);
-    Write8(memory, DirectAddress(cpu, 0xa1u), A8(cpu));
-    Write8(memory, DirectAddress(cpu, 0xa2u), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MAX_X), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SEARCH_MAX_Y), A8(cpu));
     if (!PrimaryMeasureRun(memory, cpu, 0xcdd4u)) {
         result.handler_pc = cpu->resume_pc;
         return result;
@@ -2369,7 +2385,7 @@ PrimaryCompareTarget(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA16(cpu, cpu->y);                           /* $83:D227 */
     cpu->carry = 0;                                 /* $83:D228 */
     Add16Immediate(cpu, 0x06u);                     /* $83:D229 */
-    Write16Direct(memory, cpu, 0x2au, cpu->accumulator);
+    Write16Direct(memory, cpu, DP_SCRIPT_CURSOR, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1); /* $83:D22E */
     LoadA8(cpu,
            Read8(memory, LongIndexedAddress(WRAM_ACTOR_CLAIMED_OBJECT_RECORD, cpu->x)));
@@ -2402,7 +2418,7 @@ PrimaryCompareTarget(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
     if (take) {
         LoadYDirect16(memory, cpu, 0x56u); /* $83:D278 */
-        StoreYDirect16(memory, cpu, 0x2au);
+        StoreYDirect16(memory, cpu, DP_SCRIPT_CURSOR);
     }
     dispatch = PrimaryRedispatch(memory, cpu, 1); /* $83:C85A */
     return PrimaryStepRedispatched(dispatch);
