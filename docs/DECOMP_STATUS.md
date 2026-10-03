@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-391 functions in `metadata/functions.toml`: 366 verified, 25 draft, 0 identified, 0 disabled.
+394 functions in `metadata/functions.toml`: 366 verified, 28 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -777,6 +777,17 @@ finishes the pass. They are compared against the original ROM code for CPU
 state, work RAM, ordered writes and stack frames, on random object tables, slot
 pools near their limits, camera positions at the screen edge and the horizon
 limit of the tilted view.
+
+## Battle background wave
+
+`$85:AEEB`, `$85:AE68` and `$85:ADE1` rebuild the 176-word table of scroll
+offsets for the wave effect from the ripple pattern in ROM and the base offset
+(from phase 0, from the stored phase advancing it, and from the stored phase
+stepping it back) and are `draft` reconstructions. They need M1X0 (else handed
+back) and switch to their own data bank the way the original does, so the
+stack bytes of the bank save and restore are reproduced. They are compared
+against the original ROM code for CPU state, work RAM, ordered writes and
+stack frames, with phases at both ends of the pattern.
 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary

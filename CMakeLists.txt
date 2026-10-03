@@ -51,6 +51,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_setup_internal.c
     src/battle/battle_background.c
     src/battle/battle_background_internal.c
+    src/battle/battle_background_wave.c
     src/battle/battle_exit.c
     src/battle/battle_display_setup.c
     src/battle/battle_display_internal.c

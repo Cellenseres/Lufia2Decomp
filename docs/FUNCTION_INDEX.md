@@ -347,6 +347,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:AB28` | `Lufia2BattleTickMessageEffect` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB5B` | `Lufia2BattleQueueMessageCleanup` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB78` | `Lufia2BattleStageTransfer` | verified | `src/battle/battle_loop_children.c` |
+| `$85:ADE1` | `Lufia2BattleWaveBackward` | draft | `src/battle/battle_background_wave.c` |
+| `$85:AE68` | `Lufia2BattleWaveForward` | draft | `src/battle/battle_background_wave.c` |
+| `$85:AEEB` | `Lufia2BattleWaveFill` | draft | `src/battle/battle_background_wave.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
 | `$85:CCCE` | `Lufia2BattleClearActionWork` | verified | `src/battle/battle_action_work.c` |
 | `$85:CCE3` | `Lufia2BattleClearSavedActionWork` | verified | `src/battle/battle_action_work.c` |
