@@ -121,6 +121,9 @@ typedef struct BattleContext {
     uint32_t unwind_site;
 } BattleContext;
 
+/* Fixed party records and bounded output, checked before a parent writes. */
+bool BattlePartyRenderInputsFit(const Lufia2Memory *memory, bool sprites);
+
 void BattleCallRandomFraction(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                               uint16_t return_address);
 

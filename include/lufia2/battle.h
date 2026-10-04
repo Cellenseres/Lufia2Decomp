@@ -191,6 +191,9 @@ Lufia2ExecutionResult Lufia2BattleSprites(
     Lufia2CpuState *cpu);
 
 /* $85:8A39 battle sprite pass with its setup; JSL, M1X0. */
+/* Frame setup requires M8/X16, binary arithmetic, DP0 and S $1F10..$1FFC.
+ * DB must map MMIO. All used child spans are checked before the initial clear.
+ * Unsupported entries hand off unchanged before any CPU update or write. */
 Lufia2ExecutionResult Lufia2BattleFrameSetup(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
@@ -219,6 +222,11 @@ Lufia2ExecutionResult Lufia2BattleSpriteSingleEntry(
 Lufia2ExecutionResult Lufia2BattleSpriteMarkersEntry(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
+/* Party renderers require M8/X16, binary arithmetic, DP0 and S $1F00..$1FFC.
+ * Active fixed records have 1..16 columns and rows in their +12 word.
+ * Sprite output fits $7E:2000..$FFFF; tile output stays $7E:2800..$3FFF.
+ * Inactive records need no dimension check. Unsupported entries hand off
+ * before writes, preserving the original for that state. */
 Lufia2ExecutionResult Lufia2BattleSpritePartyEntry(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

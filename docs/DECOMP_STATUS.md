@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-461 functions in `metadata/functions.toml`: 444 verified, 17 draft, 0 identified, 0 disabled.
+461 functions in `metadata/functions.toml`: 447 verified, 14 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -65,7 +65,7 @@ for any caller widths. The world sprite and slot-flag clears `$86:E650` and
 `$82:88A0`/`$82:88CB` for the `$1F00..$1FFC` caller stack. The copied-member totals `$81:F481` are also verified for DP0 and the same
 caller stack, preserving the shared stat event. Scene tracks, view origin and the two battle velocity routines are also
 verified. The world object visibility leaf and its bounded original list caller are
-also verified. Seventy-eight feature additions are verified and 17 remain draft.
+also verified. Eighty-one feature additions are verified and 14 remain draft.
 
 The base main checkpoint passed **518 independent jobs**. The normal
 application build also passes. The consumer selects all 366 verified functions,
@@ -1461,3 +1461,39 @@ They remain draft: exact partial handoff is not a whole-function proof.
 independent jobs and the Release build pass with 444 native replacements.
 All five roots have actual generated dispatch and wrapper entries. This is
 an isolated local checkpoint; main and the normal build are unchanged.
+
+
+## Complete battle render parents
+
+$85:8A39 (frame setup), $85:8C98 (party sprites) and $85:8D2E (party
+tilemap) now have complete native contracts. The shared guard checks the
+fixed records' dimensions and output spans. Setup checks all used children
+before its first clear, so a rejected entry has no partial effects. Party
+roots require M8/X16, binary arithmetic, DP0 and S $1F00..$1FFC; setup
+requires S >= $1F10 and a genuine MMIO-bank mirror. Active party dimensions
+are 1..16 in each byte; inactive records are ignored. Sprite output fits
+$7E:2000..$FFFF; tile output stays $7E:2800..$3FFF, outside all nested frames.
+The complete passes keep the original port writes, palette streams, sprite
+counting, mirrored strips, tile arithmetic, data-bank saves and CPU flags.
+
+The three ABI matrices cover 53184 cases: 22032 native comparisons and
+31152 unchanged-entry fallbacks. They include every 1..16 column/row
+combination, six active records, mirrored strips, both render modes, mode
+overrides, held grids, unused invalid records, stack boundaries and invalid
+widths/DP/decimal/banks/output spans. There is no mismatch, partial completion
+or inconclusive original run. Another 81 entry guards check all live
+host-return states with zero bus accesses. Eight source/bridge controls
+detect wrong mirrors, bottom tile rows, clear extent, root return frames
+and weakened dimension bounds. No clean comparison is discarded.
+
+Names now identify the proven block-size word and bound, party enable field,
+mode override, tile-grid hold, WRAM port setup and color-byte streams. Shared
+preflight belongs to the internal battle header. These paths execute children
+only in banks $85/$81's palette and render bodies; none crosses a hook point.
+A setup witness takes 5347 original instructions, all replaced by the native
+parent and children. This is an instruction count, not a speedup estimate.
+
+81 of 95 feature additions are verified and 14 remain draft. All518
+independent jobs and Release pass with447 native replacements. All three
+roots have actual generated dispatch and wrapper entries. This is an
+isolated local checkpoint; main and the normal build are unchanged.

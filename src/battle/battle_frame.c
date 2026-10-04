@@ -15,7 +15,7 @@ enum {
     SPRITE_Y_A = 6,
     SPRITE_X_B = 8,
     SPRITE_Y_B = 10,
-    PARTY_SPRITE_EXTRA = 12,         /* word, only in the 15 byte party records */
+    PARTY_BLOCK_SIZE = 12,         /* word, only in the 15 byte party records */
     BATTLE_SPRITE_RECORDS = 0x139au, /* 13 bytes each */
     BATTLE_SINGLE_SPRITE = 0x13ceu,  /* one record, same layout */
     BATTLE_PARTY_SPRITES = 0x13dbu,  /* 15 bytes each */
@@ -227,6 +227,8 @@ enum {
     OAM_PALETTE_MASK = 0x07u,
     BATTLE_MARKER_OAM_START = 0x493du,
     BATTLE_MARKER_COUNT = 5u,
+    BATTLE_PARTY_ENABLED = 0x154eu,
+    BATTLE_PARTY_BLOCK_LIMIT = 16u,
     BATTLE_PARTY_SPRITE_COUNT = 6u,
     BATTLE_PARTY_RECORD_SIZE = 15u,
     BATTLE_SPRITE_RECORD_SIZE = 13u,
@@ -424,7 +426,7 @@ static void BattleDrawPartySprite(const Lufia2Memory *memory, Lufia2CpuState *cp
     StoreADirect8(memory, cpu, OAM_DP_Y);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(
-                     memory, cpu, (BATTLE_PARTY_SPRITES + PARTY_SPRITE_EXTRA), cpu->y));
+                     memory, cpu, (BATTLE_PARTY_SPRITES + PARTY_BLOCK_SIZE), cpu->y));
     Write16Direct(memory, cpu, OAM_DP_CELLS, cpu->accumulator);
     BattleSpriteXSum(memory, cpu, BATTLE_PARTY_SPRITES, cpu->y);
     And16(cpu, OAM_X_MASK);
@@ -500,7 +502,7 @@ static void BattlePlacePartyTiles(const Lufia2Memory *memory, Lufia2CpuState *cp
     PushY(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(
-                     memory, cpu, (BATTLE_PARTY_SPRITES + PARTY_SPRITE_EXTRA), cpu->y));
+                     memory, cpu, (BATTLE_PARTY_SPRITES + PARTY_BLOCK_SIZE), cpu->y));
     Write16Direct(memory, cpu, TILE_BLOCK_DP_CELLS, cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     LoadAAbsolute8(memory, cpu, (BATTLE_PARTY_SPRITES + SPRITE_Y_A), cpu->y); /* 8D6A */
@@ -900,6 +902,31 @@ Lufia2ExecutionResult Lufia2BattleSpriteMarkersEntry(
     return result;
 }
 
+/* Variable party blocks must not reach scratch, return frames or another bank. */
+bool BattlePartyRenderInputsFit(const Lufia2Memory *memory, bool sprites) {
+    uint32_t bytes = 0;
+    unsigned slot;
+
+    if (Read8(memory, BATTLE_PARTY_ENABLED) == 0)
+        return true;
+    for (slot = 0; slot < BATTLE_PARTY_SPRITE_COUNT; ++slot) {
+        const uint16_t record = (uint16_t)(BATTLE_PARTY_SPRITES +
+            slot * BATTLE_PARTY_RECORD_SIZE);
+        uint8_t columns;
+        uint8_t rows;
+
+        if ((Read8(memory, record) & 0x80u) == 0)
+            continue;
+        columns = Read8(memory, record + PARTY_BLOCK_SIZE);
+        rows = Read8(memory, record + PARTY_BLOCK_SIZE + 1u);
+        if (columns == 0u || columns > BATTLE_PARTY_BLOCK_LIMIT || rows == 0u ||
+            rows > BATTLE_PARTY_BLOCK_LIMIT)
+            return false;
+        bytes += 5u * columns * rows;
+    }
+    return !sprites || BattleOamSpanFits(memory, BATTLE_OAM_CURSOR_PARTY, bytes);
+}
+
 /* $85:8C98: the party sprites; JSL entry. */
 Lufia2ExecutionResult Lufia2BattleSpritePartyEntry(
     const Lufia2Memory *memory,
@@ -907,6 +934,10 @@ Lufia2ExecutionResult Lufia2BattleSpritePartyEntry(
     Lufia2ExecutionResult result =
         BattleFrameEntry(cpu, 0x858c98u, 0x858d2du);
 
+    if (result.flow == LUFIA2_EXECUTION_RETURNED &&
+        (!BattleFrameContext(cpu) || cpu->decimal ||
+         !BattlePartyRenderInputsFit(memory, true)))
+        return ExecutionHandoff(cpu, 0x858c98u);
     if (result.flow == LUFIA2_EXECUTION_RETURNED)
         BattleSpriteParty(memory, cpu);
     return result;
@@ -919,6 +950,10 @@ Lufia2ExecutionResult Lufia2BattlePartyTilemapEntry(
     Lufia2ExecutionResult result =
         BattleFrameEntry(cpu, 0x858d2eu, 0x858dc4u);
 
+    if (result.flow == LUFIA2_EXECUTION_RETURNED &&
+        (!BattleFrameContext(cpu) || cpu->decimal ||
+         !BattlePartyRenderInputsFit(memory, false)))
+        return ExecutionHandoff(cpu, 0x858d2eu);
     if (result.flow == LUFIA2_EXECUTION_RETURNED)
         BattlePartyTilemap(memory, cpu);
     return result;
