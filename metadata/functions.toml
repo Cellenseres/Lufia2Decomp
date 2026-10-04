@@ -3780,7 +3780,7 @@ name = "Lufia2WorldStepOffsets"
 source = "src/world/world_scroll_step.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:995B"
@@ -3788,7 +3788,7 @@ name = "Lufia2WorldScrollAdvance"
 source = "src/world/world_scroll_step.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "81:BCCC"
@@ -3796,7 +3796,7 @@ name = "Lufia2BattleBlitTileRows"
 source = "src/battle/battle_tile_blit.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "81:F481"
