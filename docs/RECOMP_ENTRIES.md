@@ -81,12 +81,11 @@ its own differential check.
 `$86:A5A9`, `$82:8000`, `$85:DE2A` and `$85:DE1E` accept any M/X, D and DB
 and restore the caller widths. `$86:E650` accepts any widths; `$86:E640`
 requires M1X0. `$82:88A0` and `$82:88CB` require S in `$1F00..$1FFC`;
-`$82:88CB` also requires M1. Their contracts are recorded in `FEATURE_REPAIR.md`.
+`$82:88CB` also requires M1. Their contracts are described by the public headers and consumer entry guards.
 
 The `$86:A894` world-plane entry additionally requires PB/DB `$86`, DP `$0000`
 and S in `$1F00..1FFC`. Unsupported entries return an unchanged handoff before
-any memory access. Its complete caller contract and ABI evidence are recorded
-in `FEATURE_REPAIR.md`.
+any memory access. The consumer checks this caller contract before any write.
 
 ## System (`system.h`)
 
