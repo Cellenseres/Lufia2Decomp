@@ -226,11 +226,14 @@ static Lufia2ExecutionResult StageBuffer(
     uint16_t return_address) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
 
-    WramWrite16(wram, STAGE_SOURCE, BUFFER);
-    WramWrite(wram, STAGE_BANK, BUFFER_BANK);
-    WramWrite16(wram, STAGE_TARGET, VIDEO_TARGET);
-    WramWrite16(wram, STAGE_SIZE, size);
-    cpu->x = size;
+    LoadX16(cpu, BUFFER);
+    WramWrite16(wram, STAGE_SOURCE, cpu->x);
+    LoadA8(cpu, BUFFER_BANK);
+    WramWrite(wram, STAGE_BANK, A8(cpu));
+    LoadX16(cpu, VIDEO_TARGET);
+    WramWrite16(wram, STAGE_TARGET, cpu->x);
+    LoadX16(cpu, size);
+    WramWrite16(wram, STAGE_SIZE, cpu->x);
     SimulateJslFrame(memory, cpu, 0x86u, return_address);
     return Lufia2MenuQueueVideoWrite(memory, cpu);
 }
@@ -246,14 +249,18 @@ Lufia2ExecutionResult Lufia2MenuLoadImageGrid(
     if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x869022u);
     SetAccumulatorWidth(cpu, 0);
-    WramWrite16(wram, ROW_TARGET, BUFFER);
+    LoadX16(cpu, BUFFER);
+    WramWrite16(wram, ROW_TARGET, cpu->x);
+    LoadX16(cpu, entry);
     do {
         Word16Result back;
 
-        WramWrite(wram, ROW_BANK,
-            Read8(memory, LongIndexedAddress(GRID_TABLE + 2u, entry)));
-        WramWrite16(wram, ROW_SOURCE,
-            Read16Long(memory, LongIndexedAddress(GRID_TABLE, entry)));
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(GRID_TABLE + 2u, entry)));
+        WramWrite(wram, ROW_BANK, A8(cpu));
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(GRID_TABLE, entry)));
+        WramWrite16(wram, ROW_SOURCE, cpu->accumulator);
         PushStackWord(memory, cpu, entry);
         PushDataBank(memory, cpu);
         if (!CallSubroutine(memory, cpu, Lufia2MenuCopyImageRow128, 0x9040u,
@@ -261,17 +268,20 @@ Lufia2ExecutionResult Lufia2MenuLoadImageGrid(
             !CallSubroutine(memory, cpu, Lufia2MenuCopyImageRow128, 0x9043u,
                 &result))
             return result;
-        back = Difference16(WramRead16(wram, ROW_TARGET), 0x0380u);
+        back = Difference16Mode(WramRead16(wram, ROW_TARGET), 0x0380u, cpu->decimal);
         WramWrite16(wram, ROW_TARGET, back.value);
+        LeaveSum(cpu, back);
         if (!CallSubroutine(memory, cpu, Lufia2MenuCopyImageRow128, 0x904eu,
                 &result) ||
             !CallSubroutine(memory, cpu, Lufia2MenuCopyImageRow128, 0x9051u,
                 &result))
             return result;
-        back = Difference16(WramRead16(wram, ROW_TARGET), 0x0080u);
+        back = Difference16Mode(WramRead16(wram, ROW_TARGET), 0x0080u, cpu->decimal);
         WramWrite16(wram, ROW_TARGET, back.value);
+        LeaveSum(cpu, back);
         PullDataBank(memory, cpu);
         entry = (uint16_t)(PullStackWord(memory, cpu) + GRID_ENTRY_SIZE);
+        cpu->x = entry;
         LeaveSum(cpu, back);
         LeaveComparison(cpu, entry, GRID_END);
     } while (entry != GRID_END);
@@ -295,7 +305,9 @@ static void SetBlockPositions(Lufia2CpuState *cpu, Lufia2Wram wram,
         target = Sum16Mode(target.value, target_step, false, cpu->decimal);
     WramWrite16(wram, ROW_TARGET, target.value);
     if (target_step != 0)
-        SetSumFlags(cpu, target);
+        LeaveSum(cpu, target);
+    else
+        LoadA16(cpu, target.value);
 }
 
 /* $86:8F6F: three image blocks per entry of the list at $0A7B, taken from
@@ -310,7 +322,8 @@ Lufia2ExecutionResult Lufia2MenuLoadImageSet(
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x868f6fu);
-    WramWrite16(wram, SET_TARGET, BUFFER);
+    LoadX16(cpu, BUFFER);
+    WramWrite16(wram, SET_TARGET, cpu->x);
     WramWrite(wram, SET_INDEX, 0);
     WramWrite(wram, SET_INDEX + 1u, 0);
     do {
@@ -328,8 +341,10 @@ Lufia2ExecutionResult Lufia2MenuLoadImageSet(
                           LongIndexedAddress(IMAGE_TABLE, image_entry)),
             0x0200u, false, cpu->decimal);
         WramWrite16(wram, IMAGE_BASE, image.value);
-        SetBlockPositions(cpu, wram, 0, 0);
+        cpu->x = image_entry;
+        SetAccumulatorWidth(cpu, 0);
         SetSumFlags(cpu, image);
+        SetBlockPositions(cpu, wram, 0, 0);
         if (!CallSubroutine(memory, cpu, Lufia2MenuCopyImageBlock, 0x8fa4u,
                 &result))
             return result;

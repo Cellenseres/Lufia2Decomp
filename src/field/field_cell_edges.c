@@ -605,17 +605,20 @@ Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
     SimulateRtlFrame(memory, cpu);
-    Write8(memory, DirectAddress(cpu, DP_COLUMN),
-        AbsoluteByte(memory, cpu, 0x06bau, 0));
+    LoadA8(cpu, AbsoluteByte(memory, cpu, 0x06bau, 0));
+    Write8(memory, DirectAddress(cpu, DP_COLUMN), A8(cpu));
     Write8(memory, DirectAddress(cpu, 0x90u), 0);
-    Write8(memory, DirectAddress(cpu, DP_ROW),
-        AbsoluteByte(memory, cpu, 0x06e2u, 0));
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, AbsoluteByte(memory, cpu, 0x06e2u, 0));
+    Write8(memory, DirectAddress(cpu, DP_ROW), A8(cpu));
     Write8(memory, DirectAddress(cpu, 0x92u), 0);
     SimulateJslFrame(memory, cpu, 0x80u, 0xf84bu);
+    cpu->program_bank = 0x83u;
     result = Lufia2FieldCellPointer(memory, cpu);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
     SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x80u;
     cpu->y = cpu->x;
     width = Read16AbsoluteIndexed(memory, cpu, 0x05b9u, 0);
     Write16Direct(memory, cpu, DP_ROW_STEP, (uint16_t)(width << 1));

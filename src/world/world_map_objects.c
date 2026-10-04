@@ -769,8 +769,36 @@ enum {
     SLOT_POOL_POINTER = 0x08u,
     OBJECT_PATTERN = 0x19u,
     OBJECT_NEXT_USER = 0x1bu,
-    OBJECT_SLOT_INDEX = 0x16u
+    OBJECT_SLOT_INDEX = 0x16u,
+    OBJECT_RECORD_COUNT = VISIBLE_OBJECT_LIMIT + 1u,
+    PATTERN_POOL_LAST = SLOT_TABLE + 0x30u,
+    PATTERN_SEARCH_LIMIT = 16u
 };
+
+/* Keep object scratch and nested returns outside the frame's tables. */
+static bool WorldObjectFrameContext(const Lufia2CpuState *cpu, uint16_t minimum_stack) {
+    return cpu->direct_page == 0u && !cpu->decimal &&
+        WorldBankHasWorkRam(cpu->data_bank) &&
+        cpu->stack >= minimum_stack && cpu->stack <= VISIBLE_STACK_LAST;
+}
+
+static bool WorldObjectRecord(uint16_t object) {
+    return object >= OBJECT_TABLE && object <= OBJECT_TABLE + VISIBLE_OBJECT_LIMIT * OBJECT_SIZE &&
+        (object - OBJECT_TABLE) % OBJECT_SIZE == 0u;
+}
+
+static bool WorldSlotUsersKnown(Lufia2Wram wram) {
+    const uint16_t count = ReadAbsolute16(wram, SLOT_LIST_COUNT, 0);
+    unsigned slot;
+
+    if (count > OBJECT_RECORD_COUNT)
+        return false;
+    for (slot = 0; slot < count; ++slot)
+        if (!WorldObjectRecord(WramRead16At(wram, SLOT_LAST_USER,
+                (uint16_t)(SLOT_LIST + 2u * slot))))
+            return false;
+    return true;
+}
 
 /* One more object uses the pattern of `slot`; returns the new user count. */
 static uint16_t AddSlotUser(Lufia2Wram wram, uint16_t slot) {
@@ -797,9 +825,16 @@ Lufia2ExecutionResult Lufia2WorldMapAssignSlot(
     uint16_t user;
     bool found = false;
 
-    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !WorldObjectFrameContext(cpu, 0x1f00u))
         return ExecutionHandoff(cpu, 0x86e430u);
     wram = WramViewOfCaller(memory, cpu);
+    if (!WorldObjectRecord(WramRead16(wram, DRAW_OBJECT)) ||
+        cpu->y == 0u || cpu->y > PATTERN_SEARCH_LIMIT ||
+        WramRead16(wram, SLOT_POOL_POINTER) < SLOT_TABLE ||
+        WramRead16(wram, SLOT_POOL_POINTER) > PATTERN_POOL_LAST ||
+        !WorldSlotUsersKnown(wram))
+        return ExecutionHandoff(cpu, 0x86e430u);
     object = WramRead16(wram, DRAW_OBJECT);
     pattern = WramRead16At(wram, OBJECT_PATTERN, object);
     cpu->x = object;
@@ -906,6 +941,25 @@ static const ObjectKind kObjectKinds[] = {
 };
 #define KIND_COUNT (sizeof kObjectKinds / sizeof kObjectKinds[0])
 
+static bool WorldObjectKindKnown(Lufia2Wram wram, uint16_t object) {
+    return WorldObjectRecord(object) &&
+        WramReadAt(wram, OBJECT_KIND, object) < KIND_COUNT;
+}
+
+static bool WorldObjectKindsKnown(Lufia2Wram wram) {
+    unsigned slot;
+
+    for (slot = 0; slot < OBJECT_RECORD_COUNT; ++slot) {
+        const uint16_t object = (uint16_t)(OBJECT_TABLE + slot * OBJECT_SIZE);
+
+        if (!IsNegative16(WramRead16At(wram, OBJECT_Y, object)) &&
+            !WorldObjectKindKnown(wram, object))
+            return false;
+    }
+    return true;
+}
+
+
 /* Takes the pattern slot of the object, then draws it, or only counts its
  * sprites when the pattern is new (its first user draws it later). */
 static void DrawObjectKind(
@@ -934,17 +988,22 @@ static void DrawObjectKind(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $86:E3D2: draws the object at X by its kind. M0X0 only. An unknown kind
- * hands the original dispatch back at its indirect call. */
+/* $86:E3D2: draws the object at X by its kind. M0X0 only.
+ * Unsupported records and kinds hand off at the unchanged entry. */
 Lufia2ExecutionResult Lufia2WorldMapDrawObjectByKind(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
     uint16_t kind_offset;
 
-    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !WorldObjectFrameContext(cpu, 0x1f04u))
         return ExecutionHandoff(cpu, 0x86e3d2u);
     wram = WramViewOfCaller(memory, cpu);
+    if (!WorldObjectKindKnown(wram, cpu->x) ||
+        ReadAbsolute16(wram, SPRITE_COUNTER, 0) > 127u ||
+        !WorldSlotUsersKnown(wram))
+        return ExecutionHandoff(cpu, 0x86e3d2u);
     WramWrite16(wram, DRAW_OBJECT, cpu->x);
     kind_offset = (uint16_t)((WramRead16At(wram, OBJECT_KIND, cpu->x) & 0x00ffu) << 1);
     cpu->x = kind_offset;
@@ -983,9 +1042,20 @@ Lufia2ExecutionResult Lufia2WorldMapDrawObjects(
     uint16_t left;
     uint16_t player_y;
 
-    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !WorldObjectFrameContext(cpu, 0x1f08u))
         return ExecutionHandoff(cpu, 0x86e3abu);
     wram = WramViewOfCaller(memory, cpu);
+    if (ReadAbsolute16(wram, VISIBLE_COUNT, 0) > VISIBLE_OBJECT_LIMIT ||
+        ReadAbsolute16(wram, SLOT_LIST_COUNT, 0) != 0u ||
+        ReadAbsolute16(wram, SPRITE_COUNTER, 0) > 80u ||
+        (!IsNegative16(WramRead16At(wram, OBJECT_Y, PLAYER_OBJECT)) &&
+         !WorldObjectKindKnown(wram, PLAYER_OBJECT)))
+        return ExecutionHandoff(cpu, 0x86e3abu);
+    for (unsigned slot = 0; slot < ReadAbsolute16(wram, VISIBLE_COUNT, 0); ++slot)
+        if (!WorldObjectKindKnown(wram,
+                ReadAbsolute16(wram, LIST_OBJECTS, (uint16_t)(LIST_KEYS + 2u * slot))))
+            return ExecutionHandoff(cpu, 0x86e3abu);
     count = ReadAbsolute16(wram, VISIBLE_COUNT, 0);
     LeaveWord(cpu, count);
     if (count != 0) {
@@ -1189,9 +1259,13 @@ Lufia2ExecutionResult Lufia2WorldMapProjectObjects(
     Word16Result next = {0, false, false};
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
-        !DirectWorkWordAvailable(cpu, OBJECTS_LEFT))
+        !WorldObjectFrameContext(cpu, 0x1f00u) ||
+        cpu->x != OBJECT_TABLE || cpu->y != VISIBLE_LIST_START)
         return ExecutionHandoff(cpu, 0x86e2d2u);
     wram = WramViewOfCaller(memory, cpu);
+    if (WramRead16(wram, OBJECTS_LEFT) == 0u ||
+        WramRead16(wram, OBJECTS_LEFT) > VISIBLE_OBJECT_LIMIT)
+        return ExecutionHandoff(cpu, 0x86e2d2u);
     horizon = (uint16_t)(ReadAbsolute16(wram, VIEW_HORIZON, 0) & 0x00ffu);
     if (horizon >= VIEW_HORIZON_LIMIT)
         return Lufia2WorldMapTestObjects(memory, cpu);
@@ -1348,11 +1422,12 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
     bool tilted;
 
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
-        !DirectWorkWordAvailable(cpu, OBJECTS_LEFT) ||
-        !DirectWorkByteAvailable(cpu, UPDATE_SLOTS_LEFT) ||
-        !DirectWorkWordAvailable(cpu, UPDATE_BLOCKS_LEFT))
+        !WorldObjectFrameContext(cpu, 0x1f10u) ||
+        (cpu->data_bank != 0x86u && cpu->data_bank != 0x06u))
         return ExecutionHandoff(cpu, 0x86e1b9u);
     wram = WramViewOfCaller(memory, cpu);
+    if (!WorldObjectKindsKnown(wram))
+        return ExecutionHandoff(cpu, 0x86e1b9u);
     SimulateJsrFrame(memory, cpu, 0xe1bbu);
     result = Lufia2WorldMapClearSprites(memory, cpu);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
