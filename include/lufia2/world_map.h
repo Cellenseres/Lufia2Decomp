@@ -35,13 +35,17 @@ Lufia2ExecutionResult Lufia2WorldMapPlane(
     Lufia2CpuState *cpu);
 
 /* $86:E295 appends object X to the visible list at Y when it overlaps the
- * screen. M0X0 only (else handed back). */
+ * screen. M0X0, DP0; DB must map low work RAM. X <= $1FF1 and
+ * Y <= $1FD2 keep the record and both list fields in RAM. Caller-frame
+ * aliases retain the original writes and rewritten RTS destination. */
 Lufia2ExecutionResult Lufia2WorldMapTestObject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
 /* $86:E287 runs the test for the objects counted in DP $22, stepping X by
- * $1D. M0X0 only. */
+ * $1D. Caller contract: M0X0, DP0, work-RAM DB, X=$1469, Y=$124F,
+ * S=$1F00..$1FFC, and 1..21 objects. Other entries hand off before writes.
+ * The count check reads RAM without changing CPU flags. */
 Lufia2ExecutionResult Lufia2WorldMapTestObjects(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

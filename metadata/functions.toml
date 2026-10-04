@@ -3113,7 +3113,7 @@ name = "Lufia2WorldMapTestObjects"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:E295"
@@ -3121,7 +3121,7 @@ name = "Lufia2WorldMapTestObject"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 # World map per-frame resets.
 [[function]]

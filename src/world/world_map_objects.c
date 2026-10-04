@@ -17,7 +17,8 @@ enum {
     OBJECT_SCREEN_Y = 0x09u,
     OBJECT_WIDTH = 0x0bu,
     OBJECT_HEIGHT = 0x0du,
-    OBJECT_SIZE = 0x1du
+    OBJECT_SIZE = 0x1du,
+    OBJECT_TABLE = 0x1469u
 };
 
 /* Direct page: the camera corner subtracted from object positions, and the
@@ -34,6 +35,12 @@ enum {
 /* Absolute work RAM (data bank): visible object list. */
 enum {
     VISIBLE_COUNT = 0x124bu,
+    VISIBLE_LIST_START = 0x124fu,
+    VISIBLE_OBJECT_LIMIT = 21u,
+    VISIBLE_OBJECT_LAST = 0x1ff1u,
+    VISIBLE_LIST_LAST = 0x1fd2u,
+    VISIBLE_STACK_FIRST = 0x1f00u,
+    VISIBLE_STACK_LAST = 0x1ffcu,
     VISIBLE_KEY = 0x0000u,   /* per entry, from Y: sort key */
     VISIBLE_OBJECT = 0x002cu /* per entry, from Y: object offset */
 };
@@ -49,6 +56,12 @@ enum {
     OAM_HIDDEN_Y = 0xe0u,
     OAM_HIGH_TABLE_WORDS = 0x10u
 };
+
+/* These banks map the object-list work fields to RAM. */
+static bool WorldBankHasWorkRam(uint8_t bank) {
+    return bank < 0x40u || bank == 0x7eu || bank == 0x7fu ||
+        (bank >= 0x80u && bank < 0xc0u);
+}
 
 static uint32_t Absolute(
     const Lufia2Wram wram, uint16_t offset, uint16_t index) {
@@ -138,7 +151,9 @@ static void AppendIfOnScreen(
 Lufia2ExecutionResult Lufia2WorldMapTestObject(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->direct_page != 0u || !WorldBankHasWorkRam(cpu->data_bank) ||
+        cpu->x > VISIBLE_OBJECT_LAST || cpu->y > VISIBLE_LIST_LAST)
         return ExecutionHandoff(cpu, 0x86e295u);
     AppendIfOnScreen(WramViewOfCaller(memory, cpu), cpu, cpu->x);
     return ExecutionReturned(0x86e2d1u);
@@ -154,9 +169,14 @@ Lufia2ExecutionResult Lufia2WorldMapTestObjects(
     uint16_t objects_left;
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
-        !DirectWorkWordAvailable(cpu, OBJECTS_LEFT))
+        cpu->direct_page != 0u || !WorldBankHasWorkRam(cpu->data_bank) ||
+        cpu->x != OBJECT_TABLE || cpu->y != VISIBLE_LIST_START ||
+        cpu->stack < VISIBLE_STACK_FIRST || cpu->stack > VISIBLE_STACK_LAST)
         return ExecutionHandoff(cpu, 0x86e287u);
     wram = WramViewOfCaller(memory, cpu);
+    objects_left = WramRead16(wram, OBJECTS_LEFT);
+    if (objects_left == 0u || objects_left > VISIBLE_OBJECT_LIMIT)
+        return ExecutionHandoff(cpu, 0x86e287u);
     do {
         SimulateJsrFrame(memory, cpu, 0xe289u);
         AppendIfOnScreen(wram, cpu, cpu->x);
@@ -244,8 +264,7 @@ enum {
     ANIMATION_POINTERS = 0xeba7u,
     TABLE_POINTER_SCRATCH = 0x00u,
     FRAME_SIZE = 5u,
-    OBJECT_COUNT = 0x16u,
-    OBJECT_TABLE = 0x1469u
+    OBJECT_COUNT = 0x16u
 };
 
 /* Bytes of an animation record, reached through the data bank. */
@@ -1202,7 +1221,7 @@ Lufia2ExecutionResult Lufia2WorldMapProjectObjects(
 enum {
     POOL_STARTS = 0xeb9bu,
     POOL_SIZES = 0xeba1u,
-    UPDATE_OBJECT_COUNT = 0x15u,
+    UPDATE_OBJECT_COUNT = VISIBLE_OBJECT_LIMIT,
     UPDATE_SLOTS_LEFT = 0x26u,
     UPDATE_BLOCKS_LEFT = 0x28u,
     UPDATE_SLOT_POINTER = 0x08u,
