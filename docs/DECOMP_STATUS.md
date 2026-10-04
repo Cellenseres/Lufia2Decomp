@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-461 functions in `metadata/functions.toml`: 426 verified, 35 draft, 0 identified, 0 disabled.
+461 functions in `metadata/functions.toml`: 430 verified, 31 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -65,7 +65,7 @@ for any caller widths. The world sprite and slot-flag clears `$86:E650` and
 `$82:88A0`/`$82:88CB` for the `$1F00..$1FFC` caller stack. The copied-member totals `$81:F481` are also verified for DP0 and the same
 caller stack, preserving the shared stat event. Scene tracks, view origin and the two battle velocity routines are also
 verified. The world object visibility leaf and its bounded original list caller are
-also verified. Sixty feature additions are verified and 35 remain draft.
+also verified. Sixty-four feature additions are verified and 31 remain draft.
 
 The base main checkpoint passed **518 independent jobs**. The normal
 application build also passes. The consumer selects all 366 verified functions,
@@ -1324,5 +1324,33 @@ controls against them are caught. CPU, all WRAM and ordered bus events
 remain mandatory.
 
 60 of 95 feature routines are verified, with 35 draft. The integrated 518-job
+verification and Release build must pass before the staged selection is a
+green checkpoint. Main and the normal build remain unchanged.
+
+
+## Effect stream opcodes and battle tile ids
+
+Four further roots are selected: the effect opcodes $81:A40B (add a stream
+word to a slot field) and $81:953F (repeat counter), and the battle tile row
+$85:9790 with its grid $85:972E. Their bodies were already exact; no source
+change was needed.
+
+The opcodes run from the dispatcher's JSR (abs,X) with M8/X16. Their profile
+covers decimal mode, eight direct pages including pages that place the
+stream pointer on the scratch word or wrap bank zero, sixteen slot indices
+including the scratch word, the caller frame and the bank-7F carry, stream
+pointers in WRAM, ROM and the bank-zero mirror, and repeat counts 0, 1, 2
+and 255. The tile profile covers counter wrap, row offsets crossing banks
+or landing on the caller frame, eight data banks and four stacks. The grid's
+stores start at $2816 and cannot reach the bank-zero stack.
+
+The actual-library ABI matrices pass 102656 cases: 101952 native
+comparisons and 704 unchanged entry fallbacks. Frame, overflow,
+emulation, bank, stack and width bridge mutations and 5 source
+mutations are caught (41 controls). The shared production bridges
+repeat the matrices with identical counts, and ten further controls against
+them are caught. No consumer hook lies inside these routines.
+
+64 of 95 feature routines are verified, with 31 draft. The integrated 518-job
 verification and Release build must pass before the staged selection is a
 green checkpoint. Main and the normal build remain unchanged.
