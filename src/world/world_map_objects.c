@@ -488,10 +488,10 @@ enum {
 };
 
 /* Merges the two high bits of the x position into their field of the
- * high-table byte: `kKeep` is what stays of the old byte. */
+ * high-table byte: the keep mask retains the other sprites. */
 static uint8_t MergeXBits(Lufia2Wram wram, uint8_t old_byte, unsigned field) {
-    static const uint8_t kKeep[4] = {0xfcu, 0xf3u, 0xcfu, 0x3fu};
-    const uint8_t kept = (uint8_t)(old_byte & kKeep[field]);
+    static const uint8_t keep_masks[4] = {0xfcu, 0xf3u, 0xcfu, 0x3fu};
+    const uint8_t kept = (uint8_t)(old_byte & keep_masks[field]);
     uint8_t bits;
 
     WramWrite(wram, DRAW_ATTRIBUTES, kept);
@@ -581,8 +581,10 @@ static Byte8Result SpriteScreenY(
 
 /* The tile word of the sprite: the tile number with the attributes. */
 static uint16_t SpriteTile(Lufia2Wram wram) {
-    return (uint16_t)(WramRead16(wram, DRAW_TILE) |
-                      WramRead16(wram, DRAW_ATTRIBUTES));
+    const uint16_t tile = WramRead16(wram, DRAW_TILE);
+    const uint16_t attributes = WramRead16(wram, DRAW_ATTRIBUTES);
+
+    return (uint16_t)(tile | attributes);
 }
 
 /* $86:E555: writes the pair of hardware sprites of the object at $02 into

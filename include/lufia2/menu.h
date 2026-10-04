@@ -89,7 +89,8 @@ Lufia2ExecutionResult Lufia2MenuItemPosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $82:8AD8 / $82:8AE9 line slide corrections for slot Y; any width. */
+/* $82:8AD8 / $82:8AE9 slide corrections for slot Y. Native: M8, DP0,
+ * hardware-mapped DB, Y <= $0800, S $1F00..$1FFC. */
 Lufia2ExecutionResult Lufia2MenuSlideCorrectX(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
