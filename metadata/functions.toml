@@ -3576,7 +3576,7 @@ name = "Lufia2WorldPlaneRows0"
 source = "src/world/world_plane_rows.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:AA5B"
@@ -3584,7 +3584,7 @@ name = "Lufia2WorldPlaneRows1"
 source = "src/world/world_plane_rows.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:AB0E"
@@ -3592,7 +3592,7 @@ name = "Lufia2WorldPlaneRows2"
 source = "src/world/world_plane_rows.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:ABC1"
@@ -3600,7 +3600,7 @@ name = "Lufia2WorldPlaneRows3"
 source = "src/world/world_plane_rows.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 # Battle background wave rows
 [[function]]

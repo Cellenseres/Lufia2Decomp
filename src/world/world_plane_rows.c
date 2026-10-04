@@ -23,7 +23,11 @@ enum {
     TABLE_A_MIRROR = 0x1a9du,
     TABLE_B = 0x171au,
     TABLE_B_MIRROR = 0x1a9bu,
-    ROW_BYTES = 4u
+    ROW_BYTES = 4u,
+    BAND_FIRST = 0x0382u,
+    BAND_SECOND = 0x01c1u,
+    BAND_ROWS = 112u,
+    WORLD_BANK = 0x86u
 };
 
 typedef struct {
@@ -96,10 +100,17 @@ static Lufia2ExecutionResult Rows(const Lufia2Memory *memory,
     uint16_t row = cpu->y;
     uint16_t index;
     uint16_t read_back = 0;
+    uint16_t rows_left;
     Word16Result angle;
 
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
-        !DirectWorkWordAvailable(cpu, ROWS_LEFT))
+        cpu->direct_page != 0u || cpu->data_bank != WORLD_BANK ||
+        (cpu->y != BAND_FIRST && cpu->y != BAND_SECOND))
+        return ExecutionHandoff(cpu, entry);
+    /* The plane caller saves 112 rows and enters at one of its two bands.
+     * These ranges keep output tables separate from direct-page work. */
+    rows_left = WramRead16(wram, ROWS_LEFT);
+    if (rows_left == 0u || rows_left > BAND_ROWS)
         return ExecutionHandoff(cpu, entry);
     scaled = (WramRead16(wram, FACTOR_A) & 0x00ffu) != 0;
     do {

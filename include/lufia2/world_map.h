@@ -132,6 +132,10 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* Plane row caller contract: M0X0, DP0, DB86, Y=$0382 or $01C1,
+ * and 1..112 rows in DP $26. The body has no stack operations or children;
+ * the parent enters with S=$1EFC at its lowest supported stack. Counter
+ * guards read RAM before writes, without changing CPU flags. */
 /* $86:A9B0 plane scanline rows, quadrant 0; JSR, M16/X16 only. */
 Lufia2ExecutionResult Lufia2WorldPlaneRows0(
     const Lufia2Memory *memory,
