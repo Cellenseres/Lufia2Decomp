@@ -26,7 +26,9 @@ enum {
     SLOT_SPEED = 0x15u,
     SLOT_VELOCITY_A = 0x1bu,
     SLOT_VELOCITY_B = 0x1du,
-    WORK_BANK = 0x7eu
+    WORK_BANK = 0x7eu,
+    VELOCITY_CALL_STACK_FIRST = 0x1f03u,
+    VELOCITY_CALL_STACK_LAST = 0x1ffcu
 };
 
 /* $81:A40B: reads a field offset byte and a word from the stream and adds
@@ -116,7 +118,10 @@ Lufia2ExecutionResult Lufia2BattleEffectVelocity(
     Lufia2Wram wram;
     uint16_t velocity;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    /* Reserve the child's three-byte frame within its native stack band. */
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->direct_page != 0u || cpu->stack < VELOCITY_CALL_STACK_FIRST ||
+        cpu->stack > VELOCITY_CALL_STACK_LAST)
         return ExecutionHandoff(cpu, 0x81a598u);
     OpSetDataBank(memory, cpu, WORK_BANK);
     wram = WramViewOfCaller(memory, cpu);

@@ -70,7 +70,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:9169` | `Lufia2BattleEffectMarkLoop` | draft | `src/battle/battle_effect_ops.c` |
 | `$81:953F` | `Lufia2BattleEffectRepeat` | draft | `src/battle/battle_effect_ops.c` |
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | draft | `src/battle/battle_effect_ops.c` |
-| `$81:A598` | `Lufia2BattleEffectVelocity` | draft | `src/battle/battle_effect_ops.c` |
+| `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |
 | `$81:B1A3` | `Lufia2BattleRunConfiguredScript` | verified | `src/battle/battle_action_script.c` |
 | `$81:B1C9` | `Lufia2BattleRunBattlerScript` | verified | `src/battle/battle_action_script.c` |
@@ -404,7 +404,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
 | `$85:DCA3` | `Lufia2BattleMultiply` | verified | `src/battle/battle_script.c` |
 | `$85:DCEA` | `Lufia2BattleRandomFraction` | verified | `src/battle/battle_script.c` |
-| `$85:DD63` | `Lufia2BattleVelocityOfAngle` | draft | `src/battle/battle_vector.c` |
+| `$85:DD63` | `Lufia2BattleVelocityOfAngle` | verified | `src/battle/battle_vector.c` |
 | `$85:DE1E` | `Lufia2BattleCosineOfAngle` | verified | `src/battle/battle_vector.c` |
 | `$85:DE2A` | `Lufia2BattleSineOfAngle` | verified | `src/battle/battle_vector.c` |
 | `$85:EC81` | `Lufia2BattleFrameInput` | verified | `src/battle/battle_frame_input.c` |
@@ -434,14 +434,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:90F9` | `Lufia2MenuLoadPalette3` | verified | `src/menu/menu_image_load.c` |
 | `$86:910C` | `Lufia2MenuLoadPalette4` | verified | `src/menu/menu_image_load.c` |
 | `$86:911F` | `Lufia2MenuLoadSlotPalettes` | draft | `src/menu/menu_image_load.c` |
-| `$86:94D4` | `Lufia2SceneTrackStep` | draft | `src/field/field_scene_tracks.c` |
+| `$86:94D4` | `Lufia2SceneTrackStep` | verified | `src/field/field_scene_tracks.c` |
 | `$86:995B` | `Lufia2WorldScrollAdvance` | draft | `src/world/world_scroll_step.c` |
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:A417` | `Lufia2WorldStepOffsets` | draft | `src/world/world_scroll_step.c` |
 | `$86:A583` | `Lufia2WorldProduct16By8` | draft | `src/world/world_scroll_step.c` |
 | `$86:A5A9` | `Lufia2WorldMapDivide32` | verified | `src/world/world_map_objects.c` |
-| `$86:A791` | `Lufia2SceneViewOrigin` | draft | `src/field/field_scene_tracks.c` |
+| `$86:A791` | `Lufia2SceneViewOrigin` | verified | `src/field/field_scene_tracks.c` |
 | `$86:A894` | `Lufia2WorldMapPlane` | verified | `src/world/world_map_plane.c` |
 | `$86:A9B0` | `Lufia2WorldPlaneRows0` | draft | `src/world/world_plane_rows.c` |
 | `$86:AA5B` | `Lufia2WorldPlaneRows1` | draft | `src/world/world_plane_rows.c` |

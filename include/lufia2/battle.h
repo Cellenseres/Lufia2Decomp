@@ -257,7 +257,7 @@ Lufia2ExecutionResult Lufia2BattleCosineOfAngle(
     Lufia2CpuState *cpu);
 
 /* $85:DD63 velocity words $56/$58 from the angle $54 and speed $5A;
- * M8/X16, DP zero, JSL. */
+ * M8/X16, DP0, S1F00..1FFC; child return frames stay intact. JSL/RTL. */
 Lufia2ExecutionResult Lufia2BattleVelocityOfAngle(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
@@ -287,7 +287,8 @@ Lufia2ExecutionResult Lufia2BattleEffectMarkLoop(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $81:A598 slot velocity from angle and speed; M8/X16, JSR. */
+/* $81:A598 slot velocity; M8/X16, DP0, S1F03..1FFC for the velocity child.
+ * Leaves DB7E; slot Y may overlap scratch or the caller's frame. JSR/RTS. */
 Lufia2ExecutionResult Lufia2BattleEffectVelocity(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

@@ -17,6 +17,7 @@ enum {
     POINTER_DIRECT = 0x02u,
     COUNTER_DIRECT = 0x04u,
     STEP_BYTES = 4u,
+    STEP_DELTA_OFFSET = 2u,
     VIEW_ORIGIN_DIRECT = 0x06u,
     VIEW_WIDTH_FLAG = 0x11ddu,
     VIEW_WIDTH_SIGN = 0x11deu,
@@ -30,6 +31,12 @@ enum {
     VIEW_HALF_WIDTH = 0x0080u,
     VIEW_HALF_HEIGHT = 0x0070u
 };
+
+/* Scene work fields occupy the low RAM window of the caller's data bank. */
+static bool SceneBankHasWorkRam(uint8_t bank) {
+    return bank < 0x40u || bank == 0x7eu || bank == 0x7fu ||
+        (bank >= 0x80u && bank < 0xc0u);
+}
 
 /* An address in the data bank, plus an index that carries into the next
  * bank. The script words are addressed this way, not by a catalogued
@@ -82,7 +89,8 @@ Lufia2ExecutionResult Lufia2SceneTrackStep(
     bool overflow = false;
     size_t i;
 
-    if (cpu->index_is_8_bit || !DirectWorkWordAvailable(cpu, COUNTER_DIRECT))
+    if (cpu->index_is_8_bit || cpu->direct_page != 0u ||
+        !SceneBankHasWorkRam(cpu->data_bank))
         return ExecutionHandoff(cpu, 0x8694d4u);
     SetAccumulatorWidth(cpu, 0);
     WramWrite16(wram, POINTER_DIRECT, SCRIPT_POINTERS);
@@ -112,7 +120,7 @@ Lufia2ExecutionResult Lufia2SceneTrackStep(
         } else {
             const Word16Result moved = Sum16Mode(
                 WramRead16At(wram, TRACK_VALUES, track),
-                ReadDataWord(wram, 2u, step), false, cpu->decimal);
+                ReadDataWord(wram, STEP_DELTA_OFFSET, step), false, cpu->decimal);
 
             last = moved.value;
             overflow = moved.overflow;
@@ -145,7 +153,8 @@ Lufia2ExecutionResult Lufia2SceneViewOrigin(
     uint16_t scroll;
     Word16Result screen;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->direct_page != 0u || !SceneBankHasWorkRam(cpu->data_bank))
         return ExecutionHandoff(cpu, 0x86a791u);
     if (WramRead(wram, VIEW_WIDTH_FLAG) != 0 &&
         (WramRead(wram, VIEW_WIDTH_SIGN) & 0x80u) != 0)

@@ -3526,7 +3526,7 @@ name = "Lufia2SceneTrackStep"
 source = "src/field/field_scene_tracks.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:A791"
@@ -3534,7 +3534,7 @@ name = "Lufia2SceneViewOrigin"
 source = "src/field/field_scene_tracks.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # Attribute unpack and angle vectors
 [[function]]
@@ -3567,7 +3567,7 @@ name = "Lufia2BattleVelocityOfAngle"
 source = "src/battle/battle_vector.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # World plane rows
 [[function]]
@@ -3650,7 +3650,7 @@ name = "Lufia2BattleEffectVelocity"
 source = "src/battle/battle_effect_ops.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # Menu image loaders and RAM block move
 [[function]]
