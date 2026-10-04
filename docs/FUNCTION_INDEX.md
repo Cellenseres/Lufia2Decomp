@@ -16,8 +16,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:8638` | `Lufia2MainNmi` | verified | `src/system/nmi.c` |
 | `$80:86C1` | `Lufia2ScreenFade` | verified | `src/system/screen.c` |
 | `$80:8703` | `Lufia2NmiSpritesPaletteAndPads` | draft | `src/system/nmi_uploads.c` |
-| `$80:87A7` | `Lufia2NmiScrollAndUploads` | draft | `src/system/nmi_uploads.c` |
-| `$80:87FC` | `Lufia2NmiTilemapUploads` | draft | `src/system/nmi_uploads.c` |
+| `$80:87A7` | `Lufia2NmiScrollAndUploads` | verified | `src/system/nmi_uploads.c` |
+| `$80:87FC` | `Lufia2NmiTilemapUploads` | verified | `src/system/nmi_uploads.c` |
 | `$80:8878` | `Lufia2MenuDrawString` | verified | `src/menu/menu_string.c` |
 | `$80:8E9D` | `Lufia2DecompressResource` | verified | `src/system/decompress.c` |
 | `$80:9099` | `Lufia2LoadGameFile` | verified | `src/system/save.c` |
@@ -78,8 +78,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:B264` | `Lufia2BattleActiveMask` | verified | `src/battle/battle_util.c` |
 | `$81:B2B5` | `Lufia2BattleTargetRecord` | verified | `src/battle/battle_util.c` |
 | `$81:B2DB` | `Lufia2BattleTargetSlot` | verified | `src/battle/battle_util.c` |
-| `$81:B396` | `Lufia2BattlePaletteBrightness` | draft | `src/battle/battle_palette_fade.c` |
-| `$81:B3F8` | `Lufia2BattleScaleColor` | draft | `src/battle/battle_palette_fade.c` |
+| `$81:B396` | `Lufia2BattlePaletteBrightness` | verified | `src/battle/battle_palette_fade.c` |
+| `$81:B3F8` | `Lufia2BattleScaleColor` | verified | `src/battle/battle_palette_fade.c` |
 | `$81:B444` | `Lufia2BattlePaletteFade` | verified | `src/battle/battle_util.c` |
 | `$81:B48B` | `Lufia2BattleFadeColor` | verified | `src/battle/battle_util.c` |
 | `$81:B505` | `Lufia2BattleBlend` | verified | `src/battle/battle_util.c` |
@@ -198,7 +198,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:8000` | `Lufia2MenuMultiply` | verified | `src/menu/menu_cursor.c` |
 | `$82:8044` | `Lufia2MenuQueueVideoWrite` | draft | `src/menu/menu_image_load.c` |
 | `$82:8069` | `Lufia2MenuTileGridFill` | draft | `src/menu/menu_tilemap.c` |
-| `$82:80A5` | `Lufia2MenuTileBlockFill` | draft | `src/menu/menu_tilemap.c` |
+| `$82:80A5` | `Lufia2MenuTileBlockFill` | verified | `src/menu/menu_tilemap.c` |
 | `$82:80CA` | `Lufia2MenuRecolorRect` | draft | `src/menu/menu_tilemap.c` |
 | `$82:810E` | `Lufia2MenuDrawWindow` | verified | `src/menu/menu_window.c` |
 | `$82:838F` | `Lufia2MenuClearLayers` | draft | `src/menu/menu_tilemap.c` |
@@ -463,7 +463,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:E5BB` | `Lufia2WorldMapStoreHighBits` | draft | `src/world/world_map_objects.c` |
 | `$86:E640` | `Lufia2WorldMapClearSlotFlags` | verified | `src/world/world_map_objects.c` |
 | `$86:E650` | `Lufia2WorldMapClearSprites` | verified | `src/world/world_map_objects.c` |
-| `$86:E686` | `Lufia2WorldMapSortVisible` | draft | `src/world/world_map_objects.c` |
+| `$86:E686` | `Lufia2WorldMapSortVisible` | verified | `src/world/world_map_objects.c` |
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |

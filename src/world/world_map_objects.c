@@ -687,10 +687,20 @@ enum {
     LIST_OBJECTS = 0x002cu,
     SORT_KEY = 0x00u,
     SORT_OBJECT = 0x06u,
-    SORT_LEFT = 0x22u
+    SORT_LEFT = 0x22u,
+    SORT_STACK_FIRST = 0x1f02u
 };
 
-/* $86:E686: insertion sort of the visible list by its key words, ascending.
+/* Keep the sentinel, keys and object references in one bounded RAM list. */
+static bool VisibleSortReady(Lufia2Wram wram, const Lufia2CpuState *cpu) {
+    if (cpu->direct_page != 0u || cpu->stack < SORT_STACK_FIRST ||
+        cpu->stack > VISIBLE_STACK_LAST || wram.data_bank == 0x7fu ||
+        !WorldBankHasWorkRam(wram.data_bank))
+        return false;
+    return ReadAbsolute16(wram, VISIBLE_COUNT, 0) <= VISIBLE_OBJECT_LIMIT;
+}
+
+/* $86:E686: insertion sort of the visible list by its key words, descending.
  * The word before the list is set to $FFFF so the scan stops there. M0X0.
  * The list is reached through the direct page, entry by entry. */
 Lufia2ExecutionResult Lufia2WorldMapSortVisible(
@@ -705,6 +715,8 @@ Lufia2ExecutionResult Lufia2WorldMapSortVisible(
     if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e686u);
     wram = WramViewOfCaller(memory, cpu);
+    if (!VisibleSortReady(wram, cpu))
+        return ExecutionHandoff(cpu, 0x86e686u);
     WriteAbsolute16(wram, LIST_SENTINEL, 0, 0xffffu);
     count = ReadAbsolute16(wram, VISIBLE_COUNT, 0);
     if (count <= 1u) {
@@ -718,7 +730,7 @@ Lufia2ExecutionResult Lufia2WorldMapSortVisible(
         WramWrite16(wram, SORT_KEY, WramRead16At(wram, SORT_KEY, entry));
         WramWrite16(wram, SORT_OBJECT, WramRead16At(wram, LIST_OBJECTS, entry));
         PushStackWord(memory, cpu, entry);
-        /* Shift the larger keys up one entry until the place is found. */
+        /* Shift smaller keys forward until the descending-order position is found. */
         for (scan = (uint16_t)(entry - 2u);; scan = (uint16_t)(scan - 2u)) {
             const uint16_t key = WramRead16At(wram, SORT_KEY, scan);
 

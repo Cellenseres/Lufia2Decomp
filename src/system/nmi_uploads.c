@@ -2,6 +2,7 @@
  * and VRAM uploads. */
 
 #include "core/cpu_internal.h"
+#include "core/plain_ops.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
 #include "lufia2/system.h"
@@ -19,6 +20,7 @@ enum {
     DMA_LIST_FLAGS = 0x75u,
     DMA_LIST_ADDRESS = 0x79u,
     DMA_LIST_COUNT = 4u,
+    SCROLL_REGISTER_COUNT = 8u,
     DMA_CHANNEL_MASK = 0x3fu,
     DMA_KIND_MASK = 0xc0u,
     DMA_KIND_CGRAM = 0x80u,
@@ -155,12 +157,26 @@ static void StartListedDma(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram,
     uint8_t request) {
     Push8(memory, cpu, request);
+    cpu->carry = (request & DMA_KIND_MASK) >= DMA_KIND_CGRAM;
     if ((request & DMA_KIND_MASK) == DMA_KIND_CGRAM)
         WramWrite(wram, SNES_CGADD, (uint8_t)cpu->x);
     else
         WramWrite16(wram, SNES_VMADDL, cpu->x);
     LoadA8(cpu, (uint8_t)(Pull8(memory, cpu) & DMA_CHANNEL_MASK));
     WramWrite(wram, SNES_MDMAEN, A8(cpu));
+}
+
+/* A reverse DMA can change the return frame of the listed upload. */
+static bool ReturnFromListedDma(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t expected_return, Lufia2ExecutionResult *result) {
+    const uint16_t last_byte = PullStackWord(memory, cpu);
+
+    if (last_byte == expected_return)
+        return true;
+    *result = ExecutionHandoff(cpu,
+        ((uint32_t)cpu->program_bank << 16) | (uint16_t)(last_byte + 1u));
+    return false;
 }
 
 /* $80:882E: one 2 KiB tilemap block from $7E:X to VRAM word Y. */
@@ -226,12 +242,8 @@ Lufia2ExecutionResult Lufia2NmiTilemapUploads(
     return ExecutionReturned(0x80882du);
 }
 
-/* $80:87A7: scroll registers from $0594, the queued DMA requests, the
- * tilemap uploads and the HDMA channel mask.
- *
- * Entry contract: M1X1 as declared. The routine saves P, sets M8 and X16
- * itself and restores P on exit, so it is correct for every entry width and
- * leaves the caller's widths unchanged. */
+/* $80:87A7: updates scroll registers, queued DMA, tilemaps and HDMA.
+ * Saves and restores P; either accumulator and index width may enter. */
 Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -239,19 +251,21 @@ Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
         0x87ceu, 0x87d9u, 0x87e4u, 0x87efu};
     Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     unsigned i;
+    Lufia2ExecutionResult result;
 
     Push8(memory, cpu, PackStatus(cpu));
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
-    for (i = 0; i < 8u; ++i) {
+    for (i = 0; i < SCROLL_REGISTER_COUNT; ++i) {
         /* Each scroll register takes its low byte, then its high byte. */
-        WramWriteAt(wram, 0, (uint16_t)(0x210du + i),
+        WramWriteAt(wram, 0, (uint16_t)(SNES_BG1HOFS + i),
             WramReadAt(wram, WRAM_NMI_SCROLL_REGISTERS, (uint16_t)(2u * i)));
-        WramWriteAt(wram, 0, (uint16_t)(0x210du + i),
+        WramWriteAt(wram, 0, (uint16_t)(SNES_BG1HOFS + i),
             WramReadAt(wram, WRAM_NMI_SCROLL_REGISTERS + 1u, (uint16_t)(2u * i)));
     }
-    cpu->x = 0x2115u;
-    cpu->y = 0x0010u;
+    cpu->x = SNES_BG1HOFS + SCROLL_REGISTER_COUNT;
+    cpu->y = 2u * SCROLL_REGISTER_COUNT;
+    cpu->carry = true;
     for (i = 0; i < DMA_LIST_COUNT; ++i) {
         const uint8_t request = WramRead(wram, DMA_LIST_FLAGS + i);
 
@@ -262,7 +276,8 @@ Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
         LoadX16(cpu, WramRead16(wram, DMA_LIST_ADDRESS + 2u * i));
         SimulateJsrFrame(memory, cpu, site_return[i]);
         StartListedDma(memory, cpu, wram, request);
-        SimulateRtsFrame(memory, cpu);
+        if (!ReturnFromListedDma(memory, cpu, site_return[i], &result))
+            return result;
     }
     SimulateJsrFrame(memory, cpu, 0x87f2u);
     UploadRequestedTilemaps(memory, cpu, wram);

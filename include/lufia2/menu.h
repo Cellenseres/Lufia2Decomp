@@ -50,7 +50,8 @@ Lufia2ExecutionResult Lufia2MenuDrawWindow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $82:80A5 4 x 4 tile block at $54 counting up from $5A; M0X0. */
+/* $82:80A5 fills a 4 x 4 tile block at $54, counting up from $5A.
+ * M16/X16, native mode, DP=0, any DB, S=$1F02..$1FFC; RTS. */
 Lufia2ExecutionResult Lufia2MenuTileBlockFill(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

@@ -118,11 +118,14 @@ Lufia2ExecutionResult Lufia2Multiply16By8(
 Lufia2ExecutionResult Lufia2NmiSpritesPaletteAndPads(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
-/* $80:87A7 NMI scroll registers, listed DMA and tilemap uploads. */
+/* $80:87A7 scroll registers, queued DMA and tilemap uploads. Native mode,
+ * DP=0, hardware DB, S=$1F04..$1FFC; any M/X. Restores P on normal RTS;
+ * propagates the actual child return address if reverse DMA changes it. */
 Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
-/* $80:87FC NMI tilemap uploads; entry M1X0. */
+/* $80:87FC tilemap uploads. M8/X16, native mode, DP=0, hardware DB,
+ * S=$1F02..$1FFC. Three request masks, channel 6 DMA, then RTS. */
 Lufia2ExecutionResult Lufia2NmiTilemapUploads(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

@@ -95,7 +95,9 @@ Lufia2ExecutionResult Lufia2WorldMapDrawSmallSprite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:E686 sorts the visible object list by its key words. M0X0 only. */
+/* $86:E686 stably sorts up to 21 visible objects by descending unsigned
+ * key. M16/X16, native mode, DP=0, first-bank WRAM mirror DB,
+ * S=$1F02..$1FFC. Other entry states hand off unchanged; RTS. */
 Lufia2ExecutionResult Lufia2WorldMapSortVisible(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
