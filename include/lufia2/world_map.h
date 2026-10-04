@@ -73,24 +73,22 @@ Lufia2ExecutionResult Lufia2WorldMapStepAnimations(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:E555 writes the two hardware sprites of the object at $02 into the
- * OAM buffer and their x bits into the high table. M0X0 only. */
+/* $86:E555 draws the two sprites of the object at $02. M0X0. */
 Lufia2ExecutionResult Lufia2WorldMapDrawSpritePair(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:E5BB stores the next two x bits into the OAM high table and advances
- * the sprite counter at $1467. M0X0 only. */
+/* $86:E5BB stores two OAM high bits, advances counter $1467. M0X0. */
 Lufia2ExecutionResult Lufia2WorldMapStoreHighBits(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:E479 writes one 16-pixel-wide sprite of the object at $02 and its x bits. M0X0 only. */
+/* $86:E479 draws one 16-pixel sprite of the object at $02. M0X0. */
 Lufia2ExecutionResult Lufia2WorldMapDrawSprite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:E4E7 writes one 8-pixel-wide sprite of the object at $02 and its x bits. M0X0 only. */
+/* $86:E4E7 draws one 8-pixel sprite of the object at $02. M0X0. */
 Lufia2ExecutionResult Lufia2WorldMapDrawSmallSprite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

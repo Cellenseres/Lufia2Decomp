@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-461 functions in `metadata/functions.toml`: 417 verified, 44 draft, 0 identified, 0 disabled.
+461 functions in `metadata/functions.toml`: 426 verified, 35 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -65,7 +65,7 @@ for any caller widths. The world sprite and slot-flag clears `$86:E650` and
 `$82:88A0`/`$82:88CB` for the `$1F00..$1FFC` caller stack. The copied-member totals `$81:F481` are also verified for DP0 and the same
 caller stack, preserving the shared stat event. Scene tracks, view origin and the two battle velocity routines are also
 verified. The world object visibility leaf and its bounded original list caller are
-also verified. Fifty-one feature additions are verified and 44 remain draft.
+also verified. Sixty feature additions are verified and 35 remain draft.
 
 The base main checkpoint passed **518 independent jobs**. The normal
 application build also passes. The consumer selects all 366 verified functions,
@@ -1296,3 +1296,33 @@ external memory effect; it does not claim cycle-accurate PPU/DMA verification.
 integrated jobs and the Release build pass with 417 canonical standalone
 replacements. All six roots have actual generated dispatch calls. This is
 an isolated local checkpoint; main and the normal build remain unchanged.
+
+
+## Slide corrections, battle colour tables and world sprites
+
+Nine further roots are selected: menu slide corrections $82:8AD8/$8AE9,
+battle colour loaders $85:8AAF/$8AF4/$8B22 and world sprite builders
+$86:E555/$E5BB/$E479/$E4E7. The sprite tile and attribute words are now read
+in separate statements, so the low/high bus order is fixed by C rather than by
+argument evaluation. No other behaviour changed.
+
+The corrections cover every byte error and span pair with both index widths
+and safe cursor destinations. The colour loaders cover nonzero payloads, all
+data banks, direct pages, status and stacks. The sprite builders cover real
+object records, mirrored poses, coordinates, attributes, tiles, decimal mode,
+every sprite counter and both high bits. Native contracts: corrections M8,
+DP0, hardware DB, Y <= $0800, S $1F00..$1FFC; colours M8/X16, S $1F02..$1FFC,
+$8AAF also a hardware DB; sprites M16/X16, DP0, first-bank WRAM DB, counter
+at most 126 (pair) or 127 and objects $1000..$1E00. Read-only preflight
+checks keep their original read order before any fallback.
+
+The actual-library ABI matrices pass 886336 cases: 877289 native
+comparisons and 9047 unchanged entry fallbacks, with 264 rejection
+fixtures and 54 broken source/bridge controls caught. The shared production
+bridges repeat the same matrices with identical counts, and 20 further
+controls against them are caught. CPU, all WRAM and ordered bus events
+remain mandatory.
+
+60 of 95 feature routines are verified, with 35 draft. The integrated 518-job
+verification and Release build must pass before the staged selection is a
+green checkpoint. Main and the normal build remain unchanged.

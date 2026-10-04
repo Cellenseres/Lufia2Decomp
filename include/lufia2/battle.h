@@ -195,7 +195,8 @@ Lufia2ExecutionResult Lufia2BattleFrameSetup(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $85:8AAF, $85:8AF4, $85:8B22 color tables to the work RAM port; M1X0. */
+/* $85:8AAF, $85:8AF4, $85:8B22 color tables to the work RAM port.
+ * Native: M8/X16, S $1F02..$1FFC; $8AAF also needs a hardware DB. */
 Lufia2ExecutionResult Lufia2BattleColorsInit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

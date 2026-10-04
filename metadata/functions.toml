@@ -3164,7 +3164,7 @@ name = "Lufia2WorldMapDrawSpritePair"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:E5BB"
@@ -3172,7 +3172,7 @@ name = "Lufia2WorldMapStoreHighBits"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 # World map object list: sorting, pattern slots and drawing by kind.
 [[function]]
@@ -3181,7 +3181,7 @@ name = "Lufia2WorldMapDrawSprite"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:E4E7"
@@ -3189,7 +3189,7 @@ name = "Lufia2WorldMapDrawSmallSprite"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:E686"
@@ -3361,7 +3361,7 @@ name = "Lufia2MenuSlideCorrectX"
 source = "src/menu/menu_cursor_slide.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "82:8AE9"
@@ -3369,7 +3369,7 @@ name = "Lufia2MenuSlideCorrectY"
 source = "src/menu/menu_cursor_slide.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "82:8AFA"
@@ -3428,7 +3428,7 @@ name = "Lufia2BattleColorsInit"
 source = "src/battle/battle_frame_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:8AF4"
@@ -3436,7 +3436,7 @@ name = "Lufia2BattleColorsParty"
 source = "src/battle/battle_frame_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:8B22"
@@ -3444,7 +3444,7 @@ name = "Lufia2BattleColorsMonster"
 source = "src/battle/battle_frame_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:9790"
