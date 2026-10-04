@@ -3403,7 +3403,7 @@ name = "Lufia2MenuScreenSetup"
 source = "src/menu/menu_scene_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:8E6B"
@@ -3667,7 +3667,7 @@ name = "Lufia2MenuQueueVideoWrite"
 source = "src/menu/menu_image_load.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:9009"
@@ -3699,7 +3699,7 @@ name = "Lufia2MenuLoadImageGrid"
 source = "src/menu/menu_image_load.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:8F6F"
@@ -3707,7 +3707,7 @@ name = "Lufia2MenuLoadImageSet"
 source = "src/menu/menu_image_load.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:90C0"

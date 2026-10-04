@@ -48,7 +48,7 @@ static void WriteVideo(Lufia2Wram wram, const VideoByte *bytes, unsigned count) 
 /* $86:8DD7: video registers and empty tile maps for the select screen, the
  * OAM cleared, then the sprite frame wait. M1, X16. Hands off at $86:8B48
  * with its return pushed. */
-Lufia2ExecutionResult Lufia2MenuScreenSetup(
+static Lufia2ExecutionResult SetupMenuScreen(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -112,4 +112,24 @@ Lufia2ExecutionResult Lufia2SpriteClearSlots(
     cpu->zero = 1;
     cpu->negative = 0;
     return ExecutionReturned(0x868e78u);
+}
+
+
+Lufia2ExecutionResult Lufia2MenuScreenSetup(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    Lufia2ExecutionResult result;
+    if (!child || cpu->program_bank != 0x86u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page != 0u || cpu->decimal ||
+        cpu->stack < 0x1f04u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x868dd7u);
+    result = SetupMenuScreen(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_BOUNDARY || result.pc != 0x868b48u)
+        return result;
+    if (!child(context, cpu, 0x868b48u, 0x868e67u, 2u)) {
+        result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        result.pc = cpu->resume_pc = 0x868e67u;
+        return result;
+    }
+    return ExecutionReturned(0x868e6au);
 }
