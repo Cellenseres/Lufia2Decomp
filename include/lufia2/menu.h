@@ -57,22 +57,23 @@ Lufia2ExecutionResult Lufia2MenuTileBlockFill(
     Lufia2CpuState *cpu);
 
 /* $82:8069 8 x 8 grid of tile blocks, then the redraw wait; any M, X16.
- * Hands off at $82:93C2 with its return pushed. */
+ * Requires a frame-wait child, DP0, binary arithmetic, S $1F04..$1FFC. */
 Lufia2ExecutionResult Lufia2MenuTileGridFill(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* $82:80CA palette number Y into the rectangle at A, X = width << 8 | rows,
- * then the redraw wait; M0X0. Hands off at $82:93C2 with its return pushed. */
+ * then the redraw wait; M0X0, both dimensions 1..32.
+ * Requires a child, DP0, binary arithmetic, S $1F04..$1FFC. */
 Lufia2ExecutionResult Lufia2MenuRecolorRect(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
-/* $82:838F clears both menu layers, then the redraw wait; any M, X16. Hands
- * off at $82:93C2 with its return pushed. */
+/* $82:838F clears both layers, then waits through the child; any M, X16.
+ * Requires a child, DP0, binary arithmetic, S $1F04..$1FFC. */
 Lufia2ExecutionResult Lufia2MenuClearLayers(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* $82:8000 (JSL) $1574/$1576 = $1570 * $1572; any widths. */
 Lufia2ExecutionResult Lufia2MenuMultiply(

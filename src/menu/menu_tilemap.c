@@ -1,4 +1,4 @@
-/* Menu tile buffers; redraw waits remain explicit continuations. */
+/* Menu tile buffers and redraw requests; the consumer runs the frame wait. */
 
 #include <stdbool.h>
 
@@ -86,7 +86,7 @@ Lufia2ExecutionResult Lufia2MenuTileBlockFill(
 }
 
 /* $82:8069: fill the picture grid before its redraw wait. */
-Lufia2ExecutionResult Lufia2MenuTileGridFill(
+static Lufia2ExecutionResult FillPictureGrid(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -123,7 +123,7 @@ Lufia2ExecutionResult Lufia2MenuTileGridFill(
 }
 
 /* $82:80CA: recolor the packed-size rectangle before its redraw wait. */
-Lufia2ExecutionResult Lufia2MenuRecolorRect(
+static Lufia2ExecutionResult RecolorMenuTiles(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -175,7 +175,7 @@ Lufia2ExecutionResult Lufia2MenuRecolorRect(
 }
 
 /* $82:838F: clear both layers through bank $7E, then request redraw. */
-Lufia2ExecutionResult Lufia2MenuClearLayers(
+static Lufia2ExecutionResult ClearMenuLayers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -197,4 +197,55 @@ Lufia2ExecutionResult Lufia2MenuClearLayers(
     LoadA8(cpu, CLEAR_REDRAW);
     WramWrite(wram, REDRAW_FLAGS, CLEAR_REDRAW);
     return WaitForRedraw(memory, cpu, 0x83b3u);
+}
+
+/* Completed callers keep the real frame-wait child in the consumer. */
+typedef Lufia2ExecutionResult (*MenuTilePass)(const Lufia2Memory *, Lufia2CpuState *);
+
+static Lufia2ExecutionResult MenuTilePassWithWait(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, MenuTilePass draw,
+    uint32_t entry, uint16_t site, uint16_t exit, bool restore_word_width) {
+    Lufia2ExecutionResult result;
+
+    if (!child || cpu->program_bank != 0x82u || cpu->direct_page != 0u || cpu->decimal ||
+        cpu->stack < 0x1f04u || cpu->stack > 0x1ffcu || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x8280cau &&
+        (cpu->accumulator_is_8_bit || (cpu->x & 0xffu) == 0u ||
+         (cpu->x & 0xffu) > 32u || (cpu->x >> 8) == 0u || (cpu->x >> 8) > 32u))
+        return ExecutionHandoff(cpu, entry);
+    result = draw(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_BOUNDARY || result.pc != REDRAW_WAIT)
+        return result;
+    /* The native pass has already pushed this original JSR frame. */
+    if (!child(context, cpu, REDRAW_WAIT, 0x820000u | site, 2u)) {
+        result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        result.pc = cpu->resume_pc = 0x820000u | site;
+        return result;
+    }
+    if (restore_word_width)
+        SetAccumulatorWidth(cpu, 0);
+    return ExecutionReturned(0x820000u | exit);
+}
+
+Lufia2ExecutionResult Lufia2MenuTileGridFill(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    return MenuTilePassWithWait(memory, cpu, child, context,
+        FillPictureGrid, 0x828069u, 0x80a1u, 0x80a4u, false);
+}
+
+Lufia2ExecutionResult Lufia2MenuRecolorRect(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    return MenuTilePassWithWait(memory, cpu, child, context,
+        RecolorMenuTiles, 0x8280cau, 0x8108u, 0x810du, true);
+}
+
+Lufia2ExecutionResult Lufia2MenuClearLayers(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    return MenuTilePassWithWait(memory, cpu, child, context,
+        ClearMenuLayers, 0x82838fu, 0x83b1u, 0x83b4u, false);
 }

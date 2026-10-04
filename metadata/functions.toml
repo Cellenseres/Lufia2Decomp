@@ -3296,7 +3296,7 @@ name = "Lufia2MenuClearLayers"
 source = "src/menu/menu_tilemap.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "82:8069"
@@ -3304,7 +3304,7 @@ name = "Lufia2MenuTileGridFill"
 source = "src/menu/menu_tilemap.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "82:80A5"
@@ -3320,7 +3320,7 @@ name = "Lufia2MenuRecolorRect"
 source = "src/menu/menu_tilemap.c"
 entry_mx = "M0X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "82:8000"
