@@ -12,6 +12,11 @@ enum {
     TRACE_MODE = 0x000692u,       /* 0: start inside the region */
     CELL_BASE = 0x7fd008u,        /* per-map table of cell pointers */
     MAP_SLOT = 0x0005aau,         /* selects the entry of that table */
+    PARTY_COLUMN = 0x0006bau,
+    PARTY_ROW = 0x0006e2u,
+    TABLE_WIDTH = 0x7fd010u,      /* per-layer sizes, bytes */
+    TABLE_HEIGHT = 0x7fd018u,
+    PACKED_EDGES = 0x7fc000u,     /* edge bits as $80:ED0E restores them */
 
     CELL_BANK = 0x7f0000u,
     EDGE_BITS = 0x3000u,          /* the two edge bits of a cell word */
@@ -21,6 +26,16 @@ enum {
 
     CELL_POINTER_STACK_MIN = 0x1f04u,
     CELL_POINTER_STACK_MAX = 0x1ffcu,
+
+    /* Entry S keeping both children in their stack bands. */
+    TRACE_STACK_MIN = 0x1f09u,
+    TRACE_STACK_MAX = 0x1ffcu,
+    /* Preflight window: two rows above and below the table. */
+    WINDOW_MARGIN_ROWS = 2u,
+    WINDOW_CELLS = 0x4000u,
+    WINDOW_END = 0xc000u,         /* packed edges and tables lie above */
+    /* Conservative replay limit; longer paths stay in the original code. */
+    IDLE_LIMIT = 11u,
 
     DP_COLUMN = 0x8fu,            /* start cell, as two bytes */
     DP_ROW = 0x91u,
@@ -54,47 +69,90 @@ typedef enum {
     WALK_UP = 4,
     WALK_RIGHT = 6,
     WALK_FINISH = 8,            /* the budget ran out: fold the marks */
-    WALK_EXIT = 9               /* nothing to trace: leave at once */
+    WALK_EXIT = 9,              /* nothing to trace: leave at once */
+    WALK_REJECT = 10            /* preflight only: run the original */
 } WalkDirection;
 
-typedef enum {
-    FROM_MODE,
-    FROM_SCAN_DOWN,
-    FROM_SCAN_UP,
-    FROM_DIRECTION,
-    FROM_UP,
-    FROM_DOWN,
-    FROM_LEFT,
-    FROM_RIGHT,
-    FROM_FINISH
-} TraceEntry;
+/* Edge bits around the table, two per cell. */
+typedef struct {
+    uint32_t low;               /* first byte address in bank $7F */
+    uint32_t high;              /* one past the last */
+    uint8_t bits[WINDOW_CELLS / 4u];
+} EdgeWindow;
 
 typedef struct {
     const Lufia2Memory *memory;
     Lufia2CpuState *cpu;
+    EdgeWindow *window;    /* set: replay on edge bits, no writes */
+    uint16_t width;
+    uint16_t height;
     uint16_t y;            /* byte offset of the current cell */
+    uint16_t row;          /* $91 */
     uint16_t budget;       /* remaining steps */
     uint16_t exit_a;       /* accumulator for the early exits */
+    unsigned idle;         /* transitions since the last step */
+    bool rejected;
 } Trace;
 
+/* Cell pointers at $22-$5A; constant during the walk. */
 static uint16_t TraceOffset(const Trace *trace, uint8_t field) {
-    return Read16Direct(trace->memory, trace->cpu, field);
+    const uint16_t row = (uint16_t)(trace->width << 1);
+
+    switch (field) {
+    case DP_ROW_STEP: return row;
+    case DP_NEXT_COLUMN: return (uint16_t)(row + 2u);
+    case DP_NEXT_COLUMN_2: return (uint16_t)(row + 4u);
+    case DP_TWO_ROWS: return (uint16_t)(row << 1);
+    case DP_TWO_ROWS_NEXT: return (uint16_t)((row << 1) + 2u);
+    default: return (uint16_t)((row << 1) + 4u);
+    }
 }
 
+/* Binary: the preflight rejects decimal mode. */
 static uint16_t StepRow(const Trace *trace, uint16_t cell, bool down) {
     const uint16_t stride = TraceOffset(trace, DP_ROW_STEP);
 
-    return down ? Sum16Mode(cell, stride, false, trace->cpu->decimal).value :
-        Difference16Mode(cell, stride, trace->cpu->decimal).value;
+    return down ? (uint16_t)(cell + stride) : (uint16_t)(cell - stride);
 }
 
-static uint16_t CellWord(const Trace *t, uint16_t offset) {
-    return Read16Long(t->memory,
-        (CELL_BANK + offset + t->y) & 0x00ffffffu);
+static uint32_t WindowCell(Trace *t, uint32_t address) {
+    const EdgeWindow *window = t->window;
+
+    if (address < window->low || address + 2u > window->high ||
+        ((address - window->low) & 1u) != 0) {
+        t->rejected = true;
+        return WINDOW_CELLS;
+    }
+    return (address - window->low) >> 1;
 }
 
-static void SetCellWord(const Trace *t, uint16_t offset, uint16_t value) {
-    Write16Long(t->memory, (CELL_BANK + offset + t->y) & 0x00ffffffu, value);
+static uint16_t CellWord(Trace *t, uint16_t offset) {
+    const uint32_t address = (uint32_t)offset + t->y;
+    uint32_t cell;
+
+    if (t->window == NULL)
+        return Read16Long(t->memory, (CELL_BANK + address) & 0x00ffffffu);
+    cell = WindowCell(t, address);
+    if (cell == WINDOW_CELLS)
+        return 0;
+    return (uint16_t)(((t->window->bits[cell >> 2] >> ((cell & 3u) << 1)) & 3u) << 12);
+}
+
+static void SetCellWord(Trace *t, uint16_t offset, uint16_t value) {
+    const uint32_t address = (uint32_t)offset + t->y;
+    uint32_t cell;
+    uint8_t *bits;
+
+    if (t->window == NULL) {
+        Write16Long(t->memory, (CELL_BANK + address) & 0x00ffffffu, value);
+        return;
+    }
+    cell = WindowCell(t, address);
+    if (cell == WINDOW_CELLS)
+        return;
+    bits = &t->window->bits[cell >> 2];
+    *bits = (uint8_t)((*bits & ~(3u << ((cell & 3u) << 1))) |
+        (((value >> 12) & 3u) << ((cell & 3u) << 1)));
 }
 
 static uint8_t CellByte(const Trace *t, uint16_t offset) {
@@ -105,49 +163,68 @@ static void SetCellByte(const Trace *t, uint16_t offset, uint8_t value) {
     Write8(t->memory, (CELL_BANK + offset + t->y) & 0x00ffffffu, value);
 }
 
-static void MarkCell(const Trace *t, uint16_t offset) {
+static void MarkCell(Trace *t, uint16_t offset) {
     SetCellWord(t, offset, (uint16_t)(CellWord(t, offset) | EDGE_BITS));
 }
 
-static void ClearCellEdge(const Trace *t, uint16_t offset) {
+static void ClearCellEdge(Trace *t, uint16_t offset) {
     SetCellWord(t, offset, (uint16_t)(CellWord(t, offset) & ~EDGE_BITS));
 }
 
-static void PushWord(const Trace *t, uint16_t value) {
+/* PHA/PHY; the replay keeps the value instead. */
+static void SaveWord(const Trace *t, uint16_t value) {
+    if (t->window != NULL)
+        return;
     Push8(t->memory, t->cpu, (uint8_t)(value >> 8));
     Push8(t->memory, t->cpu, (uint8_t)value);
 }
 
-static uint16_t PullWord(const Trace *t) {
-    const uint8_t low = Pull8(t->memory, t->cpu);
+static uint16_t RestoreWord(const Trace *t, uint16_t saved) {
+    uint8_t low;
 
+    if (t->window != NULL)
+        return saved;
+    low = Pull8(t->memory, t->cpu);
     return (uint16_t)(low | ((uint16_t)Pull8(t->memory, t->cpu) << 8));
 }
 
-/* INC/DEC of a direct page word writes the high byte first. */
-static uint16_t AddToWord(const Trace *t, uint8_t offset, int delta) {
-    const uint16_t value =
-        (uint16_t)(Read16Direct(t->memory, t->cpu, offset) + delta);
+/* INC/DEC $91: the high byte is written first. */
+static uint16_t AddToRow(Trace *t, int delta) {
+    t->row = (uint16_t)(t->row + delta);
+    if (t->window == NULL) {
+        Write8(t->memory, DirectAddress(t->cpu, (uint8_t)(DP_ROW + 1u)),
+            (uint8_t)(t->row >> 8));
+        Write8(t->memory, DirectAddress(t->cpu, DP_ROW), (uint8_t)t->row);
+    }
+    return t->row;
+}
 
-    Write8(t->memory, DirectAddress(t->cpu, (uint8_t)(offset + 1u)),
-        (uint8_t)(value >> 8));
-    Write8(t->memory, DirectAddress(t->cpu, offset), (uint8_t)value);
-    return value;
+static void SetCorner(const Trace *t) {
+    if (t->window == NULL)
+        Write16Direct(t->memory, t->cpu, DP_CORNER, t->y);
 }
 
 static WalkDirection Turn(const Trace *t, WalkDirection direction) {
-    Write16Direct(t->memory, t->cpu, DP_DIRECTION, (uint16_t)direction);
+    if (t->window == NULL)
+        Write16Direct(t->memory, t->cpu, DP_DIRECTION, (uint16_t)direction);
     return direction;
+}
+
+/* A turn or detour; beyond the limit it loops forever. */
+static bool Idle(Trace *t) {
+    return ++t->idle <= IDLE_LIMIT || t->window == NULL;
 }
 
 /* The loop counter that ends the walk: some loops stop at zero, the
  * others when it turns negative. */
 static int StepsLeftNonZero(Trace *t) {
+    t->idle = 0;
     t->budget = (uint16_t)(t->budget - 1u);
     return t->budget != 0;
 }
 
 static int StepsLeftPositive(Trace *t) {
+    t->idle = 0;
     t->budget = (uint16_t)(t->budget - 1u);
     return (t->budget & 0x8000u) == 0;
 }
@@ -155,7 +232,9 @@ static int StepsLeftPositive(Trace *t) {
 /* $80:FAC3: marks the cells around a bend, following the open cells down
  * the column. */
 static void MarkBend(Trace *t) {
-    PushWord(t, t->y);
+    const uint16_t saved = t->y;
+
+    SaveWord(t, saved);
     MarkCell(t, TraceOffset(t, DP_NEXT_COLUMN_2));
     MarkCell(t, TraceOffset(t, DP_ROW_STEP));
     do {
@@ -167,14 +246,16 @@ static void MarkBend(Trace *t) {
     MarkCell(t, TraceOffset(t, DP_TWO_ROWS_NEXT_2));
     MarkCell(t, TraceOffset(t, DP_TWO_ROWS_NEXT));
     MarkCell(t, TraceOffset(t, DP_TWO_ROWS));
-    t->y = PullWord(t);
+    t->y = RestoreWord(t, saved);
 }
 
 /* Calls the bend marker as a subroutine from the return address given. */
 static void CallMarkBend(Trace *t, uint16_t return_address) {
-    SimulateJsrFrame(t->memory, t->cpu, return_address);
+    if (t->window == NULL)
+        SimulateJsrFrame(t->memory, t->cpu, return_address);
     MarkBend(t);
-    SimulateRtsFrame(t->memory, t->cpu);
+    if (t->window == NULL)
+        SimulateRtsFrame(t->memory, t->cpu);
 }
 
 /* $80:FA15: edge runs upwards. */
@@ -190,13 +271,17 @@ static WalkDirection WalkUp(Trace *t) {
         SetCellWord(t, TraceOffset(t, DP_ROW_STEP), (uint16_t)(cell | EDGE_BITS));
         beside = (uint16_t)(CellWord(t, 2u) & EDGE_BITS);
         if (beside == EDGE_OPEN) {
-            PushWord(t, t->y);
+            const uint16_t saved = t->y;
+
+            if (!Idle(t))
+                return WALK_REJECT;
+            SaveWord(t, saved);
             do {
                 t->y = StepRow(t, t->y, false);
                 ClearCellEdge(t, TraceOffset(t, DP_NEXT_COLUMN));
             } while ((CellWord(t, 2u) & EDGE_BITS) != 0);
             MarkCell(t, 2u);
-            t->y = PullWord(t);
+            t->y = RestoreWord(t, saved);
             continue;
         }
         if (beside & EDGE_INSIDE) {
@@ -268,7 +353,11 @@ static WalkDirection WalkRight(Trace *t) {
         SetCellWord(t, 2u, (uint16_t)(cell | EDGE_BITS));
         beside = (uint16_t)(CellWord(t, TraceOffset(t, DP_NEXT_COLUMN_2)) & EDGE_BITS);
         if (beside == EDGE_OPEN) {
-            PushWord(t, t->y);
+            const uint16_t saved = t->y;
+
+            if (!Idle(t))
+                return WALK_REJECT;
+            SaveWord(t, saved);
             t->y = (uint16_t)(t->y + 2u);
             while ((CellWord(t, 2u) & EDGE_BITS) == EDGE_OPEN)
                 t->y = StepRow(t, t->y, false);
@@ -283,7 +372,7 @@ static WalkDirection WalkRight(Trace *t) {
                 SetCellWord(t, TraceOffset(t, DP_NEXT_COLUMN), (uint16_t)(marked & ~EDGE_BITS));
                 t->y = StepRow(t, t->y, true);
             }
-            t->y = PullWord(t);
+            t->y = RestoreWord(t, saved);
             continue;
         }
         if (beside & EDGE_INSIDE) {
@@ -434,30 +523,30 @@ static uint8_t FoldMarks(const Trace *t, uint16_t *table, uint16_t *cell) {
 /* $80:F87B: the walk starts inside the region: go down until an edge cell
  * shows. */
 static WalkDirection StartInside(Trace *t) {
-    const Lufia2Memory *memory = t->memory;
-    Lufia2CpuState *cpu = t->cpu;
     uint16_t edge;
 
     t->y = StepRow(t, t->y, true);
-    (void)AddToWord(t, DP_ROW, 1);
+    (void)AddToRow(t, 1);
     for (;;) {
-        uint16_t row_index;
-
         edge = (uint16_t)(CellWord(t, 0u) & EDGE_BITS);
+        if (t->rejected)
+            return WALK_REJECT;
         if (edge != 0)
             break;
         t->y = StepRow(t, t->y, true);
-        row_index = (uint16_t)(Read16Direct(memory, cpu, DP_ROW) + 1u);
-        Write16Direct(memory, cpu, DP_ROW, row_index);
-        if (row_index == Read16Long(memory, MAP_HEIGHT)) {
-            t->exit_a = row_index;
+        /* LDA/INC/STA: the low byte is written first. */
+        t->row = (uint16_t)(t->row + 1u);
+        if (t->window == NULL)
+            Write16Direct(t->memory, t->cpu, DP_ROW, t->row);
+        if (t->row == t->height) {
+            t->exit_a = t->row;
             return WALK_EXIT;
         }
     }
-    PushWord(t, edge);
+    SaveWord(t, edge);
     t->y = (uint16_t)(StepRow(t, StepRow(t, t->y, false), false) - 2u);
-    Write16Direct(memory, cpu, DP_CORNER, t->y);
-    edge = PullWord(t);
+    SetCorner(t);
+    edge = RestoreWord(t, edge);
     if (edge == EDGE_OPEN)
         CallMarkBend(t, 0xf8b4u);
     t->budget = STEP_BUDGET;
@@ -469,29 +558,25 @@ static WalkDirection StartInside(Trace *t) {
 static WalkDirection StartOnEdge(Trace *t) {
     uint16_t edge;
 
-    (void)AddToWord(t, DP_ROW, 1);
+    (void)AddToRow(t, 1);
     while ((CellWord(t, 0u) & EDGE_BITS) != 0) {
         t->y = StepRow(t, t->y, false);
-        (void)AddToWord(t, DP_ROW, -1);
+        (void)AddToRow(t, -1);
     }
     for (;;) {
         edge = (uint16_t)(CellWord(t, 0u) & EDGE_BITS);
+        if (t->rejected)
+            return WALK_REJECT;
         if (edge == EDGE_OPEN) {
-            int carry = 1;
             uint16_t cell;
 
-            /* The subtraction below continues without setting the carry,
-             * as the original does. */
+            /* SBC without SEC: the carry stays set inside the window. */
             for (;;) {
-
                 cell = CellWord(t, 0u);
                 if ((cell & EDGE_BITS) == 0)
                     break;
                 SetCellWord(t, 0u, (uint16_t)(cell & ~EDGE_BITS));
-                const Word16Result result = ArithmeticValue(t->y,
-                    TraceOffset(t, DP_ROW_STEP), carry != 0, t->cpu->decimal, true, 16u);
-                carry = result.carry;
-                t->y = result.value;
+                t->y = StepRow(t, t->y, false);
             }
             SetCellWord(t, 0u, (uint16_t)(cell | EDGE_BITS));
             break;
@@ -499,69 +584,149 @@ static WalkDirection StartOnEdge(Trace *t) {
         if (edge & EDGE_INSIDE)
             break;
         t->y = StepRow(t, t->y, false);
-        if (AddToWord(t, DP_ROW, -1) == 0) {
+        if (AddToRow(t, -1) == 0) {
             t->exit_a = t->y;
             return WALK_EXIT;
         }
     }
     t->y = (uint16_t)(t->y - 2u);
-    Write16Direct(t->memory, t->cpu, DP_CORNER, t->y);
+    SetCorner(t);
     t->budget = STEP_BUDGET;
     return Turn(t, WALK_RIGHT);
 }
 
-/* Runs the walk from one of its entry points and leaves through the
- * PLB/PLP/RTL tail of $80:F821. */
+/* From the mode at $0692 to the end of the walk. */
+static WalkDirection Walk(Trace *t) {
+    WalkDirection direction = Read8(t->memory, TRACE_MODE) == 0 ?
+        StartInside(t) : StartOnEdge(t);
+
+    if (t->rejected)
+        return WALK_REJECT;
+    while (direction < WALK_FINISH) {
+        switch (direction) {
+        case WALK_DOWN: direction = WalkDown(t); break;
+        case WALK_LEFT: direction = WalkLeft(t); break;
+        case WALK_UP: direction = WalkUp(t); break;
+        default: direction = WalkRight(t); break;
+        }
+        if (t->rejected)
+            return WALK_REJECT;
+        if (direction < WALK_FINISH && !Idle(t))
+            return WALK_REJECT;
+    }
+    return direction;
+}
+
+static bool LowWramDataBank(uint8_t bank) {
+    return bank < 0x40u || (bank >= 0x80u && bank < 0xc0u) || bank == 0x7eu;
+}
+
+/* Read-only preflight: entry domain, then the walk on edge bits. */
+static bool TraceReady(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    EdgeWindow window;
+    Trace t;
+    uint8_t layout;
+    uint8_t column;
+    uint8_t row;
+    uint16_t width;
+    uint16_t height;
+    uint16_t table;
+    uint32_t cells;
+    uint32_t packed_end;
+    uint32_t cell;
+    WalkDirection direction;
+
+    if (cpu->program_bank != 0x80u || cpu->direct_page != 0u || cpu->decimal ||
+        cpu->stack < TRACE_STACK_MIN || cpu->stack > TRACE_STACK_MAX ||
+        !LowWramDataBank(cpu->data_bank))
+        return false;
+    layout = Read8(memory, MAP_SLOT);
+    if ((layout & 0xf9u) != 0 || Read8(memory, MAP_SLOT + 1u) != 0)
+        return false;
+    width = Read16Long(memory, MAP_WIDTH);
+    height = Read16Long(memory, MAP_HEIGHT);
+    if (width < 3u || width > 0xffu || height < 2u || height > 0xffu ||
+        Read8(memory, TABLE_WIDTH + layout) != width ||
+        Read8(memory, TABLE_HEIGHT + layout) != height)
+        return false;
+    column = Read8(memory, PARTY_COLUMN);
+    row = Read8(memory, PARTY_ROW);
+    if (column >= width || row >= height)
+        return false;
+
+    /* Walk below the packed edges, fold inside bank $7F. */
+    cells = (uint32_t)width * height;
+    table = Read16Long(memory, CELL_BASE + layout);
+    /* The first table starts near $7F:0000; clip the margin there. */
+    window.low = table > WINDOW_MARGIN_ROWS * 2u * width ?
+        (uint32_t)table - WINDOW_MARGIN_ROWS * 2u * width : 0u;
+    window.high = (uint32_t)table + 2u * width * (height + WINDOW_MARGIN_ROWS);
+    if ((table & 1u) != 0 || window.high > WINDOW_END ||
+        ((window.high - window.low) >> 1) > WINDOW_CELLS ||
+        Read16Long(memory, CELL_BANK | 0xd008u) + 2u * cells > WINDOW_END ||
+        Read16Long(memory, CELL_BANK | 0xd00au) + 2u * cells + 2u > WINDOW_END)
+        return false;
+
+    /* Edge bits as they stand after $80:ED0E. */
+    packed_end = table + 8u * ((cells + 3u) >> 2);
+    for (cell = 0; cell < (window.high - window.low) >> 1; ++cell) {
+        const uint32_t address = window.low + 2u * cell;
+        uint8_t edge;
+
+        if (address >= table && address < packed_end) {
+            const uint32_t index = (address - table) >> 1;
+
+            edge = (uint8_t)((Read8(memory, PACKED_EDGES + (index >> 2)) >>
+                ((index & 3u) << 1)) & 3u);
+        } else {
+            edge = (uint8_t)((Read8(memory, CELL_BANK + address + 1u) >> 4) & 3u);
+        }
+        if ((cell & 3u) == 0)
+            window.bits[cell >> 2] = 0;
+        window.bits[cell >> 2] = (uint8_t)(window.bits[cell >> 2] |
+            (edge << ((cell & 3u) << 1)));
+    }
+
+    t.memory = memory;
+    t.cpu = cpu;
+    t.window = &window;
+    t.width = width;
+    t.height = height;
+    /* $83:F9D0 with the 8-bit hardware product. */
+    t.y = (uint16_t)(table + (uint16_t)(((uint16_t)(row * width) + column) << 1));
+    t.row = row;
+    t.budget = 0;
+    t.exit_a = 0;
+    t.idle = 0;
+    t.rejected = false;
+    direction = Walk(&t);
+    return direction == WALK_FINISH || direction == WALK_EXIT;
+}
+
+/* The walk, then the PLB/PLP/RTL tail of $80:F821. */
 static Lufia2ExecutionResult RunTrace(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    TraceEntry entry) {
+    Lufia2CpuState *cpu) {
     Trace t;
-    WalkDirection direction = WALK_FINISH;
+    WalkDirection direction;
     uint16_t exit_a;
     uint16_t exit_x;
     uint16_t exit_y;
 
     t.memory = memory;
     t.cpu = cpu;
+    t.window = NULL;
+    t.width = Read16Long(memory, MAP_WIDTH);
+    t.height = Read16Long(memory, MAP_HEIGHT);
     t.y = cpu->y;
+    t.row = Read16Direct(memory, cpu, DP_ROW);
     t.budget = cpu->x;
     t.exit_a = 0;
+    t.idle = 0;
+    t.rejected = false;
 
-    switch (entry) {
-    case FROM_MODE:
-        SetAccumulatorWidth(cpu, 1);
-        direction = Read8(memory, TRACE_MODE) == 0 ?
-            StartInside(&t) : StartOnEdge(&t);
-        break;
-    case FROM_SCAN_DOWN:
-        direction = StartInside(&t);
-        break;
-    case FROM_SCAN_UP:
-        direction = StartOnEdge(&t);
-        break;
-    case FROM_DIRECTION:
-        switch (Read16Direct(memory, cpu, DP_DIRECTION)) {
-        case WALK_RIGHT: direction = WALK_RIGHT; break;
-        case WALK_DOWN: direction = WALK_DOWN; break;
-        case WALK_LEFT: direction = WALK_LEFT; break;
-        default: direction = WALK_UP; break;
-        }
-        break;
-    case FROM_UP: direction = WALK_UP; break;
-    case FROM_DOWN: direction = WALK_DOWN; break;
-    case FROM_LEFT: direction = WALK_LEFT; break;
-    case FROM_RIGHT: direction = WALK_RIGHT; break;
-    case FROM_FINISH: direction = WALK_FINISH; break;
-    }
-    while (direction != WALK_FINISH && direction != WALK_EXIT) {
-        switch (direction) {
-        case WALK_DOWN: direction = WalkDown(&t); break;
-        case WALK_LEFT: direction = WalkLeft(&t); break;
-        case WALK_UP: direction = WalkUp(&t); break;
-        default: direction = WalkRight(&t); break;
-        }
-    }
+    SetAccumulatorWidth(cpu, 1);
+    direction = Walk(&t);
     if (direction == WALK_EXIT) {
         exit_a = t.exit_a;
         exit_x = t.budget;
@@ -588,6 +753,8 @@ Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
     uint16_t width;
     unsigned slot;
 
+    if (!TraceReady(memory, cpu))
+        return ExecutionHandoff(cpu, 0x80f821u);
     Push8(memory, cpu, PackStatus(cpu));
     PushDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
@@ -628,7 +795,7 @@ Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
     Write16Direct(memory, cpu, DP_NEXT_COLUMN, (uint16_t)((width << 1) + 2u));
     Write16Direct(memory, cpu, DP_NEXT_COLUMN_2, (uint16_t)((width << 1) + 4u));
     OpSetDataBank(memory, cpu, 0x7fu);
-    return RunTrace(memory, cpu, FROM_MODE);
+    return RunTrace(memory, cpu);
 }
 
 /* $83:F9D0: pointer into the cell table for the cell whose column is at

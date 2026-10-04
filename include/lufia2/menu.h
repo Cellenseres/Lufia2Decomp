@@ -115,17 +115,20 @@ Lufia2ExecutionResult Lufia2MenuCursorSlide(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
-/* $82:8720 cursor move from the pressed buttons; carry set when none; M1.
- * Hands off at the button sound call ($80:953B). */
+/* $82:8720 moves the selected item from pressed buttons. PB82, M8/X16,
+ * DP0, binary arithmetic, low-WRAM DB, S1F02..1FFC and item X below256.
+ * The sound request is an original child; no button leaves carry set. */
 Lufia2ExecutionResult Lufia2MenuCursor(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
-/* $82:8B08 one pass of the menu input loop; M1X0. Hands off at the sprite
- * frame call ($86:8B55 at $82:8B3C). */
+/* $82:8B08 polls until a button counts, preserving original frame/text children.
+ * PB82, M8/X16, DP0, binary arithmetic, low-WRAM DB, S1F04..1FFC;
+ * the cursor slot minus5 must be below256. Original children may transfer
+ * control with their live CPU and guest call frames preserved. */
 Lufia2ExecutionResult Lufia2MenuInputLoop(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* $86:8DD7 select screen video setup and empty layers; M1X0. Hands off at
  * $86:8B48 with its return pushed. */

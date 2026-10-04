@@ -61,7 +61,7 @@ static Lufia2ExecutionResult SineLookup(const Lufia2Memory *memory,
     return ExecutionReturned(second_half ? 0x85de61u : 0x85de6bu);
 }
 
-/* Pushes the status, switches to M8/X8 and stages the angle in $55. */
+/* Preserve caller status and select byte widths for the angle lookup. */
 static void SineEntry(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Push8(memory, cpu, PackStatus(cpu));
     SetAccumulatorWidth(cpu, 1);

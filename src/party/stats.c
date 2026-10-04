@@ -160,7 +160,7 @@ Lufia2ExecutionResult Lufia2PartyBaseStats(
     StoreADirect16(memory, cpu, 0xb2u);
     SetAccumulatorWidth(cpu, 1);
     for (;;) {
-        Compare16(cpu, cpu->x, Read16AbsoluteIndexed(memory, cpu, LEVEL, 0));   /* F8BD */
+        Compare16(cpu, cpu->x, Read16AbsoluteIndexed(memory, cpu, LEVEL, 0));
         if (cpu->zero)
             break;
         TransferXToA(cpu);

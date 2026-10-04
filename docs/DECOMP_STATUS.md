@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-461 functions in `metadata/functions.toml`: 458 verified, 3 draft, 0 identified, 0 disabled.
+461 functions in `metadata/functions.toml`: 461 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -43,7 +43,11 @@ The battle frame setup, the select screen setup, the NMI upload code and the
 older large modules still step the CPU-state helpers inside their bodies.
 Moving them over is open work and does not change any entry listed above.
 
-## Current checkpoint
+## Reconstruction checkpoints
+
+The following sections record the progressive proofs. Earlier statements that
+other routines remain draft describe that stage; current status is the generated
+metadata count above and the latest complete caller contracts below.
 
 The feature repair verifies `$85:ADE1`, `$85:AE68`, `$85:AEEB` and `$85:AA3D`.
 Their complete M1X0 leaf contracts preserve binary and decimal arithmetic,
@@ -1639,3 +1643,66 @@ crossings at both stack edges. All match the original. The same run adds
 Actual production bridges, nine canonical controls, all 518 independent
 verification jobs and Release pass. Both generated dispatches are present.
 The checkpoint is local; main and the normal build remain unchanged.
+
+## Field region edges and grid-menu cursor
+
+$80:F821 now reconstructs the complete cell-edge walk, unpack, fold and
+PLB/PLP/RTL tail. It preserves the original actor mask, byte swaps, scratch
+words, nested call frames and write order. A read-only replay selects finite
+walks inside a checked WRAM window. The original code handles rejected walks;
+no native timeout changes their behavior. PB80, DP0, binary arithmetic,
+low-WRAM DB and S1F09..1FFC are required; both caller widths are restored.
+Selected layers are 0/2/4/6. Walk and fold tables end below7F:C000 so they
+cannot overwrite packed input, metadata or the protected caller stack.
+Overlapping fold planes, including odd first-plane pointers, retain live reads.
+
+Actual-library/production-bridge comparison covers 21821 synthetic field
+cases:20981 native returns,559 finite fallbacks,281 original budget caps on
+rejected paths. Another12267 layer/alias cases give11120 native returns,
+382 finite fallbacks and765 rejected original caps. None of the accepted
+native cases mismatches or exhausts the original budget. All29 directed
+contracts pass. Synthetic fixtures contain no copied ROM map data.
+
+$82:8720 now reconstructs cursor movement, signed wrap/limit checks, button
+priority, action codes and original sound children. It requires PB82,
+M8/X16, DP0, binary arithmetic, low-WRAM DB, S1F02..1FFC and X<=255.
+The sound callback is required; unwinds retain the child's live CPU/frame.
+65536 actual-library/production-bridge cases give32768 native and32768
+unchanged entry fallbacks, without mismatch, partial or budget-limited cases.
+An independently formulated selection predicate agrees in every case;
+15 child redirect/unwind probes check the production dispatch ABI.
+
+822 distinct CPU/context guards reject with zero reads/writes in the body
+and production bridge (emulation is a bridge-only guard). Seven canonical
+semantic errors and two production guard errors are caught. CPU, all WRAM,
+ordered writes and hardware reads remain mandatory comparison fields.
+
+$82:8B08 remains draft and unbound. Its repaired four-argument API retains
+original frame/text children, but38 synthetic original text-service cases
+still exhaust the default budget. Longer diagnostics reach an APU handshake;
+this is unresolved fixture/service evidence, not a passing comparison.
+
+94/95 additions have passed their individual proofs;1 remains draft.
+The intended460 native replacements require the complete518-job integration
+and Release build before this becomes a green checkpoint.
+
+## Complete menu polling caller ($82:8B08)
+
+All95 feature caller contracts are complete; current status is in metadata.
+The menu polling caller preserves original sound, string and frame children via
+its required child callback, including their stack frames and live CPU on unwind.
+Its native entry requires PB82, M8/X16, DP0, binary arithmetic, low-WRAM DB,
+S$1F04..$1FFC and a cursor-slot-minus-five byte index. Unsupported states keep
+the original entry; changed child/return state transfers at its actual boundary.
+
+Original-ROM/production-ABI matrix:65536 cases with64-instruction original-child
+cuts,4778 complete returns,23894 live transfers and36864 entry fallbacks;
+zero mismatch, partial or inconclusive. Earlier/later cuts cover4096 cases each:
+16 instructions (193 returns,3903 transfers) and4096 instructions (4087 returns,
+9 transfers). Without cuts,65536 cases give28634 returns and36864 fallbacks;
+38 original children exhaust the synthetic trace budget. Each of those38 is
+separately compared at a65536-instruction original-child transfer, preserving
+CPU, full WRAM and ordered bus events. A transfer is not a completed child.
+This proves the complete polling caller/service contract, not termination or
+complete reconstruction of the original text/sprite children. Three semantic
+error controls and1230 CPU/context guard cases independently exercise the proof.

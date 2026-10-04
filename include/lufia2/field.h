@@ -411,7 +411,9 @@ Lufia2ExecutionResult Lufia2FieldMarkObjectSlots(
     Lufia2CpuState *cpu);
 
 /* $80:F821 traces the edge of the walkable region from the party cell and
- * folds the marks into the attribute bytes; any width, JSL. */
+ * folds the marks into the attribute bytes; any width, JSL. Native entries
+ * require PB80, DP0, binary arithmetic, low-WRAM DB and S1F09..1FFC.
+ * A read-only edge replay rejects unsafe tables or walks before writes. */
 Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
