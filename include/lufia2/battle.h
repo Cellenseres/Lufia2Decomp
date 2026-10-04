@@ -296,7 +296,9 @@ Lufia2ExecutionResult Lufia2BattleEffectVelocity(
     Lufia2CpuState *cpu);
 
 /* $81:BCCC copies tile rows into the two buffers at $7E:X and $7E:X+$200;
- * M8/X16, JSL. */
+ * M8/X16, binary, DP0, S=$1F00..$1FFC, JSL. DB must expose the multiplier.
+ * The main output span must stay in $2000..$FFFF. Zero product copies
+ * 256 rows; unsupported inputs retain the original entry before writes. */
 Lufia2ExecutionResult Lufia2BattleBlitTileRows(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

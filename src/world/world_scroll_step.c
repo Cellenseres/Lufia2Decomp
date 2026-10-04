@@ -38,7 +38,10 @@ enum {
 enum {
     ANGLE_BITS = 6u,
     ANGLE_MASK = 0x3fu,
-    ANGLE_FULL = 0x40u
+    ANGLE_FULL = 0x40u,
+    STEP_STACK_MIN = 0x1e00u,
+    SCROLL_STACK_MIN = 0x1e02u,
+    WORLD_STACK_MAX = 0x1ffcu
 };
 
 /* Scroll offsets are 24-bit; wrapped positions use twelve bits. */
@@ -80,6 +83,12 @@ Lufia2ExecutionResult Lufia2WorldProduct16By8(
     cpu->x = low_product;
     LeaveSum(cpu, middle);
     return ExecutionReturned(0x86a5a8u);
+}
+
+/* World positions and angle inputs are low work-RAM fields. */
+static bool WorldMotionRamBank(uint8_t bank) {
+    return bank < 0x40u || bank == 0x7eu || bank == 0x7fu ||
+        (bank >= 0x80u && bank < 0xc0u);
 }
 
 /* Scale the distance by the selected angle-table entry. */
@@ -157,7 +166,9 @@ Lufia2ExecutionResult Lufia2WorldStepOffsets(
     uint8_t quadrant;
     unsigned index;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->direct_page != 0u || cpu->stack < STEP_STACK_MIN || cpu->stack > WORLD_STACK_MAX ||
+        !WorldMotionRamBank(cpu->data_bank))
         return ExecutionHandoff(cpu, 0x86a417u);
     distance = WramRead16(wram, DISTANCE);
     WramWrite16(wram, MULTIPLICAND, distance);
@@ -224,7 +235,9 @@ Lufia2ExecutionResult Lufia2WorldScrollAdvance(
     Word16Result sum;
     uint16_t tile;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->direct_page != 0u || cpu->stack < SCROLL_STACK_MIN || cpu->stack > WORLD_STACK_MAX ||
+        !WorldMotionRamBank(cpu->data_bank))
         return ExecutionHandoff(cpu, 0x86995bu);
     SimulateJsrFrame(memory, cpu, 0x995du);
     (void)Lufia2WorldStepOffsets(memory, cpu);

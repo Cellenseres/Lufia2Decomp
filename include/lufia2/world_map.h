@@ -164,12 +164,13 @@ Lufia2ExecutionResult Lufia2WorldProduct16By8(
     Lufia2CpuState *cpu);
 
 /* $86:A417 signed step offsets for the distance $1249 in direction $1248;
- * M8/X16. */
+ * M8/X16, RTS, DP0, low work-RAM DB, S=$1E00..$1FFC. */
 Lufia2ExecutionResult Lufia2WorldStepOffsets(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:995B applies the step to the scroll position; M8/X16. */
+/* $86:995B applies the step to the scroll position; M8/X16, RTS, DP0,
+ * low work-RAM DB, S=$1E02..$1FFC so its child frame satisfies $A417. */
 Lufia2ExecutionResult Lufia2WorldScrollAdvance(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
