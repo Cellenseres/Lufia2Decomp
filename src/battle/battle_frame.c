@@ -827,12 +827,46 @@ Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
     return result;
 }
 
+/* DP 0, stack in $1F00..$1FFC. */
+static bool BattleFrameContext(const Lufia2CpuState *cpu) {
+    return cpu->direct_page == 0 && cpu->stack >= 0x1f00u &&
+           cpu->stack <= 0x1ffcu;
+}
+
+/* OAM bytes from the cursor stay in $7E:2000..$FFFF. */
+static bool BattleOamSpanFits(
+    const Lufia2Memory *memory, uint16_t cursor_word, uint32_t bytes) {
+    const uint8_t low = Read8(memory, cursor_word);
+    const uint32_t cursor =
+        low | ((uint32_t)Read8(memory, (uint16_t)(cursor_word + 1u)) << 8);
+
+    return bytes == 0 || (cursor >= 0x2000u && cursor + bytes <= 0x10000u);
+}
+
+/* Widths, then DP, stack and the OAM span. */
+static Lufia2ExecutionResult BattleOamEntry(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
+    uint32_t exit, uint16_t cursor_word, uint16_t count_byte,
+    uint8_t count_shift, uint32_t bytes_each) {
+    Lufia2ExecutionResult result = BattleFrameEntry(cpu, entry, exit);
+    uint8_t count;
+
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
+    if (!BattleFrameContext(cpu))
+        return ExecutionHandoff(cpu, entry);
+    count = (uint8_t)(Read8(memory, count_byte) >> count_shift);
+    if (!BattleOamSpanFits(memory, cursor_word, bytes_each * count))
+        return ExecutionHandoff(cpu, entry);
+    return result;
+}
+
 /* $85:8B4B: sprite records of the battle list; JSL entry. */
 Lufia2ExecutionResult Lufia2BattleSpriteRecordsEntry(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2ExecutionResult result =
-        BattleFrameEntry(cpu, 0x858b4bu, 0x858bbfu);
+    Lufia2ExecutionResult result = BattleOamEntry(memory, cpu, 0x858b4bu,
+        0x858bbfu, BATTLE_OAM_CURSOR_RECORDS, WRAM_BATTLE_PARTY_COUNT, 0u, 20u);
 
     if (result.flow == LUFIA2_EXECUTION_RETURNED)
         BattleSpriteRecords(memory, cpu);
@@ -843,8 +877,9 @@ Lufia2ExecutionResult Lufia2BattleSpriteRecordsEntry(
 Lufia2ExecutionResult Lufia2BattleSpriteSingleEntry(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2ExecutionResult result =
-        BattleFrameEntry(cpu, 0x858bc0u, 0x858c26u);
+    /* Bit 7 draws the 45-byte sprite. */
+    Lufia2ExecutionResult result = BattleOamEntry(memory, cpu, 0x858bc0u,
+        0x858c26u, BATTLE_OAM_CURSOR_SINGLE, BATTLE_SINGLE_SPRITE, 7u, 45u);
 
     if (result.flow == LUFIA2_EXECUTION_RETURNED)
         BattleSpriteSingle(memory, cpu);
@@ -858,6 +893,8 @@ Lufia2ExecutionResult Lufia2BattleSpriteMarkersEntry(
     Lufia2ExecutionResult result =
         BattleFrameEntry(cpu, 0x858c27u, 0x858c97u);
 
+    if (result.flow == LUFIA2_EXECUTION_RETURNED && !BattleFrameContext(cpu))
+        return ExecutionHandoff(cpu, 0x858c27u);
     if (result.flow == LUFIA2_EXECUTION_RETURNED)
         BattleSpriteMarkers(memory, cpu);
     return result;

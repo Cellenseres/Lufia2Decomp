@@ -197,10 +197,10 @@ Lufia2ExecutionResult Lufia2BattleActorSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
-    uint16_t record;
     unsigned list;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    /* BCD record steps never reach the table end. */
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
         return ExecutionHandoff(cpu, 0x818e92u);
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, BATTLE_DATA_BANK);
@@ -212,19 +212,24 @@ Lufia2ExecutionResult Lufia2BattleActorSprites(
     for (list = 0; list < LIST_CURSOR_COUNT; ++list)
         Write8(memory, Field(wram, (uint16_t)(LIST_TOTALS + 4u * list), 0u), 0u);
     SetAccumulatorWidth(cpu, 0);
-    for (record = ACTOR_FIRST; record != ACTOR_END;
-         record = (uint16_t)(record + ACTOR_SIZE)) {
-        cpu->y = record;
-        if ((FieldWord(wram, ACTOR_PRESENT, record) & 0x00ffu) == 0)
-            continue;
-        if ((FieldWord(wram, ACTOR_VISIBLE, record) & 0x00ffu) == 0)
-            continue;
-        PushY(memory, cpu);
-        SimulateJsrFrame(memory, cpu, 0x8ec7u);
-        (void)AppendActorSprite(memory, cpu, wram);
-        SimulateRtsFrame(memory, cpu);
-        cpu->y = PullIndexValue(memory, cpu);
-    }
+    cpu->y = ACTOR_FIRST;
+    do {
+        if ((FieldWord(wram, ACTOR_PRESENT, cpu->y) & 0x00ffu) != 0 &&
+            (FieldWord(wram, ACTOR_VISIBLE, cpu->y) & 0x00ffu) != 0) {
+            uint16_t return_address;
+
+            PushY(memory, cpu);
+            SimulateJsrFrame(memory, cpu, 0x8ec7u);
+            (void)AppendActorSprite(memory, cpu, wram);
+            /* Sprite stores may rewrite the frame or the saved record. */
+            return_address = PullStackWord(memory, cpu);
+            if (return_address != 0x8ec7u)
+                return ExecutionHandoff(cpu,
+                    0x810000u | (uint16_t)(return_address + 1u));
+            cpu->y = PullIndexValue(memory, cpu);
+        }
+        cpu->y = (uint16_t)(cpu->y + ACTOR_SIZE);
+    } while (cpu->y != ACTOR_END);
     /* The last step to the end of the table neither carries nor overflows;
      * the compare with the end leaves carry set. */
     cpu->y = ACTOR_END;

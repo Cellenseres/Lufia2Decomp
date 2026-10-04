@@ -65,6 +65,7 @@ enum {
 /* The list of entries to load: its length, then one byte per entry. */
 enum {
     LIST_COUNT = 0x0a7au,
+    SLOT_COUNT_MAX = 7u,
     LIST_ENTRIES = 0x0a7bu
 };
 
@@ -394,9 +395,12 @@ Lufia2ExecutionResult Lufia2MenuLoadSlotPalettes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint8_t count = WramRead(wram, LIST_COUNT);
     uint16_t remaining;
 
-    if (cpu->index_is_8_bit || !DirectWorkWordAvailable(cpu, SLOTS_LEFT))
+    /* A zero count wraps over all of bank $00. */
+    if (cpu->index_is_8_bit || cpu->direct_page != 0 || count == 0 ||
+        count > SLOT_COUNT_MAX)
         return ExecutionHandoff(cpu, 0x86911fu);
     SetAccumulatorWidth(cpu, 0);
     WramWrite16(wram, SLOT_TARGET, SLOT_PALETTES);

@@ -330,7 +330,8 @@ Lufia2ExecutionResult Lufia2MenuLoadPalette4(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:911F slot palette blocks; X16, JSL */
+/* $86:911F slot palette blocks; JSL, X16, DP0,
+ * count 1..7, S $1F00..$1FFC in the consumer. */
 Lufia2ExecutionResult Lufia2MenuLoadSlotPalettes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
