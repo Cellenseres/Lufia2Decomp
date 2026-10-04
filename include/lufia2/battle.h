@@ -296,8 +296,10 @@ Lufia2ExecutionResult Lufia2BattleEffectRepeat(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $81:9169 loop start of an effect slot; M8/X16, continues at $81:8C58. */
-Lufia2ExecutionResult Lufia2BattleEffectMarkLoop(
+/* $81:9169 saves the resume pointer and yields the effect slot for this frame.
+ * PB81, M8/X16, DP0, S1F00..1FFA; any decimal/DB. Discards the opcode call
+ * with PLX and returns at $81:8C59 to the dispatcher exit, not the next opcode. */
+Lufia2ExecutionResult Lufia2BattleEffectYield(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 

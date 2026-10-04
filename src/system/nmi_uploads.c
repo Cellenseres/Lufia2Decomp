@@ -96,8 +96,10 @@ static uint16_t ReadPads(Lufia2Wram wram) {
         if (buttons == WramRead16At(wram, PAD_LAST_BUTTONS, index)) {
             if (StepWordAt(wram, PAD_REPEAT_COUNTDOWN, index, -1) != 0)
                 continue;
-            a = (uint16_t)(WramRead16At(wram, PAD_LAST_BUTTONS, index) &
-                           WramRead16(wram, PAD_REPEAT_MASK));
+            const uint16_t previous = WramRead16At(wram, PAD_LAST_BUTTONS, index);
+            const uint16_t repeat_mask = WramRead16(wram, PAD_REPEAT_MASK);
+
+            a = (uint16_t)(previous & repeat_mask);
             a |= WramRead16At(wram, DP_BUTTONS_PRESSED, index);
             WramWrite16At(wram, DP_BUTTONS_PRESSED, index, a);
             a = PAD_REPEAT_NEXT;
@@ -113,20 +115,18 @@ static uint16_t ReadPads(Lufia2Wram wram) {
     return a;
 }
 
-/* $80:8703: OAM and palette DMA when requested, then the pads once the
- * automatic read has finished.
- *
- * Entry contract (the main NMI calls it with M8 and either index width):
- * the routine saves P, forces X16 itself and restores P on exit, so entry
- * and exit widths are equal. The first accumulator access comes before any
- * width change, so the declared contract is M1X1 and a caller in M16 is
- * handed back to the original code instead. */
+/* Upload requested OAM/palette buffers, then read both pads after auto-read.
+ * The memory service must advance the automatic-read timer while polling. */
 Lufia2ExecutionResult Lufia2NmiSpritesPaletteAndPads(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
 
-    if (!cpu->accumulator_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || cpu->program_bank != 0x80u ||
+        cpu->direct_page != 0u || cpu->stack < 0x1f00u ||
+        cpu->stack > 0x1ffcu ||
+        !(cpu->data_bank < 0x40u ||
+          (cpu->data_bank >= 0x80u && cpu->data_bank < 0xc0u)))
         return ExecutionHandoff(cpu, 0x808703u);
     wram = WramViewOfCaller(memory, cpu);
     Push8(memory, cpu, PackStatus(cpu));

@@ -16,9 +16,9 @@ enum {
     SPEED = 0x5au,
     VELOCITY_A = 0x56u,
     VELOCITY_B = 0x58u,
-    SLOT_LOOP_START = 0x03u,
-    SLOT_COPY_FROM = 0x02u,
-    SLOT_COPY_TO = 0x01u,
+    SLOT_RESUME = 0x03u,
+    SLOT_RELOAD_DELAY = 0x02u,
+    SLOT_FRAME_TIMER = 0x01u,
     SLOT_REPEAT = 0x07u,
     SLOT_REPEAT_TARGET = 0x08u,
     SLOT_FIELDS = 0x13u,
@@ -87,26 +87,28 @@ Lufia2ExecutionResult Lufia2BattleEffectRepeat(
     return ExecutionReturned(0x819552u);
 }
 
-/* $81:9169: remembers the stream position in the slot, copies its byte at
- * offset 2 to offset 1 and continues at $81:8C58; M8/X16. */
-Lufia2ExecutionResult Lufia2BattleEffectMarkLoop(
+/* Save the next script position, reload the frame delay and leave dispatch. */
+Lufia2ExecutionResult Lufia2BattleEffectYield(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2Wram wram;
     uint16_t stream;
     uint8_t copied;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->program_bank != 0x81u || cpu->direct_page != 0u ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffau)
         return ExecutionHandoff(cpu, 0x819169u);
     OpSetDataBank(memory, cpu, WORK_BANK);
     wram = WramViewOfCaller(memory, cpu);
     stream = WramRead16(wram, STREAM);
-    WramWrite16At(wram, SLOT + SLOT_LOOP_START, cpu->y, stream);
-    copied = WramReadAt(wram, SLOT + SLOT_COPY_FROM, cpu->y);
-    WramWriteAt(wram, SLOT + SLOT_COPY_TO, cpu->y, copied);
+    WramWrite16At(wram, SLOT + SLOT_RESUME, cpu->y, stream);
+    copied = WramReadAt(wram, SLOT + SLOT_RELOAD_DELAY, cpu->y);
+    WramWriteAt(wram, SLOT + SLOT_FRAME_TIMER, cpu->y, copied);
     cpu->accumulator = (uint16_t)((stream & 0xff00u) | copied);
-    SetNz8(cpu, copied);
-    return ExecutionHandoff(cpu, 0x818c58u);
+    /* PLX drops this opcode call; the following RTS leaves the dispatcher. */
+    cpu->x = PullIndexValue(memory, cpu);
+    return ExecutionReturned(0x818c59u);
 }
 
 /* $81:A598: velocity of the slot from its angle and speed words at offsets
