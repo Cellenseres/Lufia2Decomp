@@ -58,7 +58,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:F518` | `Lufia2FieldStreamLeftColumn` | verified | `src/field/field_scroll.c` |
 | `$80:F589` | `Lufia2FieldStreamTopRow` | verified | `src/field/field_scroll.c` |
 | `$80:F5A2` | `Lufia2FieldStreamBottomRow` | verified | `src/field/field_scroll.c` |
-| `$80:F821` | `Lufia2FieldTraceCellEdges` | draft | `src/field/field_cell_edges.c` |
+| `$80:F821` | `Lufia2FieldTraceCellEdges` | verified | `src/field/field_cell_edges.c` |
 | `$81:8000` | `Lufia2BattleSetup` | verified | `src/battle/battle_setup.c` |
 | `$81:851E` | `Lufia2BattleDisplaySetup` | verified | `src/battle/battle_display_setup.c` |
 | `$81:876B` | `Lufia2BattleExit` | verified | `src/battle/battle_exit.c` |
@@ -202,14 +202,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:80CA` | `Lufia2MenuRecolorRect` | verified | `src/menu/menu_tilemap.c` |
 | `$82:810E` | `Lufia2MenuDrawWindow` | verified | `src/menu/menu_window.c` |
 | `$82:838F` | `Lufia2MenuClearLayers` | verified | `src/menu/menu_tilemap.c` |
-| `$82:8720` | `Lufia2MenuCursor` | draft | `src/menu/menu_input.c` |
+| `$82:8720` | `Lufia2MenuCursor` | verified | `src/menu/menu_input.c` |
 | `$82:88A0` | `Lufia2MenuItemIndex` | verified | `src/menu/menu_cursor.c` |
 | `$82:88CB` | `Lufia2MenuItemPosition` | verified | `src/menu/menu_cursor.c` |
 | `$82:89FA` | `Lufia2MenuCursorSlide` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8AD8` | `Lufia2MenuSlideCorrectX` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8AE9` | `Lufia2MenuSlideCorrectY` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8AFA` | `Lufia2MenuSlideCount` | verified | `src/menu/menu_cursor_slide.c` |
-| `$82:8B08` | `Lufia2MenuInputLoop` | draft | `src/menu/menu_input.c` |
+| `$82:8B08` | `Lufia2MenuInputLoop` | verified | `src/menu/menu_input.c` |
 | `$82:8B4B` | `Lufia2MenuButtons` | verified | `src/menu/menu.c` |
 | `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |
 | `$82:939C` | `Lufia2MenuNmi` | verified | `src/menu/menu.c` |

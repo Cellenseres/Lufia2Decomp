@@ -33,11 +33,11 @@ static void AttributeActors(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SimulateJslFrame(memory, cpu, 0x80u, 0xee33u);
-    Push8(memory, cpu, 0x80u);                                 /* EF2F */
+    Push8(memory, cpu, 0x80u);
     PullDataBank(memory, cpu);
     LoadY16(cpu, 0x0027u);
     do {
-        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->y);          /* EF34 */
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->y);
         BitImmediate8(cpu, 0x06u);
         if (cpu->zero) {
             LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->y);      /* row */
@@ -62,7 +62,7 @@ static void AttributeActors(
                     StoreADirect8(memory, cpu, 0x9au);
                 }
             }
-            TransferDirectToA(cpu);                            /* EF65 */
+            TransferDirectToA(cpu);
             LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->y);      /* column */
             SetAccumulatorWidth(cpu, 0);
             cpu->carry = 0;
@@ -74,7 +74,7 @@ static void AttributeActors(
             if (!cpu->zero)
                 AttributeSet(memory, cpu, ATTRIBUTES + 1u, 0x01u);
         }
-        LoadY16(cpu, (uint16_t)(cpu->y - 1u));                 /* EF8A */
+        LoadY16(cpu, (uint16_t)(cpu->y - 1u));
     } while (!cpu->negative);
     SimulateRtlFrame(memory, cpu);
 }
@@ -84,7 +84,7 @@ static void AttributeListBit2(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xee77u);
-    LoadA8(cpu, 0x7eu);                                        /* EEEB */
+    LoadA8(cpu, 0x7eu);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
@@ -126,7 +126,7 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
 
     if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x80ed9cu);
-    PushAccumulator8(memory, cpu);                             /* ED9C */
+    PushAccumulator8(memory, cpu);
     PushIndex(memory, cpu);
     PushY(memory, cpu);
     PushDataBank(memory, cpu);
@@ -150,7 +150,7 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     StoreZeroAbsolute8(memory, cpu, 0x05bcu, 0);
     LoadA8(cpu, 0x7fu);
     StoreADirect8(memory, cpu, 0x62u);
-    SetAccumulatorWidth(cpu, 0);                               /* EDCE */
+    SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, WRAM_FIELD_METATILE_ATTRIBUTE_BASE));
     StoreADirect16(memory, cpu, 0x60u);                        /* tile classes */
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_CELL_BASE,
@@ -165,7 +165,7 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     for (;;) {
         uint8_t class_bits;
 
-        PushY(memory, cpu);                                    /* EDEA */
+        PushY(memory, cpu);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7f0001u, cpu->x)));
         And8(cpu, 0x03u);
         ExchangeAccumulatorBytes(cpu);
@@ -176,23 +176,23 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
         class_bits = 0;
         if (A8(cpu) & 0xf0u) {
             BitImmediate8(cpu, 0xf0u);
-            class_bits = 0x08u;                                /* EDFF */
+            class_bits = 0x08u;
         } else {
             BitImmediate8(cpu, 0xf0u);
             Compare8(cpu, A8(cpu), 0x08u);
             if (cpu->zero) {
-                class_bits = 0x02u;                            /* EE13 */
+                class_bits = 0x02u;
             } else {
                 Compare8(cpu, A8(cpu), 0x09u);
                 if (cpu->zero)
-                    class_bits = 0x80u;                        /* EE0F */
+                    class_bits = 0x80u;
             }
         }
         if (class_bits) {
             LoadA8(cpu, class_bits);
             StoreADirect8(memory, cpu, DP_SCRATCH_C);
         }
-        cpu->y = PullIndexValue(memory, cpu);                  /* EE17 */
+        cpu->y = PullIndexValue(memory, cpu);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7f0001u, cpu->x)));
         And8(cpu, 0x0cu);
         AslA8(cpu);
@@ -209,13 +209,13 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
         if (cpu->zero)
             break;
     }
-    AttributeActors(memory, cpu);                              /* EE30 */
+    AttributeActors(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, 0x7ef026u));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     for (;;) {
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef000u, cpu->x))); /* EE3D */
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef000u, cpu->x)));
         Compare8(cpu, A8(cpu), 0xffu);
         if (cpu->zero)
             break;
@@ -238,11 +238,11 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
         IncrementX16(cpu);
         IncrementX16(cpu);
     }
-    LoadX16(cpu, 0x001eu);                                     /* EE72 */
+    LoadX16(cpu, 0x001eu);
     AttributeListBit2(memory, cpu);
     LoadX16(cpu, 0x0000u);
     do {
-        PushIndex(memory, cpu);                                /* EE7B */
+        PushIndex(memory, cpu);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_PENDING_RECORD_X,
             cpu->x)));
         Compare8(cpu, A8(cpu), 0xffu);
@@ -289,14 +289,14 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
                     TransferAToX(cpu);
                     SetAccumulatorWidth(cpu, 1);
                 }
-                AttributeSet(memory, cpu, ATTRIBUTES, 0x08u);  /* EED4 */
+                AttributeSet(memory, cpu, ATTRIBUTES, 0x08u);
             }
         }
-        cpu->x = PullIndexValue(memory, cpu);                  /* EEDE */
+        cpu->x = PullIndexValue(memory, cpu);
         IncrementX16(cpu);
         Compare16(cpu, cpu->x, 0x0030u);
     } while (!cpu->zero);
-    UnpackStatus(cpu, Pull8(memory, cpu));                     /* EEE5 */
+    UnpackStatus(cpu, Pull8(memory, cpu));
     PullDataBank(memory, cpu);
     cpu->y = PullIndexValue(memory, cpu);
     cpu->x = PullIndexValue(memory, cpu);

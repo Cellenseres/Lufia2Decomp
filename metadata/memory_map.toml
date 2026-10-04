@@ -2096,3 +2096,83 @@ name = "system_multiply_product"
 width = 4
 owner = "menu"
 notes = "32-bit product of the multiply at $82:8000."
+
+[[location]]
+address = "7E:14A9"
+name = "menu_cursor_slot"
+width = 2
+count = 1
+owner = "menu"
+notes = "82:8B08 reads the active sprite slot as a word; subtracting five selects the cursor item. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+
+[[location]]
+address = "7E:14AB"
+name = "menu_pressed_a"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:8720 tests the first newly pressed menu button byte. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+
+[[location]]
+address = "7E:14AC"
+name = "menu_pressed_b"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:8720 tests directions and the second menu action byte. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+
+[[location]]
+address = "7E:14B3"
+name = "menu_list_index"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:88A0 stores the flattened row/column item index. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+
+[[location]]
+address = "7E:14C1"
+name = "menu_item_flags"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:8720 indexes item flags; bits7/6 report the top/bottom edge,82:8B08 retains bit0 before polling. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+
+[[location]]
+address = "7E:14C7"
+name = "menu_item_limit"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:8720 indexes item limits; zero selects row-count wrapping. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+
+[[location]]
+address = "7E:14D9"
+name = "menu_item_column"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:8720 indexes the current item column; this base also backs window state in other menu contexts. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+
+[[location]]
+address = "7E:14EB"
+name = "menu_item_row"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:8720 indexes the current item row; this base also backs window state in other menu contexts. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+
+[[location]]
+address = "7E:14F1"
+name = "menu_item_columns"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:8720 indexes the item column count. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+
+[[location]]
+address = "7E:14F7"
+name = "menu_item_rows"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:8720 indexes the item row count. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."

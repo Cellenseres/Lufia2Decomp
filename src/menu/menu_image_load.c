@@ -393,19 +393,46 @@ static Lufia2ExecutionResult CopyPalette(
     return ExecutionReturned(return_address);
 }
 
-#define PALETTE(name, entry, source, target, count)                           \
-    Lufia2ExecutionResult name(const Lufia2Memory *memory,                    \
-        Lufia2CpuState *cpu) {                                                \
-        if (cpu->index_is_8_bit)                                              \
-            return ExecutionHandoff(cpu, entry);                              \
-        return CopyPalette(memory, cpu, source, target, count, (entry) + 0x12u); \
-    }
+/* Fixed palette blocks use the same copy contract. */
+Lufia2ExecutionResult Lufia2MenuLoadPalette0(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x8690c0u);
+    return CopyPalette(memory, cpu, 0x8200u, 0x0320u, 0x003fu,
+        0x8690d2u);
+}
 
-PALETTE(Lufia2MenuLoadPalette0, 0x8690c0u, 0x8200u, 0x0320u, 0x003fu)
-PALETTE(Lufia2MenuLoadPalette1, 0x8690d3u, 0x8420u, 0x0340u, 0x001fu)
-PALETTE(Lufia2MenuLoadPalette2, 0x8690e6u, 0x8040u, 0x0360u, 0x00bfu)
-PALETTE(Lufia2MenuLoadPalette3, 0x8690f9u, 0x8100u, 0x0420u, 0x007fu)
-PALETTE(Lufia2MenuLoadPalette4, 0x86910cu, 0x8140u, 0x04c0u, 0x001fu)
+Lufia2ExecutionResult Lufia2MenuLoadPalette1(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x8690d3u);
+    return CopyPalette(memory, cpu, 0x8420u, 0x0340u, 0x001fu,
+        0x8690e5u);
+}
+
+Lufia2ExecutionResult Lufia2MenuLoadPalette2(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x8690e6u);
+    return CopyPalette(memory, cpu, 0x8040u, 0x0360u, 0x00bfu,
+        0x8690f8u);
+}
+
+Lufia2ExecutionResult Lufia2MenuLoadPalette3(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x8690f9u);
+    return CopyPalette(memory, cpu, 0x8100u, 0x0420u, 0x007fu,
+        0x86910bu);
+}
+
+Lufia2ExecutionResult Lufia2MenuLoadPalette4(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x86910cu);
+    return CopyPalette(memory, cpu, 0x8140u, 0x04c0u, 0x001fu,
+        0x86911eu);
+}
 
 /* $86:911F: one 32-byte block of bank $97 per entry of the list at $0A7B,
  * chosen by the class table at $86:9165, stored from $04A0 on. X16. */

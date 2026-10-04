@@ -1,20 +1,28 @@
 # Entries for the consumer
 
-This page lists every routine added as a `draft` since the semantic layer was
-split off, with the entry the consumer has to provide to use it. It is
+This page lists the feature reconstruction entries and the contracts the
+consumer has to provide to use them. Current verification status is
 derived from `metadata/functions.toml` and the headers in `include/lufia2/`;
 the metadata stays the source of truth. No consumer changes are part of this
 repository.
 
 ## Entry contract
 
-Every routine has the signature
+Leaf entries have the signature
 
 ```c
 Lufia2ExecutionResult Name(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 ```
 
-and is declared in the header named in the tables. The CPU state at the call
+Parents that preserve original child calls also take the child service and its
+context:
+
+```c
+Lufia2ExecutionResult Name(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+```
+
+Each entry is declared in the header named in the tables. The CPU state at the call
 is the state at the original entry address, with the return frame of the
 original call already on the stack:
 
@@ -181,3 +189,31 @@ any memory access. The consumer checks this caller contract before any write.
 | Address | Function | Call | Entry | Exit |
 | --- | --- | --- | --- | --- |
 | `$81:F481` | `Lufia2PartyStatTotalsOfCopy` | JSL / RTL | M1X0 | M1X0 |
+
+$80:F821 also accepts the other caller M/X widths and restores caller P.
+Its native selection requires PB80, DP0, binary arithmetic, low-WRAM DB,
+S1F09..1FFC and a terminating read-only edge replay with tables below7F:C000.
+$82:8720 requires PB82, M8/X16, DP0, binary arithmetic, low-WRAM DB,
+S1F02..1FFC, X<=255 and an original sound-child callback. $82:8B08 is still
+draft and must not be bound; its frame/text-service proof remains incomplete.
+
+## Complete menu polling caller ($82:8B08)
+
+All95 feature caller contracts are complete; current status is in metadata.
+The menu polling caller preserves original sound, string and frame children via
+its required child callback, including their stack frames and live CPU on unwind.
+Its native entry requires PB82, M8/X16, DP0, binary arithmetic, low-WRAM DB,
+S$1F04..$1FFC and a cursor-slot-minus-five byte index. Unsupported states keep
+the original entry; changed child/return state transfers at its actual boundary.
+
+Original-ROM/production-ABI matrix:65536 cases with64-instruction original-child
+cuts,4778 complete returns,23894 live transfers and36864 entry fallbacks;
+zero mismatch, partial or inconclusive. Earlier/later cuts cover4096 cases each:
+16 instructions (193 returns,3903 transfers) and4096 instructions (4087 returns,
+9 transfers). Without cuts,65536 cases give28634 returns and36864 fallbacks;
+38 original children exhaust the synthetic trace budget. Each of those38 is
+separately compared at a65536-instruction original-child transfer, preserving
+CPU, full WRAM and ordered bus events. A transfer is not a completed child.
+This proves the complete polling caller/service contract, not termination or
+complete reconstruction of the original text/sprite children. Three semantic
+error controls and1230 CPU/context guard cases independently exercise the proof.
