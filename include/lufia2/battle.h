@@ -869,12 +869,14 @@ Lufia2ExecutionResult Lufia2BattleActorSprite(
 /* $81:B396 fades palette entries (15 of them, from entry $11 * 16 + 1) of
  * the $7F:F1DB palette towards black or white into the $0320 buffer; sign of
  * $13 picks the direction and its low bits the level. M1X0 only (else
- * handed back). Returns before RTS $81B3F7. */
+ * handed back). Native mode, DP=0, hardware DB, S=$1F02..$1FFC;
+ * first palette <= 15. Returns before RTS $81B3F7. */
 Lufia2ExecutionResult Lufia2BattlePaletteBrightness(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 /* $81:B3F8 scales the colour in DP $15 by the factor already written to
- * $4202, per 5-bit component. X0 only. Returns before RTS $81B443. */
+ * $4202, per 5-bit component. X16, either M, native mode, DP=0, hardware
+ * DB, S=$1F00..$1FFC. Returns before RTS $81B443. */
 Lufia2ExecutionResult Lufia2BattleScaleColor(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

@@ -3059,7 +3059,7 @@ name = "Lufia2NmiScrollAndUploads"
 source = "src/system/nmi_uploads.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
-status = "draft"
+status = "verified"
 
 # VRAM tilemap blocks requested in $74; also called by the NMI child above.
 [[function]]
@@ -3068,7 +3068,7 @@ name = "Lufia2NmiTilemapUploads"
 source = "src/system/nmi_uploads.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # Battle actor sprites: rebuilds the three OAM lists from the actor records.
 [[function]]
@@ -3095,7 +3095,7 @@ name = "Lufia2BattlePaletteBrightness"
 source = "src/battle/battle_palette_fade.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # Per-component colour scaling through the hardware multiplier.
 [[function]]
@@ -3104,7 +3104,7 @@ name = "Lufia2BattleScaleColor"
 source = "src/battle/battle_palette_fade.c"
 entry_mx = "M1X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 # World map object tests: visible-list builder and its per-object step.
 [[function]]
@@ -3197,7 +3197,7 @@ name = "Lufia2WorldMapSortVisible"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:E430"
@@ -3312,7 +3312,7 @@ name = "Lufia2MenuTileBlockFill"
 source = "src/menu/menu_tilemap.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "82:80CA"
