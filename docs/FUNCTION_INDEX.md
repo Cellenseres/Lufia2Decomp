@@ -68,8 +68,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:8E92` | `Lufia2BattleActorSprites` | draft | `src/battle/battle_monster_oam.c` |
 | `$81:8EEA` | `Lufia2BattleActorSprite` | draft | `src/battle/battle_monster_oam.c` |
 | `$81:9169` | `Lufia2BattleEffectMarkLoop` | draft | `src/battle/battle_effect_ops.c` |
-| `$81:953F` | `Lufia2BattleEffectRepeat` | draft | `src/battle/battle_effect_ops.c` |
-| `$81:A40B` | `Lufia2BattleEffectAddToField` | draft | `src/battle/battle_effect_ops.c` |
+| `$81:953F` | `Lufia2BattleEffectRepeat` | verified | `src/battle/battle_effect_ops.c` |
+| `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |
 | `$81:B1A3` | `Lufia2BattleRunConfiguredScript` | verified | `src/battle/battle_action_script.c` |
@@ -371,8 +371,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9671` | `Lufia2BattleClearMessage` | verified | `src/battle/battle_message_display.c` |
 | `$85:96A2` | `Lufia2BattleSaveWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
-| `$85:972E` | `Lufia2BattleTileGridEntry` | draft | `src/battle/battle_frame.c` |
-| `$85:9790` | `Lufia2BattleTileRow` | draft | `src/battle/battle_frame_setup.c` |
+| `$85:972E` | `Lufia2BattleTileGridEntry` | verified | `src/battle/battle_frame.c` |
+| `$85:9790` | `Lufia2BattleTileRow` | verified | `src/battle/battle_frame_setup.c` |
 | `$85:9A7D` | `Lufia2BattleMeasureMessage` | verified | `src/battle/battle_message_length.c` |
 | `$85:9AAA` | `Lufia2BattleSaveMessageState` | verified | `src/battle/battle_message_display.c` |
 | `$85:9ABC` | `Lufia2BattleRestoreMessageState` | verified | `src/battle/battle_message_display.c` |

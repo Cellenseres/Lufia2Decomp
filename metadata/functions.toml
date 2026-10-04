@@ -3452,7 +3452,7 @@ name = "Lufia2BattleTileRow"
 source = "src/battle/battle_frame_setup.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:8B4B"
@@ -3500,7 +3500,7 @@ name = "Lufia2BattleTileGridEntry"
 source = "src/battle/battle_frame.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # Battle party drift
 [[function]]
@@ -3626,7 +3626,7 @@ name = "Lufia2BattleEffectAddToField"
 source = "src/battle/battle_effect_ops.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "81:953F"
@@ -3634,7 +3634,7 @@ name = "Lufia2BattleEffectRepeat"
 source = "src/battle/battle_effect_ops.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "81:9169"
