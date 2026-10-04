@@ -236,7 +236,8 @@ Lufia2ExecutionResult Lufia2BattleTileRow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $85:8F4A shifts the random register at $122F left by one; JSR, M8. */
+/* $85:8F4A shifts the 88-bit random register left; M8, any X/DP/DB, RTS.
+ * Native selection keeps S=$1F00..$1FFC outside the register bytes. */
 Lufia2ExecutionResult Lufia2BattleRandomBit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
@@ -895,14 +896,15 @@ Lufia2ExecutionResult Lufia2BattleWaveBackward(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $85:B26D computes the half widths of the circle of the radius at DP $C6 into
- * $4600. Any entry widths; they are restored. */
+/* $85:B26D computes circle half widths from DP $C6 into $4600; RTS.
+ * Verified caller: DP0, DB7E, S=$1F00..$1FFC, any entry widths/status. */
 Lufia2ExecutionResult Lufia2BattleCircleWidths(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $85:B208 rebuilds the circular window scanline table when the radius at
- * $1B4A changed; M1X0 only (else handed back). */
+/* $85:B208 rebuilds the circular window when radius $1B4A changes; RTS.
+ * Verified caller: M8/X16, DP0, S=$1F08..$1FFC, any DB. The stack range
+ * also supports the nested half-width call. */
 Lufia2ExecutionResult Lufia2BattleCircleWindow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

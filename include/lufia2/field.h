@@ -404,7 +404,8 @@ Lufia2ExecutionResult Lufia2FieldUnpackAttributes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $80:C195 sets bit 0 of the object slot flags 5 to $27; M8/X16, JSL. */
+/* $80:C195 marks object slots 5 through 39; M8/X16, RTL, any DP/DB.
+ * Native selection keeps S=$1F00..$1FFC clear of the slot bytes. */
 Lufia2ExecutionResult Lufia2FieldMarkObjectSlots(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
@@ -415,7 +416,8 @@ Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $83:F9D0 table pointer of the cell at column $8F, row $91; M8/X16, JSL. */
+/* $83:F9D0 computes the cell pointer from column $8F and row $91;
+ * M8/X16, RTL, any DP/DB, S=$1F04..$1FFC. Retains both nested frames. */
 Lufia2ExecutionResult Lufia2FieldCellPointer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

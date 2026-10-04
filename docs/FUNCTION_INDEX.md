@@ -35,7 +35,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
 | `$80:BFAA` | `Lufia2FieldFindHeaderRecord` | verified | `src/field/field_object_lookup.c` |
 | `$80:C0B7` | `Lufia2SceneScriptReadOperand` | verified | `src/field/scene_script.c` |
-| `$80:C195` | `Lufia2FieldMarkObjectSlots` | draft | `src/field/field_object_flags.c` |
+| `$80:C195` | `Lufia2FieldMarkObjectSlots` | verified | `src/field/field_object_flags.c` |
 | `$80:C23D` | `Lufia2TextPrepareWindow` | verified | `src/text/text_window.c` |
 | `$80:C305` | `Lufia2TextBuildWindow` | verified | `src/text/text_window.c` |
 | `$80:C56E` | `Lufia2TextQueueWindowRow` | verified | `src/text/text_window.c` |
@@ -325,7 +325,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:F91F` | `Lufia2FieldCopyCellTile` | verified | `src/field/field_object_tiles.c` |
 | `$83:F933` | `Lufia2FieldQueueObjectRedraw` | verified | `src/field/field_object_tiles.c` |
 | `$83:F9AD` | `Lufia2FieldObjectAttributeCell` | verified | `src/field/field_object_lookup.c` |
-| `$83:F9D0` | `Lufia2FieldCellPointer` | draft | `src/field/field_cell_edges.c` |
+| `$83:F9D0` | `Lufia2FieldCellPointer` | verified | `src/field/field_cell_edges.c` |
 | `$83:F9D4` | `Lufia2ActorResolveMapCellOffset` | verified | `src/actor/actor_movement.c` |
 | `$83:F9D9` | `Lufia2LayerCellOffset` | verified | `src/actor/actor_movement.c` |
 | `$83:F9F7` | `Lufia2MapCellOffset` | verified | `src/actor/actor_movement.c` |
@@ -356,7 +356,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:8C98` | `Lufia2BattleSpritePartyEntry` | draft | `src/battle/battle_frame.c` |
 | `$85:8D2E` | `Lufia2BattlePartyTilemapEntry` | draft | `src/battle/battle_frame.c` |
 | `$85:8DC5` | `Lufia2BattleNmiUploads` | verified | `src/battle/battle_nmi.c` |
-| `$85:8F4A` | `Lufia2BattleRandomBit` | draft | `src/battle/battle_drift.c` |
+| `$85:8F4A` | `Lufia2BattleRandomBit` | verified | `src/battle/battle_drift.c` |
 | `$85:8F67` | `Lufia2BattleRecoverStatuses` | verified | `src/battle/battle_status_recovery.c` |
 | `$85:9099` | `Lufia2BattleExpireStatuses` | verified | `src/battle/battle_status_recovery.c` |
 | `$85:9150` | `Lufia2BattleStatusName` | verified | `src/battle/battle_status_support.c` |
@@ -390,8 +390,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:ADE1` | `Lufia2BattleWaveBackward` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AE68` | `Lufia2BattleWaveForward` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AEEB` | `Lufia2BattleWaveFill` | verified | `src/battle/battle_background_wave.c` |
-| `$85:B208` | `Lufia2BattleCircleWindow` | draft | `src/battle/battle_circle_window.c` |
-| `$85:B26D` | `Lufia2BattleCircleWidths` | draft | `src/battle/battle_circle_window.c` |
+| `$85:B208` | `Lufia2BattleCircleWindow` | verified | `src/battle/battle_circle_window.c` |
+| `$85:B26D` | `Lufia2BattleCircleWidths` | verified | `src/battle/battle_circle_window.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
 | `$85:CCCE` | `Lufia2BattleClearActionWork` | verified | `src/battle/battle_action_work.c` |
 | `$85:CCE3` | `Lufia2BattleClearSavedActionWork` | verified | `src/battle/battle_action_work.c` |
@@ -422,7 +422,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:8CDA` | `Lufia2SpriteSetTable` | verified | `src/menu/menu_sprites.c` |
 | `$86:8CF5` | `Lufia2SpriteSetAnimation` | verified | `src/menu/menu_sprites.c` |
 | `$86:8DD7` | `Lufia2MenuScreenSetup` | draft | `src/menu/menu_scene_setup.c` |
-| `$86:8E6B` | `Lufia2SpriteClearSlots` | draft | `src/menu/menu_scene_setup.c` |
+| `$86:8E6B` | `Lufia2SpriteClearSlots` | verified | `src/menu/menu_scene_setup.c` |
 | `$86:8F6F` | `Lufia2MenuLoadImageSet` | draft | `src/menu/menu_image_load.c` |
 | `$86:8FF6` | `Lufia2MenuCopyImageBlock` | draft | `src/menu/menu_image_load.c` |
 | `$86:9009` | `Lufia2MenuCopyImageRow256` | draft | `src/menu/menu_image_load.c` |
