@@ -2,7 +2,7 @@
  * clears the party tilemap through the work RAM port and reloads the color
  * tables, and the row writer of the tile grid. */
 
-#include "core/cpu_internal.h"
+#include "battle/battle_internal.h"
 #include "lufia2/battle.h"
 
 enum {
@@ -11,8 +11,8 @@ enum {
     WMADDH = 0x2183u,
     CLEAR_WORDS = 0x02a0u,
     MODE = 0x15abu,
-    MODE_ACTIVE = 0x11deu,
-    MODE_QUEUED = 0x125fu,
+    MODE_OVERRIDE = 0x11deu,
+    TILE_GRID_HOLD = 0x125fu,
     PARTY_SPRITES = 0x15d3u,
     COLOR_BANK = 0x97u,
     COLOR_SOURCE = 0xccf8u,
@@ -27,7 +27,7 @@ enum {
     BANK_WORK = 0x7eu
 };
 
-static Lufia2ExecutionResult Entry(Lufia2CpuState *cpu, uint32_t entry,
+static Lufia2ExecutionResult BattleColorEntry(Lufia2CpuState *cpu, uint32_t entry,
     uint32_t exit) {
     Lufia2ExecutionResult result = ExecutionReturned(exit);
 
@@ -40,7 +40,7 @@ static Lufia2ExecutionResult Entry(Lufia2CpuState *cpu, uint32_t entry,
 }
 
 /* STX $2181 and the bank byte, which select the work RAM port address. */
-static void PortAddress(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+static void SetWramPortAddress(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t data_bank, uint16_t address, uint8_t bank) {
     const uint32_t base = (uint32_t)data_bank << 16;
 
@@ -52,7 +52,7 @@ static void PortAddress(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 }
 
 /* Streams bytes at bank:source to the port, X counting up. */
-static void StreamBytes(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+static void StreamColorBytes(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint32_t source, uint32_t port, uint16_t count) {
     LoadX16(cpu, 0);
     do {
@@ -74,16 +74,16 @@ static void StoreWork(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
 Lufia2ExecutionResult Lufia2BattleColorsInit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2ExecutionResult result = Entry(cpu, 0x858aafu, 0x858af3u);
+    Lufia2ExecutionResult result = BattleColorEntry(cpu, 0x858aafu, 0x858af3u);
 
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
     PushDataBank(memory, cpu);
-    PortAddress(memory, cpu, cpu->data_bank, COLOR_TARGET, BANK_TARGET);
+    SetWramPortAddress(memory, cpu, cpu->data_bank, COLOR_TARGET, BANK_TARGET);
     LoadA8(cpu, COLOR_BANK);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
-    StreamBytes(memory, cpu, ((uint32_t)COLOR_BANK << 16) | COLOR_SOURCE,
+    StreamColorBytes(memory, cpu, ((uint32_t)COLOR_BANK << 16) | COLOR_SOURCE,
         ((uint32_t)COLOR_BANK << 16) | WMDATA, COLOR_COUNT);
     LoadA8(cpu, 0x0cu);
     StoreWork(memory, cpu, 0x15b5u);
@@ -94,7 +94,7 @@ Lufia2ExecutionResult Lufia2BattleColorsInit(
     LoadA8(cpu, BANK_WORK);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
-    StreamBytes(memory, cpu, ((uint32_t)BANK_WORK << 16) | COLOR_BUFFER,
+    StreamColorBytes(memory, cpu, ((uint32_t)BANK_WORK << 16) | COLOR_BUFFER,
         WMDATA, COLOR_PARTY_COUNT);
     LoadA8(cpu, 0x07u);
     StoreWork(memory, cpu, 0x15b6u);
@@ -105,11 +105,11 @@ Lufia2ExecutionResult Lufia2BattleColorsInit(
 /* The bank $85 variants stream 96 bytes of the buffer to a color table. */
 static void RowsToTable(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t target) {
-    PortAddress(memory, cpu, cpu->data_bank, target, BANK_TARGET);
+    SetWramPortAddress(memory, cpu, cpu->data_bank, target, BANK_TARGET);
     LoadA8(cpu, BANK_WORK);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
-    StreamBytes(memory, cpu, ((uint32_t)BANK_WORK << 16) | COLOR_ROWS, WMDATA,
+    StreamColorBytes(memory, cpu, ((uint32_t)BANK_WORK << 16) | COLOR_ROWS, WMDATA,
         COLOR_ROW_COUNT);
 }
 
@@ -117,7 +117,7 @@ static void RowsToTable(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 Lufia2ExecutionResult Lufia2BattleColorsParty(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2ExecutionResult result = Entry(cpu, 0x858af4u, 0x858b21u);
+    Lufia2ExecutionResult result = BattleColorEntry(cpu, 0x858af4u, 0x858b21u);
 
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
@@ -137,7 +137,7 @@ Lufia2ExecutionResult Lufia2BattleColorsParty(
     LoadA8(cpu, BANK_WORK);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
-    StreamBytes(memory, cpu, ((uint32_t)BANK_WORK << 16) | COLOR_ROWS, WMDATA,
+    StreamColorBytes(memory, cpu, ((uint32_t)BANK_WORK << 16) | COLOR_ROWS, WMDATA,
         COLOR_ROW_COUNT);
     PullDataBank(memory, cpu);
     return result;
@@ -147,7 +147,7 @@ Lufia2ExecutionResult Lufia2BattleColorsParty(
 Lufia2ExecutionResult Lufia2BattleColorsMonster(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2ExecutionResult result = Entry(cpu, 0x858b22u, 0x858b4au);
+    Lufia2ExecutionResult result = BattleColorEntry(cpu, 0x858b22u, 0x858b4au);
 
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
@@ -190,17 +190,48 @@ static int CallBattle(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return 1;
 }
 
+/* The setup clears the tilemap before it calls any renderer. Check their
+ * output spans now, so unsupported entries resume before that first clear. */
+static bool BattleFrameSetupInputsFit(
+    const Lufia2Memory *memory, const Lufia2CpuState *cpu) {
+    const uint8_t bank = cpu->data_bank;
+    const uint32_t base = (uint32_t)bank << 16;
+    bool active;
+    uint8_t mode;
+    uint32_t cursor;
+    uint32_t bytes;
+
+    if (cpu->decimal || cpu->direct_page != 0u || cpu->stack < 0x1f10u ||
+        cpu->stack > 0x1ffcu || !(bank < 0x40u || (bank >= 0x80u && bank < 0xc0u)))
+        return false;
+    active = Read8(memory, base | MODE_OVERRIDE) != 0;
+    mode = active ? 1u : Read8(memory, base | MODE);
+    if (mode != 1u && mode != 2u)
+        return true;
+    cursor = Read16Long(memory, 0x15c8u);
+    bytes = 20u * Read8(memory, 0x153cu);
+    if (bytes != 0u && (cursor < 0x2000u || cursor + bytes > 0x10000u))
+        return false;
+    cursor = Read16Long(memory, 0x15ccu);
+    bytes = (Read8(memory, 0x13ceu) & 0x80u) != 0u ? 45u : 0u;
+    if (bytes != 0u && (cursor < 0x2000u || cursor + bytes > 0x10000u))
+        return false;
+    return active || BattlePartyRenderInputsFit(memory, mode == 2u);
+}
+
 /* $85:8A39: the battle sprite pass with its setup. */
 Lufia2ExecutionResult Lufia2BattleFrameSetup(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2ExecutionResult result = Entry(cpu, 0x858a39u, 0x858a95u);
+    Lufia2ExecutionResult result = BattleColorEntry(cpu, 0x858a39u, 0x858a95u);
     const uint32_t base = (uint32_t)cpu->data_bank << 16;
     uint16_t count;
 
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
-    LoadAAbsolute8(memory, cpu, MODE_ACTIVE, 0);
+    if (!BattleFrameSetupInputsFit(memory, cpu))
+        return ExecutionHandoff(cpu, 0x858a39u);
+    LoadAAbsolute8(memory, cpu, MODE_OVERRIDE, 0);
     if (!cpu->zero) {
         LoadA8(cpu, 0x01u);
         StoreAAbsolute8(memory, cpu, MODE, 0);
@@ -226,14 +257,14 @@ Lufia2ExecutionResult Lufia2BattleFrameSetup(
             !CallBattle(memory, cpu, 0x8a73u, Lufia2BattleSpriteSingleEntry, &result) ||
             !CallBattle(memory, cpu, 0x8a77u, Lufia2BattleSpriteMarkersEntry, &result))
             return result;
-        LoadAAbsolute8(memory, cpu, MODE_ACTIVE, 0);
+        LoadAAbsolute8(memory, cpu, MODE_OVERRIDE, 0);
         if (cpu->zero) {
             if (!CallBattle(memory, cpu, 0x8a80u, Lufia2BattlePartyTilemapEntry,
                     &result))
                 return result;
             return ExecutionReturned(0x858a95u);
         }
-        LoadAAbsolute8(memory, cpu, MODE_QUEUED, 0);
+        LoadAAbsolute8(memory, cpu, TILE_GRID_HOLD, 0);
         if (!cpu->zero)
             return ExecutionReturned(0x858a95u);
         StoreZeroAbsolute8(memory, cpu, PARTY_SPRITES, 0);

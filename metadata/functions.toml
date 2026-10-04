@@ -3420,7 +3420,7 @@ name = "Lufia2BattleFrameSetup"
 source = "src/battle/battle_frame_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:8AAF"
@@ -3484,7 +3484,7 @@ name = "Lufia2BattleSpritePartyEntry"
 source = "src/battle/battle_frame.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:8D2E"
@@ -3492,7 +3492,7 @@ name = "Lufia2BattlePartyTilemapEntry"
 source = "src/battle/battle_frame.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:972E"
