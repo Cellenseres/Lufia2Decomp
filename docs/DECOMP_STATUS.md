@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-461 functions in `metadata/functions.toml`: 430 verified, 31 draft, 0 identified, 0 disabled.
+461 functions in `metadata/functions.toml`: 433 verified, 28 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -65,7 +65,7 @@ for any caller widths. The world sprite and slot-flag clears `$86:E650` and
 `$82:88A0`/`$82:88CB` for the `$1F00..$1FFC` caller stack. The copied-member totals `$81:F481` are also verified for DP0 and the same
 caller stack, preserving the shared stat event. Scene tracks, view origin and the two battle velocity routines are also
 verified. The world object visibility leaf and its bounded original list caller are
-also verified. Sixty-four feature additions are verified and 31 remain draft.
+also verified. Sixty-seven feature additions are verified and 28 remain draft.
 
 The base main checkpoint passed **518 independent jobs**. The normal
 application build also passes. The consumer selects all 366 verified functions,
@@ -1352,5 +1352,36 @@ repeat the matrices with identical counts, and ten further controls against
 them are caught. No consumer hook lies inside these routines.
 
 64 of 95 feature routines are verified, with 31 draft. The integrated 518-job
+verification and Release build must pass before the staged selection is a
+green checkpoint. Main and the normal build remain unchanged.
+
+
+## Battle actor sprite and world animations
+
+Three further roots are selected: the battle actor sprite $81:8EEA and the
+world animation start $86:E0B9 and step $86:E11F. The sprite and start
+bodies were already exact. The step inlines the start and the frame-record
+lookup with their JSR frames. Its object writes use DP,X addressing; with a
+non-zero direct page they can land on that nested frame, and the original
+then returns elsewhere. Seed 2299999 (DP $0A86, S $1F00) shows this: the
+original runs away while the old C returned normally. The step now requires
+DP0 and S $1F00..$1FFC before any access; other entries keep the original.
+
+The sprite profile covers all 64 records, every sprite kind, screen edges on
+both axes, list cursors on the stack and wrapping the bank, four direct
+pages, data banks and stacks, decimal mode and carry; both the drawn and the
+skipped exit occur. The animation profile covers all 22 objects and
+out-of-table indices, ROM and RAM tables, every timer class, loop and
+follow-up endings, and direct pages and stacks inside and outside the
+contract.
+
+The actual-library ABI matrices pass 101568 cases: 80400 native
+comparisons and 21168 unchanged entry fallbacks. 29 bridge,
+guard and profile-wide source controls are caught, including the nested
+frame witness. The shared production bridges repeat the matrices with
+identical counts, and nine further controls against them are caught. No
+consumer hook lies inside these routines.
+
+67 of 95 feature routines are verified, with 28 draft. The integrated 518-job
 verification and Release build must pass before the staged selection is a
 green checkpoint. Main and the normal build remain unchanged.

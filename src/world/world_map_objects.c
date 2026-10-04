@@ -432,8 +432,9 @@ Lufia2ExecutionResult Lufia2WorldMapStepAnimations(
     uint16_t y = cpu->y;
     uint8_t left = OBJECT_COUNT;
 
+    /* Keeps object writes off the nested JSR frame. */
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
-        !DirectWorkByteAvailable(cpu, OBJECTS_LEFT))
+        cpu->direct_page != 0 || cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
         return ExecutionHandoff(cpu, 0x86e11fu);
     wram = WramViewOfCaller(memory, cpu);
     WramWrite(wram, OBJECTS_LEFT, left);

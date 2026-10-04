@@ -66,9 +66,7 @@ Lufia2ExecutionResult Lufia2WorldMapStartAnimation(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:E11F steps the animation timers of the 22 world map objects at
- * $1469. M1X0 only. Needs the animation tables of the world map bank in the
- * data bank. */
+/* $86:E11F steps the 22 object animations. M1X0, DP0, S $1F00..$1FFC. */
 Lufia2ExecutionResult Lufia2WorldMapStepAnimations(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
