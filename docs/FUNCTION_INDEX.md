@@ -451,8 +451,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:E0B9` | `Lufia2WorldMapStartAnimation` | draft | `src/world/world_map_objects.c` |
 | `$86:E11F` | `Lufia2WorldMapStepAnimations` | draft | `src/world/world_map_objects.c` |
 | `$86:E1B9` | `Lufia2WorldMapUpdateObjects` | draft | `src/world/world_map_objects.c` |
-| `$86:E287` | `Lufia2WorldMapTestObjects` | draft | `src/world/world_map_objects.c` |
-| `$86:E295` | `Lufia2WorldMapTestObject` | draft | `src/world/world_map_objects.c` |
+| `$86:E287` | `Lufia2WorldMapTestObjects` | verified | `src/world/world_map_objects.c` |
+| `$86:E295` | `Lufia2WorldMapTestObject` | verified | `src/world/world_map_objects.c` |
 | `$86:E2D2` | `Lufia2WorldMapProjectObjects` | draft | `src/world/world_map_objects.c` |
 | `$86:E3AB` | `Lufia2WorldMapDrawObjects` | draft | `src/world/world_map_objects.c` |
 | `$86:E3D2` | `Lufia2WorldMapDrawObjectByKind` | draft | `src/world/world_map_objects.c` |
