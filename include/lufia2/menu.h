@@ -125,9 +125,11 @@ Lufia2ExecutionResult Lufia2MenuInputLoop(
 
 /* $86:8DD7 select screen video setup and empty layers; M1X0. Hands off at
  * $86:8B48 with its return pushed. */
+/* Complete screen setup requires a child, PB86, M8/X16, DP0, binary
+ * arithmetic and S $1F04..$1FFC. The original frame wait is preserved. */
 Lufia2ExecutionResult Lufia2MenuScreenSetup(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* $86:8E6B clears 1000 sprite flag bytes; M8/X16, RTL, any DP/DB.
  * Native selection uses S=$1F00..$1FFC, outside the flag table. */
@@ -272,9 +274,11 @@ Lufia2ExecutionResult Lufia2MenuSpellShopSetup(
     void *context);
 
 /* $82:8044 video transfer setup, then the frame wait; M8/X16, JSL */
+/* Complete queue/upload parent: required child, PB82, M8/X16, DP0,
+ * binary arithmetic and S $1F04..$1FFC; original $82:93C2 wait and RTL. */
 Lufia2ExecutionResult Lufia2MenuQueueVideoWrite(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* $86:9009 copies 256 bytes: M8/X16, DP=0, DB in a WRAM mirror,
  * S=$1F04..$1FFC, prepared MVN/RTS stub, target=$2000..$FF00. RTS. */
@@ -297,14 +301,19 @@ Lufia2ExecutionResult Lufia2MenuCopyImageBlock(
     Lufia2CpuState *cpu);
 
 /* $86:9022 image grid and upload; X16, JSL */
+/* Complete image parents require a child, PB86, DP0, X16, binary arithmetic,
+ * S $1F10..$1FFC and the original MVN/RTS RAM stub. DB is a low-WRAM alias
+ * or $7E. The set additionally requires M8, 1..7 list entries and each byte
+ * index <=85. Copies stay outside scratch/frames. Unsupported entries hand
+ * off before writes. The original upload wait owns frame progress. */
 Lufia2ExecutionResult Lufia2MenuLoadImageGrid(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* $86:8F6F image set and upload; M8/X16, JSL */
 Lufia2ExecutionResult Lufia2MenuLoadImageSet(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* $86:90C0 palette block copy; X16, JSL */
 Lufia2ExecutionResult Lufia2MenuLoadPalette0(

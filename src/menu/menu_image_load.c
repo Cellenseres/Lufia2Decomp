@@ -12,6 +12,9 @@
 #include "lufia2/menu.h"
 #include "lufia2/system.h"
 
+static Lufia2ExecutionResult QueueVideoWrite(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* Direct page: the row being copied, and the image set being walked. */
 enum {
     ROW_SOURCE = 0x08u,
@@ -27,7 +30,7 @@ enum {
 };
 
 /* Direct page: the video transfer request, and the words that the transfer
- * routine at $82:8067 takes from it. */
+ * routine at $82:8044 takes from it. */
 enum {
     STAGE_SOURCE = 0x5du,
     STAGE_BANK = 0x5fu,
@@ -235,11 +238,11 @@ static Lufia2ExecutionResult StageBuffer(
     LoadX16(cpu, size);
     WramWrite16(wram, STAGE_SIZE, cpu->x);
     SimulateJslFrame(memory, cpu, 0x86u, return_address);
-    return Lufia2MenuQueueVideoWrite(memory, cpu);
+    return QueueVideoWrite(memory, cpu);
 }
 
 /* $86:9022: seven image rows of 128 bytes from the table at $86:90AB. */
-Lufia2ExecutionResult Lufia2MenuLoadImageGrid(
+static Lufia2ExecutionResult LoadMenuImageGrid(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -312,7 +315,7 @@ static void SetBlockPositions(Lufia2CpuState *cpu, Lufia2Wram wram,
 
 /* $86:8F6F: three image blocks per entry of the list at $0A7B, taken from
  * the image table at $8E:E5C2, then the upload of the whole buffer. M8/X16. */
-Lufia2ExecutionResult Lufia2MenuLoadImageSet(
+static Lufia2ExecutionResult LoadMenuImageSet(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -450,7 +453,7 @@ Lufia2ExecutionResult Lufia2MenuLoadSlotPalettes(
 /* $82:8044: sets up the video transfer of $58 bytes from the long address
  * $5D to the VRAM address $60 and waits for the frame that performs it.
  * The wait is left to the original code. M8/X16, JSL. */
-Lufia2ExecutionResult Lufia2MenuQueueVideoWrite(
+static Lufia2ExecutionResult QueueVideoWrite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -471,4 +474,89 @@ Lufia2ExecutionResult Lufia2MenuQueueVideoWrite(
     SimulateJsrFrame(memory, cpu, 0x8067u);
     cpu->program_bank = 0x82u;
     return ExecutionHandoff(cpu, 0x8293c2u);
+}
+
+
+static bool ImageParentReady(const Lufia2Memory *memory,
+    const Lufia2CpuState *cpu, bool list) {
+    unsigned i, count;
+
+    if (cpu->program_bank != 0x86u || cpu->index_is_8_bit || cpu->decimal ||
+        cpu->direct_page != 0u || cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu ||
+        !(cpu->data_bank < 0x40u || cpu->data_bank == 0x7eu ||
+          (cpu->data_bank >= 0x80u && cpu->data_bank < 0xc0u)))
+        return false;
+    if (Read8(memory, COPY_BANK | MOVE_OPCODE) != COPY_MVN ||
+        Read8(memory, COPY_BANK | MOVE_RETURN) != COPY_RTS)
+        return false;
+    if (!list)
+        return true;
+    if (!cpu->accumulator_is_8_bit)
+        return false;
+    count = Read8(memory, AbsoluteIndexedAddress(cpu, LIST_COUNT, 0u));
+    if (!count || count > SLOT_COUNT_MAX)
+        return false;
+    for (i = 0; i < count; ++i) {
+        unsigned image = 3u * Read8(memory,
+            AbsoluteIndexedAddress(cpu, LIST_ENTRIES, (uint16_t)i));
+        if (image > 255u)
+            return false;
+    }
+    return true;
+}
+
+static Lufia2ExecutionResult CompleteUploadWait(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, uint32_t exit,
+    bool uploaded_image, bool grid) {
+    Lufia2ExecutionResult result;
+
+    if (!child(context, cpu, 0x8293c2u, 0x828065u, 2u)) {
+        result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        result.pc = cpu->resume_pc = 0x828065u;
+        return result;
+    }
+    if (uploaded_image) {
+        (void)Pull8(memory, cpu);
+        (void)Pull8(memory, cpu);
+        cpu->program_bank = Pull8(memory, cpu);
+        if (grid)
+            SimulateRtsFrame(memory, cpu);
+    }
+    return ExecutionReturned(exit);
+}
+
+Lufia2ExecutionResult Lufia2MenuQueueVideoWrite(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || cpu->program_bank != 0x82u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page != 0u || cpu->decimal ||
+        cpu->stack < 0x1f04u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x828044u);
+    QueueVideoWrite(memory, cpu);
+    return CompleteUploadWait(memory, cpu, child, context, 0x828068u, false, false);
+}
+
+Lufia2ExecutionResult Lufia2MenuLoadImageGrid(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    Lufia2ExecutionResult result;
+    if (!child || !ImageParentReady(memory, cpu, false))
+        return ExecutionHandoff(cpu, 0x869022u);
+    result = LoadMenuImageGrid(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_BOUNDARY || result.pc != 0x8293c2u)
+        return result;
+    return CompleteUploadWait(memory, cpu, child, context, 0x869069u, true, true);
+}
+
+Lufia2ExecutionResult Lufia2MenuLoadImageSet(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    Lufia2ExecutionResult result;
+    if (!child || !ImageParentReady(memory, cpu, true))
+        return ExecutionHandoff(cpu, 0x868f6fu);
+    result = LoadMenuImageSet(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_BOUNDARY || result.pc != 0x8293c2u)
+        return result;
+    return CompleteUploadWait(memory, cpu, child, context, 0x868ff5u, true, false);
 }

@@ -196,7 +196,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:FC0B` | `Lufia2PartyNewRecord` | verified | `src/party/level_up.c` |
 | `$81:FCE2` | `Lufia2CharacterSpritePointer` | verified | `src/battle/battle_character.c` |
 | `$82:8000` | `Lufia2MenuMultiply` | verified | `src/menu/menu_cursor.c` |
-| `$82:8044` | `Lufia2MenuQueueVideoWrite` | draft | `src/menu/menu_image_load.c` |
+| `$82:8044` | `Lufia2MenuQueueVideoWrite` | verified | `src/menu/menu_image_load.c` |
 | `$82:8069` | `Lufia2MenuTileGridFill` | verified | `src/menu/menu_tilemap.c` |
 | `$82:80A5` | `Lufia2MenuTileBlockFill` | verified | `src/menu/menu_tilemap.c` |
 | `$82:80CA` | `Lufia2MenuRecolorRect` | verified | `src/menu/menu_tilemap.c` |
@@ -421,12 +421,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:8BF5` | `Lufia2SpriteBuildOam` | verified | `src/menu/menu_sprites.c` |
 | `$86:8CDA` | `Lufia2SpriteSetTable` | verified | `src/menu/menu_sprites.c` |
 | `$86:8CF5` | `Lufia2SpriteSetAnimation` | verified | `src/menu/menu_sprites.c` |
-| `$86:8DD7` | `Lufia2MenuScreenSetup` | draft | `src/menu/menu_scene_setup.c` |
+| `$86:8DD7` | `Lufia2MenuScreenSetup` | verified | `src/menu/menu_scene_setup.c` |
 | `$86:8E6B` | `Lufia2SpriteClearSlots` | verified | `src/menu/menu_scene_setup.c` |
-| `$86:8F6F` | `Lufia2MenuLoadImageSet` | draft | `src/menu/menu_image_load.c` |
+| `$86:8F6F` | `Lufia2MenuLoadImageSet` | verified | `src/menu/menu_image_load.c` |
 | `$86:8FF6` | `Lufia2MenuCopyImageBlock` | verified | `src/menu/menu_image_load.c` |
 | `$86:9009` | `Lufia2MenuCopyImageRow256` | verified | `src/menu/menu_image_load.c` |
-| `$86:9022` | `Lufia2MenuLoadImageGrid` | draft | `src/menu/menu_image_load.c` |
+| `$86:9022` | `Lufia2MenuLoadImageGrid` | verified | `src/menu/menu_image_load.c` |
 | `$86:906A` | `Lufia2MenuCopyImageRow128` | verified | `src/menu/menu_image_load.c` |
 | `$86:90C0` | `Lufia2MenuLoadPalette0` | verified | `src/menu/menu_image_load.c` |
 | `$86:90D3` | `Lufia2MenuLoadPalette1` | verified | `src/menu/menu_image_load.c` |
