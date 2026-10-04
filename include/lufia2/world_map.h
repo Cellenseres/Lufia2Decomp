@@ -98,6 +98,17 @@ Lufia2ExecutionResult Lufia2WorldMapSortVisible(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* Object-pass contracts: binary arithmetic, DP0, X16 and a WRAM data
+ * bank. Records are the 22 fixed map/player records at $1469 + 29*n.
+ * Unsupported states hand off at the unchanged entry before any write.
+ * Assign, kind, draw, project and update require S >= $1F00, $1F04,
+ * $1F08, $1F00 and $1F10 respectively, all <= $1FFC.
+ * Assign searches 1..16 entries in pools $12A5..$12D5; existing pattern
+ * users must be fixed records. Draw requires <=21 visible records, an
+ * empty shared-pattern list and <=80 existing sprites. Project starts
+ * at X=$1469, Y=$124F, with 1..21 objects in DP $22.
+ * Update needs DB=$86/$06 for its ROM pool tables. Negative-Y records
+ * are inactive and may contain unknown kinds. */
 /* $86:E430 finds or adds the sprite pattern slot of the object at $02; carry
  * reports a new use. M0X0 only. */
 Lufia2ExecutionResult Lufia2WorldMapAssignSlot(
@@ -105,7 +116,7 @@ Lufia2ExecutionResult Lufia2WorldMapAssignSlot(
     Lufia2CpuState *cpu);
 
 /* $86:E3D2 draws the object at X by its kind; an unknown kind hands the
- * original dispatch back. M0X0 only. */
+ * original entry back before writes. M0X0 only. */
 Lufia2ExecutionResult Lufia2WorldMapDrawObjectByKind(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

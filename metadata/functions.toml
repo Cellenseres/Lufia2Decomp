@@ -3205,7 +3205,7 @@ name = "Lufia2WorldMapAssignSlot"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:E3D2"
@@ -3213,7 +3213,7 @@ name = "Lufia2WorldMapDrawObjectByKind"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:E3AB"
@@ -3221,7 +3221,7 @@ name = "Lufia2WorldMapDrawObjects"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:A5A9"
@@ -3237,7 +3237,7 @@ name = "Lufia2WorldMapProjectObjects"
 source = "src/world/world_map_objects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:E1B9"
@@ -3245,7 +3245,7 @@ name = "Lufia2WorldMapUpdateObjects"
 source = "src/world/world_map_objects.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # Battle background wave scroll table.
 [[function]]
