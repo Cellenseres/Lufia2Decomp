@@ -197,11 +197,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:FCE2` | `Lufia2CharacterSpritePointer` | verified | `src/battle/battle_character.c` |
 | `$82:8000` | `Lufia2MenuMultiply` | verified | `src/menu/menu_cursor.c` |
 | `$82:8044` | `Lufia2MenuQueueVideoWrite` | draft | `src/menu/menu_image_load.c` |
-| `$82:8069` | `Lufia2MenuTileGridFill` | draft | `src/menu/menu_tilemap.c` |
+| `$82:8069` | `Lufia2MenuTileGridFill` | verified | `src/menu/menu_tilemap.c` |
 | `$82:80A5` | `Lufia2MenuTileBlockFill` | verified | `src/menu/menu_tilemap.c` |
-| `$82:80CA` | `Lufia2MenuRecolorRect` | draft | `src/menu/menu_tilemap.c` |
+| `$82:80CA` | `Lufia2MenuRecolorRect` | verified | `src/menu/menu_tilemap.c` |
 | `$82:810E` | `Lufia2MenuDrawWindow` | verified | `src/menu/menu_window.c` |
-| `$82:838F` | `Lufia2MenuClearLayers` | draft | `src/menu/menu_tilemap.c` |
+| `$82:838F` | `Lufia2MenuClearLayers` | verified | `src/menu/menu_tilemap.c` |
 | `$82:8720` | `Lufia2MenuCursor` | draft | `src/menu/menu_input.c` |
 | `$82:88A0` | `Lufia2MenuItemIndex` | verified | `src/menu/menu_cursor.c` |
 | `$82:88CB` | `Lufia2MenuItemPosition` | verified | `src/menu/menu_cursor.c` |
