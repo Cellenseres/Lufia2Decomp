@@ -208,7 +208,8 @@ Lufia2ExecutionResult Lufia2BattleColorsMonster(
     Lufia2CpuState *cpu);
 
 /* $85:8B4B, $85:8BC0, $85:8C27, $85:8C98 sprite passes of the battle list;
- * JSL, M1X0. */
+ * JSL, M1X0. The first three require DP0, S $1F00..$1FFC;
+ * variable OAM output must fit in $7E:2000..$FFFF. */
 Lufia2ExecutionResult Lufia2BattleSpriteRecordsEntry(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
@@ -243,7 +244,8 @@ Lufia2ExecutionResult Lufia2BattleRandomBit(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $85:894A drifts the offsets of the six party records; JSL, M8/X16. */
+/* $85:894A drifts six party offsets; JSL, M8/X16, binary mode,
+ * S $1F00..$1FFC. */
 Lufia2ExecutionResult Lufia2BattleDriftRecords(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
@@ -856,7 +858,8 @@ Lufia2ExecutionResult Lufia2BattleRunItemScript(
 
 /* $81:8E92 rebuilds the actor sprite lists ($4B4A, $4C8A, $4DCA) from the
  * 64 actor records and publishes the per-list totals ($15DB, $15DF, $15E3).
- * M1X0 only (otherwise handed back), any DP. DB is set to $7E and restored.
+ * M1X0, binary mode, any DP. DB is set to $7E and restored.
+ * Rewritten child returns hand off after the original RTS.
  * Returns before RTS $818EE9. */
 Lufia2ExecutionResult Lufia2BattleActorSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);

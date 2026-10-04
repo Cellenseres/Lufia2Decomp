@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-461 functions in `metadata/functions.toml`: 433 verified, 28 draft, 0 identified, 0 disabled.
+461 functions in `metadata/functions.toml`: 439 verified, 22 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -65,7 +65,7 @@ for any caller widths. The world sprite and slot-flag clears `$86:E650` and
 `$82:88A0`/`$82:88CB` for the `$1F00..$1FFC` caller stack. The copied-member totals `$81:F481` are also verified for DP0 and the same
 caller stack, preserving the shared stat event. Scene tracks, view origin and the two battle velocity routines are also
 verified. The world object visibility leaf and its bounded original list caller are
-also verified. Sixty-seven feature additions are verified and 28 remain draft.
+also verified. Seventy-three feature additions are verified and 22 remain draft.
 
 The base main checkpoint passed **518 independent jobs**. The normal
 application build also passes. The consumer selects all 366 verified functions,
@@ -1385,3 +1385,41 @@ consumer hook lies inside these routines.
 67 of 95 feature routines are verified, with 28 draft. The integrated 518-job
 verification and Release build must pass before the staged selection is a
 green checkpoint. Main and the normal build remain unchanged.
+
+
+## Battle sprite lists, OAM groups, drift and slot palettes
+
+The six roots $81:8E92, $85:8B4B/$8BC0/$8C27/$894A and $86:911F
+have complete native contracts. Unsupported entries resume the original at
+the unchanged entry, before any CPU update or memory write. The three OAM
+passes require M8/X16, DP0 and S $1F00..$1FFC. Variable output spans must
+fit in $7E:2000..$FFFF, protecting DP scratch, return frames and the bank
+boundary. Drift requires M8/X16 and binary arithmetic with that stack band.
+Slot palettes require X16, DP0 and counts 1..7; the consumer protects the
+same stack band. Larger counts can overwrite the RAM move stub.
+
+The actor-list root keeps the actual saved record index and child return
+address. Sprite writes can rewrite either. Rewritten child returns are
+exported immediately after the original RTS, with its actual CPU, WRAM and
+bus effects. All 189 transfer cases match the original landing after RTS;
+they are complete abnormal exits, not unimplemented child prefixes. Four
+additional saved-index witnesses also match the actual-library ABI. The
+longest original run takes 335746 instructions; only those four witnesses
+use a 2097152-step cap instead of the default 262144. No comparison is
+relaxed. The saved-index mutation is detected by two of those witnesses.
+
+The six actual-library ABI matrices cover 102784 cases: 57421 native
+comparisons and 45363 unchanged-entry fallbacks. An additional 141
+entry-guard cases cover widths, emulation, program bank, decimal mode,
+direct page, both stack bounds, OAM span boundaries and invalid slot counts.
+They check CPU and WRAM preservation and exact permitted read-only preflight
+accesses. Eleven effective source/bridge controls are caught. Historical
+ineffective guard-removal controls and diagnostic crashes are retained in
+the receipt but excluded from that count; source controls were repeated with
+explicit selection-error diagnostics. Removing one redundant guard alone
+correctly leaves the second guard effective. No recomp hook is swallowed.
+
+73 of 95 feature routines are verified, with 22 draft. All 518 independent
+verification jobs and the Release build pass with 439 standalone native
+replacements. All six roots have actual generated dispatch entries. This is
+an isolated local checkpoint; main and the normal build are unchanged.

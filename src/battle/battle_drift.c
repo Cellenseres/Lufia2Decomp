@@ -127,7 +127,9 @@ Lufia2ExecutionResult Lufia2BattleDriftRecords(
     uint8_t active;
 
     result.dispatches = 0;
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    /* BCD record steps never end; stack must miss tables. */
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
         return ExecutionHandoff(cpu, 0x85894au);
     PushDataBank(memory, cpu);
     Push8(memory, cpu, DRIFT_BANK);
