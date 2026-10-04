@@ -114,7 +114,9 @@ Lufia2ExecutionResult Lufia2DecimalDigits3(
 Lufia2ExecutionResult Lufia2Multiply16By8(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
-/* $80:8703 NMI sprite and palette DMA and pad reading; entry M1. */
+/* $80:8703 requested OAM/palette DMA, then pad input/repeat. PB80, M8,
+ * either X width, DP0, hardware DB, S1F00..1FFC. Restores caller P. The
+ * host memory service must advance HVBJOY polling; LLE contexts use fallback. */
 Lufia2ExecutionResult Lufia2NmiSpritesPaletteAndPads(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

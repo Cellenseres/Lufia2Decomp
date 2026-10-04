@@ -102,7 +102,7 @@ any memory access. The consumer checks this caller contract before any write.
 | --- | --- | --- | --- | --- |
 | `$81:8E92` | `Lufia2BattleActorSprites` | JSR / RTS | M1X0 | M1X0 |
 | `$81:8EEA` | `Lufia2BattleActorSprite` | JSR / RTS | M0X0 | M0X0 |
-| `$81:9169` | `Lufia2BattleEffectMarkLoop` | table or jump entry | M1X0 | M1X0 |
+| `$81:9169` | `Lufia2BattleEffectYield` | table or jump entry | M1X0 | M1X0 |
 | `$81:953F` | `Lufia2BattleEffectRepeat` | table or jump entry | M1X0 | M1X0 |
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | table or jump entry | M1X0 | M1X0 |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | table or jump entry | M1X0 | M1X0 |

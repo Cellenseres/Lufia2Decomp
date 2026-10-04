@@ -15,7 +15,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:8378` | `Lufia2Divide16` | verified | `src/system/math.c` |
 | `$80:8638` | `Lufia2MainNmi` | verified | `src/system/nmi.c` |
 | `$80:86C1` | `Lufia2ScreenFade` | verified | `src/system/screen.c` |
-| `$80:8703` | `Lufia2NmiSpritesPaletteAndPads` | draft | `src/system/nmi_uploads.c` |
+| `$80:8703` | `Lufia2NmiSpritesPaletteAndPads` | verified | `src/system/nmi_uploads.c` |
 | `$80:87A7` | `Lufia2NmiScrollAndUploads` | verified | `src/system/nmi_uploads.c` |
 | `$80:87FC` | `Lufia2NmiTilemapUploads` | verified | `src/system/nmi_uploads.c` |
 | `$80:8878` | `Lufia2MenuDrawString` | verified | `src/menu/menu_string.c` |
@@ -67,7 +67,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:890A` | `Lufia2BattleExecuteTurns` | verified | `src/battle/battle_actions.c` |
 | `$81:8E92` | `Lufia2BattleActorSprites` | verified | `src/battle/battle_monster_oam.c` |
 | `$81:8EEA` | `Lufia2BattleActorSprite` | verified | `src/battle/battle_monster_oam.c` |
-| `$81:9169` | `Lufia2BattleEffectMarkLoop` | draft | `src/battle/battle_effect_ops.c` |
+| `$81:9169` | `Lufia2BattleEffectYield` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:953F` | `Lufia2BattleEffectRepeat` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
