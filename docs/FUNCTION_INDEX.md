@@ -7,7 +7,7 @@ Generated from `metadata/functions.toml`; update it with
 <!-- metadata-index:begin (scripts/metadata_index.py) -->
 | Address | Symbol | Status | Source |
 | --- | --- | --- | --- |
-| `$00:057D` | `Lufia2RamBlockMove` | draft | `src/system/block_move.c` |
+| `$00:057D` | `Lufia2RamBlockMove` | verified | `src/system/block_move.c` |
 | `$80:8299` | `Lufia2RandomScale` | verified | `src/system/random.c` |
 | `$80:82C7` | `Lufia2RandomByte` | verified | `src/system/random.c` |
 | `$80:82E7` | `Lufia2SeedRandom` | verified | `src/system/random.c` |
@@ -424,10 +424,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:8DD7` | `Lufia2MenuScreenSetup` | draft | `src/menu/menu_scene_setup.c` |
 | `$86:8E6B` | `Lufia2SpriteClearSlots` | verified | `src/menu/menu_scene_setup.c` |
 | `$86:8F6F` | `Lufia2MenuLoadImageSet` | draft | `src/menu/menu_image_load.c` |
-| `$86:8FF6` | `Lufia2MenuCopyImageBlock` | draft | `src/menu/menu_image_load.c` |
-| `$86:9009` | `Lufia2MenuCopyImageRow256` | draft | `src/menu/menu_image_load.c` |
+| `$86:8FF6` | `Lufia2MenuCopyImageBlock` | verified | `src/menu/menu_image_load.c` |
+| `$86:9009` | `Lufia2MenuCopyImageRow256` | verified | `src/menu/menu_image_load.c` |
 | `$86:9022` | `Lufia2MenuLoadImageGrid` | draft | `src/menu/menu_image_load.c` |
-| `$86:906A` | `Lufia2MenuCopyImageRow128` | draft | `src/menu/menu_image_load.c` |
+| `$86:906A` | `Lufia2MenuCopyImageRow128` | verified | `src/menu/menu_image_load.c` |
 | `$86:90C0` | `Lufia2MenuLoadPalette0` | verified | `src/menu/menu_image_load.c` |
 | `$86:90D3` | `Lufia2MenuLoadPalette1` | verified | `src/menu/menu_image_load.c` |
 | `$86:90E6` | `Lufia2MenuLoadPalette2` | verified | `src/menu/menu_image_load.c` |

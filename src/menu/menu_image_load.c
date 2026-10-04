@@ -43,6 +43,19 @@ enum {
 
 /* The block move stub in work RAM, and the buffer the rows are copied to. */
 enum {
+    MOVE_OPCODE = 0x057du,
+    MOVE_RETURN = 0x0580u,
+    COPY_BANK = 0x860000u,
+    COPY_MVN = 0x54u,
+    COPY_RTS = 0x60u,
+    COPY_OUTPUT_MIN = 0x2000u,
+    COPY_OUTPUT_MAX = 0xffffu,
+    COPY_STACK_MAX = 0x1ffcu,
+    ROW_COPY_STACK_MIN = 0x1f04u,
+    BLOCK_COPY_STACK_MIN = 0x1f08u,
+    ROW_256_LAST_BYTE = 0x00ffu,
+    ROW_128_LAST_BYTE = 0x007fu,
+    BLOCK_LAST_BYTE = 0x02ffu,
     MOVE_DESTINATION = 0x057eu,
     MOVE_SOURCE = 0x057fu,
     BUFFER = 0x6000u,
@@ -75,6 +88,25 @@ enum {
     SLOT_BLOCK_SIZE = 0x20u,
     SLOT_BLOCKS = 0xccf8u
 };
+
+/* Keep the RAM stub, scratch and saved frames outside the copy output. */
+static bool ImageCopyReady(
+    const Lufia2Memory *memory, const Lufia2CpuState *cpu,
+    uint16_t last_offset, uint16_t minimum_stack) {
+    uint16_t target;
+
+    if (cpu->index_is_8_bit || cpu->direct_page != 0u ||
+        cpu->stack < minimum_stack || cpu->stack > COPY_STACK_MAX ||
+        !(cpu->data_bank < 0x40u || cpu->data_bank == BUFFER_BANK ||
+          (cpu->data_bank >= 0x80u && cpu->data_bank < 0xc0u)))
+        return false;
+    if (Read8(memory, COPY_BANK | MOVE_OPCODE) != COPY_MVN ||
+        Read8(memory, COPY_BANK | MOVE_RETURN) != COPY_RTS)
+        return false;
+    target = Read16Direct(memory, cpu, ROW_TARGET);
+    return target >= COPY_OUTPUT_MIN &&
+        (uint32_t)target + last_offset <= COPY_OUTPUT_MAX;
+}
 
 typedef Lufia2ExecutionResult (*Subroutine)(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
@@ -113,13 +145,18 @@ Lufia2ExecutionResult Lufia2MenuCopyImageRow256(
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
+    uint16_t source_offset;
+    uint16_t target_offset;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit ||
+        !ImageCopyReady(memory, cpu, ROW_256_LAST_BYTE, ROW_COPY_STACK_MIN))
         return ExecutionHandoff(cpu, 0x869009u);
     WramWrite(wram, MOVE_DESTINATION, BUFFER_BANK);
     WramWrite(wram, MOVE_SOURCE, WramRead(wram, IMAGE_BANK));
-    if (!MoveBytes(memory, cpu, WramRead16(wram, ROW_SOURCE),
-            WramRead16(wram, ROW_TARGET), 0x00ffu, 0x901eu, &result))
+    source_offset = WramRead16(wram, ROW_SOURCE);
+    target_offset = WramRead16(wram, ROW_TARGET);
+    if (!MoveBytes(memory, cpu, source_offset, target_offset,
+            0x00ffu, 0x901eu, &result))
         return result;
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x869021u);
@@ -132,7 +169,7 @@ Lufia2ExecutionResult Lufia2MenuCopyImageBlock(
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
 
-    if (cpu->index_is_8_bit)
+    if (!ImageCopyReady(memory, cpu, BLOCK_LAST_BYTE, BLOCK_COPY_STACK_MIN))
         return ExecutionHandoff(cpu, 0x868ff6u);
     SetAccumulatorWidth(cpu, 1);
     PushDataBank(memory, cpu);
@@ -157,19 +194,23 @@ Lufia2ExecutionResult Lufia2MenuCopyImageRow128(
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
+    uint16_t source_offset;
+    uint16_t target_offset;
     Word16Result source;
     Word16Result target;
 
-    if (cpu->index_is_8_bit)
+    if (!ImageCopyReady(memory, cpu, ROW_128_LAST_BYTE, ROW_COPY_STACK_MIN))
         return ExecutionHandoff(cpu, 0x86906au);
     WramWrite(wram, MOVE_DESTINATION, BUFFER_BANK);
     WramWrite(wram, MOVE_SOURCE, WramRead(wram, ROW_BANK));
-    if (!MoveBytes(memory, cpu, WramRead16(wram, ROW_SOURCE),
-            WramRead16(wram, ROW_TARGET), 0x007fu, 0x9081u, &result))
+    source_offset = WramRead16(wram, ROW_SOURCE);
+    target_offset = WramRead16(wram, ROW_TARGET);
+    if (!MoveBytes(memory, cpu, source_offset, target_offset,
+            0x007fu, 0x9081u, &result))
         return result;
-    source = Sum16(WramRead16(wram, ROW_SOURCE), 0x0080u, false);
+    source = Sum16Mode(WramRead16(wram, ROW_SOURCE), 0x0080u, false, cpu->decimal);
     WramWrite16(wram, ROW_SOURCE, source.value);
-    target = Sum16(WramRead16(wram, ROW_TARGET), 0x0200u, false);
+    target = Sum16Mode(WramRead16(wram, ROW_TARGET), 0x0200u, false, cpu->decimal);
     WramWrite16(wram, ROW_TARGET, target.value);
     LeaveSum(cpu, target);
     return ExecutionReturned(0x869092u);
