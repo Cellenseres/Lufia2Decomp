@@ -262,7 +262,9 @@ Lufia2ExecutionResult Lufia2BattleVelocityOfAngle(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $85:A736 32 entries of the ripple table at $7E:4400; JSR, M8/X16. */
+/* $85:A736 fills 32 ripple bytes at $7E:4400; JSR, M8/X16.
+ * The counter at uint16(DP+$33) must lie in low WRAM. Preserves X and
+ * the bank restored from the caller's stack, including stack aliases. */
 Lufia2ExecutionResult Lufia2BattleRippleRow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

@@ -156,7 +156,9 @@ Lufia2ExecutionResult Lufia2WorldPlaneRows3(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:A583 24-bit product of the word at $4E and the byte at $50; M8/X16. */
+/* $86:A583 writes the 24-bit product of DP $4E and DP $50; M8/X16, RTS.
+ * Any DP/DB; preserves original multiplier accesses, decimal ADC and
+ * scratch aliases. X retains the first hardware product. */
 Lufia2ExecutionResult Lufia2WorldProduct16By8(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

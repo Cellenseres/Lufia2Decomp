@@ -397,8 +397,9 @@ Lufia2ExecutionResult Lufia2SceneViewOrigin(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $80:ED0E unpacks the 2-bit cell fields at $7F:C000 into the attribute
- * bytes. JSL, any width, leaves M8/X16. */
+/* $80:ED0E unpacks four 2-bit fields per source byte; JSL, any width,
+ * leaves M8/X16. DP0, S=$1F00..$1FFC and a nonzero rounded dimension
+ * product; unsupported entries retain the original path. */
 Lufia2ExecutionResult Lufia2FieldUnpackAttributes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
