@@ -127,7 +127,10 @@ Lufia2ExecutionResult Lufia2NmiTilemapUploads(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 /* $00:057D RAM block move: A + 1 bytes from the source bank at X to the
- * destination bank at Y, banks taken from $057E/$057F; JSR. */
+ * destination bank at Y, banks taken from $057E/$057F. X16, any M/DP/DB;
+ * S=$1F00..$1FFC, code in a low-RAM bank, prepared MVN/RTS bytes,
+ * destination=$7E/$7F, Y >= $2000 and Y + A <= $FFFF.
+ * Other entry states hand off untouched; RTS. */
 Lufia2ExecutionResult Lufia2RamBlockMove(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

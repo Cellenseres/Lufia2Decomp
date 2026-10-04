@@ -273,17 +273,22 @@ Lufia2ExecutionResult Lufia2MenuQueueVideoWrite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:9009 one 256-byte image row; M8/X16, JSR */
+/* $86:9009 copies 256 bytes: M8/X16, DP=0, DB in a WRAM mirror,
+ * S=$1F04..$1FFC, prepared MVN/RTS stub, target=$2000..$FF00. RTS. */
 Lufia2ExecutionResult Lufia2MenuCopyImageRow256(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:906A one 128-byte image row; X16, JSR */
+/* $86:906A copies 128 bytes: X16, DP=0, DB in a WRAM mirror,
+ * S=$1F04..$1FFC, prepared MVN/RTS stub, target=$2000..$FF80.
+ * Any accumulator width and decimal mode; RTS. */
 Lufia2ExecutionResult Lufia2MenuCopyImageRow128(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:8FF6 two image rows; X16, JSR */
+/* $86:8FF6 copies two rows: X16, DP=0, DB in a WRAM mirror,
+ * S=$1F08..$1FFC, prepared MVN/RTS stub, target=$2000..$FD00.
+ * Any accumulator width and decimal mode; RTS. */
 Lufia2ExecutionResult Lufia2MenuCopyImageBlock(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

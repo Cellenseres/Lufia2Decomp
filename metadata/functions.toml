@@ -3659,7 +3659,7 @@ name = "Lufia2RamBlockMove"
 source = "src/system/block_move.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "82:8044"
@@ -3675,7 +3675,7 @@ name = "Lufia2MenuCopyImageRow256"
 source = "src/menu/menu_image_load.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:906A"
@@ -3683,7 +3683,7 @@ name = "Lufia2MenuCopyImageRow128"
 source = "src/menu/menu_image_load.c"
 entry_mx = "M1X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:8FF6"
@@ -3691,7 +3691,7 @@ name = "Lufia2MenuCopyImageBlock"
 source = "src/menu/menu_image_load.c"
 entry_mx = "M1X0"
 exit_mx = "M0X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:9022"
