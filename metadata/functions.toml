@@ -3543,7 +3543,7 @@ name = "Lufia2FieldUnpackAttributes"
 source = "src/field/field_attributes.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:DE2A"
@@ -3609,7 +3609,7 @@ name = "Lufia2BattleRippleRow"
 source = "src/battle/battle_background_wave.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:AA3D"
@@ -3772,7 +3772,7 @@ name = "Lufia2WorldProduct16By8"
 source = "src/world/world_scroll_step.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "86:A417"

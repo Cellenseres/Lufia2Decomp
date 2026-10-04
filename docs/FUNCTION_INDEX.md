@@ -45,7 +45,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:E722` | `Lufia2FieldStartEvent` | verified | `src/field/field_event_script.c` |
 | `$80:E844` | `Lufia2FieldInitializeMapEvents` | verified | `src/field/field_map_load.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |
-| `$80:ED0E` | `Lufia2FieldUnpackAttributes` | draft | `src/field/field_attributes.c` |
+| `$80:ED0E` | `Lufia2FieldUnpackAttributes` | verified | `src/field/field_attributes.c` |
 | `$80:ED9C` | `Lufia2FieldBuildAttributes` | verified | `src/field/field_attributes.c` |
 | `$80:EF8E` | `Lufia2FieldLoadSceneGraphics` | verified | `src/field/field_scene_graphics.c` |
 | `$80:F2F3` | `Lufia2FieldSetSceneDisplay` | verified | `src/field/field_scene_display.c` |
@@ -381,7 +381,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9CD7` | `Lufia2BattleQueueActionWindow` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9CEE` | `Lufia2BattleQueueListWindow` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9DD4` | `Lufia2BattleQueueTurnDisplay` | verified | `src/battle/battle_turn_display.c` |
-| `$85:A736` | `Lufia2BattleRippleRow` | draft | `src/battle/battle_background_wave.c` |
+| `$85:A736` | `Lufia2BattleRippleRow` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AA3D` | `Lufia2BattleRippleWords` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AADC` | `Lufia2BattleStartMessageEffect` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB28` | `Lufia2BattleTickMessageEffect` | verified | `src/battle/battle_message_effect.c` |
@@ -439,7 +439,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:A417` | `Lufia2WorldStepOffsets` | draft | `src/world/world_scroll_step.c` |
-| `$86:A583` | `Lufia2WorldProduct16By8` | draft | `src/world/world_scroll_step.c` |
+| `$86:A583` | `Lufia2WorldProduct16By8` | verified | `src/world/world_scroll_step.c` |
 | `$86:A5A9` | `Lufia2WorldMapDivide32` | verified | `src/world/world_map_objects.c` |
 | `$86:A791` | `Lufia2SceneViewOrigin` | verified | `src/field/field_scene_tracks.c` |
 | `$86:A894` | `Lufia2WorldMapPlane` | verified | `src/world/world_map_plane.c` |

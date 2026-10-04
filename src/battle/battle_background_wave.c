@@ -14,7 +14,7 @@ enum {
     WAVE_BASE = 0x059eu,
     WAVE_PHASE = 0x1b22u,
     WAVE_TABLE_READY = 0x1b20u,
-    WAVE_PATTERN = 0x85a29cu,
+    WAVE_PATTERN = 0xa29cu,
     WAVE_PATTERN_END = 0x0040u,
     WAVE_LAST_PHASE = 0x003eu,
     WAVE_TABLE = 0x7e4000u,
@@ -29,15 +29,14 @@ typedef struct {
 } WaveFill;
 
 /* Advance the repeating ripple phase while adding the base scroll. */
-static WaveFill FillWaveTable(
-    const Lufia2Memory *memory, Lufia2Wram wram, uint16_t phase, bool decimal) {
+static WaveFill FillWaveTable(Lufia2Wram wram, uint16_t phase, bool decimal) {
     WaveFill fill;
     uint16_t offset = 0;
 
     fill.phase = phase;
     do {
         fill.last = Sum16Mode(
-            Read16Long(memory, LongIndexedAddress(WAVE_PATTERN, fill.phase)),
+            WramRead16At(wram, WAVE_PATTERN, fill.phase),
             WramRead16(wram, WAVE_BASE), false, decimal);
         WramWrite16At(wram, WAVE_TABLE, offset, fill.last.value);
         fill.phase = (uint16_t)(fill.phase + 2u);
@@ -53,7 +52,7 @@ static Lufia2Wram EnterWaveBank(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, WAVE_BANK);
-    return WramViewInBank(memory, cpu, WAVE_BANK);
+    return WramViewOfCaller(memory, cpu);
 }
 
 /* Publish the table, preserving the accumulator's high byte. */
@@ -76,7 +75,7 @@ Lufia2ExecutionResult Lufia2BattleWaveFill(
         return ExecutionHandoff(cpu, 0x85aeebu);
     wram = EnterWaveBank(memory, cpu);
     PushStackWord(memory, cpu, cpu->x);
-    fill = FillWaveTable(memory, wram, 0, cpu->decimal);
+    fill = FillWaveTable(wram, 0, cpu->decimal);
     cpu->x = PullStackWord(memory, cpu);
     cpu->y = fill.phase;
     cpu->carry = true;
@@ -97,7 +96,7 @@ Lufia2ExecutionResult Lufia2BattleWaveForward(
         return ExecutionHandoff(cpu, 0x85ae68u);
     wram = EnterWaveBank(memory, cpu);
     PushStackWord(memory, cpu, cpu->x);
-    fill = FillWaveTable(memory, wram, WramRead16(wram, WAVE_PHASE), cpu->decimal);
+    fill = FillWaveTable(wram, WramRead16(wram, WAVE_PHASE), cpu->decimal);
     cpu->x = PullStackWord(memory, cpu);
     next = (uint16_t)(WramRead16(wram, WAVE_PHASE) + 2u);
     cpu->carry = next >= WAVE_PATTERN_END;
@@ -122,7 +121,7 @@ Lufia2ExecutionResult Lufia2BattleWaveBackward(
         return ExecutionHandoff(cpu, 0x85ade1u);
     wram = EnterWaveBank(memory, cpu);
     PushStackWord(memory, cpu, cpu->x);
-    fill = FillWaveTable(memory, wram, WramRead16(wram, WAVE_PHASE), cpu->decimal);
+    fill = FillWaveTable(wram, WramRead16(wram, WAVE_PHASE), cpu->decimal);
     cpu->x = PullStackWord(memory, cpu);
     previous = (uint16_t)(WramRead16(wram, WAVE_PHASE) - 2u);
     if ((previous & 0x8000u) != 0)

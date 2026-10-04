@@ -3,6 +3,8 @@
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
+#include "core/plain_ops.h"
+#include "core/wram_view.h"
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
@@ -305,78 +307,98 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
     return result;
 }
 
-/* One attribute pair: bits 4-5 of the byte at $0001,X take the field. */
-static void AttributeField(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, 0x0001u, cpu->x);
-    And8(cpu, 0xcfu);
-    Or8(cpu, DirectByte(memory, cpu, 0x55u));
-    StoreAAbsolute8(memory, cpu, 0x0001u, cpu->x);
-    IncrementX16(cpu);
-    IncrementX16(cpu);
+enum {
+    PACKED_LAYOUT = 0x05aau,
+    PACKED_WIDTH = 0x7fd010u,
+    PACKED_HEIGHT = 0x7fd018u,
+    PACKED_TARGET = 0x7fd008u,
+    PACKED_SOURCE = 0x7fc000u,
+    ATTRIBUTE_BYTE = 0x7f0001u,
+    PACKED_BYTE = 0x54u,
+    ATTRIBUTE_FIELD = 0x55u,
+    PACKED_GROUP_COUNT = 0x58u,
+    ATTRIBUTE_MASK = 0xcfu,
+    CELLS_PER_GROUP = 4u,
+    ATTRIBUTE_STRIDE = 2u,
+    ATTRIBUTE_BANK = 0x7fu,
+    FIELD_STACK_MIN = 0x1f00u,
+    FIELD_STACK_MAX = 0x1ffcu
+};
+
+/* The count guard uses only RAM before the routine changes any state. */
+static uint16_t PackedAttributeGroups(const Lufia2Memory *memory, bool decimal) {
+    const uint8_t layout = Read8(memory, PACKED_LAYOUT);
+    const uint8_t width = Read8(memory, PACKED_WIDTH + layout);
+    const uint8_t height = Read8(memory, PACKED_HEIGHT + layout);
+    const Word16Result rounded = Sum16Mode((uint16_t)(width * height),
+        CELLS_PER_GROUP - 1u, false, decimal);
+
+    return (uint16_t)(rounded.value >> 2);
 }
 
-/* $80:ED0E: unpacks 2-bit fields from $7F:C000 into the attribute bits 4-5
- * of every second byte at $7F:0001,X, four cells per source byte. The
- * cell count comes from the product of two table bytes. Any width, JSL;
- * leaves M8/X16. */
+/* Preserve the other attribute bits and advance to the next cell. */
+static uint8_t MergePackedAttribute(Lufia2Wram wram, uint16_t cell) {
+    const uint8_t original = WramReadAt(wram, ATTRIBUTE_BYTE, cell);
+    const uint8_t field = WramRead(wram, ATTRIBUTE_FIELD);
+    const uint8_t merged = (uint8_t)((original & ATTRIBUTE_MASK) | field);
+
+    WramWriteAt(wram, ATTRIBUTE_BYTE, cell, merged);
+    return merged;
+}
+
+/* Four packed two-bit fields become bits 4-5 of consecutive attributes. */
 Lufia2ExecutionResult Lufia2FieldUnpackAttributes(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    if (!DirectWorkWordAvailable(cpu, 0x58u))
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewInBank(memory, cpu, ATTRIBUTE_BANK);
+    uint8_t layout;
+    uint8_t width;
+    uint8_t height;
+    uint8_t last_attribute = 0;
+    uint16_t cell;
+    uint16_t group = 0;
+    uint16_t group_count;
+    Word16Result rounded;
+
+    if (cpu->direct_page != 0u || cpu->stack < FIELD_STACK_MIN ||
+        cpu->stack > FIELD_STACK_MAX ||
+        PackedAttributeGroups(memory, cpu->decimal) == 0u)
         return ExecutionHandoff(cpu, 0x80ed0eu);
     PushDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
-    OpSetDataBank(memory, cpu, 0x7fu);
-    TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, 0x0005aau));
-    TransferAToX(cpu);
-    LoadAAbsolute8(memory, cpu, 0xd010u, cpu->x);
-    Write8(memory, SNES_WRMPYA, A8(cpu));
-    LoadAAbsolute8(memory, cpu, 0xd018u, cpu->x);
-    Write8(memory, SNES_WRMPYB, A8(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xd008u, cpu->x));
-    TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, SNES_RDMPYL));
-    cpu->carry = 0;
-    OpAdcValue(cpu, 3u);
-    LsrA16(cpu);
-    LsrA16(cpu);
-    StoreADirect16(memory, cpu, 0x58u);
-    SetAccumulatorWidth(cpu, 1);
-    LoadY16(cpu, 0);
+    OpSetDataBank(memory, cpu, ATTRIBUTE_BANK);
+    layout = Read8(memory, PACKED_LAYOUT);
+    width = Read8(memory, PACKED_WIDTH + layout);
+    Write8(memory, SNES_WRMPYA, width);
+    height = Read8(memory, PACKED_HEIGHT + layout);
+    Write8(memory, SNES_WRMPYB, height);
+    cell = Read16Long(memory, PACKED_TARGET + layout);
+    rounded = Sum16Mode(Read16Long(memory, SNES_RDMPYL),
+        CELLS_PER_GROUP - 1u, false, cpu->decimal);
+    group_count = (uint16_t)(rounded.value >> 2);
+    WramWrite16(wram, PACKED_GROUP_COUNT, group_count);
     do {
-        LoadAAbsolute8(memory, cpu, 0xc000u, cpu->y);
-        StoreADirect8(memory, cpu, 0x54u);
-        And8(cpu, 0x03u);
-        AslA8(cpu);
-        AslA8(cpu);
-        AslA8(cpu);
-        AslA8(cpu);
-        StoreADirect8(memory, cpu, 0x55u);
-        AttributeField(memory, cpu);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
-        And8(cpu, 0x0cu);
-        AslA8(cpu);
-        AslA8(cpu);
-        StoreADirect8(memory, cpu, 0x55u);
-        AttributeField(memory, cpu);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
-        And8(cpu, 0x30u);
-        StoreADirect8(memory, cpu, 0x55u);
-        AttributeField(memory, cpu);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x54u));
-        And8(cpu, 0xc0u);
-        LsrA8(cpu);
-        LsrA8(cpu);
-        StoreADirect8(memory, cpu, 0x55u);
-        AttributeField(memory, cpu);
-        IncrementY16(cpu);
-        Compare16(cpu, cpu->y, Read16Direct(memory, cpu, 0x58u));
-    } while (!cpu->zero);
+        unsigned pair;
+        uint8_t packed = WramReadAt(wram, PACKED_SOURCE, group);
+
+        WramWrite(wram, PACKED_BYTE, packed);
+        for (pair = 0; pair < CELLS_PER_GROUP; ++pair) {
+            uint8_t field;
+
+            if (pair != 0u)
+                packed = WramRead(wram, PACKED_BYTE);
+            field = (uint8_t)(((packed >> (pair * 2u)) & 3u) << 4);
+            WramWrite(wram, ATTRIBUTE_FIELD, field);
+            last_attribute = MergePackedAttribute(wram, cell);
+            cell = (uint16_t)(cell + ATTRIBUTE_STRIDE);
+        }
+        group = (uint16_t)(group + 1u);
+    } while (group != WramRead16(wram, PACKED_GROUP_COUNT));
+    cpu->x = cell;
+    cpu->y = group;
+    cpu->accumulator = (uint16_t)((group_count & 0xff00u) | last_attribute);
+    cpu->carry = 1;
+    cpu->overflow = rounded.overflow;
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x80ed9bu);
 }
