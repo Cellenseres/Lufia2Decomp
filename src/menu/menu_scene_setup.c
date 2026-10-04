@@ -100,15 +100,16 @@ Lufia2ExecutionResult Lufia2MenuScreenSetup(
 Lufia2ExecutionResult Lufia2SpriteClearSlots(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint16_t slot;
+
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x868e6bu);
-    LoadX16(cpu, SLOT_FLAGS);
-    LoadY16(cpu, SLOT_FLAGS_SIZE);
-    do {
-        StoreZeroAbsolute8(memory, cpu, 0x0000u, cpu->x);
-        IncrementX16(cpu);
-        cpu->y = (uint16_t)(cpu->y - 1u);
-        SetNz16(cpu, cpu->y);
-    } while (!cpu->zero);
+    for (slot = SLOT_FLAGS; slot < SLOT_FLAGS + SLOT_FLAGS_SIZE; ++slot)
+        WramWriteAt(wram, SLOT_FLAGS, (uint16_t)(slot - SLOT_FLAGS), 0);
+    cpu->x = SLOT_FLAGS + SLOT_FLAGS_SIZE;
+    cpu->y = 0;
+    cpu->zero = 1;
+    cpu->negative = 0;
     return ExecutionReturned(0x868e78u);
 }

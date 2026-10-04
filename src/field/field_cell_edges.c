@@ -19,6 +19,9 @@ enum {
     EDGE_OPEN = 0x2000u,
     STEP_BUDGET = 0x0200u,
 
+    CELL_POINTER_STACK_MIN = 0x1f04u,
+    CELL_POINTER_STACK_MAX = 0x1ffcu,
+
     DP_COLUMN = 0x8fu,            /* start cell, as two bytes */
     DP_ROW = 0x91u,
     DP_ROW_STEP = 0x28u,          /* one row of cells, in bytes */
@@ -631,34 +634,34 @@ Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
 Lufia2ExecutionResult Lufia2FieldCellPointer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    uint8_t column;
+    uint8_t row;
+    uint16_t relative;
+    uint16_t map_slot;
+    Word16Result address;
+
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->stack < CELL_POINTER_STACK_MIN || cpu->stack > CELL_POINTER_STACK_MAX)
         return ExecutionHandoff(cpu, 0x83f9d0u);
     SimulateJsrFrame(memory, cpu, 0xf9d2u);
-    LoadA8(cpu, DirectByte(memory, cpu, DP_COLUMN));
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, DirectByte(memory, cpu, DP_ROW));
+    column = DirectByte(memory, cpu, DP_COLUMN);
+    row = DirectByte(memory, cpu, DP_ROW);
     SimulateJsrFrame(memory, cpu, 0xf9dbu);
-    Write8(memory, SNES_WRMPYA, A8(cpu));
-    LoadA8(cpu, Read8(memory, MAP_WIDTH));
-    Write8(memory, SNES_WRMPYB, A8(cpu));
-    LoadA8(cpu, 0);
-    ExchangeAccumulatorBytes(cpu);
-    SetAccumulatorWidth(cpu, 0);
-    cpu->carry = 0;
-    OpAdcValue(cpu, Read16Long(memory, SNES_RDMPYL));
-    AslA16(cpu);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
+    Write8(memory, SNES_WRMPYA, row);
+    Write8(memory, SNES_WRMPYB, Read8(memory, MAP_WIDTH));
+    address = Sum16Mode(column, Read16Long(memory, SNES_RDMPYL), false,
+        cpu->decimal);
+    relative = (uint16_t)(address.value << 1);
     SimulateRtsFrame(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    PushIndex(memory, cpu);
-    LoadA16(cpu, Read16Long(memory, MAP_SLOT));
-    TransferAToX(cpu);
-    PullAccumulator16(memory, cpu);
-    cpu->carry = 0;
-    OpAdcValue(cpu, Read16Long(memory, CELL_BASE + cpu->x));
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
+
+    /* The original saves the relative offset while selecting the map. */
+    PushStackWord(memory, cpu, relative);
+    map_slot = Read16Long(memory, MAP_SLOT);
+    relative = PullStackWord(memory, cpu);
+    address = Sum16Mode(relative, Read16Long(memory, CELL_BASE + map_slot),
+        false, cpu->decimal);
+    cpu->x = address.value;
+    LeaveSum(cpu, address);
     SimulateRtsFrame(memory, cpu);
     return ExecutionReturned(0x83f9d3u);
 }

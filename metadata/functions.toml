@@ -3279,7 +3279,7 @@ name = "Lufia2BattleCircleWindow"
 source = "src/battle/battle_circle_window.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 [[function]]
 address = "85:B26D"
@@ -3287,7 +3287,7 @@ name = "Lufia2BattleCircleWidths"
 source = "src/battle/battle_circle_window.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # Menu tile map buffers and cursor placement.
 [[function]]
@@ -3411,7 +3411,7 @@ name = "Lufia2SpriteClearSlots"
 source = "src/menu/menu_scene_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # Battle frame setup and sprite entries
 [[function]]
@@ -3517,7 +3517,7 @@ name = "Lufia2BattleRandomBit"
 source = "src/battle/battle_drift.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # Scene tracks
 [[function]]
@@ -3763,7 +3763,7 @@ name = "Lufia2FieldMarkObjectSlots"
 source = "src/field/field_object_flags.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"
 
 # World scroll step, tile blit and member totals copy
 [[function]]
@@ -3821,4 +3821,4 @@ name = "Lufia2FieldCellPointer"
 source = "src/field/field_cell_edges.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
-status = "draft"
+status = "verified"

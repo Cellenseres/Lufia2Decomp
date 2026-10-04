@@ -126,7 +126,8 @@ Lufia2ExecutionResult Lufia2MenuScreenSetup(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:8E6B all sprite slot flags off; M1X0. */
+/* $86:8E6B clears 1000 sprite flag bytes; M8/X16, RTL, any DP/DB.
+ * Native selection uses S=$1F00..$1FFC, outside the flag table. */
 Lufia2ExecutionResult Lufia2SpriteClearSlots(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
