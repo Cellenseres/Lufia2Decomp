@@ -99,17 +99,21 @@ Lufia2ExecutionResult Lufia2MenuSlideCorrectY(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $82:8AFA slide step count; hands off at the $86:8B55 call (JSL at $82:8B02)
- * every sixteenth step. */
+/* $82:8AFA slide step count. Requires a child, PB82, M8/X16, DP0, binary
+ * arithmetic and S $1F10..$1FFC. Every sixteenth step calls the original
+ * $86:8B55 sprite frame through the JSL at $82:8B02. */
 Lufia2ExecutionResult Lufia2MenuSlideCount(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
-/* $82:89FA cursor slide between slots Y and X; M1X0. Hands off at the
- * $82:8AFA frame wait with the frames of both routines pushed. */
+/* $82:89FA cursor slide from slot Y to slot X. Requires a child, PB82,
+ * M8/X16, DP0, binary arithmetic, S $1F12..$1FFC, a register/low-WRAM DB
+ * mirror and slots below 48. Spans above 127, sprite timers that expire
+ * during the slide, descriptors outside ROM or $7E:2000+ and more than 128
+ * OAM pieces hand off before writes. $82:8AFA runs through its JSR sites. */
 Lufia2ExecutionResult Lufia2MenuCursorSlide(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* $82:8720 cursor move from the pressed buttons; carry set when none; M1.
  * Hands off at the button sound call ($80:953B). */

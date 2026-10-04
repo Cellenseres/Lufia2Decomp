@@ -205,10 +205,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:8720` | `Lufia2MenuCursor` | draft | `src/menu/menu_input.c` |
 | `$82:88A0` | `Lufia2MenuItemIndex` | verified | `src/menu/menu_cursor.c` |
 | `$82:88CB` | `Lufia2MenuItemPosition` | verified | `src/menu/menu_cursor.c` |
-| `$82:89FA` | `Lufia2MenuCursorSlide` | draft | `src/menu/menu_cursor_slide.c` |
+| `$82:89FA` | `Lufia2MenuCursorSlide` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8AD8` | `Lufia2MenuSlideCorrectX` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8AE9` | `Lufia2MenuSlideCorrectY` | verified | `src/menu/menu_cursor_slide.c` |
-| `$82:8AFA` | `Lufia2MenuSlideCount` | draft | `src/menu/menu_cursor_slide.c` |
+| `$82:8AFA` | `Lufia2MenuSlideCount` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8B08` | `Lufia2MenuInputLoop` | draft | `src/menu/menu_input.c` |
 | `$82:8B4B` | `Lufia2MenuButtons` | verified | `src/menu/menu.c` |
 | `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |

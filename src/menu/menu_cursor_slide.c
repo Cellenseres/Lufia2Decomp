@@ -3,9 +3,11 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/child_call.h"
 #include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/menu.h"
+#include "menu/menu_sprite_slots.h"
 
 enum {
     SLOT_X = 0x1388u,
@@ -65,8 +67,8 @@ Lufia2ExecutionResult Lufia2MenuSlideCorrectY(
     return ExecutionReturned(0x828af9u);
 }
 
-/* $82:8AFA: yield before the frame-wait JSL every sixteenth step. */
-Lufia2ExecutionResult Lufia2MenuSlideCount(
+/* $82:8AFA up to its JSL: count down, reload at zero. */
+static Lufia2ExecutionResult DecrementWaitCount(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -81,15 +83,41 @@ Lufia2ExecutionResult Lufia2MenuSlideCount(
     return ExecutionHandoff(cpu, 0x828b02u);
 }
 
+/* $82:8AFA: every sixteenth step runs the $86:8B55 sprite frame. */
+Lufia2ExecutionResult Lufia2MenuSlideCount(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    Lufia2ExecutionResult result;
+
+    if (!child || cpu->program_bank != 0x82u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page != 0u || cpu->decimal ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x828afau);
+    result = DecrementWaitCount(memory, cpu);
+    if (result.flow == LUFIA2_EXECUTION_RETURNED)
+        return result;
+    if (!CallChildWithFrame(memory, cpu, child, context,
+            0x828b02u, 0x868b55u, 3u, 0x82u)) {
+        result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        result.pc = cpu->resume_pc = 0x828b02u;
+        return result;
+    }
+    return ExecutionReturned(0x828b06u);
+}
+
 /* A frame wait retains the count routine's pushed return. */
 static bool SlideStep(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    bool overflow, uint16_t return_address, Lufia2ExecutionResult *result) {
+    bool overflow, uint16_t return_address, Lufia2ExecutionResult *result,
+    Lufia2PushedChildCall child, void *context) {
+    const uint32_t site = 0x820000u | (uint16_t)(return_address - 2u);
+
     cpu->overflow = overflow;
-    SimulateJsrFrame(memory, cpu, return_address);
-    *result = Lufia2MenuSlideCount(memory, cpu);
-    if (result->flow != LUFIA2_EXECUTION_RETURNED)
+    if (!CallChildWithFrame(memory, cpu, child, context,
+            site, 0x828afau, 2u, 0x82u)) {
+        result->flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        result->pc = cpu->resume_pc = site;
         return true;
-    SimulateRtsFrame(memory, cpu);
+    }
     return false;
 }
 
@@ -147,10 +175,53 @@ static bool ErrorRunsOut(Lufia2Wram wram, bool decimal, uint32_t error, uint32_t
     return !left.carry;
 }
 
+/* No animation change or OAM write can touch the pending count frames. */
+static bool SlideRenderingReady(const Lufia2Memory *memory,
+    const Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    unsigned major = 0, frames, pieces = 0, slot, axis;
+
+    for (axis = 0; axis < 2u; ++axis) {
+        unsigned table = axis ? SLOT_Y : SLOT_X;
+        unsigned from = WramReadAt(wram, table, cpu->y);
+        unsigned to = WramReadAt(wram, table, cpu->x);
+        unsigned span = from > to ? from - to : to - from;
+        if (span > major)
+            major = span;
+    }
+    if (major > 127u)
+        return false;
+    frames = major ? (major - 1u) / WAIT_EVERY : 0u;
+    if (!frames)
+        return true;
+    for (slot = 0; slot < MENU_SPRITE_SLOTS; ++slot) {
+        uint32_t record;
+        unsigned offset, bank;
+        if (!WramReadAt(wram, MENU_SPRITE_ACTIVE, (uint16_t)slot))
+            continue;
+        if (WramReadAt(wram, MENU_SPRITE_TIMER, (uint16_t)slot) <= frames)
+            return false;
+        bank = WramReadAt(wram, MENU_SPRITE_BANK, (uint16_t)slot);
+        offset = WramReadAt(wram, MENU_SPRITE_FRAME_LOW, (uint16_t)slot) |
+            ((unsigned)WramReadAt(wram, MENU_SPRITE_FRAME_HIGH, (uint16_t)slot) << 8);
+        if (!(bank == 0x7eu ? offset >= 0x2000u :
+              bank >= 0x80u && (bank >= 0xc0u || offset >= 0x8000u)))
+            return false;
+        record = ((uint32_t)bank << 16) | offset;
+        for (unsigned count = 1; ; ++count) {
+            if (++pieces > 128u || offset + 2u + 4u * count > 0xffffu)
+                return false;
+            if (Read8(memory, record + 2u + 4u * count) == 0xffu)
+                break;
+        }
+    }
+    return true;
+}
+
 /* $82:89FA: slide between slots, preserving the frame-wait continuation. */
 Lufia2ExecutionResult Lufia2MenuCursorSlide(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
     const uint16_t other = cpu->x;
@@ -158,7 +229,14 @@ Lufia2ExecutionResult Lufia2MenuCursorSlide(
     Byte8Result moved;
     uint8_t position;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!child || cpu->program_bank != 0x82u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page != 0u || cpu->decimal ||
+        cpu->stack < 0x1f12u || cpu->stack > 0x1ffcu ||
+        cpu->x >= MENU_SPRITE_SLOTS || cpu->y >= MENU_SPRITE_SLOTS ||
+        !(cpu->data_bank < 0x40u ||
+          (cpu->data_bank >= 0x80u && cpu->data_bank < 0xc0u)))
+        return ExecutionHandoff(cpu, 0x8289fau);
+    if (!SlideRenderingReady(memory, cpu))
         return ExecutionHandoff(cpu, 0x8289fau);
     WramWrite16(wram, SCRATCH_SLOT, other);
     if (A8(cpu) != 0)
@@ -195,8 +273,9 @@ Lufia2ExecutionResult Lufia2MenuCursorSlide(
                 if (cpu->zero)
                     return ExecutionReturned(SLIDE_DONE);
             }
-            if (SlideStep(memory, cpu, moved.overflow, 0x8a9au, &result))
+            if (SlideStep(memory, cpu, moved.overflow, 0x8a9au, &result, child, context))
                 return result;
+            slot = cpu->y;
         }
     }
     SlideSubtract(wram, cpu->decimal, slot, SLOT_X, DIRECTION_X);
@@ -217,7 +296,8 @@ Lufia2ExecutionResult Lufia2MenuCursorSlide(
             if (cpu->zero)
                 return ExecutionReturned(SLIDE_DONE);
         }
-        if (SlideStep(memory, cpu, moved.overflow, 0x8ad5u, &result))
+        if (SlideStep(memory, cpu, moved.overflow, 0x8ad5u, &result, child, context))
             return result;
+        slot = cpu->y;
     }
 }
