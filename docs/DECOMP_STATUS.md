@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-461 functions in `metadata/functions.toml`: 385 verified, 76 draft, 0 identified, 0 disabled.
+461 functions in `metadata/functions.toml`: 389 verified, 72 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -63,8 +63,8 @@ row entries remain draft. The menu multiply `$82:8000`, world division
 for any caller widths. The world sprite and slot-flag clears `$86:E650` and
 `$86:E640` are verified too, as are the menu item index and position
 `$82:88A0`/`$82:88CB` for the `$1F00..$1FFC` caller stack. The copied-member totals `$81:F481` are also verified for DP0 and the same
-caller stack, preserving the shared stat event. Nineteen feature additions
-are verified and 76 remain draft.
+caller stack, preserving the shared stat event. Scene tracks, view origin and the two battle velocity routines are also
+verified. Twenty-three feature additions are verified and 72 remain draft.
 
 The base main checkpoint passed **518 independent jobs**. The normal
 application build also passes. The consumer selects all 366 verified functions,
@@ -949,3 +949,44 @@ The cell edge routine walks along the border of a region of the field cell map, 
 Further work reconstructs the remaining field and battle dependencies.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the boundary
 model and [CAPTURE_RESEARCH.md](CAPTURE_RESEARCH.md) for scene evidence.
+
+
+## Scene tracks, view origin and battle velocities
+
+Four complete return contracts are verified: `$86:94D4` steps the five scene
+tracks, `$86:A791` calculates the screen origin, `$85:DD63` calculates signed
+angle velocities, and `$81:A598` transfers these velocities to an effect slot.
+The first two and the effect routine return through RTS; the angle routine
+returns through RTL. The bridges retain the original return-frame sizes.
+
+All four require native mode, the original program bank, DP0 and a caller
+stack no higher than `$1FFC`. Tracks accept either accumulator width and X16;
+the others require M8/X16. Tracks and view origin additionally require a data
+bank that maps the low work-RAM window. The velocity routine requires
+`S=$1F00..$1FFC`; its effect caller requires `$1F03..$1FFC`, reserving the
+three-byte child frame. Unsupported entries hand off before memory access.
+All decimal modes are preserved. Velocity calculation uses the already
+verified sine, cosine and multiplication semantics and their original frames.
+
+The matrices exercise all 256 angles, 16 speed edges, timer/script endings,
+coordinate edges, banks, widths and decimal modes. Effect slots also overlap
+scratch bytes and caller return frames; forward staging and final writes keep
+the ROM ordering. CPU, all WRAM, ordered writes and hardware reads are compared
+through the actual native bridges. Guarded cases are unchanged entry handoffs,
+not original-ROM execution claims.
+
+- scenetracks: 33,856 cases, 33,616 native, 240 unchanged handoffs
+- sceneview: 33,856 cases, 12,928 native, 20,928 unchanged handoffs
+- velocity: 37,952 cases, 34,064 native, 3,888 unchanged handoffs
+- effectvelocity: 33,856 cases, 33,552 native, 304 unchanged handoffs
+
+81 extra guard cases cover three host-return modes. All 35 deliberately broken
+bridges are detected: return-frame size, overflow, entry bank, stack bounds,
+DP, emulation, width and work-RAM bank checks. Bodies use typed values, named
+work fields and arithmetic helpers; CPU-state operations retain observable
+flags and call frames. The review found no AI markers in these bodies.
+
+23 of 95 feature routines are verified, with 72 draft. All 518 independent
+integrated jobs and the Release build pass with 389 standalone replacements.
+Every new binding has a generated dispatch call. Main and the normal build
+remain unchanged; this is an isolated local checkpoint.

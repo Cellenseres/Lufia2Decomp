@@ -25,7 +25,9 @@ enum {
     SIGN_LOW_BIT = 0x01u,
     SIGN_NEGATIVE = 0x80u,
     SIGN_OVERFLOW = 0x40u,
-    PRODUCT_BANK = 0x85u
+    PRODUCT_BANK = 0x85u,
+    VELOCITY_STACK_FIRST = 0x1f00u,
+    VELOCITY_STACK_LAST = 0x1ffcu
 };
 
 /* The quarter-wave table stores magnitude and a separate sign bit. */
@@ -173,7 +175,9 @@ Lufia2ExecutionResult Lufia2BattleVelocityOfAngle(
     uint8_t angle;
 
     result.dispatches = 0;
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->direct_page != 0u || cpu->stack < VELOCITY_STACK_FIRST ||
+        cpu->stack > VELOCITY_STACK_LAST)
         return ExecutionHandoff(cpu, 0x85dd63u);
     PushY(memory, cpu);
     angle = WramRead(wram, ANGLE);
