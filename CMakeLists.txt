@@ -37,6 +37,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_character.c
     src/battle/battle_frame.c
     src/battle/battle_frame_setup.c
+    src/battle/battle_effect_video.c
     src/battle/battle_drift.c
     src/battle/battle_vector.c
     src/battle/battle_frame_rows.c

@@ -217,3 +217,13 @@ CPU, full WRAM and ordered bus events. A transfer is not a completed child.
 This proves the complete polling caller/service contract, not termination or
 complete reconstruction of the original text/sprite children. Three semantic
 error controls and1230 CPU/context guard cases independently exercise the proof.
+
+## Battle effect video operands
+
+`Lufia2BattleEffectVideoRegister` ($81:963A), `Bg3Map` ($81:9653),
+`BackgroundRequest` ($81:9999), `BackgroundRelease` ($81:99A5),
+`BackgroundCopy` ($81:99B0), and `WindowBand` ($81:9AB1) share the
+`Lufia2BattleEffect` prefix and the leaf signature above. Each requires
+M8/X16, DP0, PB81, native mode, and stack $1F00..$1FFC. DB and decimal
+mode are unrestricted. Rejected entries hand off before bus access.
+All six return through their original RTS; WindowBand has two RTS paths.

@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-461 functions in `metadata/functions.toml`: 461 verified, 0 draft, 0 identified, 0 disabled.
+467 functions in `metadata/functions.toml`: 467 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -1706,3 +1706,16 @@ CPU, full WRAM and ordered bus events. A transfer is not a completed child.
 This proves the complete polling caller/service contract, not termination or
 complete reconstruction of the original text/sprite children. Three semantic
 error controls and1230 CPU/context guard cases independently exercise the proof.
+
+## Battle effect video commands
+
+The effect interpreter now has six complete native leaf commands in
+`src/battle/battle_effect_video.c`: video-shadow writes, BG3 map selection,
+background upload requests, background map release/copy, and window bands.
+They preserve the original register, cursor, decimal arithmetic, stack write,
+and PPU behavior. The consumer contract is M8/X16, DP0, PB81, and stack
+$1F00..$1FFC; unsupported contexts transfer before bus access.
+
+The effect dispatcher, graphic upload commands, and complete animation caller
+remain outside this slice. These commands retain original screen coordinates;
+widescreen presentation belongs to the consumer.

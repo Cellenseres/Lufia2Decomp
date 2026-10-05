@@ -3822,3 +3822,53 @@ source = "src/field/field_cell_edges.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Battle effect video commands
+
+[[function]]
+address = "81:963A"
+name = "Lufia2BattleEffectVideoRegister"
+source = "src/battle/battle_effect_video.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9653"
+name = "Lufia2BattleEffectBg3Map"
+source = "src/battle/battle_effect_video.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9999"
+name = "Lufia2BattleEffectBackgroundRequest"
+source = "src/battle/battle_effect_video.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:99A5"
+name = "Lufia2BattleEffectBackgroundRelease"
+source = "src/battle/battle_effect_video.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:99B0"
+name = "Lufia2BattleEffectBackgroundCopy"
+source = "src/battle/battle_effect_video.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9AB1"
+name = "Lufia2BattleEffectWindowBand"
+source = "src/battle/battle_effect_video.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

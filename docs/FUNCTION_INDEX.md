@@ -69,6 +69,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:8EEA` | `Lufia2BattleActorSprite` | verified | `src/battle/battle_monster_oam.c` |
 | `$81:9169` | `Lufia2BattleEffectYield` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:953F` | `Lufia2BattleEffectRepeat` | verified | `src/battle/battle_effect_ops.c` |
+| `$81:963A` | `Lufia2BattleEffectVideoRegister` | verified | `src/battle/battle_effect_video.c` |
+| `$81:9653` | `Lufia2BattleEffectBg3Map` | verified | `src/battle/battle_effect_video.c` |
+| `$81:9999` | `Lufia2BattleEffectBackgroundRequest` | verified | `src/battle/battle_effect_video.c` |
+| `$81:99A5` | `Lufia2BattleEffectBackgroundRelease` | verified | `src/battle/battle_effect_video.c` |
+| `$81:99B0` | `Lufia2BattleEffectBackgroundCopy` | verified | `src/battle/battle_effect_video.c` |
+| `$81:9AB1` | `Lufia2BattleEffectWindowBand` | verified | `src/battle/battle_effect_video.c` |
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |

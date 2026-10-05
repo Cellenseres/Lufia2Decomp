@@ -925,6 +925,20 @@ Lufia2ExecutionResult Lufia2BattleCircleWindow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* Effect video opcodes: M8/X16, DP0, PB81, stack $1F00..$1FFC. */
+Lufia2ExecutionResult Lufia2BattleEffectVideoRegister(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectBg3Map(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectBackgroundRelease(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectBackgroundRequest(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectBackgroundCopy(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectWindowBand(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
