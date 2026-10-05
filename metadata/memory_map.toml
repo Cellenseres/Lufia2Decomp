@@ -647,7 +647,7 @@ name = "field_streamed_row_source"
 width = 2
 count = 4
 owner = "field"
-notes = "$80:F5DB stages the row buffer address that the NMI upload at $80:A0E1 copies; zero VRAM word means nothing pending. Indexed by layer*2."
+notes = "$80:F5DB stages the row buffer address that the NMI upload at $80:A0E1 copies; zero VRAM word means nothing pending. Indexed by layer*2. In battle123C/123D are W12SEL/W34SEL shadows. Effect opcode21 writes123C plus its byte operand; battle NMI85:8E25 uploads these selectors."
 
 [[location]]
 address = "7E:1236"
@@ -655,7 +655,7 @@ name = "field_streamed_column_source"
 width = 2
 count = 4
 owner = "field"
-notes = "$80:F4FD and $80:F518 stage the column buffer address that the NMI upload at $80:A0E1 copies. Indexed by layer*2."
+notes = "$80:F4FD and $80:F518 stage the column buffer address that the NMI upload at $80:A0E1 copies. Indexed by layer*2. In battle123C/123D hold W12SEL/W34SEL shadows; effect opcode21 writes123C plus its byte operand, uploaded by85:8E25."
 
 [[location]]
 address = "7E:123E"
@@ -663,7 +663,7 @@ name = "field_streamed_row_vram"
 width = 2
 count = 4
 owner = "field"
-notes = "$80:F5DB queues the VRAM word address of a streamed row for the NMI upload at $80:A0E1; zero means nothing pending. Indexed by layer*2."
+notes = "$80:F5DB queues the VRAM word address of a streamed row for the NMI upload at $80:A0E1; zero means nothing pending. Indexed by layer*2. In battle this area holds PPU window shadows:123E WOBJSEL,1241 WH2,1242 WH3. Effect opcode5F sets the second window limits and WOBJSEL."
 
 [[location]]
 address = "7E:1246"
@@ -1170,7 +1170,7 @@ name = "save_file_buffer"
 width = 1
 count = 2048
 owner = "system"
-notes = "Plain save slot packed by 8E:BA0D and 85:C954, encrypted by 80:9184 and decrypted by 80:914B. Also the layer-3 32x32 tilemap ring (3800-3FFF) selected by ROM 83:8FF0 and written by 83:8E85. 81:F481 also uses 3800-38BD as a temporary member record for derived totals; 3886-3893 receives the member modifier bytes."
+notes = "Plain save slot packed by 8E:BA0D and 85:C954, encrypted by 80:9184 and decrypted by 80:914B. Also the layer-3 32x32 tilemap ring (3800-3FFF) selected by ROM 83:8FF0 and written by 83:8E85. 81:F481 also uses 3800-38BD as a temporary member record for derived totals; 3886-3893 receives the member modifier bytes. Battle effect opcode5B copies the2048-byte map at2000 here, and81:8B75 queues this buffer for VRAM."
 
 [[location]]
 address = "7E:0521"
@@ -2176,3 +2176,19 @@ width = 1
 count = 1
 owner = "menu"
 notes = "82:8720 indexes the item row count. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+
+[[location]]
+address = "7E:1260"
+name = "battle_background_map_state"
+width = 1
+count = 1
+owner = "battle"
+notes = "Effect opcode5B sets01 after copying 2000-27FF into 3800-3FFF. Opcode5A setsFF. The frame runner consumes and clears this state at81:8B95."
+
+[[location]]
+address = "7E:15B4"
+name = "battle_background_upload_request"
+width = 1
+count = 1
+owner = "battle"
+notes = "Effect opcode59 stores the next stream byte; opcodes5A/5B store04. The frame runner consumes this index through97:B554 and queues a2048-byte upload from3800."
