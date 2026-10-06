@@ -2765,3 +2765,75 @@ width = 1
 count = 1
 owner = "battle"
 notes = "Frame marker written while battle action effects wait."
+
+[[location]]
+address = "7E:0A5B"
+name = "battle_action_disabled"
+width = 1
+count = 1
+owner = "battle"
+notes = "Nonzero skips actor action execution."
+
+[[location]]
+address = "7E:0A5C"
+name = "battle_action_effect_pending"
+width = 1
+count = 1
+owner = "battle"
+notes = "Pending action effect request; cleared before dispatch."
+
+[[location]]
+address = "7E:0B5D"
+name = "battle_result_count"
+width = 2
+count = 1
+owner = "battle"
+notes = "Result counter increments with original word saturation."
+
+[[location]]
+address = "7E:11DD"
+name = "battle_action_special_result"
+width = 1
+count = 1
+owner = "battle"
+notes = "Selects the alternate action result message and wait."
+
+[[location]]
+address = "7E:1266"
+name = "battle_message_count"
+width = 2
+count = 1
+owner = "battle"
+notes = "Action result presentation sets one message."
+
+[[location]]
+address = "7F:F44E"
+name = "battle_action_work"
+width = 1
+count = 136
+owner = "battle"
+notes = "Original action work; saved and restored as136 bytes."
+
+[[location]]
+address = "7F:FAB6"
+name = "battle_action_alternate"
+width = 1
+count = 1
+owner = "battle"
+notes = "Selects alternate actor action and effect presentation paths."
+
+[[location]]
+address = "7E:0A42"
+name = "battle_message_name_pointer"
+width = 2
+count = 1
+owner = "battle"
+notes = "Name pointer passed to the original action message builder."
+
+[[location]]
+address = "7E:0A44"
+name = "battle_message_name_bank"
+width = 1
+count = 1
+owner = "battle"
+notes = "ROM bank of the action message name."

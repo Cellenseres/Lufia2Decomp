@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-503 functions in `metadata/functions.toml`: 503 verified, 0 draft, 0 identified, 0 disabled.
+512 functions in `metadata/functions.toml`: 512 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2004,3 +2004,42 @@ the standalone W4/WX build and the normal Release consumer build. Runtime
 selection contains503 verified entries,0draft and350 WRAM locations;
 generated bank bodies contain2016 native bridge invocations. These counts
 describe registered contracts and call sites, not whole-game coverage.
+
+## Core battle action presentation
+
+Nine complete entries add action preparation81:AFC4, actor execution81:B057,
+presentation81:B08A, no-action81:A8A7, attack81:A8A8, spell81:A968/A977
+and item81:AA1B/AA2E. The paired spell/item entries retain their original
+shared continuations. Original name and message fields come from the existing
+54-byte item/spell record buffer; no second overlapping record is invented.
+
+The contracts require PB81, M8/X16, DP0, DB97, binary arithmetic and entry
+stack1F00..1FFC. Unknown children remain explicit services with their exact
+live frames. Native preparation retains its original JSR/RTS boundary;
+other entries use JSL/RTL. Every post-child mode failure resumes at the
+original continuation. Special action results preserve terminal owners
+81:8855/88D5, stack-backed waits and word counter saturation.
+
+The preparation/presentation proof passes24876 direct and production-bridge
+comparisons,60 child unwinds,4364 owner boundaries,123 pre-access guards
+and24 altered-ROM controls. All30 child sites are exercised, including1056
+original saturated result paths. Four extra streaming comparisons verify
+the exact state after4096 frames.
+
+The core-handler proof passes49392 direct and production-bridge comparisons,
+48 child unwinds,192 post-child boundaries,246 guards and24 detected ROM
+mutations. All24 child sites are exercised. Four extra streaming comparisons
+verify both spell error wait entries after4096 frames. The first item loader
+keeps M16; later loading keeps M8. Status rejection, MP subtraction/borrow,
+item-effect wrapping and message fallback remain literal ROM behavior.
+
+Whole CPU, full WRAM, ordered writes and modeled MMIO reads are compared.
+Ordinary reads/fetches, pixel/full-NMI scheduling and synthetic child-service
+internals are outside these contracts. The32-route dispatcher81:A832 remains
+original; these entries alone do not constitute that complete dispatcher.
+
+The complete core-action checkpoint passes all542 independent verification
+jobs, the standalone W4/WX build and the normal Release consumer build.
+Runtime selection contains512 verified entries,0draft,359 WRAM locations
+and2052 actual generated native bridge invocations. All nine entries use
+their own bindings; the larger action dispatcher81:A832 remains original.
