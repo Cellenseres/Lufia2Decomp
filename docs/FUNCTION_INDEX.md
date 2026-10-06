@@ -104,6 +104,15 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |
+| `$81:A8A7` | `Lufia2BattleSkipAction` | verified | `src/battle/battle_action_handlers.c` |
+| `$81:A8A8` | `Lufia2BattleAttackAction` | verified | `src/battle/battle_action_handlers.c` |
+| `$81:A968` | `Lufia2BattleBeginSpellAction` | verified | `src/battle/battle_action_handlers.c` |
+| `$81:A977` | `Lufia2BattleSpellAction` | verified | `src/battle/battle_action_handlers.c` |
+| `$81:AA1B` | `Lufia2BattleBeginItemAction` | verified | `src/battle/battle_action_handlers.c` |
+| `$81:AA2E` | `Lufia2BattleItemAction` | verified | `src/battle/battle_action_handlers.c` |
+| `$81:AFC4` | `Lufia2BattlePrepareActionEffect` | verified | `src/battle/battle_action_presentation.c` |
+| `$81:B057` | `Lufia2BattleRunActorAction` | verified | `src/battle/battle_action_presentation.c` |
+| `$81:B08A` | `Lufia2BattleRunActionPresentation` | verified | `src/battle/battle_action_presentation.c` |
 | `$81:B139` | `Lufia2BattleRunActionEffects` | verified | `src/battle/battle_action_effects.c` |
 | `$81:B174` | `Lufia2BattleFinishActionEffects` | verified | `src/battle/battle_action_effects.c` |
 | `$81:B1A3` | `Lufia2BattleRunConfiguredScript` | verified | `src/battle/battle_action_script.c` |

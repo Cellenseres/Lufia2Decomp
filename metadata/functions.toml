@@ -4160,3 +4160,75 @@ source = "src/battle/battle_action_effects.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:AFC4"
+name = "Lufia2BattlePrepareActionEffect"
+source = "src/battle/battle_action_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B057"
+name = "Lufia2BattleRunActorAction"
+source = "src/battle/battle_action_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B08A"
+name = "Lufia2BattleRunActionPresentation"
+source = "src/battle/battle_action_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A8A7"
+name = "Lufia2BattleSkipAction"
+source = "src/battle/battle_action_handlers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A8A8"
+name = "Lufia2BattleAttackAction"
+source = "src/battle/battle_action_handlers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A968"
+name = "Lufia2BattleBeginSpellAction"
+source = "src/battle/battle_action_handlers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A977"
+name = "Lufia2BattleSpellAction"
+source = "src/battle/battle_action_handlers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AA1B"
+name = "Lufia2BattleBeginItemAction"
+source = "src/battle/battle_action_handlers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AA2E"
+name = "Lufia2BattleItemAction"
+source = "src/battle/battle_action_handlers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
