@@ -104,9 +104,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |
+| `$81:B139` | `Lufia2BattleRunActionEffects` | verified | `src/battle/battle_action_effects.c` |
+| `$81:B174` | `Lufia2BattleFinishActionEffects` | verified | `src/battle/battle_action_effects.c` |
 | `$81:B1A3` | `Lufia2BattleRunConfiguredScript` | verified | `src/battle/battle_action_script.c` |
 | `$81:B1C9` | `Lufia2BattleRunBattlerScript` | verified | `src/battle/battle_action_script.c` |
 | `$81:B1F7` | `Lufia2BattleRunItemScript` | verified | `src/battle/battle_action_script.c` |
+| `$81:B228` | `Lufia2BattleResolveTargetMask` | verified | `src/battle/battle_target_resolution.c` |
 | `$81:B264` | `Lufia2BattleActiveMask` | verified | `src/battle/battle_util.c` |
 | `$81:B2B5` | `Lufia2BattleTargetRecord` | verified | `src/battle/battle_util.c` |
 | `$81:B2DB` | `Lufia2BattleTargetSlot` | verified | `src/battle/battle_util.c` |
@@ -119,6 +122,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:B5A3` | `Lufia2BattleHideOam` | verified | `src/battle/battle_util.c` |
 | `$81:B5C4` | `Lufia2BattleBuildSprites` | verified | `src/battle/battle_sprite_build.c` |
 | `$81:B705` | `Lufia2BattleAppendOamSprites` | verified | `src/battle/battle_sprite_build.c` |
+| `$81:B7EF` | `Lufia2BattleTargetSpriteCoordinates` | verified | `src/battle/battle_target_resolution.c` |
+| `$81:B80A` | `Lufia2BattleEffectTargetCoordinates` | verified | `src/battle/battle_target_resolution.c` |
 | `$81:B8B1` | `Lufia2BattleTargetCoordinates` | verified | `src/battle/battle_target_helpers.c` |
 | `$81:B974` | `Lufia2BattleLoadPalette` | verified | `src/battle/battle_util.c` |
 | `$81:B9AF` | `Lufia2BattleCommitPalettes` | verified | `src/battle/battle_util.c` |
@@ -223,7 +228,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F979` | `Lufia2PartyLevelUpCheck` | verified | `src/party/level_up.c` |
 | `$81:F9E9` | `Lufia2PartyExperienceForLevel` | verified | `src/party/experience.c` |
 | `$81:FB79` | `Lufia2CharacterSpriteByte` | verified | `src/battle/battle_character.c` |
+| `$81:FB8E` | `Lufia2SpriteCoordinatesPacked` | verified | `src/battle/battle_sprite_lookups.c` |
 | `$81:FBA2` | `Lufia2SpriteSizePacked` | verified | `src/battle/battle_character.c` |
+| `$81:FBC6` | `Lufia2CharacterSpriteWord` | verified | `src/battle/battle_sprite_lookups.c` |
 | `$81:FBDB` | `Lufia2CharacterSpriteBox` | verified | `src/battle/battle_character.c` |
 | `$81:FC0B` | `Lufia2PartyNewRecord` | verified | `src/party/level_up.c` |
 | `$81:FCE2` | `Lufia2CharacterSpritePointer` | verified | `src/battle/battle_character.c` |
