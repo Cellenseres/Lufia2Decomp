@@ -2192,3 +2192,140 @@ width = 1
 count = 1
 owner = "battle"
 notes = "Effect opcode59 stores the next stream byte; opcodes5A/5B store04. The frame runner consumes this index through97:B554 and queues a2048-byte upload from3800."
+
+[[location]]
+address = "7E:1A8F"
+name = "battle_vram_queue"
+width = 6
+count = 16
+owner = "battle"
+notes = "Six-byte upload records: length, WRAM source, VRAM destination. $85:ECDB searches sixteen records; $85:8DC5 consumes them."
+
+[[location]]
+address = "7E:1BEC"
+name = "battle_effect_active_count"
+width = 1
+owner = "battle"
+notes = "Effect script count. $81:895E initializes one; opcode $00 at $81:915B decrements with original byte underflow. $81:8BCE tests completion."
+
+[[location]]
+address = "7E:DF00"
+name = "battle_effect_graphics_buffer"
+width = 1
+owner = "battle"
+notes = "Decompression destination used by $81:99D0/$81:9A12 and published to the VRAM queue. Resource length determines the written span."
+
+[[location]]
+address = "7E:1254"
+name = "battle_display_mode"
+width = 1
+owner = "battle"
+notes = "Effect caller $81:895E requests mode $09 before $85:AB98."
+
+[[location]]
+address = "7E:1493"
+name = "battle_effect_frame_counter"
+width = 1
+owner = "battle"
+notes = "Cleared on effect entry; incremented after each $81:8BC7 frame wait."
+
+[[location]]
+address = "7E:15AB"
+name = "battle_sprite_build_mode"
+width = 1
+owner = "battle"
+notes = "Effect caller saves and restores sprite build mode."
+
+[[location]]
+address = "7E:15AC"
+name = "battle_effect_saved_sprite_mode"
+width = 1
+owner = "battle"
+notes = "Saved $15AB value; cleanup writes it twice originally."
+
+[[location]]
+address = "7E:15AD"
+name = "battle_effect_bg2_request"
+width = 1
+owner = "battle"
+notes = "Effect frame clears request with TRB and invokes $85:9AF4."
+
+[[location]]
+address = "7E:15AE"
+name = "battle_effect_bg1_request"
+width = 1
+owner = "battle"
+notes = "Effect frame clears request with TRB and invokes $85:9BF1."
+
+[[location]]
+address = "7E:15AF"
+name = "battle_effect_bg3_request"
+width = 1
+owner = "battle"
+notes = "Effect frame clears request with TRB and invokes $85:9C08."
+
+[[location]]
+address = "7E:15B0"
+name = "battle_effect_status_request"
+width = 1
+owner = "battle"
+notes = "Effect frame clears request with TRB and invokes $85:9BDA."
+
+[[location]]
+address = "7E:15B1"
+name = "unk_7E15B1"
+width = 1
+owner = "battle"
+notes = "Cleared on $81:895E entry; meaning unresolved."
+
+[[location]]
+address = "7E:15B3"
+name = "unk_7E15B3"
+width = 1
+owner = "battle"
+notes = "Effect caller sets $FF during playback and $01 during cleanup."
+
+[[location]]
+address = "7E:15EB"
+name = "battle_effect_slot_counter"
+width = 1
+owner = "battle"
+notes = "Remaining script or actor records in $81:8A76 frame scan."
+
+[[location]]
+address = "7E:1B17"
+name = "unk_7E1B17"
+width = 1
+owner = "battle"
+notes = "Cleared when a negative background-map state releases the map."
+
+[[location]]
+address = "7E:1BEB"
+name = "unk_7E1BEB"
+width = 1
+owner = "battle"
+notes = "Cleared on $81:895E entry; meaning unresolved."
+
+[[location]]
+address = "7E:1BF1"
+name = "unk_7E1BF1"
+width = 2
+count = 8
+owner = "battle"
+notes = "Eight words cleared on $81:895E entry; meanings unresolved."
+
+[[location]]
+address = "7E:4F8F"
+name = "battle_effect_script_slots"
+width = 44
+count = 30
+owner = "battle"
+notes = "Records scanned by $81:8A76: active +0, timer +1, delay +2, stream +3, repeat +5."
+
+[[location]]
+address = "7E:54B7"
+name = "battle_effect_actor_slots"
+width = 45
+count = 64
+owner = "battle"
+notes = "Effect actor records: active +0, timer +1, stream +3, velocity +1B/+1D, position +1F/+21, motion target +25."

@@ -35,7 +35,7 @@ enum {
 
 /* Sprite build mode and tile grid hold switches. */
 enum {
-    BATTLE_SPRITE_MODE = 0x15abu,
+    BATTLE_SPRITE_MODE = WRAM_BATTLE_SPRITE_BUILD_MODE,
     BATTLE_TILE_GRID_HOLD = 0x125fu, /* non-zero: leave the tile grid alone */
 };
 
