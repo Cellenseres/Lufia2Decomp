@@ -3960,3 +3960,59 @@ source = "src/field/field_session_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:94EB"
+name = "Lufia2BattleEffectLoopStart"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9500"
+name = "Lufia2BattleEffectLoopStart2"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9515"
+name = "Lufia2BattleEffectLoopStart3"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:952A"
+name = "Lufia2BattleEffectLoopStart4"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9553"
+name = "Lufia2BattleEffectLoopNext2"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9567"
+name = "Lufia2BattleEffectLoopNext3"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:957B"
+name = "Lufia2BattleEffectLoopNext4"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

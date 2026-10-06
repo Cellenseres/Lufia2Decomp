@@ -961,6 +961,22 @@ Lufia2ExecutionResult Lufia2BattleEffectRepeatStart(
 Lufia2ExecutionResult Lufia2BattleEffectRepeatJump(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Four independent counted loops within each effect slot. */
+Lufia2ExecutionResult Lufia2BattleEffectLoopStart(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectLoopStart2(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectLoopStart3(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectLoopStart4(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectLoopNext2(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectLoopNext3(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectLoopNext4(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* Original effect setup, frame dispatcher and final cleanup. */
 Lufia2ExecutionResult Lufia2BattlePlayEffect(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

@@ -86,6 +86,14 @@ static Lufia2ExecutionResult EffectKnownCommand(
     case 0x81918fu: return Lufia2BattleEffectJump(memory, cpu);
     case 0x819198u: return Lufia2BattleEffectRepeatStart(memory, cpu);
     case 0x8191adu: return Lufia2BattleEffectRepeatJump(memory, cpu);
+    case 0x8194ebu: return Lufia2BattleEffectLoopStart(memory, cpu);
+    case 0x819500u: return Lufia2BattleEffectLoopStart2(memory, cpu);
+    case 0x819515u: return Lufia2BattleEffectLoopStart3(memory, cpu);
+    case 0x81952au: return Lufia2BattleEffectLoopStart4(memory, cpu);
+    case 0x81953fu: return Lufia2BattleEffectRepeat(memory, cpu);
+    case 0x819553u: return Lufia2BattleEffectLoopNext2(memory, cpu);
+    case 0x819567u: return Lufia2BattleEffectLoopNext3(memory, cpu);
+    case 0x81957bu: return Lufia2BattleEffectLoopNext4(memory, cpu);
     case 0x81963au: return Lufia2BattleEffectVideoRegister(memory, cpu);
     case 0x819653u: return Lufia2BattleEffectBg3Map(memory, cpu);
     case 0x819999u: return Lufia2BattleEffectBackgroundRequest(memory, cpu);
