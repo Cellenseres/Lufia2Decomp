@@ -429,7 +429,7 @@ Lufia2ExecutionResult Lufia2FieldRebuildSceneActors(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
-/* Draft session prefixes retain unresolved tail boundaries. */
+/* Session setup hands control to the original field system. */
 Lufia2ExecutionResult Lufia2FieldBeginSessionSetup(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

@@ -298,8 +298,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:A76D` | `Lufia2FieldRebuildSceneActors` | verified | `src/field/field_scene_actors.c` |
 | `$83:A9BA` | `Lufia2ActorLoadSprite` | verified | `src/actor/actor_sprites.c` |
 | `$83:AB61` | `Lufia2SpriteResetAllocations` | verified | `src/actor/sprite_reset.c` |
-| `$83:ACB7` | `Lufia2FieldBeginSessionSetup` | draft | `src/field/field_session_setup.c` |
-| `$83:AD23` | `Lufia2FieldResumeSessionSetup` | draft | `src/field/field_session_setup.c` |
+| `$83:ACB7` | `Lufia2FieldBeginSessionSetup` | verified | `src/field/field_session_setup.c` |
+| `$83:AD23` | `Lufia2FieldResumeSessionSetup` | verified | `src/field/field_session_setup.c` |
 | `$83:AEB5` | `Lufia2FieldColourEffects` | verified | `src/field/field_effects.c` |
 | `$83:B007` | `Lufia2FieldUploadFixedGraphics` | verified | `src/field/field_object_graphics.c` |
 | `$83:B062` | `Lufia2FieldRestore` | verified | `src/field/field_restore.c` |

@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-478 functions in `metadata/functions.toml`: 476 verified, 2 draft, 0 identified, 0 disabled.
+478 functions in `metadata/functions.toml`: 478 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -1786,13 +1786,14 @@ remain outside the trace-equivalence claim.
 
 The complete `$81:895E` parent contract is verified. Its unresolved child
 boundaries and supported entry modes remain explicit. The seven complete
-command entries are separately verified. No visible black frame has been reproduced or fixed in this package.
+command entries are separately verified. The semantic package retains the
+original effect cleanup behavior; rendering corrections belong to the consumer.
 
 The end command decrements `$1BEC` before final OAM, uploads, sprite rebuilding
 and the last frame wait. The caller also retains its duplicate `$15AB` stores
-and original map clearing and cleanup waits. A renderer relying only on the
-active count may change presentation before pending PPU work finishes, but
-this is a recomp-side hypothesis requiring a rendered-frame trace.
+and original map clearing and cleanup waits. The active count can reach zero
+before a queued effect-plane clear is uploaded. This ordering remains part of
+the original contract, independently of consumer-side presentation policy.
 
 ## Parallel integration checkpoint
 
@@ -1828,18 +1829,73 @@ state/writes. Composed cases execute real AC7A, AB4F, AAE5 and FCD1 ROM
 bodies; other children remain explicit original-code services. Twelve
 semantic and five consumer-ABI fault controls are independently detected.
 
-## Draft field session frontends
+## Complete field session setup
 
-`$83:ACB7` and its overlapping `$83:AD23` resume prefix reconstruct the
-finite original setup paths, including repeated mode/bank initialization,
-nineteen child call sites, fixed long stores, reload-bit sequencing and
-the original tail transfers. Neither is an independent returning root.
-Both remain draft and have no native binding; `$83:B18E`, `$83:8000` and
-the selection/wait child bodies still require further original-code work.
+`$83:ACB7` reconstructs new-session selection and the complete shared map
+installation at `$83:B18E..B500`, including both original restart paths.
+`$83:AD23` reconstructs the overlapping resume entry and all eleven of its
+child calls. Both complete parent contracts are verified. Unknown children
+retain explicit original-code services with their original pushed frames.
+The permanent field system at `$83:8000` remains an original owning-interpreter
+tail; its endless scheduler is not declared decompiled.
 
-The frontend proof passes 6,224 differential cases: 278 child-unwinds and
-5,946 exact boundaries, comprising 5,905 original tail transfers and
-forty-one child-width continuations. CPU, complete WRAM, ordered operand
-events and modeled MMIO are compared. All nineteen sites are reached,
-and five semantic fault controls are detected. Passing finite prefixes
-does not promote the incomplete larger callers.
+The original `$80:8281` JML enters ACB7 in M1X1; the semantic entry accepts
+all native widths and performs the original width initialization. The original
+`$85:840F` JML enters AD23 in M1X0 after TCS sets S to `$1FFF`. Neither root
+returns with RTS or RTL, and neither needs an invented session return frame.
+Metadata widths are representative; live child flags and width changes are
+preserved. Unexpected child widths and bounded pathological loops transfer
+at their exact original continuation instead of assuming completion.
+
+The reconstruction separates display preparation, world-map entry, resource
+loading, position installation, actor spawning and session startup. It retains
+alias-sensitive record accesses, original word-TDC behavior, reload flags,
+temporary stack spills, NMI publication and actions one and seven. All 68
+original JSR/JSL sites are covered. The consumer accepts native binary mode,
+PB83, DP0, DB00/7E/83 and S `$1F10..$1FFF`; AD23 also requires M1X0. Other
+contexts transfer unchanged before any bus access.
+
+The direct original-ROM proof passes 119,800 cases: 4,016 child unwinds and
+115,784 exact boundaries, including 114,931 field-system tails. The actual
+production bridge passes 144,280 cases, including 2,043 child unwinds and
+132,647 exact field-system tails, plus 36 redirect probes and 1,585,209
+pre-access guard checks. Comparisons include complete CPU, full WRAM,
+ordered operand bus events and modeled MMIO. Twelve independent semantic
+fault controls are detected without weakening the original-ROM oracle.
+
+A separate 3,856-case composition executes 30,080 actual original child
+returns, including initialization bodies and the `$83:900C` wait. There are
+5,200 real native-mode NMI/RTI sequences, with the original common NMI and
+published field NMI through its RAM JSL stub. The wait's live JSR frame,
+returned old counter byte, word overflows and parent continuation are checked.
+SPC handshakes, title selection and remaining unresolved children retain
+explicit services. Hardware autojoypad inputs are controlled external inputs.
+
+Twenty-seven tests link the production bridge and unchanged interpreter-owner
+implementation. Missing wait children and final field-system tails resume
+original execution with their live guest stack and consume the configured
+master deadline. Ninety-nine further checks compile the regenerated `$80:8281`
+caller, original `$85:83FC` final tail, HLE wrappers and production tail-context
+helpers. Both JML paths reach the native setup and discard inherited return
+context across all three host-return modes; the resume path resets S to `$1FFF`
+before the original wait frame.
+The current interpreter treats direct-page WRAM reads as
+dynamic; these tests do not claim automatic quiescence detection for the wait.
+They also do not establish PPU pixel equivalence, SPC execution or cycle-perfect
+interrupt scheduling. Interpreted JML instructions remain under their original
+interpreter owner; native bindings select the generated recomp callers.
+
+## Session integration checkpoint
+
+The consumer selects all 478 verified metadata entries, with zero draft
+fallbacks and 1,916 actual generated HLE wrappers. The memory map records
+338 locations; neutral one-byte records do not imply proven array extents.
+These are entry and documentation counts, not whole-ROM completeness or
+current interpreter-hit-rate measurements.
+
+The full consumer decomp-verify passes 528 independent jobs, plus 360,448
+original-ROM effect-video comparisons outside the runner. Normal Release,
+decomp-disabled Release and standalone MSVC W4/WX builds pass. The semantic
+sources and production bridges are the same versions used by the proofs.
+Original field-system ownership, unresolved child contracts and the stated
+hardware/timing limits remain unchanged.
