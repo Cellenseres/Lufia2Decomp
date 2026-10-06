@@ -74,7 +74,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:918F` | `Lufia2BattleEffectJump` | verified | `src/battle/battle_effect_flow.c` |
 | `$81:9198` | `Lufia2BattleEffectRepeatStart` | verified | `src/battle/battle_effect_flow.c` |
 | `$81:91AD` | `Lufia2BattleEffectRepeatJump` | verified | `src/battle/battle_effect_flow.c` |
+| `$81:94EB` | `Lufia2BattleEffectLoopStart` | verified | `src/battle/battle_effect_flow.c` |
+| `$81:9500` | `Lufia2BattleEffectLoopStart2` | verified | `src/battle/battle_effect_flow.c` |
+| `$81:9515` | `Lufia2BattleEffectLoopStart3` | verified | `src/battle/battle_effect_flow.c` |
+| `$81:952A` | `Lufia2BattleEffectLoopStart4` | verified | `src/battle/battle_effect_flow.c` |
 | `$81:953F` | `Lufia2BattleEffectRepeat` | verified | `src/battle/battle_effect_ops.c` |
+| `$81:9553` | `Lufia2BattleEffectLoopNext2` | verified | `src/battle/battle_effect_flow.c` |
+| `$81:9567` | `Lufia2BattleEffectLoopNext3` | verified | `src/battle/battle_effect_flow.c` |
+| `$81:957B` | `Lufia2BattleEffectLoopNext4` | verified | `src/battle/battle_effect_flow.c` |
 | `$81:963A` | `Lufia2BattleEffectVideoRegister` | verified | `src/battle/battle_effect_video.c` |
 | `$81:9653` | `Lufia2BattleEffectBg3Map` | verified | `src/battle/battle_effect_video.c` |
 | `$81:9999` | `Lufia2BattleEffectBackgroundRequest` | verified | `src/battle/battle_effect_video.c` |

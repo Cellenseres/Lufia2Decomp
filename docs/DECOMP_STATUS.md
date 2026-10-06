@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-478 functions in `metadata/functions.toml`: 478 verified, 0 draft, 0 identified, 0 disabled.
+485 functions in `metadata/functions.toml`: 485 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -1899,3 +1899,34 @@ decomp-disabled Release and standalone MSVC W4/WX builds pass. The semantic
 sources and production bridges are the same versions used by the proofs.
 Original field-system ownership, unresolved child contracts and the stated
 hardware/timing limits remain unchanged.
+
+## Counted battle-effect loops
+
+Seven complete commands at $81:94EB, 9500, 9515, 952A, 9553, 9567 and
+957B reconstruct four independent counted loops. Each start records its byte
+count and next stream position; continuation decrements the original byte
+and jumps unless it becomes zero. Zero wraps to 255. The first continuation
+at $81:953F was already verified. All eight now execute inside the native
+effect parent instead of its unresolved-child callback.
+
+The consumer contract is native PB81, M8/X16, DP0, S=$1F00..$1FFC,
+with any DB and decimal mode. Other entries hand off before bus access.
+The shared implementation retains stream/slot/stack overlap, long-indexed
+address carries, high-first word increments and rewritten RTS destinations.
+Count and target remain bus-backed fields rather than cached host records.
+
+The combined leaf and actual production-bridge matrix passes 229,376 original-
+ROM comparisons, 238 pre-access guards and fourteen detected mutations.
+Every byte count is exercised in both decimal modes. Comparisons cover all
+CPU fields, complete WRAM, ordered writes, MMIO reads and modeled hardware;
+ordinary RAM reads and instruction fetches are outside the trace claim.
+
+Expanded complete-parent checks cover 1,720 portable and 1,854 production ABI
+cases, including all four levels together, byte-zero wrap, original opcode
+frames and owner transfers. A further 1,344 compositions execute 393,508 actual
+original child returns. These use deterministic interrupt/upload inputs;
+they do not claim pixel equivalence or a complete NMI scheduler.
+
+The full consumer regression passes 532 independent jobs. Standalone W4/WX,
+Release game and decomp-disabled Release builds pass. The consumer selects
+485 verified entries, with 1,944 actual generated bridge invocations.
