@@ -939,6 +939,33 @@ Lufia2ExecutionResult Lufia2BattleEffectBackgroundCopy(
 Lufia2ExecutionResult Lufia2BattleEffectWindowBand(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Decode effect tiles and queue the original VRAM transfer. */
+Lufia2ExecutionResult Lufia2BattleEffectGraphics(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+Lufia2ExecutionResult Lufia2BattleEffectGraphicsAlternate(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+/* End a script and discard its opcode return frame. */
+Lufia2ExecutionResult Lufia2BattleEffectEnd(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Preserve the original effect delay, jump and repeat operands. */
+Lufia2ExecutionResult Lufia2BattleEffectDelay(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectJump(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectRepeatStart(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectRepeatJump(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Original effect setup, frame dispatcher and final cleanup. */
+Lufia2ExecutionResult Lufia2BattlePlayEffect(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 #ifdef __cplusplus
 }
 #endif

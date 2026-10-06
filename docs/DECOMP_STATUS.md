@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-467 functions in `metadata/functions.toml`: 467 verified, 0 draft, 0 identified, 0 disabled.
+475 functions in `metadata/functions.toml`: 475 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -1716,6 +1716,88 @@ They preserve the original register, cursor, decimal arithmetic, stack write,
 and PPU behavior. The consumer contract is M8/X16, DP0, PB81, and stack
 $1F00..$1FFC; unsupported contexts transfer before bus access.
 
-The effect dispatcher, graphic upload commands, and complete animation caller
-remain outside this slice. These commands retain original screen coordinates;
-widescreen presentation belongs to the consumer.
+These six video commands retain original screen coordinates; widescreen
+presentation belongs to the consumer. The following sections cover graphics,
+control commands and their enclosing playback caller.
+
+## Battle effect graphics and control commands
+
+`$81:99D0` and `$81:9A12` read a graphics resource index from the effect
+stream, call the original decompressor, reserve a VRAM upload record and
+publish its source, destination and byte count. Their shared C implementation
+preserves both distinct original command entries and call sites.
+
+The basic effect control commands `$81:915B`, `$81:917F`, `$81:918F`,
+`$81:9198` and `$81:91AD` reconstruct termination, frame delay, stream jumps
+and the original repeat target. The end command retains byte underflow and
+discards the opcode return before the dispatcher's return. No original bug
+or frame cleanup behavior is corrected.
+
+The command proof passes 203,264 original-ROM comparisons, including direct
+portable entries, the consumer bridge, original interpreted children and
+composed native decompressor/VRAM queue children. It compares every CPU
+field, complete WRAM, ordered writes, MMIO reads and modeled hardware state.
+There are 238 pre-access guard checks and thirteen detected ROM mutations.
+Child stops, changed width/DP returns, full queue BRK continuation and the
+end command's ancestor/owner/direct-bounce returns are covered separately.
+Ordinary RAM reads and instruction fetches are not trace-equivalence claims.
+
+## Effect playback parent and frame dispatcher
+
+`Lufia2BattlePlayEffect` reconstructs the complete `$81:895E` parent through
+its original `$81:8C57` RTL, including the `$81:8A76` frame loop. It preserves
+the thirty script records, sixty-four actor records, both opcode dispatch
+frames, actor motion, upload and background requests, and final cleanup.
+Known commands execute their semantic bodies. Unresolved opcode bodies retain
+an explicit original pushed-child boundary; they are not declared decompiled.
+`$81:8A76` requires the enclosing parent's saved DB and existing frames and
+does not receive an independent runtime binding.
+
+The final contract proof passes 4,280 original-ROM comparisons. It covers
+all 256 entry DB values, zero through sixty-four active actors, consistent
+global active counts, several frames, count transitions through zero, and
+cross-record motion targets. The original motion sums target velocity and
+target position before storing the current actor's position. Changed child
+widths, DP and decimal mode, opcode frame disposal, and nonlocal child returns
+are compared at their exact continuation boundaries. Seven zero-access guards
+and eleven original-ROM mutations are checked independently.
+
+The final actual production bridge proof passes 4,414 comparisons at forty
+distinct child sites. It compiles the final `actor_bridge.c` and links the
+updated semantic library. Thirty-two ABI zero-access guards cover the entry
+conditions across host-return modes. Ninety-six probes execute the actual
+`$85:EC81` bridge up to its owning-interpreter transfer at `$85:EC94`, keeping
+the live JSL frame. They cover return codes 5, 7, 9 and 11 and the real
+`RECOMP_RETURN_LLE_UNWIND_BASE` and `BASE + 2` values. Native-child results
+retain the framework's original per-parent decrement; explicit owning-tail
+transfers retain the matching `+1` and `-1` convention. Missing native entries,
+rewritten child returns and stack changes also transfer to the owning
+interpreter instead of assuming an ordinary return.
+
+A separate composed proof passes 416 whole-parent comparisons with 28,780
+actual original-ROM child returns at thirty-six distinct sites. Every reached
+ordinary and graphics child body executes in `interp816`. Interrupt progress
+and queue consumption are explicit deterministic frame inputs in this phase.
+Unknown opcode bodies remain callback boundaries in the contract and ABI
+proofs. These results establish CPU, full WRAM, relevant modeled hardware,
+ordered writes and MMIO reads; they do not establish PPU pixel equivalence or
+the entire interrupt scheduler. Ordinary RAM reads and instruction fetches
+remain outside the trace-equivalence claim.
+
+The complete `$81:895E` parent contract is verified. Its unresolved child
+boundaries and supported entry modes remain explicit. The seven complete
+command entries are separately verified. No visible black frame has been reproduced or fixed in this package.
+
+The end command decrements `$1BEC` before final OAM, uploads, sprite rebuilding
+and the last frame wait. The caller also retains its duplicate `$15AB` stores
+and original map clearing and cleanup waits. A renderer relying only on the
+active count may change presentation before pending PPU work finishes, but
+this is a recomp-side hypothesis requiring a rendered-frame trace.
+
+## Parallel integration checkpoint
+
+The consumer full decomp-verify passes all 525 independent jobs, with the
+360,448-comparison video-command proof outside that runner. Normal Release,
+decomp-disabled Release and the standalone MSVC warnings-as-errors build
+pass. These checks do not establish rendered-pixel or current gameplay
+interpreter-hit-rate equivalence.

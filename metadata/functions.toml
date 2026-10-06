@@ -3872,3 +3872,67 @@ source = "src/battle/battle_effect_video.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:99D0"
+name = "Lufia2BattleEffectGraphics"
+source = "src/battle/battle_effect_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9A12"
+name = "Lufia2BattleEffectGraphicsAlternate"
+source = "src/battle/battle_effect_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:915B"
+name = "Lufia2BattleEffectEnd"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:917F"
+name = "Lufia2BattleEffectDelay"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:918F"
+name = "Lufia2BattleEffectJump"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9198"
+name = "Lufia2BattleEffectRepeatStart"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:91AD"
+name = "Lufia2BattleEffectRepeatJump"
+source = "src/battle/battle_effect_flow.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:895E"
+name = "Lufia2BattlePlayEffect"
+source = "src/battle/battle_effect_engine.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
