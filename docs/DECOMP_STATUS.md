@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-475 functions in `metadata/functions.toml`: 475 verified, 0 draft, 0 identified, 0 disabled.
+478 functions in `metadata/functions.toml`: 476 verified, 2 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -1801,3 +1801,45 @@ The consumer full decomp-verify passes all 525 independent jobs, with the
 decomp-disabled Release and the standalone MSVC warnings-as-errors build
 pass. These checks do not establish rendered-pixel or current gameplay
 interpreter-hit-rate equivalence.
+
+## Field scene actor reconstruction
+
+`$83:A76D` is a complete parent shell from its original PHP/SEP30 through
+the PLP and RTS at `$83:A82D`. The C implementation separates the forty
+actor slots, thirty-two object slots and shared object-sprite copies.
+Eleven original JSR/JSL sites retain their pushed frames and live child
+CPU state. Original decimal ADC behavior, indexed stores, TDC/TAX/XBA
+ordering, aliases and out-of-range source selectors are preserved.
+
+The semantic API supports all native entry widths; M1X0 metadata is
+representative. Unsupported child widths and pathological loops transfer
+at the exact original continuation with unchanged live state. The native
+consumer requires PB83, DP0, binary arithmetic, DB00/7E/83 and stack
+$1F00..$1FFC. Its guards run before memory access. A new opt-in callback
+transfers missing native children to the owning interpreter; the legacy
+global helper remains unchanged. Native child depth is decremented,
+including active LLE sentinels; owning-tail results preserve owner depth.
+
+Final original-ROM verification passes 5,585 direct cases and 5,777 actual
+production-ABI cases, plus eighteen return/redirect probes, 704 missing
+native owner transfers and 792,624 pre-access guard checks. It compares
+CPU, complete WRAM, ordered semantic operand bus events and modeled MMIO
+state/writes. Composed cases execute real AC7A, AB4F, AAE5 and FCD1 ROM
+bodies; other children remain explicit original-code services. Twelve
+semantic and five consumer-ABI fault controls are independently detected.
+
+## Draft field session frontends
+
+`$83:ACB7` and its overlapping `$83:AD23` resume prefix reconstruct the
+finite original setup paths, including repeated mode/bank initialization,
+nineteen child call sites, fixed long stores, reload-bit sequencing and
+the original tail transfers. Neither is an independent returning root.
+Both remain draft and have no native binding; `$83:B18E`, `$83:8000` and
+the selection/wait child bodies still require further original-code work.
+
+The frontend proof passes 6,224 differential cases: 278 child-unwinds and
+5,946 exact boundaries, comprising 5,905 original tail transfers and
+forty-one child-width continuations. CPU, complete WRAM, ordered operand
+events and modeled MMIO are compared. All nineteen sites are reached,
+and five semantic fault controls are detected. Passing finite prefixes
+does not promote the incomplete larger callers.

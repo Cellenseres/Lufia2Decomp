@@ -67,7 +67,7 @@
 /* Listed object a push opcode moves, record byte minus $10. */
 #define EVENT_PUSH_OBJECT_INDEX 0x7fd0beu
 #define EVENT_PUSH_OBJECT_ID 0x7fd09fu
-#define EVENT_UNK_7FD0BF 0x7fd0bfu
+#define EVENT_UNK_7FD0BF WRAM_UNK_7FD0BF
 #define EVENT_UNK_7FD133 0x7fd133u
 #define EVENT_UNK_7FD296 0x7fd296u
 #define EVENT_UNK_7FD75C 0x7fd75cu
