@@ -2837,3 +2837,11 @@ width = 1
 count = 1
 owner = "battle"
 notes = "ROM bank of the action message name."
+
+[[location]]
+address = "7E:0A5D"
+name = "battle_action_target_request"
+width = 2
+count = 1
+owner = "battle"
+notes = "Original action target mask before byte target resolution."

@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-512 functions in `metadata/functions.toml`: 512 verified, 0 draft, 0 identified, 0 disabled.
+529 functions in `metadata/functions.toml`: 529 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2043,3 +2043,38 @@ jobs, the standalone W4/WX build and the normal Release consumer build.
 Runtime selection contains512 verified entries,0draft,359 WRAM locations
 and2052 actual generated native bridge invocations. All nine entries use
 their own bindings; the larger action dispatcher81:A832 remains original.
+
+## Complete battle action dispatch
+
+Seventeen complete entries close the original action dispatcher 81:A832,
+its remaining action handlers, the repeated effect phase and three record
+lookups. All 32 dispatch indices and their 18 distinct handler targets are
+implemented. The dispatcher reads the original ROM table; an altered or
+unsupported target retains its exact original continuation.
+
+Control entries require PB81, M8/X16, DP0, DB97, binary arithmetic and
+stack1F00..1FFC. Record lookups require M16/X16 and retain arbitrary DP/DB.
+The IP zero-parameter BRK at 81:AB6A and invalid capsule BRK at 81:AD8C
+remain original owners. Followup dispatch retains its original tail into
+81:A832. No child is replaced with invented behavior: unknown services keep
+their exact JSR/JSL frames, post-child guards and original continuations.
+
+The combined targeted proof passes 633434 direct/production-ABI comparisons,
+676 pre-access guards and 86 altered-ROM controls. The dispatcher contributes
+132472 comparisons across all 140 reachable child sites. The additional
+repeat-effect entry contributes twelve sites outside the dispatcher table.
+Three lookup sweeps cover every word input in both semantic and bridge paths.
+Twenty-eight streaming comparisons preserve the exact original state after
+4096 frames. The action-window route keeps its 672 ordered zero/one WRAM-port
+write pairs, live data bank and original word counter saturation.
+
+Whole CPU, full WRAM, ordered writes and modeled MMIO reads are compared.
+Unknown child internals, ordinary reads/fetches and pixel/full-NMI scheduling
+are outside these proofs. No current runtime hit rate is inferred from the
+number of bindings. Complete regression and consumer-build results follow.
+
+The complete action checkpoint passes all547 independent verification jobs,
+the standalone W4/WX build and the normal Release consumer build. Runtime
+selection contains529 verified entries,0draft,360 WRAM locations and2120
+actual generated native bridge invocations. All17 new entries have their
+own bindings, with exact guard and original-owner fallback behavior.

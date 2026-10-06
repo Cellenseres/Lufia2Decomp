@@ -46,6 +46,11 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_action_effects.c
     src/battle/battle_action_presentation.c
     src/battle/battle_action_handlers.c
+    src/battle/battle_action_followups.c
+    src/battle/battle_action_records.c
+    src/battle/battle_special_actions.c
+    src/battle/battle_collective_actions.c
+    src/battle/battle_action_dispatch.c
     src/battle/battle_effect_flow.c
     src/battle/battle_effect_engine.c
     src/battle/battle_drift.c

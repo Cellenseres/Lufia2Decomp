@@ -1070,6 +1070,71 @@ Lufia2ExecutionResult Lufia2BattleItemAction(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+Lufia2ExecutionResult Lufia2BattleDefendAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleContinueAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleBeginUncostedSpellAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleUncostedSpellAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleFollowupAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleWaitAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleWaitLongAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleRepeatActionEffects(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2IpRecordPointer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2IpNamePointer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2CapsuleActionRecordPointer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleIpAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleCapsuleAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleAlternateAttackAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleCollectiveAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleAction07(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleDispatchAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 Lufia2ExecutionResult Lufia2BattlePlayEffect(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);

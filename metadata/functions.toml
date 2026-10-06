@@ -4232,3 +4232,139 @@ source = "src/battle/battle_action_handlers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:AAD0"
+name = "Lufia2BattleDefendAction"
+source = "src/battle/battle_action_followups.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AB07"
+name = "Lufia2BattleContinueAction"
+source = "src/battle/battle_action_followups.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AF7A"
+name = "Lufia2BattleBeginUncostedSpellAction"
+source = "src/battle/battle_action_followups.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AF89"
+name = "Lufia2BattleUncostedSpellAction"
+source = "src/battle/battle_action_followups.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AF37"
+name = "Lufia2BattleFollowupAction"
+source = "src/battle/battle_action_followups.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AD8D"
+name = "Lufia2BattleWaitAction"
+source = "src/battle/battle_action_followups.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AEE1"
+name = "Lufia2BattleWaitLongAction"
+source = "src/battle/battle_action_followups.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AA73"
+name = "Lufia2BattleRepeatActionEffects"
+source = "src/battle/battle_action_followups.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F45E"
+name = "Lufia2IpRecordPointer"
+source = "src/battle/battle_action_records.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:F46B"
+name = "Lufia2IpNamePointer"
+source = "src/battle/battle_action_records.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:F476"
+name = "Lufia2CapsuleActionRecordPointer"
+source = "src/battle/battle_action_records.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:AB0C"
+name = "Lufia2BattleIpAction"
+source = "src/battle/battle_special_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AD3B"
+name = "Lufia2BattleCapsuleAction"
+source = "src/battle/battle_special_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AE0F"
+name = "Lufia2BattleAlternateAttackAction"
+source = "src/battle/battle_special_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AB94"
+name = "Lufia2BattleCollectiveAction"
+source = "src/battle/battle_collective_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:AC72"
+name = "Lufia2BattleAction07"
+source = "src/battle/battle_collective_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A832"
+name = "Lufia2BattleDispatchAction"
+source = "src/battle/battle_action_dispatch.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
