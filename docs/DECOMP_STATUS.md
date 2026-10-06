@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-496 functions in `metadata/functions.toml`: 496 verified, 0 draft, 0 identified, 0 disabled.
+503 functions in `metadata/functions.toml`: 503 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -1967,3 +1967,40 @@ load; both pass serial reruns with unchanged inputs and checks. The expanded
 caller matrix passes2674 direct and2807 production ABI cases;2304 compositions
 execute444108 actual original child returns. Standalone W4/WX and Release
 game builds pass. Selection496;1988 real generated bridge invocations.
+
+## Battle action coordinates and effect phases
+
+Seven complete entries reconstruct the sprite table lookups at81:FBC6/FB8E,
+target-mask resolution at81:B228, sprite/effect coordinates at81:B7EF/B80A,
+and action effect phases at81:B139/B174. Lookup tables are read from the
+original ROM. X16 is required; both accumulator widths, decimal modes and
+all DP/DB values are accepted by the lookup contracts. The other entries
+require PB81,M8/X16,DP0,DB97 and binary arithmetic. Their stack minimums are
+1F00,1F03 and1F05 as documented in the verification receipt.
+
+Target resolution retains the original random-table selection and empty-mask
+loop. The two coordinate paths retain their separate thirteen/fifteen-byte
+position records, packed ROM fields, special target branches and original
+hardware multiplication order. Child lookup calls retain their JSL frames.
+Action phases preserve all14 original child sites, register-width changes,
+stack-backed wait counters and writes to the sprite rebuild marker. Unknown
+children remain explicit services with live frames and interpreter ownership.
+
+The combined direct/production matrices pass524288 lookup and98306 target
+comparisons,180 pre-access guards and12 detected altered-ROM controls. All
+65536 accumulator inputs in both widths are covered for each lookup. Target
+requests cover all256 byte values with varied original active records. Two
+original-loop continuations compare exactly65536 random picks.
+
+The action-stage matrix passes4236 comparisons,28 child unwinds,112 post-child
+mode continuations,82 pre-access guards and16 detected controls. A further
+two streaming comparisons verify the exact original state after4096 frames;
+each executes8194 child services. Whole CPU/full WRAM and ordered writes/MMIO
+reads are compared. Ordinary reads/fetches and pixel/full-NMI scheduling are
+outside these contracts; synthetic child internals are not claimed.
+
+The completed checkpoint passes all540 independent decomp-verify jobs,
+the standalone W4/WX build and the normal Release consumer build. Runtime
+selection contains503 verified entries,0draft and350 WRAM locations;
+generated bank bodies contain2016 native bridge invocations. These counts
+describe registered contracts and call sites, not whole-game coverage.

@@ -4104,3 +4104,59 @@ source = "src/battle/battle_effect_selection.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:FBC6"
+name = "Lufia2CharacterSpriteWord"
+source = "src/battle/battle_sprite_lookups.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:FB8E"
+name = "Lufia2SpriteCoordinatesPacked"
+source = "src/battle/battle_sprite_lookups.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B228"
+name = "Lufia2BattleResolveTargetMask"
+source = "src/battle/battle_target_resolution.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B7EF"
+name = "Lufia2BattleTargetSpriteCoordinates"
+source = "src/battle/battle_target_resolution.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B80A"
+name = "Lufia2BattleEffectTargetCoordinates"
+source = "src/battle/battle_target_resolution.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B139"
+name = "Lufia2BattleRunActionEffects"
+source = "src/battle/battle_action_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B174"
+name = "Lufia2BattleFinishActionEffects"
+source = "src/battle/battle_action_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -306,7 +306,7 @@ address = "7E:1262"
 name = "palette_fade"
 width = 1
 owner = "field"
-notes = "Palette fade state; stopped by text opcode $C5."
+notes = "Palette fade stopped by text $C5; battle effect ID."
 
 [[location]]
 address = "7E:1264"
@@ -2717,3 +2717,51 @@ width = 1
 count = 1
 owner = "battle"
 notes = "Number of effect target records."
+
+[[location]]
+name = "battle_effect_special_party"
+address = "7E:11DE"
+width = 1
+count = 1
+owner = "battle"
+notes = "Special party effect positioning flag."
+
+[[location]]
+name = "battle_effect_enemy_positions"
+address = "7E:1399"
+width = 1
+count = 1
+owner = "battle"
+notes = "Base of original thirteen-byte effect position records."
+
+[[location]]
+name = "battle_effect_party_positions"
+address = "7E:13DA"
+width = 1
+count = 1
+owner = "battle"
+notes = "Base of original fifteen-byte effect position records."
+
+[[location]]
+name = "battle_effect_special_horizontal"
+address = "7E:13D2"
+width = 1
+count = 1
+owner = "battle"
+notes = "Horizontal coordinate for special effect target four."
+
+[[location]]
+name = "battle_effect_special_vertical"
+address = "7E:13D4"
+width = 1
+count = 1
+owner = "battle"
+notes = "Vertical coordinate for special effect target four."
+
+[[location]]
+name = "battle_effect_frame_marker"
+address = "7E:12F3"
+width = 1
+count = 1
+owner = "battle"
+notes = "Frame marker written while battle action effects wait."
