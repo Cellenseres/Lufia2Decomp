@@ -85,6 +85,12 @@ static Lufia2ExecutionResult EffectKnownCommand(
     case 0x81917fu: return Lufia2BattleEffectDelay(memory, cpu);
     case 0x81918fu: return Lufia2BattleEffectJump(memory, cpu);
     case 0x819198u: return Lufia2BattleEffectRepeatStart(memory, cpu);
+    case 0x8191f2u: return Lufia2BattleEffectSpawnScriptAt(memory, cpu);
+    case 0x81929eu: return Lufia2BattleEffectSpawnActorAt(memory, cpu);
+    case 0x81920fu: return Lufia2BattleEffectSpawnScriptsForTargets(memory, cpu);
+    case 0x8191b7u: return Lufia2BattleEffectBranchIfField(memory, cpu);
+    case 0x8194cau: return Lufia2BattleEffectSelectPortraitStream(memory, cpu);
+    case 0x819ba3u: return Lufia2BattleEffectSkipArgument(memory, cpu);
     case 0x8191adu: return Lufia2BattleEffectRepeatJump(memory, cpu);
     case 0x8194ebu: return Lufia2BattleEffectLoopStart(memory, cpu);
     case 0x819500u: return Lufia2BattleEffectLoopStart2(memory, cpu);

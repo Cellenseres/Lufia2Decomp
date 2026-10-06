@@ -4016,3 +4016,91 @@ source = "src/battle/battle_effect_flow.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:8F91"
+name = "Lufia2BattleEffectFindActorSlot"
+source = "src/battle/battle_effect_slots.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:8FAB"
+name = "Lufia2BattleEffectFindScriptSlot"
+source = "src/battle/battle_effect_slots.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:8FC5"
+name = "Lufia2BattleEffectSpawnActor"
+source = "src/battle/battle_effect_slots.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:905B"
+name = "Lufia2BattleEffectSpawnMovingActor"
+source = "src/battle/battle_effect_slots.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:90DF"
+name = "Lufia2BattleEffectSpawnScript"
+source = "src/battle/battle_effect_slots.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:91F2"
+name = "Lufia2BattleEffectSpawnScriptAt"
+source = "src/battle/battle_effect_slots.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:929E"
+name = "Lufia2BattleEffectSpawnActorAt"
+source = "src/battle/battle_effect_slots.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:920F"
+name = "Lufia2BattleEffectSpawnScriptsForTargets"
+source = "src/battle/battle_effect_slots.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:91B7"
+name = "Lufia2BattleEffectBranchIfField"
+source = "src/battle/battle_effect_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:94CA"
+name = "Lufia2BattleEffectSelectPortraitStream"
+source = "src/battle/battle_effect_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9BA3"
+name = "Lufia2BattleEffectSkipArgument"
+source = "src/battle/battle_effect_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

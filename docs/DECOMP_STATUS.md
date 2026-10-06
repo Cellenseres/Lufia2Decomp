@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-485 functions in `metadata/functions.toml`: 485 verified, 0 draft, 0 identified, 0 disabled.
+496 functions in `metadata/functions.toml`: 496 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -1930,3 +1930,40 @@ they do not claim pixel equivalence or a complete NMI scheduler.
 The full consumer regression passes 532 independent jobs. Standalone W4/WX,
 Release game and decomp-disabled Release builds pass. The consumer selects
 485 verified entries, with 1,944 actual generated bridge invocations.
+
+## Battle-effect spawning and selection
+
+Eight complete entries reconstruct effect allocation and creation: $81:8F91,
+8FAB,8FC5,905B,90DF,91F2,920F and929E. Actor/script allocation scans the
+original fixed pools. Full pools retain their original endless branches,
+including nested JSR and PHY frames. Source/position/attribute operands,
+parent parameters, byte versus word active counters and all target records
+remain bus-backed. Overlapping activation stores and word decrement order
+are retained. The native contract is PB81,M8/X16,DP0,binary arithmetic;
+minimum stack is1F00 for lookup,1F02 for creation,1F04 for target lists.
+
+Three complete commands at $81:91B7,94CA and9BA3 reconstruct conditional
+field branches, portrait-indexed stream selection and argument skipping.
+These accept either decimal mode and any DB. They retain stack and slot
+aliases, decimal additions and original width changes. The invalid portrait
+path transfers to the original BRK at94EA; it is not repaired in semantic C.
+
+The actual production-source matrix passes262144 allocation/creation and
+98304 selection comparisons,414 pre-access guards and22 altered-ROM controls.
+All256 target counts and counter overlaps are covered independently. Valid
+whole-parent fixtures cover empty,one,four and full-pool target lists. The
+combined caller passes802 direct and935 production ABI cases. Another576
+compositions execute110986 actual original child returns. All14 integrated
+loop/spawn/selection entries are exercised inside the complete effect caller.
+
+Comparisons cover CPU state,full WRAM,ordered writes,MMIO reads and modeled
+hardware. Ordinary RAM reads/instruction fetches,pixel equivalence and a
+complete NMI scheduler are outside the proof. Unresolved children retain
+explicit original frames and interpreter ownership.
+
+The full combined regression passes537 independent jobs. Two unchanged
+object-update tests exceeded their120-second limits under concurrent build
+load; both pass serial reruns with unchanged inputs and checks. The expanded
+caller matrix passes2674 direct and2807 production ABI cases;2304 compositions
+execute444108 actual original child returns. Standalone W4/WX and Release
+game builds pass. Selection496;1988 real generated bridge invocations.
