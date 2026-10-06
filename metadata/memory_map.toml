@@ -2399,3 +2399,273 @@ name = "unk_7E1559"
 width = 1
 owner = "field"
 notes = "83:A7CC writes FF at this indexed base across 32 object indexes."
+
+[[location]]
+name = "unk_7E0562"
+address = "7E:0562"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7FD4E6"
+aliases = ["EVENT_CALL_DEPTH"]
+address = "7F:D4E6"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7FD18C"
+aliases = ["EVENT_SLOT_TIMERS"]
+address = "7F:D18C"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E09C9"
+address = "7E:09C9"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7FD100"
+aliases = ["EVENT_SCRIPT_FLAGS"]
+address = "7F:D100"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7FD102"
+address = "7F:D102"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7FD0C4"
+address = "7F:D0C4"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E085D"
+address = "7E:085D"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E089D"
+address = "7E:089D"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7FE696"
+address = "7F:E696"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E079C"
+address = "7E:079C"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E079D"
+address = "7E:079D"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E120A"
+address = "7E:120A"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E120B"
+address = "7E:120B"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E05BD"
+aliases = ["WRAM_EVENT_UNK_05BD"]
+address = "7E:05BD"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E05BE"
+aliases = ["WRAM_EVENT_UNK_05BE"]
+address = "7E:05BE"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7FD0FD"
+address = "7F:D0FD"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7FF8A0"
+address = "7F:F8A0"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E081E"
+address = "7E:081E"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E085E"
+address = "7E:085E"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E08DE"
+address = "7E:08DE"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E089E"
+address = "7E:089E"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E120E"
+address = "7E:120E"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E120F"
+address = "7E:120F"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E1210"
+address = "7E:1210"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E1211"
+address = "7E:1211"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E1212"
+address = "7E:1212"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E091D"
+address = "7E:091D"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E08DD"
+address = "7E:08DD"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E05BF"
+aliases = ["WRAM_EVENT_UNK_05BF"]
+address = "7E:05BF"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E09AD"
+address = "7E:09AD"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E1271"
+address = "7E:1271"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "unk_7E09B7"
+address = "7E:09B7"
+width = 1
+count = 1
+owner = "field"
+notes = "Session map tail; indexed base or scalar, extent unclaimed."
