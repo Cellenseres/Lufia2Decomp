@@ -2329,3 +2329,73 @@ width = 45
 count = 64
 owner = "battle"
 notes = "Effect actor records: active +0, timer +1, stream +3, velocity +1B/+1D, position +1F/+21, motion target +25."
+
+[[location]]
+address = "7E:0520"
+name = "unk_7E0520"
+width = 1
+owner = "field"
+notes = "83:ACBF writes FF through fixed bank-zero long addressing."
+
+[[location]]
+address = "7E:05B8"
+name = "unk_7E05B8"
+width = 1
+owner = "field"
+notes = "83:ACDA/AD9C/ADB5 writes destination setup values through caller DB."
+
+[[location]]
+address = "7E:05C1"
+name = "unk_7E05C1"
+width = 1
+owner = "field"
+notes = "83:AD29 writes FF through fixed bank-zero long addressing."
+
+[[location]]
+address = "7E:099D"
+name = "unk_7E099D"
+width = 1
+owner = "field"
+notes = "83:ACE9/ADC4 writes FF; AD62 reads before original song request."
+
+[[location]]
+address = "7E:0A7F"
+name = "unk_7E0A7F"
+width = 1
+owner = "field"
+notes = "83:AD89 writes seven before child 82:C352 when 0B51 bit 1 is set."
+
+[[location]]
+address = "7E:0B51"
+name = "unk_7E0B51"
+width = 1
+owner = "field"
+notes = "83:AD1C/AD80 tests bits 7 and 1 after selection child 82:E746."
+
+[[location]]
+address = "7F:D0BF"
+name = "unk_7FD0BF"
+width = 1
+owner = "field"
+notes = "83:AD2D writes FF through long addressing during resume setup."
+
+[[location]]
+address = "7F:E75A"
+name = "unk_7FE75A"
+width = 1
+owner = "field"
+notes = "83:AD36 writes original TDC accumulator low byte through long addressing."
+
+[[location]]
+address = "7E:1471"
+name = "unk_7E1471"
+width = 1
+owner = "field"
+notes = "83:A7AB copies 066A,X into this indexed base; extent unclaimed."
+
+[[location]]
+address = "7E:1559"
+name = "unk_7E1559"
+width = 1
+owner = "field"
+notes = "83:A7CC writes FF at this indexed base across 32 object indexes."

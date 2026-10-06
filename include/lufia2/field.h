@@ -424,6 +424,19 @@ Lufia2ExecutionResult Lufia2FieldCellPointer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* Rebuild scene actors, restoring all caller M/X widths. */
+Lufia2ExecutionResult Lufia2FieldRebuildSceneActors(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* Draft session prefixes retain unresolved tail boundaries. */
+Lufia2ExecutionResult Lufia2FieldBeginSessionSetup(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2FieldResumeSessionSetup(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

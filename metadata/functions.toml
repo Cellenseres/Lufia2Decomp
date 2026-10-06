@@ -3936,3 +3936,27 @@ source = "src/battle/battle_effect_engine.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:A76D"
+name = "Lufia2FieldRebuildSceneActors"
+source = "src/field/field_scene_actors.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:ACB7"
+name = "Lufia2FieldBeginSessionSetup"
+source = "src/field/field_session_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
+
+[[function]]
+address = "83:AD23"
+name = "Lufia2FieldResumeSessionSetup"
+source = "src/field/field_session_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "draft"
