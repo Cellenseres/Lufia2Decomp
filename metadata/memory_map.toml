@@ -2669,3 +2669,51 @@ width = 1
 count = 1
 owner = "field"
 notes = "Session map tail; indexed base or scalar, extent unclaimed."
+
+[[location]]
+name = "battle_effect_spawn_stream"
+address = "7E:1494"
+width = 2
+count = 1
+owner = "battle"
+notes = "Stream for new effect slots."
+
+[[location]]
+name = "battle_effect_spawn_position"
+address = "7E:1496"
+width = 2
+count = 1
+owner = "battle"
+notes = "Packed horizontal and vertical spawn arguments."
+
+[[location]]
+name = "battle_effect_spawn_attributes"
+address = "7E:1498"
+width = 1
+count = 1
+owner = "battle"
+notes = "Attributes for new effect actors."
+
+[[location]]
+name = "battle_effect_branch_stream"
+address = "7E:15ED"
+width = 2
+count = 1
+owner = "battle"
+notes = "Shared spawn and conditional stream target."
+
+[[location]]
+name = "battle_effect_branch_parent"
+address = "7E:15EF"
+width = 2
+count = 1
+owner = "battle"
+notes = "Parent slot for field comparisons."
+
+[[location]]
+name = "battle_effect_target_count"
+address = "7E:4F0A"
+width = 1
+count = 1
+owner = "battle"
+notes = "Number of effect target records."
