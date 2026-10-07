@@ -6440,3 +6440,59 @@ source = "src/menu/menu_list_scroll.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:8D47"
+name = "Lufia2MenuLoadListParameters"
+source = "src/menu/menu_list_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9C52"
+name = "Lufia2MenuInitializeListCursor"
+source = "src/menu/menu_list_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:AC84"
+name = "Lufia2MenuDrawListPage"
+source = "src/menu/menu_list_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:ADA3"
+name = "Lufia2MenuMoveListMarkerDown"
+source = "src/menu/menu_list_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:AE53"
+name = "Lufia2MenuMoveListMarkerUp"
+source = "src/menu/menu_list_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:AD20"
+name = "Lufia2MenuAnimateListUp"
+source = "src/menu/menu_list_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:ADB4"
+name = "Lufia2MenuAnimateListDown"
+source = "src/menu/menu_list_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

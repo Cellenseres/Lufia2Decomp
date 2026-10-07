@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-788 functions in `metadata/functions.toml`: 788 verified, 0 draft, 0 identified, 0 disabled.
+795 functions in `metadata/functions.toml`: 795 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2730,3 +2730,21 @@ chains include the existing multiply,divide and animation children.
 CPU,WRAM,MMIO and observed bus order remain literal; no timing patch.
 Shared full725,W4WX and Release PASS.788 verified,zero drafts,471 fields,
 3,156 generated calls. Counts do not measure runtime interpreter load.
+
+## Original menu list presentation and motion - 2026-10-07
+
+Seven complete entries:86:8D47 and82:9C52,AC84,ADA3,AE53,AD20,ADB4.
+List parameters,page content,cursor setup,marker movement and both animated
+scroll directions have verified native bindings. Shared gameplay phases use
+structured C. Parameter stores,low-byte page updates,marker visibility,three
+frame calls,word thumb movement and all original child frames remain exact.
+Existing display-request and battle-phase allocations are reused; only the
+marker row and five parameter words receive new non-overlapping metadata.
+
+30,464 original-ROM caller/composed states and30,491 actual ABI cases pass,
+including27 child unwinds and60 redirect probes.13,440 unsupported states,
+768 additional original/actual stack-alias leaf cases,and160 public-library
+altered-ROM controls pass. CPU,WRAM,MMIO and observed bus order are literal.
+Frame wait services retain their original interpreter owner;no timing patch.
+Shared full728,W4WX and Release PASS.795 verified,zero drafts,473 fields,
+3,184 generated calls. Counts do not measure runtime interpreter load.

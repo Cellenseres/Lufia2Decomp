@@ -521,7 +521,7 @@ address = "7E:153C"
 name = "battle_party_count"
 width = 1
 owner = "battle"
-notes = "$85:9275 terminates the party turn scan with this count, 1..4."
+notes = "$85:9275 terminates the party turn scan with this count, 1..4. In menu phase,8D47 writes the seventh zero-high parameter word across153C..153D;the battle allocation is reused."
 
 [[location]]
 address = "7E:153D"
@@ -529,7 +529,7 @@ name = "battle_party_ids"
 width = 1
 count = 4
 owner = "battle"
-notes = "$81:D9E1 and $81:D12F map battle party slots to character ids. In menu phase,9C10 writes153F as a secondary list limit;the allocation is reused,not duplicated."
+notes = "$81:D9E1 and $81:D12F map battle party slots to character ids. In menu phase,9C10 writes153F as a secondary list limit;the allocation is reused,not duplicated. In menu phase,8D47 zeros153D as the high byte of153C and sets153F from the eighth list parameter;no overlapping allocation is added."
 
 [[location]]
 address = "7E:15D7"
@@ -2060,7 +2060,7 @@ address = "7E:1530"
 name = "menu_scroll_window_rows"
 width = 2
 owner = "menu"
-notes = "Rows the window shows; $82:8C85 subtracts it from the total to get the range."
+notes = "Rows the window shows; $82:8C85 subtracts it from the total to get the range. 8D47 writes the first zero-high list parameter word."
 
 [[location]]
 address = "7E:1542"
@@ -3502,7 +3502,7 @@ name = "menu_display_requests"
 width = 1
 count = 4
 owner = "menu"
-notes = "Four ordered menu requests: HDMA, window, sprite and selected tilemap. Original byte writes retain DB."
+notes = "Four ordered menu requests: HDMA, window, sprite and selected tilemap. Original byte writes retain DB. The1566 byte selects list-scroll raster/upload rows with2,4,8,0x10 before sprite frames,then restores1;8E12 consumes the request."
 
 [[location]]
 address = "7E:156A"
@@ -3711,3 +3711,19 @@ width = 2
 count = 96
 owner = "item"
 notes = "Original96-entry inventory words pack a nine-bit item ID and seven-bit quantity;F057 scans byte offsets00BE down to0000."
+
+[[location]]
+address = "7E:14EE"
+name = "menu_list_marker_row"
+width = 1
+count = 1
+owner = "menu"
+notes = "AD20 andADB4 advance the selected-row marker,hide it past the visible range,and restore it at rows0 or5."
+
+[[location]]
+address = "7E:1532"
+name = "menu_list_window_parameters"
+width = 2
+count = 5
+owner = "menu"
+notes = "8D47 copies list-definition bytes1..5 from86:8D93+X into zero-high words.1530 is the first word;153C reuses the battle allocation for the seventh word."
