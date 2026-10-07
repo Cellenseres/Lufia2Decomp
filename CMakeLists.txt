@@ -199,6 +199,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_update.c
     src/field/scene_script.c
     src/field/field_scroll.c
+    src/field/field_actor_contact.c
     src/field/field_talk.c
     src/party/capsule_stat_callers.c
     src/world/world_resource_pointers.c

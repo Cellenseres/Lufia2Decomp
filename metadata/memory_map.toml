@@ -4089,3 +4089,19 @@ width = 2
 count = 1
 owner = "world"
 notes = "Byte offset of the world-map resource row; existing region-list lookup also reads09EB."
+
+[[location]]
+address = "7F:F8A1"
+name = "field_contact_class"
+width = 1
+count = 1
+owner = "field"
+notes = "Contact classification from the two original facing tables at83B9F6/B9FE."
+
+[[location]]
+address = "7F:F8A4"
+name = "field_contact_resource"
+width = 1
+count = 1
+owner = "field"
+notes = "Selected actor ID minus50, published by83B9EC."

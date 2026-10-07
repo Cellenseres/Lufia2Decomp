@@ -572,6 +572,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:B82F` | `Lufia2FieldRefreshMenuSelection` | verified | `src/field/field_menu.c` |
 | `$83:B851` | `Lufia2FieldFindPointRecord` | verified | `src/field/field_record_search.c` |
 | `$83:B882` | `Lufia2FieldFindRectangleRecord` | verified | `src/field/field_record_search.c` |
+| `$83:B8BF` | `Lufia2FieldProbeActorContact` | verified | `src/field/field_actor_contact.c` |
 | `$83:BA06` | `Lufia2FieldProbeTalkTarget` | verified | `src/field/field_talk.c` |
 | `$83:BA5C` | `Lufia2FieldProbeTalkDown` | verified | `src/field/field_talk.c` |
 | `$83:BA76` | `Lufia2FieldProbeTalkBlocked` | verified | `src/field/field_talk.c` |
