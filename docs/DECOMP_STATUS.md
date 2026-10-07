@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-845 functions in `metadata/functions.toml`: 845 verified, 0 draft, 0 identified, 0 disabled.
+847 functions in `metadata/functions.toml`: 847 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2917,3 +2917,19 @@ Counts do not describe measured runtime interpreter load.
 
 
 The relative script caller restores the original word-INC write order.
+
+## Original field sprite selector entries - 2026-10-07
+
+60,240 original-ROM cases, 60,251 actual ABI cases, 3,456 guards
+and 55 public-library ROM error controls pass. Child probes include
+11 forced unwinds, 15 redirects and 0 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 771-job verification and Windows Release build
+with the complete 10-entry integration batch. Its final combined stage has
+847 verified entries, zero drafts, 514 fields and 3,392 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+Sprite selection separately checks 6,832 unchanged entry fallbacks.
+Its supported saved-register frame requires 000C <= S <= 1FFC.
