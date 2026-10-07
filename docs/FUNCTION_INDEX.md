@@ -848,6 +848,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:B000` | `Lufia2FieldRunMenu` | verified | `src/field/field_menu.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |
+| `$8E:BB2E` | `Lufia2FieldCycleSelectedSprite` | verified | `src/field/field_sprite_selector.c` |
+| `$8E:BBA8` | `Lufia2FieldTakeSpriteSelectionButtons` | verified | `src/field/field_sprite_selector.c` |
 | `$8E:BC99` | `Lufia2FieldSelectMenuActor` | verified | `src/menu/menu_actor_callers.c` |
 | `$8E:BD77` | `Lufia2FieldScrollUpdate` | verified | `src/field/field_scroll.c` |
 | `$8E:C338` | `Lufia2FieldSelectObjectCondition` | verified | `src/field/field_object_conditions.c` |

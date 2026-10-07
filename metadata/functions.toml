@@ -6896,3 +6896,19 @@ source = "src/battle/battle_relative_script.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "8E:BB2E"
+name = "Lufia2FieldCycleSelectedSprite"
+source = "src/field/field_sprite_selector.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+[[function]]
+address = "8E:BBA8"
+name = "Lufia2FieldTakeSpriteSelectionButtons"
+source = "src/field/field_sprite_selector.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
