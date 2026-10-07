@@ -445,6 +445,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:CD1F` | `Lufia2CapsuleTryLearn` | verified | `src/party/capsule.c` |
 | `$82:CD83` | `Lufia2CapsuleLevelUp` | verified | `src/party/capsule.c` |
 | `$82:CE23` | `Lufia2CapsuleExperienceRange` | verified | `src/party/capsule.c` |
+| `$82:CE52` | `Lufia2CapsuleBuildLevelExperience` | verified | `src/party/capsule_experience.c` |
+| `$82:CEAB` | `Lufia2CapsuleAdvanceExperienceStep` | verified | `src/party/capsule_experience.c` |
 | `$82:D07B` | `Lufia2MenuCapsuleStatus` | verified | `src/menu/menu_screen.c` |
 | `$82:D721` | `Lufia2MenuShopWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:D749` | `Lufia2MenuShopParty` | verified | `src/menu/menu_screen.c` |

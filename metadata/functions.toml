@@ -6912,3 +6912,19 @@ source = "src/field/field_sprite_selector.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+[[function]]
+address = "82:CE52"
+name = "Lufia2CapsuleBuildLevelExperience"
+source = "src/party/capsule_experience.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CEAB"
+name = "Lufia2CapsuleAdvanceExperienceStep"
+source = "src/party/capsule_experience.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

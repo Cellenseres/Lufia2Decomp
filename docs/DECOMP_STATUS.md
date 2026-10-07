@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-847 functions in `metadata/functions.toml`: 847 verified, 0 draft, 0 identified, 0 disabled.
+849 functions in `metadata/functions.toml`: 849 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -704,7 +704,7 @@ with the existing decomp; remaining children retain original dispatch.
 49,152 ROM cases compare CPU state, complete WRAM and every ordered write;
 all 34 child unwind sites pass. Production bridges pass 90,173 native calls,
 90 redirected-child contracts and 4,608 unsupported-state guards. All 16
-deliberate fault variants are detected. The record loader retains the childÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢s
+deliberate fault variants are detected. The record loader retains the childÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢s
 returned X; rebuild preserves the original caller-X lookup; claim retains the
 indexed map-tile read and its conditional saved data bank.
 
@@ -909,7 +909,7 @@ Entry widths are M8/X16 for the sprite and color routines (anything else is hand
 
 The battle party records at `$13DA` (six records of 15 bytes) carry two offset words that make the party sprites drift. `$85:894A` walks the records whose active bit in `$13DB` is set and, by the state bits in `$13DA`, either reads the shake table at `$85:9E37` with a countdown from `$152A+i`, flips the sign of the first offset word, or draws both offsets from the random bit source. Nothing happens unless `$129A` is negative.
 
-`$85:8F4A` shifts the 88-bit register at `$122F`ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“`$1239` left by one through the carry. It returns the new low bit in `$122F`. Both routines are native: the first is a JSL entry that needs M8/X16 and hands back at the entry otherwise, the second is a JSR routine that needs M8.
+`$85:8F4A` shifts the 88-bit register at `$122F`ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ`$1239` left by one through the carry. It returns the new low bit in `$122F`. Both routines are native: the first is a JSL entry that needs M8/X16 and hands back at the entry otherwise, the second is a JSR routine that needs M8.
 
 ## Scene value tracks
 
@@ -2933,3 +2933,15 @@ Counts do not describe measured runtime interpreter load.
 
 Sprite selection separately checks 6,832 unchanged entry fallbacks.
 Its supported saved-register frame requires 000C <= S <= 1FFC.
+
+## Original capsule experience entries - 2026-10-07
+
+65,536 original-ROM cases, 65,537 actual ABI cases, 4,608 guards
+and 125 public-library ROM error controls pass. Child probes include
+1 forced unwinds, 15 redirects and 534 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 786-job verification and Windows Release build
+with the complete 14-entry integration batch. Its final combined stage has
+861 verified entries, zero drafts, 519 fields and 3,448 generated calls.
+Counts do not describe measured runtime interpreter load.
