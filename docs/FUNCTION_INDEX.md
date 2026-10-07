@@ -369,7 +369,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:845B` | `Lufia2EncounterBattleSequence` | verified | `src/field/encounter.c` |
 | `$83:85DC` | `Lufia2FieldReloadMap` | verified | `src/field/field_reload.c` |
 | `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |
-| `$83:8682` | `Lufia2FieldAnimationTicks` | verified | `src/field/field_update.c` |
+| `$83:8682` | `Lufia2FieldAnimationTickSlots` | verified | `src/field/field_animation_slots.c` |
 | `$83:873F` | `Lufia2FieldApplyInitialObjectRegion` | verified | `src/field/field_animation_regions.c` |
 | `$83:8761` | `Lufia2FieldApplyAlternateObjectRegion` | verified | `src/field/field_animation_regions.c` |
 | `$83:8783` | `Lufia2FieldAnimateObjectAction` | verified | `src/field/field_animation_regions.c` |
@@ -383,6 +383,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:8927` | `Lufia2FieldSaveAnimationRegion` | verified | `src/field/field_animation_regions.c` |
 | `$83:894C` | `Lufia2FieldRestoreAnimationRegion` | verified | `src/field/field_animation_regions.c` |
 | `$83:8971` | `Lufia2FieldRedrawAnimatedRegion` | verified | `src/field/field_animation_regions.c` |
+| `$83:898E` | `Lufia2FieldFlagAnimationRow` | verified | `src/field/field_animation_cells.c` |
 | `$83:89CE` | `Lufia2FieldClearObjectTileBit` | verified | `src/field/field_object_render.c` |
 | `$83:8A0A` | `Lufia2FieldRenderObjectLayers` | verified | `src/field/field_object_render.c` |
 | `$83:8A6F` | `Lufia2FieldClearObjectTileIds` | verified | `src/field/field_object_tiles.c` |

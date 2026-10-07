@@ -3032,3 +3032,27 @@ name = "field_animation_saved_flags"
 width = 1
 owner = "field"
 notes = "Original animation-region snapshot. Restore before redraw. Final flags byte remains separate."
+
+[[location]]
+address = "7E:17AB"
+name = "field_animation_next_mask"
+width = 1
+count = 1
+owner = "field"
+notes = "Original animation slot traversal. Parallel object and phase arrays remain separate."
+
+[[location]]
+address = "7F:D04F"
+name = "field_animation_slot_object"
+width = 1
+count = 8
+owner = "field"
+notes = "Original animation slot traversal. Parallel object and phase arrays remain separate."
+
+[[location]]
+address = "7F:D057"
+name = "field_animation_slot_state"
+width = 1
+count = 8
+owner = "field"
+notes = "Original animation slot traversal. Parallel object and phase arrays remain separate."
