@@ -3,8 +3,10 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "field/field_coordinates_internal.h"
 #include "lufia2/actor.h"
+#include "lufia2/system.h"
 #include "actor/actor_internal.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
@@ -509,6 +511,8 @@ enum ObjectOpcodeHandler {
     OBJECT_OP_NEGATE_OFFSETS = 0xf11c,             /* $EB */
     OBJECT_OP_EC = 0xf137,                         /* $EC */
     OBJECT_OP_ED = 0xf155,                         /* $ED */
+    OBJECT_OP_COPY_FRAME_GRAPHICS = 0xe505,
+    OBJECT_OP_QUEUE_SOUND = 0xefeb,
     OBJECT_OP_E3 = 0xf19f,                         /* $E3 */
     OBJECT_OP_REFRESH_MAP_HEIGHT = 0xeff6,
     OBJECT_OP_UPDATE_HEIGHT_DRAW_FLAG = 0xe6d3,
@@ -1853,6 +1857,81 @@ static ObjectFlow ObjectApproachPosition(
 }
 
 
+static void ObjectCopyGraphicsRow(const Lufia2Memory *memory,
+                                  Lufia2CpuState *cpu, uint16_t last_byte) {
+    OpLoadA(cpu, last_byte);
+    OpMoveNext(memory, cpu, 0x7eu, 0x7eu);
+}
+
+static ObjectFlow ObjectCopyFrameGraphics(const Lufia2Memory *memory,
+                                          Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_SLOT_RECORD_OFFSET)));
+    OpLda(memory, cpu, OpAbsY(cpu, 2u));
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_FRAME_POINTER));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_C));
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_FRAME_POINTER + 2u));
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_OBJECT_STATE));
+    OpAndValue(cpu, 0xfcu);
+    OpOraValue(cpu, 0x20u);
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_OBJECT_STATE));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_OBJECT_SPRITE_SIZE));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpStz(memory, cpu, OpDp(cpu, DP_SCRATCH_A + 1u));
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0xa000u);
+    cpu->carry = false;
+    OpAdc(memory, cpu, OpAbsY(cpu, 0u));
+    OpTax(cpu);
+    PushDataBank(memory, cpu);
+    PushY(memory, cpu);
+    OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_SCRATCH_C)));
+    OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    if (cpu->zero) {
+        ObjectCopyGraphicsRow(memory, cpu, 0x3fu);
+        OpTxa(cpu);
+        cpu->carry = false;
+        OpAdcValue(cpu, 0x1c0u);
+        OpTax(cpu);
+        ObjectCopyGraphicsRow(memory, cpu, 0x3fu);
+    } else {
+        for (unsigned row = 0; row < 4; ++row) {
+            ObjectCopyGraphicsRow(memory, cpu, 0x7fu);
+            if (row == 3)
+                break;
+            OpTxa(cpu);
+            if (row == 1) {
+                cpu->carry = true;
+                OpSbcValue(cpu, 0x280u);
+            } else {
+                cpu->carry = false;
+                OpAdcValue(cpu, 0x380u);
+            }
+            OpTax(cpu);
+        }
+    }
+    cpu->y = PullIndexValue(memory, cpu);
+    PullDataBank(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    for (unsigned operand = 0; operand < 4; ++operand)
+        OpIny(cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static ObjectFlow ObjectQueueSound(const Lufia2Memory *memory,
+                                   Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbsY(cpu, 0u));
+    SimulateJslFrame(memory, cpu, 0x83u, 0xeff1u);
+    Lufia2QueueDeferredSound(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    OpIny(cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
+
 static ObjectFlow ObjectExecute(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1888,6 +1967,10 @@ static ObjectFlow ObjectExecute(
         return ObjectInterpolatePosition(memory, cpu);
     case OBJECT_OP_APPROACH_POSITION:
         return ObjectApproachPosition(memory, cpu);
+    case OBJECT_OP_COPY_FRAME_GRAPHICS:
+        return ObjectCopyFrameGraphics(memory, cpu);
+    case OBJECT_OP_QUEUE_SOUND:
+        return ObjectQueueSound(memory, cpu);
     case OBJECT_OP_4X_WAIT:
         return ObjectOp4XWait(memory, cpu);
     case OBJECT_OP_F6_NIBBLE_OFFSETS:

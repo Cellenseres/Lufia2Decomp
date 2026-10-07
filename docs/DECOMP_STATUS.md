@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-539 functions in `metadata/functions.toml`: 539 verified, 0 draft, 0 identified, 0 disabled.
+556 functions in `metadata/functions.toml`: 556 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2112,3 +2112,49 @@ between C and ROM runs and compares multiplier/divider/Mode-7 state.
 Three failing seeds came from stale fixture hardware, not semantic drift;
 all16384 object cases pass with equal starting hardware. Negative controls
 reproduce the mismatch when that reset is disabled. No expectations weakened.
+
+## Field probes and sprite uploads - 2026-10-07
+
+Five complete probe-record wrappers at83:FB2E/FB51/FB61/FB8B/FB9B preserve
+original attribute branches, pending-record search, accumulator bytes and
+nested JSR/JSL frames. The original unreachable pending fallback is retained.
+696320 direct and production-shaped ABI comparisons,195 guards and10 altered-ROM
+controls pass. Context:M1X0,PB83,DP0,binary,S1F00..1FFC,anyDB. Other entries fall
+back before any bus access. Both biased record bases refer to the existing byte7/byte8 header arrays.
+The original address bias of16 bytes is preserved, including synthetic IDs.
+No overlapping or invented persistent records are introduced.
+Five complete collision/input helpers at83:FBF1/FBFE/FC3C/FC56/FC69 add
+696320 direct and production ABI comparisons,195 guards and10 controls.
+Original live-bank accesses,40-actor scan,packed map coordinates,occupancy
+clear and input transitions are retained. The057C gate remains an unknown
+byte in the metadata; no wider field meaning is inferred.
+Four complete direction/position helpers at83:FBBD/F49A/F4A7/EC5F add
+557056 ROM/ABI comparisons,1416 guards and10 controls. The direction table
+is read from the ROM; nested short/long frames,position wrap and rounding
+remain literal. Context:M1X0,PB83,DP0,binary,anyDB,S1F04..1FFC. FBBD's
+native contract accepts directions0/2/4/6; other values fall back before
+bus access. The next-object probe retains unknown table continuations:
+504 additional ROM/ABI comparisons verify all252 unsupported direction
+bytes at83:FB17 with the original JSL frame intact.
+Three complete sprite-resource entries at83:AB4F/ABCC/ABE9 add417792
+direct/production ABI comparisons,117 guards and6 controls. Record offsets,
+slot-release range and VRAM-address math retain carry and byte wrap. A zero
+release count performs the original256 writes. Context:M1X1,PB83,DP0,
+binary,anyDB,S1F04..1FFC; ABE9 returns inM0X1. Allocation reset83:AB61
+was already verified and is not counted or replaced in this batch.
+Object route11 now copies frame graphics natively. 131072 complete-route cases
+cover two64-byte or four128-byte rows, wrapping indices, overlap and ordered
+WRAM writes, plus7 controls. The original source strides, DB restore and four
+operand advances remain. RouteFA queues deferred sound through its existing
+native semantic helper:another131072 cases and2 controls pass, including both
+branches of the sound gate and original nested JSL bytes.
+Another8192 whole-owner cases and512 guards pass
+with this transfer and the previously proven coordinate routes in one stream.
+CPU/full WRAM/ordered writes/modeled MMIO reads compared. Ordinary reads,
+pixels,full NMI scheduling and measured interpreter savings remain unclaimed.
+
+The field-probe and sprite checkpoint passes all557 independent verification
+jobs,public production targets,W4/WX and normal Release. Runtime selection is
+556 verified,0draft,362 WRAM entries,2228 actual generated bridge invocations.
+Seventeen new helpers have bindings; two new routes stay inside the existing VM
+owner. Original bugs,transfer order and sound gating are preserved.

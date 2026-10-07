@@ -31,6 +31,7 @@ add_library(lufia2_decomp STATIC
     src/actor/actor_slots.c
     src/actor/sprite_reset.c
     src/actor/actor_sprites.c
+    src/actor/actor_sprite_resources.c
     src/actor/object_vm.c
     src/actor/player_controller.c
     src/actor/player_update.c
@@ -142,6 +143,9 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_lookup.c
     src/field/field_coordinate_math.c
     src/field/field_object_motion.c
+    src/field/field_probe_records.c
+    src/field/field_probe_collision.c
+    src/field/field_probe_direction.c
     src/field/field_object_bits.c
     src/field/field_layer_scale.c
     src/field/field_layer_scroll.c
