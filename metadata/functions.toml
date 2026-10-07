@@ -6264,3 +6264,75 @@ source = "src/menu/menu_display_callers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:9214"
+name = "Lufia2MenuClearSpriteMask"
+source = "src/menu/menu_cursor_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:891E"
+name = "Lufia2MenuLoadCursorGrid"
+source = "src/menu/menu_cursor_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:895B"
+name = "Lufia2MenuSetCursorStyle"
+source = "src/menu/menu_cursor_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:898D"
+name = "Lufia2MenuValidatePartyCursor"
+source = "src/menu/menu_cursor_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:89C4"
+name = "Lufia2MenuBuildCursorPair"
+source = "src/menu/menu_cursor_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:89EC"
+name = "Lufia2MenuMoveCursorPair"
+source = "src/menu/menu_cursor_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8B1C"
+name = "Lufia2MenuFadeDisplayIn"
+source = "src/menu/menu_presentation_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8B32"
+name = "Lufia2MenuFadeDisplayOut"
+source = "src/menu/menu_presentation_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:93F6"
+name = "Lufia2MenuPrepareDisplayText"
+source = "src/menu/menu_presentation_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

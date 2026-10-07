@@ -70,7 +70,7 @@ name = "nmi_scroll_registers"
 width = 2
 count = 8
 owner = "system"
-notes = "Scroll register pairs the NMI copies to $210D-$2114 ($80:87A7): low byte, then high byte of each write-twice register."
+notes = "Scroll register pairs the NMI copies to $210D-$2114 ($80:87A7): low byte, then high byte of each write-twice register. 82:93F6 reuses bytes0596/0597 as an original display-text word; its phase-specific meaning remains unknown."
 
 [[location]]
 address = "7E:0073"
@@ -3631,3 +3631,51 @@ width = 1
 count = 1
 owner = "menu"
 notes = "Main debug shortcut writes FF into233 indexed bytes at this base. It overlaps the phase-dependent message-resource buffer; no disjoint allocation is claimed."
+
+[[location]]
+address = "7E:14CD"
+name = "menu_item_origin_x_low"
+width = 1
+count = 1
+owner = "menu"
+notes = "Cursor-grid descriptor byte0 supplies the horizontal origin low byte at this indexed base. Indexed base only; no disjoint allocation or larger array extent is claimed."
+
+[[location]]
+address = "7E:14D3"
+name = "menu_item_origin_x_high"
+width = 1
+count = 1
+owner = "menu"
+notes = "Cursor-grid setup clears the horizontal origin high byte at this indexed base. Indexed base only; no disjoint allocation or larger array extent is claimed."
+
+[[location]]
+address = "7E:14DF"
+name = "menu_item_origin_y_low"
+width = 1
+count = 1
+owner = "menu"
+notes = "Cursor-grid descriptor byte1 supplies the vertical origin low byte at this indexed base. Indexed base only; no disjoint allocation or larger array extent is claimed."
+
+[[location]]
+address = "7E:14E5"
+name = "menu_item_origin_y_high"
+width = 1
+count = 1
+owner = "menu"
+notes = "Cursor-grid setup clears the vertical origin high byte at this indexed base. Indexed base only; no disjoint allocation or larger array extent is claimed."
+
+[[location]]
+address = "7E:14FD"
+name = "menu_item_cell_width"
+width = 1
+count = 1
+owner = "menu"
+notes = "Cursor-grid descriptor byte4 supplies horizontal spacing;88CB multiplies it by the column. Indexed base only; no disjoint allocation or larger array extent is claimed."
+
+[[location]]
+address = "7E:1503"
+name = "menu_item_cell_height"
+width = 1
+count = 1
+owner = "menu"
+notes = "Cursor-grid descriptor byte5 supplies vertical spacing;88CB multiplies it by the row. Indexed base only; no disjoint allocation or larger array extent is claimed."
