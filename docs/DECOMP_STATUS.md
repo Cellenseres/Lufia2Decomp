@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-799 functions in `metadata/functions.toml`: 799 verified, 0 draft, 0 identified, 0 disabled.
+810 functions in `metadata/functions.toml`: 810 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2762,3 +2762,21 @@ retain LLE. The portable proof additionally covers arbitrary stack accesses.
 complete child-frame contract. Existing parent contracts are unchanged.
 Shared full731,W4WX and Release PASS.799 verified,zero drafts,478 fields,
 3,200 generated calls. Counts do not measure runtime interpreter load.
+
+## Original field frame and recovery services - 2026-10-07
+
+Eleven new complete entries and the completed83:8103 dispatcher connect
+frame services,HP/MP record restoration,recovery graphics,object lookup,
+palette preparation and both packed channel scales. Existing8103 prefix
+API remains compatible;its runtime binding now selects the complete caller.
+The original900C wait child retains its live frame and time owner.
+82A0 searches31slots while834A configures32;the discrepancy is literal.
+Recovery object slots reuse menu/battle storage in their original phase.
+
+175,104 original-ROM states and175,134 actual ABI cases pass;30 exact
+child unwinds,135 redirects,21,888 unsupported states and158 public-library
+altered-ROM controls pass. Both scales cover all65,536 accumulator words;
+lookup covers each first-match slot,ignored31 and absent keys. No graphics,
+timing or original bug is repaired inside this semantic package.
+Shared full734,W4WX and Release PASS.810 verified,zero drafts,488 fields,
+3,244 generated calls. Counts do not measure runtime interpreter load.

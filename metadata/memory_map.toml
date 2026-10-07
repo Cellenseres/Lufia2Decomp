@@ -160,7 +160,7 @@ address = "7E:05B7"
 name = "field_requests"
 width = 1
 owner = "field"
-notes = "Field status requests; $83:8103 tests bits 1, 2 and 0 and hands off at the matching call."
+notes = "Field status requests; $83:8103 tests bits 1, 2 and 0 and hands off at the matching call. Whole8103 now executes the original request children;HP and MP requests clear only after the original object-kind search fails."
 
 [[location]]
 address = "7E:05D2"
@@ -543,7 +543,7 @@ address = "7E:15D8"
 name = "battle_cursor_source"
 width = 2
 owner = "battle"
-notes = "$81:B5C4 reads the cursor sprite source pointer."
+notes = "$81:B5C4 reads the cursor sprite source pointer. During field recovery,the15D9 high byte is the first object zoom-rate slot;later zoom-rate slots reuse battle allocations."
 
 [[location]]
 address = "7E:15DA"
@@ -1623,7 +1623,7 @@ name = "unk_7E09A9"
 width = 1
 count = 1
 owner = "field"
-notes = "Cleared through a bank-00 long write by 80:EF8E before scene graphics setup."
+notes = "Cleared through a bank-00 long write by 80:EF8E before scene graphics setup. Recovery clears mask04 through a bank-zero long address before palette setup,then sets mask02 to enable the palette step."
 
 [[location]]
 address = "7E:F016"
@@ -2398,7 +2398,7 @@ address = "7E:1559"
 name = "unk_7E1559"
 width = 1
 owner = "field"
-notes = "83:A7CC writes FF at this indexed base across 32 object indexes."
+notes = "83:A7CC writes FF at this indexed base across 32 object indexes. Recovery82A0 searches kinds in slots0..30,omitting31;834A configures all32. Menu fields share the later kind slots."
 
 [[location]]
 name = "unk_7E0562"
@@ -3762,3 +3762,83 @@ name = "menu_text_raw_tile"
 width = 1
 owner = "menu"
 notes = "Nonzero bypasses multi-row glyph translation for the next tile;8DB3 clears it and8DF9 also clears it."
+
+[[location]]
+address = "7E:1274"
+name = "field_recovery_palette_levels"
+width = 2
+count = 3
+owner = "field"
+notes = "Recovery red,green,blue channel levels;green and blue become the original packed-palette bit positions."
+
+[[location]]
+address = "7E:127A"
+name = "field_recovery_palette_steps"
+width = 2
+count = 3
+owner = "field"
+notes = "Original recovery fade channel steps;green and blue are shifted through live child frames."
+
+[[location]]
+address = "7E:1280"
+name = "field_recovery_palette_delay"
+width = 1
+count = 1
+owner = "field"
+notes = "Recovery palette countdown,reloaded from1281 by the original fade step."
+
+[[location]]
+address = "7E:1281"
+name = "field_recovery_palette_period"
+width = 1
+count = 1
+owner = "field"
+notes = "Recovery palette fade period,initialized to2."
+
+[[location]]
+address = "7E:1282"
+name = "field_recovery_palette_length"
+width = 1
+count = 1
+owner = "field"
+notes = "Recovery palette fade length,initialized to20."
+
+[[location]]
+address = "7E:1283"
+name = "field_recovery_palette_control"
+width = 1
+count = 1
+owner = "field"
+notes = "Original recovery fade mode,initialized to80."
+
+[[location]]
+address = "7E:15B9"
+name = "field_recovery_object_updates"
+width = 1
+count = 1
+owner = "field"
+notes = "Field object update base,indexed across32slots. Recovery writes4;later slots reuse battle cursor allocations."
+
+[[location]]
+address = "7E:1619"
+name = "field_recovery_zoom_limits"
+width = 1
+count = 32
+owner = "field"
+notes = "Field object zoom limits for32slots;recovery writes84 to matching kinds."
+
+[[location]]
+address = "7E:1639"
+name = "field_recovery_spin_rates"
+width = 1
+count = 32
+owner = "field"
+notes = "Field object first spin rates for32slots;recovery copies DP0D."
+
+[[location]]
+address = "7E:1699"
+name = "field_recovery_second_spin_rates"
+width = 1
+count = 32
+owner = "field"
+notes = "Field object second spin rates for32slots;recovery writes21."

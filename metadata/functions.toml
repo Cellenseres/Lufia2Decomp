@@ -478,11 +478,11 @@ entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
 
-# Field loop $05B7 requests; set requests run on LLE.
+# Complete field request dispatcher; original children keep live frames.
 [[function]]
 address = "83:8103"
-name = "Lufia2FieldStatusRequests"
-source = "src/field/field_update.c"
+name = "Lufia2FieldProcessRequests"
+source = "src/field/field_recovery.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
@@ -6525,6 +6525,94 @@ status = "verified"
 address = "80:8D5D"
 name = "Lufia2MenuSetTextPalette"
 source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8192"
+name = "Lufia2FieldFrameServices"
+source = "src/field/field_recovery.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+[[function]]
+address = "83:812E"
+name = "Lufia2FieldPollHpRecovery"
+source = "src/field/field_recovery.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8160"
+name = "Lufia2FieldPollMpRecovery"
+source = "src/field/field_recovery.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:813B"
+name = "Lufia2FieldStartHpRecovery"
+source = "src/field/field_recovery.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:816D"
+name = "Lufia2FieldStartMpRecovery"
+source = "src/field/field_recovery.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:82A0"
+name = "Lufia2FieldFindRecoveryObject"
+source = "src/field/field_recovery.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:831E"
+name = "Lufia2FieldScalePaletteGreen"
+source = "src/field/field_recovery.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:8323"
+name = "Lufia2FieldScalePaletteBlue"
+source = "src/field/field_recovery.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:82B2"
+name = "Lufia2FieldPrepareRecoveryPalette"
+source = "src/field/field_recovery.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8327"
+name = "Lufia2FieldLoadRecoveryGraphics"
+source = "src/field/field_recovery.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:834A"
+name = "Lufia2FieldConfigureRecoveryObjects"
+source = "src/field/field_recovery.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
