@@ -490,6 +490,7 @@ enum ObjectOpcodeHandler {
     OBJECT_OP_2B = 0xec6d,                         /* $2B */
     OBJECT_OP_ANIMATION_FROM_OPERAND = 0xec8e,     /* $Ax */
     OBJECT_OP_CX = 0xed11,                         /* $Cx */
+    OBJECT_OP_PROBE_DIRECTION_JUMP = 0xeeec,
     OBJECT_OP_DX = 0xed32,                         /* $Dx */
     OBJECT_OP_8X_TABLE = 0xed45,                   /* $8x */
     OBJECT_OP_1X_TABLE = 0xed4b,                   /* $1x */
@@ -1932,6 +1933,59 @@ static ObjectFlow ObjectQueueSound(const Lufia2Memory *memory,
 }
 
 
+static bool ObjectProbeLongCall(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t back, Lufia2ExecutionResult (*helper)(const Lufia2Memory *, Lufia2CpuState *)) {
+    SimulateJslFrame(memory, cpu, 0x83u, back);
+    Lufia2ExecutionResult result = helper(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return false;
+    SimulateRtlFrame(memory, cpu);
+    return true;
+}
+
+static ObjectFlow ObjectProbeDirectionJump(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCoordinateCall(memory, cpu, 0xeeeeu, Lufia2ObjectRoundedProbe))
+        return OBJECT_FLOW_BOUNDARY;
+    LoadAAbsolute8(memory, cpu, 0u, cpu->y);
+    SimulateJslFrame(memory, cpu, 0x83u, 0xeef5u);
+    uint32_t movement = Lufia2ActorMovementStep(memory, cpu);
+    if (!movement) {
+        return OBJECT_FLOW_BOUNDARY;
+    }
+    SimulateRtlFrame(memory, cpu);
+    PushY(memory, cpu);
+    if (!ObjectProbeLongCall(memory, cpu, 0xeefau, Lufia2FieldProbeObjectState))
+        return OBJECT_FLOW_BOUNDARY;
+    cpu->y = PullIndexValue(memory, cpu);
+    BitImmediate8(cpu, 2u);
+    if (cpu->zero) {
+        PushY(memory, cpu);
+        LoadX16(cpu, 0x1au);
+        LoadY16(cpu, 3u);
+        if (!ObjectProbeLongCall(memory, cpu, 0xef0au, Lufia2FieldFindPointRecord))
+            return OBJECT_FLOW_BOUNDARY;
+        cpu->y = PullIndexValue(memory, cpu);
+        if (!cpu->carry) {
+            if (!ObjectCoordinateCall(memory, cpu, 0xef10u, Lufia2ObjectRoundedProbe))
+                return OBJECT_FLOW_BOUNDARY;
+            LoadAAbsolute8(memory, cpu, 0u, cpu->y);
+            SimulateJsrFrame(memory, cpu, 0xef16u);
+            Lufia2ExecutionResult result = Lufia2FieldProbeDirectionBlocked(memory, cpu);
+            if (result.flow != LUFIA2_EXECUTION_RETURNED)
+                return OBJECT_FLOW_BOUNDARY;
+            SimulateRtsFrame(memory, cpu);
+            if (!cpu->zero)
+                return ObjectJump(memory, cpu, OBJECT_OP_DX);
+        }
+    }
+    IncrementY16(cpu);
+    IncrementY16(cpu);
+    IncrementY16(cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
 static ObjectFlow ObjectExecute(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1971,6 +2025,8 @@ static ObjectFlow ObjectExecute(
         return ObjectCopyFrameGraphics(memory, cpu);
     case OBJECT_OP_QUEUE_SOUND:
         return ObjectQueueSound(memory, cpu);
+    case OBJECT_OP_PROBE_DIRECTION_JUMP:
+        return ObjectProbeDirectionJump(memory, cpu);
     case OBJECT_OP_4X_WAIT:
         return ObjectOp4XWait(memory, cpu);
     case OBJECT_OP_F6_NIBBLE_OFFSETS:

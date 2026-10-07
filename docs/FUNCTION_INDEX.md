@@ -42,6 +42,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C652` | `Lufia2TextMeasure` | verified | `src/text/text_layout.c` |
 | `$80:C784` | `Lufia2TextClearGlyphBuffer` | verified | `src/text/text_window.c` |
 | `$80:CBAE` | `Lufia2FieldEventTimerTick` | verified | `src/field/field_event_script.c` |
+| `$80:D136` | `Lufia2FieldSaveObjectRegion` | verified | `src/field/field_event_map_state.c` |
+| `$80:D15B` | `Lufia2FieldRestoreObjectRegion` | verified | `src/field/field_event_map_state.c` |
+| `$80:D18C` | `Lufia2FieldNormalizeObjectOrigin` | verified | `src/field/field_event_map_state.c` |
+| `$80:D227` | `Lufia2FieldMarkRegionObjects` | verified | `src/field/field_event_map_state.c` |
 | `$80:E722` | `Lufia2FieldStartEvent` | verified | `src/field/field_event_script.c` |
 | `$80:E844` | `Lufia2FieldInitializeMapEvents` | verified | `src/field/field_map_load.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |
@@ -350,6 +354,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:A9BA` | `Lufia2ActorLoadSprite` | verified | `src/actor/actor_sprites.c` |
 | `$83:AB4F` | `Lufia2ActorSetRecordOffsets` | verified | `src/actor/actor_sprite_resources.c` |
 | `$83:AB61` | `Lufia2SpriteResetAllocations` | verified | `src/actor/sprite_reset.c` |
+| `$83:AB7C` | `Lufia2SpriteReserveAllocation` | verified | `src/actor/actor_sprite_allocation.c` |
 | `$83:ABCC` | `Lufia2SpriteReleaseAllocation` | verified | `src/actor/actor_sprite_resources.c` |
 | `$83:ABE9` | `Lufia2SpriteComputeVramBase` | verified | `src/actor/actor_sprite_resources.c` |
 | `$83:ACB7` | `Lufia2FieldBeginSessionSetup` | verified | `src/field/field_session_setup.c` |
@@ -363,6 +368,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:B711` | `Lufia2FieldEventRects` | verified | `src/field/field_triggers.c` |
 | `$83:B747` | `Lufia2FieldAreaRects` | verified | `src/field/field_triggers.c` |
 | `$83:B76E` | `Lufia2FieldApplyAreaTransition` | verified | `src/field/field_area_transition.c` |
+| `$83:B851` | `Lufia2FieldFindPointRecord` | verified | `src/field/field_record_search.c` |
+| `$83:B882` | `Lufia2FieldFindRectangleRecord` | verified | `src/field/field_record_search.c` |
 | `$83:BB93` | `Lufia2UpdateActorSlots` | verified | `src/actor/actor_slots.c` |
 | `$83:BBF3` | `Lufia2PlayerSlotSpecialUpdate` | verified | `src/actor/player_update.c` |
 | `$83:C1B4` | `Lufia2PlayerSlotStandardUpdate` | verified | `src/actor/player_controller.c` |
@@ -379,6 +386,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:E6AA` | `Lufia2ObjectApproachCoordinate` | verified | `src/field/field_object_motion.c` |
 | `$83:EC5F` | `Lufia2ObjectProbeNextTile` | verified | `src/field/field_probe_direction.c` |
 | `$83:F422` | `Lufia2FieldSetObjectOrigin` | verified | `src/field/field_object_graphics.c` |
+| `$83:F442` | `Lufia2FieldClearObjectAttributes` | verified | `src/field/field_event_objects.c` |
 | `$83:F49A` | `Lufia2FieldSaveProbePosition` | verified | `src/field/field_probe_direction.c` |
 | `$83:F4A7` | `Lufia2FieldRestoreProbePosition` | verified | `src/field/field_probe_direction.c` |
 | `$83:F5B9` | `Lufia2FieldRefreshObjectActor` | verified | `src/field/field_object_transitions.c` |
@@ -389,6 +397,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:F6CA` | `Lufia2FieldSetupObjectActorSprite` | verified | `src/field/field_object_graphics.c` |
 | `$83:F731` | `Lufia2FieldCopyObjectPalette` | verified | `src/field/field_object_graphics.c` |
 | `$83:F747` | `Lufia2FieldRestoreObjectTiles` | verified | `src/field/field_object_tiles.c` |
+| `$83:F750` | `Lufia2FieldSetObjectTiles` | verified | `src/field/field_event_objects.c` |
 | `$83:F784` | `Lufia2FieldSetMapTileNumber` | verified | `src/field/field_object_graphics.c` |
 | `$83:F795` | `Lufia2FieldRebuildActorObject` | verified | `src/field/field_object_transitions.c` |
 | `$83:F7B1` | `Lufia2FieldPlaceActorObject` | verified | `src/field/field_object_transitions.c` |
