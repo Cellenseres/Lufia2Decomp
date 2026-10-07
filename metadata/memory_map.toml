@@ -329,7 +329,7 @@ name = "unk_7E1291"
 width = 1
 count = 40
 owner = "actor"
-notes = "Per-slot byte; its low three bits send $83:C7F8 into the $83:C808 countdown, and the text engine reads the speaker's entry for the typing sound."
+notes = "Per-slot byte; its low three bits send $83:C7F8 into the $83:C808 countdown, and the text engine reads the speaker's entry for the typing sound. World map reuses offset 14 as its 32-word slot table base; flag words are at +40 and initialized words at +80."
 
 
 
@@ -3432,3 +3432,10 @@ name = "battle_message_resource_buffer"
 width = 1
 owner = "battle"
 notes = "Base of the original variable-length, zero-terminated action message expansion buffer. 9906 draws it from bank 7F."
+
+[[location]]
+address = "7E:1469"
+name = "world_map_object_table"
+width = 1
+owner = "world"
+notes = "Base of 22 original world object records, 29 bytes each. Indexed through direct page; phase fields reuse other catalogued storage."

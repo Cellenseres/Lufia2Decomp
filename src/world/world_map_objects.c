@@ -4,6 +4,8 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
+#include "system/wram.h"
 #include "core/plain_ops.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
@@ -18,7 +20,7 @@ enum {
     OBJECT_WIDTH = 0x0bu,
     OBJECT_HEIGHT = 0x0du,
     OBJECT_SIZE = 0x1du,
-    OBJECT_TABLE = 0x1469u
+    OBJECT_TABLE = WRAM_WORLD_MAP_OBJECT_TABLE
 };
 
 /* Direct page: the camera corner subtracted from object positions, and the
@@ -47,7 +49,7 @@ enum {
 
 /* Object slot tables and the hardware sprite buffer. */
 enum {
-    SLOT_TABLE = 0x12a5u,
+    SLOT_TABLE = WRAM_UNK_7E1291 + 0x14u,
     SLOT_COUNT = 0x20u,
     SLOT_FLAGS = 0x40u,
     OAM_BUFFER = 0x0100u,
@@ -1501,4 +1503,144 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjects(
         SetNz8(cpu, slots_left);
     } while (slots_left != 0);
     return ExecutionReturned(0x86e280u);
+}
+
+enum {
+    WORLD_SLOT_TABLE = WRAM_UNK_7E1291 + 0x14u,
+    WORLD_OBJECT_TABLE = WRAM_WORLD_MAP_OBJECT_TABLE,
+    WORLD_OBJECT_ID = 0u,
+    WORLD_OBJECTS_LEFT = 0x22u,
+    WORLD_OBJECT_POINTER = 2u,
+    WORLD_OBJECT_BYTES = 0x1du
+};
+
+static uint32_t WorldObjectDirectSlot(const Lufia2CpuState *cpu,
+    uint8_t offset) {
+    return (uint16_t)(cpu->direct_page + cpu->x + offset) | OP_DP_WRAP;
+}
+
+static Lufia2ExecutionResult WorldObjectPackHighBits(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned field,
+    uint32_t entry, uint32_t end) {
+    if (cpu->program_bank != 0x86u || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    const uint8_t packed = MergeXBits(
+        WramViewOfCaller(memory, cpu), A8(cpu), field);
+    LoadA8(cpu, packed);
+    if (field)
+        cpu->carry = 0u;
+    return ExecutionReturned(end);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapPackFirstSpriteHighBits(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return WorldObjectPackHighBits(memory, cpu, 0u, 0x86e5e2u, 0x86e5ecu);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapPackSecondSpriteHighBits(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return WorldObjectPackHighBits(memory, cpu, 1u, 0x86e5edu, 0x86e5f9u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapPackThirdSpriteHighBits(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return WorldObjectPackHighBits(memory, cpu, 2u, 0x86e5fau, 0x86e608u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapPackFourthSpriteHighBits(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return WorldObjectPackHighBits(memory, cpu, 3u, 0x86e609u, 0x86e616u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapInitializeSlots(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x86u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page)
+        return ExecutionHandoff(cpu, 0x86e617u);
+    OpLdx(cpu, WORLD_SLOT_TABLE);
+    OpLoadA(cpu, 32u);
+    OpLdy(cpu, 0u);
+    do {
+        OpWriteX(memory, cpu, WorldObjectDirectSlot(cpu, 0u), cpu->y);
+        OpWriteX(memory, cpu, WorldObjectDirectSlot(cpu, 0x40u), cpu->y);
+        OpInx(cpu);
+        OpInx(cpu);
+        OpDecA(cpu);
+    } while (!cpu->zero);
+    OpLdx(cpu, WORLD_SLOT_TABLE);
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 32u);
+    OpSta(memory, cpu, OpDp(cpu, WORLD_OBJECTS_LEFT));
+    do {
+        OpLda(memory, cpu, OpAbsX(cpu, 0xd8b6u));
+        OpSta(memory, cpu, WorldObjectDirectSlot(cpu, 0x80u));
+        OpInx(cpu);
+        OpInx(cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, WORLD_OBJECTS_LEFT), -1);
+    } while (!cpu->zero);
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x86e63fu);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapInitializeObjectRecords(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x86u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page)
+        return ExecutionHandoff(cpu, 0x86e6c4u);
+    OpLdx(cpu, WORLD_OBJECT_TABLE);
+    OpStz(memory, cpu, OpDp(cpu, WORLD_OBJECT_ID));
+    OpLoadA(cpu, 22u);
+    OpSta(memory, cpu, OpDp(cpu, WORLD_OBJECTS_LEFT));
+    do {
+        OpLda(memory, cpu, OpDp(cpu, WORLD_OBJECT_ID));
+        OpSta(memory, cpu, WorldObjectDirectSlot(cpu, 0u));
+        OpStz(memory, cpu, WorldObjectDirectSlot(cpu, 0x13u));
+        OpStz(memory, cpu, WorldObjectDirectSlot(cpu, 0x15u));
+        OpLoadA(cpu, 0u);
+        OpSta(memory, cpu, WorldObjectDirectSlot(cpu, 0x18u));
+        OpRepWidths(cpu, 0x20u);
+        OpStz(memory, cpu, WorldObjectDirectSlot(cpu, 0x0bu));
+        OpStz(memory, cpu, WorldObjectDirectSlot(cpu, 0x0du));
+        OpLoadA(cpu, 0xffffu);
+        OpSta(memory, cpu, WorldObjectDirectSlot(cpu, 5u));
+        OpTxa(cpu);
+        cpu->carry = 0u;
+        OpAdcValue(cpu, WORLD_OBJECT_BYTES);
+        OpTax(cpu);
+        OpSepWidths(cpu, 0x20u);
+        OpStepMem(memory, cpu, OpDp(cpu, WORLD_OBJECT_ID), 1);
+        OpStepMem(memory, cpu, OpDp(cpu, WORLD_OBJECTS_LEFT), -1);
+    } while (!cpu->zero);
+    return ExecutionReturned(0x86e6f2u);
+}
+
+static void WorldObjectRecordAddress(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+    OpLoadA(cpu, WORLD_OBJECT_BYTES);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, WORLD_OBJECT_TABLE);
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
+}
+
+Lufia2ExecutionResult Lufia2WorldMapSelectObjectRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x86u || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x86e6f3u);
+    WorldObjectRecordAddress(memory, cpu);
+    OpSta(memory, cpu, OpDp(cpu, WORLD_OBJECT_POINTER));
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x86e708u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapIndexObjectRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x86u || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x86e709u);
+    WorldObjectRecordAddress(memory, cpu);
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x86e71du);
 }

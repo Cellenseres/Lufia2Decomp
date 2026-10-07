@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-728 functions in `metadata/functions.toml`: 728 verified, 0 draft, 0 identified, 0 disabled.
+736 functions in `metadata/functions.toml`: 736 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2512,3 +2512,15 @@ Saved widths, registers, flags, stack residue and ordered writes remain original
 Out-of-ROM and nonterminating synthetic resource IDs are not production fixes.
 Shared full679, W4WX and Release PASS. Hardware timing is not inferred.
 728 verified, zero drafts, 436 fields, 2,916 generated calls. Static counts.
+
+## Original world object foundations - 2026-10-07
+
+Eight complete entries pack four sprite high-bit fields, initialize slot and
+object records, and select or index a 29-byte record. The existing bit-packing
+core is reused. Initializers preserve the original DB:D8B6+X source and clear
+order. Record indexing retains DB-specific multiplication ports and DP writes.
+65,536 original-ROM and actual ABI cases, 13,824 guards and 28 public-library
+error controls pass. X8 and nonzero DP remain supported where the ROM does.
+The 12A5 slot phase aliases the existing 1291 array; no overlapping WRAM field
+is invented. Shared full679, W4WX and Release PASS. No hardware timing claim.
+736 verified, zero drafts, 437 fields, 2,948 generated calls. Static counts.
