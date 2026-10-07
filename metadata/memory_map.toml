@@ -3056,3 +3056,27 @@ width = 1
 count = 8
 owner = "field"
 notes = "Original animation slot traversal. Parallel object and phase arrays remain separate."
+
+[[location]]
+address = "7E:0589"
+name = "sound_upload_source_cursor"
+width = 2
+owner = "system"
+notes = "Original DB-relative source cursor; updated before speculative prefetch."
+aliases = ["SOUND_SOURCE_POSITION"]
+
+[[location]]
+address = "7E:058B"
+name = "sound_upload_source_bank"
+width = 1
+owner = "system"
+notes = "Original DB-relative source bank; bank-rollover child publishes the incremented byte."
+aliases = ["SOUND_SOURCE_BANK"]
+
+[[location]]
+address = "7E:058C"
+name = "sound_upload_source_length"
+width = 2
+owner = "system"
+notes = "Original remaining length; its high byte doubles as the chunk counter."
+aliases = ["SOUND_SOURCE_LENGTH"]

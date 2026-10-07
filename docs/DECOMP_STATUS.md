@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-648 functions in `metadata/functions.toml`: 648 verified, 0 draft, 0 identified, 0 disabled.
+651 functions in `metadata/functions.toml`: 651 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2374,3 +2374,18 @@ The wait passes 8,192 delayed-response cases and 16 stuck-phase continuations,
 are controlled by the fixture; this does not establish SPC700 hardware timing.
 Shared full645, strict C and Release pass. Checkpoint:648 verified entries,
 zero drafts,389 WRAM fields and2,596 generated calls. Static counts only.
+
+## Original sound transfer callers - 2026-10-07
+
+80:9945,80:98A5 and80:97E5 implement payload pairs, resource headers and
+queued chunks. Original speculative reads, source-bank rollover, sequence
+wrap, port order, shared length/chunk word and child frames remain literal.
+24,582 ROM states, four exact child unwinds and6,144 compositions with
+native reply waits pass. Twelve stuck-phase cases preserve the original
+continuations after65,536 polls; no timeout is treated as success.
+Production ABI:30,742 native cases, zero positive fallbacks,45 redirects.
+4,992 guards and25 altered-ROM controls pass. Full ordered streaming traces
+cover long payloads beyond the bounded MMIO summary. APU responses are
+controlled; this does not establish SPC700 hardware timing.
+Shared full645, strict C and Release pass.651 verified, zero drafts,
+392 WRAM fields and2,608 generated calls. Static counts, not runtime hits.
