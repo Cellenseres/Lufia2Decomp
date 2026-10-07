@@ -7032,3 +7032,43 @@ source = "src/field/field_actor_contact.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:D927"
+name = "Lufia2FieldProbeContactEdge"
+source = "src/field/field_contact_edges.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D932"
+name = "Lufia2FieldProbeContactEdgeDown"
+source = "src/field/field_contact_edges.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D93E"
+name = "Lufia2FieldProbeContactEdgeLeft"
+source = "src/field/field_contact_edges.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D948"
+name = "Lufia2FieldProbeContactEdgeUp"
+source = "src/field/field_contact_edges.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D952"
+name = "Lufia2FieldProbeContactEdgeRight"
+source = "src/field/field_contact_edges.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

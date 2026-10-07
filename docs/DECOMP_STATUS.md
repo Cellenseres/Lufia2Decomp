@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-862 functions in `metadata/functions.toml`: 862 verified, 0 draft, 0 identified, 0 disabled.
+867 functions in `metadata/functions.toml`: 867 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3013,3 +3013,20 @@ This group shares the full 795-job verification and Windows Release build
 with the complete 8-entry integration batch. Its final combined stage has
 869 verified entries, zero drafts, 525 fields and 3,480 generated calls.
 Counts do not describe measured runtime interpreter load.
+
+
+## Original contact edge entries - 2026-10-07
+
+655,360 original-ROM cases, 655,364 actual ABI cases, 12,288 guards
+and 23 public-library ROM error controls pass. Child probes include
+4 forced unwinds, 75 redirects and 13,660 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 795-job verification and Windows Release build
+with the complete 8-entry integration batch. Its final combined stage has
+869 verified entries, zero drafts, 525 fields and 3,480 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+Contact edge dispatch is restricted to the four original direction indices.
+Other table indices retain original interpretation.
