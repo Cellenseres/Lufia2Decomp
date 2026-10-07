@@ -469,6 +469,10 @@ uint8_t Lufia2EventActorAction(
     uint32_t *handoff) {
     SimulateJslFrame(memory, cpu, 0x80u, return_address);
     cpu->program_bank = 0x83u;
+    if (cpu->direct_page) {
+        *handoff = cpu->resume_pc = 0x83d350u;
+        return 0;
+    }
     if (Lufia2ActorPrimaryActionCore(memory, cpu) !=
             LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE) {
         *handoff = cpu->resume_pc;

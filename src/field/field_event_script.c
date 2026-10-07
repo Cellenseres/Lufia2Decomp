@@ -1261,6 +1261,12 @@ static unsigned EventScriptOpcode(
         run->total += 255u;
         return Lufia2EventObjectRegionOpcode(memory, cpu, handler, handoff);
     }
+    if (handler == EVENT_OP_REFRESH_PARTY ||
+        handler == EVENT_OP_REFRESH_PARTY_CLEAR_MODE ||
+        handler == EVENT_OP_CENTER_LAYERS) {
+        run->total += 255u;
+        return Lufia2EventRefreshOpcode(memory, cpu, handler, handoff);
+    }
     if (handler == EVENT_OP_FORK || handler == EVENT_OP_FORK_IF)
         return EventOpFork(memory, cpu, handler, run, handoff);
     /* Heavy opcodes count more toward the per-tick cap. */

@@ -410,47 +410,14 @@ static uint8_t ObjectSpriteSizeZero(
     return Read8(memory, OBJECT_SPRITE_SLOT_COUNTS + (uint32_t)(shape >> 4)) == 0;
 }
 
-/* $83:F205: despawn object $A7, free its sprite. */
-static void ObjectDespawn(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static bool ObjectEventReturn(
+    const Lufia2Memory *, Lufia2CpuState *, uint16_t, uint8_t);
+
+static bool ObjectDespawn(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SimulateJslFrame(memory, cpu, 0x83u, 0xe140u);
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* F205 */
-    LoadA8(cpu, 0x04u);
-    StoreAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
-    SetIndexWidth(cpu, 1);
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_ID, cpu->x)));
-    Compare8(cpu, A8(cpu), 0xffu);
-    if (!cpu->zero) {
-        TransferDirectToA(cpu);                                /* F218 */
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SIZE, cpu->x)));
-        Compare8(cpu, A8(cpu), 0xffu);
-        if (!cpu->zero) {
-            ExchangeAccumulatorBytes(cpu);
-            LoadA8(cpu, Read8(memory,
-                              LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_A, cpu->x)));
-            Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
-            LoadA8(cpu, Read8(memory,
-                              LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_B, cpu->x)));
-            Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
-            ExchangeAccumulatorBytes(cpu);
-            TransferAToX(cpu);
-            LoadA8(cpu, Read8(memory,
-                              LongIndexedAddress(OBJECT_SPRITE_SLOT_COUNTS, cpu->x)));
-            Lufia2SpriteFreeSlots(memory, cpu, 0xf237u);
-        }
-    }
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* F238 */
-    LoadA8(cpu, 0xffu);
-    Write8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_ID, cpu->x), A8(cpu));
-    Write8(memory, LongIndexedAddress(WRAM_OBJECT_FRAME, cpu->x), A8(cpu));
-    Write8(memory, LongIndexedAddress(WRAM_UNK_7FE3A6, cpu->x), A8(cpu));
-    StoreAAbsolute8(memory, cpu, 0x1559u, cpu->x);
-    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_A, cpu->x), A8(cpu));
-    Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_B, cpu->x), A8(cpu));
-    SetIndexWidth(cpu, 0);
-    SimulateRtlFrame(memory, cpu);
+    Lufia2ExecutionResult result = Lufia2ObjectRemoveSlot(memory, cpu);
+    return result.flow == LUFIA2_EXECUTION_RETURNED &&
+        ObjectEventReturn(memory, cpu, 0xe140u, 3u);
 }
 
 /* Object script handlers from $83:F2C8 and its low-nibble tables. */
@@ -490,6 +457,10 @@ enum ObjectOpcodeHandler {
     OBJECT_OP_2B = 0xec6d,                         /* $2B */
     OBJECT_OP_ANIMATION_FROM_OPERAND = 0xec8e,     /* $Ax */
     OBJECT_OP_CX = 0xed11,                         /* $Cx */
+    OBJECT_OP_START_LEADER_EVENT = 0xe25e,
+    OBJECT_OP_START_POSITION_EVENT = 0xeaa3,
+    OBJECT_OP_START_MODE_EVENT = 0xeda8,
+    OBJECT_OP_CLEAR_FOLLOWERS = 0xe96b,
     OBJECT_OP_EVENT_PROBE_JUMP = 0xf1b4,
     OBJECT_OP_EVENT_PROBE_ALT_JUMP = 0xf1bc,
     OBJECT_OP_PROBE_DIRECTION_JUMP = 0xeeec,
@@ -1336,7 +1307,8 @@ static ObjectFlow ObjectSpawnRegisteredChild(const Lufia2Memory *memory,
 static ObjectFlow ObjectOpDespawn(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    ObjectDespawn(memory, cpu);
+    if (!ObjectDespawn(memory, cpu))
+        return OBJECT_FLOW_BOUNDARY;
     PullDataBank(memory, cpu);                             /* E141 */
     return OBJECT_FLOW_RETURN;
 }
@@ -2042,6 +2014,110 @@ static ObjectFlow ObjectEventProbeJump(
     return OBJECT_FLOW_DISPATCH;
 }
 
+static bool ObjectEventReturn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t back, uint8_t frame_size) {
+    uint8_t low = Pull8(memory, cpu);
+    uint8_t high = Pull8(memory, cpu);
+    uint8_t bank = frame_size == 3u ? Pull8(memory, cpu) : 0x83u;
+    uint16_t actual = (uint16_t)(low | ((uint16_t)high << 8));
+    cpu->program_bank = bank;
+    if (actual == back && bank == 0x83u)
+        return true;
+    cpu->resume_pc = ((uint32_t)bank << 16) | (uint16_t)(actual + 1u);
+    return false;
+}
+
+static bool ObjectStartHeaderEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t record_offset, uint16_t back) {
+    OpLdx(cpu, 0u);
+    OpLdy(cpu, record_offset);
+    SimulateJslFrame(memory, cpu, 0x83u, back);
+    cpu->program_bank = 0x80u;
+    Lufia2ExecutionResult result = Lufia2FieldStartEvent(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return false;
+    return ObjectEventReturn(memory, cpu, back, 3u);
+}
+
+static ObjectFlow ObjectStartLeaderEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushY(memory, cpu);
+    SimulateJsrFrame(memory, cpu, 0xe261u);
+    Lufia2ExecutionResult result = Lufia2FieldProbeLeaderPosition(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED ||
+        !ObjectEventReturn(memory, cpu, 0xe261u, 2u) ||
+        !ObjectStartHeaderEvent(memory, cpu, 0x12u, 0xe26bu))
+        return OBJECT_FLOW_BOUNDARY;
+    OpPullY(memory, cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static ObjectFlow ObjectStartPositionEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushY(memory, cpu);
+    if (!ObjectCoordinateCall(memory, cpu, 0xeaa6u, Lufia2ObjectRoundedProbe) ||
+        !ObjectStartHeaderEvent(memory, cpu, 0x0au, 0xeab0u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpPullY(memory, cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static ObjectFlow ObjectStartModeEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCoordinateCall(memory, cpu, 0xedaau, Lufia2ObjectRoundedProbe))
+        return OBJECT_FLOW_BOUNDARY;
+    OpLda(memory, cpu, OpAbsY(cpu, 0u));
+    OpSta(memory, cpu, WRAM_UNK_7FD133);
+    PushY(memory, cpu);
+    if (!ObjectStartHeaderEvent(memory, cpu, 0x1au, 0xedbcu))
+        return OBJECT_FLOW_BOUNDARY;
+    OpPullY(memory, cpu);
+    OpIny(cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static bool ObjectFollowerOffsets(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t back) {
+    SimulateJslFrame(memory, cpu, 0x83u, back);
+    Lufia2ActorRecordOffsets(memory, cpu);
+    return ObjectEventReturn(memory, cpu, back, 3u);
+}
+
+static ObjectFlow ObjectClearFollowers(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushY(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+    PushAccumulator8(memory, cpu);
+    OpLdx(cpu, 7u);
+    do {
+        OpLda(memory, cpu, OpLongX(cpu, WRAM_UNK_7FD0A6));
+        OpCmpValue(cpu, 0xffu);
+        if (!cpu->zero) {
+            OpSta(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+            OpLoadA(cpu, 0xffu);
+            OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FD0A6));
+            OpPushX(memory, cpu);
+            if (!ObjectFollowerOffsets(memory, cpu, 0xe986u))
+                return OBJECT_FLOW_BOUNDARY;
+            SimulateJslFrame(memory, cpu, 0x83u, 0xe98au);
+            Lufia2ExecutionResult result = Lufia2ObjectRemoveSlot(memory, cpu);
+            if (result.flow != LUFIA2_EXECUTION_RETURNED ||
+                !ObjectEventReturn(memory, cpu, 0xe98au, 3u))
+                return OBJECT_FLOW_BOUNDARY;
+            OpPullX(memory, cpu);
+        }
+        OpDex(cpu);
+    } while (!cpu->negative);
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+    if (!ObjectFollowerOffsets(memory, cpu, 0xe995u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpPullY(memory, cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
 static ObjectFlow ObjectExecute(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -2081,6 +2157,14 @@ static ObjectFlow ObjectExecute(
         return ObjectCopyFrameGraphics(memory, cpu);
     case OBJECT_OP_QUEUE_SOUND:
         return ObjectQueueSound(memory, cpu);
+    case OBJECT_OP_START_LEADER_EVENT:
+        return ObjectStartLeaderEvent(memory, cpu);
+    case OBJECT_OP_START_POSITION_EVENT:
+        return ObjectStartPositionEvent(memory, cpu);
+    case OBJECT_OP_START_MODE_EVENT:
+        return ObjectStartModeEvent(memory, cpu);
+    case OBJECT_OP_CLEAR_FOLLOWERS:
+        return ObjectClearFollowers(memory, cpu);
     case OBJECT_OP_EVENT_PROBE_JUMP:
         return ObjectEventProbeJump(memory, cpu, 0u);
     case OBJECT_OP_EVENT_PROBE_ALT_JUMP:
@@ -2307,7 +2391,11 @@ Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
                         result.pc = cpu->resume_pc;
                         return result;
                     }
-                    SimulateRtsFrame(memory, cpu);
+                    if (!ObjectEventReturn(memory, cpu, 0xe0c2u, 2u)) {
+                        result.flow = LUFIA2_EXECUTION_BOUNDARY;
+                        result.pc = cpu->resume_pc;
+                        return result;
+                    }
                     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT); /* E0C3 */
                 }
             } else {
