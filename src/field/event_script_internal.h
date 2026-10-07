@@ -21,8 +21,8 @@
 #define EVENT_POINT_D223 0x7fd223u
 #define EVENT_POINT_D263 0x7fd263u
 /* Slot s of variable v: base + 8v + s. */
-#define EVENT_SLOT_VARIABLES 0x7fd15cu
-#define EVENT_SLOT_VARIABLES_LOW 0xd15cu
+#define EVENT_SLOT_VARIABLES WRAM_FIELD_EVENT_SLOT_VARIABLES
+#define EVENT_SLOT_VARIABLES_LOW (WRAM_FIELD_EVENT_SLOT_VARIABLES & 0xffffu)
 #define EVENT_SLOT_VARIABLE_STRIDE 0x0008u
 #define EVENT_SLOT_VARIABLE_COUNT 4u
 /* Second per-slot byte next to the slot bits. */
