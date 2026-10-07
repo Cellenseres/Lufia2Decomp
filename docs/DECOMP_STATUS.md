@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-752 functions in `metadata/functions.toml`: 752 verified, 0 draft, 0 identified, 0 disabled.
+756 functions in `metadata/functions.toml`: 756 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2587,3 +2587,25 @@ error controls pass. 4,096 compositions execute both original native
 children. Unrelated actor-state bits are independently varied. Shared
 full700, W4WX and Release PASS. 752 verified, zero drafts, 452 fields,
 3,012 generated calls. No ROM timing or current runtime hit-rate claim.
+
+## Original field and main menu callers - 2026-10-07
+
+Four complete entries connect field-menu entry, main screen construction,
+field-selection restoration and the original party actor update scripts.
+The field entry keeps all three original outcomes, including the FF map
+destination, special F0/F1 maps and live accumulator comparisons after
+the kind3 transition. The refresh entry requires M1X0: X8 decodes the
+original three-byte LDY differently. Main screen setup accepts either
+entry width and retains the original loading and input-loop children.
+Actor updates accept starting slots0..4, preserve opcode12 script bytes,
+the primary script/timer/state fields and original occupancy clearing.
+Unknown images, palettes, input and frame services remain explicit children.
+
+Callers:24,960 ROM states,24,985 actual ABI cases,25 exact child unwinds,
+45 redirects,4,608 unsupported contexts,36 public-library error controls.
+Updates:9,216 ROM states,9,218 actual ABI cases,two exact child unwinds,
+15 redirects,2,304 unsupported contexts,27 public-library error controls.
+Caller compositions384 and actor offset/occupancy compositions1,024 pass.
+CPU,WRAM,child stack frames and bus order remain original. Shared full700,
+W4WX and Release PASS. 756 verified,zero drafts,455 fields,3,028 generated
+calls. Counts describe static selection,not measured interpreter load.
