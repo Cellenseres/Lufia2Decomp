@@ -6072,3 +6072,19 @@ source = "src/menu/menu_string.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:C825"
+name = "Lufia2TextUpdateSceneLabel"
+source = "src/text/scene_label_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:C8D5"
+name = "Lufia2TextRenderSceneLabel"
+source = "src/text/scene_label_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
