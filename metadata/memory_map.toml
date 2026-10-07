@@ -3439,3 +3439,27 @@ name = "world_map_object_table"
 width = 1
 owner = "world"
 notes = "Base of 22 original world object records, 29 bytes each. Indexed through direct page; phase fields reuse other catalogued storage."
+
+[[location]]
+address = "7E:0567"
+name = "menu_number_digits"
+width = 1
+count = 8
+owner = "text"
+notes = "Eight original number characters; hexadecimal mode fills six bytes. Accesses retain the caller data bank."
+
+[[location]]
+address = "7E:0570"
+name = "menu_number"
+width = 1
+count = 3
+owner = "text"
+notes = "Original 24-bit number, destructively consumed by decimal formatting. Accesses retain the caller data bank."
+
+[[location]]
+address = "7E:057B"
+name = "menu_number_format"
+width = 1
+count = 1
+owner = "text"
+notes = "Original menu number format; bit 3 selects hexadecimal digits."

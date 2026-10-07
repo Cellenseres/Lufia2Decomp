@@ -20,6 +20,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:87A7` | `Lufia2NmiScrollAndUploads` | verified | `src/system/nmi_uploads.c` |
 | `$80:87FC` | `Lufia2NmiTilemapUploads` | verified | `src/system/nmi_uploads.c` |
 | `$80:8878` | `Lufia2MenuDrawString` | verified | `src/menu/menu_string.c` |
+| `$80:89AA` | `Lufia2MenuFormatNumberDigits` | verified | `src/menu/menu_string.c` |
+| `$80:89D0` | `Lufia2MenuAppendNumberDigit` | verified | `src/menu/menu_string.c` |
 | `$80:8E9D` | `Lufia2DecompressResource` | verified | `src/system/decompress.c` |
 | `$80:9099` | `Lufia2LoadGameFile` | verified | `src/system/save.c` |
 | `$80:90C9` | `Lufia2SaveGameFile` | verified | `src/system/save.c` |
@@ -90,8 +92,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C23D` | `Lufia2TextPrepareWindow` | verified | `src/text/text_window.c` |
 | `$80:C305` | `Lufia2TextBuildWindow` | verified | `src/text/text_window.c` |
 | `$80:C56E` | `Lufia2TextQueueWindowRow` | verified | `src/text/text_window.c` |
+| `$80:C5DD` | `Lufia2TextWriteSceneWindowRow` | verified | `src/text/text_window.c` |
+| `$80:C61D` | `Lufia2TextClearUploadRows` | verified | `src/text/scene_text_resources.c` |
 | `$80:C652` | `Lufia2TextMeasure` | verified | `src/text/text_layout.c` |
 | `$80:C784` | `Lufia2TextClearGlyphBuffer` | verified | `src/text/text_window.c` |
+| `$80:C7C2` | `Lufia2TextDrawSceneGlyph` | verified | `src/text/text_engine.c` |
+| `$80:C9C0` | `Lufia2TextExpandSceneString` | verified | `src/text/scene_text_resources.c` |
 | `$80:CBAE` | `Lufia2FieldEventTimerTick` | verified | `src/field/field_event_script.c` |
 | `$80:CE5C` | `Lufia2FieldReadObjectRegionDestination` | verified | `src/field/field_event_object_region.c` |
 | `$80:CE7E` | `Lufia2FieldReadObjectRegionArea` | verified | `src/field/field_event_object_region.c` |

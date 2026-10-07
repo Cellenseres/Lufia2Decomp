@@ -37,6 +37,18 @@ Lufia2ExecutionResult Lufia2TextPrepareWindow(
 Lufia2ExecutionResult Lufia2TextClearWindowBuffer(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2TextExpandSceneString(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2TextDrawSceneGlyph(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2TextWriteSceneWindowRow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2TextClearUploadRows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

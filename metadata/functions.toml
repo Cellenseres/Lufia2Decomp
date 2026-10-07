@@ -6024,3 +6024,51 @@ source = "src/world/world_map_objects.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:C9C0"
+name = "Lufia2TextExpandSceneString"
+source = "src/text/scene_text_resources.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "80:C7C2"
+name = "Lufia2TextDrawSceneGlyph"
+source = "src/text/text_engine.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:C5DD"
+name = "Lufia2TextWriteSceneWindowRow"
+source = "src/text/text_window.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:C61D"
+name = "Lufia2TextClearUploadRows"
+source = "src/text/scene_text_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:89AA"
+name = "Lufia2MenuFormatNumberDigits"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:89D0"
+name = "Lufia2MenuAppendNumberDigit"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

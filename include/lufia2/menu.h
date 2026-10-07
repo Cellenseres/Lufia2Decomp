@@ -353,6 +353,12 @@ Lufia2ExecutionResult Lufia2MenuLoadSlotPalettes(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2MenuFormatNumberDigits(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2MenuAppendNumberDigit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

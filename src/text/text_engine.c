@@ -87,7 +87,6 @@ void Lufia2TextNextByte(
 static void TextDrawGlyph(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    SimulateJslFrame(memory, cpu, 0x80u, 0xbd3bu);
     Push8(memory, cpu, PackStatus(cpu));                       /* C7C2 */
     PushDataBank(memory, cpu);
     TransferDirectToA(cpu);
@@ -135,7 +134,6 @@ static void TextDrawGlyph(
     }
     PullDataBank(memory, cpu);                                 /* C812 */
     UnpackStatus(cpu, Pull8(memory, cpu));
-    SimulateRtlFrame(memory, cpu);
 }
 
 /* $80:BD38: draw the glyph and queue its 32-byte VRAM upload. */
@@ -144,7 +142,9 @@ static void TextGlyphUpload(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xbd3bu);
     TextDrawGlyph(memory, cpu);                                /* BD38 */
+    SimulateRtlFrame(memory, cpu);
     StoreAImmediate8(memory, cpu, 0x01u, SNES_DMAP(0));
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TEXT_GLYPH_UPLOAD, 0));
@@ -1866,4 +1866,13 @@ Lufia2ExecutionResult Lufia2TextEngineStep(
     if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x809cb8u);
     return Lufia2TextEngineStepBody(memory, cpu, ExecutionReturned(0x809db2u));
+}
+
+Lufia2ExecutionResult Lufia2TextDrawSceneGlyph(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->direct_page)
+        return ExecutionHandoff(cpu, 0x80c7c2u);
+    TextDrawGlyph(memory, cpu);
+    return ExecutionReturned(0x80c814u);
 }

@@ -1,6 +1,8 @@
 /* Menu string byte code ($80:8878). */
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
+#include "system/wram.h"
 #include "lufia2/item.h"
 #include "lufia2/menu.h"
 #include "system/dp_scratch.h"
@@ -10,14 +12,14 @@ enum {
     ATTRIBUTE = 0x0564u,                /* tile high byte */
     WIDTH = 0x0565u,
     LEFT = 0x0566u,                     /* characters before the wrap */
-    DIGITS = 0x0567u,                   /* 8 characters */
-    NUMBER = 0x0570u,                   /* 24-bit */
+    DIGITS = WRAM_MENU_NUMBER_DIGITS,                   /* 8 characters */
+    NUMBER = WRAM_MENU_NUMBER,                   /* 24-bit */
     ROW = 0x0573u,
     CURSOR = 0x0575u,
     PALETTE = 0x0577u,
     RAW = 0x0578u,                      /* next byte is a plain tile */
     MARK = 0x0579u,
-    FORMAT = 0x057bu,
+    FORMAT = WRAM_MENU_NUMBER_FORMAT,
     NAMES = 0x0a80u,                    /* string pointers, bank 0 */
     RECORD_NAME = 0x0b77u,
     ITEM_ICON = 0x0b87u,
@@ -356,7 +358,7 @@ static void MenuDigits(const MenuVm *vm) {
             Rts(vm);
             DecrementY(cpu);
         } while (!cpu->negative);
-        cpu->y = PullIndexValue(memory, cpu);
+        OpPullY(memory, cpu);
         return;
     }
     LoadY16(cpu, 0x0000u);                                     /* 89D8 */
@@ -378,7 +380,7 @@ static void MenuDigits(const MenuVm *vm) {
         StoreAAbsolute8(memory, cpu, DIGITS, cpu->y);
         DecrementY(cpu);
     } while (!cpu->negative);
-    cpu->y = PullIndexValue(memory, cpu);
+    OpPullY(memory, cpu);
     do {
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x808a57u, cpu->x)));
         StoreADirect8(memory, cpu, 0x60u);
@@ -408,7 +410,7 @@ static void MenuDigits(const MenuVm *vm) {
         StoreAbsolute16(vm, NUMBER);
         SetAccumulatorWidth(cpu, 1);
         TransferYToA8(cpu);
-        cpu->y = PullIndexValue(memory, cpu);
+        OpPullY(memory, cpu);
         StoreAAbsolute8(memory, cpu, DIGITS, cpu->y);
         IncrementX16(cpu);
         IncrementX16(cpu);
@@ -420,7 +422,7 @@ static void MenuDigits(const MenuVm *vm) {
     cpu->carry = 0;
     Adc8(cpu, 0x30u);
     StoreAAbsolute8(memory, cpu, (uint16_t)(DIGITS + 7u), 0);
-    cpu->y = PullIndexValue(memory, cpu);                      /* 8A55 */
+    OpPullY(memory, cpu);                      /* 8A55 */
 }
 
 /* $01: number; format bits 7-5 size, 2 signed, 3 hex. */
@@ -1100,4 +1102,28 @@ Lufia2ExecutionResult Lufia2MenuDrawStringWithCheckpoint(
 Lufia2ExecutionResult Lufia2MenuDrawString(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     return Lufia2MenuDrawStringWithCheckpoint(memory, cpu, 0, 0);
+}
+
+Lufia2ExecutionResult Lufia2MenuFormatNumberDigits(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page)
+        return ExecutionHandoff(cpu, 0x8089aau);
+    MenuVm vm = {0};
+    vm.memory = memory;
+    vm.cpu = cpu;
+    MenuDigits(&vm);
+    return ExecutionReturned(0x808a56u);
+}
+
+Lufia2ExecutionResult Lufia2MenuAppendNumberDigit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x8089d0u);
+    MenuVm vm = {0};
+    vm.memory = memory;
+    vm.cpu = cpu;
+    MenuDigit(&vm);
+    return ExecutionReturned(0x8089d7u);
 }
