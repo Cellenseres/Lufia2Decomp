@@ -3080,3 +3080,43 @@ width = 2
 owner = "system"
 notes = "Original remaining length; its high byte doubles as the chunk counter."
 aliases = ["SOUND_SOURCE_LENGTH"]
+
+[[location]]
+address = "7E:0100"
+name = "field_oam_low_buffer"
+width = 1
+count = 512
+owner = "field"
+notes = "Original128 four-byte OAM records. AC7A writes hidden Y=F0 and clears the other bytes."
+
+[[location]]
+address = "7E:0300"
+name = "field_oam_high_buffer"
+width = 1
+count = 32
+owner = "field"
+notes = "Original packed OAM high bytes; AC7A clears all32."
+
+[[location]]
+address = "7F:D0B0"
+name = "field_oam_dirty"
+width = 1
+count = 1
+owner = "field"
+notes = "AC7A publishes1 after clearing both original OAM buffers."
+
+[[location]]
+address = "7E:099C"
+name = "scene_text_control"
+width = 1
+count = 1
+owner = "field"
+notes = "Scene bootstrap sets bit40 before9CB8 and clears the byte afterward."
+
+[[location]]
+address = "7E:1259"
+name = "scene_text_auxiliary"
+width = 1
+count = 1
+owner = "field"
+notes = "A368 clears this byte at the original accumulator width; other meaning remains unspecified."
