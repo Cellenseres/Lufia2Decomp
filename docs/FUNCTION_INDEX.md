@@ -146,6 +146,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:F518` | `Lufia2FieldStreamLeftColumn` | verified | `src/field/field_scroll.c` |
 | `$80:F589` | `Lufia2FieldStreamTopRow` | verified | `src/field/field_scroll.c` |
 | `$80:F5A2` | `Lufia2FieldStreamBottomRow` | verified | `src/field/field_scroll.c` |
+| `$80:F5ED` | `Lufia2FieldRenderMetatileColumn` | verified | `src/field/field_metatile_stream.c` |
+| `$80:F64E` | `Lufia2FieldRenderMetatileRow` | verified | `src/field/field_metatile_stream.c` |
 | `$80:F6AA` | `Lufia2FieldCellIndex` | verified | `src/field/field_cell_address.c` |
 | `$80:F734` | `Lufia2FieldLocateCell` | verified | `src/field/field_cell_address.c` |
 | `$80:F81C` | `Lufia2FieldDivisionDelay` | verified | `src/field/field_cell_address.c` |
