@@ -4049,3 +4049,19 @@ width = 2
 count = 1
 owner = "field"
 notes = "Active map section height published by EC78; TDC supplies its original high byte."
+
+[[location]]
+address = "7E:09D5"
+name = "capsule_experience_step"
+width = 4
+count = 1
+owner = "party"
+notes = "Four-byte fixed-point level-experience step used by CE52/CEAB."
+
+[[location]]
+address = "7E:1141"
+name = "capsule_level_experience"
+width = 3
+count = 1
+owner = "party"
+notes = "Three-byte level threshold calculated by CE52/CEAB; distinct from level-start experience at113E."
