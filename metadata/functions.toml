@@ -5536,3 +5536,11 @@ source = "src/actor/actor_scene_resources.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:A82E"
+name = "Lufia2ActorRebuildSceneState"
+source = "src/actor/actor_scene_rebuild.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

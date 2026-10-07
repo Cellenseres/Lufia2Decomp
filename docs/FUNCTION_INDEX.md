@@ -431,6 +431,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:A71C` | `Lufia2ActorSetFinePosition` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:A746` | `Lufia2ActorSyncFinePosition` | verified | `src/actor/actor_movement.c` |
 | `$83:A76D` | `Lufia2FieldRebuildSceneActors` | verified | `src/field/field_scene_actors.c` |
+| `$83:A82E` | `Lufia2ActorRebuildSceneState` | verified | `src/actor/actor_scene_rebuild.c` |
 | `$83:A97E` | `Lufia2ActorHasSpecialSceneSprite` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:A998` | `Lufia2ObjectResetSceneSprites` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:A9BA` | `Lufia2ActorLoadSprite` | verified | `src/actor/actor_sprites.c` |

@@ -243,6 +243,10 @@ Lufia2ExecutionResult Lufia2ActorQueueSceneSpriteUpload(
 Lufia2ExecutionResult Lufia2ObjectQueueSceneSpriteUpload(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2ActorRebuildSceneState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif
