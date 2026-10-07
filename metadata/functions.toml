@@ -5912,3 +5912,43 @@ source = "src/field/field_display_callers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:9906"
+name = "Lufia2BattleShowActionMessage"
+source = "src/battle/battle_action_message.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9A71"
+name = "Lufia2BattleClearMessageRow"
+source = "src/battle/battle_action_message.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9510"
+name = "Lufia2BattleCopyRecordName"
+source = "src/battle/battle_action_message.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9578"
+name = "Lufia2BattleLoadIpActionName"
+source = "src/battle/battle_action_message.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9532"
+name = "Lufia2BattleLoadStatusMessage"
+source = "src/battle/battle_action_message.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

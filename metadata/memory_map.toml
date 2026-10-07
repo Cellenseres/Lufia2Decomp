@@ -304,9 +304,9 @@ notes = "Screen effect bits; text opcode $57 waits while an effect runs."
 [[location]]
 address = "7E:1262"
 name = "palette_fade"
-width = 1
+width = 2
 owner = "field"
-notes = "Palette fade stopped by text $C5; battle effect ID."
+notes = "Palette fade stopped by text $C5; battle status message copies a two-byte header here."
 
 [[location]]
 address = "7E:1264"
@@ -321,7 +321,7 @@ address = "7E:1269"
 name = "text_wait_actor"
 width = 1
 owner = "text"
-notes = "Actor the text engine waits for (opcode $33), set to $FF when the wait ends. $83:C7F8 tests its sign."
+notes = "Actor the text engine waits for (opcode $33), set to $FF when the wait ends. $83:C7F8 tests its sign. Battle messages reuse this address as a 37-byte name buffer."
 
 [[location]]
 address = "7E:1291"
@@ -2812,7 +2812,7 @@ name = "battle_action_work"
 width = 1
 count = 136
 owner = "battle"
-notes = "Original action work; saved and restored as136 bytes."
+notes = "Original action work; saved and restored as 136 bytes. Offset 0A holds the one-based status message ID; zero skips the table."
 
 [[location]]
 address = "7F:FAB6"
@@ -3385,3 +3385,43 @@ width = 1
 count = 1
 owner = "field"
 notes = "Original scene transient byte initialized from TDC."
+
+[[location]]
+address = "7E:0A11"
+name = "battle_action_message_id"
+width = 2
+count = 1
+owner = "battle"
+notes = "Packed original item, spell or IP message ID; its high byte also selects message kind."
+
+[[location]]
+address = "7E:09F2"
+name = "battle_message_window_columns"
+width = 1
+count = 1
+owner = "battle"
+notes = "Original action message window column count."
+
+[[location]]
+address = "7E:09F3"
+name = "battle_message_window_rows"
+width = 1
+count = 1
+owner = "battle"
+notes = "Original action message window row count."
+
+[[location]]
+address = "7E:1B23"
+name = "battle_message_scroll_increment"
+width = 1
+count = 1
+owner = "battle"
+notes = "Original action message scroll increment selected by ROM table."
+
+[[location]]
+address = "7E:EE00"
+name = "battle_action_message_tiles"
+width = 2
+count = 224
+owner = "battle"
+notes = "Seven original message tile rows cleared through the row child."

@@ -596,12 +596,17 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9236` | `Lufia2BattlePartyStatusGate` | verified | `src/battle/battle_loop_children.c` |
 | `$85:9275` | `Lufia2BattleQueuePartyTurns` | verified | `src/battle/battle_turn_order.c` |
 | `$85:93B7` | `Lufia2BattleCheckOutcome` | verified | `src/battle/battle_outcome.c` |
+| `$85:9510` | `Lufia2BattleCopyRecordName` | verified | `src/battle/battle_action_message.c` |
+| `$85:9532` | `Lufia2BattleLoadStatusMessage` | verified | `src/battle/battle_action_message.c` |
+| `$85:9578` | `Lufia2BattleLoadIpActionName` | verified | `src/battle/battle_action_message.c` |
 | `$85:95FE` | `Lufia2BattleDisplayMessage` | verified | `src/battle/battle_message_display.c` |
 | `$85:9671` | `Lufia2BattleClearMessage` | verified | `src/battle/battle_message_display.c` |
 | `$85:96A2` | `Lufia2BattleSaveWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:972E` | `Lufia2BattleTileGridEntry` | verified | `src/battle/battle_frame.c` |
 | `$85:9790` | `Lufia2BattleTileRow` | verified | `src/battle/battle_frame_setup.c` |
+| `$85:9906` | `Lufia2BattleShowActionMessage` | verified | `src/battle/battle_action_message.c` |
+| `$85:9A71` | `Lufia2BattleClearMessageRow` | verified | `src/battle/battle_action_message.c` |
 | `$85:9A7D` | `Lufia2BattleMeasureMessage` | verified | `src/battle/battle_message_length.c` |
 | `$85:9AAA` | `Lufia2BattleSaveMessageState` | verified | `src/battle/battle_message_display.c` |
 | `$85:9ABC` | `Lufia2BattleRestoreMessageState` | verified | `src/battle/battle_message_display.c` |
