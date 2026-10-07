@@ -207,3 +207,13 @@ Lufia2ExecutionResult Lufia2SeedRandom(
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x80832cu);
 }
+
+Lufia2ExecutionResult Lufia2RefillRandomTable(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        !cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x80832du);
+    RandomRefill(memory, cpu);
+    Compare8(cpu, (uint8_t)cpu->x, WRAM_RANDOM_TABLE_COUNT);
+    return ExecutionReturned(0x80834bu);
+}
