@@ -8,6 +8,7 @@ Generated from `metadata/functions.toml`; update it with
 | Address | Symbol | Status | Source |
 | --- | --- | --- | --- |
 | `$00:057D` | `Lufia2RamBlockMove` | verified | `src/system/block_move.c` |
+| `$80:8285` | `Lufia2SceneUploadRequestedTilemaps` | verified | `src/system/scene_uploads.c` |
 | `$80:8299` | `Lufia2RandomScale` | verified | `src/system/random.c` |
 | `$80:82C7` | `Lufia2RandomByte` | verified | `src/system/random.c` |
 | `$80:82E7` | `Lufia2SeedRandom` | verified | `src/system/random.c` |
@@ -109,6 +110,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:E7DF` | `Lufia2FieldStartPositionEvent` | verified | `src/field/field_event_triggers.c` |
 | `$80:E7FA` | `Lufia2FieldStartEventAtProbe` | verified | `src/field/field_event_triggers.c` |
 | `$80:E844` | `Lufia2FieldInitializeMapEvents` | verified | `src/field/field_map_load.c` |
+| `$80:E898` | `Lufia2EventGetFlagMask` | verified | `src/field/field_event_script.c` |
 | `$80:EA47` | `Lufia2FieldSaveActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EA50` | `Lufia2FieldRestoreActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |
@@ -448,10 +450,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:AC7A` | `Lufia2FieldResetSpriteBuffer` | verified | `src/field/field_bootstrap.c` |
 | `$83:ACB7` | `Lufia2FieldBeginSessionSetup` | verified | `src/field/field_session_setup.c` |
 | `$83:AD23` | `Lufia2FieldResumeSessionSetup` | verified | `src/field/field_session_setup.c` |
+| `$83:ADCA` | `Lufia2FieldResetScene` | verified | `src/field/field_scene_reset.c` |
+| `$83:ADDF` | `Lufia2FieldResetSavedScene` | verified | `src/field/field_scene_reset.c` |
 | `$83:AEB5` | `Lufia2FieldColourEffects` | verified | `src/field/field_effects.c` |
 | `$83:B007` | `Lufia2FieldUploadFixedGraphics` | verified | `src/field/field_object_graphics.c` |
 | `$83:B062` | `Lufia2FieldRestore` | verified | `src/field/field_restore.c` |
+| `$83:B503` | `Lufia2FieldMarkCurrentMap` | verified | `src/field/field_scene_reset.c` |
 | `$83:B512` | `Lufia2FieldResetObjectAnimation` | verified | `src/field/field_bootstrap.c` |
+| `$83:B52E` | `Lufia2FieldResumeSceneSong` | verified | `src/field/field_scene_reset.c` |
 | `$83:B53B` | `Lufia2FieldInstallMap` | verified | `src/field/field_map_install.c` |
 | `$83:B5AD` | `Lufia2FieldSelectSceneRecordBase` | verified | `src/field/field_bootstrap.c` |
 | `$83:B5D3` | `Lufia2FieldLoadMapHeader` | verified | `src/field/field_map_load.c` |
@@ -548,6 +554,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:FCB4` | `Lufia2ObjectScaleFinePosition` | verified | `src/field/field_coordinate_math.c` |
 | `$83:FCD1` | `Lufia2ObjectQueueSceneSpriteUpload` | verified | `src/actor/actor_scene_resources.c` |
 | `$84:8193` | `Lufia2SpriteGraphicsUpload` | verified | `src/actor/actor_sprites.c` |
+| `$84:8328` | `Lufia2TextClearWindowBuffer` | verified | `src/text/text_engine.c` |
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
 | `$84:8775` | `Lufia2SendImmediateSound` | verified | `src/system/sound_commands.c` |
 | `$84:8888` | `Lufia2AncientCaveResetParty` | verified | `src/cave/cave_reset.c` |

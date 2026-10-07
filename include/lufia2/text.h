@@ -34,6 +34,9 @@ Lufia2ExecutionResult Lufia2TextBuildWindow(
 Lufia2ExecutionResult Lufia2TextPrepareWindow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2TextClearWindowBuffer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

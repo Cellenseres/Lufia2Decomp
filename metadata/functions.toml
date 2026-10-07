@@ -5544,3 +5544,59 @@ source = "src/actor/actor_scene_rebuild.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:ADCA"
+name = "Lufia2FieldResetScene"
+source = "src/field/field_scene_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:ADDF"
+name = "Lufia2FieldResetSavedScene"
+source = "src/field/field_scene_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:B503"
+name = "Lufia2FieldMarkCurrentMap"
+source = "src/field/field_scene_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:B52E"
+name = "Lufia2FieldResumeSceneSong"
+source = "src/field/field_scene_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:E898"
+name = "Lufia2EventGetFlagMask"
+source = "src/field/field_event_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:8285"
+name = "Lufia2SceneUploadRequestedTilemaps"
+source = "src/system/scene_uploads.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:8328"
+name = "Lufia2TextClearWindowBuffer"
+source = "src/text/text_engine.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -3257,3 +3257,131 @@ width = 1
 count = 1
 owner = "actor"
 notes = "Table base for original three-byte object sprite sources."
+
+[[location]]
+address = "7E:0926"
+name = "scene_party_ids"
+width = 1
+count = 5
+owner = "field"
+notes = "Five original scene party actor IDs; reset selects actor zero."
+
+[[location]]
+address = "7E:097B"
+name = "scene_map_flags"
+width = 1
+count = 32
+owner = "field"
+notes = "Map bit array; B503 sets the current map bit and ADDF clears 32 bytes."
+
+[[location]]
+address = "7E:079E"
+name = "unk_7E079E"
+width = 1
+count = 32
+owner = "field"
+notes = "Parallel saved state array cleared by ADDF; role uncertain."
+
+[[location]]
+address = "7E:07BE"
+name = "unk_7E07BE"
+width = 1
+count = 32
+owner = "field"
+notes = "Parallel saved state array cleared by ADDF; role uncertain."
+
+[[location]]
+address = "7E:07DE"
+name = "unk_7E07DE"
+width = 1
+count = 32
+owner = "field"
+notes = "Parallel saved state array cleared by ADDF; role uncertain."
+
+[[location]]
+address = "7E:07FE"
+name = "unk_7E07FE"
+width = 1
+count = 32
+owner = "field"
+notes = "Parallel saved state array cleared by ADDF; role uncertain."
+
+[[location]]
+address = "7E:092B"
+name = "unk_7E092B"
+width = 1
+count = 16
+owner = "field"
+notes = "Sixteen original saved scene bytes initialized to FF."
+
+[[location]]
+address = "7E:093B"
+name = "unk_7E093B"
+width = 1
+count = 64
+owner = "field"
+notes = "Sixty-four original saved scene bytes initialized from TDC."
+
+[[location]]
+address = "7E:091E"
+name = "unk_7E091E"
+width = 1
+count = 8
+owner = "field"
+notes = "Eight saved scene bytes cleared by ADDF."
+
+[[location]]
+address = "7E:09DF"
+name = "unk_7E09DF"
+width = 1
+count = 1
+owner = "field"
+notes = "Saved scene option byte initialized to 02."
+
+[[location]]
+address = "7E:09E0"
+name = "unk_7E09E0"
+width = 1
+count = 1
+owner = "field"
+notes = "Saved scene option byte initialized to FF."
+
+[[location]]
+address = "7E:09EE"
+name = "unk_7E09EE"
+width = 1
+count = 2
+owner = "field"
+notes = "Saved scene option pair cleared by ADDF."
+
+[[location]]
+address = "7E:09E1"
+name = "unk_7E09E1"
+width = 1
+count = 2
+owner = "field"
+notes = "Saved scene option pair cleared by ADDF."
+
+[[location]]
+address = "7E:09E3"
+name = "unk_7E09E3"
+width = 1
+count = 1
+owner = "field"
+notes = "Saved scene option byte initialized to 20."
+
+[[location]]
+address = "7E:09E4"
+name = "unk_7E09E4"
+width = 1
+count = 1
+owner = "field"
+notes = "Saved scene option byte initialized to CC."
+
+[[location]]
+address = "7F:D0C5"
+name = "unk_7FD0C5"
+width = 1
+count = 1
+owner = "field"
+notes = "Original scene transient byte initialized from TDC."

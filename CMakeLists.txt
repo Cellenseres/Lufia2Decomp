@@ -158,6 +158,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_transition.c
     src/field/field_scene_record_select.c
     src/field/field_scene_records.c
+    src/field/field_scene_reset.c
     src/field/field_scene_actor_records.c
     src/actor/actor_scene_resources.c
     src/actor/actor_scene_rebuild.c
@@ -228,6 +229,7 @@ add_library(lufia2_decomp STATIC
     src/system/sound_upload.c
     src/system/nmi.c
     src/system/nmi_uploads.c
+    src/system/scene_uploads.c
     src/system/screen.c
     src/system/sound.c
     src/text/text_engine.c

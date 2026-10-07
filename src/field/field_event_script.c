@@ -2,6 +2,7 @@
 
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
@@ -227,6 +228,28 @@ static void EventVariableOperands(
     SimulateRtsFrame(memory, cpu);
 }
 
+static void EventGetFlagMask(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpAndValue(cpu, 7u);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, 0x80be45u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
+    LoadA16(cpu, cpu->direct_page);
+    OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    for (unsigned shift = 0u; shift < 3u; ++shift)
+        OpLsrA(cpu);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
+}
+
+Lufia2ExecutionResult Lufia2EventGetFlagMask(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x80e898u);
+    EventGetFlagMask(memory, cpu);
+    return ExecutionReturned(0x80e8acu);
+}
+
 /* $80:E898: X = flag byte of n, A = its bit from $80:BE45. */
 void Lufia2EventFlagBit(
     const Lufia2Memory *memory,
@@ -241,19 +264,7 @@ void Lufia2EventFlagBitFrom(
     uint8_t return_bank,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, return_bank, return_address);
-    StoreADirect8(memory, cpu, DP_SCRATCH_A); /* E898 */
-    And8(cpu, 0x07u);
-    /* TAX keeps B, so DP high enters both indexes. */
-    TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80be45u, cpu->x)));
-    StoreADirect8(memory, cpu, DP_SCRATCH_B);
-    TransferDirectToA(cpu);
-    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
-    LsrA8(cpu);
-    LsrA8(cpu);
-    LsrA8(cpu);
-    TransferAToX(cpu);
-    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
+    EventGetFlagMask(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
