@@ -10,14 +10,14 @@
 enum {
     STRING = 0x5du,                     /* [$5D],Y */
     ATTRIBUTE = 0x0564u,                /* tile high byte */
-    WIDTH = 0x0565u,
-    LEFT = 0x0566u,                     /* characters before the wrap */
+    WIDTH = WRAM_MENU_TEXT_LINE_WIDTH,
+    LEFT = WRAM_MENU_TEXT_CHARACTERS_LEFT,
     DIGITS = WRAM_MENU_NUMBER_DIGITS,                   /* 8 characters */
     NUMBER = WRAM_MENU_NUMBER,                   /* 24-bit */
-    ROW = 0x0573u,
-    CURSOR = 0x0575u,
+    ROW = WRAM_MENU_TEXT_ROW,
+    CURSOR = WRAM_MENU_TEXT_CURSOR,
     PALETTE = 0x0577u,
-    RAW = 0x0578u,                      /* next byte is a plain tile */
+    RAW = WRAM_MENU_TEXT_RAW_TILE,
     MARK = 0x0579u,
     FORMAT = WRAM_MENU_NUMBER_FORMAT,
     NAMES = 0x0a80u,                    /* string pointers, bank 0 */
@@ -1126,4 +1126,52 @@ Lufia2ExecutionResult Lufia2MenuAppendNumberDigit(
     vm.cpu = cpu;
     MenuDigit(&vm);
     return ExecutionReturned(0x8089d7u);
+}
+
+Lufia2ExecutionResult Lufia2MenuWriteGlyph(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x808db3u);
+    MenuVm vm = {0};
+    vm.memory = memory;
+    vm.cpu = cpu;
+    MenuPutTile(&vm);
+    return ExecutionReturned(0x808dc9u);
+}
+
+Lufia2ExecutionResult Lufia2MenuAdvanceTextRow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x808df9u);
+    MenuVm vm = {0};
+    vm.memory = memory;
+    vm.cpu = cpu;
+    MenuNewRow(&vm);
+    return ExecutionReturned(0x808e0eu);
+}
+
+Lufia2ExecutionResult Lufia2MenuResetTextWidth(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x808e0fu);
+    MenuVm vm = {0};
+    vm.memory = memory;
+    vm.cpu = cpu;
+    MenuResetWidth(&vm);
+    return ExecutionReturned(0x808e15u);
+}
+
+Lufia2ExecutionResult Lufia2MenuSetTextPalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x808d5du);
+    MenuVm vm = {0};
+    vm.memory = memory;
+    vm.cpu = cpu;
+    MenuPalette(&vm);
+    return ExecutionReturned(0x808d6bu);
 }

@@ -24,6 +24,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:8878` | `Lufia2MenuDrawString` | verified | `src/menu/menu_string.c` |
 | `$80:89AA` | `Lufia2MenuFormatNumberDigits` | verified | `src/menu/menu_string.c` |
 | `$80:89D0` | `Lufia2MenuAppendNumberDigit` | verified | `src/menu/menu_string.c` |
+| `$80:8D5D` | `Lufia2MenuSetTextPalette` | verified | `src/menu/menu_string.c` |
+| `$80:8DB3` | `Lufia2MenuWriteGlyph` | verified | `src/menu/menu_string.c` |
+| `$80:8DF9` | `Lufia2MenuAdvanceTextRow` | verified | `src/menu/menu_string.c` |
+| `$80:8E0F` | `Lufia2MenuResetTextWidth` | verified | `src/menu/menu_string.c` |
 | `$80:8E9D` | `Lufia2DecompressResource` | verified | `src/system/decompress.c` |
 | `$80:9099` | `Lufia2LoadGameFile` | verified | `src/system/save.c` |
 | `$80:90C9` | `Lufia2SaveGameFile` | verified | `src/system/save.c` |

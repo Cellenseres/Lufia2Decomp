@@ -6496,3 +6496,35 @@ source = "src/menu/menu_list_motion.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:8DB3"
+name = "Lufia2MenuWriteGlyph"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:8DF9"
+name = "Lufia2MenuAdvanceTextRow"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:8E0F"
+name = "Lufia2MenuResetTextWidth"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:8D5D"
+name = "Lufia2MenuSetTextPalette"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
