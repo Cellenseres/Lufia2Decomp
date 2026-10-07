@@ -73,6 +73,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9C72` | `Lufia2FieldEventTick` | verified | `src/field/field_update.c` |
 | `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
 | `$80:A368` | `Lufia2SceneResetTextState` | verified | `src/field/scene_bootstrap.c` |
+| `$80:B404` | `Lufia2FieldQueueMenuActorUpdates` | verified | `src/field/menu_actor_updates.c` |
 | `$80:BE4D` | `Lufia2SceneRunInitialRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BE61` | `Lufia2SceneRunResumeRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BE75` | `Lufia2SceneRunTransitionRecord` | verified | `src/field/scene_bootstrap.c` |
@@ -358,6 +359,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:939C` | `Lufia2MenuNmi` | verified | `src/menu/menu.c` |
 | `$82:950E` | `Lufia2MenuMemberStatus` | verified | `src/menu/menu_screen.c` |
 | `$82:9918` | `Lufia2AdjustPurchasePrice` | verified | `src/menu/menu_spell_shop.c` |
+| `$82:9A4E` | `Lufia2MenuRunMainScreen` | verified | `src/menu/menu_main_screen.c` |
 | `$82:9CB2` | `Lufia2MenuWarpList` | verified | `src/menu/menu_screen.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
 | `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
@@ -479,6 +481,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:B727` | `Lufia2FieldBeginEventControl` | verified | `src/field/field_event_control.c` |
 | `$83:B747` | `Lufia2FieldAreaRects` | verified | `src/field/field_triggers.c` |
 | `$83:B76E` | `Lufia2FieldApplyAreaTransition` | verified | `src/field/field_area_transition.c` |
+| `$83:B82F` | `Lufia2FieldRefreshMenuSelection` | verified | `src/field/field_menu.c` |
 | `$83:B851` | `Lufia2FieldFindPointRecord` | verified | `src/field/field_record_search.c` |
 | `$83:B882` | `Lufia2FieldFindRectangleRecord` | verified | `src/field/field_record_search.c` |
 | `$83:BAC2` | `Lufia2FieldFindActorAtProbe` | verified | `src/field/field_actor_probe.c` |
@@ -753,6 +756,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:E6F3` | `Lufia2WorldMapSelectObjectRecord` | verified | `src/world/world_map_objects.c` |
 | `$86:E709` | `Lufia2WorldMapIndexObjectRecord` | verified | `src/world/world_map_objects.c` |
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
+| `$8E:B000` | `Lufia2FieldRunMenu` | verified | `src/field/field_menu.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |
 | `$8E:BC99` | `Lufia2FieldSelectMenuActor` | verified | `src/menu/menu_actor_callers.c` |

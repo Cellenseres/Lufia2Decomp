@@ -3559,3 +3559,27 @@ width = 1
 count = 1
 owner = "menu"
 notes = "82:89A4 clears this indexed base at slots5..15 before initializing their sprite lists. Other indexed cells already have separate menu-phase names; no disjoint array extent is claimed."
+
+[[location]]
+address = "7E:09CA"
+name = "menu_return_map"
+width = 1
+count = 1
+owner = "menu"
+notes = "Original field map remembered when the menu-selected destination is FF."
+
+[[location]]
+address = "7E:155E"
+name = "menu_selection_reference"
+width = 2
+count = 1
+owner = "menu"
+notes = "Main menu selection word cleared before initializing auxiliary sprites."
+
+[[location]]
+address = "7E:E000"
+name = "menu_actor_update_buffer"
+width = 1
+count = 1
+owner = "menu"
+notes = "Base of four-byte opcode12 scripts emitted for up to five party slots. The indexed extent is phase dependent; no disjoint region is claimed."

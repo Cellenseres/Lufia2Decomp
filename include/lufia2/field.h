@@ -779,6 +779,20 @@ Lufia2ExecutionResult Lufia2FieldSelectMenuActor(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+/* M1, either index width; original field-menu outcomes. */
+Lufia2ExecutionResult Lufia2FieldRunMenu(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldRefreshMenuSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* M1X0, starting party slot0..4. */
+Lufia2ExecutionResult Lufia2FieldQueueMenuActorUpdates(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

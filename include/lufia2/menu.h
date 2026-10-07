@@ -385,6 +385,11 @@ Lufia2ExecutionResult Lufia2MenuInitializeAuxiliarySprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+/* Any entry widths; original menu preparation and loop. */
+Lufia2ExecutionResult Lufia2MenuRunMainScreen(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif
