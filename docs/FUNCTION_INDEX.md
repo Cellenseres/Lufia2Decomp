@@ -596,6 +596,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:D416` | `Lufia2ActorLoadPrimaryScript` | verified | `src/actor/actor_primary.c` |
 | `$83:D508` | `Lufia2ActorSecondaryUpdate` | verified | `src/actor/actor_secondary.c` |
 | `$83:D7A5` | `Lufia2ActorPositionToObjectProbe` | verified | `src/field/field_object_graphics.c` |
+| `$83:D927` | `Lufia2FieldProbeContactEdge` | verified | `src/field/field_contact_edges.c` |
+| `$83:D932` | `Lufia2FieldProbeContactEdgeDown` | verified | `src/field/field_contact_edges.c` |
+| `$83:D93E` | `Lufia2FieldProbeContactEdgeLeft` | verified | `src/field/field_contact_edges.c` |
+| `$83:D948` | `Lufia2FieldProbeContactEdgeUp` | verified | `src/field/field_contact_edges.c` |
+| `$83:D952` | `Lufia2FieldProbeContactEdgeRight` | verified | `src/field/field_contact_edges.c` |
 | `$83:DF87` | `Lufia2ActorSpawnFromId` | verified | `src/field/field_object_transition.c` |
 | `$83:E033` | `Lufia2FieldSetObjectDrawFlags` | verified | `src/field/field_event_actors.c` |
 | `$83:E03E` | `Lufia2ObjectSlotsUpdate` | verified | `src/actor/object_vm.c` |
