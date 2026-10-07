@@ -6768,3 +6768,27 @@ source = "src/field/field_metatile_stream.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "80:E8D0"
+name = "Lufia2FieldRewindEventByte"
+source = "src/field/field_event_reader.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:E8AD"
+name = "Lufia2FieldReadEventWord"
+source = "src/field/field_event_reader.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "80:E8F4"
+name = "Lufia2FieldSetEventPointer"
+source = "src/field/field_event_reader.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
