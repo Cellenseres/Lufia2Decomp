@@ -129,6 +129,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:E7FA` | `Lufia2FieldStartEventAtProbe` | verified | `src/field/field_event_triggers.c` |
 | `$80:E844` | `Lufia2FieldInitializeMapEvents` | verified | `src/field/field_map_load.c` |
 | `$80:E898` | `Lufia2EventGetFlagMask` | verified | `src/field/field_event_script.c` |
+| `$80:E8B9` | `Lufia2FieldReadEventByte` | verified | `src/field/field_event_byte.c` |
 | `$80:EA47` | `Lufia2FieldSaveActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EA50` | `Lufia2FieldRestoreActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |
@@ -145,6 +146,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:F518` | `Lufia2FieldStreamLeftColumn` | verified | `src/field/field_scroll.c` |
 | `$80:F589` | `Lufia2FieldStreamTopRow` | verified | `src/field/field_scroll.c` |
 | `$80:F5A2` | `Lufia2FieldStreamBottomRow` | verified | `src/field/field_scroll.c` |
+| `$80:F6AA` | `Lufia2FieldCellIndex` | verified | `src/field/field_cell_address.c` |
+| `$80:F734` | `Lufia2FieldLocateCell` | verified | `src/field/field_cell_address.c` |
+| `$80:F81C` | `Lufia2FieldDivisionDelay` | verified | `src/field/field_cell_address.c` |
 | `$80:F821` | `Lufia2FieldTraceCellEdges` | verified | `src/field/field_cell_edges.c` |
 | `$81:8000` | `Lufia2BattleSetup` | verified | `src/battle/battle_setup.c` |
 | `$81:851E` | `Lufia2BattleDisplaySetup` | verified | `src/battle/battle_display_setup.c` |

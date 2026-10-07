@@ -34,7 +34,7 @@
 #define EVENT_SCRIPT_BASE_BANK WRAM_FIELD_EVENT_BASE_BANK
 /* Script start and bank of the running slot. */
 #define EVENT_SCRIPT_POINTER 0x7fd197u
-#define EVENT_SCRIPT_BANK 0x7fd199u
+#define EVENT_SCRIPT_BANK WRAM_FIELD_EVENT_RUNNING_BANK
 /* Script call frames: 13 x 10 bytes, tag = depth << 4 | slot. */
 #define EVENT_CALL_FRAMES WRAM_FIELD_EVENT_CALL_RECORDS
 #define EVENT_CALL_DEPTH 0x7fd4e6u
