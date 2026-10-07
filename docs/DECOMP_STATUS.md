@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-606 functions in `metadata/functions.toml`: 606 verified, 0 draft, 0 identified, 0 disabled.
+631 functions in `metadata/functions.toml`: 631 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2297,3 +2297,24 @@ child bank and live continuation frames.32768 forced route comparisons,
 Two in-memory ROM controls detect wrong dispatch/continuation behavior.
 The change shares the full625-job verification batch with sound callers.
 Unknown child contexts retain the exact original event-entry boundary.
+
+## Original sound driver callers - 2026-10-07
+
+Twenty-five complete sound-driver request/resource helpers are verified
+and bound. Save/restore order, original widths, DB-relative versus
+long ports, repeated resource-byte writes and pushed waits remain literal.
+The resource-table initializer retains every one of its32 child calls.
+Driver-status polling retains original iterations and uses an exact
+continuation after65536 polls when the original routine never finishes.
+No host sound-wait optimization was added.
+
+Driver callers:122880 semantic and122880 production-ABI comparisons,
+16 exact child unwinds,12672 entry guards,23 effective ROM controls.
+Table callers:49152 semantic and49152 production-ABI comparisons,
+8 exact child unwinds,4224 entry guards,13 effective ROM controls.
+Four nonreturning cases compare65536 polling iterations each.
+Transfer helpers:49152 semantic and49152 production-ABI comparisons,
+3 exact child unwinds,5760 entry guards,10 effective ROM controls.
+Strict C,Release and625 independent regression jobs pass.
+631 verified entries,0drafts,382 fields,2528 generated native calls.
+These are static selection counts, not measured interpreter hits.
