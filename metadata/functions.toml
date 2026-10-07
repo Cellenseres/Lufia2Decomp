@@ -5344,3 +5344,75 @@ source = "src/system/sound_upload.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:AC7A"
+name = "Lufia2FieldResetSpriteBuffer"
+source = "src/field/field_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:B512"
+name = "Lufia2FieldResetObjectAnimation"
+source = "src/field/field_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:B5AD"
+name = "Lufia2FieldSelectSceneRecordBase"
+source = "src/field/field_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:A368"
+name = "Lufia2SceneResetTextState"
+source = "src/field/scene_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:BE89"
+name = "Lufia2SceneRunStartRecord"
+source = "src/field/scene_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:BE4D"
+name = "Lufia2SceneRunInitialRecord"
+source = "src/field/scene_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:BE61"
+name = "Lufia2SceneRunResumeRecord"
+source = "src/field/scene_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:BE75"
+name = "Lufia2SceneRunTransitionRecord"
+source = "src/field/scene_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:BEAF"
+name = "Lufia2SceneRunMapText"
+source = "src/field/scene_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

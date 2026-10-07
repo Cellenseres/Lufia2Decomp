@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-651 functions in `metadata/functions.toml`: 651 verified, 0 draft, 0 identified, 0 disabled.
+660 functions in `metadata/functions.toml`: 660 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2389,3 +2389,16 @@ cover long payloads beyond the bounded MMIO summary. APU responses are
 controlled; this does not establish SPC700 hardware timing.
 Shared full645, strict C and Release pass.651 verified, zero drafts,
 392 WRAM fields and2,608 generated calls. Static counts, not runtime hits.
+
+## Original scene bootstrap - 2026-10-07
+
+Nine complete entries cover field OAM reset, object animation reset,
+map record selection, text reset and initial/resume/transition/map scripts.
+All saved widths, DB-relative writes, original frames, temporary record-base
+replacement and literal TDC contents remain exact. Descriptor searches and
+the text engine remain explicit children; their internals are not redefined.
+86,016 original-ROM cases include12,288 composed start-record calls.
+86,023 production ABI cases, seven child unwinds,75 redirect probes,
+11,904 unsupported-state guards and24 altered-ROM controls pass.
+Shared full651, strict C and Release pass. Checkpoint:660 verified entries,
+zero drafts,397 WRAM fields and2,644 generated calls. Static counts only.
