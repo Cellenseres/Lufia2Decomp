@@ -199,6 +199,8 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_update.c
     src/field/scene_script.c
     src/field/field_scroll.c
+    src/field/field_event_pointer.c
+    src/world/world_cell_center.c
     src/party/capsule_experience.c
     src/field/field_sprite_selector.c
     src/field/field_actor_select.c

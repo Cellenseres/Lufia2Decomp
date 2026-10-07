@@ -4065,3 +4065,11 @@ width = 3
 count = 1
 owner = "party"
 notes = "Three-byte level threshold calculated by CE52/CEAB; distinct from level-start experience at113E."
+
+[[location]]
+address = "7F:D197"
+name = "field_event_running_pointer"
+width = 2
+count = 1
+owner = "field"
+notes = "Event instruction position published by E8E2; D199 stores its bank."

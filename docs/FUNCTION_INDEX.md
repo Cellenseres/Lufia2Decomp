@@ -134,6 +134,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:E8AD` | `Lufia2FieldReadEventWord` | verified | `src/field/field_event_reader.c` |
 | `$80:E8B9` | `Lufia2FieldReadEventByte` | verified | `src/field/field_event_byte.c` |
 | `$80:E8D0` | `Lufia2FieldRewindEventByte` | verified | `src/field/field_event_reader.c` |
+| `$80:E8E2` | `Lufia2FieldPublishEventPointer` | verified | `src/field/field_event_pointer.c` |
 | `$80:E8F4` | `Lufia2FieldSetEventPointer` | verified | `src/field/field_event_reader.c` |
 | `$80:E912` | `Lufia2FieldLookupEventActor` | verified | `src/field/field_event_coordinate.c` |
 | `$80:E9BC` | `Lufia2FieldResolveEventVariable` | verified | `src/field/field_event_value.c` |
@@ -808,6 +809,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:90F9` | `Lufia2MenuLoadPalette3` | verified | `src/menu/menu_image_load.c` |
 | `$86:910C` | `Lufia2MenuLoadPalette4` | verified | `src/menu/menu_image_load.c` |
 | `$86:911F` | `Lufia2MenuLoadSlotPalettes` | verified | `src/menu/menu_image_load.c` |
+| `$86:91FE` | `Lufia2WorldMapCellCenter` | verified | `src/world/world_cell_center.c` |
 | `$86:94D4` | `Lufia2SceneTrackStep` | verified | `src/field/field_scene_tracks.c` |
 | `$86:995B` | `Lufia2WorldScrollAdvance` | verified | `src/world/world_scroll_step.c` |
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
