@@ -383,6 +383,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9B10` | `Lufia2MenuBuildMainWindows` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9B51` | `Lufia2MenuBuildListWindows` | verified | `src/menu/menu_list_controls.c` |
 | `$82:9C10` | `Lufia2MenuInitializeListScroll` | verified | `src/menu/menu_list_controls.c` |
+| `$82:9C52` | `Lufia2MenuInitializeListCursor` | verified | `src/menu/menu_list_motion.c` |
 | `$82:9CB2` | `Lufia2MenuWarpList` | verified | `src/menu/menu_screen.c` |
 | `$82:9EF2` | `Lufia2MenuBuildAlternateCursor` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
@@ -394,7 +395,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:A658` | `Lufia2MenuRunListInput` | verified | `src/menu/menu_list_controls.c` |
 | `$82:A711` | `Lufia2MenuRunListSelection` | verified | `src/menu/menu_list_controls.c` |
 | `$82:A918` | `Lufia2MenuListCursor` | verified | `src/menu/menu_screen.c` |
+| `$82:AC84` | `Lufia2MenuDrawListPage` | verified | `src/menu/menu_list_motion.c` |
 | `$82:ACDB` | `Lufia2MenuListRow` | verified | `src/menu/menu_screen.c` |
+| `$82:AD20` | `Lufia2MenuAnimateListUp` | verified | `src/menu/menu_list_motion.c` |
+| `$82:ADA3` | `Lufia2MenuMoveListMarkerDown` | verified | `src/menu/menu_list_motion.c` |
+| `$82:ADB4` | `Lufia2MenuAnimateListDown` | verified | `src/menu/menu_list_motion.c` |
+| `$82:AE53` | `Lufia2MenuMoveListMarkerUp` | verified | `src/menu/menu_list_motion.c` |
 | `$82:B2C5` | `Lufia2MenuEquipUpgrade` | verified | `src/menu/menu_screen.c` |
 | `$82:C261` | `Lufia2CapsuleLoadStats` | verified | `src/party/capsule.c` |
 | `$82:C2FD` | `Lufia2CapsuleReset` | verified | `src/party/capsule.c` |
@@ -730,6 +736,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:8BF5` | `Lufia2SpriteBuildOam` | verified | `src/menu/menu_sprites.c` |
 | `$86:8CDA` | `Lufia2SpriteSetTable` | verified | `src/menu/menu_sprites.c` |
 | `$86:8CF5` | `Lufia2SpriteSetAnimation` | verified | `src/menu/menu_sprites.c` |
+| `$86:8D47` | `Lufia2MenuLoadListParameters` | verified | `src/menu/menu_list_motion.c` |
 | `$86:8DBB` | `Lufia2MenuResetDisplayRequests` | verified | `src/menu/menu_graphics_setup.c` |
 | `$86:8DD7` | `Lufia2MenuScreenSetup` | verified | `src/menu/menu_scene_setup.c` |
 | `$86:8E6B` | `Lufia2SpriteClearSlots` | verified | `src/menu/menu_scene_setup.c` |
