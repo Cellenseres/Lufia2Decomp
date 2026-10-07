@@ -5216,3 +5216,83 @@ source = "src/system/sound_queue.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:8927"
+name = "Lufia2FieldSaveAnimationRegion"
+source = "src/field/field_animation_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:894C"
+name = "Lufia2FieldRestoreAnimationRegion"
+source = "src/field/field_animation_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8971"
+name = "Lufia2FieldRedrawAnimatedRegion"
+source = "src/field/field_animation_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:881D"
+name = "Lufia2FieldQueueObjectControlSound"
+source = "src/field/field_animation_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:888C"
+name = "Lufia2FieldCloseAnimatedRegion"
+source = "src/field/field_animation_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:88D9"
+name = "Lufia2FieldOpenAnimatedRegion"
+source = "src/field/field_animation_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:873F"
+name = "Lufia2FieldApplyInitialObjectRegion"
+source = "src/field/field_animation_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8761"
+name = "Lufia2FieldApplyAlternateObjectRegion"
+source = "src/field/field_animation_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8783"
+name = "Lufia2FieldAnimateObjectAction"
+source = "src/field/field_animation_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:87CC"
+name = "Lufia2FieldAnimateObjectControl"
+source = "src/field/field_animation_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

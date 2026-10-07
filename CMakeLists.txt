@@ -182,6 +182,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_reload.c
     src/field/field_camera.c
     src/field/field_update.c
+    src/field/field_animation_regions.c
     src/item/inventory.c
     src/item/inventory_receive.c
     src/item/item_records.c
