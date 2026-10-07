@@ -149,6 +149,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_probe_direction.c
     src/field/field_event_map_state.c
     src/field/field_event_triggers.c
+    src/field/field_event_object_region.c
     src/field/field_record_search.c
     src/field/field_object_bits.c
     src/field/field_layer_scale.c

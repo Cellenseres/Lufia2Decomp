@@ -2903,3 +2903,17 @@ aliases = ["EVENT_UNK_7FD133"]
 width = 1
 owner = "field"
 notes = "Mode byte written by Object routes 86/87 before the event probe."
+
+[[location]]
+address = "7F:D048"
+name = "field_region_record_id"
+width = 1
+owner = "field"
+notes = "Record selected by the event object-region preparation."
+
+[[location]]
+address = "7F:D049"
+name = "field_region_changed_flags"
+width = 1
+owner = "field"
+notes = "Aggregate pending-object flags from the current region update."

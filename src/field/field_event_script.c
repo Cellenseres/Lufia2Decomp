@@ -1247,6 +1247,20 @@ static unsigned EventScriptOpcode(
     uint32_t *handoff) {
     unsigned i;
 
+    if (handler == EVENT_OP_UPDATE_OBJECT_AREA || handler == EVENT_OP_COPY_OBJECT_AREA ||
+        handler == EVENT_OP_UPDATE_OBJECT_SIZE || handler == EVENT_OP_DRAW_OBJECT_AREA) {
+        run->total += 255u;
+        return Lufia2EventObjectAreaOpcode(memory, cpu, handler, handoff);
+    }
+    if (handler == EVENT_OP_COPY_OBJECT_RECORD) {
+        run->total += 255u;
+        return Lufia2EventCopyObjectRegion(memory, cpu, handoff);
+    }
+    if (handler == EVENT_OP_UPDATE_OBJECT_REGION || handler == EVENT_OP_UPDATE_OBJECT_REGION_ALT ||
+        handler == EVENT_OP_COPY_OBJECT_REGION || handler == EVENT_OP_UPDATE_OBJECT_REGION_VALUE || handler == EVENT_OP_UPDATE_OBJECT_REGION_AT) {
+        run->total += 255u;
+        return Lufia2EventObjectRegionOpcode(memory, cpu, handler, handoff);
+    }
     if (handler == EVENT_OP_FORK || handler == EVENT_OP_FORK_IF)
         return EventOpFork(memory, cpu, handler, run, handoff);
     /* Heavy opcodes count more toward the per-tick cap. */
