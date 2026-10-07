@@ -204,6 +204,9 @@ Lufia2ExecutionResult Lufia2SpriteComputeVramBase(
 Lufia2ExecutionResult Lufia2SpriteReserveAllocation(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2ActorSpawnFromId(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

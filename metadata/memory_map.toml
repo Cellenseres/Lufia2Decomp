@@ -2924,3 +2924,38 @@ name = "field_control_change_pending"
 width = 1
 owner = "field"
 notes = "Set when the field control latch acknowledges bit 5."
+
+[[location]]
+address = "7E:099E"
+name = "scene_record_base"
+width = 2
+owner = "field"
+notes = "Base used by the original scene-record searches."
+
+[[location]]
+address = "7E:09A0"
+name = "scene_record_bank"
+width = 1
+owner = "field"
+notes = "Bank used for the scene-record base."
+
+[[location]]
+address = "7E:09B8"
+name = "scene_cursor_state"
+width = 1
+owner = "field"
+notes = "Byte preserved with the adjacent scene-script bank during record searches."
+
+[[location]]
+address = "7F:D06E"
+name = "field_pending_update_record_id"
+width = 1
+owner = "field"
+notes = "Record identifier retained while applying a probed object header."
+
+[[location]]
+address = "7F:D06F"
+name = "field_pending_update_record_index"
+width = 1
+owner = "field"
+notes = "Pending record index retained during the object-header update."

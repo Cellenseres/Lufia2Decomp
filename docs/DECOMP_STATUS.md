@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-580 functions in `metadata/functions.toml`: 580 verified, 0 draft, 0 identified, 0 disabled.
+592 functions in `metadata/functions.toml`: 592 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2239,3 +2239,17 @@ One persistent control-change byte is named. No partial opcode binding added.
 and24 detected altered-ROM controls pass. W4WX,Release,production ABI and
 all584 independent jobs pass. 580 verified,0draft,371 fields,2324 native calls.
 No pixel,NMI-cycle or measured interpreter-hit-rate claim is made.
+
+## Field object control - 2026-10-07
+
+Twelve complete scene-record, object-collision and sprite-resource helpers
+are verified and bound. Event BB and Object 27/F4/21/FE/E0/10/2A use native
+helpers within their existing owners. Record search failures, arithmetic
+carry, duplicate size reads, leader reactions and exact frames remain
+literal. Object 10 handles the four original palette/graphics resources;
+other resources retain the exact original handler boundary. Object 2A
+retains the original call frame when handing off its push-object child. Five additional
+WRAM fields are named. Focused ROM/ABI/owner checks and altered-ROM controls
+pass, followed by production ABI, W4WX, Release and 600 independent jobs.
+592 verified, 0 draft, 376 fields, 2372 native calls. No measured hit-rate
+claim. Private proof records retain the individual test counts.
