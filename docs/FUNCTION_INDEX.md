@@ -55,8 +55,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9747` | `Lufia2BeginQueuedSoundResource` | verified | `src/system/sound_queue.c` |
 | `$80:9786` | `Lufia2UpdateSoundResourceQueue` | verified | `src/system/sound_queue.c` |
 | `$80:97DA` | `Lufia2AdvanceSoundSourceBank` | verified | `src/system/sound_transfer.c` |
+| `$80:97E5` | `Lufia2SendQueuedSoundChunk` | verified | `src/system/sound_upload.c` |
 | `$80:9886` | `Lufia2UploadSoundResourceSlot` | verified | `src/system/sound_queue.c` |
+| `$80:98A5` | `Lufia2SendSoundResourceHeader` | verified | `src/system/sound_upload.c` |
 | `$80:9911` | `Lufia2UploadSoundPayload` | verified | `src/system/sound_payload.c` |
+| `$80:9945` | `Lufia2SendSoundPayload` | verified | `src/system/sound_upload.c` |
 | `$80:99B2` | `Lufia2CheckSoundDriverSignature` | verified | `src/system/sound_transfer.c` |
 | `$80:99CA` | `Lufia2SoundDriverWrite1F` | verified | `src/system/sound_transfer.c` |
 | `$80:99D8` | `Lufia2SoundDriverWrite20` | verified | `src/system/sound_transfer.c` |

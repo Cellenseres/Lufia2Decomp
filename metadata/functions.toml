@@ -5320,3 +5320,27 @@ source = "src/system/sound_reply.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:9945"
+name = "Lufia2SendSoundPayload"
+source = "src/system/sound_upload.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:98A5"
+name = "Lufia2SendSoundResourceHeader"
+source = "src/system/sound_upload.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:97E5"
+name = "Lufia2SendQueuedSoundChunk"
+source = "src/system/sound_upload.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
