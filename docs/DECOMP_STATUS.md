@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-750 functions in `metadata/functions.toml`: 750 verified, 0 draft, 0 identified, 0 disabled.
+752 functions in `metadata/functions.toml`: 752 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2575,3 +2575,15 @@ The other two sprite-resource entries retain their 8-bit-index guards.
 The earlier fixture replaces only the obsolete AB4F X16 rejection with
 positive coverage; every other rejection remains. Shared full700, W4WX
 and Release PASS. Function/field/binding counts remain 750/450/3,004.
+
+## Original menu actor callers - 2026-10-07
+
+Two complete entries select the menu actor and initialize eleven auxiliary
+sprite slots. The selection checks slots7..1 and falls back to unchecked
+slot0. Original array bases share already named menu-phase cells; no
+disjoint array extent is invented. 20,480 ROM states, 20,482 actual ABI
+cases, two exact unwinds, 30 redirects, 3,456 guards and eleven public-library
+error controls pass. 4,096 compositions execute both original native
+children. Unrelated actor-state bits are independently varied. Shared
+full700, W4WX and Release PASS. 752 verified, zero drafts, 452 fields,
+3,012 generated calls. No ROM timing or current runtime hit-rate claim.
