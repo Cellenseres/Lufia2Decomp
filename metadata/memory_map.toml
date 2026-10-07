@@ -3161,3 +3161,99 @@ width = 1
 count = 1
 owner = "actor"
 notes = "Table base only; field records reuse battle storage. Table base only; field records reuse battle storage. AA7D selects83:AC14 using sprite flags bits18 and stores at the DP+A9 word offset."
+
+[[location]]
+address = "7E:120C"
+name = "scene_actor_auxiliary"
+width = 1
+count = 1
+owner = "actor"
+notes = "Scene actor header auxiliary byte; bank-relative accesses retain DB."
+
+[[location]]
+address = "7E:0732"
+name = "sprite_upload_cursor"
+width = 2
+count = 1
+owner = "actor"
+notes = "Original sprite upload queue byte offset; caller X width determines accesses."
+
+[[location]]
+address = "7E:1331"
+name = "actor_sprite_vram_base"
+width = 1
+count = 1
+owner = "actor"
+notes = "Table base; original per-actor sprite VRAM words share phase storage."
+
+[[location]]
+address = "7E:11F9"
+name = "sprite_upload_animation"
+width = 1
+count = 1
+owner = "actor"
+notes = "Queue table base for original animation words; bounds are caller owned."
+
+[[location]]
+address = "7E:11E9"
+name = "sprite_upload_vram"
+width = 1
+count = 1
+owner = "actor"
+notes = "Queue table base for original VRAM target words."
+
+[[location]]
+address = "7E:11D9"
+name = "sprite_upload_bank"
+width = 1
+count = 1
+owner = "actor"
+notes = "Queue table base for original source banks; actor writes word, object writes byte."
+
+[[location]]
+address = "7E:05C2"
+name = "sprite_upload_source"
+width = 1
+count = 1
+owner = "actor"
+notes = "Queue table base for original source offsets."
+
+[[location]]
+address = "7F:E2EE"
+name = "actor_scene_motion_offset"
+width = 1
+count = 1
+owner = "actor"
+notes = "Per-actor motion contribution; scene reset stores original TDC byte."
+
+[[location]]
+address = "7F:E25E"
+name = "unk_7FE25E"
+width = 1
+count = 1
+owner = "actor"
+notes = "Per-actor transient byte reset by A686; more specific role unknown."
+
+[[location]]
+address = "7F:E2A6"
+name = "unk_7FE2A6"
+width = 1
+count = 1
+owner = "actor"
+notes = "Per-actor transient byte reset by A686; more specific role unknown."
+
+[[location]]
+address = "7F:E05E"
+name = "object_sprite_vram_offset"
+width = 1
+count = 1
+owner = "actor"
+notes = "Table base; original object sprite upload reads words at caller index."
+
+[[location]]
+address = "7F:D894"
+name = "object_sprite_source"
+width = 1
+count = 1
+owner = "actor"
+notes = "Table base for original three-byte object sprite sources."

@@ -5480,3 +5480,59 @@ source = "src/actor/actor_bootstrap.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:A686"
+name = "Lufia2ActorResetSceneSlots"
+source = "src/actor/actor_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:C01D"
+name = "Lufia2SceneReadActorAttributes"
+source = "src/field/field_scene_actor_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:C05C"
+name = "Lufia2SceneReadActorCell"
+source = "src/field/field_scene_actor_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:C093"
+name = "Lufia2SceneReadActorPair"
+source = "src/field/field_scene_actor_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:C1A7"
+name = "Lufia2SceneApplyActorCell"
+source = "src/field/field_scene_actor_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:AAE5"
+name = "Lufia2ActorQueueSceneSpriteUpload"
+source = "src/actor/actor_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "83:FCD1"
+name = "Lufia2ObjectQueueSceneSpriteUpload"
+source = "src/actor/actor_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
