@@ -449,6 +449,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:CE52` | `Lufia2CapsuleBuildLevelExperience` | verified | `src/party/capsule_experience.c` |
 | `$82:CEAB` | `Lufia2CapsuleAdvanceExperienceStep` | verified | `src/party/capsule_experience.c` |
 | `$82:D07B` | `Lufia2MenuCapsuleStatus` | verified | `src/menu/menu_screen.c` |
+| `$82:D270` | `Lufia2CapsuleRebuildStatBlock` | verified | `src/party/capsule_stat_callers.c` |
 | `$82:D721` | `Lufia2MenuShopWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:D749` | `Lufia2MenuShopParty` | verified | `src/menu/menu_screen.c` |
 | `$82:D905` | `Lufia2MenuSpellShopSetup` | verified | `src/menu/menu_spell_shop.c` |
@@ -460,6 +461,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E746` | `Lufia2TitleStateDispatch` | verified | `src/title/title.c` |
 | `$82:EFC5` | `Lufia2MenuSavedWindow` | verified | `src/menu/menu_screen.c` |
 | `$82:F0A2` | `Lufia2MenuNameEntryWindows` | verified | `src/menu/menu_screen.c` |
+| `$82:F6A4` | `Lufia2PartyClearSecondaryModifiers` | verified | `src/party/capsule_stat_callers.c` |
+| `$82:F6D4` | `Lufia2PartyClearPrimaryModifiers` | verified | `src/party/capsule_stat_callers.c` |
 | `$82:FB1F` | `Lufia2ItemPossessionCount` | verified | `src/item/inventory.c` |
 | `$82:FBE5` | `Lufia2MenuSelectedListOffset` | verified | `src/menu/menu_list_scroll.c` |
 | `$83:80CD` | `Lufia2FieldIdleTest` | verified | `src/field/field_update.c` |

@@ -6952,3 +6952,27 @@ source = "src/world/world_resource_pointers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:D270"
+name = "Lufia2CapsuleRebuildStatBlock"
+source = "src/party/capsule_stat_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F6A4"
+name = "Lufia2PartyClearSecondaryModifiers"
+source = "src/party/capsule_stat_callers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F6D4"
+name = "Lufia2PartyClearPrimaryModifiers"
+source = "src/party/capsule_stat_callers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
