@@ -248,6 +248,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:BCCC` | `Lufia2BattleBlitTileRows` | verified | `src/battle/battle_tile_blit.c` |
 | `$81:BD47` | `Lufia2BattleSpriteBlockFar` | verified | `src/battle/battle_util.c` |
 | `$81:BD4B` | `Lufia2BattleSpriteBlock` | verified | `src/battle/battle_util.c` |
+| `$81:BDC8` | `Lufia2BattleMirrorSpriteBlockFar` | verified | `src/battle/battle_mirror_sprites.c` |
+| `$81:BDCC` | `Lufia2BattleMirrorSpriteBlock` | verified | `src/battle/battle_mirror_sprites.c` |
 | `$81:BE54` | `Lufia2BattleTileBlockFar` | verified | `src/battle/battle_util.c` |
 | `$81:BE58` | `Lufia2BattleTileBlock` | verified | `src/battle/battle_util.c` |
 | `$81:BEBC` | `Lufia2BattleCommandTiles` | verified | `src/battle/battle_command_display.c` |
@@ -746,6 +748,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
 | `$85:DCA3` | `Lufia2BattleMultiply` | verified | `src/battle/battle_script.c` |
 | `$85:DCEA` | `Lufia2BattleRandomFraction` | verified | `src/battle/battle_script.c` |
+| `$85:DD19` | `Lufia2BattleRandomizeTurnPriority` | verified | `src/battle/battle_turn_priority.c` |
 | `$85:DD63` | `Lufia2BattleVelocityOfAngle` | verified | `src/battle/battle_vector.c` |
 | `$85:DE1E` | `Lufia2BattleCosineOfAngle` | verified | `src/battle/battle_vector.c` |
 | `$85:DE2A` | `Lufia2BattleSineOfAngle` | verified | `src/battle/battle_vector.c` |

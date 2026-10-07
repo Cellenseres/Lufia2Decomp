@@ -6728,3 +6728,27 @@ source = "src/party/capsule_records.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:DD19"
+name = "Lufia2BattleRandomizeTurnPriority"
+source = "src/battle/battle_turn_priority.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:BDCC"
+name = "Lufia2BattleMirrorSpriteBlock"
+source = "src/battle/battle_mirror_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:BDC8"
+name = "Lufia2BattleMirrorSpriteBlockFar"
+source = "src/battle/battle_mirror_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
