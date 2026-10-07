@@ -97,6 +97,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C652` | `Lufia2TextMeasure` | verified | `src/text/text_layout.c` |
 | `$80:C784` | `Lufia2TextClearGlyphBuffer` | verified | `src/text/text_window.c` |
 | `$80:C7C2` | `Lufia2TextDrawSceneGlyph` | verified | `src/text/text_engine.c` |
+| `$80:C825` | `Lufia2TextUpdateSceneLabel` | verified | `src/text/scene_label_callers.c` |
+| `$80:C8D5` | `Lufia2TextRenderSceneLabel` | verified | `src/text/scene_label_callers.c` |
 | `$80:C9C0` | `Lufia2TextExpandSceneString` | verified | `src/text/scene_text_resources.c` |
 | `$80:CBAE` | `Lufia2FieldEventTimerTick` | verified | `src/field/field_event_script.c` |
 | `$80:CE5C` | `Lufia2FieldReadObjectRegionDestination` | verified | `src/field/field_event_object_region.c` |

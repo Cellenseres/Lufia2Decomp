@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-742 functions in `metadata/functions.toml`: 742 verified, 0 draft, 0 identified, 0 disabled.
+744 functions in `metadata/functions.toml`: 744 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2538,3 +2538,15 @@ write order are now exact; whole caller composition proves the latter.
 Entry guards retain the proven M/X/DP contracts. Shared full685, W4WX and
 Release PASS. No hardware timing claim. 742 verified, zero drafts, 440 fields,
 2,972 generated calls. Static counts, not a runtime hit-rate measurement.
+
+## Original scene label callers - 2026-10-07
+
+Two complete callers update field or battle labels, compare decoded strings,
+centre their window, render literals and dictionary glyphs, and request upload.
+20,480 original-ROM states include 4,096 native compositions across all ten
+child targets. Fifteen original sites have exact unwind tests; actual ABI
+20,495 cases, 30 redirects, 3,840 guards and 20 public-library error controls
+pass. Original C825 pushes P and finally pulls DB; this quirk is preserved.
+Shared previous-label buffers and the existing D0C4/D0C5 reference bytes are
+catalogued without overlapping fields. Shared full685, W4WX and Release PASS.
+744 verified, zero drafts, 444 fields, 2,980 generated calls. Static counts.

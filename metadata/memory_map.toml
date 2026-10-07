@@ -1455,7 +1455,7 @@ name = "ancient_cave_carry_count"
 width = 2
 count = 1
 owner = "cave"
-notes = "84:890B stores a word count after scanning Iris and blue equipment; consumption doubles the low byte and uses it as a byte limit. Original overflow is retained."
+notes = "84:890B stores a word count after scanning Iris and blue equipment; consumption doubles the low byte and uses it as a byte limit. Original overflow is retained. Scene labels reuse this base for the previous decoded zero-terminated string; no fixed extent is implied."
 
 [[location]]
 address = "7E:E202"
@@ -2457,7 +2457,7 @@ address = "7F:D0C4"
 width = 1
 count = 1
 owner = "field"
-notes = "Session map tail; indexed base or scalar, extent unclaimed."
+notes = "Low byte of the previous map-label reference; D0C5 supplies the high byte. Word offset into the compressed bank-87 dictionary; scene phase storage."
 
 [[location]]
 name = "unk_7E085D"
@@ -3463,3 +3463,35 @@ width = 1
 count = 1
 owner = "text"
 notes = "Original menu number format; bit 3 selects hexadecimal digits."
+
+[[location]]
+address = "7E:125B"
+name = "scene_label_width"
+width = 1
+count = 1
+owner = "text"
+notes = "Original measured scene-label width and dictionary-reference countdown; phase dependent."
+
+[[location]]
+address = "7E:125D"
+name = "scene_label_row_position"
+width = 2
+count = 1
+owner = "text"
+notes = "Original scene-label row origin, centred by measured text width. Shared with text window state."
+
+[[location]]
+address = "7E:E300"
+name = "scene_label_current"
+width = 1
+count = 1
+owner = "text"
+notes = "Base of the variable-length current decoded scene label; extent belongs to the original string."
+
+[[location]]
+address = "7E:FF00"
+name = "scene_label_battle_buffer"
+width = 1
+count = 1
+owner = "text"
+notes = "Base of the zero-terminated battle scene label; the original prefix and number are appended."

@@ -49,6 +49,14 @@ Lufia2ExecutionResult Lufia2TextWriteSceneWindowRow(
 Lufia2ExecutionResult Lufia2TextClearUploadRows(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2TextUpdateSceneLabel(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2TextRenderSceneLabel(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif
