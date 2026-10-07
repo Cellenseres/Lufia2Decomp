@@ -2287,3 +2287,13 @@ The earlier event survey overran the table by one entry. The table ends
 before80:E722: valid IDs00..BE. BF reads following instruction bytes;
 the apparent96AF target overlaps a music-call operand. No artificial
 kernel-frame function or binding was added. Unknown routes stay exact.
+
+## Secondary actor position event - 2026-10-07
+
+The complete secondary actor owner now runs its existing verified
+position-event child on map attribute9. Preserve the original JSL,
+child bank and live continuation frames.32768 forced route comparisons,
+32768 whole-owner comparisons and32768 production-ABI comparisons pass.
+Two in-memory ROM controls detect wrong dispatch/continuation behavior.
+The change shares the full625-job verification batch with sound callers.
+Unknown child contexts retain the exact original event-entry boundary.
