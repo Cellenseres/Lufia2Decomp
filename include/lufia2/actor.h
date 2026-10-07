@@ -192,6 +192,7 @@ void Lufia2ActorBlockedEvent(
 Lufia2ExecutionResult Lufia2SpriteResetAllocations(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* M1, either index width; original record offsets. */
 Lufia2ExecutionResult Lufia2ActorSetRecordOffsets(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
