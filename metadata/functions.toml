@@ -4368,3 +4368,83 @@ source = "src/battle/battle_action_dispatch.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:FC8B"
+name = "Lufia2ObjectFinePositionToProbe"
+source = "src/field/field_coordinate_math.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FCB4"
+name = "Lufia2ObjectScaleFinePosition"
+source = "src/field/field_coordinate_math.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F988"
+name = "Lufia2MapProbeTileHeight"
+source = "src/field/field_coordinate_math.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F9F2"
+name = "Lufia2MapProbeCellOffset"
+source = "src/field/field_coordinate_math.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F9EE"
+name = "Lufia2MapCellOffsetLong"
+source = "src/field/field_coordinate_math.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F9B6"
+name = "Lufia2MapPackedAttributeCell"
+source = "src/field/field_coordinate_math.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F9A5"
+name = "Lufia2FieldObjectAttributeCellLong"
+source = "src/field/field_coordinate_math.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F9A9"
+name = "Lufia2MapPackedAttributeCellLong"
+source = "src/field/field_coordinate_math.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:E60E"
+name = "Lufia2ObjectInterpolateCoordinate"
+source = "src/field/field_object_motion.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:E6AA"
+name = "Lufia2ObjectApproachCoordinate"
+source = "src/field/field_object_motion.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

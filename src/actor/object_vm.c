@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "field/field_coordinates_internal.h"
 #include "lufia2/actor.h"
 #include "actor/actor_internal.h"
 #include "system/system_internal.h"
@@ -509,6 +510,11 @@ enum ObjectOpcodeHandler {
     OBJECT_OP_EC = 0xf137,                         /* $EC */
     OBJECT_OP_ED = 0xf155,                         /* $ED */
     OBJECT_OP_E3 = 0xf19f,                         /* $E3 */
+    OBJECT_OP_REFRESH_MAP_HEIGHT = 0xeff6,
+    OBJECT_OP_UPDATE_HEIGHT_DRAW_FLAG = 0xe6d3,
+    OBJECT_OP_CLEAR_MAP_OCCUPANCY = 0xed6d,
+    OBJECT_OP_INTERPOLATE_POSITION = 0xe5bd,
+    OBJECT_OP_APPROACH_POSITION = 0xe651,
 };
 
 /* $83:E831: object opcode $4x. */
@@ -1687,6 +1693,166 @@ static ObjectFlow ObjectSpinZoom(const Lufia2Memory *memory, Lufia2CpuState *cpu
     return despawn ? ObjectOpDespawn(memory, cpu) : OBJECT_FLOW_DISPATCH;
 }
 
+typedef void (*ObjectCoordinateHelper)(const Lufia2Memory *, Lufia2CpuState *);
+
+enum {
+    OBJECT_MOTION_CURRENT_ADDRESS = 0x5d,
+    OBJECT_MOTION_CURRENT_BANK = 0x5f,
+    OBJECT_MOTION_TARGET_BANK = 0x62
+};
+
+static bool ObjectCoordinateCall(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t return_address, ObjectCoordinateHelper helper) {
+    uint16_t returned;
+    SimulateJsrFrame(memory, cpu, return_address);
+    helper(memory, cpu);
+    returned = Pull8(memory, cpu);
+    returned |= (uint16_t)Pull8(memory, cpu) << 8;
+    if (returned == return_address)
+        return true;
+    cpu->resume_pc = OBJECT_PROGRAM_BANK | (uint16_t)(returned + 1u);
+    return false;
+}
+
+static ObjectFlow ObjectRefreshMapHeight(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCoordinateCall(memory, cpu, 0xeff8u, Lufia2ObjectRoundedProbe) ||
+        !ObjectCoordinateCall(memory, cpu, 0xeffbu, Lufia2MapProbeHeightBody))
+        return OBJECT_FLOW_BOUNDARY;
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FDA2C, cpu->x), A8(cpu));
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static ObjectFlow ObjectUpdateHeightDrawFlag(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCoordinateCall(memory, cpu, 0xe6d5u, Lufia2ObjectRoundedProbe))
+        return OBJECT_FLOW_BOUNDARY;
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FD9CC, cpu->x)));
+    Compare8(cpu, A8(cpu), 4u);
+    if (cpu->zero) {
+        uint32_t row = DirectAddress(cpu, DP_PROBE_Y);
+        uint8_t next = (uint8_t)(Read8(memory, row) + 1u);
+        Write8(memory, row, next);
+        SetNz8(cpu, next);
+    }
+    if (!ObjectCoordinateCall(memory, cpu, 0xe6e4u, Lufia2MapProbeHeightBody))
+        return OBJECT_FLOW_BOUNDARY;
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    Compare8(cpu, A8(cpu), Read8(memory, LongIndexedAddress(WRAM_UNK_7FDA2C, cpu->x)));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x)));
+    And8(cpu, 0xfdu);
+    if (!cpu->carry)
+        Or8(cpu, 2u);
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x), A8(cpu));
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static ObjectFlow ObjectClearMapOccupancy(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_FLAGS, cpu->x)));
+    And8(cpu, 0x7fu);
+    Write8(memory, LongIndexedAddress(WRAM_OBJECT_FLAGS, cpu->x), A8(cpu));
+    if (!ObjectCoordinateCall(memory, cpu, 0xed7bu, Lufia2ObjectRoundedProbe))
+        return OBJECT_FLOW_BOUNDARY;
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
+    Lufia2MapCellIndex(memory, cpu, 0xed83u, 0u);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x)));
+    And8(cpu, 0xfdu);
+    Write8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));
+    And8(cpu, 0xefu);
+    Write8(memory, WRAM_FIELD_CONTROL_FLAGS, A8(cpu));
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static bool ObjectInterpolateAxis(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  uint32_t position, uint32_t origin,
+                                  uint16_t return_address) {
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_BLOCKED_EVENT_OBJECT, 0u));
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(position, cpu->x)));
+    Write16Direct(memory, cpu, DP_SCRATCH_C + 2u, cpu->accumulator);
+    cpu->carry = true;
+    Subtract16(cpu, Read16Long(memory, origin));
+    if (cpu->zero) {
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(position, cpu->x)));
+        LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
+    } else if (!ObjectCoordinateCall(memory, cpu, return_address,
+                                     Lufia2ObjectInterpolateCoordinateBody)) {
+        return false;
+    }
+    Write16Long(memory, LongIndexedAddress(position, cpu->x), cpu->accumulator);
+    return true;
+}
+
+static ObjectFlow ObjectInterpolatePosition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_X, cpu->x)));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), A8(cpu));
+    Write8(memory, DirectAddress(cpu, DP_SCRATCH_C + 1u), 0u);
+    SetAccumulatorWidth(cpu, 0);
+    if (!ObjectInterpolateAxis(memory, cpu, WRAM_OBJECT_FINE_X, WRAM_ACTOR_FINE_X, 0xe5dbu) ||
+        !ObjectInterpolateAxis(memory, cpu, WRAM_OBJECT_FINE_Y, WRAM_ACTOR_FINE_Y, 0xe5fau))
+        return OBJECT_FLOW_BOUNDARY;
+    SetAccumulatorWidth(cpu, 1);
+    IncrementY16(cpu);
+    IncrementY16(cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static bool ObjectApproachAxis(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               uint32_t position, uint32_t target,
+                               uint16_t return_address) {
+    LoadA16(cpu, cpu->x);
+    cpu->carry = false;
+    Add16Value(cpu, (uint16_t)position);
+    Write16Direct(memory, cpu, OBJECT_MOTION_CURRENT_ADDRESS, cpu->accumulator);
+    LoadA16(cpu, (uint16_t)target);
+    return ObjectCoordinateCall(memory, cpu, return_address,
+                                Lufia2ObjectApproachCoordinateBody);
+}
+
+static ObjectFlow ObjectApproachPosition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
+    LoadA8(cpu, 0x7fu);
+    Write8(memory, DirectAddress(cpu, OBJECT_MOTION_CURRENT_BANK), A8(cpu));
+    Write8(memory, DirectAddress(cpu, OBJECT_MOTION_TARGET_BANK), A8(cpu));
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_X, cpu->x)));
+    Or8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SCREEN_X + 1u, cpu->x)));
+    SetAccumulatorWidth(cpu, 0);
+    cpu->zero = (cpu->accumulator & 0x80u) == 0;
+    if (!cpu->zero) {
+        LoadA16(cpu, cpu->accumulator | 0xff00u);
+        LoadA16(cpu, cpu->accumulator ^ 0xffffu);
+        LoadA16(cpu, (uint16_t)(cpu->accumulator + 1u));
+    }
+    Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator);
+    if (!ObjectApproachAxis(memory, cpu, WRAM_OBJECT_FINE_X, WRAM_ACTOR_FINE_X, 0xe67du) ||
+        !ObjectApproachAxis(memory, cpu, WRAM_OBJECT_FINE_Y, WRAM_ACTOR_FINE_Y, 0xe68au))
+        return OBJECT_FLOW_BOUNDARY;
+    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X, cpu->x)));
+    Compare16(cpu, cpu->accumulator, Read16Long(memory, WRAM_ACTOR_FINE_X));
+    if (cpu->zero) {
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_Y, cpu->x)));
+        Compare16(cpu, cpu->accumulator, Read16Long(memory, WRAM_ACTOR_FINE_Y));
+        if (cpu->zero) {
+            LoadY16(cpu, (uint16_t)(cpu->y - 1u));
+            return ObjectJump(memory, cpu, OBJECT_OP_DX);
+        }
+    }
+    IncrementY16(cpu);
+    IncrementY16(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    return OBJECT_FLOW_DISPATCH;
+}
+
+
 static ObjectFlow ObjectExecute(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1712,6 +1878,16 @@ static ObjectFlow ObjectExecute(
     }
 
     switch (handler) {
+    case OBJECT_OP_REFRESH_MAP_HEIGHT:
+        return ObjectRefreshMapHeight(memory, cpu);
+    case OBJECT_OP_UPDATE_HEIGHT_DRAW_FLAG:
+        return ObjectUpdateHeightDrawFlag(memory, cpu);
+    case OBJECT_OP_CLEAR_MAP_OCCUPANCY:
+        return ObjectClearMapOccupancy(memory, cpu);
+    case OBJECT_OP_INTERPOLATE_POSITION:
+        return ObjectInterpolatePosition(memory, cpu);
+    case OBJECT_OP_APPROACH_POSITION:
+        return ObjectApproachPosition(memory, cpu);
     case OBJECT_OP_4X_WAIT:
         return ObjectOp4XWait(memory, cpu);
     case OBJECT_OP_F6_NIBBLE_OFFSETS:
