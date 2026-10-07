@@ -5952,3 +5952,11 @@ source = "src/battle/battle_action_message.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:C4F1"
+name = "Lufia2BattleExpandActionMessage"
+source = "src/battle/battle_message_parser.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
