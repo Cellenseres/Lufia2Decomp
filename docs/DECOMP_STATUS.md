@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-810 functions in `metadata/functions.toml`: 810 verified, 0 draft, 0 identified, 0 disabled.
+812 functions in `metadata/functions.toml`: 812 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2780,3 +2780,16 @@ lookup covers each first-match slot,ignored31 and absent keys. No graphics,
 timing or original bug is repaired inside this semantic package.
 Shared full734,W4WX and Release PASS.810 verified,zero drafts,488 fields,
 3,244 generated calls. Counts do not measure runtime interpreter load.
+
+## Original menu character callers - 2026-10-07
+
+Complete80:88DA and88C8 entries retain four live glyph and row child frames.
+Raw control preserves its tested byte across XBA;character-count underflow,
+two-row advances and original overwritten child returns remain literal.
+98,304 original-ROM states and98,308 actual ABI cases pass;four forced
+unwinds,30 redirects,4,608 unsupported states and14 public-library
+altered-ROM controls pass. Two naturally overwritten child returns occur
+in the main composition matrix. Another38 small/MMIO-stack compositions
+include seven natural redirects;production MMIO-stack entries retain LLE.
+Shared full738,W4WX and Release PASS.812 verified,zero drafts,488 fields,
+3,252 generated calls. Counts do not measure runtime interpreter load.
