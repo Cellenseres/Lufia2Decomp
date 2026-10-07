@@ -3495,3 +3495,51 @@ width = 1
 count = 1
 owner = "text"
 notes = "Base of the zero-terminated battle scene label; the original prefix and number are appended."
+
+[[location]]
+address = "7E:1565"
+name = "menu_display_requests"
+width = 1
+count = 4
+owner = "menu"
+notes = "Four ordered menu requests: HDMA, window, sprite and selected tilemap. Original byte writes retain DB."
+
+[[location]]
+address = "7E:156A"
+name = "menu_window_refresh"
+width = 1
+count = 1
+owner = "menu"
+notes = "Original menu window refresh request, cleared by display-state initialization."
+
+[[location]]
+address = "7E:156B"
+name = "unk_7E156B"
+width = 1
+count = 1
+owner = "menu"
+notes = "Menu display-state byte cleared at initialization; more specific role unknown."
+
+[[location]]
+address = "7E:1553"
+name = "menu_cursor_enabled"
+width = 1
+count = 1
+owner = "menu"
+notes = "Original menu cursor enable flag; cleared by display-state initialization."
+
+[[location]]
+address = "7E:1560"
+name = "menu_equipment_cursor"
+width = 2
+count = 1
+owner = "menu"
+notes = "Original equipment cursor word; display initialization writes the 999 sentinel. Phase dependent."
+
+[[location]]
+address = "7E:0563"
+name = "unk_7E0563"
+width = 1
+count = 1
+owner = "menu"
+notes = "Text/menu setup byte, initialized to 0F by menu display state; field reload clears it."

@@ -6088,3 +6088,51 @@ source = "src/text/scene_label_callers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:8DBB"
+name = "Lufia2MenuResetDisplayRequests"
+source = "src/menu/menu_graphics_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8E79"
+name = "Lufia2MenuInitializeDisplayState"
+source = "src/menu/menu_graphics_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8EB0"
+name = "Lufia2MenuLoadPrimaryGraphics"
+source = "src/menu/menu_graphics_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8EF1"
+name = "Lufia2MenuLoadAuxiliaryGraphics"
+source = "src/menu/menu_graphics_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8F1B"
+name = "Lufia2MenuLoadLargeGraphics"
+source = "src/menu/menu_graphics_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8F45"
+name = "Lufia2MenuLoadMediumGraphics"
+source = "src/menu/menu_graphics_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
