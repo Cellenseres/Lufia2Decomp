@@ -4105,3 +4105,35 @@ width = 1
 count = 1
 owner = "field"
 notes = "Selected actor ID minus50, published by83B9EC."
+
+[[location]]
+address = "7E:1104"
+name = "capsule_current_hp"
+width = 2
+count = 1
+owner = "party"
+notes = "HP initialized from the original capsule base HP store atD2B4; derived record offset25."
+
+[[location]]
+address = "7E:1130"
+name = "capsule_base_stat_values"
+width = 2
+count = 7
+owner = "party"
+notes = "Seven word positions beginning at record offset51. D283 writes positions0 and2..6; position1 remains untouched."
+
+[[location]]
+address = "7E:1165"
+name = "capsule_stat_copy_a"
+width = 2
+count = 1
+owner = "party"
+notes = "Low byte of ROM capsule record offset16, zero-extended into the stat work block."
+
+[[location]]
+address = "7E:1167"
+name = "capsule_stat_copy_b"
+width = 2
+count = 1
+owner = "party"
+notes = "Low byte of ROM capsule record offset17, zero-extended into the stat work block."

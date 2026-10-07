@@ -450,6 +450,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:CEAB` | `Lufia2CapsuleAdvanceExperienceStep` | verified | `src/party/capsule_experience.c` |
 | `$82:D07B` | `Lufia2MenuCapsuleStatus` | verified | `src/menu/menu_screen.c` |
 | `$82:D270` | `Lufia2CapsuleRebuildStatBlock` | verified | `src/party/capsule_stat_callers.c` |
+| `$82:D283` | `Lufia2CapsuleBuildStatValues` | verified | `src/party/capsule_stat_growth.c` |
+| `$82:D31C` | `Lufia2CapsuleAccumulateStatGrowth` | verified | `src/party/capsule_stat_growth.c` |
 | `$82:D721` | `Lufia2MenuShopWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:D749` | `Lufia2MenuShopParty` | verified | `src/menu/menu_screen.c` |
 | `$82:D905` | `Lufia2MenuSpellShopSetup` | verified | `src/menu/menu_spell_shop.c` |
