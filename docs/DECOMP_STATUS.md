@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-646 functions in `metadata/functions.toml`: 646 verified, 0 draft, 0 identified, 0 disabled.
+648 functions in `metadata/functions.toml`: 648 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2359,3 +2359,18 @@ The former prefix ABI target is superseded by the complete-owner suite; its
 semantic prefix tests remain. Full 636 jobs, strict C and Release pass.
 646 verified entries, zero drafts, 389 WRAM fields and 2,588 generated calls.
 These are static counts, not measured interpreter usage or gameplay coverage.
+
+## Original sound payload and reply wait - 2026-10-07
+
+80:9911 loads the original payload length, advances its banked source twice,
+sends mode01 and preserves both child-call frames. 80:9A0A implements all
+four reply phases, original port order and PHP/SEP/PLP restoration. A stuck
+phase preserves the exact original continuation after 65,536 native polls.
+The payload supports both M widths with X16; the wait preserves either width.
+24,576 payload ROM cases, including 8,192 native reply compositions, pass;
+24,578 actual ABI cases, two unwinds, 1,536 guards and 12 ROM controls pass.
+The wait passes 8,192 delayed-response cases and 16 stuck-phase continuations,
+8,208 actual ABI cases, 1,152 guards and 11 controls. External APU responses
+are controlled by the fixture; this does not establish SPC700 hardware timing.
+Shared full645, strict C and Release pass. Checkpoint:648 verified entries,
+zero drafts,389 WRAM fields and2,596 generated calls. Static counts only.

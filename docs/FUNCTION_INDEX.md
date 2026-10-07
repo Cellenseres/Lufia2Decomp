@@ -56,12 +56,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9786` | `Lufia2UpdateSoundResourceQueue` | verified | `src/system/sound_queue.c` |
 | `$80:97DA` | `Lufia2AdvanceSoundSourceBank` | verified | `src/system/sound_transfer.c` |
 | `$80:9886` | `Lufia2UploadSoundResourceSlot` | verified | `src/system/sound_queue.c` |
+| `$80:9911` | `Lufia2UploadSoundPayload` | verified | `src/system/sound_payload.c` |
 | `$80:99B2` | `Lufia2CheckSoundDriverSignature` | verified | `src/system/sound_transfer.c` |
 | `$80:99CA` | `Lufia2SoundDriverWrite1F` | verified | `src/system/sound_transfer.c` |
 | `$80:99D8` | `Lufia2SoundDriverWrite20` | verified | `src/system/sound_transfer.c` |
 | `$80:99E6` | `Lufia2SoundDriverWrite21` | verified | `src/system/sound_transfer.c` |
 | `$80:99F4` | `Lufia2WriteSoundTransferMarker` | verified | `src/system/sound_transfer.c` |
 | `$80:99FD` | `Lufia2WriteSoundDriverMode` | verified | `src/system/sound_commands.c` |
+| `$80:9A0A` | `Lufia2WaitSoundDriverReply` | verified | `src/system/sound_reply.c` |
 | `$80:9C72` | `Lufia2FieldEventTick` | verified | `src/field/field_update.c` |
 | `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
 | `$80:BFAA` | `Lufia2FieldFindHeaderRecord` | verified | `src/field/field_object_lookup.c` |

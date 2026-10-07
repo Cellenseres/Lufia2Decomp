@@ -217,6 +217,8 @@ add_library(lufia2_decomp STATIC
     src/system/sound_tables.c
     src/system/sound_transfer.c
     src/system/sound_queue.c
+    src/system/sound_payload.c
+    src/system/sound_reply.c
     src/system/nmi.c
     src/system/nmi_uploads.c
     src/system/screen.c
