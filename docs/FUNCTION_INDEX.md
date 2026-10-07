@@ -347,6 +347,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:8720` | `Lufia2MenuCursor` | verified | `src/menu/menu_input.c` |
 | `$82:88A0` | `Lufia2MenuItemIndex` | verified | `src/menu/menu_cursor.c` |
 | `$82:88CB` | `Lufia2MenuItemPosition` | verified | `src/menu/menu_cursor.c` |
+| `$82:89A4` | `Lufia2MenuInitializeAuxiliarySprites` | verified | `src/menu/menu_actor_callers.c` |
 | `$82:89FA` | `Lufia2MenuCursorSlide` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8AD8` | `Lufia2MenuSlideCorrectX` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8AE9` | `Lufia2MenuSlideCorrectY` | verified | `src/menu/menu_cursor_slide.c` |
@@ -754,6 +755,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |
+| `$8E:BC99` | `Lufia2FieldSelectMenuActor` | verified | `src/menu/menu_actor_callers.c` |
 | `$8E:BD77` | `Lufia2FieldScrollUpdate` | verified | `src/field/field_scroll.c` |
 | `$8E:C338` | `Lufia2FieldSelectObjectCondition` | verified | `src/field/field_object_conditions.c` |
 | `$8E:C34F` | `Lufia2FieldResolveObjectCondition` | verified | `src/field/field_object_conditions.c` |

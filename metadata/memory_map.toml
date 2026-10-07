@@ -3543,3 +3543,19 @@ width = 1
 count = 1
 owner = "menu"
 notes = "Text/menu setup byte, initialized to 0F by menu display state; field reload clears it."
+
+[[location]]
+address = "7E:14D4"
+name = "unk_7E14D4"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:89A4 clears this indexed base at slots5..15 before initializing their sprite lists. Other indexed cells already have separate menu-phase names; no disjoint array extent is claimed."
+
+[[location]]
+address = "7E:14E6"
+name = "unk_7E14E6"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:89A4 clears this indexed base at slots5..15 before initializing their sprite lists. Other indexed cells already have separate menu-phase names; no disjoint array extent is claimed."

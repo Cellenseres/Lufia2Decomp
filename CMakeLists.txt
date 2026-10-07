@@ -77,6 +77,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_tile_blit.c
     src/menu/menu_image_load.c
     src/menu/menu_graphics_setup.c
+    src/menu/menu_actor_callers.c
     src/field/field_object_flags.c
     src/field/field_cell_edges.c
     src/field/field_scene_actors.c
