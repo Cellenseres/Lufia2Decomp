@@ -4736,3 +4736,43 @@ source = "src/field/field_event_object_region.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:C0EF"
+name = "Lufia2FieldProbeLeaderPosition"
+source = "src/field/field_actor_event_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C0FA"
+name = "Lufia2FieldAcknowledgeControlChange"
+source = "src/field/field_actor_event_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F0BC"
+name = "Lufia2FieldSetFollowingObjectDrawFlags"
+source = "src/field/field_actor_event_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:EF6E"
+name = "Lufia2ObjectWakeMatchingPosition"
+source = "src/field/field_object_release.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F205"
+name = "Lufia2ObjectRemoveSlot"
+source = "src/field/field_object_release.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -2917,3 +2917,10 @@ name = "field_region_changed_flags"
 width = 1
 owner = "field"
 notes = "Aggregate pending-object flags from the current region update."
+
+[[location]]
+address = "7F:D0C1"
+name = "field_control_change_pending"
+width = 1
+owner = "field"
+notes = "Set when the field control latch acknowledges bit 5."

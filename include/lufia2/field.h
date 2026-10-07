@@ -563,6 +563,21 @@ Lufia2ExecutionResult Lufia2FieldReadObjectRegionDestination(
 Lufia2ExecutionResult Lufia2FieldReadObjectRegionArea(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldProbeLeaderPosition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldAcknowledgeControlChange(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldSetFollowingObjectDrawFlags(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2ObjectWakeMatchingPosition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2ObjectRemoveSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

@@ -382,6 +382,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:B882` | `Lufia2FieldFindRectangleRecord` | verified | `src/field/field_record_search.c` |
 | `$83:BB93` | `Lufia2UpdateActorSlots` | verified | `src/actor/actor_slots.c` |
 | `$83:BBF3` | `Lufia2PlayerSlotSpecialUpdate` | verified | `src/actor/player_update.c` |
+| `$83:C0EF` | `Lufia2FieldProbeLeaderPosition` | verified | `src/field/field_actor_event_helpers.c` |
+| `$83:C0FA` | `Lufia2FieldAcknowledgeControlChange` | verified | `src/field/field_actor_event_helpers.c` |
 | `$83:C1B4` | `Lufia2PlayerSlotStandardUpdate` | verified | `src/actor/player_controller.c` |
 | `$83:C7F8` | `Lufia2ActorPrimaryUpdate` | verified | `src/actor/actor_primary.c` |
 | `$83:C947` | `Lufia2ActorPrimaryReset` | verified | `src/actor/actor_primary.c` |
@@ -395,6 +397,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:E60E` | `Lufia2ObjectInterpolateCoordinate` | verified | `src/field/field_object_motion.c` |
 | `$83:E6AA` | `Lufia2ObjectApproachCoordinate` | verified | `src/field/field_object_motion.c` |
 | `$83:EC5F` | `Lufia2ObjectProbeNextTile` | verified | `src/field/field_probe_direction.c` |
+| `$83:EF6E` | `Lufia2ObjectWakeMatchingPosition` | verified | `src/field/field_object_release.c` |
+| `$83:F0BC` | `Lufia2FieldSetFollowingObjectDrawFlags` | verified | `src/field/field_actor_event_helpers.c` |
+| `$83:F205` | `Lufia2ObjectRemoveSlot` | verified | `src/field/field_object_release.c` |
 | `$83:F422` | `Lufia2FieldSetObjectOrigin` | verified | `src/field/field_object_graphics.c` |
 | `$83:F442` | `Lufia2FieldClearObjectAttributes` | verified | `src/field/field_event_objects.c` |
 | `$83:F49A` | `Lufia2FieldSaveProbePosition` | verified | `src/field/field_probe_direction.c` |

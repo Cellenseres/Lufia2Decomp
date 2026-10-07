@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-575 functions in `metadata/functions.toml`: 575 verified, 0 draft, 0 identified, 0 disabled.
+580 functions in `metadata/functions.toml`: 580 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2215,4 +2215,27 @@ Legacy CBAE copy stops also require the exact write ordinal. The bridge
 reference permits the same10-million instruction budget as the semantic test.
 All16384 semantic and8704 bridge cases pass without changing ROM behavior.
 575 verified,0draft,370 WRAM fields and2304 generated native invocations.
+No pixel,NMI-cycle or measured interpreter-hit-rate claim is made.
+
+## Actor event starts and refresh - 2026-10-07
+
+83:C0EF/C0FA/F0BC/EF6E/F205 are complete verified helpers with native bindings. Leader
+probe coordinates,control-latch acknowledgement and follower draw flags
+preserve original state,bus order and loop behavior. Object24/2D/88 start
+header events within the existing Object owner. Event8C/B9/BE refresh party
+actors or recenter layers within the existing Event owner. Actual return
+frames are checked; unknown actor children retain their original call frames.
+ObjectEF clears the follower list through the shared verified object removal.
+The former duplicate despawn body now uses that same implementation.
+The Object script caller validates its actual RTS frame. A targeted random
+composition that returns to83:7181 matches the ROM,along with8704 additional
+whole-owner/ABI cases. The former assumed return wrongly skipped that target. Matching
+positions wake the original pending script,including its word-sized flag reads.
+The Event actor-action caller retains the original D350 call frame for
+nonzero Direct Page, outside its proven native contract. Original CBAE
+case7663 rngCF2EF30DFE84C3CC passes at that exact child boundary.
+One persistent control-change byte is named. No partial opcode binding added.
+1232896 direct/ABI/route comparisons,32768 complete owner cases,1219 guards
+and24 detected altered-ROM controls pass. W4WX,Release,production ABI and
+all584 independent jobs pass. 580 verified,0draft,371 fields,2324 native calls.
 No pixel,NMI-cycle or measured interpreter-hit-rate claim is made.
