@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-795 functions in `metadata/functions.toml`: 795 verified, 0 draft, 0 identified, 0 disabled.
+799 functions in `metadata/functions.toml`: 799 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2748,3 +2748,17 @@ altered-ROM controls pass. CPU,WRAM,MMIO and observed bus order are literal.
 Frame wait services retain their original interpreter owner;no timing patch.
 Shared full728,W4WX and Release PASS.795 verified,zero drafts,473 fields,
 3,184 generated calls. Counts do not measure runtime interpreter load.
+
+## Shared original menu glyph entries - 2026-10-07
+
+Four complete entries80:8DB3,8DF9,8E0F,8D5D now share the existing glyph,
+row advance,width reset and palette cores. Literal raw-tile translation,
+CC quirk,stack aliases,bank wrapping and flag effects remain unchanged.
+32,768 original-ROM states and32,768 actual ABI cases,9,216 unsupported
+states and32 public-library altered-ROM controls pass. Production bindings
+require binary M1X16 with return frames in bank-zero WRAM;other entries
+retain LLE. The portable proof additionally covers arbitrary stack accesses.
+80:88DA and88C8 remain unbound:their nested child redirects need a separate
+complete child-frame contract. Existing parent contracts are unchanged.
+Shared full731,W4WX and Release PASS.799 verified,zero drafts,478 fields,
+3,200 generated calls. Counts do not measure runtime interpreter load.

@@ -3727,3 +3727,38 @@ width = 2
 count = 5
 owner = "menu"
 notes = "8D47 copies list-definition bytes1..5 from86:8D93+X into zero-high words.1530 is the first word;153C reuses the battle allocation for the seventh word."
+
+[[location]]
+address = "7E:0565"
+name = "menu_text_line_width"
+width = 1
+owner = "menu"
+notes = "8878 initializes the line width;8E0F copies it to the remaining-character counter."
+
+[[location]]
+address = "7E:0566"
+name = "menu_text_characters_left"
+width = 1
+owner = "menu"
+notes = "88DA decrements this byte after a glyph;zero advances two tile rows. Original byte underflow is retained."
+
+[[location]]
+address = "7E:0573"
+name = "menu_text_row"
+width = 2
+owner = "menu"
+notes = "8DF9 adds0040 to this word before updating the text cursor;word wrap is original."
+
+[[location]]
+address = "7E:0575"
+name = "menu_text_cursor"
+width = 2
+owner = "menu"
+notes = "String output reloads tile offset X from this word;8DF9 updates it with the next row."
+
+[[location]]
+address = "7E:0578"
+name = "menu_text_raw_tile"
+width = 1
+owner = "menu"
+notes = "Nonzero bypasses multi-row glyph translation for the next tile;8DB3 clears it and8DF9 also clears it."
