@@ -455,6 +455,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:ADCA` | `Lufia2FieldResetScene` | verified | `src/field/field_scene_reset.c` |
 | `$83:ADDF` | `Lufia2FieldResetSavedScene` | verified | `src/field/field_scene_reset.c` |
 | `$83:AEB5` | `Lufia2FieldColourEffects` | verified | `src/field/field_effects.c` |
+| `$83:AFCD` | `Lufia2FieldFadeIn` | verified | `src/field/field_display_callers.c` |
+| `$83:AFEA` | `Lufia2FieldFadeOut` | verified | `src/field/field_display_callers.c` |
 | `$83:B007` | `Lufia2FieldUploadFixedGraphics` | verified | `src/field/field_object_graphics.c` |
 | `$83:B062` | `Lufia2FieldRestore` | verified | `src/field/field_restore.c` |
 | `$83:B503` | `Lufia2FieldMarkCurrentMap` | verified | `src/field/field_scene_reset.c` |
@@ -559,6 +561,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:8193` | `Lufia2SpriteGraphicsUpload` | verified | `src/actor/actor_sprites.c` |
 | `$84:8204` | `Lufia2FieldRebuildPartyActors` | verified | `src/actor/party_scene.c` |
 | `$84:82D5` | `Lufia2ActorPreparePartyOffsets` | verified | `src/actor/party_scene.c` |
+| `$84:82E7` | `Lufia2SceneUploadFixedGraphics` | verified | `src/field/field_display_callers.c` |
+| `$84:8311` | `Lufia2FieldRestoreBackgroundLayers` | verified | `src/field/field_display_callers.c` |
 | `$84:8328` | `Lufia2TextClearWindowBuffer` | verified | `src/text/text_engine.c` |
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
 | `$84:8775` | `Lufia2SendImmediateSound` | verified | `src/system/sound_commands.c` |
