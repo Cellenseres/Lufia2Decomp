@@ -416,6 +416,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:C261` | `Lufia2CapsuleLoadStats` | verified | `src/party/capsule.c` |
 | `$82:C2FD` | `Lufia2CapsuleReset` | verified | `src/party/capsule.c` |
 | `$82:C352` | `Lufia2CapsuleSetAll` | verified | `src/party/capsule.c` |
+| `$82:C37B` | `Lufia2CapsuleClearFlags` | verified | `src/party/capsule_records.c` |
+| `$82:C38B` | `Lufia2CapsuleResolveRecord` | verified | `src/party/capsule_records.c` |
+| `$82:C3C4` | `Lufia2CapsuleFormIndex` | verified | `src/party/capsule_records.c` |
+| `$82:C3D3` | `Lufia2CapsuleSavedOffsets` | verified | `src/party/capsule_records.c` |
+| `$82:C3F8` | `Lufia2CapsuleLoadSavedStats` | verified | `src/party/capsule_records.c` |
 | `$82:C515` | `Lufia2CapsuleSetForms` | verified | `src/party/capsule.c` |
 | `$82:C627` | `Lufia2MenuCursorBlink` | verified | `src/menu/menu.c` |
 | `$82:CD1F` | `Lufia2CapsuleTryLearn` | verified | `src/party/capsule.c` |

@@ -6688,3 +6688,43 @@ source = "src/field/field_event_byte.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:C37B"
+name = "Lufia2CapsuleClearFlags"
+source = "src/party/capsule_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C38B"
+name = "Lufia2CapsuleResolveRecord"
+source = "src/party/capsule_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C3C4"
+name = "Lufia2CapsuleFormIndex"
+source = "src/party/capsule_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C3D3"
+name = "Lufia2CapsuleSavedOffsets"
+source = "src/party/capsule_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C3F8"
+name = "Lufia2CapsuleLoadSavedStats"
+source = "src/party/capsule_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
