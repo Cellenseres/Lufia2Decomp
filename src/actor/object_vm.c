@@ -461,6 +461,13 @@ enum ObjectOpcodeHandler {
     OBJECT_OP_START_POSITION_EVENT = 0xeaa3,
     OBJECT_OP_START_MODE_EVENT = 0xeda8,
     OBJECT_OP_CLEAR_FOLLOWERS = 0xe96b,
+    OBJECT_OP_APPLY_PROBED_RECORD = 0xeb0c,
+    OBJECT_OP_WAKE_OR_APPLY_RECORD = 0xef22,
+    OBJECT_OP_REACT_TO_MAP_RECORD = 0xe9d4,
+    OBJECT_OP_REACT_TO_PROBED_ACTOR = 0xf256,
+    OBJECT_OP_INTERACT_WITH_RECORD = 0xeb6d,
+    OBJECT_OP_SET_CUSTOM_GRAPHICS = 0xe487,
+    OBJECT_OP_REACT_TO_MOVEMENT = 0xf005,
     OBJECT_OP_EVENT_PROBE_JUMP = 0xf1b4,
     OBJECT_OP_EVENT_PROBE_ALT_JUMP = 0xf1bc,
     OBJECT_OP_PROBE_DIRECTION_JUMP = 0xeeec,
@@ -2118,6 +2125,628 @@ static ObjectFlow ObjectClearFollowers(
     return OBJECT_FLOW_DISPATCH;
 }
 
+typedef Lufia2ExecutionResult (*ObjectCollisionStep)(
+    const Lufia2Memory *, Lufia2CpuState *);
+
+static bool ObjectCollisionReturn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t back, uint8_t frame_size) {
+    uint8_t low = Pull8(memory, cpu);
+    uint8_t high = Pull8(memory, cpu);
+    uint8_t bank = frame_size == 3u ? Pull8(memory, cpu) : 0x83u;
+    uint16_t actual = (uint16_t)(low | ((uint16_t)high << 8));
+    cpu->program_bank = bank;
+    if (actual == back && bank == 0x83u)
+        return true;
+    cpu->resume_pc = ((uint32_t)bank << 16) | (uint16_t)(actual + 1u);
+    return false;
+}
+
+static bool ObjectCollisionCall(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    ObjectCollisionStep step, uint8_t bank, uint16_t back, uint8_t frame_size) {
+    if (frame_size == 3u)
+        SimulateJslFrame(memory, cpu, 0x83u, back);
+    else
+        SimulateJsrFrame(memory, cpu, back);
+    cpu->program_bank = bank;
+    Lufia2ExecutionResult result = step(memory, cpu);
+    return result.flow == LUFIA2_EXECUTION_RETURNED &&
+        ObjectCollisionReturn(memory, cpu, back, frame_size);
+}
+
+static void ObjectCollisionSetPendingPosition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, DP_PROBE_X));
+    OpSta(memory, cpu, WRAM_FIELD_PENDING_OBJECT_X);
+    OpLda(memory, cpu, OpDp(cpu, DP_PROBE_Y));
+    OpSta(memory, cpu, WRAM_FIELD_PENDING_OBJECT_Y);
+}
+
+static ObjectFlow ObjectApplyProbedRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCoordinateCall(memory, cpu, 0xeb0eu, Lufia2ObjectRoundedProbe))
+        return OBJECT_FLOW_BOUNDARY;
+    PushY(memory, cpu);
+    if (!ObjectCoordinateCall(memory, cpu, 0xeb12u, Lufia2MapProbeHeightBody))
+        return OBJECT_FLOW_BOUNDARY;
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpCmp(memory, cpu, OpLongX(cpu, WRAM_UNK_7FDA2C));
+    if (cpu->zero) {
+        ObjectCollisionSetPendingPosition(memory, cpu);
+        if (!ObjectCollisionCall(memory, cpu, Lufia2FieldProbeObjectState,
+            0x83u, 0xeb2au, 3u))
+            return OBJECT_FLOW_BOUNDARY;
+        OpBitValue(cpu, 0x20u);
+        if (!cpu->zero) {
+            OpLoadA(cpu, 1u);
+            if (!ObjectCollisionCall(memory, cpu, Lufia2FieldApplyObjectRecord,
+                0x83u, 0xeb33u, 2u))
+                return OBJECT_FLOW_BOUNDARY;
+        }
+    }
+    OpPullY(memory, cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static bool ObjectCollisionProbeEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t header_offset, uint16_t back) {
+    OpLdx(cpu, 0u);
+    OpLdy(cpu, header_offset);
+    return ObjectCollisionCall(memory, cpu, Lufia2FieldStartEvent,
+        0x80u, back, 3u);
+}
+
+static ObjectFlow ObjectWakeOrApplyRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCoordinateCall(memory, cpu, 0xef24u, Lufia2ObjectRoundedProbe))
+        return OBJECT_FLOW_BOUNDARY;
+    PushY(memory, cpu);
+    OpLoadA(cpu, 0u);
+    OpSta(memory, cpu, WRAM_UNK_7FD133);
+    OpLdx(cpu, 0x1au);
+    OpLdy(cpu, 8u);
+    if (!ObjectCollisionCall(memory, cpu, Lufia2FieldStartEventAtProbe,
+            0x80u, 0xef35u, 3u) ||
+        !ObjectCollisionProbeEvent(memory, cpu, 0x10u, 0xef3fu))
+        return OBJECT_FLOW_BOUNDARY;
+    OpPullY(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_OBJECT_FLAGS));
+    OpBitValue(cpu, 0x80u);
+    if (cpu->zero) {
+        if (!ObjectCollisionCall(memory, cpu, Lufia2ObjectWakeMatchingPosition,
+            0x83u, 0xef4du, 2u))
+            return OBJECT_FLOW_BOUNDARY;
+        if (cpu->carry)
+            return OBJECT_FLOW_DISPATCH;
+    }
+    if (!ObjectCollisionCall(memory, cpu, Lufia2FieldProbeObjectState,
+        0x83u, 0xef53u, 3u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpBitValue(cpu, 2u);
+    if (!cpu->zero) {
+        PushY(memory, cpu);
+        ObjectCollisionSetPendingPosition(memory, cpu);
+        OpLoadA(cpu, 2u);
+        if (!ObjectCollisionCall(memory, cpu, Lufia2FieldApplyObjectRecord,
+            0x83u, 0xef69u, 2u))
+            return OBJECT_FLOW_BOUNDARY;
+        OpPullY(memory, cpu);
+    }
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static bool ObjectCollisionMoveProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t back) {
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_UNK_7FD9CC));
+    SimulateJslFrame(memory, cpu, 0x83u, back);
+    if (!Lufia2ActorMovementStep(memory, cpu))
+        return false;
+    return ObjectCollisionReturn(memory, cpu, back, 3u);
+}
+
+static ObjectFlow ObjectCollisionSkipJump(Lufia2CpuState *cpu) {
+    OpIny(cpu);
+    OpIny(cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static bool ObjectCollisionActorCall(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    void (*step)(const Lufia2Memory *, Lufia2CpuState *), uint16_t back) {
+    SimulateJslFrame(memory, cpu, 0x83u, back);
+    step(memory, cpu);
+    return ObjectCollisionReturn(memory, cpu, back, 3u);
+}
+
+static ObjectFlow ObjectTriggerLeaderReaction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCoordinateCall(memory, cpu, 0xea39u, Lufia2ObjectRoundedProbe))
+        return OBJECT_FLOW_BOUNDARY;
+    OpLda(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+    PushAccumulator8(memory, cpu);
+    OpStz(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+    if (!ObjectCollisionActorCall(memory, cpu, Lufia2ActorRecordOffsets, 0xea42u) ||
+        !ObjectCollisionActorCall(memory, cpu, Lufia2ActorClearMapOccupancy, 0xea46u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpLoadA(cpu, 0x12u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E070A));
+    OpLda(memory, cpu, OpDp(cpu, DP_PROBE_X));
+    OpSta(memory, cpu, WRAM_ACTOR_CLAIMED_OBJECT_RECORD);
+    OpLda(memory, cpu, OpDp(cpu, DP_PROBE_Y));
+    OpSta(memory, cpu, WRAM_ACTOR_CLAIMED_PENDING_OBJECT);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE));
+    OpOraValue(cpu, 0x0au);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_FLAGS));
+    OpOraValue(cpu, 2u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_ACTOR_FLAGS));
+    OpLoadA(cpu, 0x10u);
+    OpSta(memory, cpu, WRAM_UNK_7FE4DE);
+    if (!ObjectCollisionActorCall(memory, cpu, Lufia2ActorLoadPrimaryScript, 0xea71u))
+        return OBJECT_FLOW_BOUNDARY;
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+    if (!ObjectCollisionActorCall(memory, cpu, Lufia2ActorRecordOffsets, 0xea78u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpDey(cpu);
+    return ObjectJump(memory, cpu, OBJECT_OP_DX);
+}
+
+static ObjectFlow ObjectReactToMapRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCoordinateCall(memory, cpu, 0xe9d6u, Lufia2ObjectRoundedProbe) ||
+        !ObjectCollisionMoveProbe(memory, cpu, 0xe9e0u) ||
+        !ObjectCoordinateCall(memory, cpu, 0xe9e3u, Lufia2MapProbeHeightBody))
+        return OBJECT_FLOW_BOUNDARY;
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpCmp(memory, cpu, OpLongX(cpu, WRAM_UNK_7FDA2C));
+    if (!cpu->zero)
+        return ObjectCollisionSkipJump(cpu);
+    Lufia2MapCellIndex(memory, cpu, 0xe9eeu, 1u);
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_MAP_ATTRIBUTES));
+    OpBitValue(cpu, 0x40u);
+    if (!cpu->zero) {
+        IncrementDirect8(memory, cpu, DP_PROBE_Y);
+        if (!ObjectCollisionCall(memory, cpu, Lufia2FieldFindPendingObject,
+            0x83u, 0xe9fbu, 2u))
+            return OBJECT_FLOW_BOUNDARY;
+        OpRepWidths(cpu, 0x20u);
+        OpTxa(cpu);
+        OpAslA(cpu);
+        OpAslA(cpu);
+        OpTax(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_PENDING_OBJECT_TILES));
+    } else {
+        OpRepWidths(cpu, 0x20u);
+        OpTxa(cpu);
+        OpAslA(cpu);
+        OpAdc(memory, cpu, WRAM_FIELD_LAYER_CELL_BASE + 2u);
+        OpTax(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, 0x7f0000u));
+    }
+    OpAndValue(cpu, 0x03ffu);
+    cpu->carry = 0;
+    OpAdc(memory, cpu, WRAM_FIELD_METATILE_ATTRIBUTE_BASE);
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, 0x7f0000u));
+    OpBitValue(cpu, 0xf0u);
+    if (cpu->zero)
+        return ObjectCollisionSkipJump(cpu);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_MAP_RECORD_BYTE8 - 16u));
+    OpBitValue(cpu, 4u);
+    if (cpu->zero)
+        return ObjectCollisionSkipJump(cpu);
+    return ObjectTriggerLeaderReaction(memory, cpu);
+}
+
+static ObjectFlow ObjectReactToProbedActor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCoordinateCall(memory, cpu, 0xf258u, Lufia2ObjectRoundedProbe) ||
+        !ObjectCollisionMoveProbe(memory, cpu, 0xf262u))
+        return OBJECT_FLOW_BOUNDARY;
+    Lufia2MapCellIndex(memory, cpu, 0xf265u, 1u);
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_MAP_ATTRIBUTES));
+    OpBitValue(cpu, 1u);
+    if (cpu->zero)
+        return ObjectCollisionSkipJump(cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpWriteX(memory, cpu, OpDp(cpu, DP_SCRATCH_C), cpu->x);
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_UNK_7FDA2C));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    if (!ObjectCollisionCall(memory, cpu, Lufia2FieldFindActorAtProbe,
+        0x83u, 0xf27au, 2u))
+        return OBJECT_FLOW_BOUNDARY;
+    if (!cpu->carry)
+        return ObjectCollisionSkipJump(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E05D2));
+    OpCmpValue(cpu, 0x70u);
+    if (cpu->zero)
+        return ObjectCollisionSkipJump(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_X));
+    OpSta(memory, cpu, OpDp(cpu, DP_PROBE_X));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_Y));
+    OpSta(memory, cpu, OpDp(cpu, DP_PROBE_Y));
+    OpPushX(memory, cpu);
+    if (!ObjectCoordinateCall(memory, cpu, 0xf291u, Lufia2MapProbeHeightBody))
+        return OBJECT_FLOW_BOUNDARY;
+    OpPullX(memory, cpu);
+    OpCmp(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    if (!cpu->zero)
+        return ObjectCollisionSkipJump(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_ID));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    PushY(memory, cpu);
+    OpPushX(memory, cpu);
+    if (!ObjectCollisionCall(memory, cpu, Lufia2SceneScriptSelectRecord,
+        0x80u, 0xf2a1u, 3u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpPullX(memory, cpu);
+    OpPullY(memory, cpu);
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E09B7));
+    OpCmpValue(cpu, 0xffffu);
+    OpSepWidths(cpu, 0x20u);
+    if (cpu->zero) {
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FLAGS));
+        OpOraValue(cpu, 4u);
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FLAGS));
+        OpLoadA(cpu, 9u);
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_ACTOR_PRIMARY_TIMER));
+    }
+    OpDey(cpu);
+    return ObjectJump(memory, cpu, OBJECT_OP_DX);
+}
+
+static bool ObjectProbeMovementBoundary(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_UNK_7FD9CC));
+    OpTax(cpu);
+    uint16_t target = Read16ProgramIndexed(memory, cpu, 0xf09bu, cpu->x);
+    SimulateJsrFrame(memory, cpu, 0xf012u);
+    switch (target) {
+    case 0xf0a3u:
+        OpLda(memory, cpu, OpDp(cpu, DP_PROBE_Y));
+        OpCmp(memory, cpu, OpAbs(cpu, 0x05bbu));
+        break;
+    case 0xf0aau:
+        OpLda(memory, cpu, OpDp(cpu, DP_PROBE_X));
+        OpCmp(memory, cpu, OpAbs(cpu, 0x05b9u));
+        break;
+    case 0xf0b1u:
+        OpLda(memory, cpu, OpDp(cpu, DP_PROBE_X));
+        break;
+    case 0xf0b5u:
+        OpLda(memory, cpu, OpDp(cpu, DP_PROBE_Y));
+        break;
+    default:
+        cpu->resume_pc = OBJECT_PROGRAM_BANK | target;
+        return false;
+    }
+    cpu->carry = 0;
+    if (cpu->zero)
+        cpu->carry = 1;
+    return ObjectCollisionReturn(memory, cpu, 0xf012u, 2u);
+}
+
+static ObjectFlow ObjectMovementScriptJump(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpDey(cpu);
+    return ObjectJump(memory, cpu, OBJECT_OP_DX);
+}
+
+static ObjectFlow ObjectMovementMapCheck(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2MapCellIndex(memory, cpu, 0xf06bu, 1u);
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_MAP_ATTRIBUTES));
+    OpBitValue(cpu, 4u);
+    if (!cpu->zero)
+        return ObjectMovementScriptJump(memory, cpu);
+    return ObjectCollisionSkipJump(cpu);
+}
+
+static ObjectFlow ObjectMovementStartEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushY(memory, cpu);
+    OpLoadA(cpu, 0u);
+    OpSta(memory, cpu, WRAM_UNK_7FD133);
+    OpLda(memory, cpu, WRAM_FIELD_CONTROL_FLAGS);
+    OpBitValue(cpu, 8u);
+    if (cpu->zero) {
+        OpLoadA(cpu, 1u);
+        OpSta(memory, cpu, WRAM_UNK_7FD133);
+    }
+    if (!ObjectCollisionProbeEvent(memory, cpu, 8u, 0xf097u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpPullY(memory, cpu);
+    return ObjectMovementScriptJump(memory, cpu);
+}
+
+static ObjectFlow ObjectReactToMovement(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCoordinateCall(memory, cpu, 0xf007u, Lufia2ObjectRoundedProbe) ||
+        !ObjectProbeMovementBoundary(memory, cpu))
+        return OBJECT_FLOW_BOUNDARY;
+    if (cpu->carry)
+        return ObjectMovementMapCheck(memory, cpu);
+    OpLda(memory, cpu, 0x0009a7u);
+    OpBitValue(cpu, 0x20u);
+    if (!cpu->zero) {
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+        OpLda(memory, cpu, OpLongX(cpu, WRAM_UNK_7FD9CC));
+        OpCmpValue(cpu, 0u);
+        if (cpu->zero) {
+            OpLoadA(cpu, 0x30u);
+            if (!ObjectCollisionCall(memory, cpu, Lufia2FieldSetFollowingObjectDrawFlags,
+                0x83u, 0xf02bu, 2u))
+                return OBJECT_FLOW_BOUNDARY;
+            return ObjectMovementMapCheck(memory, cpu);
+        }
+    }
+    if (!ObjectCollisionMoveProbe(memory, cpu, 0xf038u) ||
+        !ObjectCollisionCall(memory, cpu, Lufia2FieldProbeObjectAttributes,
+            0x83u, 0xf03cu, 3u))
+        return OBJECT_FLOW_BOUNDARY;
+    ExchangeAccumulatorBytes(cpu);
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpLda(memory, cpu, WRAM_FIELD_CONTROL_FLAGS);
+    OpBitValue(cpu, 4u);
+    bool compare_height = false;
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+        OpBitValue(cpu, 4u);
+        compare_height = !cpu->zero;
+    }
+    if (!compare_height) {
+        OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+        OpBitValue(cpu, 2u);
+        if (!cpu->zero)
+            return ObjectMovementStartEvent(memory, cpu);
+    }
+    if (!ObjectCoordinateCall(memory, cpu, 0xf056u, Lufia2MapProbeHeightBody))
+        return OBJECT_FLOW_BOUNDARY;
+    OpCmpValue(cpu, 3u);
+    if (cpu->zero)
+        return ObjectMovementScriptJump(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpCmp(memory, cpu, OpLongX(cpu, WRAM_UNK_7FDA2C));
+    if (cpu->zero)
+        return ObjectMovementMapCheck(memory, cpu);
+    if (!cpu->carry)
+        return ObjectCollisionSkipJump(cpu);
+    return ObjectMovementScriptJump(memory, cpu);
+}
+
+static void ObjectCopyCustomPalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpLongX(cpu, 0x83f408u));
+    OpTax(cpu);
+    OpLdy(cpu, 0x0500u);
+    OpLoadA(cpu, 31u);
+    PushDataBank(memory, cpu);
+    do {
+        uint8_t color_byte = Read8(memory, 0x960000u | cpu->x);
+        Write8(memory, 0x960000u | cpu->y, color_byte);
+        cpu->x = (uint16_t)(cpu->x + 1u);
+        cpu->y = (uint16_t)(cpu->y + 1u);
+        cpu->accumulator = (uint16_t)(cpu->accumulator - 1u);
+        cpu->data_bank = 0x96u;
+    } while (cpu->accumulator != 0xffffu);
+    PullDataBank(memory, cpu);
+}
+
+static bool ObjectLoadCustomGraphics(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpSta(memory, cpu, 0x7fd4f5u);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, 0u));
+    SetAccumulatorWidth(cpu, 0u);
+    OpAslA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpTax(cpu);
+    ObjectCopyCustomPalette(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, 0x83f400u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpLoadA(cpu, 0xa000u);
+    OpSta(memory, cpu, OpDp(cpu, 0x60u));
+    SetAccumulatorWidth(cpu, 1u);
+    OpLoadA(cpu, 2u);
+    OpTestBits(memory, cpu, OpDp(cpu, 0x73u), 1u);
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpDp(cpu, 0x62u));
+    return ObjectCollisionCall(memory, cpu, Lufia2DecompressResource,
+        0x80u, 0xe4e0u, 3u);
+}
+
+static ObjectFlow ObjectSetCustomGraphics(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!(cpu->data_bank & 0x40u) && cpu->y >= 0x1fffu &&
+        cpu->y < 0x8000u) {
+        cpu->resume_pc = 0x83e487u;
+        return OBJECT_FLOW_BOUNDARY;
+    }
+    if (Read8(memory, OpAbsY(cpu, 0u)) >= 4u ||
+        Read8(memory, OpAbsY(cpu, 1u)) >= 4u) {
+        cpu->resume_pc = 0x83e487u;
+        return OBJECT_FLOW_BOUNDARY;
+    }
+    TransferDirectToA(cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpLda(memory, cpu, OpAbsY(cpu, 0u));
+    OpOraValue(cpu, 0x80u);
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_ANIMATION_ID));
+    OpLda(memory, cpu, OpAbsY(cpu, 1u));
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_SPRITE_SIZE));
+    PushY(memory, cpu);
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_OBJECT_ANIMATION_ID));
+    OpAndValue(cpu, 0x7fu);
+    OpCmp(memory, cpu, 0x7fd4f5u);
+    if (!cpu->zero && !ObjectLoadCustomGraphics(memory, cpu))
+        return OBJECT_FLOW_BOUNDARY;
+    SetAccumulatorWidth(cpu, 0u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0xabu)));
+    OpLoadA(cpu, 0xa000u);
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_ANIMATION_POINTER));
+    SetAccumulatorWidth(cpu, 1u);
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_ANIMATION_POINTER + 2u));
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpLoadA(cpu, 7u);
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_ANIMATION_FLAGS));
+    if (!ObjectCollisionCall(memory, cpu, Lufia2ObjectAllocateSpriteResources,
+        0x83u, 0xe4feu, 2u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpPullY(memory, cpu);
+    OpIny(cpu);
+    OpIny(cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
+static ObjectFlow ObjectFinishInteraction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, bool jump) {
+    if (!ObjectCollisionCall(memory, cpu, Lufia2ObjectStartInteractionEvent,
+        0x83u, jump ? 0xec4au : 0xebfdu, 2u))
+        return OBJECT_FLOW_BOUNDARY;
+    if (jump)
+        return ObjectMovementScriptJump(memory, cpu);
+    return ObjectCollisionSkipJump(cpu);
+}
+
+static ObjectFlow ObjectActivateInteractionRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushY(memory, cpu);
+    OpLoadA(cpu, 3u);
+    if (!ObjectCollisionCall(memory, cpu, Lufia2FieldApplyObjectRecord,
+            0x83u, 0xec08u, 2u) ||
+        !ObjectCoordinateCall(memory, cpu, 0xec0bu, Lufia2ObjectRoundedProbe) ||
+        !ObjectCollisionMoveProbe(memory, cpu, 0xec15u) ||
+        !ObjectCollisionProbeEvent(memory, cpu, 0x18u, 0xec1fu))
+        return OBJECT_FLOW_BOUNDARY;
+    OpPullY(memory, cpu);
+    return ObjectFinishInteraction(memory, cpu, true);
+}
+
+static ObjectFlow ObjectPushInteractionRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCollisionCall(memory, cpu, Lufia2FieldFindPendingObject,
+        0x83u, 0xec25u, 2u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpTxa(cpu);
+    OpSta(memory, cpu, 0x7fd0beu);
+    PushY(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_UNK_7FD9CC));
+    OpSta(memory, cpu, OpDp(cpu, 0x23u));
+    OpLoadA(cpu, 8u);
+    OpSta(memory, cpu, OpDp(cpu, 0x22u));
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+    PushAccumulator8(memory, cpu);
+    SimulateJslFrame(memory, cpu, 0x83u, 0xec3fu);
+    cpu->program_bank = 0x80u;
+    cpu->resume_pc = 0x80dcdau;
+    return OBJECT_FLOW_BOUNDARY;
+}
+
+static ObjectFlow ObjectChooseInteractionRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpSta(memory, cpu, OpDp(cpu, 0x8bu));
+    OpStz(memory, cpu, OpDp(cpu, 0x8cu));
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x8bu)));
+    OpLda(memory, cpu, OpLongX(cpu, 0x7fd296u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpLda(memory, cpu, OpLongX(cpu, 0x7fd376u));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A + 1u));
+    OpOra(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    if (cpu->zero)
+        return ObjectFinishInteraction(memory, cpu, false);
+    OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+    OpBitValue(cpu, 0x10u);
+    if (!cpu->zero)
+        return ObjectActivateInteractionRecord(memory, cpu);
+    OpBitValue(cpu, 8u);
+    if (cpu->zero) {
+        OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A + 1u));
+        OpBitValue(cpu, 2u);
+        return ObjectFinishInteraction(memory, cpu, !cpu->zero);
+    }
+    OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A + 1u));
+    OpBitValue(cpu, 2u);
+    if (cpu->zero)
+        return ObjectFinishInteraction(memory, cpu, false);
+    OpLoadA(cpu, 0x0au);
+    ExchangeAccumulatorBytes(cpu);
+    OpLda(memory, cpu, OpDp(cpu, 0x8bu));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, 0x10u);
+    OpLdx(cpu, 0x16u);
+    if (!ObjectCollisionCall(memory, cpu, Lufia2FieldFindHeaderRecord,
+        0x80u, 0xebeau, 3u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpLda(memory, cpu, OpLongX(cpu, 0x7ef005u));
+    OpCmpValue(cpu, 2u);
+    if (cpu->carry)
+        return ObjectPushInteractionRecord(memory, cpu);
+    return ObjectFinishInteraction(memory, cpu, false);
+}
+
+static ObjectFlow ObjectInteractWithRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectCollisionCall(memory, cpu, Lufia2ObjectProbeNextTile,
+        0x83u, 0xeb6fu, 2u))
+        return OBJECT_FLOW_BOUNDARY;
+    Lufia2MapTileHeight(memory, cpu, 0xeb72u);
+    OpSta(memory, cpu, 0x7fd070u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpCmp(memory, cpu, OpLongX(cpu, WRAM_UNK_7FDA2C));
+    if (!cpu->zero) {
+        if (cpu->carry) {
+            OpLda(memory, cpu, OpLongX(cpu, WRAM_UNK_7FD9CC));
+            OpCmpValue(cpu, 4u);
+            if (!cpu->zero)
+                return ObjectFinishInteraction(memory, cpu, false);
+        } else {
+            OpLda(memory, cpu, 0x0009a7u);
+            OpBitValue(cpu, 0x20u);
+            if (!cpu->zero)
+                return ObjectCollisionSkipJump(cpu);
+            return ObjectFinishInteraction(memory, cpu, false);
+        }
+    }
+    if (!ObjectCollisionCall(memory, cpu, Lufia2FieldSetPendingProbePosition,
+        0x83u, 0xeb9bu, 2u))
+        return OBJECT_FLOW_BOUNDARY;
+    SimulateJslFrame(memory, cpu, 0x83u, 0xeb9fu);
+    Lufia2ActorReadMapCellValue(memory, cpu);
+    if (!ObjectCollisionReturn(memory, cpu, 0xeb9fu, 3u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpOraValue(cpu, 0u);
+    if (!cpu->zero) {
+        OpBitValue(cpu, 0xf0u);
+        if (cpu->zero)
+            return ObjectFinishInteraction(memory, cpu, false);
+    } else {
+        if (!ObjectCollisionCall(memory, cpu, Lufia2FieldFindPendingObject,
+            0x83u, 0xebacu, 2u))
+            return OBJECT_FLOW_BOUNDARY;
+        if (cpu->carry)
+            return ObjectFinishInteraction(memory, cpu, false);
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_PENDING_OBJECT_RECORD));
+    }
+    return ObjectChooseInteractionRecord(memory, cpu);
+}
+
 static ObjectFlow ObjectExecute(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -2165,6 +2794,20 @@ static ObjectFlow ObjectExecute(
         return ObjectStartModeEvent(memory, cpu);
     case OBJECT_OP_CLEAR_FOLLOWERS:
         return ObjectClearFollowers(memory, cpu);
+    case OBJECT_OP_APPLY_PROBED_RECORD:
+        return ObjectApplyProbedRecord(memory, cpu);
+    case OBJECT_OP_WAKE_OR_APPLY_RECORD:
+        return ObjectWakeOrApplyRecord(memory, cpu);
+    case OBJECT_OP_REACT_TO_MAP_RECORD:
+        return ObjectReactToMapRecord(memory, cpu);
+    case OBJECT_OP_REACT_TO_PROBED_ACTOR:
+        return ObjectReactToProbedActor(memory, cpu);
+    case OBJECT_OP_INTERACT_WITH_RECORD:
+        return ObjectInteractWithRecord(memory, cpu);
+    case OBJECT_OP_SET_CUSTOM_GRAPHICS:
+        return ObjectSetCustomGraphics(memory, cpu);
+    case OBJECT_OP_REACT_TO_MOVEMENT:
+        return ObjectReactToMovement(memory, cpu);
     case OBJECT_OP_EVENT_PROBE_JUMP:
         return ObjectEventProbeJump(memory, cpu, 0u);
     case OBJECT_OP_EVENT_PROBE_ALT_JUMP:

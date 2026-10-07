@@ -4776,3 +4776,99 @@ source = "src/field/field_object_release.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:C0D0"
+name = "Lufia2SceneScriptReadWord"
+source = "src/field/field_scene_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:C102"
+name = "Lufia2SceneScriptSeekRelative"
+source = "src/field/field_scene_records.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "80:C12E"
+name = "Lufia2SceneScriptFindRecord"
+source = "src/field/field_scene_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BB76"
+name = "Lufia2FieldPrepareEventControl"
+source = "src/field/field_event_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:B727"
+name = "Lufia2FieldBeginEventControl"
+source = "src/field/field_event_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BAC2"
+name = "Lufia2FieldFindActorAtProbe"
+source = "src/field/field_actor_probe.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:DF87"
+name = "Lufia2ActorSpawnFromId"
+source = "src/field/field_object_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F4B4"
+name = "Lufia2FieldApplyObjectRecord"
+source = "src/field/field_object_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:BFE7"
+name = "Lufia2SceneScriptSelectRecord"
+source = "src/field/field_scene_record_select.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F435"
+name = "Lufia2FieldSetPendingProbePosition"
+source = "src/field/field_object_motion_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:EC4F"
+name = "Lufia2ObjectStartInteractionEvent"
+source = "src/field/field_object_motion_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:ECDE"
+name = "Lufia2ObjectAllocateSpriteResources"
+source = "src/field/field_object_motion_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

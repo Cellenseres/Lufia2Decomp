@@ -107,6 +107,7 @@ enum EventOpcodeHandler {
     EVENT_OP_REFRESH_PARTY = 0xd5bc,
     EVENT_OP_REFRESH_PARTY_CLEAR_MODE = 0xd5eb,
     EVENT_OP_CENTER_LAYERS = 0xdb9d,
+    EVENT_OP_BEGIN_SCENE_CONTROL = 0xd6b4,
     EVENT_OP_END = 0xcc42,         /* $00 $07 $2C-$2E $56 $62 $93 $9B $AC $AD */
     EVENT_OP_GOTO_IF_FLAG = 0xcc4a,                            /* $01 */
     EVENT_OP_GOTO_IF_NOT_FLAG = 0xcc61,                        /* $0C */
@@ -476,6 +477,10 @@ unsigned Lufia2EventObjectRegionOpcode(
     uint16_t handler, uint32_t *handoff);
 
 unsigned Lufia2EventRefreshOpcode(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t handler, uint32_t *handoff);
+
+unsigned Lufia2EventControlOpcode(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t handler, uint32_t *handoff);
 
