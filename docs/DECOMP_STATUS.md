@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-668 functions in `metadata/functions.toml`: 668 verified, 0 draft, 0 identified, 0 disabled.
+675 functions in `metadata/functions.toml`: 675 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2414,3 +2414,15 @@ TDC payloads, X-width accesses, table bounds and child frames remain exact.
 9,984 unsupported-state guards and24 altered-ROM controls pass.
 Shared full651, strict C and Release pass.668 verified, zero drafts,
 402 WRAM fields and2,676 generated calls. No measured runtime-hit claim.
+
+## Original actor scene records and uploads - 2026-10-07
+
+Seven complete entries cover forty-slot reset, header attributes/cell/pair,
+actor placement and actor/object sprite upload records. Original repeated
+clears, DB-relative versus bank-zero writes, widths, flags and bus order stay
+literal. Multiplier ports use the original accesses; hardware timing is not
+inferred from controlled fixture values.65,536 ROM cases include8,192 native
+child compositions;65,541 production ABI cases, five child unwinds,
+60 redirects,10,752 guards and21 altered-ROM controls pass.
+Shared full657, W4WX and Release pass. Checkpoint675 verified, zero drafts,
+414 WRAM locations,2,704 generated calls. Static counts only.
