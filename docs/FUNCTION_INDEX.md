@@ -22,6 +22,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:882E` | `Lufia2UploadTilemapBlock` | verified | `src/system/nmi_uploads.c` |
 | `$80:884F` | `Lufia2StartListedDma` | verified | `src/system/nmi_uploads.c` |
 | `$80:8878` | `Lufia2MenuDrawString` | verified | `src/menu/menu_string.c` |
+| `$80:88C8` | `Lufia2MenuWriteRawControl` | verified | `src/menu/menu_character.c` |
+| `$80:88DA` | `Lufia2MenuWriteCharacter` | verified | `src/menu/menu_character.c` |
 | `$80:89AA` | `Lufia2MenuFormatNumberDigits` | verified | `src/menu/menu_string.c` |
 | `$80:89D0` | `Lufia2MenuAppendNumberDigit` | verified | `src/menu/menu_string.c` |
 | `$80:8D5D` | `Lufia2MenuSetTextPalette` | verified | `src/menu/menu_string.c` |

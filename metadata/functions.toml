@@ -6616,3 +6616,19 @@ source = "src/field/field_recovery.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:88DA"
+name = "Lufia2MenuWriteCharacter"
+source = "src/menu/menu_character.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:88C8"
+name = "Lufia2MenuWriteRawControl"
+source = "src/menu/menu_character.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
