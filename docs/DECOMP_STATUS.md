@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-676 functions in `metadata/functions.toml`: 676 verified, 0 draft, 0 identified, 0 disabled.
+683 functions in `metadata/functions.toml`: 683 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2439,3 +2439,14 @@ and24 altered-ROM controls pass.83:A76D was already verified and is not
 counted as new. Shared full657, W4WX and Release pass.676 verified,
 zero drafts,414 WRAM locations,2,708 generated calls.
 These are static selections; no current runtime-hit claim is made.
+
+## Original field scene reset and display callers - 2026-10-07
+
+Seven complete entries restore saved scene actors, reset options, mark maps,
+resume music and upload requested tilemaps. Text clear and event flag mask
+share their original cores with existing embedded callers. Original TDC,
+repeated writes, widths, flags, DB/DP and child frames remain literal.
+71,680 ROM cases include14,336 native child compositions;71,691 production
+ABI cases,11 child unwinds,75 redirects,11,136 guards and21 error controls
+pass. Shared full663, W4WX and Release pass. Checkpoint683 verified,
+zero drafts,430 WRAM locations and2,736 generated calls. Static counts only.

@@ -4,6 +4,7 @@
 
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "core/joypad.h"
 #include "core/wram_view.h"
 #include "field/event_script_internal.h"
@@ -198,40 +199,51 @@ static void TextPrevByte(
     SimulateRtsFrame(memory, cpu);
 }
 
+static void TextClearWindowBuffer(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Push8(memory, cpu, PackStatus(cpu));
+    PushDataBank(memory, cpu);
+    OpLoadA(cpu, 0x7eu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    SetAccumulatorWidth(cpu, 0u);
+    SetIndexWidth(cpu, 0u);
+    OpLoadA(cpu, 0x07f8u);
+    cpu->carry = 1u;
+    do {
+        OpTax(cpu);
+        for (unsigned byte = 0u; byte < 8u; byte += 2u)
+            OpStz(memory, cpu, OpAbsX(cpu, (uint16_t)(TEXT_WINDOW_TILEMAP + byte)));
+        OpSbcValue(cpu, 8u);
+    } while (!cpu->negative);
+    SetAccumulatorWidth(cpu, 1u);
+    OpLda(memory, cpu, OpAbs(cpu, TEXT_WINDOW_STATE));
+    OpAndValue(cpu, 0xfeu);
+    OpSta(memory, cpu, OpAbs(cpu, TEXT_WINDOW_STATE));
+    OpStz(memory, cpu, OpAbs(cpu, TEXT_BG3_HOFS_SHADOW));
+    OpStz(memory, cpu, OpAbs(cpu, TEXT_BG3_HOFS_SHADOW + 1u));
+    OpLoadA(cpu, 0xfcu);
+    OpSta(memory, cpu, OpAbs(cpu, TEXT_BG3_VOFS_SHADOW));
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpAbs(cpu, TEXT_BG3_VOFS_SHADOW + 1u));
+    PullDataBank(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2TextClearWindowBuffer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x84u || !cpu->accumulator_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x848328u);
+    TextClearWindowBuffer(memory, cpu);
+    return ExecutionReturned(0x848362u);
+}
+
 /* $84:8328: clear the window buffer $7E:3000-37FF and $099C bit 0. */
 void Lufia2TextWindowClear(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x80u, return_address);
-    Push8(memory, cpu, PackStatus(cpu));                       /* 8328 */
-    PushDataBank(memory, cpu);
-    LoadA8(cpu, 0x7eu);
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    SetIndexWidth(cpu, 0);
-    LoadA16(cpu, 0x07f8u);
-    cpu->carry = 1;
-    do {
-        unsigned i;
-
-        TransferAToX(cpu);                                     /* 8334 */
-        for (i = 0; i < 8u; i += 2u)
-            Write16Absolute(
-                memory, cpu, (uint16_t)(0x3000u + cpu->x + i), 0);
-        Add16Value(cpu, (uint16_t)(0x0008u ^ 0xffffu));
-    } while (!cpu->negative);
-    SetAccumulatorWidth(cpu, 1);                               /* 8346 */
-    LoadAAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
-    And8(cpu, 0xfeu);
-    StoreAAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);
-    StoreZeroAbsolute8(memory, cpu, TEXT_BG3_HOFS_SHADOW, 0);
-    StoreZeroAbsolute8(memory, cpu, (TEXT_BG3_HOFS_SHADOW + 1u), 0);
-    StoreAImmediate8(memory, cpu, 0xfcu, TEXT_BG3_VOFS_SHADOW);
-    StoreAImmediate8(memory, cpu, 0xffu, (TEXT_BG3_VOFS_SHADOW + 1u));
-    PullDataBank(memory, cpu);
-    UnpackStatus(cpu, Pull8(memory, cpu));
+    TextClearWindowBuffer(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
