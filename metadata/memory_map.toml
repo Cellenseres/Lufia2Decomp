@@ -2828,7 +2828,7 @@ name = "battle_message_name_pointer"
 width = 2
 count = 1
 owner = "battle"
-notes = "Name pointer passed to the original action message builder."
+notes = "Name pointer passed to the original action message builder; FAC9 also uses this storage as the relative script base."
 
 [[location]]
 address = "7E:0A44"
@@ -2836,7 +2836,7 @@ name = "battle_message_name_bank"
 width = 1
 count = 1
 owner = "battle"
-notes = "ROM bank of the action message name."
+notes = "ROM bank of the action message name; FAC9 also uses this byte as the relative script bank."
 
 [[location]]
 address = "7E:0A5D"
