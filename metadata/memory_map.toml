@@ -3583,3 +3583,51 @@ width = 1
 count = 1
 owner = "menu"
 notes = "Base of four-byte opcode12 scripts emitted for up to five party slots. The indexed extent is phase dependent; no disjoint region is claimed."
+
+[[location]]
+address = "7E:09C8"
+name = "unk_7E09C8"
+width = 1
+count = 1
+owner = "menu"
+notes = "Main input toggles bit0 before refreshing the auxiliary display. Other flag meanings remain unknown."
+
+[[location]]
+address = "7E:09CD"
+name = "menu_item_quantity"
+width = 2
+count = 1
+owner = "menu"
+notes = "Original main-menu debug item shortcut writes one before five item-add calls; phase-dependent word."
+
+[[location]]
+address = "7E:09D3"
+name = "unk_7E09D3"
+width = 2
+count = 1
+owner = "menu"
+notes = "Main selection copies the same live list-index word into09D1 and09D3. No broader record layout is inferred."
+
+[[location]]
+address = "7E:14BD"
+name = "unk_7E14BD"
+width = 1
+count = 1
+owner = "menu"
+notes = "Main input writes FF before preparing the original selection display."
+
+[[location]]
+address = "7E:14BF"
+name = "unk_7E14BF"
+width = 1
+count = 1
+owner = "menu"
+notes = "Alternate selection writes three before the original selection child. Specific field meaning remains unknown."
+
+[[location]]
+address = "7F:F080"
+name = "unk_7FF080"
+width = 1
+count = 1
+owner = "menu"
+notes = "Main debug shortcut writes FF into233 indexed bytes at this base. It overlaps the phase-dependent message-resource buffer; no disjoint allocation is claimed."

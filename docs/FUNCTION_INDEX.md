@@ -360,10 +360,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:950E` | `Lufia2MenuMemberStatus` | verified | `src/menu/menu_screen.c` |
 | `$82:9918` | `Lufia2AdjustPurchasePrice` | verified | `src/menu/menu_spell_shop.c` |
 | `$82:9A4E` | `Lufia2MenuRunMainScreen` | verified | `src/menu/menu_main_screen.c` |
+| `$82:9AE0` | `Lufia2MenuRefreshMainDisplay` | verified | `src/menu/menu_main_dispatch.c` |
 | `$82:9CB2` | `Lufia2MenuWarpList` | verified | `src/menu/menu_screen.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
 | `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
 | `$82:A318` | `Lufia2MenuDrawStatus` | verified | `src/menu/menu_status.c` |
+| `$82:A432` | `Lufia2MenuRunMainInput` | verified | `src/menu/menu_main_dispatch.c` |
+| `$82:A582` | `Lufia2MenuApplySpellList` | verified | `src/menu/menu_main_dispatch.c` |
+| `$82:A62D` | `Lufia2MenuRunAlternateSelection` | verified | `src/menu/menu_main_dispatch.c` |
 | `$82:A918` | `Lufia2MenuListCursor` | verified | `src/menu/menu_screen.c` |
 | `$82:ACDB` | `Lufia2MenuListRow` | verified | `src/menu/menu_screen.c` |
 | `$82:B2C5` | `Lufia2MenuEquipUpgrade` | verified | `src/menu/menu_screen.c` |
