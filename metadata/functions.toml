@@ -6976,3 +6976,51 @@ source = "src/party/capsule_stat_callers.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "83:BA06"
+name = "Lufia2FieldProbeTalkTarget"
+source = "src/field/field_talk.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BA5C"
+name = "Lufia2FieldProbeTalkDown"
+source = "src/field/field_talk.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BA80"
+name = "Lufia2FieldProbeTalkLeft"
+source = "src/field/field_talk.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BA96"
+name = "Lufia2FieldProbeTalkUp"
+source = "src/field/field_talk.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BAAC"
+name = "Lufia2FieldProbeTalkRight"
+source = "src/field/field_talk.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BA76"
+name = "Lufia2FieldProbeTalkBlocked"
+source = "src/field/field_talk.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
