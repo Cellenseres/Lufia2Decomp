@@ -7072,3 +7072,19 @@ source = "src/field/field_contact_edges.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:D283"
+name = "Lufia2CapsuleBuildStatValues"
+source = "src/party/capsule_stat_growth.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D31C"
+name = "Lufia2CapsuleAccumulateStatGrowth"
+source = "src/party/capsule_stat_growth.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

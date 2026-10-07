@@ -166,6 +166,13 @@ Lufia2ExecutionResult Lufia2PartyClearSecondaryModifiers(
 Lufia2ExecutionResult Lufia2PartyClearPrimaryModifiers(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2CapsuleBuildStatValues(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2CapsuleAccumulateStatGrowth(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

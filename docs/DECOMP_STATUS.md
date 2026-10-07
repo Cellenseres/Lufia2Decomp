@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-867 functions in `metadata/functions.toml`: 867 verified, 0 draft, 0 identified, 0 disabled.
+869 functions in `metadata/functions.toml`: 869 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3030,3 +3030,18 @@ Counts do not describe measured runtime interpreter load.
 
 Contact edge dispatch is restricted to the four original direction indices.
 Other table indices retain original interpretation.
+
+## Original capsule stat growth entries - 2026-10-07
+
+196,736 original-ROM cases, 196,744 actual ABI cases, 5,376 guards
+and 106 public-library ROM error controls pass. Child probes include
+8 forced unwinds, 15 redirects and 0 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 795-job verification and Windows Release build
+with the complete 8-entry integration batch. Its final combined stage has
+869 verified entries, zero drafts, 525 fields and 3,480 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+The growth leaf requires DP0 and0200<=S<=1FFC. Zero-level wrap remains literal.
