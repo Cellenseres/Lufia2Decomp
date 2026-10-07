@@ -2859,3 +2859,39 @@ name = "field_saved_probe_position"
 width = 2
 owner = "field"
 notes = "Saved byte-sized probe X/Y pair; written by 83:F49A and restored by 83:F4A7."
+
+[[location]]
+address = "7F:D071"
+name = "field_saved_object_source"
+width = 2
+owner = "field"
+notes = "Saved object-region state used by 80:D136/D15B."
+
+[[location]]
+address = "7F:D073"
+name = "field_saved_object_size"
+width = 2
+owner = "field"
+notes = "Saved object-region state used by 80:D136/D15B."
+
+[[location]]
+address = "7F:D075"
+name = "field_saved_object_flags"
+width = 1
+owner = "field"
+notes = "Saved object-region state used by 80:D136/D15B."
+
+[[location]]
+address = "7F:D078"
+name = "field_saved_object_position"
+width = 2
+owner = "field"
+notes = "Saved object-region state used by 80:D136/D15B."
+
+[[location]]
+address = "7F:D75C"
+name = "field_pending_record_flags"
+aliases = ["EVENT_UNK_7FD75C"]
+width = 1
+owner = "field"
+notes = "Per-record pending object flags; 48 byte records scanned by 80:D227."

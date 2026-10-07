@@ -4584,3 +4584,75 @@ source = "src/actor/actor_sprite_resources.c"
 entry_mx = "M1X1"
 exit_mx = "M0X1"
 status = "verified"
+
+[[function]]
+address = "83:AB7C"
+name = "Lufia2SpriteReserveAllocation"
+source = "src/actor/actor_sprite_allocation.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+[[function]]
+address = "80:D136"
+name = "Lufia2FieldSaveObjectRegion"
+source = "src/field/field_event_map_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:D15B"
+name = "Lufia2FieldRestoreObjectRegion"
+source = "src/field/field_event_map_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:D18C"
+name = "Lufia2FieldNormalizeObjectOrigin"
+source = "src/field/field_event_map_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:D227"
+name = "Lufia2FieldMarkRegionObjects"
+source = "src/field/field_event_map_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:B851"
+name = "Lufia2FieldFindPointRecord"
+source = "src/field/field_record_search.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:B882"
+name = "Lufia2FieldFindRectangleRecord"
+source = "src/field/field_record_search.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F442"
+name = "Lufia2FieldClearObjectAttributes"
+source = "src/field/field_event_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F750"
+name = "Lufia2FieldSetObjectTiles"
+source = "src/field/field_event_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

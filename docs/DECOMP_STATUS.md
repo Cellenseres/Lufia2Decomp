@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-556 functions in `metadata/functions.toml`: 556 verified, 0 draft, 0 identified, 0 disabled.
+565 functions in `metadata/functions.toml`: 565 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2158,3 +2158,25 @@ jobs,public production targets,W4/WX and normal Release. Runtime selection is
 556 verified,0draft,362 WRAM entries,2228 actual generated bridge invocations.
 Seventeen new helpers have bindings; two new routes stay inside the existing VM
 owner. Original bugs,transfer order and sound gating are preserved.
+
+## Event map state and sprite allocation - 2026-10-07
+
+Nine complete functions are verified and bound:83:AB7C/B851/B882/F442/F750,
+80:D136/D15B/D18C/D227. Sprite allocation retains its original accumulated
+free-slot count,byte wrap,carry and failure exits. Unsupported zero counts
+fall back before bus access. The frame-free allocation body is shared with
+the previous native callers without inserting additional original frames.
+Map-region save/restore,origin normalization and48-record flag marking retain
+word reads,byte geometry,DB changes and the original horizontal/vertical edge
+rules. Five persistent fields are catalogued. Record searches preserve the
+ROM sentinel,stride,live pointers,index wrap and carry; zero stride falls back.
+Object attribute/tile entries expose existing literal bodies,retaining nested
+frames,word writes,layer addressing and flags inside their previous callers.
+The complete Object VM F3 route uses these native record/direction probes;
+unknown direction branches keep the original continuation at83:FB17.
+1384448 helper/route comparisons,8192 whole-owner cases,366 helper guards,
+512 owner guards and35 detected altered-ROM controls pass. Direct CPU state,
+full WRAM,ordered writes and modeled MMIO reads/state are compared.
+Production bridges,W4/WX,normal Release and all563 independent jobs pass.
+565 verified,0draft,367 WRAM locations and2264 generated native invocations.
+Ordinary-read trace,pixels,full NMI timing and actual hit-rate gains unclaimed.

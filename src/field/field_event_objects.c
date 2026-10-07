@@ -302,17 +302,15 @@ static void EventObjectOrigin(
 }
 
 /* $83:F442: clear a placed object's attribute bits. */
-static void EventObjectClearAttributes(
+static void EventObjectClearAttributesBody(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
+    Lufia2CpuState *cpu) {
     unsigned bit;
 
-    SimulateJslFrame(memory, cpu, 0x80u, return_address);
-    LoadA8(cpu, Read8(memory, WRAM_FIELD_PENDING_OBJECT_X)); /* F442 */
+    LoadA8(cpu, Read8(memory, WRAM_FIELD_PENDING_OBJECT_X));
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, Read8(memory, WRAM_FIELD_PENDING_OBJECT_Y));
-    Lufia2MapCellIndex(memory, cpu, 0xf44du, 0);               /* $83:F9B6 */
+    Lufia2MapCellIndex(memory, cpu, 0xf44du, 0);
     for (bit = 0; bit < 2u; ++bit) {
         const uint8_t keep = bit ? 0xf7u : 0xbfu;
 
@@ -336,7 +334,7 @@ static void EventObjectClearAttributes(
                    A8(cpu));
         }
         if (!bit) {
-            SetAccumulatorWidth(cpu, 0);                       /* F472 */
+            SetAccumulatorWidth(cpu, 0);
             LoadA16(cpu, cpu->x);
             cpu->carry = 0;
             Add16Value(cpu, Read16Long(memory, WRAM_FIELD_SECTION_WIDTH));
@@ -344,6 +342,14 @@ static void EventObjectClearAttributes(
             SetAccumulatorWidth(cpu, 1);
         }
     }
+}
+
+static void EventObjectClearAttributes(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    EventObjectClearAttributesBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
@@ -449,20 +455,18 @@ static void EventTileWord(
 }
 
 /* $83:F750: tiles of pending object A at $8F/$91. */
-static void EventObjectSetTiles(
+static void EventObjectSetTilesBody(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJslFrame(memory, cpu, 0x80u, return_address);
-    AslA8(cpu);                                                /* F750 */
+    Lufia2CpuState *cpu) {
+    AslA8(cpu);
     AslA8(cpu);
     TransferAToY(cpu);
     SimulateJsrFrame(memory, cpu, 0xf755u);
-    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));          /* F9D4 */
+    LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
     SimulateJsrFrame(memory, cpu, 0xf9dbu);
-    Lufia2MapCellOffset(memory, cpu);                          /* $83:F9F7 */
+    Lufia2MapCellOffset(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
     PushIndex(memory, cpu);
@@ -475,7 +479,7 @@ static void EventObjectSetTiles(
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
-    PushDataBank(memory, cpu);                                 /* F756 */
+    PushDataBank(memory, cpu);
     LoadA8(cpu, 0x7fu);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
@@ -488,7 +492,7 @@ static void EventObjectSetTiles(
     And16(cpu, 0x00ffu);
     Compare16(cpu, cpu->accumulator, 0x0002u);
     if (cpu->zero) {
-        LoadA16(cpu, cpu->x);                                  /* F76F */
+        LoadA16(cpu, cpu->x);
         cpu->carry = 0;
         Add16Value(cpu, Read16Long(memory, WRAM_FIELD_SECTION_WIDTH));
         Add16Value(cpu, Read16Long(memory, WRAM_FIELD_SECTION_WIDTH));
@@ -499,8 +503,16 @@ static void EventObjectSetTiles(
                          cpu->y));
         EventTileWord(memory, cpu, 0xf77fu);
     }
-    PullDataBank(memory, cpu);                                 /* F780 */
+    PullDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
+}
+
+static void EventObjectSetTiles(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    EventObjectSetTilesBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
@@ -1301,4 +1313,24 @@ unsigned Lufia2EventOpPushObject(
     SimulateRtlFrame(memory, cpu);                             /* DD05 / DD85 */
     cpu->y = PullIndexValue(memory, cpu);                      /* DCD6 */
     return EVENT_OPCODE_NEXT;
+}
+
+Lufia2ExecutionResult Lufia2FieldClearObjectAttributes(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->decimal || cpu->direct_page || cpu->program_bank != 0x83u ||
+        cpu->stack < 0x1f04u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x83f442u);
+    EventObjectClearAttributesBody(memory, cpu);
+    return ExecutionReturned(0x83f499u);
+}
+
+Lufia2ExecutionResult Lufia2FieldSetObjectTiles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->decimal || cpu->direct_page || cpu->program_bank != 0x83u ||
+        cpu->stack < 0x1f04u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x83f750u);
+    EventObjectSetTilesBody(memory, cpu);
+    return ExecutionReturned(0x83f783u);
 }

@@ -1,6 +1,7 @@
 /* Actor sprite slot allocation. */
 
 #include "actor/actor_internal.h"
+#include "sprite_allocation_internal.h"
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
 #include "system/dp_scratch.h"
@@ -291,68 +292,7 @@ void Lufia2SpriteAllocSlots(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
-    PushDataBank(memory, cpu);                                 /* AB7C */
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
-    LoadA8(cpu, 0x7eu);
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
-    LoadX8(cpu, 0x00u);
-    LoadY8(cpu, 0x00u);
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0x00u);
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), 0x00u);
-    for (;;) {
-        LoadAAbsolute8(memory, cpu, 0xe100u, cpu->x);          /* AB8A */
-        if (cpu->zero) {
-            /* Y keeps counting across used slots. */
-            LoadY8(cpu, (uint8_t)(cpu->y + 1u));
-            Compare8(cpu, (uint8_t)cpu->y,
-                     Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
-            if (cpu->zero)
-                break;
-            LoadX8(cpu, (uint8_t)(cpu->x + 1u));
-            continue;
-        }
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_C))); /* AB97 */
-        cpu->carry = 0;
-        Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
-        Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), A8(cpu));
-        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
-        TransferAToX(cpu);
-        Compare8(cpu, A8(cpu), 0x80u);
-        if (cpu->zero) {
-            PullDataBank(memory, cpu);                         /* ABA5 */
-            cpu->carry = 1;
-            SimulateRtlFrame(memory, cpu);
-            return;
-        }
-    }
-    LoadX8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_B))); /* ABA8 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
-    Or8(cpu, 0x80u);
-    do {
-        StoreAAbsolute8(memory, cpu, 0xe100u, cpu->x);
-        LoadX8(cpu, (uint8_t)(cpu->x + 1u));
-        DecrementDirect8(memory, cpu, DP_SCRATCH_A);
-    } while (!cpu->zero);
-    PullDataBank(memory, cpu);                                 /* ABB6 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_B)));
-    AslA8(cpu);
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_B)));
-    And8(cpu, 0xf0u);
-    TrbDirect8(memory, cpu, DP_SCRATCH_B);
-    AslA8(cpu);
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, 0x00u);
-    {
-        const uint8_t carry = cpu->carry;                      /* ROL */
-
-        cpu->carry = 0;
-        LoadA8(cpu, (uint8_t)((A8(cpu) << 1) | carry));
-    }
-    ExchangeAccumulatorBytes(cpu);
-    Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_B)));
-    cpu->carry = 0;
+    SpriteAllocateSlotsBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
