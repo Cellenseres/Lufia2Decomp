@@ -109,6 +109,8 @@ enum EventOpcodeHandler {
     EVENT_OP_CENTER_LAYERS = 0xdb9d,
     EVENT_OP_BEGIN_SCENE_CONTROL = 0xd6b4,
     EVENT_OP_APPLY_AREA_TRANSITION = 0xe50b,
+    EVENT_OP_IMMEDIATE_SOUND = 0xd2bb,
+    EVENT_OP_CONDITIONAL_OBJECT_REGION = 0xd5f2,
     EVENT_OP_END = 0xcc42,         /* $00 $07 $2C-$2E $56 $62 $93 $9B $AC $AD */
     EVENT_OP_GOTO_IF_FLAG = 0xcc4a,                            /* $01 */
     EVENT_OP_GOTO_IF_NOT_FLAG = 0xcc61,                        /* $0C */

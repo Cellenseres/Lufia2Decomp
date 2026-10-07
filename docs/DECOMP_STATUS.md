@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-598 functions in `metadata/functions.toml`: 598 verified, 0 draft, 0 identified, 0 disabled.
+606 functions in `metadata/functions.toml`: 606 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2266,3 +2266,24 @@ preserved. Focused helper, route, owner, ABI, guard and altered-ROM proofs
 pass, followed by strict C, Release and 604 independent verification jobs.
 598 verified,0 draft,376 fields,2396 generated native calls. These counts
 describe bindings and verification, not a measured interpreter hit rate.
+
+## Event sound and object conditions - 2026-10-07
+
+Eight complete sound-command and object-header/condition helpers are
+verified and bound. Event0B executes its literal sound chain; Event8F
+uses the original condition table and existing object-region operations.
+Sound waits and unknown message children retain exact pushed call frames.
+Driver mode accepts every native M/X combination and preserves decimal
+status. Sound wrappers accept their documented binary-mode contracts;
+the immediate wrapper requires M8. The five field helpers require PB83
+or PB8E as appropriate, M8/X16,DP0,binary mode,S1F20..1FFC.
+
+Original-ROM helper/caller, composed child, route, whole-owner, production
+ABI, altered-ROM control and entry-guard proofs pass. Strict C, Release
+and612 independent verification jobs pass.606 verified,0draft,380fields,
+2428 generated native calls. These counts are not measured runtime hits.
+
+The earlier event survey overran the table by one entry. The table ends
+before80:E722: valid IDs00..BE. BF reads following instruction bytes;
+the apparent96AF target overlaps a music-call operand. No artificial
+kernel-frame function or binding was added. Unknown routes stay exact.

@@ -2959,3 +2959,32 @@ name = "field_pending_update_record_index"
 width = 1
 owner = "field"
 notes = "Pending record index retained during the object-header update."
+
+[[location]]
+address = "7F:D04E"
+name = "field_selected_object_record_id"
+width = 1
+owner = "field"
+notes = "Identifier used by the selected object header."
+aliases = ["EVENT_OBJECT_OPERAND"]
+
+[[location]]
+address = "7F:D060"
+name = "field_object_control_kind"
+width = 1
+owner = "field"
+notes = "Kind byte from the object control header."
+
+[[location]]
+address = "7F:D4F1"
+name = "field_object_condition_flag"
+width = 1
+owner = "field"
+notes = "Flag index selected by the ROM object-condition table."
+
+[[location]]
+address = "7F:D4F2"
+name = "field_object_condition_extended"
+width = 1
+owner = "field"
+notes = "Selects the additional 32 flag bytes."

@@ -29,8 +29,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:92A4` | `Lufia2IntroNmi` | verified | `src/title/title.c` |
 | `$80:93FE` | `Lufia2PlaySong` | verified | `src/system/music.c` |
 | `$80:941A` | `Lufia2LoadSong` | verified | `src/system/music.c` |
+| `$80:953B` | `Lufia2SendSoundCommand` | verified | `src/system/sound_commands.c` |
 | `$80:9601` | `Lufia2SetMusicVolume` | verified | `src/system/music.c` |
 | `$80:9692` | `Lufia2FadeOutMusic` | verified | `src/system/music.c` |
+| `$80:99FD` | `Lufia2WriteSoundDriverMode` | verified | `src/system/sound_commands.c` |
 | `$80:9C72` | `Lufia2FieldEventTick` | verified | `src/field/field_update.c` |
 | `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
 | `$80:BFAA` | `Lufia2FieldFindHeaderRecord` | verified | `src/field/field_object_lookup.c` |
@@ -339,6 +341,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:85DC` | `Lufia2FieldReloadMap` | verified | `src/field/field_reload.c` |
 | `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |
 | `$83:8682` | `Lufia2FieldAnimationTicks` | verified | `src/field/field_update.c` |
+| `$83:87A3` | `Lufia2FieldLoadObjectActionHeader` | verified | `src/field/field_object_conditions.c` |
+| `$83:8848` | `Lufia2FieldLoadObjectControlHeader` | verified | `src/field/field_object_conditions.c` |
+| `$83:8874` | `Lufia2FieldLoadObjectRegionHeader` | verified | `src/field/field_object_conditions.c` |
 | `$83:89CE` | `Lufia2FieldClearObjectTileBit` | verified | `src/field/field_object_render.c` |
 | `$83:8A0A` | `Lufia2FieldRenderObjectLayers` | verified | `src/field/field_object_render.c` |
 | `$83:8A6F` | `Lufia2FieldClearObjectTileIds` | verified | `src/field/field_object_tiles.c` |
@@ -474,6 +479,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:FCB4` | `Lufia2ObjectScaleFinePosition` | verified | `src/field/field_coordinate_math.c` |
 | `$84:8193` | `Lufia2SpriteGraphicsUpload` | verified | `src/actor/actor_sprites.c` |
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
+| `$84:8775` | `Lufia2SendImmediateSound` | verified | `src/system/sound_commands.c` |
 | `$84:8888` | `Lufia2AncientCaveResetParty` | verified | `src/cave/cave_reset.c` |
 | `$84:890B` | `Lufia2AncientCaveExit` | verified | `src/cave/cave_exit.c` |
 | `$84:8AF4` | `Lufia2AncientCaveCarryBlueItem` | verified | `src/cave/cave_exit.c` |
@@ -605,4 +611,6 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |
 | `$8E:BD77` | `Lufia2FieldScrollUpdate` | verified | `src/field/field_scroll.c` |
+| `$8E:C338` | `Lufia2FieldSelectObjectCondition` | verified | `src/field/field_object_conditions.c` |
+| `$8E:C34F` | `Lufia2FieldResolveObjectCondition` | verified | `src/field/field_object_conditions.c` |
 <!-- metadata-index:end -->
