@@ -4,6 +4,7 @@
 /* Field subsystem internals shared across modules. */
 
 #include "lufia2/execution.h"
+#include "system/wram.h"
 
 /* $83:80CD: field idle test; zero = no event running. */
 void Lufia2FieldIdleBody(
@@ -67,8 +68,8 @@ Lufia2ExecutionResult Lufia2FieldDecompressMapData(
     Lufia2CpuState *cpu);
 
 /* Eight object animation slots; bit 7 marks in use. */
-#define EVENT_ANIMATION_SLOT_STATE 0x7fd057u
-#define EVENT_ANIMATION_SLOT_OBJECT 0x7fd04fu
+#define EVENT_ANIMATION_SLOT_STATE WRAM_FIELD_ANIMATION_SLOT_STATE
+#define EVENT_ANIMATION_SLOT_OBJECT WRAM_FIELD_ANIMATION_SLOT_OBJECT
 /* Object index of the running opcode or animation slot. */
 #define EVENT_OBJECT_OPERAND 0x7fd04eu
 

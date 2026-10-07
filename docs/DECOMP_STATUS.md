@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-645 functions in `metadata/functions.toml`: 645 verified, 0 draft, 0 identified, 0 disabled.
+646 functions in `metadata/functions.toml`: 646 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2343,3 +2343,19 @@ pass. The shared regression batch with sound queues passes 631 independent jobs,
 strict C and Release. 645 verified entries, zero drafts, 386 WRAM locations and
 2,584 generated native calls. These are static counts, not measured runtime hits.
 The eight-slot owner is a separate follow-up; its prior contract stays unchanged.
+
+## Complete field animation slot owner - 2026-10-07
+
+The existing 83:8682 entry now processes all eight animation slots and resumes
+after both original child calls. Native action/control helpers compose with
+region redraw, snapshots and sound dispatch. The active-mask order, phase
+flags, status restoration and nested frames remain literal. 83:898E marks the
+original row, including the zero-width wrap and one-byte index advance.
+65,536 slot ROM comparisons and 65,559 production-ABI cases pass, including
+23 nested unwinds, 2,688 guards and 21 altered-ROM controls. Row and existing
+cell-clear checks pass 16,384 semantic and 16,384 ABI cases, 3,072 row guards
+and 16 controls. The row is the only new cell entry; clear was already native.
+The former prefix ABI target is superseded by the complete-owner suite; its
+semantic prefix tests remain. Full 636 jobs, strict C and Release pass.
+646 verified entries, zero drafts, 389 WRAM fields and 2,588 generated calls.
+These are static counts, not measured interpreter usage or gameplay coverage.
