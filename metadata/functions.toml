@@ -6928,3 +6928,19 @@ source = "src/party/capsule_experience.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:E8E2"
+name = "Lufia2FieldPublishEventPointer"
+source = "src/field/field_event_pointer.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:91FE"
+name = "Lufia2WorldMapCellCenter"
+source = "src/world/world_cell_center.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
