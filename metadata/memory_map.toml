@@ -3849,3 +3849,115 @@ name = "field_event_running_bank"
 width = 1
 owner = "field"
 notes = "E8B9 advances this byte when incremented Y is nonnegative, copies it to DB and resets Y to8000. Original bank-byte overflow and mismatched entry banks remain literal."
+
+[[location]]
+address = "7E:11A3"
+name = "capsule_selected_id"
+width = 1
+count = 1
+owner = "party"
+notes = "Selected capsule monster. Saved offsets use its low byte; record lookup preserves the original mask and wrap."
+
+[[location]]
+address = "7E:11A4"
+name = "capsule_selected_form"
+width = 1
+count = 1
+owner = "party"
+notes = "Selected form, added after the five-record monster stride."
+
+[[location]]
+address = "7E:11A5"
+name = "capsule_flag_any"
+width = 1
+count = 1
+owner = "party"
+notes = "C37B clears this byte before the capsule flag list."
+
+[[location]]
+address = "7E:11C2"
+name = "capsule_flag_bytes"
+width = 1
+count = 20
+owner = "party"
+notes = "Twenty flag bytes cleared by C37B, including skill state bytes."
+
+[[location]]
+address = "7E:09C4"
+name = "capsule_record_pointer"
+width = 2
+count = 1
+owner = "party"
+notes = "C38B stores the bank-97 capsule form record pointer here. This work location is reused by other operations."
+
+[[location]]
+address = "7E:09D9"
+name = "capsule_saved_index"
+width = 2
+count = 1
+owner = "party"
+notes = "C3D3 stages the selected low-byte monster index for saved data access."
+
+[[location]]
+address = "7E:09DB"
+name = "capsule_saved_experience_offset"
+width = 2
+count = 1
+owner = "party"
+notes = "Three-byte stride into saved capsule experience."
+
+[[location]]
+address = "7E:09DD"
+name = "capsule_saved_stats_offset"
+width = 2
+count = 1
+owner = "party"
+notes = "Five-byte stride into saved capsule stat increments."
+
+[[location]]
+address = "7E:10DF"
+name = "capsule_work_stats"
+width = 1
+count = 10
+owner = "party"
+notes = "C3F8 clears ten bytes and loads the first five from saved capsule stats. The derived-stat routines consume this work block."
+
+[[location]]
+address = "7E:10ED"
+name = "capsule_work_level"
+width = 1
+count = 1
+owner = "party"
+notes = "Level loaded from the selected capsule saved record."
+
+[[location]]
+address = "7E:113E"
+name = "capsule_level_start_experience"
+width = 3
+count = 1
+owner = "party"
+notes = "Three saved experience bytes loaded by C3F8."
+
+[[location]]
+address = "7F:F1A3"
+name = "capsule_saved_levels"
+width = 1
+count = 7
+owner = "party"
+notes = "One saved level per capsule monster. Original out-of-range indexed accesses are not clamped."
+
+[[location]]
+address = "7F:F1AA"
+name = "capsule_saved_experience"
+width = 3
+count = 7
+owner = "party"
+notes = "Three-byte saved experience per capsule monster."
+
+[[location]]
+address = "7F:F180"
+name = "capsule_saved_stats"
+width = 5
+count = 7
+owner = "party"
+notes = "Five saved stat increments per capsule monster."

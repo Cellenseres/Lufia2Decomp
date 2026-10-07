@@ -230,6 +230,7 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_input.c
     src/menu/menu_scene_setup.c
     src/party/capsule.c
+    src/party/capsule_records.c
     src/party/experience.c
     src/party/level_up.c
     src/party/stat_growth.c
