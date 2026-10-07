@@ -2845,3 +2845,17 @@ width = 2
 count = 1
 owner = "battle"
 notes = "Original action target mask before byte target resolution."
+
+[[location]]
+address = "7E:057C"
+name = "unk_7E057C"
+width = 1
+owner = "field"
+notes = "Control byte gating 83:FC56/FC69 probe input handling; original access uses the live data bank."
+
+[[location]]
+address = "7F:D2A4"
+name = "field_saved_probe_position"
+width = 2
+owner = "field"
+notes = "Saved byte-sized probe X/Y pair; written by 83:F49A and restored by 83:F4A7."

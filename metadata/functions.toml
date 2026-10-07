@@ -4448,3 +4448,139 @@ source = "src/field/field_object_motion.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "83:FB2E"
+name = "Lufia2FieldProbeObjectAttributes"
+source = "src/field/field_probe_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FB51"
+name = "Lufia2FieldProbeObjectState"
+source = "src/field/field_probe_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FB61"
+name = "Lufia2FieldProbeObjectProperties"
+source = "src/field/field_probe_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FB8B"
+name = "Lufia2FieldPendingObjectState"
+source = "src/field/field_probe_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FB9B"
+name = "Lufia2FieldFindPendingObjectLong"
+source = "src/field/field_probe_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FBF1"
+name = "Lufia2FieldReadProbeAttribute"
+source = "src/field/field_probe_collision.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FBFE"
+name = "Lufia2FieldClearPendingOccupancy"
+source = "src/field/field_probe_collision.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FC3C"
+name = "Lufia2FieldFindSpecialActor"
+source = "src/field/field_probe_collision.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FC56"
+name = "Lufia2FieldProbeInputAllowed"
+source = "src/field/field_probe_collision.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FC69"
+name = "Lufia2FieldUpdateProbeAction"
+source = "src/field/field_probe_collision.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FBBD"
+name = "Lufia2FieldProbeDirectionBlocked"
+source = "src/field/field_probe_direction.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F49A"
+name = "Lufia2FieldSaveProbePosition"
+source = "src/field/field_probe_direction.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F4A7"
+name = "Lufia2FieldRestoreProbePosition"
+source = "src/field/field_probe_direction.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:EC5F"
+name = "Lufia2ObjectProbeNextTile"
+source = "src/field/field_probe_direction.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:AB4F"
+name = "Lufia2ActorSetRecordOffsets"
+source = "src/actor/actor_sprite_resources.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+[[function]]
+address = "83:ABCC"
+name = "Lufia2SpriteReleaseAllocation"
+source = "src/actor/actor_sprite_resources.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+[[function]]
+address = "83:ABE9"
+name = "Lufia2SpriteComputeVramBase"
+source = "src/actor/actor_sprite_resources.c"
+entry_mx = "M1X1"
+exit_mx = "M0X1"
+status = "verified"
