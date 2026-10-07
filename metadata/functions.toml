@@ -4920,3 +4920,67 @@ source = "src/field/field_event_actors.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:99FD"
+name = "Lufia2WriteSoundDriverMode"
+source = "src/system/sound_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:953B"
+name = "Lufia2SendSoundCommand"
+source = "src/system/sound_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:8775"
+name = "Lufia2SendImmediateSound"
+source = "src/system/sound_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:87A3"
+name = "Lufia2FieldLoadObjectActionHeader"
+source = "src/field/field_object_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8848"
+name = "Lufia2FieldLoadObjectControlHeader"
+source = "src/field/field_object_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8874"
+name = "Lufia2FieldLoadObjectRegionHeader"
+source = "src/field/field_object_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:C338"
+name = "Lufia2FieldSelectObjectCondition"
+source = "src/field/field_object_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:C34F"
+name = "Lufia2FieldResolveObjectCondition"
+source = "src/field/field_object_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

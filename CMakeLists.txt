@@ -142,6 +142,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_graphics.c
     src/field/field_object_transitions.c
     src/field/field_object_lookup.c
+    src/field/field_object_conditions.c
     src/field/field_coordinate_math.c
     src/field/field_object_motion.c
     src/field/field_probe_records.c
@@ -208,6 +209,7 @@ add_library(lufia2_decomp STATIC
     src/system/random.c
     src/system/save.c
     src/system/music.c
+    src/system/sound_commands.c
     src/system/nmi.c
     src/system/nmi_uploads.c
     src/system/screen.c

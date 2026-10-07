@@ -1931,6 +1931,127 @@ boundary:
     return EVENT_OPCODE_HANDOFF;
 }
 
+static uint8_t EventSoundChild(
+    void *context, Lufia2CpuState *cpu,
+    uint32_t target, uint32_t site, uint8_t frame) {
+    const Lufia2Memory *memory = context;
+    cpu->program_bank = (uint8_t)(target >> 16);
+    if (target != 0x80953bu) {
+        cpu->resume_pc = target;
+        return false;
+    }
+    Lufia2ExecutionResult result = Lufia2SendSoundCommand(
+        memory, cpu, EventSoundChild, context);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return false;
+    return EventAreaReturn(memory, cpu, (uint16_t)(site + frame), 0x84u, frame);
+}
+
+static unsigned EventOpImmediateSound(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t *handoff) {
+    Lufia2EventNextByte(memory, cpu, 0xd2bdu);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xd2c1u);
+    cpu->program_bank = 0x84u;
+    Lufia2ExecutionResult result = Lufia2SendImmediateSound(
+        memory, cpu, EventSoundChild, (void *)memory);
+    if (result.flow == LUFIA2_EXECUTION_RETURNED &&
+        EventAreaReturn(memory, cpu, 0xd2c1u, 0x80u, 3u))
+        return EVENT_OPCODE_NEXT;
+    *handoff = cpu->resume_pc;
+    return EVENT_OPCODE_HANDOFF;
+}
+
+typedef Lufia2ExecutionResult (*EventConditionStep)(
+    const Lufia2Memory *, Lufia2CpuState *);
+
+static bool EventConditionCall(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    EventConditionStep step, uint8_t bank, uint16_t back, unsigned frame) {
+    if (frame == 3u)
+        SimulateJslFrame(memory, cpu, 0x80u, back);
+    else
+        SimulateJsrFrame(memory, cpu, back);
+    cpu->program_bank = bank;
+    Lufia2ExecutionResult result = step(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return false;
+    return EventAreaReturn(memory, cpu, back, 0x80u, frame);
+}
+
+static unsigned EventOpConditionalObjectRegion(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t *handoff) {
+    Lufia2EventNextByte(memory, cpu, 0xd5f4u);
+    OpSta(memory, cpu, OpDp(cpu, 0x54u));
+    PushDataBank(memory, cpu);
+    PushY(memory, cpu);
+    OpSetDataBank(memory, cpu, 0x91u);
+    OpLda(memory, cpu, 0x7fd1a1u);
+    ExchangeAccumulatorBytes(cpu);
+    OpLda(memory, cpu, 0x7fd1a0u);
+    OpTay(cpu);
+    for (unsigned visited = 0; visited < 65536u; ++visited) {
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpAbsY(cpu, 0xb8b5u));
+        OpCmpValue(cpu, 0xffu);
+        if (cpu->zero) {
+            OpLda(memory, cpu, OpDp(cpu, 0x54u));
+            OpSta(memory, cpu, 0x00120au);
+            OpLdx(cpu, 0x8743u);
+            SimulateJslFrame(memory, cpu, 0x80u, 0xd626u);
+            cpu->program_bank = 0x85u;
+            cpu->resume_pc = 0x858415u;
+            goto boundary;
+        }
+        OpAndValue(cpu, 31u);
+        OpCmp(memory, cpu, OpDp(cpu, 0x54u));
+        if (cpu->zero)
+            goto found;
+        OpIny(cpu);
+        OpIny(cpu);
+        OpIny(cpu);
+    }
+    cpu->resume_pc = 0x80d607u;
+    goto boundary;
+
+found:
+    OpLda(memory, cpu, OpAbsY(cpu, 0xb8b5u));
+    OpAndValue(cpu, 31u);
+    OpSta(memory, cpu, WRAM_FIELD_SELECTED_OBJECT_RECORD_ID);
+    if (!EventConditionCall(memory, cpu, Lufia2FieldLoadObjectActionHeader,
+            0x83u, 0xd635u, 3u) ||
+        !EventConditionCall(memory, cpu, Lufia2FieldLoadObjectRegionHeader,
+            0x83u, 0xd639u, 3u))
+        goto boundary;
+    StoreXDirect16(memory, cpu, 0x56u);
+    OpTyx(cpu);
+    if (!EventConditionCall(memory, cpu, Lufia2FieldSelectObjectCondition,
+            0x8eu, 0xd640u, 3u) ||
+        !EventConditionCall(memory, cpu, Lufia2FieldResolveObjectCondition,
+            0x8eu, 0xd644u, 3u))
+        goto boundary;
+    OpAndValue(cpu, Read8(memory, OpAbsX(cpu, 0x093bu)));
+    uint32_t coordinates = cpu->zero ? 0x7ef006u : 0x7ef002u;
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x56u)));
+    SetAccumulatorWidth(cpu, 0u);
+    OpLda(memory, cpu, OpLongX(cpu, coordinates));
+    OpSta(memory, cpu, WRAM_FIELD_OBJECT_SOURCE_X);
+    OpLda(memory, cpu, OpLongX(cpu, coordinates + 2u));
+    OpSta(memory, cpu, WRAM_FIELD_OBJECT_WIDTH);
+    SetAccumulatorWidth(cpu, 1u);
+    OpLda(memory, cpu, OpLongX(cpu, 0x7ef001u));
+    OpSta(memory, cpu, WRAM_FIELD_OBJECT_FLAGS);
+    if (!EventConditionCall(memory, cpu, Lufia2FieldUpdateEventObjectRegion,
+            0x80u, 0xd680u, 2u))
+        goto boundary;
+    OpPullY(memory, cpu);
+    PullDataBank(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+
+boundary:
+    *handoff = cpu->resume_pc;
+    return EVENT_OPCODE_HANDOFF;
+}
+
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1938,6 +2059,10 @@ unsigned Lufia2EventActorOpcode(
     EventRun *run,
     uint32_t *handoff) {
     switch (handler) {
+    case EVENT_OP_CONDITIONAL_OBJECT_REGION:
+        return EventOpConditionalObjectRegion(memory, cpu, handoff);
+    case EVENT_OP_IMMEDIATE_SOUND:
+        return EventOpImmediateSound(memory, cpu, handoff);
     case EVENT_OP_APPLY_AREA_TRANSITION:
         return EventOpApplyAreaTransition(memory, cpu, handoff);
     case EVENT_OP_OFFSET_POINT_X:
