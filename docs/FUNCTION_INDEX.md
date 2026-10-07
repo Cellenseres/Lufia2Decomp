@@ -364,6 +364,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:8AFA` | `Lufia2MenuSlideCount` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8B08` | `Lufia2MenuInputLoop` | verified | `src/menu/menu_input.c` |
 | `$82:8B4B` | `Lufia2MenuButtons` | verified | `src/menu/menu.c` |
+| `$82:8C43` | `Lufia2MenuSetScrollPosition` | verified | `src/menu/menu_list_scroll.c` |
+| `$82:8C85` | `Lufia2MenuInitializeScrollRange` | verified | `src/menu/menu_list_scroll.c` |
+| `$82:8C9C` | `Lufia2MenuInitializeScrollSprite` | verified | `src/menu/menu_list_scroll.c` |
+| `$82:8CC1` | `Lufia2MenuInitializeScrollStep` | verified | `src/menu/menu_list_scroll.c` |
+| `$82:8CE9` | `Lufia2MenuScrollListPage` | verified | `src/menu/menu_list_scroll.c` |
 | `$82:9214` | `Lufia2MenuClearSpriteMask` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |
 | `$82:939C` | `Lufia2MenuNmi` | verified | `src/menu/menu.c` |
@@ -412,6 +417,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:EFC5` | `Lufia2MenuSavedWindow` | verified | `src/menu/menu_screen.c` |
 | `$82:F0A2` | `Lufia2MenuNameEntryWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:FB1F` | `Lufia2ItemPossessionCount` | verified | `src/item/inventory.c` |
+| `$82:FBE5` | `Lufia2MenuSelectedListOffset` | verified | `src/menu/menu_list_scroll.c` |
 | `$83:80CD` | `Lufia2FieldIdleTest` | verified | `src/field/field_update.c` |
 | `$83:8103` | `Lufia2FieldStatusRequests` | verified | `src/field/field_update.c` |
 | `$83:81C6` | `Lufia2FieldTriggerUpdate` | verified | `src/field/field_triggers.c` |
