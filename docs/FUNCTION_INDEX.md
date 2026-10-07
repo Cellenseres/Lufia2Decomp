@@ -88,6 +88,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:BE75` | `Lufia2SceneRunTransitionRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BE89` | `Lufia2SceneRunStartRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BEAF` | `Lufia2SceneRunMapText` | verified | `src/field/scene_bootstrap.c` |
+| `$80:BF92` | `Lufia2FieldSelectActorById` | verified | `src/field/field_actor_select.c` |
 | `$80:BFAA` | `Lufia2FieldFindHeaderRecord` | verified | `src/field/field_object_lookup.c` |
 | `$80:BFE7` | `Lufia2SceneScriptSelectRecord` | verified | `src/field/field_scene_record_select.c` |
 | `$80:C01D` | `Lufia2SceneReadActorAttributes` | verified | `src/field/field_scene_actor_records.c` |
@@ -361,6 +362,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F87F` | `Lufia2PartyBaseStats` | verified | `src/party/stats.c` |
 | `$81:F979` | `Lufia2PartyLevelUpCheck` | verified | `src/party/level_up.c` |
 | `$81:F9E9` | `Lufia2PartyExperienceForLevel` | verified | `src/party/experience.c` |
+| `$81:FAC9` | `Lufia2BattleRunRelativeScript` | verified | `src/battle/battle_relative_script.c` |
 | `$81:FB79` | `Lufia2CharacterSpriteByte` | verified | `src/battle/battle_character.c` |
 | `$81:FB8E` | `Lufia2SpriteCoordinatesPacked` | verified | `src/battle/battle_sprite_lookups.c` |
 | `$81:FBA2` | `Lufia2SpriteSizePacked` | verified | `src/battle/battle_character.c` |
@@ -770,6 +772,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:EC81` | `Lufia2BattleFrameInput` | verified | `src/battle/battle_frame_input.c` |
 | `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
 | `$85:ECF0` | `Lufia2BattleFrameUpkeep` | verified | `src/battle/battle_frame.c` |
+| `$85:EDDB` | `Lufia2BattleClearPartyRecordBytes` | verified | `src/battle/battle_party_clear.c` |
 | `$86:81A9` | `Lufia2SelectScreenNmi` | verified | `src/menu/menu.c` |
 | `$86:838C` | `Lufia2TitleObjects` | verified | `src/title/title.c` |
 | `$86:86ED` | `Lufia2TitleLayers` | verified | `src/title/title.c` |

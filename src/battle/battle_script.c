@@ -104,7 +104,9 @@ static void BattleScriptAdvance(
     Lufia2CpuState *cpu) {
     const uint16_t pointer = (uint16_t)(Read16Direct(memory, cpu, BATTLE_DP_SCRIPT_POINTER) + 1u);
 
-    Write16Direct(memory, cpu, BATTLE_DP_SCRIPT_POINTER, pointer);
+    const uint16_t address = (uint16_t)DirectAddress(cpu, BATTLE_DP_SCRIPT_POINTER);
+    Write8(memory, (uint16_t)(address + 1u), (uint8_t)(pointer >> 8));
+    Write8(memory, address, (uint8_t)pointer);
     SetNz16(cpu, pointer);
 }
 

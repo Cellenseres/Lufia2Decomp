@@ -6872,3 +6872,27 @@ source = "src/field/field_section_entries.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "80:BF92"
+name = "Lufia2FieldSelectActorById"
+source = "src/field/field_actor_select.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:EDDB"
+name = "Lufia2BattleClearPartyRecordBytes"
+source = "src/battle/battle_party_clear.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:FAC9"
+name = "Lufia2BattleRunRelativeScript"
+source = "src/battle/battle_relative_script.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
