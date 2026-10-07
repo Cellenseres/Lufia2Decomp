@@ -353,6 +353,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:895B` | `Lufia2MenuSetCursorStyle` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:898D` | `Lufia2MenuValidatePartyCursor` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:89A4` | `Lufia2MenuInitializeAuxiliarySprites` | verified | `src/menu/menu_actor_callers.c` |
+| `$82:89BC` | `Lufia2MenuReplaceCursor` | verified | `src/menu/menu_list_controls.c` |
 | `$82:89C4` | `Lufia2MenuBuildCursorPair` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:89EC` | `Lufia2MenuMoveCursorPair` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:89FA` | `Lufia2MenuCursorSlide` | verified | `src/menu/menu_cursor_slide.c` |
@@ -373,6 +374,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9A4E` | `Lufia2MenuRunMainScreen` | verified | `src/menu/menu_main_screen.c` |
 | `$82:9AE0` | `Lufia2MenuRefreshMainDisplay` | verified | `src/menu/menu_main_dispatch.c` |
 | `$82:9B10` | `Lufia2MenuBuildMainWindows` | verified | `src/menu/menu_display_callers.c` |
+| `$82:9B51` | `Lufia2MenuBuildListWindows` | verified | `src/menu/menu_list_controls.c` |
+| `$82:9C10` | `Lufia2MenuInitializeListScroll` | verified | `src/menu/menu_list_controls.c` |
 | `$82:9CB2` | `Lufia2MenuWarpList` | verified | `src/menu/menu_screen.c` |
 | `$82:9EF2` | `Lufia2MenuBuildAlternateCursor` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
@@ -381,6 +384,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:A432` | `Lufia2MenuRunMainInput` | verified | `src/menu/menu_main_dispatch.c` |
 | `$82:A582` | `Lufia2MenuApplySpellList` | verified | `src/menu/menu_main_dispatch.c` |
 | `$82:A62D` | `Lufia2MenuRunAlternateSelection` | verified | `src/menu/menu_main_dispatch.c` |
+| `$82:A658` | `Lufia2MenuRunListInput` | verified | `src/menu/menu_list_controls.c` |
+| `$82:A711` | `Lufia2MenuRunListSelection` | verified | `src/menu/menu_list_controls.c` |
 | `$82:A918` | `Lufia2MenuListCursor` | verified | `src/menu/menu_screen.c` |
 | `$82:ACDB` | `Lufia2MenuListRow` | verified | `src/menu/menu_screen.c` |
 | `$82:B2C5` | `Lufia2MenuEquipUpgrade` | verified | `src/menu/menu_screen.c` |

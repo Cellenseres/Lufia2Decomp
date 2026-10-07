@@ -466,6 +466,26 @@ Lufia2ExecutionResult Lufia2MenuPrepareDisplayText(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2MenuReplaceCursor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuInitializeListScroll(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuBuildListWindows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuRunListInput(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuRunListSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

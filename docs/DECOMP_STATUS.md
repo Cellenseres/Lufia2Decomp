@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-775 functions in `metadata/functions.toml`: 775 verified, 0 draft, 0 identified, 0 disabled.
+780 functions in `metadata/functions.toml`: 780 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2669,3 +2669,30 @@ stay original services. No frame skip,host redraw or timing patch.
 CPU,WRAM,MMIO and bus-write order remain unchanged. Shared full712,
 W4WX and Release PASS.775 verified,zero drafts,467 documented fields,
 3,104 generated calls. No measured runtime-hit or whole-ROM coverage claim.
+
+## Original menu list controls - 2026-10-07
+
+Five complete entries construct mode-dependent list windows,initialize scroll
+geometry,replace cursors and run the nested action/list-selection loops.
+First/second selection,help,description,page,sort,cancel and input comparisons
+retain original flag,width,stack and memory behavior. Proven sprite-slot
+arrays keep their original indices. Existing auxiliary-sprite initialization
+is reused. Window/cursor setup composes with native clear/text and list
+children; remaining unknown services retain exact original child contracts.
+
+42,240 original-ROM states include1,280 composition-context states. All59
+child unwinds,42,299 actual ABI cases,75 redirected returns,9,600 unsupported
+states and74 public-library error controls pass. Selection/mode/overflow
+word writes are documented without truncating their high bytes. Inventory
+words retain96 entries,packed item/quantity bits and original unchecked access.
+153F keeps its existing battle allocation and a separate menu-phase alias.
+
+86:8CDA now accepts its original M1X8 callers as well as M1X16. 65,536 X8
+register pairs and65,536 X16 cases pass both ROM and actual ABI comparisons.
+1,152 remaining guard states preserve original return-frame reads/open bus;
+nine public-library controls pass. Semantic SpriteSetTable code is unchanged.
+No widened contract is inferred for other sprite children.
+
+Shared full718,W4WX and Release PASS.780 verified,zero drafts,471
+documented fields,3,124 generated calls. CPU,WRAM,MMIO and bus-write order
+remain literal. No timing patch or measured runtime-hit coverage claim.
