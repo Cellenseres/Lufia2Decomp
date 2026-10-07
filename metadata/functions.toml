@@ -5184,3 +5184,35 @@ source = "src/system/sound_transfer.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:9747"
+name = "Lufia2BeginQueuedSoundResource"
+source = "src/system/sound_queue.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9786"
+name = "Lufia2UpdateSoundResourceQueue"
+source = "src/system/sound_queue.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9886"
+name = "Lufia2UploadSoundResourceSlot"
+source = "src/system/sound_queue.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9528"
+name = "Lufia2SoundDriverRequest03"
+source = "src/system/sound_queue.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

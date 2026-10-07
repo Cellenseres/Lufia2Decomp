@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-631 functions in `metadata/functions.toml`: 631 verified, 0 draft, 0 identified, 0 disabled.
+635 functions in `metadata/functions.toml`: 635 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2318,3 +2318,15 @@ Transfer helpers:49152 semantic and49152 production-ABI comparisons,
 Strict C,Release and625 independent regression jobs pass.
 631 verified entries,0drafts,382 fields,2528 generated native calls.
 These are static selection counts, not measured interpreter hits.
+
+## Original sound resource queue - 2026-10-07
+
+Four complete queue/upload callers are verified and bound. Preserve the
+original four-slot consumption, pending-song byte, driver-inhibit transition,
+source pointer setup, widths, port order and pushed child frames.
+Unknown upload/wait children remain explicit original continuations.
+81,920 semantic and 81,920 production-ABI comparisons pass, including the
+composed queue setup; 11 child unwinds, 4,992 guards and 19 ROM controls pass.
+The shared regression batch with field animation passes 631 independent jobs,
+strict C and Release. Counts at this sound checkpoint: 635 verified entries,
+zero drafts, 382 WRAM locations. These are static selections, not runtime hits.
