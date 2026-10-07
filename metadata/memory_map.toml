@@ -2988,3 +2988,19 @@ name = "field_object_condition_extended"
 width = 1
 owner = "field"
 notes = "Selects the additional 32 flag bytes."
+
+[[location]]
+address = "7E:058E"
+name = "sound_parameter_inhibit"
+width = 1
+count = 1
+owner = "system"
+notes = "DB-relative inhibit byte for original driver command1A."
+
+[[location]]
+address = "7E:0590"
+name = "sound_resource_output"
+width = 1
+count = 1
+owner = "system"
+notes = "80:957D repeatedly stores resource bytes here without advancingY."

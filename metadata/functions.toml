@@ -4984,3 +4984,203 @@ source = "src/field/field_object_conditions.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:9554"
+name = "Lufia2PlaySoundResource"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:956A"
+name = "Lufia2SendUncheckedSoundCommand"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:957D"
+name = "Lufia2LoadSoundResource"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:95D2"
+name = "Lufia2SoundDriverRequest05"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:95DF"
+name = "Lufia2SoundDriverRead1E"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:95F0"
+name = "Lufia2SoundDriverRead0F"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9612"
+name = "Lufia2SoundDriverWrite0C"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9623"
+name = "Lufia2SoundDriverWrite0D"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9634"
+name = "Lufia2SoundDriverRead18"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9644"
+name = "Lufia2SoundDriverWrite09"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9655"
+name = "Lufia2SoundDriverWrite1A"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:966F"
+name = "Lufia2SoundDriverWrite1B"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9685"
+name = "Lufia2SoundDriverRequest15"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:969F"
+name = "Lufia2PrepareSongResource"
+source = "src/system/sound_driver.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:96CC"
+name = "Lufia2SoundDriverWrite0A"
+source = "src/system/sound_tables.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:96DD"
+name = "Lufia2SoundDriverWriteComplement10"
+source = "src/system/sound_tables.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:96F2"
+name = "Lufia2SoundDriverRead08"
+source = "src/system/sound_tables.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:96B9"
+name = "Lufia2WaitSoundDriverFlagsClear"
+source = "src/system/sound_tables.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9703"
+name = "Lufia2InitializeSoundResourceTable"
+source = "src/system/sound_tables.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:99F4"
+name = "Lufia2WriteSoundTransferMarker"
+source = "src/system/sound_transfer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:97DA"
+name = "Lufia2AdvanceSoundSourceBank"
+source = "src/system/sound_transfer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:99B2"
+name = "Lufia2CheckSoundDriverSignature"
+source = "src/system/sound_transfer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:99CA"
+name = "Lufia2SoundDriverWrite1F"
+source = "src/system/sound_transfer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:99D8"
+name = "Lufia2SoundDriverWrite20"
+source = "src/system/sound_transfer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:99E6"
+name = "Lufia2SoundDriverWrite21"
+source = "src/system/sound_transfer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
