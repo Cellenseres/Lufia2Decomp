@@ -2902,7 +2902,7 @@ name = "unk_7FD133"
 aliases = ["EVENT_UNK_7FD133"]
 width = 1
 owner = "field"
-notes = "Mode byte written by Object routes 86/87 before the event probe."
+notes = "Mode byte written by Object routes86/87 before the event probe; event value operandBF reads the same byte through D074+BF."
 
 [[location]]
 address = "7F:D048"
@@ -3961,3 +3961,19 @@ width = 5
 count = 7
 owner = "party"
 notes = "Five saved stat increments per capsule monster."
+
+[[location]]
+address = "7F:D114"
+name = "field_event_value_variables"
+width = 1
+count = 31
+owner = "field"
+notes = "A0..BE value operands read these31bytes through the original D074+operand address; BF aliases the separately catalogued D133 mode byte."
+
+[[location]]
+address = "7F:D15C"
+name = "field_event_slot_variables"
+width = 1
+count = 32
+owner = "field"
+notes = "Four parameter arrays of eight slots; FB..FE select them, while FF retains the original following-position alias."

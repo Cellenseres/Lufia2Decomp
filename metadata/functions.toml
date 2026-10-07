@@ -6792,3 +6792,19 @@ source = "src/field/field_event_reader.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "80:E9BC"
+name = "Lufia2FieldResolveEventVariable"
+source = "src/field/field_event_value.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:E9ED"
+name = "Lufia2FieldResolveEventValue"
+source = "src/field/field_event_value.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

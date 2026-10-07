@@ -133,6 +133,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:E8B9` | `Lufia2FieldReadEventByte` | verified | `src/field/field_event_byte.c` |
 | `$80:E8D0` | `Lufia2FieldRewindEventByte` | verified | `src/field/field_event_reader.c` |
 | `$80:E8F4` | `Lufia2FieldSetEventPointer` | verified | `src/field/field_event_reader.c` |
+| `$80:E9BC` | `Lufia2FieldResolveEventVariable` | verified | `src/field/field_event_value.c` |
+| `$80:E9ED` | `Lufia2FieldResolveEventValue` | verified | `src/field/field_event_value.c` |
 | `$80:EA47` | `Lufia2FieldSaveActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EA50` | `Lufia2FieldRestoreActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |
