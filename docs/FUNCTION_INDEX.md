@@ -58,10 +58,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:D19F` | `Lufia2FieldRestoreRegionObjects` | verified | `src/field/field_event_object_region.c` |
 | `$80:D1E1` | `Lufia2FieldRemoveRegionObjects` | verified | `src/field/field_event_object_region.c` |
 | `$80:D227` | `Lufia2FieldMarkRegionObjects` | verified | `src/field/field_event_map_state.c` |
+| `$80:DCDA` | `Lufia2FieldPushPendingObject` | verified | `src/field/field_event_objects.c` |
 | `$80:E722` | `Lufia2FieldStartEvent` | verified | `src/field/field_event_script.c` |
 | `$80:E7DF` | `Lufia2FieldStartPositionEvent` | verified | `src/field/field_event_triggers.c` |
 | `$80:E7FA` | `Lufia2FieldStartEventAtProbe` | verified | `src/field/field_event_triggers.c` |
 | `$80:E844` | `Lufia2FieldInitializeMapEvents` | verified | `src/field/field_map_load.c` |
+| `$80:EA47` | `Lufia2FieldSaveActorSlot` | verified | `src/field/field_event_actors.c` |
+| `$80:EA50` | `Lufia2FieldRestoreActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |
 | `$80:ED0E` | `Lufia2FieldUnpackAttributes` | verified | `src/field/field_attributes.c` |
 | `$80:ED9C` | `Lufia2FieldBuildAttributes` | verified | `src/field/field_attributes.c` |
@@ -389,8 +392,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:BB76` | `Lufia2FieldPrepareEventControl` | verified | `src/field/field_event_control.c` |
 | `$83:BB93` | `Lufia2UpdateActorSlots` | verified | `src/actor/actor_slots.c` |
 | `$83:BBF3` | `Lufia2PlayerSlotSpecialUpdate` | verified | `src/actor/player_update.c` |
+| `$83:C079` | `Lufia2FieldCanPushObject` | verified | `src/field/field_event_objects.c` |
 | `$83:C0EF` | `Lufia2FieldProbeLeaderPosition` | verified | `src/field/field_actor_event_helpers.c` |
 | `$83:C0FA` | `Lufia2FieldAcknowledgeControlChange` | verified | `src/field/field_actor_event_helpers.c` |
+| `$83:C108` | `Lufia2FieldClaimActor` | verified | `src/field/field_event_actors.c` |
 | `$83:C1B4` | `Lufia2PlayerSlotStandardUpdate` | verified | `src/actor/player_controller.c` |
 | `$83:C7F8` | `Lufia2ActorPrimaryUpdate` | verified | `src/actor/actor_primary.c` |
 | `$83:C947` | `Lufia2ActorPrimaryReset` | verified | `src/actor/actor_primary.c` |
@@ -401,6 +406,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:D508` | `Lufia2ActorSecondaryUpdate` | verified | `src/actor/actor_secondary.c` |
 | `$83:D7A5` | `Lufia2ActorPositionToObjectProbe` | verified | `src/field/field_object_graphics.c` |
 | `$83:DF87` | `Lufia2ActorSpawnFromId` | verified | `src/field/field_object_transition.c` |
+| `$83:E033` | `Lufia2FieldSetObjectDrawFlags` | verified | `src/field/field_event_actors.c` |
 | `$83:E03E` | `Lufia2ObjectSlotsUpdate` | verified | `src/actor/object_vm.c` |
 | `$83:E60E` | `Lufia2ObjectInterpolateCoordinate` | verified | `src/field/field_object_motion.c` |
 | `$83:E6AA` | `Lufia2ObjectApproachCoordinate` | verified | `src/field/field_object_motion.c` |

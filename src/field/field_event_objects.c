@@ -1183,15 +1183,13 @@ static uint8_t EventPushGround(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 }
 
 /* $83:C079: carry when a pushed object may move. */
-static uint8_t EventPushAllowed(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                uint16_t return_address, uint32_t *handoff) {
+static uint8_t EventCanPushObjectBody(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t *handoff) {
     bool allowed = true;
 
-    SimulateJslFrame(memory, cpu, 0x80u, return_address);
-    cpu->program_bank = 0x83u;
-    StoreADirect8(memory, cpu, 0x94u); /* C079 */
+    StoreADirect8(memory, cpu, 0x94u);
     EventProbeSave(memory, cpu, 0xc07du, 0);
-    Lufia2MapTileHeight(memory, cpu, 0xc080u); /* $83:F988 */
+    Lufia2MapTileHeight(memory, cpu, 0xc080u);
     StoreADirect8(memory, cpu, DP_SCRATCH_C);
     LoadA8(cpu, DirectByte(memory, cpu, 0x94u));
     if (!EventProbeStep(memory, cpu, 0x83u, 0xc088u, handoff))
@@ -1200,38 +1198,51 @@ static uint8_t EventPushAllowed(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     if (cpu->carry) {
         allowed = false;
     } else {
-        Lufia2MapCellIndex(memory, cpu, 0xc090u, 1); /* $83:F9AD */
+        Lufia2MapCellIndex(memory, cpu, 0xc090u, 1);
         LoadA8(cpu,
                Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x)));
         And8(cpu, 0x80u);
         if (cpu->zero && !EventPushGround(memory, cpu, handoff, &allowed))
             return 0;
     }
-    cpu->carry = allowed; /* C0EB, C0ED */
-    SimulateRtlFrame(memory, cpu);
-    cpu->program_bank = 0x80u;
+    cpu->carry = allowed;
     return 1;
 }
 
-/* $5A-$5D: push pending map object n one cell. */
-unsigned Lufia2EventOpPushObject(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t handler,
-    uint32_t *handoff) {
-    static const uint8_t kDirections[4] = {0x04u, 0x00u, 0x02u, 0x06u};
-    uint8_t allowed;
+static uint8_t EventPushAllowed(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address, uint32_t *handoff) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    cpu->program_bank = 0x83u;
+    if (!EventCanPushObjectBody(memory, cpu, handoff))
+        return 0u;
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x80u;
+    return 1u;
+}
 
-    LoadA8(cpu, kDirections[(handler - EVENT_OP_PUSH_OBJECT_DOWN) / 5u]);
-    StoreADirect8(memory, cpu, 0x23u);                         /* DCC0 */
-    Lufia2EventNextByte(memory, cpu, 0xdcc4u);
-    Lufia2EventValue(memory, cpu, 0xdcc7u);
-    Write8(memory, EVENT_PUSH_OBJECT_INDEX, A8(cpu));
-    Lufia2EventNextByte(memory, cpu, 0xdcceu);
-    StoreADirect8(memory, cpu, 0x22u);
-    PushY(memory, cpu);
-    SimulateJslFrame(memory, cpu, 0x80u, 0xdcd5u);
-    TransferDirectToA(cpu);                                    /* DCDA */
+Lufia2ExecutionResult Lufia2FieldCanPushObject(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f30u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x83c079u);
+    uint32_t handoff = 0u;
+    if (!EventCanPushObjectBody(memory, cpu, &handoff))
+        return ExecutionHandoff(cpu, handoff);
+    return ExecutionReturned(cpu->carry ? 0x83c0ecu : 0x83c0eeu);
+}
+
+/* $5A-$5D: push pending map object n one cell. */
+Lufia2ExecutionResult Lufia2FieldPushPendingObject(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f50u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80dcdau);
+    uint8_t allowed;
+    uint32_t handoff = 0u;
+    TransferDirectToA(cpu);
     LoadA8(cpu, Read8(memory, EVENT_PUSH_OBJECT_INDEX));
     TransferAToX(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_PENDING_RECORD_X, cpu->x)));
@@ -1247,12 +1258,12 @@ unsigned Lufia2EventOpPushObject(
     Write8(memory, EVENT_PUSH_OBJECT_ID, A8(cpu));
     PushY(memory, cpu);
     LoadA8(cpu, DirectByte(memory, cpu, 0x23u));
-    if (!EventPushAllowed(memory, cpu, 0xdd01u, handoff))
-        return EVENT_OPCODE_HANDOFF;
+    if (!EventPushAllowed(memory, cpu, 0xdd01u, &handoff))
+        return ExecutionHandoff(cpu, handoff);
     allowed = cpu->carry;
-    cpu->y = PullIndexValue(memory, cpu);
+    OpPullY(memory, cpu);
     if (allowed) {
-        Lufia2EventClaimActor(memory, cpu, 0xdd09u);                 /* DD06 */
+        Lufia2EventClaimActor(memory, cpu, 0xdd09u);
         TransferDirectToA(cpu);
         LoadA8(cpu, Read8(memory, EVENT_PUSH_OBJECT_INDEX));
         TransferAToX(cpu);
@@ -1268,9 +1279,9 @@ unsigned Lufia2EventOpPushObject(
         StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
         StoreADirect8(memory, cpu, DP_PROBE_Y);
         SimulateJslFrame(memory, cpu, 0x80u, 0xdd2fu);
-        Lufia2ActorSyncFinePosition(memory, cpu);              /* $83:A746 */
+        Lufia2ActorSyncFinePosition(memory, cpu);
         SimulateRtlFrame(memory, cpu);
-        LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);             /* DD30 */
+        LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
         LoadA8(cpu, DirectByte(memory, cpu, 0x23u));
         StoreAAbsolute8(memory, cpu, WRAM_EVENT_MAP_0692, cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, 0x22u));
@@ -1283,9 +1294,9 @@ unsigned Lufia2EventOpPushObject(
         LoadA8(cpu, 0x09u);
         StoreAAbsolute8(memory, cpu, WRAM_UNK_7E070A, cpu->x);
         SimulateJslFrame(memory, cpu, 0x80u, 0xdd53u);
-        Lufia2ActorLoadPrimaryScript(memory, cpu);             /* $83:D416 */
+        Lufia2ActorLoadPrimaryScript(memory, cpu);
         SimulateRtlFrame(memory, cpu);
-        SimulateJslFrame(memory, cpu, 0x80u, 0xdd57u);         /* $83:F9A5 */
+        SimulateJslFrame(memory, cpu, 0x80u, 0xdd57u);
         Lufia2MapCellIndex(memory, cpu, 0xf9a7u, 1);
         SimulateRtlFrame(memory, cpu);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES,
@@ -1293,8 +1304,8 @@ unsigned Lufia2EventOpPushObject(
         And8(cpu, 0xf7u);
         Write8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x), A8(cpu));
         LoadA8(cpu, DirectByte(memory, cpu, 0x23u));
-        if (!EventProbeStep(memory, cpu, 0x80u, 0xdd67u, handoff))
-            return EVENT_OPCODE_HANDOFF;
+        if (!EventProbeStep(memory, cpu, 0x80u, 0xdd67u, &handoff))
+            return ExecutionHandoff(cpu, handoff);
         SimulateJslFrame(memory, cpu, 0x80u, 0xdd6bu);
         Lufia2MapCellIndex(memory, cpu, 0xf9a7u, 1);
         SimulateRtlFrame(memory, cpu);
@@ -1302,17 +1313,41 @@ unsigned Lufia2EventOpPushObject(
             cpu->x)));
         Or8(cpu, 0x08u);
         Write8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x), A8(cpu));
-        TransferDirectToA(cpu);                                /* DD76 */
+        TransferDirectToA(cpu);
         LoadA8(cpu, DirectByte(memory, cpu, 0x23u));
         TransferAToX(cpu);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83c1a5u, cpu->x)));
         cpu->carry = 0;
         Adc8(cpu, 0x48u);
-        if (!Lufia2EventActorAction(memory, cpu, 0xdd84u, handoff))
-            return EVENT_OPCODE_HANDOFF;
+        if (!Lufia2EventActorAction(memory, cpu, 0xdd84u, &handoff))
+            return ExecutionHandoff(cpu, handoff);
     }
-    SimulateRtlFrame(memory, cpu);                             /* DD05 / DD85 */
-    cpu->y = PullIndexValue(memory, cpu);                      /* DCD6 */
+    return ExecutionReturned(allowed ? 0x80dd85u : 0x80dd05u);
+}
+
+unsigned Lufia2EventOpPushObject(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t handler,
+    uint32_t *handoff) {
+    static const uint8_t kDirections[4] = {0x04u, 0x00u, 0x02u, 0x06u};
+
+    LoadA8(cpu, kDirections[(handler - EVENT_OP_PUSH_OBJECT_DOWN) / 5u]);
+    StoreADirect8(memory, cpu, 0x23u);                         /* DCC0 */
+    Lufia2EventNextByte(memory, cpu, 0xdcc4u);
+    Lufia2EventValue(memory, cpu, 0xdcc7u);
+    Write8(memory, EVENT_PUSH_OBJECT_INDEX, A8(cpu));
+    Lufia2EventNextByte(memory, cpu, 0xdcceu);
+    StoreADirect8(memory, cpu, 0x22u);
+    PushY(memory, cpu);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xdcd5u);
+    Lufia2ExecutionResult result = Lufia2FieldPushPendingObject(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        *handoff = result.pc;
+        return EVENT_OPCODE_HANDOFF;
+    }
+    SimulateRtlFrame(memory, cpu);
+    OpPullY(memory, cpu);
     return EVENT_OPCODE_NEXT;
 }
 

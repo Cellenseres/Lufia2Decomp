@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-592 functions in `metadata/functions.toml`: 592 verified, 0 draft, 0 identified, 0 disabled.
+598 functions in `metadata/functions.toml`: 598 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2253,3 +2253,16 @@ WRAM fields are named. Focused ROM/ABI/owner checks and altered-ROM controls
 pass, followed by production ABI, W4WX, Release and 600 independent jobs.
 592 verified, 0 draft, 376 fields, 2372 native calls. No measured hit-rate
 claim. Private proof records retain the individual test counts.
+
+## Field script transitions - 2026-10-07
+
+Six complete push-object, actor-slot and object-draw helpers are verified
+and bound. Object2A now executes its push child natively. Event5A-5D share
+that same original implementation. Event1A resolves its original header
+and applies the existing area transition through known native children;
+unknown audio and special transition children retain exact call frames.
+Original flags, failed free-slot selection and map-attribute branches are
+preserved. Focused helper, route, owner, ABI, guard and altered-ROM proofs
+pass, followed by strict C, Release and 604 independent verification jobs.
+598 verified,0 draft,376 fields,2396 generated native calls. These counts
+describe bindings and verification, not a measured interpreter hit rate.
