@@ -1276,6 +1276,9 @@ Lufia2ExecutionResult Lufia2BattleLoadIpActionName(
 Lufia2ExecutionResult Lufia2BattleLoadStatusMessage(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleExpandActionMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

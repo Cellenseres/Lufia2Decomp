@@ -3425,3 +3425,10 @@ width = 2
 count = 224
 owner = "battle"
 notes = "Seven original message tile rows cleared through the row child."
+
+[[location]]
+address = "7F:F000"
+name = "battle_message_resource_buffer"
+width = 1
+owner = "battle"
+notes = "Base of the original variable-length, zero-terminated action message expansion buffer. 9906 draws it from bank 7F."

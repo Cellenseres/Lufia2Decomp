@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-727 functions in `metadata/functions.toml`: 727 verified, 0 draft, 0 identified, 0 disabled.
+728 functions in `metadata/functions.toml`: 728 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2499,3 +2499,16 @@ and M1 with X16; X8 misdecodes original immediate operands and is rejected.
 IP and status entry widths are restored from the original saved status.
 Shared phase buffers remain shared; the status header is two bytes.
 727 verified, zero drafts, 435 fields, 2,912 generated calls. Static counts.
+
+## Original battle message resource parser - 2026-10-07
+
+The complete C4F1 parser preserves literal bytes, short and long dictionaries,
+the action-ID remap, multiplication register order and original ADC carry.
+15,520 original-ROM and actual ABI cases cover 970 bounded original IDs,
+all six command classes and eight parser branches. 1,536 entry guards and
+18 public-library error controls pass. Whole action-message composition adds
+61,440 ROM cases, 12,288 native compositions and 32 exact child unwinds.
+Saved widths, registers, flags, stack residue and ordered writes remain original.
+Out-of-ROM and nonterminating synthetic resource IDs are not production fixes.
+Shared full679, W4WX and Release PASS. Hardware timing is not inferred.
+728 verified, zero drafts, 436 fields, 2,916 generated calls. Static counts.
