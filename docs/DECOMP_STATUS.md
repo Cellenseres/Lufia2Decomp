@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-766 functions in `metadata/functions.toml`: 766 verified, 0 draft, 0 identified, 0 disabled.
+775 functions in `metadata/functions.toml`: 775 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2646,3 +2646,26 @@ including original X8 portrait-table calls. Their wider binding is not claimed.
 pass. CPU,WRAM,MMIO and bus-write order remain unchanged. Shared full706,
 W4WX and Release PASS. 766 verified,zero drafts,461 documented fields,
 3,068 generated calls. No measured runtime-hit or whole-ROM coverage claim.
+
+## Original cursor and menu presentation callers - 2026-10-07
+
+Nine complete entries load original seven-byte cursor grids,select sprite
+styles,validate party selection,construct and move cursor pairs,clear sprite
+masks,wait for screen fades and prepare display text. Existing native cursor
+placement and movement remain their original children. Unchecked style/table
+indices,byte arithmetic,status restoration and child frames remain literal.
+Origin low/high bytes and cell dimensions are indexed bases; no larger
+disjoint arrays are inferred.0596/0597 retain the existing scroll-field allocation and neutral phase alias.
+
+Cursor proof:26,112 ROM states include1,536 composition-context states,
+26,120 actual ABI cases,eight child unwinds,75 redirects,11,520 unsupported
+states and55 public-library error controls. Composition uses the recovered
+grid/style/pair routines and existing native placement and sprite animation.
+Presentation proof:13,056 ROM states include768 composition-context states;
+512 execute original80:86C1 fade updates under explicit frame services.
+13,058 actual ABI cases,two child unwinds,30 redirects,5,760 unsupported
+states and32 public-library error controls pass. Remaining frame internals
+stay original services. No frame skip,host redraw or timing patch.
+CPU,WRAM,MMIO and bus-write order remain unchanged. Shared full712,
+W4WX and Release PASS.775 verified,zero drafts,467 documented fields,
+3,104 generated calls. No measured runtime-hit or whole-ROM coverage claim.
