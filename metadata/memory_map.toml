@@ -4009,3 +4009,43 @@ width = 1
 count = 64
 owner = "field"
 notes = "Y coordinate bytes of the64 script points; EA09 reads E0..FF as point0..31."
+
+[[location]]
+address = "7F:D000"
+name = "field_section_records"
+width = 2
+count = 4
+owner = "field"
+notes = "Original section header pointers; EBAA appends records using the D038 byte offset."
+
+[[location]]
+address = "7F:D038"
+name = "field_section_next_slot"
+width = 2
+count = 1
+owner = "field"
+notes = "Byte offset of the next section-table record; original EBAA adds twice the source count."
+
+[[location]]
+address = "7F:D03A"
+name = "field_map_resource_base"
+width = 2
+count = 1
+owner = "field"
+notes = "Map resource base added before and after the relative pointer lookup at ECFE."
+
+[[location]]
+address = "7F:C000"
+name = "field_packed_attributes"
+width = 1
+count = 1
+owner = "field"
+notes = "Base of packed two-bit cell attributes; dynamic extent may alias later original tables."
+
+[[location]]
+address = "7E:05BB"
+name = "field_section_height"
+width = 2
+count = 1
+owner = "field"
+notes = "Active map section height published by EC78; TDC supplies its original high byte."

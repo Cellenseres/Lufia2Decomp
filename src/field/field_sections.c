@@ -18,8 +18,7 @@ enum {
     SECTION_NEXT_SLOT = 0xd038u, /* number of used slots, times two */
     SECTION_RECORD_HEADER = 6u,  /* bytes before the first record */
     SECTION_DATA_OFFSET = 4u,    /* attribute cells follow word, width, height */
-    SECTION_PACKED_ATTRIBUTES = 0xc000u,
-    WRAM_FIELD_SECTION_HEIGHT = 0x05bbu
+    SECTION_PACKED_ATTRIBUTES = 0xc000u
 };
 
 /* Work bytes. */

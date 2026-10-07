@@ -6832,3 +6832,43 @@ source = "src/field/field_event_coordinate.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:EBAA"
+name = "Lufia2FieldLoadSectionRecords"
+source = "src/field/field_section_entries.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:EC18"
+name = "Lufia2FieldBuildPackedAttributes"
+source = "src/field/field_section_entries.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:EC78"
+name = "Lufia2FieldPublishSectionSize"
+source = "src/field/field_section_entries.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:ECF2"
+name = "Lufia2FieldAdvanceMapDestination"
+source = "src/field/field_section_entries.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:ECFE"
+name = "Lufia2FieldResolveMapOffset"
+source = "src/field/field_section_entries.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
