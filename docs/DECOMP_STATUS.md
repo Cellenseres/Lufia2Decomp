@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-722 functions in `metadata/functions.toml`: 722 verified, 0 draft, 0 identified, 0 disabled.
+727 functions in `metadata/functions.toml`: 727 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2482,3 +2482,20 @@ and empty redraw layers;40,967 actual ABI cases,7 child unwinds,60 redirects,
 6,144 guards and12 error controls pass. No timing optimization or unknown
 child reconstruction is claimed. Shared full669,W4WX and Release PASS.
 722 verified, zero drafts,430 fields,2,892 generated calls. Static counts only.
+
+## Original battle action messages - 2026-10-07
+
+Five complete entries connect item, spell and IP names, status strings,
+seven tile rows, action windows and frame confirmation. The existing 9DD4
+upload is reused and tested as a sixth regression entry. Original cleared
+tile rows ignore the loaded style values; this behavior remains unchanged.
+61,440 ROM states include 12,288 native child compositions; 61,472 actual
+ABI cases, 32 child unwinds, 45 redirects, 8,064 unsupported-entry guards
+and 26 error controls pass. C4F1 resource parsing, text drawing and frame
+services remain explicit original children. Multiplication port order is
+compared; hardware timing is not inferred. W4WX, Release and full 672 pass.
+The 9906 battle contract requires DP0 and M1X0. The row child supports M0
+and M1 with X16; X8 misdecodes original immediate operands and is rejected.
+IP and status entry widths are restored from the original saved status.
+Shared phase buffers remain shared; the status header is two bytes.
+727 verified, zero drafts, 435 fields, 2,912 generated calls. Static counts.
