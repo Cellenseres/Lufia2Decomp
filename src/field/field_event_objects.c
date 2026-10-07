@@ -4,6 +4,7 @@
 
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
 #include "lufia2/actor.h"
@@ -1333,4 +1334,189 @@ Lufia2ExecutionResult Lufia2FieldSetObjectTiles(
         return ExecutionHandoff(cpu, 0x83f750u);
     EventObjectSetTilesBody(memory, cpu);
     return ExecutionReturned(0x83f783u);
+}
+
+typedef Lufia2ExecutionResult (*EventRegionStep)(
+    const Lufia2Memory *, Lufia2CpuState *);
+
+static uint8_t EventRegionCall(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    EventRegionStep step, uint16_t back, uint32_t *handoff) {
+    Lufia2ExecutionResult result;
+    SimulateJsrFrame(memory, cpu, back);
+    result = step(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        *handoff = result.pc;
+        return 0;
+    }
+    {
+        uint8_t low = Pull8(memory, cpu);
+        uint8_t high = Pull8(memory, cpu);
+        uint16_t actual = (uint16_t)(low | ((uint16_t)high << 8));
+        if (actual != back) {
+            *handoff = 0x800000u | (uint16_t)(actual + 1u);
+            cpu->resume_pc = *handoff;
+            return 0;
+        }
+    }
+    return 1;
+}
+
+unsigned Lufia2EventObjectRegionOpcode(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t handler, uint32_t *handoff) {
+    uint16_t position_return, operand_return, value_return;
+    uint16_t prepare_return, update_return;
+    EventRegionStep update = Lufia2FieldUpdateEventObjectRegion;
+
+    switch (handler) {
+    case EVENT_OP_UPDATE_OBJECT_REGION:
+    case EVENT_OP_UPDATE_OBJECT_REGION_ALT:
+        if (handler == EVENT_OP_UPDATE_OBJECT_REGION_ALT)
+            LoadA8(cpu, 0xffu);
+        Write8(memory, OpDp(cpu, 0xaeu), handler == EVENT_OP_UPDATE_OBJECT_REGION_ALT ? 0xffu : 0u);
+        position_return = 0xd041u;
+        operand_return = 0xd044u;
+        value_return = 0xd047u;
+        prepare_return = 0xd04au;
+        update_return = 0xd04du;
+        break;
+    case EVENT_OP_COPY_OBJECT_REGION:
+        Write8(memory, OpDp(cpu, 0xaeu), 0u);
+        position_return = 0xd055u;
+        operand_return = 0xd058u;
+        value_return = 0xd05bu;
+        prepare_return = 0xd05eu;
+        update_return = 0xd061u;
+        update = Lufia2FieldCopyEventObjectRegion;
+        break;
+    case EVENT_OP_UPDATE_OBJECT_REGION_VALUE:
+        position_return = 0xd067u;
+        operand_return = 0xd06au;
+        value_return = 0xd06du;
+        prepare_return = 0xd070u;
+        update_return = 0xd073u;
+        break;
+    case EVENT_OP_UPDATE_OBJECT_REGION_AT:
+        Write8(memory, OpDp(cpu, 0xaeu), 0u);
+        Lufia2EventNextByte(memory, cpu, 0xd08bu);
+        Lufia2EventVariable(memory, cpu, 0xd08eu);
+        OpSta(memory, cpu, WRAM_FIELD_PENDING_OBJECT_X);
+        Lufia2EventNextByte(memory, cpu, 0xd095u);
+        Lufia2EventVariable(memory, cpu, 0xd098u);
+        OpSta(memory, cpu, WRAM_FIELD_PENDING_OBJECT_Y);
+        position_return = 0;
+        operand_return = 0xd09fu;
+        value_return = 0xd0a2u;
+        prepare_return = 0xd0a5u;
+        update_return = 0xd0a8u;
+        break;
+    default:
+        *handoff = 0x800000u | handler;
+        return EVENT_OPCODE_HANDOFF;
+    }
+    if (position_return && !EventRegionCall(memory, cpu,
+            Lufia2FieldReadObjectRegionPosition, position_return, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    Lufia2EventNextByte(memory, cpu, operand_return);
+    if (handler == EVENT_OP_UPDATE_OBJECT_REGION_VALUE)
+        Lufia2EventValue(memory, cpu, value_return);
+    else
+        Lufia2EventVariable(memory, cpu, value_return);
+    if (!EventRegionCall(memory, cpu,
+            Lufia2FieldPrepareObjectRegion, prepare_return, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    if (!EventRegionCall(memory, cpu, update, update_return, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    return EVENT_OPCODE_NEXT;
+}
+
+static uint8_t EventRegionDraw(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t back, uint32_t *handoff) {
+    Lufia2ExecutionResult result;
+    uint8_t low, high, bank;
+    uint16_t actual;
+    SimulateJslFrame(memory, cpu, 0x80u, back);
+    cpu->program_bank = 0x83u;
+    result = Lufia2FieldRenderLayerPair(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        *handoff = result.pc;
+        return 0;
+    }
+    low = Pull8(memory, cpu);
+    high = Pull8(memory, cpu);
+    bank = Pull8(memory, cpu);
+    actual = (uint16_t)(low | ((uint16_t)high << 8));
+    cpu->program_bank = bank;
+    if (actual != back || bank != 0x80u) {
+        *handoff = ((uint32_t)bank << 16) | (uint16_t)(actual + 1u);
+        cpu->resume_pc = *handoff;
+        return 0;
+    }
+    return 1;
+}
+
+unsigned Lufia2EventObjectAreaOpcode(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t handler, uint32_t *handoff) {
+    uint16_t destination_return, area_return, update_return;
+    EventRegionStep update = Lufia2FieldUpdateEventObjectRegion;
+
+    switch (handler) {
+    case EVENT_OP_UPDATE_OBJECT_AREA:
+        destination_return = 0xce1du;
+        area_return = 0xce20u;
+        update_return = 0xce23u;
+        break;
+    case EVENT_OP_COPY_OBJECT_AREA:
+        destination_return = 0xce29u;
+        area_return = 0xce2cu;
+        update_return = 0xce2fu;
+        update = Lufia2FieldCopyEventObjectRegion;
+        break;
+    case EVENT_OP_UPDATE_OBJECT_SIZE:
+        destination_return = 0xce35u;
+        area_return = 0;
+        update_return = 0xce58u;
+        break;
+    case EVENT_OP_DRAW_OBJECT_AREA:
+        Lufia2EventNextByte(memory, cpu, 0xd01fu);
+        Lufia2EventValue(memory, cpu, 0xd022u);
+        if (!EventRegionCall(memory, cpu,
+                Lufia2FieldReadObjectRegionArea, 0xd025u, handoff))
+            return EVENT_OPCODE_HANDOFF;
+        OpLda(memory, cpu, WRAM_FIELD_OBJECT_SOURCE_X);
+        OpSta(memory, cpu, WRAM_FIELD_PENDING_OBJECT_X);
+        OpLda(memory, cpu, WRAM_FIELD_OBJECT_SOURCE_Y);
+        OpSta(memory, cpu, WRAM_FIELD_PENDING_OBJECT_Y);
+        return EventRegionDraw(memory, cpu, 0xd039u, handoff)
+            ? EVENT_OPCODE_NEXT : EVENT_OPCODE_HANDOFF;
+    default:
+        *handoff = 0x800000u | handler;
+        return EVENT_OPCODE_HANDOFF;
+    }
+    if (!EventRegionCall(memory, cpu,
+            Lufia2FieldReadObjectRegionDestination, destination_return, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    if (area_return) {
+        if (!EventRegionCall(memory, cpu,
+                Lufia2FieldReadObjectRegionArea, area_return, handoff))
+            return EVENT_OPCODE_HANDOFF;
+    } else {
+        if (!Lufia2EventPosition(memory, cpu, 0xce38u, handoff))
+            return EVENT_OPCODE_HANDOFF;
+        OpSta(memory, cpu, WRAM_FIELD_OBJECT_SOURCE_X);
+        ExchangeAccumulatorBytes(cpu);
+        OpSta(memory, cpu, WRAM_FIELD_OBJECT_SOURCE_Y);
+        Lufia2EventNextByte(memory, cpu, 0xce44u);
+        Lufia2EventValue(memory, cpu, 0xce47u);
+        OpSta(memory, cpu, WRAM_FIELD_OBJECT_WIDTH);
+        Lufia2EventNextByte(memory, cpu, 0xce4eu);
+        Lufia2EventValue(memory, cpu, 0xce51u);
+        OpSta(memory, cpu, WRAM_FIELD_OBJECT_HEIGHT);
+    }
+    if (!EventRegionCall(memory, cpu, update, update_return, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    return EVENT_OPCODE_NEXT;
 }

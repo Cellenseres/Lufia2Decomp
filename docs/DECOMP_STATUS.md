@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-567 functions in `metadata/functions.toml`: 567 verified, 0 draft, 0 identified, 0 disabled.
+575 functions in `metadata/functions.toml`: 575 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2194,3 +2194,25 @@ retain live child frames. No standalone binding is added for opcode routes.
 and modeled MMIO state match ROM. W4WX,Release and566 independent jobs pass.
 567 verified,0draft,368 WRAM locations,2272 generated native calls. No claim
 of measured runtime hit-rate gain,pixel equivalence or NMI timing changes.
+
+## Event object-region lifecycle - 2026-10-07
+
+80:D0AC/D112/D1E1/D19F/D0BA/D077/CE5C/CE7E are complete verified functions with native
+bindings. Event routes06/0E/91/A8/1F/8D/92/8E/90/7A call these helpers inside their existing
+owner. Destination operands,object headers,region copies,attributes,48-record
+removal/restoration and layer redraw retain original state and call frames.
+The byte-valued source selector,full byte geometry,overlapping script variables,
+DB-relative accesses and original literal renderer at83:8E76 are preserved.
+Nested and opcode-call returns validate actual stack bytes; a copied region
+may overwrite a return frame,which transfers to the original actual target.
+Unknown child work retains its exact pushed frame and continuation. No opcode
+branch gets an independent runtime binding. Two persistent fields are named.
+1167360 direct/ABI/route comparisons,32768 complete Event timer/ABI owner cases,
+16 exact copy-child continuations,312 zero-bus guards and36 detected altered-ROM
+controls pass. CPU,full WRAM,ordered writes and modeled hardware state match.
+Production bridges,W4WX,Release and all575 independent jobs pass.
+Legacy CBAE copy stops also require the exact write ordinal. The bridge
+reference permits the same10-million instruction budget as the semantic test.
+All16384 semantic and8704 bridge cases pass without changing ROM behavior.
+575 verified,0draft,370 WRAM fields and2304 generated native invocations.
+No pixel,NMI-cycle or measured interpreter-hit-rate claim is made.

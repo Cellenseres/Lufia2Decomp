@@ -94,6 +94,16 @@ enum {
 
 /* Handlers in the $80:E5A4 opcode table. */
 enum EventOpcodeHandler {
+    EVENT_OP_UPDATE_OBJECT_REGION = 0xd03d,
+    EVENT_OP_UPDATE_OBJECT_REGION_ALT = 0xcdd2,
+    EVENT_OP_COPY_OBJECT_REGION = 0xd051,
+    EVENT_OP_UPDATE_OBJECT_REGION_VALUE = 0xd065,
+    EVENT_OP_UPDATE_OBJECT_REGION_AT = 0xd087,
+    EVENT_OP_UPDATE_OBJECT_AREA = 0xce1b,
+    EVENT_OP_COPY_OBJECT_AREA = 0xce27,
+    EVENT_OP_UPDATE_OBJECT_SIZE = 0xce33,
+    EVENT_OP_DRAW_OBJECT_AREA = 0xd01d,
+    EVENT_OP_COPY_OBJECT_RECORD = 0xcdd9,
     EVENT_OP_END = 0xcc42,         /* $00 $07 $2C-$2E $56 $62 $93 $9B $AC $AD */
     EVENT_OP_GOTO_IF_FLAG = 0xcc4a,                            /* $01 */
     EVENT_OP_GOTO_IF_NOT_FLAG = 0xcc61,                        /* $0C */
@@ -450,5 +460,16 @@ unsigned Lufia2EventConditionOpcode(
     Lufia2CpuState *cpu,
     uint16_t handler,
     uint32_t *handoff);
+
+unsigned Lufia2EventCopyObjectRegion(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t *handoff);
+
+unsigned Lufia2EventObjectAreaOpcode(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t handler, uint32_t *handoff);
+
+unsigned Lufia2EventObjectRegionOpcode(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t handler, uint32_t *handoff);
 
 #endif

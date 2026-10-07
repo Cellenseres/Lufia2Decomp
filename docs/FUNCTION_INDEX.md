@@ -42,9 +42,17 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C652` | `Lufia2TextMeasure` | verified | `src/text/text_layout.c` |
 | `$80:C784` | `Lufia2TextClearGlyphBuffer` | verified | `src/text/text_window.c` |
 | `$80:CBAE` | `Lufia2FieldEventTimerTick` | verified | `src/field/field_event_script.c` |
+| `$80:CE5C` | `Lufia2FieldReadObjectRegionDestination` | verified | `src/field/field_event_object_region.c` |
+| `$80:CE7E` | `Lufia2FieldReadObjectRegionArea` | verified | `src/field/field_event_object_region.c` |
+| `$80:D077` | `Lufia2FieldReadObjectRegionPosition` | verified | `src/field/field_event_object_region.c` |
+| `$80:D0AC` | `Lufia2FieldPrepareObjectRegion` | verified | `src/field/field_event_object_region.c` |
+| `$80:D0BA` | `Lufia2FieldUpdateEventObjectRegion` | verified | `src/field/field_event_object_region.c` |
+| `$80:D112` | `Lufia2FieldCopyEventObjectRegion` | verified | `src/field/field_event_object_region.c` |
 | `$80:D136` | `Lufia2FieldSaveObjectRegion` | verified | `src/field/field_event_map_state.c` |
 | `$80:D15B` | `Lufia2FieldRestoreObjectRegion` | verified | `src/field/field_event_map_state.c` |
 | `$80:D18C` | `Lufia2FieldNormalizeObjectOrigin` | verified | `src/field/field_event_map_state.c` |
+| `$80:D19F` | `Lufia2FieldRestoreRegionObjects` | verified | `src/field/field_event_object_region.c` |
+| `$80:D1E1` | `Lufia2FieldRemoveRegionObjects` | verified | `src/field/field_event_object_region.c` |
 | `$80:D227` | `Lufia2FieldMarkRegionObjects` | verified | `src/field/field_event_map_state.c` |
 | `$80:E722` | `Lufia2FieldStartEvent` | verified | `src/field/field_event_script.c` |
 | `$80:E7DF` | `Lufia2FieldStartPositionEvent` | verified | `src/field/field_event_triggers.c` |
