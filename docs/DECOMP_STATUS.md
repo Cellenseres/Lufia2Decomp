@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-855 functions in `metadata/functions.toml`: 855 verified, 0 draft, 0 identified, 0 disabled.
+861 functions in `metadata/functions.toml`: 861 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2984,3 +2984,20 @@ This group shares the full 786-job verification and Windows Release build
 with the complete 14-entry integration batch. Its final combined stage has
 861 verified entries, zero drafts, 519 fields and 3,448 generated calls.
 Counts do not describe measured runtime interpreter load.
+
+
+## Original field talk entries - 2026-10-07
+
+262,144 original-ROM cases, 262,156 actual ABI cases, 13,440 guards
+and 77 public-library ROM error controls pass. Child probes include
+12 forced unwinds, 90 redirects and 7,645 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 786-job verification and Windows Release build
+with the complete 14-entry integration batch. Its final combined stage has
+861 verified entries, zero drafts, 519 fields and 3,448 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+The dynamic talk target covers all 65,536 PB-relative table indices.
+Native compositions preserve 7,645 original abnormal child returns.

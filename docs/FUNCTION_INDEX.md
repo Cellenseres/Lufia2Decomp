@@ -572,6 +572,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:B82F` | `Lufia2FieldRefreshMenuSelection` | verified | `src/field/field_menu.c` |
 | `$83:B851` | `Lufia2FieldFindPointRecord` | verified | `src/field/field_record_search.c` |
 | `$83:B882` | `Lufia2FieldFindRectangleRecord` | verified | `src/field/field_record_search.c` |
+| `$83:BA06` | `Lufia2FieldProbeTalkTarget` | verified | `src/field/field_talk.c` |
+| `$83:BA5C` | `Lufia2FieldProbeTalkDown` | verified | `src/field/field_talk.c` |
+| `$83:BA76` | `Lufia2FieldProbeTalkBlocked` | verified | `src/field/field_talk.c` |
+| `$83:BA80` | `Lufia2FieldProbeTalkLeft` | verified | `src/field/field_talk.c` |
+| `$83:BA96` | `Lufia2FieldProbeTalkUp` | verified | `src/field/field_talk.c` |
+| `$83:BAAC` | `Lufia2FieldProbeTalkRight` | verified | `src/field/field_talk.c` |
 | `$83:BAC2` | `Lufia2FieldFindActorAtProbe` | verified | `src/field/field_actor_probe.c` |
 | `$83:BB76` | `Lufia2FieldPrepareEventControl` | verified | `src/field/field_event_control.c` |
 | `$83:BB93` | `Lufia2UpdateActorSlots` | verified | `src/actor/actor_slots.c` |
