@@ -240,6 +240,7 @@ add_library(lufia2_decomp STATIC
     src/text/text_conditions.c
     src/text/text_layout.c
     src/text/text_window.c
+    src/text/scene_text_resources.c
     src/title/title.c
     src/world/world_map.c
     src/world/world_map_plane.c

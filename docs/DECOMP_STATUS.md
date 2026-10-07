@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-736 functions in `metadata/functions.toml`: 736 verified, 0 draft, 0 identified, 0 disabled.
+742 functions in `metadata/functions.toml`: 742 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2524,3 +2524,17 @@ error controls pass. X8 and nonzero DP remain supported where the ROM does.
 The 12A5 slot phase aliases the existing 1291 array; no overlapping WRAM field
 is invented. Shared full679, W4WX and Release PASS. No hardware timing claim.
 736 verified, zero drafts, 437 fields, 2,948 generated calls. Static counts.
+
+## Original scene text foundations - 2026-10-07
+
+Six complete entries expand scene strings, draw glyphs and window rows,
+clear upload rows, format 24-bit numbers and append their original digits.
+The existing glyph, row and number cores are reused, without duplicate bodies.
+49,152 ROM and actual ABI states, 11,136 guards and 23 public-library error
+controls pass. Number seeds include the complete 24-bit range and caller DB.
+The literal 81-pass clear, dictionary references and six-byte hexadecimal
+format remain original. Number PLY flags and window word-DEC high-byte-first
+write order are now exact; whole caller composition proves the latter.
+Entry guards retain the proven M/X/DP contracts. Shared full685, W4WX and
+Release PASS. No hardware timing claim. 742 verified, zero drafts, 440 fields,
+2,972 generated calls. Static counts, not a runtime hit-rate measurement.

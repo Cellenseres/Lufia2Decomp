@@ -3,6 +3,7 @@
 
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
 #include "lufia2/text.h"
@@ -316,7 +317,7 @@ Lufia2ExecutionResult Lufia2TextBuildWindow(
         IncrementA16(cpu); StoreAAbsolute16(memory, cpu, 0x3040u, cpu->x);
         PullAccumulator16(memory, cpu);
         cpu->carry = 0; Add16Value(cpu, 0x80u); TransferAToX(cpu);
-        Decrement16Direct(memory, cpu, DP_SCRATCH_E);
+        OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_E), -1);
     } while (!cpu->zero);
     LoadA16(cpu, 0xa0d6u);
     SimulateJsrFrame(memory, cpu, 0xc4a6u);
@@ -575,4 +576,13 @@ Lufia2ExecutionResult Lufia2TextPrepareWindow(
     StoreADirect8(memory, cpu, WINDOW_UPLOAD_REQUEST(0));
     SimulateJsrFrame(memory, cpu, 0xc276u);
     return ExecutionHandoff(cpu, 0x80c2a1u);
+}
+
+Lufia2ExecutionResult Lufia2TextWriteSceneWindowRow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->index_is_8_bit ||
+        cpu->decimal || cpu->direct_page)
+        return ExecutionHandoff(cpu, 0x80c5ddu);
+    TextWriteWindowRow(memory, cpu);
+    return ExecutionReturned(0x80c61cu);
 }
