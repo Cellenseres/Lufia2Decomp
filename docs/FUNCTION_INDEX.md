@@ -12,6 +12,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:8299` | `Lufia2RandomScale` | verified | `src/system/random.c` |
 | `$80:82C7` | `Lufia2RandomByte` | verified | `src/system/random.c` |
 | `$80:82E7` | `Lufia2SeedRandom` | verified | `src/system/random.c` |
+| `$80:832D` | `Lufia2RefillRandomTable` | verified | `src/system/random.c` |
 | `$80:834C` | `Lufia2Multiply16By8` | verified | `src/system/multiply_16_by_8.c` |
 | `$80:8378` | `Lufia2Divide16` | verified | `src/system/math.c` |
 | `$80:8638` | `Lufia2MainNmi` | verified | `src/system/nmi.c` |
@@ -660,7 +661,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:91E0` | `Lufia2BattleClearStatusMarkers` | verified | `src/battle/battle_status_support.c` |
 | `$85:9236` | `Lufia2BattlePartyStatusGate` | verified | `src/battle/battle_loop_children.c` |
 | `$85:9275` | `Lufia2BattleQueuePartyTurns` | verified | `src/battle/battle_turn_order.c` |
+| `$85:9337` | `Lufia2BattleInsertTurn` | verified | `src/battle/battle_turn_queue.c` |
 | `$85:93B7` | `Lufia2BattleCheckOutcome` | verified | `src/battle/battle_outcome.c` |
+| `$85:94E7` | `Lufia2BattleCopyMessageName` | verified | `src/battle/battle_message_copy.c` |
 | `$85:9510` | `Lufia2BattleCopyRecordName` | verified | `src/battle/battle_action_message.c` |
 | `$85:9532` | `Lufia2BattleLoadStatusMessage` | verified | `src/battle/battle_action_message.c` |
 | `$85:9578` | `Lufia2BattleLoadIpActionName` | verified | `src/battle/battle_action_message.c` |

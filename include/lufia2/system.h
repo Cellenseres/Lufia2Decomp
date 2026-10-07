@@ -292,6 +292,9 @@ Lufia2ExecutionResult Lufia2UploadTilemapBlock(
 Lufia2ExecutionResult Lufia2StartListedDma(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2RefillRandomTable(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
