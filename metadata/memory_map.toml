@@ -2124,10 +2124,10 @@ notes = "82:8720 tests directions and the second menu action byte. The native co
 [[location]]
 address = "7E:14B3"
 name = "menu_list_index"
-width = 1
+width = 2
 count = 1
 owner = "menu"
-notes = "82:88A0 stores the flattened row/column item index. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+notes = "82:88A0 stores the flattened row/column item index. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation. FBE5 reads the base word,including the adjacent index byte,before adding14B5 and doubling;neither byte is discarded."
 
 [[location]]
 address = "7E:14C1"

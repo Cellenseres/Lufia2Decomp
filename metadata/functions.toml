@@ -6392,3 +6392,51 @@ source = "src/system/nmi_uploads.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:FBE5"
+name = "Lufia2MenuSelectedListOffset"
+source = "src/menu/menu_list_scroll.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:8CE9"
+name = "Lufia2MenuScrollListPage"
+source = "src/menu/menu_list_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:8CC1"
+name = "Lufia2MenuInitializeScrollStep"
+source = "src/menu/menu_list_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:8C43"
+name = "Lufia2MenuSetScrollPosition"
+source = "src/menu/menu_list_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:8C85"
+name = "Lufia2MenuInitializeScrollRange"
+source = "src/menu/menu_list_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:8C9C"
+name = "Lufia2MenuInitializeScrollSprite"
+source = "src/menu/menu_list_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

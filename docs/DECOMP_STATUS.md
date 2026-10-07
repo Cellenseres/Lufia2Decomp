@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-782 functions in `metadata/functions.toml`: 782 verified, 0 draft, 0 identified, 0 disabled.
+788 functions in `metadata/functions.toml`: 788 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2713,3 +2713,20 @@ error controls pass.1,024 original NMI compositions retain the existing
 DP0,hardware DB and stack contracts; no wider parent contract is claimed.
 Shared full722,W4WX and Release PASS.782 verified,zero drafts,471 fields,
 3,132 generated calls. These counts do not measure runtime interpreter load.
+
+## Original menu list scrolling - 2026-10-07
+
+Six complete entries:82:FBE5,8CE9,8CC1,8C43,8C85 and8C9C.
+Selection offsets,page changes,step division,thumb positioning,range setup
+and sprite initialization have verified native bindings. Carry-selected
+direction,one/two-column parity,word wrap,endpoint animations and original
+child frames remain exact. FBE5 reads the full14B3word,including its adjacent
+index byte. Existing field metadata now records that word access.
+
+26,112 original-ROM caller/composed states and26,118 actual ABI cases pass,
+including six child unwinds and60 redirect probes.11,136 unsupported states
+and82 public-library altered-ROM controls pass.1,536 additional full native
+chains include the existing multiply,divide and animation children.
+CPU,WRAM,MMIO and observed bus order remain literal; no timing patch.
+Shared full725,W4WX and Release PASS.788 verified,zero drafts,471 fields,
+3,156 generated calls. Counts do not measure runtime interpreter load.
