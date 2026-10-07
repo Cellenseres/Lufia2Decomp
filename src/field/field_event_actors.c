@@ -5,6 +5,7 @@
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
 #include "lufia2/actor.h"
+#include "lufia2/field.h"
 #include "lufia2/system.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
@@ -434,30 +435,56 @@ static unsigned EventOp85(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $80:EA47: remember the running slot in $7F:D2A3. */
-static void EventSaveSlot(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
-    PushAccumulator8(memory, cpu);                             /* EA47 */
-    LoadA8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));
-    Write8(memory, EVENT_SAVED_SLOT, A8(cpu));
+static void EventSaveActorSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushAccumulator8(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+    OpSta(memory, cpu, EVENT_SAVED_SLOT);
     LoadA8(cpu, Pull8(memory, cpu));
-    SimulateRtsFrame(memory, cpu);
 }
 
-/* $80:EA50: back to the running slot. */
-static void EventRestoreSlot(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
-    LoadA8(cpu, Read8(memory, EVENT_SAVED_SLOT)); /* EA50 */
-    StoreADirect8(memory, cpu, DP_ACTOR_SLOT);
+static void EventRestoreActorSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, EVENT_SAVED_SLOT);
+    OpSta(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
     SimulateJslFrame(memory, cpu, 0x80u, 0xea59u);
     Lufia2ActorRecordOffsets(memory, cpu);
     SimulateRtlFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2FieldSaveActorSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80ea47u);
+    EventSaveActorSlot(memory, cpu);
+    return ExecutionReturned(0x80ea4fu);
+}
+
+Lufia2ExecutionResult Lufia2FieldRestoreActorSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80ea50u);
+    EventRestoreActorSlot(memory, cpu);
+    return ExecutionReturned(0x80ea5au);
+}
+
+static void EventSaveSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    EventSaveActorSlot(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+}
+
+static void EventRestoreSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    EventRestoreActorSlot(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -563,15 +590,12 @@ uint8_t Lufia2EventMapObject(
 }
 
 /* $83:C108: claim a free actor at the leader's tile. */
-void Lufia2EventClaimActor(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJslFrame(memory, cpu, 0x80u, return_address);
-    TransferDirectToA(cpu);                                    /* $83:C108 */
+static void EventClaimActorBody(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TransferDirectToA(cpu);
     Write8(memory, WRAM_FIELD_CLAIMED_ACTOR_IDS + 1u, A8(cpu));
     SimulateJsrFrame(memory, cpu, 0xc10fu);
-    LoadX16(cpu, 0x0000u);                                     /* $83:FC3C */
+    LoadX16(cpu, 0x0000u);
     for (;;) {
         LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
         BitImmediate8(cpu, 0x04u);
@@ -582,7 +606,7 @@ void Lufia2EventClaimActor(
             if (cpu->zero)
                 break;
         }
-        IncrementX16(cpu);                                     /* $83:FC4E */
+        IncrementX16(cpu);
         Compare16(cpu, cpu->x, 0x0028u);
         if (cpu->zero) {
             cpu->carry = 1;
@@ -590,7 +614,7 @@ void Lufia2EventClaimActor(
         }
     }
     SimulateRtsFrame(memory, cpu);
-    StoreXDirect16(memory, cpu, DP_ACTOR_SLOT);                /* $83:C110 */
+    StoreXDirect16(memory, cpu, DP_ACTOR_SLOT);
     SimulateJslFrame(memory, cpu, 0x83u, 0xc115u);
     Lufia2ActorRecordOffsets(memory, cpu);
     SimulateRtlFrame(memory, cpu);
@@ -621,9 +645,26 @@ void Lufia2EventClaimActor(
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
     SimulateJslFrame(memory, cpu, 0x83u, 0xc15fu);
-    Lufia2ActorSyncFinePosition(memory, cpu);                  /* $83:A746 */
+    Lufia2ActorSyncFinePosition(memory, cpu);
     SimulateRtlFrame(memory, cpu);
+}
+
+void Lufia2EventClaimActor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    EventClaimActorBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2FieldClaimActor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x83c108u);
+    EventClaimActorBody(memory, cpu);
+    return ExecutionReturned(0x83c160u);
 }
 
 /* $80:DFC2: new actor for map object A. */
@@ -861,17 +902,30 @@ static unsigned EventOpLeaderOccupancy(
     return EVENT_OPCODE_NEXT;
 }
 
-/* $BD: $7F:E33E-E35D = n ($83:E033). */
-static unsigned EventOpFillE33E(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    Lufia2EventNextByte(memory, cpu, 0xced1u);                 /* CECF */
-    SimulateJslFrame(memory, cpu, 0x80u, 0xced5u);
-    LoadX16(cpu, 0x001fu);                                     /* $83:E033 */
+static void EventSetObjectDrawFlags(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLdx(cpu, 31u);
     do {
-        Write8(memory, LongIndexedAddress(WRAM_OBJECT_DRAW_FLAGS, cpu->x), A8(cpu));
-        LoadX16(cpu, (uint16_t)(cpu->x - 1u));
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_DRAW_FLAGS));
+        OpDex(cpu);
     } while (!cpu->negative);
+}
+
+Lufia2ExecutionResult Lufia2FieldSetObjectDrawFlags(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x83e033u);
+    EventSetObjectDrawFlags(memory, cpu);
+    return ExecutionReturned(0x83e03du);
+}
+
+static unsigned EventOpFillE33E(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2EventNextByte(memory, cpu, 0xced1u);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xced5u);
+    EventSetObjectDrawFlags(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     return EVENT_OPCODE_NEXT;
 }
@@ -1804,6 +1858,79 @@ static unsigned EventOpSpawnObjectActor(
 }
 
 /* Actor, position and point opcodes; the rest go to the conditions. */
+static bool EventAreaReturn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t expected, uint8_t bank, unsigned frame) {
+    uint16_t address = Pull8(memory, cpu);
+    address |= (uint16_t)Pull8(memory, cpu) << 8;
+    uint8_t returned_bank = frame == 3u ? Pull8(memory, cpu) : cpu->program_bank;
+    cpu->program_bank = returned_bank;
+    if (address == expected && returned_bank == bank)
+        return true;
+    cpu->resume_pc = ((uint32_t)returned_bank << 16) | (uint16_t)(address + 1u);
+    return false;
+}
+
+static uint8_t EventAreaChild(
+    void *context, Lufia2CpuState *cpu,
+    uint32_t target, uint32_t site, uint8_t frame) {
+    const Lufia2Memory *memory = context;
+    cpu->program_bank = (uint8_t)(target >> 16);
+    if (target == 0x83ab4fu) {
+        Lufia2ActorRecordOffsets(memory, cpu);
+    } else if (target == 0x83d350u && !cpu->direct_page) {
+        if (Lufia2ActorPrimaryActionCore(memory, cpu) != LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE)
+            return false;
+    } else if (target == 0x83e033u) {
+        Lufia2ExecutionResult result = Lufia2FieldSetObjectDrawFlags(memory, cpu);
+        if (result.flow != LUFIA2_EXECUTION_RETURNED)
+            return false;
+    } else {
+        cpu->resume_pc = target;
+        return false;
+    }
+    return EventAreaReturn(memory, cpu, (uint16_t)(site + 3u), 0x83u, frame);
+}
+
+static unsigned EventOpApplyAreaTransition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t *handoff) {
+    Lufia2EventNextByte(memory, cpu, 0xe50du);
+    PushDataBank(memory, cpu);
+    PushY(memory, cpu);
+    SimulateJsrFrame(memory, cpu, 0xe512u);
+    Lufia2ExecutionResult result = Lufia2FieldSaveActorSlot(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED ||
+        !EventAreaReturn(memory, cpu, 0xe512u, 0x80u, 2u))
+        goto boundary;
+    ExchangeAccumulatorBytes(cpu);
+    OpLoadA(cpu, 9u);
+    ExchangeAccumulatorBytes(cpu);
+    OpLdx(cpu, 6u);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xe51du);
+    result = Lufia2FieldFindHeaderRecord(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED ||
+        !EventAreaReturn(memory, cpu, 0xe51du, 0x80u, 3u))
+        goto boundary;
+    SimulateJslFrame(memory, cpu, 0x80u, 0xe521u);
+    cpu->program_bank = 0x83u;
+    result = Lufia2FieldApplyAreaTransition(memory, cpu, EventAreaChild, (void *)memory);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED ||
+        !EventAreaReturn(memory, cpu, 0xe521u, 0x80u, 3u))
+        goto boundary;
+    SimulateJsrFrame(memory, cpu, 0xe524u);
+    result = Lufia2FieldRestoreActorSlot(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED ||
+        !EventAreaReturn(memory, cpu, 0xe524u, 0x80u, 2u))
+        goto boundary;
+    OpPullY(memory, cpu);
+    PullDataBank(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+
+boundary:
+    *handoff = cpu->resume_pc;
+    return EVENT_OPCODE_HANDOFF;
+}
+
 unsigned Lufia2EventActorOpcode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -1811,6 +1938,8 @@ unsigned Lufia2EventActorOpcode(
     EventRun *run,
     uint32_t *handoff) {
     switch (handler) {
+    case EVENT_OP_APPLY_AREA_TRANSITION:
+        return EventOpApplyAreaTransition(memory, cpu, handoff);
     case EVENT_OP_OFFSET_POINT_X:
     case EVENT_OP_OFFSET_POINT_Y:
         return EventOpOffsetPoint(memory, cpu, handler);

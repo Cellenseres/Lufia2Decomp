@@ -2654,8 +2654,16 @@ static ObjectFlow ObjectPushInteractionRecord(
     PushAccumulator8(memory, cpu);
     SimulateJslFrame(memory, cpu, 0x83u, 0xec3fu);
     cpu->program_bank = 0x80u;
-    cpu->resume_pc = 0x80dcdau;
-    return OBJECT_FLOW_BOUNDARY;
+    Lufia2ExecutionResult result = Lufia2FieldPushPendingObject(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED ||
+        !ObjectCollisionReturn(memory, cpu, 0xec3fu, 3u))
+        return OBJECT_FLOW_BOUNDARY;
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+    if (!ObjectFollowerOffsets(memory, cpu, 0xec46u))
+        return OBJECT_FLOW_BOUNDARY;
+    OpPullY(memory, cpu);
+    return ObjectFinishInteraction(memory, cpu, true);
 }
 
 static ObjectFlow ObjectChooseInteractionRecord(
