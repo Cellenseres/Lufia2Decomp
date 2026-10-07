@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-688 functions in `metadata/functions.toml`: 688 verified, 0 draft, 0 identified, 0 disabled.
+718 functions in `metadata/functions.toml`: 718 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2462,3 +2462,13 @@ ABI cases,11 child unwinds,60 redirects,7,680 guards and15 error controls
 pass. Remaining original presentation children are explicit services.
 Shared full663, W4WX and Release pass.688 verified, zero drafts,
 430 WRAM locations and2,756 generated calls. Static counts only.
+
+## Original battle display queue callers - 2026-10-07
+
+Thirty complete upload callers share the existing display queue helper.
+Source, VRAM destination and length retain original order and child frames.
+Unknown block roles retain neutral names.307,200 ROM states include61,440
+native queue compositions;307,230 actual ABI cases,30 child unwinds,
+450 redirects,57,600 guards and90 error controls pass.1,920 full-queue
+BRK boundaries remain original. Shared full669,W4WX and Release PASS.
+718 verified, zero drafts,430 fields,2,876 generated calls. Static counts only.

@@ -5640,3 +5640,243 @@ source = "src/actor/party_scene.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:9AF4"
+name = "Lufia2BattleQueueBackgroundTilemap"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9B0B"
+name = "Lufia2BattleQueueBackgroundTiles"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9B22"
+name = "Lufia2BattleQueueExtraBackgroundTiles"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9B39"
+name = "Lufia2BattleQueueSpriteTiles"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9B50"
+name = "Lufia2BattleQueueSecondarySpriteTiles"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9B67"
+name = "Lufia2BattleQueueWindowGraphics"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9B7E"
+name = "Lufia2BattleQueueWindowTilemapHalf"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9B95"
+name = "Lufia2BattleQueueAuxiliaryTilemap"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9BAC"
+name = "Lufia2BattleQueueOverlayTilemap"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9BC3"
+name = "Lufia2BattleQueueWindowTilemaps"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9BF1"
+name = "Lufia2BattleQueueShortWindowGraphics"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9C08"
+name = "Lufia2BattleQueueWindowTilemap"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9ADD"
+name = "Lufia2BattleQueueTilesAt3000"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9C1F"
+name = "Lufia2BattleQueueTilesAt4000"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9C36"
+name = "Lufia2BattleQueueTilesAt4800"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9C4D"
+name = "Lufia2BattleQueueTilesAt1800"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9C64"
+name = "Lufia2BattleQueueTilePatchAt4400"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9C7B"
+name = "Lufia2BattleQueueShortAuxiliaryTilemap"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9C92"
+name = "Lufia2BattleQueueAlternateTilesAt4000"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9CA9"
+name = "Lufia2BattleQueueWindowTilemapPair"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9CC0"
+name = "Lufia2BattleQueueMinimalAuxiliaryTilemap"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9D05"
+name = "Lufia2BattleQueueSmallSpriteTiles"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9D1C"
+name = "Lufia2BattleQueueAlternateSpriteTiles"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9D33"
+name = "Lufia2BattleQueueMidSpriteTiles"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9D4A"
+name = "Lufia2BattleQueueUpperSpriteTiles"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9D61"
+name = "Lufia2BattleQueueTilesAt2000"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9D78"
+name = "Lufia2BattleQueueTilemapAt0E00"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9D8F"
+name = "Lufia2BattleQueueSmallTilesAt4000"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9DA6"
+name = "Lufia2BattleQueueTilesAt4400"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:9DBD"
+name = "Lufia2BattleQueueTilesAt4A00"
+source = "src/battle/battle_command_display_helpers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
