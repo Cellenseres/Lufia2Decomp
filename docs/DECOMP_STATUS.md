@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-529 functions in `metadata/functions.toml`: 529 verified, 0 draft, 0 identified, 0 disabled.
+539 functions in `metadata/functions.toml`: 539 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2078,3 +2078,37 @@ the standalone W4/WX build and the normal Release consumer build. Runtime
 selection contains529 verified entries,0draft,360 WRAM locations and2120
 actual generated native bridge invocations. All17 new entries have their
 own bindings, with exact guard and original-owner fallback behavior.
+
+## Object coordinates and map addressing - 2026-10-07
+
+Ten complete coordinate, movement and map helpers preserve fixed-point rounding,
+fine-coordinate scaling, packed map indices, tile-height bits and the original
+RTS/RTL wrappers. All65536 word or coordinate-pair inputs plus4096 additional
+bank/index contexts pass direct and production-shaped bridge comparison:
+1114112 original-ROM comparisons,312 zero-access guards and12 detected controls.
+The multiplier remains a bus-visible hardware operation. Probe conversion keeps
+carry rounding, X/Y order, register widths and 16-bit wrapping. Long wrappers
+keep their original nested JSR stack bytes. Context is binary M1X0,PB83,DP0,
+any data bank andS1F00..1FFC. Outside this contract the original entry is used.
+CPU,full WRAM,ordered writes and modeled MMIO reads are compared; ordinary
+reads/fetches,pixels and full NMI scheduling are outside this proof.
+Shared WRAM fields already have names; no new memory-layout claim is needed.
+Two word-entry movement helpers additionally pass278528 ROM/production-shaped
+ABI comparisons,78 guards and8 detected controls. Original live-bank divider
+and Mode-7 multiplication, word wrapping and sign-bit branches are preserved.
+The sharedE650 return is stopped only with the original outer stack depth.
+Five complete Object VM routesFF/8C/F0/1E/8B now use these native operations;
+655360 full-route comparisons and12 controls pass, plus8192 whole-owner cases
+and512 existing entry guards. Changed internal JSR returns retain their exact
+original continuation. The VM's remaining unsupported routes keep boundaries.
+
+The complete coordinate batch passes all551 independent verification jobs,
+the public production bridge, strict W4/WX and the normal Release build.
+Selection contains539 verified functions,0draft,360 WRAM locations and2160
+actual generated native bridge invocations. All10 new helpers are bound.
+Five further Object VM routes run natively inside their verified owner.
+The whole-object fixture now resets modeled hardware together with WRAM
+between C and ROM runs and compares multiplier/divider/Mode-7 state.
+Three failing seeds came from stale fixture hardware, not semantic drift;
+all16384 object cases pass with equal starting hardware. Negative controls
+reproduce the mismatch when that reset is disabled. No expectations weakened.

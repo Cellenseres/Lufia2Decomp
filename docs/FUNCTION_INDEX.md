@@ -372,6 +372,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:D508` | `Lufia2ActorSecondaryUpdate` | verified | `src/actor/actor_secondary.c` |
 | `$83:D7A5` | `Lufia2ActorPositionToObjectProbe` | verified | `src/field/field_object_graphics.c` |
 | `$83:E03E` | `Lufia2ObjectSlotsUpdate` | verified | `src/actor/object_vm.c` |
+| `$83:E60E` | `Lufia2ObjectInterpolateCoordinate` | verified | `src/field/field_object_motion.c` |
+| `$83:E6AA` | `Lufia2ObjectApproachCoordinate` | verified | `src/field/field_object_motion.c` |
 | `$83:F422` | `Lufia2FieldSetObjectOrigin` | verified | `src/field/field_object_graphics.c` |
 | `$83:F5B9` | `Lufia2FieldRefreshObjectActor` | verified | `src/field/field_object_transitions.c` |
 | `$83:F5EA` | `Lufia2FieldInitializeObjectActor` | verified | `src/field/field_object_transitions.c` |
@@ -392,10 +394,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:F86B` | `Lufia2FieldPlacePendingObject` | verified | `src/field/field_object_tiles.c` |
 | `$83:F91F` | `Lufia2FieldCopyCellTile` | verified | `src/field/field_object_tiles.c` |
 | `$83:F933` | `Lufia2FieldQueueObjectRedraw` | verified | `src/field/field_object_tiles.c` |
+| `$83:F988` | `Lufia2MapProbeTileHeight` | verified | `src/field/field_coordinate_math.c` |
+| `$83:F9A5` | `Lufia2FieldObjectAttributeCellLong` | verified | `src/field/field_coordinate_math.c` |
+| `$83:F9A9` | `Lufia2MapPackedAttributeCellLong` | verified | `src/field/field_coordinate_math.c` |
 | `$83:F9AD` | `Lufia2FieldObjectAttributeCell` | verified | `src/field/field_object_lookup.c` |
+| `$83:F9B6` | `Lufia2MapPackedAttributeCell` | verified | `src/field/field_coordinate_math.c` |
 | `$83:F9D0` | `Lufia2FieldCellPointer` | verified | `src/field/field_cell_edges.c` |
 | `$83:F9D4` | `Lufia2ActorResolveMapCellOffset` | verified | `src/actor/actor_movement.c` |
 | `$83:F9D9` | `Lufia2LayerCellOffset` | verified | `src/actor/actor_movement.c` |
+| `$83:F9EE` | `Lufia2MapCellOffsetLong` | verified | `src/field/field_coordinate_math.c` |
+| `$83:F9F2` | `Lufia2MapProbeCellOffset` | verified | `src/field/field_coordinate_math.c` |
 | `$83:F9F7` | `Lufia2MapCellOffset` | verified | `src/actor/actor_movement.c` |
 | `$83:FA3F` | `Lufia2ActorMarkMapOccupancy` | verified | `src/actor/actor_movement.c` |
 | `$83:FA81` | `Lufia2ActorMoveFinePosition` | verified | `src/actor/actor_movement.c` |
@@ -403,6 +411,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:FB12` | `Lufia2ActorMovementStep` | verified | `src/actor/actor_movement.c` |
 | `$83:FB71` | `Lufia2ActorReadMapCellValue` | verified | `src/actor/actor_movement.c` |
 | `$83:FB9F` | `Lufia2FieldFindPendingObject` | verified | `src/field/field_object_lookup.c` |
+| `$83:FC8B` | `Lufia2ObjectFinePositionToProbe` | verified | `src/field/field_coordinate_math.c` |
+| `$83:FCB4` | `Lufia2ObjectScaleFinePosition` | verified | `src/field/field_coordinate_math.c` |
 | `$84:8193` | `Lufia2SpriteGraphicsUpload` | verified | `src/actor/actor_sprites.c` |
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
 | `$84:8888` | `Lufia2AncientCaveResetParty` | verified | `src/cave/cave_reset.c` |

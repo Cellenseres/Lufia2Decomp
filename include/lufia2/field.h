@@ -437,6 +437,36 @@ Lufia2ExecutionResult Lufia2FieldResumeSessionSetup(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2ObjectFinePositionToProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2ObjectScaleFinePosition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2MapProbeTileHeight(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2MapProbeCellOffset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2MapCellOffsetLong(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2MapPackedAttributeCell(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldObjectAttributeCellLong(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2MapPackedAttributeCellLong(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2ObjectInterpolateCoordinate(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2ObjectApproachCoordinate(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
