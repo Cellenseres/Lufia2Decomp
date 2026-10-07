@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-760 functions in `metadata/functions.toml`: 760 verified, 0 draft, 0 identified, 0 disabled.
+766 functions in `metadata/functions.toml`: 766 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2629,3 +2629,20 @@ and selection bits vary independently,including unrelated mask bits.
 CPU,WRAM,MMIO order and original live-index word writes remain unchanged.
 Shared full703,W4WX and Release PASS. 760 verified,zero drafts,461 fields,
 3,044 generated calls. No measured runtime-hit or whole-ROM coverage claim.
+
+## Original menu display callers - 2026-10-07
+
+Six complete entries place party portraits,initialize status animations,
+build the main windows,present the display and configure alternate cursors.
+Original byte-count loops retain256 iterations for a zero count. Status
+bit4 precedes bit1;HP<=maxHP/8 selects animation2. Sprite tables remain
+original ROM resources. Window descriptors and display requests stay literal.
+All17 child frames retain exact unwind boundaries; unknown services remain
+explicit. Native SpriteSetTable and SpriteSetAnimation compositions pass,
+including original X8 portrait-table calls. Their wider binding is not claimed.
+
+26,112 ROM states include1,536 composition-context states. 26,129 actual ABI cases,
+90 redirects,11,520 unsupported states and52 public-library error controls
+pass. CPU,WRAM,MMIO and bus-write order remain unchanged. Shared full706,
+W4WX and Release PASS. 766 verified,zero drafts,461 documented fields,
+3,068 generated calls. No measured runtime-hit or whole-ROM coverage claim.
