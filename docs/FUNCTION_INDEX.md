@@ -29,6 +29,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:92A4` | `Lufia2IntroNmi` | verified | `src/title/title.c` |
 | `$80:93FE` | `Lufia2PlaySong` | verified | `src/system/music.c` |
 | `$80:941A` | `Lufia2LoadSong` | verified | `src/system/music.c` |
+| `$80:9528` | `Lufia2SoundDriverRequest03` | verified | `src/system/sound_queue.c` |
 | `$80:953B` | `Lufia2SendSoundCommand` | verified | `src/system/sound_commands.c` |
 | `$80:9554` | `Lufia2PlaySoundResource` | verified | `src/system/sound_driver.c` |
 | `$80:956A` | `Lufia2SendUncheckedSoundCommand` | verified | `src/system/sound_driver.c` |
@@ -51,7 +52,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:96DD` | `Lufia2SoundDriverWriteComplement10` | verified | `src/system/sound_tables.c` |
 | `$80:96F2` | `Lufia2SoundDriverRead08` | verified | `src/system/sound_tables.c` |
 | `$80:9703` | `Lufia2InitializeSoundResourceTable` | verified | `src/system/sound_tables.c` |
+| `$80:9747` | `Lufia2BeginQueuedSoundResource` | verified | `src/system/sound_queue.c` |
+| `$80:9786` | `Lufia2UpdateSoundResourceQueue` | verified | `src/system/sound_queue.c` |
 | `$80:97DA` | `Lufia2AdvanceSoundSourceBank` | verified | `src/system/sound_transfer.c` |
+| `$80:9886` | `Lufia2UploadSoundResourceSlot` | verified | `src/system/sound_queue.c` |
 | `$80:99B2` | `Lufia2CheckSoundDriverSignature` | verified | `src/system/sound_transfer.c` |
 | `$80:99CA` | `Lufia2SoundDriverWrite1F` | verified | `src/system/sound_transfer.c` |
 | `$80:99D8` | `Lufia2SoundDriverWrite20` | verified | `src/system/sound_transfer.c` |
