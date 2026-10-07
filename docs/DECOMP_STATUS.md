@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-780 functions in `metadata/functions.toml`: 780 verified, 0 draft, 0 identified, 0 disabled.
+782 functions in `metadata/functions.toml`: 782 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2696,3 +2696,20 @@ No widened contract is inferred for other sprite children.
 Shared full718,W4WX and Release PASS.780 verified,zero drafts,471
 documented fields,3,124 generated calls. CPU,WRAM,MMIO and bus-write order
 remain literal. No timing patch or measured runtime-hit coverage claim.
+
+## Shared original DMA entries - 2026-10-07
+
+80:882E and80:884F have complete M1X16 RTS contracts and native bindings.
+The 2KiB 7E:X tilemap upload and listed VRAM/CGRAM transfers share their
+complete CPU adapters with existing NMI callers. DMA masks,address writes,
+register high bytes,flags,stack and MMIO order retain original behavior.
+Portable leaves retain decimal flags; production binary-mode guards remain.
+No upload acceleration or timing patch is introduced.
+
+16,384 original-ROM states and16,384 actual ABI cases pass;96 additional
+original/actual ABI cases check reverse-DMA return-frame changes in all
+three host-return contexts.3,072 unsupported CPU states and19 public-library
+error controls pass.1,024 original NMI compositions retain the existing
+DP0,hardware DB and stack contracts; no wider parent contract is claimed.
+Shared full722,W4WX and Release PASS.782 verified,zero drafts,471 fields,
+3,132 generated calls. These counts do not measure runtime interpreter load.

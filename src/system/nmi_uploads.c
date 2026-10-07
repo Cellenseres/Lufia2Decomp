@@ -1,7 +1,7 @@
 /* NMI work of bank $80: sprite and palette DMA, pad reading, scroll registers
  * and VRAM uploads. */
 
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "core/plain_ops.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
@@ -151,19 +151,23 @@ Lufia2ExecutionResult Lufia2NmiSpritesPaletteAndPads(
     return ExecutionReturned(0x8087a6u);
 }
 
-/* $80:884F: starts the DMA channels in the low six bits of A, after setting
- * the CGRAM address (kind $80) or the VRAM address from X. */
-static void StartListedDma(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram,
-    uint8_t request) {
-    Push8(memory, cpu, request);
-    cpu->carry = (request & DMA_KIND_MASK) >= DMA_KIND_CGRAM;
-    if ((request & DMA_KIND_MASK) == DMA_KIND_CGRAM)
-        WramWrite(wram, SNES_CGADD, (uint8_t)cpu->x);
-    else
-        WramWrite16(wram, SNES_VMADDL, cpu->x);
-    LoadA8(cpu, (uint8_t)(Pull8(memory, cpu) & DMA_CHANNEL_MASK));
-    WramWrite(wram, SNES_MDMAEN, A8(cpu));
+Lufia2ExecutionResult Lufia2StartListedDma(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x80884fu);
+    PushAccumulator8(memory, cpu);
+    OpAndValue(cpu, DMA_KIND_MASK);
+    OpCmpValue(cpu, DMA_KIND_CGRAM);
+    if (cpu->zero) {
+        OpTxa(cpu);
+        OpSta(memory, cpu, OpAbs(cpu, SNES_CGADD));
+    } else {
+        WramWrite16(WramViewOfCaller(memory, cpu), SNES_VMADDL, cpu->x);
+    }
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpAndValue(cpu, DMA_CHANNEL_MASK);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_MDMAEN));
+    return ExecutionReturned(0x808865u);
 }
 
 /* A reverse DMA can change the return frame of the listed upload. */
@@ -179,16 +183,23 @@ static bool ReturnFromListedDma(
     return false;
 }
 
-/* $80:882E: one 2 KiB tilemap block from $7E:X to VRAM word Y. */
-static void UploadTilemapBlock(
-    Lufia2Wram wram, uint16_t source, uint16_t vram_address) {
-    WramWrite16(wram, SNES_VMADDL, vram_address);
-    WramWrite16(wram, SNES_A1TL(UPLOAD_CHANNEL), source);
-    WramWrite(wram, SNES_DMAP(UPLOAD_CHANNEL), DMA_TWO_REGISTERS);
-    WramWrite(wram, SNES_A1B(UPLOAD_CHANNEL), TILEMAP_BANK);
-    WramWrite(wram, SNES_BBAD(UPLOAD_CHANNEL), VRAM_DATA_PORT);
-    WramWrite16(wram, SNES_DASL(UPLOAD_CHANNEL), TILEMAP_SIZE);
-    WramWrite(wram, SNES_MDMAEN, UPLOAD_ENABLE);
+Lufia2ExecutionResult Lufia2UploadTilemapBlock(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x80882eu);
+    WramWrite16(WramViewOfCaller(memory, cpu), SNES_VMADDL, cpu->y);
+    WramWrite16(WramViewOfCaller(memory, cpu), SNES_A1TL(UPLOAD_CHANNEL), cpu->x);
+    OpLoadA(cpu, DMA_TWO_REGISTERS);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_DMAP(UPLOAD_CHANNEL)));
+    OpLoadA(cpu, TILEMAP_BANK);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_A1B(UPLOAD_CHANNEL)));
+    OpLoadA(cpu, VRAM_DATA_PORT);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_BBAD(UPLOAD_CHANNEL)));
+    OpLdx(cpu, TILEMAP_SIZE);
+    WramWrite16(WramViewOfCaller(memory, cpu), SNES_DASL(UPLOAD_CHANNEL), cpu->x);
+    OpLoadA(cpu, UPLOAD_ENABLE);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_MDMAEN));
+    return ExecutionReturned(0x80884eu);
 }
 
 /* $80:87FC: tilemap blocks requested in $74 (bit pairs), then clears the
@@ -217,7 +228,7 @@ static void UploadRequestedTilemaps(
         cpu->x = blocks[i].source;
         cpu->y = blocks[i].vram;
         SimulateJsrFrame(memory, cpu, blocks[i].return_address);
-        UploadTilemapBlock(wram, blocks[i].source, blocks[i].vram);
+        (void)Lufia2UploadTilemapBlock(memory, cpu);
         SimulateRtsFrame(memory, cpu);
         cpu->x = TILEMAP_SIZE;
         requests = WramRead(wram, VRAM_UPLOAD_FLAGS);
@@ -275,7 +286,7 @@ Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
         WramWrite(wram, DMA_LIST_FLAGS + i, 0);
         LoadX16(cpu, WramRead16(wram, DMA_LIST_ADDRESS + 2u * i));
         SimulateJsrFrame(memory, cpu, site_return[i]);
-        StartListedDma(memory, cpu, wram, request);
+        (void)Lufia2StartListedDma(memory, cpu);
         if (!ReturnFromListedDma(memory, cpu, site_return[i], &result))
             return result;
     }
