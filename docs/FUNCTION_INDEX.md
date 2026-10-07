@@ -694,8 +694,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:8BF5` | `Lufia2SpriteBuildOam` | verified | `src/menu/menu_sprites.c` |
 | `$86:8CDA` | `Lufia2SpriteSetTable` | verified | `src/menu/menu_sprites.c` |
 | `$86:8CF5` | `Lufia2SpriteSetAnimation` | verified | `src/menu/menu_sprites.c` |
+| `$86:8DBB` | `Lufia2MenuResetDisplayRequests` | verified | `src/menu/menu_graphics_setup.c` |
 | `$86:8DD7` | `Lufia2MenuScreenSetup` | verified | `src/menu/menu_scene_setup.c` |
 | `$86:8E6B` | `Lufia2SpriteClearSlots` | verified | `src/menu/menu_scene_setup.c` |
+| `$86:8E79` | `Lufia2MenuInitializeDisplayState` | verified | `src/menu/menu_graphics_setup.c` |
+| `$86:8EB0` | `Lufia2MenuLoadPrimaryGraphics` | verified | `src/menu/menu_graphics_setup.c` |
+| `$86:8EF1` | `Lufia2MenuLoadAuxiliaryGraphics` | verified | `src/menu/menu_graphics_setup.c` |
+| `$86:8F1B` | `Lufia2MenuLoadLargeGraphics` | verified | `src/menu/menu_graphics_setup.c` |
+| `$86:8F45` | `Lufia2MenuLoadMediumGraphics` | verified | `src/menu/menu_graphics_setup.c` |
 | `$86:8F6F` | `Lufia2MenuLoadImageSet` | verified | `src/menu/menu_image_load.c` |
 | `$86:8FF6` | `Lufia2MenuCopyImageBlock` | verified | `src/menu/menu_image_load.c` |
 | `$86:9009` | `Lufia2MenuCopyImageRow256` | verified | `src/menu/menu_image_load.c` |
