@@ -47,6 +47,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:D18C` | `Lufia2FieldNormalizeObjectOrigin` | verified | `src/field/field_event_map_state.c` |
 | `$80:D227` | `Lufia2FieldMarkRegionObjects` | verified | `src/field/field_event_map_state.c` |
 | `$80:E722` | `Lufia2FieldStartEvent` | verified | `src/field/field_event_script.c` |
+| `$80:E7DF` | `Lufia2FieldStartPositionEvent` | verified | `src/field/field_event_triggers.c` |
+| `$80:E7FA` | `Lufia2FieldStartEventAtProbe` | verified | `src/field/field_event_triggers.c` |
 | `$80:E844` | `Lufia2FieldInitializeMapEvents` | verified | `src/field/field_map_load.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |
 | `$80:ED0E` | `Lufia2FieldUnpackAttributes` | verified | `src/field/field_attributes.c` |

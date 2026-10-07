@@ -2895,3 +2895,11 @@ aliases = ["EVENT_UNK_7FD75C"]
 width = 1
 owner = "field"
 notes = "Per-record pending object flags; 48 byte records scanned by 80:D227."
+
+[[location]]
+address = "7F:D133"
+name = "unk_7FD133"
+aliases = ["EVENT_UNK_7FD133"]
+width = 1
+owner = "field"
+notes = "Mode byte written by Object routes 86/87 before the event probe."
