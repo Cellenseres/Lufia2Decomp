@@ -529,7 +529,7 @@ name = "battle_party_ids"
 width = 1
 count = 4
 owner = "battle"
-notes = "$81:D9E1 and $81:D12F map battle party slots to character ids."
+notes = "$81:D9E1 and $81:D12F map battle party slots to character ids. In menu phase,9C10 writes153F as a secondary list limit;the allocation is reused,not duplicated."
 
 [[location]]
 address = "7E:15D7"
@@ -1988,16 +1988,16 @@ notes = "Receives the source slot in $83:EE0E when an object takes over another 
 [[location]]
 address = "7E:09D1"
 name = "menu_list_mode"
-width = 1
+width = 2
 owner = "menu"
-notes = "Selects the layout of the item and spell list windows: 2 lists spells, 4, 7 and $FF pick other variants, anything else the default list."
+notes = "Selects the layout of the item and spell list windows: 2 lists spells, 4, 7 and $FF pick other variants, anything else the default list. Original main selection writes the paired mode word;9B51 compares both bytes before choosing windows."
 
 [[location]]
 address = "7E:14AF"
 name = "menu_list_selection"
-width = 1
+width = 2
 owner = "menu"
-notes = "Selected list entry; $82:A918 treats $FF as none and halves the value for the two-column spell list."
+notes = "Selected list entry; $82:A918 treats $FF as none and halves the value for the two-column spell list. A711 stores the original sixteen-bit FBE5 result;the low-byte FF sentinel still controls selection."
 
 [[location]]
 address = "7E:14B5"
@@ -2009,9 +2009,9 @@ notes = "First visible row of the list; the cursor sprite position is the select
 [[location]]
 address = "7E:14B7"
 name = "menu_list_overflow"
-width = 1
+width = 2
 owner = "menu"
-notes = "Number of list entries beyond the six visible rows."
+notes = "Number of list entries beyond the six visible rows. 9C10 writes the full Y word while configuring overflow geometry."
 
 [[location]]
 address = "7E:14B9"
@@ -3679,3 +3679,35 @@ width = 1
 count = 1
 owner = "menu"
 notes = "Cursor-grid descriptor byte5 supplies vertical spacing;88CB multiplies it by the row. Indexed base only; no disjoint allocation or larger array extent is claimed."
+
+[[location]]
+address = "7E:14B1"
+name = "menu_list_second_selection"
+width = 2
+count = 1
+owner = "menu"
+notes = "Second FBE5 selection word while combining or exchanging list entries;A711 initializes it to00FF."
+
+[[location]]
+address = "7E:1513"
+name = "menu_description_id"
+width = 2
+count = 1
+owner = "menu"
+notes = "A711 writes the selected inventory item ID or spell ID with0200 marker beforeFD81."
+
+[[location]]
+address = "7E:14F5"
+name = "menu_secondary_list_columns"
+width = 1
+count = 1
+owner = "menu"
+notes = "9C10 sets this indexed cursor-column field to2 for the two-column spell list;no separate larger array extent is claimed."
+
+[[location]]
+address = "7E:0A8D"
+name = "inventory_packed_items"
+width = 2
+count = 96
+owner = "item"
+notes = "Original96-entry inventory words pack a nine-bit item ID and seven-bit quantity;F057 scans byte offsets00BE down to0000."

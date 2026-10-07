@@ -6336,3 +6336,43 @@ source = "src/menu/menu_presentation_callers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:89BC"
+name = "Lufia2MenuReplaceCursor"
+source = "src/menu/menu_list_controls.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9C10"
+name = "Lufia2MenuInitializeListScroll"
+source = "src/menu/menu_list_controls.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9B51"
+name = "Lufia2MenuBuildListWindows"
+source = "src/menu/menu_list_controls.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:A658"
+name = "Lufia2MenuRunListInput"
+source = "src/menu/menu_list_controls.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:A711"
+name = "Lufia2MenuRunListSelection"
+source = "src/menu/menu_list_controls.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
