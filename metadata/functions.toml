@@ -5416,3 +5416,67 @@ source = "src/field/scene_bootstrap.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:A6DF"
+name = "Lufia2ActorResetTransientState"
+source = "src/actor/actor_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A71C"
+name = "Lufia2ActorSetFinePosition"
+source = "src/actor/actor_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A97E"
+name = "Lufia2ActorHasSpecialSceneSprite"
+source = "src/actor/actor_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A998"
+name = "Lufia2ObjectResetSceneSprites"
+source = "src/actor/actor_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A9E5"
+name = "Lufia2ActorReadSpriteDescriptor"
+source = "src/actor/actor_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X1"
+status = "verified"
+
+[[function]]
+address = "83:AA7D"
+name = "Lufia2ActorSelectSpriteTables"
+source = "src/actor/actor_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:AA30"
+name = "Lufia2ActorSetSpriteHeightOffset"
+source = "src/actor/actor_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A9D0"
+name = "Lufia2ActorRefreshSpriteDescriptor"
+source = "src/actor/actor_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

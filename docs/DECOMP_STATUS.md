@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-660 functions in `metadata/functions.toml`: 660 verified, 0 draft, 0 identified, 0 disabled.
+668 functions in `metadata/functions.toml`: 668 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2402,3 +2402,15 @@ the text engine remain explicit children; their internals are not redefined.
 11,904 unsupported-state guards and24 altered-ROM controls pass.
 Shared full651, strict C and Release pass. Checkpoint:660 verified entries,
 zero drafts,397 WRAM fields and2,644 generated calls. Static counts only.
+
+## Original actor sprite bootstrap - 2026-10-07
+
+Eight complete entries cover transient reset, fine/cell position, special
+sprite detection, object reset, descriptor and animation/motion tables,
+height offset and saved-register sprite refresh. Original rounding carry,
+TDC payloads, X-width accesses, table bounds and child frames remain exact.
+73,728 ROM cases include8,192 compositions with native descriptor/tables.
+73,731 production ABI cases, three child unwinds,30 redirect probes,
+9,984 unsupported-state guards and24 altered-ROM controls pass.
+Shared full651, strict C and Release pass.668 verified, zero drafts,
+402 WRAM fields and2,676 generated calls. No measured runtime-hit claim.

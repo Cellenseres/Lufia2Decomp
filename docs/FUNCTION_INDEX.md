@@ -422,9 +422,17 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:9E31` | `Lufia2AncientCaveGenerateFloor` | verified | `src/cave/ancient_cave.c` |
 | `$83:9FA9` | `Lufia2FieldNmiUploads` | verified | `src/field/field_nmi.c` |
 | `$83:A21A` | `Lufia2FieldActorSprites` | verified | `src/field/field_sprites.c` |
+| `$83:A6DF` | `Lufia2ActorResetTransientState` | verified | `src/actor/actor_bootstrap.c` |
+| `$83:A71C` | `Lufia2ActorSetFinePosition` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:A746` | `Lufia2ActorSyncFinePosition` | verified | `src/actor/actor_movement.c` |
 | `$83:A76D` | `Lufia2FieldRebuildSceneActors` | verified | `src/field/field_scene_actors.c` |
+| `$83:A97E` | `Lufia2ActorHasSpecialSceneSprite` | verified | `src/actor/actor_bootstrap.c` |
+| `$83:A998` | `Lufia2ObjectResetSceneSprites` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:A9BA` | `Lufia2ActorLoadSprite` | verified | `src/actor/actor_sprites.c` |
+| `$83:A9D0` | `Lufia2ActorRefreshSpriteDescriptor` | verified | `src/actor/actor_bootstrap.c` |
+| `$83:A9E5` | `Lufia2ActorReadSpriteDescriptor` | verified | `src/actor/actor_bootstrap.c` |
+| `$83:AA30` | `Lufia2ActorSetSpriteHeightOffset` | verified | `src/actor/actor_bootstrap.c` |
+| `$83:AA7D` | `Lufia2ActorSelectSpriteTables` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:AB4F` | `Lufia2ActorSetRecordOffsets` | verified | `src/actor/actor_sprite_resources.c` |
 | `$83:AB61` | `Lufia2SpriteResetAllocations` | verified | `src/actor/sprite_reset.c` |
 | `$83:AB7C` | `Lufia2SpriteReserveAllocation` | verified | `src/actor/actor_sprite_allocation.c` |
