@@ -3004,3 +3004,31 @@ width = 1
 count = 1
 owner = "system"
 notes = "80:957D repeatedly stores resource bytes here without advancingY."
+
+[[location]]
+address = "7F:D067"
+name = "field_animation_saved_pending_position"
+width = 2
+owner = "field"
+notes = "Original animation-region snapshot. Restore before redraw. Final flags byte remains separate."
+
+[[location]]
+address = "7F:D069"
+name = "field_animation_saved_source_position"
+width = 2
+owner = "field"
+notes = "Original animation-region snapshot. Restore before redraw. Final flags byte remains separate."
+
+[[location]]
+address = "7F:D06B"
+name = "field_animation_saved_size"
+width = 2
+owner = "field"
+notes = "Original animation-region snapshot. Restore before redraw. Final flags byte remains separate."
+
+[[location]]
+address = "7F:D06D"
+name = "field_animation_saved_flags"
+width = 1
+owner = "field"
+notes = "Original animation-region snapshot. Restore before redraw. Final flags byte remains separate."

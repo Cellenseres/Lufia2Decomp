@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-635 functions in `metadata/functions.toml`: 635 verified, 0 draft, 0 identified, 0 disabled.
+645 functions in `metadata/functions.toml`: 645 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2330,3 +2330,16 @@ composed queue setup; 11 child unwinds, 4,992 guards and 19 ROM controls pass.
 The shared regression batch with field animation passes 631 independent jobs,
 strict C and Release. Counts at this sound checkpoint: 635 verified entries,
 zero drafts, 382 WRAM locations. These are static selections, not runtime hits.
+
+## Original field object animation - 2026-10-07
+
+Ten complete animation helpers are verified and bound. The original region
+snapshot, eight-call redraw sequence, alternate/initial rectangle transitions,
+object-bit updates and sound suppression remain literal. Unknown children
+retain their original JSR/JSL boundaries; no host animation changes were added.
+180,224 semantic and 180,224 production-ABI comparisons pass, including native
+snapshot/restore composition; 35 child unwinds, 31,488 guards and 36 ROM controls
+pass. The shared regression batch with sound queues passes 631 independent jobs,
+strict C and Release. 645 verified entries, zero drafts, 386 WRAM locations and
+2,584 generated native calls. These are static counts, not measured runtime hits.
+The eight-slot owner is a separate follow-up; its prior contract stays unchanged.
