@@ -158,6 +158,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_transition.c
     src/field/field_scene_record_select.c
     src/field/field_scene_records.c
+    src/actor/actor_bootstrap.c
     src/field/field_bootstrap.c
     src/field/scene_bootstrap.c
     src/field/field_event_control.c
