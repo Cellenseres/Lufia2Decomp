@@ -6216,3 +6216,51 @@ source = "src/menu/menu_main_dispatch.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:93CF"
+name = "Lufia2MenuPlacePartyPortraits"
+source = "src/menu/menu_display_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:99BE"
+name = "Lufia2MenuInitializePartyPortrait"
+source = "src/menu/menu_display_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:999B"
+name = "Lufia2MenuInitializePartyPortraits"
+source = "src/menu/menu_display_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9B10"
+name = "Lufia2MenuBuildMainWindows"
+source = "src/menu/menu_display_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:8704"
+name = "Lufia2MenuPresentMainDisplay"
+source = "src/menu/menu_display_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9EF2"
+name = "Lufia2MenuBuildAlternateCursor"
+source = "src/menu/menu_display_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -345,6 +345,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:80CA` | `Lufia2MenuRecolorRect` | verified | `src/menu/menu_tilemap.c` |
 | `$82:810E` | `Lufia2MenuDrawWindow` | verified | `src/menu/menu_window.c` |
 | `$82:838F` | `Lufia2MenuClearLayers` | verified | `src/menu/menu_tilemap.c` |
+| `$82:8704` | `Lufia2MenuPresentMainDisplay` | verified | `src/menu/menu_display_callers.c` |
 | `$82:8720` | `Lufia2MenuCursor` | verified | `src/menu/menu_input.c` |
 | `$82:88A0` | `Lufia2MenuItemIndex` | verified | `src/menu/menu_cursor.c` |
 | `$82:88CB` | `Lufia2MenuItemPosition` | verified | `src/menu/menu_cursor.c` |
@@ -357,11 +358,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:8B4B` | `Lufia2MenuButtons` | verified | `src/menu/menu.c` |
 | `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |
 | `$82:939C` | `Lufia2MenuNmi` | verified | `src/menu/menu.c` |
+| `$82:93CF` | `Lufia2MenuPlacePartyPortraits` | verified | `src/menu/menu_display_callers.c` |
 | `$82:950E` | `Lufia2MenuMemberStatus` | verified | `src/menu/menu_screen.c` |
 | `$82:9918` | `Lufia2AdjustPurchasePrice` | verified | `src/menu/menu_spell_shop.c` |
+| `$82:999B` | `Lufia2MenuInitializePartyPortraits` | verified | `src/menu/menu_display_callers.c` |
+| `$82:99BE` | `Lufia2MenuInitializePartyPortrait` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9A4E` | `Lufia2MenuRunMainScreen` | verified | `src/menu/menu_main_screen.c` |
 | `$82:9AE0` | `Lufia2MenuRefreshMainDisplay` | verified | `src/menu/menu_main_dispatch.c` |
+| `$82:9B10` | `Lufia2MenuBuildMainWindows` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9CB2` | `Lufia2MenuWarpList` | verified | `src/menu/menu_screen.c` |
+| `$82:9EF2` | `Lufia2MenuBuildAlternateCursor` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
 | `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
 | `$82:A318` | `Lufia2MenuDrawStatus` | verified | `src/menu/menu_status.c` |
