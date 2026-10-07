@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
+#include "lufia2/field.h"
 #include "lufia2/system.h"
 #include "actor/actor_internal.h"
 #include "system/system_internal.h"
@@ -1376,9 +1377,14 @@ static SecondaryStep SecondaryOpFFMapCellTest(
     SimulateRtlFrame(memory, cpu);
     Compare8(cpu, A8(cpu), 0x09u);                         /* D77E */
     if (cpu->zero) {
-        /* $80:E7DF event queue stays LLE. */
-        cpu->resume_pc = 0x83d782u;
-        return SecondaryBoundary(cpu);
+        SimulateJslFrame(memory, cpu, 0x83u, 0xd785u);
+        cpu->program_bank = 0x80u;
+        const Lufia2ExecutionResult event =
+            Lufia2FieldStartPositionEvent(memory, cpu);
+        if (event.flow != LUFIA2_EXECUTION_RETURNED)
+            return SecondaryBoundary(cpu);
+        SimulateRtlFrame(memory, cpu);
+        cpu->program_bank = 0x83u;
     }
     return SecondaryNextByte(memory, cpu, 1);
 }
