@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-683 functions in `metadata/functions.toml`: 683 verified, 0 draft, 0 identified, 0 disabled.
+688 functions in `metadata/functions.toml`: 688 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2450,3 +2450,15 @@ repeated writes, widths, flags, DB/DP and child frames remain literal.
 ABI cases,11 child unwinds,75 redirects,11,136 guards and21 error controls
 pass. Shared full663, W4WX and Release pass. Checkpoint683 verified,
 zero drafts,430 WRAM locations and2,736 generated calls. Static counts only.
+
+## Original field party actor rebuild - 2026-10-07
+
+Five complete entries rebuild the five party actors, release six prior sprite
+slots, calculate actor offsets, clear one or two map occupancy cells and
+frame sprite uploads. Original ASL carry, TDC bytes, conditional single/hidden
+party paths, child frames, widths and bus ordering remain literal.
+51,200 ROM cases include10,240 native child compositions;51,211 production
+ABI cases,11 child unwinds,60 redirects,7,680 guards and15 error controls
+pass. Remaining original presentation children are explicit services.
+Shared full663, W4WX and Release pass.688 verified, zero drafts,
+430 WRAM locations and2,756 generated calls. Static counts only.

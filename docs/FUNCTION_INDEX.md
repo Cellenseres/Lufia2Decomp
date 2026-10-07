@@ -441,6 +441,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:A9E5` | `Lufia2ActorReadSpriteDescriptor` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:AA30` | `Lufia2ActorSetSpriteHeightOffset` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:AA7D` | `Lufia2ActorSelectSpriteTables` | verified | `src/actor/actor_bootstrap.c` |
+| `$83:AAAF` | `Lufia2ActorReleaseSceneSprite` | verified | `src/actor/party_scene.c` |
+| `$83:AAE1` | `Lufia2ActorUploadSceneSprite` | verified | `src/actor/party_scene.c` |
 | `$83:AAE5` | `Lufia2ActorQueueSceneSpriteUpload` | verified | `src/actor/actor_scene_resources.c` |
 | `$83:AB4F` | `Lufia2ActorSetRecordOffsets` | verified | `src/actor/actor_sprite_resources.c` |
 | `$83:AB61` | `Lufia2SpriteResetAllocations` | verified | `src/actor/sprite_reset.c` |
@@ -533,6 +535,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:F9EE` | `Lufia2MapCellOffsetLong` | verified | `src/field/field_coordinate_math.c` |
 | `$83:F9F2` | `Lufia2MapProbeCellOffset` | verified | `src/field/field_coordinate_math.c` |
 | `$83:F9F7` | `Lufia2MapCellOffset` | verified | `src/actor/actor_movement.c` |
+| `$83:FA12` | `Lufia2ActorClearSceneOccupancy` | verified | `src/actor/party_scene.c` |
 | `$83:FA3F` | `Lufia2ActorMarkMapOccupancy` | verified | `src/actor/actor_movement.c` |
 | `$83:FA81` | `Lufia2ActorMoveFinePosition` | verified | `src/actor/actor_movement.c` |
 | `$83:FACB` | `Lufia2ActorAddDisplayOffset` | verified | `src/actor/actor_movement.c` |
@@ -554,6 +557,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:FCB4` | `Lufia2ObjectScaleFinePosition` | verified | `src/field/field_coordinate_math.c` |
 | `$83:FCD1` | `Lufia2ObjectQueueSceneSpriteUpload` | verified | `src/actor/actor_scene_resources.c` |
 | `$84:8193` | `Lufia2SpriteGraphicsUpload` | verified | `src/actor/actor_sprites.c` |
+| `$84:8204` | `Lufia2FieldRebuildPartyActors` | verified | `src/actor/party_scene.c` |
+| `$84:82D5` | `Lufia2ActorPreparePartyOffsets` | verified | `src/actor/party_scene.c` |
 | `$84:8328` | `Lufia2TextClearWindowBuffer` | verified | `src/text/text_engine.c` |
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
 | `$84:8775` | `Lufia2SendImmediateSound` | verified | `src/system/sound_commands.c` |

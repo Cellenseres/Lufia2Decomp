@@ -5600,3 +5600,43 @@ source = "src/text/text_engine.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "84:8204"
+name = "Lufia2FieldRebuildPartyActors"
+source = "src/actor/party_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:82D5"
+name = "Lufia2ActorPreparePartyOffsets"
+source = "src/actor/party_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:AAAF"
+name = "Lufia2ActorReleaseSceneSprite"
+source = "src/actor/party_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FA12"
+name = "Lufia2ActorClearSceneOccupancy"
+source = "src/actor/party_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:AAE1"
+name = "Lufia2ActorUploadSceneSprite"
+source = "src/actor/party_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
