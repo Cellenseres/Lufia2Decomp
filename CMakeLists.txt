@@ -159,6 +159,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_scene_record_select.c
     src/field/field_scene_records.c
     src/field/field_scene_reset.c
+    src/field/field_display_callers.c
     src/field/field_scene_actor_records.c
     src/actor/actor_scene_resources.c
     src/actor/party_scene.c

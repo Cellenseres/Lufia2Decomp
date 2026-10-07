@@ -759,6 +759,22 @@ Lufia2ExecutionResult Lufia2FieldRebuildPartyActors(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2FieldFadeIn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldFadeOut(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2SceneUploadFixedGraphics(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldRestoreBackgroundLayers(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

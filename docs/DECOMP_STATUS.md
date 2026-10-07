@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-718 functions in `metadata/functions.toml`: 718 verified, 0 draft, 0 identified, 0 disabled.
+722 functions in `metadata/functions.toml`: 722 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2472,3 +2472,13 @@ native queue compositions;307,230 actual ABI cases,30 child unwinds,
 450 redirects,57,600 guards and90 error controls pass.1,920 full-queue
 BRK boundaries remain original. Shared full669,W4WX and Release PASS.
 718 verified, zero drafts,430 fields,2,876 generated calls. Static counts only.
+
+## Original field fades and display callers - 2026-10-07
+
+Four complete entries preserve brightness guards, fade controls, DMA register
+order and layer redraws. Frame waits remain explicit original child services.
+40,960 ROM states include8,192 native compositions of inactive colour effects
+and empty redraw layers;40,967 actual ABI cases,7 child unwinds,60 redirects,
+6,144 guards and12 error controls pass. No timing optimization or unknown
+child reconstruction is claimed. Shared full669,W4WX and Release PASS.
+722 verified, zero drafts,430 fields,2,892 generated calls. Static counts only.
