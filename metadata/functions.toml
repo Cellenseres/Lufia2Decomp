@@ -5960,3 +5960,67 @@ source = "src/battle/battle_message_parser.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:E5E2"
+name = "Lufia2WorldMapPackFirstSpriteHighBits"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E5ED"
+name = "Lufia2WorldMapPackSecondSpriteHighBits"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E5FA"
+name = "Lufia2WorldMapPackThirdSpriteHighBits"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E609"
+name = "Lufia2WorldMapPackFourthSpriteHighBits"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E617"
+name = "Lufia2WorldMapInitializeSlots"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E6C4"
+name = "Lufia2WorldMapInitializeObjectRecords"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E6F3"
+name = "Lufia2WorldMapSelectObjectRecord"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E709"
+name = "Lufia2WorldMapIndexObjectRecord"
+source = "src/world/world_map_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

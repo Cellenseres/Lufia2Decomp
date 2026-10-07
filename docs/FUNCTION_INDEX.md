@@ -726,9 +726,17 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:E4E7` | `Lufia2WorldMapDrawSmallSprite` | verified | `src/world/world_map_objects.c` |
 | `$86:E555` | `Lufia2WorldMapDrawSpritePair` | verified | `src/world/world_map_objects.c` |
 | `$86:E5BB` | `Lufia2WorldMapStoreHighBits` | verified | `src/world/world_map_objects.c` |
+| `$86:E5E2` | `Lufia2WorldMapPackFirstSpriteHighBits` | verified | `src/world/world_map_objects.c` |
+| `$86:E5ED` | `Lufia2WorldMapPackSecondSpriteHighBits` | verified | `src/world/world_map_objects.c` |
+| `$86:E5FA` | `Lufia2WorldMapPackThirdSpriteHighBits` | verified | `src/world/world_map_objects.c` |
+| `$86:E609` | `Lufia2WorldMapPackFourthSpriteHighBits` | verified | `src/world/world_map_objects.c` |
+| `$86:E617` | `Lufia2WorldMapInitializeSlots` | verified | `src/world/world_map_objects.c` |
 | `$86:E640` | `Lufia2WorldMapClearSlotFlags` | verified | `src/world/world_map_objects.c` |
 | `$86:E650` | `Lufia2WorldMapClearSprites` | verified | `src/world/world_map_objects.c` |
 | `$86:E686` | `Lufia2WorldMapSortVisible` | verified | `src/world/world_map_objects.c` |
+| `$86:E6C4` | `Lufia2WorldMapInitializeObjectRecords` | verified | `src/world/world_map_objects.c` |
+| `$86:E6F3` | `Lufia2WorldMapSelectObjectRecord` | verified | `src/world/world_map_objects.c` |
+| `$86:E709` | `Lufia2WorldMapIndexObjectRecord` | verified | `src/world/world_map_objects.c` |
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |
