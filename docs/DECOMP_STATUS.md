@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-756 functions in `metadata/functions.toml`: 756 verified, 0 draft, 0 identified, 0 disabled.
+760 functions in `metadata/functions.toml`: 760 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2609,3 +2609,23 @@ Caller compositions384 and actor offset/occupancy compositions1,024 pass.
 CPU,WRAM,child stack frames and bus order remain original. Shared full700,
 W4WX and Release PASS. 756 verified,zero drafts,455 fields,3,028 generated
 calls. Counts describe static selection,not measured interpreter load.
+
+## Original main menu dispatcher - 2026-10-07
+
+Four complete entries implement the main input dispatcher, spell-list
+application, alternate selection and main display refresh. Normal selection,
+rejection,cancel and auxiliary display toggling remain original. The057C-gated
+debug item/spell,buffer-clear,temporary-price and scene shortcuts remain
+literal. A4BE still owns its original inline-table child; unknown children
+remain explicit services. Embedded A4C1..A4D0,A54D..A556,A604..A62C tables
+are data,not semantic instructions. Shared fields retain canonical phase
+names; buffer F080 overlaps existing message storage.
+
+33,792 ROM states include1,024 native compositions of the recovered sibling
+helpers and existing layer clearing. All45 original child sites retain their
+frames and exact unwind boundaries. 33,837 actual ABI cases,60 redirects,
+7,680 unsupported contexts and79 public-library error controls pass. Button
+and selection bits vary independently,including unrelated mask bits.
+CPU,WRAM,MMIO order and original live-index word writes remain unchanged.
+Shared full703,W4WX and Release PASS. 760 verified,zero drafts,461 fields,
+3,044 generated calls. No measured runtime-hit or whole-ROM coverage claim.

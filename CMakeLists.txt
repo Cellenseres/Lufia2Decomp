@@ -80,6 +80,7 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_actor_callers.c
     src/field/field_menu.c
     src/menu/menu_main_screen.c
+    src/menu/menu_main_dispatch.c
     src/field/menu_actor_updates.c
     src/field/field_object_flags.c
     src/field/field_cell_edges.c

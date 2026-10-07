@@ -6184,3 +6184,35 @@ source = "src/field/menu_actor_updates.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:A432"
+name = "Lufia2MenuRunMainInput"
+source = "src/menu/menu_main_dispatch.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:A582"
+name = "Lufia2MenuApplySpellList"
+source = "src/menu/menu_main_dispatch.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:A62D"
+name = "Lufia2MenuRunAlternateSelection"
+source = "src/menu/menu_main_dispatch.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9AE0"
+name = "Lufia2MenuRefreshMainDisplay"
+source = "src/menu/menu_main_dispatch.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
