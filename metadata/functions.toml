@@ -6944,3 +6944,11 @@ source = "src/world/world_cell_center.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:CDF5"
+name = "Lufia2WorldMapBindResourcePointers"
+source = "src/world/world_resource_pointers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
