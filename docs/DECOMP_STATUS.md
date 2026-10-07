@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-675 functions in `metadata/functions.toml`: 675 verified, 0 draft, 0 identified, 0 disabled.
+676 functions in `metadata/functions.toml`: 676 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2426,3 +2426,16 @@ child compositions;65,541 production ABI cases, five child unwinds,
 60 redirects,10,752 guards and21 altered-ROM controls pass.
 Shared full657, W4WX and Release pass. Checkpoint675 verified, zero drafts,
 414 WRAM locations,2,704 generated calls. Static counts only.
+
+## Original scene actor state rebuild - 2026-10-07
+
+83:A82E..A97D rebuilds all forty actors, descriptors, fine coordinates,
+random delays, party offsets, scene attributes and primary scripts. All
+thirteen original child frames, conditional paths and register widths stay
+literal. DB83/DP0 binary owners support either M/X width; other contexts
+retain the original interpreter.12,288 ROM cases include4,096 compositions;
+12,301 production ABI cases,13 exact child unwinds,15 redirects,1,920 guards
+and24 altered-ROM controls pass.83:A76D was already verified and is not
+counted as new. Shared full657, W4WX and Release pass.676 verified,
+zero drafts,414 WRAM locations,2,708 generated calls.
+These are static selections; no current runtime-hit claim is made.
