@@ -4073,3 +4073,19 @@ width = 2
 count = 1
 owner = "field"
 notes = "Event instruction position published by E8E2; D199 stores its bank."
+
+[[location]]
+address = "7E:09EA"
+name = "world_map_resource_id"
+width = 1
+count = 1
+owner = "world"
+notes = "Resource row ID multiplied by18 through the original hardware registers at CDF5."
+
+[[location]]
+address = "7E:09EB"
+name = "world_map_resource_table_offset"
+width = 2
+count = 1
+owner = "world"
+notes = "Byte offset of the world-map resource row; existing region-list lookup also reads09EB."
