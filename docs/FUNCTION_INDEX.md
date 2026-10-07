@@ -141,6 +141,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:EA47` | `Lufia2FieldSaveActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EA50` | `Lufia2FieldRestoreActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |
+| `$80:EBAA` | `Lufia2FieldLoadSectionRecords` | verified | `src/field/field_section_entries.c` |
+| `$80:EC18` | `Lufia2FieldBuildPackedAttributes` | verified | `src/field/field_section_entries.c` |
+| `$80:EC78` | `Lufia2FieldPublishSectionSize` | verified | `src/field/field_section_entries.c` |
+| `$80:ECF2` | `Lufia2FieldAdvanceMapDestination` | verified | `src/field/field_section_entries.c` |
+| `$80:ECFE` | `Lufia2FieldResolveMapOffset` | verified | `src/field/field_section_entries.c` |
 | `$80:ED0E` | `Lufia2FieldUnpackAttributes` | verified | `src/field/field_attributes.c` |
 | `$80:ED9C` | `Lufia2FieldBuildAttributes` | verified | `src/field/field_attributes.c` |
 | `$80:EF8E` | `Lufia2FieldLoadSceneGraphics` | verified | `src/field/field_scene_graphics.c` |
