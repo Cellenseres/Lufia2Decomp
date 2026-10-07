@@ -3842,3 +3842,10 @@ width = 1
 count = 32
 owner = "field"
 notes = "Field object second spin rates for32slots;recovery writes21."
+
+[[location]]
+address = "7F:D199"
+name = "field_event_running_bank"
+width = 1
+owner = "field"
+notes = "E8B9 advances this byte when incremented Y is nonnegative, copies it to DB and resets Y to8000. Original bank-byte overflow and mismatched entry banks remain literal."

@@ -6656,3 +6656,35 @@ source = "src/battle/battle_message_copy.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:F734"
+name = "Lufia2FieldLocateCell"
+source = "src/field/field_cell_address.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "80:F81C"
+name = "Lufia2FieldDivisionDelay"
+source = "src/field/field_cell_address.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "80:F6AA"
+name = "Lufia2FieldCellIndex"
+source = "src/field/field_cell_address.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "80:E8B9"
+name = "Lufia2FieldReadEventByte"
+source = "src/field/field_event_byte.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
