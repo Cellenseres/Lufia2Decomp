@@ -2562,3 +2562,16 @@ frame services remain explicit original children. Request and MMIO order,
 DB/DP, widths and the 999 equipment-cursor sentinel remain original.
 Shared full700, W4WX and Release PASS. 750 verified, zero drafts, 450
 documented fields and 3,004 generated calls. Counts are not runtime hit rates.
+
+## Original actor record index widths - 2026-10-07
+
+83:AB4F uses no index-register instruction. Its original 8E:BC99 caller
+passes 16-bit indices; the whole wrapper and binding now accept either
+index width. Binary, M1, DP0, PB83 and existing stack guards remain.
+All 256 slot values, both widths and caller flags pass 65,536 ROM/ABI
+cases, 2,304 unsupported contexts and nine public-library error controls.
+The original shift carry in the triple-slot offset remains observable.
+The other two sprite-resource entries retain their 8-bit-index guards.
+The earlier fixture replaces only the obsolete AB4F X16 rejection with
+positive coverage; every other rejection remains. Shared full700, W4WX
+and Release PASS. Function/field/binding counts remain 750/450/3,004.

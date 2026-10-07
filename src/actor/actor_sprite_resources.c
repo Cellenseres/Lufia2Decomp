@@ -14,7 +14,9 @@ static bool SpriteResourceContext(const Lufia2CpuState *cpu) {
 
 Lufia2ExecutionResult Lufia2ActorSetRecordOffsets(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!SpriteResourceContext(cpu))
+    if (!cpu->accumulator_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->program_bank != 0x83u || cpu->stack < 0x1f04u ||
+        cpu->stack > 0x1ffcu)
         return ExecutionHandoff(cpu, 0x83ab4fu);
     Lufia2ActorRecordOffsets(memory, cpu);
     return ExecutionReturned(0x83ab60u);
