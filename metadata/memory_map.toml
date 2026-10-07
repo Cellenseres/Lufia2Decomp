@@ -3977,3 +3977,35 @@ width = 1
 count = 32
 owner = "field"
 notes = "Four parameter arrays of eight slots; FB..FE select them, while FF retains the original following-position alias."
+
+[[location]]
+address = "7F:D17C"
+name = "field_event_slot_x"
+width = 1
+count = 8
+owner = "field"
+notes = "X coordinate bytes of the eight event slots."
+
+[[location]]
+address = "7F:D184"
+name = "field_event_slot_y"
+width = 1
+count = 8
+owner = "field"
+notes = "Y coordinate bytes of the eight event slots."
+
+[[location]]
+address = "7F:D1A3"
+name = "field_event_point_x"
+width = 1
+count = 64
+owner = "field"
+notes = "X coordinate bytes of the64 script points; EA09 reads E0..FF as point0..31."
+
+[[location]]
+address = "7F:D1E3"
+name = "field_event_point_y"
+width = 1
+count = 64
+owner = "field"
+notes = "Y coordinate bytes of the64 script points; EA09 reads E0..FF as point0..31."

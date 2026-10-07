@@ -123,6 +123,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:D19F` | `Lufia2FieldRestoreRegionObjects` | verified | `src/field/field_event_object_region.c` |
 | `$80:D1E1` | `Lufia2FieldRemoveRegionObjects` | verified | `src/field/field_event_object_region.c` |
 | `$80:D227` | `Lufia2FieldMarkRegionObjects` | verified | `src/field/field_event_map_state.c` |
+| `$80:D9F0` | `Lufia2FieldReadEventVariableOperands` | verified | `src/field/field_event_coordinate.c` |
 | `$80:DCDA` | `Lufia2FieldPushPendingObject` | verified | `src/field/field_event_objects.c` |
 | `$80:E722` | `Lufia2FieldStartEvent` | verified | `src/field/field_event_script.c` |
 | `$80:E7DF` | `Lufia2FieldStartPositionEvent` | verified | `src/field/field_event_triggers.c` |
@@ -133,8 +134,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:E8B9` | `Lufia2FieldReadEventByte` | verified | `src/field/field_event_byte.c` |
 | `$80:E8D0` | `Lufia2FieldRewindEventByte` | verified | `src/field/field_event_reader.c` |
 | `$80:E8F4` | `Lufia2FieldSetEventPointer` | verified | `src/field/field_event_reader.c` |
+| `$80:E912` | `Lufia2FieldLookupEventActor` | verified | `src/field/field_event_coordinate.c` |
 | `$80:E9BC` | `Lufia2FieldResolveEventVariable` | verified | `src/field/field_event_value.c` |
 | `$80:E9ED` | `Lufia2FieldResolveEventValue` | verified | `src/field/field_event_value.c` |
+| `$80:EA09` | `Lufia2FieldResolveEventPosition` | verified | `src/field/field_event_coordinate.c` |
 | `$80:EA47` | `Lufia2FieldSaveActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EA50` | `Lufia2FieldRestoreActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |

@@ -16,8 +16,8 @@
 /* Script variables; operands $A0-$BF also read them. */
 #define EVENT_VARIABLES 0x7fd074u
 /* 64 script points; $E0-$FF operands name them. */
-#define EVENT_POINT_X 0x7fd1a3u
-#define EVENT_POINT_Y 0x7fd1e3u
+#define EVENT_POINT_X WRAM_FIELD_EVENT_POINT_X
+#define EVENT_POINT_Y WRAM_FIELD_EVENT_POINT_Y
 #define EVENT_POINT_D223 0x7fd223u
 #define EVENT_POINT_D263 0x7fd263u
 /* Slot s of variable v: base + 8v + s. */
@@ -56,8 +56,8 @@
 #define EVENT_LIST_OFFSET 0xf000u
 #define EVENT_LIST_RECORD 0x7ef000u
 /* Position of each event slot: x bytes then y bytes. */
-#define EVENT_SLOT_X 0x7fd17cu
-#define EVENT_SLOT_Y 0x7fd184u
+#define EVENT_SLOT_X WRAM_FIELD_EVENT_SLOT_X
+#define EVENT_SLOT_Y WRAM_FIELD_EVENT_SLOT_Y
 /* Slot running before an opcode switched actors. */
 #define EVENT_SAVED_SLOT 0x7fd2a3u
 /* Maps a listed actor operand to an actor slot. */

@@ -6808,3 +6808,27 @@ source = "src/field/field_event_value.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:E912"
+name = "Lufia2FieldLookupEventActor"
+source = "src/field/field_event_coordinate.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:EA09"
+name = "Lufia2FieldResolveEventPosition"
+source = "src/field/field_event_coordinate.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:D9F0"
+name = "Lufia2FieldReadEventVariableOperands"
+source = "src/field/field_event_coordinate.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
