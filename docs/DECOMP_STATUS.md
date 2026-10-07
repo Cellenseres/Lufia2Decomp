@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-565 functions in `metadata/functions.toml`: 565 verified, 0 draft, 0 identified, 0 disabled.
+567 functions in `metadata/functions.toml`: 567 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -2180,3 +2180,17 @@ full WRAM,ordered writes and modeled MMIO reads/state are compared.
 Production bridges,W4/WX,normal Release and all563 independent jobs pass.
 565 verified,0draft,367 WRAM locations and2264 generated native invocations.
 Ordinary-read trace,pixels,full NMI timing and actual hit-rate gains unclaimed.
+
+## Position event callers - 2026-10-07
+
+80:E7FA/E7DF now call the complete native record/event helpers while retaining
+original carry,selection,redraw flags and all nested JSL frames. Both complete
+entries are verified and bound. Object routes86/87 preserve original height
+checks,mode writes,inverted carry and conditional script jumps. Unknown
+movement directions keep their original table continuation; event-list limits
+retain live child frames. No standalone binding is added for opcode routes.
+540672 direct/ABI/route comparisons,8192 whole-owner cases,78 helper guards,
+512 owner guards and12 altered-ROM controls pass. CPU,full WRAM,ordered writes
+and modeled MMIO state match ROM. W4WX,Release and566 independent jobs pass.
+567 verified,0draft,368 WRAM locations,2272 generated native calls. No claim
+of measured runtime hit-rate gain,pixel equivalence or NMI timing changes.

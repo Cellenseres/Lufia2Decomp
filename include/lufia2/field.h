@@ -533,6 +533,12 @@ Lufia2ExecutionResult Lufia2FieldClearObjectAttributes(
 Lufia2ExecutionResult Lufia2FieldSetObjectTiles(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldStartEventAtProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldStartPositionEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

@@ -490,6 +490,8 @@ enum ObjectOpcodeHandler {
     OBJECT_OP_2B = 0xec6d,                         /* $2B */
     OBJECT_OP_ANIMATION_FROM_OPERAND = 0xec8e,     /* $Ax */
     OBJECT_OP_CX = 0xed11,                         /* $Cx */
+    OBJECT_OP_EVENT_PROBE_JUMP = 0xf1b4,
+    OBJECT_OP_EVENT_PROBE_ALT_JUMP = 0xf1bc,
     OBJECT_OP_PROBE_DIRECTION_JUMP = 0xeeec,
     OBJECT_OP_DX = 0xed32,                         /* $Dx */
     OBJECT_OP_8X_TABLE = 0xed45,                   /* $8x */
@@ -1986,6 +1988,60 @@ static ObjectFlow ObjectProbeDirectionJump(
     return OBJECT_FLOW_DISPATCH;
 }
 
+static bool ObjectStartProbeEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJslFrame(memory, cpu, 0x83u, 0xf1f1u);
+    cpu->program_bank = 0x80u;
+    Lufia2ExecutionResult result = Lufia2FieldStartEventAtProbe(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return false;
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x83u;
+    return true;
+}
+
+static ObjectFlow ObjectEventProbeJump(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t mode) {
+    LoadA8(cpu, mode);
+    Write8(memory, WRAM_UNK_7FD133, A8(cpu));
+    if (!ObjectCoordinateCall(memory, cpu, 0xf1c4u, Lufia2ObjectRoundedProbe))
+        return OBJECT_FLOW_BOUNDARY;
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FD9CC, cpu->x)));
+    SimulateJslFrame(memory, cpu, 0x83u, 0xf1ceu);
+    if (!Lufia2ActorMovementStep(memory, cpu))
+        return OBJECT_FLOW_BOUNDARY;
+    SimulateRtlFrame(memory, cpu);
+    PushY(memory, cpu);
+    LoadX16(cpu, 0x1eu);
+    LoadY16(cpu, 3u);
+    if (!ObjectProbeLongCall(memory, cpu, 0xf1d9u, Lufia2FieldFindPointRecord))
+        return OBJECT_FLOW_BOUNDARY;
+    if (cpu->carry) {
+        if (!ObjectCoordinateCall(memory, cpu, 0xf1deu, Lufia2MapProbeHeightBody))
+            return OBJECT_FLOW_BOUNDARY;
+        LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
+        Compare8(cpu, A8(cpu), Read8(memory,
+            LongIndexedAddress(WRAM_UNK_7FDA2C, cpu->x)));
+        cpu->carry = 0;
+        if (cpu->zero) {
+            LoadX16(cpu, 0x1eu);
+            LoadY16(cpu, 6u);
+            if (!ObjectStartProbeEvent(memory, cpu))
+                return OBJECT_FLOW_BOUNDARY;
+            cpu->carry = !cpu->carry;
+        }
+    }
+    cpu->y = PullIndexValue(memory, cpu);
+    LoadY16(cpu, (uint16_t)(cpu->y - 1u));
+    if (cpu->carry)
+        return ObjectJump(memory, cpu, OBJECT_OP_DX);
+    IncrementY16(cpu);
+    IncrementY16(cpu);
+    IncrementY16(cpu);
+    return OBJECT_FLOW_DISPATCH;
+}
+
 static ObjectFlow ObjectExecute(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -2025,6 +2081,10 @@ static ObjectFlow ObjectExecute(
         return ObjectCopyFrameGraphics(memory, cpu);
     case OBJECT_OP_QUEUE_SOUND:
         return ObjectQueueSound(memory, cpu);
+    case OBJECT_OP_EVENT_PROBE_JUMP:
+        return ObjectEventProbeJump(memory, cpu, 0u);
+    case OBJECT_OP_EVENT_PROBE_ALT_JUMP:
+        return ObjectEventProbeJump(memory, cpu, 1u);
     case OBJECT_OP_PROBE_DIRECTION_JUMP:
         return ObjectProbeDirectionJump(memory, cpu);
     case OBJECT_OP_4X_WAIT:
