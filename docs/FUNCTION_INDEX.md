@@ -801,6 +801,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:919C` | `Lufia2BattleUpdateStatusIcons` | verified | `src/battle/battle_status_icons.c` |
 | `$85:91A1` | `Lufia2BattleSyncStatusMarkers` | verified | `src/battle/battle_status_support.c` |
 | `$85:91E0` | `Lufia2BattleClearStatusMarkers` | verified | `src/battle/battle_status_support.c` |
+| `$85:920E` | `Lufia2BattleTogglePartyTargetState` | verified | `src/battle/battle_effect_target_toggle.c` |
+| `$85:922D` | `Lufia2BattleToggleSpecialTargetState` | verified | `src/battle/battle_effect_target_toggle.c` |
 | `$85:9236` | `Lufia2BattlePartyStatusGate` | verified | `src/battle/battle_loop_children.c` |
 | `$85:9275` | `Lufia2BattleQueuePartyTurns` | verified | `src/battle/battle_turn_order.c` |
 | `$85:9337` | `Lufia2BattleInsertTurn` | verified | `src/battle/battle_turn_queue.c` |
