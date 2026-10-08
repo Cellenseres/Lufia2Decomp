@@ -8120,3 +8120,19 @@ source = "src/battle/battle_effect_graphics_resource.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:96F6"
+name = "Lufia2BattleEffectClearWindowTiles"
+source = "src/battle/battle_effect_tilemap_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:96FA"
+name = "Lufia2BattleEffectResetPartyTiles"
+source = "src/battle/battle_effect_tilemap_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
