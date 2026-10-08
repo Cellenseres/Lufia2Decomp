@@ -7880,3 +7880,83 @@ source = "src/battle/battle_layer_color_dma.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A455"
+name = "Lufia2BattleEffectSpawnStationaryActor"
+source = "src/battle/battle_effect_actor_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A46E"
+name = "Lufia2BattleEffectSpawnHalfTurnActor"
+source = "src/battle/battle_effect_actor_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A489"
+name = "Lufia2BattleEffectSpawnActorWithAngle"
+source = "src/battle/battle_effect_actor_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A4A6"
+name = "Lufia2BattleEffectSpawnOffsetActor"
+source = "src/battle/battle_effect_actor_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A4C3"
+name = "Lufia2BattleEffectSpawnUnshiftedMovingActor"
+source = "src/battle/battle_effect_actor_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A4DC"
+name = "Lufia2BattleEffectSpawnHalfTurnMovingActor"
+source = "src/battle/battle_effect_actor_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A4F7"
+name = "Lufia2BattleEffectSpawnRightwardActor"
+source = "src/battle/battle_effect_actor_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A512"
+name = "Lufia2BattleEffectSpawnUpwardActor"
+source = "src/battle/battle_effect_actor_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A52D"
+name = "Lufia2BattleEffectSpawnMovingActorWithAngle"
+source = "src/battle/battle_effect_actor_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A54A"
+name = "Lufia2BattleEffectSpawnActorWithVerticalSpeed"
+source = "src/battle/battle_effect_actor_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
