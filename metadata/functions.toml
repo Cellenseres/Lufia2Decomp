@@ -7536,3 +7536,35 @@ source = "src/party/capsule_menu_chain.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A062"
+name = "Lufia2BattleEffectAimAtPoint"
+source = "src/battle/battle_effect_angle_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "81:A094"
+name = "Lufia2BattleEffectAccelerateAtAngle"
+source = "src/battle/battle_effect_angle_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A0C4"
+name = "Lufia2BattleEffectDecelerateAtAngle"
+source = "src/battle/battle_effect_angle_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A0F4"
+name = "Lufia2BattleEffectDecelerateAtOffsetAngle"
+source = "src/battle/battle_effect_angle_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
