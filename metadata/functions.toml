@@ -7216,3 +7216,27 @@ source = "src/field/field_row_buffer.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "86:CD67"
+name = "Lufia2WorldMapUploadInitialTilemap"
+source = "src/world/world_perspective.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E356"
+name = "Lufia2WorldMapProjectDistance"
+source = "src/world/world_perspective.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:A7F8"
+name = "Lufia2WorldMapBuildColorHdma"
+source = "src/world/world_perspective.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

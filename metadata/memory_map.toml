@@ -4153,3 +4153,11 @@ width = 2
 count = 1
 owner = "world"
 notes = "Streamed column VRAM address."
+
+[[location]]
+address = "7E:1716"
+name = "world_map_color_hdma_table"
+width = 2
+count = 1
+owner = "world"
+notes = "Channel4 color HDMA source table."
