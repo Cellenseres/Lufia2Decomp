@@ -463,6 +463,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:C4F4` | `Lufia2CapsuleGetFormAddress` | verified | `src/party/capsule_selection_addresses.c` |
 | `$82:C504` | `Lufia2CapsuleGetItemAddress` | verified | `src/party/capsule_selection_addresses.c` |
 | `$82:C515` | `Lufia2CapsuleSetForms` | verified | `src/party/capsule.c` |
+| `$82:C554` | `Lufia2CapsuleChooseMenuItem` | verified | `src/party/capsule_item_choice.c` |
 | `$82:C627` | `Lufia2MenuCursorBlink` | verified | `src/menu/menu.c` |
 | `$82:CD1F` | `Lufia2CapsuleTryLearn` | verified | `src/party/capsule.c` |
 | `$82:CD83` | `Lufia2CapsuleLevelUp` | verified | `src/party/capsule.c` |
