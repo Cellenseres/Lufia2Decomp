@@ -4641,3 +4641,11 @@ width = 1
 count = 1
 owner = "field"
 notes = "Ten-byte encounter record table base; byte resource indexing can cross bank7F. Extent unclaimed."
+
+[[location]]
+address = "7F:F65B"
+name = "battle_encounter_write_base"
+width = 1
+count = 1
+owner = "battle"
+notes = "Original encounter output base; saved X plus0100 controls long-bank writes. Extent unclaimed."

@@ -172,6 +172,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:F81C` | `Lufia2FieldDivisionDelay` | verified | `src/field/field_cell_address.c` |
 | `$80:F821` | `Lufia2FieldTraceCellEdges` | verified | `src/field/field_cell_edges.c` |
 | `$81:8000` | `Lufia2BattleSetup` | verified | `src/battle/battle_setup.c` |
+| `$81:839F` | `Lufia2BattleGenerateEncounterRecord` | verified | `src/battle/battle_encounter_generation.c` |
+| `$81:84FC` | `Lufia2BattleAddEncounterEnemy` | verified | `src/battle/battle_encounter_generation.c` |
 | `$81:851E` | `Lufia2BattleDisplaySetup` | verified | `src/battle/battle_display_setup.c` |
 | `$81:876B` | `Lufia2BattleExit` | verified | `src/battle/battle_exit.c` |
 | `$81:8821` | `Lufia2BattleEntry` | verified | `src/battle/battle_entry.c` |
