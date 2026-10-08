@@ -8232,3 +8232,11 @@ source = "src/battle/battle_effect_frame_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:986E"
+name = "Lufia2BattleEffectCopyActorTiles"
+source = "src/battle/battle_effect_actor_tiles.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
