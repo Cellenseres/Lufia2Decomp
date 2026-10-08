@@ -195,6 +195,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:91F2` | `Lufia2BattleEffectSpawnScriptAt` | verified | `src/battle/battle_effect_slots.c` |
 | `$81:920F` | `Lufia2BattleEffectSpawnScriptsForTargets` | verified | `src/battle/battle_effect_slots.c` |
 | `$81:929E` | `Lufia2BattleEffectSpawnActorAt` | verified | `src/battle/battle_effect_slots.c` |
+| `$81:92E9` | `Lufia2BattleEffectSpawnSavedActorScript` | verified | `src/battle/battle_effect_saved_actor.c` |
 | `$81:94CA` | `Lufia2BattleEffectSelectPortraitStream` | verified | `src/battle/battle_effect_selection.c` |
 | `$81:94EB` | `Lufia2BattleEffectLoopStart` | verified | `src/battle/battle_effect_flow.c` |
 | `$81:9500` | `Lufia2BattleEffectLoopStart2` | verified | `src/battle/battle_effect_flow.c` |
@@ -263,6 +264,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:B5A3` | `Lufia2BattleHideOam` | verified | `src/battle/battle_util.c` |
 | `$81:B5C4` | `Lufia2BattleBuildSprites` | verified | `src/battle/battle_sprite_build.c` |
 | `$81:B705` | `Lufia2BattleAppendOamSprites` | verified | `src/battle/battle_sprite_build.c` |
+| `$81:B7D9` | `Lufia2BattleEffectTargetAdjustment` | verified | `src/battle/battle_effect_saved_actor.c` |
 | `$81:B7EF` | `Lufia2BattleTargetSpriteCoordinates` | verified | `src/battle/battle_target_resolution.c` |
 | `$81:B80A` | `Lufia2BattleEffectTargetCoordinates` | verified | `src/battle/battle_target_resolution.c` |
 | `$81:B8B1` | `Lufia2BattleTargetCoordinates` | verified | `src/battle/battle_target_helpers.c` |
