@@ -4385,3 +4385,27 @@ width = 1
 count = 1
 owner = "battle"
 notes = "Last radius used to build the edge table."
+
+[[location]]
+address = "7E:1B08"
+name = "battle_layer_hdma_descriptor"
+width = 1
+count = 5
+owner = "battle"
+notes = "Channel-five indirect TM/TS descriptor."
+
+[[location]]
+address = "7E:1AF9"
+name = "battle_color_hdma_descriptor"
+width = 1
+count = 5
+owner = "battle"
+notes = "Channel-two indirect CGWSEL/CGADSUB descriptor."
+
+[[location]]
+address = "7E:124E"
+name = "battle_hdma_bottom_color_control"
+width = 2
+count = 1
+owner = "battle"
+notes = "CGWSEL/CGADSUB pair for the last HDMA band."

@@ -837,6 +837,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:AB28` | `Lufia2BattleTickMessageEffect` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB5B` | `Lufia2BattleQueueMessageCleanup` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB78` | `Lufia2BattleStageTransfer` | verified | `src/battle/battle_loop_children.c` |
+| `$85:AB98` | `Lufia2BattleConfigureLayerColorDma` | verified | `src/battle/battle_layer_color_dma.c` |
 | `$85:ADE1` | `Lufia2BattleWaveBackward` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AE68` | `Lufia2BattleWaveForward` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AEEB` | `Lufia2BattleWaveFill` | verified | `src/battle/battle_background_wave.c` |
