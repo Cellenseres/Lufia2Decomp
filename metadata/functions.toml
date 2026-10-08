@@ -7144,3 +7144,35 @@ source = "src/world/world_scene.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:96FE"
+name = "Lufia2BattleEffectAddBg3Scroll"
+source = "src/battle/battle_effect_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9738"
+name = "Lufia2BattleEffectSetBg3Scroll"
+source = "src/battle/battle_effect_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:976B"
+name = "Lufia2BattleEffectAddBg1Scroll"
+source = "src/battle/battle_effect_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:97A5"
+name = "Lufia2BattleEffectSetBg1Scroll"
+source = "src/battle/battle_effect_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
