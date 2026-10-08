@@ -1683,6 +1683,17 @@ Lufia2ExecutionResult Lufia2BattleInitializeEnemySpriteRecord(
 Lufia2ExecutionResult Lufia2BattleFindEnemySpriteGroup(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleLoadEnemyGraphicsGroups(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2BattleAllocateEnemyTiles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2BattleAllocateEnemyPalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

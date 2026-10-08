@@ -4529,3 +4529,43 @@ width = 1
 count = 1
 owner = "battle"
 notes = "Six-byte timer table base; phase storage overlaps menu_scroll_range."
+
+[[location]]
+address = "7E:1303"
+name = "battle_enemy_group_graphics"
+width = 1
+count = 3
+owner = "battle"
+notes = "Three graphics IDs; tile allocation also reads stride-four cache records in the shared group storage."
+
+[[location]]
+address = "7E:1306"
+name = "battle_enemy_group_palette_ids"
+width = 1
+count = 3
+owner = "battle"
+notes = "Three palette IDs loaded with the enemy graphics groups."
+
+[[location]]
+address = "7E:1324"
+name = "battle_enemy_palettes_used"
+width = 1
+count = 1
+owner = "battle"
+notes = "Next palette slot in the battle graphics allocator."
+
+[[location]]
+address = "7E:1325"
+name = "battle_enemy_cached_tile_sets"
+width = 1
+count = 1
+owner = "battle"
+notes = "Byte count of cached tile sets; cache scanning wraps its byte index."
+
+[[location]]
+address = "7E:1326"
+name = "battle_enemy_tile_rows_used"
+width = 1
+count = 1
+owner = "battle"
+notes = "Next tile row used by the original enemy tile blit."

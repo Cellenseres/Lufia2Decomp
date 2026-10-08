@@ -199,6 +199,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_update.c
     src/field/scene_script.c
     src/field/field_scroll.c
+    src/battle/battle_enemy_graphics.c
     src/battle/battle_enemy_sprite_setup.c
     src/battle/battle_capsule_graphics.c
     src/battle/battle_portrait_state.c
