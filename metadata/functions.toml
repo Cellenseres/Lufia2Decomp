@@ -8136,3 +8136,11 @@ source = "src/battle/battle_effect_tilemap_callers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:9B56"
+name = "Lufia2BattleEffectSetPortraitPose"
+source = "src/battle/battle_effect_portrait_pose.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
