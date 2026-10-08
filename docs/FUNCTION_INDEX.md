@@ -799,6 +799,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:CDD0` | `Lufia2BattleLoadActionRecord` | verified | `src/battle/battle_action_work.c` |
 | `$85:CDFA` | `Lufia2BattleActionRecordPointer` | verified | `src/battle/battle_action_work.c` |
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
+| `$85:DB6D` | `Lufia2SystemDivideVectorMagnitude` | verified | `src/system/vector_division.c` |
 | `$85:DCA3` | `Lufia2BattleMultiply` | verified | `src/battle/battle_script.c` |
 | `$85:DCEA` | `Lufia2BattleRandomFraction` | verified | `src/battle/battle_script.c` |
 | `$85:DD19` | `Lufia2BattleRandomizeTurnPriority` | verified | `src/battle/battle_turn_priority.c` |

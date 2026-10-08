@@ -306,6 +306,9 @@ Lufia2ExecutionResult Lufia2SystemTestEventFlagLong(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2SystemDivideVectorMagnitude(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
