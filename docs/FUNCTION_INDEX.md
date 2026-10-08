@@ -221,6 +221,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:99B0` | `Lufia2BattleEffectBackgroundCopy` | verified | `src/battle/battle_effect_video.c` |
 | `$81:99D0` | `Lufia2BattleEffectGraphics` | verified | `src/battle/battle_effect_graphics.c` |
 | `$81:9A12` | `Lufia2BattleEffectGraphicsAlternate` | verified | `src/battle/battle_effect_graphics.c` |
+| `$81:9A54` | `Lufia2BattleEffectSetCircleRadius` | verified | `src/battle/battle_effect_circle_window.c` |
 | `$81:9AB1` | `Lufia2BattleEffectWindowBand` | verified | `src/battle/battle_effect_video.c` |
 | `$81:9AF7` | `Lufia2BattleEffectSetTargetMotionOffsets` | verified | `src/battle/battle_effect_target_state.c` |
 | `$81:9BA3` | `Lufia2BattleEffectSkipArgument` | verified | `src/battle/battle_effect_selection.c` |
@@ -839,6 +840,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:ADE1` | `Lufia2BattleWaveBackward` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AE68` | `Lufia2BattleWaveForward` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AEEB` | `Lufia2BattleWaveFill` | verified | `src/battle/battle_background_wave.c` |
+| `$85:B1D6` | `Lufia2BattleEnableCircleWindow` | verified | `src/battle/battle_effect_circle_window.c` |
 | `$85:B208` | `Lufia2BattleCircleWindow` | verified | `src/battle/battle_circle_window.c` |
 | `$85:B26D` | `Lufia2BattleCircleWidths` | verified | `src/battle/battle_circle_window.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
