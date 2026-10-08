@@ -7488,3 +7488,11 @@ source = "src/party/capsule_item_choice.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:C482"
+name = "Lufia2CapsuleGetStatusAddress"
+source = "src/party/capsule_status_address.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
