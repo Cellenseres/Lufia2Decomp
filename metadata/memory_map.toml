@@ -4169,3 +4169,35 @@ width = 1
 count = 1
 owner = "world"
 notes = "Number of skyline HDMA bands."
+
+[[location]]
+address = "7E:1701"
+name = "world_map_palette_transfer_mode"
+width = 1
+count = 1
+owner = "world"
+notes = "Palette transfer descriptor mode."
+
+[[location]]
+address = "7E:1702"
+name = "world_map_palette_transfer_length"
+width = 2
+count = 1
+owner = "world"
+notes = "Palette transfer descriptor byte length."
+
+[[location]]
+address = "7E:1704"
+name = "world_map_palette_transfer_source"
+width = 2
+count = 1
+owner = "world"
+notes = "Palette transfer descriptor source offset."
+
+[[location]]
+address = "7E:1706"
+name = "world_map_palette_transfer_bank"
+width = 1
+count = 1
+owner = "world"
+notes = "Palette transfer descriptor source bank."

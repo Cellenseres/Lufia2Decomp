@@ -840,6 +840,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:995B` | `Lufia2WorldScrollAdvance` | verified | `src/world/world_scroll_step.c` |
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
+| `$86:A03B` | `Lufia2WorldMapStepPaletteColors` | verified | `src/world/world_palette_step.c` |
+| `$86:A0A2` | `Lufia2WorldMapQueuePaletteTransfer` | verified | `src/world/world_palette_step.c` |
 | `$86:A417` | `Lufia2WorldStepOffsets` | verified | `src/world/world_scroll_step.c` |
 | `$86:A4FA` | `Lufia2WorldMapResolveAngleScale` | verified | `src/world/world_math_resources.c` |
 | `$86:A52F` | `Lufia2WorldMapMultiply16` | verified | `src/world/world_math_resources.c` |

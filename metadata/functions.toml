@@ -7320,3 +7320,19 @@ source = "src/world/world_flagged_blocks.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:A0A2"
+name = "Lufia2WorldMapQueuePaletteTransfer"
+source = "src/world/world_palette_step.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A03B"
+name = "Lufia2WorldMapStepPaletteColors"
+source = "src/world/world_palette_step.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
