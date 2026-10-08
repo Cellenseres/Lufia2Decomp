@@ -827,6 +827,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:910C` | `Lufia2MenuLoadPalette4` | verified | `src/menu/menu_image_load.c` |
 | `$86:911F` | `Lufia2MenuLoadSlotPalettes` | verified | `src/menu/menu_image_load.c` |
 | `$86:91FE` | `Lufia2WorldMapCellCenter` | verified | `src/world/world_cell_center.c` |
+| `$86:92A1` | `Lufia2WorldMapResetScene` | verified | `src/world/world_scene.c` |
 | `$86:94D4` | `Lufia2SceneTrackStep` | verified | `src/field/field_scene_tracks.c` |
 | `$86:995B` | `Lufia2WorldScrollAdvance` | verified | `src/world/world_scroll_step.c` |
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
@@ -835,13 +836,19 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:A583` | `Lufia2WorldProduct16By8` | verified | `src/world/world_scroll_step.c` |
 | `$86:A5A9` | `Lufia2WorldMapDivide32` | verified | `src/world/world_map_objects.c` |
 | `$86:A791` | `Lufia2SceneViewOrigin` | verified | `src/field/field_scene_tracks.c` |
+| `$86:A7CE` | `Lufia2WorldMapUpdatePlane` | verified | `src/world/world_scene.c` |
 | `$86:A894` | `Lufia2WorldMapPlane` | verified | `src/world/world_map_plane.c` |
 | `$86:A9B0` | `Lufia2WorldPlaneRows0` | verified | `src/world/world_plane_rows.c` |
 | `$86:AA5B` | `Lufia2WorldPlaneRows1` | verified | `src/world/world_plane_rows.c` |
 | `$86:AB0E` | `Lufia2WorldPlaneRows2` | verified | `src/world/world_plane_rows.c` |
 | `$86:ABC1` | `Lufia2WorldPlaneRows3` | verified | `src/world/world_plane_rows.c` |
+| `$86:AD82` | `Lufia2WorldMapUploadTilePlane` | verified | `src/world/world_scene.c` |
+| `$86:AE1E` | `Lufia2WorldMapConfigureMode7` | verified | `src/world/world_scene.c` |
+| `$86:CD41` | `Lufia2WorldMapInstallGraphics` | verified | `src/world/world_scene.c` |
 | `$86:CDF5` | `Lufia2WorldMapBindResourcePointers` | verified | `src/world/world_resource_pointers.c` |
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
+| `$86:D2D6` | `Lufia2WorldMapResetSceneState` | verified | `src/world/world_scene.c` |
+| `$86:D3A5` | `Lufia2WorldMapBlankDisplay` | verified | `src/world/world_scene.c` |
 | `$86:E0B9` | `Lufia2WorldMapStartAnimation` | verified | `src/world/world_map_objects.c` |
 | `$86:E11F` | `Lufia2WorldMapStepAnimations` | verified | `src/world/world_map_objects.c` |
 | `$86:E1B9` | `Lufia2WorldMapUpdateObjects` | verified | `src/world/world_map_objects.c` |
