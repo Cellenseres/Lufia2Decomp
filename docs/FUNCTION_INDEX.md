@@ -238,6 +238,15 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A431` | `Lufia2BattleEffectRandomizeParameterWord` | verified | `src/battle/battle_effect_parameter_words.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
+| `$81:A605` | `Lufia2BattleEffectSetDelayOne` | verified | `src/battle/battle_effect_delay_presets.c` |
+| `$81:A60F` | `Lufia2BattleEffectSetDelayTwo` | verified | `src/battle/battle_effect_delay_presets.c` |
+| `$81:A619` | `Lufia2BattleEffectSetDelayThree` | verified | `src/battle/battle_effect_delay_presets.c` |
+| `$81:A623` | `Lufia2BattleEffectSetDelayFour` | verified | `src/battle/battle_effect_delay_presets.c` |
+| `$81:A62D` | `Lufia2BattleEffectSetDelayFive` | verified | `src/battle/battle_effect_delay_presets.c` |
+| `$81:A637` | `Lufia2BattleEffectSetDelaySix` | verified | `src/battle/battle_effect_delay_presets.c` |
+| `$81:A641` | `Lufia2BattleEffectSetDelayEight` | verified | `src/battle/battle_effect_delay_presets.c` |
+| `$81:A64B` | `Lufia2BattleEffectSetDelayTen` | verified | `src/battle/battle_effect_delay_presets.c` |
+| `$81:A655` | `Lufia2BattleEffectSetDelayTwenty` | verified | `src/battle/battle_effect_delay_presets.c` |
 | `$81:A69A` | `Lufia2BattleEffectAccelerateByByte` | verified | `src/battle/battle_effect_byte_acceleration.c` |
 | `$81:A6C6` | `Lufia2BattleEffectDecelerateByByte` | verified | `src/battle/battle_effect_byte_acceleration.c` |
 | `$81:A6F2` | `Lufia2BattleEffectAccelerateOne` | verified | `src/battle/battle_effect_byte_acceleration.c` |

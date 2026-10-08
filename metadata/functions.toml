@@ -7696,3 +7696,75 @@ source = "src/battle/battle_effect_vector_placement.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A605"
+name = "Lufia2BattleEffectSetDelayOne"
+source = "src/battle/battle_effect_delay_presets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A60F"
+name = "Lufia2BattleEffectSetDelayTwo"
+source = "src/battle/battle_effect_delay_presets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A619"
+name = "Lufia2BattleEffectSetDelayThree"
+source = "src/battle/battle_effect_delay_presets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A623"
+name = "Lufia2BattleEffectSetDelayFour"
+source = "src/battle/battle_effect_delay_presets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A62D"
+name = "Lufia2BattleEffectSetDelayFive"
+source = "src/battle/battle_effect_delay_presets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A637"
+name = "Lufia2BattleEffectSetDelaySix"
+source = "src/battle/battle_effect_delay_presets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A641"
+name = "Lufia2BattleEffectSetDelayEight"
+source = "src/battle/battle_effect_delay_presets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A64B"
+name = "Lufia2BattleEffectSetDelayTen"
+source = "src/battle/battle_effect_delay_presets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A655"
+name = "Lufia2BattleEffectSetDelayTwenty"
+source = "src/battle/battle_effect_delay_presets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
