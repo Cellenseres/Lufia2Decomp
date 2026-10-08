@@ -4441,3 +4441,91 @@ width = 1
 count = 1
 owner = "battle"
 notes = "Capsule graphics ID copied from1144 during battle setup."
+
+[[location]]
+address = "7E:1300"
+name = "battle_enemy_sprite_group_ids"
+width = 1
+count = 3
+owner = "battle"
+notes = "Three graphics-group IDs searched by85DF35."
+
+[[location]]
+address = "7E:1309"
+name = "battle_enemy_sprite_group_palettes"
+width = 1
+count = 3
+owner = "battle"
+notes = "Palette attributes copied to enemy sprite records."
+
+[[location]]
+address = "7E:130F"
+name = "battle_enemy_sprite_group_tiles"
+width = 1
+count = 3
+owner = "battle"
+notes = "Tile offsets copied to enemy sprite records."
+
+[[location]]
+address = "7E:1315"
+name = "battle_enemy_sprite_group_widths"
+width = 1
+count = 3
+owner = "battle"
+notes = "Graphics-group width bytes copied to sprite records."
+
+[[location]]
+address = "7E:1318"
+name = "battle_enemy_sprite_group_heights"
+width = 1
+count = 3
+owner = "battle"
+notes = "Graphics-group height bytes copied to sprite records."
+
+[[location]]
+address = "7E:131B"
+name = "battle_enemy_sprite_group_attributes"
+width = 1
+count = 3
+owner = "battle"
+notes = "Graphics-group attributes copied to sprite records."
+
+[[location]]
+address = "7E:1327"
+name = "battle_enemy_sprite_record_slots"
+width = 1
+count = 6
+owner = "battle"
+notes = "Sprite-record index assigned to each enemy by85DEDC."
+
+[[location]]
+address = "7E:132D"
+name = "battle_enemy_sprite_x_positions"
+width = 1
+count = 1
+owner = "battle"
+notes = "Six-byte table base; phase storage overlaps actor_sprite_vram_base."
+
+[[location]]
+address = "7E:1333"
+name = "battle_enemy_sprite_y_positions"
+width = 1
+count = 6
+owner = "battle"
+notes = "Six initial enemy sprite Y positions."
+
+[[location]]
+address = "7E:1345"
+name = "battle_enemy_sprite_group_keys"
+width = 1
+count = 6
+owner = "battle"
+notes = "Graphics-group lookup key for each enemy."
+
+[[location]]
+address = "7E:152A"
+name = "battle_enemy_sprite_timers"
+width = 1
+count = 1
+owner = "battle"
+notes = "Six-byte timer table base; phase storage overlaps menu_scroll_range."

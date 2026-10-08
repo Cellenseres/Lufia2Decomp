@@ -8272,3 +8272,27 @@ source = "src/battle/battle_capsule_graphics.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:DE9D"
+name = "Lufia2BattleInitializeEnemySpriteRecords"
+source = "src/battle/battle_enemy_sprite_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:DEDC"
+name = "Lufia2BattleInitializeEnemySpriteRecord"
+source = "src/battle/battle_enemy_sprite_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:DF35"
+name = "Lufia2BattleFindEnemySpriteGroup"
+source = "src/battle/battle_enemy_sprite_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
