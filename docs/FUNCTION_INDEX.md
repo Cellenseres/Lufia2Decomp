@@ -226,6 +226,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A094` | `Lufia2BattleEffectAccelerateAtAngle` | verified | `src/battle/battle_effect_angle_motion.c` |
 | `$81:A0C4` | `Lufia2BattleEffectDecelerateAtAngle` | verified | `src/battle/battle_effect_angle_motion.c` |
 | `$81:A0F4` | `Lufia2BattleEffectDecelerateAtOffsetAngle` | verified | `src/battle/battle_effect_angle_motion.c` |
+| `$81:A12A` | `Lufia2BattleEffectSetPackedDrawState` | verified | `src/battle/battle_effect_draw_state.c` |
+| `$81:A162` | `Lufia2BattleEffectSetAlternatePackedDrawState` | verified | `src/battle/battle_effect_draw_state.c` |
+| `$81:A19C` | `Lufia2BattleEffectSetDrawState` | verified | `src/battle/battle_effect_draw_state.c` |
+| `$81:A39D` | `Lufia2BattleEffectCopyDrawValue` | verified | `src/battle/battle_effect_draw_state.c` |
+| `$81:A3BF` | `Lufia2BattleEffectSetDrawVariant` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |

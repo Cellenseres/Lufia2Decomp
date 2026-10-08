@@ -7568,3 +7568,43 @@ source = "src/battle/battle_effect_angle_motion.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A12A"
+name = "Lufia2BattleEffectSetPackedDrawState"
+source = "src/battle/battle_effect_draw_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A162"
+name = "Lufia2BattleEffectSetAlternatePackedDrawState"
+source = "src/battle/battle_effect_draw_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A19C"
+name = "Lufia2BattleEffectSetDrawState"
+source = "src/battle/battle_effect_draw_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A39D"
+name = "Lufia2BattleEffectCopyDrawValue"
+source = "src/battle/battle_effect_draw_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A3BF"
+name = "Lufia2BattleEffectSetDrawVariant"
+source = "src/battle/battle_effect_draw_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
