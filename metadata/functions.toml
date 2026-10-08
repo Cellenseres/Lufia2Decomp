@@ -8192,3 +8192,11 @@ source = "src/battle/battle_effect_centered_parameter.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A2B0"
+name = "Lufia2BattleEffectSpawnVectorActor"
+source = "src/battle/battle_effect_vector_actor.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

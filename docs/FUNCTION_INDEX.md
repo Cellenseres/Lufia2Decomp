@@ -258,6 +258,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A1FF` | `Lufia2BattleEffectRandomizeCenteredParameter` | verified | `src/battle/battle_effect_centered_parameter.c` |
 | `$81:A264` | `Lufia2BattleEffectProjectFromPosition` | verified | `src/battle/battle_effect_vector_placement.c` |
 | `$81:A295` | `Lufia2BattleEffectSetVelocityWords` | verified | `src/battle/battle_effect_stream_fields.c` |
+| `$81:A2B0` | `Lufia2BattleEffectSpawnVectorActor` | verified | `src/battle/battle_effect_vector_actor.c` |
 | `$81:A31D` | `Lufia2BattleEffectVectorFromParameters` | verified | `src/battle/battle_effect_vector_placement.c` |
 | `$81:A35E` | `Lufia2BattleEffectSetDrawAttributes` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A373` | `Lufia2BattleEffectSetDrawValue` | verified | `src/battle/battle_effect_stream_fields.c` |
