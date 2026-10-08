@@ -255,6 +255,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A1CC` | `Lufia2BattleEffectSpawnMovingActorFromStream` | verified | `src/battle/battle_effect_script_commands.c` |
 | `$81:A1EC` | `Lufia2BattleEffectClearDrawDirty` | verified | `src/battle/battle_effect_record_controls.c` |
 | `$81:A1F5` | `Lufia2BattleEffectClearTarget` | verified | `src/battle/battle_effect_record_controls.c` |
+| `$81:A1FF` | `Lufia2BattleEffectRandomizeCenteredParameter` | verified | `src/battle/battle_effect_centered_parameter.c` |
 | `$81:A264` | `Lufia2BattleEffectProjectFromPosition` | verified | `src/battle/battle_effect_vector_placement.c` |
 | `$81:A295` | `Lufia2BattleEffectSetVelocityWords` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A31D` | `Lufia2BattleEffectVectorFromParameters` | verified | `src/battle/battle_effect_vector_placement.c` |

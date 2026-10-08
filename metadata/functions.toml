@@ -8184,3 +8184,11 @@ source = "src/battle/battle_effect_sound_command.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A1FF"
+name = "Lufia2BattleEffectRandomizeCenteredParameter"
+source = "src/battle/battle_effect_centered_parameter.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
