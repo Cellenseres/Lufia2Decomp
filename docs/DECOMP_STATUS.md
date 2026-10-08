@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-920 functions in `metadata/functions.toml`: 920 verified, 0 draft, 0 identified, 0 disabled.
+921 functions in `metadata/functions.toml`: 921 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3403,3 +3403,19 @@ This group shares the full 891-job verification and Windows Release build
 with the complete 24-entry integration batch. Its final combined stage has
 942 verified entries, zero drafts, 547 fields and 3,772 generated calls.
 Counts do not describe measured runtime interpreter load.
+
+
+## Original menu tile clear entries - 2026-10-08
+
+295,168 original-ROM cases, 295,168 actual ABI cases, 5,376 guards
+and 19 public-library ROM error controls pass. Child probes include
+0 forced unwinds, 0 redirects and 0 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 891-job verification and Windows Release build
+with the complete 24-entry integration batch. Its final combined stage has
+942 verified entries, zero drafts, 547 fields and 3,772 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+All278784 legal rectangles and5376 geometry/context guards pass.
