@@ -231,7 +231,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A19C` | `Lufia2BattleEffectSetDrawState` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A39D` | `Lufia2BattleEffectCopyDrawValue` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A3BF` | `Lufia2BattleEffectSetDrawVariant` | verified | `src/battle/battle_effect_draw_state.c` |
+| `$81:A3E9` | `Lufia2BattleEffectSetParameterWord` | verified | `src/battle/battle_effect_parameter_words.c` |
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
+| `$81:A431` | `Lufia2BattleEffectRandomizeParameterWord` | verified | `src/battle/battle_effect_parameter_words.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |
 | `$81:A832` | `Lufia2BattleDispatchAction` | verified | `src/battle/battle_action_dispatch.c` |

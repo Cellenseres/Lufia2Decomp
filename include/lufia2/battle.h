@@ -1390,6 +1390,13 @@ Lufia2ExecutionResult Lufia2BattleEffectCopyDrawValue(
 Lufia2ExecutionResult Lufia2BattleEffectSetDrawVariant(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleEffectSetParameterWord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleEffectRandomizeParameterWord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif
