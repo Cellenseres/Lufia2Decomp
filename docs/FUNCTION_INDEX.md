@@ -204,6 +204,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:9553` | `Lufia2BattleEffectLoopNext2` | verified | `src/battle/battle_effect_flow.c` |
 | `$81:9567` | `Lufia2BattleEffectLoopNext3` | verified | `src/battle/battle_effect_flow.c` |
 | `$81:957B` | `Lufia2BattleEffectLoopNext4` | verified | `src/battle/battle_effect_flow.c` |
+| `$81:958F` | `Lufia2BattleEffectChangeDisplay` | verified | `src/battle/battle_effect_display_transition.c` |
 | `$81:963A` | `Lufia2BattleEffectVideoRegister` | verified | `src/battle/battle_effect_video.c` |
 | `$81:9653` | `Lufia2BattleEffectBg3Map` | verified | `src/battle/battle_effect_video.c` |
 | `$81:96FE` | `Lufia2BattleEffectAddBg3Scroll` | verified | `src/battle/battle_effect_scroll.c` |
