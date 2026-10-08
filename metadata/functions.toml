@@ -7960,3 +7960,27 @@ source = "src/battle/battle_effect_actor_commands.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A1CC"
+name = "Lufia2BattleEffectSpawnMovingActorFromStream"
+source = "src/battle/battle_effect_script_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A65F"
+name = "Lufia2BattleEffectSpawnZeroPositionScript"
+source = "src/battle/battle_effect_script_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A676"
+name = "Lufia2BattleEffectSpawnCenteredScript"
+source = "src/battle/battle_effect_script_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
