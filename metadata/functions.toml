@@ -7360,3 +7360,19 @@ source = "src/battle/battle_glyph_caller.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:E872"
+name = "Lufia2BattleBuildPartyNameTiles"
+source = "src/battle/battle_name_tiles.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E877"
+name = "Lufia2BattleBuildAlternateNameTiles"
+source = "src/battle/battle_name_tiles.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
