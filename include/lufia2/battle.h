@@ -1569,6 +1569,9 @@ Lufia2ExecutionResult Lufia2BattleEffectLoadThirdPalettePreset(
 Lufia2ExecutionResult Lufia2BattleEffectCopyTileRectangle(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleEffectSpawnScriptWhenEnabled(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
