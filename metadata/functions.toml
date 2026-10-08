@@ -8024,3 +8024,27 @@ source = "src/battle/battle_effect_record_controls.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A5BD"
+name = "Lufia2BattleEffectLoadFirstPalettePreset"
+source = "src/battle/battle_effect_palette_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A5D5"
+name = "Lufia2BattleEffectLoadSecondPalettePreset"
+source = "src/battle/battle_effect_palette_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A5ED"
+name = "Lufia2BattleEffectLoadThirdPalettePreset"
+source = "src/battle/battle_effect_palette_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
