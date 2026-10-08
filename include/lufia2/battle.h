@@ -1557,6 +1557,15 @@ Lufia2ExecutionResult Lufia2BattleEffectUseThirdDrawParameter(
 Lufia2ExecutionResult Lufia2BattleEffectClearBackgroundUploadRequest(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleEffectLoadFirstPalettePreset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleEffectLoadSecondPalettePreset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleEffectLoadThirdPalettePreset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

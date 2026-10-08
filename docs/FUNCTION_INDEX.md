@@ -265,6 +265,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A567` | `Lufia2BattleEffectSetDrawVariantThree` | verified | `src/battle/battle_effect_record_controls.c` |
 | `$81:A588` | `Lufia2BattleEffectUseThirdDrawParameter` | verified | `src/battle/battle_effect_record_controls.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
+| `$81:A5BD` | `Lufia2BattleEffectLoadFirstPalettePreset` | verified | `src/battle/battle_effect_palette_load.c` |
+| `$81:A5D5` | `Lufia2BattleEffectLoadSecondPalettePreset` | verified | `src/battle/battle_effect_palette_load.c` |
+| `$81:A5ED` | `Lufia2BattleEffectLoadThirdPalettePreset` | verified | `src/battle/battle_effect_palette_load.c` |
 | `$81:A605` | `Lufia2BattleEffectSetDelayOne` | verified | `src/battle/battle_effect_delay_presets.c` |
 | `$81:A60F` | `Lufia2BattleEffectSetDelayTwo` | verified | `src/battle/battle_effect_delay_presets.c` |
 | `$81:A619` | `Lufia2BattleEffectSetDelayThree` | verified | `src/battle/battle_effect_delay_presets.c` |

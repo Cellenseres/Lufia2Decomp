@@ -61,15 +61,8 @@ static void ReadPaletteSource(const Lufia2Memory *memory,
     OpLdy(cpu, 0u);
 }
 
-Lufia2ExecutionResult Lufia2BattleEffectLoadPaletteRange(
+static Lufia2ExecutionResult UploadPaletteResource(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
-        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
-        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
-        return ExecutionHandoff(cpu, 0x8196c6u);
-    PushY(memory, cpu);
-    OpSetDataBank(memory, cpu, PALETTE_WORK_BANK);
-    ReadPaletteDestination(memory, cpu);
     ReadPaletteSource(memory, cpu);
     do {
         OpLda(memory, cpu, DirectLongIndirectY(memory, cpu, DP_PALETTE_SOURCE));
@@ -83,4 +76,48 @@ Lufia2ExecutionResult Lufia2BattleEffectLoadPaletteRange(
     OpSta(memory, cpu, OpDp(cpu, DP_PALETTE_UPLOAD));
     cpu->y = PullIndexValue(memory, cpu);
     return ExecutionReturned(0x81915au);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectLoadPaletteRange(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x8196c6u);
+    PushY(memory, cpu);
+    OpSetDataBank(memory, cpu, PALETTE_WORK_BANK);
+    ReadPaletteDestination(memory, cpu);
+    return UploadPaletteResource(memory, cpu);
+}
+
+static Lufia2ExecutionResult LoadFixedPalette(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint32_t entry, uint16_t backup, uint16_t destination) {
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, entry);
+    PushY(memory, cpu);
+    OpSetDataBank(memory, cpu, PALETTE_WORK_BANK);
+    OpRepWidths(cpu, 0x20u);
+    LoadA16(cpu, backup);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDL));
+    LoadA16(cpu, destination);
+    OpSta(memory, cpu, OpDp(cpu, DP_PALETTE_DESTINATION));
+    OpLdx(cpu, 32u);
+    return UploadPaletteResource(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectLoadFirstPalettePreset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return LoadFixedPalette(memory, cpu, 0x81a5bdu, 0xf1fbu, 0x0340u);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectLoadSecondPalettePreset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return LoadFixedPalette(memory, cpu, 0x81a5d5u, 0xf2fbu, 0x0440u);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectLoadThirdPalettePreset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return LoadFixedPalette(memory, cpu, 0x81a5edu, 0xf31bu, 0x0460u);
 }
