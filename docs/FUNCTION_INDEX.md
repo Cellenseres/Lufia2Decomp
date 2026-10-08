@@ -238,6 +238,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A162` | `Lufia2BattleEffectSetAlternatePackedDrawState` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A19C` | `Lufia2BattleEffectSetDrawState` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A1CC` | `Lufia2BattleEffectSpawnMovingActorFromStream` | verified | `src/battle/battle_effect_script_commands.c` |
+| `$81:A1EC` | `Lufia2BattleEffectClearDrawDirty` | verified | `src/battle/battle_effect_record_controls.c` |
+| `$81:A1F5` | `Lufia2BattleEffectClearTarget` | verified | `src/battle/battle_effect_record_controls.c` |
 | `$81:A264` | `Lufia2BattleEffectProjectFromPosition` | verified | `src/battle/battle_effect_vector_placement.c` |
 | `$81:A295` | `Lufia2BattleEffectSetVelocityWords` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A31D` | `Lufia2BattleEffectVectorFromParameters` | verified | `src/battle/battle_effect_vector_placement.c` |
@@ -260,6 +262,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A512` | `Lufia2BattleEffectSpawnUpwardActor` | verified | `src/battle/battle_effect_actor_commands.c` |
 | `$81:A52D` | `Lufia2BattleEffectSpawnMovingActorWithAngle` | verified | `src/battle/battle_effect_actor_commands.c` |
 | `$81:A54A` | `Lufia2BattleEffectSpawnActorWithVerticalSpeed` | verified | `src/battle/battle_effect_actor_commands.c` |
+| `$81:A567` | `Lufia2BattleEffectSetDrawVariantThree` | verified | `src/battle/battle_effect_record_controls.c` |
+| `$81:A588` | `Lufia2BattleEffectUseThirdDrawParameter` | verified | `src/battle/battle_effect_record_controls.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A605` | `Lufia2BattleEffectSetDelayOne` | verified | `src/battle/battle_effect_delay_presets.c` |
 | `$81:A60F` | `Lufia2BattleEffectSetDelayTwo` | verified | `src/battle/battle_effect_delay_presets.c` |
@@ -272,6 +276,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A655` | `Lufia2BattleEffectSetDelayTwenty` | verified | `src/battle/battle_effect_delay_presets.c` |
 | `$81:A65F` | `Lufia2BattleEffectSpawnZeroPositionScript` | verified | `src/battle/battle_effect_script_commands.c` |
 | `$81:A676` | `Lufia2BattleEffectSpawnCenteredScript` | verified | `src/battle/battle_effect_script_commands.c` |
+| `$81:A696` | `Lufia2BattleEffectClearBackgroundUploadRequest` | verified | `src/battle/battle_effect_record_controls.c` |
 | `$81:A69A` | `Lufia2BattleEffectAccelerateByByte` | verified | `src/battle/battle_effect_byte_acceleration.c` |
 | `$81:A6C6` | `Lufia2BattleEffectDecelerateByByte` | verified | `src/battle/battle_effect_byte_acceleration.c` |
 | `$81:A6F2` | `Lufia2BattleEffectAccelerateOne` | verified | `src/battle/battle_effect_byte_acceleration.c` |

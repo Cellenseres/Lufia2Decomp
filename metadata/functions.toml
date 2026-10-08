@@ -7984,3 +7984,43 @@ source = "src/battle/battle_effect_script_commands.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A1EC"
+name = "Lufia2BattleEffectClearDrawDirty"
+source = "src/battle/battle_effect_record_controls.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A1F5"
+name = "Lufia2BattleEffectClearTarget"
+source = "src/battle/battle_effect_record_controls.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A567"
+name = "Lufia2BattleEffectSetDrawVariantThree"
+source = "src/battle/battle_effect_record_controls.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A588"
+name = "Lufia2BattleEffectUseThirdDrawParameter"
+source = "src/battle/battle_effect_record_controls.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A696"
+name = "Lufia2BattleEffectClearBackgroundUploadRequest"
+source = "src/battle/battle_effect_record_controls.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
