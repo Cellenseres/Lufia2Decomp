@@ -237,7 +237,7 @@ Lufia2ExecutionResult Lufia2TextClearWindowBuffer(
     return ExecutionReturned(0x848362u);
 }
 
-/* $84:8328: clear the window buffer $7E:3000-37FF and $099C bit 0. */
+/* $84:8328: clear window buffer and its update flag. */
 void Lufia2TextWindowClear(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
