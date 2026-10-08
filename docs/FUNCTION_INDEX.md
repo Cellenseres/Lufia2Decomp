@@ -459,6 +459,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:C3C4` | `Lufia2CapsuleFormIndex` | verified | `src/party/capsule_records.c` |
 | `$82:C3D3` | `Lufia2CapsuleSavedOffsets` | verified | `src/party/capsule_records.c` |
 | `$82:C3F8` | `Lufia2CapsuleLoadSavedStats` | verified | `src/party/capsule_records.c` |
+| `$82:C4E4` | `Lufia2CapsuleGetFlagMask` | verified | `src/party/capsule_selection_addresses.c` |
+| `$82:C4F4` | `Lufia2CapsuleGetFormAddress` | verified | `src/party/capsule_selection_addresses.c` |
+| `$82:C504` | `Lufia2CapsuleGetItemAddress` | verified | `src/party/capsule_selection_addresses.c` |
 | `$82:C515` | `Lufia2CapsuleSetForms` | verified | `src/party/capsule.c` |
 | `$82:C627` | `Lufia2MenuCursorBlink` | verified | `src/menu/menu.c` |
 | `$82:CD1F` | `Lufia2CapsuleTryLearn` | verified | `src/party/capsule.c` |
