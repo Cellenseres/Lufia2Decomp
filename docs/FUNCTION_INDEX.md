@@ -243,6 +243,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:9DC9` | `Lufia2BattleEffectRestorePortraitPose` | verified | `src/battle/battle_effect_portrait_restore.c` |
 | `$81:9DF6` | `Lufia2BattleEffectRebuildSprites` | verified | `src/battle/battle_effect_sprite_rebuild.c` |
 | `$81:9E13` | `Lufia2BattleEffectSendSoundCommand` | verified | `src/battle/battle_effect_sound_command.c` |
+| `$81:9F8B` | `Lufia2BattleEffectSendConditionalSound` | verified | `src/battle/battle_effect_conditional_sound.c` |
 | `$81:A03A` | `Lufia2BattleEffectOffsetBaseAngle` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A04E` | `Lufia2BattleEffectRotateAngle` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A062` | `Lufia2BattleEffectAimAtPoint` | verified | `src/battle/battle_effect_angle_motion.c` |

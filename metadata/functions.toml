@@ -8200,3 +8200,11 @@ source = "src/battle/battle_effect_vector_actor.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:9F8B"
+name = "Lufia2BattleEffectSendConditionalSound"
+source = "src/battle/battle_effect_conditional_sound.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
