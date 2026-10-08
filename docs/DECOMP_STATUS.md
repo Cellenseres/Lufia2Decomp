@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-921 functions in `metadata/functions.toml`: 921 verified, 0 draft, 0 identified, 0 disabled.
+925 functions in `metadata/functions.toml`: 925 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3419,3 +3419,18 @@ Counts do not describe measured runtime interpreter load.
 
 
 All278784 legal rectangles and5376 geometry/context guards pass.
+
+## Original capsule menu chain entries - 2026-10-08
+
+264,192 original-ROM cases, 264,206 actual ABI cases, 12,288 guards
+and 68 public-library ROM error controls pass. Child probes include
+14 forced unwinds, 60 redirects and 0 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 891-job verification and Windows Release build
+with the complete 24-entry integration batch. Its final combined stage has
+942 verified entries, zero drafts, 547 fields and 3,772 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+Four complete parent contracts compose all14 original child sites natively.

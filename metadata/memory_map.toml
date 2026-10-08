@@ -4281,3 +4281,35 @@ width = 1
 count = 7
 owner = "party"
 notes = "Original capsule form and state bytes."
+
+[[location]]
+address = "7E:1552"
+name = "menu_cursor_visible"
+width = 1
+count = 1
+owner = "menu"
+notes = "Original cursor visibility latch."
+
+[[location]]
+address = "7E:1554"
+name = "menu_cursor_timer"
+width = 1
+count = 1
+owner = "menu"
+notes = "Original cursor animation timer."
+
+[[location]]
+address = "7E:1555"
+name = "capsule_menu_form"
+width = 1
+count = 1
+owner = "menu"
+notes = "Original selected capsule form for item cursor."
+
+[[location]]
+address = "7E:1556"
+name = "capsule_menu_item"
+width = 2
+count = 1
+owner = "menu"
+notes = "Original selected capsule item for cursor."

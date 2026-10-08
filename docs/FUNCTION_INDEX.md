@@ -466,7 +466,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:C504` | `Lufia2CapsuleGetItemAddress` | verified | `src/party/capsule_selection_addresses.c` |
 | `$82:C515` | `Lufia2CapsuleSetForms` | verified | `src/party/capsule.c` |
 | `$82:C554` | `Lufia2CapsuleChooseMenuItem` | verified | `src/party/capsule_item_choice.c` |
+| `$82:C577` | `Lufia2CapsuleEnsureMenuItem` | verified | `src/party/capsule_menu_chain.c` |
+| `$82:C5AF` | `Lufia2CapsuleRefreshMenuItem` | verified | `src/party/capsule_menu_chain.c` |
+| `$82:C5F3` | `Lufia2CapsuleUpdateItemCursor` | verified | `src/party/capsule_menu_chain.c` |
 | `$82:C627` | `Lufia2MenuCursorBlink` | verified | `src/menu/menu.c` |
+| `$82:CC3C` | `Lufia2CapsuleCheckMenuForm` | verified | `src/party/capsule_menu_chain.c` |
 | `$82:CD1F` | `Lufia2CapsuleTryLearn` | verified | `src/party/capsule.c` |
 | `$82:CD83` | `Lufia2CapsuleLevelUp` | verified | `src/party/capsule.c` |
 | `$82:CE23` | `Lufia2CapsuleExperienceRange` | verified | `src/party/capsule.c` |

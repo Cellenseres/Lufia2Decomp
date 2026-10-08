@@ -7504,3 +7504,35 @@ source = "src/menu/menu_tile_clear.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:CC3C"
+name = "Lufia2CapsuleCheckMenuForm"
+source = "src/party/capsule_menu_chain.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C577"
+name = "Lufia2CapsuleEnsureMenuItem"
+source = "src/party/capsule_menu_chain.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C5F3"
+name = "Lufia2CapsuleUpdateItemCursor"
+source = "src/party/capsule_menu_chain.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C5AF"
+name = "Lufia2CapsuleRefreshMenuItem"
+source = "src/party/capsule_menu_chain.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
