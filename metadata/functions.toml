@@ -7416,3 +7416,11 @@ source = "src/system/vector_division.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "85:DAC7"
+name = "Lufia2SystemCalculateVectorAngle"
+source = "src/system/vector_angle.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

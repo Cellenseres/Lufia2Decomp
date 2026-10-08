@@ -199,6 +199,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_update.c
     src/field/scene_script.c
     src/field/field_scroll.c
+    src/system/vector_angle.c
     src/system/vector_division.c
     src/battle/battle_effect_saved_actor.c
     src/battle/battle_effect_display_transition.c
