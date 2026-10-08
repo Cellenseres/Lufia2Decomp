@@ -7624,3 +7624,51 @@ source = "src/battle/battle_effect_parameter_words.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A69A"
+name = "Lufia2BattleEffectAccelerateByByte"
+source = "src/battle/battle_effect_byte_acceleration.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A6C6"
+name = "Lufia2BattleEffectDecelerateByByte"
+source = "src/battle/battle_effect_byte_acceleration.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A6F2"
+name = "Lufia2BattleEffectAccelerateOne"
+source = "src/battle/battle_effect_byte_acceleration.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A71C"
+name = "Lufia2BattleEffectAccelerateTwo"
+source = "src/battle/battle_effect_byte_acceleration.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A746"
+name = "Lufia2BattleEffectAccelerateThree"
+source = "src/battle/battle_effect_byte_acceleration.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A770"
+name = "Lufia2BattleEffectAccelerateFour"
+source = "src/battle/battle_effect_byte_acceleration.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
