@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1043 functions in `metadata/functions.toml`: 1043 verified, 0 draft, 0 identified, 0 disabled.
+1045 functions in `metadata/functions.toml`: 1045 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -44,6 +44,38 @@ older large modules still step the CPU-state helpers inside their bodies.
 Moving them over is open work and does not change any entry listed above.
 
 ## Reconstruction checkpoints
+
+### Menu selection restore and result-window HDMA
+
+`Lufia2BattleConfigureResultHdma` reconstructs `$85:A972` through the RTL at
+`$85:AA3C`. Four descending scroll runs, the `$85:AA3D` child frame, four
+HDMA descriptors and the original request flags retain their write order.
+The two runs beginning at `$FF40` remain separate. Zero descriptor controls
+retain the original TDC value, including a nonzero direct page.
+
+`Lufia2MenuRestoreSelectionState` reconstructs `$8E:E751` through the RTL
+at `$8E:E7BF`. It compares the cached selection byte, clears cursor indices
+1 through 5, optionally restores indices Y through 5 and three state words
+through the original ROM pointer table, then records the selection word.
+Cursor index 0 is not cleared. Names and offsets describe the
+original state; no modern UI behavior is introduced here.
+
+The shared proof checks 133,121 original-ROM cases and 133,121 actual
+production-ABI cases, including 1,024 exact ripple-child compositions,
+one forced child unwind and 30 redirected production returns. CPU state,
+all WRAM, MMIO and write order agree. 6,528 unsupported production entries
+fall back without changing guest state, apart from original return-frame
+open-bus reads. 105 altered-ROM controls are detected. Runtime selection
+requires native mode, binary arithmetic, M1X0, the expected PB, DP0 and a
+safe return stack; selection restore additionally requires Y0..5.
+
+All 18 original menu branch/index combinations are exercised. The integrated
+checkpoint passes all 1,026 independent `decomp-verify` jobs and the Windows
+Release build. Both complete contracts are selected by the production bindings.
+
+The field-session follow-ups `$83:84E1` and `$8E:B28F` are still original
+execution. Their NMI-dependent waits require an interrupt-aware continuation
+contract before a native binding can be selected.
 
 The following sections record the progressive proofs. Earlier statements that
 other routines remain draft describe that stage; current status is the generated

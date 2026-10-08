@@ -81,6 +81,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_menu.c
     src/menu/menu_main_screen.c
     src/menu/menu_main_dispatch.c
+    src/menu/menu_selection_state.c
     src/menu/menu_display_callers.c
     src/menu/menu_cursor_callers.c
     src/menu/menu_presentation_callers.c
@@ -119,6 +120,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_action_message.c
     src/battle/battle_message_parser.c
     src/battle/battle_result_window.c
+    src/battle/battle_result_hdma.c
     src/battle/battle_results.c
     src/battle/battle_turn_display.c
     src/battle/battle_status_support.c

@@ -4713,3 +4713,51 @@ width = 1
 count = 11
 owner = "battle"
 notes = "Five party/capsule status bytes followed by six fixed enemy status bytes from ED51."
+
+[[location]]
+address = "7E:0B76"
+name = "menu_restore_selection_enabled"
+width = 1
+count = 1
+owner = "menu"
+notes = "Nonzero enables 8E:E751 restoration from the bank 7F saved cursor-state records."
+
+[[location]]
+address = "7E:1B03"
+name = "battle_result_color_hdma_descriptor"
+width = 1
+count = 5
+owner = "battle"
+notes = "Result window fixed-source HDMA descriptor: control 1, register 30, bank 85, table A062."
+
+[[location]]
+address = "7E:1B1F"
+name = "battle_result_hdma_request"
+width = 1
+count = 1
+owner = "battle"
+notes = "85:A972 writes FF after configuring result-window HDMA."
+
+[[location]]
+address = "7E:1B20"
+name = "battle_result_scroll_ready"
+width = 1
+count = 1
+owner = "battle"
+notes = "AA3D publishes 1 after filling the 84-word result ripple table."
+
+[[location]]
+address = "7E:1B21"
+name = "battle_result_hdma_channels"
+width = 1
+count = 1
+owner = "battle"
+notes = "85:A972 selects channel mask 0C."
+
+[[location]]
+address = "7E:1B22"
+name = "battle_result_scroll_phase"
+width = 1
+count = 1
+owner = "battle"
+notes = "AA3D reads the ripple phase byte. A972 clears the word, also clearing the adjacent battle_message_scroll_increment."

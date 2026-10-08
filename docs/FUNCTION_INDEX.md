@@ -886,6 +886,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9DD4` | `Lufia2BattleQueueTurnDisplay` | verified | `src/battle/battle_turn_display.c` |
 | `$85:A701` | `Lufia2BattleInitializeRipple` | verified | `src/battle/battle_ripple_setup.c` |
 | `$85:A736` | `Lufia2BattleRippleRow` | verified | `src/battle/battle_background_wave.c` |
+| `$85:A972` | `Lufia2BattleConfigureResultHdma` | verified | `src/battle/battle_result_hdma.c` |
 | `$85:AA3D` | `Lufia2BattleRippleWords` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AADC` | `Lufia2BattleStartMessageEffect` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB28` | `Lufia2BattleTickMessageEffect` | verified | `src/battle/battle_message_effect.c` |
@@ -1050,4 +1051,5 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:BD77` | `Lufia2FieldScrollUpdate` | verified | `src/field/field_scroll.c` |
 | `$8E:C338` | `Lufia2FieldSelectObjectCondition` | verified | `src/field/field_object_conditions.c` |
 | `$8E:C34F` | `Lufia2FieldResolveObjectCondition` | verified | `src/field/field_object_conditions.c` |
+| `$8E:E751` | `Lufia2MenuRestoreSelectionState` | verified | `src/menu/menu_selection_state.c` |
 <!-- metadata-index:end -->
