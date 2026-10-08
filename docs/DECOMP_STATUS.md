@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-981 functions in `metadata/functions.toml`: 981 verified, 0 draft, 0 identified, 0 disabled.
+986 functions in `metadata/functions.toml`: 986 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3614,6 +3614,19 @@ Counts do not describe measured runtime interpreter load.
 
 245,760 original-ROM cases, 245,760 actual ABI cases, 9,216 guards
 and 36 public-library ROM error controls pass. Child probes include
+0 forced unwinds, 0 redirects and 0 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 948-job verification and Windows Release build
+with the complete 35-entry integration batch. Its final combined stage has
+1000 verified entries, zero drafts, 560 fields and 4,004 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+## Original effect record controls entries - 2026-10-08
+
+409,600 original-ROM cases, 409,600 actual ABI cases, 15,360 guards
+and 23 public-library ROM error controls pass. Child probes include
 0 forced unwinds, 0 redirects and 0 natural overwritten
 returns. Original registers, WRAM, bus order and return frames are retained.
 
