@@ -7440,3 +7440,11 @@ source = "src/battle/battle_ripple_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:DC6F"
+name = "Lufia2SystemDivide24ByByte"
+source = "src/system/hardware_division.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
