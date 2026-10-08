@@ -249,6 +249,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A3E9` | `Lufia2BattleEffectSetParameterWord` | verified | `src/battle/battle_effect_parameter_words.c` |
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A431` | `Lufia2BattleEffectRandomizeParameterWord` | verified | `src/battle/battle_effect_parameter_words.c` |
+| `$81:A455` | `Lufia2BattleEffectSpawnStationaryActor` | verified | `src/battle/battle_effect_actor_commands.c` |
+| `$81:A46E` | `Lufia2BattleEffectSpawnHalfTurnActor` | verified | `src/battle/battle_effect_actor_commands.c` |
+| `$81:A489` | `Lufia2BattleEffectSpawnActorWithAngle` | verified | `src/battle/battle_effect_actor_commands.c` |
+| `$81:A4A6` | `Lufia2BattleEffectSpawnOffsetActor` | verified | `src/battle/battle_effect_actor_commands.c` |
+| `$81:A4C3` | `Lufia2BattleEffectSpawnUnshiftedMovingActor` | verified | `src/battle/battle_effect_actor_commands.c` |
+| `$81:A4DC` | `Lufia2BattleEffectSpawnHalfTurnMovingActor` | verified | `src/battle/battle_effect_actor_commands.c` |
+| `$81:A4F7` | `Lufia2BattleEffectSpawnRightwardActor` | verified | `src/battle/battle_effect_actor_commands.c` |
+| `$81:A512` | `Lufia2BattleEffectSpawnUpwardActor` | verified | `src/battle/battle_effect_actor_commands.c` |
+| `$81:A52D` | `Lufia2BattleEffectSpawnMovingActorWithAngle` | verified | `src/battle/battle_effect_actor_commands.c` |
+| `$81:A54A` | `Lufia2BattleEffectSpawnActorWithVerticalSpeed` | verified | `src/battle/battle_effect_actor_commands.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A605` | `Lufia2BattleEffectSetDelayOne` | verified | `src/battle/battle_effect_delay_presets.c` |
 | `$81:A60F` | `Lufia2BattleEffectSetDelayTwo` | verified | `src/battle/battle_effect_delay_presets.c` |
