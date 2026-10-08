@@ -887,6 +887,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:AB5B` | `Lufia2BattleQueueMessageCleanup` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB78` | `Lufia2BattleStageTransfer` | verified | `src/battle/battle_loop_children.c` |
 | `$85:AB98` | `Lufia2BattleConfigureLayerColorDma` | verified | `src/battle/battle_layer_color_dma.c` |
+| `$85:ABE4` | `Lufia2BattlePrepareTransitionMask` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:ADE1` | `Lufia2BattleWaveBackward` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AE68` | `Lufia2BattleWaveForward` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AEEB` | `Lufia2BattleWaveFill` | verified | `src/battle/battle_background_wave.c` |
@@ -916,6 +917,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:DE9D` | `Lufia2BattleInitializeEnemySpriteRecords` | verified | `src/battle/battle_enemy_sprite_setup.c` |
 | `$85:DEDC` | `Lufia2BattleInitializeEnemySpriteRecord` | verified | `src/battle/battle_enemy_sprite_setup.c` |
 | `$85:DF35` | `Lufia2BattleFindEnemySpriteGroup` | verified | `src/battle/battle_enemy_sprite_setup.c` |
+| `$85:E7BC` | `Lufia2BattlePlayTransition` | verified | `src/battle/battle_transition_setup.c` |
+| `$85:EAE4` | `Lufia2BattleAdvanceTransitionFrame` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EB91` | `Lufia2BattleLoadEnemyGraphicsGroups` | verified | `src/battle/battle_enemy_graphics.c` |
 | `$85:EBE0` | `Lufia2BattleAllocateEnemyTiles` | verified | `src/battle/battle_enemy_graphics.c` |
 | `$85:EC4D` | `Lufia2BattleAllocateEnemyPalette` | verified | `src/battle/battle_enemy_graphics.c` |

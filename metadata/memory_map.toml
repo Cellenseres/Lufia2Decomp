@@ -4569,3 +4569,43 @@ width = 1
 count = 1
 owner = "battle"
 notes = "Next tile row used by the original enemy tile blit."
+
+[[location]]
+address = "7E:1AF4"
+name = "battle_transition_hdma_control"
+width = 1
+count = 1
+owner = "battle"
+notes = "HDMA transfer control for the battle transition mask."
+
+[[location]]
+address = "7E:1AF5"
+name = "battle_transition_hdma_register"
+width = 1
+count = 1
+owner = "battle"
+notes = "Target register byte2C for the battle transition mask."
+
+[[location]]
+address = "7E:1AF6"
+name = "battle_transition_hdma_source"
+width = 2
+count = 1
+owner = "battle"
+notes = "Original descriptor addressA10D for the battle transition."
+
+[[location]]
+address = "7E:1AF8"
+name = "battle_transition_hdma_source_bank"
+width = 1
+count = 1
+owner = "battle"
+notes = "Bank85 for the original transition descriptor."
+
+[[location]]
+address = "7E:4200"
+name = "battle_transition_mask"
+width = 2
+count = 129
+owner = "battle"
+notes = "129 original1F1F words, changed through native random mask selection."

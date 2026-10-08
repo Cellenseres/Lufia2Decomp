@@ -8320,3 +8320,27 @@ source = "src/battle/battle_enemy_graphics.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:E7BC"
+name = "Lufia2BattlePlayTransition"
+source = "src/battle/battle_transition_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:EAE4"
+name = "Lufia2BattleAdvanceTransitionFrame"
+source = "src/battle/battle_transition_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:ABE4"
+name = "Lufia2BattlePrepareTransitionMask"
+source = "src/battle/battle_transition_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
