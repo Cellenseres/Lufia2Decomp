@@ -1489,6 +1489,9 @@ Lufia2ExecutionResult Lufia2BattleEffectMoveSpecialTarget(
 Lufia2ExecutionResult Lufia2BattleEffectSetTargetStatus(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleEffectLoadPaletteRange(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

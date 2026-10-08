@@ -211,6 +211,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:963A` | `Lufia2BattleEffectVideoRegister` | verified | `src/battle/battle_effect_video.c` |
 | `$81:9653` | `Lufia2BattleEffectBg3Map` | verified | `src/battle/battle_effect_video.c` |
 | `$81:968A` | `Lufia2BattleEffectRestorePaletteRange` | verified | `src/battle/battle_effect_palette_copy.c` |
+| `$81:96C6` | `Lufia2BattleEffectLoadPaletteRange` | verified | `src/battle/battle_effect_palette_load.c` |
 | `$81:96FE` | `Lufia2BattleEffectAddBg3Scroll` | verified | `src/battle/battle_effect_scroll.c` |
 | `$81:9738` | `Lufia2BattleEffectSetBg3Scroll` | verified | `src/battle/battle_effect_scroll.c` |
 | `$81:976B` | `Lufia2BattleEffectAddBg1Scroll` | verified | `src/battle/battle_effect_scroll.c` |
