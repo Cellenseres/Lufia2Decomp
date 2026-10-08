@@ -842,6 +842,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:A5A9` | `Lufia2WorldMapDivide32` | verified | `src/world/world_map_objects.c` |
 | `$86:A791` | `Lufia2SceneViewOrigin` | verified | `src/field/field_scene_tracks.c` |
 | `$86:A7CE` | `Lufia2WorldMapUpdatePlane` | verified | `src/world/world_scene.c` |
+| `$86:A7F8` | `Lufia2WorldMapBuildColorHdma` | verified | `src/world/world_perspective.c` |
 | `$86:A894` | `Lufia2WorldMapPlane` | verified | `src/world/world_map_plane.c` |
 | `$86:A9B0` | `Lufia2WorldPlaneRows0` | verified | `src/world/world_plane_rows.c` |
 | `$86:AA5B` | `Lufia2WorldPlaneRows1` | verified | `src/world/world_plane_rows.c` |
@@ -854,6 +855,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:AE05` | `Lufia2WorldMapBuildBlockPointer` | verified | `src/world/world_stream.c` |
 | `$86:AE1E` | `Lufia2WorldMapConfigureMode7` | verified | `src/world/world_scene.c` |
 | `$86:CD41` | `Lufia2WorldMapInstallGraphics` | verified | `src/world/world_scene.c` |
+| `$86:CD67` | `Lufia2WorldMapUploadInitialTilemap` | verified | `src/world/world_perspective.c` |
 | `$86:CDF5` | `Lufia2WorldMapBindResourcePointers` | verified | `src/world/world_resource_pointers.c` |
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
 | `$86:D2D6` | `Lufia2WorldMapResetSceneState` | verified | `src/world/world_scene.c` |
@@ -864,6 +866,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:E287` | `Lufia2WorldMapTestObjects` | verified | `src/world/world_map_objects.c` |
 | `$86:E295` | `Lufia2WorldMapTestObject` | verified | `src/world/world_map_objects.c` |
 | `$86:E2D2` | `Lufia2WorldMapProjectObjects` | verified | `src/world/world_map_objects.c` |
+| `$86:E356` | `Lufia2WorldMapProjectDistance` | verified | `src/world/world_perspective.c` |
 | `$86:E3AB` | `Lufia2WorldMapDrawObjects` | verified | `src/world/world_map_objects.c` |
 | `$86:E3D2` | `Lufia2WorldMapDrawObjectByKind` | verified | `src/world/world_map_objects.c` |
 | `$86:E430` | `Lufia2WorldMapAssignSlot` | verified | `src/world/world_map_objects.c` |
