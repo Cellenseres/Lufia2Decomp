@@ -7336,3 +7336,11 @@ source = "src/world/world_palette_step.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:CCFC"
+name = "Lufia2WorldMapLoadResourceBlocks"
+source = "src/world/world_map_load.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
