@@ -230,6 +230,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A12A` | `Lufia2BattleEffectSetPackedDrawState` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A162` | `Lufia2BattleEffectSetAlternatePackedDrawState` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A19C` | `Lufia2BattleEffectSetDrawState` | verified | `src/battle/battle_effect_draw_state.c` |
+| `$81:A264` | `Lufia2BattleEffectProjectFromPosition` | verified | `src/battle/battle_effect_vector_placement.c` |
+| `$81:A31D` | `Lufia2BattleEffectVectorFromParameters` | verified | `src/battle/battle_effect_vector_placement.c` |
 | `$81:A39D` | `Lufia2BattleEffectCopyDrawValue` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A3BF` | `Lufia2BattleEffectSetDrawVariant` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A3E9` | `Lufia2BattleEffectSetParameterWord` | verified | `src/battle/battle_effect_parameter_words.c` |
