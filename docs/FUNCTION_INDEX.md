@@ -778,6 +778,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9DA6` | `Lufia2BattleQueueTilesAt4400` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9DBD` | `Lufia2BattleQueueTilesAt4A00` | verified | `src/battle/battle_command_display_helpers.c` |
 | `$85:9DD4` | `Lufia2BattleQueueTurnDisplay` | verified | `src/battle/battle_turn_display.c` |
+| `$85:A701` | `Lufia2BattleInitializeRipple` | verified | `src/battle/battle_ripple_setup.c` |
 | `$85:A736` | `Lufia2BattleRippleRow` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AA3D` | `Lufia2BattleRippleWords` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AADC` | `Lufia2BattleStartMessageEffect` | verified | `src/battle/battle_message_effect.c` |

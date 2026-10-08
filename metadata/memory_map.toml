@@ -4201,3 +4201,59 @@ width = 1
 count = 1
 owner = "world"
 notes = "Palette transfer descriptor source bank."
+
+[[location]]
+address = "7E:1AEF"
+name = "battle_ripple_hdma_mode"
+width = 1
+count = 1
+owner = "battle"
+notes = "Original ripple HDMA mode."
+
+[[location]]
+address = "7E:1AF0"
+name = "battle_ripple_hdma_register"
+width = 1
+count = 1
+owner = "battle"
+notes = "Original ripple HDMA register."
+
+[[location]]
+address = "7E:1AF1"
+name = "battle_ripple_hdma_source"
+width = 2
+count = 1
+owner = "battle"
+notes = "Original ripple HDMA source address."
+
+[[location]]
+address = "7E:1AF3"
+name = "battle_ripple_hdma_source_bank"
+width = 1
+count = 1
+owner = "battle"
+notes = "Original ripple HDMA source bank."
+
+[[location]]
+address = "7E:1B18"
+name = "battle_ripple_row_delay"
+width = 1
+count = 1
+owner = "battle"
+notes = "Original ripple row timing counter."
+
+[[location]]
+address = "7E:1B19"
+name = "unk_7E1B19"
+width = 1
+count = 1
+owner = "battle"
+notes = "Cleared by ripple setup; meaning unresolved."
+
+[[location]]
+address = "7E:1B1A"
+name = "battle_ripple_phase"
+width = 2
+count = 1
+owner = "battle"
+notes = "Setup clears word; row builder advances low byte."
