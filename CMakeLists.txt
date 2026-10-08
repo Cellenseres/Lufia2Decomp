@@ -199,6 +199,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_update.c
     src/field/scene_script.c
     src/field/field_scroll.c
+    src/party/capsule_menu_chain.c
     src/menu/menu_tile_clear.c
     src/party/capsule_status_address.c
     src/party/capsule_item_choice.c
