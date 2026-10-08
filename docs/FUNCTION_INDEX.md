@@ -222,6 +222,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:97D8` | `Lufia2BattleEffectCopyTileRectangle` | verified | `src/battle/battle_effect_tile_rectangle.c` |
 | `$81:9853` | `Lufia2BattleEffectSetPaletteBrightness` | verified | `src/battle/battle_effect_palette_brightness.c` |
 | `$81:9935` | `Lufia2BattleEffectAdjustPaletteBrightness` | verified | `src/battle/battle_effect_palette_brightness.c` |
+| `$81:9968` | `Lufia2BattleEffectRefreshTurnDisplay` | verified | `src/battle/battle_effect_turn_display.c` |
 | `$81:9976` | `Lufia2BattleEffectSpawnScriptWhenEnabled` | verified | `src/battle/battle_effect_conditional_script.c` |
 | `$81:9999` | `Lufia2BattleEffectBackgroundRequest` | verified | `src/battle/battle_effect_video.c` |
 | `$81:99A5` | `Lufia2BattleEffectBackgroundRelease` | verified | `src/battle/battle_effect_video.c` |
