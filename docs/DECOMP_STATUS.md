@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1017 functions in `metadata/functions.toml`: 1017 verified, 0 draft, 0 identified, 0 disabled.
+1020 functions in `metadata/functions.toml`: 1020 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3955,6 +3955,19 @@ Counts do not describe measured runtime interpreter load.
 
 66,560 original-ROM cases, 66,562 actual ABI cases, 3,072 guards
 and 42 public-library ROM error controls pass. Child probes include
+2 forced unwinds, 30 redirects and 0 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 999-job verification and Windows Release build
+with the complete 9-entry integration batch. Its final combined stage has
+1020 verified entries, zero drafts, 574 fields and 4,084 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+## Original enemy sprite setup entries - 2026-10-08
+
+330,752 original-ROM cases, 330,754 actual ABI cases, 9,216 guards
+and 56 public-library ROM error controls pass. Child probes include
 2 forced unwinds, 30 redirects and 0 natural overwritten
 returns. Original registers, WRAM, bus order and return frames are retained.
 
