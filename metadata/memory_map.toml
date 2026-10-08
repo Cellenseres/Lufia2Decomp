@@ -4313,3 +4313,35 @@ width = 2
 count = 1
 owner = "menu"
 notes = "Original selected capsule item for cursor."
+
+[[location]]
+address = "7E:15F1"
+name = "battle_effect_vertical_offset"
+width = 2
+count = 1
+owner = "battle"
+notes = "Shared signed vertical effect offset."
+
+[[location]]
+address = "7E:13CE"
+name = "battle_effect_special_status"
+width = 1
+count = 1
+owner = "battle"
+notes = "Status byte for special effect target four."
+
+[[location]]
+address = "7E:13A2"
+name = "battle_effect_target_horizontal_motion"
+width = 2
+count = 1
+owner = "battle"
+notes = "Horizontal motion base in thirteen-byte target records."
+
+[[location]]
+address = "7E:13A4"
+name = "battle_effect_target_vertical_motion"
+width = 2
+count = 1
+owner = "battle"
+notes = "Vertical motion base in thirteen-byte target records."

@@ -1480,6 +1480,15 @@ Lufia2ExecutionResult Lufia2BattleEffectSetDrawMode(
 Lufia2ExecutionResult Lufia2BattleEffectSetDrawFlag(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleEffectSetTargetMotionOffsets(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleEffectMoveSpecialTarget(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleEffectSetTargetStatus(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
