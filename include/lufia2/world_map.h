@@ -276,6 +276,14 @@ Lufia2ExecutionResult Lufia2WorldMapLoadResourceColors(
 Lufia2ExecutionResult Lufia2WorldMapBuildSkylineHdma(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2WorldMapProjectTiltDistance(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2WorldMapProjectTiltReciprocal(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

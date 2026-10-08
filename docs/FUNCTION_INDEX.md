@@ -846,6 +846,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:A7CE` | `Lufia2WorldMapUpdatePlane` | verified | `src/world/world_scene.c` |
 | `$86:A7F8` | `Lufia2WorldMapBuildColorHdma` | verified | `src/world/world_perspective.c` |
 | `$86:A894` | `Lufia2WorldMapPlane` | verified | `src/world/world_map_plane.c` |
+| `$86:A913` | `Lufia2WorldMapProjectTiltDistance` | verified | `src/world/world_depth.c` |
+| `$86:A956` | `Lufia2WorldMapProjectTiltReciprocal` | verified | `src/world/world_depth.c` |
 | `$86:A9B0` | `Lufia2WorldPlaneRows0` | verified | `src/world/world_plane_rows.c` |
 | `$86:AA5B` | `Lufia2WorldPlaneRows1` | verified | `src/world/world_plane_rows.c` |
 | `$86:AB0E` | `Lufia2WorldPlaneRows2` | verified | `src/world/world_plane_rows.c` |
