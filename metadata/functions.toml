@@ -7480,3 +7480,11 @@ source = "src/party/capsule_selection_addresses.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:C554"
+name = "Lufia2CapsuleChooseMenuItem"
+source = "src/party/capsule_item_choice.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
