@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-876 functions in `metadata/functions.toml`: 876 verified, 0 draft, 0 identified, 0 disabled.
+880 functions in `metadata/functions.toml`: 880 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3060,3 +3060,18 @@ Counts do not describe measured runtime interpreter load.
 
 
 Tile-plane upload requires DP0 and1F00<=S<=1FFC. Original64-row loops remain exact.
+
+## Original effect scroll entries - 2026-10-08
+
+589,824 original-ROM cases, 589,824 actual ABI cases, 7,680 guards
+and 84 public-library ROM error controls pass. Child probes include
+0 forced unwinds, 0 redirects and 0 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 807-job verification and Windows Release build
+with the complete 16-entry integration batch. Its final combined stage has
+885 verified entries, zero drafts, 527 fields and 3,544 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+The second signed operand reads a word and advances only one byte.
