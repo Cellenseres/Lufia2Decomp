@@ -8168,3 +8168,11 @@ source = "src/battle/battle_effect_turn_display.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:9DF6"
+name = "Lufia2BattleEffectRebuildSprites"
+source = "src/battle/battle_effect_sprite_rebuild.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
