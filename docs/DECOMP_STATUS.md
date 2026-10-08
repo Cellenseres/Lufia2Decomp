@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-991 functions in `metadata/functions.toml`: 991 verified, 0 draft, 0 identified, 0 disabled.
+993 functions in `metadata/functions.toml`: 993 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3680,3 +3680,18 @@ Counts do not describe measured runtime interpreter load.
 
 
 Both width-dependent stream advances and1321 exhausted original script owners pass.
+
+## Original effect palette brightness entries - 2026-10-08
+
+139,264 original-ROM cases, 139,266 actual ABI cases, 6,144 guards
+and 31 public-library ROM error controls pass. Child probes include
+2 forced unwinds, 30 redirects and 0 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 948-job verification and Windows Release build
+with the complete 35-entry integration batch. Its final combined stage has
+1000 verified entries, zero drafts, 560 fields and 4,004 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+All selector/level and current/delta byte pairs, plus4096 native palette compositions per root, preserve the original saturation branches.
