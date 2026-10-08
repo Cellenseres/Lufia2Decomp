@@ -8080,3 +8080,19 @@ source = "src/battle/battle_effect_palette_brightness.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:920E"
+name = "Lufia2BattleTogglePartyTargetState"
+source = "src/battle/battle_effect_target_toggle.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:922D"
+name = "Lufia2BattleToggleSpecialTargetState"
+source = "src/battle/battle_effect_target_toggle.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
