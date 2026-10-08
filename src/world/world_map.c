@@ -493,7 +493,7 @@ Lufia2ExecutionResult Lufia2WorldMapNmiUploads(const Lufia2Memory *memory,
     WorldMapUploadStreamedRow(memory, cpu);
     WorldMapUploadStreamedColumn(memory, cpu);
     WorldMapUploadPalette(memory, cpu);
-    LoadAAbsolute8(memory, cpu, 0x16e7u, 0); /* CFC0 */
+    LoadAAbsolute8(memory, cpu, WRAM_WORLD_MAP_SKYLINE_BAND_COUNT & 0xffffu, 0); /* CFC0 */
     if (!cpu->zero)
         WorldMapPaletteCycles(memory, cpu);
     WorldMapSetupHdma(memory, cpu);

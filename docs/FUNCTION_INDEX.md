@@ -838,6 +838,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:A417` | `Lufia2WorldStepOffsets` | verified | `src/world/world_scroll_step.c` |
+| `$86:A4FA` | `Lufia2WorldMapResolveAngleScale` | verified | `src/world/world_math_resources.c` |
+| `$86:A52F` | `Lufia2WorldMapMultiply16` | verified | `src/world/world_math_resources.c` |
 | `$86:A583` | `Lufia2WorldProduct16By8` | verified | `src/world/world_scroll_step.c` |
 | `$86:A5A9` | `Lufia2WorldMapDivide32` | verified | `src/world/world_map_objects.c` |
 | `$86:A791` | `Lufia2SceneViewOrigin` | verified | `src/field/field_scene_tracks.c` |
@@ -854,8 +856,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:ADEE` | `Lufia2WorldMapBuildCellOffset` | verified | `src/world/world_stream.c` |
 | `$86:AE05` | `Lufia2WorldMapBuildBlockPointer` | verified | `src/world/world_stream.c` |
 | `$86:AE1E` | `Lufia2WorldMapConfigureMode7` | verified | `src/world/world_scene.c` |
+| `$86:CBF0` | `Lufia2WorldMapBuildSkylineHdma` | verified | `src/world/world_math_resources.c` |
 | `$86:CD41` | `Lufia2WorldMapInstallGraphics` | verified | `src/world/world_scene.c` |
 | `$86:CD67` | `Lufia2WorldMapUploadInitialTilemap` | verified | `src/world/world_perspective.c` |
+| `$86:CD91` | `Lufia2WorldMapLoadResourceColors` | verified | `src/world/world_math_resources.c` |
 | `$86:CDF5` | `Lufia2WorldMapBindResourcePointers` | verified | `src/world/world_resource_pointers.c` |
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
 | `$86:D2D6` | `Lufia2WorldMapResetSceneState` | verified | `src/world/world_scene.c` |
