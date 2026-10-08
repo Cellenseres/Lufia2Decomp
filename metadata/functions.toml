@@ -8264,3 +8264,11 @@ source = "src/battle/battle_portrait_state.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:BC55"
+name = "Lufia2BattleLoadCapsuleGraphics"
+source = "src/battle/battle_capsule_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

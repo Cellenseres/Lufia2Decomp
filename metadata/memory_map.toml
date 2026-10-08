@@ -4425,3 +4425,19 @@ width = 1
 count = 4
 owner = "battle"
 notes = "Current pose byte for each of four party portraits."
+
+[[location]]
+address = "7E:154C"
+name = "battle_capsule_slot_flag"
+width = 1
+count = 1
+owner = "battle"
+notes = "Selected capsule slot plus one; zero skips graphics loading."
+
+[[location]]
+address = "7E:154D"
+name = "battle_capsule_graphics_id"
+width = 1
+count = 1
+owner = "battle"
+notes = "Capsule graphics ID copied from1144 during battle setup."

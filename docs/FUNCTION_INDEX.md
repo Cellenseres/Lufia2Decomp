@@ -361,6 +361,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:BAFB` | `Lufia2BattlePortrait` | verified | `src/battle/battle_portrait.c` |
 | `$81:BB75` | `Lufia2BattlePortraitUpload` | verified | `src/battle/battle_portrait.c` |
 | `$81:BBE0` | `Lufia2BattleUpdateSlotPortraitStatus` | verified | `src/battle/battle_portrait_state.c` |
+| `$81:BC55` | `Lufia2BattleLoadCapsuleGraphics` | verified | `src/battle/battle_capsule_graphics.c` |
 | `$81:BCCC` | `Lufia2BattleBlitTileRows` | verified | `src/battle/battle_tile_blit.c` |
 | `$81:BD47` | `Lufia2BattleSpriteBlockFar` | verified | `src/battle/battle_util.c` |
 | `$81:BD4B` | `Lufia2BattleSpriteBlock` | verified | `src/battle/battle_util.c` |
