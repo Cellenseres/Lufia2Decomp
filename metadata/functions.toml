@@ -7768,3 +7768,59 @@ source = "src/battle/battle_effect_delay_presets.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A03A"
+name = "Lufia2BattleEffectOffsetBaseAngle"
+source = "src/battle/battle_effect_stream_fields.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A04E"
+name = "Lufia2BattleEffectRotateAngle"
+source = "src/battle/battle_effect_stream_fields.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A295"
+name = "Lufia2BattleEffectSetVelocityWords"
+source = "src/battle/battle_effect_stream_fields.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A35E"
+name = "Lufia2BattleEffectSetDrawAttributes"
+source = "src/battle/battle_effect_stream_fields.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A373"
+name = "Lufia2BattleEffectSetDrawValue"
+source = "src/battle/battle_effect_stream_fields.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A388"
+name = "Lufia2BattleEffectSetDrawMode"
+source = "src/battle/battle_effect_stream_fields.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A3D4"
+name = "Lufia2BattleEffectSetDrawFlag"
+source = "src/battle/battle_effect_stream_fields.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

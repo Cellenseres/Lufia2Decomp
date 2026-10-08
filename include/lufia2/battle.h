@@ -1459,6 +1459,27 @@ Lufia2ExecutionResult Lufia2BattleEffectSetDelayTen(
 Lufia2ExecutionResult Lufia2BattleEffectSetDelayTwenty(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleEffectOffsetBaseAngle(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleEffectRotateAngle(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleEffectSetVelocityWords(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleEffectSetDrawAttributes(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleEffectSetDrawValue(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleEffectSetDrawMode(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleEffectSetDrawFlag(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

@@ -223,6 +223,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:9AB1` | `Lufia2BattleEffectWindowBand` | verified | `src/battle/battle_effect_video.c` |
 | `$81:9BA3` | `Lufia2BattleEffectSkipArgument` | verified | `src/battle/battle_effect_selection.c` |
 | `$81:9BBE` | `Lufia2BattleEffectMoveTarget` | verified | `src/battle/battle_effect_target_motion.c` |
+| `$81:A03A` | `Lufia2BattleEffectOffsetBaseAngle` | verified | `src/battle/battle_effect_stream_fields.c` |
+| `$81:A04E` | `Lufia2BattleEffectRotateAngle` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A062` | `Lufia2BattleEffectAimAtPoint` | verified | `src/battle/battle_effect_angle_motion.c` |
 | `$81:A094` | `Lufia2BattleEffectAccelerateAtAngle` | verified | `src/battle/battle_effect_angle_motion.c` |
 | `$81:A0C4` | `Lufia2BattleEffectDecelerateAtAngle` | verified | `src/battle/battle_effect_angle_motion.c` |
@@ -231,9 +233,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A162` | `Lufia2BattleEffectSetAlternatePackedDrawState` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A19C` | `Lufia2BattleEffectSetDrawState` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A264` | `Lufia2BattleEffectProjectFromPosition` | verified | `src/battle/battle_effect_vector_placement.c` |
+| `$81:A295` | `Lufia2BattleEffectSetVelocityWords` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A31D` | `Lufia2BattleEffectVectorFromParameters` | verified | `src/battle/battle_effect_vector_placement.c` |
+| `$81:A35E` | `Lufia2BattleEffectSetDrawAttributes` | verified | `src/battle/battle_effect_stream_fields.c` |
+| `$81:A373` | `Lufia2BattleEffectSetDrawValue` | verified | `src/battle/battle_effect_stream_fields.c` |
+| `$81:A388` | `Lufia2BattleEffectSetDrawMode` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A39D` | `Lufia2BattleEffectCopyDrawValue` | verified | `src/battle/battle_effect_draw_state.c` |
 | `$81:A3BF` | `Lufia2BattleEffectSetDrawVariant` | verified | `src/battle/battle_effect_draw_state.c` |
+| `$81:A3D4` | `Lufia2BattleEffectSetDrawFlag` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A3E9` | `Lufia2BattleEffectSetParameterWord` | verified | `src/battle/battle_effect_parameter_words.c` |
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A431` | `Lufia2BattleEffectRandomizeParameterWord` | verified | `src/battle/battle_effect_parameter_words.c` |
