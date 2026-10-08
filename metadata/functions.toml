@@ -7496,3 +7496,11 @@ source = "src/party/capsule_status_address.c"
 entry_mx = "M0X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:83EB"
+name = "Lufia2MenuClearTileRectangle"
+source = "src/menu/menu_tile_clear.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
