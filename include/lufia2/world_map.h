@@ -214,6 +214,31 @@ Lufia2ExecutionResult Lufia2WorldMapCellCenter(
 Lufia2ExecutionResult Lufia2WorldMapBindResourcePointers(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2WorldMapBlankDisplay(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2WorldMapResetSceneState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2WorldMapConfigureMode7(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2WorldMapUpdatePlane(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2WorldMapInstallGraphics(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2WorldMapResetScene(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2WorldMapUploadTilePlane(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-869 functions in `metadata/functions.toml`: 869 verified, 0 draft, 0 identified, 0 disabled.
+876 functions in `metadata/functions.toml`: 876 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3045,3 +3045,18 @@ Counts do not describe measured runtime interpreter load.
 
 
 The growth leaf requires DP0 and0200<=S<=1FFC. Zero-level wrap remains literal.
+
+## Original world scene entries - 2026-10-08
+
+409,600 original-ROM cases, 409,621 actual ABI cases, 16,128 guards
+and 137 public-library ROM error controls pass. Child probes include
+21 forced unwinds, 60 redirects and 4,140 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 807-job verification and Windows Release build
+with the complete 16-entry integration batch. Its final combined stage has
+885 verified entries, zero drafts, 527 fields and 3,544 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+Tile-plane upload requires DP0 and1F00<=S<=1FFC. Original64-row loops remain exact.

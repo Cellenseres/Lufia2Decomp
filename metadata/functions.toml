@@ -7088,3 +7088,59 @@ source = "src/party/capsule_stat_growth.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "86:D3A5"
+name = "Lufia2WorldMapBlankDisplay"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:D2D6"
+name = "Lufia2WorldMapResetSceneState"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AE1E"
+name = "Lufia2WorldMapConfigureMode7"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A7CE"
+name = "Lufia2WorldMapUpdatePlane"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:CD41"
+name = "Lufia2WorldMapInstallGraphics"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:92A1"
+name = "Lufia2WorldMapResetScene"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AD82"
+name = "Lufia2WorldMapUploadTilePlane"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
