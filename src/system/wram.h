@@ -725,6 +725,7 @@
 #define WRAM_FIELD_BATTLE_SOURCE 0x7ff8a3u
 #define WRAM_FIELD_CONTACT_RESOURCE 0x7ff8a4u
 #define WRAM_BATTLE_ACTION_ALTERNATE 0x7ffab6u
+#define WRAM_BATTLE_EFFECT_SCRIPT_ENABLED 0x7ffab7u
 /* memory-map:end */
 
 /* $0583 values. */

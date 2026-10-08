@@ -4409,3 +4409,11 @@ width = 2
 count = 1
 owner = "battle"
 notes = "CGWSEL/CGADSUB pair for the last HDMA band."
+
+[[location]]
+address = "7F:FAB7"
+name = "battle_effect_script_enabled"
+width = 1
+count = 1
+owner = "battle"
+notes = "Zero skips the conditional effect script operand."
