@@ -861,6 +861,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:ADEE` | `Lufia2WorldMapBuildCellOffset` | verified | `src/world/world_stream.c` |
 | `$86:AE05` | `Lufia2WorldMapBuildBlockPointer` | verified | `src/world/world_stream.c` |
 | `$86:AE1E` | `Lufia2WorldMapConfigureMode7` | verified | `src/world/world_scene.c` |
+| `$86:AE4D` | `Lufia2WorldMapCopyFlaggedBlocks` | verified | `src/world/world_flagged_blocks.c` |
 | `$86:CBF0` | `Lufia2WorldMapBuildSkylineHdma` | verified | `src/world/world_math_resources.c` |
 | `$86:CD41` | `Lufia2WorldMapInstallGraphics` | verified | `src/world/world_scene.c` |
 | `$86:CD67` | `Lufia2WorldMapUploadInitialTilemap` | verified | `src/world/world_perspective.c` |
