@@ -7352,3 +7352,11 @@ source = "src/battle/battle_text_tiles.c"
 entry_mx = "M0X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:E8E1"
+name = "Lufia2BattleEmitGlyphTile"
+source = "src/battle/battle_glyph_caller.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

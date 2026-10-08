@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-902 functions in `metadata/functions.toml`: 902 verified, 0 draft, 0 identified, 0 disabled.
+903 functions in `metadata/functions.toml`: 903 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3209,6 +3209,19 @@ All16-bit resource offsets,real compressed streams and nested unwinds compared.
 81,920 original-ROM cases, 81,920 actual ABI cases, 1,536 guards
 and 99 public-library ROM error controls pass. Child probes include
 0 forced unwinds, 0 redirects and 0 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 846-job verification and Windows Release build
+with the complete 8-entry integration batch. Its final combined stage has
+909 verified entries, zero drafts, 533 fields and 3,640 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+## Original battle glyph caller entries - 2026-10-08
+
+98,304 original-ROM cases, 98,306 actual ABI cases, 2,688 guards
+and 3 public-library ROM error controls pass. Child probes include
+2 forced unwinds, 15 redirects and 2 natural overwritten
 returns. Original registers, WRAM, bus order and return frames are retained.
 
 This group shares the full 846-job verification and Windows Release build
