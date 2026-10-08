@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-892 functions in `metadata/functions.toml`: 892 verified, 0 draft, 0 identified, 0 disabled.
+894 functions in `metadata/functions.toml`: 894 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3130,3 +3130,15 @@ Counts do not describe measured runtime interpreter load.
 
 
 Skyline HDMA requires DP0 and1F00<=S<=1FFC; byte products remain original.
+
+## Original world depth entries - 2026-10-08
+
+196,608 original-ROM cases, 196,612 actual ABI cases, 4,608 guards
+and 55 public-library ROM error controls pass. Child probes include
+4 forced unwinds, 30 redirects and 952 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 828-job verification and Windows Release build
+with the complete 16-entry integration batch. Its final combined stage has
+901 verified entries, zero drafts, 533 fields and 3,608 generated calls.
+Counts do not describe measured runtime interpreter load.
