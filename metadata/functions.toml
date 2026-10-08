@@ -8208,3 +8208,11 @@ source = "src/battle/battle_effect_conditional_sound.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:9F39"
+name = "Lufia2BattleEffectSpawnPopupActor"
+source = "src/battle/battle_effect_popup_actor.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
