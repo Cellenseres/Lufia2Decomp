@@ -222,6 +222,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:9AB1` | `Lufia2BattleEffectWindowBand` | verified | `src/battle/battle_effect_video.c` |
 | `$81:9BA3` | `Lufia2BattleEffectSkipArgument` | verified | `src/battle/battle_effect_selection.c` |
 | `$81:9BBE` | `Lufia2BattleEffectMoveTarget` | verified | `src/battle/battle_effect_target_motion.c` |
+| `$81:A062` | `Lufia2BattleEffectAimAtPoint` | verified | `src/battle/battle_effect_angle_motion.c` |
+| `$81:A094` | `Lufia2BattleEffectAccelerateAtAngle` | verified | `src/battle/battle_effect_angle_motion.c` |
+| `$81:A0C4` | `Lufia2BattleEffectDecelerateAtAngle` | verified | `src/battle/battle_effect_angle_motion.c` |
+| `$81:A0F4` | `Lufia2BattleEffectDecelerateAtOffsetAngle` | verified | `src/battle/battle_effect_angle_motion.c` |
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |
