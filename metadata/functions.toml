@@ -7448,3 +7448,11 @@ source = "src/system/hardware_division.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:940E"
+name = "Lufia2BattleEffectSpawnEnemyScripts"
+source = "src/battle/battle_effect_enemy_scripts.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
