@@ -4609,3 +4609,35 @@ width = 2
 count = 129
 owner = "battle"
 notes = "129 original1F1F words, changed through native random mask selection."
+
+[[location]]
+address = "7E:134B"
+name = "battle_enemy_group_flags"
+width = 1
+count = 6
+owner = "battle"
+notes = "Per-enemy flag bytes; encounter exit compacts their low bits into the first byte."
+
+[[location]]
+address = "7E:1363"
+name = "battle_submenu_choices"
+width = 1
+count = 1
+owner = "battle"
+notes = "Seven seven-byte submenu-choice records. Table base only; field phases overlap actor_sprite_animation_table."
+
+[[location]]
+address = "7F:F1BF"
+name = "battle_saved_submenu_choices"
+width = 1
+count = 28
+owner = "battle"
+notes = "Seven four-byte records store packed offsets and original submenu bases."
+
+[[location]]
+address = "7F:F756"
+name = "field_encounter_records"
+width = 1
+count = 1
+owner = "field"
+notes = "Ten-byte encounter record table base; byte resource indexing can cross bank7F. Extent unclaimed."
