@@ -7672,3 +7672,11 @@ source = "src/battle/battle_effect_byte_acceleration.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:968A"
+name = "Lufia2BattleEffectRestorePaletteRange"
+source = "src/battle/battle_effect_palette_copy.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
