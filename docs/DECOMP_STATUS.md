@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-897 functions in `metadata/functions.toml`: 897 verified, 0 draft, 0 identified, 0 disabled.
+898 functions in `metadata/functions.toml`: 898 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3158,3 +3158,18 @@ Counts do not describe measured runtime interpreter load.
 
 
 Flag read wrappers retain original nested frames and supported low-stack guards.
+
+## Original world flagged blocks entries - 2026-10-08
+
+32,768 original-ROM cases, 32,771 actual ABI cases, 3,072 guards
+and 26 public-library ROM error controls pass. Child probes include
+3 forced unwinds, 15 redirects and 0 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 828-job verification and Windows Release build
+with the complete 16-entry integration batch. Its final combined stage has
+901 verified entries, zero drafts, 533 fields and 3,608 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+
+Block copies retain all five original event gates and word writes.

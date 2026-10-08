@@ -7312,3 +7312,11 @@ source = "src/system/system_flag_read.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:AE4D"
+name = "Lufia2WorldMapCopyFlaggedBlocks"
+source = "src/world/world_flagged_blocks.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
