@@ -8256,3 +8256,11 @@ source = "src/battle/battle_window_fades.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:BBE0"
+name = "Lufia2BattleUpdateSlotPortraitStatus"
+source = "src/battle/battle_portrait_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
