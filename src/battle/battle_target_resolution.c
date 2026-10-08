@@ -20,10 +20,12 @@ enum {
     POSITION_VERTICAL_FIELD = 7u
 };
 
-static bool TargetContext(const Lufia2CpuState *cpu, uint16_t minimum) {
+static bool TargetContext(const Lufia2CpuState *cpu, uint16_t minimum,
+    bool allow_wram) {
     return cpu->accumulator_is_8_bit && !cpu->index_is_8_bit &&
         !cpu->decimal && cpu->direct_page == 0u &&
-        cpu->program_bank == 0x81u && cpu->data_bank == 0x97u &&
+        cpu->program_bank == 0x81u &&
+        (cpu->data_bank == 0x97u || (allow_wram && cpu->data_bank == 0x7eu)) &&
         cpu->stack >= minimum && cpu->stack <= 0x1ffcu;
 }
 
@@ -36,7 +38,7 @@ static void ReadActiveTargets(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 
 Lufia2ExecutionResult Lufia2BattleResolveTargetMask(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!TargetContext(cpu, 0x1f00u))
+    if (!TargetContext(cpu, 0x1f00u, false))
         return ExecutionHandoff(cpu, 0x81b228u);
     StoreAAbsolute8(memory, cpu, TARGET_REQUEST, 0u);
     ReadActiveTargets(memory, cpu, 0xb22bu);
@@ -96,7 +98,7 @@ static void SelectTargetSprite(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 
 Lufia2ExecutionResult Lufia2BattleTargetSpriteCoordinates(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!TargetContext(cpu, 0x1f03u))
+    if (!TargetContext(cpu, 0x1f03u, false))
         return ExecutionHandoff(cpu, 0x81b7efu);
     SelectTargetSprite(memory, cpu, 0xffu);
     ReadSpriteCoordinates(memory, cpu, 0xb7fdu);
@@ -131,7 +133,7 @@ static void StoreEffectAxis(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 
 Lufia2ExecutionResult Lufia2BattleEffectTargetCoordinates(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!TargetContext(cpu, 0x1f05u))
+    if (!TargetContext(cpu, 0x1f05u, true))
         return ExecutionHandoff(cpu, 0x81b80au);
     BitImmediate8(cpu, 0x80u);
     if (!cpu->zero) {

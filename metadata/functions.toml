@@ -7392,3 +7392,19 @@ source = "src/battle/battle_effect_display_transition.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:92E9"
+name = "Lufia2BattleEffectSpawnSavedActorScript"
+source = "src/battle/battle_effect_saved_actor.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B7D9"
+name = "Lufia2BattleEffectTargetAdjustment"
+source = "src/battle/battle_effect_saved_actor.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
