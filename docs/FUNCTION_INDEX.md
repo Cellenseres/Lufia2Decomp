@@ -916,6 +916,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:DE9D` | `Lufia2BattleInitializeEnemySpriteRecords` | verified | `src/battle/battle_enemy_sprite_setup.c` |
 | `$85:DEDC` | `Lufia2BattleInitializeEnemySpriteRecord` | verified | `src/battle/battle_enemy_sprite_setup.c` |
 | `$85:DF35` | `Lufia2BattleFindEnemySpriteGroup` | verified | `src/battle/battle_enemy_sprite_setup.c` |
+| `$85:EB91` | `Lufia2BattleLoadEnemyGraphicsGroups` | verified | `src/battle/battle_enemy_graphics.c` |
+| `$85:EBE0` | `Lufia2BattleAllocateEnemyTiles` | verified | `src/battle/battle_enemy_graphics.c` |
+| `$85:EC4D` | `Lufia2BattleAllocateEnemyPalette` | verified | `src/battle/battle_enemy_graphics.c` |
 | `$85:EC81` | `Lufia2BattleFrameInput` | verified | `src/battle/battle_frame_input.c` |
 | `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
 | `$85:ECF0` | `Lufia2BattleFrameUpkeep` | verified | `src/battle/battle_frame.c` |

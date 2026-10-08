@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1020 functions in `metadata/functions.toml`: 1020 verified, 0 draft, 0 identified, 0 disabled.
+1023 functions in `metadata/functions.toml`: 1023 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -3974,4 +3974,16 @@ returns. Original registers, WRAM, bus order and return frames are retained.
 This group shares the full 999-job verification and Windows Release build
 with the complete 9-entry integration batch. Its final combined stage has
 1020 verified entries, zero drafts, 574 fields and 4,084 generated calls.
+Counts do not describe measured runtime interpreter load.
+
+## Original enemy graphics entries - 2026-10-08
+
+199,680 original-ROM cases, 199,685 actual ABI cases, 9,216 guards
+and 78 public-library ROM error controls pass. Child probes include
+5 forced unwinds, 75 redirects and 0 natural overwritten
+returns. Original registers, WRAM, bus order and return frames are retained.
+
+This group shares the full 1023-job verification and Windows Release build
+with the complete 23-entry integration batch. Its final combined stage has
+1043 verified entries, zero drafts, 597 fields and 4,176 generated calls.
 Counts do not describe measured runtime interpreter load.

@@ -8296,3 +8296,27 @@ source = "src/battle/battle_enemy_sprite_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:EB91"
+name = "Lufia2BattleLoadEnemyGraphicsGroups"
+source = "src/battle/battle_enemy_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:EBE0"
+name = "Lufia2BattleAllocateEnemyTiles"
+source = "src/battle/battle_enemy_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:EC4D"
+name = "Lufia2BattleAllocateEnemyPalette"
+source = "src/battle/battle_enemy_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
