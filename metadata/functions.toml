@@ -7288,3 +7288,27 @@ source = "src/world/world_depth.c"
 entry_mx = "M0X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:BE30"
+name = "Lufia2SystemResolveEventFlagBit"
+source = "src/system/system_flag_read.c"
+entry_mx = "M1X0"
+exit_mx = "M1X1"
+status = "verified"
+
+[[function]]
+address = "80:BE1E"
+name = "Lufia2SystemTestEventFlag"
+source = "src/system/system_flag_read.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:BE1A"
+name = "Lufia2SystemTestEventFlagLong"
+source = "src/system/system_flag_read.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

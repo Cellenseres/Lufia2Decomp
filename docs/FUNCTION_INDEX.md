@@ -83,6 +83,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
 | `$80:A368` | `Lufia2SceneResetTextState` | verified | `src/field/scene_bootstrap.c` |
 | `$80:B404` | `Lufia2FieldQueueMenuActorUpdates` | verified | `src/field/menu_actor_updates.c` |
+| `$80:BE1A` | `Lufia2SystemTestEventFlagLong` | verified | `src/system/system_flag_read.c` |
+| `$80:BE1E` | `Lufia2SystemTestEventFlag` | verified | `src/system/system_flag_read.c` |
+| `$80:BE30` | `Lufia2SystemResolveEventFlagBit` | verified | `src/system/system_flag_read.c` |
 | `$80:BE4D` | `Lufia2SceneRunInitialRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BE61` | `Lufia2SceneRunResumeRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BE75` | `Lufia2SceneRunTransitionRecord` | verified | `src/field/scene_bootstrap.c` |
