@@ -1317,6 +1317,9 @@ Lufia2ExecutionResult Lufia2BattleEffectAddBg1Scroll(
 Lufia2ExecutionResult Lufia2BattleEffectSetBg1Scroll(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleMergeGlyphTile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

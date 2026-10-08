@@ -337,6 +337,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:E7D2` | `Lufia2BattleFillRect` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E808` | `Lufia2DecimalDigits3` | verified | `src/system/math.c` |
 | `$81:E835` | `Lufia2BattleGlyph` | verified | `src/battle/battle_ip.c` |
+| `$81:E8EE` | `Lufia2BattleMergeGlyphTile` | verified | `src/battle/battle_text_tiles.c` |
 | `$81:EA35` | `Lufia2BattleRenderGlyph` | verified | `src/battle/battle_message_glyph.c` |
 | `$81:EB34` | `Lufia2BattlePaletteCopy` | verified | `src/battle/battle_util.c` |
 | `$81:EB62` | `Lufia2BattlePaletteSplit` | verified | `src/battle/battle_util.c` |
