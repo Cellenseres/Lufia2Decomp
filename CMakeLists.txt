@@ -199,6 +199,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_update.c
     src/field/scene_script.c
     src/field/field_scroll.c
+    src/world/world_math_resources.c
     src/world/world_perspective.c
     src/field/field_row_buffer.c
     src/world/world_stream.c
