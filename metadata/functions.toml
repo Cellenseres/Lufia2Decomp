@@ -8048,3 +8048,11 @@ source = "src/battle/battle_effect_palette_load.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:97D8"
+name = "Lufia2BattleEffectCopyTileRectangle"
+source = "src/battle/battle_effect_tile_rectangle.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

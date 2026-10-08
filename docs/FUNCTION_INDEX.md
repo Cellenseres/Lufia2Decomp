@@ -216,6 +216,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:9738` | `Lufia2BattleEffectSetBg3Scroll` | verified | `src/battle/battle_effect_scroll.c` |
 | `$81:976B` | `Lufia2BattleEffectAddBg1Scroll` | verified | `src/battle/battle_effect_scroll.c` |
 | `$81:97A5` | `Lufia2BattleEffectSetBg1Scroll` | verified | `src/battle/battle_effect_scroll.c` |
+| `$81:97D8` | `Lufia2BattleEffectCopyTileRectangle` | verified | `src/battle/battle_effect_tile_rectangle.c` |
 | `$81:9999` | `Lufia2BattleEffectBackgroundRequest` | verified | `src/battle/battle_effect_video.c` |
 | `$81:99A5` | `Lufia2BattleEffectBackgroundRelease` | verified | `src/battle/battle_effect_video.c` |
 | `$81:99B0` | `Lufia2BattleEffectBackgroundCopy` | verified | `src/battle/battle_effect_video.c` |
