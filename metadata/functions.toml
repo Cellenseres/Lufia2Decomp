@@ -7824,3 +7824,27 @@ source = "src/battle/battle_effect_stream_fields.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:9AF7"
+name = "Lufia2BattleEffectSetTargetMotionOffsets"
+source = "src/battle/battle_effect_target_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9D1F"
+name = "Lufia2BattleEffectMoveSpecialTarget"
+source = "src/battle/battle_effect_target_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9C76"
+name = "Lufia2BattleEffectSetTargetStatus"
+source = "src/battle/battle_effect_target_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
