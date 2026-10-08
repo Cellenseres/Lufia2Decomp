@@ -7408,3 +7408,11 @@ source = "src/battle/battle_effect_saved_actor.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:DB6D"
+name = "Lufia2SystemDivideVectorMagnitude"
+source = "src/system/vector_division.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
