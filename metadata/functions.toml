@@ -7872,3 +7872,11 @@ source = "src/battle/battle_effect_circle_window.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:AB98"
+name = "Lufia2BattleConfigureLayerColorDma"
+source = "src/battle/battle_layer_color_dma.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
