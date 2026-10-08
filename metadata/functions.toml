@@ -8448,3 +8448,19 @@ source = "src/battle/battle_record_reset.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:ED51"
+name = "Lufia2BattleSnapshotStatuses"
+source = "src/battle/battle_status_cache.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:DFB9"
+name = "Lufia2BattleReleaseDefeatedEnemies"
+source = "src/battle/battle_status_cache.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

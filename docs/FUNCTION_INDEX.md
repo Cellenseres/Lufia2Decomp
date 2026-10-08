@@ -923,6 +923,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:DE9D` | `Lufia2BattleInitializeEnemySpriteRecords` | verified | `src/battle/battle_enemy_sprite_setup.c` |
 | `$85:DEDC` | `Lufia2BattleInitializeEnemySpriteRecord` | verified | `src/battle/battle_enemy_sprite_setup.c` |
 | `$85:DF35` | `Lufia2BattleFindEnemySpriteGroup` | verified | `src/battle/battle_enemy_sprite_setup.c` |
+| `$85:DFB9` | `Lufia2BattleReleaseDefeatedEnemies` | verified | `src/battle/battle_status_cache.c` |
 | `$85:E7BC` | `Lufia2BattlePlayTransition` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAE4` | `Lufia2BattleAdvanceTransitionFrame` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EB91` | `Lufia2BattleLoadEnemyGraphicsGroups` | verified | `src/battle/battle_enemy_graphics.c` |
@@ -931,6 +932,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:EC81` | `Lufia2BattleFrameInput` | verified | `src/battle/battle_frame_input.c` |
 | `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
 | `$85:ECF0` | `Lufia2BattleFrameUpkeep` | verified | `src/battle/battle_frame.c` |
+| `$85:ED51` | `Lufia2BattleSnapshotStatuses` | verified | `src/battle/battle_status_cache.c` |
 | `$85:EDB2` | `Lufia2BattleClearAllModifiers` | verified | `src/battle/battle_record_reset.c` |
 | `$85:EDBB` | `Lufia2BattleRetainPersistentStatuses` | verified | `src/battle/battle_encounter_state.c` |
 | `$85:EDDB` | `Lufia2BattleClearPartyRecordBytes` | verified | `src/battle/battle_party_clear.c` |
