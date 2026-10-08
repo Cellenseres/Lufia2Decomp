@@ -8064,3 +8064,19 @@ source = "src/battle/battle_effect_conditional_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:9853"
+name = "Lufia2BattleEffectSetPaletteBrightness"
+source = "src/battle/battle_effect_palette_brightness.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9935"
+name = "Lufia2BattleEffectAdjustPaletteBrightness"
+source = "src/battle/battle_effect_palette_brightness.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
