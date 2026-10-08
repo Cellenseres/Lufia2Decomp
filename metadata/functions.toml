@@ -8112,3 +8112,11 @@ source = "src/battle/battle_effect_target_toggle_callers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:9664"
+name = "Lufia2BattleEffectLoadGraphicsResource"
+source = "src/battle/battle_effect_graphics_resource.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
