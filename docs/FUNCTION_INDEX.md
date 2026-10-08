@@ -236,6 +236,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:9BAC` | `Lufia2BattleEffectTogglePartyTargetState` | verified | `src/battle/battle_effect_target_toggle_callers.c` |
 | `$81:9BBE` | `Lufia2BattleEffectMoveTarget` | verified | `src/battle/battle_effect_target_motion.c` |
 | `$81:9C76` | `Lufia2BattleEffectSetTargetStatus` | verified | `src/battle/battle_effect_target_state.c` |
+| `$81:9CCC` | `Lufia2BattleEffectSetPortraitPoseIfStatusClear` | verified | `src/battle/battle_effect_portrait_status.c` |
 | `$81:9D0B` | `Lufia2BattleEffectToggleSpecialTargetState` | verified | `src/battle/battle_effect_target_toggle_callers.c` |
 | `$81:9D1F` | `Lufia2BattleEffectMoveSpecialTarget` | verified | `src/battle/battle_effect_target_state.c` |
 | `$81:9DC9` | `Lufia2BattleEffectRestorePortraitPose` | verified | `src/battle/battle_effect_portrait_restore.c` |
