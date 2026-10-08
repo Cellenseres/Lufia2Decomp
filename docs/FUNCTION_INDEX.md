@@ -238,6 +238,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:9C76` | `Lufia2BattleEffectSetTargetStatus` | verified | `src/battle/battle_effect_target_state.c` |
 | `$81:9D0B` | `Lufia2BattleEffectToggleSpecialTargetState` | verified | `src/battle/battle_effect_target_toggle_callers.c` |
 | `$81:9D1F` | `Lufia2BattleEffectMoveSpecialTarget` | verified | `src/battle/battle_effect_target_state.c` |
+| `$81:9DC9` | `Lufia2BattleEffectRestorePortraitPose` | verified | `src/battle/battle_effect_portrait_restore.c` |
 | `$81:A03A` | `Lufia2BattleEffectOffsetBaseAngle` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A04E` | `Lufia2BattleEffectRotateAngle` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A062` | `Lufia2BattleEffectAimAtPoint` | verified | `src/battle/battle_effect_angle_motion.c` |
