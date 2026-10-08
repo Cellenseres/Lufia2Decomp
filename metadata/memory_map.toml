@@ -4649,3 +4649,51 @@ width = 1
 count = 1
 owner = "battle"
 notes = "Original encounter output base; saved X plus0100 controls long-bank writes. Extent unclaimed."
+
+[[location]]
+address = "7E:1339"
+name = "battle_enemy_encounter_widths"
+width = 1
+count = 6
+owner = "battle"
+notes = "Six original packed enemy widths used by encounter positioning."
+
+[[location]]
+address = "7E:133F"
+name = "battle_enemy_encounter_heights"
+width = 1
+count = 6
+owner = "battle"
+notes = "Six original packed enemy heights used by encounter positioning."
+
+[[location]]
+address = "7E:154E"
+name = "battle_enemy_initial_count"
+width = 1
+count = 1
+owner = "battle"
+notes = "Enemy count initialized from normal or special encounter records."
+
+[[location]]
+address = "7E:15FE"
+name = "battle_enemy_remaining_count"
+width = 1
+count = 1
+owner = "battle"
+notes = "Enemy count initialized alongside154E."
+
+[[location]]
+address = "7E:15A7"
+name = "battle_enemy_combined_width"
+width = 1
+count = 1
+owner = "battle"
+notes = "Original sum of enemy widths plus gaps, minus one."
+
+[[location]]
+address = "7E:11E0"
+name = "battle_special_encounter_flags"
+width = 1
+count = 1
+owner = "battle"
+notes = "Byte copied from the special encounter descriptor."

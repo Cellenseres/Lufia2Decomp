@@ -8392,3 +8392,19 @@ source = "src/battle/battle_encounter_generation.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+[[function]]
+address = "81:81E6"
+name = "Lufia2BattleLoadEncounter"
+source = "src/battle/battle_encounter_loader.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:DE8E"
+name = "Lufia2BattleClearEnemySpriteSlots"
+source = "src/battle/battle_encounter_loader.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

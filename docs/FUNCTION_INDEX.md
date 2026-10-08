@@ -172,6 +172,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:F81C` | `Lufia2FieldDivisionDelay` | verified | `src/field/field_cell_address.c` |
 | `$80:F821` | `Lufia2FieldTraceCellEdges` | verified | `src/field/field_cell_edges.c` |
 | `$81:8000` | `Lufia2BattleSetup` | verified | `src/battle/battle_setup.c` |
+| `$81:81E6` | `Lufia2BattleLoadEncounter` | verified | `src/battle/battle_encounter_loader.c` |
 | `$81:839F` | `Lufia2BattleGenerateEncounterRecord` | verified | `src/battle/battle_encounter_generation.c` |
 | `$81:84FC` | `Lufia2BattleAddEncounterEnemy` | verified | `src/battle/battle_encounter_generation.c` |
 | `$81:851E` | `Lufia2BattleDisplaySetup` | verified | `src/battle/battle_display_setup.c` |
@@ -916,6 +917,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:DD63` | `Lufia2BattleVelocityOfAngle` | verified | `src/battle/battle_vector.c` |
 | `$85:DE1E` | `Lufia2BattleCosineOfAngle` | verified | `src/battle/battle_vector.c` |
 | `$85:DE2A` | `Lufia2BattleSineOfAngle` | verified | `src/battle/battle_vector.c` |
+| `$85:DE8E` | `Lufia2BattleClearEnemySpriteSlots` | verified | `src/battle/battle_encounter_loader.c` |
 | `$85:DE9D` | `Lufia2BattleInitializeEnemySpriteRecords` | verified | `src/battle/battle_enemy_sprite_setup.c` |
 | `$85:DEDC` | `Lufia2BattleInitializeEnemySpriteRecord` | verified | `src/battle/battle_enemy_sprite_setup.c` |
 | `$85:DF35` | `Lufia2BattleFindEnemySpriteGroup` | verified | `src/battle/battle_enemy_sprite_setup.c` |
