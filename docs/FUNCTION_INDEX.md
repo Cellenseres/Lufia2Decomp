@@ -196,6 +196,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:920F` | `Lufia2BattleEffectSpawnScriptsForTargets` | verified | `src/battle/battle_effect_slots.c` |
 | `$81:929E` | `Lufia2BattleEffectSpawnActorAt` | verified | `src/battle/battle_effect_slots.c` |
 | `$81:92E9` | `Lufia2BattleEffectSpawnSavedActorScript` | verified | `src/battle/battle_effect_saved_actor.c` |
+| `$81:9393` | `Lufia2BattleEffectSpawnCurrentTargetScript` | verified | `src/battle/battle_effect_current_target.c` |
 | `$81:94CA` | `Lufia2BattleEffectSelectPortraitStream` | verified | `src/battle/battle_effect_selection.c` |
 | `$81:94EB` | `Lufia2BattleEffectLoopStart` | verified | `src/battle/battle_effect_flow.c` |
 | `$81:9500` | `Lufia2BattleEffectLoopStart2` | verified | `src/battle/battle_effect_flow.c` |

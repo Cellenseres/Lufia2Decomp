@@ -7424,3 +7424,11 @@ source = "src/system/vector_angle.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "81:9393"
+name = "Lufia2BattleEffectSpawnCurrentTargetScript"
+source = "src/battle/battle_effect_current_target.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
