@@ -4273,3 +4273,11 @@ width = 2
 count = 7
 owner = "party"
 notes = "Original selected item words per capsule."
+
+[[location]]
+address = "7E:11BB"
+name = "capsule_form_states"
+width = 1
+count = 7
+owner = "party"
+notes = "Original capsule form and state bytes."
