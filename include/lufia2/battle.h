@@ -1586,6 +1586,14 @@ Lufia2ExecutionResult Lufia2BattleTogglePartyTargetState(
 Lufia2ExecutionResult Lufia2BattleToggleSpecialTargetState(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleEffectTogglePartyTargetState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2BattleEffectToggleSpecialTargetState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif
