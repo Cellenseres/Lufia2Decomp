@@ -925,7 +925,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:EC81` | `Lufia2BattleFrameInput` | verified | `src/battle/battle_frame_input.c` |
 | `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
 | `$85:ECF0` | `Lufia2BattleFrameUpkeep` | verified | `src/battle/battle_frame.c` |
+| `$85:EDBB` | `Lufia2BattleRetainPersistentStatuses` | verified | `src/battle/battle_encounter_state.c` |
 | `$85:EDDB` | `Lufia2BattleClearPartyRecordBytes` | verified | `src/battle/battle_party_clear.c` |
+| `$85:EDF1` | `Lufia2BattleLoadSavedSubmenuChoices` | verified | `src/battle/battle_encounter_state.c` |
+| `$85:EE3E` | `Lufia2BattleStoreSavedSubmenuChoices` | verified | `src/battle/battle_encounter_state.c` |
+| `$85:EEA1` | `Lufia2BattleStoreRemainingEncounter` | verified | `src/battle/battle_encounter_state.c` |
 | `$86:81A9` | `Lufia2SelectScreenNmi` | verified | `src/menu/menu.c` |
 | `$86:838C` | `Lufia2TitleObjects` | verified | `src/title/title.c` |
 | `$86:86ED` | `Lufia2TitleLayers` | verified | `src/title/title.c` |

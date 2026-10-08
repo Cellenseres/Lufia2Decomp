@@ -8344,3 +8344,35 @@ source = "src/battle/battle_transition_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:EDBB"
+name = "Lufia2BattleRetainPersistentStatuses"
+source = "src/battle/battle_encounter_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:EDF1"
+name = "Lufia2BattleLoadSavedSubmenuChoices"
+source = "src/battle/battle_encounter_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:EE3E"
+name = "Lufia2BattleStoreSavedSubmenuChoices"
+source = "src/battle/battle_encounter_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:EEA1"
+name = "Lufia2BattleStoreRemainingEncounter"
+source = "src/battle/battle_encounter_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

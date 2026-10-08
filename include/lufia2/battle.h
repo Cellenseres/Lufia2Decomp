@@ -1705,6 +1705,18 @@ Lufia2ExecutionResult Lufia2BattleAdvanceTransitionFrame(
 Lufia2ExecutionResult Lufia2BattlePrepareTransitionMask(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleRetainPersistentStatuses(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleLoadSavedSubmenuChoices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleStoreSavedSubmenuChoices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleStoreRemainingEncounter(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
