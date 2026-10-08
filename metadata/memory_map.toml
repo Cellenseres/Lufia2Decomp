@@ -4257,3 +4257,19 @@ width = 2
 count = 1
 owner = "battle"
 notes = "Setup clears word; row builder advances low byte."
+
+[[location]]
+address = "7E:11A6"
+name = "capsule_forms"
+width = 1
+count = 7
+owner = "party"
+notes = "Original capsule form bytes."
+
+[[location]]
+address = "7E:11AD"
+name = "capsule_menu_items"
+width = 2
+count = 7
+owner = "party"
+notes = "Original selected item words per capsule."

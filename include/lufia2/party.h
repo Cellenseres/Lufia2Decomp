@@ -173,6 +173,15 @@ Lufia2ExecutionResult Lufia2CapsuleBuildStatValues(
 Lufia2ExecutionResult Lufia2CapsuleAccumulateStatGrowth(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2CapsuleGetFlagMask(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2CapsuleGetFormAddress(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2CapsuleGetItemAddress(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

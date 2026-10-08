@@ -7456,3 +7456,27 @@ source = "src/battle/battle_effect_enemy_scripts.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:C4E4"
+name = "Lufia2CapsuleGetFlagMask"
+source = "src/party/capsule_selection_addresses.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C4F4"
+name = "Lufia2CapsuleGetFormAddress"
+source = "src/party/capsule_selection_addresses.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:C504"
+name = "Lufia2CapsuleGetItemAddress"
+source = "src/party/capsule_selection_addresses.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
