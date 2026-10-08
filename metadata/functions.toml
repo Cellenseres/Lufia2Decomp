@@ -8176,3 +8176,11 @@ source = "src/battle/battle_effect_sprite_rebuild.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:9E13"
+name = "Lufia2BattleEffectSendSoundCommand"
+source = "src/battle/battle_effect_sound_command.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
