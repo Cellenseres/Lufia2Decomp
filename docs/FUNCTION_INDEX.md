@@ -235,6 +235,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:A40B` | `Lufia2BattleEffectAddToField` | verified | `src/battle/battle_effect_ops.c` |
 | `$81:A431` | `Lufia2BattleEffectRandomizeParameterWord` | verified | `src/battle/battle_effect_parameter_words.c` |
 | `$81:A598` | `Lufia2BattleEffectVelocity` | verified | `src/battle/battle_effect_ops.c` |
+| `$81:A69A` | `Lufia2BattleEffectAccelerateByByte` | verified | `src/battle/battle_effect_byte_acceleration.c` |
+| `$81:A6C6` | `Lufia2BattleEffectDecelerateByByte` | verified | `src/battle/battle_effect_byte_acceleration.c` |
+| `$81:A6F2` | `Lufia2BattleEffectAccelerateOne` | verified | `src/battle/battle_effect_byte_acceleration.c` |
+| `$81:A71C` | `Lufia2BattleEffectAccelerateTwo` | verified | `src/battle/battle_effect_byte_acceleration.c` |
+| `$81:A746` | `Lufia2BattleEffectAccelerateThree` | verified | `src/battle/battle_effect_byte_acceleration.c` |
+| `$81:A770` | `Lufia2BattleEffectAccelerateFour` | verified | `src/battle/battle_effect_byte_acceleration.c` |
 | `$81:A79A` | `Lufia2BattlePrepareAction` | verified | `src/battle/battle_actions.c` |
 | `$81:A832` | `Lufia2BattleDispatchAction` | verified | `src/battle/battle_action_dispatch.c` |
 | `$81:A8A7` | `Lufia2BattleSkipAction` | verified | `src/battle/battle_action_handlers.c` |
