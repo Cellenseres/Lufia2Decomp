@@ -7856,3 +7856,19 @@ source = "src/battle/battle_effect_palette_load.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:B1D6"
+name = "Lufia2BattleEnableCircleWindow"
+source = "src/battle/battle_effect_circle_window.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9A54"
+name = "Lufia2BattleEffectSetCircleRadius"
+source = "src/battle/battle_effect_circle_window.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

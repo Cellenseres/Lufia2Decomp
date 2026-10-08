@@ -4345,3 +4345,43 @@ width = 2
 count = 1
 owner = "battle"
 notes = "Vertical motion base in thirteen-byte target records."
+
+[[location]]
+address = "7E:1B0D"
+name = "battle_circle_hdma_descriptor"
+width = 1
+count = 5
+owner = "battle"
+notes = "Channel-six indirect window-edge descriptor."
+
+[[location]]
+address = "7E:1B47"
+name = "battle_circle_window_enabled"
+width = 1
+count = 1
+owner = "battle"
+notes = "Circle-window enable latch."
+
+[[location]]
+address = "7E:1B49"
+name = "battle_circle_window_state"
+width = 1
+count = 1
+owner = "battle"
+notes = "Circle-window state initialized to eleven."
+
+[[location]]
+address = "7E:1B4A"
+name = "battle_circle_window_radius"
+width = 1
+count = 1
+owner = "battle"
+notes = "Current circle radius."
+
+[[location]]
+address = "7E:1B4B"
+name = "battle_circle_window_previous_radius"
+width = 1
+count = 1
+owner = "battle"
+notes = "Last radius used to build the edge table."
