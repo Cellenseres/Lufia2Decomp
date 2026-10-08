@@ -7608,3 +7608,19 @@ source = "src/battle/battle_effect_draw_state.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:A3E9"
+name = "Lufia2BattleEffectSetParameterWord"
+source = "src/battle/battle_effect_parameter_words.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:A431"
+name = "Lufia2BattleEffectRandomizeParameterWord"
+source = "src/battle/battle_effect_parameter_words.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
