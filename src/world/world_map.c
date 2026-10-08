@@ -40,8 +40,8 @@ enum {
     WORLD_MAP_COLOUR_MATH = 0x170fu,  /* CGADSUB value */
     WORLD_MAP_ROW_PENDING = 0x1710u,  /* set to $FF by the streamer */
     WORLD_MAP_COLUMN_PENDING = 0x1711u,
-    WORLD_MAP_ROW_STAGE = 0x1712u,    /* source address; low 14 bits are VRAM */
-    WORLD_MAP_COLUMN_STAGE = 0x1714u, /* VRAM address of the column */
+    WORLD_MAP_ROW_STAGE = WRAM_WORLD_MAP_ROW_STAGE & 0xffffu,    /* source address; low 14 bits are VRAM */
+    WORLD_MAP_COLUMN_STAGE = WRAM_WORLD_MAP_COLUMN_STAGE & 0xffffu, /* VRAM address of the column */
     WORLD_MAP_COLOUR_TABLE = 0x1716u, /* HDMA source for channel 4 */
     WORLD_MAP_MATRIX_TABLE = 0x1718u, /* HDMA source for channel 0 */
     WORLD_MAP_SHAKE_X = 0x1e50u,      /* sprite chain shake, x then y words */

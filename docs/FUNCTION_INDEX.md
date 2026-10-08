@@ -846,7 +846,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:AA5B` | `Lufia2WorldPlaneRows1` | verified | `src/world/world_plane_rows.c` |
 | `$86:AB0E` | `Lufia2WorldPlaneRows2` | verified | `src/world/world_plane_rows.c` |
 | `$86:ABC1` | `Lufia2WorldPlaneRows3` | verified | `src/world/world_plane_rows.c` |
+| `$86:AC6C` | `Lufia2WorldMapStreamRow` | verified | `src/world/world_stream.c` |
+| `$86:ACFE` | `Lufia2WorldMapStreamColumn` | verified | `src/world/world_stream.c` |
 | `$86:AD82` | `Lufia2WorldMapUploadTilePlane` | verified | `src/world/world_scene.c` |
+| `$86:ADEE` | `Lufia2WorldMapBuildCellOffset` | verified | `src/world/world_stream.c` |
+| `$86:AE05` | `Lufia2WorldMapBuildBlockPointer` | verified | `src/world/world_stream.c` |
 | `$86:AE1E` | `Lufia2WorldMapConfigureMode7` | verified | `src/world/world_scene.c` |
 | `$86:CD41` | `Lufia2WorldMapInstallGraphics` | verified | `src/world/world_scene.c` |
 | `$86:CDF5` | `Lufia2WorldMapBindResourcePointers` | verified | `src/world/world_resource_pointers.c` |

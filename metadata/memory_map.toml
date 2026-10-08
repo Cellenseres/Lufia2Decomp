@@ -4137,3 +4137,19 @@ width = 2
 count = 1
 owner = "party"
 notes = "Low byte of ROM capsule record offset17, zero-extended into the stat work block."
+
+[[location]]
+address = "7E:1712"
+name = "world_map_row_stage"
+width = 2
+count = 1
+owner = "world"
+notes = "Streamed row source; low14 bits select VRAM."
+
+[[location]]
+address = "7E:1714"
+name = "world_map_column_stage"
+width = 2
+count = 1
+owner = "world"
+notes = "Streamed column VRAM address."
