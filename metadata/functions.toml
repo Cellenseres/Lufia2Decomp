@@ -8216,3 +8216,11 @@ source = "src/battle/battle_effect_popup_actor.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:9E22"
+name = "Lufia2BattleEffectSpawnTargetPopups"
+source = "src/battle/battle_effect_target_popups.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
