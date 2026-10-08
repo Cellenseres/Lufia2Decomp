@@ -380,6 +380,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:C2E3` | `Lufia2BattleResetPartyTilemap` | verified | `src/battle/battle_buffers.c` |
 | `$81:C2FB` | `Lufia2BattleClearWindowTilemap` | verified | `src/battle/battle_buffers.c` |
 | `$81:C30E` | `Lufia2BattleClearTilemap3800` | verified | `src/battle/battle_buffers.c` |
+| `$81:C321` | `Lufia2BattleFadeOutWindows` | verified | `src/battle/battle_window_fades.c` |
+| `$81:C339` | `Lufia2BattleFadeInWindows` | verified | `src/battle/battle_window_fades.c` |
 | `$81:C35F` | `Lufia2BattlePopups` | verified | `src/battle/battle_popup.c` |
 | `$81:C5CF` | `Lufia2BattleTargetPointer` | verified | `src/battle/battle_util.c` |
 | `$81:C600` | `Lufia2BattleStatusTick` | verified | `src/battle/battle_status_tick.c` |

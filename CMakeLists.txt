@@ -199,6 +199,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_update.c
     src/field/scene_script.c
     src/field/field_scroll.c
+    src/battle/battle_window_fades.c
     src/battle/battle_effect_actor_tiles.c
     src/battle/battle_effect_frame_setup.c
     src/battle/battle_effect_target_popups.c
