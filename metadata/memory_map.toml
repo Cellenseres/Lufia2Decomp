@@ -4417,3 +4417,11 @@ width = 1
 count = 1
 owner = "battle"
 notes = "Zero skips the conditional effect script operand."
+
+[[location]]
+address = "7E:1547"
+name = "battle_portrait_poses"
+width = 1
+count = 4
+owner = "battle"
+notes = "Current pose byte for each of four party portraits."
