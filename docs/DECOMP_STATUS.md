@@ -3746,3 +3746,12 @@ This group shares the full 948-job verification and Windows Release build
 with the complete 35-entry integration batch. Its final combined stage has
 1000 verified entries, zero drafts, 560 fields and 4,004 generated calls.
 Counts do not describe measured runtime interpreter load.
+
+## Exact gauge counter writes — 2026-10-08
+
+The two word DEC operations in81:E5C1/E604 now write high byte before
+low byte, matching original65816 bus order. Values and CPU state remain
+literal. The turn-display composition detects the uncorrected trace;
+both changed operand controls are detected. Shared full981, Release,
+strict C and781824 ROM/781842 ABI cases across eleven new callers pass.
+No new entry or binding is counted for this existing helper correction.

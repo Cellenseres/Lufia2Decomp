@@ -1,6 +1,6 @@
 /* Battle window frame rows and small lookups of bank $81. */
 
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/battle.h"
 
 enum {
@@ -168,7 +168,7 @@ Lufia2ExecutionResult Lufia2BattleGaugeBlock(
             IncX2(cpu);
             LoadY16(cpu, (uint16_t)(cpu->y - 1u));
         }
-        Decrement16Direct(memory, cpu, 0x11u);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x11u), -1);
     } while (!cpu->zero);
     Or16(cpu, 0x4000u);
     cpu->carry = 0;
@@ -206,7 +206,7 @@ Lufia2ExecutionResult Lufia2BattleGaugeColumn(
         Add16Value(cpu, 0x000eu);
         TransferAToX(cpu);
         LoadA16(cpu, cpu->y);
-        Decrement16Direct(memory, cpu, 0x11u);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x11u), -1);
     } while (!cpu->zero);
     cpu->carry = 0;
     Add16Value(cpu, 0x0004u);
