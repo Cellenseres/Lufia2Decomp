@@ -7384,3 +7384,11 @@ source = "src/battle/battle_effect_target_motion.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:958F"
+name = "Lufia2BattleEffectChangeDisplay"
+source = "src/battle/battle_effect_display_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
