@@ -908,6 +908,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:CDD0` | `Lufia2BattleLoadActionRecord` | verified | `src/battle/battle_action_work.c` |
 | `$85:CDFA` | `Lufia2BattleActionRecordPointer` | verified | `src/battle/battle_action_work.c` |
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
+| `$85:DA71` | `Lufia2BattleClearPartyModifiers` | verified | `src/battle/battle_record_reset.c` |
+| `$85:DA9C` | `Lufia2BattleClearEnemyModifiers` | verified | `src/battle/battle_record_reset.c` |
 | `$85:DAC7` | `Lufia2SystemCalculateVectorAngle` | verified | `src/system/vector_angle.c` |
 | `$85:DB6D` | `Lufia2SystemDivideVectorMagnitude` | verified | `src/system/vector_division.c` |
 | `$85:DC6F` | `Lufia2SystemDivide24ByByte` | verified | `src/system/hardware_division.c` |
@@ -929,10 +931,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:EC81` | `Lufia2BattleFrameInput` | verified | `src/battle/battle_frame_input.c` |
 | `$85:ECDB` | `Lufia2BattleVramQueueSlot` | verified | `src/battle/battle_frame.c` |
 | `$85:ECF0` | `Lufia2BattleFrameUpkeep` | verified | `src/battle/battle_frame.c` |
+| `$85:EDB2` | `Lufia2BattleClearAllModifiers` | verified | `src/battle/battle_record_reset.c` |
 | `$85:EDBB` | `Lufia2BattleRetainPersistentStatuses` | verified | `src/battle/battle_encounter_state.c` |
 | `$85:EDDB` | `Lufia2BattleClearPartyRecordBytes` | verified | `src/battle/battle_party_clear.c` |
 | `$85:EDF1` | `Lufia2BattleLoadSavedSubmenuChoices` | verified | `src/battle/battle_encounter_state.c` |
 | `$85:EE3E` | `Lufia2BattleStoreSavedSubmenuChoices` | verified | `src/battle/battle_encounter_state.c` |
+| `$85:EE82` | `Lufia2BattleClearPartyStatuses` | verified | `src/battle/battle_record_reset.c` |
+| `$85:EE9B` | `Lufia2BattleClearSelectedPartyStatus` | verified | `src/battle/battle_record_reset.c` |
 | `$85:EEA1` | `Lufia2BattleStoreRemainingEncounter` | verified | `src/battle/battle_encounter_state.c` |
 | `$86:81A9` | `Lufia2SelectScreenNmi` | verified | `src/menu/menu.c` |
 | `$86:838C` | `Lufia2TitleObjects` | verified | `src/title/title.c` |

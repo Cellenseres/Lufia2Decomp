@@ -8408,3 +8408,43 @@ source = "src/battle/battle_encounter_loader.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:DA71"
+name = "Lufia2BattleClearPartyModifiers"
+source = "src/battle/battle_record_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:DA9C"
+name = "Lufia2BattleClearEnemyModifiers"
+source = "src/battle/battle_record_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:EE9B"
+name = "Lufia2BattleClearSelectedPartyStatus"
+source = "src/battle/battle_record_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:EDB2"
+name = "Lufia2BattleClearAllModifiers"
+source = "src/battle/battle_record_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:EE82"
+name = "Lufia2BattleClearPartyStatuses"
+source = "src/battle/battle_record_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
