@@ -8224,3 +8224,11 @@ source = "src/battle/battle_effect_target_popups.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:9B7E"
+name = "Lufia2BattleEffectPrepareFrame"
+source = "src/battle/battle_effect_frame_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

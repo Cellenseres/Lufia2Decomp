@@ -233,6 +233,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:9AB1` | `Lufia2BattleEffectWindowBand` | verified | `src/battle/battle_effect_video.c` |
 | `$81:9AF7` | `Lufia2BattleEffectSetTargetMotionOffsets` | verified | `src/battle/battle_effect_target_state.c` |
 | `$81:9B56` | `Lufia2BattleEffectSetPortraitPose` | verified | `src/battle/battle_effect_portrait_pose.c` |
+| `$81:9B7E` | `Lufia2BattleEffectPrepareFrame` | verified | `src/battle/battle_effect_frame_setup.c` |
 | `$81:9BA3` | `Lufia2BattleEffectSkipArgument` | verified | `src/battle/battle_effect_selection.c` |
 | `$81:9BAC` | `Lufia2BattleEffectTogglePartyTargetState` | verified | `src/battle/battle_effect_target_toggle_callers.c` |
 | `$81:9BBE` | `Lufia2BattleEffectMoveTarget` | verified | `src/battle/battle_effect_target_motion.c` |
