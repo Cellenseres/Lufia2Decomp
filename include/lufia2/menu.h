@@ -561,6 +561,10 @@ Lufia2ExecutionResult Lufia2MenuWriteRawControl(
 Lufia2ExecutionResult Lufia2MenuClearTileRectangle(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Original cached menu selection and saved cursor state. */
+Lufia2ExecutionResult Lufia2MenuRestoreSelectionState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

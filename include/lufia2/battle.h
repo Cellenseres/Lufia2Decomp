@@ -1762,6 +1762,11 @@ Lufia2ExecutionResult Lufia2BattleInitializeEnemySpriteSizes(
 Lufia2ExecutionResult Lufia2BattleInitializePartySpriteDescriptors(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Original result-window scroll tables and HDMA descriptors. */
+Lufia2ExecutionResult Lufia2BattleConfigureResultHdma(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

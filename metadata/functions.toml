@@ -8480,3 +8480,19 @@ source = "src/battle/battle_sprite_descriptors.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:A972"
+name = "Lufia2BattleConfigureResultHdma"
+source = "src/battle/battle_result_hdma.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:E751"
+name = "Lufia2MenuRestoreSelectionState"
+source = "src/menu/menu_selection_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
