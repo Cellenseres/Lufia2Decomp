@@ -7176,3 +7176,35 @@ source = "src/battle/battle_effect_scroll.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:ADEE"
+name = "Lufia2WorldMapBuildCellOffset"
+source = "src/world/world_stream.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:AE05"
+name = "Lufia2WorldMapBuildBlockPointer"
+source = "src/world/world_stream.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:AC6C"
+name = "Lufia2WorldMapStreamRow"
+source = "src/world/world_stream.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:ACFE"
+name = "Lufia2WorldMapStreamColumn"
+source = "src/world/world_stream.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
