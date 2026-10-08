@@ -4705,3 +4705,11 @@ width = 2
 count = 1
 owner = "party"
 notes = "Capsule character record pointer; battle results awards capsule experience through it. DA71 includes it after four party pointers."
+
+[[location]]
+address = "7E:1C01"
+name = "battle_status_cache"
+width = 1
+count = 11
+owner = "battle"
+notes = "Five party/capsule status bytes followed by six fixed enemy status bytes from ED51."
