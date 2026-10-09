@@ -412,11 +412,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:DDE7` | `Lufia2BattleResultWindowLine` | verified | `src/battle/battle_result_window.c` |
 | `$81:DE55` | `Lufia2BattleResultWindowScroll` | verified | `src/battle/battle_result_window.c` |
 | `$81:DE9E` | `Lufia2BattleResultWindowWait` | verified | `src/battle/battle_result_window.c` |
+| `$81:DEA9` | `Lufia2BattleDrawPartyStatusWindows` | verified | `src/battle/battle_party_status.c` |
 | `$81:DEE9` | `Lufia2BattleRefreshTurnDisplay` | verified | `src/battle/battle_turn_display.c` |
 | `$81:DEF4` | `Lufia2BattleActionWindow` | verified | `src/battle/battle_command_display.c` |
 | `$81:DF0A` | `Lufia2BattlePartyWindows` | verified | `src/battle/battle_command_display.c` |
 | `$81:DFA2` | `Lufia2BattleListRows` | verified | `src/battle/battle_ip.c` |
 | `$81:E16F` | `Lufia2BattleClearActionWindow` | verified | `src/battle/battle_command_display.c` |
+| `$81:E1B5` | `Lufia2BattleDrawPartyStatusDetail` | verified | `src/battle/battle_party_status_detail.c` |
 | `$81:E2AF` | `Lufia2BattleStatusGauge` | verified | `src/battle/battle_gauges.c` |
 | `$81:E2C8` | `Lufia2BattleStatusDigits` | verified | `src/battle/battle_gauges.c` |
 | `$81:E3AE` | `Lufia2BattleWindowE3AE` | verified | `src/battle/battle_frame_rows.c` |
@@ -446,6 +448,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:EA35` | `Lufia2BattleRenderGlyph` | verified | `src/battle/battle_message_glyph.c` |
 | `$81:EB34` | `Lufia2BattlePaletteCopy` | verified | `src/battle/battle_util.c` |
 | `$81:EB62` | `Lufia2BattlePaletteSplit` | verified | `src/battle/battle_util.c` |
+| `$81:EB93` | `Lufia2BattleRefreshPartyStatusSprites` | verified | `src/battle/battle_party_status.c` |
 | `$81:EC35` | `Lufia2StartDefaultRecords` | verified | `src/system/default_records.c` |
 | `$81:EC41` | `Lufia2BattleClearF000` | verified | `src/battle/battle_util.c` |
 | `$81:EC56` | `Lufia2InitializeDefaultRecords` | verified | `src/system/default_records.c` |

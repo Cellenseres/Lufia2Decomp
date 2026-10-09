@@ -1,6 +1,7 @@
 /* Battle window frame rows and small lookups of bank $81. */
 
 #include "core/cpu_ops.h"
+#include "core/wram_view.h"
 #include "lufia2/battle.h"
 
 enum {
@@ -31,9 +32,8 @@ static uint16_t Abs16(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
 /* DEC abs, 16-bit; returns the new value. */
 static uint16_t DecAbs16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t address) {
-    const uint16_t value = (uint16_t)(Abs16(memory, cpu, address) - 1u);
-
-    StoreWordAbsolute(memory, cpu, address, value);
+    const uint16_t value =
+        WramStep16(WramViewOfCaller(memory, cpu), address, -1);
     SetNz16(cpu, value);
     return value;
 }
@@ -341,9 +341,8 @@ static void IncAbs16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     const int step = delta < 0 ? -1 : 1;
 
     while (delta) {
-        const uint16_t value = (uint16_t)(Abs16(memory, cpu, address) + step);
-
-        StoreWordAbsolute(memory, cpu, address, value);
+        const uint16_t value =
+            WramStep16(WramViewOfCaller(memory, cpu), address, step);
         SetNz16(cpu, value);
         delta -= step;
     }

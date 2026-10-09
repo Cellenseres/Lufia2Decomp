@@ -9352,3 +9352,27 @@ source = "src/field/field_sections.c"
 entry_mx = "M0X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:DEA9"
+name = "Lufia2BattleDrawPartyStatusWindows"
+source = "src/battle/battle_party_status.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:EB93"
+name = "Lufia2BattleRefreshPartyStatusSprites"
+source = "src/battle/battle_party_status.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:E1B5"
+name = "Lufia2BattleDrawPartyStatusDetail"
+source = "src/battle/battle_party_status_detail.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
