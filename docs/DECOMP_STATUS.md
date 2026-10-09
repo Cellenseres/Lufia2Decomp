@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1104 functions in `metadata/functions.toml`: 1104 verified, 0 draft, 0 identified, 0 disabled.
+1122 functions in `metadata/functions.toml`: 1122 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4358,3 +4358,51 @@ its existing index modes. All 18,048 guards, 810 redirects, 50 forced unwinds,
 186 negative ROM controls and six C++ APIs pass. Other child internals remain
 explicit services. Public-library proofs and all 1,113 full verification jobs pass.
 Windows Release passes.
+
+### Selection gold and equipment updates
+
+Five complete original callers retain the 24-bit gold comparison and debit,
+alternate-selection update, eight-step feedback and six flagged equipment
+increments. Low/high borrow, CPU flags, hidden accumulator, live indirect
+pointers, DB-relative feedback writes and all nine pushed child frames are
+preserved. Four roots enter M1X0; flagged equipment enters M0X0.
+
+Shared original-ROM and production-ABI proofs pass 48,137 unique states each,
+including 3,072 nested parents with 41,088 actual child returns through twelve
+reconstructed contracts. All 17,280 guards, 225 redirects, nine forced unwinds,
+51 negative ROM controls and five C++ APIs pass. Unknown display/input services
+remain explicit. Public-library proofs, all 1,128 full jobs and Windows Release pass.
+
+### Menu inventory additions and possession lookup
+
+Seven complete M0X0 entries store packed slots, update/cap quantities, test
+the original equality99 limit, scan96 slots, register possession and add
+the selected menu item. The possession-bit body is shared with the existing
+FB1F count entry; no duplicate table scanner was introduced. DP scratch,
+hidden accumulator, original overflow, DB-relative word overlap and ordered
+RTS/RTL frames stay literal. The 09CF field is phase-dependent byte/word.
+
+Original-ROM and production-ABI root proofs cover65,543 states each,
+including16,384 complete parents with43,696 actual reconstructed child
+returns. All24,192 guards,165 redirects,seven forced unwinds,83 meaningful
+ROM controls and eight C++ APIs pass. All106 reachable noncall/return
+boundaries are covered. The original table terminates at entry34, making
+the64-entry exhaustion BRA unreachable in the supported immutable ROM;
+the original bounded exhaustion path remains in C.
+Public-library proofs, all 1,128 full jobs and Windows Release pass.
+
+### Menu selection and session services
+
+Six complete M1X0 contracts preserve selection retries, five input-result
+returns, cursor style restoration, the original session reset, Capsule arrays,
+24-bit gold addition with its original wrap and cap, and byte-ordered field
+buffer copies. All fourteen pushed child sites and the PHP/PLP status frame
+remain original. Three neutral persistent reset fields are catalogued.
+
+68,622 unique original-ROM and production-ABI root states each pass, including
+6,144 nested roots with 16,332 actual cursor/style/animation/Capsule returns.
+Input, sound and remaining cursor-slide internals use explicit child contracts
+in these parent proofs. 20,736 guards, 315 redirects, fourteen forced unwinds,
+127 effective bounded ROM mutations and six C++ APIs pass. All 156 reachable
+noncall/return boundaries across 180 original instruction states are covered.
+Public-library proofs, all 1,128 full jobs and Windows Release pass.

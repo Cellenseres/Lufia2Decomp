@@ -311,6 +311,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_animation_slots.c
     src/field/field_animation_cells.c
     src/item/inventory.c
+    src/item/inventory_selection.c
     src/item/inventory_receive.c
     src/item/item_records.c
     src/menu/menu.c
@@ -349,6 +350,8 @@ add_library(lufia2_decomp STATIC
     src/menu/name_entry.c
     src/menu/menu_record_services.c
     src/menu/menu_confirmation.c
+    src/menu/menu_price_followup.c
+    src/menu/menu_context_services.c
     src/system/save_file_check.c
     src/system/save_file_flags.c
     src/title/title_selection.c

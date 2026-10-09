@@ -70,6 +70,29 @@ Lufia2ExecutionResult Lufia2SpellTextPointer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2InventoryStorePackedSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2InventoryAddMenuItem(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2InventoryRegisterPossession(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2InventoryIncreaseSlotQuantity(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2InventorySlotAtQuantityLimit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2InventoryFindEmptySlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2ItemCheckPossessionBit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

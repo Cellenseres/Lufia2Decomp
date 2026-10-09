@@ -4,9 +4,7 @@
 #include "lufia2/item.h"
 #include "system/dp_scratch.h"
 
-/* $82:FB51: possession bits at DB:$091E. */
-static void ItemPossessionBit(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0xfb27u);
+static Lufia2ExecutionResult ItemPossessionBitCore(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     And16(cpu, 0x01ffu);
     StoreADirect16(memory, cpu, DP_SCRATCH_A);
     LoadX16(cpu, 0);
@@ -32,8 +30,7 @@ static void ItemPossessionBit(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                 LoadA16(cpu, 1);
                 cpu->carry = 1;
             }
-            SimulateRtsFrame(memory, cpu);
-            return;
+            return ExecutionReturned(cpu->carry ? 0x82fb8eu : 0x82fb89u);
         }
         IncrementX16(cpu);
         IncrementX16(cpu);
@@ -42,6 +39,19 @@ static void ItemPossessionBit(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
     LoadA16(cpu, 2);
     cpu->carry = 1;
+    return ExecutionReturned(0x82fb93u);
+}
+
+Lufia2ExecutionResult Lufia2ItemCheckPossessionBit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x82fb51u);
+    return ItemPossessionBitCore(memory, cpu);
+}
+
+static void ItemPossessionBit(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xfb27u);
+    (void)ItemPossessionBitCore(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 

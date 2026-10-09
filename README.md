@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1104 functions in `metadata/functions.toml`: 1104 verified, 0 draft, 0 identified, 0 disabled.
+1122 functions in `metadata/functions.toml`: 1122 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
@@ -137,3 +137,12 @@ live buffers, equipment records and child frames through native contracts.
 Menu confirmation and price callers preserve original retries and returns.
 Original item-name stack reads are explicitly ordered; menu M0 item-byte
 reads use the native bridge within its verified context.
+
+Selection gold and equipment updates retain original arithmetic, live
+pointers and child returns without interpreting the reconstructed callers.
+
+Menu inventory additions use shared possession lookup and original packed
+slot updates without interpreting the reconstructed parent/child chain.
+
+Menu selection and session services retain original input returns, cursor
+frames, Capsule records, gold arithmetic and field-buffer ordering.
