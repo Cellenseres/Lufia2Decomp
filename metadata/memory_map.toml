@@ -4801,3 +4801,11 @@ width = 1
 count = 3
 owner = "system"
 notes = "Original next-level experience work bytes."
+
+[[location]]
+address = "7E:1523"
+name = "party_equipment_selected_slot"
+width = 2
+count = 1
+owner = "party"
+notes = "F703 stores66+2*(A&FF) as the original selected equipment offset."

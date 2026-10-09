@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1058 functions in `metadata/functions.toml`: 1058 verified, 0 draft, 0 identified, 0 disabled.
+1065 functions in `metadata/functions.toml`: 1065 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -44,6 +44,31 @@ older large modules still step the CPU-state helpers inside their bodies.
 Moving them over is open work and does not change any entry listed above.
 
 ## Reconstruction checkpoints
+
+### Default party records and equipment services
+
+Five equipment entries select the original slot, load its item, accumulate
+seven modifiers, rebuild six slots, and refresh all seven party records.
+`$81:EC56` initializes party, inventory and capsule records from `$85:B2A1`,
+including all 2,024 individual WRAM-port writes. `$81:ED35` resets the seven
+party records from `$85:B395`; its first member-counter clear remains one byte.
+Nonzero equipped words are tested before masking their nine-bit item IDs,
+preserving the original item-zero path. All original child frames and returns
+remain live; unknown execution unwinds at its exact call site.
+
+The existing full and bare member unpackers now preserve the ROM's high-byte
+first 16-bit DEC/INC write order. Both bridges accept either accumulator width
+with 16-bit indices, as proven directly and inside the original DB85 callers.
+The canonical member metadata still records its usual M1X0 entry.
+
+Shared original-ROM and production-ABI proofs each pass 118,171 cases,
+with 28,800 unsupported states, 172 altered-ROM controls and two independent
+write-order regressions. All 27 forced child unwinds and 480 redirected returns
+pass. Another 2,196 composition replay states prove 896 actual member-bridge
+calls. New own spans compare ordered WRAM reads and writes; existing child
+interiors retain their CPU/full-WRAM/MMIO/ordered-write contracts. All seven
+public APIs link from C++. Shared full decomp-verify passes all1,053 independent jobs. Windows Release passes.
+
 
 ### Save record callers and complete state codec
 

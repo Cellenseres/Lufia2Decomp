@@ -8600,3 +8600,59 @@ source = "src/system/save_state_restore.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:F703"
+name = "Lufia2PartySelectEquipmentSlot"
+source = "src/party/party_equipment.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F710"
+name = "Lufia2PartyLoadEquipmentItem"
+source = "src/party/party_equipment.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F722"
+name = "Lufia2PartyAccumulateEquipmentModifiers"
+source = "src/party/party_equipment.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F846"
+name = "Lufia2PartyRebuildEquipmentModifiers"
+source = "src/party/party_equipment.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:994E"
+name = "Lufia2PartyRebuildAllEquipmentStats"
+source = "src/party/party_equipment.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:EC56"
+name = "Lufia2InitializeDefaultRecords"
+source = "src/system/default_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:ED35"
+name = "Lufia2PartyResetDefaultRecords"
+source = "src/system/default_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
