@@ -8656,3 +8656,27 @@ source = "src/system/default_records.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:EC35"
+name = "Lufia2StartDefaultRecords"
+source = "src/system/default_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9971"
+name = "Lufia2PartySelectActiveEquipmentMember"
+source = "src/party/party_refresh.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:E893"
+name = "Lufia2PartyRefreshActiveEquipmentStats"
+source = "src/party/party_refresh.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"

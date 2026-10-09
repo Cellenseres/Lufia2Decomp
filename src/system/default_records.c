@@ -190,3 +190,19 @@ Lufia2ExecutionResult Lufia2PartyResetDefaultRecords(
             return DefaultRecordChildUnwound(service_sites[service]);
     return ExecutionReturned(0x81ed8du);
 }
+
+Lufia2ExecutionResult Lufia2StartDefaultRecords(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || !cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x81ec35u);
+    OpSepWidths(cpu, 0x20u);
+    OpRepWidths(cpu, 0x10u);
+    if (!CallChildWithFrame(memory, cpu, child, context,
+            0x81ec39u, 0x81ec41u, 2u, cpu->program_bank))
+        return DefaultRecordChildUnwound(0x81ec39u);
+    if (!CallChildWithFrame(memory, cpu, child, context,
+            0x81ec3cu, 0x81ec56u, 3u, cpu->program_bank))
+        return DefaultRecordChildUnwound(0x81ec3cu);
+    return ExecutionReturned(0x81ec40u);
+}
