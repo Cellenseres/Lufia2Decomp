@@ -441,6 +441,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:EA35` | `Lufia2BattleRenderGlyph` | verified | `src/battle/battle_message_glyph.c` |
 | `$81:EB34` | `Lufia2BattlePaletteCopy` | verified | `src/battle/battle_util.c` |
 | `$81:EB62` | `Lufia2BattlePaletteSplit` | verified | `src/battle/battle_util.c` |
+| `$81:EC35` | `Lufia2StartDefaultRecords` | verified | `src/system/default_records.c` |
 | `$81:EC41` | `Lufia2BattleClearF000` | verified | `src/battle/battle_util.c` |
 | `$81:EC56` | `Lufia2InitializeDefaultRecords` | verified | `src/system/default_records.c` |
 | `$81:ED35` | `Lufia2PartyResetDefaultRecords` | verified | `src/system/default_records.c` |
@@ -520,6 +521,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:950E` | `Lufia2MenuMemberStatus` | verified | `src/menu/menu_screen.c` |
 | `$82:9918` | `Lufia2AdjustPurchasePrice` | verified | `src/menu/menu_spell_shop.c` |
 | `$82:994E` | `Lufia2PartyRebuildAllEquipmentStats` | verified | `src/party/party_equipment.c` |
+| `$82:9971` | `Lufia2PartySelectActiveEquipmentMember` | verified | `src/party/party_refresh.c` |
 | `$82:999B` | `Lufia2MenuInitializePartyPortraits` | verified | `src/menu/menu_display_callers.c` |
 | `$82:99BE` | `Lufia2MenuInitializePartyPortrait` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9A4E` | `Lufia2MenuRunMainScreen` | verified | `src/menu/menu_main_screen.c` |
@@ -583,6 +585,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E49E` | `Lufia2MenuShopTitle` | verified | `src/menu/menu_screen.c` |
 | `$82:E5E1` | `Lufia2MenuShopCompare` | verified | `src/menu/menu_screen.c` |
 | `$82:E746` | `Lufia2TitleStateDispatch` | verified | `src/title/title.c` |
+| `$82:E893` | `Lufia2PartyRefreshActiveEquipmentStats` | verified | `src/party/party_refresh.c` |
 | `$82:EFC5` | `Lufia2MenuSavedWindow` | verified | `src/menu/menu_screen.c` |
 | `$82:F0A2` | `Lufia2MenuNameEntryWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:F6A4` | `Lufia2PartyClearSecondaryModifiers` | verified | `src/party/capsule_stat_callers.c` |

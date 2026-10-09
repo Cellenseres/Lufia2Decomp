@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1065 functions in `metadata/functions.toml`: 1065 verified, 0 draft, 0 identified, 0 disabled.
+1068 functions in `metadata/functions.toml`: 1068 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -44,6 +44,24 @@ older large modules still step the CPU-state helpers inside their bodies.
 Moving them over is open work and does not change any entry listed above.
 
 ## Reconstruction checkpoints
+
+### Active-party equipment and default start callers
+
+`$81:EC35` starts the original cleared F000 area and default records.
+`$82:9971` selects the active record from the original party-pointer table,
+preserving Y and status. `$82:E893` refreshes active members' equipment and
+derived stats. Its zero-count do-loop still executes 65,536 iterations.
+Five exact child sites, original byte ordering and rewritten returns remain.
+
+Shared original-ROM/production-ABI proofs each pass 18,182 cases,
+including 768 actual-child compositions at 23 original call sites; 10,368
+unsupported states, 26 selected ROM controls and 210 redirects pass.
+All three APIs link from C++. Another ten-entry replay proves 5,505 ROM/ABI
+states at stack1FF8..1FFC, 34,560 guards and 224 nested member-bridge calls.
+The seven existing service bridges and these three callers now accept1FFC;
+1FFD remains unsupported. Semantic code is unchanged by this guard expansion.
+Public-library proofs and all 1,067 full verification jobs pass. Windows Release passes.
+
 
 ### Default party records and equipment services
 
