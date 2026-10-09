@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1068 functions in `metadata/functions.toml`: 1068 verified, 0 draft, 0 identified, 0 disabled.
+1074 functions in `metadata/functions.toml`: 1074 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -44,6 +44,22 @@ older large modules still step the CPU-state helpers inside their bodies.
 Moving them over is open work and does not change any entry listed above.
 
 ## Reconstruction checkpoints
+
+### Title and save-selection services
+
+Six original contracts cover save-selection graphics, zero/nonzero visual
+setup, SRAM selection bits, indexed file flags, selection palettes, and the
+file-read validity check. Live child frames, original register restoration,
+status writes, indexed/unindexed SRAM reads, and palette bus order remain.
+The three selection scratch fields keep neutral names.
+
+Shared ROM/ABI fixtures pass 45,077 cases each, including 8,192
+actual-child compositions and 4,096 nested flag-bridge calls. Another 23,424
+unsupported states, 100 original-ROM controls, 405 redirects, and 21 forced
+child unwinds pass. Six distinct C++ APIs link. Unknown child internals
+remain explicit services; only the proven compositions claim those bodies.
+Public-library proofs and all 1,079 full verification jobs pass. Windows Release passes.
+
 
 ### Active-party equipment and default start callers
 

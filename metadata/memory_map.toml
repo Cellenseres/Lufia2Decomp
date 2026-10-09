@@ -4809,3 +4809,24 @@ width = 2
 count = 1
 owner = "party"
 notes = "F703 stores66+2*(A&FF) as the original selected equipment offset."
+
+[[location]]
+address = "7E:09C0"
+name = "unk_7E09C0"
+width = 1
+owner = "title"
+notes = "Original title selection work field; meaning remains neutral."
+
+[[location]]
+address = "7E:09C1"
+name = "unk_7E09C1"
+width = 1
+owner = "title"
+notes = "Original title selection work field; meaning remains neutral."
+
+[[location]]
+address = "7E:09C2"
+name = "unk_7E09C2"
+width = 2
+owner = "title"
+notes = "Original title selection work field; meaning remains neutral."

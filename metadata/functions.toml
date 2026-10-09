@@ -8680,3 +8680,51 @@ source = "src/party/party_refresh.c"
 entry_mx = "M0X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:E8DE"
+name = "Lufia2TitlePrepareSaveSelection"
+source = "src/title/title_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E917"
+name = "Lufia2TitlePrepareSelectionMode"
+source = "src/title/title_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E998"
+name = "Lufia2TitleLoadSaveSelectionBits"
+source = "src/title/title_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:905F"
+name = "Lufia2SaveTestFileHighFlags"
+source = "src/system/save_file_flags.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:916C"
+name = "Lufia2MenuLoadSelectionPalettes"
+source = "src/menu/menu_selection_palettes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9073"
+name = "Lufia2SaveCheckGameFile"
+source = "src/system/save_file_check.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
