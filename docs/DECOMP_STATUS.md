@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1074 functions in `metadata/functions.toml`: 1074 verified, 0 draft, 0 identified, 0 disabled.
+1081 functions in `metadata/functions.toml`: 1081 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -44,6 +44,32 @@ older large modules still step the CPU-state helpers inside their bodies.
 Moving them over is open work and does not change any entry listed above.
 
 ## Reconstruction checkpoints
+
+### Save-menu construction and cursor preparation
+
+Four original contracts build all four save-slot descriptions, populate one
+description from the original save reader, restore stored cursor selection,
+and prepare the original cursor styles, grids, and zero visual mode. Empty and
+occupied slots, dynamic indirect pointers, register restoration, byte ordering,
+and nested child unwind sites remain literal. Unproven fields retain neutral names.
+
+Shared ROM/actual production-root ABI proofs pass8,730 cases each,
+including527 compositions and2,585 actual semantic child returns. All13,824
+guards,375 redirects,26 forced child unwinds,62 ROM code controls andfour C++ APIs
+pass. An altered ROM pointer-table byte remains a shared-data positive control.
+Unknown graphics/save-reader internals remain separate services in this proof.
+The same batch includes three complete save-menu callers: open the original
+menu, preserve alternate action/restart loops, and prepare slot windows and
+display services. Their separate proofs pass6,178 ROM/actual ABI cases each,
+10,368 guards,555 redirects,34 forced child unwinds,78 negative ROM controls
+andthree C++ APIs. Two transient carry changes are positive controls because
+original later operations overwrite them before any observable boundary.
+Unknown child internals remain explicit services. Combined batch proof has
+14,908 ROM andactual ABI cases each,24,192 guards,930 redirects,60 forced
+unwinds,140 negative code controls andseven C++ APIs.
+
+Public-library proofs and all 1,087 full verification jobs pass. Windows Release passes.
+
 
 ### Title and save-selection services
 

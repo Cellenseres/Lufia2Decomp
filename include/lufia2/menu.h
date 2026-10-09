@@ -568,6 +568,33 @@ Lufia2ExecutionResult Lufia2MenuRestoreSelectionState(
 Lufia2ExecutionResult Lufia2MenuLoadSelectionPalettes(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2SaveBuildMenuSlots(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
+Lufia2ExecutionResult Lufia2SaveBuildMenuSlot(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
+Lufia2ExecutionResult Lufia2SaveRestoreMenuSelection(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2SavePrepareMenuCursors(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
+Lufia2ExecutionResult Lufia2SaveOpenMenu(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
+Lufia2ExecutionResult Lufia2SaveRunAlternateMenu(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
+Lufia2ExecutionResult Lufia2SavePrepareSlotDisplay(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
 #ifdef __cplusplus
 }
 #endif

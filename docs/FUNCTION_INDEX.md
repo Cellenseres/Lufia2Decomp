@@ -590,9 +590,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E893` | `Lufia2PartyRefreshActiveEquipmentStats` | verified | `src/party/party_refresh.c` |
 | `$82:E8DE` | `Lufia2TitlePrepareSaveSelection` | verified | `src/title/title_selection.c` |
 | `$82:E917` | `Lufia2TitlePrepareSelectionMode` | verified | `src/title/title_selection.c` |
+| `$82:E941` | `Lufia2SaveOpenMenu` | verified | `src/menu/save_menu_parent.c` |
+| `$82:E95D` | `Lufia2SaveRunAlternateMenu` | verified | `src/menu/save_menu_parent.c` |
 | `$82:E998` | `Lufia2TitleLoadSaveSelectionBits` | verified | `src/title/title_selection.c` |
+| `$82:EEF7` | `Lufia2SavePrepareMenuCursors` | verified | `src/menu/save_menu_build.c` |
+| `$82:EF25` | `Lufia2SavePrepareSlotDisplay` | verified | `src/menu/save_menu_parent.c` |
 | `$82:EFC5` | `Lufia2MenuSavedWindow` | verified | `src/menu/menu_screen.c` |
 | `$82:F0A2` | `Lufia2MenuNameEntryWindows` | verified | `src/menu/menu_screen.c` |
+| `$82:F20A` | `Lufia2SaveBuildMenuSlots` | verified | `src/menu/save_menu_build.c` |
+| `$82:F22B` | `Lufia2SaveBuildMenuSlot` | verified | `src/menu/save_menu_build.c` |
+| `$82:F481` | `Lufia2SaveRestoreMenuSelection` | verified | `src/menu/save_menu_build.c` |
 | `$82:F6A4` | `Lufia2PartyClearSecondaryModifiers` | verified | `src/party/capsule_stat_callers.c` |
 | `$82:F6D4` | `Lufia2PartyClearPrimaryModifiers` | verified | `src/party/capsule_stat_callers.c` |
 | `$82:F703` | `Lufia2PartySelectEquipmentSlot` | verified | `src/party/party_equipment.c` |
