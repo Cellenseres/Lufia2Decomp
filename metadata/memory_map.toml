@@ -1263,10 +1263,10 @@ notes = "82:D905 stores the adjusted price into the first two bytes only; the or
 [[location]]
 address = "7E:09CF"
 name = "menu_selected_spell"
-width = 1
+width = 2
 count = 1
 owner = "menu"
-notes = "82:D905 passes this spell ID to the record loader."
+notes = "Phase-dependent selection: D905 uses the spell-ID byte; F9F2/FA2E use a nine-bit item-ID word and clear both bytes after addition."
 
 [[location]]
 address = "7E:0A06"
@@ -4898,3 +4898,27 @@ width = 1
 count = 1
 owner = "menu"
 notes = "Original alternate-display byte deciding whether saved buffers are restored."
+
+[[location]]
+name = "unk_7E0B52"
+address = "7E:0B52"
+width = 1
+count = 1
+owner = "menu"
+notes = "Original menu session reset storage; purpose remains neutral."
+
+[[location]]
+name = "unk_7E0B53"
+address = "7E:0B53"
+width = 1
+count = 1
+owner = "menu"
+notes = "Original menu session reset storage; purpose remains neutral."
+
+[[location]]
+name = "unk_7E119D"
+address = "7E:119D"
+width = 1
+count = 6
+owner = "menu"
+notes = "Original menu session reset storage; purpose remains neutral."

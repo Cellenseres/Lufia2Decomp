@@ -8968,3 +8968,147 @@ source = "src/menu/menu_confirmation.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:9855"
+name = "Lufia2MenuCheckSelectionGold"
+source = "src/menu/menu_price_followup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:983D"
+name = "Lufia2MenuSpendSelectionGold"
+source = "src/menu/menu_price_followup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:EDDF"
+name = "Lufia2MenuApplyAlternateSelection"
+source = "src/menu/menu_price_followup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:97E3"
+name = "Lufia2MenuPlaySelectionFeedback"
+source = "src/menu/menu_price_followup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F8C6"
+name = "Lufia2MenuAdvanceFlaggedEquipment"
+source = "src/menu/menu_price_followup.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F9E8"
+name = "Lufia2InventoryStorePackedSlot"
+source = "src/item/inventory_selection.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F9F2"
+name = "Lufia2InventoryAddMenuItem"
+source = "src/item/inventory_selection.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FA2E"
+name = "Lufia2InventoryRegisterPossession"
+source = "src/item/inventory_selection.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FAA0"
+name = "Lufia2InventoryIncreaseSlotQuantity"
+source = "src/item/inventory_selection.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FAF4"
+name = "Lufia2InventorySlotAtQuantityLimit"
+source = "src/item/inventory_selection.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FB94"
+name = "Lufia2InventoryFindEmptySlot"
+source = "src/item/inventory_selection.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FB51"
+name = "Lufia2ItemCheckPossessionBit"
+source = "src/item/inventory.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:9246"
+name = "Lufia2MenuPollSelectionChoice"
+source = "src/menu/menu_context_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:92F9"
+name = "Lufia2MenuRestoreSelectionCursor"
+source = "src/menu/menu_context_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9AA3"
+name = "Lufia2MenuResetSessionRecords"
+source = "src/menu/menu_context_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C2AE"
+name = "Lufia2CapsuleInitializeSavedRecords"
+source = "src/menu/menu_context_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9808"
+name = "Lufia2MenuCreditSelectionGold"
+source = "src/menu/menu_context_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F660"
+name = "Lufia2MenuSaveFieldBuffers"
+source = "src/menu/menu_context_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
