@@ -32,6 +32,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:8DF9` | `Lufia2MenuAdvanceTextRow` | verified | `src/menu/menu_string.c` |
 | `$80:8E0F` | `Lufia2MenuResetTextWidth` | verified | `src/menu/menu_string.c` |
 | `$80:8E9D` | `Lufia2DecompressResource` | verified | `src/system/decompress.c` |
+| `$80:905F` | `Lufia2SaveTestFileHighFlags` | verified | `src/system/save_file_flags.c` |
+| `$80:9073` | `Lufia2SaveCheckGameFile` | verified | `src/system/save_file_check.c` |
 | `$80:9099` | `Lufia2LoadGameFile` | verified | `src/system/save.c` |
 | `$80:90C9` | `Lufia2SaveGameFile` | verified | `src/system/save.c` |
 | `$80:90FC` | `Lufia2SaveFileChecksum` | verified | `src/system/save.c` |
@@ -586,6 +588,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E5E1` | `Lufia2MenuShopCompare` | verified | `src/menu/menu_screen.c` |
 | `$82:E746` | `Lufia2TitleStateDispatch` | verified | `src/title/title.c` |
 | `$82:E893` | `Lufia2PartyRefreshActiveEquipmentStats` | verified | `src/party/party_refresh.c` |
+| `$82:E8DE` | `Lufia2TitlePrepareSaveSelection` | verified | `src/title/title_selection.c` |
+| `$82:E917` | `Lufia2TitlePrepareSelectionMode` | verified | `src/title/title_selection.c` |
+| `$82:E998` | `Lufia2TitleLoadSaveSelectionBits` | verified | `src/title/title_selection.c` |
 | `$82:EFC5` | `Lufia2MenuSavedWindow` | verified | `src/menu/menu_screen.c` |
 | `$82:F0A2` | `Lufia2MenuNameEntryWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:F6A4` | `Lufia2PartyClearSecondaryModifiers` | verified | `src/party/capsule_stat_callers.c` |
@@ -998,6 +1003,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:90F9` | `Lufia2MenuLoadPalette3` | verified | `src/menu/menu_image_load.c` |
 | `$86:910C` | `Lufia2MenuLoadPalette4` | verified | `src/menu/menu_image_load.c` |
 | `$86:911F` | `Lufia2MenuLoadSlotPalettes` | verified | `src/menu/menu_image_load.c` |
+| `$86:916C` | `Lufia2MenuLoadSelectionPalettes` | verified | `src/menu/menu_selection_palettes.c` |
 | `$86:91FE` | `Lufia2WorldMapCellCenter` | verified | `src/world/world_cell_center.c` |
 | `$86:92A1` | `Lufia2WorldMapResetScene` | verified | `src/world/world_scene.c` |
 | `$86:94D4` | `Lufia2SceneTrackStep` | verified | `src/field/field_scene_tracks.c` |

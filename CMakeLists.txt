@@ -341,6 +341,10 @@ add_library(lufia2_decomp STATIC
     src/system/random.c
     src/system/save.c
     src/system/default_records.c
+    src/menu/menu_selection_palettes.c
+    src/system/save_file_check.c
+    src/system/save_file_flags.c
+    src/title/title_selection.c
     src/system/save_party_stats.c
     src/system/save_party_pack.c
     src/system/save_state_pack.c

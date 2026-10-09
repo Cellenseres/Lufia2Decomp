@@ -565,6 +565,9 @@ Lufia2ExecutionResult Lufia2MenuClearTileRectangle(
 Lufia2ExecutionResult Lufia2MenuRestoreSelectionState(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2MenuLoadSelectionPalettes(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
