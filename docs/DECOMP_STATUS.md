@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1152 functions in `metadata/functions.toml`: 1152 verified, 0 draft, 0 identified, 0 disabled.
+1155 functions in `metadata/functions.toml`: 1155 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4551,3 +4551,24 @@ reused without duplication: 3,672 states cover all 27 primary resources,
 17 alternate variants, four destinations and two data banks, with 17,928
 actual decompressor, advance and offset returns in each proof path.
 Eleven public-library jobs, all 1,184 full jobs and Windows Release pass.
+
+### Party status drawing and upload callers
+
+Three complete callers retain the original party-window, level, HP, MP,
+IP, portrait-state and sprite upload sequences. Drawing phases preserve
+the original pushed frames and exact child-unwind boundaries. The existing
+shared gauge-fill interior remains an explicit original child.
+
+16,395 original-ROM and production-ABI parent states each pass, including
+4,096 mixed actual parents and 26,624 actual child returns. Entry checks
+cover 9,216 rejected states, 120 redirect probes and eleven forced unwinds.
+79 bounded altered-ROM controls and three C++ contracts pass. All 195
+noncall-return boundaries across 209 original instruction states are covered.
+CPU, full WRAM, MMIO and ordered data access are retained.
+
+Window/frame counters now use the original high-byte-first RMW order.
+Four existing APIs pass 4,096 additional original-ROM and production-ABI
+states each. Portrait composition covers empty slots; the nonempty loader
+is independently reconstructed. The existing M1X0 allocator binding falls
+back in 1,024 composed M0X0 calls; those fallbacks are explicitly checked.
+Twelve public-library jobs, all 1,196 full jobs and Windows Release pass.
