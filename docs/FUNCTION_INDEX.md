@@ -593,10 +593,17 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E941` | `Lufia2SaveOpenMenu` | verified | `src/menu/save_menu_parent.c` |
 | `$82:E95D` | `Lufia2SaveRunAlternateMenu` | verified | `src/menu/save_menu_parent.c` |
 | `$82:E998` | `Lufia2TitleLoadSaveSelectionBits` | verified | `src/title/title_selection.c` |
+| `$82:E9D5` | `Lufia2SaveRunMenuActions` | verified | `src/menu/save_menu_dispatch.c` |
+| `$82:EA3B` | `Lufia2SaveRunSlotActions` | verified | `src/menu/save_menu_dispatch.c` |
+| `$82:ECAF` | `Lufia2SaveTestRecordList` | verified | `src/menu/save_menu_actions.c` |
+| `$82:ECF3` | `Lufia2SaveSelectAlternatePartyMember` | verified | `src/menu/save_menu_actions.c` |
 | `$82:EEF7` | `Lufia2SavePrepareMenuCursors` | verified | `src/menu/save_menu_build.c` |
 | `$82:EF25` | `Lufia2SavePrepareSlotDisplay` | verified | `src/menu/save_menu_parent.c` |
+| `$82:EFB5` | `Lufia2SaveResetSlotCursor` | verified | `src/menu/save_menu_actions.c` |
 | `$82:EFC5` | `Lufia2MenuSavedWindow` | verified | `src/menu/menu_screen.c` |
 | `$82:F0A2` | `Lufia2MenuNameEntryWindows` | verified | `src/menu/menu_screen.c` |
+| `$82:F139` | `Lufia2SavePrepareAlternateDisplay` | verified | `src/menu/save_menu_actions.c` |
+| `$82:F190` | `Lufia2SavePrepareAlternateActionDisplay` | verified | `src/menu/save_menu_actions.c` |
 | `$82:F20A` | `Lufia2SaveBuildMenuSlots` | verified | `src/menu/save_menu_build.c` |
 | `$82:F22B` | `Lufia2SaveBuildMenuSlot` | verified | `src/menu/save_menu_build.c` |
 | `$82:F481` | `Lufia2SaveRestoreMenuSelection` | verified | `src/menu/save_menu_build.c` |
