@@ -4844,3 +4844,17 @@ name = "unk_7E1558"
 width = 1
 owner = "menu"
 notes = "Original save-display style selector; meaning remains neutral."
+
+[[location]]
+address = "7E:155B"
+name = "unk_7E155B"
+width = 1
+owner = "menu"
+notes = "Original save-menu action byte; meaning remains neutral."
+
+[[location]]
+address = "7E:0B54"
+name = "unk_7E0B54"
+width = 1
+owner = "menu"
+notes = "Original save-menu action byte; meaning remains neutral."

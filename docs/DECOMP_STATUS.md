@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1081 functions in `metadata/functions.toml`: 1081 verified, 0 draft, 0 identified, 0 disabled.
+1088 functions in `metadata/functions.toml`: 1088 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -44,6 +44,38 @@ older large modules still step the CPU-state helpers inside their bodies.
 Moving them over is open work and does not change any entry listed above.
 
 ## Reconstruction checkpoints
+
+### Save-menu action dispatch and shared record editing
+
+82:E9D5 and 82:EA3B preserve the original menu/slot action loops and shared
+EBF2..ECAC record actions. All 47 distinct child sites keep live call frames.
+EA90 deliberately removes the caller return word before the shared tail.
+Indexed directional bounds, retry paths, current flags and the SRAM flag
+read/modify/write remain original. Unproven child internals stay explicit.
+
+6,191 ROM and production-root ABI cases each include 2,048 actual slot-child
+compositions, 1,708 child returns and 600 caller-owned stack handoffs. The
+two roots also pass 6,912 unsupported-entry guards, 735 redirect probes,
+47 forced child unwinds, 129 altered-ROM controls and two C++ API checks.
+All 182 original instruction boundaries are observed. Return-word wrap,
+hidden A, varied DB/DP, full WRAM/SRAM and ordered bus access are checked.
+Public-library proofs and all 1,095 full verification jobs pass. Windows Release passes.
+
+
+### Save-menu alternate selection and display helpers
+
+Five complete contracts test the original list, reset the slot cursor, preserve
+alternate member-selection retries, and prepare the two original alternate
+displays. The byte entry check and subsequent word list count stay distinct;
+indirect pointers, bank crossings, packed window geometry, widths, flags and
+pushed child frames remain literal. Unknown child internals remain services.
+
+Shared original-ROM and actual production-root ABI proofs pass 10,272 cases each,
+including 32 forced child unwinds. All 17,280 guards, 540 dispatcher redirects,
+113 negative ROM controls and five C++ APIs pass. No gameplay replay or actual
+unknown-child composition is claimed. Existing WRAM locations are reused.
+Public-library proofs and all 1,095 full verification jobs pass. Windows Release passes.
+
 
 ### Save-menu construction and cursor preparation
 

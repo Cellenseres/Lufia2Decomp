@@ -8784,3 +8784,59 @@ source = "src/menu/save_menu_parent.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:ECAF"
+name = "Lufia2SaveTestRecordList"
+source = "src/menu/save_menu_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:EFB5"
+name = "Lufia2SaveResetSlotCursor"
+source = "src/menu/save_menu_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:ECF3"
+name = "Lufia2SaveSelectAlternatePartyMember"
+source = "src/menu/save_menu_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F139"
+name = "Lufia2SavePrepareAlternateDisplay"
+source = "src/menu/save_menu_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F190"
+name = "Lufia2SavePrepareAlternateActionDisplay"
+source = "src/menu/save_menu_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E9D5"
+name = "Lufia2SaveRunMenuActions"
+source = "src/menu/save_menu_dispatch.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:EA3B"
+name = "Lufia2SaveRunSlotActions"
+source = "src/menu/save_menu_dispatch.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
