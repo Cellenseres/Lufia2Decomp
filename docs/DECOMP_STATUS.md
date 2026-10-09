@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1088 functions in `metadata/functions.toml`: 1088 verified, 0 draft, 0 identified, 0 disabled.
+1100 functions in `metadata/functions.toml`: 1100 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -44,6 +44,24 @@ older large modules still step the CPU-state helpers inside their bodies.
 Moving them over is open work and does not change any entry listed above.
 
 ## Reconstruction checkpoints
+
+### Name entry and adjacent menu services
+
+Twelve complete contracts cover original name text preparation, live tile
+pointers, glyph drawing, record insertion/removal/clear, graphics staging,
+selection messages, saved-buffer restoration and equipment-item flag testing.
+The equipment test enters and returns in M0X0; the other eleven use M1X0.
+Byte counters, separate word reads, pointer aliasing, bank carries, two-tile
+glyphs, snapshot copy order, CPU flags and pushed child frames stay literal.
+
+Shared ROM and actual production-root ABI proofs pass 36,884 states each,
+including 12,288 nested parent states and 192,843 real child returns. All
+41,472 guards, 435 redirects, 20 forced unwinds, 132 negative ROM controls
+and twelve C++ APIs pass. Unknown text/graphics children remain services.
+The existing save buffer and destination fields are reused; three neutral
+nonoverlapping fields catalog the name cursor and original snapshot blocks.
+Public-library proofs and all 1,105 full verification jobs pass. Windows Release passes.
+
 
 ### Save-menu action dispatch and shared record editing
 

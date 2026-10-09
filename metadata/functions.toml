@@ -8840,3 +8840,99 @@ source = "src/menu/save_menu_dispatch.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:F0F6"
+name = "Lufia2MenuPrepareNameEntryUpperText"
+source = "src/menu/name_entry.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F117"
+name = "Lufia2MenuPrepareNameEntryLowerText"
+source = "src/menu/name_entry.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F4F4"
+name = "Lufia2MenuPrepareNameEntryTilePointers"
+source = "src/menu/name_entry.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F556"
+name = "Lufia2MenuAppendNameEntryGlyph"
+source = "src/menu/name_entry.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F50A"
+name = "Lufia2MenuDrawNameEntryRecord"
+source = "src/menu/name_entry.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F523"
+name = "Lufia2MenuInsertNameEntryCharacter"
+source = "src/menu/name_entry.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F585"
+name = "Lufia2MenuRemoveNameEntryCharacter"
+source = "src/menu/name_entry.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F5AF"
+name = "Lufia2MenuClearNameEntryRecord"
+source = "src/menu/name_entry.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F496"
+name = "Lufia2MenuPrepareAlternateGraphics"
+source = "src/menu/menu_record_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F637"
+name = "Lufia2MenuDrawSelectionMessage"
+source = "src/menu/menu_record_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F682"
+name = "Lufia2MenuRestoreSavedFieldBuffers"
+source = "src/menu/menu_record_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F893"
+name = "Lufia2MenuTestEquipmentItemFlag"
+source = "src/menu/menu_record_services.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
