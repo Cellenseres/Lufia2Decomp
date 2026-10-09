@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1045 functions in `metadata/functions.toml`: 1045 verified, 0 draft, 0 identified, 0 disabled.
+1058 functions in `metadata/functions.toml`: 1058 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -44,6 +44,97 @@ older large modules still step the CPU-state helpers inside their bodies.
 Moving them over is open work and does not change any entry listed above.
 
 ## Reconstruction checkpoints
+
+### Save record callers and complete state codec
+
+`Lufia2SaveDerivePartyStatBonuses` (`$85:CC69`..`$85:CCCD`) computes the
+seven saved stat bonuses through the original base-stat child.
+`Lufia2SaveRestorePartyBaseStats` (`$85:CBDC`..`$85:CC68`) restores all seven
+party records and next-level experience thresholds through the original
+stat/experience children. `Lufia2SavePackPartyRecord` (`$85:CA22`..`$85:CB7A`)
+packs vitals, equipment, six-bit fields, stat planes and original status bits.
+Their joint ROM and production-ABI batches each pass49,932 cases; all12 pushed
+child sites and225 redirected runtime returns pass. All10,368 unsupported
+entries and309 original operand controls pass. These bridges require DB7E,
+DP0, binary native M1X0; unsupported entries retain original fallback.
+
+`Lufia2SavePackState` (`$85:C954`..`$85:CA21`) and
+`Lufia2SaveRestoreState` (`$85:C60E`..`$85:C753`) complete the remaining save
+codec. Reversed field blocks, seven party records, capsule state, item tails,
+checksum validation, party selection and level-mismatch services retain their
+original ordering and live return frames. Unknown service bodies remain
+explicit child contracts. Each shared ROM/production-ABI batch passes4,385
+cases, including256 native record compositions and33 exact child unwinds.
+All525 runtime child redirects,6,912 unsupported entries and300 changed-ROM
+operand controls pass. Direct codec spans compare WRAM reads and writes in
+order; existing native child compositions retain their separately verified
+CPU/full-WRAM/MMIO/ordered-write contracts. A bank-sensitive fixture prevents
+7E/7F aliasing. The original checksum-failure and level-mismatch service paths
+remain unchanged. Shared full decomp-verify passes all1,041 jobs. Windows Release passes.
+
+
+### Party and capsule save records
+
+`Lufia2SaveUnpackCapsuleRecord` (`$85:C8CF`..`$85:C931`) and
+`Lufia2SavePackCapsuleRecord` (`$85:CB7B`..`$85:CBD1`) reconstruct the original
+capsule record format. Two header bytes, seven split form bytes and seven
+packed word pairs retain their original bit order and bus rereads. Live DB:X
+addresses the save stream; DP30 and derived DP2A address the live record.
+Registers, scratch bytes and final flags retain the original values.
+
+`Lufia2SaveFlagPartyLevelMismatch` (`$85:C932`..`$85:C953`) compares the three
+current-experience bytes with the next-level threshold, most significant
+first. A reached threshold increments the counter unless the level is99. The
+8-bit DP counter retains its original wrap. All three complete contracts
+use native M1X0, with DP0 required by their production bridges.
+
+Shared original-ROM and production-ABI batches each pass 198,656 cases,
+including 1,024 pack/unpack compositions. The party cases cover all seven
+comparison relations and levels 1,98,99,100. Direct comparisons check every
+WRAM data read and write in order; ABI comparisons check CPU, full WRAM,
+ordered writes, MMIO and all three host-return modes. All 9,216 isolated
+unsupported entries and 101 altered-ROM operand controls pass. All three
+production bridges select their complete routines without positive fallback.
+`Lufia2SaveUnpackPartyRecord` (`$85:C754`..`$85:C8CE`) restores the original
+vitals, experience, equipment bytes, six-bit fields and packed high bits.
+The six-bit empty value still becomes `$FF`; stat planes retain TDC seeding
+and the status conversion retains its original arithmetic.
+`Lufia2SavePackStatBits` (`$85:CBD2`..`$85:CBDB`) collects the original three
+stat bit planes, including the shifted accumulator and scratch-byte flags.
+Both contracts use native M1X0 with DP0 required by the production bridges.
+Their shared ROM and production-ABI batches each pass 131,072 cases;
+6,144 isolated invalid-entry guards and 177 altered-ROM controls pass.
+Their comparisons retain CPU, full WRAM and ordered bus effects.
+The five contracts have no child calls; their parent integrations are separate.
+Shared full decomp-verify passes all1,041 independent jobs. Windows Release passes.
+
+
+### Saved field state and record checksum
+
+`Lufia2RestoreSavedFieldState` (`$8E:B993`..`$8E:BA0C`) and
+`Lufia2CaptureFieldSaveState` (`$8E:BA0D`..`$8E:BA80`) reconstruct the five
+original ascending block transfers and scalar field bytes. The save-buffer
+ranges still overlap at `$3BAA`. Restore clears the map and layer high bytes;
+capture stores only their low bytes. Entry-width stack saves and the original
+8-bit accumulator high-byte residue remain observable. Both accept all four
+native register-width combinations and preserve live DB and DP.
+
+`Lufia2SaveRecordChecksum` (`$85:DE6C`..`$85:DE8D`) reconstructs the original
+alternating-byte carry checksum. The source and length remain DP-backed.
+TDC seeds both accumulator bytes; signed Y determines the loop, including the
+one-byte iteration for length zero. The last PLB determines N/Z after PLP.
+The complete contract accepts all four native widths in binary mode.
+
+The shared original-ROM and production-ABI batches each pass 223,616 cases,
+including 1,024 capture/restore compositions and 384 signed-length edges.
+Original comparisons include every WRAM data read and write in order; ABI
+comparisons check CPU, full WRAM, writes, MMIO and all three host-return modes.
+All 6,144 isolated unsupported entries preserve state except the existing
+return-frame open-bus reads. All 148 altered-ROM operand controls are detected.
+The production bridges select each complete routine without positive fallback.
+Their save/load parents still use original services for unreconstructed children.
+Shared full decomp-verify passes all1,041 independent jobs. Windows Release passes.
+
 
 ### Menu selection restore and result-window HDMA
 

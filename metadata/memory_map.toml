@@ -4761,3 +4761,43 @@ width = 1
 count = 1
 owner = "battle"
 notes = "AA3D reads the ripple phase byte. A972 clears the word, also clearing the adjacent battle_message_scroll_increment."
+
+[[location]]
+address = "7E:09F0"
+name = "save_record_checksum_difference"
+width = 2
+count = 1
+owner = "system"
+notes = "Original checksum difference before restore."
+
+[[location]]
+address = "7E:09FA"
+name = "party_stat_member_index"
+width = 2
+count = 1
+owner = "system"
+notes = "Original member index for stat tables."
+
+[[location]]
+address = "7E:09FE"
+name = "party_stat_level"
+width = 2
+count = 1
+owner = "system"
+notes = "Original level for base stat tables."
+
+[[location]]
+address = "7E:0A1C"
+name = "party_base_stat_work"
+width = 2
+count = 7
+owner = "system"
+notes = "Original base stats or saved stat bonuses."
+
+[[location]]
+address = "7E:0A2A"
+name = "party_level_experience_work"
+width = 1
+count = 3
+owner = "system"
+notes = "Original next-level experience work bytes."

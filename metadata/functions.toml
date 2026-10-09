@@ -8496,3 +8496,107 @@ source = "src/menu/menu_selection_state.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "8E:B993"
+name = "Lufia2RestoreSavedFieldState"
+source = "src/system/field_save_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:BA0D"
+name = "Lufia2CaptureFieldSaveState"
+source = "src/system/field_save_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:DE6C"
+name = "Lufia2SaveRecordChecksum"
+source = "src/system/save_record_checksum.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:C8CF"
+name = "Lufia2SaveUnpackCapsuleRecord"
+source = "src/system/save_capsule_record.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CB7B"
+name = "Lufia2SavePackCapsuleRecord"
+source = "src/system/save_capsule_record.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:C932"
+name = "Lufia2SaveFlagPartyLevelMismatch"
+source = "src/system/save_party_check.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:C754"
+name = "Lufia2SaveUnpackPartyRecord"
+source = "src/system/save_party_unpack.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CBD2"
+name = "Lufia2SavePackStatBits"
+source = "src/system/save_party_unpack.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CC69"
+name = "Lufia2SaveDerivePartyStatBonuses"
+source = "src/system/save_party_stats.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CBDC"
+name = "Lufia2SaveRestorePartyBaseStats"
+source = "src/system/save_party_stats.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CA22"
+name = "Lufia2SavePackPartyRecord"
+source = "src/system/save_party_pack.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:C954"
+name = "Lufia2SavePackState"
+source = "src/system/save_state_pack.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:C60E"
+name = "Lufia2SaveRestoreState"
+source = "src/system/save_state_restore.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
