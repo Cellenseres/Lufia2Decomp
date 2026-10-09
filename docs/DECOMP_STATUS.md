@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1155 functions in `metadata/functions.toml`: 1155 verified, 0 draft, 0 identified, 0 disabled.
+1156 functions in `metadata/functions.toml`: 1156 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4572,3 +4572,28 @@ states each. Portrait composition covers empty slots; the nonempty loader
 is independently reconstructed. The existing M1X0 allocator binding falls
 back in 1,024 composed M0X0 calls; those fallbacks are explicitly checked.
 Twelve public-library jobs, all 1,196 full jobs and Windows Release pass.
+
+### Shared party gauge and queue entry modes
+
+The independent party-gauge entry reuses the existing four-part gauge core.
+Three redundant direct-page reads are removed to retain the original bus
+sequence. The shared division uses the original SBC operation, including
+decimal mode. Existing M1X0 queue selection remains intact; the additional
+M0X0 context retains both proven inherited data banks and the full-queue
+original BRK continuation. No second gauge or allocator is reconstructed.
+
+106,496 original-ROM and 106,496 production-ABI states pass across the gauge
+core, existing labeled gauge, division and queue. The direct gauge matrix
+covers all 256 data banks, three direct pages and both decimal modes;
+division additionally covers all four M/X combinations. 6,528 entry guards,
+39 bounded altered-ROM controls and four C++ interfaces pass. All 68
+executed gauge instruction states and both queue accumulator widths are
+covered. CPU, full WRAM, MMIO and ordered data access remain literal.
+
+2,048 party-detail compositions execute all six original digit/gauge children,
+with 12,288 actual returns and 6,144 native gauge calls without fallback.
+2,048 additional mixed display parents execute 20,480 original child returns;
+the allocator now executes 1,024 M0X0 calls natively, without fallback.
+Those portrait compositions cover empty slots. Unknown portrait-loader paths
+are not claimed by these compositions.
+Six public-library jobs, all 1,202 full jobs and Windows Release pass.

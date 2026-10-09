@@ -139,7 +139,7 @@ Lufia2ExecutionResult Lufia2Divide16(
             if (!cpu->carry)
                 continue;
         }
-        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x51u));
+        OpSbcValue(cpu, Read16Direct(memory, cpu, 0x51u));
         OpStepMem(memory, cpu, OpDp(cpu, 0x4eu), 1);
     }
     UnpackStatus(cpu, Pull8(memory, cpu));

@@ -51,7 +51,8 @@ static void GaugeFill(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSepWidths(cpu, 0x20u);
     for (unsigned part = 0; part < 4u; ++part) {
         const uint8_t cap = part == 0u || part == 3u ? 5u : 8u;
-        OpLda(memory, cpu, OpDp(cpu, GAUGE_DP_REMAINING));
+        if (part == 0u)
+            OpLda(memory, cpu, OpDp(cpu, GAUGE_DP_REMAINING));
         OpCmpValue(cpu, (uint8_t)(cap + 1u));
         if (cpu->carry)
             OpLoadA(cpu, cap);
@@ -131,4 +132,12 @@ Lufia2ExecutionResult Lufia2BattleStatusDigits(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpAbsY(cpu, 8u));
     OpPullY(memory, cpu);
     return ExecutionReturned(0x81e307u);
+}
+
+Lufia2ExecutionResult Lufia2BattleFillStatusGauge(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81e308u);
+    GaugeFill(memory, cpu);
+    return ExecutionReturned(0x81e38eu);
 }
