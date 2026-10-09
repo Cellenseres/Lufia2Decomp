@@ -338,6 +338,15 @@ add_library(lufia2_decomp STATIC
     src/system/multiply_16_by_8.c
     src/system/random.c
     src/system/save.c
+    src/system/save_party_stats.c
+    src/system/save_party_pack.c
+    src/system/save_state_pack.c
+    src/system/save_state_restore.c
+    src/system/save_capsule_record.c
+    src/system/save_party_check.c
+    src/system/save_party_unpack.c
+    src/system/field_save_state.c
+    src/system/save_record_checksum.c
     src/system/music.c
     src/system/sound_commands.c
     src/system/sound_driver.c

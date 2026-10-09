@@ -902,6 +902,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:B26D` | `Lufia2BattleCircleWidths` | verified | `src/battle/battle_circle_window.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
 | `$85:C4F1` | `Lufia2BattleExpandActionMessage` | verified | `src/battle/battle_message_parser.c` |
+| `$85:C60E` | `Lufia2SaveRestoreState` | verified | `src/system/save_state_restore.c` |
+| `$85:C754` | `Lufia2SaveUnpackPartyRecord` | verified | `src/system/save_party_unpack.c` |
+| `$85:C8CF` | `Lufia2SaveUnpackCapsuleRecord` | verified | `src/system/save_capsule_record.c` |
+| `$85:C932` | `Lufia2SaveFlagPartyLevelMismatch` | verified | `src/system/save_party_check.c` |
+| `$85:C954` | `Lufia2SavePackState` | verified | `src/system/save_state_pack.c` |
+| `$85:CA22` | `Lufia2SavePackPartyRecord` | verified | `src/system/save_party_pack.c` |
+| `$85:CB7B` | `Lufia2SavePackCapsuleRecord` | verified | `src/system/save_capsule_record.c` |
+| `$85:CBD2` | `Lufia2SavePackStatBits` | verified | `src/system/save_party_unpack.c` |
+| `$85:CBDC` | `Lufia2SaveRestorePartyBaseStats` | verified | `src/system/save_party_stats.c` |
+| `$85:CC69` | `Lufia2SaveDerivePartyStatBonuses` | verified | `src/system/save_party_stats.c` |
 | `$85:CCCE` | `Lufia2BattleClearActionWork` | verified | `src/battle/battle_action_work.c` |
 | `$85:CCE3` | `Lufia2BattleClearSavedActionWork` | verified | `src/battle/battle_action_work.c` |
 | `$85:CCF8` | `Lufia2BattleClearActionRecords` | verified | `src/battle/battle_action_work.c` |
@@ -922,6 +932,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:DD63` | `Lufia2BattleVelocityOfAngle` | verified | `src/battle/battle_vector.c` |
 | `$85:DE1E` | `Lufia2BattleCosineOfAngle` | verified | `src/battle/battle_vector.c` |
 | `$85:DE2A` | `Lufia2BattleSineOfAngle` | verified | `src/battle/battle_vector.c` |
+| `$85:DE6C` | `Lufia2SaveRecordChecksum` | verified | `src/system/save_record_checksum.c` |
 | `$85:DE8E` | `Lufia2BattleClearEnemySpriteSlots` | verified | `src/battle/battle_encounter_loader.c` |
 | `$85:DE9D` | `Lufia2BattleInitializeEnemySpriteRecords` | verified | `src/battle/battle_enemy_sprite_setup.c` |
 | `$85:DEDC` | `Lufia2BattleInitializeEnemySpriteRecord` | verified | `src/battle/battle_enemy_sprite_setup.c` |
@@ -1045,6 +1056,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:B000` | `Lufia2FieldRunMenu` | verified | `src/field/field_menu.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |
+| `$8E:B993` | `Lufia2RestoreSavedFieldState` | verified | `src/system/field_save_state.c` |
+| `$8E:BA0D` | `Lufia2CaptureFieldSaveState` | verified | `src/system/field_save_state.c` |
 | `$8E:BB2E` | `Lufia2FieldCycleSelectedSprite` | verified | `src/field/field_sprite_selector.c` |
 | `$8E:BBA8` | `Lufia2FieldTakeSpriteSelectionButtons` | verified | `src/field/field_sprite_selector.c` |
 | `$8E:BC99` | `Lufia2FieldSelectMenuActor` | verified | `src/menu/menu_actor_callers.c` |

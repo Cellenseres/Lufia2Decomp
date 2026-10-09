@@ -316,6 +316,45 @@ Lufia2ExecutionResult Lufia2SystemCalculateVectorAngle(
 Lufia2ExecutionResult Lufia2SystemDivide24ByByte(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Original saved field blocks and scalar state. */
+Lufia2ExecutionResult Lufia2RestoreSavedFieldState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2CaptureFieldSaveState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Original alternating-byte save-record checksum; binary mode. */
+Lufia2ExecutionResult Lufia2SaveRecordChecksum(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Original party and capsule save records. */
+Lufia2ExecutionResult Lufia2SaveUnpackCapsuleRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2SavePackCapsuleRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2SaveFlagPartyLevelMismatch(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2SaveUnpackPartyRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2SavePackStatBits(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Original save record reconstruction and stat work. */
+Lufia2ExecutionResult Lufia2SaveDerivePartyStatBonuses(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2SaveRestorePartyBaseStats(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2SavePackPartyRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2SavePackState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2SaveRestoreState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif
