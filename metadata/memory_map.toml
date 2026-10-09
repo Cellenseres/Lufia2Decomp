@@ -4922,3 +4922,27 @@ width = 1
 count = 6
 owner = "menu"
 notes = "Original menu session reset storage; purpose remains neutral."
+
+[[location]]
+name = "capsule_last_ability_flags"
+address = "7E:11D6"
+width = 2
+count = 1
+owner = "capsule"
+notes = "Final word of the seven Capsule ability masks based at11CA. Earlier words overlap existing capsule_flag_bytes storage; the original20-byte clear ends at11D5."
+
+[[location]]
+name = "unk_7E1562"
+address = "7E:1562"
+width = 1
+count = 1
+owner = "menu"
+notes = "Byte copied from direct-page31 by82E84C before the original selection display. Purpose remains unproven."
+
+[[location]]
+name = "menu_frame_flags"
+address = "7E:0074"
+width = 1
+count = 1
+owner = "menu"
+notes = "Name-entry frame requests; bit08 is set after lower text, insertion and removal updates. Original direct-page access follows live D; the canonical location is74 when D is zero."

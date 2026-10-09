@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1122 functions in `metadata/functions.toml`: 1122 verified, 0 draft, 0 identified, 0 disabled.
+1139 functions in `metadata/functions.toml`: 1139 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
@@ -146,3 +146,15 @@ slot updates without interpreting the reconstructed parent/child chain.
 
 Menu selection and session services retain original input returns, cursor
 frames, Capsule records, gold arithmetic and field-buffer ordering.
+
+Capsule abilities and party spell registration retain original ROM tables,
+form masks, saved records and the36-slot learning rules.
+
+Original save-selection callers retain callback, mode and display contracts
+while the remaining inline-table dispatcher stays an explicit child.
+
+Capsule and received-item selection callers retain their original saved IDs,
+stat transfers, inventory decisions and shared display returns.
+
+Name-entry and item-selection loops retain original input repeats, glyph
+records, cursor edges, closure conditions and scenario handoff.

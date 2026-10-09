@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1122 functions in `metadata/functions.toml`: 1122 verified, 0 draft, 0 identified, 0 disabled.
+1139 functions in `metadata/functions.toml`: 1139 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4406,3 +4406,71 @@ in these parent proofs. 20,736 guards, 315 redirects, fourteen forced unwinds,
 127 effective bounded ROM mutations and six C++ APIs pass. All 156 reachable
 noncall/return boundaries across 180 original instruction states are covered.
 Public-library proofs, all 1,128 full jobs and Windows Release pass.
+
+### Capsule ability flags and spell registration
+
+Six complete M1X0 contracts preserve saved-stat writes, per-Capsule ability
+words, original three-bit form shifts, ROM-backed ability values, unlocking
+and the original36-slot party spell list. Applicability, duplicates, full
+lists, FF insertion, carry, live pointers and CPU/ordered bus effects remain
+literal. The form-zero16-bit-wrap shift loop remains unchanged and tested.
+The final ability word11D6 is catalogued without overlapping existing flags;
+the original20-byte flag clear still ends at11D5.
+
+53,258 original-ROM and production-ABI root states each pass, including
+8,192 complete parents with15,694 actual returns through all five child APIs.
+20,736 guards,255 redirects,nine forced unwinds,84 effective bounded ROM
+controls and six C++ APIs pass. All114 reachable noncall-return boundaries
+across132 original instruction states are covered. Public-library proofs, all1,148 full jobs and Windows Release pass.
+
+### Save-selection callers and shared display
+
+Six complete M1X0 contracts preserve selection setup, alternate modes,
+callback restoration, shared display, original frame flags and pushed
+JSR/JSL frames. Five original RTL callers share one original RTS display
+service. The inlineE8CB dispatch table remains an explicit child, and the
+already recoveredE8DE routine is neither duplicated nor decoded as data.
+
+30,742 original-ROM and production-ABI root states each pass, including
+6,144 nested roots with30,720 actual returns through six recovered child
+APIs. Remaining child internals are explicit controlled contracts, not
+claims of complete original gameplay.20,736 guards,555 redirects,22 forced
+unwinds,30 bounded altered-ROM controls and six C++ APIs pass. All30
+noncall-return boundaries across58 original instruction states are covered.
+Public-library proofs, all1,148 full jobs and Windows Release pass.
+
+### Capsule and received-item selection callers
+
+Two complete M1X0 contracts retain original selection setup, saved Capsule
+IDs, ROM-backed initial levels, stat transfers and conditional item display.
+The shared item return restores M1 on both M0 and M1 arrivals. The original
+09D0 bit update belongs to the existing selected-spell word; no overlapping
+field is introduced. The unexplained1562 byte remains neutrally named.
+
+20,500 original-ROM and production-ABI root states each pass, including
+4,096 nested roots with34,648 actual returns through16 recovered child APIs.
+Unknown graphics, fades, Capsule services and inline dispatch children remain
+explicit controlled contracts.6,912 guards,465 redirects,20 forced unwinds,
+47 bounded altered-ROM controls and two C++ APIs pass. All47 reachable
+noncall-return boundaries across71 instruction states are covered.
+Public-library proofs, all1,148 full jobs and Windows Release pass.
+
+### Name-entry and item selection loops
+
+Three complete M1X0 RTS contracts retain input repeats, character insertion,
+deletion, cursor-edge behavior, item actions, conditional menu closure and
+the original scenario handoff. Name text edits reuse the recovered record
+and glyph routines. Cursor and item flags stay live; original loops and
+their flags, byte widths, stack frames and ordered bus effects remain exact.
+Name-entry frame flags74 now share one catalogued name; the existing name
+routines change only that constant spelling.
+
+15,387 original-ROM and production-ABI root states each pass, including
+3,072 nested roots with13,808 actual returns through six name and item APIs.
+Unknown input, presentation and inline-table children remain explicit.
+10,368 guards,540 redirects,27 forced unwinds,80 bounded altered-ROM controls
+and three C++ APIs pass. All97 reachable noncall-return boundaries across127
+instruction states are covered. Initial reduced control cases omitted one
+cursor origin and an item flag; both were added. Altered unconditional jumps
+outside the valid loop are excluded, not counted as detected mismatches.
+Public-library proofs, all1,148 full jobs and Windows Release pass.

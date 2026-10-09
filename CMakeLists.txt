@@ -329,6 +329,7 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_scene_setup.c
     src/party/capsule.c
     src/party/capsule_records.c
+    src/party/capsule_abilities.c
     src/party/experience.c
     src/party/level_up.c
     src/party/stat_growth.c
@@ -352,6 +353,9 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_confirmation.c
     src/menu/menu_price_followup.c
     src/menu/menu_context_services.c
+    src/menu/menu_dispatch_callers.c
+    src/menu/menu_inventory_capsule_callers.c
+    src/menu/menu_selection_callers.c
     src/system/save_file_check.c
     src/system/save_file_flags.c
     src/title/title_selection.c

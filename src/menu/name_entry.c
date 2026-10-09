@@ -7,7 +7,6 @@ enum {
     DP_NAME_UPPER_TILES = 0x08u,
     DP_NAME_LOWER_TILES = 0x0bu,
     DP_NAME_TEXT_BANK = 0x5fu,
-    DP_NAME_FRAME_FLAGS = 0x74u,
     DP_NAME_RECORD = 0x2au,
     NAME_GRID_SLOT = 5u,
     NAME_GRID_ORIGIN = 0x34u,
@@ -75,7 +74,7 @@ Lufia2ExecutionResult Lufia2MenuPrepareNameEntryLowerText(
             0x82f130u, 0x808878u, 3u, cpu->program_bank))
         return NameEntryChildUnwound(0x82f130u);
     OpLoadA(cpu, 8u);
-    OpTestBits(memory, cpu, OpDp(cpu, DP_NAME_FRAME_FLAGS), true);
+    OpTestBits(memory, cpu, OpDp(cpu, DP_MENU_FRAME_FLAGS), true);
     return ExecutionReturned(0x82f138u);
 }
 
@@ -182,7 +181,7 @@ Lufia2ExecutionResult Lufia2MenuInsertNameEntryCharacter(
             0x82f54eu, 0x82f556u, 2u, cpu->program_bank))
         return NameEntryChildUnwound(0x82f54eu);
     OpLoadA(cpu, 8u);
-    OpTestBits(memory, cpu, OpDp(cpu, DP_NAME_FRAME_FLAGS), true);
+    OpTestBits(memory, cpu, OpDp(cpu, DP_MENU_FRAME_FLAGS), true);
     return ExecutionReturned(0x82f555u);
 }
 

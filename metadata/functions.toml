@@ -9112,3 +9112,139 @@ source = "src/menu/menu_context_services.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:C443"
+name = "Lufia2CapsuleStoreSavedStats"
+source = "src/party/capsule_abilities.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C4A2"
+name = "Lufia2CapsuleSelectAbilityFlags"
+source = "src/party/capsule_abilities.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C4B3"
+name = "Lufia2CapsuleReadAbilityByte"
+source = "src/party/capsule_abilities.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CCFE"
+name = "Lufia2CapsuleBuildAbilityMask"
+source = "src/party/capsule_abilities.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CD41"
+name = "Lufia2CapsuleUnlockAbility"
+source = "src/party/capsule_abilities.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FD3D"
+name = "Lufia2PartyLearnSelectedSpell"
+source = "src/party/capsule_abilities.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E75D"
+name = "Lufia2TitleOpenSaveSelection"
+source = "src/menu/menu_selection_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E77C"
+name = "Lufia2TitleRestoreSaveSelection"
+source = "src/menu/menu_selection_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E78D"
+name = "Lufia2TitleOpenAlternateSaveSelection"
+source = "src/menu/menu_selection_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E861"
+name = "Lufia2MenuOpenAlternateSaveSelection"
+source = "src/menu/menu_selection_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E87B"
+name = "Lufia2MenuOpenClearedSaveSelection"
+source = "src/menu/menu_selection_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E8B2"
+name = "Lufia2MenuRunSaveSelection"
+source = "src/menu/menu_selection_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E7AA"
+name = "Lufia2CapsuleOpenSelection"
+source = "src/menu/menu_inventory_capsule_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E80C"
+name = "Lufia2MenuOpenItemSelection"
+source = "src/menu/menu_inventory_capsule_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:EBF2"
+name = "Lufia2MenuRunNameEntry"
+source = "src/menu/menu_dispatch_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B104"
+name = "Lufia2MenuRunItemSelection"
+source = "src/menu/menu_dispatch_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:EEF2"
+name = "Lufia2MenuRunScenarioSelection"
+source = "src/menu/menu_dispatch_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
