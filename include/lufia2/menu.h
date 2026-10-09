@@ -756,6 +756,10 @@ Lufia2ExecutionResult Lufia2MenuSaveSelectionState(
 Lufia2ExecutionResult Lufia2MenuResetSaveSelectionRecords(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2MenuDrawCharacterSummary(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

@@ -117,6 +117,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C8D5` | `Lufia2TextRenderSceneLabel` | verified | `src/text/scene_label_callers.c` |
 | `$80:C9C0` | `Lufia2TextExpandSceneString` | verified | `src/text/scene_text_resources.c` |
 | `$80:CBAE` | `Lufia2FieldEventTimerTick` | verified | `src/field/field_event_script.c` |
+| `$80:CC26` | `Lufia2FieldRequestTilemapUploads` | verified | `src/field/field_redraw_flags.c` |
 | `$80:CE5C` | `Lufia2FieldReadObjectRegionDestination` | verified | `src/field/field_event_object_region.c` |
 | `$80:CE7E` | `Lufia2FieldReadObjectRegionArea` | verified | `src/field/field_event_object_region.c` |
 | `$80:D077` | `Lufia2FieldReadObjectRegionPosition` | verified | `src/field/field_event_object_region.c` |
@@ -152,6 +153,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:EBAA` | `Lufia2FieldLoadSectionRecords` | verified | `src/field/field_section_entries.c` |
 | `$80:EC18` | `Lufia2FieldBuildPackedAttributes` | verified | `src/field/field_section_entries.c` |
 | `$80:EC78` | `Lufia2FieldPublishSectionSize` | verified | `src/field/field_section_entries.c` |
+| `$80:EC98` | `Lufia2FieldDecompressMapData` | verified | `src/field/field_sections.c` |
 | `$80:ECF2` | `Lufia2FieldAdvanceMapDestination` | verified | `src/field/field_section_entries.c` |
 | `$80:ECFE` | `Lufia2FieldResolveMapOffset` | verified | `src/field/field_section_entries.c` |
 | `$80:ED0E` | `Lufia2FieldUnpackAttributes` | verified | `src/field/field_attributes.c` |
@@ -523,6 +525,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:939C` | `Lufia2MenuNmi` | verified | `src/menu/menu.c` |
 | `$82:93CF` | `Lufia2MenuPlacePartyPortraits` | verified | `src/menu/menu_display_callers.c` |
 | `$82:93F6` | `Lufia2MenuPrepareDisplayText` | verified | `src/menu/menu_presentation_callers.c` |
+| `$82:94C0` | `Lufia2MenuDrawCharacterSummary` | verified | `src/menu/menu_field_dispatch.c` |
 | `$82:950E` | `Lufia2MenuMemberStatus` | verified | `src/menu/menu_screen.c` |
 | `$82:97E3` | `Lufia2MenuPlaySelectionFeedback` | verified | `src/menu/menu_price_followup.c` |
 | `$82:9808` | `Lufia2MenuCreditSelectionGold` | verified | `src/menu/menu_context_services.c` |
@@ -684,6 +687,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:8323` | `Lufia2FieldScalePaletteBlue` | verified | `src/field/field_recovery.c` |
 | `$83:8327` | `Lufia2FieldLoadRecoveryGraphics` | verified | `src/field/field_recovery.c` |
 | `$83:834A` | `Lufia2FieldConfigureRecoveryObjects` | verified | `src/field/field_recovery.c` |
+| `$83:8386` | `Lufia2FieldRunSaveMenu` | verified | `src/menu/menu_field_dispatch.c` |
 | `$83:83A0` | `Lufia2FieldMenuRequest` | verified | `src/field/field_update.c` |
 | `$83:83E0` | `Lufia2FieldEncounterHandoff` | verified | `src/field/encounter.c` |
 | `$83:83EB` | `Lufia2FieldBattleTransition` | verified | `src/field/field_battle_transition.c` |
