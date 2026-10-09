@@ -9376,3 +9376,11 @@ source = "src/battle/battle_party_status_detail.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:E308"
+name = "Lufia2BattleFillStatusGauge"
+source = "src/battle/battle_gauges.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -421,6 +421,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:E1B5` | `Lufia2BattleDrawPartyStatusDetail` | verified | `src/battle/battle_party_status_detail.c` |
 | `$81:E2AF` | `Lufia2BattleStatusGauge` | verified | `src/battle/battle_gauges.c` |
 | `$81:E2C8` | `Lufia2BattleStatusDigits` | verified | `src/battle/battle_gauges.c` |
+| `$81:E308` | `Lufia2BattleFillStatusGauge` | verified | `src/battle/battle_gauges.c` |
 | `$81:E3AE` | `Lufia2BattleWindowE3AE` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E3CD` | `Lufia2BattleWindowE3CD` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E3EC` | `Lufia2BattleTileWindow` | verified | `src/battle/battle_frame_rows.c` |
