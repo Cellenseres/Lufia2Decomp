@@ -4830,3 +4830,17 @@ name = "unk_7E09C2"
 width = 2
 owner = "title"
 notes = "Original title selection work field; meaning remains neutral."
+
+[[location]]
+address = "7E:11DF"
+name = "unk_7E11DF"
+width = 1
+owner = "menu"
+notes = "Original save-menu preparation byte; meaning remains neutral."
+
+[[location]]
+address = "7E:1558"
+name = "unk_7E1558"
+width = 1
+owner = "menu"
+notes = "Original save-display style selector; meaning remains neutral."

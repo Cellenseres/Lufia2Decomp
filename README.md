@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1074 functions in `metadata/functions.toml`: 1074 verified, 0 draft, 0 identified, 0 disabled.
+1081 functions in `metadata/functions.toml`: 1081 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
@@ -124,3 +124,6 @@ with `-DLUFIA2_DECOMP_ROOT=<path>`.
   reverse-engineering references and the rules for using them.
 - [docs/CAPTURE_RESEARCH.md](docs/CAPTURE_RESEARCH.md): gameplay-capture
   research notes.
+
+Save-menu constructors preserve all four original descriptors, stored selection,
+cursor setup andnested call frames throughverified native contracts.

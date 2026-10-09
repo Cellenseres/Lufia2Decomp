@@ -8728,3 +8728,59 @@ source = "src/system/save_file_check.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:F20A"
+name = "Lufia2SaveBuildMenuSlots"
+source = "src/menu/save_menu_build.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F22B"
+name = "Lufia2SaveBuildMenuSlot"
+source = "src/menu/save_menu_build.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F481"
+name = "Lufia2SaveRestoreMenuSelection"
+source = "src/menu/save_menu_build.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:EEF7"
+name = "Lufia2SavePrepareMenuCursors"
+source = "src/menu/save_menu_build.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E941"
+name = "Lufia2SaveOpenMenu"
+source = "src/menu/save_menu_parent.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E95D"
+name = "Lufia2SaveRunAlternateMenu"
+source = "src/menu/save_menu_parent.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:EF25"
+name = "Lufia2SavePrepareSlotDisplay"
+source = "src/menu/save_menu_parent.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
