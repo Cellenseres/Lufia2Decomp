@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1142 functions in `metadata/functions.toml`: 1142 verified, 0 draft, 0 identified, 0 disabled.
+1143 functions in `metadata/functions.toml`: 1143 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4497,3 +4497,22 @@ these exact bus effects without changing shared CPU helpers or ROM quirks.
 4096 window geometries and4096 generated strings, including91 exact
 interpreter handoffs, pass CPU/full WRAM/ordered bus comparison.
 Seven public-library jobs, all1,155 full jobs and Windows Release pass.
+
+### Cursor selection state persistence
+
+The complete8E:E710 writer retains the six column/row records, original
+ROM-selected bank7F cache, starting-index behavior and three scroll/list
+words. The existing8E:E751 reader is reverified in the same batch; no
+duplicate reader or speculative menu layout is introduced.
+
+16,384 direct original-ROM and production-ABI states each cover both
+contracts, all18 original state keys, six starting indices and all reader
+branches. CPU, full WRAM, MMIO and ordered pointer-table/WRAM access match.
+4,096 save/change/restore transactions additionally check both original
+boundaries and restored cursor/scroll values;8,192 native ABI calls pass.
+6,912 rejected entry states,24 bounded altered-ROM controls and two C++
+contracts pass. All34 nonreturn boundaries of the35-state writer are covered.
+The writer remains literal for other starting indices; runtime selection
+requires the same proven Y<6 contract as the existing reader. Unknown
+DP relocation effects remain original; transaction value assertions use D0.
+Five public-library jobs, all1,160 full jobs and Windows Release pass.

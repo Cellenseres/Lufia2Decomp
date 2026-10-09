@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1142 functions in `metadata/functions.toml`: 1142 verified, 0 draft, 0 identified, 0 disabled.
+1143 functions in `metadata/functions.toml`: 1143 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
@@ -161,3 +161,5 @@ records, cursor edges, closure conditions and scenario handoff.
 
 Save/erase confirmation retains original SRAM operations and child frames.
 Menu window and string drawing preserve original ordered data accesses.
+
+Menu selection caches preserve the original six cursor records and scroll words.
