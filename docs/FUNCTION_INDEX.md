@@ -1148,5 +1148,6 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:BD77` | `Lufia2FieldScrollUpdate` | verified | `src/field/field_scroll.c` |
 | `$8E:C338` | `Lufia2FieldSelectObjectCondition` | verified | `src/field/field_object_conditions.c` |
 | `$8E:C34F` | `Lufia2FieldResolveObjectCondition` | verified | `src/field/field_object_conditions.c` |
+| `$8E:E710` | `Lufia2MenuSaveSelectionState` | verified | `src/menu/menu_selection_save.c` |
 | `$8E:E751` | `Lufia2MenuRestoreSelectionState` | verified | `src/menu/menu_selection_state.c` |
 <!-- metadata-index:end -->

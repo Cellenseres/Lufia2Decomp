@@ -9272,3 +9272,11 @@ source = "src/menu/menu_save_erase.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "8E:E710"
+name = "Lufia2MenuSaveSelectionState"
+source = "src/menu/menu_selection_save.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
