@@ -353,6 +353,7 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_confirmation.c
     src/menu/menu_price_followup.c
     src/menu/menu_context_services.c
+    src/menu/menu_save_erase.c
     src/menu/menu_dispatch_callers.c
     src/menu/menu_inventory_capsule_callers.c
     src/menu/menu_selection_callers.c

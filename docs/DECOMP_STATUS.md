@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1139 functions in `metadata/functions.toml`: 1139 verified, 0 draft, 0 identified, 0 disabled.
+1142 functions in `metadata/functions.toml`: 1142 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4474,3 +4474,26 @@ instruction states are covered. Initial reduced control cases omitted one
 cursor origin and an item flag; both were added. Altered unconditional jumps
 outside the valid loop are excluded, not counted as detected mismatches.
 Public-library proofs, all1,148 full jobs and Windows Release pass.
+
+### Save confirmation and erase selection
+
+Three complete M1X0 RTS contracts retain alternate slot views, overwrite
+confirmation, cancellation, repeated input, SRAM header flags, two erase
+confirmations and the original8192 byte erase loop. Unknown save/input and
+presentation children remain explicit pushed-frame contracts.
+
+15,404 original-ROM and production-ABI roots each pass, including3072 nested
+roots with15104 actual returns through six recovered APIs. Full WRAM,8KiB
+mirrored SRAM, CPU, MMIO and ordered data access are compared.10368 guards,
+780 redirects,44 forced unwinds,77 bounded altered-ROM controls and three
+C++ contracts pass. All88 noncall-return boundaries across135 instruction
+states are covered. Counter-removal and invalid unconditional-jump mutants
+are excluded; none is claimed as a detected semantic mismatch.
+
+Nested parents exposed existing decomp fidelity gaps: original wordDEC
+writes high byte first, three text dispatches read original ROM tables,
+and branch operands reload the original format byte. Local changes restore
+these exact bus effects without changing shared CPU helpers or ROM quirks.
+4096 window geometries and4096 generated strings, including91 exact
+interpreter handoffs, pass CPU/full WRAM/ordered bus comparison.
+Seven public-library jobs, all1,155 full jobs and Windows Release pass.

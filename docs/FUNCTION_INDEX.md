@@ -617,12 +617,15 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E998` | `Lufia2TitleLoadSaveSelectionBits` | verified | `src/title/title_selection.c` |
 | `$82:E9D5` | `Lufia2SaveRunMenuActions` | verified | `src/menu/save_menu_dispatch.c` |
 | `$82:EA3B` | `Lufia2SaveRunSlotActions` | verified | `src/menu/save_menu_dispatch.c` |
+| `$82:EAF4` | `Lufia2SaveRunSelection` | verified | `src/menu/menu_save_erase.c` |
 | `$82:EB9A` | `Lufia2MenuConfirmExit` | verified | `src/menu/menu_confirmation.c` |
 | `$82:EBF2` | `Lufia2MenuRunNameEntry` | verified | `src/menu/menu_dispatch_callers.c` |
 | `$82:ECAF` | `Lufia2SaveTestRecordList` | verified | `src/menu/save_menu_actions.c` |
 | `$82:ECF3` | `Lufia2SaveSelectAlternatePartyMember` | verified | `src/menu/save_menu_actions.c` |
 | `$82:ED50` | `Lufia2MenuConfirmAlternateSelection` | verified | `src/menu/menu_confirmation.c` |
 | `$82:EDDF` | `Lufia2MenuApplyAlternateSelection` | verified | `src/menu/menu_price_followup.c` |
+| `$82:EE28` | `Lufia2SaveRunEraseSelection` | verified | `src/menu/menu_save_erase.c` |
+| `$82:EEC2` | `Lufia2SaveDrawErasePrompt` | verified | `src/menu/menu_save_erase.c` |
 | `$82:EEF2` | `Lufia2MenuRunScenarioSelection` | verified | `src/menu/menu_dispatch_callers.c` |
 | `$82:EEF7` | `Lufia2SavePrepareMenuCursors` | verified | `src/menu/save_menu_build.c` |
 | `$82:EF25` | `Lufia2SavePrepareSlotDisplay` | verified | `src/menu/save_menu_parent.c` |

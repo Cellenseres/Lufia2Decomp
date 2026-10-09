@@ -4946,3 +4946,19 @@ width = 1
 count = 1
 owner = "menu"
 notes = "Name-entry frame requests; bit08 is set after lower text, insertion and removal updates. Original direct-page access follows live D; the canonical location is74 when D is zero."
+
+[[location]]
+name = "unk_7E156C"
+address = "7E:156C"
+width = 2
+count = 1
+owner = "menu"
+notes = "Erase selection stores8080 before original82935D presentation service. Purpose remains unproven."
+
+[[location]]
+name = "unk_7E156E"
+address = "7E:156E"
+width = 2
+count = 1
+owner = "menu"
+notes = "Erase selection stores8080 before original82935D presentation service. Purpose remains unproven."
