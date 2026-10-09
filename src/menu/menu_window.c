@@ -1,6 +1,6 @@
 /* Menu window frames ($82:810E). */
 
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/menu.h"
 
 enum {
@@ -57,7 +57,7 @@ static void WindowEdgeDraw(const Lufia2Memory *memory, Lufia2CpuState *cpu,
             }
             LoadA16(cpu, (uint16_t)(cpu->y ^ 0x0002u));
             TransferAToY(cpu);
-            Decrement16Direct(memory, cpu, 0x5au);
+            OpStepMem(memory, cpu, OpDp(cpu, 0x5au), -1);
         } while (!cpu->zero);
         return;
     }
@@ -134,7 +134,7 @@ Lufia2ExecutionResult Lufia2MenuDrawWindow(
         cpu->carry = 0;
         Add16Value(cpu, 0x0040u);
         StoreADirect16(memory, cpu, 0x63u);
-        Decrement16Direct(memory, cpu, 0x5au);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x5au), -1);
     } while (!cpu->zero);
     LoadY16(cpu, 0x0000u);                                     /* top */
     LoadA16(cpu, Read16Direct(memory, cpu, POSITION));

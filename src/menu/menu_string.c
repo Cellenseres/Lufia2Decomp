@@ -8,6 +8,9 @@
 #include "system/dp_scratch.h"
 
 enum {
+    ROM_MENU_CONTROL_TARGETS = 0x808e7cu,
+    ROM_MENU_STRING_TARGETS = 0x808a81u,
+    ROM_MENU_BRANCH_TARGETS = 0x808c11u,
     STRING = 0x5du,                     /* [$5D],Y */
     ATTRIBUTE = 0x0564u,                /* tile high byte */
     WIDTH = WRAM_MENU_TEXT_LINE_WIDTH,
@@ -680,6 +683,7 @@ static int MenuOpString(MenuVm *vm) {
         vm->handoff = 0x808a7eu;                               /* JMP ($8A81,x) */
         return MENU_HANDOFF;
     }
+    (void)Read16Long(memory, ROM_MENU_STRING_TARGETS + cpu->x);
     switch (kind) {
     case 0:                                                    /* 8A99 */
         SetAccumulatorWidth(cpu, 0);
@@ -796,6 +800,7 @@ static void MenuOperands(const MenuVm *vm) {
         StoreADirect16(memory, cpu, DP_SCRATCH_C);
         SetAccumulatorWidth(cpu, 1);
     } else {
+        LoadAAbsolute8(memory, cpu, FORMAT, 0);
         BitImmediate8(cpu, 0x40u);                             /* 8CDD */
         if (cpu->zero) {
             BitImmediate8(cpu, 0x20u);
@@ -839,6 +844,7 @@ static int MenuOpBranch(MenuVm *vm) {
         vm->handoff = 0x808c0eu;                               /* JMP ($8C11,x) */
         return MENU_HANDOFF;
     }
+    (void)Read16Long(memory, ROM_MENU_BRANCH_TARGETS + cpu->x);
     if (kind < 3u) {
         static const uint16_t kReturn[3] = {0x8c1bu, 0x8c40u, 0x8c50u};
 
@@ -934,6 +940,7 @@ static int MenuRun(MenuVm *vm) {
             vm->handoff = 0x8088c5u;                           /* JMP ($8E7C,x) */
             return 1;
         }
+        (void)Read16Long(memory, ROM_MENU_CONTROL_TARGETS + cpu->x);
         switch (cpu->x >> 1) {
         case 0x0:                                              /* 88E9 end */
             LoadX16(cpu, Absolute16(vm, CURSOR));

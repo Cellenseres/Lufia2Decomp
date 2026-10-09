@@ -9248,3 +9248,27 @@ source = "src/menu/menu_dispatch_callers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:EAF4"
+name = "Lufia2SaveRunSelection"
+source = "src/menu/menu_save_erase.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:EE28"
+name = "Lufia2SaveRunEraseSelection"
+source = "src/menu/menu_save_erase.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:EEC2"
+name = "Lufia2SaveDrawErasePrompt"
+source = "src/menu/menu_save_erase.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
