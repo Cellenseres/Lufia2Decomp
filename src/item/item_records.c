@@ -47,8 +47,8 @@ static void ItemName(
     PushAccumulator16(memory, cpu);
     AslA16(cpu);
     cpu->carry = 0;
-    Add16Value(cpu, (uint16_t)(Read8(memory, (uint16_t)(cpu->stack + 1u)) |
-        (Read8(memory, (uint16_t)(cpu->stack + 2u)) << 8)));   /* ADC $01,s */
+    Add16Value(cpu, Read16Pair(memory, (uint16_t)(cpu->stack + 1u),
+        (uint16_t)(cpu->stack + 2u)));   /* ADC $01,s */
     cpu->y = PullIndexValue(memory, cpu);
     TransferAToY(cpu);                                         /* item * 12 */
     LoadX16(cpu, 0x0000u);

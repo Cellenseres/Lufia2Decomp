@@ -8936,3 +8936,35 @@ source = "src/menu/menu_record_services.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:EB9A"
+name = "Lufia2MenuConfirmExit"
+source = "src/menu/menu_confirmation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:ED50"
+name = "Lufia2MenuConfirmAlternateSelection"
+source = "src/menu/menu_confirmation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:EFF6"
+name = "Lufia2MenuRestoreAlternateSelection"
+source = "src/menu/menu_confirmation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F5B5"
+name = "Lufia2MenuComputeSelectionPrice"
+source = "src/menu/menu_confirmation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

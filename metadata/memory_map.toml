@@ -4882,3 +4882,19 @@ width = 1
 count = 347
 owner = "menu"
 notes = "Original menu snapshot copied bytewise to7F:F080..F1DA by82:F682. Contents remain neutral."
+
+[[location]]
+address = "7E:14DC"
+name = "unk_7E14DC"
+width = 1
+count = 1
+owner = "menu"
+notes = "Original alternate-selection byte cleared by82:F04B; role remains neutral."
+
+[[location]]
+address = "7E:155A"
+name = "unk_7E155A"
+width = 1
+count = 1
+owner = "menu"
+notes = "Original alternate-display byte deciding whether saved buffers are restored."

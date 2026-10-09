@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1100 functions in `metadata/functions.toml`: 1100 verified, 0 draft, 0 identified, 0 disabled.
+1104 functions in `metadata/functions.toml`: 1104 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
@@ -133,3 +133,7 @@ member retries, packed windows and live child frames in verified native contract
 
 Verified name-entry and menu-record services preserve original glyphs,
 live buffers, equipment records and child frames through native contracts.
+
+Menu confirmation and price callers preserve original retries and returns.
+Original item-name stack reads are explicitly ordered; menu M0 item-byte
+reads use the native bridge within its verified context.
