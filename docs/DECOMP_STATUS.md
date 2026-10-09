@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1100 functions in `metadata/functions.toml`: 1100 verified, 0 draft, 0 identified, 0 disabled.
+1104 functions in `metadata/functions.toml`: 1104 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4336,3 +4336,25 @@ This group shares the full 1023-job verification and Windows Release build
 with the complete 23-entry integration batch. Its final combined stage has
 1043 verified entries, zero drafts, 597 fields and 4,176 generated calls.
 Counts do not describe measured runtime interpreter load.
+
+### Menu confirmations and item prices
+
+Four complete M1X0 callers cover exit confirmation, alternate selection,
+display restoration and selection prices. Their 50 original child sites,
+retry branches, fade waits, word/byte prices, stack values, flags and live
+data-bank reads remain literal. Two neutral fields reuse the original bytes.
+
+The existing item-name stack operand now uses explicit low/high reads. This
+corrects a C evaluation-order discrepancy demonstrated by real price calls;
+the original ROM behavior and all registers, flags and writes stay unchanged.
+The item-record-byte bridge additionally accepts the verified M0X0 menu
+context (PB81, DB7E, DP0, S1F10..1FFC). Its existing M1X0 contract is retained;
+canonical metadata stays M1X0. Other M0 contexts still use the interpreter.
+
+Shared original-ROM and production-ABI proofs pass 49,202 unique states each,
+including 8,192 nested parent states and 32,682 actual child returns. All 512
+item IDs and both accumulator modes are covered; record loading also covers
+its existing index modes. All 18,048 guards, 810 redirects, 50 forced unwinds,
+186 negative ROM controls and six C++ APIs pass. Other child internals remain
+explicit services. Public-library proofs and all 1,113 full verification jobs pass.
+Windows Release passes.

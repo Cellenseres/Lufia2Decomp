@@ -595,12 +595,15 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E998` | `Lufia2TitleLoadSaveSelectionBits` | verified | `src/title/title_selection.c` |
 | `$82:E9D5` | `Lufia2SaveRunMenuActions` | verified | `src/menu/save_menu_dispatch.c` |
 | `$82:EA3B` | `Lufia2SaveRunSlotActions` | verified | `src/menu/save_menu_dispatch.c` |
+| `$82:EB9A` | `Lufia2MenuConfirmExit` | verified | `src/menu/menu_confirmation.c` |
 | `$82:ECAF` | `Lufia2SaveTestRecordList` | verified | `src/menu/save_menu_actions.c` |
 | `$82:ECF3` | `Lufia2SaveSelectAlternatePartyMember` | verified | `src/menu/save_menu_actions.c` |
+| `$82:ED50` | `Lufia2MenuConfirmAlternateSelection` | verified | `src/menu/menu_confirmation.c` |
 | `$82:EEF7` | `Lufia2SavePrepareMenuCursors` | verified | `src/menu/save_menu_build.c` |
 | `$82:EF25` | `Lufia2SavePrepareSlotDisplay` | verified | `src/menu/save_menu_parent.c` |
 | `$82:EFB5` | `Lufia2SaveResetSlotCursor` | verified | `src/menu/save_menu_actions.c` |
 | `$82:EFC5` | `Lufia2MenuSavedWindow` | verified | `src/menu/menu_screen.c` |
+| `$82:EFF6` | `Lufia2MenuRestoreAlternateSelection` | verified | `src/menu/menu_confirmation.c` |
 | `$82:F0A2` | `Lufia2MenuNameEntryWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:F0F6` | `Lufia2MenuPrepareNameEntryUpperText` | verified | `src/menu/name_entry.c` |
 | `$82:F117` | `Lufia2MenuPrepareNameEntryLowerText` | verified | `src/menu/name_entry.c` |
@@ -616,6 +619,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F556` | `Lufia2MenuAppendNameEntryGlyph` | verified | `src/menu/name_entry.c` |
 | `$82:F585` | `Lufia2MenuRemoveNameEntryCharacter` | verified | `src/menu/name_entry.c` |
 | `$82:F5AF` | `Lufia2MenuClearNameEntryRecord` | verified | `src/menu/name_entry.c` |
+| `$82:F5B5` | `Lufia2MenuComputeSelectionPrice` | verified | `src/menu/menu_confirmation.c` |
 | `$82:F637` | `Lufia2MenuDrawSelectionMessage` | verified | `src/menu/menu_record_services.c` |
 | `$82:F682` | `Lufia2MenuRestoreSavedFieldBuffers` | verified | `src/menu/menu_record_services.c` |
 | `$82:F6A4` | `Lufia2PartyClearSecondaryModifiers` | verified | `src/party/capsule_stat_callers.c` |

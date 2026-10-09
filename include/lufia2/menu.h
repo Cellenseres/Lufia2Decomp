@@ -667,6 +667,22 @@ Lufia2ExecutionResult Lufia2MenuTestEquipmentItemFlag(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2MenuConfirmExit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuConfirmAlternateSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuRestoreAlternateSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuComputeSelectionPrice(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif
