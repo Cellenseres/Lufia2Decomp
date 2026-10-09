@@ -333,11 +333,13 @@ add_library(lufia2_decomp STATIC
     src/party/stat_growth.c
     src/party/party_records.c
     src/party/stats.c
+    src/party/party_equipment.c
     src/system/decompress.c
     src/system/math.c
     src/system/multiply_16_by_8.c
     src/system/random.c
     src/system/save.c
+    src/system/default_records.c
     src/system/save_party_stats.c
     src/system/save_party_pack.c
     src/system/save_state_pack.c

@@ -227,11 +227,7 @@ Lufia2ExecutionResult Lufia2PartyBaseStats(
 /* DEC abs, 16-bit. */
 static void Decrement16Absolute(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t address) {
-    const uint32_t at = AbsoluteIndexedAddress(cpu, address, 0);
-    const uint16_t value = (uint16_t)(Read16Long(memory, at) - 1u);
-
-    Write16Long(memory, at, value);
-    SetNz16(cpu, value);
+    OpStepMem(memory, cpu, OpAbs(cpu, address), -1);
 }
 
 static uint16_t SourceWord(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
@@ -329,12 +325,7 @@ static void MemberFinish(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, (uint16_t)(STATS + 2u * i), 0));
         StoreAAbsolute16(memory, cpu, kStats[i], cpu->y);
     }
-    {
-        const uint32_t member = AbsoluteIndexedAddress(cpu, MEMBER, 0);
-        const uint16_t next = (uint16_t)(Read16Long(memory, member) + 1u);
-
-        Write16Long(memory, member, next);
-    }
+    OpStepMem(memory, cpu, OpAbs(cpu, MEMBER), 1);
     LoadX16(cpu, Read16Direct(memory, cpu, 0xb2u));
     SimulateJslFrame(memory, cpu, 0x81u, returns[2]);
     (void)Lufia2PartyDerivedStats(memory, cpu);
