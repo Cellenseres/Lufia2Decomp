@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1143 functions in `metadata/functions.toml`: 1143 verified, 0 draft, 0 identified, 0 disabled.
+1148 functions in `metadata/functions.toml`: 1148 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4516,3 +4516,20 @@ The writer remains literal for other starting indices; runtime selection
 requires the same proven Y<6 contract as the existing reader. Unknown
 DP relocation effects remain original; transaction value assertions use D0.
 Five public-library jobs, all1,160 full jobs and Windows Release pass.
+
+### Initial map object setup
+
+Three complete M1X0 parents and two exact reset routines preserve conditional object records, the literal
+64-entry saved-control loop and pending-object tile/coordinate initialization.
+Original banks, widths, frames, FF terminators and bus access order remain.
+Headers and region updates remain explicit pushed-frame services.
+
+26,634 original-ROM and production-ABI parent states each pass, with2,048
+nested parents and59,094 actual child returns.15,360 unsupported states,
+90 redirected entries,10 forced unwinds,64 bounded altered-ROM controls
+and five C++ contracts pass.137 instruction states/122 noncall-return
+boundaries are covered. CPU/full WRAM/MMIO/ordered data access match.
+Pending-object event compositions cover the FF no-script path and timer
+states without script resumption; they do not claim complete event execution.
+The pending flags are48 original byte records, not a single-byte field.
+Thirteen public-library jobs, all 1,173 full jobs and Windows Release pass.

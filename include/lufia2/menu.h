@@ -753,6 +753,9 @@ Lufia2ExecutionResult Lufia2MenuRunScenarioSelection(
 Lufia2ExecutionResult Lufia2MenuSaveSelectionState(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2MenuResetSaveSelectionRecords(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

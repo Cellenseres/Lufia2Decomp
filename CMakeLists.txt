@@ -83,6 +83,7 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_main_dispatch.c
     src/menu/menu_selection_state.c
     src/menu/menu_selection_save.c
+    src/menu/menu_selection_reset.c
     src/menu/menu_display_callers.c
     src/menu/menu_cursor_callers.c
     src/menu/menu_presentation_callers.c
@@ -164,6 +165,9 @@ add_library(lufia2_decomp STATIC
     src/field/field_object_transitions.c
     src/field/field_object_lookup.c
     src/field/field_object_conditions.c
+    src/field/field_object_initialization.c
+    src/field/field_event_reset.c
+    src/field/field_pending_initialization.c
     src/field/field_coordinate_math.c
     src/field/field_object_motion.c
     src/field/field_probe_records.c
