@@ -9280,3 +9280,43 @@ source = "src/menu/menu_selection_save.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:86EA"
+name = "Lufia2FieldApplyObjectConditions"
+source = "src/field/field_object_initialization.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8728"
+name = "Lufia2FieldApplySavedObjectControls"
+source = "src/field/field_object_initialization.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:EA5B"
+name = "Lufia2FieldInitializePendingObjects"
+source = "src/field/field_pending_initialization.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:B581"
+name = "Lufia2FieldResetMapEventState"
+source = "src/field/field_event_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:E6EA"
+name = "Lufia2MenuResetSaveSelectionRecords"
+source = "src/menu/menu_selection_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

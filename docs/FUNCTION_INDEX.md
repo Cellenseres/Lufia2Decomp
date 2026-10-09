@@ -147,6 +147,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:EA09` | `Lufia2FieldResolveEventPosition` | verified | `src/field/field_event_coordinate.c` |
 | `$80:EA47` | `Lufia2FieldSaveActorSlot` | verified | `src/field/field_event_actors.c` |
 | `$80:EA50` | `Lufia2FieldRestoreActorSlot` | verified | `src/field/field_event_actors.c` |
+| `$80:EA5B` | `Lufia2FieldInitializePendingObjects` | verified | `src/field/field_pending_initialization.c` |
 | `$80:EAE7` | `Lufia2FieldLoadMapResources` | verified | `src/field/field_map_install.c` |
 | `$80:EBAA` | `Lufia2FieldLoadSectionRecords` | verified | `src/field/field_section_entries.c` |
 | `$80:EC18` | `Lufia2FieldBuildPackedAttributes` | verified | `src/field/field_section_entries.c` |
@@ -690,6 +691,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:85DC` | `Lufia2FieldReloadMap` | verified | `src/field/field_reload.c` |
 | `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |
 | `$83:8682` | `Lufia2FieldAnimationTickSlots` | verified | `src/field/field_animation_slots.c` |
+| `$83:86EA` | `Lufia2FieldApplyObjectConditions` | verified | `src/field/field_object_initialization.c` |
+| `$83:8728` | `Lufia2FieldApplySavedObjectControls` | verified | `src/field/field_object_initialization.c` |
 | `$83:873F` | `Lufia2FieldApplyInitialObjectRegion` | verified | `src/field/field_animation_regions.c` |
 | `$83:8761` | `Lufia2FieldApplyAlternateObjectRegion` | verified | `src/field/field_animation_regions.c` |
 | `$83:8783` | `Lufia2FieldAnimateObjectAction` | verified | `src/field/field_animation_regions.c` |
@@ -766,6 +769,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:B512` | `Lufia2FieldResetObjectAnimation` | verified | `src/field/field_bootstrap.c` |
 | `$83:B52E` | `Lufia2FieldResumeSceneSong` | verified | `src/field/field_scene_reset.c` |
 | `$83:B53B` | `Lufia2FieldInstallMap` | verified | `src/field/field_map_install.c` |
+| `$83:B581` | `Lufia2FieldResetMapEventState` | verified | `src/field/field_event_reset.c` |
 | `$83:B5AD` | `Lufia2FieldSelectSceneRecordBase` | verified | `src/field/field_bootstrap.c` |
 | `$83:B5D3` | `Lufia2FieldLoadMapHeader` | verified | `src/field/field_map_load.c` |
 | `$83:B66E` | `Lufia2FieldStairRects` | verified | `src/field/field_triggers.c` |
@@ -1148,6 +1152,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:BD77` | `Lufia2FieldScrollUpdate` | verified | `src/field/field_scroll.c` |
 | `$8E:C338` | `Lufia2FieldSelectObjectCondition` | verified | `src/field/field_object_conditions.c` |
 | `$8E:C34F` | `Lufia2FieldResolveObjectCondition` | verified | `src/field/field_object_conditions.c` |
+| `$8E:E6EA` | `Lufia2MenuResetSaveSelectionRecords` | verified | `src/menu/menu_selection_reset.c` |
 | `$8E:E710` | `Lufia2MenuSaveSelectionState` | verified | `src/menu/menu_selection_save.c` |
 | `$8E:E751` | `Lufia2MenuRestoreSelectionState` | verified | `src/menu/menu_selection_state.c` |
 <!-- metadata-index:end -->

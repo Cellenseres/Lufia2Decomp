@@ -2893,6 +2893,7 @@ address = "7F:D75C"
 name = "field_pending_record_flags"
 aliases = ["EVENT_UNK_7FD75C"]
 width = 1
+count = 48
 owner = "field"
 notes = "Per-record pending object flags; 48 byte records scanned by 80:D227."
 
@@ -4962,3 +4963,53 @@ width = 2
 count = 1
 owner = "menu"
 notes = "Erase selection stores8080 before original82935D presentation service. Purpose remains unproven."
+
+[[location]]
+address = "7F:D1A0"
+name = "field_object_condition_list_offset"
+width = 2
+count = 1
+owner = "field"
+notes = "80:E844 selects this word from91:B8B5 by map ID;83:86EA uses it as the offset of three-byte conditional object records."
+
+[[location]]
+address = "7E:F028"
+name = "field_pending_object_list_offset"
+width = 2
+count = 1
+owner = "field"
+notes = "80:EA5B indexes three-byte pending object records at7E:F000 with this original word."
+
+[[location]]
+address = "7F:D104"
+name = "unk_7FD104"
+width = 1
+count = 16
+owner = "field"
+notes = "The48-byte clear at83:B581 begins here and overlaps31 value variables plusD133."
+
+[[location]]
+address = "7F:D223"
+name = "field_event_point_copy_x"
+aliases = ["EVENT_POINT_D223"]
+width = 1
+count = 64
+owner = "field"
+notes = "Copied script-point X values; original map reset clears64 entries."
+
+[[location]]
+address = "7F:D263"
+name = "field_event_point_copy_y"
+aliases = ["EVENT_POINT_D263"]
+width = 1
+count = 64
+owner = "field"
+notes = "Copied script-point Y values; original map reset clears64 entries."
+
+[[location]]
+address = "7F:FABA"
+name = "menu_saved_selection_records"
+width = 1
+count = 144
+owner = "menu"
+notes = "Original8E:E6EA clears144 saved cursor-state bytes; the pointer table continues beyond this clear."
