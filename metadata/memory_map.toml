@@ -5013,3 +5013,18 @@ width = 1
 count = 144
 owner = "menu"
 notes = "Original8E:E6EA clears144 saved cursor-state bytes; the pointer table continues beyond this clear."
+
+[[location]]
+address = "7E:1550"
+name = "menu_character_summary_attribute"
+width = 1
+owner = "menu"
+notes = "Original82:94C0 chooses7,5 or3 from character status and inclusive HP thresholds."
+
+[[location]]
+address = "7E:1273"
+name = "field_event_redraw_flags"
+aliases = ["WRAM_EVENT_REDRAW"]
+width = 1
+owner = "field"
+notes = "Original80:CC26 converts these bits into direct-page tilemap upload requests."

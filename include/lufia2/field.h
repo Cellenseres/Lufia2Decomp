@@ -994,6 +994,16 @@ Lufia2ExecutionResult Lufia2FieldInitializePendingObjects(
 Lufia2ExecutionResult Lufia2FieldResetMapEventState(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldRunSaveMenu(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldRequestTilemapUploads(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldDecompressMapData(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1148 functions in `metadata/functions.toml`: 1148 verified, 0 draft, 0 identified, 0 disabled.
+1152 functions in `metadata/functions.toml`: 1152 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4533,3 +4533,21 @@ Pending-object event compositions cover the FF no-script path and timer
 states without script resumption; they do not claim complete event execution.
 The pending flags are48 original byte records, not a single-byte field.
 Thirteen public-library jobs, all 1,173 full jobs and Windows Release pass.
+
+### Save-menu dispatch and character summary
+
+Four complete entry contracts preserve the original save-menu call chain,
+character-summary status and inclusive HP color thresholds, and tilemap
+upload bit conversion. Related text uses the original string child. Fades,
+save dispatch and map reload remain explicit pushed-frame services.
+
+79,453 original-ROM and production-ABI parent states each pass; 2,048
+compositions execute the actual original text child. The proof covers all
+256 data banks, 12,288 entry guards, 45 redirects, five child unwinds,
+67 bounded altered-ROM controls and four C++ contracts. All 80 noncall
+return boundaries across 94 instruction states are covered. CPU, full
+WRAM, MMIO and ordered data operands stay literal. Existing map-data C is
+reused without duplication: 3,672 states cover all 27 primary resources,
+17 alternate variants, four destinations and two data banks, with 17,928
+actual decompressor, advance and offset returns in each proof path.
+Eleven public-library jobs, all 1,184 full jobs and Windows Release pass.
