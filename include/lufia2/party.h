@@ -256,6 +256,9 @@ Lufia2ExecutionResult Lufia2CapsuleOpenSelection(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2PartyListHasEntry(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

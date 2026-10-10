@@ -272,6 +272,13 @@ Lufia2ExecutionResult Lufia2ActorInitializeSpawnSlot(
 Lufia2ExecutionResult Lufia2ActorMarkAllState40(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2ActorStartSecondaryActionScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2ActorPrepareSecondaryScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

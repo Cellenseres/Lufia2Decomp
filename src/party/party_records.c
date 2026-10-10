@@ -124,8 +124,8 @@ Lufia2ExecutionResult Lufia2PartyListHasEntry(
             Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
             SetAccumulatorWidth(cpu, 1);
             LoadY16(cpu, 0x0000u);                             /* C675 */
+            LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
             do {
-                LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
                 Compare8(cpu, A8(cpu),
                          Read8(memory, AbsoluteIndexedAddress(
                                            cpu, Read16Direct(memory, cpu, DP_SCRATCH_C),

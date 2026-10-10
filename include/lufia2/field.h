@@ -1135,6 +1135,27 @@ Lufia2ExecutionResult Lufia2FieldChooseCollectedObjects(const Lufia2Memory *memo
 Lufia2ExecutionResult Lufia2FieldFindAvailableChoice(const Lufia2Memory *memory,
                                                      Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldReadPlayerDirection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldClearSecondaryActionState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldReadSelectedItemByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldSpawnActionActor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldSpawnFacingActionActor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldReadLeaderFacingAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif
