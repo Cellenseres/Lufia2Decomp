@@ -9,6 +9,7 @@
 #include "field/field_internal.h"
 #include "lufia2/actor.h"
 #include "lufia2/field.h"
+#include "field_animation_queue_internal.h"
 
 #include "lufia2/system.h"
 #include "system/dp_scratch.h"
@@ -113,39 +114,7 @@ static unsigned EventQueueObjectAnimation(
         *handoff = 0x83f564u;
         return EVENT_OPCODE_HANDOFF;
     }
-    for (LoadX16(cpu, 0x0000u);;) {                            /* F581 */
-        LoadA8(cpu,
-               Read8(memory, LongIndexedAddress(EVENT_ANIMATION_SLOT_STATE, cpu->x)));
-        if (cpu->negative) {
-            LoadA8(cpu, Read8(memory,
-                              LongIndexedAddress(EVENT_ANIMATION_SLOT_OBJECT, cpu->x)));
-            Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_D));
-            if (cpu->zero) {
-                SimulateRtlFrame(memory, cpu);
-                return EVENT_OPCODE_NEXT;
-            }
-        }
-        IncrementX16(cpu);                                     /* F592 */
-        Compare16(cpu, cpu->x, EVENT_ANIMATION_SLOT_COUNT);
-        if (cpu->carry)
-            break;
-    }
-    for (LoadX16(cpu, 0x0000u);;) {                            /* F598 */
-        LoadA8(cpu,
-               Read8(memory, LongIndexedAddress(EVENT_ANIMATION_SLOT_STATE, cpu->x)));
-        if (!cpu->negative)
-            break;
-        IncrementX16(cpu);
-        Compare16(cpu, cpu->x, EVENT_ANIMATION_SLOT_COUNT);
-        if (cpu->zero) {
-            LoadX16(cpu, 0x0000u);
-            break;
-        }
-    }
-    LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, DP_SCRATCH_C) | 0x90u)); /* F5AA */
-    Write8(memory, LongIndexedAddress(EVENT_ANIMATION_SLOT_STATE, cpu->x), A8(cpu));
-    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_D));
-    Write8(memory, LongIndexedAddress(EVENT_ANIMATION_SLOT_OBJECT, cpu->x), A8(cpu));
+    Lufia2FieldQueueAnimationSlot(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     return EVENT_OPCODE_NEXT;
 }

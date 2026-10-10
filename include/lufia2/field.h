@@ -1110,6 +1110,10 @@ Lufia2ExecutionResult Lufia2FieldCountValue2B(
 Lufia2ExecutionResult Lufia2FieldReadMapResourceFlags(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldRequestObjectAnimation(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

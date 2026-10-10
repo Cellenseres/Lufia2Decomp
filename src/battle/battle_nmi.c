@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/battle.h"
+#include "primary_wave_internal.h"
 #include "system/wram.h"
 
 /* $85:8E98: sixteen queued VRAM DMA uploads on channel 6. */
@@ -92,85 +93,6 @@ static void BattleHdmaChannels(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $85:A8E7: timer 1, battle HDMA wave table at $7E:40CC. */
-static void BattleWaveTable(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, 0x1b23u, 0);                   /* A8E7 */
-    if (cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x1b22u, 0);
-        PushIndex(memory, cpu);
-        SetIndexWidth(cpu, 1);
-        TransferAToX(cpu);
-        And8(cpu, 0x03u);
-        Write8(memory, DirectAddress(cpu, 0x33u), A8(cpu));
-        LoadA8(cpu, 0x04u);
-        cpu->carry = 1;
-        Sbc8(cpu, Read8(memory, DirectAddress(cpu, 0x33u)));
-        Write8(memory, DirectAddress(cpu, 0x33u), A8(cpu));
-        AslA8(cpu);
-        Adc8(cpu, Read8(memory, DirectAddress(cpu, 0x33u)));
-        TransferAToY(cpu);
-        TransferXToA(cpu);
-        AslA8(cpu);
-        cpu->carry = 0;
-        Adc8(cpu, 0x08u);
-        TransferAToX(cpu);
-        PushDataBank(memory, cpu);
-        LoadA8(cpu, 0x7eu);
-        PushAccumulator8(memory, cpu);
-        PullDataBank(memory, cpu);
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x859ffau, cpu->x)));
-        LoadX8(cpu, 0x00u);
-        do {
-            Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x40ccu, cpu->x),
-                cpu->accumulator);                             /* A915 */
-            LoadY8(cpu, (uint8_t)(cpu->y - 1u));
-            if (cpu->zero) {
-                LoadY8(cpu, 0x0cu);
-                cpu->carry = 0;
-                Add16Value(cpu, 0x0004u);
-            }
-            LoadX8(cpu, (uint8_t)(cpu->x + 1u));               /* A921 */
-            LoadX8(cpu, (uint8_t)(cpu->x + 1u));
-            Compare8(cpu, (uint8_t)cpu->x, 0x90u);
-        } while (!cpu->zero);
-        PullDataBank(memory, cpu);                             /* A927 */
-        SetAccumulatorWidth(cpu, 1);
-        SetIndexWidth(cpu, 0);
-        cpu->x = PullIndexValue(memory, cpu);
-    } else {
-        static const uint16_t fills[3][2] = {
-            {0x015fu, 0x0008u}, {0x015bu, 0x0038u}, {0x011fu, 0x0008u}};
-        unsigned band;
-
-        PushIndex(memory, cpu);                                /* A933 */
-        PushDataBank(memory, cpu);
-        LoadA8(cpu, 0x7eu);
-        PushAccumulator8(memory, cpu);
-        PullDataBank(memory, cpu);
-        LoadX16(cpu, 0x0000u);
-        SetAccumulatorWidth(cpu, 0);
-        for (band = 0; band < 3u; ++band) {
-            LoadA16(cpu, fills[band][0]);
-            LoadY16(cpu, fills[band][1]);
-            do {
-                Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x40ccu, cpu->x),
-                    cpu->accumulator);
-                IncrementX16(cpu);
-                IncrementX16(cpu);
-                LoadY16(cpu, (uint16_t)(cpu->y - 1u));
-            } while (!cpu->zero);
-        }
-        SetAccumulatorWidth(cpu, 1);                           /* A968 */
-        PullDataBank(memory, cpu);
-        cpu->x = PullIndexValue(memory, cpu);
-    }
-    LoadA8(cpu, 0x01u);                                        /* A92D */
-    StoreAAbsolute8(memory, cpu, 0x1b20u, 0);
-}
-
 /* $85:8F1B: eight battle timers; 0 = handler left to LLE. */
 static uint8_t BattleTimers(
     const Lufia2Memory *memory,
@@ -208,7 +130,7 @@ static uint8_t BattleTimers(
                     cpu->resume_pc = 0x850000u | (uint16_t)(handler + 1u);
                     return 0;
                 }
-                BattleWaveTable(memory, cpu);
+                (void)Lufia2BattleFillPrimaryWave(memory, cpu);
                 SimulateRtsFrame(memory, cpu);                 /* to 8F3C */
                 SetIndexWidth(cpu, 1);
             }

@@ -855,6 +855,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:F49A` | `Lufia2FieldSaveProbePosition` | verified | `src/field/field_probe_direction.c` |
 | `$83:F4A7` | `Lufia2FieldRestoreProbePosition` | verified | `src/field/field_probe_direction.c` |
 | `$83:F4B4` | `Lufia2FieldApplyObjectRecord` | verified | `src/field/field_object_transition.c` |
+| `$83:F559` | `Lufia2FieldRequestObjectAnimation` | verified | `src/field/field_animation_queue.c` |
 | `$83:F5B9` | `Lufia2FieldRefreshObjectActor` | verified | `src/field/field_object_transitions.c` |
 | `$83:F5EA` | `Lufia2FieldInitializeObjectActor` | verified | `src/field/field_object_transitions.c` |
 | `$83:F611` | `Lufia2FieldObjectLayer` | verified | `src/field/field_object_graphics.c` |
@@ -1015,6 +1016,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9DD4` | `Lufia2BattleQueueTurnDisplay` | verified | `src/battle/battle_turn_display.c` |
 | `$85:A701` | `Lufia2BattleInitializeRipple` | verified | `src/battle/battle_ripple_setup.c` |
 | `$85:A736` | `Lufia2BattleRippleRow` | verified | `src/battle/battle_background_wave.c` |
+| `$85:A804` | `Lufia2BattleBeginPrimaryWave` | verified | `src/battle/battle_primary_wave.c` |
+| `$85:A8E7` | `Lufia2BattleBuildPrimaryWaveTable` | verified | `src/battle/battle_primary_wave.c` |
 | `$85:A972` | `Lufia2BattleConfigureResultHdma` | verified | `src/battle/battle_result_hdma.c` |
 | `$85:AA3D` | `Lufia2BattleRippleWords` | verified | `src/battle/battle_background_wave.c` |
 | `$85:AADC` | `Lufia2BattleStartMessageEffect` | verified | `src/battle/battle_message_effect.c` |

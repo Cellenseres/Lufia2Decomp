@@ -5172,3 +5172,11 @@ width = 2
 count = 1
 owner = "field"
 notes = "Original value2B saturating word count; purpose remains neutral."
+
+[[location]]
+address = "7E:1B12"
+name = "battle_primary_wave_hdma_descriptor"
+width = 1
+count = 5
+owner = "battle"
+notes = "Original channel-seven primary-wave descriptor; control, register, source and bank."

@@ -77,6 +77,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_hdma_commands.c
     src/battle/battle_hdma_builders.c
     src/battle/battle_hdma_transition.c
+    src/battle/battle_primary_wave.c
     src/battle/battle_effect_ops.c
     src/battle/battle_tile_blit.c
     src/menu/menu_image_load.c
@@ -165,6 +166,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_event_actors.c
     src/field/field_event_conditions.c
     src/field/field_event_objects.c
+    src/field/field_animation_queue.c
     src/field/field_event_script.c
     src/field/field_nmi.c
     src/field/field_area_transition.c
