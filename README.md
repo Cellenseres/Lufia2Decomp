@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1251 functions in `metadata/functions.toml`: 1251 verified, 0 draft, 0 identified, 0 disabled.
+1253 functions in `metadata/functions.toml`: 1253 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
@@ -203,3 +203,5 @@ Four original transition-HDMA routines retain carry-chained patterns and paired 
 The primary-wave caller and existing NMI share one original table builder.
 
 Field requests and the Event VM share the original animation-slot queue.
+
+Field item-region callers retain original notice and dismissal timing.

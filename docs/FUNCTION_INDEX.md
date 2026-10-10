@@ -1241,6 +1241,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:B142` | `Lufia2FieldConsumePressedLow` | verified | `src/field/field_camera_services.c` |
 | `$8E:B149` | `Lufia2FieldConsumePressedHigh` | verified | `src/field/field_camera_services.c` |
 | `$8E:B5FB` | `Lufia2FieldBuildPrefixedName` | verified | `src/field/field_prefixed_name.c` |
+| `$8E:B63B` | `Lufia2FieldTryItemRegion` | verified | `src/field/field_item_regions.c` |
+| `$8E:B760` | `Lufia2FieldShowObjectItemNotice` | verified | `src/field/field_item_regions.c` |
 | `$8E:B7CD` | `Lufia2FieldReadBankedStreamByte` | verified | `src/field/field_camera_services.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |
 | `$8E:B993` | `Lufia2RestoreSavedFieldState` | verified | `src/system/field_save_state.c` |
