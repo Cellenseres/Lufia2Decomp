@@ -38,9 +38,8 @@ Lufia2ExecutionResult Lufia2BattleEffectSendConditionalSound(
             PushY(memory, cpu);
             if (!CallChildWithFrame(memory, cpu, child, context,
                     0x819f9fu, 0x80953bu, 3u, 0x81u)) {
-                const Lufia2ExecutionResult unwind = {
-                    LUFIA2_EXECUTION_CHILD_UNWOUND, 0x819f9fu
-                };
+                const Lufia2ExecutionResult unwind = {LUFIA2_EXECUTION_CHILD_UNWOUND,
+                                                      0x819f9fu, 0u};
                 return unwind;
             }
             cpu->y = PullIndexValue(memory, cpu);

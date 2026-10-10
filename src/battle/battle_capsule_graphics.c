@@ -102,16 +102,16 @@ Lufia2ExecutionResult Lufia2BattleLoadCapsuleGraphics(
         PrepareCapsuleResource(memory, cpu);
         if (!CallChildWithFrame(memory, cpu, child, context,
                 0x81bc8bu, 0x808e9du, 3u, 0x81u)) {
-            const Lufia2ExecutionResult result =
-                {LUFIA2_EXECUTION_CHILD_UNWOUND, 0x81bc8bu};
+            const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND,
+                                                  0x81bc8bu, 0u};
             return result;
         }
     }
     PrepareCapsuleTiles(memory, cpu);
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x81bca3u, 0x81bcccu, 3u, 0x81u)) {
-        const Lufia2ExecutionResult result =
-            {LUFIA2_EXECUTION_CHILD_UNWOUND, 0x81bca3u};
+        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND,
+                                              0x81bca3u, 0u};
         return result;
     }
     LoadCapsulePalette(memory, cpu);
