@@ -1782,6 +1782,12 @@ Lufia2ExecutionResult Lufia2BattleDrawPartyStatusDetail(
 Lufia2ExecutionResult Lufia2BattleFillStatusGauge(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleLoadIndexedMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleBuildSpriteGrid(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

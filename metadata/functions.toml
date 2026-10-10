@@ -9488,3 +9488,91 @@ source = "src/field/field_diagnostics.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:C729"
+name = "Lufia2FieldSpawnRadialObjects"
+source = "src/field/field_radial_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:E200"
+name = "Lufia2ObjectSelectSpriteFrame"
+source = "src/actor/object_vm.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:DFA5"
+name = "Lufia2ActorInitializeSpawnSlot"
+source = "src/actor/actor_slots.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C33D"
+name = "Lufia2FieldFindSecondaryAtProbe"
+source = "src/field/field_event_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F410"
+name = "Lufia2FieldPendingObjectType"
+source = "src/field/field_event_objects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C7C7"
+name = "Lufia2ActorMarkAllState40"
+source = "src/actor/actor_state_mark.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:95C6"
+name = "Lufia2BattleLoadIndexedMessage"
+source = "src/battle/battle_indexed_message.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:BA81"
+name = "Lufia2FieldResetPresentationState"
+source = "src/field/field_presentation_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C6AA"
+name = "Lufia2FieldApplyObjectParameters"
+source = "src/field/field_object_parameters.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9884"
+name = "Lufia2BattleBuildSpriteGrid"
+source = "src/battle/battle_sprite_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B5FB"
+name = "Lufia2FieldBuildPrefixedName"
+source = "src/field/field_prefixed_name.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

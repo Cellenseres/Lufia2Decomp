@@ -28,6 +28,7 @@ add_library(lufia2_decomp STATIC
     src/actor/actor_movement.c
     src/actor/actor_primary.c
     src/actor/actor_secondary.c
+    src/actor/actor_state_mark.c
     src/actor/actor_slots.c
     src/actor/sprite_reset.c
     src/actor/actor_sprites.c
@@ -130,6 +131,8 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_party_status_detail.c
     src/battle/battle_status_support.c
     src/battle/battle_status_recovery.c
+    src/battle/battle_indexed_message.c
+    src/battle/battle_sprite_grid.c
     src/battle/battle_message_display.c
     src/battle/battle_message_length.c
     src/battle/battle_gauges.c
@@ -316,6 +319,10 @@ add_library(lufia2_decomp STATIC
     src/field/field_camera.c
     src/field/field_update.c
     src/field/field_diagnostics.c
+    src/field/field_radial_objects.c
+    src/field/field_presentation_reset.c
+    src/field/field_object_parameters.c
+    src/field/field_prefixed_name.c
     src/field/field_recovery.c
     src/field/field_animation_regions.c
     src/field/field_animation_slots.c

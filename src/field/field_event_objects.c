@@ -9,6 +9,7 @@
 #include "field/field_internal.h"
 #include "lufia2/actor.h"
 #include "lufia2/field.h"
+
 #include "lufia2/system.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
@@ -1052,11 +1053,9 @@ static uint8_t EventProbeStep(
 }
 
 /* $83:C33D: carry when a secondary actor is at $8F/$91. */
-static void EventSecondaryAtProbe(
+static void EventFindSecondaryActor(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+    Lufia2CpuState *cpu) {
     Write8(memory, DirectAddress(cpu, 0x90u), 0x00u);          /* C33D */
     Write8(memory, DirectAddress(cpu, 0x92u), 0x00u);
     LoadY16(cpu, 0x001fu);
@@ -1089,7 +1088,28 @@ static void EventSecondaryAtProbe(
             cpu->carry = 0;
     } while (!cpu->negative);
     SetAccumulatorWidth(cpu, 1);
+}
+
+static void EventSecondaryAtProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    EventFindSecondaryActor(memory, cpu);
     SimulateRtsFrame(memory, cpu);
+}
+
+static void EventPendingObjectType(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    EventFindPending(memory, cpu, 0xf412u);
+    if (!cpu->carry) {
+        LoadY16(cpu, cpu->x);
+        TransferDirectToA(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_PENDING_OBJECT_RECORD,
+                                                     cpu->x)));
+        TransferAToX(cpu);
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd7fcu, cpu->x)));
+        cpu->carry = 0;
+    }
 }
 
 /* $83:C0B8-$83:C0DB: pending object's tile below a pushed object. */
@@ -1100,16 +1120,7 @@ static bool EventPushPendingTile(const Lufia2Memory *memory, Lufia2CpuState *cpu
     if (!cpu->zero)
         return false;
     SimulateJsrFrame(memory, cpu, 0xc0c3u);
-    EventFindPending(memory, cpu, 0xf412u); /* F410 */
-    if (!cpu->carry) {
-        LoadY16(cpu, cpu->x);
-        TransferDirectToA(cpu);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_PENDING_OBJECT_RECORD,
-                                                     cpu->x)));
-        TransferAToX(cpu);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd7fcu, cpu->x)));
-        cpu->carry = 0;
-    }
+    EventPendingObjectType(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     if (cpu->carry)
         return false;
@@ -1554,4 +1565,20 @@ unsigned Lufia2EventObjectAreaOpcode(
     if (!EventRegionCall(memory, cpu, update, update_return, handoff))
         return EVENT_OPCODE_HANDOFF;
     return EVENT_OPCODE_NEXT;
+}
+
+Lufia2ExecutionResult Lufia2FieldFindSecondaryAtProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83c33du);
+    EventFindSecondaryActor(memory, cpu);
+    return ExecutionReturned(0x83c374u);
+}
+
+Lufia2ExecutionResult Lufia2FieldPendingObjectType(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83f410u);
+    EventPendingObjectType(memory, cpu);
+    return ExecutionReturned(0x83f421u);
 }
