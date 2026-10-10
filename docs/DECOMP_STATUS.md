@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1211 functions in `metadata/functions.toml`: 1211 verified, 0 draft, 0 identified, 0 disabled.
+1217 functions in `metadata/functions.toml`: 1217 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4782,3 +4782,19 @@ match. Original PB/DB 86, DP zero, binary M1X0 contexts use real object records.
 3,072 semantic handoffs, 20,736 runtime guards, 135 redirects, 576 child-entry
 unwinds per path, seventeen bounded controls and six C++ APIs pass.
 Seven public jobs, all 1,257 full jobs and Windows Release pass.
+
+### Original finite field camera and scene services
+
+Six original entries consume pressed latches, advance a banked scene stream,
+mark encounter actor timer/flags, count value2B with original saturation and
+read ROM-backed map-resource flags. The stream differs from the text helper
+in status-stack accesses; its original bank transition remains observable.
+Value2B purpose stays neutral. The frame wait remains an original boundary.
+
+49,152 direct and 49,152 production-ABI cases cover all 41 required states.
+CPU, full WRAM, MMIO and ordered accesses match across all 256 DB values,
+three DP layouts and both decimal states in semantic tests. The production ABI
+accepts all data banks with DP0 and binary arithmetic. Original M0X0 counter entry and
+five M1X0 entries retain their distinct RTS/RTL frames. 1,152 semantic
+handoffs, 18,432 runtime guards, sixteen bounded ROM controls, six C++ APIs
+and three return modes pass. Three public jobs, all 1,260 full jobs and Windows Release pass.
