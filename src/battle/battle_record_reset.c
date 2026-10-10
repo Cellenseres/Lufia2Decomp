@@ -69,8 +69,7 @@ Lufia2ExecutionResult Lufia2BattleClearSelectedPartyStatus(
 }
 
 static Lufia2ExecutionResult RecordResetUnwound(uint32_t site) {
-    const Lufia2ExecutionResult result =
-        {LUFIA2_EXECUTION_CHILD_UNWOUND, site};
+    const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
     return result;
 }
 

@@ -16,7 +16,7 @@ static uint8_t FadeEntryFits(const Lufia2CpuState *cpu,
 }
 
 static Lufia2ExecutionResult FadeChildUnwound(uint32_t site) {
-    const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site};
+    const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
     return result;
 }
 

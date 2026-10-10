@@ -28,7 +28,7 @@ static uint8_t SpawnPopup(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 }
 
 static Lufia2ExecutionResult PopupUnwind(uint32_t site) {
-    const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site};
+    const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
     return result;
 }
 
