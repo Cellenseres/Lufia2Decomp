@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1251 functions in `metadata/functions.toml`: 1251 verified, 0 draft, 0 identified, 0 disabled.
+1253 functions in `metadata/functions.toml`: 1253 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4882,3 +4882,18 @@ native compositions per path include5,120 request/6,144 region children.
 512 child-entry unwinds/1,536 changed-width returns per path,8,192 actual
 Event VM child calls,twelve bounded controls andone C++ API PASS.
 Sixteen grouped public jobs, ONE full 1,296 jobs and Windows Release pass.
+
+### Original field item-region callers
+
+8E:B63B retains item-region/facing selection and inventory/notice paths;
+8E:B760 retains text service boundaries, animation and input/timer dismissal.
+Nineteen child sites preserve exact JSR/JSL frames and changed-width tails.
+16,384 direct/16,384 ABI states cover164 required instruction states;
+753,856 actual original child returns per path,768 semantic handoffs and
+12,288 runtime guards pass.16,384 native chains per path retain184,169
+original frame waits and368,338 original NMI executions across both sides.
+Item/name/text and unrelated frame grandchildren are controlled boundaries;
+their returns are excluded from actual-original-child counts. CPU,fullWRAM,
+MMIO,ordered accesses and live stack match.2,432 unwinds and7,296 changed-
+width returns per path,21 bounded ROM controls andtwo C++ APIs pass.
+Seven grouped public jobs, ONE full 1,303 jobs and Windows Release pass.

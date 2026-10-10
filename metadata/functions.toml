@@ -10144,3 +10144,19 @@ source = "src/field/field_animation_queue.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "8E:B63B"
+name = "Lufia2FieldTryItemRegion"
+source = "src/field/field_item_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B760"
+name = "Lufia2FieldShowObjectItemNotice"
+source = "src/field/field_item_regions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
