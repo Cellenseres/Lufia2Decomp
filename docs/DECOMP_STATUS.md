@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1248 functions in `metadata/functions.toml`: 1248 verified, 0 draft, 0 identified, 0 disabled.
+1251 functions in `metadata/functions.toml`: 1251 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4851,3 +4851,34 @@ and12,288 runtime guards pass. Another16,384 fully native compositions per
 path,256 actual child-entry unwinds and768 symmetric changed-width handoffs
 per path pass. Sixteen bounded ROM controls andfour CPP APIs pass.
 Twelve grouped public jobs, ONE full 1,280 jobs and Windows Release pass.
+
+### Original primary wave caller and shared NMI table
+
+85:A804 retains the original four offset bands/four descriptors and bank-relative
+channel stores. Its original85:C7A0 caller now has a native child.85:A8E7 was
+already reconstructed inside BattleNMI; one shared moving/fixed table core
+replaces that internal copy and provides its direct entry contract. A804 is
+the newly reconstructed functionality; do not double-count existing NMI work.
+
+16,384 direct/16,384 ABI states cover all166 required instruction states,
+with8,192 original table returns per path. All256DB/threeDP/decimal andboth
+branches match CPU/fullWRAM/MMIO/ordered accesses;576 semantic handoffs and
+6,144 runtime guards pass.8,192 fully native compositions per path,128 original
+child-entry unwinds and384 symmetric changed-width handoffs per path pass.
+Twelve bounded controls/two CPP APIs and16,384 original NMI reuse states pass.
+The NMI reuse proof retains its existing binary-context contract. Additional
+synthetic decimal1 case128 fails identically with unchanged legacy NMI; that
+diagnostic is retained without a decimal NMI verification or behavior repair.
+Sixteen grouped public jobs, ONE full 1,296 jobs and Windows Release pass.
+
+### Complete field object animation request and shared slot queue
+
+83:F559 retains four child calls and both brightness paths. Its existing
+Event VM slot queue now uses one shared core; the original negative path
+still hands off at83:F564. No original behavior repaired or timing removed.
+8,192 direct/8,192 ABI states, all37 non-return states,5,120 original child
+returns per path;320 semantic handoffs/6,144 runtime guards PASS.8,192
+native compositions per path include5,120 request/6,144 region children.
+512 child-entry unwinds/1,536 changed-width returns per path,8,192 actual
+Event VM child calls,twelve bounded controls andone C++ API PASS.
+Sixteen grouped public jobs, ONE full 1,296 jobs and Windows Release pass.

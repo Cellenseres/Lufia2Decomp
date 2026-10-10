@@ -10120,3 +10120,27 @@ source = "src/battle/battle_hdma_transition.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:A804"
+name = "Lufia2BattleBeginPrimaryWave"
+source = "src/battle/battle_primary_wave.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:A8E7"
+name = "Lufia2BattleBuildPrimaryWaveTable"
+source = "src/battle/battle_primary_wave.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F559"
+name = "Lufia2FieldRequestObjectAnimation"
+source = "src/field/field_animation_queue.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
