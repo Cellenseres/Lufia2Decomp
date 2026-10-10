@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1189 functions in `metadata/functions.toml`: 1189 verified, 0 draft, 0 identified, 0 disabled.
+1191 functions in `metadata/functions.toml`: 1191 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4712,3 +4712,24 @@ guards retain unproved contexts on original execution.1,728 unsupported
 semantic handoffs,31,104 runtime guards,35 bounded altered-ROM controls,
 three host return modes and nine C++ interfaces pass. No gameplay/profile
 claim or copied ROM data. Three public jobs, all 1,235 full jobs and Windows Release pass.
+
+### Original field palette children
+
+Two complete palette routines84:8D54/8E07 scale or fade original9B colors
+into CGRAM staging. Mode7 product reads,read-only-register RMW writes,
+rounding,channel clamps,TDC values,DP aliasing and decimal flags stay exact.
+Both explicit palette child sites in83:AEB5 now finish through original
+call frames. Palette cycles and HDMA wave work retain their shared native
+cores and existing zero-duration-chain continuation. This extends that
+verified contract;it does not claim whole-VM or infinite-chain completion.
+The legacy portable API and continuation bridge stay compatible.
+
+24,576 ROM and24,576 ABI entry cases,223 required new instruction states.
+Native composition adds8,192 ROM and8,192 ABI parent cases:5,300/5,972
+native palette returns and260/512 actual original-copy returns. Separate
+child compositions retain520/1,024 original-copy and4,788/5,460 palette
+returns. CPU,fullWRAM,MMIO and ordered accesses match.896 semantic handoffs,
+9,600 runtime guards,60 redirects,192 child unwinds,26 bounded controls,
+three return modes and three C++ interfaces pass. Unproved contexts keep
+original execution. No gameplay/profile claim or copied ROM artifacts.
+Nine public jobs, all 1,244 full jobs and Windows Release pass.
