@@ -5140,3 +5140,27 @@ width = 1
 count = 1
 owner = "world"
 notes = "Original world-view parameter; caller data bank remains observable."
+
+[[location]]
+address = "7E:1202"
+name = "world_map_motion_heading"
+width = 2
+count = 1
+owner = "world"
+notes = "Original world object positioning and heading state."
+
+[[location]]
+address = "7E:11E8"
+name = "world_map_position_x_low"
+width = 1
+count = 1
+owner = "world"
+notes = "Original world position low byte; high byte reuses sprite_upload_vram."
+
+[[location]]
+address = "7E:11EA"
+name = "world_map_position_y"
+width = 2
+count = 1
+owner = "world"
+notes = "Original world object positioning and heading state."
