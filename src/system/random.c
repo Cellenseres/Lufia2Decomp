@@ -21,18 +21,16 @@ static void RandomRefill(
     unsigned i;
 
     for (i = 0; i < RANDOM_SHORT_LAG; ++i) {
-        const uint8_t current = WramReadAt(
-            wram, WRAM_RANDOM_TABLE, (uint16_t)i);
-        const uint8_t lagged = WramReadAt(
-            wram, WRAM_RANDOM_TABLE, (uint16_t)(i + RANDOM_LONG_LAG));
+        const uint8_t current = WramReadAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i);
+        const uint8_t lagged =
+            WramReadAt(wram, WRAM_RANDOM_TABLE, (uint16_t)(i + RANDOM_LONG_LAG));
         value = (uint8_t)(current ^ lagged);
         WramWriteAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i, value);
     }
     for (; i < WRAM_RANDOM_TABLE_COUNT; ++i) {
-        const uint8_t current = WramReadAt(
-            wram, WRAM_RANDOM_TABLE, (uint16_t)i);
-        const uint8_t lagged = WramReadAt(
-            wram, WRAM_RANDOM_TABLE, (uint16_t)(i - RANDOM_SHORT_LAG));
+        const uint8_t current = WramReadAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i);
+        const uint8_t lagged =
+            WramReadAt(wram, WRAM_RANDOM_TABLE, (uint16_t)(i - RANDOM_SHORT_LAG));
         value = (uint8_t)(current ^ lagged);
         WramWriteAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i, value);
     }

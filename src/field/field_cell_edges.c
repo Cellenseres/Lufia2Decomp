@@ -1,5 +1,7 @@
 /* Walk along the edge of a region of the field cell map and mark it. */
 
+#include <stddef.h>
+
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "core/plain_ops.h"

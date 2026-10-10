@@ -1,6 +1,6 @@
-#include "lufia2/field.h"
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "lufia2/field.h"
 #include "system/wram.h"
 
 enum {
@@ -35,13 +35,11 @@ static uint8_t RewardWidths(const Lufia2CpuState *cpu, uint8_t wide) {
     return !cpu->index_is_8_bit && cpu->accumulator_is_8_bit != wide;
 }
 
-static uint8_t RewardChild(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context, uint32_t site,
-    uint32_t target, uint8_t frame, uint8_t wide,
-    Lufia2ExecutionResult *result) {
-    if (!CallChildWithFrame(memory, cpu, child, context,
-            site, target, frame, 0x8eu)) {
+static uint8_t RewardChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                           Lufia2PushedChildCall child, void *context, uint32_t site,
+                           uint32_t target, uint8_t frame, uint8_t wide,
+                           Lufia2ExecutionResult *result) {
+    if (!CallChildWithFrame(memory, cpu, child, context, site, target, frame, 0x8eu)) {
         *result = ExecutionReturned(site);
         result->flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
         return 0u;
@@ -53,8 +51,7 @@ static uint8_t RewardChild(
     return 1u;
 }
 
-static uint8_t RewardConditionFound(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static uint8_t RewardConditionFound(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpLongX(cpu, OBJECT_RECORDS + 1u));
     OpSta(memory, cpu, OpDp(cpu, RECORD_X));
@@ -83,8 +80,8 @@ static uint8_t RewardConditionFound(
     }
 }
 
-static void IncrementRewardCount(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t count) {
+static void IncrementRewardCount(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t count) {
     OpLda(memory, cpu, OpAbs(cpu, count));
     OpIncA(cpu);
     if (cpu->zero)
@@ -92,16 +89,17 @@ static void IncrementRewardCount(
     OpSta(memory, cpu, OpAbs(cpu, count));
 }
 
-static Lufia2ExecutionResult ApplyContextReward(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
+static Lufia2ExecutionResult ApplyContextReward(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu,
+                                                Lufia2PushedChildCall child,
+                                                void *context) {
     Lufia2ExecutionResult result;
     OpWriteX(memory, cpu, OpDp(cpu, SELECTED_RECORD), cpu->x);
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpLongX(cpu, OBJECT_RECORDS));
     OpSta(memory, cpu, REWARD_OBJECT);
-    if (!RewardChild(memory, cpu, child, context,
-            0x8ec0b8u, 0x80e898u, 3u, 0u, &result))
+    if (!RewardChild(memory, cpu, child, context, 0x8ec0b8u, 0x80e898u, 3u, 0u,
+                     &result))
         return result;
     OpAndValue(cpu, OpReadM(memory, cpu, COLLECTED_FLAGS));
     if (!cpu->zero) {
@@ -123,16 +121,16 @@ static Lufia2ExecutionResult ApplyContextReward(
             OpSta(memory, cpu, OpAbs(cpu, SPELL_RECORD_ID));
             OpTxa(cpu);
             PushIndex(memory, cpu);
-            if (!RewardChild(memory, cpu, child, context,
-                    0x8ec0eau, 0x82fd3du, 3u, 0u, &result))
+            if (!RewardChild(memory, cpu, child, context, 0x8ec0eau, 0x82fd3du, 3u, 0u,
+                             &result))
                 return result;
             OpPullX(memory, cpu);
             OpInx(cpu);
             OpCpx(cpu, 7u);
         } while (!cpu->carry);
     }
-    if (!RewardChild(memory, cpu, child, context,
-            0x8ec0f5u, 0x8ec1deu, 3u, 0u, &result))
+    if (!RewardChild(memory, cpu, child, context, 0x8ec0f5u, 0x8ec1deu, 3u, 0u,
+                     &result))
         return result;
     OpLda(memory, cpu, OpAbs(cpu, REWARD_REMAINING + 1u));
     OpAndValue(cpu, 0x7fu);
@@ -152,13 +150,12 @@ static Lufia2ExecutionResult ApplyContextReward(
         }
         OpLda(memory, cpu, OpLongX(cpu, REWARD_VALUES));
         OpBitValue(cpu, 0x4000u);
-        IncrementRewardCount(memory, cpu,
-            cpu->zero ? REWARD_COUNT_B : REWARD_COUNT_A);
+        IncrementRewardCount(memory, cpu, cpu->zero ? REWARD_COUNT_B : REWARD_COUNT_A);
         OpSepWidths(cpu, 0x20u);
         TransferDirectToA(cpu);
         OpLda(memory, cpu, REWARD_OBJECT);
-        if (!RewardChild(memory, cpu, child, context,
-                0x8ec145u, 0x80e898u, 3u, 0u, &result))
+        if (!RewardChild(memory, cpu, child, context, 0x8ec145u, 0x80e898u, 3u, 0u,
+                         &result))
             return result;
         OpOraValue(cpu, OpReadM(memory, cpu, COLLECTED_FLAGS));
         OpSta(memory, cpu, COLLECTED_FLAGS);
@@ -168,16 +165,17 @@ static Lufia2ExecutionResult ApplyContextReward(
     return result;
 }
 
-static Lufia2ExecutionResult ApplyConditionReward(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
+static Lufia2ExecutionResult ApplyConditionReward(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu,
+                                                  Lufia2PushedChildCall child,
+                                                  void *context) {
     Lufia2ExecutionResult result;
     OpWriteX(memory, cpu, OpDp(cpu, SELECTED_RECORD), cpu->x);
-    if (!RewardChild(memory, cpu, child, context,
-            0x8ec155u, 0x8ec338u, 3u, 0u, &result))
+    if (!RewardChild(memory, cpu, child, context, 0x8ec155u, 0x8ec338u, 3u, 0u,
+                     &result))
         return result;
-    if (!RewardChild(memory, cpu, child, context,
-            0x8ec159u, 0x8ec34fu, 3u, 0u, &result))
+    if (!RewardChild(memory, cpu, child, context, 0x8ec159u, 0x8ec34fu, 3u, 0u,
+                     &result))
         return result;
     OpBit(memory, cpu, OpAbsX(cpu, CHOICE_FLAGS));
     if (!cpu->zero)
@@ -205,29 +203,29 @@ static Lufia2ExecutionResult ApplyConditionReward(
     if (!chosen) {
         OpSepWidths(cpu, 0x20u);
         OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SELECTED_RECORD)));
-        if (!RewardChild(memory, cpu, child, context,
-                0x8ec189u, 0x8ec36du, 2u, 0u, &result))
+        if (!RewardChild(memory, cpu, child, context, 0x8ec189u, 0x8ec36du, 2u, 0u,
+                         &result))
             return result;
         OpSta(memory, cpu, REWARD_VALUE);
         ExchangeAccumulatorBytes(cpu);
         OpSta(memory, cpu, REWARD_VALUE + 1u);
     }
-    if (!RewardChild(memory, cpu, child, context,
-            0x8ec195u, 0x8ec1deu, 3u, 0u, &result))
+    if (!RewardChild(memory, cpu, child, context, 0x8ec195u, 0x8ec1deu, 3u, 0u,
+                     &result))
         return result;
     OpLda(memory, cpu, OpAbs(cpu, REWARD_REMAINING + 1u));
     OpAndValue(cpu, 0x7fu);
     OpOraValue(cpu, OpReadM(memory, cpu, OpAbs(cpu, REWARD_REMAINING)));
     if (cpu->zero) {
-        if (!RewardChild(memory, cpu, child, context,
-                0x8ec1a3u, 0x8ec34fu, 3u, 0u, &result))
+        if (!RewardChild(memory, cpu, child, context, 0x8ec1a3u, 0x8ec34fu, 3u, 0u,
+                         &result))
             return result;
         OpOraValue(cpu, OpReadM(memory, cpu, OpAbsX(cpu, CHOICE_FLAGS)));
         OpSta(memory, cpu, OpAbsX(cpu, CHOICE_FLAGS));
         OpRepWidths(cpu, 0x20u);
         OpLda(memory, cpu, REWARD_VALUE);
-        if (!RewardChild(memory, cpu, child, context,
-                0x8ec1b3u, 0x8ec1c5u, 3u, 1u, &result))
+        if (!RewardChild(memory, cpu, child, context, 0x8ec1b3u, 0x8ec1c5u, 3u, 1u,
+                         &result))
             return result;
         if (!cpu->carry) {
             OpStepMem(memory, cpu, OpAbs(cpu, CLAIMED_COUNT), 1u);
@@ -240,11 +238,11 @@ static Lufia2ExecutionResult ApplyConditionReward(
     return ExecutionReturned(0x8ec1c4u);
 }
 
-Lufia2ExecutionResult Lufia2FieldTryObjectReward(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (!RewardWidths(cpu, 0u) || !child || cpu->decimal ||
-            cpu->program_bank != 0x8eu)
+Lufia2ExecutionResult Lufia2FieldTryObjectReward(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu,
+                                                 Lufia2PushedChildCall child,
+                                                 void *context) {
+    if (!RewardWidths(cpu, 0u) || !child || cpu->decimal || cpu->program_bank != 0x8eu)
         return ExecutionHandoff(cpu, 0x8ec05fu);
     OpLda(memory, cpu, OpAbs(cpu, FIELD_INPUT_LOCK));
     cpu->carry = 0u;
@@ -253,8 +251,8 @@ Lufia2ExecutionResult Lufia2FieldTryObjectReward(
     OpLdx(cpu, 0x26u);
     OpLdy(cpu, 4u);
     Lufia2ExecutionResult result;
-    if (!RewardChild(memory, cpu, child, context,
-            0x8ec06bu, 0x83b851u, 3u, 0u, &result))
+    if (!RewardChild(memory, cpu, child, context, 0x8ec06bu, 0x83b851u, 3u, 0u,
+                     &result))
         return result;
     if (!cpu->carry)
         return ExecutionReturned(0x8ec0acu);
@@ -268,8 +266,8 @@ Lufia2ExecutionResult Lufia2FieldTryObjectReward(
     return ApplyConditionReward(memory, cpu, child, context);
 }
 
-Lufia2ExecutionResult Lufia2FieldFindAvailableChoice(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2FieldFindAvailableChoice(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu) {
     if (!RewardWidths(cpu, 1u) || cpu->program_bank != 0x8eu)
         return ExecutionHandoff(cpu, 0x8ebd5eu);
     OpLdx(cpu, 0u);
@@ -292,10 +290,9 @@ Lufia2ExecutionResult Lufia2FieldFindAvailableChoice(
     }
 }
 
-static uint8_t GatherCollectedChoices(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context,
-    Lufia2ExecutionResult *result) {
+static uint8_t GatherCollectedChoices(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                      Lufia2PushedChildCall child, void *context,
+                                      Lufia2ExecutionResult *result) {
     OpLdy(cpu, 0u);
     OpLdx(cpu, 2u);
     do {
@@ -321,8 +318,8 @@ static uint8_t GatherCollectedChoices(
                 OpSta(memory, cpu, REWARD_VALUE + 3u);
                 OpLda(memory, cpu, OpLongX(cpu, CONDITION_RECORDS + 1u));
                 OpSta(memory, cpu, REWARD_VALUE + 2u);
-                if (!RewardChild(memory, cpu, child, context,
-                        0x8ebce1u, 0x8ec34fu, 3u, 0u, result))
+                if (!RewardChild(memory, cpu, child, context, 0x8ebce1u, 0x8ec34fu, 3u,
+                                 0u, result))
                     return 0u;
                 OpBit(memory, cpu, OpAbsX(cpu, CHOICE_FLAGS));
                 if (!cpu->zero) {
@@ -349,11 +346,11 @@ static uint8_t GatherCollectedChoices(
     return 1u;
 }
 
-Lufia2ExecutionResult Lufia2FieldChooseCollectedObjects(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (!RewardWidths(cpu, 0u) || !child || cpu->decimal ||
-            cpu->program_bank != 0x8eu)
+Lufia2ExecutionResult Lufia2FieldChooseCollectedObjects(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu,
+                                                        Lufia2PushedChildCall child,
+                                                        void *context) {
+    if (!RewardWidths(cpu, 0u) || !child || cpu->decimal || cpu->program_bank != 0x8eu)
         return ExecutionHandoff(cpu, 0x8ebcadu);
     Lufia2ExecutionResult result;
     if (!GatherCollectedChoices(memory, cpu, child, context, &result))
@@ -364,15 +361,15 @@ Lufia2ExecutionResult Lufia2FieldChooseCollectedObjects(
         OpLda(memory, cpu, OpDp(cpu, CHOICE_BYTES));
         OpLsrA(cpu);
         OpSta(memory, cpu, OpDp(cpu, CHOICE_COUNT));
-        if (!RewardChild(memory, cpu, child, context,
-                0x8ebd13u, 0x869e3bu, 3u, 1u, &result))
+        if (!RewardChild(memory, cpu, child, context, 0x8ebd13u, 0x869e3bu, 3u, 1u,
+                         &result))
             return result;
         OpStepMem(memory, cpu, OpDp(cpu, CHOICE_ORDINAL), 1u);
-        if (!RewardChild(memory, cpu, child, context,
-                0x8ebd19u, 0x8ebd5eu, 2u, 1u, &result))
+        if (!RewardChild(memory, cpu, child, context, 0x8ebd19u, 0x8ebd5eu, 2u, 1u,
+                         &result))
             return result;
-        if (!cpu->carry && !RewardChild(memory, cpu, child, context,
-                0x8ebd1eu, 0x8ebd5eu, 2u, 1u, &result))
+        if (!cpu->carry && !RewardChild(memory, cpu, child, context, 0x8ebd1eu,
+                                        0x8ebd5eu, 2u, 1u, &result))
             return result;
         OpLda(memory, cpu, OpLongX(cpu, CHOICE_VALUES));
         OpSta(memory, cpu, REWARD_VALUE + 2u);
@@ -380,8 +377,8 @@ Lufia2ExecutionResult Lufia2FieldChooseCollectedObjects(
         OpOraValue(cpu, 0x8000u);
         OpSta(memory, cpu, OpLongX(cpu, CHOICE_VALUES));
         OpSepWidths(cpu, 0x20u);
-        if (!RewardChild(memory, cpu, child, context,
-                0x8ebd35u, 0x8ec34fu, 3u, 0u, &result))
+        if (!RewardChild(memory, cpu, child, context, 0x8ebd35u, 0x8ec34fu, 3u, 0u,
+                         &result))
             return result;
         OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffu));
         OpAndValue(cpu, OpReadM(memory, cpu, OpAbsX(cpu, CHOICE_FLAGS)));
@@ -394,12 +391,11 @@ Lufia2ExecutionResult Lufia2FieldChooseCollectedObjects(
     OpLoadA(cpu, 0x2bu);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
     OpSepWidths(cpu, 0x20u);
-    if (!RewardChild(memory, cpu, child, context,
-            0x8ebd52u, 0x81f057u, 3u, 0u, &result))
+    if (!RewardChild(memory, cpu, child, context, 0x8ebd52u, 0x81f057u, 3u, 0u,
+                     &result))
         return result;
     TransferDirectToA(cpu);
     OpSta(memory, cpu, OpAbsX(cpu, WRAM_INVENTORY_PACKED_ITEMS));
     OpSta(memory, cpu, OpAbsX(cpu, WRAM_INVENTORY_PACKED_ITEMS + 1u));
     return ExecutionReturned(0x8ebd5du);
 }
-
