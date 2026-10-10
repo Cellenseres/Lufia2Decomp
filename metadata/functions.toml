@@ -10256,3 +10256,75 @@ source = "src/battle/battle_party_actions.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "83:C161"
+name = "Lufia2FieldReadPlayerDirection"
+source = "src/field/field_player_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C180"
+name = "Lufia2FieldClearSecondaryActionState"
+source = "src/field/field_player_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C652"
+name = "Lufia2PartyListHasEntry"
+source = "src/party/party_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C692"
+name = "Lufia2FieldReadSelectedItemByte"
+source = "src/field/field_player_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C2FE"
+name = "Lufia2FieldSpawnActionActor"
+source = "src/field/field_player_action_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C311"
+name = "Lufia2FieldSpawnFacingActionActor"
+source = "src/field/field_player_action_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C32D"
+name = "Lufia2FieldReadLeaderFacingAction"
+source = "src/field/field_player_action_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D3A1"
+name = "Lufia2ActorStartSecondaryActionScript"
+source = "src/field/field_player_action_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D3F7"
+name = "Lufia2ActorPrepareSecondaryScript"
+source = "src/field/field_player_action_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

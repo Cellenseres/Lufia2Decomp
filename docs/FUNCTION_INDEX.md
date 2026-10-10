@@ -817,8 +817,15 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:C0EF` | `Lufia2FieldProbeLeaderPosition` | verified | `src/field/field_actor_event_helpers.c` |
 | `$83:C0FA` | `Lufia2FieldAcknowledgeControlChange` | verified | `src/field/field_actor_event_helpers.c` |
 | `$83:C108` | `Lufia2FieldClaimActor` | verified | `src/field/field_event_actors.c` |
+| `$83:C161` | `Lufia2FieldReadPlayerDirection` | verified | `src/field/field_player_commands.c` |
+| `$83:C180` | `Lufia2FieldClearSecondaryActionState` | verified | `src/field/field_player_commands.c` |
 | `$83:C1B4` | `Lufia2PlayerSlotStandardUpdate` | verified | `src/actor/player_controller.c` |
+| `$83:C2FE` | `Lufia2FieldSpawnActionActor` | verified | `src/field/field_player_action_setup.c` |
+| `$83:C311` | `Lufia2FieldSpawnFacingActionActor` | verified | `src/field/field_player_action_setup.c` |
+| `$83:C32D` | `Lufia2FieldReadLeaderFacingAction` | verified | `src/field/field_player_action_setup.c` |
 | `$83:C33D` | `Lufia2FieldFindSecondaryAtProbe` | verified | `src/field/field_event_objects.c` |
+| `$83:C652` | `Lufia2PartyListHasEntry` | verified | `src/party/party_records.c` |
+| `$83:C692` | `Lufia2FieldReadSelectedItemByte` | verified | `src/field/field_player_commands.c` |
 | `$83:C6AA` | `Lufia2FieldApplyObjectParameters` | verified | `src/field/field_object_parameters.c` |
 | `$83:C729` | `Lufia2FieldSpawnRadialObjects` | verified | `src/field/field_radial_objects.c` |
 | `$83:C7C7` | `Lufia2ActorMarkAllState40` | verified | `src/actor/actor_state_mark.c` |
@@ -827,6 +834,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:CA68` | `Lufia2ActorBlockedEvent` | verified | `src/actor/actor_primary.c` |
 | `$83:CB65` | `Lufia2ActorClearSlotLinks` | verified | `src/actor/actor_primary.c` |
 | `$83:D350` | `Lufia2ActorPrimaryActionCore` | verified | `src/actor/actor_action.c` |
+| `$83:D3A1` | `Lufia2ActorStartSecondaryActionScript` | verified | `src/field/field_player_action_setup.c` |
+| `$83:D3F7` | `Lufia2ActorPrepareSecondaryScript` | verified | `src/field/field_player_action_setup.c` |
 | `$83:D416` | `Lufia2ActorLoadPrimaryScript` | verified | `src/actor/actor_primary.c` |
 | `$83:D508` | `Lufia2ActorSecondaryUpdate` | verified | `src/actor/actor_secondary.c` |
 | `$83:D7A5` | `Lufia2ActorPositionToObjectProbe` | verified | `src/field/field_object_graphics.c` |

@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1265 functions in `metadata/functions.toml`: 1265 verified, 0 draft, 0 identified, 0 disabled.
+1274 functions in `metadata/functions.toml`: 1274 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4970,3 +4970,31 @@ addressing in the previous helper. Original queue reads remain ordered.
 Existing parent behavior is not counted again as newly native functionality.
 Proofs use supported D0/DP0 contracts; no NMI or frame-wait claim is made.
 Fifteen grouped public jobs, ONE full 1,339 jobs and Windows Release pass.
+
+### Original field player-command leaves
+
+83:C161 D-pad selection and83:C652 party-list search share the existing
+native implementations; no duplicate body or whole-game progress claim.
+83:C180 resets original secondary-action state and83:C692 reads the selected
+item record byte.32,768 direct/32,768 ABI states cover73 required states,
+21,504 runtime guards,14 bounded ROM controls andfour CPP APIs pass.
+8,192 exact83:C1E3 JSR/RTS windows verify the existing controller's direction
+core reuse. CPU/full WRAM/MMIO/ordered bus comparisons preserve original DB,
+dynamic/unaligned DP, register and flag behavior. The party-list inner loop
+reads the search value once, matching the original CMP-loop bus order.
+No original gameplay behavior, interpreter owner, wait or NMI was changed.
+Twelve grouped field jobs, ONE full 1,351 jobs and Windows Release pass.
+
+### Original field action setup
+
+83:C2FE/C311/C32D preserve action-actor spawn and leader-facing selection.
+83:D3A1/D3F7 share the existing original secondary-script installer.
+40,960 direct/40,960 ABI cases cover43 required original instructions and
+114,688 original child returns per path. Full-native compositions compare
+40,960 cases per path,65536 native child returns andzero interpreted children.
+768 unwinds/2304 changed-width returns/256 decimal boundaries per path,
+29,952 runtime guards/7,168 semantic guards/25 controls/five CPP APIs pass.
+CPU/full WRAM/MMIO/ordered bus comparison retains original DB and DP behavior.
+Nine adjacent player-command/action contracts share one public integration
+batch. No original gameplay bug, interpreter wait or NMI behavior changed.
+Twelve grouped field jobs, ONE full 1,351 jobs and Windows Release pass.

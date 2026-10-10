@@ -5339,3 +5339,10 @@ width = 1
 count = 96
 owner = "battle"
 notes = "Second96-byte destination written through the WRAM port."
+
+[[location]]
+address = "7F:D4F6"
+name = "field_selected_direction"
+width = 1
+owner = "field"
+notes = "Direction selected by 83:C161 from the original D-pad table83:D437."

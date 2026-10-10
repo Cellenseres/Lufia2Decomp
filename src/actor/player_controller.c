@@ -5,6 +5,7 @@
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
+#include "lufia2/field.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
@@ -210,26 +211,10 @@ static uint8_t PlayerFindTalkTarget(
     return 1;
 }
 
-/* $83:C161: D-pad to $22/$23; carry = held. */
 static void PlayerReadDirection(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xc1e5u);
-    TransferDirectToA(cpu);                                    /* C161 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x47u)));
-    And8(cpu, 0x0fu);
-    cpu->carry = 0;
-    if (!cpu->zero) {
-        TrbDirect8(memory, cpu, 0x4bu);                        /* C169 */
-        TransferAToX(cpu);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83d437u, cpu->x)));
-        Write8(memory, DirectAddress(cpu, 0x22u), A8(cpu));
-        Write8(memory, 0x7fd4f6u, A8(cpu));
-        TransferAToX(cpu);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83c1b0u, cpu->x)));
-        Write8(memory, DirectAddress(cpu, 0x23u), A8(cpu));
-        cpu->carry = 1;
-    }
+    (void)Lufia2FieldReadPlayerDirection(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
