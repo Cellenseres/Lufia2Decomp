@@ -10024,3 +10024,99 @@ source = "src/battle/battle_hdma_commands.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:AF5E"
+name = "Lufia2BattleHdmaBuildMode5"
+source = "src/battle/battle_hdma_builders.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AFE0"
+name = "Lufia2BattleHdmaBuildMode6"
+source = "src/battle/battle_hdma_builders.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B058"
+name = "Lufia2BattleHdmaBuildMode7"
+source = "src/battle/battle_hdma_builders.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B0C3"
+name = "Lufia2BattleHdmaBuildMode8"
+source = "src/battle/battle_hdma_builders.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B13B"
+name = "Lufia2BattleHdmaBuildMode9"
+source = "src/battle/battle_hdma_builders.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B1A4"
+name = "Lufia2BattleHdmaBuildMode10"
+source = "src/battle/battle_hdma_builders.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B0F4"
+name = "Lufia2BattleHdmaStopMode8"
+source = "src/battle/battle_hdma_builders.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B166"
+name = "Lufia2BattleHdmaStopMode9"
+source = "src/battle/battle_hdma_builders.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AC16"
+name = "Lufia2BattleHdmaBeginTransitionMode13"
+source = "src/battle/battle_hdma_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:ACDF"
+name = "Lufia2BattleHdmaBeginTransitionMode14"
+source = "src/battle/battle_hdma_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AC79"
+name = "Lufia2BattleHdmaBuildTransitionMode13"
+source = "src/battle/battle_hdma_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AD42"
+name = "Lufia2BattleHdmaBuildTransitionMode14"
+source = "src/battle/battle_hdma_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

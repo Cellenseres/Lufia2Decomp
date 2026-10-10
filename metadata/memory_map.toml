@@ -70,7 +70,7 @@ name = "nmi_scroll_registers"
 width = 2
 count = 8
 owner = "system"
-notes = "Scroll register pairs the NMI copies to $210D-$2114 ($80:87A7): low byte, then high byte of each write-twice register. 82:93F6 reuses bytes0596/0597 as an original display-text word; its phase-specific meaning remains unknown."
+notes = "Scroll register pairs the NMI copies to $210D-$2114 ($80:87A7): low byte, then high byte of each write-twice register. 82:93F6 reuses bytes0596/0597 as an original display-text word; its phase-specific meaning remains unknown. Battle HDMA pattern builders read the word at +8 as their original base scroll."
 
 [[location]]
 address = "7E:0073"
@@ -1067,7 +1067,7 @@ name = "field_map_attributes"
 width = 1
 count = 1
 owner = "field"
-notes = "Base of the byte-per-cell attribute grid; extent follows the active map."
+notes = "Base of the byte-per-cell attribute grid; extent follows the active map. Battle HDMA pattern builders alias this base as their sixteen/thirty-two-word upload table. Transition-HDMA patterns also alias this base as a 224-word upload table."
 
 [[location]]
 address = "7F:D020"
@@ -4401,7 +4401,7 @@ name = "battle_color_hdma_descriptor"
 width = 1
 count = 5
 owner = "battle"
-notes = "Channel-two indirect CGWSEL/CGADSUB descriptor."
+notes = "Channel-two indirect CGWSEL/CGADSUB descriptor. Transition modes 13/14 pair this descriptor with the one at 1AF4."
 
 [[location]]
 address = "7E:124E"
@@ -4609,7 +4609,7 @@ name = "battle_transition_mask"
 width = 2
 count = 129
 owner = "battle"
-notes = "129 original1F1F words, changed through native random mask selection."
+notes = "129 original1F1F words, changed through native random mask selection. Transition setup also aliases this base as a 224-word reverse index table."
 
 [[location]]
 address = "7E:134B"
@@ -4745,7 +4745,7 @@ name = "battle_result_scroll_ready"
 width = 1
 count = 1
 owner = "battle"
-notes = "AA3D publishes 1 after filling the 84-word result ripple table."
+notes = "AA3D publishes 1 after filling the 84-word result ripple table. Battle pattern copies publish 1 for offset tables and 4 for forward/backward phase slices. Transition patterns publish one and retain the nine-step phase update."
 
 [[location]]
 address = "7E:1B21"
