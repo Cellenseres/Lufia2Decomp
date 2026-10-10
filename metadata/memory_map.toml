@@ -5068,3 +5068,75 @@ width = 1
 count = 1
 owner = "field"
 notes = "Original target factor;80 requests the original palette copy."
+
+[[location]]
+address = "7E:11F2"
+name = "world_map_tile_x"
+width = 2
+count = 1
+owner = "world"
+notes = "Original world-motion service field; caller DB remains observable."
+
+[[location]]
+address = "7E:11F4"
+name = "world_map_tile_y"
+width = 2
+count = 1
+owner = "world"
+notes = "Original world-motion service field; caller DB remains observable."
+
+[[location]]
+address = "7E:11F6"
+name = "world_map_saved_tile_x"
+width = 1
+count = 1
+owner = "world"
+notes = "Original world-motion service field; caller DB remains observable."
+
+[[location]]
+address = "7E:11F7"
+name = "world_map_saved_tile_y"
+width = 1
+count = 1
+owner = "world"
+notes = "Original world-motion service field; caller DB remains observable."
+
+[[location]]
+address = "7E:16CF"
+name = "unk_7E16CF"
+width = 2
+count = 1
+owner = "world"
+notes = "Original world-motion service field; caller DB remains observable."
+
+[[location]]
+address = "7E:1204"
+name = "world_map_view_parameter"
+width = 2
+count = 1
+owner = "world"
+notes = "Original world-view parameter; caller data bank remains observable."
+
+[[location]]
+address = "7E:11FF"
+name = "world_map_view_tilt"
+width = 1
+count = 1
+owner = "world"
+notes = "Original world-view parameter; caller data bank remains observable."
+
+[[location]]
+address = "7E:170F"
+name = "world_map_view_colour_math"
+width = 1
+count = 1
+owner = "world"
+notes = "Original world-view parameter; caller data bank remains observable."
+
+[[location]]
+address = "7E:16D3"
+name = "world_map_view_origin"
+width = 1
+count = 1
+owner = "world"
+notes = "Original world-view parameter; caller data bank remains observable."

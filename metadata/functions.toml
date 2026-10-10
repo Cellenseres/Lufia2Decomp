@@ -9664,3 +9664,115 @@ source = "src/field/field_effects.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:9470"
+name = "Lufia2WorldMapLoadMotionRecords"
+source = "src/world/world_motion_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:973E"
+name = "Lufia2WorldMapDisableDisplay"
+source = "src/world/world_motion_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:994C"
+name = "Lufia2WorldMapSumMotionTerms"
+source = "src/world/world_motion_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9A44"
+name = "Lufia2WorldMapRememberTilePosition"
+source = "src/world/world_motion_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9AB1"
+name = "Lufia2WorldMapCheckMovingArrival"
+source = "src/world/world_motion_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9AB8"
+name = "Lufia2WorldMapCheckStoppedArrival"
+source = "src/world/world_motion_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:D37D"
+name = "Lufia2WorldMapStartFadeOut"
+source = "src/world/world_motion_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:D381"
+name = "Lufia2WorldMapStartFadeIn"
+source = "src/world/world_motion_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9F35"
+name = "Lufia2WorldMapResolveResourcePointer"
+source = "src/world/world_view_services.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:A28B"
+name = "Lufia2WorldMapCenterTargetTiles"
+source = "src/world/world_view_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A2C6"
+name = "Lufia2WorldMapReadSecondObjectTarget"
+source = "src/world/world_view_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A376"
+name = "Lufia2WorldMapConfigurePrimaryView"
+source = "src/world/world_view_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A38C"
+name = "Lufia2WorldMapConfigureSecondaryView"
+source = "src/world/world_view_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:D3AE"
+name = "Lufia2WorldMapEnableDisplay"
+source = "src/world/world_view_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
