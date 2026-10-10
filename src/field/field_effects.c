@@ -1,5 +1,7 @@
 /* Field colour and screen effects. */
 
+#include <stddef.h>
+
 #include "core/cpu_ops.h"
 #include "core/child_call.h"
 #include "field/field_internal.h"
