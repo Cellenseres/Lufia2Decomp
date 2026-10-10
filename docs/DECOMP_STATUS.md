@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1160 functions in `metadata/functions.toml`: 1160 verified, 0 draft, 0 identified, 0 disabled.
+1169 functions in `metadata/functions.toml`: 1169 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4613,3 +4613,22 @@ The direct matrices cover all 256 data banks and three direct pages. All
 WRAM, MMIO and ordered data accesses pass. 16,896 unsupported entry guards,
 20 bounded original-ROM controls and four C++ interfaces pass.
 Three public-library jobs, all 1,205 full jobs and Windows Release pass.
+
+### Field diagnostic flag and value display
+
+Nine complete entries preserve the original diagnostic flag/value editor,
+its two event-state sources, sixteen display rows, cursor tiles, tilemap
+clear and button consumption. The bitmask table remains original ROM data.
+Shared cursor and flag addressing remain explicit original child calls.
+The cursor-address entry returns M0X0; its callers restore M1X0. The clear
+routine retains the direct-page-derived word and both incoming index widths.
+
+73,728 original-ROM and 73,728 production-ABI cases pass across all entries.
+The direct matrices cover all 256 data banks and three direct pages. All
+146 executed instruction states and every original return boundary pass.
+CPU, full WRAM, MMIO and ordered data operands remain literal. 30,720 entry
+guards, 90 child redirects, six child unwinds, 31 bounded altered-ROM controls
+and nine C++ interfaces pass. 1,024 complete display compositions per proof
+path execute 49,152 actual original flag/string returns each. Unsupported
+entry contexts and pure frame polling retain original interpreter execution.
+Six public-library jobs, all 1,211 full jobs and Windows Release pass.

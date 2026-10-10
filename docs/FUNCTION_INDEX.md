@@ -903,6 +903,15 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:8AF4` | `Lufia2AncientCaveCarryBlueItem` | verified | `src/cave/cave_exit.c` |
 | `$84:8B9C` | `Lufia2AncientCaveDefeat` | verified | `src/cave/cave_reset.c` |
 | `$84:8BC7` | `Lufia2BattleVisualTransition` | verified | `src/battle/battle_transition.c` |
+| `$85:821C` | `Lufia2FieldDiagnosticsEditValue` | verified | `src/field/field_diagnostics.c` |
+| `$85:8267` | `Lufia2FieldDiagnosticsHideCursor` | verified | `src/field/field_diagnostics.c` |
+| `$85:8274` | `Lufia2FieldDiagnosticsShowCursor` | verified | `src/field/field_diagnostics.c` |
+| `$85:8281` | `Lufia2FieldDiagnosticsCursorAddress` | verified | `src/field/field_diagnostics.c` |
+| `$85:829D` | `Lufia2FieldDiagnosticsDrawValues` | verified | `src/field/field_diagnostics.c` |
+| `$85:8312` | `Lufia2FieldDiagnosticsResolveFlag` | verified | `src/field/field_diagnostics.c` |
+| `$85:84A9` | `Lufia2FieldDiagnosticsClearTilemap` | verified | `src/field/field_diagnostics.c` |
+| `$85:850E` | `Lufia2FieldDiagnosticsConsumeHighButtons` | verified | `src/field/field_diagnostics.c` |
+| `$85:8515` | `Lufia2FieldDiagnosticsConsumeLowButtons` | verified | `src/field/field_diagnostics.c` |
 | `$85:8850` | `Lufia2BattleAnimateStatusIcons` | verified | `src/battle/battle_status_icons.c` |
 | `$85:8905` | `Lufia2BattleInitializeEnemySpriteSizes` | verified | `src/battle/battle_sprite_descriptors.c` |
 | `$85:894A` | `Lufia2BattleDriftRecords` | verified | `src/battle/battle_drift.c` |
