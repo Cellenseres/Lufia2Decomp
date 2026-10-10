@@ -38,8 +38,8 @@ Lufia2ExecutionResult Lufia2BattleEffectRestorePortraitPose(
     OpSetDataBank(memory, cpu, 0x97u);
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x819debu, 0x81bb75u, 2u, 0x81u)) {
-        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND,
-                                              0x819debu, 0u};
+        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, 0x819debu,
+                                              0u};
         return result;
     }
     PullDataBank(memory, cpu);

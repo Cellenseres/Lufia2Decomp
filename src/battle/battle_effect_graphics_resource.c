@@ -46,8 +46,8 @@ Lufia2ExecutionResult Lufia2BattleEffectLoadGraphicsResource(
     PushY(memory, cpu);
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x819684u, 0x808e9du, 3u, 0x81u)) {
-        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND,
-                                              0x819684u, 0u};
+        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, 0x819684u,
+                                              0u};
         return result;
     }
     OpPullY(memory, cpu);
