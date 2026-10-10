@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1205 functions in `metadata/functions.toml`: 1205 verified, 0 draft, 0 identified, 0 disabled.
+1211 functions in `metadata/functions.toml`: 1211 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4766,3 +4766,19 @@ CPU, full WRAM, MMIO and ordered accesses match across all 256 DB values,
 three DP layouts and both decimal states. 1,152 semantic handoffs, 20,736
 runtime guards, twelve bounded ROM controls, six C++ APIs and three return
 modes pass. Six shared public jobs, all 1,250 full jobs and Windows Release pass.
+
+### Original world-map frame callers
+
+Six complete entries connect object heading, paired animations, original
+record positioning, display reset, palette DMA and tile classification.
+All nine child sites retain their original JSR frames and unwind points.
+Existing child implementations remain shared. World X spans its documented
+low byte and the existing sprite-upload high byte; metadata does not overlap.
+
+49,152 direct and 49,152 production-ABI cases retain 73,696 original child
+returns per path. Another 49,152 cases per path compose native children with
+90,080 returns. All 101 required states, CPU, WRAM, MMIO and ordered accesses
+match. Original PB/DB 86, DP zero, binary M1X0 contexts use real object records.
+3,072 semantic handoffs, 20,736 runtime guards, 135 redirects, 576 child-entry
+unwinds per path, seventeen bounded controls and six C++ APIs pass.
+Seven public jobs, all 1,257 full jobs and Windows Release pass.

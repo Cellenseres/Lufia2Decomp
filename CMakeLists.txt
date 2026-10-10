@@ -414,6 +414,7 @@ add_library(lufia2_decomp STATIC
     src/world/world_scroll_step.c
     src/world/world_motion_services.c
     src/world/world_view_services.c
+    src/world/world_frame_callers.c
     src/world/world_map_objects.c)
 add_library(Lufia2::Decomp ALIAS lufia2_decomp)
 target_link_libraries(lufia2_decomp PUBLIC Lufia2::ResourceFormat)
