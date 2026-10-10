@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1236 functions in `metadata/functions.toml`: 1236 verified, 0 draft, 0 identified, 0 disabled.
+1248 functions in `metadata/functions.toml`: 1248 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
@@ -195,3 +195,7 @@ Six original world-frame callers preserve shared children and display transition
 Six finite field-camera services preserve scene bytes, input and encounter state.
 
 Battle HDMA dispatch and eighteen original command handlers retain real child frames.
+
+Eight original HDMA pattern builders retain phase boundaries and ordered table writes.
+
+Four original transition-HDMA routines retain carry-chained patterns and paired descriptors.

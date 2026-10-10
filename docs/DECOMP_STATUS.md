@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1236 functions in `metadata/functions.toml`: 1236 verified, 0 draft, 0 identified, 0 disabled.
+1248 functions in `metadata/functions.toml`: 1248 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4816,3 +4816,38 @@ handler compositions per path, 768 original child-entry unwinds per path and
 1,728 symmetric changed-width return handoffs per path pass. Fifty-five
 bounded ROM controls, nineteen C++ APIs and three return modes pass.
 Eight public jobs, all 1,268 full jobs and Windows Release pass.
+
+### Original battle HDMA pattern builders
+
+Six original ROM-pattern builders and two stop cores use shared named C
+fill/phase helpers. Four fills retain original decimal scroll addition; two
+phase slices preserve distinct forward/reverse endpoints and their stop tails.
+The offset scroll aliases nmi_scroll_registers +8 and the upload table aliases
+field_map_attributes. Original stack/bank behavior and register outputs remain exact.
+
+65,536 direct and 65,536 production-ABI cases cover all 171 required states.
+Direct states include all 256 DB values, three DP layouts, decimal arithmetic,
+phase endpoints and 4,096 stack-overlap/wrap cases within the same batch.
+1,536 semantic handoffs and 24,576 runtime guards pass. The production ABI
+retains binary/DP0/native M1X0 contexts and three actual RTS return modes.
+Another 155,648 original nineteen-command chains per path compose 8,192
+native handler returns and 69,176 native builder returns; 25,942 remaining
+original wave returns retain their services. Each builder returns 8,647 times.
+CPU, full WRAM, MMIO and ordered accesses match. Sixteen bounded controls
+and eight C++ interfaces pass. Twelve grouped public jobs, ONE full 1,280 jobs and Windows Release pass.
+
+### Original battle transition HDMA
+
+Two paired-descriptor setups and two original carry-chained pattern builders
+retain the 224-word reverse index and upload tables. Negative sums retain
+the original DP result, CMP carry feeds the next row, and nine-step phase
+updates preserve decimal/negative behavior. Long bank-zero4317/4327 stores
+remain distinct from bank-relative channel writes. Existing aliases suffice.
+
+32,768 direct and32,768 ABI cases cover all184 non-return instruction states;
+16,384 original builder returns per path. All256DB/threeDP/decimal and phase
+boundaries match CPU, fullWRAM, MMIO andordered access. 1,152 semantic handoffs
+and12,288 runtime guards pass. Another16,384 fully native compositions per
+path,256 actual child-entry unwinds and768 symmetric changed-width handoffs
+per path pass. Sixteen bounded ROM controls andfour CPP APIs pass.
+Twelve grouped public jobs, ONE full 1,280 jobs and Windows Release pass.
