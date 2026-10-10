@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1253 functions in `metadata/functions.toml`: 1253 verified, 0 draft, 0 identified, 0 disabled.
+1257 functions in `metadata/functions.toml`: 1257 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4897,3 +4897,21 @@ their returns are excluded from actual-original-child counts. CPU,fullWRAM,
 MMIO,ordered accesses and live stack match.2,432 unwinds and7,296 changed-
 width returns per path,21 bounded ROM controls andtwo C++ APIs pass.
 Seven grouped public jobs, ONE full 1,303 jobs and Windows Release pass.
+
+### Original object-reward and choice callers
+
+8E:C05F preserves two reward contexts and eleven child sites.8E:BCAD preserves
+collection enumeration and eight choices;8E:BD5E searches available choices.
+86:9E3B builds a random word and preserves the original multiply/PLP tail.
+8,192 direct/8,192 ABI states cover233 instruction states;734,704 actual
+original child returns per path,1,152 semantic handoffs and24,576 runtime
+guards pass.8,192 native compositions per path reuse twelve services and
+retain1,792 original child returns.2,560 unwinds/7,680 changed-width returns
+per path,22 bounded original-ROM controls andfour C++ APIs pass.
+Presentation8E:C1DE is an explicit controlled boundary, with2,176 returns
+excluded from actual-child execution.128 chooser states use one declared
+synthetic ROM-data fixture for a dormant branch;ROM instructions/file remain
+unchanged. No presentation, frame-wait or NMI execution is claimed here.
+Existing random refill/seed reads now follow ROM order explicitly;four random
+services match8,192 strict bus-order states andfive bounded ROM controls.
+Eight grouped public jobs, ONE full 1,311 jobs and Windows Release pass.

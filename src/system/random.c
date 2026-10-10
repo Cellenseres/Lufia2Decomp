@@ -21,15 +21,19 @@ static void RandomRefill(
     unsigned i;
 
     for (i = 0; i < RANDOM_SHORT_LAG; ++i) {
-        value = (uint8_t)(WramReadAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i) ^
-                          WramReadAt(wram, WRAM_RANDOM_TABLE,
-                                     (uint16_t)(i + RANDOM_LONG_LAG)));
+        const uint8_t current = WramReadAt(
+            wram, WRAM_RANDOM_TABLE, (uint16_t)i);
+        const uint8_t lagged = WramReadAt(
+            wram, WRAM_RANDOM_TABLE, (uint16_t)(i + RANDOM_LONG_LAG));
+        value = (uint8_t)(current ^ lagged);
         WramWriteAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i, value);
     }
     for (; i < WRAM_RANDOM_TABLE_COUNT; ++i) {
-        value = (uint8_t)(WramReadAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i) ^
-                          WramReadAt(wram, WRAM_RANDOM_TABLE,
-                                     (uint16_t)(i - RANDOM_SHORT_LAG)));
+        const uint8_t current = WramReadAt(
+            wram, WRAM_RANDOM_TABLE, (uint16_t)i);
+        const uint8_t lagged = WramReadAt(
+            wram, WRAM_RANDOM_TABLE, (uint16_t)(i - RANDOM_SHORT_LAG));
+        value = (uint8_t)(current ^ lagged);
         WramWriteAt(wram, WRAM_RANDOM_TABLE, (uint16_t)i, value);
     }
     cpu->x = (uint16_t)i;
@@ -164,8 +168,9 @@ static SeedFillResult SeedFillTable(Lufia2Wram wram) {
         index = (uint8_t)(index + RANDOM_SEED_STRIDE);
         if (index >= RANDOM_TABLE_SIZE)
             index = (uint8_t)(index - RANDOM_TABLE_SIZE);
-        difference = (uint8_t)(WramRead(wram, WRAM_RANDOM_SEED_WORK) -
-                               WramRead(wram, RANDOM_SEED_SCRATCH));
+        const uint8_t seed = WramRead(wram, WRAM_RANDOM_SEED_WORK);
+        const uint8_t scratch = WramRead(wram, RANDOM_SEED_SCRATCH);
+        difference = (uint8_t)(seed - scratch);
         previous = WramRead(wram, RANDOM_SEED_SCRATCH);
         WramWrite(wram, WRAM_RANDOM_SEED_WORK, previous);
         WramWriteAt(wram, WRAM_RANDOM_TABLE, index, previous);

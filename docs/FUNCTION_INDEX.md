@@ -1164,6 +1164,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9A71` | `Lufia2WorldMapReadTileClass` | verified | `src/world/world_frame_callers.c` |
 | `$86:9AB1` | `Lufia2WorldMapCheckMovingArrival` | verified | `src/world/world_motion_services.c` |
 | `$86:9AB8` | `Lufia2WorldMapCheckStoppedArrival` | verified | `src/world/world_motion_services.c` |
+| `$86:9E3B` | `Lufia2WorldMapRandomScaledWord` | verified | `src/world/world_random_word.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:9F35` | `Lufia2WorldMapResolveResourcePointer` | verified | `src/world/world_view_services.c` |
 | `$86:A03B` | `Lufia2WorldMapStepPaletteColors` | verified | `src/world/world_palette_step.c` |
@@ -1252,7 +1253,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:BB2E` | `Lufia2FieldCycleSelectedSprite` | verified | `src/field/field_sprite_selector.c` |
 | `$8E:BBA8` | `Lufia2FieldTakeSpriteSelectionButtons` | verified | `src/field/field_sprite_selector.c` |
 | `$8E:BC99` | `Lufia2FieldSelectMenuActor` | verified | `src/menu/menu_actor_callers.c` |
+| `$8E:BCAD` | `Lufia2FieldChooseCollectedObjects` | verified | `src/field/field_object_rewards.c` |
+| `$8E:BD5E` | `Lufia2FieldFindAvailableChoice` | verified | `src/field/field_object_rewards.c` |
 | `$8E:BD77` | `Lufia2FieldScrollUpdate` | verified | `src/field/field_scroll.c` |
+| `$8E:C05F` | `Lufia2FieldTryObjectReward` | verified | `src/field/field_object_rewards.c` |
 | `$8E:C1C5` | `Lufia2FieldCountValue2B` | verified | `src/field/field_camera_services.c` |
 | `$8E:C338` | `Lufia2FieldSelectObjectCondition` | verified | `src/field/field_object_conditions.c` |
 | `$8E:C34F` | `Lufia2FieldResolveObjectCondition` | verified | `src/field/field_object_conditions.c` |

@@ -5180,3 +5180,68 @@ width = 1
 count = 5
 owner = "battle"
 notes = "Original channel-seven primary-wave descriptor; control, register, source and bank."
+
+[[location]]
+address = "7F:D4EE"
+name = "field_reward_object"
+width = 1
+owner = "field"
+notes = "Object id shared by the two reward contexts."
+
+[[location]]
+address = "7F:D4EF"
+name = "field_reward_value"
+width = 2
+owner = "field"
+notes = "Reward item/spell value with original flag bits."
+
+[[location]]
+address = "7F:E733"
+name = "collected_reward_flags"
+width = 1
+owner = "field"
+notes = "Eight collected reward bits; reused by Ancient Cave."
+
+[[location]]
+address = "7F:E746"
+name = "object_reward_values"
+width = 2
+count = 8
+owner = "field"
+notes = "Eight reward words; Ancient Cave chest values share this storage."
+
+[[location]]
+address = "7F:E75B"
+name = "special_reward_state"
+width = 2
+aliases = ["CAVE_SCROLL_CHEST_STATE_LONG"]
+owner = "field"
+notes = "Value 002D stores FFFF; reused by cave scroll/chest state."
+
+[[location]]
+address = "7E:D000"
+name = "field_collected_choice_buffer"
+width = 2
+owner = "field"
+notes = "Indexed temporary choice words; aliases the text glyph buffer in another phase."
+
+[[location]]
+address = "7E:0B5F"
+name = "field_claimed_reward_count"
+width = 2
+owner = "field"
+notes = "Saturating word count for non-002B rewards."
+
+[[location]]
+address = "7E:0B6E"
+name = "field_reward_count_a"
+width = 2
+owner = "field"
+notes = "Saturating count selected when reward bit 4000 is set."
+
+[[location]]
+address = "7E:0B70"
+name = "field_reward_count_b"
+width = 2
+owner = "field"
+notes = "Saturating count selected when reward bit 4000 is clear."

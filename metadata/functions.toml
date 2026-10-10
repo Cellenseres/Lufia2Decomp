@@ -10160,3 +10160,35 @@ source = "src/field/field_item_regions.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "8E:C05F"
+name = "Lufia2FieldTryObjectReward"
+source = "src/field/field_object_rewards.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:BCAD"
+name = "Lufia2FieldChooseCollectedObjects"
+source = "src/field/field_object_rewards.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:BD5E"
+name = "Lufia2FieldFindAvailableChoice"
+source = "src/field/field_object_rewards.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:9E3B"
+name = "Lufia2WorldMapRandomScaledWord"
+source = "src/world/world_random_word.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
