@@ -9,11 +9,8 @@ enum {
     TURN_ENTRY_BYTES = 3u
 };
 
-Lufia2ExecutionResult Lufia2BattleInsertTurn(
+Lufia2ExecutionResult BattleInsertTurnBody(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
-        cpu->index_is_8_bit || cpu->decimal)
-        return ExecutionHandoff(cpu, 0x859337u);
     PushDataBank(memory, cpu);
     Push8(memory, cpu, 0x85u);
     PullDataBank(memory, cpu);
@@ -46,4 +43,12 @@ Lufia2ExecutionResult Lufia2BattleInsertTurn(
     }
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x85937cu);
+}
+
+Lufia2ExecutionResult Lufia2BattleInsertTurn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x859337u);
+    return BattleInsertTurnBody(memory, cpu);
 }

@@ -10240,3 +10240,19 @@ source = "src/battle/battle_special_party_grid.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:92CE"
+name = "Lufia2BattlePublishPartyAction"
+source = "src/battle/battle_party_actions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:92FF"
+name = "Lufia2BattleQueueStagedPartyAction"
+source = "src/battle/battle_party_actions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

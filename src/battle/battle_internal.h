@@ -7,6 +7,9 @@
 #include "lufia2/battle.h"
 #include "system/wram.h"
 
+Lufia2ExecutionResult BattleInsertTurnBody(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* ROM routines reached by battle child calls. */
 enum {
     BATTLE_ROUTINE_DECOMPRESS_RESOURCE = 0x808e9du,
