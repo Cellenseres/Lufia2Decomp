@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1180 functions in `metadata/functions.toml`: 1180 verified, 0 draft, 0 identified, 0 disabled.
+1189 functions in `metadata/functions.toml`: 1189 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4692,3 +4692,23 @@ altered-ROM controls,three host return modes and three C++ interfaces pass.
 No actual-parent composition or gameplay-capture claim. Runtime bindings
 keep unproved CPU contexts on original execution. No copied ROM data.
 Twenty-one public-library jobs, all1,232 full jobs and Windows Release pass.
+
+### Shared field sprite sizes and tile layouts
+
+Nine complete original entries write single,vertical,horizontal and square
+OAM layouts,the square's four orientations and the original high-table bits.
+Existing callers share these cores and retain original nested stack frames.
+IndexedJSR pointer reads remain ordered before its stack writes. Decimal
+coordinate additions use the existing complete CPU adapter. Pointer tables
+at83:A48A..A491 and83:A589..A590 remain original ROM data.
+
+73,728 original-ROM and73,728 production-ABI cases cover all217 required
+nonreturn states,the square's three terminals and original width changes.
+The direct proof executes62,144 nested original RTS returns; ABI proof
+executes63,224. Native cores retain corresponding stack/bus accesses.
+CPU,fullWRAM,MMIO and ordered reads/writes match across all256 data banks,
+three direct pages,both decimal states and boundary Y coordinates. Runtime
+guards retain unproved contexts on original execution.1,728 unsupported
+semantic handoffs,31,104 runtime guards,35 bounded altered-ROM controls,
+three host return modes and nine C++ interfaces pass. No gameplay/profile
+claim or copied ROM data. Three public jobs, all 1,235 full jobs and Windows Release pass.

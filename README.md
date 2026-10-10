@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1180 functions in `metadata/functions.toml`: 1180 verified, 0 draft, 0 identified, 0 disabled.
+1189 functions in `metadata/functions.toml`: 1189 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
@@ -181,3 +181,5 @@ Five independent field-object entries reuse their verified shared cores.
 Three shared actor, battle-message and field-reset entries are verified.
 
 Original object-parameter, sprite-grid and prefixed-name entries are verified.
+
+Nine shared field-OAM size and layout entries are verified.
