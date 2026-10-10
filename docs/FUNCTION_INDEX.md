@@ -746,6 +746,15 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:9E31` | `Lufia2AncientCaveGenerateFloor` | verified | `src/cave/ancient_cave.c` |
 | `$83:9FA9` | `Lufia2FieldNmiUploads` | verified | `src/field/field_nmi.c` |
 | `$83:A21A` | `Lufia2FieldActorSprites` | verified | `src/field/field_sprites.c` |
+| `$83:A4A2` | `Lufia2FieldWriteOamSingle` | verified | `src/field/field_sprites.c` |
+| `$83:A4BF` | `Lufia2FieldWriteOamVerticalPair` | verified | `src/field/field_sprites.c` |
+| `$83:A501` | `Lufia2FieldWriteOamHorizontalPair` | verified | `src/field/field_sprites.c` |
+| `$83:A534` | `Lufia2FieldWriteOamSquare` | verified | `src/field/field_sprites.c` |
+| `$83:A591` | `Lufia2FieldWriteOamQuad` | verified | `src/field/field_sprites.c` |
+| `$83:A5C7` | `Lufia2FieldWriteOamQuadFlipX` | verified | `src/field/field_sprites.c` |
+| `$83:A5FD` | `Lufia2FieldWriteOamQuadFlipY` | verified | `src/field/field_sprites.c` |
+| `$83:A633` | `Lufia2FieldWriteOamQuadFlipXY` | verified | `src/field/field_sprites.c` |
+| `$83:A669` | `Lufia2FieldSetOamSizeBit` | verified | `src/field/field_sprites.c` |
 | `$83:A686` | `Lufia2ActorResetSceneSlots` | verified | `src/actor/actor_scene_resources.c` |
 | `$83:A6DF` | `Lufia2ActorResetTransientState` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:A71C` | `Lufia2ActorSetFinePosition` | verified | `src/actor/actor_bootstrap.c` |

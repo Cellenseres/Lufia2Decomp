@@ -9576,3 +9576,75 @@ source = "src/field/field_prefixed_name.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:A591"
+name = "Lufia2FieldWriteOamQuad"
+source = "src/field/field_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A5C7"
+name = "Lufia2FieldWriteOamQuadFlipX"
+source = "src/field/field_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A5FD"
+name = "Lufia2FieldWriteOamQuadFlipY"
+source = "src/field/field_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A633"
+name = "Lufia2FieldWriteOamQuadFlipXY"
+source = "src/field/field_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A669"
+name = "Lufia2FieldSetOamSizeBit"
+source = "src/field/field_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A4A2"
+name = "Lufia2FieldWriteOamSingle"
+source = "src/field/field_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A4BF"
+name = "Lufia2FieldWriteOamVerticalPair"
+source = "src/field/field_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A501"
+name = "Lufia2FieldWriteOamHorizontalPair"
+source = "src/field/field_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:A534"
+name = "Lufia2FieldWriteOamSquare"
+source = "src/field/field_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

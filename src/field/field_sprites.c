@@ -1,7 +1,7 @@
 /* Field actor OAM ($83:A21A). */
 
 #include "actor/actor_internal.h"
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "system/dp_scratch.h"
@@ -36,12 +36,10 @@ enum {
 #define OAM_TILE(n) ((n) * OAM_ENTRY_SIZE + 2u)
 #define OAM_ATTRIBUTES(n) ((n) * OAM_ENTRY_SIZE + 3u)
 
-/* $83:A669: set the size bit for OAM entry $58, then $58++. */
-static void FieldOamHighBit(
+/* Set the next OAM high-table bit. */
+static void FieldSetOamSizeBit(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+    Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);                                    /* A669 */
     LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_INDEX));
     And8(cpu, 0x03u);
@@ -57,11 +55,19 @@ static void FieldOamHighBit(
     LoadAAbsolute8(memory, cpu, OAM_HIGH_TABLE, cpu->x);
     Or8(cpu, DirectByte(memory, cpu, OAM_DP_SIZE_MASK));
     StoreAAbsolute8(memory, cpu, OAM_HIGH_TABLE, cpu->x);
+}
+
+static void FieldOamHighBit(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    FieldSetOamSizeBit(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:A591-$83:A633: four 16x16 tiles; bit 1 flips Y, bit 0 X. */
-static void FieldOamQuad(
+/* Four tiles with independent horizontal and vertical flips. */
+static void FieldWriteOamQuad(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint8_t layout) {
@@ -70,7 +76,6 @@ static void FieldOamQuad(
     const uint8_t *order = tiles[layout & 1u];
     unsigned i;
 
-    SimulateJsrFrame(memory, cpu, 0xa555u);
     LoadX16(cpu, cpu->y);                                      /* TYX */
     for (i = 0; i < 4u; ++i) {
         if (i)
@@ -81,27 +86,38 @@ static void FieldOamQuad(
     StoreAAbsolute8(memory, cpu, (layout & 2u) ? OAM_Y(2) : OAM_Y(0), cpu->x);
     StoreAAbsolute8(memory, cpu, (layout & 2u) ? OAM_Y(3) : OAM_Y(1), cpu->x);
     cpu->carry = 0;
-    Adc8(cpu, 0x10u);
+    OpAdcValue(cpu, 0x10u);
     StoreAAbsolute8(memory, cpu, (layout & 2u) ? OAM_Y(0) : OAM_Y(2), cpu->x);
     StoreAAbsolute8(memory, cpu, (layout & 2u) ? OAM_Y(1) : OAM_Y(3), cpu->x);
     LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
     StoreAAbsolute8(memory, cpu, OAM_X(0), cpu->x);
     StoreAAbsolute8(memory, cpu, OAM_X(2), cpu->x);
     cpu->carry = 0;
-    Adc8(cpu, 0x10u);
+    OpAdcValue(cpu, 0x10u);
     StoreAAbsolute8(memory, cpu, OAM_X(1), cpu->x);
     StoreAAbsolute8(memory, cpu, OAM_X(3), cpu->x);
+}
+
+static void FieldOamQuad(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint8_t layout) {
+    (void)Read8(memory, ((uint32_t)cpu->program_bank << 16) | (0xa589u + cpu->x));
+    (void)Read8(memory, ((uint32_t)cpu->program_bank << 16) | (0xa58au + cpu->x));
+    SimulateJsrFrame(memory, cpu, 0xa555u);
+    FieldWriteOamQuad(memory, cpu, layout);
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:A48A handlers: OAM entries by sprite size. */
-static void FieldOamEntries(
+/* Emit OAM entries for the four original sizes. */
+static uint16_t FieldWriteOamEntries(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint8_t size) {
-    SimulateJsrFrame(memory, cpu, 0xa463u);
+    uint16_t terminal = 0xa588u;
     LoadX16(cpu, cpu->y);                                      /* TYX */
     if (size == 0) {
+        terminal = 0xa4beu;
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_TILE)); /* A4A2 */
         StoreAAbsolute8(memory, cpu, OAM_TILE(0), cpu->x);
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_ATTRIBUTES));
@@ -114,6 +130,7 @@ static void FieldOamEntries(
         if (!cpu->zero)
             FieldOamHighBit(memory, cpu, 0xa4bdu);
     } else if (size == 1) {
+        terminal = 0xa500u;
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_TILE)); /* A4BF */
         StoreAAbsolute8(memory, cpu, OAM_TILE(0), cpu->x);
         LoadA8(cpu, (uint8_t)(A8(cpu) + 2u));
@@ -128,7 +145,7 @@ static void FieldOamEntries(
             LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_Y));
             StoreAAbsolute8(memory, cpu, top, cpu->x);
             cpu->carry = 0;
-            Adc8(cpu, 0x10u);
+            OpAdcValue(cpu, 0x10u);
             StoreAAbsolute8(memory, cpu, top ^ OAM_X(1), cpu->x);
         }
         LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));           /* A4EE */
@@ -140,6 +157,7 @@ static void FieldOamEntries(
             FieldOamHighBit(memory, cpu, 0xa4ffu);
         }
     } else if (size == 2) {
+        terminal = 0xa533u;
         LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_TILE)); /* A501 */
         StoreAAbsolute8(memory, cpu, OAM_TILE(0), cpu->x);
         LoadA8(cpu, (uint8_t)(A8(cpu) + 2u));
@@ -153,7 +171,7 @@ static void FieldOamEntries(
         LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
         StoreAAbsolute8(memory, cpu, OAM_X(0), cpu->x);
         cpu->carry = 0;
-        Adc8(cpu, 0x10u);
+        OpAdcValue(cpu, 0x10u);
         StoreAAbsolute8(memory, cpu, OAM_X(1), cpu->x);
         if (!cpu->carry)
             LoadA8(cpu, DirectByte(memory, cpu, OAM_DP_SIZE_FLAGS));
@@ -183,8 +201,9 @@ static void FieldOamEntries(
         if (!cpu->negative) {
             LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));
             cpu->carry = 0;
-            Adc8(cpu, 0x10u);
+            OpAdcValue(cpu, 0x10u);
             if (cpu->carry) {
+                terminal = 0xa56bu;
                 IncrementDirect8(memory, cpu, OAM_DP_INDEX); /* A561 */
                 FieldOamHighBit(memory, cpu, 0xa565u);
                 IncrementDirect8(memory, cpu, OAM_DP_INDEX);
@@ -193,8 +212,9 @@ static void FieldOamEntries(
         } else {
             LoadA8(cpu, DirectByte(memory, cpu, DP_PROBE_X));       /* A56C */
             cpu->carry = 0;
-            Adc8(cpu, 0x10u);
+            OpAdcValue(cpu, 0x10u);
             if (!cpu->carry) {
+                terminal = 0xa57fu;
                 FieldOamHighBit(memory, cpu, 0xa575u);
                 FieldOamHighBit(memory, cpu, 0xa578u);
                 FieldOamHighBit(memory, cpu, 0xa57bu);
@@ -206,6 +226,15 @@ static void FieldOamEntries(
             }
         }
     }
+    return terminal;
+}
+
+static void FieldOamEntries(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t size) {
+    (void)Read8(memory, ((uint32_t)cpu->program_bank << 16) | (0xa48au + cpu->x));
+    (void)Read8(memory, ((uint32_t)cpu->program_bank << 16) | (0xa48bu + cpu->x));
+    SimulateJsrFrame(memory, cpu, 0xa463u);
+    (void)FieldWriteOamEntries(memory, cpu, size);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -713,4 +742,72 @@ Lufia2ExecutionResult Lufia2FieldActorSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     return Lufia2FieldActorSpritesWithVisibility(memory, cpu, 0);
+}
+
+Lufia2ExecutionResult Lufia2FieldWriteOamQuad(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83a591u);
+    FieldWriteOamQuad(memory, cpu, 0u);
+    return ExecutionReturned(0x83a5c6u);
+}
+
+Lufia2ExecutionResult Lufia2FieldWriteOamQuadFlipX(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83a5c7u);
+    FieldWriteOamQuad(memory, cpu, 1u);
+    return ExecutionReturned(0x83a5fcu);
+}
+
+Lufia2ExecutionResult Lufia2FieldWriteOamQuadFlipY(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83a5fdu);
+    FieldWriteOamQuad(memory, cpu, 2u);
+    return ExecutionReturned(0x83a632u);
+}
+
+Lufia2ExecutionResult Lufia2FieldWriteOamQuadFlipXY(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83a633u);
+    FieldWriteOamQuad(memory, cpu, 3u);
+    return ExecutionReturned(0x83a668u);
+}
+
+Lufia2ExecutionResult Lufia2FieldSetOamSizeBit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83a669u);
+    FieldSetOamSizeBit(memory, cpu);
+    return ExecutionReturned(0x83a685u);
+}
+
+Lufia2ExecutionResult Lufia2FieldWriteOamSingle(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83a4a2u);
+    return ExecutionReturned(0x830000u | FieldWriteOamEntries(memory, cpu, 0u));
+}
+
+Lufia2ExecutionResult Lufia2FieldWriteOamVerticalPair(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83a4bfu);
+    return ExecutionReturned(0x830000u | FieldWriteOamEntries(memory, cpu, 1u));
+}
+
+Lufia2ExecutionResult Lufia2FieldWriteOamHorizontalPair(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83a501u);
+    return ExecutionReturned(0x830000u | FieldWriteOamEntries(memory, cpu, 2u));
+}
+
+Lufia2ExecutionResult Lufia2FieldWriteOamSquare(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83a534u);
+    return ExecutionReturned(0x830000u | FieldWriteOamEntries(memory, cpu, 3u));
 }
