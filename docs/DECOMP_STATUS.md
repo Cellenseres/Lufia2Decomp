@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1191 functions in `metadata/functions.toml`: 1191 verified, 0 draft, 0 identified, 0 disabled.
+1205 functions in `metadata/functions.toml`: 1205 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4733,3 +4733,36 @@ returns. CPU,fullWRAM,MMIO and ordered accesses match.896 semantic handoffs,
 three return modes and three C++ interfaces pass. Unproved contexts keep
 original execution. No gameplay/profile claim or copied ROM artifacts.
 Nine public jobs, all 1,244 full jobs and Windows Release pass.
+
+### Original world-map motion services
+
+Eight complete entries load five referenced motion records and an optional
+control record, retain tile-position bytes, test arrival conditions, sum
+overlapping motion terms, disable display uploads, and start screen fades.
+Both arrival entries share their original tail; both fades share one body.
+Discarded reads, stack transfers, byte widths and original bus order remain
+observable. Reused motion-table bytes retain their existing field metadata.
+
+65,536 original-ROM cases and 65,536 production-ABI cases cover all 99
+required nonreturn instruction states. CPU, full WRAM, MMIO and ordered
+accesses match. Direct tests cover all 256 DB values, three DP layouts and
+both decimal states. Runtime guards retain the proven binary PB/DB86,
+DP0, M1X0 and stack contract. 1,536 semantic handoffs, 27,648 runtime guards,
+16 bounded ROM controls, eight C++ APIs and three return modes pass.
+No original wait or nonterminating scene loop is replaced by a finite stub.
+Six shared public jobs, all 1,250 full jobs and Windows Release pass.
+
+### Original world-map resource and view services
+
+Six complete entries resolve banked resources, center tile targets, read
+positions and pose from the second original world object, configure shared
+view parameters, and restore display brightness. Resource resolution keeps
+its ASL carry, repeated table read, stack access, changed DB and M0X0 exit.
+Both view variants share their backward original tail. Original pose and
+coordinates stay in their real record; no host copy replaces bus accesses.
+
+49,152 direct and 49,152 production-ABI cases cover all 77 required states.
+CPU, full WRAM, MMIO and ordered accesses match across all 256 DB values,
+three DP layouts and both decimal states. 1,152 semantic handoffs, 20,736
+runtime guards, twelve bounded ROM controls, six C++ APIs and three return
+modes pass. Six shared public jobs, all 1,250 full jobs and Windows Release pass.
