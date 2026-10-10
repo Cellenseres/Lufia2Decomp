@@ -25,8 +25,7 @@ static uint32_t EncounterIndexedScratch(const Lufia2CpuState *cpu,
 }
 
 static Lufia2ExecutionResult EncounterChildUnwound(uint32_t site) {
-    const Lufia2ExecutionResult result =
-        {LUFIA2_EXECUTION_CHILD_UNWOUND, site};
+    const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
     return result;
 }
 

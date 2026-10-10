@@ -10,7 +10,7 @@ enum {
 };
 
 static Lufia2ExecutionResult FrameChildUnwound(uint32_t site) {
-    const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site};
+    const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
     return result;
 }
 

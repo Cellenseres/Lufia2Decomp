@@ -16,9 +16,8 @@ Lufia2ExecutionResult Lufia2BattleEffectRefreshTurnDisplay(
         const uint8_t frame = call == 0u ? 2u : 3u;
         if (!CallChildWithFrame(memory, cpu, child, context,
                 sites[call], targets[call], frame, 0x81u)) {
-            const Lufia2ExecutionResult result = {
-                LUFIA2_EXECUTION_CHILD_UNWOUND, sites[call]
-            };
+            const Lufia2ExecutionResult result =
+                {LUFIA2_EXECUTION_CHILD_UNWOUND, sites[call], 0u};
             return result;
         }
     }

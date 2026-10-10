@@ -38,7 +38,7 @@ static Lufia2ExecutionResult ApplyBrightnessCommand(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpAbsX(cpu, PALETTE_BRIGHTNESS_LEVELS));
     PushY(memory, cpu);
     if (!CallChildWithFrame(memory, cpu, child, context, site, 0x81b396u, 2u, 0x81u)) {
-        const Lufia2ExecutionResult result = { LUFIA2_EXECUTION_CHILD_UNWOUND, site };
+        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
         return result;
     }
     cpu->y = PullIndexValue(memory, cpu);

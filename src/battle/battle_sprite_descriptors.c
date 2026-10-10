@@ -48,8 +48,7 @@ Lufia2ExecutionResult Lufia2BattleInitializePartySpriteDescriptors(
 }
 
 static Lufia2ExecutionResult DescriptorChildUnwound(uint32_t site) {
-    const Lufia2ExecutionResult result =
-        {LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
+    const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
     return result;
 }
 

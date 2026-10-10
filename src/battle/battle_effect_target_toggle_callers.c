@@ -21,9 +21,7 @@ static Lufia2ExecutionResult ToggleTargetState(const Lufia2Memory *memory,
     PushDataBank(memory, cpu);
     if (!CallChildWithFrame(memory, cpu, child, context,
             site, target, 3u, 0x81u)) {
-        const Lufia2ExecutionResult result = {
-            LUFIA2_EXECUTION_CHILD_UNWOUND, site
-        };
+        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
         return result;
     }
     PullDataBank(memory, cpu);

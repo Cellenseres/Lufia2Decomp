@@ -10,9 +10,7 @@ static Lufia2ExecutionResult CallTilemapCommand(const Lufia2Memory *memory,
         return ExecutionHandoff(cpu, site);
     if (!CallChildWithFrame(memory, cpu, child, context,
             site, target, 2u, 0x81u)) {
-        const Lufia2ExecutionResult result = {
-            LUFIA2_EXECUTION_CHILD_UNWOUND, site
-        };
+        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
         return result;
     }
     return ExecutionReturned(site + 3u);
