@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1217 functions in `metadata/functions.toml`: 1217 verified, 0 draft, 0 identified, 0 disabled.
+1236 functions in `metadata/functions.toml`: 1236 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4798,3 +4798,21 @@ accepts all data banks with DP0 and binary arithmetic. Original M0X0 counter ent
 five M1X0 entries retain their distinct RTS/RTL frames. 1,152 semantic
 handoffs, 18,432 runtime guards, sixteen bounded ROM controls, six C++ APIs
 and three return modes pass. Three public jobs, all 1,260 full jobs and Windows Release pass.
+
+### Original battle HDMA command dispatch
+
+The original indirect dispatcher and eighteen enable/disable handlers preserve
+nine builder calls, descriptor writes, banked MMIO and both JSR stop wrappers.
+The dispatcher retains PHY/PHK/PEA92E6 and the real 81:92E4 JML through
+bank-zero129B; bytes +10..+12 alias existing unk_7E1291 storage.
+Unknown deeper builders remain original child services.
+
+155,648 direct and 155,648 production-ABI cases cover all 259 required states,
+with 98,304 actual original child returns per path. CPU, full WRAM, MMIO
+and ordered accesses match. 65,792 indirect boundaries cover all command and
+data-bank values, three DP layouts, decimal states and stack aliases.
+5,184 semantic handoffs, 58,752 runtime guards, 180 redirects, 8,192 native
+handler compositions per path, 768 original child-entry unwinds per path and
+1,728 symmetric changed-width return handoffs per path pass. Fifty-five
+bounded ROM controls, nineteen C++ APIs and three return modes pass.
+Eight public jobs, all 1,268 full jobs and Windows Release pass.

@@ -9872,3 +9872,155 @@ source = "src/field/field_camera_services.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:92BE"
+name = "Lufia2BattleEffectDispatchHdmaCommand"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:ADA8"
+name = "Lufia2BattleEffectBeginBackwardWave"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AE27"
+name = "Lufia2BattleEffectEndBackwardWave"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AE2F"
+name = "Lufia2BattleEffectBeginForwardWave"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AEB1"
+name = "Lufia2BattleEffectEndForwardWave"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AEB9"
+name = "Lufia2BattleEffectBeginWaveFill"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AF1D"
+name = "Lufia2BattleEffectEndWaveFill"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AF25"
+name = "Lufia2BattleEffectBeginHdmaMode5"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AF9F"
+name = "Lufia2BattleEffectEndHdmaMode5"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AFA7"
+name = "Lufia2BattleEffectBeginHdmaMode6"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B01E"
+name = "Lufia2BattleEffectEndHdmaMode6"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B026"
+name = "Lufia2BattleEffectBeginHdmaMode7"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B082"
+name = "Lufia2BattleEffectEndHdmaMode7"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B08A"
+name = "Lufia2BattleEffectBeginHdmaMode8"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B0FC"
+name = "Lufia2BattleEffectEndHdmaMode8"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B100"
+name = "Lufia2BattleEffectBeginHdmaMode9"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B16E"
+name = "Lufia2BattleEffectEndHdmaMode9"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B172"
+name = "Lufia2BattleEffectBeginHdmaMode10"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:B1CE"
+name = "Lufia2BattleEffectEndHdmaMode10"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

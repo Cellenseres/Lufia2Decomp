@@ -329,7 +329,7 @@ name = "unk_7E1291"
 width = 1
 count = 40
 owner = "actor"
-notes = "Per-slot byte; its low three bits send $83:C7F8 into the $83:C808 countdown, and the text engine reads the speaker's entry for the typing sound. World map reuses offset 14 as its 32-word slot table base; flag words are at +40 and initialized words at +80."
+notes = "Per-slot byte; its low three bits send $83:C7F8 into the $83:C808 countdown, and the text engine reads the speaker's entry for the typing sound. World map reuses offset 14 as its 32-word slot table base; flag words are at +40 and initialized words at +80. Battle HDMA command dispatch aliases bytes +10..+12 as its indirect long target."
 
 
 
