@@ -9384,3 +9384,35 @@ source = "src/battle/battle_gauges.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:81E6"
+name = "Lufia2MenuDrawWindowTopBottomEdge"
+source = "src/menu/menu_window.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:820B"
+name = "Lufia2MenuDrawWindowCorner"
+source = "src/menu/menu_window.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:8230"
+name = "Lufia2MenuDrawWindowSideEdge"
+source = "src/menu/menu_window.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:8259"
+name = "Lufia2MenuDrawWindowThreeRowCorner"
+source = "src/menu/menu_window.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

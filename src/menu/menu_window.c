@@ -208,3 +208,35 @@ Lufia2ExecutionResult Lufia2MenuDrawWindow(
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x8281e5u);
 }
+
+Lufia2ExecutionResult Lufia2MenuDrawWindowTopBottomEdge(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x8281e6u);
+    WindowEdgeDraw(memory, cpu, EDGE_ROW);
+    return ExecutionReturned(0x82820au);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawWindowCorner(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x82820bu);
+    WindowEdgeDraw(memory, cpu, EDGE_CORNER);
+    return ExecutionReturned(0x82822fu);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawWindowSideEdge(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x828230u);
+    WindowEdgeDraw(memory, cpu, EDGE_COLUMN);
+    return ExecutionReturned(0x828258u);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawWindowThreeRowCorner(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x828259u);
+    WindowEdgeDraw(memory, cpu, EDGE_CORNER3);
+    return ExecutionReturned(0x82827du);
+}
