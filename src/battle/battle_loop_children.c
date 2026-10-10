@@ -1,16 +1,33 @@
 #include "battle/battle_internal.h"
 
+enum { PARTY_RECORD_STATUS = 0x0f, PARTY_RECORD_BLOCKED = 0x34 };
+
+static Lufia2ExecutionResult CheckPartyRecordBody(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpCpx(cpu, 0u);
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpAbsX(cpu, PARTY_RECORD_STATUS));
+        OpAndValue(cpu, PARTY_RECORD_BLOCKED);
+        if (cpu->zero) {
+            cpu->carry = 0u;
+            return ExecutionReturned(0x859262u);
+        }
+    }
+    cpu->carry = 1u;
+    return ExecutionReturned(0x859264u);
+}
+
+Lufia2ExecutionResult Lufia2BattleCheckPartyRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x859255u);
+    return CheckPartyRecordBody(memory, cpu);
+}
+
 static void BattleCheckPartyStatus(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    OpCpx(cpu, 0u);
-    if (cpu->zero) {
-        cpu->carry = true;
-    } else {
-        OpLda(memory, cpu, OpAbsX(cpu, 0x000fu));
-        OpAndValue(cpu, 0x34u);
-        cpu->carry = !cpu->zero;
-    }
+    (void)CheckPartyRecordBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 

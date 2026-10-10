@@ -10192,3 +10192,51 @@ source = "src/world/world_random_word.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "85:9255"
+name = "Lufia2BattleCheckPartyRecord"
+source = "src/battle/battle_loop_children.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9326"
+name = "Lufia2BattleSetPartyCommandBytes"
+source = "src/battle/battle_party_layouts.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:942D"
+name = "Lufia2BattleSwapFirstTwoMembers"
+source = "src/battle/battle_party_layouts.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9445"
+name = "Lufia2BattleSwapFirstThirdMembers"
+source = "src/battle/battle_party_layouts.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9460"
+name = "Lufia2BattleReversePartyMembers"
+source = "src/battle/battle_party_layouts.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:97D1"
+name = "Lufia2BattlePrepareSpecialPartyGrid"
+source = "src/battle/battle_special_party_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

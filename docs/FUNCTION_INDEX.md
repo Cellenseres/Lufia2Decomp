@@ -959,9 +959,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:920E` | `Lufia2BattleTogglePartyTargetState` | verified | `src/battle/battle_effect_target_toggle.c` |
 | `$85:922D` | `Lufia2BattleToggleSpecialTargetState` | verified | `src/battle/battle_effect_target_toggle.c` |
 | `$85:9236` | `Lufia2BattlePartyStatusGate` | verified | `src/battle/battle_loop_children.c` |
+| `$85:9255` | `Lufia2BattleCheckPartyRecord` | verified | `src/battle/battle_loop_children.c` |
 | `$85:9275` | `Lufia2BattleQueuePartyTurns` | verified | `src/battle/battle_turn_order.c` |
+| `$85:9326` | `Lufia2BattleSetPartyCommandBytes` | verified | `src/battle/battle_party_layouts.c` |
 | `$85:9337` | `Lufia2BattleInsertTurn` | verified | `src/battle/battle_turn_queue.c` |
 | `$85:93B7` | `Lufia2BattleCheckOutcome` | verified | `src/battle/battle_outcome.c` |
+| `$85:942D` | `Lufia2BattleSwapFirstTwoMembers` | verified | `src/battle/battle_party_layouts.c` |
+| `$85:9445` | `Lufia2BattleSwapFirstThirdMembers` | verified | `src/battle/battle_party_layouts.c` |
+| `$85:9460` | `Lufia2BattleReversePartyMembers` | verified | `src/battle/battle_party_layouts.c` |
 | `$85:94E7` | `Lufia2BattleCopyMessageName` | verified | `src/battle/battle_message_copy.c` |
 | `$85:9510` | `Lufia2BattleCopyRecordName` | verified | `src/battle/battle_action_message.c` |
 | `$85:9532` | `Lufia2BattleLoadStatusMessage` | verified | `src/battle/battle_action_message.c` |
@@ -973,6 +978,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:972E` | `Lufia2BattleTileGridEntry` | verified | `src/battle/battle_frame.c` |
 | `$85:9790` | `Lufia2BattleTileRow` | verified | `src/battle/battle_frame_setup.c` |
+| `$85:97D1` | `Lufia2BattlePrepareSpecialPartyGrid` | verified | `src/battle/battle_special_party_grid.c` |
 | `$85:9884` | `Lufia2BattleBuildSpriteGrid` | verified | `src/battle/battle_sprite_grid.c` |
 | `$85:9906` | `Lufia2BattleShowActionMessage` | verified | `src/battle/battle_action_message.c` |
 | `$85:9A71` | `Lufia2BattleClearMessageRow` | verified | `src/battle/battle_action_message.c` |
