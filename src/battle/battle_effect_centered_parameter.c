@@ -65,8 +65,8 @@ Lufia2ExecutionResult Lufia2BattleEffectRandomizeCenteredParameter(
     ReadParameterRange(memory, cpu);
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x81a215u, 0x808299u, 3u, 0x81u)) {
-        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND,
-                                              0x81a215u, 0u};
+        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, 0x81a215u,
+                                              0u};
         return result;
     }
     return StoreCenteredParameter(memory, cpu);

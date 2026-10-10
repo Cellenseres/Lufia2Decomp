@@ -90,8 +90,8 @@ Lufia2ExecutionResult Lufia2BattleUpdateSlotPortraitStatus(
     SelectSlotPose(memory, cpu);
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x81bc1cu, 0x81bb75u, 2u, 0x81u)) {
-        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND,
-                                              0x81bc1cu, 0u};
+        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, 0x81bc1cu,
+                                              0u};
         return result;
     }
     return ExecutionReturned(0x81bc1fu);

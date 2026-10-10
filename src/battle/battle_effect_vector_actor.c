@@ -89,8 +89,8 @@ Lufia2ExecutionResult Lufia2BattleEffectSpawnVectorActor(
     ReadActorVector(memory, cpu);
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x81a2dau, 0x85dd63u, 3u, 0x81u)) {
-        const Lufia2ExecutionResult unwind = {LUFIA2_EXECUTION_CHILD_UNWOUND,
-                                              0x81a2dau, 0u};
+        const Lufia2ExecutionResult unwind = {LUFIA2_EXECUTION_CHILD_UNWOUND, 0x81a2dau,
+                                              0u};
         return unwind;
     }
     InitializeActor(memory, cpu);

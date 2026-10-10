@@ -15,8 +15,8 @@ Lufia2ExecutionResult Lufia2BattleEffectSendSoundCommand(
     PushY(memory, cpu);
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x819e16u, 0x80953bu, 3u, 0x81u)) {
-        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND,
-                                              0x819e16u, 0u};
+        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND, 0x819e16u,
+                                              0u};
         return result;
     }
     OpPullY(memory, cpu);
