@@ -6,6 +6,7 @@
 #include "core/cpu_ops.h"
 #include "field/field_coordinates_internal.h"
 #include "lufia2/actor.h"
+
 #include "lufia2/system.h"
 #include "actor/actor_internal.h"
 #include "system/system_internal.h"
@@ -44,11 +45,9 @@ enum {
 };
 
 /* $83:E200: sprite frame $54 for object $A7. */
-static void ObjectSetFrame(
+static void ObjectSelectFrame(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+    Lufia2CpuState *cpu) {
     PushY(memory, cpu);                                        /* E200 */
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     TransferDirectToA(cpu);
@@ -93,7 +92,22 @@ static void ObjectSetFrame(
     Or8(cpu, 0x20u);
     StoreAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
     cpu->y = PullIndexValue(memory, cpu);                      /* E25C */
+}
+
+static void ObjectSetFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    ObjectSelectFrame(memory, cpu);
     SimulateRtsFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2ObjectSelectSpriteFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83e200u);
+    ObjectSelectFrame(memory, cpu);
+    return ExecutionReturned(0x83e25du);
 }
 
 typedef enum ObjectFlow {

@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
+
 #include "actor/actor_internal.h"
 #include "actor/actor_slot_view.h"
 #include "system/wram.h"
@@ -205,4 +206,12 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
         TestBitsAbsolute8(memory, cpu, WRAM_FOLLOW_SLOTS, 0);
     }
     return result;
+}
+
+Lufia2ExecutionResult Lufia2ActorInitializeSpawnSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83dfa5u);
+    SecondarySpawnInit(memory, cpu);
+    return ExecutionReturned(0x83dffcu);
 }

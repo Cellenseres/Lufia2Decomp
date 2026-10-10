@@ -5028,3 +5028,27 @@ aliases = ["WRAM_EVENT_REDRAW"]
 width = 1
 owner = "field"
 notes = "Original80:CC26 converts these bits into direct-page tilemap upload requests."
+
+[[location]]
+address = "7E:0735"
+name = "unk_7E0735"
+width = 1
+count = 1
+owner = "field"
+notes = "Original8E:BA81 clears this DB-relative byte after the camera actor."
+
+[[location]]
+address = "7E:09B3"
+name = "unk_7E09B3"
+width = 1
+count = 1
+owner = "field"
+notes = "Original8E:BA81 stores the TDC-derived byte through long bank-zero addressing."
+
+[[location]]
+address = "7F:D0AE"
+name = "unk_7FD0AE"
+width = 1
+count = 1
+owner = "field"
+notes = "Original8E:BA81 stores the TDC-derived byte through long addressing."

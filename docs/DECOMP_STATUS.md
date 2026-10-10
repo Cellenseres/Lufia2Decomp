@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1169 functions in `metadata/functions.toml`: 1169 verified, 0 draft, 0 identified, 0 disabled.
+1180 functions in `metadata/functions.toml`: 1180 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4632,3 +4632,63 @@ and nine C++ interfaces pass. 1,024 complete display compositions per proof
 path execute 49,152 actual original flag/string returns each. Unsupported
 entry contexts and pure frame polling retain original interpreter execution.
 Six public-library jobs, all 1,211 full jobs and Windows Release pass.
+
+### Radial field objects and shared object services
+
+Five complete original entries preserve radial object spawning, sprite-frame
+selection, secondary slot initialization, secondary actor probe lookup and
+pending-object type lookup. Existing frame, slot and probe cores remain shared
+with their original callers. Radial spawning preserves all incoming M/X
+widths, saved status, hardware 256/count division and 256 zero-count iterations.
+The primary metadata mode remains the original M1X0 caller contract.
+
+40,960 original-ROM and 40,960 production-ABI entry cases pass across all five
+entries. Direct matrices cover every data bank and three direct pages. The
+three service matrices execute 24,576 actual original child returns each.
+Another 1,024 complete radial parents per proof path execute 26,432 original
+spawn returns each. CPU, full WRAM, MMIO and ordered data accesses match.
+Three host-return modes, 16,512 rejected entries, 15 child redirects, four
+unwind width states, 34 bounded original-ROM controls and five C++ APIs pass.
+All original instruction states and complete return contracts are covered.
+Unproved production contexts retain original execution.
+Twenty-one public-library jobs, all1,232 full jobs and Windows Release pass.
+
+### Shared actor states, battle messages and field reset
+
+Three complete original leaves mark both state arrays with bit40, copy an
+indexed battle message including its terminator, and reset field presentation
+and animation state. All incoming M/X widths, saved registers/status, banks,
+stack accesses and original TDC-derived fills are retained. The message
+contract covers all78 actual A5:DF00 entries; other selectors remain original
+interpreter work without a semantic clamp or new memory access.
+
+24,576 original-ROM and24,576 production-ABI states pass. Direct matrices
+cover all256 data banks,three direct pages and both decimal states. All117
+executed instruction states include every required nonreturn instruction and
+three terminal boundaries. CPU,fullWRAM,MMIO and ordered operands match.
+1,424 invalid semantic selector handoffs,11,214 production guards,15 bounded
+original-ROM controls,three host return modes and three C++ interfaces pass.
+No child services or gameplay-capture claims are involved. Runtime bindings
+select proven binary contexts; unproved contexts keep original execution.
+Twenty-one public-library jobs, all1,232 full jobs and Windows Release pass.
+
+### Object parameters, sprite grids and prefixed names
+
+Three complete M1X0 leaves preserve the original object-parameter table,
+five-byte sprite-grid construction and prefixed field-name composition.
+The parameter routine scans32 kinds and all nine original ROM records.
+Sprite grids retain zero-size256 loops,16-pixel spacing and tile transitions;
+all scratch reads remain bus-backed without a clamp or cached dimensions.
+Names preserve source-bank differences, indirect bank carry, trailing-space
+trimming and TDC-derived fills. Original terminal and stack behavior remains.
+
+24,576 original-ROM and24,576 production-ABI states pass across three entries.
+Direct parameter/grid proofs cover all256 data banks; name proofs cover130
+WRAM-backed banks and64 bank-crossing cases. Each uses three direct pages
+and both decimal states. All148 required nonreturn instruction states and
+three complete terminals are covered. CPU,fullWRAM,MMIO and ordered data
+accesses match.576 semantic-width handoffs,9,984 runtime guards,40 bounded
+altered-ROM controls,three host return modes and three C++ interfaces pass.
+No actual-parent composition or gameplay-capture claim. Runtime bindings
+keep unproved CPU contexts on original execution. No copied ROM data.
+Twenty-one public-library jobs, all1,232 full jobs and Windows Release pass.

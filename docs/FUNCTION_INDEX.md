@@ -808,6 +808,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:C0FA` | `Lufia2FieldAcknowledgeControlChange` | verified | `src/field/field_actor_event_helpers.c` |
 | `$83:C108` | `Lufia2FieldClaimActor` | verified | `src/field/field_event_actors.c` |
 | `$83:C1B4` | `Lufia2PlayerSlotStandardUpdate` | verified | `src/actor/player_controller.c` |
+| `$83:C33D` | `Lufia2FieldFindSecondaryAtProbe` | verified | `src/field/field_event_objects.c` |
+| `$83:C6AA` | `Lufia2FieldApplyObjectParameters` | verified | `src/field/field_object_parameters.c` |
+| `$83:C729` | `Lufia2FieldSpawnRadialObjects` | verified | `src/field/field_radial_objects.c` |
+| `$83:C7C7` | `Lufia2ActorMarkAllState40` | verified | `src/actor/actor_state_mark.c` |
 | `$83:C7F8` | `Lufia2ActorPrimaryUpdate` | verified | `src/actor/actor_primary.c` |
 | `$83:C947` | `Lufia2ActorPrimaryReset` | verified | `src/actor/actor_primary.c` |
 | `$83:CA68` | `Lufia2ActorBlockedEvent` | verified | `src/actor/actor_primary.c` |
@@ -822,8 +826,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:D948` | `Lufia2FieldProbeContactEdgeUp` | verified | `src/field/field_contact_edges.c` |
 | `$83:D952` | `Lufia2FieldProbeContactEdgeRight` | verified | `src/field/field_contact_edges.c` |
 | `$83:DF87` | `Lufia2ActorSpawnFromId` | verified | `src/field/field_object_transition.c` |
+| `$83:DFA5` | `Lufia2ActorInitializeSpawnSlot` | verified | `src/actor/actor_slots.c` |
 | `$83:E033` | `Lufia2FieldSetObjectDrawFlags` | verified | `src/field/field_event_actors.c` |
 | `$83:E03E` | `Lufia2ObjectSlotsUpdate` | verified | `src/actor/object_vm.c` |
+| `$83:E200` | `Lufia2ObjectSelectSpriteFrame` | verified | `src/actor/object_vm.c` |
 | `$83:E60E` | `Lufia2ObjectInterpolateCoordinate` | verified | `src/field/field_object_motion.c` |
 | `$83:E6AA` | `Lufia2ObjectApproachCoordinate` | verified | `src/field/field_object_motion.c` |
 | `$83:EC4F` | `Lufia2ObjectStartInteractionEvent` | verified | `src/field/field_object_motion_resources.c` |
@@ -832,6 +838,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:EF6E` | `Lufia2ObjectWakeMatchingPosition` | verified | `src/field/field_object_release.c` |
 | `$83:F0BC` | `Lufia2FieldSetFollowingObjectDrawFlags` | verified | `src/field/field_actor_event_helpers.c` |
 | `$83:F205` | `Lufia2ObjectRemoveSlot` | verified | `src/field/field_object_release.c` |
+| `$83:F410` | `Lufia2FieldPendingObjectType` | verified | `src/field/field_event_objects.c` |
 | `$83:F422` | `Lufia2FieldSetObjectOrigin` | verified | `src/field/field_object_graphics.c` |
 | `$83:F435` | `Lufia2FieldSetPendingProbePosition` | verified | `src/field/field_object_motion_resources.c` |
 | `$83:F442` | `Lufia2FieldClearObjectAttributes` | verified | `src/field/field_event_objects.c` |
@@ -946,12 +953,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9510` | `Lufia2BattleCopyRecordName` | verified | `src/battle/battle_action_message.c` |
 | `$85:9532` | `Lufia2BattleLoadStatusMessage` | verified | `src/battle/battle_action_message.c` |
 | `$85:9578` | `Lufia2BattleLoadIpActionName` | verified | `src/battle/battle_action_message.c` |
+| `$85:95C6` | `Lufia2BattleLoadIndexedMessage` | verified | `src/battle/battle_indexed_message.c` |
 | `$85:95FE` | `Lufia2BattleDisplayMessage` | verified | `src/battle/battle_message_display.c` |
 | `$85:9671` | `Lufia2BattleClearMessage` | verified | `src/battle/battle_message_display.c` |
 | `$85:96A2` | `Lufia2BattleSaveWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:972E` | `Lufia2BattleTileGridEntry` | verified | `src/battle/battle_frame.c` |
 | `$85:9790` | `Lufia2BattleTileRow` | verified | `src/battle/battle_frame_setup.c` |
+| `$85:9884` | `Lufia2BattleBuildSpriteGrid` | verified | `src/battle/battle_sprite_grid.c` |
 | `$85:9906` | `Lufia2BattleShowActionMessage` | verified | `src/battle/battle_action_message.c` |
 | `$85:9A71` | `Lufia2BattleClearMessageRow` | verified | `src/battle/battle_action_message.c` |
 | `$85:9A7D` | `Lufia2BattleMeasureMessage` | verified | `src/battle/battle_message_length.c` |
@@ -1164,9 +1173,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
 | `$8E:B000` | `Lufia2FieldRunMenu` | verified | `src/field/field_menu.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
+| `$8E:B5FB` | `Lufia2FieldBuildPrefixedName` | verified | `src/field/field_prefixed_name.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |
 | `$8E:B993` | `Lufia2RestoreSavedFieldState` | verified | `src/system/field_save_state.c` |
 | `$8E:BA0D` | `Lufia2CaptureFieldSaveState` | verified | `src/system/field_save_state.c` |
+| `$8E:BA81` | `Lufia2FieldResetPresentationState` | verified | `src/field/field_presentation_reset.c` |
 | `$8E:BB2E` | `Lufia2FieldCycleSelectedSprite` | verified | `src/field/field_sprite_selector.c` |
 | `$8E:BBA8` | `Lufia2FieldTakeSpriteSelectionButtons` | verified | `src/field/field_sprite_selector.c` |
 | `$8E:BC99` | `Lufia2FieldSelectMenuActor` | verified | `src/menu/menu_actor_callers.c` |
