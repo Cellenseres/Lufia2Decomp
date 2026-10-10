@@ -168,6 +168,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_event_objects.c
     src/field/field_animation_queue.c
     src/field/field_item_regions.c
+    src/field/field_object_rewards.c
     src/field/field_event_script.c
     src/field/field_nmi.c
     src/field/field_area_transition.c
@@ -416,6 +417,7 @@ add_library(lufia2_decomp STATIC
     src/text/scene_label_callers.c
     src/title/title.c
     src/world/world_map.c
+    src/world/world_random_word.c
     src/world/world_map_plane.c
     src/world/world_plane_rows.c
     src/world/world_scroll_step.c
