@@ -370,10 +370,10 @@ entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
 
-# Field palette cycles and HDMA wave table; bank-84 effects stay LLE.
+# Field colour effects with original palette children.
 [[function]]
 address = "83:AEB5"
-name = "Lufia2FieldColourEffects"
+name = "Lufia2FieldColourEffectsWithServices"
 source = "src/field/field_effects.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
@@ -9645,6 +9645,22 @@ status = "verified"
 address = "83:A534"
 name = "Lufia2FieldWriteOamSquare"
 source = "src/field/field_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:8D54"
+name = "Lufia2FieldScaleScenePalette"
+source = "src/field/field_palette_scale.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:8E07"
+name = "Lufia2FieldFadeScenePalette"
+source = "src/field/field_effects.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"

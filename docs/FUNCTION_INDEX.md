@@ -781,7 +781,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:AD23` | `Lufia2FieldResumeSessionSetup` | verified | `src/field/field_session_setup.c` |
 | `$83:ADCA` | `Lufia2FieldResetScene` | verified | `src/field/field_scene_reset.c` |
 | `$83:ADDF` | `Lufia2FieldResetSavedScene` | verified | `src/field/field_scene_reset.c` |
-| `$83:AEB5` | `Lufia2FieldColourEffects` | verified | `src/field/field_effects.c` |
+| `$83:AEB5` | `Lufia2FieldColourEffectsWithServices` | verified | `src/field/field_effects.c` |
 | `$83:AFCD` | `Lufia2FieldFadeIn` | verified | `src/field/field_display_callers.c` |
 | `$83:AFEA` | `Lufia2FieldFadeOut` | verified | `src/field/field_display_callers.c` |
 | `$83:B007` | `Lufia2FieldUploadFixedGraphics` | verified | `src/field/field_object_graphics.c` |
@@ -919,6 +919,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:8AF4` | `Lufia2AncientCaveCarryBlueItem` | verified | `src/cave/cave_exit.c` |
 | `$84:8B9C` | `Lufia2AncientCaveDefeat` | verified | `src/cave/cave_reset.c` |
 | `$84:8BC7` | `Lufia2BattleVisualTransition` | verified | `src/battle/battle_transition.c` |
+| `$84:8D54` | `Lufia2FieldScaleScenePalette` | verified | `src/field/field_palette_scale.c` |
+| `$84:8E07` | `Lufia2FieldFadeScenePalette` | verified | `src/field/field_effects.c` |
 | `$85:821C` | `Lufia2FieldDiagnosticsEditValue` | verified | `src/field/field_diagnostics.c` |
 | `$85:8267` | `Lufia2FieldDiagnosticsHideCursor` | verified | `src/field/field_diagnostics.c` |
 | `$85:8274` | `Lufia2FieldDiagnosticsShowCursor` | verified | `src/field/field_diagnostics.c` |

@@ -133,7 +133,7 @@ Lufia2ExecutionResult Lufia2FieldAreaRects(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $83:AEB5 palette cycles and HDMA wave table. */
+/* Legacy palette-cycle continuation API. */
 Lufia2ExecutionResult Lufia2FieldColourEffects(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
@@ -1080,6 +1080,17 @@ Lufia2ExecutionResult Lufia2FieldWriteOamHorizontalPair(
 
 Lufia2ExecutionResult Lufia2FieldWriteOamSquare(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldFadeScenePalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldScaleScenePalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldColourEffectsWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 #ifdef __cplusplus
 }

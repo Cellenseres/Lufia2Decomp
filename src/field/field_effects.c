@@ -1,6 +1,7 @@
 /* Field colour and screen effects. */
 
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
+#include "core/child_call.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "lufia2/system.h"
@@ -181,54 +182,76 @@ static void FieldWaveTable(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:AEB5: per-frame field palette and wave effects. */
-Lufia2ExecutionResult Lufia2FieldColourEffects(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    Lufia2ExecutionResult result;
+static Lufia2ExecutionResult ColourBoundary(
+    Lufia2CpuState *cpu, uint32_t site) {
+    return ExecutionHandoff(cpu, site);
+}
 
-    result.flow = LUFIA2_EXECUTION_BOUNDARY;
-    result.pc = 0x83aeecu;
-    result.dispatches = 0;
-    Push8(memory, cpu, PackStatus(cpu));                       /* AEB5 */
-    SetAccumulatorWidth(cpu, 1);
-    SetIndexWidth(cpu, 0);
-    LoadA8(cpu, Read8(memory, 0x0009a9u));
-    BitImmediate8(cpu, 0x02u);
+static Lufia2ExecutionResult ColourChildUnwound(uint32_t site) {
+    Lufia2ExecutionResult result = ExecutionReturned(site);
+    result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+    return result;
+}
+
+static Lufia2ExecutionResult FieldColourEffectsBody(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    Lufia2ExecutionResult result = ExecutionReturned(0x83aeecu);
+
+    Push8(memory, cpu, PackStatus(cpu));
+    OpSepWidths(cpu, 0x20u);
+    OpRepWidths(cpu, 0x10u);
+    OpLda(memory, cpu, 0x0009a9u);
+    OpBitValue(cpu, 0x02u);
     if (!cpu->zero) {
-        const uint32_t timer = AbsoluteIndexedAddress(cpu, 0x1280u, 0);
-        const uint8_t left = (uint8_t)(Read8(memory, timer) - 1u);
-
-        Write8(memory, timer, left);                           /* AEC2 */
-        SetNz8(cpu, left);
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_FIELD_RECOVERY_PALETTE_DELAY), -1);
         if (cpu->zero) {
-            /* $84:8E07 stays LLE. */
-            result.pc = cpu->resume_pc = 0x83aec7u;
-            return result;
+            if (!child)
+                return ColourBoundary(cpu, 0x83aec7u);
+            if (!CallChildWithFrame(memory, cpu, child, context,
+                    0x83aec7u, 0x848e07u, 3u, 0x83u))
+                return ColourChildUnwound(0x83aec7u);
+            OpLda(memory, cpu, 0x0009a9u);
         }
     }
-    BitImmediate8(cpu, 0x04u);                                 /* AECF */
+    OpBitValue(cpu, 0x04u);
     if (!cpu->zero) {
-        /* $84:8D54 stays LLE. */
-        result.pc = cpu->resume_pc = 0x83aed3u;
-        return result;
+        if (!child)
+            return ColourBoundary(cpu, 0x83aed3u);
+        if (!CallChildWithFrame(memory, cpu, child, context,
+                0x83aed3u, 0x848d54u, 3u, 0x83u))
+            return ColourChildUnwound(0x83aed3u);
+        OpLda(memory, cpu, 0x0009a9u);
     }
-    BitImmediate8(cpu, 0x01u);                                 /* AEDB */
+    OpBitValue(cpu, 0x01u);
     if (!cpu->zero) {
         PushDataBank(memory, cpu);
-        LoadA8(cpu, 0x7fu);
+        OpLoadA(cpu, 0x7fu);
         PushAccumulator8(memory, cpu);
         PullDataBank(memory, cpu);
         if (!FieldPaletteCycles(memory, cpu, &result.dispatches)) {
+            result.flow = LUFIA2_EXECUTION_BOUNDARY;
             result.pc = cpu->resume_pc;
             return result;
         }
         FieldWaveTable(memory, cpu);
-        PullDataBank(memory, cpu);                             /* AEEA */
+        PullDataBank(memory, cpu);
     }
-    UnpackStatus(cpu, Pull8(memory, cpu));                     /* AEEB */
-    result.flow = LUFIA2_EXECUTION_RETURNED;
+    UnpackStatus(cpu, Pull8(memory, cpu));
     return result;
+}
+
+Lufia2ExecutionResult Lufia2FieldColourEffects(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return FieldColourEffectsBody(memory, cpu, NULL, NULL);
+}
+
+Lufia2ExecutionResult Lufia2FieldColourEffectsWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83aeb5u);
+    return FieldColourEffectsBody(memory, cpu, child, context);
 }
 
 /* $84:8145: random shake offsets into $7F:D081/D083. */
@@ -325,115 +348,125 @@ static void ScreenColorStep(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $84:8E07: fade palette $9B:[$7F:D0F8] into $0320 by $58/$5A/$63. */
-static void ScreenPaletteFade(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    static const struct {
-        uint16_t level;
-        uint16_t step;
-        uint8_t out;
-    } channels[3] = {
-        {0x1274u, 0x127au, 0x58u},
-        {0x1276u, 0x127cu, 0x5au},
-        {0x1278u, 0x127eu, 0x63u}};
-    uint8_t darken;
-    unsigned i;
+enum {
+    DP_PALETTE_COLOR = 0x54,
+    DP_PALETTE_COMBINED = 0x56,
+    DP_PALETTE_RED_STEP = 0x58,
+    DP_PALETTE_GREEN_STEP = 0x5a,
+    DP_PALETTE_BLUE_STEP = 0x63
+};
 
-    SimulateJslFrame(memory, cpu, 0x84u, 0x80a5u);
-    LoadAAbsolute8(memory, cpu, 0x1281u, 0);                   /* 8E07 */
-    StoreAAbsolute8(memory, cpu, 0x1280u, 0);
-    LoadAAbsolute8(memory, cpu, 0x1283u, 0);
-    BitImmediate8(cpu, 0x80u);
-    darken = !cpu->zero;
-    SetAccumulatorWidth(cpu, 0);
-    SetIndexWidth(cpu, 0);
-    for (i = 0; i < 3u; ++i) {
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, channels[i].level, 0));
-        if (!darken) {
+static void AdvancePaletteLevels(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t subtract) {
+    static const uint8_t output[] = {
+        DP_PALETTE_RED_STEP, DP_PALETTE_GREEN_STEP, DP_PALETTE_BLUE_STEP};
+
+    for (unsigned channel = 0; channel < 3u; ++channel) {
+        const uint16_t level =
+            (uint16_t)(WRAM_FIELD_RECOVERY_PALETTE_LEVELS + channel * 2u);
+        const uint16_t step =
+            (uint16_t)(WRAM_FIELD_RECOVERY_PALETTE_STEPS + channel * 2u);
+        OpLda(memory, cpu, OpAbs(cpu, level));
+        if (!subtract) {
             cpu->carry = 0;
-            Add16Value(cpu,
-                Read16AbsoluteIndexed(memory, cpu, channels[i].step, 0));
+            OpAdc(memory, cpu, OpAbs(cpu, step));
         } else if (!cpu->zero) {
             cpu->carry = 1;
-            Add16Value(cpu, (uint16_t)~Read16AbsoluteIndexed(
-                memory, cpu, channels[i].step, 0));
+            OpSbcValue(cpu, OpReadM(memory, cpu, OpAbs(cpu, step)));
         }
-        Write16Absolute(memory, cpu, channels[i].level, cpu->accumulator);
-        Write16Direct(memory, cpu, channels[i].out, cpu->accumulator);
+        OpSta(memory, cpu, OpAbs(cpu, level));
+        OpSta(memory, cpu, OpDp(cpu, output[channel]));
     }
-    LoadX16(cpu, Read16Long(memory, WRAM_FIELD_PALETTE_SOURCE)); /* 8E66 */
-    LoadY16(cpu, Read16Long(memory, WRAM_FIELD_PALETTE_SKIP_BYTES));
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1283u, 0));
-    cpu->zero = (cpu->accumulator & 0x0040u) == 0;
-    darken = !cpu->zero;
-    do {
-        const uint16_t color =
-            Read16Long(memory, LongIndexedAddress(0x9b0000u, cpu->x));
+}
 
-        LoadA16(cpu, color);
-        Write16Direct(memory, cpu, DP_SCRATCH_A, color);
-        if (darken) {
-            LoadA16(cpu, (uint16_t)(color & 0x001fu));         /* 8E78 */
-            cpu->carry = 1;
-            Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_E));
-            if (!cpu->carry)
-                TransferDirectToA(cpu);
-            Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
-            LoadA16(cpu, (uint16_t)(color & 0x03e0u));
-            cpu->carry = 1;
-            Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x5au));
-            if (cpu->negative)
-                TransferDirectToA(cpu);
-            TestBitsDirect(memory, cpu, DP_SCRATCH_C, 1);
-            LoadA16(cpu, (uint16_t)(color & 0x7c00u));
-            cpu->carry = 1;
-            Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, 0x63u));
-            if (cpu->negative)
+static void FadePaletteColor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t subtract) {
+    static const uint16_t masks[] = {0x001fu, 0x03e0u, 0x7c00u};
+    static const uint8_t offsets[] = {
+        DP_PALETTE_RED_STEP, DP_PALETTE_GREEN_STEP, DP_PALETTE_BLUE_STEP};
+
+    OpLda(memory, cpu, OpLongX(cpu, 0x9b0000u));
+    OpSta(memory, cpu, OpDp(cpu, DP_PALETTE_COLOR));
+    for (unsigned channel = 0; channel < 3u; ++channel) {
+        if (channel)
+            OpLda(memory, cpu, OpDp(cpu, DP_PALETTE_COLOR));
+        OpAndValue(cpu, masks[channel]);
+        cpu->carry = subtract;
+        if (subtract) {
+            OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, offsets[channel])));
+            if (channel ? cpu->negative : !cpu->carry)
                 TransferDirectToA(cpu);
         } else {
-            LoadA16(cpu, (uint16_t)(color & 0x001fu));         /* 8EB1 */
-            cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_E));
-            if (cpu->accumulator & 0x0020u)
-                LoadA16(cpu, 0x001fu);
-            Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
-            LoadA16(cpu, (uint16_t)(color & 0x03e0u));
-            cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, 0x5au));
-            if (cpu->accumulator & 0x0400u)
-                LoadA16(cpu, 0x03e0u);
-            TestBitsDirect(memory, cpu, DP_SCRATCH_C, 1);
-            LoadA16(cpu, (uint16_t)(color & 0x7c00u));
-            cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, 0x63u));
-            if (cpu->negative)
-                LoadA16(cpu, 0x7c00u);
+            OpAdc(memory, cpu, OpDp(cpu, offsets[channel]));
+            if (channel < 2u) {
+                OpBitValue(cpu, channel ? 0x0400u : 0x0020u);
+                if (!cpu->zero)
+                    OpLoadA(cpu, masks[channel]);
+            } else if (cpu->negative) {
+                OpLoadA(cpu, masks[channel]);
+            }
         }
-        LoadA16(cpu,
-                (uint16_t)(cpu->accumulator | Read16Direct(memory, cpu, DP_SCRATCH_C)));
-        Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_CGRAM_BUFFER, cpu->y),
-            (uint8_t)cpu->accumulator);
-        Write8(memory, AbsoluteIndexedAddress(cpu, (WRAM_CGRAM_BUFFER + 1u), cpu->y),
-               (uint8_t)(cpu->accumulator >> 8));
-        IncrementX16(cpu);
-        IncrementX16(cpu);
-        IncrementY16(cpu);
-        IncrementY16(cpu);
-        Compare16(cpu, cpu->y, 0x00e0u);
-    } while (!cpu->zero);
-    SetAccumulatorWidth(cpu, 1);                               /* 8EF4 */
-    LoadA8(cpu, 0x01u);
-    TestBitsDirect(memory, cpu, DP_NMI_UPLOAD_FLAGS, 1);
-    LoadAAbsolute8(memory, cpu, 0x1282u, 0);
-    DecrementA8(cpu);
-    StoreAAbsolute8(memory, cpu, 0x1282u, 0);
-    And8(cpu, 0x1fu);
-    if (cpu->zero) {
-        LoadA8(cpu, (uint8_t)(Read8(memory, 0x0009a9u) & 0xfdu));
-        Write8(memory, 0x0009a9u, A8(cpu));
+        if (!channel)
+            OpSta(memory, cpu, OpDp(cpu, DP_PALETTE_COMBINED));
+        else if (channel == 1u)
+            OpTestBits(memory, cpu, OpDp(cpu, DP_PALETTE_COMBINED), 1u);
+        else
+            OpOra(memory, cpu, OpDp(cpu, DP_PALETTE_COMBINED));
     }
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_CGRAM_BUFFER));
+}
+
+static void FadeScenePalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_RECOVERY_PALETTE_PERIOD));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_RECOVERY_PALETTE_DELAY));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_RECOVERY_PALETTE_CONTROL));
+    OpBitValue(cpu, 0x80u);
+    const uint8_t subtract_levels = !cpu->zero;
+    OpRepWidths(cpu, 0x30u);
+    AdvancePaletteLevels(memory, cpu, subtract_levels);
+    OpLda(memory, cpu, WRAM_FIELD_PALETTE_SOURCE);
+    OpTax(cpu);
+    OpLda(memory, cpu, WRAM_FIELD_PALETTE_SKIP_BYTES);
+    OpTay(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_RECOVERY_PALETTE_CONTROL));
+    OpBitValue(cpu, 0x0040u);
+    const uint8_t subtract_colors = !cpu->zero;
+    do {
+        FadePaletteColor(memory, cpu, subtract_colors);
+        OpInx(cpu);
+        OpInx(cpu);
+        OpIny(cpu);
+        OpIny(cpu);
+        OpCpy(cpu, 0x00e0u);
+    } while (!cpu->zero);
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 1u);
+    OpTestBits(memory, cpu, OpDp(cpu, DP_NMI_UPLOAD_FLAGS), 1u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_RECOVERY_PALETTE_LENGTH));
+    OpDecA(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_RECOVERY_PALETTE_LENGTH));
+    OpAndValue(cpu, 0x1fu);
+    if (cpu->zero) {
+        OpLda(memory, cpu, 0x0009a9u);
+        OpAndValue(cpu, 0xfdu);
+        OpSta(memory, cpu, 0x0009a9u);
+    }
+}
+
+static void ScreenPaletteFade(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJslFrame(memory, cpu, 0x84u, 0x80a5u);
+    FadeScenePalette(memory, cpu);
     SimulateRtlFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2FieldFadeScenePalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x848e07u);
+    FadeScenePalette(memory, cpu);
+    return ExecutionReturned(0x848f0fu);
 }
 
 /* $84:8000: screen effects of $1261 and the $1262 palette fade. */

@@ -5052,3 +5052,19 @@ width = 1
 count = 1
 owner = "field"
 notes = "Original8E:BA81 stores the TDC-derived byte through long addressing."
+
+[[location]]
+address = "7E:1284"
+name = "field_palette_scale_phase"
+width = 1
+count = 1
+owner = "field"
+notes = "Original palette scale factor, advanced by1282."
+
+[[location]]
+address = "7E:1285"
+name = "field_palette_scale_target"
+width = 1
+count = 1
+owner = "field"
+notes = "Original target factor;80 requests the original palette copy."
