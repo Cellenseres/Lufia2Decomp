@@ -2095,7 +2095,7 @@ address = "7E:1574"
 name = "system_multiply_product"
 width = 4
 owner = "menu"
-notes = "32-bit product of the multiply at $82:8000."
+notes = "32-bit product of the multiply at $82:8000. Battle85:97D1 clears its reused byte at1577; this is phase storage, not a separate allocation."
 
 [[location]]
 address = "7E:14A9"
@@ -5245,3 +5245,97 @@ name = "field_reward_count_b"
 width = 2
 owner = "field"
 notes = "Saturating count selected when reward bit 4000 is clear."
+
+[[location]]
+address = "7F:F564"
+name = "battle_party_command_byte_0_long"
+width = 1
+owner = "battle"
+notes = "Command byte 0; the original four slots are twelve bytes apart."
+
+[[location]]
+address = "7F:F570"
+name = "battle_party_command_byte_1_long"
+width = 1
+owner = "battle"
+notes = "Command byte 1; the original four slots are twelve bytes apart."
+
+[[location]]
+address = "7F:F57C"
+name = "battle_party_command_byte_2_long"
+width = 1
+owner = "battle"
+notes = "Command byte 2; the original four slots are twelve bytes apart."
+
+[[location]]
+address = "7F:F588"
+name = "battle_party_command_byte_3_long"
+width = 1
+owner = "battle"
+notes = "Command byte 3; the original four slots are twelve bytes apart."
+
+[[location]]
+address = "7E:15B7"
+name = "battle_party_palette_phase"
+width = 1
+owner = "battle"
+notes = "Palette phase of the original party sprite group."
+
+[[location]]
+address = "7E:15D3"
+name = "battle_party_sprite_rebuild_state"
+width = 1
+owner = "battle"
+notes = "Party sprite rebuild state; this caller writes FF."
+
+[[location]]
+address = "7E:15D4"
+name = "battle_party_oam_cursor"
+width = 2
+owner = "battle"
+notes = "Next party OAM record; original display initialization stores4956."
+
+[[location]]
+address = "7E:15D6"
+name = "battle_party_oam_count"
+width = 1
+owner = "battle"
+notes = "Accumulated party OAM sprite count."
+
+[[location]]
+address = "7E:157F"
+name = "battle_special_party_slot_oam_count"
+width = 1
+owner = "battle"
+notes = "Indexed group count base; wider capacity is not established here."
+
+[[location]]
+address = "7E:1578"
+name = "battle_special_party_slot_oam_total"
+width = 1
+owner = "battle"
+notes = "Indexed group total base; wider capacity is not established here."
+
+[[location]]
+address = "7E:4820"
+name = "battle_special_party_grid_graphics_source"
+width = 1
+count = 96
+owner = "battle"
+notes = "Two identical96-byte source transfers; shared WRAM graphics phase."
+
+[[location]]
+address = "7F:F2FB"
+name = "battle_special_party_grid_graphics_a_long"
+width = 1
+count = 96
+owner = "battle"
+notes = "First96-byte destination written through the WRAM port."
+
+[[location]]
+address = "7F:F27B"
+name = "battle_special_party_grid_graphics_b_long"
+width = 1
+count = 96
+owner = "battle"
+notes = "Second96-byte destination written through the WRAM port."

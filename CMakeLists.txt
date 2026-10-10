@@ -108,6 +108,8 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_display_internal.c
     src/battle/battle_loop.c
     src/battle/battle_loop_children.c
+    src/battle/battle_party_layouts.c
+    src/battle/battle_special_party_grid.c
     src/battle/battle_turn_order.c
     src/battle/battle_turn_queue.c
     src/battle/battle_turn_priority.c

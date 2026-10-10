@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1257 functions in `metadata/functions.toml`: 1257 verified, 0 draft, 0 identified, 0 disabled.
+1263 functions in `metadata/functions.toml`: 1263 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4915,3 +4915,37 @@ unchanged. No presentation, frame-wait or NMI execution is claimed here.
 Existing random refill/seed reads now follow ROM order explicitly;four random
 services match8,192 strict bus-order states andfive bounded ROM controls.
 Eight grouped public jobs, ONE full 1,311 jobs and Windows Release pass.
+
+### Original battle party-layout services
+
+85:9255 reuses one predicate with85:9236; no duplicated party test or claim
+that the existing parent's predicate was previously interpreted.
+85:9326 writes four original command bytes;85:942D/9445 swap members and
+85:9460 reverses their original identity/record arrays. Registers, flags,
+widths, bank addressing and ordered writes are preserved.
+49,152 direct/49,152 ABI states include8,192 existing-parent reuse cases.
+47 required instruction states pass.8,192 twelve-service chains per path
+perform98,304 native operations;2,048 writable-stack overlap states pass.
+30,720 runtime guards/192 semantic handoffs,13 bounded ROM controls and
+five C++ interfaces pass. No asynchronous/frame/NMI behavior claimed.
+Thirteen grouped public jobs, ONE full 1,324 jobs and Windows Release pass.
+
+### Original special-party sprite-grid preparation
+
+85:97D1 preserves the caller-bank early exit, saved DB, two original WRAM-port
+copies,8x7 grid setup, group counts and tile row. Both child sites reuse
+verified original services; no display timing or rendering is changed.
+8,192 direct/8,192 ABI states cover79 required instructions, with13,106
+actual original child returns per path.8,192 fully native chains per path
+use6,553 grid and6,553 tile-row calls.256 original child-entry unwinds and
+768 symmetric changed-width returns per path pass, including the final
+width-independent SEP/PLB tail.6,144 runtime/320 semantic guards,18 bounded
+ROM controls andone C++ interface pass. No frame waits or NMI are claimed.
+Shared full 1,324 jobs and Windows Release pass.
+The cleared1577 byte reuses the catalogued multiply-product storage.
+
+CLI CI fixes were fast-forwarded before checkpointing. The prior full batch
+was retained for equivalent formatting/initialization/include changes; all
+13 new public jobs and Release were rebuilt after the merge. All 406 C units
+pass Clang C11/Wall/Wextra/Wpedantic/Werror; the original 16-bit graphics
+offset is explicit and its seven public jobs pass after that clarification.
