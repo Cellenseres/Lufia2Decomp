@@ -9824,3 +9824,51 @@ source = "src/world/world_frame_callers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "8E:B142"
+name = "Lufia2FieldConsumePressedLow"
+source = "src/field/field_camera_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B149"
+name = "Lufia2FieldConsumePressedHigh"
+source = "src/field/field_camera_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B7CD"
+name = "Lufia2FieldReadBankedStreamByte"
+source = "src/field/field_camera_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:BAE7"
+name = "Lufia2FieldMarkEncounterActor"
+source = "src/field/field_camera_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:C1C5"
+name = "Lufia2FieldCountValue2B"
+source = "src/field/field_camera_services.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "8E:C36D"
+name = "Lufia2FieldReadMapResourceFlags"
+source = "src/field/field_camera_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

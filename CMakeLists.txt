@@ -320,6 +320,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_camera.c
     src/field/field_update.c
     src/field/field_diagnostics.c
+    src/field/field_camera_services.c
     src/field/field_radial_objects.c
     src/field/field_presentation_reset.c
     src/field/field_object_parameters.c
