@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1263 functions in `metadata/functions.toml`: 1263 verified, 0 draft, 0 identified, 0 disabled.
+1265 functions in `metadata/functions.toml`: 1265 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4949,3 +4949,24 @@ was retained for equivalent formatting/initialization/include changes; all
 13 new public jobs and Release were rebuilt after the merge. All 406 C units
 pass Clang C11/Wall/Wextra/Wpedantic/Werror; the original 16-bit graphics
 offset is explicit and its seven public jobs pass after that clarification.
+
+### Original party-action publication and shared turn services
+
+85:92CE publishes staged action words;85:92FF stages and inserts a turn.
+The canonical parent entry is M0X0; both independently proven accumulator
+widths preserve saved registers and status. Native child boundaries remain
+explicit and retain original call frames and changed-width handoffs.
+32,768 direct/32,768 ABI cases across both entry widths;44 required states,
+49,152 actual original child returns per path. Native compositions call the
+pointer32,768/insertion16,384 times per path.768 unwinds/2,304 changed-width
+returns per path,12,288 both-width guards,12 controls andtwo CPP APIs pass.
+
+Existing85:9275,81:C254 and81:C294 reuse one action, insertion andpriority
+implementation each.10,240 direct/10,240 production-ABI states cover89
+required states with exact CPU/full WRAM/MMIO/ordered bus. Six addressing
+controls and8,192 independent fraction/8,192 multiply comparisons pass.
+Absolute record fields preserve DB addressing, rather than accidental DP
+addressing in the previous helper. Original queue reads remain ordered.
+Existing parent behavior is not counted again as newly native functionality.
+Proofs use supported D0/DP0 contracts; no NMI or frame-wait claim is made.
+Fifteen grouped public jobs, ONE full 1,339 jobs and Windows Release pass.

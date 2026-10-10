@@ -961,6 +961,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9236` | `Lufia2BattlePartyStatusGate` | verified | `src/battle/battle_loop_children.c` |
 | `$85:9255` | `Lufia2BattleCheckPartyRecord` | verified | `src/battle/battle_loop_children.c` |
 | `$85:9275` | `Lufia2BattleQueuePartyTurns` | verified | `src/battle/battle_turn_order.c` |
+| `$85:92CE` | `Lufia2BattlePublishPartyAction` | verified | `src/battle/battle_party_actions.c` |
+| `$85:92FF` | `Lufia2BattleQueueStagedPartyAction` | verified | `src/battle/battle_party_actions.c` |
 | `$85:9326` | `Lufia2BattleSetPartyCommandBytes` | verified | `src/battle/battle_party_layouts.c` |
 | `$85:9337` | `Lufia2BattleInsertTurn` | verified | `src/battle/battle_turn_queue.c` |
 | `$85:93B7` | `Lufia2BattleCheckOutcome` | verified | `src/battle/battle_outcome.c` |
