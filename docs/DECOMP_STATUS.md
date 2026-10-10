@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1156 functions in `metadata/functions.toml`: 1156 verified, 0 draft, 0 identified, 0 disabled.
+1160 functions in `metadata/functions.toml`: 1160 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4597,3 +4597,19 @@ the allocator now executes 1,024 M0X0 calls natively, without fallback.
 Those portrait compositions cover empty slots. Unknown portrait-loader paths
 are not claimed by these compositions.
 Six public-library jobs, all 1,202 full jobs and Windows Release pass.
+
+### Independent menu-window edges
+
+Four original M0X0 edge entries reuse the existing window-pattern renderer.
+The routines preserve the complete horizontal, vertical, two-row corner and
+three-row corner paths. Their production selection retains binary mode,
+DB82, DP0, valid stack and the proved even pattern indices; other contexts
+retain original execution. Original dimensions are never clamped.
+
+36,864 original-ROM and 36,864 production-ABI states pass, including 4,096
+complete window parents and 32,188 original edge returns per proof path.
+The direct matrices cover all 256 data banks and three direct pages. All
+74 executed edge instruction states, the four RTS boundaries, CPU, full
+WRAM, MMIO and ordered data accesses pass. 16,896 unsupported entry guards,
+20 bounded original-ROM controls and four C++ interfaces pass.
+Three public-library jobs, all 1,205 full jobs and Windows Release pass.
