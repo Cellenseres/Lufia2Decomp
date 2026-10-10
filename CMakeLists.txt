@@ -315,6 +315,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_reload.c
     src/field/field_camera.c
     src/field/field_update.c
+    src/field/field_diagnostics.c
     src/field/field_recovery.c
     src/field/field_animation_regions.c
     src/field/field_animation_slots.c

@@ -9416,3 +9416,75 @@ source = "src/menu/menu_window.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "85:821C"
+name = "Lufia2FieldDiagnosticsEditValue"
+source = "src/field/field_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:8267"
+name = "Lufia2FieldDiagnosticsHideCursor"
+source = "src/field/field_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:8274"
+name = "Lufia2FieldDiagnosticsShowCursor"
+source = "src/field/field_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:8281"
+name = "Lufia2FieldDiagnosticsCursorAddress"
+source = "src/field/field_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:829D"
+name = "Lufia2FieldDiagnosticsDrawValues"
+source = "src/field/field_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:8312"
+name = "Lufia2FieldDiagnosticsResolveFlag"
+source = "src/field/field_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:84A9"
+name = "Lufia2FieldDiagnosticsClearTilemap"
+source = "src/field/field_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:850E"
+name = "Lufia2FieldDiagnosticsConsumeHighButtons"
+source = "src/field/field_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:8515"
+name = "Lufia2FieldDiagnosticsConsumeLowButtons"
+source = "src/field/field_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
