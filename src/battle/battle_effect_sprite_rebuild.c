@@ -20,9 +20,8 @@ Lufia2ExecutionResult Lufia2BattleEffectRebuildSprites(
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_SPRITE_BUILD_MODE));
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x819e02u, 0x858a2fu, 3u, 0x81u)) {
-        const Lufia2ExecutionResult result = {
-            LUFIA2_EXECUTION_CHILD_UNWOUND, 0x819e02u
-        };
+        const Lufia2ExecutionResult result = {LUFIA2_EXECUTION_CHILD_UNWOUND,
+                                              0x819e02u, 0u};
         return result;
     }
     LoadA8(cpu, 0xffu);
