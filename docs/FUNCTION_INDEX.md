@@ -813,6 +813,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:BB76` | `Lufia2FieldPrepareEventControl` | verified | `src/field/field_event_control.c` |
 | `$83:BB93` | `Lufia2UpdateActorSlots` | verified | `src/actor/actor_slots.c` |
 | `$83:BBF3` | `Lufia2PlayerSlotSpecialUpdate` | verified | `src/actor/player_update.c` |
+| `$83:BE64` | `Lufia2FieldChangeLeaderFacing` | verified | `src/field/field_player_effect_callers.c` |
+| `$83:BF33` | `Lufia2FieldStepLeaderFacing` | verified | `src/field/field_player_effect_callers.c` |
 | `$83:C079` | `Lufia2FieldCanPushObject` | verified | `src/field/field_event_objects.c` |
 | `$83:C0EF` | `Lufia2FieldProbeLeaderPosition` | verified | `src/field/field_actor_event_helpers.c` |
 | `$83:C0FA` | `Lufia2FieldAcknowledgeControlChange` | verified | `src/field/field_actor_event_helpers.c` |
@@ -820,10 +822,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:C161` | `Lufia2FieldReadPlayerDirection` | verified | `src/field/field_player_commands.c` |
 | `$83:C180` | `Lufia2FieldClearSecondaryActionState` | verified | `src/field/field_player_commands.c` |
 | `$83:C1B4` | `Lufia2PlayerSlotStandardUpdate` | verified | `src/actor/player_controller.c` |
+| `$83:C24F` | `Lufia2FieldDispatchSelectedItemAction` | verified | `src/field/field_selected_item_action.c` |
 | `$83:C2FE` | `Lufia2FieldSpawnActionActor` | verified | `src/field/field_player_action_setup.c` |
 | `$83:C311` | `Lufia2FieldSpawnFacingActionActor` | verified | `src/field/field_player_action_setup.c` |
 | `$83:C32D` | `Lufia2FieldReadLeaderFacingAction` | verified | `src/field/field_player_action_setup.c` |
 | `$83:C33D` | `Lufia2FieldFindSecondaryAtProbe` | verified | `src/field/field_event_objects.c` |
+| `$83:C3DC` | `Lufia2FieldProbeFacingObject` | verified | `src/field/field_facing_callers.c` |
+| `$83:C40E` | `Lufia2FieldCompareFacingTileHeight` | verified | `src/field/field_facing_callers.c` |
+| `$83:C5FE` | `Lufia2FieldSelectItemAnimation` | verified | `src/field/field_player_effect_callers.c` |
 | `$83:C652` | `Lufia2PartyListHasEntry` | verified | `src/party/party_records.c` |
 | `$83:C692` | `Lufia2FieldReadSelectedItemByte` | verified | `src/field/field_player_commands.c` |
 | `$83:C6AA` | `Lufia2FieldApplyObjectParameters` | verified | `src/field/field_object_parameters.c` |
@@ -911,6 +917,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:FBBD` | `Lufia2FieldProbeDirectionBlocked` | verified | `src/field/field_probe_direction.c` |
 | `$83:FBF1` | `Lufia2FieldReadProbeAttribute` | verified | `src/field/field_probe_collision.c` |
 | `$83:FBFE` | `Lufia2FieldClearPendingOccupancy` | verified | `src/field/field_probe_collision.c` |
+| `$83:FC1C` | `Lufia2FieldSpawnLeaderSecondaryAction` | verified | `src/field/field_facing_callers.c` |
 | `$83:FC3C` | `Lufia2FieldFindSpecialActor` | verified | `src/field/field_probe_collision.c` |
 | `$83:FC56` | `Lufia2FieldProbeInputAllowed` | verified | `src/field/field_probe_collision.c` |
 | `$83:FC69` | `Lufia2FieldUpdateProbeAction` | verified | `src/field/field_probe_collision.c` |

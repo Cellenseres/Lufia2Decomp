@@ -5346,3 +5346,38 @@ name = "field_selected_direction"
 width = 1
 owner = "field"
 notes = "Direction selected by 83:C161 from the original D-pad table83:D437."
+
+[[location]]
+address = "7E:1272"
+name = "field_facing_change_marker"
+width = 1
+owner = "field"
+notes = "Original83:BE64 writes FF after the facing transition."
+
+[[location]]
+address = "7E:0C1F"
+name = "field_selected_item"
+width = 2
+owner = "field"
+notes = "Original83:C24F reads the selected field-tool ID into the item-record word."
+
+[[location]]
+address = "7E:128A"
+name = "field_leader_tile_height"
+width = 1
+owner = "field"
+notes = "Original83:C40E caches the current leader tile height."
+
+[[location]]
+address = "7E:128B"
+name = "field_facing_tile_height"
+width = 1
+owner = "field"
+notes = "Original83:C40E caches the adjacent tile height."
+
+[[location]]
+address = "7E:128C"
+name = "field_leader_cell_category"
+width = 1
+owner = "field"
+notes = "Original83:C40E caches the current cell category before its comparisons."

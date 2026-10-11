@@ -10328,3 +10328,59 @@ source = "src/field/field_player_action_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:BE64"
+name = "Lufia2FieldChangeLeaderFacing"
+source = "src/field/field_player_effect_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BF33"
+name = "Lufia2FieldStepLeaderFacing"
+source = "src/field/field_player_effect_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C5FE"
+name = "Lufia2FieldSelectItemAnimation"
+source = "src/field/field_player_effect_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C24F"
+name = "Lufia2FieldDispatchSelectedItemAction"
+source = "src/field/field_selected_item_action.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C3DC"
+name = "Lufia2FieldProbeFacingObject"
+source = "src/field/field_facing_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C40E"
+name = "Lufia2FieldCompareFacingTileHeight"
+source = "src/field/field_facing_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:FC1C"
+name = "Lufia2FieldSpawnLeaderSecondaryAction"
+source = "src/field/field_facing_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1274 functions in `metadata/functions.toml`: 1274 verified, 0 draft, 0 identified, 0 disabled.
+1281 functions in `metadata/functions.toml`: 1281 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -4998,3 +4998,16 @@ CPU/full WRAM/MMIO/ordered bus comparison retains original DB and DP behavior.
 Nine adjacent player-command/action contracts share one public integration
 batch. No original gameplay bug, interpreter wait or NMI behavior changed.
 Twelve grouped field jobs, ONE full 1,351 jobs and Windows Release pass.
+
+### Original field action callers
+
+Seven complete original contracts connect facing transitions, item-animation
+selection, field-tool dispatch, tile-height/object probes and secondary actor
+spawning. Existing actor, item-record, map andscript cores remain shared.
+Three grouped proofs compare57,344 direct and57,344 runtime-ABI states per
+path, with359,524 original nested child returns perpath. Separate full-native
+compositions compare57,344 states and234,301 native callback returns perpath;
+zero interpreted children. All167 required non-return instructions and35
+root child sites are covered. Original CPU/full WRAM/MMIO/ordered bus remain
+unchanged. No original gameplay bug fix or asynchronous/NMI execution claim.
+Twenty-four grouped jobs, ONE full 1,375 and Windows Release pass.

@@ -192,6 +192,9 @@ add_library(lufia2_decomp STATIC
     src/field/field_probe_collision.c
     src/field/field_player_commands.c
     src/field/field_player_action_setup.c
+    src/field/field_facing_callers.c
+    src/field/field_selected_item_action.c
+    src/field/field_player_effect_callers.c
     src/field/field_probe_direction.c
     src/field/field_event_map_state.c
     src/field/field_event_triggers.c
