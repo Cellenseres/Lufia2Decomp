@@ -41,6 +41,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9184` | `Lufia2WriteGameFile` | verified | `src/system/save.c` |
 | `$80:91D3` | `Lufia2ResolveSaveFileAddress` | verified | `src/system/save.c` |
 | `$80:92A4` | `Lufia2IntroNmi` | verified | `src/title/title.c` |
+| `$80:9383` | `Lufia2InitializeBootSound` | verified | `src/system/sound_startup.c` |
+| `$80:93D6` | `Lufia2ResetSoundResources` | verified | `src/system/sound_startup.c` |
 | `$80:93FE` | `Lufia2PlaySong` | verified | `src/system/music.c` |
 | `$80:941A` | `Lufia2LoadSong` | verified | `src/system/music.c` |
 | `$80:9528` | `Lufia2SoundDriverRequest03` | verified | `src/system/sound_queue.c` |
@@ -81,6 +83,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:99F4` | `Lufia2WriteSoundTransferMarker` | verified | `src/system/sound_transfer.c` |
 | `$80:99FD` | `Lufia2WriteSoundDriverMode` | verified | `src/system/sound_commands.c` |
 | `$80:9A0A` | `Lufia2WaitSoundDriverReply` | verified | `src/system/sound_reply.c` |
+| `$80:9C0F` | `Lufia2UploadBootSoundBlocks` | verified | `src/system/sound_boot_blocks.c` |
 | `$80:9C72` | `Lufia2FieldEventTick` | verified | `src/field/field_update.c` |
 | `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
 | `$80:A368` | `Lufia2SceneResetTextState` | verified | `src/field/scene_bootstrap.c` |
@@ -535,6 +538,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:92F9` | `Lufia2MenuRestoreSelectionCursor` | verified | `src/menu/menu_context_services.c` |
 | `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |
 | `$82:939C` | `Lufia2MenuNmi` | verified | `src/menu/menu.c` |
+| `$82:93C2` | `Lufia2WaitMenuFrameChange` | verified | `src/menu/menu_frame_wait.c` |
 | `$82:93CF` | `Lufia2MenuPlacePartyPortraits` | verified | `src/menu/menu_display_callers.c` |
 | `$82:93F6` | `Lufia2MenuPrepareDisplayText` | verified | `src/menu/menu_presentation_callers.c` |
 | `$82:94C0` | `Lufia2MenuDrawCharacterSummary` | verified | `src/menu/menu_field_dispatch.c` |

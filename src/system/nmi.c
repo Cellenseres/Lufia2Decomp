@@ -4,7 +4,7 @@
 #include "lufia2/system.h"
 #include "system/wram.h"
 
-enum { NMI_FRAME_COUNTER = 0x40, NMI_FRAME_COUNTER_SECONDARY = 0x42 };
+enum { NMI_FRAME_COUNTER_SECONDARY = 0x42 };
 
 static uint8_t NmiChild(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
@@ -81,7 +81,7 @@ Lufia2ExecutionResult Lufia2MainNmi(
     if (checkpoint)
         checkpoint(context, cpu, 0x808699u);
     OpRepWidths(cpu, 0x20u);
-    OpStepMem(memory, cpu, OpDp(cpu, NMI_FRAME_COUNTER), 1);
+    OpStepMem(memory, cpu, OpDp(cpu, DP_NMI_FRAME_COUNTER), 1);
     OpStepMem(memory, cpu, OpDp(cpu, NMI_FRAME_COUNTER_SECONDARY), 1);
     OpLda(memory, cpu, 0x000520u);
     OpAndValue(cpu, 0x00ffu);

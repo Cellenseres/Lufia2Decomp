@@ -3002,9 +3002,9 @@ notes = "DB-relative inhibit byte for original driver command1A."
 address = "7E:0590"
 name = "sound_resource_output"
 width = 1
-count = 1
+count = 4
 owner = "system"
-notes = "80:957D repeatedly stores resource bytes here without advancingY."
+notes = "80:957D repeatedly stores at the first byte.80:93D6 resets the shared four-byte resource queue."
 
 [[location]]
 address = "7F:D067"
@@ -5397,3 +5397,17 @@ width = 1
 count = 1
 owner = "field"
 notes = "83BB08 copies the actor ID here before requesting the eight-slot facing group."
+
+[[location]]
+address = "7E:0040"
+name = "nmi_frame_counter"
+width = 2
+owner = "system"
+notes = "Primary NMI counter.82:93C2 waits for the low byte to change at dynamic DP."
+
+[[location]]
+address = "7E:058F"
+name = "sound_deferred_command"
+width = 1
+owner = "system"
+notes = "Deferred driver command;80:93D6 initializes it to FF."

@@ -10523,3 +10523,39 @@ source = "src/field/field_interaction.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Original widths restored; asynchronous polls retain live continuations.
+[[function]]
+address = "80:9383"
+name = "Lufia2InitializeBootSound"
+source = "src/system/sound_startup.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+# Original widths restored; asynchronous polls retain live continuations.
+[[function]]
+address = "80:93D6"
+name = "Lufia2ResetSoundResources"
+source = "src/system/sound_startup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Original widths restored; asynchronous polls retain live continuations.
+[[function]]
+address = "80:9C0F"
+name = "Lufia2UploadBootSoundBlocks"
+source = "src/system/sound_boot_blocks.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Original widths restored; asynchronous polls retain live continuations.
+[[function]]
+address = "82:93C2"
+name = "Lufia2WaitMenuFrameChange"
+source = "src/menu/menu_frame_wait.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

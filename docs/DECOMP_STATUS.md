@@ -11,6 +11,31 @@
 function replaces the original at runtime is decided by the consumer's
 `recomp/decomp_bindings.toml`.
 
+## Original boot sound and menu frame synchronization
+
+80:9383/93D6 reconstruct original boot sound initialization and resource
+reset through five exact child sites.80:9C0F decodes and transfers the IPL
+blocks;82:93C2 waits for the primary NMI counter's low byte to change.
+All original widths,flags,DP/DB,live frames and ordered byte bus remain.
+Bounded polls hand off at their exact original comparison or block header.
+Boot sound roots are selected; IPL upload and menu wait remain unbound.
+The current consumer word-bus pacing and asynchronous NMI contracts need
+separate proof before those two bindings can be enabled. Byte-stream
+equivalence does not establish real SPC timing or full native startup.
+65,536 menu states per direct/ABI path;65,536 IPL header prefixes
+checked by the direct helper in both fixtures;8,228 actual IPL ABI calls;
+8,192 complete controlled IPL programs,32 poll and4 block-limit cuts.
+256 boot/256 reset states and1,280 actual child returns per path;
+640 child-unwind/changed-width states and64 root poll cuts per path.
+600 production redirected-return probes,26 bounded ROM controls;
+18,432 runtime/7,168 semantic guards. Native composition uses existing
+sound routines:1,664 native callbacks across256 states;8,192 nested
+original services remain explicit. No hardware-timing claim.
+Fourteen grouped original-ROM/production-ABI jobs,26 bounded fault
+controls,three positive controls and four C++ APIs pass. ONE full1,453
+verification jobs and Windows Release pass. Strict Clang C11,Wall,Wextra,
+Wpedantic and Werror pass across420 standalone source units.
+
 ## Complete original player controller
 
 The existing 83:C1B4 entry now reconstructs all twenty-one child sites.
@@ -45,7 +70,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1298 functions in `metadata/functions.toml`: 1298 verified, 0 draft, 0 identified, 0 disabled.
+1302 functions in `metadata/functions.toml`: 1302 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

@@ -355,6 +355,7 @@ add_library(lufia2_decomp STATIC
     src/item/item_records.c
     src/menu/menu.c
     src/menu/menu_status.c
+    src/menu/menu_frame_wait.c
     src/menu/menu_screen.c
     src/menu/menu_spell_shop.c
     src/menu/menu_sprites.c
@@ -410,6 +411,8 @@ add_library(lufia2_decomp STATIC
     src/system/save_record_checksum.c
     src/system/music.c
     src/system/sound_commands.c
+    src/system/sound_startup.c
+    src/system/sound_boot_blocks.c
     src/system/sound_driver.c
     src/system/sound_tables.c
     src/system/sound_transfer.c
