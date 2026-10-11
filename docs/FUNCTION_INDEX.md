@@ -830,7 +830,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:C108` | `Lufia2FieldClaimActor` | verified | `src/field/field_event_actors.c` |
 | `$83:C161` | `Lufia2FieldReadPlayerDirection` | verified | `src/field/field_player_commands.c` |
 | `$83:C180` | `Lufia2FieldClearSecondaryActionState` | verified | `src/field/field_player_commands.c` |
-| `$83:C1B4` | `Lufia2PlayerSlotStandardUpdate` | verified | `src/actor/player_controller.c` |
+| `$83:C1B4` | `Lufia2PlayerSlotStandardUpdateWithServices` | verified | `src/actor/player_controller.c` |
 | `$83:C246` | `Lufia2FieldReadFacingStepCode` | verified | `src/field/field_player_input_leaves.c` |
 | `$83:C24F` | `Lufia2FieldDispatchSelectedItemAction` | verified | `src/field/field_selected_item_action.c` |
 | `$83:C2FE` | `Lufia2FieldSpawnActionActor` | verified | `src/field/field_player_action_setup.c` |

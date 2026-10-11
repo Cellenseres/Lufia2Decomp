@@ -84,11 +84,12 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
-# Whole C1B4 through its RTS. Menu, dialog, vehicle boarding, door
-# transitions and $8E:C05F stop at their exact ROM PC.
+# Complete player controller; all twenty-one original child frames.
+# Both index widths and dynamic DP/DB; children preserve live boundaries.
+# Canonical modes below; early returns preserve entry widths.
 [[function]]
 address = "83:C1B4"
-name = "Lufia2PlayerSlotStandardUpdate"
+name = "Lufia2PlayerSlotStandardUpdateWithServices"
 source = "src/actor/player_controller.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
@@ -4513,6 +4514,7 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# Both index widths; original dynamic Direct Page and data bank.
 [[function]]
 address = "83:FC56"
 name = "Lufia2FieldProbeInputAllowed"
@@ -4521,6 +4523,7 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
+# Both index widths; original dynamic Direct Page and data bank.
 [[function]]
 address = "83:FC69"
 name = "Lufia2FieldUpdateProbeAction"

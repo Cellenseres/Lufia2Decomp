@@ -17,6 +17,12 @@ static bool ProbeCollisionContext(const Lufia2CpuState *cpu) {
         cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
 }
 
+static bool ProbeControlContext(const Lufia2CpuState *cpu) {
+    return cpu->accumulator_is_8_bit && !cpu->decimal &&
+        cpu->program_bank == 0x83u && cpu->stack >= 0x1f00u &&
+        cpu->stack <= 0x1ffcu;
+}
+
 Lufia2ExecutionResult Lufia2FieldReadProbeAttribute(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!ProbeCollisionContext(cpu))
@@ -71,7 +77,7 @@ Lufia2ExecutionResult Lufia2FieldFindSpecialActor(
 
 Lufia2ExecutionResult Lufia2FieldProbeInputAllowed(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!ProbeCollisionContext(cpu))
+    if (!ProbeControlContext(cpu))
         return ExecutionHandoff(cpu, 0x83fc56u);
     OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E057C));
     cpu->carry = false;
@@ -90,7 +96,7 @@ Lufia2ExecutionResult Lufia2FieldProbeInputAllowed(
 
 Lufia2ExecutionResult Lufia2FieldUpdateProbeAction(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!ProbeCollisionContext(cpu))
+    if (!ProbeControlContext(cpu))
         return ExecutionHandoff(cpu, 0x83fc69u);
     OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E057C));
     if (!cpu->zero) {

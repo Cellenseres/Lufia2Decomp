@@ -68,6 +68,10 @@ Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdateWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $83:C1B4 player controller; exact LLE boundaries. */
 Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
     const Lufia2Memory *memory,

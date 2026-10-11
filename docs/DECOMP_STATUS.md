@@ -11,6 +11,34 @@
 function replaces the original at runtime is decided by the consumer's
 `recomp/decomp_bindings.toml`.
 
+## Complete original player controller
+
+The existing 83:C1B4 entry now reconstructs all twenty-one child sites.
+Interaction, input, terrain probes, turning and movement use shared native
+services. The old two-argument API delegates to the same controller and
+native children. Unknown children retain their original live call frames.
+No wait, NMI, actor interaction or vehicle transition is invented.
+Both index widths, varied Direct Pages and data banks are verified. FC56
+and FC69 retain their original dynamic input addressing in both index widths.
+The canonical metadata modes do not describe every early-return context.
+
+Private direct and production-ABI proofs each cover 131,072 states and all
+79 required non-return instruction/mode states; 853,300 actual original child
+returns and 36,152 live child cuts per path. Native-prefix composition covers
+65,536 states and 262,867 native child returns per path, with no interpreted
+children. The compatibility API adds 196,608 independent whole-ROM prefix
+states and 131,072 production-ABI states, including altered return frames.
+Two input leaves add 65,536 direct and ABI states per path. CPU, full WRAM,
+MMIO and ordered bus effects remain original. Twenty bounded ROM controls,
+child unwinds, changed widths, decimal boundaries and pre-access guards pass.
+Twenty-three grouped jobs, ONE full 1,439 and Windows Release pass.
+Four extended public replays reproduce all 79 required instruction states.
+Return-opcode regressions add 65,536 states per direct and ABI path, including
+5,947 indexed JSR calls into the original RTL at AB60 per path. A further
+65,536 original callee states check both caller-frame sizes. A native error
+control detects the former invented return immediately. Original malformed
+indices, rewritten return addresses and live stacks remain unchanged.
+
 ## Function counts
 
 Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit

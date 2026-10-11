@@ -1,569 +1,354 @@
-/* Player controller ($83:C1B4). */
-
-#include <stdbool.h>
-
-#include "actor/actor_internal.h"
-#include "core/cpu_internal.h"
 #include "lufia2/actor.h"
+#include "actor/actor_internal.h"
 #include "lufia2/field.h"
+#include "core/child_call.h"
+#include "core/cpu_ops.h"
 #include "core/joypad.h"
-#include "field/vehicle_transition_internal.h"
-#include "system/dp_scratch.h"
 #include "system/wram.h"
 
-static void PlayerPressedClear(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint8_t joypad_byte, uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
-    (void)TakeButtonPress8(memory, cpu, joypad_byte);
-    SimulateRtsFrame(memory, cpu);
-}
+enum {
+    PROBE_ACTOR_SLOT = 0x56,
+    PLAYER_DIRECTION = 0x22,
+    PLAYER_STEP_DIRECTION = 0x7fd09d,
+    TURN_ACTION_BASE = 0x18,
+    FIELD_CONTROL_REQUEST = 8,
+    ANY_INDEX_WIDTH = 2
+};
 
-/* $83:F9AD cell under $8F/$91. */
-static void PlayerProbeCell(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    Lufia2MapCellIndex(memory, cpu, return_address, 1);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x)));
-}
+typedef struct PlayerControl {
+    const Lufia2Memory *memory;
+    Lufia2CpuState *cpu;
+    Lufia2PushedChildCall child;
+    void *context;
+} PlayerControl;
 
-/* $83:BA76: solid bit of the probed cell. */
-static void PlayerProbeSolid(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    PlayerProbeCell(memory, cpu, 0xba78u);
-    And8(cpu, 0x01u);
-}
-
-/* $83:BA5C..BAAC: step the probe past ledges. */
-static void PlayerProbeAhead(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t target) {
-    switch (target) {
-    case 0xba5cu:
-        IncrementDirect8(memory, cpu, DP_PROBE_Y);
-        PlayerProbeCell(memory, cpu, 0xba60u);
-        BitImmediate8(cpu, 0x01u);
-        if (!cpu->zero)
-            return;                                            /* BA67 */
-        BitImmediate8(cpu, 0x10u);
-        if (!cpu->zero) {
-            IncrementDirect8(memory, cpu, DP_PROBE_Y);         /* BA6D */
-            SimulateJsrFrame(memory, cpu, 0xba71u);
-            PlayerProbeSolid(memory, cpu);
-            SimulateRtsFrame(memory, cpu);
-            if (!cpu->zero)
-                return;
-            IncrementDirect8(memory, cpu, DP_PROBE_Y);         /* BA74 */
-        }
-        PlayerProbeSolid(memory, cpu);
-        return;
-    case 0xba80u:
-    case 0xba96u: {
-        const uint8_t along_x = target == 0xba80u;
-        const uint8_t axis = along_x ? 0x8fu : 0x91u;
-
-        PlayerProbeCell(memory, cpu, along_x ? 0xba82u : 0xba98u);
-        And8(cpu, along_x ? 0x20u : 0x10u);
-        if (!cpu->zero) {
-            DecrementDirect8(memory, cpu, axis);
-            SimulateJsrFrame(memory, cpu, along_x ? 0xba8fu : 0xbaa5u);
-            PlayerProbeSolid(memory, cpu);
-            SimulateRtsFrame(memory, cpu);
-            if (!cpu->zero)
-                return;
-        }
-        DecrementDirect8(memory, cpu, axis);                   /* BA92 */
-        PlayerProbeSolid(memory, cpu);
-        return;
-    }
-    default:                                                   /* BAAC */
-        IncrementDirect8(memory, cpu, DP_PROBE_X);
-        PlayerProbeCell(memory, cpu, 0xbab0u);
-        BitImmediate8(cpu, 0x01u);
-        if (!cpu->zero)
-            return;
-        BitImmediate8(cpu, 0x20u);
-        if (cpu->zero)
-            return;
-        IncrementDirect8(memory, cpu, DP_PROBE_X);
-        PlayerProbeSolid(memory, cpu);
-        return;
-    }
-}
-
-/* $83:BAC2: actor 8..39 on $8F/$91; X and $56. */
-static void PlayerFindActorAt(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    LoadX16(cpu, 0x0008u);
-    for (;;) {
-        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x); /* BAC5 */
-        BitImmediate8(cpu, 0x04u);
-        if (cpu->zero) {
-            uint8_t hit = 0;
-            unsigned i;
-
-            /* The ROM tests the wide column twice. */
-            for (i = 0; i < 2u && !hit; ++i) {
-                LoadA8(cpu, Read8(
-                    memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
-                Compare8(cpu, A8(cpu), 0x02u);
-                if (cpu->carry) {
-                    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);
-                    LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-                    Compare8(
-                        cpu, A8(cpu),
-                        Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
-                    hit = cpu->zero;
-                }
-            }
-            if (!hit) {
-                LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);  /* BAEC */
-                Compare8(
-                    cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
-                hit = cpu->zero;
-            }
-            if (hit) {
-                LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);  /* BAF3 */
-                Compare8(
-                    cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
-                cpu->carry = 1;
-                if (cpu->zero) {
-                    StoreXDirect16(memory, cpu, DP_SCRATCH_C); /* BB04 */
-                    return;
-                }
-            }
-        }
-        IncrementX16(cpu);                                     /* BAFB */
-        Compare16(cpu, cpu->x, 0x0028u);
-        if (cpu->zero) {
-            cpu->carry = 0;
-            return;
-        }
-    }
-}
-
-/* $83:BA06: talkable actor ahead; carry = found. */
-static uint8_t PlayerFindTalkTarget(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    uint16_t target;
-
-    SimulateJsrFrame(memory, cpu, 0xc1d2u);
-    SetIndexWidth(cpu, 0);                                     /* BA06 */
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);
-    Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
-    Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
-    Lufia2MapTileHeight(memory, cpu, 0xba14u);
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
-    TransferDirectToA(cpu);                                    /* BA17 */
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, 0);
-    TransferAToX(cpu);
-    target = Read16ProgramIndexed(memory, cpu, 0xba54u, cpu->x);
-    if (target != 0xba5cu && target != 0xba80u &&
-        target != 0xba96u && target != 0xbaacu) {
-        cpu->resume_pc = 0x83ba1cu;
-        return 0;
-    }
-    SimulateJsrFrame(memory, cpu, 0xba1eu);
-    PlayerProbeAhead(memory, cpu, target);
-    SimulateRtsFrame(memory, cpu);
-    cpu->carry = 0;                                            /* BA1F */
-    if (!cpu->zero) {
-        SimulateJsrFrame(memory, cpu, 0xba24u);
-        PlayerFindActorAt(memory, cpu);
-        SimulateRtsFrame(memory, cpu);
-        if (cpu->carry) {
-            uint8_t same_height = 1;
-
-            LoadAAbsolute8(memory, cpu, WRAM_UNK_7E05D2, cpu->x);      /* BA27 */
-            Compare8(cpu, A8(cpu), 0x70u);
-            if (cpu->zero) {
-                LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);
-                BitImmediate8(cpu, 0x01u);
-                if (!cpu->zero) {
-                    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FACING, 0); /* BA35 */
-                    Compare8(cpu, A8(cpu), 0x04u);
-                    cpu->carry = cpu->zero;
-                    same_height = 0;
-                }
-            }
-            if (same_height) {
-                LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);  /* BA40 */
-                Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
-                LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
-                Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
-                Lufia2MapTileHeight(memory, cpu, 0xba4cu);
-                Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
-                cpu->carry = cpu->zero;
-            }
-        }
-    }
-    SimulateRtsFrame(memory, cpu);
-    return 1;
-}
-
-static void PlayerReadDirection(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0xc1e5u);
-    (void)Lufia2FieldReadPlayerDirection(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
-}
-
-/* $83:FC56: $057C set, B held, slot 0. */
-static void PlayerSkipProbe(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0xc1eau);
-    LoadAAbsolute8(memory, cpu, 0x057cu, 0);                   /* FC56 */
-    cpu->carry = 0;
-    if (!cpu->zero) {
-        LoadA8(cpu, 0x80u);
-        And8(cpu, Read8(memory, DirectAddress(cpu, 0x47u)));
-        if (!cpu->zero) {
-            LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
-            if (cpu->zero)
-                cpu->carry = 1;                                /* FC67 */
-        }
-    }
-    SimulateRtsFrame(memory, cpu);
-}
-
-/* $83:C246: $83:C1B0 entry for direction $22. */
-static void PlayerFacingCode(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
-    (void)Lufia2FieldReadFacingStepCode(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
-}
-
-/* $83:FBBD: edge bit toward facing A; carry = set. */
-static uint8_t PlayerEdgeAhead(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    uint16_t target;
-    uint8_t mask;
-
-    SimulateJsrFrame(memory, cpu, 0xc1f7u);
-    ExchangeAccumulatorBytes(cpu);                             /* FBBD */
-    LoadA8(cpu, 0x00u);
-    ExchangeAccumulatorBytes(cpu);
-    TransferAToX(cpu);
-    target = Read16ProgramIndexed(memory, cpu, 0xfbc6u, cpu->x);
-    if (target != 0xfbceu && target != 0xfbd7u &&
-        target != 0xfbdeu && target != 0xfbe5u) {
-        cpu->resume_pc = 0x83fbc2u;
-        return 0;
-    }
-    SimulateJsrFrame(memory, cpu, 0xfbc4u);
-    if (target == 0xfbceu)
-        IncrementDirect8(memory, cpu, DP_PROBE_Y);
-    else if (target == 0xfbe5u)
-        IncrementDirect8(memory, cpu, DP_PROBE_X);
-    mask = (target == 0xfbceu || target == 0xfbdeu) ? 0x10u : 0x20u;
-    SimulateJsrFrame(                                          /* FBF1 */
-        memory, cpu,
-        target == 0xfbceu ? 0xfbd2u : target == 0xfbd7u ? 0xfbd9u :
-        target == 0xfbdeu ? 0xfbe0u : 0xfbe9u);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
-    Lufia2MapCellIndex(memory, cpu, 0xfbf8u, 0);               /* F9B6 */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x)));
-    SimulateRtsFrame(memory, cpu);
-    And8(cpu, mask);                                           /* FBEC */
-    cpu->carry = !cpu->zero;
-    SimulateRtsFrame(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
-    return 1;
-}
-
-/* $8E:BBAF: vehicle tile pair; boundary past $8E:BBD1. */
-static uint8_t PlayerVehicleProbeChild(
-    void *context, Lufia2CpuState *cpu, uint32_t target,
-    uint32_t site, uint8_t frame) {
-    const Lufia2Memory *memory = context;
-    (void)frame;
-    cpu->program_bank = (uint8_t)(target >> 16);
-    if (target == 0x83fb71u)
-        Lufia2ActorReadMapCellValue(memory, cpu);
-    else if (target == 0x83fb12u) {
-        if (!Lufia2ActorMovementStep(memory, cpu))
-            return 0u;
-    } else {
-        cpu->resume_pc = target;
+static uint8_t PlayerControlChild(
+    const PlayerControl *control, uint32_t site, uint32_t target,
+    uint8_t frame, uint8_t index_width, Lufia2ExecutionResult *result) {
+    Lufia2CpuState *cpu = control->cpu;
+    if (!CallChildWithFrame(control->memory, cpu, control->child,
+            control->context, site, target, frame, 0x83u)) {
+        *result = (Lufia2ExecutionResult){
+            LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
         return 0u;
     }
-    SimulateRtlFrame(memory, cpu);
-    cpu->program_bank = (uint8_t)(site >> 16);
+    if (!cpu->accumulator_is_8_bit ||
+        (index_width != ANY_INDEX_WIDTH &&
+            cpu->index_is_8_bit != index_width)) {
+        *result = ExecutionHandoff(cpu, site + frame + 1u);
+        return 0u;
+    }
     return 1u;
 }
 
-static uint8_t PlayerVehicleTile(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    cpu->program_bank = 0x8eu;
-    Lufia2ExecutionResult result = Lufia2FieldProbeVehicleTerrainBody(
-        memory, cpu, PlayerVehicleProbeChild, (void *)memory);
-    if (result.flow == LUFIA2_EXECUTION_RETURNED)
-        return 1u;
-    if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
-        cpu->resume_pc = result.pc;
-    return 0u;
-}
-
-/* $8E:B65A: leader tile inside rectangle at base. */
-static uint8_t PlayerInsideRect(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t base) {
-    unsigned axis;
-
-    for (axis = 0; axis < 2u; ++axis) {
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, (uint8_t)(0x56u + axis))));
-        Compare8(
-            cpu, A8(cpu), Read8(memory, AbsoluteIndexedAddress(
-                cpu, (uint16_t)(base + axis), cpu->x)));
-        if (!cpu->carry)
-            return 0;
-        Compare8(
-            cpu, A8(cpu), Read8(memory, AbsoluteIndexedAddress(
-                cpu, (uint16_t)(base + 2u + axis), cpu->x)));
-        if (cpu->carry)
-            return 0;
-    }
-    return 1;
-}
-
-/* $8E:B63B: door rectangles at $7E:F000; boundary $8E:B6D4. */
-static uint8_t PlayerDoorRegion(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    uint32_t entries;
-
-    cpu->program_bank = 0x8eu;
-    PushDataBank(memory, cpu);                                 /* B63B */
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), A8(cpu));
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_D), A8(cpu));
-    LoadA8(cpu, 0x7eu);
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
-    SetIndexWidth(cpu, 0);                                     /* B64A */
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xf002u, 0));
-    LoadA8(cpu, 0xffu);
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
-    for (entries = 0;; ++entries) {
-        /* A table without $FF spins the ROM. */
-        if (entries == 0x10000u) {
-            cpu->resume_pc = 0x8eb653u;
-            return 0;
-        }
-        LoadAAbsolute8(memory, cpu, 0xf000u, cpu->x);          /* B653 */
-        Compare8(cpu, A8(cpu), 0xffu);
-        if (cpu->zero)
-            break;
-        if (PlayerInsideRect(memory, cpu, 0xf005u)) {
-            LoadAAbsolute8(memory, cpu, 0xf00du, cpu->x);      /* B672 */
-            Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
-            break;
-        }
-        LoadAAbsolute8(memory, cpu, 0xf009u, cpu->x);          /* B679 */
-        Compare8(cpu, A8(cpu), 0xffu);
-        if (!cpu->zero && PlayerInsideRect(memory, cpu, 0xf009u)) {
-            LoadAAbsolute8(memory, cpu, 0xf00du, cpu->x);      /* B698 */
-            Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
-            break;
-        }
-        SetAccumulatorWidth(cpu, 0);                           /* B69F */
-        TransferXToA(cpu);
-        cpu->carry = 0;
-        Add16Immediate(cpu, 0x000fu);
-        TransferAToX(cpu);
-        SetAccumulatorWidth(cpu, 1);
-    }
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_E))); /* B6AB */
-    Compare8(cpu, A8(cpu), 0xffu);
-    cpu->carry = 0;
+static uint8_t TryPlayerInteraction(
+    const PlayerControl *control, uint8_t *handled,
+    Lufia2ExecutionResult *result) {
+    const Lufia2Memory *memory = control->memory;
+    Lufia2CpuState *cpu = control->cpu;
+    OpLoadA(cpu, JOY_LOW_A | JOY_LOW_L);
+    const uint8_t entry_index_width = cpu->index_is_8_bit;
+    if (!PlayerControlChild(control, 0x83c1bbu, 0x83867bu,
+            2u, entry_index_width, result))
+        return 0u;
     if (!cpu->zero) {
-        LoadA8(cpu, Read8(memory, 0x7fd09du));                 /* B6B5 */
-        Compare8(cpu, A8(cpu), 0x00u);
-        if (cpu->zero) {
-            LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_D)));
-            Compare8(
-                cpu, A8(cpu),
-                Read8(memory, AbsoluteIndexedAddress(cpu, 0xf002u, cpu->x)));
-        } else if (Compare8(cpu, A8(cpu), 0x01u), cpu->zero) {
-            LoadAAbsolute8(memory, cpu, 0xf002u, cpu->x);      /* B6CD */
-            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_SCRATCH_D)));
-        } else {
-            cpu->carry = 0;                                    /* B6C1 */
-        }
+        if (!PlayerControlChild(control, 0x83c1d0u, 0x83ba06u, 2u, 0u, result))
+            return 0u;
         if (cpu->carry) {
-            cpu->resume_pc = 0x8eb6d4u;
-            return 0;
+            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, PROBE_ACTOR_SLOT)));
+            if (!PlayerControlChild(control, 0x83c1d7u, 0x83bb08u,
+                    2u, ANY_INDEX_WIDTH, result))
+                return 0u;
+            *handled = 1u;
+            *result = ExecutionReturned(0x83c1e2u);
+            return 1u;
         }
+        if (!PlayerControlChild(control, 0x83c1dcu, 0x8ec05fu, 3u, 0u, result))
+            return 0u;
+        *handled = cpu->carry;
+        *result = ExecutionReturned(0x83c1e2u);
+        return 1u;
     }
-    PullDataBank(memory, cpu);                                 /* B738 */
-    return 1;
-}
-
-/* $83:FC69: $057C and B pick walk speed $10/$08. */
-static void PlayerWalkSpeed(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0xc234u);
-    LoadAAbsolute8(memory, cpu, 0x057cu, 0);                   /* FC69 */
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E057C));
     if (!cpu->zero) {
-        LoadA8(cpu, 0x80u);
-        And8(cpu, Read8(memory, DirectAddress(cpu, 0x47u)));
+        OpLoadA(cpu, JOY_HIGH_SELECT);
+        if (!PlayerControlChild(control, 0x83c1c7u, 0x838674u,
+                2u, entry_index_width, result))
+            return 0u;
         if (!cpu->zero) {
-            LoadA8(cpu, 0x10u);
-            Write8(memory, WRAM_UNK_7FE4DE, A8(cpu));
-        } else {
-            LoadA8(cpu, Read8(memory, WRAM_UNK_7FE4DE)); /* FC7C */
-            Compare8(cpu, A8(cpu), 0x10u);
-            if (cpu->zero) {
-                LoadA8(cpu, 0x08u);
-                Write8(memory, WRAM_UNK_7FE4DE, A8(cpu));
-            }
+            if (!PlayerControlChild(control, 0x83c1ccu, 0x8383e0u,
+                    2u, ANY_INDEX_WIDTH, result))
+                return 0u;
+            *handled = 1u;
+            *result = ExecutionReturned(0x83c1cfu);
         }
     }
-    SimulateRtsFrame(memory, cpu);
+    return 1u;
 }
 
-static Lufia2ExecutionResult PlayerReturned(uint32_t rts_pc) {
+static uint8_t TurnPlayerAtObstacle(
+    const PlayerControl *control, Lufia2ExecutionResult *result) {
+    const Lufia2Memory *memory = control->memory;
+    Lufia2CpuState *cpu = control->cpu;
+    OpLda(memory, cpu, OpDp(cpu, PLAYER_DIRECTION));
+    OpSta(memory, cpu, PLAYER_STEP_DIRECTION);
+    cpu->carry = 0u;
+    if (cpu->decimal) {
+        *result = ExecutionHandoff(cpu, 0x83c20du);
+        return 0u;
+    }
+    OpAdcValue(cpu, TURN_ACTION_BASE);
+    if (!PlayerControlChild(control, 0x83c20fu, 0x83d350u, 3u, 1u, result))
+        return 0u;
+    if (!PlayerControlChild(control, 0x83c213u, 0x8eb63bu,
+            3u, ANY_INDEX_WIDTH, result))
+        return 0u;
+    return 1u;
+}
+
+static uint8_t ProbePlayerStep(
+    const PlayerControl *control, uint8_t *walk,
+    Lufia2ExecutionResult *result) {
+    const Lufia2Memory *memory = control->memory;
+    Lufia2CpuState *cpu = control->cpu;
+    OpRepWidths(cpu, 0x10u);
+    if (!PlayerControlChild(control, 0x83c1efu, 0x83c0efu, 2u, 0u, result) ||
+        !PlayerControlChild(control, 0x83c1f2u, 0x83c246u, 2u, 0u, result) ||
+        !PlayerControlChild(control, 0x83c1f5u, 0x83fbbdu,
+            2u, ANY_INDEX_WIDTH, result))
+        return 0u;
+    OpSepWidths(cpu, 0x10u);
+    uint8_t turn;
+    if (cpu->carry) {
+        OpRepWidths(cpu, 0x10u);
+        if (!PlayerControlChild(control, 0x83c1feu, 0x8ebbafu,
+                3u, ANY_INDEX_WIDTH, result))
+            return 0u;
+        OpSepWidths(cpu, 0x10u);
+        *walk = 0u;
+        turn = !cpu->carry;
+    } else {
+        OpRepWidths(cpu, 0x10u);
+        if (!PlayerControlChild(control, 0x83c21bu, 0x83c0efu, 2u, 0u, result) ||
+            !PlayerControlChild(control, 0x83c21eu, 0x83c246u, 2u, 0u, result) ||
+            !PlayerControlChild(control, 0x83c221u, 0x83fb12u, 3u, 0u, result) ||
+            !PlayerControlChild(control, 0x83c225u, 0x83f9adu, 2u, 0u, result))
+            return 0u;
+        OpLda(memory, cpu, OpLongX(cpu, WRAM_FIELD_MAP_ATTRIBUTES));
+        OpSepWidths(cpu, 0x10u);
+        OpBitValue(cpu, 1u);
+        turn = !cpu->zero;
+    }
+    if (turn) {
+        if (!TurnPlayerAtObstacle(control, result))
+            return 0u;
+        *walk = 0u;
+    }
+    return 1u;
+}
+
+static uint8_t StartPlayerWalk(
+    const PlayerControl *control, Lufia2ExecutionResult *result) {
+    const Lufia2Memory *memory = control->memory;
+    Lufia2CpuState *cpu = control->cpu;
+    if (!PlayerControlChild(control, 0x83c232u, 0x83fc69u,
+            2u, ANY_INDEX_WIDTH, result))
+        return 0u;
+    OpLda(memory, cpu, OpDp(cpu, PLAYER_DIRECTION));
+    if (!PlayerControlChild(control, 0x83c237u, 0x83d350u,
+            3u, ANY_INDEX_WIDTH, result) ||
+        !PlayerControlChild(control, 0x83c23bu, 0x83c0fau,
+            2u, ANY_INDEX_WIDTH, result))
+        return 0u;
+    OpLoadA(cpu, FIELD_CONTROL_REQUEST);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 1u);
+    return 1u;
+}
+
+Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdateWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit ||
+        cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x83c1b4u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
+    if (cpu->negative)
+        return ExecutionReturned(0x83c1e2u);
+    const PlayerControl control = {memory, cpu, child, context};
     Lufia2ExecutionResult result;
-    result.flow = LUFIA2_EXECUTION_RETURNED;
-    result.pc = rts_pc;
-    result.dispatches = 0;
-    return result;
+    uint8_t handled = 0u;
+    if (!TryPlayerInteraction(&control, &handled, &result) || handled)
+        return result;
+    if (!PlayerControlChild(&control, 0x83c1e3u, 0x83c161u,
+            2u, cpu->index_is_8_bit, &result))
+        return result;
+    if (!cpu->carry)
+        return ExecutionReturned(0x83c1e2u);
+    if (!PlayerControlChild(&control, 0x83c1e8u, 0x83fc56u,
+            2u, cpu->index_is_8_bit, &result))
+        return result;
+    uint8_t walk = 1u;
+    if (!cpu->carry && !ProbePlayerStep(&control, &walk, &result))
+        return result;
+    if (walk && !StartPlayerWalk(&control, &result))
+        return result;
+    OpSepWidths(cpu, 0x10u);
+    return ExecutionReturned(0x83c245u);
 }
 
-static Lufia2ExecutionResult PlayerBoundary(
-    Lufia2CpuState *cpu, uint32_t pc) {
+static uint8_t PlayerNativeService(
+    void *context, Lufia2CpuState *cpu, uint32_t target,
+    uint32_t site, uint8_t frame) {
+    const Lufia2Memory *memory = context;
+    cpu->program_bank = (uint8_t)(target >> 16);
     Lufia2ExecutionResult result;
-    if (pc)
-        cpu->resume_pc = pc;
-    result.flow = LUFIA2_EXECUTION_BOUNDARY;
-    result.pc = cpu->resume_pc;
-    result.dispatches = 0;
-    return result;
-}
+    uint8_t return_frame = 2u;
+    switch (target) {
+    case 0x83867bu:
+        result = Lufia2FieldTakeButtons(memory, cpu);
+        break;
+    case 0x838674u:
+        result = Lufia2FieldTakeHighButtons(memory, cpu);
+        break;
+    case 0x8383e0u:
+        result = Lufia2FieldEncounterHandoff(memory, cpu, PlayerNativeService, context);
+        break;
+    case 0x83ba06u:
+        result = Lufia2FieldProbeTalkTarget(memory, cpu, PlayerNativeService, context);
+        break;
+    case 0x83bb08u:
+        result = Lufia2FieldTryActorInteraction(memory, cpu, PlayerNativeService, context);
+        break;
+    case 0x8ec05fu:
+        result = Lufia2FieldTryObjectReward(memory, cpu, PlayerNativeService, context);
+        return_frame = 3u;
+        break;
+    case 0x83c161u:
+        result = Lufia2FieldReadPlayerDirection(memory, cpu);
+        break;
+    case 0x83fc56u:
+        result = Lufia2FieldProbeInputAllowed(memory, cpu);
+        break;
+    case 0x83c0efu:
+        result = Lufia2FieldProbeLeaderPosition(memory, cpu);
+        break;
+    case 0x83c246u:
+        result = Lufia2FieldReadFacingStepCode(memory, cpu);
+        break;
+    case 0x83fbbdu:
+        result = Lufia2FieldProbeDirectionBlocked(memory, cpu);
+        break;
+    case 0x8ebbafu:
+        result = Lufia2FieldTryVehicleTransition(memory, cpu, PlayerNativeService, context);
+        return_frame = 3u;
+        break;
+    case 0x83f9adu:
+        result = Lufia2FieldObjectAttributeCell(memory, cpu);
+        break;
+    case 0x83fc69u:
+        result = Lufia2FieldUpdateProbeAction(memory, cpu);
+        break;
+    case 0x83c0fau:
+        result = Lufia2FieldAcknowledgeControlChange(memory, cpu);
+        break;
+    case 0x8eb63bu:
+        result = Lufia2FieldTryItemRegion(memory, cpu, PlayerNativeService, context);
+        return_frame = 3u;
+        break;
+    case 0x83f988u:
+        result = Lufia2MapProbeTileHeight(memory, cpu);
+        break;
+    case 0x83ba5cu:
+        result = Lufia2FieldProbeTalkDown(memory, cpu, PlayerNativeService, context);
+        break;
+    case 0x83ba80u:
+        result = Lufia2FieldProbeTalkLeft(memory, cpu, PlayerNativeService, context);
+        break;
+    case 0x83ba96u:
+        result = Lufia2FieldProbeTalkUp(memory, cpu, PlayerNativeService, context);
+        break;
+    case 0x83baacu:
+        result = Lufia2FieldProbeTalkRight(memory, cpu, PlayerNativeService, context);
+        break;
+    case 0x83ba76u:
+        result = Lufia2FieldProbeTalkBlocked(memory, cpu, PlayerNativeService, context);
+        break;
+    case 0x83bac2u:
+        result = Lufia2FieldFindActorAtProbe(memory, cpu);
+        break;
+    case 0x80ad57u:
+        result = Lufia2FieldFaceActorTowardActor(memory, cpu, PlayerNativeService, context);
+        break;
+    case 0x80ad39u:
+        result = Lufia2FieldFaceActorGroupTowardActor(memory, cpu, PlayerNativeService, context);
+        return_frame = 3u;
+        break;
+    case 0x80c1dfu:
+        result = Lufia2FieldSelectInteractionVariant(memory, cpu, PlayerNativeService, context);
+        return_frame = 3u;
+        break;
+    case 0x80bf92u:
+        result = Lufia2FieldSelectActorById(memory, cpu, PlayerNativeService, context);
+        return_frame = 3u;
+        break;
+    case 0x83ab4fu:
+        result = Lufia2ActorSetRecordOffsets(memory, cpu);
+        return_frame = 3u;
+        break;
+    case 0x80bfe7u:
+        result = Lufia2SceneScriptSelectRecord(memory, cpu);
+        return_frame = 3u;
+        break;
+    case 0x83bb76u:
+        result = Lufia2FieldPrepareEventControl(memory, cpu);
+        break;
+    case 0x8482d5u:
+        result = Lufia2ActorPreparePartyOffsets(memory, cpu);
+        return_frame = 3u;
+        break;
 
-/* D350 via JSL; 0 on its exact boundary. */
-static uint8_t PlayerCallActionCore(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJslFrame(memory, cpu, 0x83u, return_address);
-    if (Lufia2ActorPrimaryActionCore(memory, cpu) !=
-        LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE)
-        return 0;
-    SimulateRtlFrame(memory, cpu);
-    return 1;
+    case 0x83d350u:
+        if (Lufia2ActorPrimaryActionCore(memory, cpu) !=
+                LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE)
+            return 0u;
+        result = ExecutionReturned(0x83d3aeu);
+        return_frame = 3u;
+        break;
+    case 0x83fb12u: {
+        const uint32_t return_pc = Lufia2ActorMovementStep(memory, cpu);
+        if (!return_pc)
+            return 0u;
+        result = ExecutionReturned(return_pc);
+        return_frame = 3u;
+        break;
+    }
+    default:
+        cpu->resume_pc = target;
+        return 0u;
+    }
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
+            cpu->resume_pc = result.pc;
+        return 0u;
+    }
+    const uint8_t low = Pull8(memory, cpu);
+    const uint8_t high = Pull8(memory, cpu);
+    if (return_frame == 3u)
+        cpu->program_bank = Pull8(memory, cpu);
+    const uint32_t resume = ((uint32_t)cpu->program_bank << 16) |
+        (uint16_t)(((uint16_t)low | (uint16_t)high << 8) + 1u);
+    if (resume != site + frame + 1u) {
+        cpu->resume_pc = resume;
+        return 0u;
+    }
+    return 1u;
 }
 
 Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    bool walk = true;
-
-    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* C1B4 */
-    if (cpu->negative)
-        return PlayerReturned(0x83c1e2u);
-    LoadA8(cpu, 0xa0u);                                        /* C1B9 */
-    PlayerPressedClear(memory, cpu, JOYPAD_LOW_BYTE, 0xc1bdu);
-    if (!cpu->zero) {
-        if (!PlayerFindTalkTarget(memory, cpu))                /* C1D0 */
-            return PlayerBoundary(cpu, 0);
-        if (!cpu->carry)
-            return PlayerBoundary(cpu, 0x83c1dcu);             /* $8E:C05F */
-        LoadXDirect(memory, cpu, DP_SCRATCH_C);                /* C1D5 */
-        return PlayerBoundary(cpu, 0x83c1d7u);                 /* BB08 */
-    }
-    LoadAAbsolute8(memory, cpu, 0x057cu, 0);                   /* C1C0 */
-    if (!cpu->zero) {
-        LoadA8(cpu, 0x20u);
-        PlayerPressedClear(memory, cpu, JOYPAD_HIGH_BYTE, 0xc1c9u);
-        if (!cpu->zero)
-            return PlayerBoundary(cpu, 0x83c1ccu);             /* 83E0 */
-    }
-
-    PlayerReadDirection(memory, cpu);                          /* C1E3 */
-    if (!cpu->carry)
-        return PlayerReturned(0x83c1e2u);
-    PlayerSkipProbe(memory, cpu);                              /* C1E8 */
-    if (!cpu->carry) {
-        bool turn;
-
-        SetIndexWidth(cpu, 0);                                 /* C1ED */
-        Lufia2ActorLeaderToProbe(memory, cpu, 0xc1f1u);
-        PlayerFacingCode(memory, cpu, 0xc1f4u);
-        if (!PlayerEdgeAhead(memory, cpu))
-            return PlayerBoundary(cpu, 0);
-        SetIndexWidth(cpu, 1);                                 /* C1F8 */
-        if (cpu->carry) {
-            SetIndexWidth(cpu, 0);                             /* C1FC */
-            SimulateJslFrame(memory, cpu, 0x83u, 0xc201u);
-            if (!PlayerVehicleTile(memory, cpu))
-                return PlayerBoundary(cpu, 0);
-            SimulateRtlFrame(memory, cpu);
-            cpu->program_bank = 0x83u;
-            SetIndexWidth(cpu, 1);                             /* C202 */
-            walk = false;
-            turn = !cpu->carry;
-        } else {
-            SetIndexWidth(cpu, 0);                             /* C219 */
-            Lufia2ActorLeaderToProbe(memory, cpu, 0xc21du);
-            PlayerFacingCode(memory, cpu, 0xc220u);
-            SimulateJslFrame(memory, cpu, 0x83u, 0xc224u);
-            if (Lufia2ActorMovementStep(memory, cpu) == 0)
-                return PlayerBoundary(cpu, 0);
-            SimulateRtlFrame(memory, cpu);
-            PlayerProbeCell(memory, cpu, 0xc227u);             /* C225 */
-            SetIndexWidth(cpu, 1);
-            BitImmediate8(cpu, 0x01u);
-            turn = !cpu->zero;
-        }
-        if (turn) {
-            /* Blocked: turn toward $22 + $18. */
-            LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x22u))); /* C206 */
-            Write8(memory, 0x7fd09du, A8(cpu));
-            cpu->carry = 0;
-            Adc8(cpu, 0x18u);
-            if (!PlayerCallActionCore(memory, cpu, 0xc212u))
-                return PlayerBoundary(cpu, 0);
-            SimulateJslFrame(memory, cpu, 0x83u, 0xc216u); /* C213 */
-            if (!PlayerDoorRegion(memory, cpu))
-                return PlayerBoundary(cpu, 0);
-            SimulateRtlFrame(memory, cpu);
-            cpu->program_bank = 0x83u;
-            walk = false;
-        }
-    }
-
-    if (walk) {
-        PlayerWalkSpeed(memory, cpu); /* C232 */
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x22u)));
-        if (!PlayerCallActionCore(memory, cpu, 0xc23au))
-            return PlayerBoundary(cpu, 0);
-        SimulateJsrFrame(memory, cpu, 0xc23du); /* C23B */
-        LoadA8(cpu, 0x20u);                     /* C0FA */
-        TestBitsAbsolute8(memory, cpu, 0x099cu, 0);
-        if (!cpu->zero) {
-            LoadA8(cpu, 0x01u);
-            Write8(memory, 0x7fd0c1u, A8(cpu));
-        }
-        SimulateRtsFrame(memory, cpu);
-        LoadA8(cpu, 0x08u); /* C23E */
-        TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
-    }
-    SetIndexWidth(cpu, 1);                                     /* C243 */
-    return PlayerReturned(0x83c245u);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result = Lufia2PlayerSlotStandardUpdateWithServices(
+        memory, cpu, PlayerNativeService, (void *)memory);
+    if (result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
+        return ExecutionHandoff(cpu, cpu->resume_pc);
+    return result;
 }
