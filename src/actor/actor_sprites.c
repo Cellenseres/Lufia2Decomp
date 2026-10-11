@@ -55,54 +55,10 @@ static void ActorReleaseSprite(
 
 /* $83:A9E5: sprite descriptor A from $CF:F000. */
 static void ActorSpriteDescriptor(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t return_address) {
-    uint32_t pointer;
-
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
-    PushDataBank(memory, cpu);                                 /* A9E5 */
-    SetAccumulatorWidth(cpu, 1);
-    SetIndexWidth(cpu, 1);
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E05D2, cpu->x);
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, 0x00u);
-    ExchangeAccumulatorBytes(cpu);
-    SetAccumulatorWidth(cpu, 0);
-    SetIndexWidth(cpu, 0);
-    AslA16(cpu);
-    TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xcff000u, cpu->x)));
-    Write16Direct(memory, cpu, 0x5du, cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);                               /* A9FB */
-    SetIndexWidth(cpu, 1);
-    LoadA8(cpu, 0xcfu);
-    Write8(memory, DirectAddress(cpu, 0x5fu), A8(cpu));
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    pointer = DirectLongPointer(memory, cpu, 0x5du);
-    LoadA8(cpu, Read8(memory, pointer));
-    And8(cpu, 0x07u);
-    Write8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x), A8(cpu));
-    LoadA8(cpu, Read8(memory, pointer));
-    And8(cpu, 0xf8u);
-    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E1291, cpu->x);
-    LoadY8(cpu, 0x01u);
-    LoadA8(cpu, Read8(memory, (pointer + cpu->y) & 0x00ffffffu));
-    AslA8(cpu);
-    Write8(memory, LongIndexedAddress(0x7fe1ceu, cpu->x), A8(cpu));
-    LoadY8(cpu, (uint8_t)(cpu->y + 1u));
-    SetAccumulatorWidth(cpu, 0);                               /* AA1C */
-    LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
-    LoadA16(cpu, Read16Long(memory, (pointer + cpu->y) & 0x00ffffffu));
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x12b9u, cpu->x),
-        cpu->accumulator);
-    LoadY8(cpu, (uint8_t)(cpu->y + 1u));
-    LoadY8(cpu, (uint8_t)(cpu->y + 1u));
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, (pointer + cpu->y) & 0x00ffffffu));
-    StoreAAbsolute8(memory, cpu, 0x12bbu, cpu->x);
-    PullDataBank(memory, cpu);
+    Lufia2ActorReadSpriteDescriptorBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 

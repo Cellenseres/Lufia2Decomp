@@ -5381,3 +5381,19 @@ name = "field_leader_cell_category"
 width = 1
 owner = "field"
 notes = "Original83:C40E caches the current cell category before its comparisons."
+
+[[location]]
+address = "7E:09AB"
+name = "field_interaction_actor_id"
+width = 1
+count = 1
+owner = "field"
+notes = "Actor ID selected by 83BB08;80C1DF uses it to select the 1260 interaction variant."
+
+[[location]]
+address = "7E:09AC"
+name = "field_interaction_facing_actor_id"
+width = 1
+count = 1
+owner = "field"
+notes = "83BB08 copies the actor ID here before requesting the eight-slot facing group."

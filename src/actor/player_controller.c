@@ -6,20 +6,16 @@
 #include "core/cpu_internal.h"
 #include "lufia2/actor.h"
 #include "lufia2/field.h"
+#include "core/joypad.h"
+#include "field/vehicle_transition_internal.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
-/* $83:867B / $83:8674: pressed-bit test, clear latch on hit. */
 static void PlayerPressedClear(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t pressed,
-    uint8_t latch,
-    uint16_t return_address) {
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint8_t joypad_byte, uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    And8(cpu, Read8(memory, DirectAddress(cpu, pressed)));
-    if (!cpu->zero)
-        TrbDirect8(memory, cpu, latch);
+    (void)TakeButtonPress8(memory, cpu, joypad_byte);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -239,14 +235,10 @@ static void PlayerSkipProbe(
 
 /* $83:C246: $83:C1B0 entry for direction $22. */
 static void PlayerFacingCode(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    TransferDirectToA(cpu);                                    /* C246 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x22u)));
-    TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83c1b0u, cpu->x)));
+    (void)Lufia2FieldReadFacingStepCode(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -292,39 +284,36 @@ static uint8_t PlayerEdgeAhead(
 }
 
 /* $8E:BBAF: vehicle tile pair; boundary past $8E:BBD1. */
-static uint8_t PlayerVehicleTile(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    cpu->program_bank = 0x8eu;
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);                   /* BBAF */
-    Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
-    Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
-    SimulateJslFrame(memory, cpu, 0x8eu, 0xbbbcu);
-    cpu->program_bank = 0x83u;
-    Lufia2ActorReadMapCellValue(memory, cpu);                  /* FB71 */
-    SimulateRtlFrame(memory, cpu);
-    cpu->program_bank = 0x8eu;
-    Compare8(cpu, A8(cpu), 0x06u);                             /* BBBD */
-    if (cpu->zero) {
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x23u)));
-        SimulateJslFrame(memory, cpu, 0x8eu, 0xbbc6u);
-        cpu->program_bank = 0x83u;
-        if (Lufia2ActorMovementStep(memory, cpu) == 0)
-            return 0;
-        SimulateRtlFrame(memory, cpu);
-        SimulateJslFrame(memory, cpu, 0x8eu, 0xbbcau);
+static uint8_t PlayerVehicleProbeChild(
+    void *context, Lufia2CpuState *cpu, uint32_t target,
+    uint32_t site, uint8_t frame) {
+    const Lufia2Memory *memory = context;
+    (void)frame;
+    cpu->program_bank = (uint8_t)(target >> 16);
+    if (target == 0x83fb71u)
         Lufia2ActorReadMapCellValue(memory, cpu);
-        SimulateRtlFrame(memory, cpu);
-        cpu->program_bank = 0x8eu;
-        Compare8(cpu, A8(cpu), 0x06u);                         /* BBCB */
-        if (cpu->zero) {
-            cpu->resume_pc = 0x8ebbd1u;
-            return 0;
-        }
+    else if (target == 0x83fb12u) {
+        if (!Lufia2ActorMovementStep(memory, cpu))
+            return 0u;
+    } else {
+        cpu->resume_pc = target;
+        return 0u;
     }
-    cpu->carry = 0;                                            /* BBCF */
-    return 1;
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = (uint8_t)(site >> 16);
+    return 1u;
+}
+
+static uint8_t PlayerVehicleTile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    cpu->program_bank = 0x8eu;
+    Lufia2ExecutionResult result = Lufia2FieldProbeVehicleTerrainBody(
+        memory, cpu, PlayerVehicleProbeChild, (void *)memory);
+    if (result.flow == LUFIA2_EXECUTION_RETURNED)
+        return 1u;
+    if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
+        cpu->resume_pc = result.pc;
+    return 0u;
 }
 
 /* $8E:B65A: leader tile inside rectangle at base. */
@@ -489,7 +478,7 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
     if (cpu->negative)
         return PlayerReturned(0x83c1e2u);
     LoadA8(cpu, 0xa0u);                                        /* C1B9 */
-    PlayerPressedClear(memory, cpu, 0x46u, 0x4au, 0xc1bdu);
+    PlayerPressedClear(memory, cpu, JOYPAD_LOW_BYTE, 0xc1bdu);
     if (!cpu->zero) {
         if (!PlayerFindTalkTarget(memory, cpu))                /* C1D0 */
             return PlayerBoundary(cpu, 0);
@@ -501,7 +490,7 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
     LoadAAbsolute8(memory, cpu, 0x057cu, 0);                   /* C1C0 */
     if (!cpu->zero) {
         LoadA8(cpu, 0x20u);
-        PlayerPressedClear(memory, cpu, 0x47u, 0x4bu, 0xc1c9u);
+        PlayerPressedClear(memory, cpu, JOYPAD_HIGH_BYTE, 0xc1c9u);
         if (!cpu->zero)
             return PlayerBoundary(cpu, 0x83c1ccu);             /* 83E0 */
     }

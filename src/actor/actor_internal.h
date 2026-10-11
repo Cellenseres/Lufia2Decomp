@@ -141,4 +141,9 @@ enum {
 void Lufia2ActorPrepareCollisionProbe(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+void Lufia2SignExtendA8Body(Lufia2CpuState *cpu);
+
+void Lufia2ActorReadSpriteDescriptorBody(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #endif

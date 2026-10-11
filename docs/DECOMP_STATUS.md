@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1290 functions in `metadata/functions.toml`: 1290 verified, 0 draft, 0 identified, 0 disabled.
+1298 functions in `metadata/functions.toml`: 1298 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -5026,3 +5026,24 @@ interpreted children. Shared legacy D89E comparison adds 32,768 original states
 over four directions, four Direct Pages and five data banks. Original CPU,
 WRAM, MMIO and ordered bus behavior preserved. No original bug fix or NMI claim.
 Seventeen grouped jobs, ONE full 1,392, two hardened adapter replays and Windows Release pass.
+
+### Original player control services
+
+Eight complete original entries retain joypad/facing lookup, vehicle rejection and
+actor updates, header lookup, original frames and width restoration.
+One terrain body serves both the transition and existing player controller.
+Sprite descriptors and sign-byte handling share the existing actor kernels.
+16,384 direct and runtime-ABI states per path cover 92 required instructions
+and 15 root child sites; 246,446 actual original child returns per path.
+Native composition retains 138,022 callbacks per path without interpreted
+children. Legacy terrain prefix adds 8,192 original states; sprite descriptor
+adds 20,480 states over all 256 IDs, four widths/Direct Pages and five banks.
+The sign-byte core covers all 65,536 accumulators in both index widths.
+Two input leaves add 147,456 direct/ABI states, both index widths, eight
+original-ROM controls and 24,576 original controller JSR/RTS windows.
+Original CPU, WRAM, MMIO and ordered bus preserved. No gameplay or NMI claim.
+Four interaction contracts add65,536 states perpath,131 original states,
+2,166,053 actual original child returns and493,353 native callbacks perpath.
+Nine child sites,ordered actor flags,scene records and facing ties are retained.
+An interaction variant is selected;an animation classification is unproven.
+Twenty-four grouped jobs, ONE full 1,416 and Windows Release pass.

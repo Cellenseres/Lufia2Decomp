@@ -10456,3 +10456,67 @@ source = "src/field/field_probe_dispatchers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "8E:BBAF"
+name = "Lufia2FieldTryVehicleTransition"
+source = "src/field/field_vehicle_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C446"
+name = "Lufia2FieldSpawnHeaderActor"
+source = "src/field/field_vehicle_transition.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:8674"
+name = "Lufia2FieldTakeHighButtons"
+source = "src/field/field_player_input_leaves.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C246"
+name = "Lufia2FieldReadFacingStepCode"
+source = "src/field/field_player_input_leaves.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:AD57"
+name = "Lufia2FieldFaceActorTowardActor"
+source = "src/field/field_interaction.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:AD39"
+name = "Lufia2FieldFaceActorGroupTowardActor"
+source = "src/field/field_interaction.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:C1DF"
+name = "Lufia2FieldSelectInteractionVariant"
+source = "src/field/field_interaction.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BB08"
+name = "Lufia2FieldTryActorInteraction"
+source = "src/field/field_interaction.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

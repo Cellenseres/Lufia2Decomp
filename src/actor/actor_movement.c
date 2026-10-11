@@ -186,17 +186,19 @@ void Lufia2ActorSyncFinePosition(
 }
 
 /* $83:FAFA: sign-extend A's low byte; positive keeps high byte. */
-void Lufia2SignExtendA8(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
+void Lufia2SignExtendA8Body(Lufia2CpuState *cpu) {
     const uint8_t value = A8(cpu);
-
-    SimulateJsrFrame(memory, cpu, return_address);
     if (value & 0x80u)
         cpu->accumulator = (uint16_t)(0xff00u | value);
     SetNz8(cpu, value);
-    SetAccumulatorWidth(cpu, 0);
+    SetAccumulatorWidth(cpu, 0u);
+}
+
+void Lufia2SignExtendA8(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Lufia2SignExtendA8Body(cpu);
     SimulateRtsFrame(memory, cpu);
 }
 

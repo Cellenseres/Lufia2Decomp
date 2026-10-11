@@ -116,10 +116,8 @@ Lufia2ExecutionResult Lufia2ObjectResetSceneSprites(
     return ExecutionReturned(0x83a9b9u);
 }
 
-Lufia2ExecutionResult Lufia2ActorReadSpriteDescriptor(
+void Lufia2ActorReadSpriteDescriptorBody(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x83u)
-        return ExecutionHandoff(cpu, 0x83a9e5u);
     PushDataBank(memory, cpu);
     SetAccumulatorWidth(cpu, 1u);
     SetIndexWidth(cpu, 1u);
@@ -160,6 +158,13 @@ Lufia2ExecutionResult Lufia2ActorReadSpriteDescriptor(
     OpLda(memory, cpu, DirectLongIndirectY(memory, cpu, ACTOR_DESCRIPTOR));
     OpSta(memory, cpu, OpAbsX(cpu, (WRAM_ACTOR_SPRITE_DESCRIPTOR_SOURCE + 2u)));
     PullDataBank(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2ActorReadSpriteDescriptor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u)
+        return ExecutionHandoff(cpu, 0x83a9e5u);
+    Lufia2ActorReadSpriteDescriptorBody(memory, cpu);
     return ExecutionReturned(0x83aa2fu);
 }
 
