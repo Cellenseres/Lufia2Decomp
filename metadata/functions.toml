@@ -10591,3 +10591,43 @@ source = "src/field/field_leader_interaction.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:BC28"
+name = "Lufia2FieldCoordinatePlayerAction"
+source = "src/field/field_player_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BCC8"
+name = "Lufia2FieldHandlePlayerMovement"
+source = "src/field/field_player_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BF3E"
+name = "Lufia2FieldReleaseClaimedActor"
+source = "src/field/field_player_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C460"
+name = "Lufia2FieldOpenItemSelection"
+source = "src/field/field_item_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:C01C"
+name = "Lufia2FieldBeginObjectPush"
+source = "src/field/field_player_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

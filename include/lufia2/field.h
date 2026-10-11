@@ -1259,6 +1259,23 @@ Lufia2ExecutionResult Lufia2FieldClaimFacingActor(
 Lufia2ExecutionResult Lufia2FieldHandleFacingCellAction(
     const Lufia2Memory *, Lufia2CpuState *, Lufia2PushedChildCall, void *);
 
+Lufia2ExecutionResult Lufia2FieldReleaseClaimedActor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2FieldBeginObjectPush(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2FieldCoordinatePlayerAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2FieldHandlePlayerMovement(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2FieldOpenItemSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+
 #ifdef __cplusplus
 }
 #endif

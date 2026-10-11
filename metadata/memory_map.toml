@@ -5418,3 +5418,74 @@ name = "field_last_pending_object"
 width = 2
 owner = "field"
 notes = "83:BE90 preserves the object-record index selected by FB8B."
+
+[[location]]
+address = "7E:1499"
+name = "field_item_choices"
+width = 2
+owner = "field"
+notes = "Indexed word base for C460 choices; overlaps later menu phases."
+
+[[location]]
+address = "7E:171B"
+name = "field_item_count"
+width = 1
+owner = "field"
+notes = "C460 counts owned field-item records."
+
+[[location]]
+address = "7E:171C"
+name = "field_item_active_slot"
+width = 2
+owner = "field"
+notes = "C460 stores the active selection actor index."
+
+[[location]]
+address = "7E:171E"
+name = "field_item_idle_slot"
+width = 2
+owner = "field"
+notes = "C460 stores the idle selection actor index."
+
+[[location]]
+address = "7E:1721"
+name = "field_item_marker_slot"
+width = 2
+owner = "field"
+notes = "C460 stores the marker actor index."
+
+[[location]]
+address = "7E:14F9"
+name = "field_item_second_angle"
+width = 1
+owner = "field"
+notes = "Indexed byte base for the second C460 radial angle."
+
+[[location]]
+address = "7E:1679"
+name = "field_item_second_velocity"
+width = 1
+owner = "field"
+notes = "Indexed byte base for the second C460 radial velocity."
+
+[[location]]
+address = "7F:D0BE"
+name = "field_pending_push_object"
+aliases = ["EVENT_PUSH_OBJECT_INDEX"]
+width = 1
+owner = "field"
+notes = "C01C stores the pending push object index."
+
+[[location]]
+address = "7F:D09D"
+name = "field_last_movement_direction"
+width = 1
+owner = "field"
+notes = "BCC8 records the current movement direction."
+
+[[location]]
+address = "7E:11D8"
+name = "unk_7E11D8"
+width = 1
+owner = "field"
+notes = "C460 sets this byte to one after committing selection."

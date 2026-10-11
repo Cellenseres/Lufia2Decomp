@@ -1,5 +1,31 @@
 # Decompilation status
 
+## Player action and field-item callers — 2026-10-11
+
+Five complete M1X0, D0 entry contracts retain dynamic DP/DB: 83:BC28 player
+input, 83:BCC8 movement, 83:BF3E actor release, 83:C460 field-item selection
+and 83:C01C object push. All 75 child sites retain original live frames.
+
+Six shared fixtures cover all 437 non-return instruction/mode states on both
+direct and production-ABI paths: 245,760 states, 2,798,047 original child
+returns and 33,453 live cuts per path. Each also covers 4,800 child-entry
+unwinds, 14,400 changed-width returns and 256 decimal continuation fences.
+9,000 production-helper redirect probes and 61,440 pre-access guards pass.
+Twenty bounded ROM fault controls, one positive control and five C++ APIs pass.
+
+Native composition covers 40,960 states, 205,654 native callbacks and 29,154
+exact unknown frontiers per path. Thirty-nine of 56 available services are
+exercised, with zero interpreted children in the native path. CPU, full WRAM,
+MMIO and ordered operand-bus behavior agree. Unknown and asynchronous children
+retain interpreter ownership. Existing WRAM aliases and bridge helpers are
+reused; original behavior and timing are not optimized or corrected.
+
+Seven grouped public-library jobs, one full 1,475-job verification run and
+Windows Release pass. Strict Clang C11 with Wall, Wextra, Wpedantic and Werror
+passes across all 423 standalone source units. Existing event push constants
+are preserved as an explicit same-address alias. No source or API duplicates.
+
+
 ## Field interaction callers — 2026-10-11
 
 Four complete M1X0, D0 entry contracts preserve dynamic DP/DB and 38 original
@@ -95,7 +121,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1306 functions in `metadata/functions.toml`: 1306 verified, 0 draft, 0 identified, 0 disabled.
+1311 functions in `metadata/functions.toml`: 1311 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

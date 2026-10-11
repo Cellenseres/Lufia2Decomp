@@ -823,6 +823,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:BB76` | `Lufia2FieldPrepareEventControl` | verified | `src/field/field_event_control.c` |
 | `$83:BB93` | `Lufia2UpdateActorSlots` | verified | `src/actor/actor_slots.c` |
 | `$83:BBF3` | `Lufia2PlayerSlotSpecialUpdate` | verified | `src/actor/player_update.c` |
+| `$83:BC28` | `Lufia2FieldCoordinatePlayerAction` | verified | `src/field/field_player_actions.c` |
+| `$83:BCC8` | `Lufia2FieldHandlePlayerMovement` | verified | `src/field/field_player_actions.c` |
 | `$83:BDFC` | `Lufia2FieldTryLeaderLowerStep` | verified | `src/field/field_probe_dispatchers.c` |
 | `$83:BE3B` | `Lufia2FieldProbeDownRightHeight` | verified | `src/field/field_indexed_probes.c` |
 | `$83:BE3F` | `Lufia2FieldProbeDownLeftHeight` | verified | `src/field/field_indexed_probes.c` |
@@ -830,7 +832,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:BE64` | `Lufia2FieldChangeLeaderFacing` | verified | `src/field/field_player_effect_callers.c` |
 | `$83:BE90` | `Lufia2FieldHandleLeaderAction` | verified | `src/field/field_leader_interaction.c` |
 | `$83:BF33` | `Lufia2FieldStepLeaderFacing` | verified | `src/field/field_player_effect_callers.c` |
+| `$83:BF3E` | `Lufia2FieldReleaseClaimedActor` | verified | `src/field/field_player_actions.c` |
 | `$83:BFB4` | `Lufia2FieldClaimFacingActor` | verified | `src/field/field_leader_interaction.c` |
+| `$83:C01C` | `Lufia2FieldBeginObjectPush` | verified | `src/field/field_player_actions.c` |
 | `$83:C079` | `Lufia2FieldCanPushObject` | verified | `src/field/field_event_objects.c` |
 | `$83:C0EF` | `Lufia2FieldProbeLeaderPosition` | verified | `src/field/field_actor_event_helpers.c` |
 | `$83:C0FA` | `Lufia2FieldAcknowledgeControlChange` | verified | `src/field/field_actor_event_helpers.c` |
@@ -848,6 +852,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:C3DC` | `Lufia2FieldProbeFacingObject` | verified | `src/field/field_facing_callers.c` |
 | `$83:C40E` | `Lufia2FieldCompareFacingTileHeight` | verified | `src/field/field_facing_callers.c` |
 | `$83:C446` | `Lufia2FieldSpawnHeaderActor` | verified | `src/field/field_vehicle_transition.c` |
+| `$83:C460` | `Lufia2FieldOpenItemSelection` | verified | `src/field/field_item_selection.c` |
 | `$83:C5FE` | `Lufia2FieldSelectItemAnimation` | verified | `src/field/field_player_effect_callers.c` |
 | `$83:C652` | `Lufia2PartyListHasEntry` | verified | `src/party/party_records.c` |
 | `$83:C692` | `Lufia2FieldReadSelectedItemByte` | verified | `src/field/field_player_commands.c` |
