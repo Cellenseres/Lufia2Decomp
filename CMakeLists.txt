@@ -193,6 +193,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_player_commands.c
     src/field/field_player_action_setup.c
     src/field/field_facing_callers.c
+    src/field/field_leader_interaction.c
     src/field/field_probe_dispatchers.c
     src/field/field_vehicle_transition.c
     src/field/field_player_input_leaves.c

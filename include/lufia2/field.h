@@ -1250,6 +1250,15 @@ Lufia2ExecutionResult Lufia2FieldTryActorInteraction(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2FieldHandleLeaderAction(
+    const Lufia2Memory *, Lufia2CpuState *, Lufia2PushedChildCall, void *);
+Lufia2ExecutionResult Lufia2FieldStartFacingPointEvent(
+    const Lufia2Memory *, Lufia2CpuState *, Lufia2PushedChildCall, void *);
+Lufia2ExecutionResult Lufia2FieldClaimFacingActor(
+    const Lufia2Memory *, Lufia2CpuState *, Lufia2PushedChildCall, void *);
+Lufia2ExecutionResult Lufia2FieldHandleFacingCellAction(
+    const Lufia2Memory *, Lufia2CpuState *, Lufia2PushedChildCall, void *);
+
 #ifdef __cplusplus
 }
 #endif

@@ -141,6 +141,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:E722` | `Lufia2FieldStartEvent` | verified | `src/field/field_event_script.c` |
 | `$80:E7DF` | `Lufia2FieldStartPositionEvent` | verified | `src/field/field_event_triggers.c` |
 | `$80:E7FA` | `Lufia2FieldStartEventAtProbe` | verified | `src/field/field_event_triggers.c` |
+| `$80:E817` | `Lufia2FieldStartFacingPointEvent` | verified | `src/field/field_leader_interaction.c` |
 | `$80:E844` | `Lufia2FieldInitializeMapEvents` | verified | `src/field/field_map_load.c` |
 | `$80:E898` | `Lufia2EventGetFlagMask` | verified | `src/field/field_event_script.c` |
 | `$80:E8AD` | `Lufia2FieldReadEventWord` | verified | `src/field/field_event_reader.c` |
@@ -827,7 +828,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:BE3F` | `Lufia2FieldProbeDownLeftHeight` | verified | `src/field/field_indexed_probes.c` |
 | `$83:BE43` | `Lufia2FieldProbeDownThreeHeight` | verified | `src/field/field_indexed_probes.c` |
 | `$83:BE64` | `Lufia2FieldChangeLeaderFacing` | verified | `src/field/field_player_effect_callers.c` |
+| `$83:BE90` | `Lufia2FieldHandleLeaderAction` | verified | `src/field/field_leader_interaction.c` |
 | `$83:BF33` | `Lufia2FieldStepLeaderFacing` | verified | `src/field/field_player_effect_callers.c` |
+| `$83:BFB4` | `Lufia2FieldClaimFacingActor` | verified | `src/field/field_leader_interaction.c` |
 | `$83:C079` | `Lufia2FieldCanPushObject` | verified | `src/field/field_event_objects.c` |
 | `$83:C0EF` | `Lufia2FieldProbeLeaderPosition` | verified | `src/field/field_actor_event_helpers.c` |
 | `$83:C0FA` | `Lufia2FieldAcknowledgeControlChange` | verified | `src/field/field_actor_event_helpers.c` |
@@ -841,6 +844,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:C311` | `Lufia2FieldSpawnFacingActionActor` | verified | `src/field/field_player_action_setup.c` |
 | `$83:C32D` | `Lufia2FieldReadLeaderFacingAction` | verified | `src/field/field_player_action_setup.c` |
 | `$83:C33D` | `Lufia2FieldFindSecondaryAtProbe` | verified | `src/field/field_event_objects.c` |
+| `$83:C375` | `Lufia2FieldHandleFacingCellAction` | verified | `src/field/field_leader_interaction.c` |
 | `$83:C3DC` | `Lufia2FieldProbeFacingObject` | verified | `src/field/field_facing_callers.c` |
 | `$83:C40E` | `Lufia2FieldCompareFacingTileHeight` | verified | `src/field/field_facing_callers.c` |
 | `$83:C446` | `Lufia2FieldSpawnHeaderActor` | verified | `src/field/field_vehicle_transition.c` |

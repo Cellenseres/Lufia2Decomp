@@ -5411,3 +5411,10 @@ name = "sound_deferred_command"
 width = 1
 owner = "system"
 notes = "Deferred driver command;80:93D6 initializes it to FF."
+
+[[location]]
+address = "7E:1216"
+name = "field_last_pending_object"
+width = 2
+owner = "field"
+notes = "83:BE90 preserves the object-record index selected by FB8B."

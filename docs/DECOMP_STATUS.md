@@ -1,5 +1,30 @@
 # Decompilation status
 
+## Field interaction callers — 2026-10-11
+
+Four complete M1X0, D0 entry contracts preserve dynamic DP/DB and 38 original
+child frames: 83:BE90 leader action, 80:E817 facing-point event, 83:BFB4 actor
+claim and 83:C375 facing-cell action. Gameplay phases share existing native
+probe, event, actor and sound services; unknown children remain explicit.
+
+163,840 original-ROM states per direct/production-ABI path cover all 161
+canonical instruction/mode states, 716,565 actual child returns and 12,852
+live cuts. Each path also checks 4,864 child-entry unwinds, 14,592 changed-width
+returns and 256 decimal fences. There are 4,560 production redirect/ancestor
+probes; 28,672 runtime and 20,480 semantic guards reject without bus access.
+Sixteen bounded original-ROM fault controls and four C++ interfaces pass.
+
+Native composition covers 32,768 states, 285,451 native returns and 6,594 exact
+frontier cases per path across 31 services, with zero interpreted children in
+the native path. Complete CPU, full WRAM, MMIO and ordered operand-bus behavior
+agree. Unknown routines and asynchronous owner timing are not claimed.
+
+Fifteen grouped public-library jobs, one full 1,468-job verification run and
+Windows Release pass. Strict Clang C11 with Wall, Wextra, Wpedantic and Werror
+passes across all 421 standalone source units. Existing interaction code stays
+unchanged; the second claimed-actor byte reuses its existing array definition.
+
+
 | Status | Meaning |
 | --- | --- |
 | `identified` | Boundary/address known; no semantic implementation yet. |
@@ -70,7 +95,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1302 functions in `metadata/functions.toml`: 1302 verified, 0 draft, 0 identified, 0 disabled.
+1306 functions in `metadata/functions.toml`: 1306 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
