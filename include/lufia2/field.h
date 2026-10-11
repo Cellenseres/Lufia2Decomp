@@ -1184,6 +1184,42 @@ Lufia2ExecutionResult Lufia2FieldSpawnLeaderSecondaryAction(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2FieldProbeDownRightHeight(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldProbeDownLeftHeight(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldProbeDownThreeHeight(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldProbeDownCollision(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldProbeLeftCollision(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldProbeUpCollision(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldProbeRightCollision(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldTryLeaderLowerStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldProbeActorStepCollision(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

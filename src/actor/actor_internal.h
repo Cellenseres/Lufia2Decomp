@@ -138,4 +138,7 @@ enum {
     SECONDARY_OPERAND_3 = 0x0003
 };
 
+void Lufia2ActorPrepareCollisionProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #endif

@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1281 functions in `metadata/functions.toml`: 1281 verified, 0 draft, 0 identified, 0 disabled.
+1290 functions in `metadata/functions.toml`: 1290 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
@@ -219,3 +219,5 @@ Player-command leaves share the original direction and party-list cores.
 Field action setup reuses original actor spawning and script-pointer services.
 
 Field action callers share original map, actor and item services.
+
+Field probe dispatchers share original indexed routes and actor collision setup.

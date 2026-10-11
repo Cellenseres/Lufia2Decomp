@@ -5,6 +5,8 @@
 #include "core/cpu_internal.h"
 #include "core/wram_view.h"
 #include "lufia2/actor.h"
+#include "lufia2/field.h"
+#include "field/indexed_probe_internal.h"
 #include "system/wram.h"
 
 /* Probe column and row: tile in the low byte. */
@@ -72,100 +74,35 @@ void Lufia2MapTileHeight(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* Collision byte test: A = mask & $7E:4000+offset,X. */
-static void PrimaryCollisionTest(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t mask,
-    uint8_t second_column) {
-    LoadA8(cpu, mask);
-    And8(
-        cpu, Read8(
-            memory,
-            LongIndexedAddress(
-                second_column ? 0x7e4001u : 0x7e4000u, cpu->x)));
-}
-
-/* $9A >= 2 means a two-column actor. */
-static uint8_t PrimaryWideActor(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0x9au)));
-    Compare8(cpu, A8(cpu), 0x02u);
-    return cpu->carry;
-}
-
-/* $83:D89E body: Z clear = blocked, 0 = unknown target. */
-uint8_t Lufia2ActorStepBlockedBody(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    uint16_t target;
-
-    TransferAToX(cpu);                                         /* D89E */
-    target = Read16ProgramIndexed(memory, cpu, 0xd8a3u, cpu->x);
-    SimulateJsrFrame(memory, cpu, 0xd8a1u);                    /* D89F */
-
-    switch (target) {
-    case 0xd8abu:
-        IncrementDirect8(memory, cpu, DP_PROBE_Y);             /* D8AB */
-        Lufia2MapCellIndex(memory, cpu, 0xd8afu, 1);
-        PrimaryCollisionTest(memory, cpu, 0x9bu, 0);
-        if (!cpu->zero)
-            break;
-        if (!PrimaryWideActor(memory, cpu)) {
-            TransferDirectToA(cpu);                            /* D8BE */
-            break;
-        }
-        PrimaryCollisionTest(memory, cpu, 0x9bu, 1);           /* D8C0 */
-        break;
-
-    case 0xd8c7u:
-        Lufia2MapCellIndex(memory, cpu, 0xd8c9u, 1);           /* D8C7 */
-        PrimaryCollisionTest(memory, cpu, 0x20u, 0);
-        if (!cpu->zero)
-            break;
-        DecrementDirect8(memory, cpu, DP_PROBE_X);             /* D8D2 */
-        Lufia2MapCellIndex(memory, cpu, 0xd8d6u, 1);
-        PrimaryCollisionTest(memory, cpu, 0x8bu, 0);
-        break;
-
-    case 0xd8deu:
-        Lufia2MapCellIndex(memory, cpu, 0xd8e0u, 1);           /* D8DE */
-        PrimaryCollisionTest(memory, cpu, 0x10u, 0);
-        if (!cpu->zero)
-            break;
-        if (PrimaryWideActor(memory, cpu)) {
-            PrimaryCollisionTest(memory, cpu, 0x10u, 1);       /* D8EF */
-            if (!cpu->zero)
-                break;
-        }
-        DecrementDirect8(memory, cpu, DP_PROBE_Y);             /* D8F7 */
-        Lufia2MapCellIndex(memory, cpu, 0xd8fbu, 1);
-        PrimaryCollisionTest(memory, cpu, 0x8bu, 0);
-        if (!cpu->zero)
-            break;
-        if (!PrimaryWideActor(memory, cpu)) {
-            TransferDirectToA(cpu);                            /* D90A */
-            break;
-        }
-        PrimaryCollisionTest(memory, cpu, 0x8bu, 1);           /* D90C */
-        break;
-
-    case 0xd913u:
-        if (PrimaryWideActor(memory, cpu))                     /* D913 */
-            IncrementDirect8(memory, cpu, DP_PROBE_X);
-        IncrementDirect8(memory, cpu, DP_PROBE_X);             /* D91B */
-        Lufia2MapCellIndex(memory, cpu, 0xd91fu, 1);
-        PrimaryCollisionTest(memory, cpu, 0xabu, 0);
-        break;
-
-    default:
-        cpu->resume_pc = 0x830000u | target;
-        return 0;
+static uint8_t CollisionCellChild(
+    void *context, Lufia2CpuState *cpu, uint32_t target,
+    uint32_t site, uint8_t frame) {
+    const Lufia2Memory *memory = context;
+    (void)site;
+    if (target != 0x83f9adu || frame != 2u)
+        return 0u;
+    Lufia2ExecutionResult result = Lufia2FieldObjectAttributeCell(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        cpu->resume_pc = result.pc;
+        return 0u;
     }
-
     SimulateRtsFrame(memory, cpu);
-    return 1;
+    return 1u;
+}
+
+uint8_t Lufia2ActorStepBlockedBody(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TransferAToX(cpu);
+    uint16_t target = Read16ProgramIndexed(memory, cpu, 0xd8a3u, cpu->x);
+    SimulateJsrFrame(memory, cpu, 0xd8a1u);
+    Lufia2ExecutionResult result = Lufia2FieldProbeCollisionBody(
+        memory, cpu, CollisionCellChild, (void *)memory, 0x830000u | target);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        cpu->resume_pc = result.pc;
+        return 0u;
+    }
+    SimulateRtsFrame(memory, cpu);
+    return 1u;
 }
 
 /* Scratch byte: non-zero when the actor blocks its cell. */

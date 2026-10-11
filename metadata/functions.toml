@@ -10384,3 +10384,75 @@ source = "src/field/field_facing_callers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:BE3B"
+name = "Lufia2FieldProbeDownRightHeight"
+source = "src/field/field_indexed_probes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BE3F"
+name = "Lufia2FieldProbeDownLeftHeight"
+source = "src/field/field_indexed_probes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BE43"
+name = "Lufia2FieldProbeDownThreeHeight"
+source = "src/field/field_indexed_probes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D8AB"
+name = "Lufia2FieldProbeDownCollision"
+source = "src/field/field_indexed_probes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D8C7"
+name = "Lufia2FieldProbeLeftCollision"
+source = "src/field/field_indexed_probes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D8DE"
+name = "Lufia2FieldProbeUpCollision"
+source = "src/field/field_indexed_probes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D913"
+name = "Lufia2FieldProbeRightCollision"
+source = "src/field/field_indexed_probes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:BDFC"
+name = "Lufia2FieldTryLeaderLowerStep"
+source = "src/field/field_probe_dispatchers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D87D"
+name = "Lufia2FieldProbeActorStepCollision"
+source = "src/field/field_probe_dispatchers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

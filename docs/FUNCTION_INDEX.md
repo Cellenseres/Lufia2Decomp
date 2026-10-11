@@ -813,6 +813,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:BB76` | `Lufia2FieldPrepareEventControl` | verified | `src/field/field_event_control.c` |
 | `$83:BB93` | `Lufia2UpdateActorSlots` | verified | `src/actor/actor_slots.c` |
 | `$83:BBF3` | `Lufia2PlayerSlotSpecialUpdate` | verified | `src/actor/player_update.c` |
+| `$83:BDFC` | `Lufia2FieldTryLeaderLowerStep` | verified | `src/field/field_probe_dispatchers.c` |
+| `$83:BE3B` | `Lufia2FieldProbeDownRightHeight` | verified | `src/field/field_indexed_probes.c` |
+| `$83:BE3F` | `Lufia2FieldProbeDownLeftHeight` | verified | `src/field/field_indexed_probes.c` |
+| `$83:BE43` | `Lufia2FieldProbeDownThreeHeight` | verified | `src/field/field_indexed_probes.c` |
 | `$83:BE64` | `Lufia2FieldChangeLeaderFacing` | verified | `src/field/field_player_effect_callers.c` |
 | `$83:BF33` | `Lufia2FieldStepLeaderFacing` | verified | `src/field/field_player_effect_callers.c` |
 | `$83:C079` | `Lufia2FieldCanPushObject` | verified | `src/field/field_event_objects.c` |
@@ -845,6 +849,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:D416` | `Lufia2ActorLoadPrimaryScript` | verified | `src/actor/actor_primary.c` |
 | `$83:D508` | `Lufia2ActorSecondaryUpdate` | verified | `src/actor/actor_secondary.c` |
 | `$83:D7A5` | `Lufia2ActorPositionToObjectProbe` | verified | `src/field/field_object_graphics.c` |
+| `$83:D87D` | `Lufia2FieldProbeActorStepCollision` | verified | `src/field/field_probe_dispatchers.c` |
+| `$83:D8AB` | `Lufia2FieldProbeDownCollision` | verified | `src/field/field_indexed_probes.c` |
+| `$83:D8C7` | `Lufia2FieldProbeLeftCollision` | verified | `src/field/field_indexed_probes.c` |
+| `$83:D8DE` | `Lufia2FieldProbeUpCollision` | verified | `src/field/field_indexed_probes.c` |
+| `$83:D913` | `Lufia2FieldProbeRightCollision` | verified | `src/field/field_indexed_probes.c` |
 | `$83:D927` | `Lufia2FieldProbeContactEdge` | verified | `src/field/field_contact_edges.c` |
 | `$83:D932` | `Lufia2FieldProbeContactEdgeDown` | verified | `src/field/field_contact_edges.c` |
 | `$83:D93E` | `Lufia2FieldProbeContactEdgeLeft` | verified | `src/field/field_contact_edges.c` |

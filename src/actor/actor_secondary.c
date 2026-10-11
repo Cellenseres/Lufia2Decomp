@@ -186,24 +186,7 @@ static uint8_t SecondaryStepBlocked(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    PushAccumulator8(memory, cpu);                             /* D87D */
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->y);
-    Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->y);
-    Write8(memory, DirectAddress(cpu, DP_PROBE_Y), A8(cpu));
-    TransferYToX(cpu);                                         /* D888 */
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
-    Write8(memory, DirectAddress(cpu, 0x9au), A8(cpu));
-    TransferDirectToA(cpu);                                    /* D88F */
-    TransferXToA(cpu);
-    AslA8(cpu);
-    TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_ACTOR_DISPLAY_OFFSET_X, cpu->x)));
-    if (!cpu->zero) {
-        LoadA8(cpu, 0x01u);                                    /* D899 */
-        Write8(memory, DirectAddress(cpu, 0x9au), A8(cpu));
-    }
-    LoadA8(cpu, Pull8(memory, cpu));                           /* D89D */
+    Lufia2ActorPrepareCollisionProbe(memory, cpu);
     if (!Lufia2ActorStepBlockedBody(memory, cpu))
         return 0;
     SimulateRtsFrame(memory, cpu);                             /* D8A2 */

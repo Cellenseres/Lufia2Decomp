@@ -17,7 +17,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1281 functions in `metadata/functions.toml`: 1281 verified, 0 draft, 0 identified, 0 disabled.
+1290 functions in `metadata/functions.toml`: 1290 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
@@ -5011,3 +5011,18 @@ zero interpreted children. All167 required non-return instructions and35
 root child sites are covered. Original CPU/full WRAM/MMIO/ordered bus remain
 unchanged. No original gameplay bug fix or asynchronous/NMI execution claim.
 Twenty-four grouped jobs, ONE full 1,375 and Windows Release pass.
+
+### Original field probe dispatchers and indexed routes
+
+Nine complete original contracts retain BE33/D8A3 target-table reads before
+the original indexed JSR frames. Three lower-height routes share one body;
+the four collision routes serve both new entries and existing actor callers.
+Actor collision setup is shared with the existing secondary-script caller.
+No duplicate collision/prefix implementation or data-table function binding.
+73,728 direct/ABI states per path cover 138 required instruction states;
+185,368 actual original nested child returns per path. Full-native compositions
+compare 73,728 states and 118,145 native callback returns per path, zero
+interpreted children. Shared legacy D89E comparison adds 32,768 original states
+over four directions, four Direct Pages and five data banks. Original CPU,
+WRAM, MMIO and ordered bus behavior preserved. No original bug fix or NMI claim.
+Seventeen grouped jobs, ONE full 1,392, two hardened adapter replays and Windows Release pass.
