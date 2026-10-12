@@ -1,5 +1,21 @@
 # Decompilation status
 
+## Actor coordinate entry contracts - 2026-10-12
+
+Nine complete original entries share the existing target-direction, facing
+comparison andaction-boundary operations. The existing actor implementation
+prefix andpublic legacy ABIs remain unchanged. Both direct andproduction-core
+ABI paths cover294912 states,all112 canonical instruction/mode states,both
+index widths,all256 DBs andfour DP contexts,with full CPU,WRAM,MMIO andordered
+operand-bus equality. There are no child calls,live cuts orinterpreted native
+children.48384 runtime and36864 semantic guard cases,18 separate owned-root
+instruction faults,one unchanged full control andnine executed C++ APIs pass.
+Three actual-library jobs, one full 1514-job verification run and Windows
+Release pass. All 426 source units pass strict Clang C11 with Wall, Wextra,
+Wpedantic and Werror. The existing actor implementation prefix is unchanged.
+No duplicate source, entry, API, binding or coordinate operation.
+
+
 ## Field screen effects - 2026-10-12
 
 Six complete original entries share brightness, fixed-color and screen-shake
@@ -218,7 +234,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1336 functions in `metadata/functions.toml`: 1336 verified, 0 draft, 0 identified, 0 disabled.
+1345 functions in `metadata/functions.toml`: 1345 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

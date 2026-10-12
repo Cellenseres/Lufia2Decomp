@@ -278,3 +278,75 @@ Lufia2ActorPrimaryActionFlow Lufia2ActorPrimaryActionCore(
         return LUFIA2_ACTOR_PRIMARY_ACTION_RETURN_D3AE;         /* D39B */
     return ActionInstallSecondaryScript(memory, cpu);
 }
+
+Lufia2ExecutionResult Lufia2ActorChooseTargetDirection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83ca93u);
+    Lufia2ActorTargetDirection(memory, cpu);
+    return ExecutionReturned(cpu->carry ? 0x83cab8u : 0x83cab6u);
+}
+
+Lufia2ExecutionResult Lufia2ActorCompareLeaderTileY(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83cd6eu);
+    Lufia2ActorFacingCompare(memory, cpu, 0xcd6eu);
+    return ExecutionReturned(0x83cd76u);
+}
+
+Lufia2ExecutionResult Lufia2ActorCompareActorTileX(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83cd77u);
+    Lufia2ActorFacingCompare(memory, cpu, 0xcd77u);
+    return ExecutionReturned(0x83cd7fu);
+}
+
+Lufia2ExecutionResult Lufia2ActorCompareActorTileY(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83cd80u);
+    Lufia2ActorFacingCompare(memory, cpu, 0xcd80u);
+    return ExecutionReturned(0x83cd88u);
+}
+
+Lufia2ExecutionResult Lufia2ActorCompareLeaderTileX(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83cd89u);
+    Lufia2ActorFacingCompare(memory, cpu, 0xcd89u);
+    return ExecutionReturned(0x83cd91u);
+}
+
+Lufia2ExecutionResult Lufia2ActorCheckNorthActionLimit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83d3b7u);
+    PrimaryActionBoundaryHelper(memory, cpu, 0xd3b7u);
+    return ExecutionReturned(0x83d3c4u);
+}
+
+Lufia2ExecutionResult Lufia2ActorCheckSouthActionLimit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83d3c5u);
+    PrimaryActionBoundaryHelper(memory, cpu, 0xd3c5u);
+    return ExecutionReturned(0x83d3d6u);
+}
+
+Lufia2ExecutionResult Lufia2ActorCheckWestActionLimit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83d3d7u);
+    PrimaryActionBoundaryHelper(memory, cpu, 0xd3d7u);
+    return ExecutionReturned(0x83d3e4u);
+}
+
+Lufia2ExecutionResult Lufia2ActorCheckEastActionLimit(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83d3e5u);
+    PrimaryActionBoundaryHelper(memory, cpu, 0xd3e5u);
+    return ExecutionReturned(0x83d3f6u);
+}

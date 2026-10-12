@@ -10831,3 +10831,75 @@ source = "src/field/field_effects.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:CA93"
+name = "Lufia2ActorChooseTargetDirection"
+source = "src/actor/actor_action.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:CD6E"
+name = "Lufia2ActorCompareLeaderTileY"
+source = "src/actor/actor_action.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:CD77"
+name = "Lufia2ActorCompareActorTileX"
+source = "src/actor/actor_action.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:CD80"
+name = "Lufia2ActorCompareActorTileY"
+source = "src/actor/actor_action.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:CD89"
+name = "Lufia2ActorCompareLeaderTileX"
+source = "src/actor/actor_action.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D3B7"
+name = "Lufia2ActorCheckNorthActionLimit"
+source = "src/actor/actor_action.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D3C5"
+name = "Lufia2ActorCheckSouthActionLimit"
+source = "src/actor/actor_action.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D3D7"
+name = "Lufia2ActorCheckWestActionLimit"
+source = "src/actor/actor_action.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D3E5"
+name = "Lufia2ActorCheckEastActionLimit"
+source = "src/actor/actor_action.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
