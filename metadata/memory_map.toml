@@ -5489,3 +5489,31 @@ name = "unk_7E11D8"
 width = 1
 owner = "field"
 notes = "C460 sets this byte to one after committing selection."
+
+[[location]]
+address = "7E:1719"
+name = "field_item_angle_step"
+width = 1
+owner = "field"
+notes = "C460 sets the radial angle multiplier;836A writes it to M7A."
+
+[[location]]
+address = "7E:171A"
+name = "field_item_selected_index"
+width = 1
+owner = "field"
+notes = "836A moves and wraps the selected radial item index."
+
+[[location]]
+address = "7E:1720"
+name = "field_item_hold_frames"
+width = 1
+owner = "field"
+notes = "836A decrements the outcome hold before closing selection."
+
+[[location]]
+address = "7E:1723"
+name = "field_item_selection_mode"
+width = 1
+owner = "field"
+notes = "836A and863E preserve original selection-mode transitions."

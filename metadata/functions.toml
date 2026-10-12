@@ -10631,3 +10631,83 @@ source = "src/field/field_player_actions.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "84:8363"
+name = "Lufia2FieldWaitSelectionFrame"
+source = "src/field/field_item_selection_controller.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:836A"
+name = "Lufia2FieldUpdateItemSelection"
+source = "src/field/field_item_selection_controller.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:863E"
+name = "Lufia2FieldRotateSelectionMarker"
+source = "src/field/field_item_selection_controller.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:8685"
+name = "Lufia2FieldSetSelectionMosaic"
+source = "src/field/field_item_selection_controller.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:868C"
+name = "Lufia2FieldSetSelectionBlink"
+source = "src/field/field_item_selection_controller.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:869E"
+name = "Lufia2FieldResetSelectionBlink"
+source = "src/field/field_item_selection_controller.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:86C0"
+name = "Lufia2FieldReadSelectedItem"
+source = "src/field/field_item_selection_controller.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:86D7"
+name = "Lufia2FieldDrawSelectedItemName"
+source = "src/field/field_item_selection_controller.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:8758"
+name = "Lufia2FieldTakeSelectionHighButtons"
+source = "src/field/field_item_selection_controller.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:875F"
+name = "Lufia2FieldTakeSelectionLowButtons"
+source = "src/field/field_item_selection_controller.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

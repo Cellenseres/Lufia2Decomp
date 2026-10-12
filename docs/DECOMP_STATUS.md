@@ -1,5 +1,41 @@
 # Decompilation status
 
+## Field item selection controller - 2026-10-11
+
+Ten complete entry contracts, nine intended finite bindings. 84:8363 remains
+unbound: a synthetic frame-counter peer proves values and exact continuations,
+not real NMI timing. All 425 observed non-return states and 49 child sites pass
+on direct and actual production-ABI paths. Each covers 184,576 states, 418,553
+original child returns and 4,072 live cuts, with full CPU, WRAM, MMIO and
+ordered operand-bus comparison. Each also covers 3,136 entry unwinds, 9,408
+changed-width returns and 128 decimal fences. 5,880 actual-helper redirects,
+106,496 pre-access guards, twenty bounded faults, one positive control and ten
+C++ APIs pass. Strict portable Clang C11 and MSVC W4/WX compile cleanly.
+
+Native composition covers 73,728 states, 228,609 callbacks and 8,312 exact
+frontiers per path; fourteen of fifteen available services actually complete.
+Zero interpreted children in the native path. The original NMI wait owns its
+original live frame. Two retained IO direct-page cases independently preserve
+8,193 and 16,391 original child returns and exact 4,096-loop continuations on
+both direct and actual ABI paths. Only isolated test resource capacities grow;
+the ROM, semantic loop limits and proof expectations stay unchanged.
+
+Diagnostics retained: wrong 1619/1699 catalog association corrected; overlapping
+DP/stack addresses keep non-ROM child targets as exact live frontiers. The
+private fetch table missed opcode13; all 1,024 opcode/width pairs were checked
+against the local decoder and the affected batch rerun. The original twelve-
+character name scan required 128 reference steps to reach its unchanged decimal
+fence. No fault, trace truncation, timeout or step limit was accepted as proof.
+
+Ten complete functions are integrated; nine finite entries are selected.
+84:8363 remains verified and unbound until real timing is proven. Original
+behavior, duplicate writes, input consumption and live frames stay unchanged.
+Existing catalogued fields and the common field bridge are reused.
+Nine grouped public-library jobs, one full 1,484-job verification run and
+Windows Release pass. All 424 source units pass strict Clang C11 with Wall,
+Wextra, Wpedantic and Werror. No duplicate source, entry, API or binding.
+
+
 ## Player action and field-item callers — 2026-10-11
 
 Five complete M1X0, D0 entry contracts retain dynamic DP/DB: 83:BC28 player
@@ -121,7 +157,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1311 functions in `metadata/functions.toml`: 1311 verified, 0 draft, 0 identified, 0 disabled.
+1321 functions in `metadata/functions.toml`: 1321 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

@@ -959,6 +959,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:82E7` | `Lufia2SceneUploadFixedGraphics` | verified | `src/field/field_display_callers.c` |
 | `$84:8311` | `Lufia2FieldRestoreBackgroundLayers` | verified | `src/field/field_display_callers.c` |
 | `$84:8328` | `Lufia2TextClearWindowBuffer` | verified | `src/text/text_engine.c` |
+| `$84:8363` | `Lufia2FieldWaitSelectionFrame` | verified | `src/field/field_item_selection_controller.c` |
+| `$84:836A` | `Lufia2FieldUpdateItemSelection` | verified | `src/field/field_item_selection_controller.c` |
+| `$84:863E` | `Lufia2FieldRotateSelectionMarker` | verified | `src/field/field_item_selection_controller.c` |
+| `$84:8685` | `Lufia2FieldSetSelectionMosaic` | verified | `src/field/field_item_selection_controller.c` |
+| `$84:868C` | `Lufia2FieldSetSelectionBlink` | verified | `src/field/field_item_selection_controller.c` |
+| `$84:869E` | `Lufia2FieldResetSelectionBlink` | verified | `src/field/field_item_selection_controller.c` |
+| `$84:86C0` | `Lufia2FieldReadSelectedItem` | verified | `src/field/field_item_selection_controller.c` |
+| `$84:86D7` | `Lufia2FieldDrawSelectedItemName` | verified | `src/field/field_item_selection_controller.c` |
+| `$84:8758` | `Lufia2FieldTakeSelectionHighButtons` | verified | `src/field/field_item_selection_controller.c` |
+| `$84:875F` | `Lufia2FieldTakeSelectionLowButtons` | verified | `src/field/field_item_selection_controller.c` |
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
 | `$84:8775` | `Lufia2SendImmediateSound` | verified | `src/system/sound_commands.c` |
 | `$84:8888` | `Lufia2AncientCaveResetParty` | verified | `src/cave/cave_reset.c` |
