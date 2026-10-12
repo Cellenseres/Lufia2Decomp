@@ -10783,3 +10783,51 @@ source = "src/world/world_map_region.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "84:8000"
+name = "Lufia2FieldUpdateScreenEffects"
+source = "src/field/field_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:80C0"
+name = "Lufia2FieldLowerFixedColor"
+source = "src/field/field_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:80D3"
+name = "Lufia2FieldRaiseFixedColor"
+source = "src/field/field_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:80E6"
+name = "Lufia2FieldRaiseBrightness"
+source = "src/field/field_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:8115"
+name = "Lufia2FieldLowerBrightness"
+source = "src/field/field_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:8145"
+name = "Lufia2FieldUpdateScreenShake"
+source = "src/field/field_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

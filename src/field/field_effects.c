@@ -13,12 +13,16 @@
 
 /* Brightness fade and color math step state. */
 enum {
-    FADE_FRAMES_PER_STEP = 0x7fd08fu,
-    FADE_BRIGHTNESS_STEP = 0x7fd090u,
-    FADE_BRIGHTNESS = 0x7fd091u,
-    FADE_FRAME_COUNTER = 0x7fd092u,
-    COLOR_STEP_TIMER = 0x7fd094u,
-    COLOR_MATH_INTENSITY = 0x1271u
+    FADE_FRAMES_PER_STEP = WRAM_FIELD_FADE_FRAMES_PER_STEP,
+    FADE_BRIGHTNESS_STEP = WRAM_FIELD_FADE_BRIGHTNESS_STEP,
+    FADE_BRIGHTNESS = WRAM_FIELD_FADE_BRIGHTNESS,
+    FADE_FRAME_COUNTER = WRAM_FIELD_FADE_FRAME_COUNTER,
+    COLOR_STEP_TIMER = WRAM_FIELD_FIXED_COLOR_STEP_TIMER,
+    COLOR_MATH_INTENSITY = 0x1271u,
+    COLOR_FADE_SOURCE = WRAM_SCREEN_COLOR_FADE_SOURCE,
+    COLOR_FADE_TARGET = WRAM_SCREEN_COLOR_FADE_TARGET,
+    COLOR_FADE_PROGRESS = WRAM_SCREEN_FADE_PROGRESS,
+    COLOR_FADE_SPEED = WRAM_SCREEN_FADE_STEP
 };
 
 /* $83:AF05-$83:AF4C: advance palette cycle X; 0 = cap hit. */
@@ -257,97 +261,273 @@ Lufia2ExecutionResult Lufia2FieldColourEffectsWithServices(
 }
 
 /* $84:8145: random shake offsets into $7F:D081/D083. */
-static void ScreenShake(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0x8009u);
-    LoadA8(cpu, 0xffu);                                        /* 8145 */
-    SimulateJslFrame(memory, cpu, 0x84u, 0x814au);
-    Lufia2RandomScale(memory, cpu);
-    SimulateRtlFrame(memory, cpu);
-    Compare8(cpu, A8(cpu), Read8(memory, FIELD_SHAKE_CHANCE));
-    if (!cpu->carry) {
-        uint8_t first;
-
-        LoadA8(cpu, Read8(memory, FIELD_SHAKE_AMPLITUDE)); /* 8151 */
-        SimulateJslFrame(memory, cpu, 0x84u, 0x8158u);
-        Lufia2RandomScale(memory, cpu);
-        SimulateRtlFrame(memory, cpu);
-        StoreADirect8(memory, cpu, DP_SCRATCH_A);
-        Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0x00u);
-        TransferDirectToA(cpu);
-        LoadA8(cpu, Read8(memory, FIELD_SHAKE_AMPLITUDE));
-        SetAccumulatorWidth(cpu, 0);
-        LsrA16(cpu);
-        cpu->carry = 1;
-        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_A));
-        Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator);
-        LoadA16(cpu, 0x0002u);
-        SimulateJslFrame(memory, cpu, 0x84u, 0x8170u);
-        Lufia2RandomScale(memory, cpu);
-        SimulateRtlFrame(memory, cpu);
-        LoadA16(cpu, cpu->accumulator);                        /* ORA #0 */
-        first = !cpu->zero;
-        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
-        Write16Long(memory, first ? FIELD_SCREEN_OFFSET_X : FIELD_SCREEN_OFFSET_Y,
-                    cpu->accumulator);
-        TransferDirectToA(cpu);
-        Write16Long(memory, first ? FIELD_SCREEN_OFFSET_Y : FIELD_SCREEN_OFFSET_X,
-                    cpu->accumulator);
-        SetAccumulatorWidth(cpu, 1);
-    }
-    SimulateRtsFrame(memory, cpu);
+static uint8_t ScreenEffectContext(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x84u && cpu->accumulator_is_8_bit &&
+        !cpu->decimal;
 }
 
-/* $84:80E6/$84:8115: brightness step every $7F:D08F frames. */
-static void ScreenFade(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t in) {
-    SimulateJsrFrame(memory, cpu, in ? 0x8013u : 0x801du);
-    LoadA8(cpu, (uint8_t)(Read8(memory, FADE_FRAME_COUNTER) + 1u));
-    Write8(memory, FADE_FRAME_COUNTER, A8(cpu));
-    Compare8(cpu, A8(cpu), Read8(memory, FADE_FRAMES_PER_STEP));
+static uint8_t AdvanceEffectChild(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context,
+    uint32_t site, uint32_t target, uint8_t frame, uint8_t accumulator_width,
+    uint8_t index_width,
+    Lufia2ExecutionResult *result) {
+    if (!CallChildWithFrame(memory, cpu, child, context,
+            site, target, frame, 0x84u)) {
+        *result = (Lufia2ExecutionResult){
+            LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
+        return 0u;
+    }
+    if (cpu->accumulator_is_8_bit != accumulator_width ||
+        cpu->index_is_8_bit != index_width || cpu->decimal) {
+        *result = ExecutionHandoff(cpu, site + frame + 1u);
+        return 0u;
+    }
+    return 1u;
+}
+
+static Lufia2ExecutionResult AdvanceFixedColor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t brighten) {
+    if (!ScreenEffectContext(cpu))
+        return ExecutionHandoff(cpu, brighten ? 0x8480d3u : 0x8480c0u);
+    OpLda(memory, cpu, OpAbs(cpu, COLOR_MATH_INTENSITY));
+    if (brighten)
+        OpIncA(cpu);
+    else
+        OpDecA(cpu);
+    OpOraValue(cpu, 0xe0u);
+    OpSta(memory, cpu, OpAbs(cpu, COLOR_MATH_INTENSITY));
+    OpCmpValue(cpu, brighten ? 0xffu : 0xe0u);
+    if (cpu->zero) {
+        OpLoadA(cpu, brighten ? 0x20u : 0x10u);
+        OpTestBits(memory, cpu, OpAbs(cpu, WRAM_SCREEN_EFFECTS), 0u);
+    }
+    return ExecutionReturned(brighten ? 0x8480e5u : 0x8480d2u);
+}
+
+Lufia2ExecutionResult Lufia2FieldLowerFixedColor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    (void)child;
+    (void)context;
+    return AdvanceFixedColor(memory, cpu, 0u);
+}
+
+Lufia2ExecutionResult Lufia2FieldRaiseFixedColor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    (void)child;
+    (void)context;
+    return AdvanceFixedColor(memory, cpu, 1u);
+}
+
+static Lufia2ExecutionResult AdvanceBrightness(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t brighten) {
+    if (!ScreenEffectContext(cpu))
+        return ExecutionHandoff(cpu, brighten ? 0x8480e6u : 0x848115u);
+    OpLda(memory, cpu, FADE_FRAME_COUNTER);
+    OpIncA(cpu);
+    OpSta(memory, cpu, FADE_FRAME_COUNTER);
+    OpCmp(memory, cpu, FADE_FRAMES_PER_STEP);
     if (cpu->carry) {
-        LoadA8(cpu, 0x00u);
-        Write8(memory, FADE_FRAME_COUNTER, A8(cpu));
-        LoadA8(cpu, Read8(memory, FADE_BRIGHTNESS));
-        cpu->carry = in ? 0u : 1u;
-        if (in)
-            Adc8(cpu, Read8(memory, FADE_BRIGHTNESS_STEP));
+        OpLoadA(cpu, 0u);
+        OpSta(memory, cpu, FADE_FRAME_COUNTER);
+        OpLda(memory, cpu, FADE_BRIGHTNESS);
+        cpu->carry = brighten ? 0u : 1u;
+        if (brighten)
+            OpAdc(memory, cpu, FADE_BRIGHTNESS_STEP);
         else
-            Sbc8(cpu, Read8(memory, FADE_BRIGHTNESS_STEP));
-        Write8(memory, FADE_BRIGHTNESS, A8(cpu));
-        StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
-        if (in) {
-            Compare8(cpu, A8(cpu), 0x0fu);
+            OpSbcValue(cpu, OpReadM(memory, cpu, FADE_BRIGHTNESS_STEP));
+        OpSta(memory, cpu, FADE_BRIGHTNESS);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
+        if (brighten) {
+            OpCmpValue(cpu, 0x0fu);
             if (cpu->carry) {
-                LoadA8(cpu, 0x02u);
-                TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+                OpLoadA(cpu, 2u);
+                OpTestBits(memory, cpu, OpAbs(cpu, WRAM_SCREEN_EFFECTS), 0u);
             }
         } else if (cpu->negative) {
-            StoreAImmediate8(memory, cpu, BRIGHTNESS_FORCED_BLANK, WRAM_BRIGHTNESS);
-            StoreZeroAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+            OpLoadA(cpu, BRIGHTNESS_FORCED_BLANK);
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
+            OpStz(memory, cpu, OpAbs(cpu, WRAM_SCREEN_EFFECTS));
         }
     }
-    SimulateRtsFrame(memory, cpu);
+    return ExecutionReturned(brighten ? 0x848114u : 0x848144u);
 }
 
-/* $84:80C0/$84:80D3: color math intensity $1271 down or up. */
-static void ScreenColorStep(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t down) {
-    SimulateJsrFrame(memory, cpu, down ? 0x803fu : 0x8044u);
-    LoadAAbsolute8(memory, cpu, COLOR_MATH_INTENSITY, 0);
-    LoadA8(cpu, (uint8_t)((A8(cpu) + (down ? 0xffu : 0x01u)) | 0xe0u));
-    StoreAAbsolute8(memory, cpu, COLOR_MATH_INTENSITY, 0);
-    Compare8(cpu, A8(cpu), down ? 0xe0u : 0xffu);
-    if (cpu->zero) {
-        LoadA8(cpu, down ? 0x10u : 0x20u);
-        TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+Lufia2ExecutionResult Lufia2FieldRaiseBrightness(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    (void)child;
+    (void)context;
+    return AdvanceBrightness(memory, cpu, 1u);
+}
+
+Lufia2ExecutionResult Lufia2FieldLowerBrightness(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    (void)child;
+    (void)context;
+    return AdvanceBrightness(memory, cpu, 0u);
+}
+
+Lufia2ExecutionResult Lufia2FieldUpdateScreenShake(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!ScreenEffectContext(cpu) || !child)
+        return ExecutionHandoff(cpu, 0x848145u);
+    Lufia2ExecutionResult result;
+    const uint8_t index_width = cpu->index_is_8_bit;
+    OpLoadA(cpu, 0xffu);
+    if (!AdvanceEffectChild(memory, cpu, child, context,
+            0x848147u, 0x808299u, 3u, 1u, index_width, &result))
+        return result;
+    OpCmp(memory, cpu, FIELD_SHAKE_CHANCE);
+    if (!cpu->carry) {
+        OpLda(memory, cpu, FIELD_SHAKE_AMPLITUDE);
+        if (!AdvanceEffectChild(memory, cpu, child, context,
+                0x848155u, 0x808299u, 3u, 1u, index_width, &result))
+            return result;
+        OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+        OpStz(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, FIELD_SHAKE_AMPLITUDE);
+        OpRepWidths(cpu, 0x20u);
+        OpLsrA(cpu);
+        cpu->carry = 1u;
+        OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, DP_SCRATCH_A)));
+        OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+        OpLoadA(cpu, 2u);
+        if (!AdvanceEffectChild(memory, cpu, child, context,
+                0x84816du, 0x808299u, 3u, 0u, index_width, &result))
+            return result;
+        OpOraValue(cpu, 0u);
+        OpRepWidths(cpu, 0x20u);
+        if (!cpu->zero) {
+            OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+            OpSta(memory, cpu, FIELD_SCREEN_OFFSET_X);
+            TransferDirectToA(cpu);
+            OpSta(memory, cpu, FIELD_SCREEN_OFFSET_Y);
+        } else {
+            OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
+            OpSta(memory, cpu, FIELD_SCREEN_OFFSET_Y);
+            TransferDirectToA(cpu);
+            OpSta(memory, cpu, FIELD_SCREEN_OFFSET_X);
+        }
+        OpSepWidths(cpu, 0x20u);
     }
-    SimulateRtsFrame(memory, cpu);
+    return ExecutionReturned(0x848192u);
+}
+
+Lufia2ExecutionResult Lufia2FieldUpdateScreenEffects(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!ScreenEffectContext(cpu) || !child)
+        return ExecutionHandoff(cpu, 0x848000u);
+    Lufia2ExecutionResult result;
+
+    LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+    BitImmediate8(cpu, 0x04u);
+    if (!cpu->zero) {
+        if (!AdvanceEffectChild(memory, cpu, child, context,
+                0x848007u, 0x848145u, 2u, 1u, cpu->index_is_8_bit, &result))
+            return result;
+        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+    }
+    BitImmediate8(cpu, 0x02u);
+    if (!cpu->zero) {
+        if (!AdvanceEffectChild(memory, cpu, child, context,
+                0x848011u, 0x8480e6u, 2u, 1u, cpu->index_is_8_bit, &result))
+            return result;
+        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+    }
+    BitImmediate8(cpu, 0x01u);
+    if (!cpu->zero) {
+        if (!AdvanceEffectChild(memory, cpu, child, context,
+                0x84801bu, 0x848115u, 2u, 1u, cpu->index_is_8_bit, &result))
+            return result;
+        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+    }
+    BitImmediate8(cpu, 0x30u);
+    if (!cpu->zero) {
+        LoadA8(cpu, (uint8_t)(Read8(memory, COLOR_STEP_TIMER) - 1u));
+        Write8(memory, COLOR_STEP_TIMER, A8(cpu));
+        if (cpu->zero) {
+            LoadA8(cpu, 0x06u);
+            Write8(memory, COLOR_STEP_TIMER, A8(cpu));
+            LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+            BitImmediate8(cpu, 0x10u);
+            if (!AdvanceEffectChild(memory, cpu, child, context,
+                    cpu->zero ? 0x848042u : 0x84803du,
+                    cpu->zero ? 0x8480d3u : 0x8480c0u,
+                    2u, 1u, cpu->index_is_8_bit, &result))
+                return result;
+        }
+        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+    }
+    BitImmediate8(cpu, 0x80u);
+    if (!cpu->zero) {
+        LoadAAbsolute8(memory, cpu, COLOR_FADE_SPEED, 0);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        StoreADirect8(memory, cpu, DP_SCRATCH_B);
+        LoadAAbsolute8(memory, cpu, COLOR_FADE_PROGRESS, 0);
+        cpu->carry = 0;
+        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, COLOR_FADE_SPEED, 0)));
+        StoreAAbsolute8(memory, cpu, COLOR_FADE_PROGRESS, 0);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
+        LoadAAbsolute8(memory, cpu, COLOR_FADE_SOURCE, 0);
+        And8(cpu, 0x1fu);
+        Compare8(cpu, A8(cpu),
+            Read8(memory, AbsoluteIndexedAddress(cpu, COLOR_FADE_TARGET, 0)));
+        if (cpu->carry) {
+            LoadA8(cpu, 0x1fu);
+            Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+            StoreADirect8(memory, cpu, DP_SCRATCH_A);
+            cpu->carry = 1;
+            Sbc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, COLOR_FADE_TARGET, 0)));
+        } else {
+            LoadAAbsolute8(memory, cpu, COLOR_FADE_TARGET, 0);
+            cpu->carry = 1;
+            Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+        }
+        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_B));
+        if (!cpu->carry) {
+            LoadAAbsolute8(memory, cpu, COLOR_FADE_TARGET, 0);
+            StoreADirect8(memory, cpu, DP_SCRATCH_A);
+            LoadA8(cpu, 0x80u);
+            TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+        }
+        LoadAAbsolute8(memory, cpu, COLOR_FADE_SOURCE, 0);
+        And8(cpu, 0xe0u);
+        Or8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+        StoreAAbsolute8(memory, cpu, SNES_COLDATA, 0);
+    }
+    LoadAAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0);
+    BitImmediate8(cpu, 0x01u);
+    if (!cpu->zero) {
+        if (!AdvanceEffectChild(memory, cpu, child, context,
+                0x8480a2u, 0x848e07u, 3u, 1u, 0u, &result))
+            return result;
+        LoadAAbsolute8(memory, cpu, COLOR_FADE_PROGRESS, 0);
+        cpu->carry = 0;
+        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, COLOR_FADE_SPEED, 0)));
+        StoreAAbsolute8(memory, cpu, COLOR_FADE_PROGRESS, 0);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        LsrA8(cpu);
+        Compare8(cpu, A8(cpu), 0x1fu);
+        if (cpu->zero) {
+            LoadA8(cpu, 0x01u);
+            TestBitsAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0);
+            LoadAAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0);
+        }
+    }
+    return ExecutionReturned(0x8480bfu);
 }
 
 enum {
@@ -456,112 +636,62 @@ static void FadeScenePalette(
     }
 }
 
-static void ScreenPaletteFade(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    SimulateJslFrame(memory, cpu, 0x84u, 0x80a5u);
-    FadeScenePalette(memory, cpu);
-    SimulateRtlFrame(memory, cpu);
-}
-
 Lufia2ExecutionResult Lufia2FieldFadeScenePalette(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x848e07u);
     FadeScenePalette(memory, cpu);
     return ExecutionReturned(0x848f0fu);
 }
 
-/* $84:8000: screen effects of $1261 and the $1262 palette fade. */
-void Lufia2FieldScreenEffects(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);       /* 8000 */
-    BitImmediate8(cpu, 0x04u);
-    if (!cpu->zero) {
-        ScreenShake(memory, cpu);
-        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+
+static uint8_t ScreenEffectChild(void *context,Lufia2CpuState *cpu,
+    uint32_t target,uint32_t site,uint8_t frame) {
+    const Lufia2Memory *memory = context;
+    cpu->program_bank = (uint8_t)(target >> 16);
+    Lufia2ExecutionResult result;
+    switch (target) {
+    case 0x8480c0u:
+        result = Lufia2FieldLowerFixedColor(memory, cpu, ScreenEffectChild, context);
+        break;
+    case 0x8480d3u:
+        result = Lufia2FieldRaiseFixedColor(memory, cpu, ScreenEffectChild, context);
+        break;
+    case 0x8480e6u:
+        result = Lufia2FieldRaiseBrightness(memory, cpu, ScreenEffectChild, context);
+        break;
+    case 0x848115u:
+        result = Lufia2FieldLowerBrightness(memory, cpu, ScreenEffectChild, context);
+        break;
+    case 0x848145u:
+        result = Lufia2FieldUpdateScreenShake(memory, cpu, ScreenEffectChild, context);
+        break;
+    case 0x848e07u:
+        result = Lufia2FieldFadeScenePalette(memory, cpu);
+        break;
+    case 0x808299u:
+        Lufia2RandomScale(memory, cpu);
+        result = ExecutionReturned(0x8082c6u);
+        break;
+    default:
+        cpu->resume_pc = target;
+        return 0u;
     }
-    BitImmediate8(cpu, 0x02u);                                 /* 800D */
-    if (!cpu->zero) {
-        ScreenFade(memory, cpu, 1);
-        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        if (result.flow == LUFIA2_EXECUTION_BOUNDARY)
+            cpu->resume_pc = result.pc;
+        return 0u;
     }
-    BitImmediate8(cpu, 0x01u);                                 /* 8017 */
-    if (!cpu->zero) {
-        ScreenFade(memory, cpu, 0);
-        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
-    }
-    BitImmediate8(cpu, 0x30u);                                 /* 8021 */
-    if (!cpu->zero) {
-        LoadA8(cpu, (uint8_t)(Read8(memory, COLOR_STEP_TIMER) - 1u));
-        Write8(memory, COLOR_STEP_TIMER, A8(cpu));
-        if (cpu->zero) {
-            LoadA8(cpu, 0x06u);
-            Write8(memory, COLOR_STEP_TIMER, A8(cpu));
-            LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
-            BitImmediate8(cpu, 0x10u);
-            ScreenColorStep(memory, cpu, !cpu->zero);
-        }
-        LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);   /* 8045 */
-    }
-    BitImmediate8(cpu, 0x80u);                                 /* 8048 */
-    if (!cpu->zero) {
-        LoadAAbsolute8(memory, cpu, 0x1289u, 0);               /* COLDATA fade */
-        LsrA8(cpu);
-        LsrA8(cpu);
-        LsrA8(cpu);
-        StoreADirect8(memory, cpu, DP_SCRATCH_B);
-        LoadAAbsolute8(memory, cpu, 0x1288u, 0);
-        cpu->carry = 0;
-        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x1289u, 0)));
-        StoreAAbsolute8(memory, cpu, 0x1288u, 0);
-        LsrA8(cpu);
-        LsrA8(cpu);
-        LsrA8(cpu);
-        StoreADirect8(memory, cpu, DP_SCRATCH_A);
-        LoadAAbsolute8(memory, cpu, 0x1286u, 0);
-        And8(cpu, 0x1fu);
-        Compare8(cpu, A8(cpu),
-            Read8(memory, AbsoluteIndexedAddress(cpu, 0x1287u, 0)));
-        if (cpu->carry) {
-            LoadA8(cpu, 0x1fu);                                /* toward black */
-            Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
-            StoreADirect8(memory, cpu, DP_SCRATCH_A);
-            cpu->carry = 1;
-            Sbc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x1287u, 0)));
-        } else {
-            LoadAAbsolute8(memory, cpu, 0x1287u, 0);           /* 807D */
-            cpu->carry = 1;
-            Sbc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
-        }
-        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_B));
-        if (!cpu->carry) {
-            LoadAAbsolute8(memory, cpu, 0x1287u, 0);           /* 8087 */
-            StoreADirect8(memory, cpu, DP_SCRATCH_A);
-            LoadA8(cpu, 0x80u);
-            TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
-        }
-        LoadAAbsolute8(memory, cpu, 0x1286u, 0);               /* 8091 */
-        And8(cpu, 0xe0u);
-        Or8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
-        StoreAAbsolute8(memory, cpu, SNES_COLDATA, 0);
-    }
-    LoadAAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0);         /* 809B */
-    BitImmediate8(cpu, 0x01u);
-    if (!cpu->zero) {
-        ScreenPaletteFade(memory, cpu);
-        LoadAAbsolute8(memory, cpu, 0x1288u, 0);               /* 80A6 */
-        cpu->carry = 0;
-        Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x1289u, 0)));
-        StoreAAbsolute8(memory, cpu, 0x1288u, 0);
-        LsrA8(cpu);
-        LsrA8(cpu);
-        LsrA8(cpu);
-        Compare8(cpu, A8(cpu), 0x1fu);
-        if (cpu->zero) {
-            LoadA8(cpu, 0x01u);
-            TestBitsAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0);
-            LoadAAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0);
-        }
-    }
+    uint16_t word = Pull8(memory, cpu);
+    word |= (uint16_t)Pull8(memory, cpu) << 8;
+    if (frame == 3u)
+        cpu->program_bank = Pull8(memory, cpu);
+    cpu->resume_pc = ((uint32_t)cpu->program_bank << 16) | (uint16_t)(word + 1u);
+    return cpu->resume_pc == ((site & 0xff0000u) | (uint16_t)(site + frame + 1u));
+}
+
+Lufia2ExecutionResult Lufia2FieldScreenEffects(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return Lufia2FieldUpdateScreenEffects(
+        memory, cpu, ScreenEffectChild, (void *)memory);
 }

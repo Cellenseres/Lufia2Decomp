@@ -1,5 +1,27 @@
 # Decompilation status
 
+## Field screen effects - 2026-10-12
+
+Six complete original entries share brightness, fixed-color and screen-shake
+operations with the existing field event tick. Both entry index widths retain
+literal original flags, bus accesses, live child frames and continuation cuts.
+The existing palette entry accepts X8 and still exits X16. No duplicate palette
+or screen dispatcher is introduced. Private direct and production-core ABI
+proofs cover196608 states each; native composition covers98304 states each.
+Existing event tick and palette entry each have16384-state direct and ABI
+regressions. Eleven actual-library jobs,one full1511-job verification run andWindows
+Release pass. All426 source units pass strict Clang C11 with Wall,Wextra,
+Wpedantic andWerror. All312 canonical states andnine sites are covered.
+Each direct/ABI path preserves125288 original child returns and8160 live cuts.
+Native composition uses84448 callbacks acrossseven services,with zero
+interpreted native children. Each path also passes1152 unwinds,3456 changed
+widths and1152 decimal fences.2160 redirects,58880 guard states,twelve
+bounded ROM controls,one positive control andsix C++ APIs pass. Existing
+M0 palette guards remain intact;X8 acceptance is proved against the ROM.
+Thirteen identified fields have distinct occupied extents andgenerated names.
+No duplicate source,entry,API,binding orshared screen dispatcher.
+
+
 ## World region pointer andposition chain - 2026-10-12
 
 Two complete original callers reuse the existing verified resource pointer.
@@ -196,7 +218,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1330 functions in `metadata/functions.toml`: 1330 verified, 0 draft, 0 identified, 0 disabled.
+1336 functions in `metadata/functions.toml`: 1336 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

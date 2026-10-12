@@ -123,19 +123,26 @@ Lufia2ExecutionResult Lufia2FieldEventTick(
     result.flow = LUFIA2_EXECUTION_RETURNED;
     result.pc = 0x809cb7u;
     result.dispatches = 0;
-    SimulateJslFrame(memory, cpu, 0x80u, 0x9c75u);             /* 9C72 */
+    SimulateJslFrame(memory, cpu, 0x80u, 0x9c75u);
     cpu->program_bank = 0x84u;
-    Lufia2FieldScreenEffects(memory, cpu);                     /* $84:8000 */
-    SimulateRtlFrame(memory, cpu);
-    cpu->program_bank = 0x80u;
-    SimulateJsrFrame(memory, cpu, 0x9c78u);                    /* 9C76 */
-    LoadA8(cpu, Read8(memory, 0x7fd0c1u));                     /* C21A */
+    const Lufia2ExecutionResult screen = Lufia2FieldScreenEffects(memory, cpu);
+    if (screen.flow != LUFIA2_EXECUTION_RETURNED)
+        return ExecutionHandoff(cpu, cpu->resume_pc);
+    uint16_t screen_return = Pull8(memory, cpu);
+    screen_return |= (uint16_t)Pull8(memory, cpu) << 8;
+    cpu->program_bank = Pull8(memory, cpu);
+    const uint32_t screen_landing = ((uint32_t)cpu->program_bank << 16) |
+        (uint16_t)(screen_return + 1u);
+    if (screen_landing != 0x809c76u)
+        return ExecutionHandoff(cpu, screen_landing);
+    SimulateJsrFrame(memory, cpu, 0x9c78u);
+    LoadA8(cpu, Read8(memory, 0x7fd0c1u));
     Compare8(cpu, A8(cpu), 0xffu);
     if (!cpu->zero) {
         LoadA8(cpu, (uint8_t)(A8(cpu) - 1u));
         Write8(memory, 0x7fd0c1u, A8(cpu));
         if (cpu->zero) {
-            LoadA8(cpu, 0xffu);                                /* C229 */
+            LoadA8(cpu, 0xffu);
             Write8(memory, 0x7fd0c1u, A8(cpu));
             LoadA8(cpu, 0xa0u);
             TestBitsAbsolute8(memory, cpu, 0x099cu, 0);
@@ -145,15 +152,16 @@ Lufia2ExecutionResult Lufia2FieldEventTick(
         }
     }
     SimulateRtsFrame(memory, cpu);
-    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* 9C79 */
+    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
     And8(cpu, 0x0au);
     if (!cpu->zero)
         return Lufia2TextPromptTick(memory, cpu, result);
-    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* 9CB2 */
+    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
     if (cpu->negative)
         return Lufia2TextEngineStepBody(memory, cpu, result);
     return result;
 }
+
 
 /* B, Start and A together open the menu. */
 #define FIELD_MENU_BUTTONS (((JOY_HIGH_B | JOY_HIGH_START) << 8) | JOY_LOW_A)

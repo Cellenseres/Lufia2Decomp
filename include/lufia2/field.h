@@ -1308,6 +1308,30 @@ Lufia2ExecutionResult Lufia2FieldTakeSelectionLowButtons(
     Lufia2PushedChildCall child, void *context);
 
 
+Lufia2ExecutionResult Lufia2FieldUpdateScreenEffects(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
+Lufia2ExecutionResult Lufia2FieldLowerFixedColor(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
+Lufia2ExecutionResult Lufia2FieldRaiseFixedColor(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
+Lufia2ExecutionResult Lufia2FieldRaiseBrightness(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
+Lufia2ExecutionResult Lufia2FieldLowerBrightness(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
+Lufia2ExecutionResult Lufia2FieldUpdateScreenShake(
+    const Lufia2Memory *memory,Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child,void *context);
+
 #ifdef __cplusplus
 }
 #endif

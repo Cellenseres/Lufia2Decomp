@@ -953,6 +953,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:FC8B` | `Lufia2ObjectFinePositionToProbe` | verified | `src/field/field_coordinate_math.c` |
 | `$83:FCB4` | `Lufia2ObjectScaleFinePosition` | verified | `src/field/field_coordinate_math.c` |
 | `$83:FCD1` | `Lufia2ObjectQueueSceneSpriteUpload` | verified | `src/actor/actor_scene_resources.c` |
+| `$84:8000` | `Lufia2FieldUpdateScreenEffects` | verified | `src/field/field_effects.c` |
+| `$84:80C0` | `Lufia2FieldLowerFixedColor` | verified | `src/field/field_effects.c` |
+| `$84:80D3` | `Lufia2FieldRaiseFixedColor` | verified | `src/field/field_effects.c` |
+| `$84:80E6` | `Lufia2FieldRaiseBrightness` | verified | `src/field/field_effects.c` |
+| `$84:8115` | `Lufia2FieldLowerBrightness` | verified | `src/field/field_effects.c` |
+| `$84:8145` | `Lufia2FieldUpdateScreenShake` | verified | `src/field/field_effects.c` |
 | `$84:8193` | `Lufia2SpriteGraphicsUpload` | verified | `src/actor/actor_sprites.c` |
 | `$84:8204` | `Lufia2FieldRebuildPartyActors` | verified | `src/actor/party_scene.c` |
 | `$84:82D5` | `Lufia2ActorPreparePartyOffsets` | verified | `src/actor/party_scene.c` |

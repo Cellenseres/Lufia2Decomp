@@ -44,7 +44,7 @@ uint8_t Lufia2FieldEventTimerBody(
     unsigned *passes);
 
 /* $84:8000: screen effects of $1261 and the $1262 palette fade. */
-void Lufia2FieldScreenEffects(
+Lufia2ExecutionResult Lufia2FieldScreenEffects(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
@@ -74,12 +74,12 @@ Lufia2ExecutionResult Lufia2FieldSectionSize(
 #define FIELD_SCRIPTED_CAMERA_X 0x7fd08bu
 #define FIELD_SCRIPTED_CAMERA_Y 0x7fd08du
 /* Screen shake offsets added to the published scroll. */
-#define FIELD_SCREEN_OFFSET_X 0x7fd081u
-#define FIELD_SCREEN_OFFSET_Y 0x7fd083u
+#define FIELD_SCREEN_OFFSET_X WRAM_FIELD_SCREEN_OFFSET_X
+#define FIELD_SCREEN_OFFSET_Y WRAM_FIELD_SCREEN_OFFSET_Y
 /* Screen shake: flag, amplitude, chance threshold. */
 #define FIELD_SHAKE_PARAM_7E 0x7fd07eu
-#define FIELD_SHAKE_AMPLITUDE 0x7fd07fu
-#define FIELD_SHAKE_CHANCE 0x7fd080u
+#define FIELD_SHAKE_AMPLITUDE WRAM_FIELD_SHAKE_AMPLITUDE
+#define FIELD_SHAKE_CHANCE WRAM_FIELD_SHAKE_CHANCE
 /* Per-layer scroll follow state: target words and speed words. */
 #define FIELD_FOLLOW_TARGET_X 0x7fd0ceu
 #define FIELD_FOLLOW_TARGET_Y 0x7fd0d6u

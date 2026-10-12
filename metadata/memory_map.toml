@@ -5531,3 +5531,94 @@ name = "world_map_player_object"
 width = 1
 owner = "world"
 notes = "Player-object restoration selects the original player object index."
+
+[[location]]
+address = "7E:1286"
+name = "screen_color_fade_source"
+width = 1
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7E:1287"
+name = "screen_color_fade_target"
+width = 1
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7E:1288"
+name = "screen_fade_progress"
+width = 1
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7E:1289"
+name = "screen_fade_step"
+width = 1
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7F:D07F"
+name = "field_shake_amplitude"
+width = 1
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7F:D080"
+name = "field_shake_chance"
+width = 1
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7F:D081"
+name = "field_screen_offset_x"
+width = 2
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7F:D083"
+name = "field_screen_offset_y"
+width = 2
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7F:D08F"
+name = "field_fade_frames_per_step"
+width = 1
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7F:D090"
+name = "field_fade_brightness_step"
+width = 1
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7F:D091"
+name = "field_fade_brightness"
+width = 1
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7F:D092"
+name = "field_fade_frame_counter"
+width = 1
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7F:D094"
+name = "field_fixed_color_step_timer"
+width = 1
+owner = "field"
+notes = "Original screen-effect state shared by field and palette operations."
