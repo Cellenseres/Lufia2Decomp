@@ -1233,12 +1233,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9AB8` | `Lufia2WorldMapCheckStoppedArrival` | verified | `src/world/world_motion_services.c` |
 | `$86:9E3B` | `Lufia2WorldMapRandomScaledWord` | verified | `src/world/world_random_word.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
+| `$86:9F13` | `Lufia2WorldMapFindRegionPosition` | verified | `src/world/world_map_region.c` |
 | `$86:9F35` | `Lufia2WorldMapResolveResourcePointer` | verified | `src/world/world_view_services.c` |
 | `$86:A03B` | `Lufia2WorldMapStepPaletteColors` | verified | `src/world/world_palette_step.c` |
 | `$86:A0A2` | `Lufia2WorldMapQueuePaletteTransfer` | verified | `src/world/world_palette_step.c` |
 | `$86:A1C5` | `Lufia2WorldMapActivateVehicle` | verified | `src/world/world_map_player.c` |
 | `$86:A1EC` | `Lufia2WorldMapRestorePlayerObject` | verified | `src/world/world_map_player.c` |
 | `$86:A28B` | `Lufia2WorldMapCenterTargetTiles` | verified | `src/world/world_view_services.c` |
+| `$86:A2AE` | `Lufia2WorldMapConsumeRegionPosition` | verified | `src/world/world_map_region.c` |
 | `$86:A2C6` | `Lufia2WorldMapReadSecondObjectTarget` | verified | `src/world/world_view_services.c` |
 | `$86:A338` | `Lufia2WorldMapAnimatePairedObjects` | verified | `src/world/world_frame_callers.c` |
 | `$86:A357` | `Lufia2WorldMapPositionAnimatedObject` | verified | `src/world/world_frame_callers.c` |

@@ -10767,3 +10767,19 @@ source = "src/world/world_map_player.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:9F13"
+name = "Lufia2WorldMapFindRegionPosition"
+source = "src/world/world_map_region.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A2AE"
+name = "Lufia2WorldMapConsumeRegionPosition"
+source = "src/world/world_map_region.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

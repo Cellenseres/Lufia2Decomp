@@ -1,5 +1,24 @@
 # Decompilation status
 
+## World region pointer andposition chain - 2026-10-12
+
+Two complete original callers reuse the existing verified resource pointer.
+They preserve region position scans andpending player-position requests. The
+existing pointer returns M0X0 andchanges DB;the search restores DB. Combined
+three-entry direct andactual ABI regression paths cover
+81920 original-ROM states,12288 original child returns,all41 canonical states
+andtwo call sites. Native composition covers81920 states,16384 callbacks and
+zero interpreted native children. Each path passes128 entry unwinds,384
+changed-width returns and128 decimal continuations. Long tests use symmetric
+post-original-child fixtures:320 states,192 matches,128 exact4096 boundaries.
+240 helper redirects,26752 guard states,six bounded ROM controls,one positive
+control andthree C++ APIs pass. No original behavior orloop limit changes.
+Existing WRAM aliases andthe common bridge are reused;no fields are added.
+Nine grouped public-library jobs, one full 1,500-job verification run and
+Windows Release pass. All 426 source units pass strict Clang C11 with Wall,
+Wextra, Wpedantic and Werror. No duplicate source, entry, API or binding.
+
+
 ## World-player object and movement services - 2026-10-12
 
 Seven complete original entry contracts preserve player-song scratch, vehicle
@@ -177,7 +196,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1328 functions in `metadata/functions.toml`: 1328 verified, 0 draft, 0 identified, 0 disabled.
+1330 functions in `metadata/functions.toml`: 1330 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
