@@ -1,5 +1,25 @@
 # Decompilation status
 
+## World-player object and movement services - 2026-10-12
+
+Seven complete original entry contracts preserve player-song scratch, vehicle
+activation/restoration and the shared direction/tile-arrival tail. Both direct
+and actual ABI paths cover all195 canonical states and31 call sites across
+114688 original-ROM states,264904 child returns and46188 live cuts each.
+1984 unwinds,5952 changed-width returns,3720 redirects,74368 guards,14 bounded
+faults,one positive control andseven C++ APIs pass. Native composition covers
+114688 states,131184 callbacks and106388 exact frontiers per path;6 of9
+available services complete with zero interpreted children in the native path.
+Composition frontiers include already verified services outside this test
+router. They do not establish missing bindings. Timing ownership remains
+independent. Existing
+WRAM aliases and the common entry bridge are reused. Fetch-table correction
+was audited against1024 opcode/mode pairs and affected proofs rerun.
+Seven grouped public-library jobs,one full1491-job verification run and
+Windows Release pass. All425 source units pass strict Clang C11 with Wall,
+Wextra,Wpedantic andWerror. No source,entry,API orbinding duplicates.
+
+
 ## Field item selection controller - 2026-10-11
 
 Ten complete entry contracts, nine intended finite bindings. 84:8363 remains
@@ -157,7 +177,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1321 functions in `metadata/functions.toml`: 1321 verified, 0 draft, 0 identified, 0 disabled.
+1328 functions in `metadata/functions.toml`: 1328 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

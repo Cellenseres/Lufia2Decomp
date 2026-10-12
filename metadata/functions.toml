@@ -10711,3 +10711,59 @@ source = "src/field/field_item_selection_controller.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:D35D"
+name = "Lufia2WorldMapSetPlayerSong"
+source = "src/world/world_map_player.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A1C5"
+name = "Lufia2WorldMapActivateVehicle"
+source = "src/world/world_map_player.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A1EC"
+name = "Lufia2WorldMapRestorePlayerObject"
+source = "src/world/world_map_player.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:98C6"
+name = "Lufia2WorldMapMovePlayerNorth"
+source = "src/world/world_map_player.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:98CD"
+name = "Lufia2WorldMapMovePlayerWest"
+source = "src/world/world_map_player.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:98D4"
+name = "Lufia2WorldMapMovePlayerSouth"
+source = "src/world/world_map_player.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:98DB"
+name = "Lufia2WorldMapMovePlayerEast"
+source = "src/world/world_map_player.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

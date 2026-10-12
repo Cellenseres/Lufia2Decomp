@@ -5517,3 +5517,17 @@ name = "field_item_selection_mode"
 width = 1
 owner = "field"
 notes = "836A and863E preserve original selection-mode transitions."
+
+[[location]]
+address = "7E:11E3"
+name = "world_map_move_phase"
+width = 1
+owner = "world"
+notes = "Player-object restoration clears the movement phase."
+
+[[location]]
+address = "7E:11E5"
+name = "world_map_player_object"
+width = 1
+owner = "world"
+notes = "Player-object restoration selects the original player object index."
