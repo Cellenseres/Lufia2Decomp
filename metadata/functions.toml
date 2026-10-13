@@ -10903,3 +10903,67 @@ source = "src/actor/actor_action.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "8E:BE78"
+name = "Lufia2FieldFollowLayerScroll"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "8E:BF24"
+name = "Lufia2FieldRetainLayerScroll"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "8E:BF25"
+name = "Lufia2FieldParallaxLayerScroll"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "8E:BF70"
+name = "Lufia2FieldShiftScrollRight"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "8E:BF88"
+name = "Lufia2FieldReadScrollShiftCount"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "8E:BF9B"
+name = "Lufia2FieldScaleLayerScroll"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "8E:BFDE"
+name = "Lufia2FieldShiftScrollLeft"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"
+
+[[function]]
+address = "8E:BFEE"
+name = "Lufia2FieldWrapLayerScroll"
+source = "src/field/field_scroll.c"
+entry_mx = "M0X1"
+exit_mx = "M0X1"
+status = "verified"

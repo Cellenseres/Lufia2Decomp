@@ -1344,6 +1344,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:BCAD` | `Lufia2FieldChooseCollectedObjects` | verified | `src/field/field_object_rewards.c` |
 | `$8E:BD5E` | `Lufia2FieldFindAvailableChoice` | verified | `src/field/field_object_rewards.c` |
 | `$8E:BD77` | `Lufia2FieldScrollUpdate` | verified | `src/field/field_scroll.c` |
+| `$8E:BE78` | `Lufia2FieldFollowLayerScroll` | verified | `src/field/field_scroll.c` |
+| `$8E:BF24` | `Lufia2FieldRetainLayerScroll` | verified | `src/field/field_scroll.c` |
+| `$8E:BF25` | `Lufia2FieldParallaxLayerScroll` | verified | `src/field/field_scroll.c` |
+| `$8E:BF70` | `Lufia2FieldShiftScrollRight` | verified | `src/field/field_scroll.c` |
+| `$8E:BF88` | `Lufia2FieldReadScrollShiftCount` | verified | `src/field/field_scroll.c` |
+| `$8E:BF9B` | `Lufia2FieldScaleLayerScroll` | verified | `src/field/field_scroll.c` |
+| `$8E:BFDE` | `Lufia2FieldShiftScrollLeft` | verified | `src/field/field_scroll.c` |
+| `$8E:BFEE` | `Lufia2FieldWrapLayerScroll` | verified | `src/field/field_scroll.c` |
 | `$8E:C05F` | `Lufia2FieldTryObjectReward` | verified | `src/field/field_object_rewards.c` |
 | `$8E:C1C5` | `Lufia2FieldCountValue2B` | verified | `src/field/field_camera_services.c` |
 | `$8E:C338` | `Lufia2FieldSelectObjectCondition` | verified | `src/field/field_object_conditions.c` |

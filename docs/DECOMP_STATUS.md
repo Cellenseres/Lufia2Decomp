@@ -1,5 +1,38 @@
 # Decompilation status
 
+## Field scroll mode entries - 2026-10-13
+
+Eight complete entries share the existing field-scroll operations: camera
+following, retained scroll, parallax, scaling, wrapping and shift services.
+They preserve both literal child frames and all original operand-bus accesses.
+The existing two-argument scroll API and its M1 entry contract are unchanged.
+The original caller now reads its indirect mode table and repeats the original
+vertical-scroll RAM reads rather than caching them. CPU and WRAM behavior stay
+identical. Malformed return frames retain their exact continuation boundary.
+
+Private direct and production-core ABI matrices each cover 65,536 ROM states,
+218 non-return instruction/mode states, 64,639 original child returns and 96
+live-frame boundaries. Native DP-zero composition uses 65,152 callbacks with
+no interpreted native children. Each boundary path checks 512 child unwinds,
+1,536 changed-width returns and 512 decimal fences. The guards cover 24,576
+runtime and 43,008 semantic rejected entries with zero bus accesses. Fifteen
+effective ROM fault controls, an unchanged full positive control, 960 runtime
+redirect probes and eight executed C++ API calls pass. An ineffective low-bit
+ORA fault was excluded because the next shift discards that bit.
+
+The existing whole-root regression covers 8,192 states per direct/ABI path,
+6,295 returns and 1,897 boundaries, with CPU, WRAM and ordered bus equality.
+The production bridge selects 7,680 cases and preserves 512 X16 entry handoffs.
+Nine actual-library jobs and the full 1523-job verification run pass.
+All 426 source units pass strict Clang C11 with warnings as errors. A separate
+Windows Release validation links the existing pending PPU-host renderer module
+without editing its sources; the default desktop target still lacks that module
+and fails on its foreign host-cost flag. The validation executable is private,
+normal build settings are restored, and rendered-output acceptance is not
+claimed. Public ABI checks repeat the ROM matrices, guards, redirects and
+effective fault controls. No duplicate entry, binding or scroll operation.
+
+
 ## Actor coordinate entry contracts - 2026-10-12
 
 Nine complete original entries share the existing target-direction, facing
@@ -234,7 +267,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1345 functions in `metadata/functions.toml`: 1345 verified, 0 draft, 0 identified, 0 disabled.
+1353 functions in `metadata/functions.toml`: 1353 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

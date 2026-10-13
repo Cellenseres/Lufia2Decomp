@@ -1332,6 +1332,32 @@ Lufia2ExecutionResult Lufia2FieldUpdateScreenShake(
     const Lufia2Memory *memory,Lufia2CpuState *cpu,
     Lufia2PushedChildCall child,void *context);
 
+Lufia2ExecutionResult Lufia2FieldFollowLayerScroll(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldRetainLayerScroll(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldParallaxLayerScroll(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldShiftScrollRight(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldReadScrollShiftCount(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldScaleLayerScroll(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldShiftScrollLeft(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldWrapLayerScroll(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
