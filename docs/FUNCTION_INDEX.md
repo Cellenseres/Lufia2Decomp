@@ -1266,10 +1266,15 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:A28B` | `Lufia2WorldMapCenterTargetTiles` | verified | `src/world/world_view_services.c` |
 | `$86:A2AE` | `Lufia2WorldMapConsumeRegionPosition` | verified | `src/world/world_map_region.c` |
 | `$86:A2C6` | `Lufia2WorldMapReadSecondObjectTarget` | verified | `src/world/world_view_services.c` |
+| `$86:A2E7` | `Lufia2WorldMapRunPairedObjectInput` | verified | `src/world/world_scene.c` |
 | `$86:A338` | `Lufia2WorldMapAnimatePairedObjects` | verified | `src/world/world_frame_callers.c` |
 | `$86:A357` | `Lufia2WorldMapPositionAnimatedObject` | verified | `src/world/world_frame_callers.c` |
 | `$86:A376` | `Lufia2WorldMapConfigurePrimaryView` | verified | `src/world/world_view_services.c` |
 | `$86:A38C` | `Lufia2WorldMapConfigureSecondaryView` | verified | `src/world/world_view_services.c` |
+| `$86:A3A2` | `Lufia2WorldMapSelectSecondaryView` | verified | `src/world/world_scene.c` |
+| `$86:A3AB` | `Lufia2WorldMapRunScene05` | verified | `src/world/world_scene.c` |
+| `$86:A3E4` | `Lufia2WorldMapCallScene03` | verified | `src/world/world_scene.c` |
+| `$86:A3E8` | `Lufia2WorldMapRunTileScene` | verified | `src/world/world_scene.c` |
 | `$86:A417` | `Lufia2WorldStepOffsets` | verified | `src/world/world_scroll_step.c` |
 | `$86:A473` | `Lufia2WorldMapPolarQuadrant0` | verified | `src/world/world_map.c` |
 | `$86:A496` | `Lufia2WorldMapPolarQuadrant1` | verified | `src/world/world_map.c` |
@@ -1309,6 +1314,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:D35D` | `Lufia2WorldMapSetPlayerSong` | verified | `src/world/world_map_player.c` |
 | `$86:D37D` | `Lufia2WorldMapStartFadeOut` | verified | `src/world/world_motion_services.c` |
 | `$86:D381` | `Lufia2WorldMapStartFadeIn` | verified | `src/world/world_motion_services.c` |
+| `$86:D397` | `Lufia2WorldMapWaitFade` | verified | `src/world/world_scene.c` |
 | `$86:D3A5` | `Lufia2WorldMapBlankDisplay` | verified | `src/world/world_scene.c` |
 | `$86:D3AE` | `Lufia2WorldMapEnableDisplay` | verified | `src/world/world_view_services.c` |
 | `$86:E0B9` | `Lufia2WorldMapStartAnimation` | verified | `src/world/world_map_objects.c` |

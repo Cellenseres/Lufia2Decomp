@@ -1,5 +1,36 @@
 # Decompilation status
 
+## World fade, tile and input callers - 2026-10-13
+
+Six complete original-ROM callers reuse the existing scene context and child
+frames. Fade progress runs through the original NMI; waiting never becomes a
+successful timeout. Tile classification selects the existing vehicle scenes.
+Up/down/A/B input retains the original TRB behavior and both paired-object Y
+resets. Object19/20 coordinates derive from the original29-byte record layout.
+Original CPU flags, widths, memory accesses and all child boundaries remain.
+
+The independent fade/caller and tile/input parent proofs cover2560/1280 states
+per path, all31/53 canonical non-return states and all13/10 child sites.
+Boundary matrices retain104/80 unwinds,312/240 width changes and104/80 decimal
+fences. Runtime guards15360/7680 and semantic guards32768/16384 perform no
+accesses. All1560/1200 runtime redirects,15 effective faults and six C++ calls
+pass. The paired Y naming refinement produces identical optimized object bytes.
+
+Native compositions512/256 states execute27056/26272 native service returns
+and10152/6112 original NMI events per path. All10/15 native service kinds are
+reached, including nested scene03, both vehicle scenes and actual tile lookup.
+CPU/WRAM/MMIO/write order remain exact. Child RAM/ROM reads are outside that
+separate composition contract; all parent reads are independently compared.
+Eight long cases per group and path retain4096-iteration original continuations
+and32768 original NMI events. Other services remain explicit. Opcode lengths
+are independently audited; private buffer extensions preserve every assertion.
+No fully native frame-loop or hardware-timing acceptance claim is made.
+
+Twenty actual-library jobs, 15 faults, two full controls and six C++ API
+calls pass. All 426 source units pass strict portable Clang C11. The full
+1587-job verification and normal Windows Release pass. No duplicate entry,
+binding or scene implementation is introduced. No gameplay acceptance claim.
+
 ## World polar quadrants and vehicle scenes - 2026-10-13
 
 Six complete entries share the existing polar quadrant operation and scene
@@ -371,7 +402,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1366 functions in `metadata/functions.toml`: 1366 verified, 0 draft, 0 identified, 0 disabled.
+1372 functions in `metadata/functions.toml`: 1372 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

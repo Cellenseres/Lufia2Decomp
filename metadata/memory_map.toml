@@ -663,7 +663,7 @@ name = "field_streamed_row_vram"
 width = 2
 count = 4
 owner = "field"
-notes = "$80:F5DB queues the VRAM word address of a streamed row for the NMI upload at $80:A0E1; zero means nothing pending. Indexed by layer*2. In battle this area holds PPU window shadows:123E WOBJSEL,1241 WH2,1242 WH3. Effect opcode5F sets the second window limits and WOBJSEL."
+notes = "$80:F5DB queues the VRAM word address of a streamed row for the NMI upload at $80:A0E1; zero means nothing pending. Indexed by layer*2. In battle this area holds PPU window shadows:123E WOBJSEL,1241 WH2,1242 WH3. Effect opcode5F sets the second window limits and WOBJSEL. World mode reuses byte1242 as the paired-object phase: A2E7 selects zero/up1/downFF; A338 restores it after DEC/INC for object19/20 animations."
 
 [[location]]
 address = "7E:1246"

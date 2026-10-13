@@ -5,7 +5,6 @@
 
 enum {
     WORLD_ACTIVE_OBJECT = 0x11e7,
-    WORLD_PAIR_PHASE = 0x1242,
     WORLD_OBJECT_BYTES = 0x1d,
     WORLD_FIRST_PAIRED_OBJECT = WRAM_WORLD_MAP_OBJECT_TABLE + 19 * WORLD_OBJECT_BYTES,
     WORLD_SECOND_PAIRED_OBJECT = WRAM_WORLD_MAP_OBJECT_TABLE + 20 * WORLD_OBJECT_BYTES,
@@ -103,14 +102,14 @@ Lufia2ExecutionResult Lufia2WorldMapAnimatePairedObjects(
         return ExecutionHandoff(cpu, 0x86a338u);
     OpLdx(cpu, WORLD_FIRST_PAIRED_OBJECT);
     OpLoadA(cpu, 9u);
-    OpStepMem(memory, cpu, OpAbs(cpu, WORLD_PAIR_PHASE), -1);
+    OpStepMem(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_PAIR_PHASE), -1);
     if (!cpu->zero)
         OpLoadA(cpu, 8u);
     if (!RunWorldChild(memory, cpu, child, context, 0x86a344u, 0x86a357u))
         return WorldChildUnwound(0x86a344u);
     OpLdx(cpu, WORLD_SECOND_PAIRED_OBJECT);
     OpLoadA(cpu, 11u);
-    OpStepMem(memory, cpu, OpAbs(cpu, WORLD_PAIR_PHASE), 1);
+    OpStepMem(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_PAIR_PHASE), 1);
     if (!cpu->negative)
         OpLoadA(cpu, 10u);
     if (!RunWorldChild(memory, cpu, child, context, 0x86a353u, 0x86a357u))

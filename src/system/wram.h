@@ -921,6 +921,9 @@
 #define WRAM_MENU_SAVED_SELECTION_RECORDS_COUNT 144u
 /* memory-map:end */
 
+/* World mode reuses the streaming buffer. */
+#define WRAM_WORLD_MAP_PAIR_PHASE (WRAM_FIELD_STREAMED_ROW_VRAM + 4u)
+
 /* $0583 values. */
 #define BRIGHTNESS_FULL 0x0fu
 #define BRIGHTNESS_FORCED_BLANK 0x80u

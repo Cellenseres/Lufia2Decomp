@@ -1,5 +1,6 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "core/joypad.h"
 #include "lufia2/world_map.h"
 #include "system/wram.h"
 
@@ -711,4 +712,195 @@ Lufia2ExecutionResult Lufia2WorldMapRunVehicleScene07(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
     return RunVehicleScene(memory, cpu, child, context, 7u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapWaitFade(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu,
+                                               Lufia2PushedChildCall child,
+                                               void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x86d397u);
+    Lufia2ExecutionResult result;
+    for (unsigned frames = 0u; frames < SCENE_FRAME_BOUNDARY; ++frames) {
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
+        if (cpu->zero)
+            return ExecutionReturned(0x86d3a4u);
+        if (!SceneChild(memory, cpu, child, context, 0x86d39cu, 0x86973eu, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x86d39fu, 0x86974fu, &result))
+            return result;
+    }
+    return ExecutionHandoff(cpu, 0x86d397u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapSelectSecondaryView(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x86a3a2u);
+    Lufia2ExecutionResult result;
+    if (!SceneChild(memory, cpu, child, context, 0x86a3a2u, 0x86a38cu, &result))
+        return result;
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_TARGET_STATE));
+    return ExecutionReturned(0x86a3aau);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapRunScene05(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu,
+                                                 Lufia2PushedChildCall child,
+                                                 void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x86a3abu);
+    Lufia2ExecutionResult result;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_ACTIVE_OBJECT));
+    if (!SceneChild(memory, cpu, child, context, 0x86a3aeu, 0x86e709u, &result))
+        return result;
+    OpLda(memory, cpu, SceneObjectField(cpu, OBJECT_POSE));
+    OpOraValue(cpu, 1u);
+    OpSta(memory, cpu, SceneObjectField(cpu, OBJECT_POSE));
+    OpLoadA(cpu, 5u);
+    if (!SceneChild(memory, cpu, child, context, 0x86a3b9u, 0x86e0b9u, &result))
+        return result;
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, SceneObjectField(cpu, OBJECT_CONTROL));
+    for (unsigned frames = 0u; frames < SCENE_FRAME_BOUNDARY; ++frames) {
+        if (!SceneChild(memory, cpu, child, context, 0x86a3c0u, 0x86e11fu, &result))
+            return result;
+        OpLda(memory, cpu, OpAbs(cpu, WORLD_ACTIVE_OBJECT));
+        if (!SceneChild(memory, cpu, child, context, 0x86a3c6u, 0x86e709u, &result))
+            return result;
+        OpLda(memory, cpu, SceneObjectField(cpu, OBJECT_ANIMATION));
+        OpCmpValue(cpu, 1u);
+        if (cpu->zero) {
+            OpStz(memory, cpu, OpAbs(cpu, WORLD_TARGET_STATE));
+            return ExecutionReturned(0x86a3e3u);
+        }
+        if (!SceneChild(memory, cpu, child, context, 0x86a3cfu, 0x86a7ceu, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x86a3d2u, 0x86a791u, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x86a3d5u, 0x86e1b9u, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x86a3d8u, 0x86973eu, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x86a3dbu, 0x86974fu, &result))
+            return result;
+    }
+    return ExecutionHandoff(cpu, 0x86a3c0u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapCallScene03(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu,
+                                                  Lufia2PushedChildCall child,
+                                                  void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x86a3e4u);
+    Lufia2ExecutionResult result;
+    if (!SceneChild(memory, cpu, child, context, 0x86a3e4u, 0x869f55u, &result))
+        return result;
+    return ExecutionReturned(0x86a3e7u);
+}
+
+enum {
+    TILE_SCENE_VEHICLE_CLASS = 0x30u,
+    TILE_SCENE_DP_X = 0x58u,
+    TILE_SCENE_DP_Y = 0x5au,
+    PAIRED_INPUT_FIRST_Y = WRAM_WORLD_MAP_OBJECT_TABLE + 19u * 0x1du + 5u,
+    PAIRED_INPUT_SECOND_Y = WRAM_WORLD_MAP_OBJECT_TABLE + 20u * 0x1du + 5u
+};
+
+static void ReadSceneTileCoordinates(const Lufia2Memory *memory,
+                                     Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_POSITION_X));
+    for (unsigned shift = 0u; shift < 4u; ++shift)
+        OpLsrA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, TILE_SCENE_DP_X));
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_POSITION_Y));
+    for (unsigned shift = 0u; shift < 4u; ++shift)
+        OpLsrA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, TILE_SCENE_DP_Y));
+    OpSepWidths(cpu, 0x20u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapRunTileScene(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x86a3e8u);
+    Lufia2ExecutionResult result;
+    if (!SceneChild(memory, cpu, child, context, 0x86a3e8u, 0x86a376u, &result))
+        return result;
+    ReadSceneTileCoordinates(memory, cpu);
+    if (!SceneChild(memory, cpu, child, context, 0x86a401u, 0x869a71u, &result))
+        return result;
+    OpCmpValue(cpu, TILE_SCENE_VEHICLE_CLASS);
+    if (cpu->zero) {
+        if (!SceneChild(memory, cpu, child, context, 0x86a40cu, 0x86a0c6u, &result))
+            return result;
+        return ExecutionReturned(0x86a40fu);
+    }
+    if (!SceneChild(memory, cpu, child, context, 0x86a408u, 0x86a0b9u, &result))
+        return result;
+    return ExecutionReturned(0x86a40bu);
+}
+
+static void ReadPairedInputDirection(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, DP_BUTTONS_HELD + JOYPAD_HIGH_BYTE));
+    OpBitValue(cpu, JOY_HIGH_UP);
+    if (!cpu->zero) {
+        OpLoadA(cpu, 1u);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_PAIR_PHASE));
+        OpLda(memory, cpu, OpDp(cpu, DP_BUTTONS_HELD + JOYPAD_HIGH_BYTE));
+    }
+    OpBitValue(cpu, JOY_HIGH_DOWN);
+    if (!cpu->zero) {
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_PAIR_PHASE));
+    }
+}
+
+static uint8_t AcceptPairedInput(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_PAIR_PHASE));
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpDp(cpu, DP_BUTTONS_HELD + JOYPAD_LOW_BYTE));
+        OpBitValue(cpu, JOY_LOW_A);
+        if (!cpu->zero) {
+            OpTestBits(memory, cpu, OpDp(cpu, DP_BUTTONS_PRESSED + JOYPAD_LOW_BYTE), 0u);
+            if (!cpu->zero)
+                return 1u;
+        }
+    }
+    OpLda(memory, cpu, OpDp(cpu, DP_BUTTONS_HELD + JOYPAD_HIGH_BYTE));
+    OpBitValue(cpu, JOY_HIGH_B);
+    if (cpu->zero)
+        return 0u;
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_PAIR_PHASE));
+    return 1u;
+}
+
+Lufia2ExecutionResult Lufia2WorldMapRunPairedObjectInput(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x86a2e7u);
+    Lufia2ExecutionResult result;
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_PAIR_PHASE));
+    if (!SceneChild(memory, cpu, child, context, 0x86a2eau, 0x86a338u, &result))
+        return result;
+    OpLoadA(cpu, JOY_LOW_A);
+    OpTestBits(memory, cpu, OpDp(cpu, DP_BUTTONS_PRESSED + JOYPAD_LOW_BYTE), 0u);
+    for (unsigned frame = 0u; frame < SCENE_FRAME_BOUNDARY; ++frame) {
+        ReadPairedInputDirection(memory, cpu);
+        if (!SceneChild(memory, cpu, child, context, 0x86a307u, 0x86a338u, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x86a30au, 0x86e11fu, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x86a30du, 0x86e1b9u, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x86a310u, 0x86973eu, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x86a313u, 0x86974fu, &result))
+            return result;
+        if (AcceptPairedInput(memory, cpu)) {
+            OpLdy(cpu, 0xffffu);
+            OpWrite16(memory, OpAbs(cpu, PAIRED_INPUT_FIRST_Y), cpu->y);
+            OpWrite16(memory, OpAbs(cpu, PAIRED_INPUT_SECOND_Y), cpu->y);
+            return ExecutionReturned(0x86a337u);
+        }
+    }
+    return ExecutionHandoff(cpu, 0x86a2f1u);
 }
