@@ -75,7 +75,8 @@ def load_functions() -> list[dict]:
         if entry.get("status") not in STATUSES:
             errors.append(f"{where}: status must be one of {STATUSES}")
         for key in ("entry_mx", "exit_mx"):
-            if not MODE.match(entry.get(key, "")):
+            if not MODE.match(entry.get(key, "")) and not (
+                    key == "exit_mx" and entry.get(key) == "dynamic"):
                 errors.append(f"{where}: {key} must look like M1X0")
         if not (ROOT / entry.get("source", "")).is_file():
             errors.append(f"{where}: source {entry.get('source')!r} not found")

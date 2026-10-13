@@ -904,3 +904,121 @@ Lufia2ExecutionResult Lufia2WorldMapRunPairedObjectInput(
     }
     return ExecutionHandoff(cpu, 0x86a2f1u);
 }
+
+enum {
+    WORLD_REGION_DP_X = 0x58u,
+    WORLD_REGION_DP_Y = 0x5au,
+    WORLD_REGION_DP_CLASS = 0x00u,
+    WORLD_REGION_DP_BANK = 0x10u,
+    REGION_ID = 0x00u,
+    REGION_PARAMETERS = 0x05u,
+    REGION_DESTINATION = 0x06u,
+    REGION_MAP_ID = 0x08u,
+    REGION_CLASS_PREFIX = 0xf0u,
+    REGION_CLASS_MASK = 0x0fu,
+    ROM_WORLD_REGION_CLASSES = 0x869ed9u
+};
+
+static uint32_t RegionField(const Lufia2CpuState *cpu, uint16_t field) {
+    return OpAbsX(cpu, field);
+}
+
+static uint8_t FindCurrentWorldRegion(const Lufia2Memory *memory,
+                                      Lufia2CpuState *cpu,
+                                      Lufia2PushedChildCall child, void *context,
+                                      Lufia2ExecutionResult *result) {
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_X)));
+    OpWriteX(memory, cpu, OpDp(cpu, WORLD_REGION_DP_X), cpu->y);
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_Y)));
+    OpWriteX(memory, cpu, OpDp(cpu, WORLD_REGION_DP_Y), cpu->y);
+    return SceneChild(memory, cpu, child, context, 0x869e65u, 0x869eddu, result);
+}
+
+static uint8_t ReadWorldRegionClass(const Lufia2Memory *memory,
+                                   Lufia2CpuState *cpu,
+                                   Lufia2PushedChildCall child, void *context,
+                                   Lufia2ExecutionResult *result) {
+    OpPushX(memory, cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_ACTIVE_OBJECT));
+    if (!SceneChild(memory, cpu, child, context, 0x869e81u, 0x86e709u, result))
+        return 0u;
+    OpLoadA(cpu, 0u);
+    ExchangeAccumulatorBytes(cpu);
+    OpLda(memory, cpu, SceneObjectField(cpu, OBJECT_POSE));
+    OpTax(cpu);
+    OpLda(memory, cpu, LongIndexedAddress(ROM_WORLD_REGION_CLASSES, cpu->x));
+    OpSta(memory, cpu, OpDp(cpu, WORLD_REGION_DP_CLASS));
+    OpPullX(memory, cpu);
+    return 1u;
+}
+
+static void CopyRegionDestination(const Lufia2Memory *memory,
+                                  Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, RegionField(cpu, REGION_MAP_ID));
+    OpSta(memory, cpu, WRAM_FIELD_MAP_ID);
+    OpLda(memory, cpu, RegionField(cpu, REGION_PARAMETERS));
+    OpCmpValue(cpu, REGION_CLASS_PREFIX);
+    if (cpu->carry) {
+        OpAndValue(cpu, REGION_CLASS_MASK);
+        OpOra(memory, cpu, OpDp(cpu, WORLD_REGION_DP_CLASS));
+    }
+    OpLdy(cpu, OpReadX(memory, cpu, RegionField(cpu, REGION_DESTINATION)));
+    PullDataBank(memory, cpu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_PARAMETERS));
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_X), cpu->y);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_X));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_LAST_REGION_TILE));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_Y));
+    OpSta(memory, cpu, OpAbs(cpu, (WRAM_WORLD_MAP_LAST_REGION_TILE + 1u)));
+}
+
+Lufia2ExecutionResult Lufia2WorldMapApplyRegionRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x869e4fu);
+    Lufia2ExecutionResult result;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_TARGET_PENDING));
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpAbs(cpu, WORLD_TARGET_STATE));
+        OpCmpValue(cpu, 2u);
+        if (cpu->zero)
+            return ExecutionReturned(0x869e70u);
+    }
+    if (!FindCurrentWorldRegion(memory, cpu, child, context, &result))
+        return result;
+    if (cpu->carry) {
+        OpLoadA(cpu, 0u);
+        OpSta(memory, cpu, WRAM_WORLD_MAP_CURRENT_REGION_ID);
+        return ExecutionReturned(0x869e70u);
+    }
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_MOVE_PHASE));
+    if (!ReadWorldRegionClass(memory, cpu, child, context, &result))
+        return result;
+    PushDataBank(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, WORLD_REGION_DP_BANK));
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    OpLda(memory, cpu, WRAM_WORLD_MAP_CURRENT_REGION_ID);
+    if (cpu->negative) {
+        OpLda(memory, cpu, RegionField(cpu, REGION_ID));
+        OpSta(memory, cpu, WRAM_WORLD_MAP_CURRENT_REGION_ID);
+        PullDataBank(memory, cpu);
+        return ExecutionReturned(0x869e79u);
+    }
+    OpCmp(memory, cpu, RegionField(cpu, REGION_ID));
+    if (cpu->zero) {
+        PullDataBank(memory, cpu);
+        return ExecutionReturned(0x869e79u);
+    }
+    CopyRegionDestination(memory, cpu);
+    if (!SceneChild(memory, cpu, child, context, 0x869ec9u, 0x86d37du, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869eccu, 0x86d397u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869ecfu, 0x86d32du, &result))
+        return result;
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_REGION_SAVED_STACK)));
+    cpu->stack = cpu->x;
+    PullDataBank(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x869ed8u);
+}

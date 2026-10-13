@@ -5622,3 +5622,26 @@ name = "field_fixed_color_step_timer"
 width = 1
 owner = "field"
 notes = "Original screen-effect state shared by field and palette operations."
+
+[[location]]
+address = "7E:09E6"
+name = "world_map_last_region_tile"
+width = 1
+count = 2
+stride = 1
+owner = "world"
+notes = "Previous region tile X/Y bytes copied from11F2/11F4 by86:9E4F before the saved-stack transition."
+
+[[location]]
+address = "7E:09E8"
+name = "world_map_region_saved_stack"
+width = 2
+owner = "world"
+notes = "Saved world-loop stack restored by86:9E4F before PLB/PLP/RTL; this exits the active region caller."
+
+[[location]]
+address = "7E:09ED"
+name = "world_map_current_region_id"
+width = 1
+owner = "world"
+notes = "Current region ID in86:9E4F; negative selects initial recording, carry from search selects zero, changed ID starts a destination transition."

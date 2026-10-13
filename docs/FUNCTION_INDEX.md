@@ -1252,6 +1252,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9AB8` | `Lufia2WorldMapCheckStoppedArrival` | verified | `src/world/world_motion_services.c` |
 | `$86:9BCA` | `Lufia2WorldMapApplyEntryPosition` | verified | `src/world/world_map_region.c` |
 | `$86:9E3B` | `Lufia2WorldMapRandomScaledWord` | verified | `src/world/world_random_word.c` |
+| `$86:9E4F` | `Lufia2WorldMapApplyRegionRecord` | verified | `src/world/world_scene.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:9F13` | `Lufia2WorldMapFindRegionPosition` | verified | `src/world/world_map_region.c` |
 | `$86:9F35` | `Lufia2WorldMapResolveResourcePointer` | verified | `src/world/world_view_services.c` |

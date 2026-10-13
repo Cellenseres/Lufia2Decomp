@@ -14,6 +14,13 @@ Only functions whose metadata status is `verified` are eligible for native
 selection by a consumer. Consumers independently bind an address to a bridge;
 verification without a binding is informational and never activates code.
 
+Function metadata keeps entry M/X widths fixed. An `exit_mx` value of
+`dynamic` means the original function restores runtime status instead of
+guaranteeing one exit width. Its documented return boundaries define the
+contract; consumers must preserve those live widths. For `$86:9E4F`, normal
+RTS paths keep M1X0, while its nonlocal RTL restores the saved status byte.
+This annotation must never supply a guessed fixed callee exit to a decoder.
+
 Partial semantic front-ends may stop at named continuation boundaries when a
 whole routine is not reconstructed yet. Function status lives only in
 `metadata/functions.toml`; a partial front-end that is not yet a whole

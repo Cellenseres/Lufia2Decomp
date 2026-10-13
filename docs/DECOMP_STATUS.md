@@ -1,3 +1,24 @@
+# World region transition caller — 2026-10-13
+
+`$86:9E4F` now has a complete original caller contract. It preserves the
+region lookup, pose classification, destination copies, fade children and
+saved-stack PLB/PLP/RTL exit. Existing region search and scene helpers are
+reused; normal RTS paths and all restored status widths remain distinct.
+Metadata records a dynamic exit width rather than inventing a fixed mode.
+
+Private proof: 4096 parent states, all57 canonical states/five child sites;
+40 child unwinds,120 changed-width returns,40 decimal fences;3840 runtime
+and8192 semantic guards;600 redirects; eight original-ROM faults and two
+final bridge faults.256 actual interpreter-owner pairs cover every savedP
+byte. The exact production ancestor resolver covers eight host-ancestry
+shapes. Both controlled-search and ROM-region compositions use existing
+native services and original NMI. Child operand reads are outside composition
+traces; independent parent-read comparisons remain exact. No gameplay claim.
+Eleven actual-library jobs, ten effective faults, a full positive control,
+one C++ API and strict426 C11 pass. The complete1598-job verification and
+normal Windows Release pass. Both metadata readers accept dynamic exits
+without relaxing fixed entry modes. No duplicate entry or implementation.
+
 # Decompilation status
 
 ## World fade, tile and input callers - 2026-10-13
@@ -402,7 +423,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1372 functions in `metadata/functions.toml`: 1372 verified, 0 draft, 0 identified, 0 disabled.
+1373 functions in `metadata/functions.toml`: 1373 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
