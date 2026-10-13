@@ -1236,6 +1236,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:92A1` | `Lufia2WorldMapResetScene` | verified | `src/world/world_scene.c` |
 | `$86:9470` | `Lufia2WorldMapLoadMotionRecords` | verified | `src/world/world_motion_services.c` |
 | `$86:94D4` | `Lufia2SceneTrackStep` | verified | `src/field/field_scene_tracks.c` |
+| `$86:96BC` | `Lufia2WorldMapHandleSceneInput` | verified | `src/world/world_scene.c` |
 | `$86:973E` | `Lufia2WorldMapDisableDisplay` | verified | `src/world/world_motion_services.c` |
 | `$86:98C6` | `Lufia2WorldMapMovePlayerNorth` | verified | `src/world/world_map_player.c` |
 | `$86:98CD` | `Lufia2WorldMapMovePlayerWest` | verified | `src/world/world_map_player.c` |
@@ -1249,10 +1250,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9A71` | `Lufia2WorldMapReadTileClass` | verified | `src/world/world_frame_callers.c` |
 | `$86:9AB1` | `Lufia2WorldMapCheckMovingArrival` | verified | `src/world/world_motion_services.c` |
 | `$86:9AB8` | `Lufia2WorldMapCheckStoppedArrival` | verified | `src/world/world_motion_services.c` |
+| `$86:9BCA` | `Lufia2WorldMapApplyEntryPosition` | verified | `src/world/world_map_region.c` |
 | `$86:9E3B` | `Lufia2WorldMapRandomScaledWord` | verified | `src/world/world_random_word.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
 | `$86:9F13` | `Lufia2WorldMapFindRegionPosition` | verified | `src/world/world_map_region.c` |
 | `$86:9F35` | `Lufia2WorldMapResolveResourcePointer` | verified | `src/world/world_view_services.c` |
+| `$86:9F55` | `Lufia2WorldMapRunScene03` | verified | `src/world/world_scene.c` |
+| `$86:9F5C` | `Lufia2WorldMapRunScene06` | verified | `src/world/world_scene.c` |
 | `$86:A03B` | `Lufia2WorldMapStepPaletteColors` | verified | `src/world/world_palette_step.c` |
 | `$86:A0A2` | `Lufia2WorldMapQueuePaletteTransfer` | verified | `src/world/world_palette_step.c` |
 | `$86:A1C5` | `Lufia2WorldMapActivateVehicle` | verified | `src/world/world_map_player.c` |

@@ -1,5 +1,42 @@
 # Decompilation status
 
+## World-map entry and scene callers - 2026-10-13
+
+Four complete entries apply an entry position, run scene animations 03/06 and
+handle scene input. They reuse the existing region and scene contexts. The two
+scene entries share one body. Original coordinate branches, view-word copies,
+palette segments, input edges, child frames and open waits remain literal.
+No timing optimization or new source unit is introduced.
+
+Entry-position direct and production ABI proofs cover 4096 states each, all 72
+non-return states and seven child sites. They execute 5648 original children;
+native composition uses 7536 callbacks without interpreted native children.
+Each boundary path covers 56 unwinds, 168 width changes and 56 decimal fences.
+The 64 malformed-list states retain their exact 4096-record continuation.
+Guards cover 3840 runtime and 8192 semantic rejected states without bus accesses.
+All 840 redirects, six effective faults and two C++ API calls pass. Corrected
+complete opcode-length tables independently repeat all original private proofs.
+
+The scene direct and production ABI proofs cover 12288 states each, all 233
+non-return states and 44 child sites, with ordered parent operand accesses.
+Each path executes 21054 original NMI/RTI events; other services are controlled
+contracts. Boundary proofs cover 352 unwinds, 1056 width changes and 352 decimal
+fences each. Guards cover 11520 runtime and 24576 semantic rejected entries
+without bus accesses. All 5280 redirects, seven faults and six C++ calls pass.
+
+Scene composition covers 3072 states per path, 263304 actual native service
+returns and 78992 original NMI/RTI events. All nine native services are reached.
+Existing child contracts compare CPU, WRAM and MMIO/write order; their RAM/ROM
+operand reads are outside this composition trace contract. The independent
+parent proof compares every parent operand access. Other services remain
+controlled, so a fully native frame loop is not claimed. Twenty cases per path
+retain exact 4096-iteration scene continuations without successful timeouts.
+
+Nineteen actual-library jobs, 13 faults, two full controls and eight C++ API
+calls pass. All 426 source units pass strict portable Clang C11. The full
+1554-job verification and normal Windows Release pass. No duplicate entry,
+binding or scene implementation is introduced. No gameplay acceptance claim.
+
 ## Battle status message callers - 2026-10-13
 
 Three original entries display queued status updates, display a status message,
@@ -298,7 +335,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1356 functions in `metadata/functions.toml`: 1356 verified, 0 draft, 0 identified, 0 disabled.
+1360 functions in `metadata/functions.toml`: 1360 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
