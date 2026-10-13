@@ -11023,3 +11023,51 @@ source = "src/world/world_scene.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:A473"
+name = "Lufia2WorldMapPolarQuadrant0"
+source = "src/world/world_map.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A496"
+name = "Lufia2WorldMapPolarQuadrant1"
+source = "src/world/world_map.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A4AD"
+name = "Lufia2WorldMapPolarQuadrant2"
+source = "src/world/world_map.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A4BC"
+name = "Lufia2WorldMapPolarQuadrant3"
+source = "src/world/world_map.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A0B9"
+name = "Lufia2WorldMapRunVehicleScene03"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:A0C6"
+name = "Lufia2WorldMapRunVehicleScene07"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -1,5 +1,41 @@
 # Decompilation status
 
+## World polar quadrants and vehicle scenes - 2026-10-13
+
+Six complete entries share the existing polar quadrant operation and scene
+helpers. The old sprite-chain polar caller now uses that same operation; no
+duplicate internal switch is retained. Scene palette copying takes its original
+source parameter, retaining B400 for the previous scenes and B200 for the new
+vehicle scenes. No original timing, flags, widths, frames or waits are changed.
+
+Polar direct proof covers 16384 original-ROM states and all 46 non-return
+states with CPU, WRAM, MMIO and ordered operand-bus equality. The production ABI
+selects 8192 states and retains 8192 existing decimal-policy handoffs. Runtime
+and semantic guards each cover 12288 rejected states without bus accesses.
+
+Vehicle direct and production-ABI matrices each cover 1024 states, all 205
+non-return states, all 54 child sites and 40310 original NMI/RTI events in the
+initial matrix. A separate symmetric controlled child-RAM change covers the
+additional parent control-byte branch; it is not a claim about original child
+behavior. Boundary proofs each cover 432 unwinds, 1296 width changes and 432
+decimal fences. Guards cover 7680 runtime and 16384 semantic rejected entries
+with zero accesses. All 6480 actual runtime redirects pass.
+
+Vehicle composition covers 256 states per path, 91172 actual native service
+returns and 36434 original NMI/RTI events. Existing child contracts compare CPU,
+WRAM and MMIO/write order; child RAM/ROM operand reads are outside that separate
+composition contract. Independent matrices compare every parent operand read.
+Twenty-four cases per path retain exact 4096-iteration live continuations.
+Thirteen effective faults and six C++ API calls pass. Private long-trace buffer
+extensions preserve every assertion. Other services remain explicit; no fully
+native frame loop or original hardware-timing acceptance is claimed.
+
+Thirteen actual-library jobs, four shared-caller regressions, 13 faults, two
+full controls and six C++ API
+calls pass. All 426 source units pass strict portable Clang C11. The full
+1567-job verification and normal Windows Release pass. No duplicate entry,
+binding or quadrant implementation is introduced. No gameplay acceptance claim.
+
 ## World-map entry and scene callers - 2026-10-13
 
 Four complete entries apply an entry position, run scene animations 03/06 and
@@ -335,7 +371,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1360 functions in `metadata/functions.toml`: 1360 verified, 0 draft, 0 identified, 0 disabled.
+1366 functions in `metadata/functions.toml`: 1366 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

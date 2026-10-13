@@ -941,6 +941,70 @@ static void WorldStoreNegated(
     StoreADirect8(memory, cpu, (uint8_t)(to + 2u));
 }
 
+static Lufia2ExecutionResult ApplyPolarQuadrant(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu,
+                                               uint8_t quadrant) {
+    static const uint32_t returns[] = {0x86a495u, 0x86a4acu, 0x86a4bbu, 0x86a4d2u};
+    switch (quadrant) {
+    case 0u:
+        WorldStoreNegated(memory, cpu, POLAR_DP_FIRST_PART, POLAR_DP_OFFSET_X);
+        SetAccumulatorWidth(cpu, 0);
+        WorldStoreNegated(memory, cpu, POLAR_DP_ACCUMULATED, POLAR_DP_OFFSET_Y);
+        break;
+    case 1u:
+        LoadADirect16(memory, cpu, POLAR_DP_FIRST_PART);
+        StoreADirect16(memory, cpu, POLAR_DP_OFFSET_Y);
+        WorldStoreNegated(memory, cpu, POLAR_DP_ACCUMULATED, POLAR_DP_OFFSET_X);
+        Write8(memory, DirectAddress(cpu, POLAR_DP_OFFSET_Y + 2u), 0u);
+        break;
+    case 2u:
+        LoadADirect16(memory, cpu, POLAR_DP_FIRST_PART);
+        StoreADirect16(memory, cpu, POLAR_DP_OFFSET_X);
+        LoadADirect16(memory, cpu, POLAR_DP_ACCUMULATED);
+        StoreADirect16(memory, cpu, POLAR_DP_OFFSET_Y);
+        SetAccumulatorWidth(cpu, 1);
+        Write8(memory, DirectAddress(cpu, POLAR_DP_OFFSET_X + 2u), 0u);
+        Write8(memory, DirectAddress(cpu, POLAR_DP_OFFSET_Y + 2u), 0u);
+        break;
+    default:
+        LoadADirect16(memory, cpu, POLAR_DP_ACCUMULATED);
+        StoreADirect16(memory, cpu, POLAR_DP_OFFSET_X);
+        WorldStoreNegated(memory, cpu, POLAR_DP_FIRST_PART, POLAR_DP_OFFSET_Y);
+        Write8(memory, DirectAddress(cpu, POLAR_DP_OFFSET_X + 2u), 0u);
+        break;
+    }
+    return ExecutionReturned(returns[quadrant]);
+}
+
+static Lufia2ExecutionResult EnterPolarQuadrant(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu,
+                                               uint8_t quadrant) {
+    static const uint32_t entries[] = {0x86a473u, 0x86a496u, 0x86a4adu, 0x86a4bcu};
+    if (cpu->program_bank != 0x86u || cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entries[quadrant]);
+    return ApplyPolarQuadrant(memory, cpu, quadrant);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapPolarQuadrant0(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return EnterPolarQuadrant(memory, cpu, 0u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapPolarQuadrant1(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return EnterPolarQuadrant(memory, cpu, 1u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapPolarQuadrant2(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return EnterPolarQuadrant(memory, cpu, 2u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapPolarQuadrant3(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return EnterPolarQuadrant(memory, cpu, 3u);
+}
+
 /* $86:A417: polar step. */
 static void WorldPolarOffset(
     const Lufia2Memory *memory,
@@ -991,34 +1055,7 @@ static void WorldPolarOffset(
     And16(cpu, 0x0006u);
     TransferAToX(cpu);
     SimulateJsrFrame(memory, cpu, 0xa460u);                    /* JSR ($A46B,x) */
-    switch (cpu->x) {
-    case 0:                                                    /* A473 */
-        WorldStoreNegated(memory, cpu, POLAR_DP_FIRST_PART, POLAR_DP_OFFSET_X);
-        SetAccumulatorWidth(cpu, 0);
-        WorldStoreNegated(memory, cpu, POLAR_DP_ACCUMULATED, POLAR_DP_OFFSET_Y);
-        break;
-    case 2:                                                    /* A496 */
-        LoadADirect16(memory, cpu, POLAR_DP_FIRST_PART);
-        StoreADirect16(memory, cpu, POLAR_DP_OFFSET_Y);
-        WorldStoreNegated(memory, cpu, POLAR_DP_ACCUMULATED, POLAR_DP_OFFSET_X);
-        Write8(memory, DirectAddress(cpu, 0x0du), 0x00u);
-        break;
-    case 4:                                                    /* A4AD */
-        LoadADirect16(memory, cpu, POLAR_DP_FIRST_PART);
-        StoreADirect16(memory, cpu, POLAR_DP_OFFSET_X);
-        LoadADirect16(memory, cpu, POLAR_DP_ACCUMULATED);
-        StoreADirect16(memory, cpu, POLAR_DP_OFFSET_Y);
-        SetAccumulatorWidth(cpu, 1);
-        Write8(memory, DirectAddress(cpu, 0x0au), 0x00u);
-        Write8(memory, DirectAddress(cpu, 0x0du), 0x00u);
-        break;
-    default:                                                   /* A4BC */
-        LoadADirect16(memory, cpu, POLAR_DP_ACCUMULATED);
-        StoreADirect16(memory, cpu, POLAR_DP_OFFSET_X);
-        WorldStoreNegated(memory, cpu, POLAR_DP_FIRST_PART, POLAR_DP_OFFSET_Y);
-        Write8(memory, DirectAddress(cpu, 0x0au), 0x00u);
-        break;
-    }
+    (void)ApplyPolarQuadrant(memory, cpu, (uint8_t)(cpu->x >> 1));
     SimulateRtsFrame(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }

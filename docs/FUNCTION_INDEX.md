@@ -1259,6 +1259,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9F5C` | `Lufia2WorldMapRunScene06` | verified | `src/world/world_scene.c` |
 | `$86:A03B` | `Lufia2WorldMapStepPaletteColors` | verified | `src/world/world_palette_step.c` |
 | `$86:A0A2` | `Lufia2WorldMapQueuePaletteTransfer` | verified | `src/world/world_palette_step.c` |
+| `$86:A0B9` | `Lufia2WorldMapRunVehicleScene03` | verified | `src/world/world_scene.c` |
+| `$86:A0C6` | `Lufia2WorldMapRunVehicleScene07` | verified | `src/world/world_scene.c` |
 | `$86:A1C5` | `Lufia2WorldMapActivateVehicle` | verified | `src/world/world_map_player.c` |
 | `$86:A1EC` | `Lufia2WorldMapRestorePlayerObject` | verified | `src/world/world_map_player.c` |
 | `$86:A28B` | `Lufia2WorldMapCenterTargetTiles` | verified | `src/world/world_view_services.c` |
@@ -1269,6 +1271,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:A376` | `Lufia2WorldMapConfigurePrimaryView` | verified | `src/world/world_view_services.c` |
 | `$86:A38C` | `Lufia2WorldMapConfigureSecondaryView` | verified | `src/world/world_view_services.c` |
 | `$86:A417` | `Lufia2WorldStepOffsets` | verified | `src/world/world_scroll_step.c` |
+| `$86:A473` | `Lufia2WorldMapPolarQuadrant0` | verified | `src/world/world_map.c` |
+| `$86:A496` | `Lufia2WorldMapPolarQuadrant1` | verified | `src/world/world_map.c` |
+| `$86:A4AD` | `Lufia2WorldMapPolarQuadrant2` | verified | `src/world/world_map.c` |
+| `$86:A4BC` | `Lufia2WorldMapPolarQuadrant3` | verified | `src/world/world_map.c` |
 | `$86:A4FA` | `Lufia2WorldMapResolveAngleScale` | verified | `src/world/world_math_resources.c` |
 | `$86:A52F` | `Lufia2WorldMapMultiply16` | verified | `src/world/world_math_resources.c` |
 | `$86:A583` | `Lufia2WorldProduct16By8` | verified | `src/world/world_scroll_step.c` |

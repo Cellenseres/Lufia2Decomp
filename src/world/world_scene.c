@@ -323,7 +323,8 @@ static void SaveSceneView(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
 }
 
-static void RestoreScenePalette(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void RestoreScenePalette(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint16_t source) {
     Push8(memory, cpu, PackStatus(cpu));
     PushDataBank(memory, cpu);
     OpLoadA(cpu, 0xa6u);
@@ -333,7 +334,7 @@ static void RestoreScenePalette(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     OpSepWidths(cpu, 0x10u);
     OpLdx(cpu, 0x20u);
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, 0xb400u));
+        OpLda(memory, cpu, OpAbsX(cpu, source));
         OpSta(memory, cpu, OpAbsX(cpu, 0x0320u));
         OpInx(cpu);
         OpInx(cpu);
@@ -430,7 +431,7 @@ static Lufia2ExecutionResult RunWorldScene(const Lufia2Memory *memory,
             !SceneChild(memory, cpu, child, context, 0x86a007u, 0x86974fu, &result))
             return result;
     }
-    RestoreScenePalette(memory, cpu);
+    RestoreScenePalette(memory, cpu, 0xb400u);
     if (!SceneChild(memory, cpu, child, context, 0x86a024u, 0x86a0a2u, &result))
         return result;
     OpStz(memory, cpu, OpAbs(cpu, WORLD_SCENE_ACTIVE));
@@ -538,4 +539,176 @@ Lufia2ExecutionResult Lufia2WorldMapHandleSceneInput(const Lufia2Memory *memory,
     if (!SceneChild(memory, cpu, child, context, site, target, &result))
         return result;
     return ExecutionReturned(0x86973bu);
+}
+
+enum {
+    VEHICLE_SCENE_DEPTH = 0x11fcu,
+    VEHICLE_SCENE_TARGET_DEPTH = 0x0100u,
+    VEHICLE_SCENE_DEPTH_INCREASE = 0x0010u,
+    VEHICLE_SCENE_DEPTH_DECREASE = 0x0020u,
+    VEHICLE_SCENE_PALETTE = 0xb200u
+};
+
+static uint8_t StepVehicleSceneDepth(const Lufia2Memory *memory,
+                                    Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbs(cpu, VEHICLE_SCENE_DEPTH));
+    OpCmpValue(cpu, VEHICLE_SCENE_TARGET_DEPTH);
+    if (cpu->zero) {
+        OpSepWidths(cpu, 0x20u);
+        return 1u;
+    }
+    if (cpu->carry) {
+        OpSbcValue(cpu, VEHICLE_SCENE_DEPTH_DECREASE);
+        OpCmpValue(cpu, VEHICLE_SCENE_TARGET_DEPTH);
+        if (!cpu->carry)
+            OpLoadA(cpu, VEHICLE_SCENE_TARGET_DEPTH);
+    } else {
+        OpAdcValue(cpu, VEHICLE_SCENE_DEPTH_INCREASE);
+        OpCmpValue(cpu, VEHICLE_SCENE_TARGET_DEPTH);
+        if (cpu->carry)
+            OpLoadA(cpu, VEHICLE_SCENE_TARGET_DEPTH);
+    }
+    OpSta(memory, cpu, OpAbs(cpu, VEHICLE_SCENE_DEPTH));
+    OpSepWidths(cpu, 0x20u);
+    return 0u;
+}
+
+static uint8_t VehicleSceneFrame(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 Lufia2PushedChildCall child, void *context,
+                                 uint8_t palette,
+                                 Lufia2ExecutionResult *result) {
+    if (!SceneChild(memory, cpu, child, context,
+                    palette ? 0x86a14fu : 0x86a0ffu, 0x86e11fu, result) ||
+        !SceneChild(memory, cpu, child, context,
+                    palette ? 0x86a152u : 0x86a102u, 0x86a7ceu, result) ||
+        !SceneChild(memory, cpu, child, context,
+                    palette ? 0x86a155u : 0x86a105u, 0x86a791u, result) ||
+        !SceneChild(memory, cpu, child, context,
+                    palette ? 0x86a158u : 0x86a108u, 0x86e1b9u, result))
+        return 0u;
+    if (palette) {
+        OpLdy(cpu, VEHICLE_SCENE_PALETTE);
+        OpLoadA(cpu, 0xa6u);
+        if (!SceneChild(memory, cpu, child, context, 0x86a160u, 0x86a03bu, result))
+            return 0u;
+    }
+    return SceneChild(memory, cpu, child, context,
+                       palette ? 0x86a163u : 0x86a10bu, 0x86973eu, result) &&
+           SceneChild(memory, cpu, child, context,
+                       palette ? 0x86a166u : 0x86a10eu, 0x86974fu, result);
+}
+
+static Lufia2ExecutionResult RunVehicleScene(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu,
+                                           Lufia2PushedChildCall child,
+                                           void *context, uint8_t animation) {
+    const uint32_t entry = animation == 3u ? 0x86a0b9u : 0x86a0c6u;
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, entry);
+    Lufia2ExecutionResult result;
+    OpLdx(cpu, 0x0200u);
+    OpWriteX(memory, cpu, OpAbs(cpu, 0x1204u), cpu->x);
+    if (animation == 7u)
+        OpStz(memory, cpu, OpAbs(cpu, WORLD_TARGET_STATE));
+    OpLoadA(cpu, animation);
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_SCENE_ANIMATION));
+    if (animation == 7u)
+        OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_SCENE_CONTROL));
+    unsigned frames = 0u;
+    for (;;) {
+        if (frames++ == SCENE_FRAME_BOUNDARY)
+            return ExecutionHandoff(cpu, 0x86a0d9u);
+        if (StepVehicleSceneDepth(memory, cpu))
+            break;
+        if (!VehicleSceneFrame(memory, cpu, child, context, 0u, &result))
+            return result;
+    }
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_ACTIVE_OBJECT));
+    if (!SceneChild(memory, cpu, child, context, 0x86a118u, 0x86e709u, &result))
+        return result;
+    OpLda(memory, cpu, SceneObjectField(cpu, OBJECT_POSE));
+    OpOraValue(cpu, 1u);
+    OpSta(memory, cpu, SceneObjectField(cpu, OBJECT_POSE));
+    OpLda(memory, cpu, SceneObjectField(cpu, OBJECT_ANIMATION));
+    if (!SceneChild(memory, cpu, child, context, 0x86a123u, 0x86e0b9u, &result))
+        return result;
+    OpLdx(cpu, 0xdc6du);
+    OpLdy(cpu, 0u);
+    if (!SceneChild(memory, cpu, child, context, 0x86a12cu, 0x869470u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x86a12fu, 0x8694d4u, &result))
+        return result;
+    OpLoadA(cpu, 0x17u);
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_SCENE_PHASE));
+    frames = 0u;
+    for (;;) {
+        if (frames++ == SCENE_FRAME_BOUNDARY)
+            return ExecutionHandoff(cpu, 0x86a137u);
+        if (!SceneChild(memory, cpu, child, context, 0x86a137u, 0x8694d4u, &result))
+            return result;
+        if (cpu->carry)
+            break;
+        OpStepMem(memory, cpu, OpAbs(cpu, WORLD_SCENE_PHASE), -1);
+        OpLoadA(cpu, 0u);
+        ExchangeAccumulatorBytes(cpu);
+        OpLda(memory, cpu, OpAbs(cpu, WORLD_SCENE_PHASE));
+        OpTax(cpu);
+        OpLda(memory, cpu, OpAbsX(cpu, 0xdc3bu));
+        cpu->carry = 0u;
+        OpAdcValue(cpu, 0x70u);
+        OpSta(memory, cpu, OpAbs(cpu, WORLD_PLANE_OFFSET));
+        if (!VehicleSceneFrame(memory, cpu, child, context, 1u, &result))
+            return result;
+    }
+    RestoreScenePalette(memory, cpu, VEHICLE_SCENE_PALETTE);
+    if (!SceneChild(memory, cpu, child, context, 0x86a183u, 0x86a0a2u, &result))
+        return result;
+    OpStz(memory, cpu, OpAbs(cpu, WORLD_MAP_MODE));
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_ACTIVE_OBJECT));
+    if (!SceneChild(memory, cpu, child, context, 0x86a18cu, 0x86e709u, &result))
+        return result;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_SCENE_ANIMATION));
+    if (!SceneChild(memory, cpu, child, context, 0x86a192u, 0x86e0b9u, &result))
+        return result;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_SCENE_CONTROL));
+    OpSta(memory, cpu, SceneObjectField(cpu, OBJECT_CONTROL));
+    OpLdy(cpu, 0xffffu);
+    OpWriteX(memory, cpu, OpAbs(cpu, WORLD_PLANE_ORIGIN), cpu->y);
+    frames = 0u;
+    for (;;) {
+        if (frames++ == SCENE_FRAME_BOUNDARY)
+            return ExecutionHandoff(cpu, 0x86a1a0u);
+        if (!SceneChild(memory, cpu, child, context, 0x86a1a0u, 0x86e11fu, &result))
+            return result;
+        OpLda(memory, cpu, OpAbs(cpu, WORLD_ACTIVE_OBJECT));
+        if (!SceneChild(memory, cpu, child, context, 0x86a1a6u, 0x86e709u, &result))
+            return result;
+        OpLda(memory, cpu, SceneObjectField(cpu, OBJECT_ANIMATION));
+        OpCmpValue(cpu, 7u);
+        if (!cpu->zero)
+            break;
+        if (!SceneChild(memory, cpu, child, context, 0x86a1afu, 0x86e1b9u, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x86a1b2u, 0x86973eu, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x86a1b5u, 0x86974fu, &result))
+            return result;
+    }
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_SCENE_CONTROL));
+    OpCmpValue(cpu, 3u);
+    if (cpu->zero &&
+        !SceneChild(memory, cpu, child, context, 0x86a1c1u, 0x86a1ecu, &result))
+        return result;
+    return ExecutionReturned(0x86a1c4u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapRunVehicleScene03(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    return RunVehicleScene(memory, cpu, child, context, 3u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapRunVehicleScene07(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    return RunVehicleScene(memory, cpu, child, context, 7u);
 }
