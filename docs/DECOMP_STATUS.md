@@ -1,3 +1,26 @@
+# World scene construction and player input — 2026-10-13
+
+`$86:CC3C`, `$86:9766` and `$86:9758` have complete caller contracts.
+Scene construction reuses the original object slots and ROM scene table.
+Input retains alignment, alternate view, direction table, motion updates,
+vehicle animation, fade and saved-stack resource transitions. Shared scene
+helpers are reused; no internal block is duplicated or separately bound.
+The perpetual `$86:924C` owner remains an explicit interpreter continuation.
+The 4096-frame native boundary resumes the original loop without skipping waits.
+
+Private comparisons cover 4096 scene states and 32768 input/caller states
+per path, all 74/183 canonical parent states and 16/33 child sites. Width,
+decimal, unwind, guard, redirect and long-continuation checks pass. Original
+NMI runs in waits and compositions. Nested caller/root owner tests use the
+actual interpreter with an explicit synthetic successor marker; they do
+not claim whole-loop gameplay acceptance. CPU, WRAM, MMIO and ordered parent
+accesses match. Child operand reads are excluded only in composition tests.
+
+All28 actual-library jobs,18 effective ROM faults,two full positive controls,
+three C++ API calls and strict426 C11 pass. The complete1626-job differential
+verification and default Windows Release pass. Original timing owners remain
+unbound; metadata, bindings and function definitions contain no duplicates.
+
 # World region transition caller — 2026-10-13
 
 `$86:9E4F` now has a complete original caller contract. It preserves the
@@ -423,7 +446,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1373 functions in `metadata/functions.toml`: 1373 verified, 0 draft, 0 identified, 0 disabled.
+1376 functions in `metadata/functions.toml`: 1376 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

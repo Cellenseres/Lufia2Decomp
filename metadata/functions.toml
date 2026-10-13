@@ -11127,3 +11127,27 @@ source = "src/world/world_scene.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "86:CC3C"
+name = "Lufia2WorldMapBuildScene"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9766"
+name = "Lufia2WorldMapReadPlayerInput"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9758"
+name = "Lufia2WorldMapMaybeReadPlayerInput"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

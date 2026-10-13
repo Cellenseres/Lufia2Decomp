@@ -1238,6 +1238,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:94D4` | `Lufia2SceneTrackStep` | verified | `src/field/field_scene_tracks.c` |
 | `$86:96BC` | `Lufia2WorldMapHandleSceneInput` | verified | `src/world/world_scene.c` |
 | `$86:973E` | `Lufia2WorldMapDisableDisplay` | verified | `src/world/world_motion_services.c` |
+| `$86:9758` | `Lufia2WorldMapMaybeReadPlayerInput` | verified | `src/world/world_scene.c` |
+| `$86:9766` | `Lufia2WorldMapReadPlayerInput` | verified | `src/world/world_scene.c` |
 | `$86:98C6` | `Lufia2WorldMapMovePlayerNorth` | verified | `src/world/world_map_player.c` |
 | `$86:98CD` | `Lufia2WorldMapMovePlayerWest` | verified | `src/world/world_map_player.c` |
 | `$86:98D4` | `Lufia2WorldMapMovePlayerSouth` | verified | `src/world/world_map_player.c` |
@@ -1304,6 +1306,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:AE4D` | `Lufia2WorldMapCopyFlaggedBlocks` | verified | `src/world/world_flagged_blocks.c` |
 | `$86:CBBF` | `Lufia2WorldMapClearDisplayPalette` | verified | `src/world/world_frame_callers.c` |
 | `$86:CBF0` | `Lufia2WorldMapBuildSkylineHdma` | verified | `src/world/world_math_resources.c` |
+| `$86:CC3C` | `Lufia2WorldMapBuildScene` | verified | `src/world/world_scene.c` |
 | `$86:CCFC` | `Lufia2WorldMapLoadResourceBlocks` | verified | `src/world/world_map_load.c` |
 | `$86:CD41` | `Lufia2WorldMapInstallGraphics` | verified | `src/world/world_scene.c` |
 | `$86:CD67` | `Lufia2WorldMapUploadInitialTilemap` | verified | `src/world/world_perspective.c` |
