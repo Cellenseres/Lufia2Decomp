@@ -1252,6 +1252,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9A71` | `Lufia2WorldMapReadTileClass` | verified | `src/world/world_frame_callers.c` |
 | `$86:9AB1` | `Lufia2WorldMapCheckMovingArrival` | verified | `src/world/world_motion_services.c` |
 | `$86:9AB8` | `Lufia2WorldMapCheckStoppedArrival` | verified | `src/world/world_motion_services.c` |
+| `$86:9ADB` | `Lufia2WorldMapMaybeOpenMenu` | verified | `src/world/world_scene.c` |
+| `$86:9B30` | `Lufia2WorldMapApplyMenuReturnTransition` | verified | `src/world/world_scene.c` |
+| `$86:9B91` | `Lufia2WorldMapAnimateMenuReturn` | verified | `src/world/world_scene.c` |
+| `$86:9BBE` | `Lufia2WorldMapClearPlayerScenePosition` | verified | `src/world/world_scene.c` |
 | `$86:9BCA` | `Lufia2WorldMapApplyEntryPosition` | verified | `src/world/world_map_region.c` |
 | `$86:9C71` | `Lufia2WorldMapCheckEncounter` | verified | `src/world/world_scene.c` |
 | `$86:9DD6` | `Lufia2WorldMapAnimateEncounterTransition` | verified | `src/world/world_scene.c` |

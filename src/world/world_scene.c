@@ -1919,3 +1919,170 @@ Lufia2ExecutionResult Lufia2WorldMapCheckEncounter(
     }
     return RunWorldEncounter(memory, cpu, child, context);
 }
+
+enum {
+    WORLD_MENU_RETURN_KIND = WRAM_UNK_7E09C9,
+    WORLD_PLAYER_ANIMATION_PHASE = 0x11u,
+    WORLD_MENU_RETURN_ANIMATION = 0x1du,
+    WORLD_MENU_RESUME_ANIMATION = 0x1eu
+};
+
+Lufia2ExecutionResult Lufia2WorldMapAnimateMenuReturn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x869b91u);
+    Lufia2ExecutionResult result;
+    PushAccumulator8(memory, cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_ACTIVE_OBJECT));
+    if (!SceneChild(memory, cpu, child, context, 0x869b95u, 0x86e709u, &result))
+        return result;
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WORLD_POSITION_Y)));
+    OpWriteX(memory, cpu, SceneObjectField(cpu, 5u), cpu->y);
+    OpStz(memory, cpu, SceneObjectField(cpu, OBJECT_POSE));
+    OpLoadA(cpu, Pull8(memory, cpu));
+    if (!SceneChild(memory, cpu, child, context, 0x869ba0u, 0x86e0b9u, &result))
+        return result;
+    for (unsigned frame = 0u; frame < SCENE_FRAME_BOUNDARY; ++frame) {
+        if (!SceneChild(memory, cpu, child, context, 0x869ba3u, 0x86e11fu, &result))
+            return result;
+        OpLda(memory, cpu, OpAbs(cpu, WORLD_ACTIVE_OBJECT));
+        if (!SceneChild(memory, cpu, child, context, 0x869ba9u, 0x86e709u, &result))
+            return result;
+        OpLda(memory, cpu, SceneObjectField(cpu, WORLD_PLAYER_ANIMATION_PHASE));
+        OpCmpValue(cpu, 5u);
+        if (cpu->carry)
+            return ExecutionReturned(0x869bbdu);
+        if (!SceneChild(memory, cpu, child, context, 0x869bb2u, 0x86e1b9u, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x869bb5u, 0x86973eu, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x869bb8u, 0x86974fu, &result))
+            return result;
+    }
+    return ExecutionHandoff(cpu, 0x869ba3u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapClearPlayerScenePosition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x869bbeu);
+    Lufia2ExecutionResult result;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_ACTIVE_OBJECT));
+    if (!SceneChild(memory, cpu, child, context, 0x869bc1u, 0x86e709u, &result))
+        return result;
+    OpLdy(cpu, 0xffffu);
+    OpWriteX(memory, cpu, SceneObjectField(cpu, 5u), cpu->y);
+    return ExecutionReturned(0x869bc9u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapApplyMenuReturnTransition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x869b30u);
+    Lufia2ExecutionResult result;
+    if (!SceneChild(memory, cpu, child, context, 0x869b30u, 0x86d34au, &result))
+        return result;
+    OpLoadA(cpu, 12u);
+    if (!SceneChild(memory, cpu, child, context, 0x869b35u, 0x869748u, &result))
+        return result;
+    OpLoadA(cpu, 0x81u);
+    if (!SceneChild(memory, cpu, child, context, 0x869b3au, 0x86d378u, &result))
+        return result;
+    OpLoadA(cpu, WORLD_MENU_RETURN_ANIMATION);
+    if (!SceneChild(memory, cpu, child, context, 0x869b3fu, 0x869b91u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b42u, 0x869bbeu, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b45u, 0x86e1b9u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b48u, 0x86973eu, &result))
+        return result;
+    OpLoadA(cpu, 30u);
+    if (!SceneChild(memory, cpu, child, context, 0x869b4du, 0x869748u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b50u, 0x86d37du, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b53u, 0x86d397u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b56u, 0x869bcau, &result))
+        return result;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_RETURN_POSE));
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_PLAYER_POSE));
+    OpStepMem(memory, cpu, OpAbs(cpu, WORLD_RESOURCE_DIRTY), -1);
+    if (!SceneChild(memory, cpu, child, context, 0x869b62u, 0x86cc3cu, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b65u, 0x869bbeu, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b68u, 0x86e1b9u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b6bu, 0x86973eu, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b6eu, 0x86d397u, &result))
+        return result;
+    OpLoadA(cpu, 0x74u);
+    if (!SceneChild(memory, cpu, child, context, 0x869b73u, 0x86d378u, &result))
+        return result;
+    OpLoadA(cpu, WORLD_MENU_RESUME_ANIMATION);
+    if (!SceneChild(memory, cpu, child, context, 0x869b78u, 0x869b91u, &result))
+        return result;
+    OpLdx(cpu, 0x1469u);
+    OpLoadA(cpu, 2u);
+    OpSta(memory, cpu, SceneObjectField(cpu, OBJECT_POSE));
+    OpLoadA(cpu, 0u);
+    if (!SceneChild(memory, cpu, child, context, 0x869b84u, 0x86e0b9u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b87u, 0x86e1b9u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b8au, 0x86973eu, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b8du, 0x86974fu, &result))
+        return result;
+    return ExecutionReturned(0x869b90u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapMaybeOpenMenu(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x869adbu);
+    OpLda(memory, cpu, OpDp(cpu, INPUT_FIRST));
+    OpBitValue(cpu, 0x40u);
+    if (cpu->zero)
+        return ExecutionReturned(0x869b2fu);
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_TARGET_PENDING));
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpAbs(cpu, WORLD_TARGET_STATE));
+        if (!cpu->zero)
+            return ExecutionReturned(0x869b2fu);
+    }
+    Lufia2ExecutionResult result;
+    if (!SceneChild(memory, cpu, child, context, 0x869aebu, 0x86d37du, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869aeeu, 0x86d397u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869af1u, 0x86d32du, &result))
+        return result;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_PLAYER_POSE_FIELD));
+    PushAccumulator8(memory, cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_X));
+    PushAccumulator8(memory, cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_Y));
+    PushAccumulator8(memory, cpu);
+    Push8(memory, cpu, PackStatus(cpu));
+    PushDataBank(memory, cpu);
+    if (!CallChildWithFrame(memory, cpu, child, context,
+            0x869b02u, 0x829a4eu, 3u, 0x86u))
+        return WorldSceneUnwound(0x869b02u);
+    PullDataBank(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    if (!SceneChild(memory, cpu, child, context, 0x869b08u, 0x86cdf5u, &result))
+        return result;
+    OpLoadA(cpu, Pull8(memory, cpu));
+    if (!SceneChild(memory, cpu, child, context, 0x869b0cu, 0x8691feu, &result))
+        return result;
+    OpWriteX(memory, cpu, OpAbs(cpu, WORLD_POSITION_Y), cpu->y);
+    OpLoadA(cpu, Pull8(memory, cpu));
+    if (!SceneChild(memory, cpu, child, context, 0x869b13u, 0x8691feu, &result))
+        return result;
+    OpWriteX(memory, cpu, OpAbs(cpu, WORLD_POSITION_X), cpu->y);
+    OpLoadA(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_PLAYER_POSE_FIELD));
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_MENU_RETURN_KIND));
+    OpCmpValue(cpu, 1u);
+    if (cpu->zero) {
+        if (!SceneChild(memory, cpu, child, context,
+                0x869b24u, 0x869b30u, &result))
+            return result;
+        return ExecutionReturned(0x869b2fu);
+    }
+    if (!SceneChild(memory, cpu, child, context, 0x869b29u, 0x869bcau, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869b2cu, 0x86d34au, &result))
+        return result;
+    return ExecutionReturned(0x869b2fu);
+}

@@ -1,3 +1,30 @@
+# World menu callers — 2026-10-13
+
+`$86:9B91`, `$86:9BBE`, `$86:9B30` and `$86:9ADB` preserve player
+animation, scene positioning, menu return transitions and menu entry.
+The menu's JSL return restores saved DB/P before continuing with fixed
+register widths. The special return path skips the original restoration
+calls at `$86:9B29` and `$86:9B2C`. No separate wait or sound-wrapper binding
+is introduced. Text, rendering and recomp enhancements are unaffected.
+
+16,384 states per path cover all 94 canonical nonreturn states, the actual
+branch at `$86:9B27` and 40 child sites. Each path passes 320 child unwinds,
+936 changed-width returns and 312 decimal fences. 4,800 redirect checks and
+eight 4,096-frame continuations with 32,768 original NMIs pass. Unsupported
+states perform no bus access: 15,360 runtime and 32,768 semantic cases.
+
+512 compositions per path execute 2,459 native services across six kinds,
+8,010 nested calls and 6,059 original NMIs. The counted wait stays literal.
+Other child services remain controlled. CPU, WRAM, MMIO and ordered parent
+accesses match; child operand reads are excluded only in compositions.
+All 14 original-ROM mutation checks, the complete positive control, four
+C++ API calls and nine opcode-length audits pass.
+
+All ten actual-library jobs, 14 original-ROM mutation checks, the full
+positive control, four C++ API calls and strict C11 across 426 source units
+pass. The full 1,656-job verification and default Windows Release pass.
+Entry, binding and implementation duplicate checks pass.
+
 # World encounter transitions — 2026-10-13
 
 `$86:D34A`, `$86:9DD6` and `$86:9C71` now have complete caller contracts.
@@ -478,7 +505,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1379 functions in `metadata/functions.toml`: 1379 verified, 0 draft, 0 identified, 0 disabled.
+1383 functions in `metadata/functions.toml`: 1383 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
