@@ -5645,3 +5645,17 @@ name = "world_map_current_region_id"
 width = 1
 owner = "world"
 notes = "Current region ID in86:9E4F; negative selects initial recording, carry from search selects zero, changed ID starts a destination transition."
+
+[[location]]
+address = "7E:1710"
+name = "unk_7E1710"
+width = 1
+owner = "world"
+notes = "World loop combines this byte with $7E:1711 before updating the plane. Cleared by scene reset; precise meaning remains unknown."
+
+[[location]]
+address = "7E:1711"
+name = "unk_7E1711"
+width = 1
+owner = "world"
+notes = "World loop combines this byte with $7E:1710 before updating the plane. Cleared by scene reset; precise meaning remains unknown."

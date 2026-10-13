@@ -2086,3 +2086,137 @@ Lufia2ExecutionResult Lufia2WorldMapMaybeOpenMenu(
         return result;
     return ExecutionReturned(0x869b2fu);
 }
+
+enum {
+    WORLD_CELL_OFFSET_MASK = 15u,
+    WORLD_CELL_CENTER_OFFSET = 8u
+};
+
+static Lufia2ExecutionResult RunWorldMapFrames(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    Lufia2ExecutionResult result;
+    for (unsigned frame = 0u; frame < SCENE_FRAME_BOUNDARY; ++frame) {
+        OpLda(memory, cpu, OpAbs(cpu, WORLD_MOVEMENT_ENABLED));
+        if (!cpu->zero && !SceneChild(memory, cpu, child, context,
+                0x869261u, 0x8696bcu, &result))
+            return result;
+        OpLda(memory, cpu, OpAbs(cpu, WORLD_POSITION_X));
+        OpAndValue(cpu, WORLD_CELL_OFFSET_MASK);
+        OpCmpValue(cpu, WORLD_CELL_CENTER_OFFSET);
+        if (cpu->zero) {
+            OpLda(memory, cpu, OpAbs(cpu, WORLD_POSITION_Y));
+            OpAndValue(cpu, WORLD_CELL_OFFSET_MASK);
+            OpCmpValue(cpu, WORLD_CELL_CENTER_OFFSET);
+            if (cpu->zero &&
+                (!SceneChild(memory, cpu, child, context,
+                     0x869276u, 0x869e4fu, &result) ||
+                 !SceneChild(memory, cpu, child, context,
+                     0x869279u, 0x869c71u, &result) ||
+                 !SceneChild(memory, cpu, child, context,
+                     0x86927cu, 0x869adbu, &result)))
+                return result;
+        }
+        if (!SceneChild(memory, cpu, child, context,
+                0x86927fu, 0x869758u, &result) ||
+            !SceneChild(memory, cpu, child, context,
+                0x869282u, 0x86e11fu, &result) ||
+            !SceneChild(memory, cpu, child, context,
+                0x869285u, 0x8699bfu, &result))
+            return result;
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E1710));
+        OpOra(memory, cpu, OpAbs(cpu, WRAM_UNK_7E1711));
+        if (cpu->zero && !SceneChild(memory, cpu, child, context,
+                0x869290u, 0x86a7ceu, &result))
+            return result;
+        if (!SceneChild(memory, cpu, child, context,
+                0x869293u, 0x86a791u, &result) ||
+            !SceneChild(memory, cpu, child, context,
+                0x869296u, 0x86e1b9u, &result) ||
+            !SceneChild(memory, cpu, child, context,
+                0x869299u, 0x86973eu, &result) ||
+            !SceneChild(memory, cpu, child, context,
+                0x86929cu, 0x86974fu, &result))
+            return result;
+    }
+    return ExecutionHandoff(cpu, 0x86925cu);
+}
+
+static Lufia2ExecutionResult PrepareWorldMapFrames(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    LoadX16(cpu, cpu->stack);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_REGION_SAVED_STACK), cpu->x);
+    Lufia2ExecutionResult result;
+    if (!SceneChild(memory, cpu, child, context,
+            0x869250u, 0x86ccfcu, &result))
+        return result;
+    OpStz(memory, cpu, OpAbs(cpu, WORLD_RESOURCE_DIRTY));
+    if (!SceneChild(memory, cpu, child, context,
+            0x869256u, 0x86cc3cu, &result) ||
+        !SceneChild(memory, cpu, child, context,
+            0x869259u, 0x86d397u, &result))
+        return result;
+    return RunWorldMapFrames(memory, cpu, child, context);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapRunSession(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!WorldSceneEntry(cpu) || cpu->direct_page || !child)
+        return ExecutionHandoff(cpu, 0x86919eu);
+    Push8(memory, cpu, PackStatus(cpu));
+    PushDataBank(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpRepWidths(cpu, 0x10u);
+    OpLoadA(cpu, 0x86u);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    OpStz(memory, cpu, OpAbs(cpu, WORLD_ENCOUNTER_DISABLED));
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_TARGET_STATE));
+    if (cpu->negative)
+        OpStz(memory, cpu, OpAbs(cpu, WORLD_TARGET_PENDING));
+    OpDecA(cpu);
+    if (cpu->zero)
+        OpStepMem(memory, cpu, OpAbs(cpu, WORLD_ENCOUNTER_DISABLED), 1);
+    Lufia2ExecutionResult result;
+    if (!SceneChild(memory, cpu, child, context,
+            0x8691b9u, 0x86cdf5u, &result))
+        return result;
+    OpLoadA(cpu, 0x88u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_WINDOW_MODE));
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_CURRENT_REGION_ID));
+    OpLoadA(cpu, 2u);
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_PLAYER_POSE_FIELD));
+    if (!SceneChild(memory, cpu, child, context,
+            0x8691cbu, 0x869bcau, &result))
+        return result;
+    if (!cpu->carry) {
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_X));
+        if (!SceneChild(memory, cpu, child, context,
+                0x8691d3u, 0x8691feu, &result))
+            return result;
+        OpWriteX(memory, cpu, OpAbs(cpu, WORLD_POSITION_X), cpu->y);
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_Y));
+        if (!SceneChild(memory, cpu, child, context,
+                0x8691dcu, 0x8691feu, &result))
+            return result;
+        OpWriteX(memory, cpu, OpAbs(cpu, WORLD_POSITION_Y), cpu->y);
+        OpLdx(cpu, WRAM_WORLD_MAP_OBJECT_TABLE);
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_PARAMETERS));
+        OpStz(memory, cpu, SceneObjectField(cpu, OBJECT_POSE));
+        OpCmpValue(cpu, 0x40u);
+        if (!cpu->zero) {
+            OpStepMem(memory, cpu, SceneObjectField(cpu, OBJECT_POSE), 1);
+            OpCmpValue(cpu, 0x20u);
+            if (!cpu->zero) {
+                OpStepMem(memory, cpu, SceneObjectField(cpu, OBJECT_POSE), 1);
+                OpCmpValue(cpu, 0u);
+                if (!cpu->zero)
+                    OpStepMem(memory, cpu, SceneObjectField(cpu, OBJECT_POSE), 1);
+            }
+        }
+    }
+    return PrepareWorldMapFrames(memory, cpu, child, context);
+}

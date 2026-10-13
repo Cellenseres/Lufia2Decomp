@@ -11207,3 +11207,11 @@ source = "src/world/world_scene.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:919E"
+name = "Lufia2WorldMapRunSession"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

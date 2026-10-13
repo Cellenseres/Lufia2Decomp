@@ -1,3 +1,37 @@
+# World session owner — 2026-10-14
+
+`$86:919E` now reconstructs initialization and the complete world-map frame
+loop. Its incoming JSL at `$83:B21C` is documented in the verified field
+caller. `$86:924C` and `$86:925C` remain internal continuations. The native
+caller preserves its saved P/DB, stored stack, original waits, region return,
+resource restart and encounter stack-reset JML. No additional wait binding
+is introduced. The two plane-gating bytes retain neutral catalog names.
+
+4,096 states per direct and runtime-ABI path cover all 74 canonical states
+and 19 child sites. Each passes 152 child unwinds, 456 changed-width returns
+and 152 decimal fences. 3,456 runtime and 7,168 semantic guard cases perform
+no bus access. All 2,280 redirect probes pass. Eight 4,096-frame continuations
+per path preserve 32,768 original NMIs and the exact `$86:925C` handoff.
+
+512 region compositions per path run the actual region function through its
+nonlocal RTL to `$83:B220`, preserving the incoming JSL and saved bytes.
+512 nested input compositions per path preserve the `$86:924C` resource
+restart. Other leaf services remain controlled; ordered parent accesses,
+CPU, WRAM and MMIO match. Child operand reads are excluded in compositions.
+
+The actual interpreter and current ancestor resolver pass 768 owner pairs
+across region return, input restart and cross-bank encounter exit. These use
+verified child bridges, controlled services and explicit synthetic successor
+markers. They establish ownership, not timing or gameplay acceptance.
+All 15 original-ROM mutation checks, the effective incoming-stack bridge
+mutation, positive controls, executed C++ call and strict C11 pass. Naming
+cleanup preserves complete object contents apart from build timestamps.
+
+All 15 actual-library jobs, 15 original-ROM mutation checks, the incoming-
+stack bridge mutation, two positive controls, the C++ API call and strict
+C11 across 426 source units pass. The complete 1,671-job verification and
+default Windows Release pass. Duplicate entry and binding checks pass.
+
 # World menu callers — 2026-10-13
 
 `$86:9B91`, `$86:9BBE`, `$86:9B30` and `$86:9ADB` preserve player
@@ -505,7 +539,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1383 functions in `metadata/functions.toml`: 1383 verified, 0 draft, 0 identified, 0 disabled.
+1384 functions in `metadata/functions.toml`: 1384 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

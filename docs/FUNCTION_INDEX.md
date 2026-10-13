@@ -1232,6 +1232,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:910C` | `Lufia2MenuLoadPalette4` | verified | `src/menu/menu_image_load.c` |
 | `$86:911F` | `Lufia2MenuLoadSlotPalettes` | verified | `src/menu/menu_image_load.c` |
 | `$86:916C` | `Lufia2MenuLoadSelectionPalettes` | verified | `src/menu/menu_selection_palettes.c` |
+| `$86:919E` | `Lufia2WorldMapRunSession` | verified | `src/world/world_scene.c` |
 | `$86:91FE` | `Lufia2WorldMapCellCenter` | verified | `src/world/world_cell_center.c` |
 | `$86:92A1` | `Lufia2WorldMapResetScene` | verified | `src/world/world_scene.c` |
 | `$86:9470` | `Lufia2WorldMapLoadMotionRecords` | verified | `src/world/world_motion_services.c` |
