@@ -11151,3 +11151,27 @@ source = "src/world/world_scene.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:D34A"
+name = "Lufia2WorldMapRestoreEncounterScene"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9DD6"
+name = "Lufia2WorldMapAnimateEncounterTransition"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9C71"
+name = "Lufia2WorldMapCheckEncounter"
+source = "src/world/world_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -1,3 +1,35 @@
+# World encounter transitions — 2026-10-13
+
+`$86:D34A`, `$86:9DD6` and `$86:9C71` now have complete caller contracts.
+They preserve scene restoration, camera/fade animation, original random
+eligibility and weighted ROM selections, battle calls and saved positions.
+The three normal encounter RTS exits stay distinct from the stack-reset
+JML to `$83:ACEF`. The specific bridge preserves the cross-bank state before
+handing that tail to its original interpreter owner. Shared scene helpers
+are reused; no duplicate routines or timing/poll bindings are introduced.
+
+Private comparisons cover 8,192 caller and 32,768 root states per path,
+all 191 canonical nonreturn states and 25 child sites. Width, decimal,
+unwind, unsupported-state and 3,000 redirect checks pass. Eight 4,096-frame
+continuations per path execute 32,776 original NMIs. Invalid RNG outputs
+exercise 26 selection boundaries after 4,096 records; these are not normal
+RNG acceptance states. Original overflow, zero-weight and lookahead behavior
+is retained. The 256-pair interpreter-owner test uses a synthetic successor
+at `$83:ACEF`; it does not establish whole-field-start or gameplay acceptance.
+
+512 caller compositions per path execute 25,344 native services across eight
+kinds, 3,418 nested calls and 6,400 original NMIs. Fades finish through the
+original NMI. The 1,024 root compositions execute 123 RNG and cell-center
+services plus 99 random/multiply children. CPU, WRAM, MMIO and ordered parent
+accesses match. Child operand reads are excluded only from composition traces.
+All 23 original-ROM mutation checks and two bridge mutation checks pass.
+
+All 20 actual-library jobs, 23 original-ROM mutation checks, two bridge
+mutation checks, two positive controls, three C++ API calls and strict C11
+across 426 source units pass. The complete 1,646-job verification and default
+Windows Release pass. Entry, binding and implementation duplicate checks
+pass; original timing owners remain unbound.
+
 # World scene construction and player input — 2026-10-13
 
 `$86:CC3C`, `$86:9766` and `$86:9758` have complete caller contracts.
@@ -446,7 +478,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1376 functions in `metadata/functions.toml`: 1376 verified, 0 draft, 0 identified, 0 disabled.
+1379 functions in `metadata/functions.toml`: 1379 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

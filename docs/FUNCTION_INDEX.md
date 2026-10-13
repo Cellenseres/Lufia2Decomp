@@ -1253,6 +1253,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9AB1` | `Lufia2WorldMapCheckMovingArrival` | verified | `src/world/world_motion_services.c` |
 | `$86:9AB8` | `Lufia2WorldMapCheckStoppedArrival` | verified | `src/world/world_motion_services.c` |
 | `$86:9BCA` | `Lufia2WorldMapApplyEntryPosition` | verified | `src/world/world_map_region.c` |
+| `$86:9C71` | `Lufia2WorldMapCheckEncounter` | verified | `src/world/world_scene.c` |
+| `$86:9DD6` | `Lufia2WorldMapAnimateEncounterTransition` | verified | `src/world/world_scene.c` |
 | `$86:9E3B` | `Lufia2WorldMapRandomScaledWord` | verified | `src/world/world_random_word.c` |
 | `$86:9E4F` | `Lufia2WorldMapApplyRegionRecord` | verified | `src/world/world_scene.c` |
 | `$86:9EDD` | `Lufia2WorldMapRegionSearch` | verified | `src/world/world_map.c` |
@@ -1315,6 +1317,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
 | `$86:D2D6` | `Lufia2WorldMapResetSceneState` | verified | `src/world/world_scene.c` |
 | `$86:D32D` | `Lufia2WorldMapResetDisplayState` | verified | `src/world/world_frame_callers.c` |
+| `$86:D34A` | `Lufia2WorldMapRestoreEncounterScene` | verified | `src/world/world_scene.c` |
 | `$86:D35D` | `Lufia2WorldMapSetPlayerSong` | verified | `src/world/world_map_player.c` |
 | `$86:D37D` | `Lufia2WorldMapStartFadeOut` | verified | `src/world/world_motion_services.c` |
 | `$86:D381` | `Lufia2WorldMapStartFadeIn` | verified | `src/world/world_motion_services.c` |

@@ -1561,3 +1561,361 @@ Lufia2ExecutionResult Lufia2WorldMapReadPlayerInput(
         return result;
     return ApplyPlayerDirectionBody(memory, cpu, child, context);
 }
+
+enum {
+    WORLD_PLAYER_POSE = 0x1495u,
+    WORLD_RETURN_POSE = 0x09e2u,
+    WORLD_FRAME_NUMBER = 0x42u,
+    WORLD_ENCOUNTER_FADE_FRAME = 30u,
+    WORLD_ENCOUNTER_CAMERA_TRACK = 0xdd31u,
+    WORLD_FADE_STATUS = 0x0583u
+};
+
+Lufia2ExecutionResult Lufia2WorldMapRestoreEncounterScene(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x86d34au);
+    Lufia2ExecutionResult result;
+    if (!SceneChild(memory, cpu, child, context, 0x86d34au, 0x86ccfcu, &result))
+        return result;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_RETURN_POSE));
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_PLAYER_POSE));
+    OpStz(memory, cpu, OpAbs(cpu, 0x11e2u));
+    if (!SceneChild(memory, cpu, child, context, 0x86d356u, 0x86cc3cu, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x86d359u, 0x86d397u, &result))
+        return result;
+    return ExecutionReturned(0x86d35cu);
+}
+
+static void SaveEncounterView(const Lufia2Memory *memory,
+                              Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x11ddu));
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_MAP_MODE));
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x1202u)));
+    OpWriteX(memory, cpu, OpAbs(cpu, 0x1210u), cpu->y);
+    OpLdy(cpu, 0u);
+    OpWriteX(memory, cpu, OpAbs(cpu, 0x1212u), cpu->y);
+    static const uint16_t fields[][2] = {
+        {0x11fcu, 0x1214u}, {0x11feu, 0x1216u}, {0x1200u, 0x1218u}
+    };
+    for (unsigned field = 0u; field < sizeof(fields) / sizeof(fields[0]); ++field) {
+        OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, fields[field][0])));
+        OpWriteX(memory, cpu, OpAbs(cpu, fields[field][1]), cpu->y);
+    }
+}
+
+Lufia2ExecutionResult Lufia2WorldMapAnimateEncounterTransition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x869dd6u);
+    Lufia2ExecutionResult result;
+    SaveEncounterView(memory, cpu);
+    OpLdx(cpu, WORLD_ENCOUNTER_CAMERA_TRACK);
+    OpLdy(cpu, 0u);
+    if (!SceneChild(memory, cpu, child, context, 0x869e04u, 0x869470u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869e07u, 0x8694d4u, &result))
+        return result;
+    OpLdx(cpu, 0u);
+    OpWriteX(memory, cpu, OpDp(cpu, WORLD_FRAME_NUMBER), cpu->x);
+    OpLoadA(cpu, 0x18u);
+    if (!SceneChild(memory, cpu, child, context, 0x869e11u, 0x86d35du, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869e14u, 0x86974fu, &result))
+        return result;
+    unsigned frames = 0u;
+    for (;;) {
+        if (frames++ == SCENE_FRAME_BOUNDARY)
+            return ExecutionHandoff(cpu, 0x869e17u);
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, WORLD_FRAME_NUMBER)));
+        OpCpx(cpu, WORLD_ENCOUNTER_FADE_FRAME);
+        if (cpu->zero && !SceneChild(memory, cpu, child, context,
+            0x869e1eu, 0x86d37du, &result))
+            return result;
+        OpLda(memory, cpu, OpAbs(cpu, WORLD_FADE_STATUS));
+        if (cpu->negative)
+            return ExecutionReturned(0x869e3au);
+        if (!SceneChild(memory, cpu, child, context, 0x869e26u, 0x8694d4u, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x869e29u, 0x86995bu, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x869e2cu, 0x86a7ceu, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x869e2fu, 0x86a791u, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x869e32u, 0x86973eu, &result) ||
+            !SceneChild(memory, cpu, child, context, 0x869e35u, 0x86974fu, &result))
+            return result;
+    }
+}
+
+enum {
+    WORLD_ENCOUNTER_DISABLED = 0x09eau,
+    WORLD_ENCOUNTER_LOCK = 0x123fu,
+    WORLD_STEP_COUNT = 0x11e3u,
+    WORLD_PREVIOUS_STEP_COUNT = 0x11e4u,
+    WORLD_SPECIAL_ENCOUNTERS = 0x09e1u,
+    WORLD_SPECIAL_LOCK = 0x09e0u,
+    WORLD_PARTY_LEVEL = 0x0bbbu,
+    WORLD_ENCOUNTER_TILE_LIST = 0x7fe000u,
+    WORLD_ENCOUNTER_WEIGHTS = 0x97c494u,
+    WORLD_ENCOUNTER_GROUPS = 0x97c493u,
+    WORLD_SPECIAL_GROUPS = 0x9dc7u,
+    WORLD_ENCOUNTER_KIND = 0x7ff8a0u,
+    WORLD_ENCOUNTER_RESULT = 0x7ff8a2u,
+    WORLD_ENCOUNTER_ENABLED = 0x7ff8a3u,
+    WORLD_ENCOUNTER_GROUP = 0x7ff8a4u,
+    WORLD_PLAYER_POSE_FIELD = 0x1478u,
+    DP_ENCOUNTER_RANDOM = 0x00u,
+    DP_ENCOUNTER_CHOICE = 0x02u,
+    DP_ENCOUNTER_WEIGHT = 0x04u
+};
+
+static uint8_t EncounterChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               Lufia2PushedChildCall child, void *context,
+                               uint32_t site, uint32_t target, uint8_t frame,
+                               uint8_t accumulator_width,
+                               Lufia2ExecutionResult *result) {
+    if (!CallChildWithFrame(memory, cpu, child, context, site, target, frame, 0x86u)) {
+        *result = (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
+        return 0u;
+    }
+    if (cpu->program_bank != 0x86u || cpu->decimal || cpu->index_is_8_bit ||
+        cpu->accumulator_is_8_bit != accumulator_width) {
+        *result = ExecutionHandoff(cpu, site + frame + 1u);
+        return 0u;
+    }
+    return 1u;
+}
+
+static Lufia2ExecutionResult RememberWorldStepCount(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_STEP_COUNT));
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_PREVIOUS_STEP_COUNT));
+    return ExecutionReturned(0x869ca5u);
+}
+
+static uint8_t CheckWorldEncounterChance(const Lufia2Memory *memory,
+                                          Lufia2CpuState *cpu,
+                                          Lufia2PushedChildCall child,
+                                          void *context,
+                                          Lufia2ExecutionResult *result) {
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_ENCOUNTER_DISABLED));
+    OpOra(memory, cpu, OpAbs(cpu, WORLD_MAP_MODE));
+    if (!cpu->zero)
+        return 0u;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_ENCOUNTER_LOCK));
+    if (!cpu->zero)
+        return 0u;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_PREVIOUS_STEP_COUNT));
+    OpIncA(cpu);
+    if (cpu->zero)
+        return 1u;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_STEP_COUNT));
+    OpCmpValue(cpu, 6u);
+    if (!cpu->carry)
+        return 0u;
+    OpCmp(memory, cpu, OpAbs(cpu, WORLD_PREVIOUS_STEP_COUNT));
+    if (cpu->zero)
+        return 0u;
+    cpu->carry = 0u;
+    OpAdcValue(cpu, 0xd6u);
+    if (cpu->carry)
+        OpLoadA(cpu, 0xffu);
+    if (!EncounterChild(memory, cpu, child, context,
+        0x869c97u, 0x808299u, 3u, 1u, result))
+        return 0u;
+    OpCmpValue(cpu, 0xdcu);
+    return cpu->carry;
+}
+
+static uint8_t ChooseSpecialEncounter(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu,
+                                       Lufia2PushedChildCall child,
+                                       void *context,
+                                       Lufia2ExecutionResult *result) {
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_SPECIAL_LOCK));
+    if (!cpu->zero)
+        return 0u;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_PREVIOUS_STEP_COUNT));
+    OpIncA(cpu);
+    if (!cpu->zero) {
+        OpStz(memory, cpu, OpAbs(cpu, WORLD_STEP_COUNT));
+        OpLoadA(cpu, 100u);
+        if (!EncounterChild(memory, cpu, child, context,
+            0x869cbbu, 0x808299u, 3u, 1u, result))
+            return 0u;
+        OpCmpValue(cpu, 40u);
+        if (cpu->carry)
+            return 0u;
+    }
+    OpLoadA(cpu, 6u);
+    if (!EncounterChild(memory, cpu, child, context,
+        0x869cc5u, 0x808299u, 3u, 1u, result))
+        return 0u;
+    OpSta(memory, cpu, OpDp(cpu, DP_ENCOUNTER_RANDOM));
+    OpLoadA(cpu, 0u);
+    ExchangeAccumulatorBytes(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_PARTY_LEVEL));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, 30u);
+    if (!cpu->carry)
+        OpLoadA(cpu, 0u);
+    OpCmpValue(cpu, 20u);
+    if (cpu->carry)
+        OpLoadA(cpu, 18u);
+    OpLsrA(cpu);
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpDp(cpu, DP_ENCOUNTER_RANDOM));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, WORLD_SPECIAL_GROUPS));
+    OpSta(memory, cpu, WORLD_ENCOUNTER_GROUP);
+    OpLoadA(cpu, 3u);
+    OpSta(memory, cpu, WORLD_ENCOUNTER_KIND);
+    return 1u;
+}
+
+static uint8_t ChooseRegionEncounter(const Lufia2Memory *memory,
+                                      Lufia2CpuState *cpu,
+                                      Lufia2PushedChildCall child,
+                                      void *context,
+                                      Lufia2ExecutionResult *result) {
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_X));
+    OpLsrA(cpu);
+    OpLsrA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, DP_ENCOUNTER_RANDOM));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_Y));
+    OpAndValue(cpu, 0xfcu);
+    for (unsigned shift = 0u; shift < 4u; ++shift)
+        OpAslA(cpu);
+    OpAdc(memory, cpu, OpDp(cpu, DP_ENCOUNTER_RANDOM));
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, LongIndexedAddress(WORLD_ENCOUNTER_TILE_LIST, cpu->x));
+    OpSta(memory, cpu, OpAbs(cpu, 0x4202u));
+    OpLoadA(cpu, 10u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x4203u));
+    OpRepWidths(cpu, 0x20u);
+    OpStz(memory, cpu, OpDp(cpu, DP_ENCOUNTER_WEIGHT));
+    OpLdy(cpu, 5u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, 0x4216u)));
+    OpPushX(memory, cpu);
+    do {
+        OpLda(memory, cpu, LongIndexedAddress(WORLD_ENCOUNTER_WEIGHTS, cpu->x));
+        OpAndValue(cpu, 0xffu);
+        cpu->carry = 0u;
+        OpAdc(memory, cpu, OpDp(cpu, DP_ENCOUNTER_WEIGHT));
+        OpSta(memory, cpu, OpDp(cpu, DP_ENCOUNTER_WEIGHT));
+        OpInx(cpu);
+        OpInx(cpu);
+        OpDey(cpu);
+    } while (!cpu->zero);
+    OpLda(memory, cpu, OpDp(cpu, DP_ENCOUNTER_WEIGHT));
+    if (cpu->zero) {
+        OpSepWidths(cpu, 0x20u);
+        OpPullX(memory, cpu);
+        *result = ExecutionReturned(0x869d56u);
+        return 0u;
+    }
+    if (!EncounterChild(memory, cpu, child, context,
+        0x869d37u, 0x869e3bu, 3u, 0u, result))
+        return 0u;
+    OpPullX(memory, cpu);
+    OpStz(memory, cpu, OpDp(cpu, DP_ENCOUNTER_WEIGHT));
+    for (unsigned choice = 0u; choice < SCENE_FRAME_BOUNDARY; ++choice) {
+        OpLda(memory, cpu, LongIndexedAddress(WORLD_ENCOUNTER_WEIGHTS, cpu->x));
+        OpAndValue(cpu, 0xffu);
+        cpu->carry = 0u;
+        OpAdc(memory, cpu, OpDp(cpu, DP_ENCOUNTER_WEIGHT));
+        OpSta(memory, cpu, OpDp(cpu, DP_ENCOUNTER_WEIGHT));
+        OpDecA(cpu);
+        OpCmp(memory, cpu, OpDp(cpu, DP_ENCOUNTER_CHOICE));
+        if (cpu->carry) {
+            OpSepWidths(cpu, 0x20u);
+            OpLda(memory, cpu, LongIndexedAddress(WORLD_ENCOUNTER_GROUPS, cpu->x));
+            OpSta(memory, cpu, WORLD_ENCOUNTER_GROUP);
+            OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_X)));
+            OpWriteX(memory, cpu, OpDp(cpu, DP_PLAYER_TILE_X), cpu->y);
+            OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_Y)));
+            OpWriteX(memory, cpu, OpDp(cpu, DP_PLAYER_TILE_Y), cpu->y);
+            if (!SceneChild(memory, cpu, child, context,
+                0x869d6bu, 0x869a71u, result))
+                return 0u;
+            OpLdy(cpu, 0u);
+            OpCmpValue(cpu, 0x10u);
+            if (!cpu->zero)
+                OpLdy(cpu, 4u);
+            OpTya(cpu);
+            OpSta(memory, cpu, WORLD_ENCOUNTER_KIND);
+            return 1u;
+        }
+        OpInx(cpu);
+        OpInx(cpu);
+    }
+    *result = ExecutionHandoff(cpu, 0x869d3eu);
+    return 0u;
+}
+
+static Lufia2ExecutionResult RunWorldEncounter(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu,
+                                               Lufia2PushedChildCall child,
+                                               void *context) {
+    Lufia2ExecutionResult result;
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, WORLD_ENCOUNTER_ENABLED);
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpAbs(cpu, 0xf8a1u));
+    if (!SceneChild(memory, cpu, child, context, 0x869d88u, 0x869dd6u, &result) ||
+        !SceneChild(memory, cpu, child, context, 0x869d8bu, 0x86d32du, &result))
+        return result;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_PLAYER_POSE_FIELD));
+    PushAccumulator8(memory, cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_X));
+    PushAccumulator8(memory, cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_TILE_Y));
+    PushAccumulator8(memory, cpu);
+    if (!EncounterChild(memory, cpu, child, context,
+        0x869d9au, 0x818821u, 3u, 1u, &result))
+        return result;
+    OpLda(memory, cpu, WORLD_ENCOUNTER_RESULT);
+    OpCmpValue(cpu, 1u);
+    if (cpu->zero) {
+        OpLdx(cpu, 0x1fffu);
+        cpu->stack = cpu->x;
+        cpu->program_bank = 0x83u;
+        return ExecutionHandoff(cpu, 0x83acefu);
+    }
+    OpLoadA(cpu, Pull8(memory, cpu));
+    if (!SceneChild(memory, cpu, child, context, 0x869da7u, 0x8691feu, &result))
+        return result;
+    OpWriteX(memory, cpu, OpAbs(cpu, WORLD_POSITION_Y), cpu->y);
+    OpLoadA(cpu, Pull8(memory, cpu));
+    if (!SceneChild(memory, cpu, child, context, 0x869daeu, 0x8691feu, &result))
+        return result;
+    OpWriteX(memory, cpu, OpAbs(cpu, WORLD_POSITION_X), cpu->y);
+    OpLoadA(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_PLAYER_POSE_FIELD));
+    if (!SceneChild(memory, cpu, child, context, 0x869db8u, 0x86d34au, &result))
+        return result;
+    OpStz(memory, cpu, OpAbs(cpu, WORLD_STEP_COUNT));
+    return ExecutionReturned(0x869dbeu);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapCheckEncounter(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneCallerEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x869c71u);
+    Lufia2ExecutionResult result = ExecutionReturned(0x869ca5u);
+    if (!CheckWorldEncounterChance(memory, cpu, child, context, &result))
+        return result.flow == LUFIA2_EXECUTION_RETURNED ?
+            RememberWorldStepCount(memory, cpu) : result;
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_SPECIAL_ENCOUNTERS));
+    if (!cpu->zero) {
+        if (!ChooseSpecialEncounter(memory, cpu, child, context, &result))
+            return result.flow == LUFIA2_EXECUTION_RETURNED ?
+                RememberWorldStepCount(memory, cpu) : result;
+    } else if (!ChooseRegionEncounter(memory, cpu, child, context, &result)) {
+        return result;
+    }
+    return RunWorldEncounter(memory, cpu, child, context);
+}
