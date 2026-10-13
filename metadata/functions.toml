@@ -10967,3 +10967,27 @@ source = "src/field/field_scroll.c"
 entry_mx = "M0X1"
 exit_mx = "M0X1"
 status = "verified"
+
+[[function]]
+address = "85:903F"
+name = "Lufia2BattleShowStatusUpdates"
+source = "src/battle/battle_status_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9114"
+name = "Lufia2BattleShowStatusMessage"
+source = "src/battle/battle_status_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:90BC"
+name = "Lufia2BattleTickStatusMessage"
+source = "src/battle/battle_status_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

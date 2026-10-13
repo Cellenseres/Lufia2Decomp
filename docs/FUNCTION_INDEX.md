@@ -1020,7 +1020,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:8DC5` | `Lufia2BattleNmiUploads` | verified | `src/battle/battle_nmi.c` |
 | `$85:8F4A` | `Lufia2BattleRandomBit` | verified | `src/battle/battle_drift.c` |
 | `$85:8F67` | `Lufia2BattleRecoverStatuses` | verified | `src/battle/battle_status_recovery.c` |
+| `$85:903F` | `Lufia2BattleShowStatusUpdates` | verified | `src/battle/battle_status_support.c` |
 | `$85:9099` | `Lufia2BattleExpireStatuses` | verified | `src/battle/battle_status_recovery.c` |
+| `$85:90BC` | `Lufia2BattleTickStatusMessage` | verified | `src/battle/battle_status_support.c` |
+| `$85:9114` | `Lufia2BattleShowStatusMessage` | verified | `src/battle/battle_status_support.c` |
 | `$85:9150` | `Lufia2BattleStatusName` | verified | `src/battle/battle_status_support.c` |
 | `$85:9173` | `Lufia2BattleStatusPhrase` | verified | `src/battle/battle_status_support.c` |
 | `$85:919C` | `Lufia2BattleUpdateStatusIcons` | verified | `src/battle/battle_status_icons.c` |

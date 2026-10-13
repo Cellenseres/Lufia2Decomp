@@ -1,63 +1,22 @@
 #include "battle/battle_internal.h"
-#include "core/snes_registers.h"
+#include "battle/status_target_internal.h"
 
-/* $85:903F/$9114: present one recovered or expired status. */
-static bool StatusMessage(BattleContext *battle, uint16_t call_site, bool recovery) {
-    const Lufia2Memory *memory = battle->memory;
-    Lufia2CpuState *cpu = battle->cpu;
-    SimulateJsrFrame(memory, cpu, (uint16_t)(call_site + 2u));
-    OpPushX(memory, cpu);
-    if (!BattleCall(battle, recovery ? 0x9040u : 0x9115u, 0x859aaau, 3u))
+static bool StatusMessage(BattleContext *battle, uint16_t call_site, bool recovery,
+                          Lufia2ExecutionResult *stopped) {
+    SimulateJsrFrame(battle->memory, battle->cpu, (uint16_t)(call_site + 2u));
+    *stopped =
+        recovery ? Lufia2BattleShowStatusUpdates(battle->memory, battle->cpu,
+                                                 battle->child, battle->child_context)
+                 : Lufia2BattleShowStatusMessage(battle->memory, battle->cpu,
+                                                 battle->child, battle->child_context);
+    if (stopped->flow != LUFIA2_EXECUTION_RETURNED)
         return false;
-    OpLdx(cpu, 0xffffu);
-    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_WAIT_COUNTER), cpu->x);
-    if (!BattleCall(battle, recovery ? 0x904au : 0x911fu, 0x8595feu, 3u))
-        return false;
-    if (recovery) {
-        if (!BattleCall(battle, 0x904eu, BATTLE_ROUTINE_SYNC_STATUS_MARKERS, 3u) ||
-            !BattleCall(battle, 0x9052u, 0x81bae8u, 3u))
-            return false;
-        OpRepWidths(cpu, 0x20u);
-        if (!BattleCall(battle, 0x9058u, BATTLE_ROUTINE_QUEUE_STATUS_SPRITES, 3u))
-            return false;
-        OpSepWidths(cpu, 0x20u);
-        if (!BattleCall(battle, 0x905eu, BATTLE_ROUTINE_SPRITES, 3u))
-            return false;
-        OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
-        if (!BattleCall(battle, 0x9068u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
-            return false;
-    }
-    OpLoadA(cpu, 0x2du);
-    do {
-        PushAccumulator8(memory, cpu);
-        if (!BattleCall(battle, recovery ? 0x906fu : 0x9126u, BATTLE_ROUTINE_SPRITES,
-                        3u))
-            return false;
-        OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
-        if (!BattleCall(battle, recovery ? 0x9079u : 0x9130u,
-                        BATTLE_ROUTINE_FRAME_INPUT, 3u))
-            return false;
-        LoadA8(cpu, Pull8(memory, cpu));
-        OpDecA(cpu);
-    } while (!cpu->zero);
-    if (!BattleCall(battle, recovery ? 0x9081u : 0x9138u, 0x859671u, 3u) ||
-        !BattleCall(battle, recovery ? 0x9085u : 0x913cu, BATTLE_ROUTINE_SPRITES, 3u))
-        return false;
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
-    if (!BattleCall(battle, recovery ? 0x908fu : 0x9146u, BATTLE_ROUTINE_FRAME_INPUT,
-                    3u) ||
-        !BattleCall(battle, recovery ? 0x9093u : 0x914au, 0x859abcu, 3u))
-        return false;
-    OpPullX(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
+    SimulateRtsFrame(battle->memory, battle->cpu);
     return true;
 }
 
 /* Each cured status gets its own roll and message. */
-static bool StatusCureRolls(BattleContext *battle) {
+static bool StatusCureRolls(BattleContext *battle, Lufia2ExecutionResult *stopped) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
     static const struct {
@@ -91,71 +50,52 @@ static bool StatusCureRolls(BattleContext *battle) {
             return false;
         OpLoadA(cpu, cures[i].phrase);
         if (!BattleCall(battle, cures[i].phrase_site, 0x859173u, 3u) ||
-            !StatusMessage(battle, cures[i].message_site, true))
+            !StatusMessage(battle, cures[i].message_site, true, stopped))
             return false;
     }
     return true;
 }
 
-/* Timed status counts down and clears at zero. */
-static bool StatusExpireCountdown(BattleContext *battle) {
-    const Lufia2Memory *memory = battle->memory;
-    Lufia2CpuState *cpu = battle->cpu;
-    OpBitValue(cpu, 0x80u);
-    if (cpu->zero)
-        return true;
-    OpTxy(cpu);
-    OpLda(memory, cpu, OpDp(cpu, 3u));
-    if (!BattleCall(battle, 0x90f0u, 0x81b2dbu, 3u))
-        return false;
-    OpLda(memory, cpu, OpAbsX(cpu, 6u));
-    OpDecA(cpu);
-    OpSta(memory, cpu, OpAbsX(cpu, 6u));
-    if (!cpu->zero)
-        return true;
-    OpTyx(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-    OpAndValue(cpu, 0x7fu);
-    OpSta(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-    if (!BattleCall(battle, 0x9106u, 0x859150u, 3u))
-        return false;
-    OpLoadA(cpu, 6u);
-    if (!BattleCall(battle, 0x910cu, 0x859173u, 3u) ||
-        !StatusMessage(battle, 0x9110u, false))
-        return false;
-    return true;
+typedef struct StatusMessageChild {
+    BattleContext *battle;
+    Lufia2ExecutionResult stopped;
+} StatusMessageChild;
+
+static uint8_t StatusTargetChild(void *context, Lufia2CpuState *cpu, uint32_t target,
+                                 uint32_t site, uint8_t frame) {
+    StatusMessageChild *call = context;
+    BattleContext *battle = call->battle;
+    if (target != 0x859114u || site != 0x859110u || frame != 2u)
+        return battle->child(battle->child_context, cpu, target, site, frame);
+    call->stopped = Lufia2BattleShowStatusMessage(battle->memory, cpu, battle->child,
+                                                  battle->child_context);
+    if (call->stopped.flow != LUFIA2_EXECUTION_RETURNED)
+        return 0u;
+    SimulateRtsFrame(battle->memory, cpu);
+    return 1u;
 }
 
-/* Each target clears its original 30-byte effect-work record first. */
-static bool StatusTarget(BattleContext *battle, uint16_t call_site, bool recovery) {
-    const Lufia2Memory *memory = battle->memory;
-    Lufia2CpuState *cpu = battle->cpu;
-    SimulateJsrFrame(memory, cpu, (uint16_t)(call_site + 2u));
-    OpLda(memory, cpu, OpDp(cpu, 0u));
-    OpOra(memory, cpu, OpDp(cpu, 1u));
-    OpSta(memory, cpu, OpDp(cpu, 3u));
-    if (!BattleCall(battle, recovery ? 0x8f90u : 0x90c2u, 0x85d9c9u, 3u))
-        return false;
-    OpWriteX(memory, cpu, OpAbs(cpu, SNES_WMADDL), cpu->x);
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
-    OpLdx(cpu, 0x1eu);
-    do {
-        OpStz(memory, cpu, OpAbs(cpu, SNES_WMDATA));
-        OpDex(cpu);
-    } while (!cpu->zero);
-    OpLda(memory, cpu, OpDp(cpu, 3u));
-    if (!BattleCall(battle, recovery ? 0x8fa7u : 0x90d9u, 0x81b2b5u, 3u))
-        return false;
-    OpCpx(cpu, 0u);
-    if (!cpu->zero) {
-        OpLda(memory, cpu, OpAbsX(cpu, BATTLE_BATTLER_STATUS));
-        OpBitValue(cpu, 4u);
-        if (cpu->zero &&
-            !(recovery ? StatusCureRolls(battle) : StatusExpireCountdown(battle)))
+static bool StatusTarget(BattleContext *battle, uint16_t call_site, bool recovery,
+                         Lufia2ExecutionResult *stopped) {
+    SimulateJsrFrame(battle->memory, battle->cpu, (uint16_t)(call_site + 2u));
+    if (!recovery) {
+        StatusMessageChild call = {battle, ExecutionReturned(0u)};
+        *stopped = Lufia2BattleTickStatusMessage(battle->memory, battle->cpu,
+                                                 StatusTargetChild, &call);
+        if (call.stopped.flow != LUFIA2_EXECUTION_RETURNED)
+            *stopped = call.stopped;
+        if (stopped->flow != LUFIA2_EXECUTION_RETURNED)
+            return false;
+    } else {
+        const BattleStatusTargetState target =
+            BattlePrepareStatusTarget(battle->memory, battle->cpu, battle->child,
+                                      battle->child_context, 1u, stopped);
+        if (target == BATTLE_STATUS_TARGET_STOPPED)
+            return false;
+        if (target == BATTLE_STATUS_TARGET_READY && !StatusCureRolls(battle, stopped))
             return false;
     }
-    SimulateRtsFrame(memory, cpu);
+    SimulateRtsFrame(battle->memory, battle->cpu);
     return true;
 }
 
@@ -164,6 +104,7 @@ static Lufia2ExecutionResult StatusScan(const Lufia2Memory *memory, Lufia2CpuSta
                                         void *child_context, bool recovery) {
     BattleContext battle =
         BattleContextCreate(memory, cpu, child, child_context, 0x85u);
+    Lufia2ExecutionResult stopped = ExecutionReturned(0u);
     PushDataBank(memory, cpu);
     Push8(memory, cpu, cpu->program_bank);
     PullDataBank(memory, cpu);
@@ -175,8 +116,10 @@ static Lufia2ExecutionResult StatusScan(const Lufia2Memory *memory, Lufia2CpuSta
         do {
             const uint16_t site =
                 recovery ? (side ? 0x8f81u : 0x8f72u) : (side ? 0x90b3u : 0x90a4u);
-            if (!StatusTarget(&battle, site, recovery))
-                return BattleChildUnwound(&battle);
+            if (!StatusTarget(&battle, site, recovery, &stopped))
+                return stopped.flow == LUFIA2_EXECUTION_RETURNED
+                           ? BattleChildUnwound(&battle)
+                           : stopped;
             const uint8_t mask = Read8(memory, OpDp(cpu, 1u));
             cpu->carry = (mask & 1u) != 0u;
             Write8(memory, OpDp(cpu, 1u), (uint8_t)(mask >> 1));

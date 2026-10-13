@@ -1,5 +1,36 @@
 # Decompilation status
 
+## Battle status message callers - 2026-10-13
+
+Three original entries display queued status updates, display a status message,
+and expire a target's status-message timer. They share the original 45-frame
+display loop and preserve literal child frames, target checks, flags, stack
+effects and bus-visible register writes. Existing NMI waits and zero-mask
+nontermination remain in the original runtime path. No timing patch is added.
+
+Direct and production-core ABI matrices each cover 6144 ROM states, all 86
+non-return instruction/mode states and all 27 child sites, 216331 actual child
+returns, 2112 live boundaries and 95420 real ROM NMI/RTI events per path.
+Each boundary proof covers 216 child unwinds, 648 changed-width returns and 216
+decimal fences. 9216 runtime and 18432 semantic guards preserve rejected states.
+Native top-service composition covers 1536 states, retaining 47616 original wait
+tails and 97152 original nested contracts. This is not a fully native frame loop.
+
+The existing target-mask record helper repeats the original RAM read before
+each shift. 16320 all-mask ROM states prove CPU,WRAM and ordered bus equality;
+its production ABI selects 4080 states and preserves 12240 DB/DP handoffs and 64
+zero-mask guards. Nine effective faults,two unchanged full controls and 3240
+runtime redirect probes pass.
+The existing recovery and expiry scanners share these target/message operations.
+Their adapters preserve the old callback boundaries. A 5162-case legacy proof
+and 1024-state direct/production-ABI whole-root proofs pass, including 33074
+actual child returns and 4480 original ROM NMI/RTI events per path.
+Twelve actual-library jobs and the full 1535-job verification run pass.
+All 426 source units pass strict Clang C11 with warnings as errors.
+Four C++ APIs are executed. No duplicate entry, binding or status operation.
+Default Windows Release passes.
+
+
 ## Field scroll mode entries - 2026-10-13
 
 Eight complete entries share the existing field-scroll operations: camera
@@ -267,7 +298,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1353 functions in `metadata/functions.toml`: 1353 verified, 0 draft, 0 identified, 0 disabled.
+1356 functions in `metadata/functions.toml`: 1356 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
