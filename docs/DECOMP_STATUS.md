@@ -1,3 +1,15 @@
+# Original text prompt reads - 2026-10-14
+
+The prompt timer increments its elapsed counter, then the ROM reads that
+counter again for CMP. C now retains that read instead of comparing the
+cached incremented value. This corrects the reconstruction; it changes no
+original game behavior and adds no function or runtime binding.
+
+Original-ROM prompt/close/delay states and ordered-bus fault controls prove
+the read. The combined caller batch also passes its full 1,907-job suite,
+strict C11, normal Release and production lifecycle checks. The subsequent
+caller checkpoint records that combined integration's complete scope.
+
 # Field/event caller services — 2026-10-14
 
 `$80:CBAE` now completes its original `$80:CC0E` redraw continuation through

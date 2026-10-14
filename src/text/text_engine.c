@@ -1837,7 +1837,7 @@ Lufia2ExecutionResult Lufia2TextPromptTick(
 
         Write8(memory, timer, count);
         SetNz8(cpu, count);
-        Compare8(cpu, A8(cpu), count);
+        Compare8(cpu, A8(cpu), Read8(memory, timer));
         if (cpu->carry)
             return result;
     } else {
