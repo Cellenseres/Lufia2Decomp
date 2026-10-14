@@ -1,3 +1,35 @@
+# Field diagnostic controllers — 2026-10-14
+
+`$85:8045/$85:8322/$85:8415` preserve the original diagnostic menu,
+save/load flow and message display. Registers, text-pointer widths, input
+masks, PPU writes and child frames follow the ROM. Successful loading keeps
+the original stack reset and field-session tail. The message entry supports
+the event caller's 16-bit text pointer and an additional tested 8-bit profile.
+`$85:851C` preserves every counter read and its exact bounded continuation;
+it remains unbound so the interpreter retains frame-wait ownership.
+
+15,360 direct states, 7,168 production-adapter states and all 379 nonreturn
+instructions pass. All 62 child sites pass 15,872 direct/13,888 adapter
+boundaries, 930 redirects and 1,984 missing-entry handoffs. Another 988
+original/native-child compositions compare CPU, WRAM, SRAM where relevant
+and ordered MMIO; button/frame/save services remain explicit. Unsupported
+states pass 9,600 consumer/20,480 portable guards and 40,960 C++ guard calls.
+Eight ROM, eight actual-C and five adapter faults are detected.
+
+All 1,859 shared jobs, strict C11 across 429 units and normal Release pass.
+Three production-object original/native controller prefixes match CPU and
+full WRAM at the original frame wait. Three cold/reset/new-session boots
+reach both logos and intro with real audio; ninety snapshot replay hashes
+match CPU/WRAM/PPU/APU/picture. This is no complete diagnostic gameplay or
+cycle-equality claim. Three scoped adapters hand missing children to the
+owning interpreter without changing other runtime paths.
+
+The production save-prefix fixture uses DB85, while the older `$80:905F`
+consumer adapter requires DB7E. Its existing guard therefore hands off:
+15 parent instructions run natively and the remaining 29 are interpreted,
+starting at `$85:8348`. CPU/full WRAM still match the original wait state.
+Expanding that older callee's consumer profile is separate work.
+
 # Boot controller and original handoffs — 2026-10-14
 
 `$80:8035` preserves all fifteen calls, startup audio branches, SRAM mirror
@@ -810,7 +842,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1412 functions in `metadata/functions.toml`: 1412 verified, 0 draft, 0 identified, 0 disabled.
+1416 functions in `metadata/functions.toml`: 1416 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

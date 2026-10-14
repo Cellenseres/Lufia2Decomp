@@ -11439,3 +11439,35 @@ source = "src/world/world_scene.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:851C"
+name = "Lufia2FieldDiagnosticsWaitFrame"
+source = "src/field/field_diagnostics_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:8322"
+name = "Lufia2FieldDiagnosticsSaveMenu"
+source = "src/field/field_diagnostics_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:8415"
+name = "Lufia2FieldDiagnosticsShowMessage"
+source = "src/field/field_diagnostics_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:8045"
+name = "Lufia2FieldDiagnosticsRunMenu"
+source = "src/field/field_diagnostics_control.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
