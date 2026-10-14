@@ -69,3 +69,13 @@ Lufia2ExecutionResult Lufia2RamBlockMove(
             return ExecutionHandoff(cpu, bank | STUB_OPCODE);
     }
 }
+
+Lufia2ExecutionResult Lufia2FillWordBlock32(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x84u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x849e1cu);
+    for (uint16_t offset = 0u; offset < 32u; offset += 2u)
+        OpSta(memory, cpu, OpAbsX(cpu, offset));
+    return ExecutionReturned(0x849e4cu);
+}

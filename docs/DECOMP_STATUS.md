@@ -5,6 +5,8 @@ Catalogued RAM block-move fields retain identical machine code and relocations.
 CPU/WRAM/bus effects and documented continuation boundaries.
 `$80:91DF` `Lufia2InitializeStartupImage` preserves its original entry/exit,
 CPU/WRAM/bus effects and documented continuation boundaries.
+`$84:9E1C` `Lufia2FillWordBlock32` preserves its original entry/exit,
+CPU/WRAM/bus effects and documented continuation boundaries.
 
 Joint 1,769-job verification and normal Windows Release pass.
 No timing, PCM, rendered-output or gameplay claim.
@@ -683,7 +685,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1397 functions in `metadata/functions.toml`: 1397 verified, 0 draft, 0 identified, 0 disabled.
+1398 functions in `metadata/functions.toml`: 1398 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
