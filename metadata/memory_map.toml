@@ -5680,3 +5680,10 @@ name = "unk_7E05A9"
 width = 1
 owner = "field"
 notes = "Cleared with05A8 before83:8000 jumps to the existing B18E session sibling;precise role remains unknown."
+
+[[location]]
+address = "7F:F1DB"
+name = "unk_7FF1DB"
+width = 1
+owner = "battle"
+notes = "Palette source base read by81:B444;85:EAEF copies512 CGRAM bytes here. Base only:shared storage overlaps phase-specific F27B/F2FB graphics."

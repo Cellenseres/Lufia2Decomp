@@ -1,3 +1,10 @@
+# Palette fidelity checkpoint — 2026-10-14
+
+Four existing palette APIs retain original operand rereads, word TSB order
+and Gray index widths. Full CPU/WRAM/ordered-bus comparisons and controls pass.
+Validation: joint 1,742-job verification and normal Windows Release.
+No runtime timing, PCM or gameplay acceptance is claimed.
+
 # Party order and inline menu dispatch — 2026-10-14
 
 `$85:9419` reconstructs the original party reversal for zero through four

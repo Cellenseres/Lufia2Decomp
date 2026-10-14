@@ -1,6 +1,7 @@
 /* Small battle helpers of bank $81. */
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/battle.h"
 #include "system/wram.h"
 
@@ -131,7 +132,7 @@ Lufia2ExecutionResult Lufia2BattleBlend(
         return ExecutionReturned(0x81b52eu);
     if (cpu->carry) {
         cpu->carry = 1;                                        /* B52F */
-        Sbc8(cpu, base);
+        Sbc8(cpu, DirectByte(memory, cpu, 0xcau));
         StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
         LoadA8(cpu, DirectByte(memory, cpu, 0x29u));
         StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
@@ -139,7 +140,7 @@ Lufia2ExecutionResult Lufia2BattleBlend(
         return ExecutionReturned(0x81b549u);
     }
     ExchangeAccumulatorBytes(cpu);                             /* swap with $CA */
-    LoadA8(cpu, base);
+    LoadA8(cpu, DirectByte(memory, cpu, 0xcau));
     ExchangeAccumulatorBytes(cpu);
     StoreADirect8(memory, cpu, 0xcau);
     ExchangeAccumulatorBytes(cpu);
@@ -177,20 +178,21 @@ Lufia2ExecutionResult Lufia2ColorToGray(
     LoadA8(cpu, GRAY_WEIGHT_RED);
     StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
     SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, (uint16_t)(Read16Direct(memory, cpu, COLOR_WORK_COLOR) >> 5));
-    cpu->carry = (Read16Direct(memory, cpu, COLOR_WORK_COLOR) >> 4) & 1u;
+    const uint16_t color = Read16Direct(memory, cpu, COLOR_WORK_COLOR);
+    LoadA16(cpu, (uint16_t)(color >> 5));
+    cpu->carry = (color >> 4) & 1u;
     SetAccumulatorWidth(cpu, 1);
     And8(cpu, COLOR_CHANNEL_MASK);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
     StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
     LoadA8(cpu, GRAY_WEIGHT_GREEN);
     StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
-    Write16Direct(memory, cpu, COLOR_WORK_SCRATCH, cpu->y);
+    OpWriteX(memory, cpu, OpDp(cpu, COLOR_WORK_SCRATCH), cpu->y);
     LoadA8(cpu, DirectByte(memory, cpu, COLOR_WORK_COLOR_HIGH));
     cpu->carry = (A8(cpu) >> 1) & 1u;
     LoadA8(cpu, (uint8_t)(A8(cpu) >> 2));
     And8(cpu, COLOR_CHANNEL_MASK);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
     StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
     LoadA8(cpu, GRAY_WEIGHT_BLUE);
     StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
@@ -211,12 +213,7 @@ Lufia2ExecutionResult Lufia2ColorToGray(
     AslA16(cpu);
     AslA16(cpu);
     AslA16(cpu);
-    {
-        const uint16_t old = Read16Direct(memory, cpu, COLOR_WORK_COLOR);
-
-        cpu->zero = (old & cpu->accumulator) == 0;
-        Write16Direct(memory, cpu, COLOR_WORK_COLOR, (uint16_t)(old | cpu->accumulator));
-    }
+    OpTestBits(memory, cpu, OpDp(cpu, COLOR_WORK_COLOR), 1u);
     return ExecutionReturned(0x81b5a2u);
 }
 
@@ -275,7 +272,7 @@ Lufia2ExecutionResult Lufia2BattleLoadPalette(
     StoreADirect8(memory, cpu, 0x25u);
     do {
         LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
-        Write8(memory, LongIndexedAddress(0x7ff1dbu, cpu->x), A8(cpu));
+        Write8(memory, LongIndexedAddress(WRAM_UNK_7FF1DB, cpu->x), A8(cpu));
         IncrementX16(cpu);
         IncrementY16(cpu);
         count = (uint8_t)(DirectByte(memory, cpu, 0x25u) - 1u);
@@ -296,7 +293,7 @@ Lufia2ExecutionResult Lufia2BattleCommitPalettes(
     PullDataBank(memory, cpu);
     LoadX16(cpu, 0x01ffu);
     do {
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ff1dbu, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FF1DB, cpu->x)));
         StoreAAbsolute8(memory, cpu, WRAM_CGRAM_BUFFER, cpu->x);
         LoadX16(cpu, (uint16_t)(cpu->x - 1u));
     } while (!cpu->negative);
@@ -511,9 +508,8 @@ Lufia2ExecutionResult Lufia2BattleFadeColor(
     AslA8(cpu);
     AslA8(cpu);
     StoreADirect8(memory, cpu, 0x29u);
-    LoadA8(cpu, (uint8_t)((level >> 4) & 0x03u));
-    Write8(memory, (uint16_t)(cpu->direct_page + 0x29u),
-        (uint8_t)(DirectByte(memory, cpu, 0x29u) | A8(cpu)));
+    LoadA8(cpu, (uint8_t)((DirectByte(memory, cpu, 0x13u) >> 4) & 0x03u));
+    OpTestBits(memory, cpu, OpDp(cpu, 0x29u), 1u);
     LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x22u) & 0x1fu));
     StoreADirect8(memory, cpu, 0x26u);
     LoadA8(cpu, (uint8_t)((DirectByte(memory, cpu, 0x23u) >> 2) & 0x1fu));
@@ -585,7 +581,7 @@ Lufia2ExecutionResult Lufia2BattlePaletteFade(
         IncrementX16(cpu);
         IncrementX16(cpu);
         SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ff1dbu, cpu->x)));
+        LoadA16(cpu, Read16Long(memory, LongIndexedAddress(WRAM_UNK_7FF1DB, cpu->x)));
         PushIndex(memory, cpu);
         StoreADirect16(memory, cpu, 0x24u);
         StoreADirect16(memory, cpu, 0x15u);
@@ -596,7 +592,7 @@ Lufia2ExecutionResult Lufia2BattlePaletteFade(
         cpu->carry = (gray >> 1) & 1u;
         LoadA16(cpu, (uint16_t)((((gray >> 2) & 0x1c00u) ^ 0xffffu) + 1u));
         cpu->carry = 0;
-        Add16Value(cpu, gray);
+        Add16Value(cpu, Read16Direct(memory, cpu, COLOR_WORK_COLOR));
         StoreADirect16(memory, cpu, 0x15u);
         StoreADirect16(memory, cpu, 0x22u);
         SetAccumulatorWidth(cpu, 1);
@@ -616,6 +612,7 @@ Lufia2ExecutionResult Lufia2BattlePaletteFade(
 /* Item, party and sprite helpers of bank $81. */
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/battle.h"
 
 static void SetPaletteBank(const Lufia2Memory *memory, Lufia2CpuState *cpu,
