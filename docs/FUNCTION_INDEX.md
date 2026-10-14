@@ -34,10 +34,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:8DF9` | `Lufia2MenuAdvanceTextRow` | verified | `src/menu/menu_string.c` |
 | `$80:8E0F` | `Lufia2MenuResetTextWidth` | verified | `src/menu/menu_string.c` |
 | `$80:8E9D` | `Lufia2DecompressResource` | verified | `src/system/decompress.c` |
+| `$80:9037` | `Lufia2ValidateSaveFiles` | verified | `src/system/save.c` |
 | `$80:905F` | `Lufia2SaveTestFileHighFlags` | verified | `src/system/save_file_flags.c` |
 | `$80:9073` | `Lufia2SaveCheckGameFile` | verified | `src/system/save_file_check.c` |
 | `$80:9099` | `Lufia2LoadGameFile` | verified | `src/system/save.c` |
 | `$80:90C9` | `Lufia2SaveGameFile` | verified | `src/system/save.c` |
+| `$80:90E5` | `Lufia2ValidateSaveFileChecksum` | verified | `src/system/save.c` |
 | `$80:90FC` | `Lufia2SaveFileChecksum` | verified | `src/system/save.c` |
 | `$80:911C` | `Lufia2ClearGameFile` | verified | `src/system/save.c` |
 | `$80:914B` | `Lufia2ReadGameFile` | verified | `src/system/save.c` |

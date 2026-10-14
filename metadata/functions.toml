@@ -11375,3 +11375,19 @@ source = "src/system/save.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:90E5"
+name = "Lufia2ValidateSaveFileChecksum"
+source = "src/system/save.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9037"
+name = "Lufia2ValidateSaveFiles"
+source = "src/system/save.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"

@@ -1,3 +1,21 @@
+# Save validation and startup repair — 2026-10-14
+
+`$80:90E5` preserves the original checksum comparison and carry result.
+`$80:9037` checks all four save files, clears invalid files and records
+the original four-bit result. Its saved status and byte-width registers
+are restored literally. Existing checksum, address, clearing and encrypted
+write implementations are reused; no duplicate bodies or new WRAM fields.
+
+Joint ROM comparisons cover 17,408 direct and 17,408 production-bridge
+states, complete WRAM and synthetic SRAM, ordered bus accesses and child
+inputs. Compositions include original children and the native save chain.
+1,024 child boundaries, 60 redirects, 7,680 consumer guards, 12,288 portable
+guards and 786,432 C++ calls pass. Strict C11 across 426 units, all 1,820
+verification jobs and the normal Windows Release pass. Three 1,500-frame
+boots (cold, reset, new session) show both logos, intro and real audio,
+with zero original save-validation or video instructions. Ninety snapshot
+replay frame hashes match. No real save files are used by these tests.
+
 # Preview controller and clear-save operation — 2026-10-14
 
 `$84:9B3E` retains RGB editing, labels, party-status invalidation and original
@@ -745,7 +763,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1404 functions in `metadata/functions.toml`: 1404 verified, 0 draft, 0 identified, 0 disabled.
+1406 functions in `metadata/functions.toml`: 1406 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

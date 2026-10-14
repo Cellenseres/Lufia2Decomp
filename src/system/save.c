@@ -239,7 +239,7 @@ enum {
     SAVE_EMPTY_HEADER = 0xf0u
 };
 
-static uint8_t ClearSaveChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+static uint8_t SaveFileChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                               Lufia2PushedChildCall child, void *context,
                               uint32_t site, uint32_t target,
                               Lufia2ExecutionResult *result) {
@@ -284,19 +284,88 @@ Lufia2ExecutionResult Lufia2ClearGameFile(
         return ExecutionHandoff(cpu, 0x80911cu);
     Lufia2ExecutionResult result = {0};
     OpSta(memory, cpu, OpDp(cpu, DP_CLEAR_SAVE_INDEX));
-    if (!ClearSaveChild(memory, cpu, child, context,
+    if (!SaveFileChild(memory, cpu, child, context,
                         0x80911eu, 0x8091d3u, &result))
         return result;
     ClearSaveWorkBuffer(memory, cpu);
     OpLda(memory, cpu, OpDp(cpu, DP_CLEAR_SAVE_INDEX));
-    if (!ClearSaveChild(memory, cpu, child, context,
+    if (!SaveFileChild(memory, cpu, child, context,
                         0x80913cu, 0x809184u, &result))
         return result;
     OpLda(memory, cpu, OpDp(cpu, DP_CLEAR_SAVE_INDEX));
-    if (!ClearSaveChild(memory, cpu, child, context,
+    if (!SaveFileChild(memory, cpu, child, context,
                         0x809141u, 0x8091d3u, &result))
         return result;
     OpLoadA(cpu, SAVE_EMPTY_HEADER);
     OpSta(memory, cpu, OpLongX(cpu, 0x700000u));
     return ExecutionReturned(0x80914au);
+}
+
+enum {
+    DP_SAVE_INVALID_FILES = 0x66u,
+    SAVE_FILE_COUNT = 4u,
+    SRAM_SAVE_CHECKSUM = 0x700002u
+};
+
+Lufia2ExecutionResult Lufia2ValidateSaveFileChecksum(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x8090e5u);
+    Lufia2ExecutionResult result = {0};
+    SavePushA(memory, cpu);
+    if (!SaveFileChild(memory, cpu, child, context,
+                        0x8090e6u, 0x8090fcu, &result))
+        return result;
+    SavePullA(memory, cpu);
+    if (!SaveFileChild(memory, cpu, child, context,
+                        0x8090eau, 0x8091d3u, &result))
+        return result;
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpLongX(cpu, SRAM_SAVE_CHECKSUM));
+    OpCmp(memory, cpu, OpDp(cpu, SAVE_CHECKSUM));
+    cpu->carry = !cpu->zero;
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x8090fbu);
+}
+
+Lufia2ExecutionResult Lufia2ValidateSaveFiles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        !cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x809037u);
+    Lufia2ExecutionResult result = {0};
+    SavePushA(memory, cpu);
+    PushIndex(memory, cpu);
+    PushY(memory, cpu);
+    PushDataBank(memory, cpu);
+    Push8(memory, cpu, PackStatus(cpu));
+    OpSepWidths(cpu, 0x20u);
+    OpRepWidths(cpu, 0x10u);
+    OpLoadA(cpu, SAVE_FILE_COUNT - 1u);
+    OpSta(memory, cpu, OpDp(cpu, SAVE_SELECTED_FILE));
+    OpStz(memory, cpu, OpDp(cpu, DP_SAVE_INVALID_FILES));
+    do {
+        OpLda(memory, cpu, OpDp(cpu, SAVE_SELECTED_FILE));
+        if (!SaveFileChild(memory, cpu, child, context,
+                            0x809048u, 0x8090e5u, &result))
+            return result;
+        if (cpu->carry) {
+            OpLda(memory, cpu, OpDp(cpu, SAVE_SELECTED_FILE));
+            if (!SaveFileChild(memory, cpu, child, context,
+                                0x80904fu, 0x80911cu, &result))
+                return result;
+            cpu->carry = 1u;
+        }
+        OpRolMem8(memory, cpu, OpDp(cpu, DP_SAVE_INVALID_FILES));
+        OpStepMem(memory, cpu, OpDp(cpu, SAVE_SELECTED_FILE), -1);
+    } while (!cpu->negative);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    PullDataBank(memory, cpu);
+    OpPullY(memory, cpu);
+    OpPullX(memory, cpu);
+    SavePullA(memory, cpu);
+    return ExecutionReturned(0x80905eu);
 }
