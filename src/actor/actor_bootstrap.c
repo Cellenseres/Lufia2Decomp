@@ -252,3 +252,21 @@ Lufia2ExecutionResult Lufia2ActorRefreshSpriteDescriptor(
         PullAccumulator16(memory, cpu);
     return ExecutionReturned(0x83a9e4u);
 }
+
+enum { BYTE_SIGN_BIT = 0x80u, BYTE_HIGH_MASK = 0xff00u };
+
+static uint16_t ExtendNegativeByte(uint16_t value) {
+    /* Positive values keep the original high byte. */
+    return value & BYTE_SIGN_BIT ? (uint16_t)(value | BYTE_HIGH_MASK) : value;
+}
+
+Lufia2ExecutionResult Lufia2ActorExtendSignedByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83fafau);
+    SetNz8(cpu, A8(cpu));
+    cpu->accumulator = ExtendNegativeByte(cpu->accumulator);
+    OpRepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x83fb04u);
+}

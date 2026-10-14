@@ -1,3 +1,16 @@
+# Signed-byte extension — 2026-10-14
+
+`$83:FAFA` reconstructs the signed-low-byte helper used by83:AA30. Negative
+bytes fill the high byte withFF; positive bytes retain the original high
+byte. Eight-bit NZ and the original M0 exit are retained. All 2,097,152
+semantic states and 524,288 consumer states pass, covering all16-bitA and
+relevant flags/widths. 3,072 runtime guard states and 131,072 unsupported C++
+states make no body access. Four ROM faults and one frame fault are detected.
+No timing, PCM, performance or manual gameplay acceptance is claimed.
+
+Validated with the field-reward batch: full1710, default Windows Release
+and metadata/binding checks pass. Private proof inputs remain excluded.
+
 # Field loop and scene transitions — 2026-10-14
 
 `$83:8000` now reconstructs initialization and the complete field frame loop.
@@ -577,7 +590,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1387 functions in `metadata/functions.toml`: 1387 verified, 0 draft, 0 identified, 0 disabled.
+1388 functions in `metadata/functions.toml`: 1388 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

@@ -946,6 +946,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:FA3F` | `Lufia2ActorMarkMapOccupancy` | verified | `src/actor/actor_movement.c` |
 | `$83:FA81` | `Lufia2ActorMoveFinePosition` | verified | `src/actor/actor_movement.c` |
 | `$83:FACB` | `Lufia2ActorAddDisplayOffset` | verified | `src/actor/actor_movement.c` |
+| `$83:FAFA` | `Lufia2ActorExtendSignedByte` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:FB12` | `Lufia2ActorMovementStep` | verified | `src/actor/actor_movement.c` |
 | `$83:FB2E` | `Lufia2FieldProbeObjectAttributes` | verified | `src/field/field_probe_records.c` |
 | `$83:FB51` | `Lufia2FieldProbeObjectState` | verified | `src/field/field_probe_records.c` |

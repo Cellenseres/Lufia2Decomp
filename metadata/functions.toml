@@ -11239,3 +11239,11 @@ source = "src/field/field_session_setup.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+[[function]]
+address = "83:FAFA"
+name = "Lufia2ActorExtendSignedByte"
+source = "src/actor/actor_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
