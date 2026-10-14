@@ -192,6 +192,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:F734` | `Lufia2FieldLocateCell` | verified | `src/field/field_cell_address.c` |
 | `$80:F81C` | `Lufia2FieldDivisionDelay` | verified | `src/field/field_cell_address.c` |
 | `$80:F821` | `Lufia2FieldTraceCellEdges` | verified | `src/field/field_cell_edges.c` |
+| `$80:FBCE` | `Lufia2FieldClearCellFlagsAndPublish` | verified | `src/field/field_publish.c` |
 | `$81:8000` | `Lufia2BattleSetup` | verified | `src/battle/battle_setup.c` |
 | `$81:81E6` | `Lufia2BattleLoadEncounter` | verified | `src/battle/battle_encounter_loader.c` |
 | `$81:839F` | `Lufia2BattleGenerateEncounterRecord` | verified | `src/battle/battle_encounter_generation.c` |
@@ -761,6 +762,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:8E09` | `Lufia2FieldScaleCoordinateRight` | verified | `src/field/field_layer_scale.c` |
 | `$83:8E1A` | `Lufia2FieldScaleCoordinateLeft` | verified | `src/field/field_layer_scale.c` |
 | `$83:8E2B` | `Lufia2FieldPrepareCoordinateScale` | verified | `src/field/field_layer_scale.c` |
+| `$83:8E4C` | `Lufia2FieldPublishRedrawnLayers` | verified | `src/field/field_publish.c` |
 | `$83:8E66` | `Lufia2FieldRedrawAllLayers` | verified | `src/field/field_scroll.c` |
 | `$83:8E76` | `Lufia2FieldRenderLayerPair` | verified | `src/field/field_scroll.c` |
 | `$83:8E85` | `Lufia2FieldRenderRegion` | verified | `src/field/field_scroll.c` |

@@ -166,6 +166,7 @@ add_library(lufia2_decomp STATIC
     src/field/encounter.c
     src/field/field_restore.c
     src/field/field_attributes.c
+    src/field/field_publish.c
     src/field/field_event_actors.c
     src/field/field_event_conditions.c
     src/field/field_event_objects.c

@@ -16,6 +16,21 @@ save-validation or video instructions, and original startup ownership.
 Ninety snapshot replay hashes match CPU/WRAM/PPU/APU/picture state. Driver
 waits use explicit services in synthetic tests; cycle equality is not claimed.
 
+# Field redraw publication — 2026-10-14
+
+`$80:FBCE` unpacks cell attributes, retains the original CFFF mask, blanks
+the display, publishes redrawn layers and restores brightness. Dimension
+selection reads one byte; the cell base always comes from the first layer.
+The zero-product loop still processes 65,536 words. `$83:8E4C` preserves
+saved registers/status, redraws layers, publishes immediate A8 and calls
+the original frame-wait owner. Existing child bodies are reused.
+
+Direct ROM, actual production-bridge, original-child compositions, all five
+field/world call sites, boundaries, redirects, guards, C++ and deliberate
+ROM/C/bridge faults pass. The shared 1,836-job regression, strict C11 and
+normal Release pass. Frame waits remain explicit test services; live field
+NMI timing and cycle-identical execution are not claimed.
+
 # Save validation and startup repair — 2026-10-14
 
 `$80:90E5` preserves the original checksum comparison and carry result.
@@ -781,7 +796,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1409 functions in `metadata/functions.toml`: 1409 verified, 0 draft, 0 identified, 0 disabled.
+1411 functions in `metadata/functions.toml`: 1411 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
