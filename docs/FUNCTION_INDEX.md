@@ -131,7 +131,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C825` | `Lufia2TextUpdateSceneLabel` | verified | `src/text/scene_label_callers.c` |
 | `$80:C8D5` | `Lufia2TextRenderSceneLabel` | verified | `src/text/scene_label_callers.c` |
 | `$80:C9C0` | `Lufia2TextExpandSceneString` | verified | `src/text/scene_text_resources.c` |
-| `$80:CBAE` | `Lufia2FieldEventTimerTick` | verified | `src/field/field_event_script.c` |
+| `$80:CBAE` | `Lufia2FieldEventTimerTickWithServices` | verified | `src/field/field_event_script.c` |
 | `$80:CC26` | `Lufia2FieldRequestTilemapUploads` | verified | `src/field/field_redraw_flags.c` |
 | `$80:CE5C` | `Lufia2FieldReadObjectRegionDestination` | verified | `src/field/field_event_object_region.c` |
 | `$80:CE7E` | `Lufia2FieldReadObjectRegionArea` | verified | `src/field/field_event_object_region.c` |
@@ -711,7 +711,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:8160` | `Lufia2FieldPollMpRecovery` | verified | `src/field/field_recovery.c` |
 | `$83:816D` | `Lufia2FieldStartMpRecovery` | verified | `src/field/field_recovery.c` |
 | `$83:8192` | `Lufia2FieldFrameServices` | verified | `src/field/field_recovery.c` |
-| `$83:81C6` | `Lufia2FieldTriggerUpdate` | verified | `src/field/field_triggers.c` |
+| `$83:81C6` | `Lufia2FieldTriggerUpdateWithServices` | verified | `src/field/field_triggers.c` |
 | `$83:82A0` | `Lufia2FieldFindRecoveryObject` | verified | `src/field/field_recovery.c` |
 | `$83:82B2` | `Lufia2FieldPrepareRecoveryPalette` | verified | `src/field/field_recovery.c` |
 | `$83:831E` | `Lufia2FieldScalePaletteGreen` | verified | `src/field/field_recovery.c` |

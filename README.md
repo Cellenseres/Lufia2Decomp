@@ -223,3 +223,6 @@ Field action callers share original map, actor and item services.
 Field probe dispatchers share original indexed routes and actor collision setup.
 
 Vehicle transitions share original terrain, sign-byte and sprite descriptor kernels.
+
+Field/event caller services complete the original redraw and trigger children.
+The legacy entry APIs retain their original continuation boundaries.

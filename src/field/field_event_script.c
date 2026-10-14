@@ -2,6 +2,8 @@
 
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
+#include "core/child_call.h"
+#include "core/snes_registers.h"
 #include "core/cpu_ops.h"
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
@@ -1521,4 +1523,51 @@ Lufia2ExecutionResult Lufia2FieldEventTimerTick(
         result.dispatches = passes;
     }
     return result;
+}
+
+static uint8_t EventRedrawChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                Lufia2PushedChildCall child, void *context,
+                                uint32_t site, uint32_t target,
+                                Lufia2ExecutionResult *result) {
+    const uint8_t data_bank = cpu->data_bank;
+    if (!CallChildWithFrame(memory, cpu, child, context, site, target, 3u, 0x80u)) {
+        *result = (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
+        return 0u;
+    }
+    if (cpu->program_bank != 0x80u || cpu->data_bank != data_bank ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->direct_page ||
+        cpu->decimal) {
+        *result = ExecutionHandoff(cpu, site + 4u);
+        return 0u;
+    }
+    return 1u;
+}
+
+Lufia2ExecutionResult
+Lufia2FieldEventTimerTickWithServices(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu,
+                                           Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit || cpu->decimal ||
+        !child)
+        return ExecutionHandoff(cpu, 0x80cbaeu);
+    const uint32_t resume_pc = cpu->resume_pc;
+    Lufia2ExecutionResult result = Lufia2FieldEventTimerTick(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_BOUNDARY || result.pc != 0x80cc0eu ||
+        cpu->direct_page)
+        return result;
+    if (!EventRedrawChild(memory, cpu, child, context, 0x80cc0eu, 0x80cc26u, &result))
+        return result;
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
+    if (cpu->negative) {
+        OpStz(memory, cpu, OpAbs(cpu, SNES_NMITIMEN));
+        if (!EventRedrawChild(memory, cpu, child, context, 0x80cc1au, 0x808285u,
+                              &result))
+            return result;
+        OpLoadA(cpu, 0x81u);
+        OpSta(memory, cpu, OpAbs(cpu, SNES_NMITIMEN));
+    }
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    PullDataBank(memory, cpu);
+    cpu->resume_pc = resume_pc;
+    return ExecutionReturned(0x80cc25u);
 }

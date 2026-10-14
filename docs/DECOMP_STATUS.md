@@ -1,3 +1,30 @@
+# Field/event caller services — 2026-10-14
+
+`$80:CBAE` now completes its original `$80:CC0E` redraw continuation through
+the existing upload children. `$83:81C6` delegates all fourteen original
+trigger children through explicit JSR/JSL frames. Both extend existing
+entries; neither the internal redraw tail nor the existing VM is counted
+as a new function. One trigger core serves both APIs. Legacy callers retain
+their original boundaries and supported data-bank/direct-page profiles.
+
+20,480 direct states, 20,480 owner-helper states and 20,480 canonical-adapter
+states pass. Another 32,768 cases retain the legacy trigger contract; 512
+actual event-VM message handoffs preserve PB85/DB91/X8743. All sixteen child
+sites pass 4,096 direct/3,584 adapter boundaries, 512 missing-entry handoffs
+and 240 redirects. Direct checks compare CPU/full WRAM and ordered bus.
+The 1,024 original/native-child compositions compare ordered MMIO; remaining
+children are explicit services. 18,432 C++ guard calls, strict C11 across
+429 units, seven ROM/five actual-C/five adapter faults, all 1,877 shared
+jobs and normal Release pass.
+
+Three production-object caller pairs cover idle timers, idle triggers and
+an original-ROM redraw script. CPU/full WRAM match at the caller wait;
+each native parent executes zero interpreted instructions. Three further
+boot/reset/new-session runs retain both logos, intro, audio and ninety
+snapshot replay hashes. These fixtures do not claim complete field gameplay
+or cycle equality. Shared owner adapters retain bank changes and missing
+children without exporting stale state after an unwind.
+
 # Field diagnostic controllers — 2026-10-14
 
 `$85:8045/$85:8322/$85:8415` preserve the original diagnostic menu,

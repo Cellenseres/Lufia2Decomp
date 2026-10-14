@@ -108,15 +108,23 @@ Lufia2ExecutionResult Lufia2FieldEventTick(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $80:CBAE event slot timers; a due slot runs on LLE. */
+/* Event timers and original script continuation boundaries. */
 Lufia2ExecutionResult Lufia2FieldEventTimerTick(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldEventTimerTickWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* $83:81C6 field trigger checks; exact LLE boundaries. */
 Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldTriggerUpdateWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* $83:B66E stair rectangles at $7E:F000. */
 Lufia2ExecutionResult Lufia2FieldStairRects(
