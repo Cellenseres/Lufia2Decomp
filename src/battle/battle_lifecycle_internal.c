@@ -12,6 +12,7 @@ static void ClearBattleWorkArea(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
 
+    OpSepWidths(cpu, 0x20u);
     OpStz(memory, cpu, OpDp(cpu, 0x40u));
     OpStz(memory, cpu, OpAbs(cpu, BATTLE_WORK_CLEAR_START));
     OpRepWidths(cpu, 0x20u);

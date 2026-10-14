@@ -1,3 +1,15 @@
+# Battle entry clear width - 2026-10-14
+
+The original `$81:8828` selects 8-bit accumulator accesses before clearing
+the frame byte and first battle-work byte. C now retains that width change.
+The prior reconstruction wrote two extra bytes. This corrects C to the ROM;
+it adds no function or binding and changes no original game behavior.
+
+1,024 original full-entry states compare CPU, full WRAM and ordered bus,
+including child-produced width changes and the original block move. The
+old entry with only the width correction also passes. The combined exit
+batch passes all 1,928 shared jobs, strict C11 and normal Release.
+
 # Field service declaration layout - 2026-10-14
 
 The new field/menu service helpers follow the repository formatter after
