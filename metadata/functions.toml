@@ -11303,3 +11303,11 @@ source = "src/system/screen.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+[[function]]
+address = "80:80E1"
+name = "Lufia2InitializeRuntimeDefaults"
+source = "src/system/screen.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"

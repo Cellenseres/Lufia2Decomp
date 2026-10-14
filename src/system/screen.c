@@ -1,9 +1,11 @@
 /* Screen initialization and brightness fade. */
 
+#include "core/child_call.h"
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "core/snes_registers.h"
 #include "lufia2/system.h"
+#include "system/dp_scratch.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
 
@@ -171,4 +173,50 @@ Lufia2ExecutionResult Lufia2SystemInitializeVideoMemory(
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x808210u);
+}
+
+enum {
+    DP_AUXILIARY_CALL_STUB = 0x6cu,
+    DP_INITIAL_REQUEST_FIRST = 0x81u,
+    DP_INITIAL_REQUEST_SECOND = 0x82u,
+    RUNTIME_CALL_OPCODE = 0x22u,
+    RUNTIME_RETURN_OPCODE = 0x60u,
+    RUNTIME_MOVE_OPCODE = 0x54u
+};
+
+static void InitializeRuntimeCallTemplates(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu) {
+    OpLoadA(cpu, RUNTIME_CALL_OPCODE);
+    OpSta(memory, cpu, OpDp(cpu, DP_NMI_STUB));
+    OpSta(memory, cpu, OpDp(cpu, DP_AUXILIARY_CALL_STUB));
+    OpLoadA(cpu, RUNTIME_RETURN_OPCODE);
+    OpSta(memory, cpu, OpDp(cpu, DP_NMI_STUB + 4u));
+    OpSta(memory, cpu, OpDp(cpu, DP_AUXILIARY_CALL_STUB + 4u));
+    OpLoadA(cpu, RUNTIME_MOVE_OPCODE);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_RAM_BLOCK_MOVE_OPCODE));
+    OpLoadA(cpu, RUNTIME_RETURN_OPCODE);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_RAM_BLOCK_MOVE_RETURN));
+}
+
+Lufia2ExecutionResult Lufia2InitializeRuntimeDefaults(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->data_bank != 0x80u ||
+        cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x8080e1u);
+    Push8(memory, cpu, PackStatus(cpu));
+    OpSepWidths(cpu, 0x30u);
+    InitializeRuntimeCallTemplates(memory, cpu);
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
+    OpLoadA(cpu, 0x80u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
+    OpStz(memory, cpu, OpDp(cpu, DP_NMI_STUB + 3u));
+    OpStz(memory, cpu, OpDp(cpu, DP_AUXILIARY_CALL_STUB + 3u));
+    OpStz(memory, cpu, OpDp(cpu, DP_INITIAL_REQUEST_FIRST));
+    OpStz(memory, cpu, OpDp(cpu, DP_INITIAL_REQUEST_SECOND));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E057C));
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0x0f30u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E0562));
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x808116u);
 }

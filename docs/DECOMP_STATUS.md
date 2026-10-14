@@ -1,6 +1,8 @@
 # Startup and sprite checkpoint — 2026-10-14
 
 Catalogued RAM block-move fields retain identical machine code and relocations.
+`$80:80E1` `Lufia2InitializeRuntimeDefaults` preserves its original entry/exit,
+CPU/WRAM/bus effects and documented continuation boundaries.
 
 Joint 1,769-job verification and normal Windows Release pass.
 No timing, PCM, rendered-output or gameplay claim.
@@ -679,7 +681,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1395 functions in `metadata/functions.toml`: 1395 verified, 0 draft, 0 identified, 0 disabled.
+1396 functions in `metadata/functions.toml`: 1396 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
