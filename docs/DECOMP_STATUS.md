@@ -1,9 +1,24 @@
-# Preview-controller checkpoint — 2026-10-14
+# Preview controller and clear-save operation — 2026-10-14
 
-Original RGB controls,labels,selection wraps and JML81:8855 are retained.
-Both exact4096 loop continuations and the original81:CC03 owner pass.
-Joint1,815-job verification and normal Windows Release pass.
-No timing,PCM,rendered-output or gameplay claim.
+`$84:9B3E` retains RGB editing, labels, party-status invalidation and original
+selection wraps. Its original JML81:8855 stays nonreturning. The consumer
+exports PB explicitly at that handoff. Both loop continuations retain the
+exact CPU, WRAM, bus and child-input state after 4,096 original iterations.
+`$84:9C94` remains an internal suffix, without a duplicate implementation.
+
+`$80:911C` retains the selected-X buffer offset, 512 original pairs of word
+writes, existing file writer and F0 SRAM marker. Full synthetic SRAM is
+compared, including compositions with original RNG, seed and checksum
+children and the original80:904F interpreter caller. No real save files
+are read or written by verification.
+
+Private ROM, bridge, boundary, owner, guard, C++ and fault-control proofs
+pass. No timing, PCM, rendered-output or gameplay claim.
+
+All 18 actual-library jobs, 26 ROM faults, four bridge faults, two actual-source
+C faults, five positive controls and 786,432 executed C++ API calls pass.
+Strict C11 across 426 source units, joint 1,815-job verification, normal
+Windows Release, metadata and binding uniqueness pass.
 
 # Party rendering and enemy preview — 2026-10-14
 
@@ -730,7 +745,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1403 functions in `metadata/functions.toml`: 1403 verified, 0 draft, 0 identified, 0 disabled.
+1404 functions in `metadata/functions.toml`: 1404 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

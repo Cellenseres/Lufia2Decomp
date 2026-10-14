@@ -233,3 +233,70 @@ Lufia2ExecutionResult Lufia2WriteGameFile(
     return ExecutionReturned(0x8091d2u);
 }
 
+enum {
+    DP_CLEAR_SAVE_INDEX = SAVE_FILE_INDEX,
+    SAVE_CLEAR_WORD_PAIRS = 0x0200u,
+    SAVE_EMPTY_HEADER = 0xf0u
+};
+
+static uint8_t ClearSaveChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              Lufia2PushedChildCall child, void *context,
+                              uint32_t site, uint32_t target,
+                              Lufia2ExecutionResult *result) {
+    const uint8_t data_bank = cpu->data_bank;
+    if (!CallChildWithFrame(memory, cpu, child, context, site, target, 2u, 0x80u)) {
+        const Lufia2ExecutionResult unwound = {
+            LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
+        *result = unwound;
+        return 0u;
+    }
+    if (cpu->program_bank != 0x80u || cpu->data_bank != data_bank ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->direct_page || cpu->decimal) {
+        *result = ExecutionHandoff(cpu, site + 3u);
+        return 0u;
+    }
+    return 1u;
+}
+
+static void ClearSaveWorkBuffer(const Lufia2Memory *memory,
+                                Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpLdy(cpu, SAVE_CLEAR_WORD_PAIRS);
+    OpLoadA(cpu, 0u);
+    do {
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_SAVE_FILE_BUFFER));
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_SAVE_FILE_BUFFER + 2u));
+        OpInx(cpu);
+        OpInx(cpu);
+        OpInx(cpu);
+        OpInx(cpu);
+        OpDey(cpu);
+    } while (!cpu->zero);
+    OpSepWidths(cpu, 0x20u);
+}
+
+Lufia2ExecutionResult Lufia2ClearGameFile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x80911cu);
+    Lufia2ExecutionResult result = {0};
+    OpSta(memory, cpu, OpDp(cpu, DP_CLEAR_SAVE_INDEX));
+    if (!ClearSaveChild(memory, cpu, child, context,
+                        0x80911eu, 0x8091d3u, &result))
+        return result;
+    ClearSaveWorkBuffer(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, DP_CLEAR_SAVE_INDEX));
+    if (!ClearSaveChild(memory, cpu, child, context,
+                        0x80913cu, 0x809184u, &result))
+        return result;
+    OpLda(memory, cpu, OpDp(cpu, DP_CLEAR_SAVE_INDEX));
+    if (!ClearSaveChild(memory, cpu, child, context,
+                        0x809141u, 0x8091d3u, &result))
+        return result;
+    OpLoadA(cpu, SAVE_EMPTY_HEADER);
+    OpSta(memory, cpu, OpLongX(cpu, 0x700000u));
+    return ExecutionReturned(0x80914au);
+}

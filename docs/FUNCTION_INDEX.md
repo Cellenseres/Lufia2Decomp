@@ -39,6 +39,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9099` | `Lufia2LoadGameFile` | verified | `src/system/save.c` |
 | `$80:90C9` | `Lufia2SaveGameFile` | verified | `src/system/save.c` |
 | `$80:90FC` | `Lufia2SaveFileChecksum` | verified | `src/system/save.c` |
+| `$80:911C` | `Lufia2ClearGameFile` | verified | `src/system/save.c` |
 | `$80:914B` | `Lufia2ReadGameFile` | verified | `src/system/save.c` |
 | `$80:9184` | `Lufia2WriteGameFile` | verified | `src/system/save.c` |
 | `$80:91D3` | `Lufia2ResolveSaveFileAddress` | verified | `src/system/save.c` |
