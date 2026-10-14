@@ -1019,6 +1019,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:8A03` | `Lufia2BattleInitializePartySpriteDescriptors` | verified | `src/battle/battle_sprite_descriptors.c` |
 | `$85:8A2F` | `Lufia2BattleSprites` | verified | `src/battle/battle_frame.c` |
 | `$85:8A39` | `Lufia2BattleFrameSetup` | verified | `src/battle/battle_frame_setup.c` |
+| `$85:8A96` | `Lufia2BattleRenderPartyPass` | verified | `src/battle/battle_frame_setup.c` |
 | `$85:8AAF` | `Lufia2BattleColorsInit` | verified | `src/battle/battle_frame_setup.c` |
 | `$85:8AF4` | `Lufia2BattleColorsParty` | verified | `src/battle/battle_frame_setup.c` |
 | `$85:8B22` | `Lufia2BattleColorsMonster` | verified | `src/battle/battle_frame_setup.c` |

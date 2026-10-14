@@ -3,6 +3,7 @@
  * tables, and the row writer of the tile grid. */
 
 #include "battle/battle_internal.h"
+#include "core/child_call.h"
 #include "lufia2/battle.h"
 
 enum {
@@ -190,6 +191,56 @@ static int CallBattle(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return 1;
 }
 
+typedef struct BattlePartyPassStep {
+    uint16_t return_address;
+    uint32_t target;
+    Lufia2ExecutionResult (*run)(const Lufia2Memory *, Lufia2CpuState *);
+} BattlePartyPassStep;
+
+static Lufia2ExecutionResult RenderBattlePartyPass(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    static const BattlePartyPassStep steps[] = {
+        {0x8a99u, 0x858aafu, Lufia2BattleColorsInit},
+        {0x8a9du, 0x858af4u, Lufia2BattleColorsParty},
+        {0x8aa1u, 0x858b4bu, Lufia2BattleSpriteRecordsEntry},
+        {0x8aa5u, 0x858bc0u, Lufia2BattleSpriteSingleEntry},
+        {0x8aa9u, 0x858c27u, Lufia2BattleSpriteMarkersEntry},
+        {0x8aadu, 0x858c98u, Lufia2BattleSpritePartyEntry}
+    };
+    const uint8_t caller_bank = cpu->data_bank;
+    for (unsigned i = 0u; i < sizeof(steps) / sizeof(steps[0]); ++i) {
+        const BattlePartyPassStep *step = &steps[i];
+        if (!child) {
+            Lufia2ExecutionResult result;
+            if (!CallBattle(memory, cpu, step->return_address, step->run, &result))
+                return result;
+            continue;
+        }
+        const uint32_t site = 0x850000u | (uint16_t)(step->return_address - 3u);
+        if (!CallChildWithFrame(memory, cpu, child, context,
+                               site, step->target, 3u, 0x85u)) {
+            const Lufia2ExecutionResult result = {
+                LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
+            return result;
+        }
+        if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+            cpu->program_bank != 0x85u || cpu->data_bank != caller_bank ||
+            cpu->direct_page || cpu->decimal)
+            return ExecutionHandoff(cpu, site + 4u);
+    }
+    return ExecutionReturned(0x858aaeu);
+}
+
+Lufia2ExecutionResult Lufia2BattleRenderPartyPass(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x858a96u);
+    return RenderBattlePartyPass(memory, cpu, child, context);
+}
+
 /* The setup clears the tilemap before it calls any renderer. Check their
  * output spans now, so unsupported entries resume before that first clear. */
 static bool BattleFrameSetupInputsFit(
@@ -280,12 +331,5 @@ Lufia2ExecutionResult Lufia2BattleFrameSetup(
     DecrementA8(cpu);
     if (!cpu->zero)
         return ExecutionReturned(0x858a63u);
-    if (!CallBattle(memory, cpu, 0x8a99u, Lufia2BattleColorsInit, &result) ||
-        !CallBattle(memory, cpu, 0x8a9du, Lufia2BattleColorsParty, &result) ||
-        !CallBattle(memory, cpu, 0x8aa1u, Lufia2BattleSpriteRecordsEntry, &result) ||
-        !CallBattle(memory, cpu, 0x8aa5u, Lufia2BattleSpriteSingleEntry, &result) ||
-        !CallBattle(memory, cpu, 0x8aa9u, Lufia2BattleSpriteMarkersEntry, &result) ||
-        !CallBattle(memory, cpu, 0x8aadu, Lufia2BattleSpritePartyEntry, &result))
-        return result;
-    return ExecutionReturned(0x858aaeu);
+    return RenderBattlePartyPass(memory, cpu, NULL, NULL);
 }

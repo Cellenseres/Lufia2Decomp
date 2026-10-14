@@ -1,3 +1,11 @@
+# Preview checkpoint — 2026-10-14
+
+`$85:8A96` `Lufia2BattleRenderPartyPass` preserves original semantics,
+child frames and exact continuations.
+
+Joint 1,797-job verification and normal Windows Release pass.
+No timing,PCM,rendered-output or gameplay claim.
+
 # Startup and enemy graphics contracts — 2026-10-14
 
 `$80:80E1` installs the original RAM call templates and runtime values. It
@@ -700,7 +708,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1399 functions in `metadata/functions.toml`: 1399 verified, 0 draft, 0 identified, 0 disabled.
+1400 functions in `metadata/functions.toml`: 1400 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
