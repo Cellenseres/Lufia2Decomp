@@ -1389,6 +1389,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:BFEE` | `Lufia2FieldWrapLayerScroll` | verified | `src/field/field_scroll.c` |
 | `$8E:C05F` | `Lufia2FieldTryObjectReward` | verified | `src/field/field_object_rewards.c` |
 | `$8E:C1C5` | `Lufia2FieldCountValue2B` | verified | `src/field/field_camera_services.c` |
+| `$8E:C1DE` | `Lufia2FieldApplyObjectReward` | verified | `src/field/field_object_rewards.c` |
 | `$8E:C338` | `Lufia2FieldSelectObjectCondition` | verified | `src/field/field_object_conditions.c` |
 | `$8E:C34F` | `Lufia2FieldResolveObjectCondition` | verified | `src/field/field_object_conditions.c` |
 | `$8E:C36D` | `Lufia2FieldReadMapResourceFlags` | verified | `src/field/field_camera_services.c` |

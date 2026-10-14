@@ -1,4 +1,21 @@
-# Signed-byte extension — 2026-10-14
+# Field reward application and byte extension — 2026-10-14
+
+`$8E:C1DE` reconstructs the complete object reward presentation and application:
+item/spell description, announcement, original frame/counter waits, inventory
+selection, remaining value handling and field restoration. All 15 original
+child sites retain JSL frames and explicit continuation boundaries. The
+consumer profile is DB83/DP0/M1X0. The text child may change the saved bank;
+original PLB restores it. The internal waits receive no independent binding.
+
+4,096 direct and consumer states each cover 126 instruction states and all
+15 sites. Each path passes 120 child unwinds, 360 width and 352 context fences.
+3,840 runtime and 7,168 semantic guard states make no body access. 1,800 child
+redirects preserve the original landing/frame contract. Both exact wait
+boundaries pass eight states per path, with 64 actual original NMI resumptions.
+16 actual FieldFrameServices compositions each preserve 3,200 original NMIs;
+900C and NMI execute ROM, other leaves stay controlled. All 14 ROM mutations
+and one incoming-frame mutation are detected. Positive controls, C++ and
+strict C11 pass. Existing WRAM names preserve complete COFF except timestamp.
 
 `$83:FAFA` reconstructs the signed-low-byte helper used by83:AA30. Negative
 bytes fill the high byte withFF; positive bytes retain the original high
@@ -8,8 +25,10 @@ relevant flags/widths. 3,072 runtime guard states and 131,072 unsupported C++
 states make no body access. Four ROM faults and one frame fault are detected.
 No timing, PCM, performance or manual gameplay acceptance is claimed.
 
-Validated with the field-reward batch: full1710, default Windows Release
-and metadata/binding checks pass. Private proof inputs remain excluded.
+All 15 actual-library jobs, 18 ROM mutations, two bridge mutations, four
+positive controls, 131,073 executed C++ API calls and strict C11 across426
+source units pass. The joint 1,710-job full verification and default Windows
+Release pass. Duplicate metadata and binding checks pass.
 
 # Field loop and scene transitions — 2026-10-14
 
@@ -590,7 +609,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1388 functions in `metadata/functions.toml`: 1388 verified, 0 draft, 0 identified, 0 disabled.
+1389 functions in `metadata/functions.toml`: 1389 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

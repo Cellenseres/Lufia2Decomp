@@ -399,3 +399,243 @@ Lufia2ExecutionResult Lufia2FieldChooseCollectedObjects(const Lufia2Memory *memo
     OpSta(memory, cpu, OpAbsX(cpu, WRAM_INVENTORY_PACKED_ITEMS + 1u));
     return ExecutionReturned(0x8ebd5du);
 }
+
+enum {
+    REWARD_ACTOR_REQUEST = WRAM_FIELD_SELECTED_OBJECT_RECORD_ID,
+    REWARD_ANIMATION = WRAM_ACTOR_CLAIMED_OBJECT_RECORD,
+    REWARD_ANIMATION_TIME = WRAM_ACTOR_CLAIMED_PENDING_OBJECT,
+    REWARD_DESCRIPTION = WRAM_RECORD_BUFFER,
+    REWARD_DESCRIPTION_KIND = 0x0b88u,
+    REWARD_DESCRIPTION_FLAGS = 0x0b84u,
+    REWARD_MENU_ORDINAL = WRAM_MENU_ITEM_QUANTITY,
+    REWARD_MESSAGE_POINTER = WRAM_UNK_7E09B7,
+    REWARD_MESSAGE_BANK = WRAM_SCENE_SCRIPT_BANK,
+    REWARD_MESSAGE_POSITION = WRAM_SCENE_LABEL_ROW_POSITION,
+    REWARD_MESSAGE_TIME = WRAM_FIELD_CONTROL_CHANGE_PENDING,
+    REWARD_MESSAGE_FIRST = WRAM_UNK_7E0562,
+    REWARD_MESSAGE_SECOND = WRAM_UNK_7E0563,
+    REWARD_ACTOR_STATE = WRAM_ACTOR_STATE,
+    DP_REWARD_SELECTED_RECORD = 0x8bu,
+    DP_REWARD_DESCRIPTION_FLAGS = 0x60u,
+    DP_REWARD_MENU_OPERATION = 0x30u,
+    DP_REWARD_MENU_PARAMETER = 0x31u,
+    ROM_REWARD_FACING_SCRIPT = 0x83c1a5u,
+    REWARD_FRAME_LIMIT = 4096u,
+    REWARD_POLL_LIMIT = 65536u
+};
+
+static uint8_t ApplyRewardChild(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, uint32_t site,
+    uint32_t target, uint8_t saved_bank, Lufia2ExecutionResult *result) {
+    if (!CallChildWithFrame(memory, cpu, child, context, site, target, 3u, 0x8eu)) {
+        *result = ExecutionReturned(site);
+        result->flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        return 0u;
+    }
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->direct_page || cpu->decimal || (!saved_bank && cpu->data_bank!=0x83u)) {
+        *result = ExecutionHandoff(cpu, site+4u);
+        return 0u;
+    }
+    return 1u;
+}
+
+static uint8_t DescribeObjectReward(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, Lufia2ExecutionResult *result) {
+    OpLda(memory, cpu, REWARD_OBJECT);
+    OpSta(memory, cpu, REWARD_ACTOR_REQUEST);
+    OpOraValue(cpu, 0x80u);
+    ExchangeAccumulatorBytes(cpu);
+    OpLoadA(cpu, 0u);
+    if (!ApplyRewardChild(memory, cpu, child, context,
+            0x8ec1ebu, 0x83f559u, 0u, result))
+        return 0u;
+    OpLdx(cpu, 0x8000u);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_REWARD_DESCRIPTION_FLAGS), cpu->x);
+    OpLda(memory, cpu, REWARD_VALUE+1u);
+    if (cpu->negative) {
+        OpLda(memory, cpu, REWARD_VALUE);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_SPELL_RECORD_ID));
+        if (!ApplyRewardChild(memory, cpu, child, context,
+                0x8ec201u, 0x81f414u, 0u, result))
+            return 0u;
+    } else {
+        OpLda(memory, cpu, REWARD_VALUE);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
+        OpLda(memory, cpu, REWARD_VALUE+1u);
+        OpAndValue(cpu, 1u);
+        OpSta(memory, cpu, REWARD_VALUE+1u);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID + 1u));
+        if (!ApplyRewardChild(memory, cpu, child, context,
+                0x8ec21eu, 0x81f1c5u, 0u, result))
+            return 0u;
+    }
+    OpLdx(cpu, REWARD_DESCRIPTION);
+    return ApplyRewardChild(memory, cpu, child, context,
+        0x8ec225u, 0x8eb5fbu, 0u, result);
+}
+
+static void ChooseRewardAnnouncement(const Lufia2Memory *memory,
+                                    Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, REWARD_VALUE+1u);
+    if (cpu->negative) {
+        OpLoadA(cpu, 0x1cu);
+        OpSta(memory, cpu, REWARD_ANIMATION);
+        OpLoadA(cpu, 0x0au);
+        OpSta(memory, cpu, REWARD_ANIMATION_TIME);
+        OpLoadA(cpu, 0x35u);
+        return;
+    }
+    OpLda(memory, cpu, OpAbs(cpu, REWARD_DESCRIPTION_KIND));
+    OpCmpValue(cpu, 0x40u);
+    if (cpu->carry) {
+        cpu->carry=1u;
+        OpSbcValue(cpu, 0x40u);
+        OpSta(memory, cpu, REWARD_ANIMATION);
+        OpLoadA(cpu, 0x18u);
+        OpSta(memory, cpu, REWARD_ANIMATION_TIME);
+        OpLoadA(cpu, 0x35u);
+        return;
+    }
+    OpSta(memory, cpu, REWARD_ANIMATION);
+    OpLoadA(cpu, 0x0au);
+    OpSta(memory, cpu, REWARD_ANIMATION_TIME);
+    OpLda(memory, cpu, OpAbs(cpu, REWARD_DESCRIPTION_FLAGS));
+    OpBitValue(cpu, 0x20u);
+    OpLoadA(cpu, cpu->zero ? 0x36u : 0x33u);
+}
+
+static uint8_t WaitForRewardAnnouncement(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, Lufia2ExecutionResult *result) {
+    for (unsigned frame=0u; frame<REWARD_FRAME_LIMIT; ++frame) {
+        if (!ApplyRewardChild(memory, cpu, child, context,
+                0x8ec2aau, 0x838192u, 0u, result))
+            return 0u;
+        OpLda(memory, cpu, OpDp(cpu, DP_FRAME_COUNTER));
+        OpCmpValue(cpu, 0xc8u);
+        if (cpu->carry)
+            return 1u;
+    }
+    *result=ExecutionHandoff(cpu, 0x8ec2aau);
+    return 0u;
+}
+
+static uint8_t WaitForRewardNextFrame(const Lufia2Memory *memory,
+                                    Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, DP_NMI_FRAME_COUNTER));
+    for (unsigned poll=0u; poll<REWARD_POLL_LIMIT; ++poll) {
+        OpCmp(memory, cpu, OpDp(cpu, DP_NMI_FRAME_COUNTER));
+        if (!cpu->zero)
+            return 1u;
+    }
+    return 0u;
+}
+
+Lufia2ExecutionResult Lufia2FieldApplyObjectReward(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank!=0x8eu || cpu->data_bank!=0x83u ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x8ec1deu);
+    Lufia2ExecutionResult result;
+    if (!DescribeObjectReward(memory, cpu, child, context, &result))
+        return result;
+    ChooseRewardAnnouncement(memory, cpu);
+    if (!ApplyRewardChild(memory, cpu, child, context,
+            0x8ec26eu, 0x8093feu, 0u, &result) ||
+        !ApplyRewardChild(memory, cpu, child, context,
+            0x8ec272u, 0x838e66u, 0u, &result))
+        return result;
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_FACING));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, ROM_REWARD_FACING_SCRIPT));
+    cpu->carry=0u;
+    OpAdcValue(cpu, 0x40u);
+    if (!ApplyRewardChild(memory, cpu, child, context,
+            0x8ec282u, 0x83d350u, 0u, &result))
+        return result;
+    OpLdx(cpu, 0xe000u);
+    OpWriteX(memory, cpu, OpAbs(cpu, REWARD_MESSAGE_POINTER), cpu->x);
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpAbs(cpu, REWARD_MESSAGE_BANK));
+    OpLdx(cpu, 0x0440u);
+    OpWriteX(memory, cpu, OpAbs(cpu, REWARD_MESSAGE_POSITION), cpu->x);
+    PushDataBank(memory, cpu);
+    if (!ApplyRewardChild(memory, cpu, child, context,
+            0x8ec298u, 0x80c8d5u, 1u, &result))
+        return result;
+    OpLoadA(cpu, 0xc4u);
+    OpSta(memory, cpu, REWARD_MESSAGE_TIME);
+    PullDataBank(memory, cpu);
+    OpLoadA(cpu, 1u);
+    OpTestBits(memory, cpu, OpAbs(cpu, REWARD_ACTOR_STATE), 1u);
+    OpStz(memory, cpu, OpDp(cpu, DP_FRAME_COUNTER));
+    if (!WaitForRewardAnnouncement(memory, cpu, child, context, &result))
+        return result;
+    OpLoadA(cpu, 1u);
+    OpTestBits(memory, cpu, OpAbs(cpu, REWARD_ACTOR_STATE), 0u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E099D));
+    if (!ApplyRewardChild(memory, cpu, child, context,
+            0x8ec2bcu, 0x80969fu, 0u, &result) ||
+        !ApplyRewardChild(memory, cpu, child, context,
+            0x8ec2c0u, 0x838e66u, 0u, &result))
+        return result;
+    if (!WaitForRewardNextFrame(memory, cpu))
+        return ExecutionHandoff(cpu, 0x8ec2c6u);
+    OpRepWidths(cpu, 0x10u);
+    OpLda(memory, cpu, REWARD_VALUE);
+    OpSta(memory, cpu, OpAbs(cpu, REWARD_REMAINING));
+    OpLda(memory, cpu, REWARD_VALUE+1u);
+    OpSta(memory, cpu, OpAbs(cpu, REWARD_REMAINING+1u));
+    if (cpu->negative) {
+        OpStz(memory, cpu, OpAbs(cpu, REWARD_REMAINING));
+        OpStz(memory, cpu, OpAbs(cpu, REWARD_REMAINING+1u));
+    } else {
+        OpLdy(cpu, 1u);
+        OpWriteX(memory, cpu, OpAbs(cpu, REWARD_MENU_ORDINAL), cpu->y);
+        OpStz(memory, cpu, OpDp(cpu, DP_REWARD_MENU_PARAMETER));
+        OpLoadA(cpu, 4u);
+        OpSta(memory, cpu, OpDp(cpu, DP_REWARD_MENU_OPERATION));
+        if (!ApplyRewardChild(memory, cpu, child, context,
+                0x8ec2f0u, 0x82e746u, 0u, &result))
+            return result;
+        TransferDirectToA(cpu);
+        OpSta(memory, cpu, OpAbs(cpu, REWARD_MESSAGE_FIRST));
+        OpLoadA(cpu, 0x0fu);
+        OpSta(memory, cpu, OpAbs(cpu, REWARD_MESSAGE_SECOND));
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, REWARD_REMAINING)));
+        if (cpu->negative) {
+            OpLoadA(cpu, 0xffu);
+            OpSta(memory, cpu, REWARD_MESSAGE_TIME+1u);
+            OpSta(memory, cpu, REWARD_MESSAGE_TIME+2u);
+            if (!ApplyRewardChild(memory, cpu, child, context,
+                    0x8ec30cu, 0x8385dcu, 0u, &result) ||
+                !ApplyRewardChild(memory, cpu, child, context,
+                    0x8ec310u, 0x83afcdu, 0u, &result))
+                return result;
+        }
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_REWARD_SELECTED_RECORD)));
+        OpLda(memory, cpu, OpAbs(cpu, REWARD_REMAINING+1u));
+        OpAndValue(cpu, 0x7fu);
+        OpOra(memory, cpu, OpAbs(cpu, REWARD_REMAINING));
+        if (!cpu->zero) {
+            OpLda(memory, cpu, REWARD_OBJECT);
+            OpSta(memory, cpu, REWARD_ACTOR_REQUEST);
+            OpOraValue(cpu, 0x80u);
+            ExchangeAccumulatorBytes(cpu);
+            OpLoadA(cpu, 0x40u);
+            if (!ApplyRewardChild(memory, cpu, child, context,
+                    0x8ec32du, 0x83f559u, 0u, &result))
+                return result;
+        }
+    }
+    cpu->carry=1u;
+    TransferDirectToA(cpu);
+    OpSta(memory, cpu, WRAM_UNK_7FD0AE);
+    return ExecutionReturned(0x8ec337u);
+}
