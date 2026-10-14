@@ -1,12 +1,25 @@
-# Preview checkpoint — 2026-10-14
+# Party rendering and enemy preview — 2026-10-14
 
-`$85:8A96` `Lufia2BattleRenderPartyPass` preserves original semantics,
-child frames and exact continuations.
-`$84:9D2C` `Lufia2BattleBuildEnemyPreview` preserves original semantics,
-child frames and exact continuations.
+`$85:8A96` exposes the six-child party-render suffix through one shared
+helper. The enclosing `$85:8A39` mode-2 behavior remains unchanged and is
+checked against its previous implementation.
 
-Joint 1,797-job verification and normal Windows Release pass.
-No timing,PCM,rendered-output or gameplay claim.
+`$84:9D2C` retains ROM sprite selection, original record initialization,
+dimension-dependent placement, graphics groups, party tilemap and frame
+publication. `$84:9CD4` retains the unchanged-background fast return and
+two original graphics queue records. All original child frames and context
+fences remain explicit. The queue's existing M0 behavior is checked in
+composition without changing its default M1 metadata or consumer profile.
+
+Private ROM, production-bridge, child-input, owner-prefix, boundary,
+fault-control and portable C/C++ checks pass. Original frame waits remain
+explicit services in preview compositions. No timing, PCM, rendered-output,
+whole diagnostic-loop or gameplay claim.
+
+All 28 actual-library jobs, 25 ROM faults, six bridge faults, seven positive
+controls, 1,179,648 executed C++ calls and 4,096 previous-parent regressions
+pass. Strict C11 across 426 source units, joint 1,797-job verification,
+normal Windows Release, metadata and binding uniqueness pass.
 
 # Startup and enemy graphics contracts — 2026-10-14
 
@@ -710,7 +723,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1401 functions in `metadata/functions.toml`: 1401 verified, 0 draft, 0 identified, 0 disabled.
+1402 functions in `metadata/functions.toml`: 1402 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

@@ -509,3 +509,50 @@ Lufia2ExecutionResult Lufia2BattleBuildEnemyPreview(
         return preview.result;
     return ExecutionReturned(0x849e1bu);
 }
+
+static void QueuePreviewBackgroundHalf(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu, uint16_t source,
+                                       uint16_t destination) {
+    OpLoadA(cpu, source);
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE + 2u));
+    OpLoadA(cpu, destination);
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE + 4u));
+    OpLoadA(cpu, 0x1000u);
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE));
+}
+
+Lufia2ExecutionResult Lufia2BattleUpdatePreviewBackground(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x84u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x849cd4u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_BACKGROUND_SELECTION));
+    OpCmp(memory, cpu, OpAbs(cpu, WRAM_BATTLE_BACKGROUND_ID));
+    if (cpu->zero)
+        return ExecutionReturned(0x849d2bu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_BACKGROUND_ID));
+    PreviewBuild preview = {memory, cpu, child, context, {0}};
+    if (!CallPreviewStep(&preview, 0x849cdfu, 0x81b9c7u, 3u) ||
+        !CallPreviewStep(&preview, 0x849ce3u, 0x81b9afu, 3u))
+        return preview.result;
+    OpRepWidths(cpu, 0x20u);
+    if (!CallPreviewStep(&preview, 0x849ce9u, 0x85ecdbu, 3u))
+        return preview.result;
+    QueuePreviewBackgroundHalf(memory, cpu, 0xc000u, 0x3000u);
+    OpSepWidths(cpu, 0x20u);
+    if (!CallPreviewStep(&preview, 0x849d01u, 0x85ec81u, 3u))
+        return preview.result;
+    OpRepWidths(cpu, 0x20u);
+    if (!CallPreviewStep(&preview, 0x849d07u, 0x85ecdbu, 3u))
+        return preview.result;
+    QueuePreviewBackgroundHalf(memory, cpu, 0xd000u, 0x3800u);
+    OpSepWidths(cpu, 0x20u);
+    if (!CallPreviewStep(&preview, 0x849d1fu, 0x85ec81u, 3u))
+        return preview.result;
+    OpRepWidths(cpu, 0x20u);
+    if (!CallPreviewStep(&preview, 0x849d25u, 0x859af4u, 3u))
+        return preview.result;
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x849d2bu);
+}
