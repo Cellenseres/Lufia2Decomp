@@ -8,6 +8,7 @@ Generated from `metadata/functions.toml`; update it with
 | Address | Symbol | Status | Source |
 | --- | --- | --- | --- |
 | `$00:057D` | `Lufia2RamBlockMove` | verified | `src/system/block_move.c` |
+| `$80:8117` | `Lufia2SystemInitializeVideoMemory` | verified | `src/system/screen.c` |
 | `$80:8285` | `Lufia2SceneUploadRequestedTilemaps` | verified | `src/system/scene_uploads.c` |
 | `$80:8299` | `Lufia2RandomScale` | verified | `src/system/random.c` |
 | `$80:82C7` | `Lufia2RandomByte` | verified | `src/system/random.c` |

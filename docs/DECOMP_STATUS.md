@@ -1,13 +1,33 @@
-# Palette fidelity checkpoint — 2026-10-14
+# Palette fidelity, battle exit and startup â€” 2026-10-14
 
-Four existing palette APIs retain original operand rereads, word TSB order
-and Gray index widths. Full CPU/WRAM/ordered-bus comparisons and controls pass.
-`$85:EAEF` preserves the complete special exit, original frame waits and
-explicit child/continuation boundaries.
-`$82:A4BE` reuses the original inline dispatcher under the verified
-main-menu parent; independent handlers retain original boundaries.
-Validation: joint 1,742-job verification and normal Windows Release.
-No runtime timing, PCM or gameplay acceptance is claimed.
+Four existing palette APIs now preserve original operand rereads, word TSB
+write order and the Gray helper's X-dependent LDY/STY width. Canonical values
+remain unchanged; the existing admitted X8 path also matches the ROM.
+266,240 direct and 266,240 production-bridge comparisons include ordered
+data/MMIO. Six effective C faults, C++ linkage and strict C11 pass privately.
+
+`$85:EAEF` reconstructs the complete special-exit fade, palette copy, frame
+hold and brightness fade. Its 11 child sites, exact mode/continuation fences,
+four 4,096-iteration handoffs and original frame/NMI compositions are proved.
+The shared palette address is catalogued as a base without overlapping ranges.
+
+`$82:A4BE` reuses the verified inline dispatcher. Original table contents and
+incoming frames remain literal; independent menu handlers retain boundaries.
+1,024 actual interpreter owner pairs cover all eight choices under the real
+native main-menu parent. No handler completeness is implied.
+
+`$80:8117` reconstructs both original video-register streams, DMA setup and
+RAM initialization. All four M/X modes and 256 DB values pass. The negative
+DFF8 countdown, OAM length2020 and VRAM count0000 remain unchanged. The actual
+startup JSR enters at S1FFD;128 original-prefix owner pairs preserve that ABI.
+
+Original DMA devices remain owned by the existing bus. No rendered-output,
+runtime timing, PCM or gameplay acceptance is claimed.
+
+All 20 actual-library jobs, 17 ROM faults, three bridge faults, one public
+palette-order fault, five positive controls, 327,685 executed C++ API calls
+and strict C11 across 426 source units pass. The joint 1,742-job verification
+and normal Windows Release pass. Metadata, binding and source checks pass.
 
 # Party order and inline menu dispatch — 2026-10-14
 
@@ -652,7 +672,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1394 functions in `metadata/functions.toml`: 1394 verified, 0 draft, 0 identified, 0 disabled.
+1395 functions in `metadata/functions.toml`: 1395 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
