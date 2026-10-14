@@ -1189,6 +1189,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:DFB9` | `Lufia2BattleReleaseDefeatedEnemies` | verified | `src/battle/battle_status_cache.c` |
 | `$85:E7BC` | `Lufia2BattlePlayTransition` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAE4` | `Lufia2BattleAdvanceTransitionFrame` | verified | `src/battle/battle_transition_setup.c` |
+| `$85:EAEF` | `Lufia2BattleFadeSpecialExit` | verified | `src/battle/battle_exit.c` |
 | `$85:EB91` | `Lufia2BattleLoadEnemyGraphicsGroups` | verified | `src/battle/battle_enemy_graphics.c` |
 | `$85:EBE0` | `Lufia2BattleAllocateEnemyTiles` | verified | `src/battle/battle_enemy_graphics.c` |
 | `$85:EC4D` | `Lufia2BattleAllocateEnemyPalette` | verified | `src/battle/battle_enemy_graphics.c` |

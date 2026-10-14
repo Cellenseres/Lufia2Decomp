@@ -2,6 +2,8 @@
 
 Four existing palette APIs retain original operand rereads, word TSB order
 and Gray index widths. Full CPU/WRAM/ordered-bus comparisons and controls pass.
+`$85:EAEF` preserves the complete special exit, original frame waits and
+explicit child/continuation boundaries.
 Validation: joint 1,742-job verification and normal Windows Release.
 No runtime timing, PCM or gameplay acceptance is claimed.
 
@@ -648,7 +650,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1392 functions in `metadata/functions.toml`: 1392 verified, 0 draft, 0 identified, 0 disabled.
+1393 functions in `metadata/functions.toml`: 1393 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

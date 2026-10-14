@@ -11279,3 +11279,11 @@ source = "src/title/title.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:EAEF"
+name = "Lufia2BattleFadeSpecialExit"
+source = "src/battle/battle_exit.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
