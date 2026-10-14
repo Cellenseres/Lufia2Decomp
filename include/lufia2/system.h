@@ -392,6 +392,10 @@ Lufia2ExecutionResult Lufia2SystemInitializeVideoMemory(
 Lufia2ExecutionResult Lufia2InitializeRuntimeDefaults(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2InitializeStartupImage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

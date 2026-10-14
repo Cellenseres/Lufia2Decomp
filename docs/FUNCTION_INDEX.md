@@ -42,6 +42,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:914B` | `Lufia2ReadGameFile` | verified | `src/system/save.c` |
 | `$80:9184` | `Lufia2WriteGameFile` | verified | `src/system/save.c` |
 | `$80:91D3` | `Lufia2ResolveSaveFileAddress` | verified | `src/system/save.c` |
+| `$80:91DF` | `Lufia2InitializeStartupImage` | verified | `src/system/screen.c` |
 | `$80:92A4` | `Lufia2IntroNmi` | verified | `src/title/title.c` |
 | `$80:9383` | `Lufia2InitializeBootSound` | verified | `src/system/sound_startup.c` |
 | `$80:93D6` | `Lufia2ResetSoundResources` | verified | `src/system/sound_startup.c` |

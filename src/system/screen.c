@@ -220,3 +220,156 @@ Lufia2ExecutionResult Lufia2InitializeRuntimeDefaults(
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x808116u);
 }
+
+enum {
+    STARTUP_RESOURCE_ID = 0x003fu,
+    STARTUP_RESOURCE_BUFFER = 0x4000u,
+    STARTUP_MAP_FIRST = 0x2000u,
+    STARTUP_MAP_SECOND = 0x2800u,
+    STARTUP_MAP_BYTES = 0x0800u,
+    STARTUP_IMAGE_ROW_FIRST = 0x0280u,
+    STARTUP_IMAGE_ROW_END = 0x0480u,
+    STARTUP_IMAGE_ROW_BYTES = 0x0200u,
+    STARTUP_PALETTE_OFFSET = 0x0008u,
+    STARTUP_PALETTE_BYTES = 0x000cu,
+    STARTUP_PPU_BG1SC = 0x2107u,
+    STARTUP_PPU_BG12NBA = 0x210bu,
+    STARTUP_PPU_BG34NBA = 0x210cu,
+    DP_STARTUP_RESOURCE_OUTPUT = 0x60u,
+    DP_STARTUP_REQUEST = 0x50u
+};
+
+static void ConfigureStartupVideo(const Lufia2Memory *memory,
+                                  Lufia2CpuState *cpu) {
+    OpLdx(cpu, 0u);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_NMI_SCROLL_REGISTERS), cpu->x);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_NMI_SCROLL_REGISTERS + 2u), cpu->x);
+    OpLoadA(cpu, 0x80u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_INIDISP));
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_BGMODE));
+    OpLoadA(cpu, 0u);
+    OpSta(memory, cpu, OpAbs(cpu, STARTUP_PPU_BG1SC));
+    OpLoadA(cpu, 0x44u);
+    OpSta(memory, cpu, OpAbs(cpu, STARTUP_PPU_BG12NBA));
+    OpSta(memory, cpu, OpAbs(cpu, STARTUP_PPU_BG34NBA));
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_TM));
+    OpStz(memory, cpu, OpAbs(cpu, SNES_TS));
+    OpStz(memory, cpu, OpAbs(cpu, SNES_CGWSEL));
+    OpStz(memory, cpu, OpAbs(cpu, SNES_CGADSUB));
+    OpLoadA(cpu, 0xe0u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_COLDATA));
+}
+
+static void ClearStartupMaps(const Lufia2Memory *memory,
+                              Lufia2CpuState *cpu) {
+    OpLdx(cpu, 0u);
+    do {
+        OpLoadA(cpu, 2u);
+        OpSta(memory, cpu, OpAbsX(cpu, STARTUP_MAP_FIRST));
+        TransferDirectToA(cpu);
+        OpSta(memory, cpu, OpAbsX(cpu, STARTUP_MAP_SECOND));
+        OpInx(cpu);
+        OpInx(cpu);
+        OpCpx(cpu, STARTUP_MAP_BYTES);
+    } while (!cpu->carry);
+}
+
+static void CopyStartupImageRow(const Lufia2Memory *memory,
+                                 Lufia2CpuState *cpu, uint16_t destination) {
+    OpLdy(cpu, STARTUP_IMAGE_ROW_FIRST);
+    do {
+        OpLda(memory, cpu, OpAbsX(cpu, STARTUP_RESOURCE_BUFFER));
+        OpSta(memory, cpu, OpAbsY(cpu, destination));
+        OpInx(cpu);
+        OpInx(cpu);
+        OpIny(cpu);
+        OpIny(cpu);
+        OpCpy(cpu, STARTUP_IMAGE_ROW_END);
+    } while (!cpu->carry);
+}
+
+static uint8_t CopyStartupPalette(const Lufia2Memory *memory,
+                                   Lufia2CpuState *cpu) {
+    OpLdx(cpu, OpReadX(memory, cpu,
+        OpAbs(cpu, STARTUP_RESOURCE_BUFFER + STARTUP_PALETTE_OFFSET)));
+    OpLdy(cpu, 0u);
+    unsigned copies = 0u;
+    do {
+        OpLda(memory, cpu, OpAbsX(cpu, STARTUP_RESOURCE_BUFFER));
+        OpSta(memory, cpu, OpAbsY(cpu, WRAM_CGRAM_BUFFER));
+        OpInx(cpu);
+        OpInx(cpu);
+        OpIny(cpu);
+        OpIny(cpu);
+        OpCpy(cpu, OpReadX(memory, cpu,
+            OpAbs(cpu, STARTUP_RESOURCE_BUFFER + STARTUP_PALETTE_BYTES)));
+        if (!cpu->carry && ++copies == 4096u)
+            return 0u;
+    } while (!cpu->carry);
+    return 1u;
+}
+
+Lufia2ExecutionResult Lufia2InitializeStartupImage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!cpu->accumulator_is_8_bit || !cpu->index_is_8_bit ||
+        cpu->program_bank != 0x80u || cpu->data_bank != 0x80u ||
+        cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x8091dfu);
+    PushAccumulator8(memory, cpu);
+    PushIndex(memory, cpu);
+    Push8(memory, cpu, (uint8_t)cpu->y);
+    PushDataBank(memory, cpu);
+    Push8(memory, cpu, PackStatus(cpu));
+    OpSepWidths(cpu, 0x20u);
+    OpRepWidths(cpu, 0x10u);
+    OpLdx(cpu, STARTUP_RESOURCE_ID);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_SCRATCH_A), cpu->x);
+    OpLdx(cpu, STARTUP_RESOURCE_BUFFER);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_STARTUP_RESOURCE_OUTPUT), cpu->x);
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpDp(cpu, DP_STARTUP_RESOURCE_OUTPUT + 2u));
+    if (!CallChildWithFrame(memory, cpu, child, context,
+                           0x8091f6u, 0x808e9du, 3u, 0x80u)) {
+        const Lufia2ExecutionResult result = {
+            LUFIA2_EXECUTION_CHILD_UNWOUND, 0x8091f6u, 0u};
+        return result;
+    }
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->program_bank != 0x80u || cpu->data_bank != 0x80u ||
+        cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x8091fau);
+    ConfigureStartupVideo(memory, cpu);
+    PushDataBank(memory, cpu);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    OpRepWidths(cpu, 0x20u);
+    ClearStartupMaps(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, STARTUP_RESOURCE_BUFFER)));
+    CopyStartupImageRow(memory, cpu, STARTUP_MAP_FIRST);
+    OpLda(memory, cpu, OpAbs(cpu, STARTUP_RESOURCE_BUFFER));
+    cpu->carry = 0u;
+    OpAdcValue(cpu, STARTUP_IMAGE_ROW_BYTES);
+    OpTax(cpu);
+    CopyStartupImageRow(memory, cpu, STARTUP_MAP_SECOND);
+    if (!CopyStartupPalette(memory, cpu))
+        return ExecutionHandoff(cpu, 0x80927du);
+    PullDataBank(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0x80u);
+    const uint8_t flags = Read8(memory, OpDp(cpu, DP_NMI_UPLOAD_FLAGS));
+    cpu->zero = (flags & A8(cpu)) == 0u;
+    Write8(memory, OpDp(cpu, DP_NMI_UPLOAD_FLAGS), (uint8_t)(flags | A8(cpu)));
+    OpStz(memory, cpu, OpDp(cpu, DP_STARTUP_REQUEST));
+    OpLdx(cpu, 0x92a4u);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_NMI_STUB + 1u), cpu->x);
+    OpLoadA(cpu, 0x80u);
+    OpSta(memory, cpu, OpDp(cpu, DP_NMI_STUB + 3u));
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    PullDataBank(memory, cpu);
+    OpPullY(memory, cpu);
+    OpPullX(memory, cpu);
+    LoadA8(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x8092a3u);
+}
