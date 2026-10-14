@@ -1,3 +1,11 @@
+# Field service declaration layout - 2026-10-14
+
+The new field/menu service helpers follow the repository formatter after
+their public API names were finalized. Every non-whitespace character and
+the legacy suffix remain unchanged. No function, binding or semantic change
+is added. All 1,910 shared verification jobs and strict C11 across 429 units
+pass with the consumer save-profile integration.
+
 # Field menu and window services - 2026-10-14
 
 `$83:83A0` completes the menu-request children and original S1FFF/JMP83ACEF

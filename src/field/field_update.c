@@ -55,9 +55,10 @@ static uint8_t FieldMenuRequested(const Lufia2Memory *memory, Lufia2CpuState *cp
     return !cpu->zero;
 }
 
-Lufia2ExecutionResult
-Lufia2FieldMenuRequestWithServices(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                        Lufia2PushedChildCall child, void *context) {
+Lufia2ExecutionResult Lufia2FieldMenuRequestWithServices(const Lufia2Memory *memory,
+                                                         Lufia2CpuState *cpu,
+                                                         Lufia2PushedChildCall child,
+                                                         void *context) {
     if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit ||
         !cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
         return ExecutionHandoff(cpu, 0x8383a0u);
@@ -118,9 +119,9 @@ static Lufia2ExecutionResult TickTextWindowCountdown(const Lufia2Memory *memory,
 }
 
 Lufia2ExecutionResult Lufia2FieldTextWindowTimer(const Lufia2Memory *memory,
-                                                      Lufia2CpuState *cpu,
-                                                      Lufia2PushedChildCall child,
-                                                      void *context) {
+                                                 Lufia2CpuState *cpu,
+                                                 Lufia2PushedChildCall child,
+                                                 void *context) {
     if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit || cpu->direct_page ||
         cpu->decimal || !child)
         return ExecutionHandoff(cpu, 0x80c21au);
@@ -139,9 +140,9 @@ static Lufia2ExecutionResult FinishFieldTextTick(const Lufia2Memory *memory,
 }
 
 Lufia2ExecutionResult Lufia2FieldEventTickWithServices(const Lufia2Memory *memory,
-                                                            Lufia2CpuState *cpu,
-                                                            Lufia2PushedChildCall child,
-                                                            void *context) {
+                                                       Lufia2CpuState *cpu,
+                                                       Lufia2PushedChildCall child,
+                                                       void *context) {
     if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit || cpu->direct_page ||
         cpu->decimal || !child)
         return ExecutionHandoff(cpu, 0x809c72u);
@@ -154,6 +155,7 @@ Lufia2ExecutionResult Lufia2FieldEventTickWithServices(const Lufia2Memory *memor
         return result;
     return FinishFieldTextTick(memory, cpu);
 }
+
 /* $83:80CD: field idle test; zero = no event running. */
 void Lufia2FieldIdleBody(
     const Lufia2Memory *memory,
