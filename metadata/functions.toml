@@ -11287,3 +11287,11 @@ source = "src/battle/battle_exit.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:A4BE"
+name = "Lufia2MenuDispatchMainSelection"
+source = "src/menu/menu_main_dispatch.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

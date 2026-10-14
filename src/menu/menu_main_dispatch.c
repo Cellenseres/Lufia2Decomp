@@ -374,3 +374,11 @@ Lufia2ExecutionResult Lufia2MenuRefreshMainDisplay(
     }
     return ExecutionReturned(0x829b0fu);
 }
+
+Lufia2ExecutionResult Lufia2MenuDispatchMainSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x82u || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x82a4beu);
+    SimulateJsrFrame(memory, cpu, 0xa4c0u);
+    return Lufia2MenuDispatchInlineTable(memory, cpu);
+}

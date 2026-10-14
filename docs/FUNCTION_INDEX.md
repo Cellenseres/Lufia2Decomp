@@ -567,6 +567,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
 | `$82:A318` | `Lufia2MenuDrawStatus` | verified | `src/menu/menu_status.c` |
 | `$82:A432` | `Lufia2MenuRunMainInput` | verified | `src/menu/menu_main_dispatch.c` |
+| `$82:A4BE` | `Lufia2MenuDispatchMainSelection` | verified | `src/menu/menu_main_dispatch.c` |
 | `$82:A582` | `Lufia2MenuApplySpellList` | verified | `src/menu/menu_main_dispatch.c` |
 | `$82:A62D` | `Lufia2MenuRunAlternateSelection` | verified | `src/menu/menu_main_dispatch.c` |
 | `$82:A658` | `Lufia2MenuRunListInput` | verified | `src/menu/menu_list_controls.c` |

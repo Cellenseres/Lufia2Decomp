@@ -781,6 +781,9 @@ Lufia2ExecutionResult Lufia2MenuDispatchInlineTable(
 Lufia2ExecutionResult Lufia2MenuDispatchSaveMode(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2MenuDispatchMainSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
