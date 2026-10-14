@@ -1,3 +1,10 @@
+# Startup and sprite checkpoint — 2026-10-14
+
+Catalogued RAM block-move fields retain identical machine code and relocations.
+
+Joint 1,769-job verification and normal Windows Release pass.
+No timing, PCM, rendered-output or gameplay claim.
+
 # Palette fidelity, battle exit and startup â€” 2026-10-14
 
 Four existing palette APIs now preserve original operand rereads, word TSB

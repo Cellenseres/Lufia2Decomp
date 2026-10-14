@@ -3,12 +3,13 @@
 #include "core/cpu_ops.h"
 #include "core/cpu_internal.h"
 #include "lufia2/system.h"
+#include "system/wram.h"
 
 enum {
-    STUB_OPCODE = 0x057du,
-    STUB_DESTINATION = 0x057eu,
-    STUB_SOURCE = 0x057fu,
-    STUB_RETURN = 0x0580u,
+    STUB_OPCODE = WRAM_RAM_BLOCK_MOVE_OPCODE,
+    STUB_DESTINATION = WRAM_RAM_BLOCK_MOVE_DESTINATION,
+    STUB_SOURCE = WRAM_RAM_BLOCK_MOVE_SOURCE,
+    STUB_RETURN = WRAM_RAM_BLOCK_MOVE_RETURN,
     OPCODE_MVN = 0x54u,
     OPCODE_RTS = 0x60u,
     WORK_BANK = 0x7eu,

@@ -5687,3 +5687,31 @@ name = "unk_7FF1DB"
 width = 1
 owner = "battle"
 notes = "Palette source base read by81:B444;85:EAEF copies512 CGRAM bytes here. Base only:shared storage overlaps phase-specific F27B/F2FB graphics."
+
+[[location]]
+address = "7E:057D"
+name = "ram_block_move_opcode"
+width = 1
+owner = "system"
+notes = "RAM block-move instruction opcode, initialized to MVN by80:80E1."
+
+[[location]]
+address = "7E:057E"
+name = "ram_block_move_destination"
+width = 1
+owner = "system"
+notes = "Destination bank operand of the RAM block-move instruction."
+
+[[location]]
+address = "7E:057F"
+name = "ram_block_move_source"
+width = 1
+owner = "system"
+notes = "Source bank operand of the RAM block-move instruction."
+
+[[location]]
+address = "7E:0580"
+name = "ram_block_move_return"
+width = 1
+owner = "system"
+notes = "RTS opcode following the RAM block-move instruction."
