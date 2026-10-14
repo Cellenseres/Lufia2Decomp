@@ -31,6 +31,20 @@ ROM/C/bridge faults pass. The shared 1,836-job regression, strict C11 and
 normal Release pass. Frame waits remain explicit test services; live field
 NMI timing and cycle-identical execution are not claimed.
 
+# World-map sound caller — 2026-10-14
+
+`$86:D378` forwards the original sound command through its JSL frame and
+returns through its own RTS. It reuses the existing sound implementation,
+retains all registers/banks and supports explicit child handoffs.
+
+The joint field/world proof passes 10,496 direct and 10,496 actual-bridge
+states, 384 original-child compositions, 1,280 direct/1,120 ABI boundaries,
+75 redirects, guards and 36,864 C++ calls. Another 384 recursive native-child
+compositions match CPU/full WRAM and ordered MMIO. Eight ROM, three private C and
+three private frame faults are detected; integrated-source controls also
+pass. All 1,836 shared jobs and normal Release pass. APU waits are explicit
+services; synthetic SRAM tests never read or write real save files.
+
 # Save validation and startup repair — 2026-10-14
 
 `$80:90E5` preserves the original checksum comparison and carry result.
@@ -796,7 +810,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1411 functions in `metadata/functions.toml`: 1411 verified, 0 draft, 0 identified, 0 disabled.
+1412 functions in `metadata/functions.toml`: 1412 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

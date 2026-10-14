@@ -1349,6 +1349,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:D32D` | `Lufia2WorldMapResetDisplayState` | verified | `src/world/world_frame_callers.c` |
 | `$86:D34A` | `Lufia2WorldMapRestoreEncounterScene` | verified | `src/world/world_scene.c` |
 | `$86:D35D` | `Lufia2WorldMapSetPlayerSong` | verified | `src/world/world_map_player.c` |
+| `$86:D378` | `Lufia2WorldMapSendSoundCommand` | verified | `src/world/world_scene.c` |
 | `$86:D37D` | `Lufia2WorldMapStartFadeOut` | verified | `src/world/world_motion_services.c` |
 | `$86:D381` | `Lufia2WorldMapStartFadeIn` | verified | `src/world/world_motion_services.c` |
 | `$86:D397` | `Lufia2WorldMapWaitFade` | verified | `src/world/world_scene.c` |

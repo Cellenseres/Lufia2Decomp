@@ -2220,3 +2220,18 @@ Lufia2ExecutionResult Lufia2WorldMapRunSession(
     }
     return PrepareWorldMapFrames(memory, cpu, child, context);
 }
+
+Lufia2ExecutionResult Lufia2WorldMapSendSoundCommand(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!WorldSceneEntry(cpu) || cpu->direct_page || !child)
+        return ExecutionHandoff(cpu, 0x86d378u);
+    const uint8_t data_bank = cpu->data_bank;
+    if (!CallChildWithFrame(memory, cpu, child, context, 0x86d378u,
+                           0x80953bu, 3u, 0x86u))
+        return WorldSceneUnwound(0x86d378u);
+    if (!WorldSceneEntry(cpu) || cpu->direct_page ||
+        cpu->data_bank != data_bank)
+        return ExecutionHandoff(cpu, 0x86d37cu);
+    return ExecutionReturned(0x86d37cu);
+}
