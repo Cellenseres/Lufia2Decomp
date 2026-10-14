@@ -556,3 +556,260 @@ Lufia2ExecutionResult Lufia2BattleUpdatePreviewBackground(
     OpSepWidths(cpu, 0x20u);
     return ExecutionReturned(0x849d2bu);
 }
+
+enum {
+    PREVIEW_COLOR_RED = WRAM_UNK_7E11D8,
+    PREVIEW_COLOR_GREEN = WRAM_SPRITE_UPLOAD_BANK,
+    PREVIEW_COLOR_BLUE = WRAM_BATTLE_PREVIEW_COLOR_BLUE,
+    PREVIEW_COLOR_SHADOW = WRAM_CGRAM_BUFFER + 33u * 2u,
+    PREVIEW_COLOR_PALETTE = WRAM_BATTLE_PREVIEW_COLOR_PALETTE,
+    DP_PREVIEW_COLOR = 0x54u,
+    DP_PREVIEW_TEXT_BANK = 0x5fu,
+    DP_PREVIEW_PAD_LOW = 0x46u,
+    DP_PREVIEW_PAD_HIGH = 0x47u,
+    DP_PREVIEW_REPEAT_LOW = 0xddu,
+    DP_PREVIEW_REPEAT_HIGH = 0xdeu,
+    PREVIEW_LABEL_TILES = 0x7e3800u,
+    PREVIEW_MASK_BUFFER = WRAM_BATTLE_TRANSITION_MASK,
+    PREVIEW_PARTY_STATUS = 0x0c69u,
+    PREVIEW_PARTY_RECORD_SIZE = 0x00beu,
+    PREVIEW_PARTY_COUNT = 7u,
+    PREVIEW_LOOP_BUDGET = 4096u
+};
+
+typedef enum PreviewSelectionAction {
+    PREVIEW_KEEP_SELECTION,
+    PREVIEW_NEXT_BACKGROUND,
+    PREVIEW_PREVIOUS_BACKGROUND,
+    PREVIEW_NEXT_SPRITE,
+    PREVIEW_PREVIOUS_SPRITE
+} PreviewSelectionAction;
+
+static void UpdatePreviewColor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, PREVIEW_COLOR_RED));
+    OpSta(memory, cpu, OpDp(cpu, DP_PREVIEW_COLOR));
+    OpLda(memory, cpu, OpAbs(cpu, PREVIEW_COLOR_BLUE));
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, DP_PREVIEW_COLOR + 1u));
+    OpLda(memory, cpu, OpAbs(cpu, PREVIEW_COLOR_GREEN));
+    OpRepWidths(cpu, 0x20u);
+    ExchangeAccumulatorBytes(cpu);
+    OpLsrA(cpu);
+    OpLsrA(cpu);
+    OpLsrA(cpu);
+    OpOra(memory, cpu, OpDp(cpu, DP_PREVIEW_COLOR));
+    OpSta(memory, cpu, PREVIEW_COLOR_PALETTE);
+    OpSta(memory, cpu, OpAbs(cpu, PREVIEW_COLOR_SHADOW));
+    OpSepWidths(cpu, 0x20u);
+}
+
+static void PreparePreviewLabel(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 0x80u);
+    OpSta(memory, cpu, PREVIEW_MASK_BUFFER);
+    OpDecA(cpu);
+    OpSta(memory, cpu, PREVIEW_MASK_BUFFER + 2u);
+    cpu->carry = 0u;
+    OpAdcValue(cpu, 0x40u);
+    OpSta(memory, cpu, PREVIEW_MASK_BUFFER + 1u);
+    OpIncA(cpu);
+    OpSta(memory, cpu, PREVIEW_MASK_BUFFER + 3u);
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpDp(cpu, DP_PREVIEW_TEXT_BANK));
+    OpLoadA(cpu, 0x20u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
+    OpLdy(cpu, PREVIEW_RECORD);
+    OpLdx(cpu, 0x3860u);
+}
+
+static void InvalidatePreviewPartyStatuses(const Lufia2Memory *memory,
+                                          Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 0xffu);
+    for (unsigned member = 0u; member < PREVIEW_PARTY_COUNT; ++member)
+        OpSta(memory, cpu, OpAbs(cpu,
+            (uint16_t)(PREVIEW_PARTY_STATUS + member * PREVIEW_PARTY_RECORD_SIZE)));
+}
+
+static void ClearPreviewLabel(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TransferDirectToA(cpu);
+    OpSta(memory, cpu, PREVIEW_MASK_BUFFER + 1u);
+    OpSta(memory, cpu, PREVIEW_MASK_BUFFER + 3u);
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0x0100u);
+    OpLdx(cpu, 0x007eu);
+    do {
+        OpSta(memory, cpu, OpLongX(cpu, PREVIEW_LABEL_TILES));
+        OpDex(cpu);
+        OpDex(cpu);
+    } while (!cpu->negative);
+}
+
+static uint8_t ShowPreviewLabel(PreviewBuild *preview) {
+    const Lufia2Memory *memory = preview->memory;
+    Lufia2CpuState *cpu = preview->cpu;
+    PreparePreviewLabel(memory, cpu);
+    if (!CallPreviewStep(preview, 0x849bb7u, 0x808878u, 3u))
+        return 0u;
+    OpRepWidths(cpu, 0x20u);
+    if (!CallPreviewStep(preview, 0x849bbdu, 0x859cc0u, 3u))
+        return 0u;
+    OpSepWidths(cpu, 0x20u);
+    unsigned frames = 0u;
+    for (;;) {
+        if (!CallPreviewStep(preview, 0x849bc3u, 0x85ec81u, 3u))
+            return 0u;
+        OpLda(memory, cpu, OpDp(cpu, DP_PREVIEW_PAD_LOW));
+        OpBitValue(cpu, 0x10u);
+        if (!cpu->zero) {
+            InvalidatePreviewPartyStatuses(memory, cpu);
+            OpLda(memory, cpu, OpDp(cpu, DP_PREVIEW_PAD_LOW));
+        }
+        OpBitValue(cpu, 0x20u);
+        if (cpu->zero)
+            break;
+        if (++frames == PREVIEW_LOOP_BUDGET) {
+            preview->result = ExecutionHandoff(cpu, 0x849bc3u);
+            return 0u;
+        }
+    }
+    ClearPreviewLabel(memory, cpu);
+    if (!CallPreviewStep(preview, 0x849c03u, 0x859cc0u, 3u))
+        return 0u;
+    OpSepWidths(cpu, 0x20u);
+    return 1u;
+}
+
+static void IncrementPreviewColor(const Lufia2Memory *memory,
+                                  Lufia2CpuState *cpu, uint16_t component) {
+    OpLda(memory, cpu, OpAbs(cpu, component));
+    OpIncA(cpu);
+    OpAndValue(cpu, 0x1fu);
+    OpSta(memory, cpu, OpAbs(cpu, component));
+}
+
+static uint8_t EditPreviewColor(const Lufia2Memory *memory,
+                               Lufia2CpuState *cpu) {
+    static const uint8_t buttons[] = {1u, 8u, 2u};
+    static const uint16_t components[] = {
+        PREVIEW_COLOR_RED, PREVIEW_COLOR_GREEN, PREVIEW_COLOR_BLUE};
+    OpLda(memory, cpu, OpDp(cpu, DP_PREVIEW_REPEAT_HIGH));
+    for (unsigned i = 0u; i < 3u; ++i) {
+        OpBitValue(cpu, buttons[i]);
+        if (!cpu->zero) {
+            IncrementPreviewColor(memory, cpu, components[i]);
+            return 1u;
+        }
+    }
+    OpBitValue(cpu, 4u);
+    if (cpu->zero)
+        return 0u;
+    OpStz(memory, cpu, OpAbs(cpu, PREVIEW_COLOR_RED));
+    OpStz(memory, cpu, OpAbs(cpu, PREVIEW_COLOR_GREEN));
+    OpStz(memory, cpu, OpAbs(cpu, PREVIEW_COLOR_BLUE));
+    return 1u;
+}
+
+static PreviewSelectionAction ReadPreviewSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, DP_PREVIEW_REPEAT_LOW));
+    if (cpu->negative)
+        return PREVIEW_NEXT_BACKGROUND;
+    OpAslA(cpu);
+    if (cpu->negative)
+        return PREVIEW_NEXT_SPRITE;
+    OpLda(memory, cpu, OpDp(cpu, DP_PREVIEW_REPEAT_HIGH));
+    if (cpu->negative)
+        return PREVIEW_PREVIOUS_BACKGROUND;
+    OpAslA(cpu);
+    return cpu->negative ? PREVIEW_PREVIOUS_SPRITE : PREVIEW_KEEP_SELECTION;
+}
+
+static uint8_t ChangePreviewSelection(PreviewBuild *preview,
+                                      PreviewSelectionAction action) {
+    const Lufia2Memory *memory = preview->memory;
+    Lufia2CpuState *cpu = preview->cpu;
+    switch (action) {
+    case PREVIEW_NEXT_BACKGROUND:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_BACKGROUND_SELECTION));
+        OpIncA(cpu);
+        OpCmpValue(cpu, 25u);
+        if (cpu->zero)
+            TransferDirectToA(cpu);
+        break;
+    case PREVIEW_PREVIOUS_BACKGROUND:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_BACKGROUND_SELECTION));
+        OpDecA(cpu);
+        if (cpu->negative)
+            OpLoadA(cpu, 24u);
+        break;
+    case PREVIEW_NEXT_SPRITE:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_SPRITE_SELECTION));
+        OpIncA(cpu);
+        OpCmpValue(cpu, 205u);
+        if (cpu->zero)
+            TransferDirectToA(cpu);
+        break;
+    case PREVIEW_PREVIOUS_SPRITE:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_SPRITE_SELECTION));
+        OpDecA(cpu);
+        OpCmpValue(cpu, 0xffu);
+        if (cpu->zero)
+            OpLoadA(cpu, 204u);
+        break;
+    default:
+        return 1u;
+    }
+    if (action == PREVIEW_NEXT_BACKGROUND || action == PREVIEW_PREVIOUS_BACKGROUND) {
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_BACKGROUND_SELECTION));
+        return CallPreviewStep(preview, 0x849c75u, 0x849cd4u, 3u);
+    }
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_SPRITE_SELECTION));
+    return CallPreviewStep(preview, 0x849c94u, 0x849d2cu, 3u);
+}
+
+Lufia2ExecutionResult Lufia2BattleRunSpritePreview(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x84u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x849b3eu);
+    PreviewBuild preview = {memory, cpu, child, context, {0}};
+    if (!CallPreviewStep(&preview, 0x849b3eu, 0x849cd4u, 3u) ||
+        !CallPreviewStep(&preview, 0x849b42u, 0x849d2cu, 3u))
+        return preview.result;
+    for (unsigned visits = 0u; visits < PREVIEW_LOOP_BUDGET; ++visits) {
+        OpSepWidths(cpu, 0x20u);
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_BACKGROUND_SELECTION));
+        OpCmpValue(cpu, 24u);
+        if (cpu->zero) {
+            UpdatePreviewColor(memory, cpu);
+            if (!CallPreviewStep(&preview, 0x849b70u, 0x81b9afu, 3u))
+                return preview.result;
+        }
+        if (!CallPreviewStep(&preview, 0x849b74u, 0x85ec81u, 3u))
+            return preview.result;
+        OpLda(memory, cpu, OpDp(cpu, DP_PREVIEW_PAD_LOW));
+        OpLsrA(cpu);
+        OpAndValue(cpu, OpReadM(memory, cpu, OpDp(cpu, DP_PREVIEW_PAD_HIGH)));
+        OpAndValue(cpu, 8u);
+        if (!cpu->zero) {
+            OpLoadA(cpu, 0u);
+            OpSta(memory, cpu, WRAM_FIELD_BATTLE_RESULT);
+            cpu->program_bank = 0x81u;
+            return ExecutionHandoff(cpu, 0x818855u);
+        }
+        OpLda(memory, cpu, OpDp(cpu, DP_PREVIEW_PAD_LOW));
+        OpBitValue(cpu, 0x20u);
+        if (!cpu->zero) {
+            if (!ShowPreviewLabel(&preview))
+                return preview.result;
+            continue;
+        }
+        if (EditPreviewColor(memory, cpu))
+            continue;
+        if (!ChangePreviewSelection(&preview, ReadPreviewSelection(memory, cpu)))
+            return preview.result;
+    }
+    return ExecutionHandoff(cpu, 0x849b46u);
+}

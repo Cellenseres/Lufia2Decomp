@@ -1,3 +1,10 @@
+# Preview-controller checkpoint — 2026-10-14
+
+Original RGB controls,labels,selection wraps and JML81:8855 are retained.
+Both exact4096 loop continuations and the original81:CC03 owner pass.
+Joint1,815-job verification and normal Windows Release pass.
+No timing,PCM,rendered-output or gameplay claim.
+
 # Party rendering and enemy preview — 2026-10-14
 
 `$85:8A96` exposes the six-child party-render suffix through one shared
@@ -723,7 +730,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1402 functions in `metadata/functions.toml`: 1402 verified, 0 draft, 0 identified, 0 disabled.
+1403 functions in `metadata/functions.toml`: 1403 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

@@ -125,7 +125,7 @@ name = "cgram_buffer"
 width = 2
 count = 256
 owner = "system"
-notes = "CGRAM shadow, one BGR555 word per color; the palette effects write colors here and set $73 bit 0 for the upload. The extent follows the 512-byte CGRAM."
+notes = "CGRAM shadow, one BGR555 word per color; the palette effects write colors here and set $73 bit 0 for the upload. The extent follows the 512-byte CGRAM. The preview controller writes color33 through the bank-relative shadow address0362."
 
 [[location]]
 address = "7E:0581"
@@ -1170,7 +1170,7 @@ name = "save_file_buffer"
 width = 1
 count = 2048
 owner = "system"
-notes = "Plain save slot packed by 8E:BA0D and 85:C954, encrypted by 80:9184 and decrypted by 80:914B. Also the layer-3 32x32 tilemap ring (3800-3FFF) selected by ROM 83:8FF0 and written by 83:8E85. 81:F481 also uses 3800-38BD as a temporary member record for derived totals; 3886-3893 receives the member modifier bytes. Battle effect opcode5B copies the2048-byte map at2000 here, and81:8B75 queues this buffer for VRAM."
+notes = "Plain save slot packed by 8E:BA0D and 85:C954, encrypted by 80:9184 and decrypted by 80:914B. Also the layer-3 32x32 tilemap ring (3800-3FFF) selected by ROM 83:8FF0 and written by 83:8E85. 81:F481 also uses 3800-38BD as a temporary member record for derived totals; 3886-3893 receives the member modifier bytes. Battle effect opcode5B copies the2048-byte map at2000 here, and81:8B75 queues this buffer for VRAM. 84:9B3E reuses this address for preview label tiles."
 
 [[location]]
 address = "7E:0521"
@@ -3209,7 +3209,7 @@ name = "sprite_upload_bank"
 width = 1
 count = 1
 owner = "actor"
-notes = "Queue table base for original source banks; actor writes word, object writes byte."
+notes = "Queue table base for original source banks; actor writes word, object writes byte. 84:9B3E reuses this byte for the preview green component."
 
 [[location]]
 address = "7E:05C2"
@@ -4609,7 +4609,7 @@ name = "battle_transition_mask"
 width = 2
 count = 129
 owner = "battle"
-notes = "129 original1F1F words, changed through native random mask selection. Transition setup also aliases this base as a 224-word reverse index table."
+notes = "129 original1F1F words, changed through native random mask selection. Transition setup also aliases this base as a 224-word reverse index table. 84:9B3E reuses the first four bytes for preview label mask controls."
 
 [[location]]
 address = "7E:134B"
@@ -5488,7 +5488,7 @@ address = "7E:11D8"
 name = "unk_7E11D8"
 width = 1
 owner = "field"
-notes = "C460 sets this byte to one after committing selection."
+notes = "C460 sets this byte to one after committing selection. 84:9B3E reuses this byte for the preview red component."
 
 [[location]]
 address = "7E:1719"
@@ -5751,3 +5751,17 @@ name = "battle_preview_background_selection"
 width = 1
 owner = "battle"
 notes = "Requested preview background;84:9CD4 compares it with active11E1."
+
+[[location]]
+address = "7E:11DA"
+name = "battle_preview_color_blue"
+width = 1
+owner = "battle"
+notes = "Preview blue component,clamped to five bits by its input control;world-map plane refresh reuses this byte."
+
+[[location]]
+address = "7F:F21D"
+name = "battle_preview_color_palette"
+width = 2
+owner = "battle"
+notes = "Preview color33 in palette staging;84:9B3E writes the same word toCGRAM shadow color33."
