@@ -1,3 +1,15 @@
+# Battle party order â€” 2026-10-14
+
+`$85:9419` reconstructs the original party reversal for zero through four
+members. It preserves eight-bit count scaling and actual indexed table reads;
+other table targets remain literal post-JMP continuations. 16,384 direct and
+consumer states each cover all count bytes, eight mirrored banks and full
+register patterns. All 41 non-return states, 3,840 runtime and 4,096 semantic
+zero-access guards, 262,144 C++ guards, ten ROM faults and one frame fault pass.
+
+Validated with the joint menu-dispatch batch: full1722, default Windows Release
+and metadata/binding checks pass. Private proof inputs remain excluded.
+
 # Field reward application and byte extension — 2026-10-14
 
 `$8E:C1DE` reconstructs the complete object reward presentation and application:
@@ -609,7 +621,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1389 functions in `metadata/functions.toml`: 1389 verified, 0 draft, 0 identified, 0 disabled.
+1390 functions in `metadata/functions.toml`: 1390 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

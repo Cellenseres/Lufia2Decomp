@@ -11255,3 +11255,11 @@ source = "src/actor/actor_bootstrap.c"
 entry_mx = "M1X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "85:9419"
+name = "Lufia2BattleReversePartyOrder"
+source = "src/battle/battle_loop_children.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

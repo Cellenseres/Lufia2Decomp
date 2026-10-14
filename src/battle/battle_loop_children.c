@@ -123,3 +123,80 @@ Lufia2ExecutionResult Lufia2BattleStageTransfer(
     OpTestBits(memory, cpu, OpDp(cpu, 0xdau), 1u);
     return ExecutionReturned(0x85ab97u);
 }
+
+enum { ROM_PARTY_ORDER_ROUTES = 0x859422u, PARTY_MEMBER_BYTES = 2u };
+
+static void ReverseTwoPartyMembers(const Lufia2Memory *memory,
+                                  Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_IDS));
+    ExchangeAccumulatorBytes(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_IDS));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS)));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS + PARTY_MEMBER_BYTES));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS));
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS + PARTY_MEMBER_BYTES), cpu->x);
+    OpSepWidths(cpu, 0x20u);
+}
+
+static void ReverseThreePartyMembers(const Lufia2Memory *memory,
+                                    Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_IDS));
+    ExchangeAccumulatorBytes(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_IDS + 2u));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_IDS));
+    ExchangeAccumulatorBytes(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_IDS + 2u));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS)));
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS + 4u)));
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS), cpu->y);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS + 4u), cpu->x);
+}
+
+static void ReverseFourPartyMembers(const Lufia2Memory *memory,
+                                   Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_IDS)));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_IDS + 2u));
+    ExchangeAccumulatorBytes(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_IDS));
+    OpTxa(cpu);
+    ExchangeAccumulatorBytes(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_IDS + 2u));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS)));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS + 6u));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS));
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS + 6u), cpu->x);
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS + 2u)));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS + 4u));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS + 2u));
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_RECORDS + 4u), cpu->x);
+    OpSepWidths(cpu, 0x20u);
+}
+
+Lufia2ExecutionResult Lufia2BattleReversePartyOrder(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page)
+        return ExecutionHandoff(cpu, 0x859419u);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_COUNT));
+    OpAslA(cpu);
+    OpTax(cpu);
+    const uint16_t target = Read16Long(memory, OpLongX(cpu, ROM_PARTY_ORDER_ROUTES));
+    switch (target) {
+    case 0x942cu:
+        return ExecutionReturned(0x85942cu);
+    case 0x942du:
+        ReverseTwoPartyMembers(memory, cpu);
+        return ExecutionReturned(0x859444u);
+    case 0x9445u:
+        ReverseThreePartyMembers(memory, cpu);
+        return ExecutionReturned(0x85945fu);
+    case 0x9460u:
+        ReverseFourPartyMembers(memory, cpu);
+        return ExecutionReturned(0x85948bu);
+    default:
+        return ExecutionHandoff(cpu, 0x850000u | target);
+    }
+}

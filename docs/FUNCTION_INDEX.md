@@ -1042,6 +1042,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9326` | `Lufia2BattleSetPartyCommandBytes` | verified | `src/battle/battle_party_layouts.c` |
 | `$85:9337` | `Lufia2BattleInsertTurn` | verified | `src/battle/battle_turn_queue.c` |
 | `$85:93B7` | `Lufia2BattleCheckOutcome` | verified | `src/battle/battle_outcome.c` |
+| `$85:9419` | `Lufia2BattleReversePartyOrder` | verified | `src/battle/battle_loop_children.c` |
 | `$85:942D` | `Lufia2BattleSwapFirstTwoMembers` | verified | `src/battle/battle_party_layouts.c` |
 | `$85:9445` | `Lufia2BattleSwapFirstThirdMembers` | verified | `src/battle/battle_party_layouts.c` |
 | `$85:9460` | `Lufia2BattleReversePartyMembers` | verified | `src/battle/battle_party_layouts.c` |
