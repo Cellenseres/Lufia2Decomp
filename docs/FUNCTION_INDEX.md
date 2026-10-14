@@ -1230,7 +1230,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:EEA1` | `Lufia2BattleStoreRemainingEncounter` | verified | `src/battle/battle_encounter_state.c` |
 | `$86:81A9` | `Lufia2SelectScreenNmi` | verified | `src/menu/menu.c` |
 | `$86:838C` | `Lufia2TitleObjects` | verified | `src/title/title.c` |
+| `$86:8637` | `Lufia2TitleFindActiveSprite` | verified | `src/title/title.c` |
+| `$86:8655` | `Lufia2TitleCopyRecord` | verified | `src/title/title.c` |
 | `$86:86ED` | `Lufia2TitleLayers` | verified | `src/title/title.c` |
+| `$86:8740` | `Lufia2TitleCopyTileRows` | verified | `src/title/title.c` |
 | `$86:88BE` | `Lufia2TitleParticleSprites` | verified | `src/title/title.c` |
 | `$86:8996` | `Lufia2TitlePaletteCycle` | verified | `src/title/title.c` |
 | `$86:8B1C` | `Lufia2MenuFadeDisplayIn` | verified | `src/menu/menu_presentation_callers.c` |

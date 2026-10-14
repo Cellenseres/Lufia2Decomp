@@ -955,3 +955,122 @@ Lufia2ExecutionResult Lufia2TitlePaletteCycle(
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x8689fcu);                       /* RTS */
 }
+
+enum {
+    TITLE_SPRITE_POOL = WRAM_TITLE_SPRITE_POOL & 0xffffu,
+    TITLE_SPRITE_POOL_COUNT = WRAM_TITLE_SPRITE_POOL_COUNT,
+    TITLE_RECORD_TABLE = 0x8ed911u,
+    TITLE_RECORD_BYTES = 19u,
+    DP_TITLE_RECORD_COUNT = 0x04u
+};
+
+static bool TitleRecordEntrySupported(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x86u && cpu->accumulator_is_8_bit &&
+           !cpu->index_is_8_bit && !cpu->direct_page && !cpu->decimal;
+}
+
+Lufia2ExecutionResult Lufia2TitleFindActiveSprite(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (!TitleRecordEntrySupported(cpu))
+        return ExecutionHandoff(cpu, 0x868637u);
+    OpLdy(cpu, TITLE_SPRITE_POOL);
+    OpLoadA(cpu, TITLE_SPRITE_POOL_COUNT);
+    OpSta(memory, cpu, OpDp(cpu, DP_TITLE_RECORD_COUNT));
+    do {
+        OpLda(memory, cpu, OpAbsY(cpu, TITLE_SPRITE_ACTIVE));
+        if (!cpu->zero) {
+            cpu->carry = 0u;
+            return ExecutionReturned(0x868654u);
+        }
+        TitleNextParticle(cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, DP_TITLE_RECORD_COUNT), -1);
+    } while (!cpu->zero);
+    cpu->carry = 1u;
+    return ExecutionReturned(0x868652u);
+}
+
+Lufia2ExecutionResult Lufia2TitleCopyRecord(const Lufia2Memory *memory,
+                                            Lufia2CpuState *cpu) {
+    if (!TitleRecordEntrySupported(cpu))
+        return ExecutionHandoff(cpu, 0x868655u);
+    OpLoadA(cpu, TITLE_RECORD_BYTES);
+    OpSta(memory, cpu, OpDp(cpu, DP_TITLE_RECORD_COUNT));
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_TITLE_OBJECT_RECORD_POINTER)));
+    do {
+        OpLda(memory, cpu, LongIndexedAddress(TITLE_RECORD_TABLE, cpu->x));
+        OpSta(memory, cpu, OpAbsY(cpu, 0u));
+        OpInx(cpu);
+        OpIny(cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, DP_TITLE_RECORD_COUNT), -1);
+    } while (!cpu->zero);
+    return ExecutionReturned(0x868669u);
+}
+
+enum {
+    DP_TITLE_TILE_DESTINATION = 0x11u,
+    DP_TITLE_TILE_COLUMNS = 0x13u,
+    DP_TITLE_TILE_ROWS = 0x15u,
+    DP_TITLE_TILE_SOURCE = 0x19u,
+    TITLE_TILE_ROW_BYTES = 0x40u,
+    TITLE_TILE_COPY_BUDGET = 4096u
+};
+
+static void PrepareTitleTileRows(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Push8(memory, cpu, PackStatus(cpu));
+    OpRepWidths(cpu, 0x30u);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_TITLE_TILE_DESTINATION), cpu->x);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_TITLE_TILE_SOURCE), cpu->y);
+    PushDataBank(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, TitleDirectPointer(memory, cpu, DP_TITLE_TILE_SOURCE));
+    OpSta(memory, cpu, OpDp(cpu, DP_TITLE_TILE_COLUMNS));
+    OpLdy(cpu, 2u);
+    OpLda(memory, cpu,
+          (TitleDirectPointer(memory, cpu, DP_TITLE_TILE_SOURCE) + cpu->y) & 0xffffffu);
+    OpSta(memory, cpu, OpDp(cpu, DP_TITLE_TILE_ROWS));
+    OpLda(memory, cpu, OpDp(cpu, DP_TITLE_TILE_SOURCE));
+    cpu->carry = 0u;
+    OpAdcValue(cpu, 4u);
+    OpSta(memory, cpu, OpDp(cpu, DP_TITLE_TILE_SOURCE));
+}
+
+static bool CopyTitleTileRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             unsigned *copied) {
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_TITLE_TILE_DESTINATION)));
+    OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_TITLE_TILE_COLUMNS)));
+    do {
+        if (*copied == TITLE_TILE_COPY_BUDGET)
+            return false;
+        ++*copied;
+        OpLda(memory, cpu, TitleDirectPointer(memory, cpu, DP_TITLE_TILE_SOURCE));
+        OpSta(memory, cpu, OpAbsX(cpu, 0u));
+        OpInx(cpu);
+        OpInx(cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, DP_TITLE_TILE_SOURCE), 1);
+        OpStepMem(memory, cpu, OpDp(cpu, DP_TITLE_TILE_SOURCE), 1);
+        OpDey(cpu);
+    } while (!cpu->zero);
+    return true;
+}
+
+Lufia2ExecutionResult Lufia2TitleCopyTileRows(const Lufia2Memory *memory,
+                                              Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x86u || cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x868740u);
+    unsigned copied = 0u;
+    PrepareTitleTileRows(memory, cpu);
+    do {
+        if (!CopyTitleTileRow(memory, cpu, &copied))
+            return ExecutionHandoff(cpu, 0x868767u);
+        OpLda(memory, cpu, OpDp(cpu, DP_TITLE_TILE_DESTINATION));
+        cpu->carry = 0u;
+        OpAdcValue(cpu, TITLE_TILE_ROW_BYTES);
+        OpSta(memory, cpu, OpDp(cpu, DP_TITLE_TILE_DESTINATION));
+        OpStepMem(memory, cpu, OpDp(cpu, DP_TITLE_TILE_ROWS), -1);
+    } while (!cpu->zero);
+    PullDataBank(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x868783u);
+}

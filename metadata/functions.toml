@@ -11479,3 +11479,27 @@ source = "src/field/field_update.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:8637"
+name = "Lufia2TitleFindActiveSprite"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8655"
+name = "Lufia2TitleCopyRecord"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8740"
+name = "Lufia2TitleCopyTileRows"
+source = "src/title/title.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
