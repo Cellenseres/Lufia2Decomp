@@ -1,3 +1,4 @@
+#include "battle/battle_lifecycle_internal.h"
 /* Battle frame setup: the full variant of the battle sprite pass, which first
  * clears the party tilemap through the work RAM port and reloads the color
  * tables, and the row writer of the tile grid. */
@@ -812,4 +813,16 @@ Lufia2ExecutionResult Lufia2BattleRunSpritePreview(
             return preview.result;
     }
     return ExecutionHandoff(cpu, 0x849b46u);
+}
+
+Lufia2ExecutionResult Lufia2BattleRunSpritePreviewWithExit(const Lufia2Memory *memory,
+                                                           Lufia2CpuState *cpu,
+                                                           Lufia2PushedChildCall child,
+                                                           void *context) {
+    const Lufia2ExecutionResult preview =
+        Lufia2BattleRunSpritePreview(memory, cpu, child, context);
+    if (preview.flow != LUFIA2_EXECUTION_BOUNDARY || preview.pc != 0x818855u)
+        return preview;
+    BattleContext battle = BattleContextCreate(memory, cpu, child, context, 0x81u);
+    return BattleFinishSession(&battle);
 }

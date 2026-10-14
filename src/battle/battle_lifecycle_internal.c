@@ -138,3 +138,15 @@ bool BattleTearDownDisplay(BattleContext *battle) {
 
     return BattleCall(battle, 0x87b2u, BATTLE_ROUTINE_FRAME_INPUT, 3u);
 }
+
+Lufia2ExecutionResult BattleFinishSession(BattleContext *battle) {
+    BattleRestoreSessionStack(battle);
+
+    if (!BattleRunPostLoopSteps(battle))
+        return BattleChildUnwound(battle);
+    if (!BattleRunExit(battle))
+        return BattleChildUnwound(battle);
+
+    BattleEndSession(battle);
+    return ExecutionReturned(0x81886eu);
+}

@@ -47,4 +47,6 @@ bool BattlePrepareExit(BattleContext *battle);
 bool BattleFadeOut(BattleContext *battle);
 bool BattleTearDownDisplay(BattleContext *battle);
 
+Lufia2ExecutionResult BattleFinishSession(BattleContext *battle);
+
 #endif

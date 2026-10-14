@@ -17,13 +17,5 @@ Lufia2ExecutionResult Lufia2BattleEntry(
     if (!BattleRunMainLoop(&battle))
         return BattleChildUnwound(&battle);
 
-    BattleRestoreSessionStack(&battle);
-
-    if (!BattleRunPostLoopSteps(&battle))
-        return BattleChildUnwound(&battle);
-    if (!BattleRunExit(&battle))
-        return BattleChildUnwound(&battle);
-
-    BattleEndSession(&battle);
-    return ExecutionReturned(0x81886eu);
+    return BattleFinishSession(&battle);
 }

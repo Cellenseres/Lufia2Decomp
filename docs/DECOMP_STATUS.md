@@ -1,3 +1,38 @@
+# Shared battle session exit - 2026-10-14
+
+`$84:9B3E` reuses the existing battle lifecycle to finish its original
+nonlocal cancellation tail at `$81:8855`. The old preview API remains. The
+battle entry and extended preview share one finish core; no function body
+or metadata count is duplicated. The extended API restores the caller's
+runtime widths and data bank, so its declared exit is dynamic.
+
+The proof covers 16,384 direct and 16,384 owner-adapter session tails,
+4,096 complete preview states and their actual-adapter counterparts,
+2,048 original/native child compositions and 1,024 full legacy entries.
+Boundary, missing-child, redirect, legacy-profile and negative-control
+checks pass. Portable C++ guards pass 24,576 calls. The actual SDK owner
+matches 256 original nonlocal-return pairs using controlled child services.
+
+All 1,928 shared jobs, strict C11 across 429 units and Release pass. Two
+production-object prefixes match CPU/full WRAM at the original frame wait;
+4,680 boot/reset/intro/audio/replay frames pass. Frame waits stay original.
+The common path after a frame yield can still resume in the interpreter;
+complete battle gameplay, video and cycle equality are not claimed.
+
+Historical verifier sources are partly absent from this workspace. Their
+hashed reference and adapter objects are retained and relinked against the
+current semantic library. The eighteen new fixtures compile the current
+public semantic and bridge sources. This is an incremental regression run;
+no clean-source rebuild of those historical fixtures is claimed.
+
+The first full run found one obsolete palette-fade fixture guard. It
+expected M1X1 rejection after an earlier verified extension admitted that
+mode. A separate fixture retains both M0 guards and compares 16,384 ROM
+states across both supported X widths. Reinstating the old C restriction
+fails the new positive matrix. The entire 1,928-job matrix was rerun with
+the repaired fixture; the failed first run remains archived. No palette
+semantics or runtime selection changed in this batch.
+
 # Battle entry clear width - 2026-10-14
 
 The original `$81:8828` selects 8-bit accumulator accesses before clearing

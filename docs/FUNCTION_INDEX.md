@@ -1011,7 +1011,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:8BC7` | `Lufia2BattleVisualTransition` | verified | `src/battle/battle_transition.c` |
 | `$84:8D54` | `Lufia2FieldScaleScenePalette` | verified | `src/field/field_palette_scale.c` |
 | `$84:8E07` | `Lufia2FieldFadeScenePalette` | verified | `src/field/field_effects.c` |
-| `$84:9B3E` | `Lufia2BattleRunSpritePreview` | verified | `src/battle/battle_frame_setup.c` |
+| `$84:9B3E` | `Lufia2BattleRunSpritePreviewWithExit` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9CD4` | `Lufia2BattleUpdatePreviewBackground` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9D2C` | `Lufia2BattleBuildEnemyPreview` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9E1C` | `Lufia2FillWordBlock32` | verified | `src/system/block_move.c` |
