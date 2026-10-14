@@ -3,6 +3,8 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
+#include "lufia2/menu.h"
 #include "lufia2/title.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
@@ -58,45 +60,59 @@ enum {
     TITLE_PALETTE_PHASE = 0x15b9u,
 };
 
-/* $82:E746: JSR $8028 inline table on $30; handlers on LLE. */
-Lufia2ExecutionResult Lufia2TitleStateDispatch(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    uint32_t table;
-    uint16_t target;
+enum { DP_INLINE_MENU_TABLE = 0x5du, DP_INLINE_MENU_BANK = 0x5fu,
+       DP_INLINE_MENU_TARGET = 0x60u };
 
+static uint16_t SelectInlineMenuTarget(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu, uint8_t table_bank) {
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpIncA(cpu);
+    OpTay(cpu);
+    PullAccumulator16(memory, cpu);
+    OpSta(memory, cpu, OpDp(cpu, DP_INLINE_MENU_TABLE));
+    OpSepWidths(cpu, 0x20u);
+    Push8(memory, cpu, table_bank);
+    OpLoadA(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpDp(cpu, DP_INLINE_MENU_BANK));
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, DirectLongIndirectY(memory, cpu, DP_INLINE_MENU_TABLE));
+    EmitExecutionCheckpoint(memory, cpu, 0x82803du);
+    OpSta(memory, cpu, OpDp(cpu, DP_INLINE_MENU_TARGET));
+    OpSepWidths(cpu, 0x20u);
+    return Read16Long(memory, 0x000060u);
+}
+
+Lufia2ExecutionResult Lufia2MenuDispatchInlineTable(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x82u || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x828028u);
+    const uint16_t target = SelectInlineMenuTarget(memory, cpu, 0x82u);
+    return ExecutionHandoff(cpu, 0x820000u | target);
+}
+
+Lufia2ExecutionResult Lufia2MenuDispatchSaveMode(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x82u || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x82e8cbu);
+    SimulateJsrFrame(memory, cpu, 0xe8cdu);
+    const uint16_t target = SelectInlineMenuTarget(memory, cpu, 0x82u);
+    return ExecutionHandoff(cpu, 0x820000u | target);
+}
+
+/* Dispatch the selected title or menu state. */
+Lufia2ExecutionResult Lufia2TitleStateDispatch(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x82e746u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x30u));               /* E746 */
+    OpLda(memory, cpu, OpDp(cpu, 0x30u));
     SimulateJsrFrame(memory, cpu, 0xe74au);
-    SetAccumulatorWidth(cpu, 0);                               /* 8028 */
-    And16(cpu, 0x00ffu);
-    AslA16(cpu);
-    IncrementA16(cpu);
-    TransferAToY(cpu);
-    PullAccumulator16(memory, cpu);
-    StoreADirect16(memory, cpu, 0x5du);
-    SetAccumulatorWidth(cpu, 1);
-    Push8(memory, cpu, 0x82u);                                 /* PHK */
-    LoadA8(cpu, Pull8(memory, cpu));
-    StoreADirect8(memory, cpu, 0x5fu);
-    SetAccumulatorWidth(cpu, 0);
-    table = Read16Direct(memory, cpu, 0x5du) |
-        ((uint32_t)DirectByte(memory, cpu, 0x5fu) << 16);
-    LoadA16(cpu, Read16Long(memory, (table + cpu->y) & 0x00ffffffu));
-    StoreADirect16(memory, cpu, 0x60u);
-    SetAccumulatorWidth(cpu, 1);
-    target = (uint16_t)(Read8(memory, 0x000060u) |
-        ((uint16_t)Read8(memory, 0x000061u) << 8));            /* JMP ($0060) */
-    {
-        Lufia2ExecutionResult result =
-            ExecutionHandoff(cpu, 0x820000u | target);
-
-        /* The ROM passed these at this S already. */
-        result.dispatches = target == 0xe746u || target == 0xe748u ||
-            (target >= 0x8031u && target <= 0x8041u && (target & 1u));
-        return result;
-    }
+    const uint16_t target = SelectInlineMenuTarget(memory, cpu, 0x82u);
+    Lufia2ExecutionResult result = ExecutionHandoff(cpu, 0x820000u | target);
+    result.dispatches = target == 0xe746u || target == 0xe748u ||
+        (target >= 0x8031u && target <= 0x8041u && (target & 1u));
+    return result;
 }
 
 /* $80:9357: DMA channel 6, $700 bytes from $7E:X to VRAM Y. */

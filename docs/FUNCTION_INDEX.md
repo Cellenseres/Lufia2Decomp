@@ -501,6 +501,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:FC0B` | `Lufia2PartyNewRecord` | verified | `src/party/level_up.c` |
 | `$81:FCE2` | `Lufia2CharacterSpritePointer` | verified | `src/battle/battle_character.c` |
 | `$82:8000` | `Lufia2MenuMultiply` | verified | `src/menu/menu_cursor.c` |
+| `$82:8028` | `Lufia2MenuDispatchInlineTable` | verified | `src/title/title.c` |
 | `$82:8044` | `Lufia2MenuQueueVideoWrite` | verified | `src/menu/menu_image_load.c` |
 | `$82:8069` | `Lufia2MenuTileGridFill` | verified | `src/menu/menu_tilemap.c` |
 | `$82:80A5` | `Lufia2MenuTileBlockFill` | verified | `src/menu/menu_tilemap.c` |
@@ -631,6 +632,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E87B` | `Lufia2MenuOpenClearedSaveSelection` | verified | `src/menu/menu_selection_callers.c` |
 | `$82:E893` | `Lufia2PartyRefreshActiveEquipmentStats` | verified | `src/party/party_refresh.c` |
 | `$82:E8B2` | `Lufia2MenuRunSaveSelection` | verified | `src/menu/menu_selection_callers.c` |
+| `$82:E8CB` | `Lufia2MenuDispatchSaveMode` | verified | `src/title/title.c` |
 | `$82:E8DE` | `Lufia2TitlePrepareSaveSelection` | verified | `src/title/title_selection.c` |
 | `$82:E917` | `Lufia2TitlePrepareSelectionMode` | verified | `src/title/title_selection.c` |
 | `$82:E941` | `Lufia2SaveOpenMenu` | verified | `src/menu/save_menu_parent.c` |

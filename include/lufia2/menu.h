@@ -775,6 +775,12 @@ Lufia2ExecutionResult Lufia2MenuDrawWindowThreeRowCorner(
 Lufia2ExecutionResult Lufia2WaitMenuFrameChange(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2MenuDispatchInlineTable(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2MenuDispatchSaveMode(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,4 +1,4 @@
-# Battle party order â€” 2026-10-14
+# Party order and inline menu dispatch — 2026-10-14
 
 `$85:9419` reconstructs the original party reversal for zero through four
 members. It preserves eight-bit count scaling and actual indexed table reads;
@@ -7,8 +7,28 @@ consumer states each cover all count bytes, eight mirrored banks and full
 register patterns. All 41 non-return states, 3,840 runtime and 4,096 semantic
 zero-access guards, 262,144 C++ guards, ten ROM faults and one frame fault pass.
 
-Validated with the joint menu-dispatch batch: full1722, default Windows Release
-and metadata/binding checks pass. Private proof inputs remain excluded.
+`$82:8028` consumes its original JSR frame and selects the inline table target.
+`$82:E8CB` retains its incoming caller frame, pushes the original inner JSR,
+and uses that same dispatcher. Both original A widths pass 32,768 states each
+per direct and consumer path. The existing E746 prefix now shares that body;
+16,384 original prefix states preserve its fixed82 bank and dispatch predicate.
+Save, name and alternate handlers stay independent verified contracts.
+
+Both APIs pass 6,912 runtime and 4,096 semantic zero-access guards and 393,216
+shared C++ guard calls. Eight original-ROM faults, two host-context faults and
+positive controls pass. Actual interp_bridge ownership passes 1,024 normal,
+1,024 nonlocal and 768 native-parent pairs. The last group uses verified E8B2
+and actual nested interp_tier_run_call_frame. Controlled caller shims, terminal
+handlers and leaf services are explicit; no timing, PCM or gameplay claim.
+No handler body is invented or duplicated. Invalid selectors retain original
+table behavior. All private sources remain separate from the committed code.
+
+All 12 actual-library jobs, 18 ROM mutations, three bridge faults, six
+positive controls, 655,360 executed C++ API calls and strict C11 across426
+source units pass. The joint 1,722-job full verification and default Windows
+Release pass. Duplicate metadata and binding checks pass. The original803D
+checkpoint preserves the separate Sound-menu correction;32,768 patch-aware
+ROM/consumer states and an effective wrong-target mutation pass.
 
 # Field reward application and byte extension — 2026-10-14
 
@@ -621,7 +641,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1390 functions in `metadata/functions.toml`: 1390 verified, 0 draft, 0 identified, 0 disabled.
+1392 functions in `metadata/functions.toml`: 1392 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

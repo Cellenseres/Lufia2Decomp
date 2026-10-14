@@ -11263,3 +11263,19 @@ source = "src/battle/battle_loop_children.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:8028"
+name = "Lufia2MenuDispatchInlineTable"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E8CB"
+name = "Lufia2MenuDispatchSaveMode"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
