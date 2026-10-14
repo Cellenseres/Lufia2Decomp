@@ -5723,3 +5723,24 @@ width = 1
 count = 3
 owner = "battle"
 notes = "Three tile counts from multiplied rounded group widths and heights;written by85:DF44."
+
+[[location]]
+address = "7E:00B2"
+name = "battle_preview_record_pointer"
+width = 2
+owner = "battle"
+notes = "Record pointer written bank-relative by84:9D2C;81:FC0B consumes DP B2 with DP0."
+
+[[location]]
+address = "7E:0A38"
+name = "battle_preview_sprite_id"
+width = 1
+owner = "battle"
+notes = "ROM-selected sprite ID retained across preview record initialization."
+
+[[location]]
+address = "7E:11DC"
+name = "battle_preview_sprite_selection"
+width = 1
+owner = "battle"
+notes = "Index into84:9E4D;the original preview controller wraps at205 entries."

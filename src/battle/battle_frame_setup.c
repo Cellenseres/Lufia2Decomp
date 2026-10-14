@@ -4,6 +4,7 @@
 
 #include "battle/battle_internal.h"
 #include "core/child_call.h"
+#include "core/snes_registers.h"
 #include "lufia2/battle.h"
 
 enum {
@@ -332,4 +333,179 @@ Lufia2ExecutionResult Lufia2BattleFrameSetup(
     if (!cpu->zero)
         return ExecutionReturned(0x858a63u);
     return RenderBattlePartyPass(memory, cpu, NULL, NULL);
+}
+
+enum {
+    ROM_PREVIEW_SPRITES = 0x849e4du,
+    PREVIEW_GRAPHICS_ID = 0x09f2u,
+    PREVIEW_RECORD = 0x161bu,
+    DP_PREVIEW_WIDTH_PIXELS = 0xcau,
+    PREVIEW_TILEMAP_START = 0x2800u,
+    PREVIEW_TILEMAP_WORDS = 0x0200u
+};
+
+typedef struct PreviewBuild {
+    const Lufia2Memory *memory;
+    Lufia2CpuState *cpu;
+    Lufia2PushedChildCall child;
+    void *context;
+    Lufia2ExecutionResult result;
+} PreviewBuild;
+
+static uint8_t CallPreviewStep(PreviewBuild *preview, uint32_t site,
+                               uint32_t target, uint8_t frame_size) {
+    Lufia2CpuState *cpu = preview->cpu;
+    const uint8_t data_bank = cpu->data_bank;
+    const uint8_t accumulator_width = cpu->accumulator_is_8_bit;
+    if (!CallChildWithFrame(preview->memory, cpu, preview->child,
+                            preview->context, site, target, frame_size, 0x84u)) {
+        const Lufia2ExecutionResult unwound = {
+            LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
+        preview->result = unwound;
+        return 0u;
+    }
+    if (cpu->program_bank != 0x84u || cpu->data_bank != data_bank ||
+        cpu->accumulator_is_8_bit != accumulator_width || cpu->index_is_8_bit ||
+        cpu->direct_page || cpu->decimal) {
+        preview->result = ExecutionHandoff(cpu, site + frame_size + 1u);
+        return 0u;
+    }
+    return 1u;
+}
+
+static void SelectPreviewSprite(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_SPRITE_SELECTION));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, ROM_PREVIEW_SPRITES));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_SPRITE_ID));
+    OpRepWidths(cpu, 0x20u);
+    OpLdx(cpu, 10u);
+    do {
+        OpStz(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_ENEMY_RECORDS));
+        OpDex(cpu);
+        OpDex(cpu);
+    } while (!cpu->zero);
+    OpLoadA(cpu, PREVIEW_RECORD);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_ENEMY_RECORDS));
+    OpSta(memory, cpu, OpAbs(cpu, DP_BATTLE_PREVIEW_RECORD_POINTER));
+    OpSepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_SPRITE_ID));
+    OpSta(memory, cpu, OpAbs(cpu, PREVIEW_GRAPHICS_ID));
+}
+
+static void PositionPreviewSprite(const Lufia2Memory *memory,
+                                  Lufia2CpuState *cpu) {
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_ENCOUNTER_WIDTHS));
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, DP_PREVIEW_WIDTH_PIXELS));
+    ExchangeAccumulatorBytes(cpu);
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_ENCOUNTER_HEIGHTS));
+    OpLoadA(cpu, 0xa0u);
+    cpu->carry = 1u;
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, DP_PREVIEW_WIDTH_PIXELS)));
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_SPRITE_X_POSITIONS));
+    OpLoadA(cpu, 12u);
+    cpu->carry = 1u;
+    OpSbcValue(cpu, OpReadM(memory, cpu,
+        OpAbsY(cpu, WRAM_BATTLE_ENEMY_ENCOUNTER_HEIGHTS)));
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_GROUP_FLAGS));
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_SPRITE_Y_POSITIONS));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EFFECT_SPECIAL_PARTY));
+    OpLda(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_ENCOUNTER_HEIGHTS));
+    OpCmpValue(cpu, 16u);
+    if (cpu->zero) {
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EFFECT_SPECIAL_PARTY));
+    }
+}
+
+static void FillPreviewPartyTilemap(const Lufia2Memory *memory,
+                                    Lufia2CpuState *cpu) {
+    OpLdx(cpu, PREVIEW_TILEMAP_START);
+    OpLdy(cpu, PREVIEW_TILEMAP_WORDS);
+    OpWriteX(memory, cpu, OpAbs(cpu, SNES_WMADDL), cpu->x);
+    OpStz(memory, cpu, OpAbs(cpu, SNES_WMADDH));
+    OpLoadA(cpu, 1u);
+    do {
+        OpStz(memory, cpu, OpAbs(cpu, SNES_WMDATA));
+        OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
+        OpDey(cpu);
+    } while (!cpu->zero);
+}
+
+static uint8_t PublishPreviewGraphics(PreviewBuild *preview) {
+    static const uint32_t uploads[][2] = {
+        {0x849df9u, 0x859b67u},
+        {0x849e05u, 0x859d33u},
+        {0x849e11u, 0x859d4au}
+    };
+    Lufia2CpuState *cpu = preview->cpu;
+    OpLoadA(cpu, 0xffu);
+    OpSta(preview->memory, cpu, WRAM_BATTLE_EFFECT_FRAME_MARKER);
+    if (!CallPreviewStep(preview, 0x849defu, 0x85ec81u, 3u) ||
+        !CallPreviewStep(preview, 0x849df3u, 0x81b9afu, 3u))
+        return 0u;
+    for (unsigned i = 0u; i < sizeof(uploads) / sizeof(uploads[0]); ++i) {
+        OpRepWidths(cpu, 0x20u);
+        if (!CallPreviewStep(preview, uploads[i][0], uploads[i][1], 3u))
+            return 0u;
+        OpSepWidths(cpu, 0x20u);
+        if (!CallPreviewStep(preview, uploads[i][0] + 6u, 0x85ec81u, 3u))
+            return 0u;
+    }
+    return 1u;
+}
+
+Lufia2ExecutionResult Lufia2BattleBuildEnemyPreview(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x84u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x849d2cu);
+    PreviewBuild preview = {memory, cpu, child, context, {0}};
+    SelectPreviewSprite(memory, cpu);
+    if (!CallPreviewStep(&preview, 0x849d55u, 0x81fc0bu, 3u))
+        return preview.result;
+    OpLdy(cpu, 0u);
+    TransferDirectToA(cpu);
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_GROUP_FLAGS));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PREVIEW_SPRITE_ID));
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_ENEMY_SPRITE_GROUP_KEYS));
+    if (!CallPreviewStep(&preview, 0x849d66u, 0x81fbc6u, 3u) ||
+        !CallPreviewStep(&preview, 0x849d6au, 0x81fb8eu, 3u))
+        return preview.result;
+    PositionPreviewSprite(memory, cpu);
+    PushDataBank(memory, cpu);
+    OpLoadA(cpu, 0x7eu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0x2100u);
+    OpLdx(cpu, 0x2b96u);
+    if (!CallPreviewStep(&preview, 0x849dadu, 0x849e1cu, 2u))
+        return preview.result;
+    OpSepWidths(cpu, 0x20u);
+    PullDataBank(memory, cpu);
+    if (!CallPreviewStep(&preview, 0x849db3u, 0x85dfb9u, 3u) ||
+        !CallPreviewStep(&preview, 0x849db7u, 0x85df44u, 3u) ||
+        !CallPreviewStep(&preview, 0x849dbbu, 0x85eb91u, 3u) ||
+        !CallPreviewStep(&preview, 0x849dbfu, 0x85de9du, 3u) ||
+        !CallPreviewStep(&preview, 0x849dc3u, 0x858a96u, 3u))
+        return preview.result;
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EFFECT_SPECIAL_PARTY));
+    if (!cpu->zero) {
+        if (!CallPreviewStep(&preview, 0x849dccu, 0x8597d1u, 3u))
+            return preview.result;
+    } else {
+        FillPreviewPartyTilemap(memory, cpu);
+    }
+    if (!PublishPreviewGraphics(&preview))
+        return preview.result;
+    return ExecutionReturned(0x849e1bu);
 }
