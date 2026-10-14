@@ -427,6 +427,7 @@ add_library(lufia2_decomp STATIC
     src/system/nmi.c
     src/system/nmi_uploads.c
     src/system/scene_uploads.c
+    src/system/boot.c
     src/system/screen.c
     src/system/sound.c
     src/text/text_engine.c

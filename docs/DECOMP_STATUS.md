@@ -1,3 +1,21 @@
+# Boot controller and original handoffs — 2026-10-14
+
+`$80:8035` preserves all fifteen calls, startup audio branches, SRAM mirror
+checks, title-button test and original field/reset tails. Its bounded NMI
+continuation preserves all 4,096 reads. `$80:8281` preserves the literal
+field-session jump. Both APIs are verified without runtime bindings:
+interpreted JML arrivals keep their original owner. Only `$80:80D3` is
+selected natively; its descending clear deliberately leaves bytes 0000/0001.
+
+15,360 ROM comparisons and matching adapter-model cases, 512 original-child
+compositions, all child boundaries, stack edges, guards, C++ and fault controls
+pass. Unbound-entry adapters remain private. The shared 1,836-job regression,
+strict C11 across 428 units and normal Release pass. Three production boots
+reach both logos and the intro with real audio, zero interpreted RAM-clear,
+save-validation or video instructions, and original startup ownership.
+Ninety snapshot replay hashes match CPU/WRAM/PPU/APU/picture state. Driver
+waits use explicit services in synthetic tests; cycle equality is not claimed.
+
 # Save validation and startup repair — 2026-10-14
 
 `$80:90E5` preserves the original checksum comparison and carry result.
@@ -763,7 +781,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1406 functions in `metadata/functions.toml`: 1406 verified, 0 draft, 0 identified, 0 disabled.
+1409 functions in `metadata/functions.toml`: 1409 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

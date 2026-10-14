@@ -1186,7 +1186,7 @@ name = "random_seed_work"
 width = 1
 count = 1
 owner = "system"
-notes = "80:82E7 subtracts DP scratch from this byte; save cryptography initializes it from the slot seed."
+notes = "80:82E7 subtracts DP scratch from this byte; save cryptography initializes it from the slot seed. 80:8035 initializes this seed byte to96 on the IPL-ready startup path."
 
 [[location]]
 address = "7E:0559"
@@ -2335,7 +2335,7 @@ address = "7E:0520"
 name = "unk_7E0520"
 width = 1
 owner = "field"
-notes = "83:ACBF writes FF through fixed bank-zero long addressing."
+notes = "83:ACBF writes FF through fixed bank-zero long addressing. 80:8035 writes FF before testing SRAM mirroring."
 
 [[location]]
 address = "7E:05B8"
@@ -2851,7 +2851,7 @@ address = "7E:057C"
 name = "unk_7E057C"
 width = 1
 owner = "field"
-notes = "Control byte gating 83:FC56/FC69 probe input handling; original access uses the live data bank."
+notes = "Control byte gating 83:FC56/FC69 probe input handling; original access uses the live data bank. 80:8035 clears this byte before its title-button test."
 
 [[location]]
 address = "7F:D2A4"
