@@ -1,3 +1,41 @@
+# Field loop and scene transitions — 2026-10-14
+
+`$83:8000` now reconstructs initialization and the complete field frame loop.
+It preserves all 19 child sites and the original JMP to the existing B18E
+session sibling. No new incoming guest frame or internal-loop binding is
+created. `$83:84E1` reconstructs map/actor reload and both service-driven
+fades; `$8E:B28F` reconstructs layer redraw, blanking and display upload.
+The consumer selects these transitions only with the field caller's DB83.
+Original waits, counter saturation, widths and nonlocal exits remain literal.
+
+The loop passes 4,096 states per direct and consumer path, with 16,096 real
+original NMIs each. All 19 sites are reached. 152 child unwinds, 304 M0 return
+fences and 456 decimal/bank/DP fences pass per path. 2,304 runtime and 4,096
+semantic unsupported states perform no bus access. All 2,280 redirects and
+152 unavailable-child ownership tails pass. Eight 4,096-frame continuations
+per path preserve 32,768 original NMIs and the exact8004 handoff.
+
+The two transitions pass 8,192 canonical states plus 6,144 supplemental entry-
+width states per path. 120 canonical states and all 30 sites are covered.
+Each path passes 240 child unwinds, 720 width and 720 context fences. 5,760
+runtime and 10,240 semantic guard states and all 3,600 redirects pass. Five
+4,096-iteration poll boundaries preserve CPU, full WRAM and bus order. Their
+40-state resumption witnesses run 160 original NMIs per path. 128 actual
+FieldFrameServices compositions per path preserve 3,840 original NMIs.
+Other leaf services stay controlled; no timing, PCM or gameplay acceptance
+is claimed. Source-derived sound instruction notes are separate private work.
+
+All 28 ROM mutations, two effective bridge/owner-stack mutations, positive
+controls, three C++ calls and strict C11 pass. Constant cleanup preserves
+complete COFF contents except the timestamp. The loop's field-owner depth
+contract was compared exactly with the existing shared bridge. Unknown
+counter/reset fields retain neutral names. No wait binding is added.
+
+All 24 actual-library jobs, 28 original-ROM mutation checks, two bridge/
+owner-stack mutations, four positive controls, three C++ API calls and
+strict C11 across 426 source units pass. The complete 1,695-job verification
+and default Windows Release pass. Duplicate entry and binding checks pass.
+
 # World session owner — 2026-10-14
 
 `$86:919E` now reconstructs initialization and the complete world-map frame
@@ -539,7 +577,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1384 functions in `metadata/functions.toml`: 1384 verified, 0 draft, 0 identified, 0 disabled.
+1387 functions in `metadata/functions.toml`: 1387 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

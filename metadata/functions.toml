@@ -11215,3 +11215,27 @@ source = "src/world/world_scene.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:8000"
+name = "Lufia2FieldRunLoop"
+source = "src/field/field_session_setup.c"
+entry_mx = "M1X1"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "83:84E1"
+name = "Lufia2FieldRunMapTransition"
+source = "src/field/field_session_setup.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"
+
+[[function]]
+address = "8E:B28F"
+name = "Lufia2FieldSwitchDisplayScene"
+source = "src/field/field_session_setup.c"
+entry_mx = "M1X1"
+exit_mx = "M1X1"
+status = "verified"

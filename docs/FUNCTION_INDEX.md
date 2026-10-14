@@ -690,6 +690,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:FB94` | `Lufia2InventoryFindEmptySlot` | verified | `src/item/inventory_selection.c` |
 | `$82:FBE5` | `Lufia2MenuSelectedListOffset` | verified | `src/menu/menu_list_scroll.c` |
 | `$82:FD3D` | `Lufia2PartyLearnSelectedSpell` | verified | `src/party/capsule_abilities.c` |
+| `$83:8000` | `Lufia2FieldRunLoop` | verified | `src/field/field_session_setup.c` |
 | `$83:80CD` | `Lufia2FieldIdleTest` | verified | `src/field/field_update.c` |
 | `$83:8103` | `Lufia2FieldProcessRequests` | verified | `src/field/field_recovery.c` |
 | `$83:812E` | `Lufia2FieldPollHpRecovery` | verified | `src/field/field_recovery.c` |
@@ -709,6 +710,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:83E0` | `Lufia2FieldEncounterHandoff` | verified | `src/field/encounter.c` |
 | `$83:83EB` | `Lufia2FieldBattleTransition` | verified | `src/field/field_battle_transition.c` |
 | `$83:845B` | `Lufia2EncounterBattleSequence` | verified | `src/field/encounter.c` |
+| `$83:84E1` | `Lufia2FieldRunMapTransition` | verified | `src/field/field_session_setup.c` |
 | `$83:85DC` | `Lufia2FieldReloadMap` | verified | `src/field/field_reload.c` |
 | `$83:8674` | `Lufia2FieldTakeHighButtons` | verified | `src/field/field_player_input_leaves.c` |
 | `$83:867B` | `Lufia2FieldTakeButtons` | verified | `src/field/field_update.c` |
@@ -1359,6 +1361,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
 | `$8E:B142` | `Lufia2FieldConsumePressedLow` | verified | `src/field/field_camera_services.c` |
 | `$8E:B149` | `Lufia2FieldConsumePressedHigh` | verified | `src/field/field_camera_services.c` |
+| `$8E:B28F` | `Lufia2FieldSwitchDisplayScene` | verified | `src/field/field_session_setup.c` |
 | `$8E:B5FB` | `Lufia2FieldBuildPrefixedName` | verified | `src/field/field_prefixed_name.c` |
 | `$8E:B63B` | `Lufia2FieldTryItemRegion` | verified | `src/field/field_item_regions.c` |
 | `$8E:B760` | `Lufia2FieldShowObjectItemNotice` | verified | `src/field/field_item_regions.c` |

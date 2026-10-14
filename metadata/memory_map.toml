@@ -5659,3 +5659,24 @@ name = "unk_7E1711"
 width = 1
 owner = "world"
 notes = "World loop combines this byte with $7E:1710 before updating the plane. Cleared by scene reset; precise meaning remains unknown."
+
+[[location]]
+address = "7E:0B63"
+name = "unk_7E0B63"
+width = 2
+owner = "field"
+notes = "Incremented with sixteen-bit saturation by83:84E1;precise counter meaning remains unknown."
+
+[[location]]
+address = "7E:05A8"
+name = "unk_7E05A8"
+width = 1
+owner = "field"
+notes = "Cleared with05A9 before83:8000 jumps to the existing B18E session sibling;precise role remains unknown."
+
+[[location]]
+address = "7E:05A9"
+name = "unk_7E05A9"
+width = 1
+owner = "field"
+notes = "Cleared with05A8 before83:8000 jumps to the existing B18E session sibling;precise role remains unknown."

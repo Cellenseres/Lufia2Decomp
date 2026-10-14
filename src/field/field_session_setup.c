@@ -1,5 +1,6 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "core/snes_registers.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
@@ -826,4 +827,400 @@ static Lufia2ExecutionResult PrepareSessionMap(
         }
         return StartSessionMap(memory, cpu, child, context);
     }
+}
+
+enum {
+    DP_TRANSITION_TILEMAP_REQUEST = 0x74u,
+    TRANSITION_POLL_LIMIT = 4096u,
+    TRANSITION_ACTOR_COUNT = 40u
+};
+
+static uint8_t TransitionChild(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, uint32_t site,
+    uint32_t target, uint8_t frame, Lufia2ExecutionResult *result) {
+    const uint8_t accumulator_width = cpu->accumulator_is_8_bit;
+    const uint8_t index_width = cpu->index_is_8_bit;
+    const uint8_t data_bank = cpu->data_bank;
+    const uint16_t direct_page = cpu->direct_page;
+    if (!CallChildWithFrame(memory, cpu, child, context,
+            site, target, frame, (uint8_t)(site >> 16))) {
+        *result = ExecutionReturned(site);
+        result->flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        return 0u;
+    }
+    if (cpu->accumulator_is_8_bit != accumulator_width ||
+        cpu->index_is_8_bit != index_width || cpu->data_bank != data_bank ||
+        cpu->direct_page != direct_page || cpu->decimal) {
+        *result = ExecutionHandoff(cpu, site + frame + 1u);
+        return 0u;
+    }
+    return 1u;
+}
+
+static uint8_t RunTransitionFade(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, uint32_t site,
+    Lufia2ExecutionResult *result) {
+    for (unsigned frame = 0u; frame < TRANSITION_POLL_LIMIT; ++frame) {
+        if (!TransitionChild(memory, cpu, child, context,
+                site, 0x838192u, 3u, result))
+            return 0u;
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
+        if (cpu->zero)
+            return 1u;
+    }
+    *result = ExecutionHandoff(cpu, site);
+    return 0u;
+}
+
+static uint8_t PollTransitionDisplay(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t site,
+    uint16_t address, uint8_t wait_for_negative,
+    Lufia2ExecutionResult *result) {
+    for (unsigned poll = 0u; poll < TRANSITION_POLL_LIMIT; ++poll) {
+        OpLda(memory, cpu, OpAbs(cpu, address));
+        if (wait_for_negative ? cpu->negative : cpu->zero)
+            return 1u;
+    }
+    *result = ExecutionHandoff(cpu, site);
+    return 0u;
+}
+
+Lufia2ExecutionResult Lufia2FieldRunMapTransition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x83u || cpu->data_bank != 0x83u ||
+        cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x8384e1u);
+    OpSepWidths(cpu, 0x20u);
+    OpRepWidths(cpu, 0x10u);
+    OpLoadA(cpu, 1u);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE), 1u);
+    OpRepWidths(cpu, 0x20u);
+    OpStepMem(memory, cpu, OpAbs(cpu, WRAM_UNK_7E0B63), 1);
+    if (cpu->zero)
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_UNK_7E0B63), -1);
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 8u);
+    OpSta(memory, cpu, WRAM_FIELD_MOSAIC_STATE);
+    OpLoadA(cpu, 0x80u);
+    OpSta(memory, cpu, WRAM_FIELD_MOSAIC_ACCUMULATOR);
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_TRANSITION_FLAGS));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_FADE_LEVEL));
+    OpLoadA(cpu, 0xc8u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
+    Lufia2ExecutionResult result;
+    if (!RunTransitionFade(memory, cpu, child, context, 0x83850fu, &result))
+        return result;
+    TransferDirectToA(cpu);
+    OpSta(memory, cpu, WRAM_FIELD_CONTROL_FLAGS);
+    OpLoadA(cpu, 8u);
+    if (!TransitionChild(memory, cpu, child, context,
+            0x83851fu, 0x80953bu, 3u, &result) ||
+        !TransitionChild(memory, cpu, child, context,
+            0x838523u, 0x83c0efu, 2u, &result))
+        return result;
+    OpLdx(cpu, 0u);
+    OpLdy(cpu, 0x20u);
+    if (!TransitionChild(memory, cpu, child, context,
+            0x83852cu, 0x80e722u, 3u, &result) ||
+        !TransitionChild(memory, cpu, child, context,
+            0x838530u, 0x80cbaeu, 3u, &result))
+        return result;
+    OpLoadA(cpu, 0x14u);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_RELOAD_FLAGS), 1u);
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, WRAM_UNK_7FD0FD);
+    static const struct { uint32_t site, target; uint8_t frame; } setup[] = {
+        {0x83853fu, 0x83b5d3u, 3u},
+        {0x838543u, 0x83a998u, 2u},
+        {0x838546u, 0x83b512u, 2u},
+        {0x838549u, 0x80beafu, 3u},
+        {0x83854du, 0x80be4du, 3u},
+        {0x838551u, 0x83b53bu, 3u},
+        {0x838555u, 0x80be75u, 3u}
+    };
+    for (unsigned step = 0u; step < sizeof(setup) / sizeof(setup[0]); ++step)
+        if (!TransitionChild(memory, cpu, child, context,
+                setup[step].site, setup[step].target, setup[step].frame, &result))
+            return result;
+    OpLoadA(cpu, 0x1cu);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_RELOAD_FLAGS), 0u);
+    if (!TransitionChild(memory, cpu, child, context,
+            0x83855eu, 0x83a82eu, 3u, &result) ||
+        !TransitionChild(memory, cpu, child, context,
+            0x838562u, 0x83b52eu, 2u, &result))
+        return result;
+    OpStz(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+    if (!TransitionChild(memory, cpu, child, context,
+            0x838567u, 0x83ab4fu, 3u, &result))
+        return result;
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05BD));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_ACTOR_TILE_X));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05BE));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_ACTOR_TILE_Y));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05BF));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_ACTOR_FACING));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E066A));
+    if (!TransitionChild(memory, cpu, child, context,
+            0x838580u, 0x83a746u, 3u, &result))
+        return result;
+    OpLdx(cpu, TRANSITION_ACTOR_COUNT - 1u);
+    do {
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FLAGS));
+        OpAndValue(cpu, 0xdfu);
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FLAGS));
+        OpDex(cpu);
+    } while (!cpu->negative);
+    if (!TransitionChild(memory, cpu, child, context,
+            0x838592u, 0x80f821u, 3u, &result) ||
+        !TransitionChild(memory, cpu, child, context,
+            0x838596u, 0x8385dcu, 3u, &result) ||
+        !TransitionChild(memory, cpu, child, context,
+            0x83859au, 0x83c0efu, 2u, &result))
+        return result;
+    OpRepWidths(cpu, 0x10u);
+    OpLdx(cpu, 0u);
+    OpLdy(cpu, 0u);
+    if (!TransitionChild(memory, cpu, child, context,
+            0x8385a5u, 0x80e722u, 3u, &result) ||
+        !TransitionChild(memory, cpu, child, context,
+            0x8385a9u, 0x80cbaeu, 3u, &result))
+        return result;
+    OpSepWidths(cpu, 0x10u);
+    if (!PollTransitionDisplay(memory, cpu, 0x8385afu,
+            WRAM_FADE_CONTROL, 0u, &result))
+        return result;
+    OpLoadA(cpu, 0xf8u);
+    OpSta(memory, cpu, WRAM_FIELD_MOSAIC_STATE);
+    OpLoadA(cpu, 0u);
+    OpSta(memory, cpu, WRAM_FIELD_MOSAIC_ACCUMULATOR);
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_TRANSITION_FLAGS));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_FADE_LEVEL));
+    OpLoadA(cpu, 0x88u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
+    if (!RunTransitionFade(memory, cpu, child, context, 0x8385cdu, &result))
+        return result;
+    OpLoadA(cpu, 1u);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE), 0u);
+    return ExecutionReturned(0x8385dbu);
+}
+
+Lufia2ExecutionResult Lufia2FieldSwitchDisplayScene(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x8eu || !cpu->accumulator_is_8_bit ||
+        cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x8eb28fu);
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_FADE_LEVEL));
+    OpLoadA(cpu, 0xd0u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
+    OpRepWidths(cpu, 0x10u);
+    Lufia2ExecutionResult result;
+    if (!TransitionChild(memory, cpu, child, context,
+            0x8eb299u, 0x80f821u, 3u, &result) ||
+        !TransitionChild(memory, cpu, child, context,
+            0x8eb29du, 0x80be75u, 3u, &result))
+        return result;
+    OpLdx(cpu, 0u);
+    OpLdy(cpu, 0x14u);
+    if (!TransitionChild(memory, cpu, child, context,
+            0x8eb2a7u, 0x80e722u, 3u, &result) ||
+        !TransitionChild(memory, cpu, child, context,
+            0x8eb2abu, 0x80cbaeu, 3u, &result))
+        return result;
+    OpLdx(cpu, 0u);
+    if (!TransitionChild(memory, cpu, child, context,
+            0x8eb2b2u, 0x80f47au, 3u, &result))
+        return result;
+    OpLdx(cpu, 2u);
+    if (!TransitionChild(memory, cpu, child, context,
+            0x8eb2b9u, 0x80f47au, 3u, &result) ||
+        !PollTransitionDisplay(memory, cpu, 0x8eb2bdu,
+            WRAM_BRIGHTNESS, 1u, &result))
+        return result;
+    OpStz(memory, cpu, OpAbs(cpu, SNES_NMITIMEN));
+    OpLoadA(cpu, 0x80u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_INIDISP));
+    OpLoadA(cpu, 0xa8u);
+    OpSta(memory, cpu, OpDp(cpu, DP_TRANSITION_TILEMAP_REQUEST));
+    if (!TransitionChild(memory, cpu, child, context,
+            0x8eb2ceu, 0x808285u, 3u, &result))
+        return result;
+    OpLoadA(cpu, 0x81u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_NMITIMEN));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_FADE_LEVEL));
+    OpLoadA(cpu, 0x90u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_LAYER_TABLE_OFFSET));
+    if (!TransitionChild(memory, cpu, child, context,
+            0x8eb2e2u, 0x80ed9cu, 3u, &result) ||
+        !PollTransitionDisplay(memory, cpu, 0x8eb2e6u,
+            WRAM_FADE_CONTROL, 0u, &result))
+        return result;
+    OpSepWidths(cpu, 0x10u);
+    return ExecutionReturned(0x8eb2edu);
+}
+
+enum {
+    FIELD_LOOP_FRAME_LIMIT = 4096u,
+    DP_FIELD_SECOND_PAD_HIGH = DP_BUTTONS_HELD + 3u,
+};
+
+static uint8_t FieldLoopChild(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context,
+    uint32_t site, uint32_t target, uint8_t frame,
+    Lufia2ExecutionResult *result) {
+    if (!CallChildWithFrame(memory, cpu, child, context,
+            site, target, frame, 0x83u)) {
+        *result = ExecutionReturned(site);
+        result->flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        return 0u;
+    }
+    if (!cpu->accumulator_is_8_bit || cpu->data_bank != 0x83u ||
+        cpu->direct_page || cpu->decimal) {
+        *result = ExecutionHandoff(cpu, site + frame + 1u);
+        return 0u;
+    }
+    return 1u;
+}
+
+static uint8_t FieldLoopUpdateServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context,
+    Lufia2ExecutionResult *result) {
+    static const struct { uint32_t site, target; uint8_t frame; } services[] = {
+        {0x838070u, 0x83aeb5u, 2u},
+        {0x838073u, 0x809c72u, 3u},
+        {0x838077u, 0x8383a0u, 2u},
+        {0x83807au, 0x838682u, 2u},
+        {0x83807du, 0x83bb93u, 3u},
+        {0x838081u, 0x83e03eu, 2u},
+        {0x838084u, 0x8ebd77u, 3u},
+        {0x838088u, 0x83a21au, 3u},
+        {0x83808cu, 0x8381c6u, 2u},
+        {0x83808fu, 0x838103u, 2u}
+    };
+    for (unsigned service = 0u;
+         service < sizeof(services) / sizeof(services[0]); ++service)
+        if (!FieldLoopChild(memory, cpu, child, context,
+                services[service].site, services[service].target,
+                services[service].frame, result))
+            return 0u;
+    return 1u;
+}
+
+static Lufia2ExecutionResult FieldLoopChangeMap(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
+    PushAccumulator16(memory, cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_MAP));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
+    PullAccumulator16(memory, cpu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_MAP));
+    OpSepWidths(cpu, 0x20u);
+    Lufia2ExecutionResult result;
+    if (!FieldLoopChild(memory, cpu, child, context,
+            0x83804fu, 0x83afeau, 3u, &result))
+        return result;
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05A8));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05A9));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_SCREEN_EFFECTS));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
+    return ExecutionHandoff(cpu, 0x83b18eu);
+}
+
+Lufia2ExecutionResult Lufia2FieldRunLoop(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x83u || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x838000u);
+    OpSepWidths(cpu, 0x30u);
+    Push8(memory, cpu, cpu->program_bank);
+    PullDataBank(memory, cpu);
+    Lufia2ExecutionResult result;
+    for (unsigned frame = 0u; frame < FIELD_LOOP_FRAME_LIMIT; ++frame) {
+        if (!FieldLoopChild(memory, cpu, child, context,
+                0x838004u, 0x83900cu, 2u, &result))
+            return result;
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_SOUND_COMMAND));
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E057C));
+        if (!cpu->zero) {
+            OpLoadA(cpu, 0x10u);
+            OpBit(memory, cpu, OpDp(cpu, DP_FIELD_SECOND_PAD_HIGH));
+            if (!cpu->zero)
+                continue;
+        }
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE));
+        OpBitValue(cpu, 0x80u);
+        if (cpu->zero) {
+            OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_REQUESTS));
+            if (cpu->zero) {
+                OpLoadA(cpu, 0x80u);
+                OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
+                if (!cpu->zero) {
+                    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_RELOAD_FLAGS));
+                    OpBitValue(cpu, 8u);
+                    if (!cpu->zero) {
+                        if (!FieldLoopChild(memory, cpu, child, context,
+                                0x838031u, 0x8384e1u, 2u, &result))
+                            return result;
+                        continue;
+                    }
+                    OpLoadA(cpu, 8u);
+                    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
+                    if (!cpu->zero)
+                        return FieldLoopChangeMap(memory, cpu, child, context);
+                }
+            }
+        }
+        OpLoadA(cpu, 0x20u);
+        OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
+        if (!cpu->zero) {
+            if (!FieldLoopChild(memory, cpu, child, context,
+                    0x838069u, 0x8eb28fu, 3u, &result))
+                return result;
+            continue;
+        }
+        if (!FieldLoopUpdateServices(memory, cpu, child, context, &result))
+            return result;
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_SOUND_COMMAND));
+        OpCmpValue(cpu, 0xffu);
+        if (!cpu->zero && !FieldLoopChild(memory, cpu, child, context,
+                0x838099u, 0x80953bu, 3u, &result))
+            return result;
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
+        if (cpu->negative)
+            continue;
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E057C));
+        if (!cpu->zero && !FieldLoopChild(memory, cpu, child, context,
+                0x8380aau, 0x8ebb2eu, 3u, &result))
+            return result;
+        OpLoadA(cpu, 0x40u);
+        if (!FieldLoopChild(memory, cpu, child, context,
+                0x8380b0u, 0x83867bu, 2u, &result))
+            return result;
+        if (cpu->zero)
+            continue;
+        OpLda(memory, cpu, WRAM_FIELD_CONTROL_FLAGS);
+        if (!cpu->zero)
+            continue;
+        if (!FieldLoopChild(memory, cpu, child, context,
+                0x8380bbu, 0x8380cdu, 2u, &result))
+            return result;
+        if (!cpu->zero)
+            continue;
+        OpLda(memory, cpu, WRAM_UNK_7FD0FE);
+        if (cpu->zero && !FieldLoopChild(memory, cpu, child, context,
+                0x8380c6u, 0x8eb000u, 3u, &result))
+            return result;
+    }
+    return ExecutionHandoff(cpu, 0x838004u);
 }
