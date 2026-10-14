@@ -11327,3 +11327,11 @@ source = "src/system/block_move.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "85:DF44"
+name = "Lufia2BattleBuildEnemyGraphicsGroups"
+source = "src/battle/battle_status_cache.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

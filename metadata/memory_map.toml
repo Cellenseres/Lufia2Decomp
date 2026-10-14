@@ -5715,3 +5715,11 @@ name = "ram_block_move_return"
 width = 1
 owner = "system"
 notes = "RTS opcode following the RAM block-move instruction."
+
+[[location]]
+address = "7E:1312"
+name = "battle_enemy_group_tile_counts"
+width = 1
+count = 3
+owner = "battle"
+notes = "Three tile counts from multiplied rounded group widths and heights;written by85:DF44."

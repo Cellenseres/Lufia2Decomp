@@ -1,15 +1,30 @@
-# Startup and sprite checkpoint — 2026-10-14
+# Startup and enemy graphics contracts — 2026-10-14
 
-Catalogued RAM block-move fields retain identical machine code and relocations.
-`$80:80E1` `Lufia2InitializeRuntimeDefaults` preserves its original entry/exit,
-CPU/WRAM/bus effects and documented continuation boundaries.
-`$80:91DF` `Lufia2InitializeStartupImage` preserves its original entry/exit,
-CPU/WRAM/bus effects and documented continuation boundaries.
-`$84:9E1C` `Lufia2FillWordBlock32` preserves its original entry/exit,
-CPU/WRAM/bus effects and documented continuation boundaries.
+`$80:80E1` installs the original RAM call templates and runtime values. It
+restores P and retains the original index truncation caused by SEP30.
+`$80:91DF` keeps the decompressor call, map clears, image copies, palette
+and NMI callback installation. Malformed palette loops retain an exact
+4,096-iteration continuation. Original startup caller frames are preserved.
 
-Joint 1,769-job verification and normal Windows Release pass.
-No timing, PCM, rendered-output or gameplay claim.
+`$84:9E1C` writes sixteen words without changing registers or flags. Direct
+proof covers every X/A/DP value, all data banks and decimal modes. Consumer
+selection follows the original DB7E/DP0/D0 caller profile, including stack
+overlap and bank carry. Existing block-move fields share catalogued names.
+
+`$85:DF44` rebuilds the three shared enemy graphics groups from six records.
+Original lookups, rounding, multiply-register writes and reads stay ordered.
+BRK A5 remains an original interpreter trap continuation; malformed loops
+retain the exact DF55 state. Child unwinds and context fences stay explicit.
+
+Private original-ROM and actual-bridge proofs, caller-owner compositions,
+negative controls and portable C/C++ checks pass. CPU, full WRAM and ordered
+data/MMIO are compared. No timing, PCM, rendered-output or gameplay claim.
+
+All 27 actual-library jobs, 43 ROM faults, four bridge faults, eight positive
+controls, 1,179,648 executed C++ API calls and strict C11 across 426 source
+units pass. Constant names preserve identical machine code and relocations.
+The joint 1,769-job verification and normal Windows Release pass. Metadata,
+binding uniqueness and source checks pass.
 
 # Palette fidelity, battle exit and startup â€” 2026-10-14
 
@@ -685,7 +700,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1398 functions in `metadata/functions.toml`: 1398 verified, 0 draft, 0 identified, 0 disabled.
+1399 functions in `metadata/functions.toml`: 1399 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
