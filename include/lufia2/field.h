@@ -48,6 +48,10 @@ Lufia2ExecutionResult Lufia2FieldMenuRequest(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldMenuRequestWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $83:867B consume pressed buttons in A. */
 Lufia2ExecutionResult Lufia2FieldTakeButtons(
     const Lufia2Memory *memory,
@@ -107,6 +111,14 @@ Lufia2ExecutionResult Lufia2FieldAnimationTicks(
 Lufia2ExecutionResult Lufia2FieldEventTick(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2FieldEventTickWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldTextWindowTimer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 /* Event timers and original script continuation boundaries. */
 Lufia2ExecutionResult Lufia2FieldEventTimerTick(

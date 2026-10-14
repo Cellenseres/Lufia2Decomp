@@ -392,7 +392,7 @@ status = "verified"
 # Field event tick: screen effects, event timer, text step.
 [[function]]
 address = "80:9C72"
-name = "Lufia2FieldEventTick"
+name = "Lufia2FieldEventTickWithServices"
 source = "src/field/field_update.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
@@ -464,7 +464,7 @@ status = "verified"
 # Field loop menu request; the menu runs on LLE.
 [[function]]
 address = "83:83A0"
-name = "Lufia2FieldMenuRequest"
+name = "Lufia2FieldMenuRequestWithServices"
 source = "src/field/field_update.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
@@ -11470,4 +11470,12 @@ name = "Lufia2FieldDiagnosticsRunMenu"
 source = "src/field/field_diagnostics_control.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
+status = "verified"
+
+[[function]]
+address = "80:C21A"
+name = "Lufia2FieldTextWindowTimer"
+source = "src/field/field_update.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
 status = "verified"

@@ -49,7 +49,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for repository boundaries.
 portable symbol, source file, entry/exit M/X and status. Current totals:
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1416 functions in `metadata/functions.toml`: 1416 verified, 0 draft, 0 identified, 0 disabled.
+1417 functions in `metadata/functions.toml`: 1417 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 [docs/DECOMP_STATUS.md](docs/DECOMP_STATUS.md) starts with the per-function
@@ -226,3 +226,6 @@ Vehicle transitions share original terrain, sign-byte and sprite descriptor kern
 
 Field/event caller services complete the original redraw and trigger children.
 The legacy entry APIs retain their original continuation boundaries.
+
+Field menu requests, window timers and frame text updates share their original
+cores. Required button-store ordering and prompt-counter reads follow the ROM.

@@ -1,12 +1,159 @@
 /* Field loop steps and event tick. */
 
 #include "core/cpu_internal.h"
+#include "core/child_call.h"
+#include "core/cpu_ops.h"
+#include "core/snes_registers.h"
 #include "core/joypad.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
 
+enum {
+    DP_MENU_HDMA_CONTROL = 0x81u,
+    DP_TEXT_UPLOAD_REQUEST = 0x74u,
+    MENU_HELD_BUTTONS = ((JOY_HIGH_B | JOY_HIGH_START) << 8) | JOY_LOW_A,
+    TEXT_WINDOW_FLAGS = 0x099cu
+};
+
+static uint8_t FieldRequestChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 Lufia2PushedChildCall child, void *context,
+                                 uint32_t site, uint32_t target, uint8_t frame_size,
+                                 uint8_t index_width, Lufia2ExecutionResult *result) {
+    const uint8_t bank = (uint8_t)(site >> 16);
+    const uint8_t data_bank = cpu->data_bank;
+    if (!CallChildWithFrame(memory, cpu, child, context, site, target, frame_size,
+                            bank)) {
+        *result = (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
+        return 0u;
+    }
+    if (cpu->program_bank != bank || cpu->data_bank != data_bank ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit != index_width ||
+        cpu->direct_page || cpu->decimal) {
+        *result = ExecutionHandoff(cpu, site + frame_size + 1u);
+        return 0u;
+    }
+    return 1u;
+}
+
+static uint8_t FieldMenuRequested(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 0x40u);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
+    if (!cpu->zero)
+        return 1u;
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WINDOW_MODE));
+    OpBitValue(cpu, 2u);
+    if (cpu->zero)
+        return 0u;
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, MENU_HELD_BUTTONS);
+    OpAndValue(cpu, Read16Direct(memory, cpu, DP_BUTTONS_HELD));
+    if (cpu->zero)
+        return 0u;
+    OpTestBits(memory, cpu, OpDp(cpu, DP_BUTTONS_PRESSED), 0u);
+    return !cpu->zero;
+}
+
+Lufia2ExecutionResult
+Lufia2FieldMenuRequestWithServices(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                        Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit ||
+        !cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x8383a0u);
+    if (!FieldMenuRequested(memory, cpu)) {
+        OpSepWidths(cpu, 0x20u);
+        return ExecutionReturned(0x8383dfu);
+    }
+    OpSepWidths(cpu, 0x20u);
+    Lufia2ExecutionResult result = {0};
+    if (!FieldRequestChild(memory, cpu, child, context, 0x8383bdu, 0x83afeau, 3u, 1u,
+                           &result))
+        return result;
+    OpStz(memory, cpu, OpDp(cpu, DP_MENU_HDMA_CONTROL));
+    OpStz(memory, cpu, OpAbs(cpu, SNES_HDMAEN));
+    if (!FieldRequestChild(memory, cpu, child, context, 0x8383c6u, 0x83900cu, 2u, 1u,
+                           &result))
+        return result;
+    OpLoadA(cpu, 0x1fu);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_TM));
+    if (!FieldRequestChild(memory, cpu, child, context, 0x8383ceu, 0x809528u, 3u, 1u,
+                           &result))
+        return result;
+    OpRepWidths(cpu, 0x30u);
+    OpLoadA(cpu, 0x1fffu);
+    cpu->stack = cpu->accumulator;
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionHandoff(cpu, 0x83acefu);
+}
+
+static Lufia2ExecutionResult TickTextWindowCountdown(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu,
+                                                     Lufia2PushedChildCall child,
+                                                     void *context) {
+    OpLda(memory, cpu, WRAM_FIELD_CONTROL_CHANGE_PENDING);
+    OpCmpValue(cpu, 0xffu);
+    if (!cpu->zero) {
+        OpDecA(cpu);
+        OpSta(memory, cpu, WRAM_FIELD_CONTROL_CHANGE_PENDING);
+        if (cpu->zero) {
+            OpLoadA(cpu, 0xffu);
+            OpSta(memory, cpu, WRAM_FIELD_CONTROL_CHANGE_PENDING);
+            OpLoadA(cpu, 0xa0u);
+            OpTestBits(memory, cpu, OpAbs(cpu, TEXT_WINDOW_FLAGS), 0u);
+            const uint8_t index_width = cpu->index_is_8_bit;
+            Lufia2ExecutionResult result = {0};
+            if (child) {
+                if (!FieldRequestChild(memory, cpu, child, context, 0x80c234u,
+                                       0x848328u, 3u, index_width, &result))
+                    return result;
+            } else {
+                Lufia2TextWindowClear(memory, cpu, 0xc237u);
+            }
+            OpLoadA(cpu, 8u);
+            OpSta(memory, cpu, OpDp(cpu, DP_TEXT_UPLOAD_REQUEST));
+        }
+    }
+    return ExecutionReturned(0x80c23cu);
+}
+
+Lufia2ExecutionResult Lufia2FieldTextWindowTimer(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu,
+                                                      Lufia2PushedChildCall child,
+                                                      void *context) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit || cpu->direct_page ||
+        cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x80c21au);
+    return TickTextWindowCountdown(memory, cpu, child, context);
+}
+
+static Lufia2ExecutionResult FinishFieldTextTick(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    Lufia2ExecutionResult result = ExecutionReturned(0x809cb7u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
+    OpAndValue(cpu, 0x0au);
+    if (!cpu->zero)
+        return Lufia2TextPromptTick(memory, cpu, result);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
+    return cpu->negative ? Lufia2TextEngineStepBody(memory, cpu, result) : result;
+}
+
+Lufia2ExecutionResult Lufia2FieldEventTickWithServices(const Lufia2Memory *memory,
+                                                            Lufia2CpuState *cpu,
+                                                            Lufia2PushedChildCall child,
+                                                            void *context) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit || cpu->direct_page ||
+        cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x809c72u);
+    const uint8_t index_width = cpu->index_is_8_bit;
+    Lufia2ExecutionResult result = {0};
+    if (!FieldRequestChild(memory, cpu, child, context, 0x809c72u, 0x848000u, 3u,
+                           index_width, &result) ||
+        !FieldRequestChild(memory, cpu, child, context, 0x809c76u, 0x80c21au, 2u,
+                           index_width, &result))
+        return result;
+    return FinishFieldTextTick(memory, cpu);
+}
 /* $83:80CD: field idle test; zero = no event running. */
 void Lufia2FieldIdleBody(
     const Lufia2Memory *memory,
@@ -115,14 +262,8 @@ Lufia2ExecutionResult Lufia2FieldAnimationTicks(
     return result;
 }
 
-Lufia2ExecutionResult Lufia2FieldEventTick(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    Lufia2ExecutionResult result;
-
-    result.flow = LUFIA2_EXECUTION_RETURNED;
-    result.pc = 0x809cb7u;
-    result.dispatches = 0;
+Lufia2ExecutionResult Lufia2FieldEventTick(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu) {
     SimulateJslFrame(memory, cpu, 0x80u, 0x9c75u);
     cpu->program_bank = 0x84u;
     const Lufia2ExecutionResult screen = Lufia2FieldScreenEffects(memory, cpu);
@@ -131,63 +272,25 @@ Lufia2ExecutionResult Lufia2FieldEventTick(
     uint16_t screen_return = Pull8(memory, cpu);
     screen_return |= (uint16_t)Pull8(memory, cpu) << 8;
     cpu->program_bank = Pull8(memory, cpu);
-    const uint32_t screen_landing = ((uint32_t)cpu->program_bank << 16) |
-        (uint16_t)(screen_return + 1u);
+    const uint32_t screen_landing =
+        ((uint32_t)cpu->program_bank << 16) | (uint16_t)(screen_return + 1u);
     if (screen_landing != 0x809c76u)
         return ExecutionHandoff(cpu, screen_landing);
     SimulateJsrFrame(memory, cpu, 0x9c78u);
-    LoadA8(cpu, Read8(memory, 0x7fd0c1u));
-    Compare8(cpu, A8(cpu), 0xffu);
-    if (!cpu->zero) {
-        LoadA8(cpu, (uint8_t)(A8(cpu) - 1u));
-        Write8(memory, 0x7fd0c1u, A8(cpu));
-        if (cpu->zero) {
-            LoadA8(cpu, 0xffu);
-            Write8(memory, 0x7fd0c1u, A8(cpu));
-            LoadA8(cpu, 0xa0u);
-            TestBitsAbsolute8(memory, cpu, 0x099cu, 0);
-            Lufia2TextWindowClear(memory, cpu, 0xc237u);
-            LoadA8(cpu, 0x08u);
-            Write8(memory, DirectAddress(cpu, 0x74u), A8(cpu));
-        }
-    }
+    (void)TickTextWindowCountdown(memory, cpu, NULL, NULL);
     SimulateRtsFrame(memory, cpu);
-    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
-    And8(cpu, 0x0au);
-    if (!cpu->zero)
-        return Lufia2TextPromptTick(memory, cpu, result);
-    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
-    if (cpu->negative)
-        return Lufia2TextEngineStepBody(memory, cpu, result);
-    return result;
+    return FinishFieldTextTick(memory, cpu);
 }
 
 
-/* B, Start and A together open the menu. */
-#define FIELD_MENU_BUTTONS (((JOY_HIGH_B | JOY_HIGH_START) << 8) | JOY_LOW_A)
-
 /* $83:83A0: menu request; the menu itself runs on LLE. */
-Lufia2ExecutionResult Lufia2FieldMenuRequest(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2FieldMenuRequest(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x8383a0u);
-    LoadA8(cpu, 0x40u);                                        /* 83A0 */
-    TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 0);
-    if (!cpu->zero)
-        return ExecutionHandoff(cpu, 0x8383bdu);
-    LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);
-    BitImmediate8(cpu, 0x02u);
-    if (!cpu->zero) {
-        SetAccumulatorWidth(cpu, 0);                           /* 83AE */
-        LoadA16(cpu, FIELD_MENU_BUTTONS);
-        if (TakeButtonPress16(memory, cpu)) {
-            SetAccumulatorWidth(cpu, 1);
-            return ExecutionHandoff(cpu, 0x8383bdu);
-        }
-        SetAccumulatorWidth(cpu, 1);                           /* 83DD */
-    }
-    return ExecutionReturned(0x8383dfu);
+    const uint8_t requested = FieldMenuRequested(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    return requested ? ExecutionHandoff(cpu, 0x8383bdu) : ExecutionReturned(0x8383dfu);
 }
 
 /* $83:867B: A & pressed buttons; consume them from $4A. */

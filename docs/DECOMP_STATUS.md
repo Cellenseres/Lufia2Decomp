@@ -1,3 +1,28 @@
+# Field menu and window services - 2026-10-14
+
+`$83:83A0` completes the menu-request children and original S1FFF/JMP83ACEF
+tail. Its shared button predicate retains the ROM's high-first word TRB.
+`$80:C21A` is the independent fourteen-instruction window timer and clear
+call. `$80:9C72` now delegates its original screen/timer children while
+sharing the existing text tail. The actual `$83:819D` caller is M1X1;
+both index widths are tested. Legitimate child-width changes retain an
+exact original continuation. Existing text VM code is reused.
+
+49,152 direct, 4,096 extended text, 32,768 legacy-prefix, 3,072 original/native
+composition, 49,152 owner-helper and 49,152 canonical-adapter states pass.
+All six child sites pass 1,536 direct/1,344 adapter boundaries, 192 missing
+handoffs and 135 redirects. Raw service guards pass 8,448 cases; portable
+C++ guards pass 32,768 calls. Prior CBAE/81C6 regressions pass 20,480 states.
+Three ROM/five actual-C/seven adapter/lookup faults are detected.
+
+All 1,907 shared jobs, strict C11 across 429 units and Release pass. Five
+production-object original/native pairs retain CPU/full WRAM: both window
+timer widths, both frame-caller widths and the menu prefix at its original
+frame wait. Three boot/reset/session runs retain logos, intro, real audio
+and ninety snapshot replay hashes. The original menu wait stays owned by
+the interpreter. No complete menu/field gameplay or cycle-equality claim.
+Only C21A adds an entry; shared cores preserve the legacy APIs.
+
 # Original text prompt reads - 2026-10-14
 
 The prompt timer increments its elapsed counter, then the ROM reads that
@@ -881,7 +906,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1416 functions in `metadata/functions.toml`: 1416 verified, 0 draft, 0 identified, 0 disabled.
+1417 functions in `metadata/functions.toml`: 1417 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
