@@ -42,6 +42,11 @@ void Lufia2TextWidenSignedOffset(const Lufia2Memory *memory,
 uint32_t Lufia2TextExecutePartyCommand(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t handler);
 
+void Lufia2TextReleaseActors(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint16_t return_address);
+uint32_t Lufia2TextExecuteSystemCommand(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint16_t handler);
+
 /* Text engine WRAM. */
 #define TEXT_WINDOW_STATE 0x099cu /* bit 0: window buffer in use */
 #define TEXT_GLYPH_ATTRIBUTE 0x09adu

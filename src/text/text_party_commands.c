@@ -11,6 +11,7 @@
 
 enum {
     BRANCH_ON_FLAG = 0xa29cu,
+    REBUILD_PARTY_ACTORS = 0xb46bu,
     LEARN_SPELL = 0xa489u,
     RESET_MEMBER_MARKER = 0xa4f0u,
     INCREASE_MEMBER_STAT = 0xa54au,
@@ -431,6 +432,22 @@ static uint32_t SetObjectLocation(const Lufia2Memory *memory, Lufia2CpuState *cp
     return LUFIA2_TEXT_COMMAND_NEXT;
 }
 
+static uint32_t RebuildPartyActors(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2TextNextByte(memory, cpu, 0xb46du);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WINDOW_MODE));
+    PushAccumulator8(memory, cpu);
+    OpAndValue(cpu, 0xfeu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_WINDOW_MODE));
+    PushY(memory, cpu);
+    const uint32_t handoff = CallPartyService(memory, cpu, 0x848204u, 0xb47bu);
+    if (handoff)
+        return handoff;
+    OpPullY(memory, cpu);
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_WINDOW_MODE));
+    return LUFIA2_TEXT_COMMAND_NEXT;
+}
+
 uint32_t Lufia2TextExecutePartyCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                        uint16_t handler) {
     if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
@@ -438,6 +455,8 @@ uint32_t Lufia2TextExecutePartyCommand(const Lufia2Memory *memory, Lufia2CpuStat
         cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
         return 0u;
     switch (handler) {
+    case REBUILD_PARTY_ACTORS:
+        return RebuildPartyActors(memory, cpu);
     case BRANCH_ON_FLAG:
         return BranchOnFlag(memory, cpu);
     case LEARN_SPELL:

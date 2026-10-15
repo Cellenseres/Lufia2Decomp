@@ -1570,6 +1570,16 @@ static unsigned TextScriptOpcode(
         return TEXT_OPCODE_HANDOFF;
     }
 
+    const uint32_t system_flow = Lufia2TextExecuteSystemCommand(memory, cpu, handler);
+    if (system_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (system_flow == LUFIA2_TEXT_COMMAND_YIELD)
+        return TEXT_OPCODE_EXIT;
+    if (system_flow) {
+        *handoff = system_flow;
+        return TEXT_OPCODE_HANDOFF;
+    }
+
     const uint32_t party_flow = Lufia2TextExecutePartyCommand(memory, cpu, handler);
     if (party_flow == LUFIA2_TEXT_COMMAND_NEXT)
         return TEXT_OPCODE_NEXT;
@@ -1911,10 +1921,10 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(const Lufia2Memory *memory,
 }
 
 /* $80:C11C: clear bit 0 of the actor flags $0622-$0649. */
-static void TextReleaseActors(
+void Lufia2TextReleaseActors(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0x9ca5u);
+    Lufia2CpuState *cpu, uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
     Push8(memory, cpu, PackStatus(cpu));                       /* C11C */
     SetIndexWidth(cpu, 1);
     cpu->x = 0x27u;
@@ -1954,7 +1964,7 @@ Lufia2ExecutionResult Lufia2TextPromptTick(
     if (!cpu->zero) {
         StoreZeroAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
         TextCloseWindow(memory, cpu, 0x9ca2u);
-        TextReleaseActors(memory, cpu);
+        Lufia2TextReleaseActors(memory, cpu, 0x9ca5u);
         return result;
     }
     LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* 9CA8 */
