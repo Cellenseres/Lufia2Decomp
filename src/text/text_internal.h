@@ -54,6 +54,9 @@ uint32_t Lufia2TextExecuteRenderCommand(const Lufia2Memory *memory,
 uint32_t Lufia2TextExecuteTileCommand(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t handler);
 
+uint32_t Lufia2TextExecuteMenuCommand(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint16_t handler);
+
 /* Text engine WRAM. */
 #define TEXT_WINDOW_STATE 0x099cu /* bit 0: window buffer in use */
 #define TEXT_GLYPH_ATTRIBUTE 0x09adu

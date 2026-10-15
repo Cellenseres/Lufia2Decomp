@@ -444,6 +444,7 @@ add_library(lufia2_decomp STATIC
     src/text/text_camera_commands.c
     src/text/text_color_commands.c
     src/text/text_party_commands.c
+    src/text/text_menu_commands.c
     src/text/text_system_commands.c
     src/text/text_render_commands.c
     src/text/text_tile_commands.c

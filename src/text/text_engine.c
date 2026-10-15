@@ -1597,6 +1597,16 @@ static unsigned TextScriptOpcode(
         return TEXT_OPCODE_HANDOFF;
     }
 
+    const uint32_t menu_flow = Lufia2TextExecuteMenuCommand(memory, cpu, handler);
+    if (menu_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (menu_flow == LUFIA2_TEXT_COMMAND_YIELD)
+        return TEXT_OPCODE_EXIT;
+    if (menu_flow) {
+        *handoff = menu_flow;
+        return TEXT_OPCODE_HANDOFF;
+    }
+
     const uint32_t party_flow = Lufia2TextExecutePartyCommand(memory, cpu, handler);
     if (party_flow == LUFIA2_TEXT_COMMAND_NEXT)
         return TEXT_OPCODE_NEXT;
