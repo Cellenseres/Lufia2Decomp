@@ -971,7 +971,7 @@ name = "unk_7E09A6"
 width = 1
 count = 1
 owner = "actor"
-notes = "Single byte after the follow slots; bit 0 is tested by the actor reset and the conditional action, primary opcode $19."
+notes = "Single byte after the follow slots; bit 0 is tested by the actor reset and the conditional action, primary opcode $19. Text opcode A7 sets bit0 for a zero operand and clears it otherwise."
 
 [[location]]
 address = "7F:DB4C"
@@ -1075,7 +1075,7 @@ name = "field_layer_section_word"
 width = 2
 count = 4
 owner = "field"
-notes = "Map section header word, copied by 80:EBAA. Its low byte gates redraw and raw object tile copying; its high-byte nibbles control horizontal and vertical coordinate scaling in 83:8D42 via 83:8DDA/8E01."
+notes = "Map section header word, copied by 80:EBAA. Its low byte gates redraw and raw object tile copying; its high-byte nibbles control horizontal and vertical coordinate scaling in 83:8D42 via 83:8DDA/8E01. Text opcode CA writes a byte-indexed word at this base; the index is not doubled."
 
 [[location]]
 address = "7F:D4F8"
@@ -1162,7 +1162,7 @@ address = "7E:05B6"
 name = "field_map_flags"
 width = 1
 owner = "field"
-notes = "Bit 0 selects the generated cave header in $83:B5D3 and skips regular resource installation in $83:B53B. Bit 1 inhibits the sound command store in $84:8766."
+notes = "Bit 0 selects the generated cave header in $83:B5D3 and skips regular resource installation in $83:B53B. Bit 1 inhibits the sound command store in $84:8766. Text opcode AE sets bit1 unless its operand is FF."
 
 [[location]]
 address = "7E:3800"
@@ -2349,7 +2349,7 @@ address = "7E:05C1"
 name = "unk_7E05C1"
 width = 1
 owner = "field"
-notes = "83:AD29 writes FF through fixed bank-zero long addressing."
+notes = "83:AD29 writes FF through fixed bank-zero long addressing. Text opcode A9 also stores its second operand here when the first is at least2."
 
 [[location]]
 address = "7E:099D"
@@ -5593,28 +5593,28 @@ address = "7F:D08F"
 name = "field_fade_frames_per_step"
 width = 1
 owner = "field"
-notes = "Original screen-effect state shared by field and palette operations."
+notes = "Original screen-effect state shared by field and palette operations. Text opcodes58/59 take the low nibble from their parameter."
 
 [[location]]
 address = "7F:D090"
 name = "field_fade_brightness_step"
 width = 1
 owner = "field"
-notes = "Original screen-effect state shared by field and palette operations."
+notes = "Original screen-effect state shared by field and palette operations. Text opcodes58/59 take the high nibble from the same parameter."
 
 [[location]]
 address = "7F:D091"
 name = "field_fade_brightness"
 width = 1
 owner = "field"
-notes = "Original screen-effect state shared by field and palette operations."
+notes = "Original screen-effect state shared by field and palette operations. Text opcode58 starts at15; opcode59 starts at0."
 
 [[location]]
 address = "7F:D092"
 name = "field_fade_frame_counter"
 width = 1
 owner = "field"
-notes = "Original screen-effect state shared by field and palette operations."
+notes = "Original screen-effect state shared by field and palette operations. Text opcodes58/59 clear this byte when starting the fade."
 
 [[location]]
 address = "7F:D094"
@@ -5630,7 +5630,7 @@ width = 1
 count = 2
 stride = 1
 owner = "world"
-notes = "Previous region tile X/Y bytes copied from11F2/11F4 by86:9E4F before the saved-stack transition."
+notes = "Previous region tile X/Y bytes copied from11F2/11F4 by86:9E4F before the saved-stack transition. Text opcode A9 aliases this pair for first operands0/1, clearing the second byte."
 
 [[location]]
 address = "7E:09E8"

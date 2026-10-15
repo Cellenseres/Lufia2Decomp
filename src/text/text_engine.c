@@ -1503,6 +1503,9 @@ static unsigned TextScriptOpcode(
     uint32_t *handoff) {
     unsigned i;
 
+    if (Lufia2TextExecuteStateCommand(memory, cpu, handler))
+        return TEXT_OPCODE_NEXT;
+
     for (i = 0; i < 11u; ++i) {
         if (handler != kTextByteStores[i].handler)
             continue;

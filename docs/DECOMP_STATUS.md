@@ -1,3 +1,34 @@
+# Text palette and state commands - 2026-10-15
+
+Thirteen additional text/dialogue commands now execute in portable C inside
+80:9CB8: variable subtraction, a no-op, region/layer coordinates, actor and
+sound-control flags, a layer section word, both brightness fades, mosaic
+transition, three palette-word operations and a Mode7-based glyph offset.
+They use a shared state-command module; no duplicate public entries or
+runtime bindings were introduced. The dispatch table now has75 recognized
+unique handlers across76 of205 routes.128 unique handlers remain outside
+this direct dispatch; recognition does not establish complete VM semantics.
+
+The new internal command boundary requires M1/X16 and DP0. Other contexts
+retain the existing original-code handoff. The original eight-bit palette
+index doubling, bank-crossing operands, stack frames, CPU flags, MMIO order
+and unusual subtraction sequence remain literal. Binary and decimal byte
+subtraction is exhaustively checked; no algebraic shortcut replaces it.
+
+Shared final-source verification passes184320 direct original-ROM states,
+13312 complete engine/production-ABI cases,65627 unknown/context guards
+and three detected ROM faults. Both standalone compilers/CLI gates and
+Windows Release pass. Counts stay1434 verified entries,1423 bindings and
+742 WRAM locations; the portable implementation now has431 C units.
+
+A normal7444-frame replay reaches both new brightness-fade commands.
+Their actual caller states also match the original ROM for CPU/full WRAM.
+Pictures and PPU state match the preceding native baseline throughout.
+PCM hashes differ from frame3580 onward; a run without the diagnostic
+observer reproduces the same hashes. This is semantic verification, not
+cycle-level scheduling or audio-sample equality. Full1965 is an earlier
+baseline and was not repeated for this component-local command extension.
+
 # Animated menu cursor and observed menu banks - 2026-10-15
 
 The verified cursor interpolation at82:89FA now runs its original frame

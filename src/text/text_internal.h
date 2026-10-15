@@ -4,6 +4,10 @@
 /* Shared text engine internals. */
 
 #include "lufia2/execution.h"
+#include <stdbool.h>
+
+bool Lufia2TextExecuteStateCommand(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint16_t handler);
 
 /* Text engine WRAM. */
 #define TEXT_WINDOW_STATE 0x099cu /* bit 0: window buffer in use */
