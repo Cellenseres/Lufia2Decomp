@@ -169,7 +169,9 @@ static void SetGlyphOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 
 bool Lufia2TextExecuteStateCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                    uint16_t handler) {
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->direct_page)
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
         return false;
     switch (handler) {
     case SUBTRACT_VARIABLE:

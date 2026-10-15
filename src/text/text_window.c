@@ -21,7 +21,7 @@ enum { ACTOR_STATE_EXCLUDED = 0x04 };
 enum { DP_WINDOW_ACTOR_ID = 0x54 };
 
 /* $80:BF6F: slot of actor A; carry set when none. */
-static void TextFindWindowActor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+void Lufia2TextFindWindowActor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
 
     WramWrite(wram, DP_WINDOW_ACTOR_ID, A8(cpu));
@@ -114,7 +114,7 @@ static void TextWindowBorderRow(const Lufia2Memory *memory, Lufia2CpuState *cpu)
 static void TextWindowActorPosition(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x09abu, 0);
     SimulateJslFrame(memory, cpu, 0x80u, 0xc345u);
-    TextFindWindowActor(memory, cpu);
+    Lufia2TextFindWindowActor(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     LoadAAbsolute8(memory, cpu, 0x125cu, 0);
     AslA8(cpu); Adc8(cpu, 2);

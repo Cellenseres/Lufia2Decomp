@@ -176,7 +176,7 @@ static Lufia2ExecutionResult TextEngineExit(
 }
 
 /* $80:C0EC: previous text byte; Y below $8000 moves the bank back. */
-static void TextPrevByte(
+void Lufia2TextPrevByte(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -602,7 +602,7 @@ static unsigned TextOpWaitForActor(
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     And8(cpu, 0x88u);
     if (!cpu->zero) {
-        TextPrevByte(memory, cpu, 0xa822u);
+        Lufia2TextPrevByte(memory, cpu, 0xa822u);
         return TEXT_OPCODE_EXIT;
     }
     LoadA8(cpu, 0xffu);                                    /* A826 */
@@ -624,7 +624,7 @@ static unsigned TextOpWaitFrames(
     Compare8(cpu, A8(cpu),
         Read8(memory, AbsoluteIndexedAddress(cpu, 0x0000u, cpu->y)));
     if (!cpu->carry) {
-        TextPrevByte(memory, cpu, 0xb2fdu);
+        Lufia2TextPrevByte(memory, cpu, 0xb2fdu);
         return TEXT_OPCODE_EXIT;
     }
     Lufia2TextNextByte(memory, cpu, 0xb303u);                    /* B301 */
@@ -651,7 +651,7 @@ static unsigned TextOpWaitForParty(
             AbsoluteIndexedAddress(cpu, (uint16_t)(WRAM_ACTOR_STATE + i), 0)));
     BitImmediate8(cpu, 0x08u);
     if (!cpu->zero) {
-        TextPrevByte(memory, cpu, 0xb400u);                /* B3FE */
+        Lufia2TextPrevByte(memory, cpu, 0xb400u);                /* B3FE */
         return TEXT_OPCODE_EXIT;
     }
     LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);               /* B3B2 */
@@ -935,7 +935,7 @@ static unsigned TextOpWaitSeconds(
         LoadA8(cpu, DirectByte(memory, cpu, DP_FRAME_COUNTER));
         Compare8(cpu, A8(cpu), 0x3cu);
         if (!cpu->carry) {
-            TextPrevByte(memory, cpu, 0xb328u);
+            Lufia2TextPrevByte(memory, cpu, 0xb328u);
             return TEXT_OPCODE_EXIT;
         }
         Write8(memory, DirectAddress(cpu, DP_FRAME_COUNTER), 0x00u);      /* B32C */
@@ -976,9 +976,9 @@ static unsigned TextOpScrollView(
             return TEXT_OPCODE_NEXT;                           /* B58F */
     }
     SetAccumulatorWidth(cpu, 1);                               /* B4F0 */
-    TextPrevByte(memory, cpu, 0xb4f4u);
-    TextPrevByte(memory, cpu, 0xb4f7u);
-    TextPrevByte(memory, cpu, 0xb4fau);
+    Lufia2TextPrevByte(memory, cpu, 0xb4f4u);
+    Lufia2TextPrevByte(memory, cpu, 0xb4f7u);
+    Lufia2TextPrevByte(memory, cpu, 0xb4fau);
     return TEXT_OPCODE_EXIT;
 }
 
@@ -1112,7 +1112,7 @@ static unsigned TextOpChoice(
         TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
         return TEXT_OPCODE_NEXT;
     }
-    TextPrevByte(memory, cpu, 0x9fe3u);                        /* 9FE1 */
+    Lufia2TextPrevByte(memory, cpu, 0x9fe3u);                        /* 9FE1 */
     return TEXT_OPCODE_EXIT;
 }
 
@@ -1372,7 +1372,7 @@ static unsigned TextOpWaitForEffects(
     Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0);
     if (!cpu->zero) {
-        TextPrevByte(memory, cpu, 0xb999u);
+        Lufia2TextPrevByte(memory, cpu, 0xb999u);
         return TEXT_OPCODE_EXIT;
     }
     return TEXT_OPCODE_NEXT;
@@ -1385,7 +1385,7 @@ static unsigned TextOpWaitD0FC(
     LoadA8(cpu, (uint8_t)(Read8(memory, TEXT_WAIT_FRAMES) - 1u));
     Write8(memory, TEXT_WAIT_FRAMES, A8(cpu));
     if (!cpu->zero) {
-        TextPrevByte(memory, cpu, 0xb8adu);
+        Lufia2TextPrevByte(memory, cpu, 0xb8adu);
         return TEXT_OPCODE_EXIT;
     }
     return TEXT_OPCODE_NEXT;
@@ -1402,7 +1402,7 @@ static unsigned TextOpWaitForFade(
         if (cpu->zero)
             return TEXT_OPCODE_NEXT;
     }
-    TextPrevByte(memory, cpu, 0xb9aeu);
+    Lufia2TextPrevByte(memory, cpu, 0xb9aeu);
     return TEXT_OPCODE_EXIT;
 }
 
@@ -1505,6 +1505,12 @@ static unsigned TextScriptOpcode(
 
     if (Lufia2TextExecuteStateCommand(memory, cpu, handler))
         return TEXT_OPCODE_NEXT;
+    const Lufia2TextCommandFlow actor_flow =
+        Lufia2TextExecuteActorCommand(memory, cpu, handler);
+    if (actor_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (actor_flow == LUFIA2_TEXT_COMMAND_YIELD)
+        return TEXT_OPCODE_EXIT;
 
     for (i = 0; i < 11u; ++i) {
         if (handler != kTextByteStores[i].handler)

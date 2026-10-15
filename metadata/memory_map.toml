@@ -200,7 +200,7 @@ name = "unk_7E066A"
 width = 1
 count = 40
 owner = "actor"
-notes = "Per-slot byte; $83:D508 toggles bit 0 when the walk counter reaches $20."
+notes = "Per-slot byte; $83:D508 toggles bit 0 when the walk counter reaches $20. Text7A writes it directly; text31 maps a facing operand through80:A7B6 and updates this byte together with0692 when changed."
 
 [[location]]
 address = "7E:06BA"
@@ -938,7 +938,7 @@ name = "actor_claimed_object_record"
 width = 1
 count = 40
 owner = "field"
-notes = "Map object record ID held by each actor."
+notes = "Map object record ID held by each actor. Text8C stores its second binding operand here after locating the actor."
 
 [[location]]
 address = "7F:E5CE"
@@ -946,7 +946,7 @@ name = "actor_claimed_pending_object"
 width = 1
 count = 40
 owner = "field"
-notes = "Pending object slot held by each actor."
+notes = "Pending object slot held by each actor. Text8C stores its first binding operand here."
 
 [[location]]
 address = "7E:0692"
@@ -963,7 +963,7 @@ name = "unk_7E070A"
 width = 1
 count = 40
 owner = "actor"
-notes = "Receives $09 when primary opcode $0F restarts a script while the window mode is open."
+notes = "Primary script selector consumed by83:D416. Text32 stores it before restarting one actor; text78 temporarily selects09 for slots5..39, rebuilds their script pointers and restores each selector. Also receives09 when primary0F restarts while the window mode is open."
 
 [[location]]
 address = "7E:09A6"

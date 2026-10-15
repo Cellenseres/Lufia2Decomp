@@ -9,6 +9,18 @@
 bool Lufia2TextExecuteStateCommand(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t handler);
 
+typedef enum Lufia2TextCommandFlow {
+    LUFIA2_TEXT_COMMAND_UNHANDLED,
+    LUFIA2_TEXT_COMMAND_NEXT = 0x809d00u,
+    LUFIA2_TEXT_COMMAND_YIELD = 0x809db0u
+} Lufia2TextCommandFlow;
+
+Lufia2TextCommandFlow Lufia2TextExecuteActorCommand(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint16_t handler);
+void Lufia2TextFindWindowActor(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+void Lufia2TextPrevByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address);
+
 /* Text engine WRAM. */
 #define TEXT_WINDOW_STATE 0x099cu /* bit 0: window buffer in use */
 #define TEXT_GLYPH_ATTRIBUTE 0x09adu
