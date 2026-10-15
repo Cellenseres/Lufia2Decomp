@@ -18,6 +18,8 @@ enum {
     SET_PRESENTATION = 0xac8au,
     REQUEST_PRESENTATION = 0xacbdu,
     CLEAR_PRESENTATION_REQUEST = 0xace2u,
+    OFFSET_ACTOR_FINE_POSITION = 0xb0bdu,
+    OFFSET_ACTOR_CELL_POSITION = 0xb0c3u,
     ACTOR_COUNT = 40u,
     ROM_FACING_TABLE = 0x80a7b6u,
     DP_MOTION_FLAGS = 0x54u,
@@ -263,6 +265,57 @@ static void ClearPresentationRequest(const Lufia2Memory *memory, Lufia2CpuState 
     OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE316));
 }
 
+static void WidenSignedOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    OpOraValue(cpu, 0u);
+    const uint8_t extension = cpu->negative ? 0xffu : 0u;
+    ExchangeAccumulatorBytes(cpu);
+    OpLoadA(cpu, extension);
+    ExchangeAccumulatorBytes(cpu);
+    OpRepWidths(cpu, 0x20u);
+    SimulateRtsFrame(memory, cpu);
+}
+
+static void OffsetActorFinePosition(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Lufia2TextNextByte(memory, cpu, 0xb0edu);
+    Lufia2EventFindActorId(memory, cpu, 0xb0f1u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_SLOT_WORD_OFFSET)));
+    Lufia2TextNextByte(memory, cpu, 0xb0f6u);
+    WidenSignedOffset(memory, cpu, 0xb0f9u);
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FINE_X));
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FINE_X));
+    OpSepWidths(cpu, 0x20u);
+    Lufia2TextNextByte(memory, cpu, 0xb107u);
+    WidenSignedOffset(memory, cpu, 0xb10au);
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FINE_Y));
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FINE_Y));
+    OpSepWidths(cpu, 0x20u);
+    SimulateRtsFrame(memory, cpu);
+}
+
+static void OffsetActorCellPosition(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OffsetActorFinePosition(memory, cpu, 0xb0c5u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_SLOT_WORD_OFFSET)));
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FINE_X));
+    for (unsigned bit = 0; bit < 4u; ++bit)
+        OpLsrA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, DP_POSITION_X));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FINE_Y));
+    for (unsigned bit = 0; bit < 4u; ++bit)
+        OpLsrA(cpu);
+    OpSepWidths(cpu, 0x20u);
+    LoadActorSlot(memory, cpu);
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_Y));
+    OpLda(memory, cpu, OpDp(cpu, DP_POSITION_X));
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_X));
+}
+
 Lufia2TextCommandFlow Lufia2TextExecuteActorCommand(const Lufia2Memory *memory,
                                                     Lufia2CpuState *cpu,
                                                     uint16_t handler) {
@@ -306,6 +359,12 @@ Lufia2TextCommandFlow Lufia2TextExecuteActorCommand(const Lufia2Memory *memory,
         break;
     case CLEAR_PRESENTATION_REQUEST:
         ClearPresentationRequest(memory, cpu);
+        break;
+    case OFFSET_ACTOR_FINE_POSITION:
+        OffsetActorFinePosition(memory, cpu, 0xb0bfu);
+        break;
+    case OFFSET_ACTOR_CELL_POSITION:
+        OffsetActorCellPosition(memory, cpu);
         break;
     default:
         return LUFIA2_TEXT_COMMAND_UNHANDLED;
