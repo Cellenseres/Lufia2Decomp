@@ -13,6 +13,10 @@ enum {
     BRANCH_ON_FLAG = 0xa29cu,
     REBUILD_PARTY_ACTORS = 0xb46bu,
     LEARN_SPELL = 0xa489u,
+    REMOVE_ITEM_PAGE_ZERO = 0xa49du,
+    REMOVE_ITEM_PAGE_ONE = 0xa4a6u,
+    RESTORE_PARTY = 0xa4ddu,
+    CLEAR_EQUIPMENT = 0xa50bu,
     RESET_MEMBER_MARKER = 0xa4f0u,
     INCREASE_MEMBER_STAT = 0xa54au,
     ADD_PARTY_MEMBER = 0xa5c8u,
@@ -56,6 +60,21 @@ static uint8_t RunPartyChild(void *context, Lufia2CpuState *cpu, uint32_t target
         break;
     case 0x81f4d5u:
         result = Lufia2PartyDerivedStats(memory, cpu);
+        break;
+    case 0x81f629u:
+        result = Lufia2PartyClearStatuses(memory, cpu);
+        break;
+    case 0x81f5edu:
+        result = Lufia2PartyRestore11(memory, cpu);
+        break;
+    case 0x81f60bu:
+        result = Lufia2PartyRestore13(memory, cpu);
+        break;
+    case 0x82fa57u:
+        result = Lufia2ItemRemoveRequested(memory, cpu);
+        break;
+    case 0x82fd15u:
+        result = Lufia2PartyClearEquipment(memory, cpu);
         break;
     case 0x81f723u:
         result = Lufia2PartyAddMenuMember(memory, cpu);
@@ -337,6 +356,60 @@ static uint32_t TestItemCount(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     return LUFIA2_TEXT_COMMAND_NEXT;
 }
 
+static uint32_t RemoveItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                           bool second_page) {
+    if (second_page) {
+        OpLoadA(cpu, 1u);
+        OpSta(memory, cpu, OpAbs(cpu, 0x09d0u));
+    } else {
+        OpStz(memory, cpu, OpAbs(cpu, 0x09d0u));
+    }
+    SimulateJsrFrame(memory, cpu, second_page ? 0xa4adu : 0xa4a2u);
+    Lufia2TextNextByte(memory, cpu, 0xa4b3u);
+    OpSta(memory, cpu, OpAbs(cpu, 0x09cfu));
+    Lufia2TextNextByte(memory, cpu, 0xa4b9u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_ITEM_QUANTITY));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_MENU_ITEM_QUANTITY + 1u));
+    PushY(memory, cpu);
+    OpRepWidths(cpu, 0x20u);
+    const uint32_t handoff = CallPartyService(memory, cpu, 0x82fa57u, 0xa4c6u);
+    if (handoff)
+        return handoff;
+    OpSepWidths(cpu, 0x20u);
+    OpPullY(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    return LUFIA2_TEXT_COMMAND_NEXT;
+}
+
+static uint32_t RestoreParty(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushDataBank(memory, cpu);
+    PushY(memory, cpu);
+    uint32_t handoff = CallPartyService(memory, cpu, 0x81f629u, 0xa4e2u);
+    if (!handoff)
+        handoff = CallPartyService(memory, cpu, 0x81f5edu, 0xa4e6u);
+    if (!handoff)
+        handoff = CallPartyService(memory, cpu, 0x81f60bu, 0xa4eau);
+    if (handoff)
+        return handoff;
+    OpPullY(memory, cpu);
+    PullDataBank(memory, cpu);
+    return LUFIA2_TEXT_COMMAND_NEXT;
+}
+
+static uint32_t ClearEquipment(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2TextNextByte(memory, cpu, 0xa50du);
+    PushDataBank(memory, cpu);
+    PushY(memory, cpu);
+    OpRepWidths(cpu, 0x30u);
+    const uint32_t handoff = CallPartyService(memory, cpu, 0x82fd15u, 0xa515u);
+    if (handoff)
+        return handoff;
+    OpSepWidths(cpu, 0x20u);
+    OpPullY(memory, cpu);
+    PullDataBank(memory, cpu);
+    return LUFIA2_TEXT_COMMAND_NEXT;
+}
+
 static uint32_t TestGold(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetTextCondition(memory, cpu, 0xae05u, false);
     Lufia2TextNextWord(memory, cpu, 0xae08u);
@@ -455,6 +528,14 @@ uint32_t Lufia2TextExecutePartyCommand(const Lufia2Memory *memory, Lufia2CpuStat
         cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
         return 0u;
     switch (handler) {
+    case REMOVE_ITEM_PAGE_ZERO:
+        return RemoveItem(memory, cpu, false);
+    case REMOVE_ITEM_PAGE_ONE:
+        return RemoveItem(memory, cpu, true);
+    case RESTORE_PARTY:
+        return RestoreParty(memory, cpu);
+    case CLEAR_EQUIPMENT:
+        return ClearEquipment(memory, cpu);
     case REBUILD_PARTY_ACTORS:
         return RebuildPartyActors(memory, cpu);
     case BRANCH_ON_FLAG:

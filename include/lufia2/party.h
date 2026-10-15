@@ -267,6 +267,12 @@ Lufia2ExecutionResult Lufia2CapsuleOpenSelection(
 Lufia2ExecutionResult Lufia2PartyListHasEntry(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2PartyClearStatuses(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2PartyClearEquipment(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

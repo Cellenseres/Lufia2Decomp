@@ -21,6 +21,21 @@ static void RefreshMenuPartyRecords(const Lufia2Memory *memory, Lufia2CpuState *
     SimulateRtsFrame(memory, cpu);
 }
 
+Lufia2ExecutionResult Lufia2PartyClearStatuses(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu) {
+    if (!MenuPartyReady(cpu) || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81f629u);
+    OpLdy(cpu, 6u);
+    do {
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbsY(cpu, WRAM_MENU_PARTY_CHARACTER_OFFSET)));
+        if (!cpu->zero)
+            OpStz(memory, cpu, OpAbsX(cpu, 0x000fu));
+        OpDey(cpu);
+        OpDey(cpu);
+    } while (!cpu->negative);
+    return ExecutionReturned(0x81f638u);
+}
+
 Lufia2ExecutionResult Lufia2PartyAddMenuMember(const Lufia2Memory *memory,
                                                Lufia2CpuState *cpu) {
     if (!MenuPartyReady(cpu))

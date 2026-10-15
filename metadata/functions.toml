@@ -11631,3 +11631,67 @@ source = "src/party/party_records.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:F629"
+name = "Lufia2PartyClearStatuses"
+source = "src/party/party_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FD15"
+name = "Lufia2PartyClearEquipment"
+source = "src/party/party_equipment.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FA57"
+name = "Lufia2ItemRemoveRequested"
+source = "src/item/item_commands.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FA77"
+name = "Lufia2ItemClearRequestedPossession"
+source = "src/item/item_commands.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FAD0"
+name = "Lufia2ItemSubtractSlotQuantity"
+source = "src/item/item_commands.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FCED"
+name = "Lufia2ItemSelectPackedCount"
+source = "src/item/packed_item_counts.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FC97"
+name = "Lufia2ItemIncrementPackedCount"
+source = "src/item/packed_item_counts.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FCC7"
+name = "Lufia2ItemDecrementPackedCount"
+source = "src/item/packed_item_counts.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

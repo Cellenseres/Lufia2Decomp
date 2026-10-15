@@ -673,6 +673,18 @@ static inline void AslAbsolute8(
     SetNz8(cpu, value);
 }
 
+/* ASL dp, 8-bit. */
+static inline void AslDirect8(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              uint8_t offset) {
+    const uint32_t at = DirectAddress(cpu, offset);
+    const uint8_t old = Read8(memory, at);
+    const uint8_t value = (uint8_t)(old << 1);
+
+    cpu->carry = (old & 0x80u) != 0;
+    Write8(memory, at, value);
+    SetNz8(cpu, value);
+}
+
 /* ROL abs, 8-bit. */
 static inline void RolAbsolute8(
     const Lufia2Memory *memory,

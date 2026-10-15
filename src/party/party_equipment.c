@@ -1,6 +1,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/party.h"
+#include "lufia2/item.h"
 #include "system/wram.h"
 
 enum {
@@ -20,6 +21,47 @@ static Lufia2ExecutionResult EquipmentChildUnwound(uint32_t site) {
     Lufia2ExecutionResult result = ExecutionReturned(site);
     result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
     return result;
+}
+
+Lufia2ExecutionResult Lufia2PartyClearEquipment(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x82u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu ||
+        (cpu->accumulator & 0xffu) >= PARTY_RECORD_COUNT)
+        return ExecutionHandoff(cpu, 0x82fd15u);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, 0x859ebau));
+    OpSta(memory, cpu, OpDp(cpu, DP_EQUIPMENT_MEMBER));
+    OpLoadA(cpu, 0u);
+    do {
+        PushAccumulator16(memory, cpu);
+        SimulateJsrFrame(memory, cpu, 0xfd26u);
+        Lufia2ExecutionResult result = Lufia2PartySelectEquipmentSlot(memory, cpu);
+        if (result.flow != LUFIA2_EXECUTION_RETURNED)
+            return result;
+        SimulateRtsFrame(memory, cpu);
+        OpLda(memory, cpu,
+              AbsoluteIndexedAddress(
+                  cpu, Read16Direct(memory, cpu, DP_EQUIPMENT_MEMBER), cpu->y));
+        OpTax(cpu);
+        OpLoadA(cpu, 0u);
+        OpSta(memory, cpu,
+              AbsoluteIndexedAddress(
+                  cpu, Read16Direct(memory, cpu, DP_EQUIPMENT_MEMBER), cpu->y));
+        OpLoadA(cpu, 1u);
+        SimulateJsrFrame(memory, cpu, 0xfd34u);
+        result = Lufia2ItemIncrementPackedCount(memory, cpu);
+        if (result.flow != LUFIA2_EXECUTION_RETURNED)
+            return result;
+        SimulateRtsFrame(memory, cpu);
+        PullAccumulator16(memory, cpu);
+        OpIncA(cpu);
+        OpCmpValue(cpu, PARTY_EQUIPMENT_SLOT_COUNT);
+    } while (!cpu->zero);
+    return ExecutionReturned(0x82fd3cu);
 }
 
 Lufia2ExecutionResult Lufia2PartySelectEquipmentSlot(

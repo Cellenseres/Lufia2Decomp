@@ -357,6 +357,8 @@ add_library(lufia2_decomp STATIC
     src/field/field_animation_slots.c
     src/field/field_animation_cells.c
     src/item/inventory.c
+    src/item/item_commands.c
+    src/item/packed_item_counts.c
     src/item/inventory_selection.c
     src/item/inventory_receive.c
     src/item/item_records.c

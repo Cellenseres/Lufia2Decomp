@@ -497,6 +497,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F4ED` | `Lufia2PartyStatTotals` | verified | `src/party/stats.c` |
 | `$81:F5ED` | `Lufia2PartyRestore11` | verified | `src/party/party_records.c` |
 | `$81:F60B` | `Lufia2PartyRestore13` | verified | `src/party/party_records.c` |
+| `$81:F629` | `Lufia2PartyClearStatuses` | verified | `src/party/party_records.c` |
 | `$81:F723` | `Lufia2PartyAddMenuMember` | verified | `src/party/party_records.c` |
 | `$81:F74F` | `Lufia2PartyRemoveMenuMember` | verified | `src/party/party_records.c` |
 | `$81:F789` | `Lufia2PartyPointersFar` | verified | `src/party/party_records.c` |
@@ -701,12 +702,19 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F9E8` | `Lufia2InventoryStorePackedSlot` | verified | `src/item/inventory_selection.c` |
 | `$82:F9F2` | `Lufia2InventoryAddMenuItem` | verified | `src/item/inventory_selection.c` |
 | `$82:FA2E` | `Lufia2InventoryRegisterPossession` | verified | `src/item/inventory_selection.c` |
+| `$82:FA57` | `Lufia2ItemRemoveRequested` | verified | `src/item/item_commands.c` |
+| `$82:FA77` | `Lufia2ItemClearRequestedPossession` | verified | `src/item/item_commands.c` |
 | `$82:FAA0` | `Lufia2InventoryIncreaseSlotQuantity` | verified | `src/item/inventory_selection.c` |
+| `$82:FAD0` | `Lufia2ItemSubtractSlotQuantity` | verified | `src/item/item_commands.c` |
 | `$82:FAF4` | `Lufia2InventorySlotAtQuantityLimit` | verified | `src/item/inventory_selection.c` |
 | `$82:FB1F` | `Lufia2ItemPossessionCount` | verified | `src/item/inventory.c` |
 | `$82:FB51` | `Lufia2ItemCheckPossessionBit` | verified | `src/item/inventory.c` |
 | `$82:FB94` | `Lufia2InventoryFindEmptySlot` | verified | `src/item/inventory_selection.c` |
 | `$82:FBE5` | `Lufia2MenuSelectedListOffset` | verified | `src/menu/menu_list_scroll.c` |
+| `$82:FC97` | `Lufia2ItemIncrementPackedCount` | verified | `src/item/packed_item_counts.c` |
+| `$82:FCC7` | `Lufia2ItemDecrementPackedCount` | verified | `src/item/packed_item_counts.c` |
+| `$82:FCED` | `Lufia2ItemSelectPackedCount` | verified | `src/item/packed_item_counts.c` |
+| `$82:FD15` | `Lufia2PartyClearEquipment` | verified | `src/party/party_equipment.c` |
 | `$82:FD3D` | `Lufia2PartyLearnSelectedSpell` | verified | `src/party/capsule_abilities.c` |
 | `$83:8000` | `Lufia2FieldRunLoop` | verified | `src/field/field_session_setup.c` |
 | `$83:80CD` | `Lufia2FieldIdleTest` | verified | `src/field/field_update.c` |
