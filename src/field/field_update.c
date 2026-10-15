@@ -207,65 +207,6 @@ Lufia2ExecutionResult Lufia2FieldIdleTest(
     return result;
 }
 
-/* $83:8682: tick the eight animation slots at $7F:D057. */
-Lufia2ExecutionResult Lufia2FieldAnimationTicks(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    const uint32_t slots = EVENT_ANIMATION_SLOT_STATE;
-    Lufia2ExecutionResult result;
-
-    result.flow = LUFIA2_EXECUTION_RETURNED;
-    result.pc = 0x8386e9u;
-    result.dispatches = 0;
-    Push8(memory, cpu, PackStatus(cpu));                       /* 8682 */
-    SetIndexWidth(cpu, 0);
-    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_ANIMATION_MASK, 0), 0x00u);
-    LoadA8(cpu, 0x01u);
-    StoreAAbsolute8(memory, cpu, 0x17abu, 0);
-    LoadX16(cpu, 0x0000u);
-    do {
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(slots, cpu->x)));
-        if (cpu->negative) {
-            ExchangeAccumulatorBytes(cpu);                     /* 8696 */
-            LoadAAbsolute8(memory, cpu, 0x17abu, 0);
-            TestBitsAbsolute8(memory, cpu, WRAM_ANIMATION_MASK, 1);
-            AslA8(cpu);
-            StoreAAbsolute8(memory, cpu, 0x17abu, 0);
-            ExchangeAccumulatorBytes(cpu);
-            cpu->carry = 0;
-            Adc8(cpu, 0x08u);
-            Write8(memory, LongIndexedAddress(slots, cpu->x), A8(cpu));
-            And8(cpu, 0x18u);
-            Compare8(cpu, A8(cpu), 0x18u);
-            if (cpu->zero) {
-                LoadA8(cpu, Read8(memory, LongIndexedAddress(slots, cpu->x)));
-                And8(cpu, 0xe7u);                              /* 86B3 */
-                Write8(memory, LongIndexedAddress(slots, cpu->x), A8(cpu));
-                PushIndex(memory, cpu);
-                Write8(memory, 0x7fd049u, A8(cpu));
-                LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-                BitImmediate8(cpu, 0x02u);
-                if (!cpu->zero)
-                    TransferDirectToA(cpu);                    /* 86C3 */
-                Write8(memory, LongIndexedAddress(slots, cpu->x), A8(cpu));
-                LoadA8(cpu, Read8(memory, LongIndexedAddress(
-                                              EVENT_ANIMATION_SLOT_OBJECT, cpu->x)));
-                Write8(memory, EVENT_OBJECT_OPERAND, A8(cpu));
-                LoadA8(cpu, Read8(memory, EVENT_OBJECT_OPERAND));
-                /* The slot handlers $83:8783/87CC stay LLE. */
-                result.flow = LUFIA2_EXECUTION_BOUNDARY;
-                result.pc = cpu->resume_pc =
-                    cpu->negative ? 0x8386d6u : 0x8386dbu;
-                return result;
-            }
-        }
-        IncrementX16(cpu);                                     /* 86DF */
-        Compare16(cpu, cpu->x, 0x0008u);
-    } while (!cpu->zero);
-    UnpackStatus(cpu, Pull8(memory, cpu));                     /* 86E8 */
-    return result;
-}
-
 Lufia2ExecutionResult Lufia2FieldEventTick(const Lufia2Memory *memory,
                                            Lufia2CpuState *cpu) {
     SimulateJslFrame(memory, cpu, 0x80u, 0x9c75u);
