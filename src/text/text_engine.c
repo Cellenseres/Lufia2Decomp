@@ -377,7 +377,7 @@ void Lufia2TextSetScriptPointer(
 }
 
 /* $80:A3C6: goto script base $099E/$09A0 + next word. */
-static void TextGoto(
+void Lufia2TextGoto(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     Lufia2TextNextWord(memory, cpu, 0xa3c8u);                        /* A3C6 */
@@ -1208,7 +1208,7 @@ static unsigned TextOpGotoIfFlag(
     Lufia2TextNextByte(memory, cpu, 0xa28au);
     Lufia2TextTestFlag(memory, cpu, 0xa28du);
     if (!cpu->zero) {
-        TextGoto(memory, cpu);
+        Lufia2TextGoto(memory, cpu);
         return TEXT_OPCODE_NEXT;
     }
     Lufia2TextNextByte(memory, cpu, 0xa295u);                    /* A293 */
@@ -1262,7 +1262,7 @@ static unsigned TextOpChangeFlag(
 static unsigned TextOpGoto(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    TextGoto(memory, cpu);
+    Lufia2TextGoto(memory, cpu);
     return TEXT_OPCODE_NEXT;
 }
 
@@ -1570,6 +1570,14 @@ static unsigned TextScriptOpcode(
         return TEXT_OPCODE_HANDOFF;
     }
 
+    const uint32_t party_flow = Lufia2TextExecutePartyCommand(memory, cpu, handler);
+    if (party_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (party_flow) {
+        *handoff = party_flow;
+        return TEXT_OPCODE_HANDOFF;
+    }
+
     if (Lufia2TextExecuteColorCommand(memory, cpu, handler))
         return TEXT_OPCODE_NEXT;
     const uint32_t object_flow = Lufia2TextExecuteObjectCommand(memory, cpu, handler);
@@ -1651,7 +1659,7 @@ static unsigned TextScriptOpcode(
         return TextOpGotoIfFlag(memory, cpu);
     case TEXT_OP_CONDITION:
         if (Lufia2TextEvaluateCondition(memory, cpu) == 0x80a3c6u)
-            TextGoto(memory, cpu);
+            Lufia2TextGoto(memory, cpu);
         return TEXT_OPCODE_NEXT;
     case TEXT_OP_SET_FLAG:
     case TEXT_OP_CLEAR_FLAG:

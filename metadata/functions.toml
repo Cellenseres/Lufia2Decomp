@@ -11615,3 +11615,19 @@ source = "src/title/title.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "81:F723"
+name = "Lufia2PartyAddMenuMember"
+source = "src/party/party_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F74F"
+name = "Lufia2PartyRemoveMenuMember"
+source = "src/party/party_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

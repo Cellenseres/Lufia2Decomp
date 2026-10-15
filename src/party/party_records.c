@@ -1,18 +1,109 @@
 /* Party record pointers and restoration ($81:F5ED, F60B, F78D, F7BD). */
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/party.h"
 #include "party/party_internal.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
+enum { MENU_PARTY_CAPACITY = 4u };
+
+static bool MenuPartyReady(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x81u && cpu->accumulator_is_8_bit &&
+           cpu->stack >= 0x1f10u && cpu->stack <= 0x1ffcu;
+}
+
+static void RefreshMenuPartyRecords(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                    uint16_t back) {
+    SimulateJsrFrame(memory, cpu, back);
+    Lufia2PartyPointers(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2PartyAddMenuMember(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu) {
+    if (!MenuPartyReady(cpu))
+        return ExecutionHandoff(cpu, 0x81f723u);
+    OpSepWidths(cpu, 0x10u);
+    OpLdx(cpu, 0u);
+    do {
+        OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, WRAM_MENU_PARTY_FIRST_ID)));
+        if (cpu->negative) {
+            OpSta(memory, cpu, OpAbsX(cpu, WRAM_MENU_PARTY_FIRST_ID));
+            OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_PARTY_MEMBER_COUNT), 1);
+            OpRepWidths(cpu, 0x10u);
+            RefreshMenuPartyRecords(memory, cpu, 0xf74cu);
+            cpu->carry = 0u;
+            return ExecutionReturned(0x81f74eu);
+        }
+        OpCmp(memory, cpu, OpAbsX(cpu, WRAM_MENU_PARTY_FIRST_ID));
+        if (cpu->zero) {
+            OpRepWidths(cpu, 0x10u);
+            OpLoadA(cpu, 2u);
+            cpu->carry = 1u;
+            return ExecutionReturned(0x81f741u);
+        }
+        OpInx(cpu);
+        OpCpx(cpu, MENU_PARTY_CAPACITY);
+    } while (!cpu->zero);
+    OpRepWidths(cpu, 0x10u);
+    OpLoadA(cpu, 1u);
+    cpu->carry = 1u;
+    return ExecutionReturned(0x81f73bu);
+}
+
+Lufia2ExecutionResult Lufia2PartyRemoveMenuMember(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (!MenuPartyReady(cpu))
+        return ExecutionHandoff(cpu, 0x81f74fu);
+    OpSepWidths(cpu, 0x10u);
+    OpLdx(cpu, 0u);
+    for (;;) {
+        OpCmp(memory, cpu, OpAbsX(cpu, WRAM_MENU_PARTY_FIRST_ID));
+        if (cpu->zero)
+            break;
+        OpInx(cpu);
+        OpCpx(cpu, MENU_PARTY_CAPACITY);
+        if (cpu->zero) {
+            OpRepWidths(cpu, 0x10u);
+            OpLoadA(cpu, 2u);
+            cpu->carry = 1u;
+            return ExecutionReturned(0x81f762u);
+        }
+    }
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_MENU_PARTY_MEMBER_COUNT)));
+    OpDey(cpu);
+    if (cpu->zero) {
+        OpRepWidths(cpu, 0x10u);
+        OpLoadA(cpu, 1u);
+        cpu->carry = 1u;
+        return ExecutionReturned(0x81f76eu);
+    }
+    for (;;) {
+        OpWriteX(memory, cpu, OpAbs(cpu, WRAM_MENU_PARTY_MEMBER_COUNT), cpu->y);
+        OpInx(cpu);
+        OpCpx(cpu, MENU_PARTY_CAPACITY);
+        if (cpu->zero)
+            break;
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_MENU_PARTY_FIRST_ID));
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_MENU_PARTY_MEMBER_COUNT));
+    }
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_MENU_PARTY_MEMBER_COUNT));
+    OpRepWidths(cpu, 0x10u);
+    RefreshMenuPartyRecords(memory, cpu, 0xf786u);
+    cpu->carry = 0u;
+    return ExecutionReturned(0x81f788u);
+}
+
 /* Copy a word within each active party record ($0A80). */
-static void PartyCopy(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t from, uint16_t to) {
+static void PartyCopy(const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t from,
+                      uint16_t to) {
     LoadY16(cpu, 0x0006u);
     do {
         LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu,
-            WRAM_MENU_PARTY_CHARACTER_OFFSET, cpu->y));
+                                           WRAM_MENU_PARTY_CHARACTER_OFFSET, cpu->y));
         if (!cpu->zero) {
             LoadAAbsolute8(memory, cpu, 0x000fu, cpu->x);
             cpu->zero = (A8(cpu) & 0x04u) == 0;

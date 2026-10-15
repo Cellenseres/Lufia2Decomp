@@ -1,3 +1,39 @@
+# Party and inventory text commands - 2026-10-15
+
+Twelve additional internal text handlers execute in portable C: party membership,
+spell learning, member markers and percentage stat gains, actor visibility,
+display offsets and object locations, plus flag/item/gold/object-bit conditions.
+The existing lookup, spell-record, multiplication, stat and occupancy routines
+are shared. Signed-byte widening and script jumps have one internal implementation.
+Unknown party sprite children retain their original targets and live call frames.
+
+The complete 81:F723/F74F menu-party routines are verified and selected through
+two production bridges. Their four menu slots remain distinct from the text
+callers' five field slots. Empty-before-duplicate precedence, rejection codes,
+zero-count underflow, repeated count writes and byte-index truncation are kept.
+The semantic entry accepts PB81/M1 and stack1F10..1FFC; direct page, data bank,
+index width and decimal state remain observable. The consumer conservatively
+selects native M1/X16/binary contexts; unsupported states retain its fallback.
+
+One shared checkpoint passes 73728 direct original-ROM cases, including 16384
+additional membership edge cases, and 14336 production-ABI/ROM cases. CPU,
+full WRAM and ordered data-bus events match. The ABI cases include 1024 exact
+child continuations and no fallback. There are 65706 pre-access guard cases;
+six deliberate ROM faults are detected. Complete text callers use sufficient
+stack for native handler entry; smaller direct-handler stacks are guarded.
+The initial ABI observer stopped before an unchanged computed-jump table read
+in unsupported shallow-stack cases; its caller fixtures were separated from
+the direct guard proofs. No game-semantic correction was required.
+
+Formatting preserves C tokens, joining adjacent fixture string literals.
+Compiler/CLI checks belong to this combined source checkpoint; intermediate
+commits are not claimed independently tested. The historical 1965-job full
+regression and a fresh whole-game replay are deferred; the preceding replay
+is not claimed on this revision. Totals:1436 verified entries,1425 bindings,
+742 WRAM locations and438 portable C units. Text recognition reaches150 unique
+handlers/152 of205 routes;53 unique handlers remain. These counts do not measure
+whole-game completeness or runtime hit rates.
+
 # Scene-control text commands - 2026-10-15
 
 Twenty-three additional internal text routes use portable C. Object commands
@@ -1470,7 +1506,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1434 functions in `metadata/functions.toml`: 1434 verified, 0 draft, 0 identified, 0 disabled.
+1436 functions in `metadata/functions.toml`: 1436 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

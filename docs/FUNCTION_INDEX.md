@@ -497,6 +497,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F4ED` | `Lufia2PartyStatTotals` | verified | `src/party/stats.c` |
 | `$81:F5ED` | `Lufia2PartyRestore11` | verified | `src/party/party_records.c` |
 | `$81:F60B` | `Lufia2PartyRestore13` | verified | `src/party/party_records.c` |
+| `$81:F723` | `Lufia2PartyAddMenuMember` | verified | `src/party/party_records.c` |
+| `$81:F74F` | `Lufia2PartyRemoveMenuMember` | verified | `src/party/party_records.c` |
 | `$81:F789` | `Lufia2PartyPointersFar` | verified | `src/party/party_records.c` |
 | `$81:F78D` | `Lufia2PartyPointers` | verified | `src/party/party_records.c` |
 | `$81:F7BD` | `Lufia2BattleTable9EBA` | verified | `src/party/party_records.c` |

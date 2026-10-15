@@ -265,7 +265,7 @@ static void ClearPresentationRequest(const Lufia2Memory *memory, Lufia2CpuState 
     OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE316));
 }
 
-static void WidenSignedOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+void Lufia2TextWidenSignedOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                               uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     OpOraValue(cpu, 0u);
@@ -284,13 +284,13 @@ static void OffsetActorFinePosition(const Lufia2Memory *memory, Lufia2CpuState *
     Lufia2EventFindActorId(memory, cpu, 0xb0f1u);
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_SLOT_WORD_OFFSET)));
     Lufia2TextNextByte(memory, cpu, 0xb0f6u);
-    WidenSignedOffset(memory, cpu, 0xb0f9u);
+    Lufia2TextWidenSignedOffset(memory, cpu, 0xb0f9u);
     cpu->carry = 0u;
     OpAdc(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FINE_X));
     OpSta(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FINE_X));
     OpSepWidths(cpu, 0x20u);
     Lufia2TextNextByte(memory, cpu, 0xb107u);
-    WidenSignedOffset(memory, cpu, 0xb10au);
+    Lufia2TextWidenSignedOffset(memory, cpu, 0xb10au);
     cpu->carry = 0u;
     OpAdc(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FINE_Y));
     OpSta(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FINE_Y));

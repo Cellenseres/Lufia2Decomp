@@ -79,6 +79,14 @@ Lufia2ExecutionResult Lufia2BattleTable9EBA(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* Add member A to the four-slot menu party. */
+Lufia2ExecutionResult Lufia2PartyAddMenuMember(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Remove member A, preserving the original rejection codes. */
+Lufia2ExecutionResult Lufia2PartyRemoveMenuMember(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $81:F78D $0A80 = records of members $0A7B; M1X0. */
 Lufia2ExecutionResult Lufia2PartyPointers(
     const Lufia2Memory *memory,
