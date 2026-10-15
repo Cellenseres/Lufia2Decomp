@@ -1,3 +1,30 @@
+# Observed event and menu-buffer contexts - 2026-10-15
+
+The index-independent83:C0EF position probe and83:C0FA control-change latch
+now admit X8 and the valid top two-byte JSR frame atS1FFD. Their indexed
+83:F0BC sibling retains its original strict guard; its BRK7B path is unchanged.
+82:F660 now admits the real DB83 caller and other literal data-bank contexts.
+Its first copy still reads0100..11D7 through DB before its long-address copies.
+M1/X16 remains mandatory for this copy; no loop or data access is optimized.
+
+Shared actual-source ROM/ABI proof passes12288 cases with zero fallback,
+plus9216 unsupported-entry/sibling guards and two detected faults. All256
+data banks, both leaf index widths and the top JSR frame are represented.
+The copy verifier needed a larger instruction ceiling; its failed fixture
+was corrected independently of the already matching leaf functions.
+
+Actual6814-frame production replay records1029 native position probes,
+35 native latch calls and one native buffer copy, with zero own interpreted
+entries. The latter removes23297 interpreted instructions in this observed
+call.31 early-menu animation frames match nearby prior-reference images at
+one/two-frame offsets; no unmatched new picture appears. One sampled confirm
+image differs by animation phase. CPU/WRAM, PPU and PCM frame hashes also
+differ; this is not original/native cycle or audio equality.
+
+Windows Release and both standalone compiler/CLI gates pass. Counts remain
+1434 verified functions,1423 bindings,742 locations and430 C units. Full1965
+is still the prior baseline, not repeated for these three localized contexts.
+
 # Frame-wait contracts - 2026-10-15
 
 Five additional ROM contracts are reconstructed together in system/frame_wait.c:

@@ -5,15 +5,16 @@
 
 enum { FIELD_CONTROL_LATCH = 0x099cu };
 
-static bool ActorEventContext(const Lufia2CpuState *cpu) {
+static bool ActorEventContext(const Lufia2CpuState *cpu, bool allow_x8,
+                              uint16_t maximum_stack) {
     return cpu->program_bank == 0x83u && cpu->accumulator_is_8_bit &&
-        !cpu->index_is_8_bit && !cpu->decimal && !cpu->direct_page &&
-        cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+        (allow_x8 || !cpu->index_is_8_bit) && !cpu->decimal && !cpu->direct_page &&
+        cpu->stack >= 0x1f00u && cpu->stack <= maximum_stack;
 }
 
 Lufia2ExecutionResult Lufia2FieldProbeLeaderPosition(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!ActorEventContext(cpu))
+    if (!ActorEventContext(cpu, true, 0x1ffdu))
         return ExecutionHandoff(cpu, 0x83c0efu);
     OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_TILE_X));
     OpSta(memory, cpu, OpDp(cpu, DP_PROBE_X));
@@ -24,7 +25,7 @@ Lufia2ExecutionResult Lufia2FieldProbeLeaderPosition(
 
 Lufia2ExecutionResult Lufia2FieldAcknowledgeControlChange(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!ActorEventContext(cpu))
+    if (!ActorEventContext(cpu, true, 0x1ffdu))
         return ExecutionHandoff(cpu, 0x83c0fau);
     OpLoadA(cpu, 0x20u);
     OpTestBits(memory, cpu, OpAbs(cpu, FIELD_CONTROL_LATCH), 0u);
@@ -37,7 +38,7 @@ Lufia2ExecutionResult Lufia2FieldAcknowledgeControlChange(
 
 Lufia2ExecutionResult Lufia2FieldSetFollowingObjectDrawFlags(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!ActorEventContext(cpu))
+    if (!ActorEventContext(cpu, false, 0x1ffcu))
         return ExecutionHandoff(cpu, 0x83f0bcu);
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
     OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_DRAW_FLAGS));
