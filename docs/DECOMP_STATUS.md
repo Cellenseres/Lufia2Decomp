@@ -1,3 +1,29 @@
+# Field entry widths - 2026-10-15
+
+PrepareSecondaryScript at83:D3F7 and TryItemRegion at8E:B63B now accept
+both index widths in their existing M1 contracts. SpriteGraphicsUpload
+at84:8193 already normalizes both widths; its consumer now admits all four
+entry combinations. Canonical metadata contracts and function counts remain.
+
+The existing D350 X8 reconstruction is now used by the consumer. Its explicit
+83:D38D handoff preserves the original F9D4 PHX/PLA stack quirk. No original
+behavior is repaired inside semantic C. The secondary-script installation
+inside D350 remains shared rather than becoming another dispatcher call.
+
+One combined current-source batch passes458752 ROM/ABI cases and53376
+guard cases, including4685 D350 continuation cases. The unchanged private
+direct proofs and eight three-mode fault controls are retained; two additional
+primary-action faults are detected. Current standalone GCC/Clang/CLI checks,
+Windows Release and6814 input-driven runtime frames pass their stated scopes.
+All runtime CPU/WRAM/PPU/PCM and pixel hashes match the prior three-mode native
+candidate. Its47-frame fade offset relative to the original admission baseline
+remains documented; no original/native cycle or audio equality is claimed.
+
+Full1965 remains the preceding regression baseline and was not rerun for these
+four localized entry changes under the owner's batched-validation policy.
+Counts remain1429 verified functions,1423 selected bindings,742 locations and
+429 C units. No new function or binding is counted for broader entry support.
+
 # Field animation and colour caller admission - 2026-10-15
 
 Real field callers enter83:8682 and83:AEB5 atS1FFD. Both are two-byte JSR

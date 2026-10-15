@@ -118,7 +118,7 @@ Lufia2ExecutionResult Lufia2ActorStartSecondaryActionScript(
 
 Lufia2ExecutionResult Lufia2ActorPrepareSecondaryScript(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!ActionSetupWidths(cpu) || cpu->program_bank != 0x83u || cpu->decimal)
+    if (!cpu->accumulator_is_8_bit || cpu->program_bank != 0x83u || cpu->decimal)
         return ExecutionHandoff(cpu, 0x83d3f7u);
     Lufia2ActorInstallSecondaryScript(memory, cpu);
     return ExecutionReturned(0x83d415u);

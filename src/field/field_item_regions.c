@@ -103,7 +103,7 @@ static Lufia2ExecutionResult ReturnItemRegion(
 Lufia2ExecutionResult Lufia2FieldTryItemRegion(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    if (!ItemRegionWidths(cpu, 0u) || !child || cpu->decimal ||
+    if (!cpu->accumulator_is_8_bit || !child || cpu->decimal ||
             cpu->program_bank != 0x8eu)
         return ExecutionHandoff(cpu, 0x8eb63bu);
     Push8(memory, cpu, cpu->data_bank);
