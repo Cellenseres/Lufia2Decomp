@@ -1,5 +1,7 @@
 /* Field loop steps and event tick. */
 
+#include <stddef.h>
+
 #include "core/cpu_internal.h"
 #include "core/child_call.h"
 #include "core/cpu_ops.h"

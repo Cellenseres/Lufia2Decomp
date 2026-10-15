@@ -1,6 +1,7 @@
 /* Intro logos and title state flow. */
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "core/child_call.h"
 #include "core/cpu_internal.h"

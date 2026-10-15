@@ -498,3 +498,16 @@ if(LUFIA2_BUILD_TOOLS)
     target_link_libraries(lufia2-resource PRIVATE Lufia2::ResourceFormat)
     target_compile_options(lufia2-resource PRIVATE ${_lufia2_warnings})
 endif()
+
+if(_lufia2_top_level)
+    include(CTest)
+    if(BUILD_TESTING AND LUFIA2_BUILD_TOOLS)
+        find_package(Python3 COMPONENTS Interpreter)
+        if(Python3_Interpreter_FOUND)
+            add_test(NAME resource-cli
+                COMMAND ${Python3_EXECUTABLE}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_resource_cli.py
+                    $<TARGET_FILE:lufia2-resource>)
+        endif()
+    endif()
+endif()

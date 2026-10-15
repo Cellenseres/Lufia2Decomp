@@ -1,4 +1,5 @@
 #include "battle/battle_lifecycle_internal.h"
+#include <stddef.h>
 /* Battle frame setup: the full variant of the battle sprite pass, which first
  * clears the party tilemap through the work RAM port and reloads the color
  * tables, and the row writer of the tile grid. */

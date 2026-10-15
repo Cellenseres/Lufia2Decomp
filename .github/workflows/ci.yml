@@ -19,6 +19,9 @@ jobs:
         compiler: [gcc, clang]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Configure
         env:
           CC: ${{ matrix.compiler }}
@@ -29,6 +32,8 @@ jobs:
           -DLUFIA2_WARNINGS_AS_ERRORS=ON
       - name: Build
         run: cmake --build build
+      - name: Test command-line tools
+        run: ctest --test-dir build --output-on-failure --no-tests=error
 
   metadata:
     name: Metadata
