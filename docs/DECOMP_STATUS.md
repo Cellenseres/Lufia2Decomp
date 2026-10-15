@@ -1,3 +1,19 @@
+# Word shift bus order - 2026-10-15
+
+The shared absolute-word LSR and ROR helpers now write the high byte before
+the low byte, matching original 65816 read-modify-write bus order. Reads,
+final values and CPU flags are unchanged. This corrects semantic fidelity
+in title signed products and system multiplication; no game behavior is
+intentionally patched and no native entry or binding is added by this fix.
+
+All 786,432 original-ROM comparisons cover every word value, both carry
+inputs and every data bank, including exact ordered reads and writes.
+Reverting either helper is detected. The combined title checkpoint also
+passes all 1,950 regression jobs, strict C11 across 429 units, normal
+Release, six production pairs and 4,680 boot/reset/intro/audio frames
+with ninety snapshot replays. Historical fixture-source limits remain;
+this is not a claim of complete source rebuild or game coverage.
+
 # Title record and tile helpers - 2026-10-14
 
 Three original title entries now have portable C and native selection:

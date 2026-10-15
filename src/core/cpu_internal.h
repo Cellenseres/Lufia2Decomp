@@ -696,7 +696,9 @@ static inline void LsrAbsolute16(
     const uint16_t value = (uint16_t)(old >> 1);
 
     cpu->carry = old & 1u;
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, address, 0), value);
+    const uint32_t at = AbsoluteIndexedAddress(cpu, address, 0);
+    Write8(memory, (at + 1u) & 0x00ffffffu, (uint8_t)(value >> 8));
+    Write8(memory, at, (uint8_t)value);
     SetNz16(cpu, value);
 }
 
@@ -710,7 +712,9 @@ static inline void RorAbsolute16(
         (uint16_t)((old >> 1) | (cpu->carry ? 0x8000u : 0u));
 
     cpu->carry = old & 1u;
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, address, 0), value);
+    const uint32_t at = AbsoluteIndexedAddress(cpu, address, 0);
+    Write8(memory, (at + 1u) & 0x00ffffffu, (uint8_t)(value >> 8));
+    Write8(memory, at, (uint8_t)value);
     SetNz16(cpu, value);
 }
 
