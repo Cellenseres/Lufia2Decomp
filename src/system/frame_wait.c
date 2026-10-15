@@ -1,0 +1,92 @@
+#include "core/child_call.h"
+#include "core/cpu_ops.h"
+#include "lufia2/system.h"
+#include "system/wram.h"
+
+enum { FRAME_POLL_LIMIT = 65536, FRAME_COUNT_LIMIT = 4096 };
+
+static Lufia2ExecutionResult WaitForFrameChange(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu, uint32_t poll_pc,
+                                                uint32_t return_pc) {
+    OpLda(memory, cpu, OpDp(cpu, DP_NMI_FRAME_COUNTER));
+    for (uint32_t polls = 0; polls < FRAME_POLL_LIMIT; ++polls) {
+        OpCmp(memory, cpu, OpDp(cpu, DP_NMI_FRAME_COUNTER));
+        if (!cpu->zero)
+            return ExecutionReturned(return_pc);
+    }
+    return ExecutionHandoff(cpu, poll_pc);
+}
+
+static void SaveAccumulator(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->accumulator_is_8_bit)
+        PushAccumulator8(memory, cpu);
+    else
+        PushAccumulator16(memory, cpu);
+}
+
+static void RestoreAccumulator(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->accumulator_is_8_bit)
+        LoadA8(cpu, Pull8(memory, cpu));
+    else
+        PullAccumulator16(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2FieldWaitForNextFrame(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u)
+        return ExecutionHandoff(cpu, 0x83900cu);
+    return WaitForFrameChange(memory, cpu, 0x83900eu, 0x839012u);
+}
+
+Lufia2ExecutionResult Lufia2ItemRegionWaitForNextFrame(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x8eu)
+        return ExecutionHandoff(cpu, 0x8eb550u);
+    return WaitForFrameChange(memory, cpu, 0x8eb552u, 0x8eb556u);
+}
+
+Lufia2ExecutionResult Lufia2MenuWaitForNextFrame(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x86u)
+        return ExecutionHandoff(cpu, 0x868b48u);
+    SaveAccumulator(memory, cpu);
+    Push8(memory, cpu, PackStatus(cpu));
+    OpSepWidths(cpu, 0x20u);
+    Lufia2ExecutionResult result =
+        WaitForFrameChange(memory, cpu, 0x868b4eu, 0x868b54u);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    RestoreAccumulator(memory, cpu);
+    return result;
+}
+
+Lufia2ExecutionResult Lufia2WorldWaitForNextFrame(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x86u)
+        return ExecutionHandoff(cpu, 0x86974fu);
+    SaveAccumulator(memory, cpu);
+    Lufia2ExecutionResult result =
+        WaitForFrameChange(memory, cpu, 0x869752u, 0x869757u);
+    if (result.flow == LUFIA2_EXECUTION_RETURNED)
+        RestoreAccumulator(memory, cpu);
+    return result;
+}
+
+Lufia2ExecutionResult Lufia2WorldWaitFrames(const Lufia2Memory *memory,
+                                            Lufia2CpuState *cpu,
+                                            Lufia2PushedChildCall child,
+                                            void *context) {
+    if (cpu->program_bank != 0x86u || !child)
+        return ExecutionHandoff(cpu, 0x869748u);
+    for (unsigned frames = 0; frames < FRAME_COUNT_LIMIT; ++frames) {
+        if (!CallChildWithFrame(memory, cpu, child, context, 0x869748u, 0x86974fu, 2u,
+                                0x86u))
+            return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, 0x869748u,
+                                           0u};
+        OpDecA(cpu);
+        if (cpu->zero)
+            return ExecutionReturned(0x86974eu);
+    }
+    return ExecutionHandoff(cpu, 0x869748u);
+}

@@ -1,3 +1,28 @@
+# Frame-wait contracts - 2026-10-15
+
+Five additional ROM contracts are reconstructed together in system/frame_wait.c:
+83:900C field wait,8E:B550 item-region wait,86:8B48 menu wait,86:974F world
+wait and86:9748 counted world wait. All entry M/X combinations retain their
+original data accesses, saved accumulator/status, flags and return frames.
+Zero-count wrapping remains literal. A stalled clock hands off at the original
+CMP after65536 polls; the counted caller hands off at its next JSR after4096
+completed waits. Pending saved values and stack frames are not unwound early.
+
+Shared original-ROM validation passes16756 cases:16696 returns,48 bounded
+continuations and12 child unwinds.1276 wrong-bank/null-child guards touch no
+bus. Cases include saved-status bit aliases, high-byte-only counter changes,
+all M/X combinations and both poll/count limit edges. Four targeted faults
+are detected. The standalone superproject verifier is retained as
+tests/decomp_verify/lufia2_frame_wait_verify.c, without private opcode tables.
+
+GCC13/Clang18 standalone library/tool/CLI gates, metadata validation, Windows
+Release and the archive identity audit pass. These five timing routines are
+verified but deliberately unbound: clock/NMI scheduling remains a separate
+consumer contract. Existing runtime wait patches and bindings are unchanged.
+Counts are1434 verified,1423 selected bindings,742 locations and430 C units.
+Full1965 remains the preceding baseline, not a regression on this revision;
+this additive unbound batch uses its combined affected proof and compiler gates.
+
 # Field entry widths - 2026-10-15
 
 PrepareSecondaryScript at83:D3F7 and TryItemRegion at8E:B63B now accept
@@ -1182,7 +1207,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1429 functions in `metadata/functions.toml`: 1429 verified, 0 draft, 0 identified, 0 disabled.
+1434 functions in `metadata/functions.toml`: 1434 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

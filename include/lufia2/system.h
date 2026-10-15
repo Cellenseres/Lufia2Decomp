@@ -14,6 +14,19 @@ extern "C" {
 typedef uint8_t (*Lufia2MusicCheckpoint)(
     void *context, Lufia2CpuState *cpu, uint32_t pc);
 
+/* Frame polls retain their exact continuation when the clock stalls. */
+Lufia2ExecutionResult Lufia2FieldWaitForNextFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2ItemRegionWaitForNextFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2MenuWaitForNextFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2WorldWaitForNextFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2WorldWaitFrames(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* Original song loader/player and driver commands; any M/X, binary mode.
  * APU handshakes and sample uploads retain explicit child boundaries. */
 Lufia2ExecutionResult Lufia2LoadSong(

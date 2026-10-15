@@ -293,6 +293,7 @@ add_library(lufia2_decomp STATIC
     src/party/capsule_selection_addresses.c
     src/battle/battle_effect_enemy_scripts.c
     src/system/hardware_division.c
+    src/system/frame_wait.c
     src/battle/battle_ripple_setup.c
     src/battle/battle_effect_current_target.c
     src/system/vector_angle.c

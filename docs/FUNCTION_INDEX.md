@@ -771,6 +771,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:8E85` | `Lufia2FieldRenderRegion` | verified | `src/field/field_scroll.c` |
 | `$83:9000` | `Lufia2FieldPixelCellCeiling` | verified | `src/field/field_scroll.c` |
 | `$83:9004` | `Lufia2FieldPixelCellFloor` | verified | `src/field/field_scroll.c` |
+| `$83:900C` | `Lufia2FieldWaitForNextFrame` | verified | `src/system/frame_wait.c` |
 | `$83:9B44` | `Lufia2CaveRoomHeaderCoordinates` | verified | `src/cave/cave_header.c` |
 | `$83:9E31` | `Lufia2AncientCaveGenerateFloor` | verified | `src/cave/ancient_cave.c` |
 | `$83:9FA9` | `Lufia2FieldNmiUploads` | verified | `src/field/field_nmi.c` |
@@ -1247,6 +1248,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:8996` | `Lufia2TitlePaletteCycle` | verified | `src/title/title.c` |
 | `$86:8B1C` | `Lufia2MenuFadeDisplayIn` | verified | `src/menu/menu_presentation_callers.c` |
 | `$86:8B32` | `Lufia2MenuFadeDisplayOut` | verified | `src/menu/menu_presentation_callers.c` |
+| `$86:8B48` | `Lufia2MenuWaitForNextFrame` | verified | `src/system/frame_wait.c` |
 | `$86:8B55` | `Lufia2SpriteFrame` | verified | `src/menu/menu_sprites.c` |
 | `$86:8B73` | `Lufia2SpriteAnimateAll` | verified | `src/menu/menu_sprites.c` |
 | `$86:8BCF` | `Lufia2SpriteClearOam` | verified | `src/menu/menu_sprites.c` |
@@ -1281,6 +1283,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:94D4` | `Lufia2SceneTrackStep` | verified | `src/field/field_scene_tracks.c` |
 | `$86:96BC` | `Lufia2WorldMapHandleSceneInput` | verified | `src/world/world_scene.c` |
 | `$86:973E` | `Lufia2WorldMapDisableDisplay` | verified | `src/world/world_motion_services.c` |
+| `$86:9748` | `Lufia2WorldWaitFrames` | verified | `src/system/frame_wait.c` |
+| `$86:974F` | `Lufia2WorldWaitForNextFrame` | verified | `src/system/frame_wait.c` |
 | `$86:9758` | `Lufia2WorldMapMaybeReadPlayerInput` | verified | `src/world/world_scene.c` |
 | `$86:9766` | `Lufia2WorldMapReadPlayerInput` | verified | `src/world/world_scene.c` |
 | `$86:98C6` | `Lufia2WorldMapMovePlayerNorth` | verified | `src/world/world_map_player.c` |
@@ -1403,6 +1407,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:B142` | `Lufia2FieldConsumePressedLow` | verified | `src/field/field_camera_services.c` |
 | `$8E:B149` | `Lufia2FieldConsumePressedHigh` | verified | `src/field/field_camera_services.c` |
 | `$8E:B28F` | `Lufia2FieldSwitchDisplayScene` | verified | `src/field/field_session_setup.c` |
+| `$8E:B550` | `Lufia2ItemRegionWaitForNextFrame` | verified | `src/system/frame_wait.c` |
 | `$8E:B5FB` | `Lufia2FieldBuildPrefixedName` | verified | `src/field/field_prefixed_name.c` |
 | `$8E:B63B` | `Lufia2FieldTryItemRegion` | verified | `src/field/field_item_regions.c` |
 | `$8E:B760` | `Lufia2FieldShowObjectItemNotice` | verified | `src/field/field_item_regions.c` |

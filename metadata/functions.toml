@@ -1,6 +1,46 @@
 format = 1
 rom = "lufia2-usa"
 
+[[function]]
+address = "83:900C"
+name = "Lufia2FieldWaitForNextFrame"
+source = "src/system/frame_wait.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B550"
+name = "Lufia2ItemRegionWaitForNextFrame"
+source = "src/system/frame_wait.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8B48"
+name = "Lufia2MenuWaitForNextFrame"
+source = "src/system/frame_wait.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:974F"
+name = "Lufia2WorldWaitForNextFrame"
+source = "src/system/frame_wait.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9748"
+name = "Lufia2WorldWaitFrames"
+source = "src/system/frame_wait.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
 # Canonical function metadata. This file alone records, per reconstructed
 # routine: ROM address, portable symbol, source file, entry/exit M/X and
 # status (identified, draft, verified, disabled). Other files derive from it
