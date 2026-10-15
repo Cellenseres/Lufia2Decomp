@@ -14,6 +14,10 @@ Lufia2ExecutionResult Lufia2TextEngineStep(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2TextEngineStepWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $80:C652: measure upcoming text. M1X0, script in DB:Y; RTS C743. */
 Lufia2ExecutionResult Lufia2TextMeasure(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);

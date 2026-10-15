@@ -1,6 +1,7 @@
 /* Text and cutscene script engine ($80:9CB8). */
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
@@ -457,7 +458,8 @@ enum {
     TEXT_OPCODE_RELOAD,
     TEXT_OPCODE_EXIT,
     TEXT_OPCODE_PRINT,
-    TEXT_OPCODE_HANDOFF
+    TEXT_OPCODE_HANDOFF,
+    TEXT_OPCODE_CHILD_UNWOUND
 };
 
 /* $80:9D3E: measure upcoming text and prepare its window (opcode $08). */
@@ -1487,13 +1489,30 @@ static unsigned TextOpSetSpeaker(const Lufia2Memory *memory, Lufia2CpuState *cpu
     return TextOpenWindow(memory, cpu, handoff);
 }
 
+typedef struct TextCommandServices {
+    Lufia2PushedChildCall child;
+    void *context;
+    Lufia2ExecutionResult result;
+} TextCommandServices;
+
 /* Script opcodes behind JMP ($CA14,x); others hand off. */
 static unsigned TextScriptOpcode(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler,
-    uint32_t *handoff) {
+    uint32_t *handoff,
+    TextCommandServices *services) {
     unsigned i;
+    if (handler == 0xa2e1u && services->child) {
+        services->result = Lufia2TextRecoverParty(
+            memory, cpu, services->child, services->context);
+        if (services->result.flow == LUFIA2_EXECUTION_RETURNED)
+            return TEXT_OPCODE_NEXT;
+        if (services->result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
+            return TEXT_OPCODE_CHILD_UNWOUND;
+        *handoff = services->result.pc;
+        return TEXT_OPCODE_HANDOFF;
+    }
 
     const uint32_t cave_flow = Lufia2TextExecuteCaveCommand(memory, cpu, handler);
     if (cave_flow == LUFIA2_TEXT_COMMAND_NEXT)
@@ -1841,9 +1860,10 @@ static void TextStepTypingSound(const Lufia2Memory *memory, Lufia2CpuState *cpu)
 }
 
 /* $80:9CB8 text step: plain characters native, the rest on LLE. */
-Lufia2ExecutionResult Lufia2TextEngineStepBody(const Lufia2Memory *memory,
-                                               Lufia2CpuState *cpu,
-                                               Lufia2ExecutionResult result) {
+static Lufia2ExecutionResult TextEngineRun(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionResult result, Lufia2PushedChildCall child, void *context) {
+    TextCommandServices services = {child, context, ExecutionReturned(0u)};
     unsigned opcodes;
     unsigned words = 0;
     bool reload;
@@ -1903,7 +1923,7 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(const Lufia2Memory *memory,
             SetAccumulatorWidth(cpu, 1);
             handler = Read16Bank(memory, 0x80u, (uint16_t)(0xca14u + cpu->x));
             switch (TextScriptOpcode(memory, cpu, opcodes < 4096u ? handler : 0u,
-                                     &handoff)) {
+                                     &handoff, &services)) {
             case TEXT_OPCODE_NEXT: /* 9D00 */
                 ++opcodes;
                 continue;
@@ -1915,6 +1935,8 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(const Lufia2Memory *memory,
                 return TextEngineExit(memory, cpu, result);
             case TEXT_OPCODE_PRINT:
                 break;
+            case TEXT_OPCODE_CHILD_UNWOUND:
+                return services.result;
             default: /* 9D3B */
                 result = ExecutionHandoff(cpu, handoff);
                 result.dispatches = handoff == 0x809d3bu ? opcodes : 0;
@@ -1927,6 +1949,12 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(const Lufia2Memory *memory,
     TextStepAdvance(memory, cpu);
     TextStepTypingSound(memory, cpu);
     return TextEngineExit(memory, cpu, result);
+}
+
+Lufia2ExecutionResult Lufia2TextEngineStepBody(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionResult result) {
+    return TextEngineRun(memory, cpu, result, NULL, NULL);
 }
 
 /* $80:C11C: clear bit 0 of the actor flags $0622-$0649. */
@@ -1989,6 +2017,14 @@ Lufia2ExecutionResult Lufia2TextEngineStep(
     if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x809cb8u);
     return Lufia2TextEngineStepBody(memory, cpu, ExecutionReturned(0x809db2u));
+}
+
+Lufia2ExecutionResult Lufia2TextEngineStepWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x809cb8u);
+    return TextEngineRun(memory, cpu, ExecutionReturned(0x809db2u), child, context);
 }
 
 Lufia2ExecutionResult Lufia2TextDrawSceneGlyph(
