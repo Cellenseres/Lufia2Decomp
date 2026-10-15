@@ -11785,3 +11785,83 @@ source = "src/field/scene_bootstrap.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:AEB1"
+name = "Lufia2WorldMapRunSceneSequence"
+source = "src/world/world_scene_sequence.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:D330"
+name = "Lufia2WorldMapFinishDisplayReset"
+source = "src/world/world_frame_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9934"
+name = "Lufia2WorldMapRefreshObjectPose"
+source = "src/world/world_frame_callers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AF3A"
+name = "Lufia2WorldMapRunSceneTrack0"
+source = "src/world/world_scene_sequence.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AF88"
+name = "Lufia2WorldMapRunSceneTrack1"
+source = "src/world/world_scene_sequence.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AF90"
+name = "Lufia2WorldMapRunSceneTrack2"
+source = "src/world/world_scene_sequence.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AF98"
+name = "Lufia2WorldMapRunSceneTrack3"
+source = "src/world/world_scene_sequence.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AFA0"
+name = "Lufia2WorldMapRunSceneTrack4"
+source = "src/world/world_scene_sequence.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AFA8"
+name = "Lufia2WorldMapRunSceneTrack5"
+source = "src/world/world_scene_sequence.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AF71"
+name = "Lufia2WorldMapUpdateSceneActor"
+source = "src/world/world_scene_sequence.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -2,6 +2,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "system/wram.h"
+#include "world/world_scene_internal.h"
 
 enum {
     WORLD_ACTIVE_OBJECT = 0x11e7,
@@ -56,15 +57,9 @@ static Lufia2ExecutionResult WorldChildUnwound(uint32_t site) {
     return result;
 }
 
-Lufia2ExecutionResult Lufia2WorldMapUpdateObjectHeading(
+static Lufia2ExecutionResult RefreshWorldObjectPose(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    if (!FrameWidths(cpu, child))
-        return ExecutionHandoff(cpu, 0x86992bu);
-    OpWrite16(memory, OpAbs(cpu, WRAM_WORLD_MAP_MOTION_HEADING), cpu->y);
-    OpLda(memory, cpu, OpAbs(cpu, WORLD_ACTIVE_OBJECT));
-    if (!RunWorldChild(memory, cpu, child, context, 0x869931u, 0x86e709u))
-        return WorldChildUnwound(0x869931u);
     OpLda(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_MOTION_HEADING + 1u));
     cpu->carry = 0u;
     OpAdcValue(cpu, 0x20u);
@@ -80,6 +75,26 @@ Lufia2ExecutionResult Lufia2WorldMapUpdateObjectHeading(
     return ExecutionReturned(0x86994bu);
 }
 
+Lufia2ExecutionResult Lufia2WorldMapRefreshObjectPose(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!FrameWidths(cpu, child))
+        return ExecutionHandoff(cpu, 0x869934u);
+    return RefreshWorldObjectPose(memory, cpu, child, context);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapUpdateObjectHeading(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!FrameWidths(cpu, child))
+        return ExecutionHandoff(cpu, 0x86992bu);
+    OpWrite16(memory, OpAbs(cpu, WRAM_WORLD_MAP_MOTION_HEADING), cpu->y);
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_ACTIVE_OBJECT));
+    if (!RunWorldChild(memory, cpu, child, context, 0x869931u, 0x86e709u))
+        return WorldChildUnwound(0x869931u);
+    return RefreshWorldObjectPose(memory, cpu, child, context);
+}
+
 Lufia2ExecutionResult Lufia2WorldMapPositionAnimatedObject(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -88,10 +103,7 @@ Lufia2ExecutionResult Lufia2WorldMapPositionAnimatedObject(
     OpStz(memory, cpu, WorldObjectField(cpu, OBJECT_POSE));
     if (!RunWorldChild(memory, cpu, child, context, 0x86a359u, 0x86e0b9u))
         return WorldChildUnwound(0x86a359u);
-    OpLdy(cpu, OpRead16(memory, OpAbs(cpu, WRAM_WORLD_MAP_POSITION_X_LOW)));
-    OpWrite16(memory, WorldObjectField(cpu, OBJECT_X), cpu->y);
-    OpLdy(cpu, OpRead16(memory, OpAbs(cpu, WRAM_WORLD_MAP_POSITION_Y)));
-    OpWrite16(memory, WorldObjectField(cpu, OBJECT_Y), cpu->y);
+    WorldSceneCopyPositionToObject(memory, cpu);
     return ExecutionReturned(0x86a366u);
 }
 
@@ -117,13 +129,9 @@ Lufia2ExecutionResult Lufia2WorldMapAnimatePairedObjects(
     return ExecutionReturned(0x86a356u);
 }
 
-Lufia2ExecutionResult Lufia2WorldMapResetDisplayState(
+static Lufia2ExecutionResult FinishWorldDisplayReset(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    if (!FrameWidths(cpu, child))
-        return ExecutionHandoff(cpu, 0x86d32du);
-    if (!RunWorldChild(memory, cpu, child, context, 0x86d32du, 0x86a2c6u))
-        return WorldChildUnwound(0x86d32du);
     static const uint8_t scratch[] = {0x6au, 0x72u, 0x73u, 0x74u, 0x81u};
     for (unsigned field = 0; field < sizeof(scratch); ++field)
         OpStz(memory, cpu, OpDp(cpu, scratch[field]));
@@ -134,6 +142,24 @@ Lufia2ExecutionResult Lufia2WorldMapResetDisplayState(
     OpWrite16(memory, OpAbs(cpu, DISPLAY_WINDOW_LEFT), cpu->y);
     OpWrite16(memory, OpAbs(cpu, DISPLAY_WINDOW_RIGHT), cpu->y);
     return ExecutionReturned(0x86d349u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapFinishDisplayReset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!FrameWidths(cpu, child))
+        return ExecutionHandoff(cpu, 0x86d330u);
+    return FinishWorldDisplayReset(memory, cpu, child, context);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapResetDisplayState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!FrameWidths(cpu, child))
+        return ExecutionHandoff(cpu, 0x86d32du);
+    if (!RunWorldChild(memory, cpu, child, context, 0x86d32du, 0x86a2c6u))
+        return WorldChildUnwound(0x86d32du);
+    return FinishWorldDisplayReset(memory, cpu, child, context);
 }
 
 Lufia2ExecutionResult Lufia2WorldMapClearDisplayPalette(

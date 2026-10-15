@@ -1311,6 +1311,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:98D4` | `Lufia2WorldMapMovePlayerSouth` | verified | `src/world/world_map_player.c` |
 | `$86:98DB` | `Lufia2WorldMapMovePlayerEast` | verified | `src/world/world_map_player.c` |
 | `$86:992B` | `Lufia2WorldMapUpdateObjectHeading` | verified | `src/world/world_frame_callers.c` |
+| `$86:9934` | `Lufia2WorldMapRefreshObjectPose` | verified | `src/world/world_frame_callers.c` |
 | `$86:994C` | `Lufia2WorldMapSumMotionTerms` | verified | `src/world/world_motion_services.c` |
 | `$86:995B` | `Lufia2WorldScrollAdvance` | verified | `src/world/world_scroll_step.c` |
 | `$86:99BF` | `Lufia2WorldMapStreamEdges` | verified | `src/world/world_map.c` |
@@ -1376,6 +1377,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:AE05` | `Lufia2WorldMapBuildBlockPointer` | verified | `src/world/world_stream.c` |
 | `$86:AE1E` | `Lufia2WorldMapConfigureMode7` | verified | `src/world/world_scene.c` |
 | `$86:AE4D` | `Lufia2WorldMapCopyFlaggedBlocks` | verified | `src/world/world_flagged_blocks.c` |
+| `$86:AEB1` | `Lufia2WorldMapRunSceneSequence` | verified | `src/world/world_scene_sequence.c` |
+| `$86:AF3A` | `Lufia2WorldMapRunSceneTrack0` | verified | `src/world/world_scene_sequence.c` |
+| `$86:AF71` | `Lufia2WorldMapUpdateSceneActor` | verified | `src/world/world_scene_sequence.c` |
+| `$86:AF88` | `Lufia2WorldMapRunSceneTrack1` | verified | `src/world/world_scene_sequence.c` |
+| `$86:AF90` | `Lufia2WorldMapRunSceneTrack2` | verified | `src/world/world_scene_sequence.c` |
+| `$86:AF98` | `Lufia2WorldMapRunSceneTrack3` | verified | `src/world/world_scene_sequence.c` |
+| `$86:AFA0` | `Lufia2WorldMapRunSceneTrack4` | verified | `src/world/world_scene_sequence.c` |
+| `$86:AFA8` | `Lufia2WorldMapRunSceneTrack5` | verified | `src/world/world_scene_sequence.c` |
 | `$86:CBBF` | `Lufia2WorldMapClearDisplayPalette` | verified | `src/world/world_frame_callers.c` |
 | `$86:CBF0` | `Lufia2WorldMapBuildSkylineHdma` | verified | `src/world/world_math_resources.c` |
 | `$86:CC3C` | `Lufia2WorldMapBuildScene` | verified | `src/world/world_scene.c` |
@@ -1387,6 +1396,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
 | `$86:D2D6` | `Lufia2WorldMapResetSceneState` | verified | `src/world/world_scene.c` |
 | `$86:D32D` | `Lufia2WorldMapResetDisplayState` | verified | `src/world/world_frame_callers.c` |
+| `$86:D330` | `Lufia2WorldMapFinishDisplayReset` | verified | `src/world/world_frame_callers.c` |
 | `$86:D34A` | `Lufia2WorldMapRestoreEncounterScene` | verified | `src/world/world_scene.c` |
 | `$86:D35D` | `Lufia2WorldMapSetPlayerSong` | verified | `src/world/world_map_player.c` |
 | `$86:D378` | `Lufia2WorldMapSendSoundCommand` | verified | `src/world/world_scene.c` |
