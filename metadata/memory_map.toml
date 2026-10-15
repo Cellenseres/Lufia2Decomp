@@ -5780,3 +5780,10 @@ width = 13
 count = 75
 owner = "title"
 notes = "Title sprite records;active byte is offset1. 86:8637 scans through the live data bank, observed7E."
+
+[[location]]
+address = "7E:15BC"
+name = "title_sprite_record_pointer"
+width = 2
+owner = "title"
+notes = "Current title sprite pointer; 86:8513/866A use the live data bank, observed7E."

@@ -84,6 +84,16 @@ Lufia2ExecutionResult Lufia2TitleCopyRecord(
 Lufia2ExecutionResult Lufia2TitleCopyTileRows(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2TitleSelectObjectSprite(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2TitleSetObjectSpeed(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2TitleActivateObject(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

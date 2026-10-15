@@ -1,3 +1,37 @@
+# Title object activation - 2026-10-15
+
+Three additional original entries are verified and selected natively:
+86:8513 selects the depth-dependent sprite, 86:8530 sets object speed,
+and 86:866A activates an object through its three original child calls.
+Existing sprite/speed implementations are reused. The sprite-record
+pointer is catalogued in WRAM. No ROM tables are embedded or duplicated.
+
+All three enter with M1X0, DP0 and binary arithmetic. Saved live status
+can change the speed helper's and activation parent's exit widths;
+both exits are dynamic. Return-frame and status aliases, all data banks,
+child unwinds and the original projection child remain explicit.
+
+Verification covers 214,020 original-ROM states and 214,020 actual
+adapter states, CPU/full WRAM/MMIO and ordered own-span bus accesses.
+These include 256 original-projection/native-child compositions and all
+four final child-return width combinations. Sixteen dedicated return/status
+aliases, sixty parent redirects, 13,824 leaf guards and 197,382 C++ guards
+pass. Four C, three bridge, three memory-only ROM and two reverted-core
+faults are detected. All seven new jobs and the full 1,950-job matrix pass.
+Strict C11 covers all 429 units and the normal Release build passes.
+
+Six production original/native pairs agree at the literal caller wait.
+Each new entry executes eighteen times over 4,680 boot/reset/intro/audio
+frames with zero own interpreted instructions; ninety snapshot replays
+agree. Original projection remains an original child; it is not promoted
+by these tests. No original/native timing or whole-game coverage is claimed.
+
+The regression links 1,592 hashed historical reference/adapter object
+graphs with the current library. The repaired fade fixture, eighteen battle,
+six prior title and fifteen default-record fixtures are rebuilt from
+accepted sources. There remain 194 absent historical fixture-source paths;
+no complete clean-source historical rebuild is claimed.
+
 # Word shift bus order - 2026-10-15
 
 The shared absolute-word LSR and ROR helpers now write the high byte before
@@ -1009,7 +1043,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1420 functions in `metadata/functions.toml`: 1420 verified, 0 draft, 0 identified, 0 disabled.
+1423 functions in `metadata/functions.toml`: 1423 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

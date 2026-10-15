@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 
+#include "core/child_call.h"
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/menu.h"
@@ -422,8 +423,8 @@ Lufia2ExecutionResult Lufia2TitleParticleSprites(
 
 /* Working registers of the object being stepped. */
 enum {
-    TITLE_OBJECT = 0x15bau,
-    TITLE_OBJECT_SPRITE = 0x15bcu,
+    TITLE_OBJECT = WRAM_TITLE_OBJECT_RECORD_POINTER,
+    TITLE_OBJECT_SPRITE = WRAM_TITLE_SPRITE_RECORD_POINTER,
     TITLE_OBJECT_PARTICLES = 0x15beu,
     TITLE_SIGNS = 0x1583u,
     TITLE_PRODUCT = 0x1575u,
@@ -1073,4 +1074,51 @@ Lufia2ExecutionResult Lufia2TitleCopyTileRows(const Lufia2Memory *memory,
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x868783u);
+}
+
+Lufia2ExecutionResult Lufia2TitleSelectObjectSprite(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (!TitleRecordEntrySupported(cpu))
+        return ExecutionHandoff(cpu, 0x868513u);
+    TitleObjectSprite(memory, cpu);
+    return ExecutionReturned(0x86852fu);
+}
+
+Lufia2ExecutionResult Lufia2TitleSetObjectSpeed(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu) {
+    if (!TitleRecordEntrySupported(cpu))
+        return ExecutionHandoff(cpu, 0x868530u);
+    TitleObjectSpeed(memory, cpu);
+    return ExecutionReturned(0x86856eu);
+}
+
+Lufia2ExecutionResult Lufia2TitleActivateObject(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu,
+                                                Lufia2PushedChildCall child,
+                                                void *context) {
+    if (!child || !TitleRecordEntrySupported(cpu))
+        return ExecutionHandoff(cpu, 0x86866au);
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 3u);
+    OpSta(memory, cpu, OpAbs(cpu, TITLE_PALETTE_TIMER));
+    OpLdx(cpu, TitleWord(memory, cpu, TITLE_OBJECT));
+    OpStz(memory, cpu, OpAbsX(cpu, TITLE_OBJ_ANGLE_X_STEP));
+    OpStz(memory, cpu, OpAbsX(cpu, TITLE_OBJ_ANGLE_Y_STEP));
+    OpSepWidths(cpu, 0x20u);
+    if (!CallChildWithFrame(memory, cpu, child, context, 0x86867du, 0x8683f2u, 2u,
+                            cpu->program_bank))
+        return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, 0x86867du, 0u};
+    OpLdx(cpu, TitleWord(memory, cpu, TITLE_OBJECT));
+    OpSta(memory, cpu, OpAbsX(cpu, TITLE_OBJ_DEPTH));
+    OpLdy(cpu, TitleWord(memory, cpu, TITLE_OBJECT_SPRITE));
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbsY(cpu, TITLE_SPRITE_ACTIVE));
+    const uint32_t sites[] = {0x86868eu, 0x868691u};
+    const uint32_t targets[] = {0x868513u, 0x868530u};
+    for (unsigned step = 0u; step < 2u; ++step)
+        if (!CallChildWithFrame(memory, cpu, child, context, sites[step], targets[step],
+                                2u, cpu->program_bank))
+            return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, sites[step],
+                                           0u};
+    return ExecutionReturned(0x868694u);
 }

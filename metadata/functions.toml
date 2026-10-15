@@ -11503,3 +11503,27 @@ source = "src/title/title.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "86:8513"
+name = "Lufia2TitleSelectObjectSprite"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8530"
+name = "Lufia2TitleSetObjectSpeed"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "86:866A"
+name = "Lufia2TitleActivateObject"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
