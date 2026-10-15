@@ -30,6 +30,7 @@ add_library(lufia2_decomp STATIC
     src/actor/actor_secondary.c
     src/actor/actor_state_mark.c
     src/actor/actor_slots.c
+    src/actor/actor_scene_slot.c
     src/actor/sprite_reset.c
     src/actor/actor_sprites.c
     src/actor/actor_sprite_resources.c

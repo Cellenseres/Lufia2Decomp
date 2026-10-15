@@ -240,3 +240,20 @@ Lufia2ExecutionResult Lufia2FieldSetupObjectActorSprite(
     OpStz(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E1291));
     return ExecutionReturned(0x83f730u);
 }
+
+Lufia2ExecutionResult Lufia2FieldSetupObjectActorSpriteFar(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x83f6c6u);
+    SimulateJsrFrame(memory, cpu, 0xf6c8u);
+    const Lufia2ExecutionResult result = Lufia2FieldSetupObjectActorSprite(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
+    uint16_t back = Pull8(memory, cpu);
+    back |= (uint16_t)Pull8(memory, cpu) << 8;
+    if (back != 0xf6c8u)
+        return ExecutionHandoff(cpu, 0x830000u | (uint16_t)(back + 1u));
+    return ExecutionReturned(0x83f6c9u);
+}

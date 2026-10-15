@@ -313,6 +313,9 @@ Lufia2ExecutionResult Lufia2ActorCheckEastActionLimit(
 Lufia2ExecutionResult Lufia2ActorExtendSignedByte(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2ActorPrepareAuxiliarySlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

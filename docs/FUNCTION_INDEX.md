@@ -869,6 +869,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:C0EF` | `Lufia2FieldProbeLeaderPosition` | verified | `src/field/field_actor_event_helpers.c` |
 | `$83:C0FA` | `Lufia2FieldAcknowledgeControlChange` | verified | `src/field/field_actor_event_helpers.c` |
 | `$83:C108` | `Lufia2FieldClaimActor` | verified | `src/field/field_event_actors.c` |
+| `$83:C110` | `Lufia2ActorPrepareAuxiliarySlot` | verified | `src/actor/actor_scene_slot.c` |
 | `$83:C161` | `Lufia2FieldReadPlayerDirection` | verified | `src/field/field_player_commands.c` |
 | `$83:C180` | `Lufia2FieldClearSecondaryActionState` | verified | `src/field/field_player_commands.c` |
 | `$83:C1B4` | `Lufia2PlayerSlotStandardUpdateWithServices` | verified | `src/actor/player_controller.c` |
@@ -944,6 +945,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:F611` | `Lufia2FieldObjectLayer` | verified | `src/field/field_object_graphics.c` |
 | `$83:F620` | `Lufia2FieldClaimPlacedObject` | verified | `src/field/field_object_transitions.c` |
 | `$83:F6B0` | `Lufia2ActorResetObjectOffsets` | verified | `src/field/field_object_graphics.c` |
+| `$83:F6C6` | `Lufia2FieldSetupObjectActorSpriteFar` | verified | `src/field/field_object_graphics.c` |
 | `$83:F6CA` | `Lufia2FieldSetupObjectActorSprite` | verified | `src/field/field_object_graphics.c` |
 | `$83:F731` | `Lufia2FieldCopyObjectPalette` | verified | `src/field/field_object_graphics.c` |
 | `$83:F747` | `Lufia2FieldRestoreObjectTiles` | verified | `src/field/field_object_tiles.c` |

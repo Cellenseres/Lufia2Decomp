@@ -11695,3 +11695,19 @@ source = "src/item/packed_item_counts.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "83:C110"
+name = "Lufia2ActorPrepareAuxiliarySlot"
+source = "src/actor/actor_scene_slot.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:F6C6"
+name = "Lufia2FieldSetupObjectActorSpriteFar"
+source = "src/field/field_object_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

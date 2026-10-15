@@ -6,6 +6,7 @@
 #include "text/text_internal.h"
 
 enum {
+    PREPARE_OBJECT_ACTOR = 0xb6b3u,
     RADIAL_AT_ACTOR_3C = 0xa9b7u,
     RADIAL_AT_SCENE_3C = 0xa9beu,
     RADIAL_AT_ACTOR_4F = 0xa9c5u,
@@ -34,6 +35,64 @@ enum {
     DP_RADIAL_SPAWN_ID = 0x0au,
     ROM_FACING_ACTION_OFFSETS = 0x83c1a5u
 };
+
+typedef Lufia2ExecutionResult (*ObjectActorRoutine)(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+
+static uint32_t CallObjectActor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                ObjectActorRoutine routine, uint16_t back) {
+    SimulateJslFrame(memory, cpu, 0x80u, back);
+    cpu->program_bank = 0x83u;
+    const Lufia2ExecutionResult result = routine(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result.pc;
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x80u;
+    return 0u;
+}
+
+static uint32_t PrepareObjectActor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2TextNextByte(memory, cpu, 0xb6b5u);
+    cpu->carry = 1u;
+    OpSbcValue(cpu, 0x48u);
+    ExchangeAccumulatorBytes(cpu);
+    OpLoadA(cpu, 0u);
+    ExchangeAccumulatorBytes(cpu);
+    OpTax(cpu);
+    uint32_t handoff = CallObjectActor(memory, cpu, Lufia2ActorPrepareAuxiliarySlot,
+                                       0xb6c1u);
+    if (handoff)
+        return handoff;
+    LoadA16(cpu, cpu->direct_page);
+    OpSta(memory, cpu, 0x7fd0a2u);
+    Lufia2TextNextByte(memory, cpu, 0xb6c9u);
+    PushDataBank(memory, cpu);
+    PushY(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_ACTOR_CLAIMED_OBJECT_RECORD));
+    handoff = CallObjectActor(memory, cpu, Lufia2FieldSetupObjectActorSpriteFar,
+                              0xb6d5u);
+    if (handoff)
+        return handoff;
+    OpPullY(memory, cpu);
+    PullDataBank(memory, cpu);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    LoadA16(cpu, cpu->direct_page);
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_X));
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_Y));
+    OpTxa(cpu);
+    cpu->carry = 0u;
+    OpAdcValue(cpu, 0x48u);
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_ID));
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
+    SimulateJslFrame(memory, cpu, 0x80u, 0xb6f0u);
+    cpu->program_bank = 0x83u;
+    Lufia2ActorSyncFinePosition(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = 0x80u;
+    return LUFIA2_TEXT_COMMAND_NEXT;
+}
 
 typedef struct TextObjectSpawn {
     const Lufia2Memory *memory;
@@ -264,6 +323,8 @@ uint32_t Lufia2TextExecuteFieldCommand(const Lufia2Memory *memory, Lufia2CpuStat
         cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
         return 0u;
     switch (handler) {
+    case PREPARE_OBJECT_ACTOR:
+        return PrepareObjectActor(memory, cpu);
     case RADIAL_AT_ACTOR_3C:
     case RADIAL_AT_SCENE_3C:
     case RADIAL_AT_ACTOR_4F:
