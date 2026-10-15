@@ -5,6 +5,7 @@
 #include "text/text_internal.h"
 
 enum {
+    PRINT_EXTENDED_GLYPH = 0x9ec8u,
     SCENE_PAIR_ACTION = 0xafc0u,
     COPY_SCENE_TILES = 0xb62bu,
     REFRESH_ATTRIBUTES = 0xb646u,
@@ -221,6 +222,12 @@ uint32_t Lufia2TextExecuteRenderCommand(const Lufia2Memory *memory, Lufia2CpuSta
         cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
         return 0u;
     switch (handler) {
+    case PRINT_EXTENDED_GLYPH:
+        OpLda(memory, cpu, OpAbsY(cpu, 0u));
+        OpSta(memory, cpu, OpAbs(cpu, TEXT_GLYPH));
+        OpLoadA(cpu, 3u);
+        OpSta(memory, cpu, OpAbs(cpu, TEXT_GLYPH + 1u));
+        return 0x80bce4u;
     case COPY_SCENE_TILES:
     case COPY_SCENE_TILES_AND_UPLOAD:
     case COPY_SCENE_TILES_AND_REDRAW:

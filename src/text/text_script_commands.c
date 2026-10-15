@@ -1,4 +1,6 @@
 #include "core/cpu_ops.h"
+#include "core/snes_registers.h"
+#include "lufia2/text.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
 
@@ -7,6 +9,7 @@ enum {
     REPEAT_SCRIPT = 0x9e83u,
     PREPARE_CHOICES = 0x9f10u,
     NEXT_VARIABLE_BRANCH = 0xa041u,
+    CENTER_TEXT_WINDOW = 0xb7feu,
     DP_SCRIPT_OFFSET = 0x54u,
     DP_VARIABLE_INDEX = 0x56u,
     DP_BRANCH_OFFSET = 0x58u,
@@ -132,6 +135,37 @@ static uint32_t NextVariableBranch(const Lufia2Memory *memory, Lufia2CpuState *c
     return 0x80a3c6u;
 }
 
+static uint32_t CenterTextWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2TextNextByte(memory, cpu, 0xb800u);
+    PushAccumulator8(memory, cpu);
+    SimulateJsrFrame(memory, cpu, 0xb804u);
+    Lufia2TextMeasure(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_SCENE_LABEL_WIDTH));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, 0x1eu);
+    OpLoadA(cpu, cpu->accumulator ^ 0xffu);
+    OpIncA(cpu);
+    OpAndValue(cpu, 0x3eu);
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRIPT_OFFSET));
+    LoadA8(cpu, Pull8(memory, cpu));
+    SimulateJsrFrame(memory, cpu, 0xb815u);
+    OpStz(memory, cpu, OpDp(cpu, DP_SCRIPT_OFFSET + 1u));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_M7A));
+    OpStz(memory, cpu, OpAbs(cpu, SNES_M7A));
+    OpLoadA(cpu, 0x40u);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_M7B));
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbs(cpu, SNES_MPYL));
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpDp(cpu, DP_SCRIPT_OFFSET));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_SCENE_LABEL_ROW_POSITION));
+    OpSepWidths(cpu, 0x20u);
+    OpStz(memory, cpu, OpAbs(cpu, TEXT_TYPING_SOUND));
+    SimulateRtsFrame(memory, cpu);
+    return 0x809d3eu;
+}
+
 uint32_t Lufia2TextExecuteScriptCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                         uint16_t handler) {
     if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
@@ -147,6 +181,8 @@ uint32_t Lufia2TextExecuteScriptCommand(const Lufia2Memory *memory, Lufia2CpuSta
         return PrepareChoices(memory, cpu);
     case NEXT_VARIABLE_BRANCH:
         return NextVariableBranch(memory, cpu);
+    case CENTER_TEXT_WINDOW:
+        return CenterTextWindow(memory, cpu);
     default:
         return 0u;
     }

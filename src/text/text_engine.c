@@ -509,6 +509,7 @@ enum {
     TEXT_OPCODE_NEXT,
     TEXT_OPCODE_RELOAD,
     TEXT_OPCODE_EXIT,
+    TEXT_OPCODE_PRINT,
     TEXT_OPCODE_HANDOFF
 };
 
@@ -1597,6 +1598,8 @@ static unsigned TextScriptOpcode(
         return TEXT_OPCODE_NEXT;
     if (render_flow == LUFIA2_TEXT_COMMAND_YIELD)
         return TEXT_OPCODE_EXIT;
+    if (render_flow == 0x80bce4u)
+        return TEXT_OPCODE_PRINT;
     if (render_flow) {
         *handoff = render_flow;
         return TEXT_OPCODE_HANDOFF;
@@ -1954,13 +1957,14 @@ Lufia2ExecutionResult Lufia2TextEngineStepBody(const Lufia2Memory *memory,
                 break;
             case TEXT_OPCODE_EXIT: /* 9DB0 */
                 return TextEngineExit(memory, cpu, result);
+            case TEXT_OPCODE_PRINT:
+                break;
             default: /* 9D3B */
                 result = ExecutionHandoff(cpu, handoff);
                 result.dispatches = handoff == 0x809d3bu ? opcodes : 0;
                 return result;
             }
-            if (reload)
-                break;
+            break;
         }
     } while (reload);
     TextStepQueueRow(memory, cpu);
