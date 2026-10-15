@@ -33,6 +33,8 @@ uint32_t Lufia2TextExecuteObjectCommand(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t handler);
 uint32_t Lufia2TextExecuteCameraCommand(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t handler);
+bool Lufia2TextExecuteColorCommand(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint16_t handler);
 
 /* Text engine WRAM. */
 #define TEXT_WINDOW_STATE 0x099cu /* bit 0: window buffer in use */

@@ -1,3 +1,42 @@
+# Scene-control text commands - 2026-10-15
+
+Twenty-three additional internal text routes use portable C. Object commands
+apply motion/spin parameters, restart matching objects, wait for parameter
+completion, face actors or groups, request animations and set scene targets.
+Camera commands center the view/layers, rebuild attributes, publish layers
+and restore the scene display. Color commands set channel and packed-color
+interpolation. Existing native children remain shared implementations.
+
+The object script initializer and scene-coordinate scaler are exported only
+inside the library. Their bodies are unchanged after name/linkage substitution.
+Wait commands retain their original byte rewinds and bank behavior. Facing
+keeps first-match/missing behavior, tie-breaking and selector changes. Color
+setup keeps the ignored duration operand, channel masks, signed intensity,
+width changes and the original ordering of color writes. Unknown animation
+and redraw children remain exact live-frame continuations.
+
+A shared checkpoint covers 94208 direct original-ROM states, 23552 complete
+text-engine/production-ABI states, two direct and two engine search-budget
+continuations, and 65835 unsupported/unknown contexts. CPU, full WRAM and
+ordered data-bus events match. Six ROM fault controls are detected. The first
+18 direct groups were retained when two synthetic attribute-list terminators
+were corrected; only the five remaining groups were run afterward. Formatting
+preserves semantic C tokens; adjacent C strings in the fixture are joined for
+its token comparison. No independent intermediate-commit validation is claimed.
+
+GCC/Clang standalone, CLI and metadata checks pass once on the combined final
+source. The isolated Windows Release build passes. Its first configuration took 279 seconds;
+future checkpoints reuse this independent cache. A 7444-frame runtime replay
+compares 1495 actual text-body calls with the ROM: 1421 returns and 74 boundaries
+match CPU/full WRAM. B92C is reached twice and B93D once. All PPU/image hashes
+and 43 pictures match the preceding native replay. Two combined CPU/WRAM frame
+hashes and 4787 PCM hashes differ; cycle/audio equality is not established.
+The historical 1965-job full regression is deferred, not a result on this source.
+No public entries or runtime bindings are added. Totals remain 1434 verified
+entries, 1423 bindings and 742 WRAM locations, with 437 portable C units.
+Text recognition reaches 138 unique handlers / 140 of 205 routes; 65 unique
+handlers remain. Recognition does not imply whole-VM or whole-game completeness.
+
 # Text field effects and action callers - 2026-10-15
 
 Thirteen additional internal text handlers execute in C: six radial-effect
@@ -57,7 +96,7 @@ untouched. Three ROM faults are detected. Windows Release and GCC/Clang
 standalone/CLI/metadata pass once on this combined batch. Speaker formatting
 was checked by complete C-token identity; no redundant semantic rerun follows.
 
-A7444-frame replay compares1495 actual text-body calls with the ROM:
+A 7444-frame replay compares 1495 actual text-body calls with the ROM:
 1421 returns and74 boundaries match CPU/full WRAM. Field callers share this
 body; their canonical return9CB7 is compared at the original9DB2 RTL.
 Dispatcher9D3B visits use the native handled-opcode count before stopping;
@@ -128,7 +167,7 @@ passing proof; only the two script reload groups needed a CPU-bank fix
 and focused reruns. Full1965 is the older baseline and is deferred here.
 Windows Release and GCC/Clang standalone/CLI/metadata gates pass together.
 
-A7444-frame input-driven replay verifies eight actual command calls
+A 7444-frame input-driven replay verifies eight actual command calls
 against original CPU/full WRAM. PPU state and all sampled pictures are
 identical to the preceding native baseline. One combinedCPU/WRAM hash
 and3765PCM hashes differ; this is not cycle/audio equality. The diagnostic

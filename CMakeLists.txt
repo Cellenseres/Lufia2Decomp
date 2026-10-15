@@ -440,6 +440,7 @@ add_library(lufia2_decomp STATIC
     src/text/text_field_commands.c
     src/text/text_object_commands.c
     src/text/text_camera_commands.c
+    src/text/text_color_commands.c
     src/text/text_conditions.c
     src/text/text_layout.c
     src/text/text_window.c
