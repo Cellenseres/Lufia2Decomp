@@ -1551,7 +1551,7 @@ name = "field_destination_x"
 width = 1
 count = 1
 owner = "field"
-notes = "Rectangle byte6 from83:B76E;83:B2C4 copies it to leader X on the coordinate entry path."
+notes = "Rectangle byte6 from83:B76E;83:B2C4 copies it to leader X on the coordinate entry path. Destination X byte. TextBDF1 copies the selected scene-cell X from120A."
 
 [[location]]
 address = "7E:05B1"
@@ -1559,7 +1559,7 @@ name = "field_destination_y"
 width = 1
 count = 1
 owner = "field"
-notes = "Rectangle byte7 from83:B76E;83:B2CA copies it to leader Y on the coordinate entry path."
+notes = "Rectangle byte7 from83:B76E;83:B2CA copies it to leader Y on the coordinate entry path. Destination Y byte. TextBDF1 copies the selected scene-cell Y from120B."
 
 [[location]]
 address = "7E:05B2"
@@ -1567,7 +1567,7 @@ name = "field_destination_parameters"
 width = 1
 count = 1
 owner = "field"
-notes = "83:B76E copies rectangle byte5; its low nibble selects the transition type and F in the high nibble inherits066A shifted left4."
+notes = "83:B76E copies rectangle byte5; its low nibble selects the transition type and F in the high nibble inherits066A shifted left4. Packed destination parameters. TextBDF1 retains the low nibble and inserts its operand shifted left four in8-bit A."
 
 [[location]]
 address = "7F:F8A2"
@@ -2522,7 +2522,7 @@ address = "7E:05BD"
 width = 1
 count = 1
 owner = "field"
-notes = "Session map tail; indexed base or scalar, extent unclaimed."
+notes = "Session map tail; indexed base or scalar, extent unclaimed. TextAC48 copies the scene-cell X from120A here."
 
 [[location]]
 name = "unk_7E05BE"
@@ -2531,7 +2531,7 @@ address = "7E:05BE"
 width = 1
 count = 1
 owner = "field"
-notes = "Session map tail; indexed base or scalar, extent unclaimed."
+notes = "Session map tail; indexed base or scalar, extent unclaimed. TextAC48 copies the scene-cell Y from120B here."
 
 [[location]]
 name = "unk_7FD0FD"
@@ -2644,7 +2644,7 @@ address = "7E:05BF"
 width = 1
 count = 1
 owner = "field"
-notes = "Session map tail; indexed base or scalar, extent unclaimed."
+notes = "Session map tail; indexed base or scalar, extent unclaimed. TextAC48 stores its following operand here and sets7F:D0BF toFF."
 
 [[location]]
 name = "unk_7E09AD"
@@ -5388,7 +5388,7 @@ name = "field_interaction_actor_id"
 width = 1
 count = 1
 owner = "field"
-notes = "Actor ID selected by 83BB08;80C1DF uses it to select the 1260 interaction variant."
+notes = "Actor ID selected by 83BB08;80C1DF uses it to select the 1260 interaction variant. Text speaker actor ID. Text presets BC19..BC31 select0,1,2,3,5,4,6; A06E reads an operand. C1DF uses raw actor lookup to derive the typing sound before opening a window."
 
 [[location]]
 address = "7E:09AC"

@@ -533,6 +533,15 @@ static unsigned TextOpenWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 
 /* Handlers in the $80:CA14 opcode table. */
 enum TextOpcodeHandler {
+    TEXT_OP_SET_SPEAKER = 0xa06e,
+    TEXT_OP_REFRESH_SPEAKER = 0xb8f9,
+    TEXT_OP_SPEAKER_0 = 0xbc19,
+    TEXT_OP_SPEAKER_1 = 0xbc1d,
+    TEXT_OP_SPEAKER_2 = 0xbc21,
+    TEXT_OP_SPEAKER_3 = 0xbc25,
+    TEXT_OP_SPEAKER_5 = 0xbc29,
+    TEXT_OP_SPEAKER_4 = 0xbc2d,
+    TEXT_OP_SPEAKER_6 = 0xbc31,
     TEXT_OP_OPEN_WINDOW = 0x9d3e,                             /* $08 */
     TEXT_OP_END = 0x9d4c,                                      /* $00, $42 */
     TEXT_OP_NEW_LINE = 0x9dd5,                                 /* $03 */
@@ -982,6 +991,29 @@ static unsigned TextOpScrollView(
     return TEXT_OPCODE_EXIT;
 }
 
+static void TextUpdateSpeaker(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    LoadAAbsolute8(memory, cpu, TEXT_SPEAKER_ACTOR, 0); /* C1DF */
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (!cpu->zero) {
+        Lufia2EventFindActorId(memory, cpu, 0xc1e9u);
+        if (!cpu->carry) {
+            LoadXDirect(memory, cpu, DP_ACTOR_SLOT); /* C1EC */
+            LoadAAbsolute8(memory, cpu, WRAM_UNK_7E1291, cpu->x);
+            LsrA8(cpu);
+            LsrA8(cpu);
+            LsrA8(cpu);
+            LsrA8(cpu);
+            LsrA8(cpu);
+            cpu->carry = 0;
+            Adc8(cpu, 0x45u);
+            StoreAAbsolute8(memory, cpu, TEXT_TYPING_SOUND, 0);
+        }
+    }
+    SimulateRtlFrame(memory, cpu);
+}
+
 /* $01: wait for a button. */
 static unsigned TextOpWaitForButton(
     const Lufia2Memory *memory,
@@ -996,25 +1028,7 @@ static unsigned TextOpWaitForButton(
     Compare8(cpu, A8(cpu), 0xffu);
     if (!cpu->zero)
         StoreAAbsolute8(memory, cpu, TEXT_SPEAKER_ACTOR, 0);
-    SimulateJslFrame(memory, cpu, 0x80u, 0x9dd0u);
-    LoadAAbsolute8(memory, cpu, TEXT_SPEAKER_ACTOR, 0); /* C1DF */
-    Compare8(cpu, A8(cpu), 0xffu);
-    if (!cpu->zero) {
-        Lufia2EventFindActorId(memory, cpu, 0xc1e9u);
-        if (!cpu->carry) {
-            LoadXDirect(memory, cpu, DP_ACTOR_SLOT);           /* C1EC */
-            LoadAAbsolute8(memory, cpu, WRAM_UNK_7E1291, cpu->x);
-            LsrA8(cpu);
-            LsrA8(cpu);
-            LsrA8(cpu);
-            LsrA8(cpu);
-            LsrA8(cpu);
-            cpu->carry = 0;
-            Adc8(cpu, 0x45u);
-            StoreAAbsolute8(memory, cpu, TEXT_TYPING_SOUND, 0);
-        }
-    }
-    SimulateRtlFrame(memory, cpu);
+    TextUpdateSpeaker(memory, cpu, 0x9dd0u);
     return TEXT_OPCODE_EXIT;
 }
 
@@ -1495,6 +1509,36 @@ static unsigned TextOpColorFade(
     return TEXT_OPCODE_NEXT;
 }
 
+static unsigned TextOpSetSpeaker(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t handler, uint32_t *handoff) {
+    static const struct {
+        uint16_t handler;
+        uint8_t actor;
+    } speakers[] = {{0xbc19u, 0u}, {0xbc1du, 1u}, {0xbc21u, 2u}, {0xbc25u, 3u},
+                    {0xbc29u, 5u}, {0xbc2du, 4u}, {0xbc31u, 6u}};
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
+        return TEXT_OPCODE_HANDOFF;
+    if (handler == TEXT_OP_REFRESH_SPEAKER) {
+        TextUpdateSpeaker(memory, cpu, 0xb8fcu);
+        return TEXT_OPCODE_NEXT;
+    }
+    if (handler == TEXT_OP_SET_SPEAKER)
+        Lufia2TextNextByte(memory, cpu, 0xa070u);
+    else {
+        for (unsigned i = 0; i < sizeof speakers / sizeof speakers[0]; ++i) {
+            if (speakers[i].handler == handler) {
+                LoadA8(cpu, speakers[i].actor);
+                break;
+            }
+        }
+    }
+    StoreAAbsolute8(memory, cpu, TEXT_SPEAKER_ACTOR, 0);
+    TextUpdateSpeaker(memory, cpu, 0xbc39u);
+    return TextOpenWindow(memory, cpu, handoff);
+}
+
 /* Script opcodes behind JMP ($CA14,x); others hand off. */
 static unsigned TextScriptOpcode(
     const Lufia2Memory *memory,
@@ -1511,6 +1555,13 @@ static unsigned TextScriptOpcode(
         return TEXT_OPCODE_NEXT;
     if (actor_flow == LUFIA2_TEXT_COMMAND_YIELD)
         return TEXT_OPCODE_EXIT;
+    const uint32_t scene_flow = Lufia2TextExecuteSceneCommand(memory, cpu, handler);
+    if (scene_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (scene_flow) {
+        *handoff = scene_flow;
+        return TEXT_OPCODE_HANDOFF;
+    }
 
     for (i = 0; i < 11u; ++i) {
         if (handler != kTextByteStores[i].handler)
@@ -1524,6 +1575,16 @@ static unsigned TextScriptOpcode(
         return TEXT_OPCODE_NEXT;
     }
     switch (handler) {
+    case TEXT_OP_SET_SPEAKER:
+    case TEXT_OP_REFRESH_SPEAKER:
+    case TEXT_OP_SPEAKER_0:
+    case TEXT_OP_SPEAKER_1:
+    case TEXT_OP_SPEAKER_2:
+    case TEXT_OP_SPEAKER_3:
+    case TEXT_OP_SPEAKER_5:
+    case TEXT_OP_SPEAKER_4:
+    case TEXT_OP_SPEAKER_6:
+        return TextOpSetSpeaker(memory, cpu, handler, handoff);
     case TEXT_OP_OPEN_WINDOW:
         return TextOpenWindow(memory, cpu, handoff);
     case TEXT_OP_WAIT_FOR_ACTOR:
