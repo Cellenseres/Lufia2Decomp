@@ -155,7 +155,6 @@ Lufia2ExecutionResult Lufia2WorldMapCheckStoppedArrival(
 
 static void StartWorldFade(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t control) {
-    OpLoadA(cpu, 0x10u);
     OpOraValue(cpu, control);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
     OpStz(memory, cpu, OpAbs(cpu, WRAM_FADE_LEVEL));
@@ -165,6 +164,7 @@ Lufia2ExecutionResult Lufia2WorldMapStartFadeOut(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!MotionWidths(cpu))
         return ExecutionHandoff(cpu, 0x86d37du);
+    OpLoadA(cpu, 0x10u);
     StartWorldFade(memory, cpu, 0xc0u);
     return ExecutionReturned(0x86d396u);
 }
@@ -173,6 +173,15 @@ Lufia2ExecutionResult Lufia2WorldMapStartFadeIn(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!MotionWidths(cpu))
         return ExecutionHandoff(cpu, 0x86d381u);
+    OpLoadA(cpu, 0x10u);
+    StartWorldFade(memory, cpu, 0x80u);
+    return ExecutionReturned(0x86d38du);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapApplyFadeIn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!MotionWidths(cpu))
+        return ExecutionHandoff(cpu, 0x86d385u);
     StartWorldFade(memory, cpu, 0x80u);
     return ExecutionReturned(0x86d38du);
 }

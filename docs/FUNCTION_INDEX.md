@@ -1385,6 +1385,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:AF98` | `Lufia2WorldMapRunSceneTrack3` | verified | `src/world/world_scene_sequence.c` |
 | `$86:AFA0` | `Lufia2WorldMapRunSceneTrack4` | verified | `src/world/world_scene_sequence.c` |
 | `$86:AFA8` | `Lufia2WorldMapRunSceneTrack5` | verified | `src/world/world_scene_sequence.c` |
+| `$86:C1D2` | `Lufia2WorldMapRunSceneScript` | verified | `src/world/world_frame_script.c` |
+| `$86:C246` | `Lufia2WorldMapStepSceneScript` | verified | `src/world/world_frame_script.c` |
+| `$86:C284` | `Lufia2WorldMapStartSceneActors` | verified | `src/world/world_frame_script.c` |
+| `$86:C2AD` | `Lufia2WorldMapStartSceneActor` | verified | `src/world/world_frame_script.c` |
 | `$86:CBBF` | `Lufia2WorldMapClearDisplayPalette` | verified | `src/world/world_frame_callers.c` |
 | `$86:CBF0` | `Lufia2WorldMapBuildSkylineHdma` | verified | `src/world/world_math_resources.c` |
 | `$86:CC3C` | `Lufia2WorldMapBuildScene` | verified | `src/world/world_scene.c` |
@@ -1402,6 +1406,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:D378` | `Lufia2WorldMapSendSoundCommand` | verified | `src/world/world_scene.c` |
 | `$86:D37D` | `Lufia2WorldMapStartFadeOut` | verified | `src/world/world_motion_services.c` |
 | `$86:D381` | `Lufia2WorldMapStartFadeIn` | verified | `src/world/world_motion_services.c` |
+| `$86:D385` | `Lufia2WorldMapApplyFadeIn` | verified | `src/world/world_motion_services.c` |
 | `$86:D397` | `Lufia2WorldMapWaitFade` | verified | `src/world/world_scene.c` |
 | `$86:D3A5` | `Lufia2WorldMapBlankDisplay` | verified | `src/world/world_scene.c` |
 | `$86:D3AE` | `Lufia2WorldMapEnableDisplay` | verified | `src/world/world_view_services.c` |

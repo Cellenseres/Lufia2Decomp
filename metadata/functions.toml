@@ -11865,3 +11865,43 @@ source = "src/world/world_scene_sequence.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:C1D2"
+name = "Lufia2WorldMapRunSceneScript"
+source = "src/world/world_frame_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C246"
+name = "Lufia2WorldMapStepSceneScript"
+source = "src/world/world_frame_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C284"
+name = "Lufia2WorldMapStartSceneActors"
+source = "src/world/world_frame_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C2AD"
+name = "Lufia2WorldMapStartSceneActor"
+source = "src/world/world_frame_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:D385"
+name = "Lufia2WorldMapApplyFadeIn"
+source = "src/world/world_motion_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
