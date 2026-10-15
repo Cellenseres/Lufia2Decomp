@@ -3,6 +3,7 @@
 #include "actor/actor_internal.h"
 #include "core/cpu_ops.h"
 #include "field/event_script_internal.h"
+#include "field/actor_visibility_internal.h"
 #include "field/field_internal.h"
 #include "lufia2/actor.h"
 #include "lufia2/field.h"
@@ -1477,32 +1478,11 @@ static unsigned EventOpHideActor(
     Lufia2EventFindActorId(memory, cpu, (uint16_t)(handler + 0x0cu));
     SimulateJslFrame(memory, cpu, 0x80u, (uint16_t)(handler + 0x10u));
     cpu->program_bank = 0x8eu;
-    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* BB17 */
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     if (hide) {
-        Or8(cpu, 0x04u);
-        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
-        Or8(cpu, 0x20u);
-        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
-        SimulateJslFrame(memory, cpu, 0x8eu, 0xbb2cu);
-        cpu->program_bank = 0x83u;
-        Lufia2ActorClearMapOccupancy(memory, cpu);             /* $83:FA12 */
-        SimulateRtlFrame(memory, cpu);
-    } else {
-        And8(cpu, 0xfbu);                                      /* BAF6 */
-        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
-        BitImmediate8(cpu, 0x20u);
-        if (!cpu->zero) {
-            And8(cpu, 0xdfu);
-            StoreAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
-            LoadAAbsolute8(memory, cpu, WRAM_ACTOR_ID, cpu->x);
-            cpu->carry = 1;
-            Sbc8(cpu, 0x50u);
-            *handoff = 0x8ebb12u;                              /* JSL $81:8351 */
-            return EVENT_OPCODE_HANDOFF;
-        }
+        Lufia2FieldHideActorState(memory, cpu);
+    } else if (Lufia2FieldRevealActorState(memory, cpu)) {
+        *handoff = 0x8ebb12u;
+        return EVENT_OPCODE_HANDOFF;
     }
     SimulateRtlFrame(memory, cpu);
     cpu->program_bank = 0x80u;

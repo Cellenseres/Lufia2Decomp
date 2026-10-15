@@ -327,6 +327,7 @@ add_library(lufia2_decomp STATIC
     src/party/capsule_experience.c
     src/field/field_sprite_selector.c
     src/field/field_actor_select.c
+    src/field/field_actor_visibility.c
     src/battle/battle_party_clear.c
     src/battle/battle_relative_script.c
     src/field/field_section_entries.c
@@ -440,6 +441,7 @@ add_library(lufia2_decomp STATIC
     src/text/text_script_commands.c
     src/text/text_state_commands.c
     src/text/text_actor_commands.c
+    src/text/text_actor_visibility.c
     src/text/text_scene_commands.c
     src/text/text_field_commands.c
     src/text/text_object_commands.c

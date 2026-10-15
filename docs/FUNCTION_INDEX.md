@@ -109,6 +109,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:BE75` | `Lufia2SceneRunTransitionRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BE89` | `Lufia2SceneRunStartRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BEAF` | `Lufia2SceneRunMapText` | verified | `src/field/scene_bootstrap.c` |
+| `$80:BF6F` | `Lufia2FieldFindWindowActor` | verified | `src/field/field_actor_visibility.c` |
 | `$80:BF92` | `Lufia2FieldSelectActorById` | verified | `src/field/field_actor_select.c` |
 | `$80:BFAA` | `Lufia2FieldFindHeaderRecord` | verified | `src/field/field_object_lookup.c` |
 | `$80:BFE7` | `Lufia2SceneScriptSelectRecord` | verified | `src/field/field_scene_record_select.c` |
@@ -1429,6 +1430,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:BA0D` | `Lufia2CaptureFieldSaveState` | verified | `src/system/field_save_state.c` |
 | `$8E:BA81` | `Lufia2FieldResetPresentationState` | verified | `src/field/field_presentation_reset.c` |
 | `$8E:BAE7` | `Lufia2FieldMarkEncounterActor` | verified | `src/field/field_camera_services.c` |
+| `$8E:BAF6` | `Lufia2FieldRevealActor` | verified | `src/field/field_actor_visibility.c` |
+| `$8E:BB17` | `Lufia2FieldHideActor` | verified | `src/field/field_actor_visibility.c` |
 | `$8E:BB2E` | `Lufia2FieldCycleSelectedSprite` | verified | `src/field/field_sprite_selector.c` |
 | `$8E:BBA8` | `Lufia2FieldTakeSpriteSelectionButtons` | verified | `src/field/field_sprite_selector.c` |
 | `$8E:BBAF` | `Lufia2FieldTryVehicleTransition` | verified | `src/field/field_vehicle_transition.c` |

@@ -9,6 +9,15 @@
 extern "C" {
 #endif
 
+/* Actor lookup and visibility; M1/X16, binary, DP0. */
+Lufia2ExecutionResult Lufia2FieldFindWindowActor(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldRevealActor(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu,
+                                           Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2FieldHideActor(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu);
+
 /* Scene-script operands at DB:Y; either M width, X16. */
 Lufia2ExecutionResult Lufia2SceneScriptReadOperand(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
