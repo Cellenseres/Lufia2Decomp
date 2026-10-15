@@ -5794,3 +5794,10 @@ name = "title_particle_pool_pointer"
 width = 2
 owner = "title"
 notes = "Current title particle-pool pointer;86:85C2 uses the live data bank, observed7E."
+
+[[location]]
+address = "7E:126F"
+name = "text_pause_elapsed"
+width = 1
+owner = "text"
+notes = "80:9E0B resets this frame counter for an inline pause; 9E3C increments it until it exceeds ten times the operand low seven bits, with original byte wrap."

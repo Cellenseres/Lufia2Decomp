@@ -1547,6 +1547,17 @@ static unsigned TextScriptOpcode(
     uint32_t *handoff) {
     unsigned i;
 
+    const uint32_t script_flow = Lufia2TextExecuteScriptCommand(memory, cpu, handler);
+    if (script_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (script_flow == LUFIA2_TEXT_COMMAND_YIELD)
+        return TEXT_OPCODE_EXIT;
+    if (script_flow == 0x809d3eu)
+        return TextOpenWindow(memory, cpu, handoff);
+    if (script_flow) {
+        *handoff = script_flow;
+        return TEXT_OPCODE_HANDOFF;
+    }
     if (Lufia2TextExecuteStateCommand(memory, cpu, handler))
         return TEXT_OPCODE_NEXT;
     const Lufia2TextCommandFlow actor_flow =
@@ -1565,6 +1576,8 @@ static unsigned TextScriptOpcode(
     const uint32_t field_flow = Lufia2TextExecuteFieldCommand(memory, cpu, handler);
     if (field_flow == LUFIA2_TEXT_COMMAND_NEXT)
         return TEXT_OPCODE_NEXT;
+    if (field_flow == LUFIA2_TEXT_COMMAND_YIELD)
+        return TEXT_OPCODE_EXIT;
     if (field_flow) {
         *handoff = field_flow;
         return TEXT_OPCODE_HANDOFF;

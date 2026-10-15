@@ -12,6 +12,7 @@ enum {
     GIVE_ITEM_PAGE_ONE = 0xa41fu,
     OPEN_SCRIPT_MENU = 0xa51du,
     START_SCRIPTED_BATTLE = 0xb909u,
+    OPEN_PARAMETERIZED_MENU = 0xbd99u,
     ITEM_REWARD_ID = 0x7fd4efu,
     ITEM_REWARD_PAGE = 0x7fd4f0u,
     ITEM_REWARD_COUNT = 0x7fd4f1u,
@@ -134,6 +135,22 @@ static uint32_t OpenScriptMenu(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     return handoff ? handoff : 0x80a52du;
 }
 
+static uint32_t OpenParameterizedMenu(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
+    Lufia2TextNextByte(memory, cpu, 0xbd9bu);
+    OpSta(memory, cpu, OpDp(cpu, DP_MENU_PHASE));
+    PushDataBank(memory, cpu);
+    PushY(memory, cpu);
+    OpLoadA(cpu, 3u);
+    OpSta(memory, cpu, OpDp(cpu, DP_MENU_STATE));
+    uint32_t handoff = CallMenuService(memory, cpu, 0x83afeau, 0xbda7u);
+    if (handoff)
+        return handoff;
+    OpStz(memory, cpu, OpDp(cpu, DP_MENU_FINISHED));
+    handoff = CallMenuService(memory, cpu, 0x82e746u, 0xbdadu);
+    return handoff ? handoff : 0x80bdaeu;
+}
+
 static uint32_t GiveItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                          bool second_page) {
     if (second_page)
@@ -182,6 +199,8 @@ uint32_t Lufia2TextExecuteMenuCommand(const Lufia2Memory *memory, Lufia2CpuState
         cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
         return 0u;
     switch (handler) {
+    case OPEN_PARAMETERIZED_MENU:
+        return OpenParameterizedMenu(memory, cpu);
     case REQUEST_MAP_CHANGE:
         return RequestMapChange(memory, cpu);
     case OPEN_SCENE_MENU:

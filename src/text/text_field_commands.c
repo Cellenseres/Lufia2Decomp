@@ -6,6 +6,10 @@
 #include "text/text_internal.h"
 
 enum {
+    CHOOSE_COLLECTED_OBJECTS = 0xac6au,
+    ENTER_AREA = 0xbbebu,
+    PUBLISH_REGION = 0xbdbbu,
+    ENTER_AREA_AND_KEEP_MAP = 0xbdcau,
     PREPARE_OBJECT_ACTOR = 0xb6b3u,
     RADIAL_AT_ACTOR_3C = 0xa9b7u,
     RADIAL_AT_SCENE_3C = 0xa9beu,
@@ -38,6 +42,118 @@ enum {
 
 typedef Lufia2ExecutionResult (*ObjectActorRoutine)(const Lufia2Memory *,
                                                    Lufia2CpuState *);
+
+typedef struct FieldCommandService {
+    const Lufia2Memory *memory;
+    uint32_t handoff;
+} FieldCommandService;
+
+static uint8_t RunFieldCommandChild(void *context, Lufia2CpuState *cpu,
+                                    uint32_t target, uint32_t site, uint8_t frame) {
+    FieldCommandService *service = context;
+    const uint8_t caller_bank = cpu->program_bank;
+    cpu->program_bank = (uint8_t)(target >> 16);
+    Lufia2ExecutionResult result;
+    switch (target) {
+    case 0x8ebcadu:
+        result = Lufia2FieldChooseCollectedObjects(service->memory, cpu,
+                                                  RunFieldCommandChild, context);
+        break;
+    case 0x80bfaau:
+        result = Lufia2FieldFindHeaderRecord(service->memory, cpu);
+        break;
+    case 0x83b76eu:
+        result = Lufia2FieldApplyAreaTransition(service->memory, cpu,
+                                               RunFieldCommandChild, context);
+        break;
+    case 0x80f821u:
+        result = Lufia2FieldTraceCellEdges(service->memory, cpu);
+        break;
+    case 0x838e4cu:
+        result = Lufia2FieldPublishRedrawnLayers(service->memory, cpu,
+                                                RunFieldCommandChild, context);
+        break;
+    default:
+        service->handoff = target;
+        return 0u;
+    }
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        if (!service->handoff)
+            service->handoff = result.pc;
+        return 0u;
+    }
+    uint16_t back = Pull8(service->memory, cpu);
+    back |= (uint16_t)Pull8(service->memory, cpu) << 8;
+    cpu->program_bank = frame == 3u ? Pull8(service->memory, cpu) : caller_bank;
+    const uint32_t next = ((uint32_t)cpu->program_bank << 16) | (uint16_t)(back + 1u);
+    if (next != site + frame + 1u) {
+        service->handoff = next;
+        return 0u;
+    }
+    return 1u;
+}
+
+static uint32_t CallFieldCommandChild(const Lufia2Memory *memory,
+                                      Lufia2CpuState *cpu, uint32_t target,
+                                      uint16_t back) {
+    SimulateJslFrame(memory, cpu, 0x80u, back);
+    FieldCommandService service = {memory, 0u};
+    RunFieldCommandChild(&service, cpu, target,
+                         0x800000u | (uint16_t)(back - 3u), 3u);
+    return service.handoff;
+}
+
+static uint32_t ChooseCollectedObjects(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
+    PushY(memory, cpu);
+    const uint32_t handoff = CallFieldCommandChild(memory, cpu, 0x8ebcadu, 0xac6eu);
+    if (handoff)
+        return handoff;
+    OpPullY(memory, cpu);
+    return LUFIA2_TEXT_COMMAND_NEXT;
+}
+
+static uint32_t EnterArea(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                          bool keep_map) {
+    Lufia2TextNextByte(memory, cpu, keep_map ? 0xbdccu : 0xbbedu);
+    ExchangeAccumulatorBytes(cpu);
+    OpLoadA(cpu, 9u);
+    ExchangeAccumulatorBytes(cpu);
+    OpLdx(cpu, 6u);
+    uint32_t handoff = CallFieldCommandChild(memory, cpu, 0x80bfaau,
+                                             keep_map ? 0xbdd7u : 0xbbf8u);
+    if (handoff)
+        return handoff;
+    handoff = CallFieldCommandChild(memory, cpu, 0x83b76eu,
+                                    keep_map ? 0xbddbu : 0xbbfcu);
+    if (handoff)
+        return handoff;
+    if (keep_map) {
+        OpLda(memory, cpu, WRAM_FIELD_DESTINATION_MAP);
+        OpSta(memory, cpu, WRAM_FIELD_MAP_ID);
+        OpLda(memory, cpu, WRAM_FIELD_RELOAD_FLAGS);
+        OpOraValue(cpu, 0x20u);
+        OpSta(memory, cpu, WRAM_FIELD_RELOAD_FLAGS);
+    } else {
+        OpLoadA(cpu, 8u);
+        OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), true);
+    }
+    return LUFIA2_TEXT_COMMAND_YIELD;
+}
+
+static uint32_t PublishRegion(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushDataBank(memory, cpu);
+    PushY(memory, cpu);
+    uint32_t handoff = CallFieldCommandChild(memory, cpu, 0x80f821u, 0xbdc0u);
+    if (handoff)
+        return handoff;
+    handoff = CallFieldCommandChild(memory, cpu, 0x838e4cu, 0xbdc4u);
+    if (handoff)
+        return handoff;
+    OpPullY(memory, cpu);
+    PullDataBank(memory, cpu);
+    return LUFIA2_TEXT_COMMAND_NEXT;
+}
 
 static uint32_t CallObjectActor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                 ObjectActorRoutine routine, uint16_t back) {
@@ -323,6 +439,13 @@ uint32_t Lufia2TextExecuteFieldCommand(const Lufia2Memory *memory, Lufia2CpuStat
         cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
         return 0u;
     switch (handler) {
+    case CHOOSE_COLLECTED_OBJECTS:
+        return ChooseCollectedObjects(memory, cpu);
+    case ENTER_AREA:
+    case ENTER_AREA_AND_KEEP_MAP:
+        return EnterArea(memory, cpu, handler == ENTER_AREA_AND_KEEP_MAP);
+    case PUBLISH_REGION:
+        return PublishRegion(memory, cpu);
     case PREPARE_OBJECT_ACTOR:
         return PrepareObjectActor(memory, cpu);
     case RADIAL_AT_ACTOR_3C:
