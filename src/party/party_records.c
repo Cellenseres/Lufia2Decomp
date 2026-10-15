@@ -7,7 +7,15 @@
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
-enum { MENU_PARTY_CAPACITY = 4u };
+enum {
+    MENU_PARTY_CAPACITY = 4u,
+    PARTY_RECORD_STATUS = 0x0fu,
+    PARTY_RECORD_CURRENT_HP = 0x11u,
+    PARTY_RECORD_CURRENT_MP = 0x13u,
+    PARTY_RECORD_MAX_HP = 0x25u,
+    PARTY_RECORD_MAX_MP = 0x27u,
+    PARTY_RECOVERY_EXCLUDED = 4u
+};
 
 static bool MenuPartyReady(const Lufia2CpuState *cpu) {
     return cpu->program_bank == 0x81u && cpu->accumulator_is_8_bit &&
@@ -113,19 +121,26 @@ Lufia2ExecutionResult Lufia2PartyRemoveMenuMember(const Lufia2Memory *memory,
 }
 
 /* Copy a word within each active party record ($0A80). */
-static void PartyCopy(const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t from,
-                      uint16_t to) {
+static void RestorePartyValues(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               uint16_t source_offset, uint16_t destination_offset,
+                               unsigned field_count) {
     LoadY16(cpu, 0x0006u);
     do {
         LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu,
                                            WRAM_MENU_PARTY_CHARACTER_OFFSET, cpu->y));
         if (!cpu->zero) {
-            LoadAAbsolute8(memory, cpu, 0x000fu, cpu->x);
-            cpu->zero = (A8(cpu) & 0x04u) == 0;
+            LoadAAbsolute8(memory, cpu, PARTY_RECORD_STATUS, cpu->x);
+            cpu->zero = (A8(cpu) & PARTY_RECOVERY_EXCLUDED) == 0;
             if (cpu->zero) {
                 SetAccumulatorWidth(cpu, 0);
-                LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, from, cpu->x));
-                StoreAAbsolute16(memory, cpu, to, cpu->x);
+                for (unsigned field = 0u; field < field_count; ++field) {
+                    const uint16_t offset = (uint16_t)(field * 2u);
+                    LoadA16(cpu, Read16AbsoluteIndexed(
+                                     memory, cpu, (uint16_t)(source_offset + offset),
+                                     cpu->x));
+                    StoreAAbsolute16(memory, cpu,
+                                     (uint16_t)(destination_offset + offset), cpu->x);
+                }
                 SetAccumulatorWidth(cpu, 1);
             }
         }
@@ -133,19 +148,18 @@ static void PartyCopy(const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t 
     } while (!cpu->negative);
 }
 
+
 /* $81:F5ED: $11 = $25 in each active party record; M1X0. */
-Lufia2ExecutionResult Lufia2PartyRestore11(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    PartyCopy(memory, cpu, 0x0025u, 0x0011u);
+Lufia2ExecutionResult Lufia2PartyRestore11(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu) {
+    RestorePartyValues(memory, cpu, PARTY_RECORD_MAX_HP, PARTY_RECORD_CURRENT_HP, 1u);
     return ExecutionReturned(0x81f60au);
 }
 
 /* $81:F60B: $13 = $27 in each active party record; M1X0. */
-Lufia2ExecutionResult Lufia2PartyRestore13(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    PartyCopy(memory, cpu, 0x0027u, 0x0013u);
+Lufia2ExecutionResult Lufia2PartyRestore13(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu) {
+    RestorePartyValues(memory, cpu, PARTY_RECORD_MAX_MP, PARTY_RECORD_CURRENT_MP, 1u);
     return ExecutionReturned(0x81f628u);
 }
 
