@@ -1562,6 +1562,13 @@ static unsigned TextScriptOpcode(
         *handoff = scene_flow;
         return TEXT_OPCODE_HANDOFF;
     }
+    const uint32_t field_flow = Lufia2TextExecuteFieldCommand(memory, cpu, handler);
+    if (field_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (field_flow) {
+        *handoff = field_flow;
+        return TEXT_OPCODE_HANDOFF;
+    }
 
     for (i = 0; i < 11u; ++i) {
         if (handler != kTextByteStores[i].handler)

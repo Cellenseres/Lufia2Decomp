@@ -1,3 +1,38 @@
+# Text field effects and action callers - 2026-10-15
+
+Thirteen additional internal text handlers execute in C: six radial-effect
+spawners, scene/actor object placement and five actor-action callers. They
+reuse the existing radial generator, complete object spawn, scene-cell chain,
+filtered/raw actor lookups and primary-action implementation. No public entry
+or runtime binding is added, and no child implementation is duplicated.
+
+Count zero retains 256 radial spawns. Full object lists retain stale selectors.
+Scene scaling writes all four coordinate words, including the stale fourth
+byte. Actor-relative placement saves only the original saved selector. Action
+frames, linked actor records, facing offsets and pending-child continuations
+retain their original behavior. The scene-cell helper export preserves all
+870 operation tokens after its internal name/linkage substitution.
+
+The shared checkpoint passes 53248 direct original-ROM states and 13312
+complete text-engine/production-ABI states, comparing CPU, full WRAM and exact
+ordered data-bus events. Three additional direct and three full-engine cases
+preserve the exact 65536-record search continuation with live frames. All
+65705 unsupported/unknown contexts leave state and memory untouched. Three
+semantic ROM faults are detected. Windows Release, GCC/Clang standalone,
+CLI and metadata checks pass. Only whitespace formatting follows these
+checks; complete C-token identity preserves their source coverage.
+
+The previous 7444-frame gameplay replay is unchanged-source evidence for its
+own checkpoint only. A new whole-game replay and the full 1965-job regression
+are deferred; neither is claimed as passing on this batch. An owner link
+failure overlapped an agent build in build/windows. The agent build completed
+successfully, but future agent Windows builds use a separate build directory.
+
+Totals remain 1434 verified entries, 1423 bindings and 742 WRAM locations,
+with 434 portable C units. Text recognition reaches 115 unique handlers and
+117 of 205 routes; 88 unique handlers remain. These are internal routes,
+not new standalone functions or a percentage of whole-game functionality.
+
 # Speaker, scene-cell and relative-position commands - 2026-10-15
 
 Fourteen additional internal text handlers are reconstructed: seven speaker

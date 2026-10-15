@@ -38,7 +38,7 @@ static uint8_t SearchSceneCell(void *context, Lufia2CpuState *cpu, uint32_t targ
     return 1u;
 }
 
-static uint32_t ReadSceneCell(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+uint32_t Lufia2TextReadSceneCell(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                               uint16_t return_address) {
     SceneCellSearch search = {memory, 0u};
     SimulateJslFrame(memory, cpu, 0x80u, return_address);
@@ -108,7 +108,7 @@ uint32_t Lufia2TextExecuteSceneCommand(const Lufia2Memory *memory, Lufia2CpuStat
     default:
         return 0u;
     }
-    const uint32_t handoff = ReadSceneCell(memory, cpu, return_address);
+    const uint32_t handoff = Lufia2TextReadSceneCell(memory, cpu, return_address);
     if (handoff)
         return handoff;
     if (handler == PLACE_ACTOR_AT_SCENE_CELL)
