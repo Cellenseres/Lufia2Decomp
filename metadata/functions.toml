@@ -11759,3 +11759,27 @@ source = "src/cave/cave_entry.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:BF12"
+name = "Lufia2GoldAdd"
+source = "src/system/gold.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:BF43"
+name = "Lufia2GoldSpend"
+source = "src/system/gold.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:A350"
+name = "Lufia2SceneReloadAndFadeIn"
+source = "src/field/scene_bootstrap.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

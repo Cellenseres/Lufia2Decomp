@@ -63,3 +63,21 @@ void Lufia2ChangeGold(const Lufia2Memory *memory, Lufia2CpuState *cpu, bool add)
         SpendGold(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
+
+static Lufia2ExecutionResult ChangeGold(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                        bool add) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, add ? 0x80bf12u : 0x80bf43u);
+    Lufia2ChangeGold(memory, cpu, add);
+    return ExecutionReturned(add ? 0x80bf42u : 0x80bf6eu);
+}
+
+Lufia2ExecutionResult Lufia2GoldAdd(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return ChangeGold(memory, cpu, true);
+}
+
+Lufia2ExecutionResult Lufia2GoldSpend(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return ChangeGold(memory, cpu, false);
+}

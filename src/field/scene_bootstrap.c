@@ -44,6 +44,27 @@ static void SceneBootstrapClearText(const Lufia2Memory *memory, Lufia2CpuState *
     OpStz(memory, cpu, OpAbs(cpu, WRAM_SCENE_TEXT_CONTROL));
 }
 
+Lufia2ExecutionResult Lufia2SceneReloadAndFadeIn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80a350u);
+    Push8(memory, cpu, cpu->program_bank);
+    PullDataBank(memory, cpu);
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, WRAM_SCENE_RELOAD_UNK_D0C2);
+    OpSta(memory, cpu, WRAM_SCENE_RELOAD_UNK_D0C2 + 1u);
+    if (!SceneBootstrapChild(memory, cpu, child, context, 0x80a35cu, 0x8385dcu, 3u))
+        return SceneBootstrapUnwound(0x80a35cu);
+    if (!SceneBootstrapChild(memory, cpu, child, context, 0x80a360u, 0x83afcdu, 3u))
+        return SceneBootstrapUnwound(0x80a360u);
+    if (!SceneBootstrapChild(memory, cpu, child, context, 0x80a364u, 0x80a368u, 2u))
+        return SceneBootstrapUnwound(0x80a364u);
+    return ExecutionReturned(0x80a367u);
+}
+
 Lufia2ExecutionResult Lufia2SceneRunStartRecord(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {

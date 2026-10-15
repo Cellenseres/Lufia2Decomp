@@ -1,7 +1,7 @@
 #ifndef LUFIA2_SYSTEM_H
 #define LUFIA2_SYSTEM_H
 
-/* Random numbers, sound queue and screen fade. */
+/* Random numbers, gold, sound queue and screen fade. */
 
 #include "lufia2/execution.h"
 
@@ -13,6 +13,11 @@ extern "C" {
  * Song at $80:942E before STA $54, fade at $80:9692 before PHP. */
 typedef uint8_t (*Lufia2MusicCheckpoint)(
     void *context, Lufia2CpuState *cpu, uint32_t pc);
+
+Lufia2ExecutionResult Lufia2GoldAdd(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2GoldSpend(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 /* Frame polls retain their exact continuation when the clock stalls. */
 Lufia2ExecutionResult Lufia2FieldWaitForNextFrame(

@@ -727,6 +727,10 @@ Lufia2ExecutionResult Lufia2FieldResetObjectAnimation(
 Lufia2ExecutionResult Lufia2FieldSelectSceneRecordBase(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2SceneReloadAndFadeIn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 Lufia2ExecutionResult Lufia2SceneResetTextState(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

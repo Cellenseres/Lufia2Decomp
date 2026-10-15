@@ -97,6 +97,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9C0F` | `Lufia2UploadBootSoundBlocks` | verified | `src/system/sound_boot_blocks.c` |
 | `$80:9C72` | `Lufia2FieldEventTickWithServices` | verified | `src/field/field_update.c` |
 | `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
+| `$80:A350` | `Lufia2SceneReloadAndFadeIn` | verified | `src/field/scene_bootstrap.c` |
 | `$80:A368` | `Lufia2SceneResetTextState` | verified | `src/field/scene_bootstrap.c` |
 | `$80:AD39` | `Lufia2FieldFaceActorGroupTowardActor` | verified | `src/field/field_interaction.c` |
 | `$80:AD57` | `Lufia2FieldFaceActorTowardActor` | verified | `src/field/field_interaction.c` |
@@ -109,6 +110,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:BE75` | `Lufia2SceneRunTransitionRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BE89` | `Lufia2SceneRunStartRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BEAF` | `Lufia2SceneRunMapText` | verified | `src/field/scene_bootstrap.c` |
+| `$80:BF12` | `Lufia2GoldAdd` | verified | `src/system/gold.c` |
+| `$80:BF43` | `Lufia2GoldSpend` | verified | `src/system/gold.c` |
 | `$80:BF6F` | `Lufia2FieldFindWindowActor` | verified | `src/field/field_actor_visibility.c` |
 | `$80:BF92` | `Lufia2FieldSelectActorById` | verified | `src/field/field_actor_select.c` |
 | `$80:BFAA` | `Lufia2FieldFindHeaderRecord` | verified | `src/field/field_object_lookup.c` |
