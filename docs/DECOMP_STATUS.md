@@ -1,3 +1,29 @@
+# Animated menu cursor and observed menu banks - 2026-10-15
+
+The verified cursor interpolation at82:89FA now runs its original frame
+children while other menu sprites advance their animation. The old static
+animation/OAM preflight and127-pixel limit are removed. Byte coordinates,
+child context changes, live unwinds and bounded-loop continuations are
+covered; no frame wait or original behavior is optimized away.
+
+The related82:9246/92F9/9971 consumer entries now accept the observed DB83
+callers and other literal data banks, retaining their original width and
+stack contracts. This broadens four existing native paths; counts remain
+1434 verified functions,1423 bindings,742 locations and430 C units.
+
+One combined checkpoint covers24576 menu caller ROM/ABI cases,4361 cursor
+ROM/ABI cases,15 dispatcher redirections,13440 guards and two detected ROM
+faults. The tracked cursor fixture independently reconstructs its four
+animated sprite slots from the ROM and passes4361 cases without a capture.
+Current Windows Release and GCC/Clang standalone/CLI gates pass.
+
+The7444-frame input-driven replay has identical full WRAM, CPU registers,
+PPU state, pictures and PCM audio. Only the saved resume PC differs on two
+frames:82:93C8 versus93CA inside the same original frame-wait loop. Paired
+frame diagnostics reproduce both baselines exactly and isolate that sole
+difference. This is not cycle-level scheduling equality. Full1965 remains
+an earlier baseline; the affected batch checks replace repeated full runs.
+
 # Observed event and menu-buffer contexts - 2026-10-15
 
 The index-independent83:C0EF position probe and83:C0FA control-change latch
@@ -2338,16 +2364,25 @@ every entry width.
 
 ## Menu cursor slide
 
-`$82:89FA` slides a menu cursor sprite between the positions of two slots in
-straight steps (an error-accumulating line), with the corrections `$82:8AD8`
-and `$82:8AE9` and the step counter `$82:8AFA` that asks for a frame every
-sixteenth step. They are `draft` reconstructions that need M1 (else handed
-back). The counter hands off at its sprite frame call, and the slide passes
-that hand off up with the frames of both routines pushed, so the rest of the
-slide continues in the original code. They are compared against the original
-ROM code for CPU state, work RAM, ordered writes and stack frames, on random
-slot pairs, equal slots, short slides that finish before the first frame and
-long ones that hand off.
+`$82:89FA` interpolates a cursor between two sprite slots. `$82:8AD8`
+and `$82:8AE9` correct the other axis; `$82:8AFA` requests the original
+`$86:8B55` sprite frame every sixteen steps. These contracts are verified.
+The cursor now admits live animation changes and the full byte-coordinate
+range. It executes each original frame child through its pushed callback;
+there is no animation prediction, frame omission or timing shortcut.
+
+A changed child CPU mode, DB or DP transfers at the following original BRA
+($82:8A9B/$82:8AD6). A nonreturning movement transfers after4096 steps at
+$82:8A75/$82:8AA6. Original frame unwinds keep all pending guest frames.
+The parent boundary does not claim that the frame scheduler is reconstructed.
+
+The tracked ROM verifier builds four animated slots with the original table
+and animation constructors, without a running game or saved capture. It
+compares CPU, full WRAM, write order fingerprints and exact MMIO order.
+A separate production-ABI proof also covers the observed DB83 movement,
+child return rewrites/unwinds and guarded unsupported states. A synthetic
+clock advances only inside the original frame-wait reads; this is not NMI
+or cycle-level timing verification.
 
 ## Menu cursor input
 
