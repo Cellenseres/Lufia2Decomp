@@ -19,6 +19,10 @@ Lufia2ExecutionResult Lufia2AncientCaveExit(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2AncientCaveEnter(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $84:8888: clear the Cave party and give its initial items; PB84/M1X0. */
 Lufia2ExecutionResult Lufia2AncientCaveResetParty(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

@@ -69,6 +69,9 @@ Lufia2ExecutionResult Lufia2PartyRestore11(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2PartyRestoreVitals(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $81:F60B $13 = $27 in each active party record; M1X0. */
 Lufia2ExecutionResult Lufia2PartyRestore13(
     const Lufia2Memory *memory,

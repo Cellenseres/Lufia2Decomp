@@ -148,6 +148,18 @@ static void RestorePartyValues(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     } while (!cpu->negative);
 }
 
+Lufia2ExecutionResult Lufia2PartyRestoreVitals(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu) {
+    if (!MenuPartyReady(cpu) || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x81f5bdu);
+    RestorePartyValues(memory, cpu, PARTY_RECORD_MAX_HP, PARTY_RECORD_CURRENT_HP, 2u);
+    OpRepWidths(cpu, 0x20u);
+    OpStepMem(memory, cpu, OpAbs(cpu, WRAM_PARTY_RECOVERY_COUNT), 1);
+    if (cpu->zero)
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_PARTY_RECOVERY_COUNT), -1);
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x81f5ecu);
+}
 
 /* $81:F5ED: $11 = $25 in each active party record; M1X0. */
 Lufia2ExecutionResult Lufia2PartyRestore11(const Lufia2Memory *memory,

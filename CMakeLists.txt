@@ -157,6 +157,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_loop_internal.c
     src/cave/ancient_cave.c
     src/cave/cave_exit.c
+    src/cave/cave_entry.c
     src/cave/cave_reset.c
     src/cave/cave_header.c
     src/cave/cave_grid.c
@@ -443,6 +444,7 @@ add_library(lufia2_decomp STATIC
     src/text/text_state_commands.c
     src/text/text_actor_commands.c
     src/text/text_actor_visibility.c
+    src/text/text_cave_commands.c
     src/text/text_scene_commands.c
     src/text/text_field_commands.c
     src/text/text_object_commands.c

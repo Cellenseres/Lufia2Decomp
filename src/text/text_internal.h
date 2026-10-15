@@ -12,6 +12,8 @@ uint32_t Lufia2TextExecuteScriptCommand(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t handler);
 uint32_t Lufia2TextExecuteActorVisibility(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t handler);
+uint32_t Lufia2TextExecuteCaveCommand(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint16_t handler);
 
 typedef enum Lufia2TextCommandFlow {
     LUFIA2_TEXT_COMMAND_UNHANDLED,

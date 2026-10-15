@@ -5801,3 +5801,25 @@ name = "text_pause_elapsed"
 width = 1
 owner = "text"
 notes = "80:9E0B resets this frame counter for an inline pause; 9E3C increments it until it exceeds ten times the operand low seven bits, with original byte wrap."
+
+[[location]]
+address = "7E:0B59"
+name = "party_recovery_count"
+width = 2
+owner = "party"
+notes = "81:F5BD restores eligible party records and increments this counter, saturating at FFFF."
+
+[[location]]
+address = "7E:0B6A"
+name = "ancient_cave_entry_count"
+width = 2
+owner = "cave"
+notes = "84:878A increments this counter at Cave entry, saturating at FFFF."
+
+[[location]]
+address = "7F:E75D"
+name = "cave_unk_e75d"
+width = 1
+count = 3
+owner = "cave"
+notes = "84:878A clears these three bytes individually before carrying blue items; further meanings unproven."

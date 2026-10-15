@@ -11743,3 +11743,19 @@ source = "src/battle/field_encounter_selection.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:F5BD"
+name = "Lufia2PartyRestoreVitals"
+source = "src/party/party_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:878A"
+name = "Lufia2AncientCaveEnter"
+source = "src/cave/cave_entry.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

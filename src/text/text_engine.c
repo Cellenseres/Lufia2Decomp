@@ -1548,6 +1548,15 @@ static unsigned TextScriptOpcode(
     uint32_t *handoff) {
     unsigned i;
 
+    const uint32_t cave_flow = Lufia2TextExecuteCaveCommand(memory, cpu, handler);
+    if (cave_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (cave_flow == LUFIA2_TEXT_COMMAND_YIELD)
+        return TEXT_OPCODE_EXIT;
+    if (cave_flow) {
+        *handoff = cave_flow;
+        return TEXT_OPCODE_HANDOFF;
+    }
     const uint32_t visibility_flow = Lufia2TextExecuteActorVisibility(memory, cpu, handler);
     if (visibility_flow == LUFIA2_TEXT_COMMAND_NEXT)
         return TEXT_OPCODE_NEXT;

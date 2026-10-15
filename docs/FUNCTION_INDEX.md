@@ -497,6 +497,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F4D5` | `Lufia2PartyDerivedStats` | verified | `src/party/stats.c` |
 | `$81:F4E9` | `Lufia2PartyStatTotalsFar` | verified | `src/party/stats.c` |
 | `$81:F4ED` | `Lufia2PartyStatTotals` | verified | `src/party/stats.c` |
+| `$81:F5BD` | `Lufia2PartyRestoreVitals` | verified | `src/party/party_records.c` |
 | `$81:F5ED` | `Lufia2PartyRestore11` | verified | `src/party/party_records.c` |
 | `$81:F60B` | `Lufia2PartyRestore13` | verified | `src/party/party_records.c` |
 | `$81:F629` | `Lufia2PartyClearStatuses` | verified | `src/party/party_records.c` |
@@ -1021,6 +1022,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:875F` | `Lufia2FieldTakeSelectionLowButtons` | verified | `src/field/field_item_selection_controller.c` |
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
 | `$84:8775` | `Lufia2SendImmediateSound` | verified | `src/system/sound_commands.c` |
+| `$84:878A` | `Lufia2AncientCaveEnter` | verified | `src/cave/cave_entry.c` |
 | `$84:8888` | `Lufia2AncientCaveResetParty` | verified | `src/cave/cave_reset.c` |
 | `$84:890B` | `Lufia2AncientCaveExit` | verified | `src/cave/cave_exit.c` |
 | `$84:8AF4` | `Lufia2AncientCaveCarryBlueItem` | verified | `src/cave/cave_exit.c` |
