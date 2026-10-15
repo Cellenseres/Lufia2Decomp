@@ -5,9 +5,10 @@
 #include "lufia2/field.h"
 #include "system/wram.h"
 
-static Lufia2ExecutionResult TickAnimationSlots(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
+static Lufia2ExecutionResult TickAnimationSlots(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu,
+                                                Lufia2PushedChildCall child,
+                                                void *context) {
     Push8(memory, cpu, PackStatus(cpu));
     SetIndexWidth(cpu, 0u);
     OpStz(memory, cpu, OpAbs(cpu, WRAM_ANIMATION_MASK));
@@ -62,19 +63,20 @@ static Lufia2ExecutionResult TickAnimationSlots(
     return ExecutionReturned(0x8386e9u);
 }
 
-Lufia2ExecutionResult Lufia2FieldAnimationTicks(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2FieldAnimationTicks(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x838682u);
     return TickAnimationSlots(memory, cpu, NULL, NULL);
 }
 
-Lufia2ExecutionResult Lufia2FieldAnimationTickSlots(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (!child || cpu->program_bank != 0x83u ||
-        !cpu->accumulator_is_8_bit || cpu->direct_page || cpu->decimal ||
-        cpu->stack < 0x1f60u || cpu->stack > 0x1ffdu)
+Lufia2ExecutionResult Lufia2FieldAnimationTickSlots(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu,
+                                                    Lufia2PushedChildCall child,
+                                                    void *context) {
+    if (!child || cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit ||
+        cpu->direct_page || cpu->decimal || cpu->stack < 0x1f60u ||
+        cpu->stack > 0x1ffdu)
         return ExecutionHandoff(cpu, 0x838682u);
     return TickAnimationSlots(memory, cpu, child, context);
 }
