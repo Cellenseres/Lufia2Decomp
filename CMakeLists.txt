@@ -245,6 +245,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_record_reset.c
     src/battle/battle_encounter_loader.c
     src/battle/battle_encounter_generation.c
+    src/battle/field_encounter_selection.c
     src/battle/battle_encounter_state.c
     src/battle/battle_transition_setup.c
     src/battle/battle_enemy_graphics.c

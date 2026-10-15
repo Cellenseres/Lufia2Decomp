@@ -1,10 +1,24 @@
 #include "core/cpu_ops.h"
 #include "lufia2/actor.h"
+#include "lufia2/battle.h"
 #include "lufia2/field.h"
+#include "lufia2/system.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
 
-enum { REPLACE_ACTOR_SPRITE = 0xa8f8u, REVEAL_ENCOUNTER_ACTOR = 0xaca7u };
+enum {
+    REPLACE_ACTOR_SPRITE = 0xa8f8u,
+    REVEAL_ENCOUNTER_ACTOR = 0xaca7u,
+    POPULATE_ENCOUNTER_ACTORS = 0xab51u,
+    PLACE_ENCOUNTER_ACTOR = 0xbc55u,
+    ENCOUNTER_ACTOR_LIST = 0x7ef600u,
+    CAVE_ENCOUNTERS = 0x7ff966u,
+    ROM_ENCOUNTER_SPRITES = 0x94ddf6u,
+    DP_ENTITY_ID = 0x54u,
+    CAVE_FLOOR_THEME = 0x7fe697u,
+    CAVE_ENCOUNTER_THEME = 0x7ff8a0u,
+    ROM_ENCOUNTER_THEMES = 0x80abcdu
+};
 
 typedef struct ActorVisibilityService {
     const Lufia2Memory *memory;
@@ -19,6 +33,41 @@ static uint8_t RunActorVisibilityChild(void *context, Lufia2CpuState *cpu,
     cpu->program_bank = (uint8_t)(target >> 16);
     Lufia2ExecutionResult result;
     switch (target) {
+    case 0x818351u:
+        result =
+            Lufia2FieldGenerateEncounter(memory, cpu, RunActorVisibilityChild, context);
+        break;
+    case 0x81839fu:
+        result = Lufia2BattleGenerateEncounterRecord(memory, cpu,
+                                                     RunActorVisibilityChild, context);
+        break;
+    case 0x8184fcu:
+        result = Lufia2BattleAddEncounterEnemy(memory, cpu, RunActorVisibilityChild,
+                                               context);
+        break;
+    case 0x808299u:
+        Lufia2RandomScale(memory, cpu);
+        result = ExecutionReturned(0x8082c6u);
+        break;
+    case 0x81fbc6u:
+        result = Lufia2CharacterSpriteWord(memory, cpu);
+        break;
+    case 0x81fb8eu:
+        result = Lufia2SpriteCoordinatesPacked(memory, cpu);
+        break;
+    case 0x81fb79u:
+        result = Lufia2CharacterSpriteByte(memory, cpu);
+        break;
+    case 0x80c01du:
+        result = Lufia2SceneReadActorAttributes(memory, cpu, RunActorVisibilityChild,
+                                                context);
+        break;
+    case 0x80bfaau:
+        result = Lufia2FieldFindHeaderRecord(memory, cpu);
+        break;
+    case 0x80c1a7u:
+        result = Lufia2SceneApplyActorCell(memory, cpu);
+        break;
     case 0x80bf6fu:
         result = Lufia2FieldFindWindowActor(memory, cpu);
         break;
@@ -146,6 +195,112 @@ static uint32_t RevealEncounterActor(const Lufia2Memory *memory, Lufia2CpuState 
     return handoff ? handoff : LUFIA2_TEXT_COMMAND_NEXT;
 }
 
+static uint32_t PopulateEncounterActors(const Lufia2Memory *memory,
+                                        Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_FLAGS));
+    OpBitValue(cpu, 1u);
+    if (cpu->zero)
+        return LUFIA2_TEXT_COMMAND_NEXT;
+    OpLoadA(cpu, 0x91u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_WINDOW_MODE));
+    PushY(memory, cpu);
+    PushDataBank(memory, cpu);
+    OpLdx(cpu, 0u);
+    for (;;) {
+        OpLda(memory, cpu, OpLongX(cpu, ENCOUNTER_ACTOR_LIST));
+        OpCmpValue(cpu, 0xffu);
+        if (cpu->zero)
+            break;
+        uint32_t handoff = CallActorVisibilityChild(memory, cpu, 0x8482d5u, 0xab70u);
+        if (handoff)
+            return handoff;
+        OpPushX(memory, cpu);
+        OpLda(memory, cpu, OpLongX(cpu, ENCOUNTER_ACTOR_LIST));
+        OpAdcValue(cpu, 0x4fu);
+        OpSta(memory, cpu, OpDp(cpu, DP_ENTITY_ID));
+        LoadA16(cpu, cpu->direct_page);
+        OpLda(memory, cpu, OpLongX(cpu, ENCOUNTER_ACTOR_LIST));
+        OpDecA(cpu);
+        OpTax(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, CAVE_ENCOUNTERS));
+        OpTax(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, ROM_ENCOUNTER_SPRITES));
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7E05D2));
+        OpStz(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FLAGS));
+        OpLda(memory, cpu, OpDp(cpu, DP_ENTITY_ID));
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_ACTOR_ID));
+        cpu->carry = 1u;
+        OpSbcValue(cpu, 0x4fu);
+        PushAccumulator8(memory, cpu);
+        handoff = CallActorVisibilityChild(memory, cpu, 0x80c01du, 0xaba0u);
+        if (handoff)
+            return handoff;
+        handoff = CallActorVisibilityChild(memory, cpu, 0x80c1a7u, 0xaba4u);
+        if (handoff)
+            return handoff;
+        LoadA8(cpu, Pull8(memory, cpu));
+        OpDecA(cpu);
+        handoff = CallActorVisibilityChild(memory, cpu, 0x818351u, 0xabaau);
+        if (handoff)
+            return handoff;
+        OpPullX(memory, cpu);
+        OpRepWidths(cpu, 0x20u);
+        OpTxa(cpu);
+        cpu->carry = 0u;
+        OpAdcValue(cpu, 8u);
+        OpTax(cpu);
+        OpSepWidths(cpu, 0x20u);
+        OpStepMem(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT), 1);
+    }
+    LoadA16(cpu, cpu->direct_page);
+    OpLda(memory, cpu, CAVE_FLOOR_THEME);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, ROM_ENCOUNTER_THEMES));
+    OpSta(memory, cpu, CAVE_ENCOUNTER_THEME);
+    PullDataBank(memory, cpu);
+    OpPullY(memory, cpu);
+    return LUFIA2_TEXT_COMMAND_YIELD;
+}
+
+static uint32_t PlaceEncounterActor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_RELOAD_FLAGS));
+    OpBitValue(cpu, 0x10u);
+    bool place = cpu->zero;
+    if (!place) {
+        OpBitValue(cpu, 8u);
+        place = !cpu->zero;
+        Lufia2TextNextByte(memory, cpu, place ? 0xbc74u : 0xbc62u);
+        OpSta(memory, cpu, OpDp(cpu, DP_ENTITY_ID));
+        if (place)
+            Lufia2TextPrevByte(memory, cpu, 0xbc79u);
+        else
+            Lufia2TextNextByte(memory, cpu, 0xbc67u);
+        OpLda(memory, cpu, OpDp(cpu, DP_ENTITY_ID));
+        const uint32_t handoff =
+            CallActorVisibilityChild(memory, cpu, 0x80bf92u, place ? 0xbc7fu : 0xbc6du);
+        if (handoff)
+            return handoff;
+        if (!place && cpu->carry)
+            return LUFIA2_TEXT_COMMAND_NEXT;
+    }
+    if (place && !Lufia2TextPlaceActor(memory, cpu, 0xbc82u))
+        return 0x80bfbcu;
+    LoadA16(cpu, cpu->direct_page);
+    OpLda(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_ID));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, 0x50u);
+    PushY(memory, cpu);
+    const uint32_t handoff = CallActorVisibilityChild(memory, cpu, 0x818351u, 0xbc91u);
+    if (handoff)
+        return handoff;
+    OpPullY(memory, cpu);
+    OpStepMem(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT), 1);
+    return LUFIA2_TEXT_COMMAND_NEXT;
+}
+
 uint32_t Lufia2TextExecuteActorVisibility(const Lufia2Memory *memory,
                                           Lufia2CpuState *cpu, uint16_t handler) {
     if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
@@ -157,6 +312,10 @@ uint32_t Lufia2TextExecuteActorVisibility(const Lufia2Memory *memory,
         return ReplaceActorSprite(memory, cpu);
     case REVEAL_ENCOUNTER_ACTOR:
         return RevealEncounterActor(memory, cpu);
+    case POPULATE_ENCOUNTER_ACTORS:
+        return PopulateEncounterActors(memory, cpu);
+    case PLACE_ENCOUNTER_ACTOR:
+        return PlaceEncounterActor(memory, cpu);
     default:
         return 0u;
     }

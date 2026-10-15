@@ -1778,7 +1778,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1449 functions in `metadata/functions.toml`: 1449 verified, 0 draft, 0 identified, 0 disabled.
+1450 functions in `metadata/functions.toml`: 1450 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

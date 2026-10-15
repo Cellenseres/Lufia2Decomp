@@ -24,6 +24,8 @@ Lufia2TextCommandFlow Lufia2TextExecuteActorCommand(const Lufia2Memory *memory,
 void Lufia2TextFindWindowActor(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 void Lufia2TextPrevByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t return_address);
+uint8_t Lufia2TextPlaceActor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address);
 uint32_t Lufia2TextExecuteSceneCommand(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t handler);
 uint32_t Lufia2TextReadSceneCell(const Lufia2Memory *memory, Lufia2CpuState *cpu,

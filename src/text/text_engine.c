@@ -750,7 +750,7 @@ static uint8_t TextEntityPosition(
 }
 
 /* $80:BC98: place actor $A7 at a map entity. */
-static uint8_t TextPlaceActor(
+uint8_t Lufia2TextPlaceActor(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -792,7 +792,7 @@ static unsigned TextOpSkipBranch(
     LoadAAbsolute8(memory, cpu, WRAM_FIELD_RELOAD_FLAGS, 0);
     BitImmediate8(cpu, 0x10u);
     if (cpu->zero) {
-        if (!TextPlaceActor(memory, cpu, 0xbc46u)) {           /* BC44 */
+        if (!Lufia2TextPlaceActor(memory, cpu, 0xbc46u)) {      /* BC44 */
             *handoff = 0x80bfbcu;
             return TEXT_OPCODE_HANDOFF;
         }
@@ -1550,6 +1550,8 @@ static unsigned TextScriptOpcode(
     const uint32_t visibility_flow = Lufia2TextExecuteActorVisibility(memory, cpu, handler);
     if (visibility_flow == LUFIA2_TEXT_COMMAND_NEXT)
         return TEXT_OPCODE_NEXT;
+    if (visibility_flow == LUFIA2_TEXT_COMMAND_YIELD)
+        return TEXT_OPCODE_EXIT;
     if (visibility_flow) {
         *handoff = visibility_flow;
         return TEXT_OPCODE_HANDOFF;

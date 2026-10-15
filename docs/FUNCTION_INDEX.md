@@ -199,6 +199,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:FBCE` | `Lufia2FieldClearCellFlagsAndPublish` | verified | `src/field/field_publish.c` |
 | `$81:8000` | `Lufia2BattleSetup` | verified | `src/battle/battle_setup.c` |
 | `$81:81E6` | `Lufia2BattleLoadEncounter` | verified | `src/battle/battle_encounter_loader.c` |
+| `$81:8351` | `Lufia2FieldGenerateEncounter` | verified | `src/battle/field_encounter_selection.c` |
 | `$81:839F` | `Lufia2BattleGenerateEncounterRecord` | verified | `src/battle/battle_encounter_generation.c` |
 | `$81:84FC` | `Lufia2BattleAddEncounterEnemy` | verified | `src/battle/battle_encounter_generation.c` |
 | `$81:851E` | `Lufia2BattleDisplaySetup` | verified | `src/battle/battle_display_setup.c` |
