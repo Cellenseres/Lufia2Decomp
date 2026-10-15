@@ -179,7 +179,8 @@ Lufia2ExecutionResult Lufia2TextRunSceneOperation(
         cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu)
         return ExecutionHandoff(cpu, 0x80ba39u);
     const uint16_t target = ReadSceneOperation(memory, cpu);
-    if (target == 0xba97u || target == 0xbaa2u || target == 0xbaf1u) {
+    if (target == 0xba69u || target == 0xba97u || target == 0xbaa2u ||
+        target == 0xbac9u || target == 0xbaf1u || target == 0xbb94u) {
         const Lufia2ExecutionResult result =
             Lufia2TextSceneDisplayCallback(memory, cpu, target, child, context);
         if (result.flow != LUFIA2_EXECUTION_RETURNED)
