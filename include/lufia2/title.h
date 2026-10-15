@@ -100,6 +100,12 @@ Lufia2ExecutionResult Lufia2TitleApplyProductSign(
 Lufia2ExecutionResult Lufia2TitleSpawnObjectParticle(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2TitleProjectObject(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2TitleAnimateObjectParticles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

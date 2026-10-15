@@ -506,9 +506,9 @@ static void TitleSignedProduct(
 }
 
 /* $86:83F2: move on the ellipse; returns the depth step. */
-static void TitleObjectProject(
+static bool TitleObjectProject(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+    Lufia2CpuState *cpu, unsigned *depth_steps) {
     SetAccumulatorWidth(cpu, 0);                               /* 83F2 */
     LoadX16(cpu, TitleWord(memory, cpu, TITLE_OBJECT_SPRITE));
     LoadY16(cpu, TitleWord(memory, cpu, TITLE_OBJECT));
@@ -550,6 +550,11 @@ static void TitleObjectProject(
     Add16Value(cpu, 0x0064u);
     LoadX16(cpu, 0x0014u);
     for (;;) {                                                 /* 84F4 */
+        if (depth_steps) {
+            if (!*depth_steps)
+                return false;
+            --*depth_steps;
+        }
         Compare16(cpu, cpu->accumulator,
             Read16Long(memory, LongIndexedAddress(0x868a5bu, cpu->x)));
         if (!cpu->negative)
@@ -560,6 +565,7 @@ static void TitleObjectProject(
     TransferXToA(cpu);
     LsrA16(cpu);
     SetAccumulatorWidth(cpu, 1);
+    return true;
 }
 
 /* $86:8513: sprite list for the object's depth from $86:8AC0. */
@@ -631,7 +637,7 @@ static void TitleObjectStep(
     StoreAAbsolute16(memory, cpu, TITLE_OBJ_TIMER, cpu->y);
     SetAccumulatorWidth(cpu, 1);
     SimulateJsrFrame(memory, cpu, 0x83d5u);
-    TitleObjectProject(memory, cpu);
+    TitleObjectProject(memory, cpu, NULL);
     SimulateRtsFrame(memory, cpu);
     LoadY16(cpu, TitleWord(memory, cpu, TITLE_OBJECT));        /* 83D6 */
     Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, TITLE_OBJ_DEPTH, cpu->y));
@@ -1143,4 +1149,23 @@ Lufia2ExecutionResult Lufia2TitleSpawnObjectParticle(
         return ExecutionHandoff(cpu, 0x8685c2u);
     TitleObjectSpawn(memory, cpu);
     return ExecutionReturned(0x868636u);
+}
+
+Lufia2ExecutionResult Lufia2TitleProjectObject(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!TitleRecordEntrySupported(cpu))
+        return ExecutionHandoff(cpu, 0x8683f2u);
+    unsigned depth_steps = 4096u;
+    if (!TitleObjectProject(memory, cpu, &depth_steps))
+        return ExecutionHandoff(cpu, 0x8684f4u);
+    return ExecutionReturned(0x868502u);
+}
+
+
+Lufia2ExecutionResult Lufia2TitleAnimateObjectParticles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!TitleRecordEntrySupported(cpu))
+        return ExecutionHandoff(cpu, 0x86856fu);
+    TitleObjectParticles(memory, cpu);
+    return ExecutionReturned(0x8685c1u);
 }

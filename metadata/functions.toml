@@ -11559,3 +11559,19 @@ source = "src/system/math.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "86:83F2"
+name = "Lufia2TitleProjectObject"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:856F"
+name = "Lufia2TitleAnimateObjectParticles"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"

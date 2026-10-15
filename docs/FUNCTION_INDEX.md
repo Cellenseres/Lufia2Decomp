@@ -1232,9 +1232,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:EEA1` | `Lufia2BattleStoreRemainingEncounter` | verified | `src/battle/battle_encounter_state.c` |
 | `$86:81A9` | `Lufia2SelectScreenNmi` | verified | `src/menu/menu.c` |
 | `$86:838C` | `Lufia2TitleObjects` | verified | `src/title/title.c` |
+| `$86:83F2` | `Lufia2TitleProjectObject` | verified | `src/title/title.c` |
 | `$86:8503` | `Lufia2TitleApplyProductSign` | verified | `src/title/title.c` |
 | `$86:8513` | `Lufia2TitleSelectObjectSprite` | verified | `src/title/title.c` |
 | `$86:8530` | `Lufia2TitleSetObjectSpeed` | verified | `src/title/title.c` |
+| `$86:856F` | `Lufia2TitleAnimateObjectParticles` | verified | `src/title/title.c` |
 | `$86:85C2` | `Lufia2TitleSpawnObjectParticle` | verified | `src/title/title.c` |
 | `$86:8637` | `Lufia2TitleFindActiveSprite` | verified | `src/title/title.c` |
 | `$86:8655` | `Lufia2TitleCopyRecord` | verified | `src/title/title.c` |
