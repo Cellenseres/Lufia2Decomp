@@ -11527,3 +11527,35 @@ source = "src/title/title.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "86:8503"
+name = "Lufia2TitleApplyProductSign"
+source = "src/title/title.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:85C2"
+name = "Lufia2TitleSpawnObjectParticle"
+source = "src/title/title.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "80:8450"
+name = "Lufia2SineAngle"
+source = "src/system/math.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "80:8486"
+name = "Lufia2CosineAngle"
+source = "src/system/math.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"

@@ -46,12 +46,9 @@ static uint8_t QuarterSine(const Lufia2Memory *memory, uint8_t step) {
 }
 
 /* PHX/PHY/PHP/SEP #$30 */
-static void TrigEnter(
+static void SaveTrigRegisters(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t return_bank,
-    uint16_t return_address) {
-    SimulateJslFrame(memory, cpu, return_bank, return_address);
+    Lufia2CpuState *cpu) {
     PushIndex(memory, cpu);
     PushY(memory, cpu);
     Push8(memory, cpu, PackStatus(cpu));
@@ -60,7 +57,7 @@ static void TrigEnter(
 }
 
 /* PLP/PLY/PLX/RTL with the result in A. */
-static void TrigLeave(
+static void RestoreTrigRegisters(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint8_t value) {
@@ -68,19 +65,16 @@ static void TrigLeave(
     UnpackStatus(cpu, Pull8(memory, cpu));
     cpu->y = PullIndexValue(memory, cpu);
     cpu->x = PullIndexValue(memory, cpu);
-    SimulateRtlFrame(memory, cpu);
 }
 
 /* $80:8450: sine of angle A (180 steps per turn); bit 7 = minus. */
-void Lufia2CallSine(
+static void CalculateSine(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
-    uint8_t return_bank,
-    uint16_t return_address) {
-    const uint8_t angle = A8(cpu);
+    uint8_t angle) {
     uint8_t value;
 
-    TrigEnter(memory, cpu, return_bank, return_address);
+    SaveTrigRegisters(memory, cpu);
     if (angle < 0x2du)                                         /* 8455 */
         value = QuarterSine(memory, angle);
     else if (angle < 0x5au)
@@ -89,19 +83,26 @@ void Lufia2CallSine(
         value = (uint8_t)(QuarterSine(memory, (uint8_t)(angle - 0x5au)) | 0x80u);
     else
         value = (uint8_t)(QuarterSine(memory, (uint8_t)(0xb4u - angle)) | 0x80u);
-    TrigLeave(memory, cpu, value);
+    RestoreTrigRegisters(memory, cpu, value);
 }
 
+void Lufia2CallSine(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                    uint8_t return_bank, uint16_t return_address) {
+    const uint8_t angle = A8(cpu);
+    SimulateJslFrame(memory, cpu, return_bank, return_address);
+    CalculateSine(memory, cpu, angle);
+    SimulateRtlFrame(memory, cpu);
+}
+
+
 /* $80:8486: cosine of angle A (180 steps per turn); bit 7 = minus. */
-void Lufia2CallCosine(
+static void CalculateCosine(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
-    uint8_t return_bank,
-    uint16_t return_address) {
-    const uint8_t angle = A8(cpu);
+    uint8_t angle) {
     uint8_t value;
 
-    TrigEnter(memory, cpu, return_bank, return_address);
+    SaveTrigRegisters(memory, cpu);
     if (angle < 0x2du)                                         /* 848B */
         value = QuarterSine(memory, (uint8_t)(0x2du - angle));
     else if (angle < 0x5au)
@@ -110,8 +111,17 @@ void Lufia2CallCosine(
         value = (uint8_t)(QuarterSine(memory, (uint8_t)(0x87u - angle)) | 0x80u);
     else
         value = QuarterSine(memory, (uint8_t)(angle - 0x87u));
-    TrigLeave(memory, cpu, value);
+    RestoreTrigRegisters(memory, cpu, value);
 }
+
+void Lufia2CallCosine(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                    uint8_t return_bank, uint16_t return_address) {
+    const uint8_t angle = A8(cpu);
+    SimulateJslFrame(memory, cpu, return_bank, return_address);
+    CalculateCosine(memory, cpu, angle);
+    SimulateRtlFrame(memory, cpu);
+}
+
 
 /* $80:8378: $4E = $4E / $51, A = remainder; 16 shift-subtract steps. */
 Lufia2ExecutionResult Lufia2Divide16(
@@ -180,4 +190,24 @@ Lufia2ExecutionResult Lufia2DecimalDigits3(
     SetAccumulatorWidth(cpu, 1);
     StoreADirect8(memory, cpu, 0xb2u);
     return ExecutionReturned(0x81e834u);
+}
+
+static bool TrigEntrySupported(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x80u && !cpu->direct_page && !cpu->decimal;
+}
+
+Lufia2ExecutionResult Lufia2SineAngle(const Lufia2Memory *memory,
+                                            Lufia2CpuState *cpu) {
+    if (!TrigEntrySupported(cpu))
+        return ExecutionHandoff(cpu, 0x808450u);
+    CalculateSine(memory, cpu, A8(cpu));
+    return ExecutionReturned(0x808485u);
+}
+
+Lufia2ExecutionResult Lufia2CosineAngle(const Lufia2Memory *memory,
+                                            Lufia2CpuState *cpu) {
+    if (!TrigEntrySupported(cpu))
+        return ExecutionHandoff(cpu, 0x808486u);
+    CalculateCosine(memory, cpu, A8(cpu));
+    return ExecutionReturned(0x8084beu);
 }

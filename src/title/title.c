@@ -425,7 +425,7 @@ Lufia2ExecutionResult Lufia2TitleParticleSprites(
 enum {
     TITLE_OBJECT = WRAM_TITLE_OBJECT_RECORD_POINTER,
     TITLE_OBJECT_SPRITE = WRAM_TITLE_SPRITE_RECORD_POINTER,
-    TITLE_OBJECT_PARTICLES = 0x15beu,
+    TITLE_OBJECT_PARTICLES = WRAM_TITLE_PARTICLE_POOL_POINTER,
     TITLE_SIGNS = 0x1583u,
     TITLE_PRODUCT = 0x1575u,
     TITLE_PARTICLE_SLOTS = 0x18u,
@@ -482,6 +482,16 @@ static void TitleTrigMagnitude(
     StoreAAbsolute16(memory, cpu, WRAM_SYSTEM_MULTIPLY_A, 0);
 }
 
+static void TitleApplyProductSign(const Lufia2Memory *memory,
+                                  Lufia2CpuState *cpu) {
+    LsrAbsolute16(memory, cpu, TITLE_SIGNS);                   /* 8503 */
+    if (cpu->carry) {
+        LoadA16(cpu, (uint16_t)(~TitleWord(memory, cpu, TITLE_PRODUCT)));
+        IncrementA16(cpu);
+        StoreAAbsolute16(memory, cpu, TITLE_PRODUCT, 0);
+    }
+}
+
 /* $82:8000 then $86:8503: $1575 = signed magnitude * factor. */
 static void TitleSignedProduct(
     const Lufia2Memory *memory,
@@ -491,12 +501,7 @@ static void TitleSignedProduct(
     StoreAAbsolute16(memory, cpu, WRAM_SYSTEM_MULTIPLY_B, 0);
     Lufia2CallMultiply(memory, cpu, 0x86u, multiply_return);
     SimulateJsrFrame(memory, cpu, sign_return);
-    LsrAbsolute16(memory, cpu, TITLE_SIGNS);                   /* 8503 */
-    if (cpu->carry) {
-        LoadA16(cpu, (uint16_t)(~TitleWord(memory, cpu, TITLE_PRODUCT)));
-        IncrementA16(cpu);
-        StoreAAbsolute16(memory, cpu, TITLE_PRODUCT, 0);
-    }
+    TitleApplyProductSign(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -1121,4 +1126,21 @@ Lufia2ExecutionResult Lufia2TitleActivateObject(const Lufia2Memory *memory,
             return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, sites[step],
                                            0u};
     return ExecutionReturned(0x868694u);
+}
+
+Lufia2ExecutionResult Lufia2TitleApplyProductSign(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x86u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x868503u);
+    TitleApplyProductSign(memory, cpu);
+    return ExecutionReturned(0x868512u);
+}
+
+Lufia2ExecutionResult Lufia2TitleSpawnObjectParticle(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!TitleRecordEntrySupported(cpu))
+        return ExecutionHandoff(cpu, 0x8685c2u);
+    TitleObjectSpawn(memory, cpu);
+    return ExecutionReturned(0x868636u);
 }

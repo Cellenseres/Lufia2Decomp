@@ -5787,3 +5787,10 @@ name = "title_sprite_record_pointer"
 width = 2
 owner = "title"
 notes = "Current title sprite pointer; 86:8513/866A use the live data bank, observed7E."
+
+[[location]]
+address = "7E:15BE"
+name = "title_particle_pool_pointer"
+width = 2
+owner = "title"
+notes = "Current title particle-pool pointer;86:85C2 uses the live data bank, observed7E."

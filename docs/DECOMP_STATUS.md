@@ -1,3 +1,45 @@
+# Title geometry entry boundaries - 2026-10-15
+
+Four original entry contracts now reuse existing semantic implementations:
+86:8503 applies a product sign, 86:85C2 spawns a title particle, and
+80:8450/8486 calculate sine/cosine through the original ROM table. The sign
+operation and trig save/calculate/restore phases are shared once. Existing
+pushed-call APIs retain their original frames; no ROM data is embedded.
+The particle-pool pointer at 15BE is catalogued. The 85EB fallthrough is
+not counted as another function.
+
+Sign correction enters/exits M0X0. Particle spawning enters M1X0 and
+restores live saved status. Trig supports all four width combinations;
+M1X0 is its canonical metadata entry and exits are dynamic. The original
+ROM accesses for angles 180..255 remain; no input clamping is introduced.
+Binary arithmetic/DP0 and original data-bank addressing are preserved.
+
+Seven actual-source jobs cover 705,536 original-ROM states and 705,536
+actual adapter states, plus 32,768 original JSL/RTL caller compositions.
+CPU/full WRAM/MMIO and ordered bus accesses agree. All 24 free particle
+positions, exhaustion/inactive cases, saved-status aliases and eleven
+altered return targets are covered. There are 24,576 consumer guards and
+263,170 C++ guards. Seven C, four bridge and six memory-only ROM faults
+are detected, with four positive replacement/proxy baselines.
+All 1,427 metadata addresses and function names are unique; each has
+exactly one definition in the current archive. All 1,421 bindings are unique.
+
+All 1,957 regression jobs, strict C11 across 429 units and normal Release
+pass. Eight real generated-table original/native pairs agree at literal
+JSR/JSL caller waits, including mixed widths. Boot/reset/intro/real audio
+passes over 4,680 frames and ninety snapshot replay frames. Sign/trig
+entries are observed natively, with zero own interpreted instructions.
+Spawning can have zero normal boot hits because the native title-object
+parent already contains it internally. Binding count alone proves no
+additional speedup; no whole-game or original/native timing claim is made.
+
+The regression relinks 1,592 hashed historical object graphs with the
+current library and rebuilds the repaired fade, eighteen battle, six prior
+title, fifteen default-record and seven title-object fixtures. There remain
+194 absent historical fixture-source paths. No complete clean-source
+historical rebuild is claimed. The six intentional timing/startup owners
+remain verified without runtime bindings.
+
 # Title object activation - 2026-10-15
 
 Three additional original entries are verified and selected natively:
@@ -1043,7 +1085,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1423 functions in `metadata/functions.toml`: 1423 verified, 0 draft, 0 identified, 0 disabled.
+1427 functions in `metadata/functions.toml`: 1427 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
