@@ -146,4 +146,6 @@ void Lufia2SignExtendA8Body(Lufia2CpuState *cpu);
 void Lufia2ActorReadSpriteDescriptorBody(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+void Lufia2ObjectLoadSecondaryScript(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #endif

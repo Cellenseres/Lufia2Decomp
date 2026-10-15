@@ -67,7 +67,7 @@ static uint8_t SpawnRadialObject(void *context, Lufia2CpuState *cpu, uint32_t ta
     return 1u;
 }
 
-static void ScaleSceneCoordinates(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+void Lufia2TextScaleSceneCoordinates(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                   uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
     OpPushX(memory, cpu);
@@ -105,7 +105,7 @@ static uint32_t ReadRadialOrigin(const Lufia2Memory *memory, Lufia2CpuState *cpu
         const uint32_t handoff = Lufia2TextReadSceneCell(memory, cpu, 0xaa0du);
         if (handoff)
             return handoff;
-        ScaleSceneCoordinates(memory, cpu, 0xaa10u);
+        Lufia2TextScaleSceneCoordinates(memory, cpu, 0xaa10u);
         OpRepWidths(cpu, 0x20u);
         OpLda(memory, cpu, OpAbs(cpu, SCENE_FINE_POSITION));
         OpSta(memory, cpu, OpDp(cpu, DP_RADIAL_X));
@@ -186,7 +186,7 @@ static uint32_t SpawnObjectAtPosition(const Lufia2Memory *memory, Lufia2CpuState
         OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_SPAWN_WORD_OFFSET)));
         OpWriteX(memory, cpu, OpDp(cpu, DP_SLOT_WORD_OFFSET), cpu->x);
     }
-    ScaleSceneCoordinates(memory, cpu, 0xb28fu);
+    Lufia2TextScaleSceneCoordinates(memory, cpu, 0xb28fu);
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_SLOT_WORD_OFFSET)));
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpAbs(cpu, SCENE_FINE_POSITION));

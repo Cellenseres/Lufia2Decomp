@@ -24,7 +24,7 @@ void Lufia2ActorRecordOffsets(
 }
 
 /* $83:DFFD: script pointer from table $91:8EC7. */
-static void SecondarySpawnScript(
+void Lufia2ObjectLoadSecondaryScript(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);                               /* DFFD */
@@ -77,7 +77,7 @@ static void SecondarySpawnInit(
     TransferDirectToA(cpu);                                    /* DFF5 */
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     SimulateJslFrame(memory, cpu, 0x83u, 0xdffbu);
-    SecondarySpawnScript(memory, cpu);
+    Lufia2ObjectLoadSecondaryScript(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 

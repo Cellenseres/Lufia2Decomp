@@ -1570,6 +1570,23 @@ static unsigned TextScriptOpcode(
         return TEXT_OPCODE_HANDOFF;
     }
 
+    const uint32_t object_flow = Lufia2TextExecuteObjectCommand(memory, cpu, handler);
+    if (object_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (object_flow == LUFIA2_TEXT_COMMAND_YIELD)
+        return TEXT_OPCODE_EXIT;
+    if (object_flow) {
+        *handoff = object_flow;
+        return TEXT_OPCODE_HANDOFF;
+    }
+    const uint32_t camera_flow = Lufia2TextExecuteCameraCommand(memory, cpu, handler);
+    if (camera_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (camera_flow) {
+        *handoff = camera_flow;
+        return TEXT_OPCODE_HANDOFF;
+    }
+
     for (i = 0; i < 11u; ++i) {
         if (handler != kTextByteStores[i].handler)
             continue;
