@@ -11,6 +11,7 @@
 #include "field/field_internal.h"
 #include "lufia2/text.h"
 #include "system/dp_scratch.h"
+#include "system/gold_internal.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
 
@@ -55,8 +56,6 @@ enum {
     TEXT_MUSIC_COPY = 0x7fd0fdu,
     TEXT_WAIT_FRAMES = 0x7fd0fcu,
     TEXT_UNK_7FD4F7 = 0x7fd4f7u,
-    GOLD_CAP_LOW = 0x967fu, /* $98967F is 9,999,999 */
-    GOLD_CAP_HIGH = 0x98u,
 };
 
 /* $80:C0B7: next text byte from DB:Y; Y past $FFFF moves the bank. */
@@ -408,62 +407,10 @@ static const struct {
                          {0xb696u, TEXT_PRINT_DELAY},      /* $CB print delay */
                          {0xb2a7u, 0x7ff8a0u}};            /* $74 */
 
-/* $80:BF12/$80:BF43: gold $0A8A-$0A8C +/- A, capped/undone. */
-static void TextGold(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t add,
-    uint16_t return_address) {
+static void TextGold(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                     uint8_t add, uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    Push8(memory, cpu, PackStatus(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    if (add) {
-        cpu->carry = 0;                                        /* BF15 */
-        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_GOLD, 0));
-        Write16Absolute(memory, cpu, WRAM_GOLD, cpu->accumulator);
-        SetAccumulatorWidth(cpu, 1);
-        LoadAAbsolute8(memory, cpu, (WRAM_GOLD + 2u), 0);
-        Adc8(cpu, 0x00u);
-        StoreAAbsolute8(memory, cpu, (WRAM_GOLD + 2u), 0);
-        Compare8(cpu, A8(cpu), GOLD_CAP_HIGH);
-        if (cpu->carry) {
-            SetAccumulatorWidth(cpu, 0);
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_GOLD, 0));
-            Compare16(cpu, cpu->accumulator, GOLD_CAP_LOW);
-            if (cpu->carry) {
-                LoadA16(cpu, GOLD_CAP_LOW); /* 9,999,999 */
-                Write16Absolute(memory, cpu, WRAM_GOLD, cpu->accumulator);
-                SetAccumulatorWidth(cpu, 1);
-                StoreAImmediate8(memory, cpu, GOLD_CAP_HIGH, WRAM_GOLD + 2u);
-            }
-        }
-    } else {
-        Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator); /* BF46 */
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_GOLD, 0));
-        cpu->carry = 1;
-        Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_A));
-        Write16Absolute(memory, cpu, WRAM_GOLD, cpu->accumulator);
-        SetAccumulatorWidth(cpu, 1);
-        LoadAAbsolute8(memory, cpu, (WRAM_GOLD + 2u), 0);
-        Sbc8(cpu, 0x00u);
-        StoreAAbsolute8(memory, cpu, (WRAM_GOLD + 2u), 0);
-        if (!cpu->carry) {
-            uint8_t high;
-
-            SetAccumulatorWidth(cpu, 0);                       /* undo */
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_GOLD, 0));
-            cpu->carry = 0;
-            Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
-            Write16Absolute(memory, cpu, WRAM_GOLD, cpu->accumulator);
-            SetAccumulatorWidth(cpu, 1);
-            high = (uint8_t)(Read8(memory,
-                                   AbsoluteIndexedAddress(cpu, (WRAM_GOLD + 2u), 0)) +
-                             1u);
-            Write8(memory, AbsoluteIndexedAddress(cpu, (WRAM_GOLD + 2u), 0), high);
-            SetNz8(cpu, high);
-        }
-    }
-    UnpackStatus(cpu, Pull8(memory, cpu));
+    Lufia2ChangeGold(memory, cpu, add != 0u);
     SimulateRtsFrame(memory, cpu);
 }
 
