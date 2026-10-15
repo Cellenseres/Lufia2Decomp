@@ -100,7 +100,7 @@ static void SetSceneEffect(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpTestBits(memory, cpu, OpAbs(cpu, SCENE_EFFECT_FLAGS), true);
 }
 
-static uint32_t RunSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static uint16_t ReadSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Lufia2TextNextByte(memory, cpu, 0xba3bu);
     ExchangeAccumulatorBytes(cpu);
     OpLoadA(cpu, 0u);
@@ -110,16 +110,25 @@ static uint32_t RunSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cp
     const uint16_t target =
         Read16Bank(memory, 0x80u, (uint16_t)(ROM_SCENE_OPERATIONS + cpu->x));
     SimulateJsrFrame(memory, cpu, 0xba44u);
+    return target;
+}
+
+static uint32_t FinishSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateRtsFrame(memory, cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS));
+    OpBitValue(cpu, 0x40u);
+    if (cpu->zero)
+        return LUFIA2_TEXT_COMMAND_NEXT;
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
+    return LUFIA2_TEXT_COMMAND_YIELD;
+}
+
+static uint32_t StartSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                    uint16_t target) {
     switch (target) {
     case 0xbb70u:
         SetSceneEffect(memory, cpu);
-        SimulateRtsFrame(memory, cpu);
-        OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS));
-        OpBitValue(cpu, 0x40u);
-        if (cpu->zero)
-            return LUFIA2_TEXT_COMMAND_NEXT;
-        OpStz(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
-        return LUFIA2_TEXT_COMMAND_YIELD;
+        return FinishSceneOperation(memory, cpu);
     case 0xbb94u:
         PushY(memory, cpu);
         PushDataBank(memory, cpu);
@@ -162,6 +171,27 @@ static uint32_t RunSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cp
     }
 }
 
+Lufia2ExecutionResult Lufia2TextRunSceneOperation(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80ba39u);
+    const uint16_t target = ReadSceneOperation(memory, cpu);
+    if (target == 0xba97u || target == 0xbaa2u || target == 0xbaf1u) {
+        const Lufia2ExecutionResult result =
+            Lufia2TextSceneDisplayCallback(memory, cpu, target, child, context);
+        if (result.flow != LUFIA2_EXECUTION_RETURNED)
+            return result;
+        return ExecutionReturned(FinishSceneOperation(memory, cpu));
+    }
+    const uint32_t next = StartSceneOperation(memory, cpu, target);
+    if (next == LUFIA2_TEXT_COMMAND_NEXT || next == LUFIA2_TEXT_COMMAND_YIELD)
+        return ExecutionReturned(next);
+    return ExecutionHandoff(cpu, next);
+}
+
 uint32_t Lufia2TextExecuteCaveCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                       uint16_t handler) {
     if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
@@ -172,7 +202,7 @@ uint32_t Lufia2TextExecuteCaveCommand(const Lufia2Memory *memory, Lufia2CpuState
     case TRANSITION_CAVE:
         return TransitionCave(memory, cpu);
     case RUN_SCENE_OPERATION:
-        return RunSceneOperation(memory, cpu);
+        return StartSceneOperation(memory, cpu, ReadSceneOperation(memory, cpu));
     default:
         return 0u;
     }

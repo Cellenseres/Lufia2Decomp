@@ -10,6 +10,14 @@ Lufia2ExecutionResult Lufia2TextRecoverParty(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2TextRunSceneOperation(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2TextSceneDisplayCallback(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t target,
+    Lufia2PushedChildCall child, void *context);
+
 bool Lufia2TextExecuteStateCommand(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t handler);
 uint32_t Lufia2TextExecuteScriptCommand(const Lufia2Memory *memory,

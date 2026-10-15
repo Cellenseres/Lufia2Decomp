@@ -1513,6 +1513,17 @@ static unsigned TextScriptOpcode(
         *handoff = services->result.pc;
         return TEXT_OPCODE_HANDOFF;
     }
+    if (handler == 0xba39u && services->child) {
+        services->result = Lufia2TextRunSceneOperation(
+            memory, cpu, services->child, services->context);
+        if (services->result.flow == LUFIA2_EXECUTION_RETURNED)
+            return services->result.pc == LUFIA2_TEXT_COMMAND_YIELD ?
+                TEXT_OPCODE_EXIT : TEXT_OPCODE_NEXT;
+        if (services->result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
+            return TEXT_OPCODE_CHILD_UNWOUND;
+        *handoff = services->result.pc;
+        return TEXT_OPCODE_HANDOFF;
+    }
 
     const uint32_t cave_flow = Lufia2TextExecuteCaveCommand(memory, cpu, handler);
     if (cave_flow == LUFIA2_TEXT_COMMAND_NEXT)
