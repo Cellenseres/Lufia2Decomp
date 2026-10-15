@@ -434,6 +434,9 @@ void Lufia2EventFindActorId(
     Lufia2CpuState *cpu,
     uint16_t return_address);
 
+void Lufia2EventMoveActorTo(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address);
+
 /* $83:8B40: map object A into $7F:D04A/D04C/D05F; 0 = handoff. */
 uint8_t Lufia2EventMapObject(
     const Lufia2Memory *memory,

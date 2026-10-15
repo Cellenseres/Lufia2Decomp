@@ -1,5 +1,6 @@
 #include "actor/actor_internal.h"
 #include "core/cpu_ops.h"
+#include "field/event_script_internal.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
 
@@ -13,9 +14,17 @@ enum {
     WAIT_ALL_ACTOR_MOTION = 0xa6e7u,
     REFRESH_ACTOR_SCRIPTS = 0xa6c2u,
     RESTART_ACTOR_SCRIPT = 0xa7bbu,
+    SET_ACTOR_POSITION = 0xa71bu,
+    SET_PRESENTATION = 0xac8au,
+    REQUEST_PRESENTATION = 0xacbdu,
+    CLEAR_PRESENTATION_REQUEST = 0xace2u,
     ACTOR_COUNT = 40u,
     ROM_FACING_TABLE = 0x80a7b6u,
-    DP_MOTION_FLAGS = 0x54u
+    DP_MOTION_FLAGS = 0x54u,
+    DP_POSITION_X = 0x54u,
+    DP_POSITION_Y = 0x56u,
+    DP_PRESENTATION_ACTOR = 0x56u,
+    DP_PRESENTATION_VALUE = 0x57u
 };
 
 static void FindActor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
@@ -203,6 +212,57 @@ static void RestartActorScript(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     LoadPrimaryScript(memory, cpu, 0xa80bu);
 }
 
+static void SetActorPosition(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SelectActor(memory, cpu, SET_ACTOR_POSITION);
+    Lufia2TextNextByte(memory, cpu, 0xa724u);
+    OpSta(memory, cpu, OpDp(cpu, DP_POSITION_X));
+    Lufia2TextNextByte(memory, cpu, 0xa729u);
+    OpSta(memory, cpu, OpDp(cpu, DP_POSITION_Y));
+    Lufia2EventMoveActorTo(memory, cpu, 0xa749u);
+}
+
+static void SetPresentation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2TextNextByte(memory, cpu, 0xac8cu);
+    OpSta(memory, cpu, OpDp(cpu, DP_PRESENTATION_ACTOR));
+    Lufia2TextNextByte(memory, cpu, 0xac91u);
+    OpSta(memory, cpu, OpDp(cpu, DP_PRESENTATION_VALUE));
+    OpLda(memory, cpu, OpDp(cpu, DP_PRESENTATION_ACTOR));
+    Lufia2EventFindActorId(memory, cpu, 0xac99u);
+    if (!cpu->carry) {
+        LoadActorSlot(memory, cpu);
+        OpLda(memory, cpu, OpDp(cpu, DP_PRESENTATION_VALUE));
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE316));
+    }
+}
+
+static void RequestPresentation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2TextNextByte(memory, cpu, 0xacbfu);
+    Lufia2EventFindActorId(memory, cpu, 0xacc3u);
+    if (cpu->carry) {
+        Lufia2TextNextByte(memory, cpu, 0xacdeu);
+        return;
+    }
+    LoadActorSlot(memory, cpu);
+    Lufia2TextNextByte(memory, cpu, 0xaccau);
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_ACTOR_SECONDARY_TIMER));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FLAGS));
+    OpOraValue(cpu, 0x80u);
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FLAGS));
+}
+
+static void ClearPresentationRequest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2TextNextByte(memory, cpu, 0xace4u);
+    Lufia2EventFindActorId(memory, cpu, 0xace8u);
+    if (cpu->carry)
+        return;
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FLAGS));
+    OpAndValue(cpu, 0x7fu);
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_ACTOR_FLAGS));
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE316));
+    OpAndValue(cpu, 0x7fu);
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE316));
+}
+
 Lufia2TextCommandFlow Lufia2TextExecuteActorCommand(const Lufia2Memory *memory,
                                                     Lufia2CpuState *cpu,
                                                     uint16_t handler) {
@@ -234,6 +294,18 @@ Lufia2TextCommandFlow Lufia2TextExecuteActorCommand(const Lufia2Memory *memory,
         break;
     case RESTART_ACTOR_SCRIPT:
         RestartActorScript(memory, cpu);
+        break;
+    case SET_ACTOR_POSITION:
+        SetActorPosition(memory, cpu);
+        break;
+    case SET_PRESENTATION:
+        SetPresentation(memory, cpu);
+        break;
+    case REQUEST_PRESENTATION:
+        RequestPresentation(memory, cpu);
+        break;
+    case CLEAR_PRESENTATION_REQUEST:
+        ClearPresentationRequest(memory, cpu);
         break;
     default:
         return LUFIA2_TEXT_COMMAND_UNHANDLED;

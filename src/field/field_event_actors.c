@@ -1639,24 +1639,9 @@ static void EventSetActorPosition(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $BC: move listed actor n to a position. */
-static unsigned EventOpMoveActorTo(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t *handoff) {
-    EventSaveSlot(memory, cpu, 0xcea2u);                       /* CEA0 */
-    Lufia2EventNextByte(memory, cpu, 0xcea5u);
-    cpu->carry = 0;
-    Adc8(cpu, 0x4fu);
-    Lufia2EventFindActorId(memory, cpu, 0xceacu);
-    Lufia2EventNextByte(memory, cpu, 0xceafu);
-    Lufia2EventValue(memory, cpu, 0xceb2u);
-    if (!Lufia2EventPosition(memory, cpu, 0xceb5u, handoff))
-        return EVENT_OPCODE_HANDOFF;
-    StoreADirect8(memory, cpu, DP_SCRATCH_A); /* CEB6 */
-    ExchangeAccumulatorBytes(cpu);
-    StoreADirect8(memory, cpu, DP_SCRATCH_C);
-    SimulateJslFrame(memory, cpu, 0x80u, 0xcebeu);
+void Lufia2EventMoveActorTo(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
     SimulateJslFrame(memory, cpu, 0x80u, 0xa750u);             /* A74D */
     cpu->program_bank = 0x83u;
     Lufia2ActorClearMapOccupancy(memory, cpu);                 /* $83:FA12 */
@@ -1704,6 +1689,26 @@ static unsigned EventOpMoveActorTo(
     cpu->program_bank = 0x80u;
     SimulateRtlFrame(memory, cpu);
     SimulateRtlFrame(memory, cpu);                             /* A793 */
+}
+
+/* $BC: move listed actor n to a position. */
+static unsigned EventOpMoveActorTo(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
+    EventSaveSlot(memory, cpu, 0xcea2u);                       /* CEA0 */
+    Lufia2EventNextByte(memory, cpu, 0xcea5u);
+    cpu->carry = 0;
+    Adc8(cpu, 0x4fu);
+    Lufia2EventFindActorId(memory, cpu, 0xceacu);
+    Lufia2EventNextByte(memory, cpu, 0xceafu);
+    Lufia2EventValue(memory, cpu, 0xceb2u);
+    if (!Lufia2EventPosition(memory, cpu, 0xceb5u, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    StoreADirect8(memory, cpu, DP_SCRATCH_A); /* CEB6 */
+    ExchangeAccumulatorBytes(cpu);
+    StoreADirect8(memory, cpu, DP_SCRATCH_C);
+    Lufia2EventMoveActorTo(memory, cpu, 0xcebeu);
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* CEBF */
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     And8(cpu, 0xfeu);

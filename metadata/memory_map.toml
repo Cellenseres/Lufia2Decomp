@@ -415,7 +415,7 @@ name = "unk_7FE316"
 width = 1
 count = 40
 owner = "actor"
-notes = "Per-slot flags; $83:D508 toggles bit 7 when its countdown reloads, and several action starts set it."
+notes = "Per-slot flags; $83:D508 toggles bit7 when its countdown reloads, and several action starts set it. TextB6 writes the byte after raw actor-ID lookup; textB0 clears bit7."
 
 [[location]]
 address = "7F:E35E"
@@ -423,7 +423,7 @@ name = "actor_secondary_timer"
 width = 1
 count = 40
 owner = "actor"
-notes = "$83:D508 countdown: low nibble counts down, the high nibble reloads it."
+notes = "$83:D508 countdown: low nibble counts down, the high nibble reloads it. TextAF stores a byte and sets0736bit7; textB0 clears0736bit7 andE316bit7."
 
 [[location]]
 address = "7F:E3C6"
