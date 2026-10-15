@@ -50,6 +50,18 @@ uint32_t Lufia2TextReadSceneCell(const Lufia2Memory *memory, Lufia2CpuState *cpu
     return 0u;
 }
 
+uint32_t Lufia2TextReadScenePair(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint16_t return_address) {
+    SceneCellSearch search = {memory, 0u};
+    SimulateJsrFrame(memory, cpu, return_address);
+    const Lufia2ExecutionResult result =
+        Lufia2SceneReadActorPair(memory, cpu, SearchSceneCell, &search);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return search.handoff ? search.handoff : result.pc;
+    SimulateRtsFrame(memory, cpu);
+    return 0u;
+}
+
 static void PlaceActorAtSceneCell(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E120A));
     OpSta(memory, cpu, OpDp(cpu, DP_POSITION_X));

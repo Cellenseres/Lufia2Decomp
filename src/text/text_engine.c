@@ -1570,6 +1570,23 @@ static unsigned TextScriptOpcode(
         return TEXT_OPCODE_HANDOFF;
     }
 
+    const uint32_t render_flow = Lufia2TextExecuteRenderCommand(memory, cpu, handler);
+    if (render_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (render_flow == LUFIA2_TEXT_COMMAND_YIELD)
+        return TEXT_OPCODE_EXIT;
+    if (render_flow) {
+        *handoff = render_flow;
+        return TEXT_OPCODE_HANDOFF;
+    }
+    const uint32_t tile_flow = Lufia2TextExecuteTileCommand(memory, cpu, handler);
+    if (tile_flow == LUFIA2_TEXT_COMMAND_NEXT)
+        return TEXT_OPCODE_NEXT;
+    if (tile_flow) {
+        *handoff = tile_flow;
+        return TEXT_OPCODE_HANDOFF;
+    }
+
     const uint32_t system_flow = Lufia2TextExecuteSystemCommand(memory, cpu, handler);
     if (system_flow == LUFIA2_TEXT_COMMAND_NEXT)
         return TEXT_OPCODE_NEXT;

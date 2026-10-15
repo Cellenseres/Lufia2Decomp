@@ -443,6 +443,8 @@ add_library(lufia2_decomp STATIC
     src/text/text_color_commands.c
     src/text/text_party_commands.c
     src/text/text_system_commands.c
+    src/text/text_render_commands.c
+    src/text/text_tile_commands.c
     src/text/text_conditions.c
     src/text/text_layout.c
     src/text/text_window.c
