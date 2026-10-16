@@ -12545,3 +12545,107 @@ source = "src/world/world_scene_motion.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:B454"
+name = "Lufia2WorldMapGrowSceneWindow"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B47E"
+name = "Lufia2WorldMapRotateSceneWindow"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B4BE"
+name = "Lufia2WorldMapContractSceneWindow"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B4F2"
+name = "Lufia2WorldMapSubmitPhasedSceneWindow"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B508"
+name = "Lufia2WorldMapContractSceneCircle"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B748"
+name = "Lufia2WorldMapStepLayeredSceneWindows"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B7CF"
+name = "Lufia2WorldMapStopWindowSparkEmission"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B7D3"
+name = "Lufia2WorldMapBeginWindowColorPulse"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B7D5"
+name = "Lufia2WorldMapRestartWindowColorPulse"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B7DF"
+name = "Lufia2WorldMapLoadLayeredSceneWindow0"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B7F7"
+name = "Lufia2WorldMapLoadLayeredSceneWindow1"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B7FE"
+name = "Lufia2WorldMapLoadLayeredSceneWindow2"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B350"
+name = "Lufia2WorldMapCycleScenePaletteFade"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
