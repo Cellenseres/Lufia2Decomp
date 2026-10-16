@@ -19,6 +19,8 @@ enum {
     ITEM_REWARD_ID = 0x7fd4efu,
     ITEM_REWARD_PAGE = 0x7fd4f0u,
     ITEM_REWARD_COUNT = 0x7fd4f1u,
+    ITEM_REWARD_MENU_VALUE = WRAM_MENU_SELECTED_SPELL,
+    ITEM_REWARD_STEP_LIMIT = 4096u,
     DP_MENU_STATE = 0x30u,
     DP_MENU_PHASE = 0x31u,
     DP_MENU_FINISHED = 0x6au
@@ -241,21 +243,56 @@ static uint32_t GiveItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2TextNextByte(memory, cpu, 0xa434u);
     OpSta(memory, cpu, ITEM_REWARD_COUNT);
     PushY(memory, cpu);
-    OpRepWidths(cpu, 0x20u);
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_ITEM_QUANTITY));
-    OpLda(memory, cpu, ITEM_REWARD_ID);
-    OpSta(memory, cpu, OpAbs(cpu, 0x09cfu));
-    uint32_t handoff = CallMenuService(service, cpu, 0x8ec1c5u, 0xa44cu);
-    if (handoff)
-        return handoff;
-    OpSepWidths(cpu, 0x20u);
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpDp(cpu, DP_MENU_PHASE));
-    OpLoadA(cpu, 4u);
-    OpSta(memory, cpu, OpDp(cpu, DP_MENU_STATE));
-    handoff = CallMenuService(service, cpu, 0x82e746u, 0xa45au);
-    return handoff ? handoff : 0x80a45bu;
+    for (unsigned rewards = 0u; rewards < ITEM_REWARD_STEP_LIMIT; ++rewards) {
+        OpRepWidths(cpu, 0x20u);
+        OpLoadA(cpu, 1u);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_ITEM_QUANTITY));
+        OpLda(memory, cpu, ITEM_REWARD_ID);
+        OpSta(memory, cpu, OpAbs(cpu, ITEM_REWARD_MENU_VALUE));
+        uint32_t handoff = CallMenuService(service, cpu, 0x8ec1c5u, 0xa44cu);
+        if (handoff)
+            return handoff;
+        OpSepWidths(cpu, 0x20u);
+        OpLoadA(cpu, 1u);
+        OpSta(memory, cpu, OpDp(cpu, DP_MENU_PHASE));
+        OpLoadA(cpu, 4u);
+        OpSta(memory, cpu, OpDp(cpu, DP_MENU_STATE));
+        handoff = CallMenuService(service, cpu, 0x82e746u, 0xa45au);
+        if (handoff || !service->child)
+            return handoff ? handoff : 0x80a45bu;
+        LoadA16(cpu, cpu->direct_page);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E0562));
+        if (!cpu->accumulator_is_8_bit)
+            return 0x80a45fu;
+        OpLoadA(cpu, 0x0fu);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E0563));
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, ITEM_REWARD_MENU_VALUE)));
+        if (cpu->negative) {
+            PushDataBank(memory, cpu);
+            handoff = MenuCall(service, cpu, 0x80a350u, 0x80a46au, 2u);
+            if (handoff)
+                return handoff;
+            PullDataBank(memory, cpu);
+        }
+        OpLda(memory, cpu, ITEM_REWARD_COUNT);
+        OpDecA(cpu);
+        OpSta(memory, cpu, ITEM_REWARD_COUNT);
+        if (!cpu->zero)
+            continue;
+        if (!cpu->accumulator_is_8_bit)
+            return 0x80a479u;
+        OpLoadA(cpu, 0x80u);
+        OpTestBits(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE), true);
+        OpPullY(memory, cpu);
+        uint16_t back = Pull8(memory, cpu);
+        back |= (uint16_t)Pull8(memory, cpu) << 8;
+        const uint32_t next =
+            ((uint32_t)cpu->program_bank << 16) | (uint16_t)(back + 1u);
+        if (next != (second_page ? 0x80a428u : 0x80a41cu))
+            return next;
+        return LUFIA2_TEXT_COMMAND_NEXT;
+    }
+    return 0x80a43au;
 }
 
 static uint32_t StartBattle(const Lufia2Memory *memory, Lufia2CpuState *cpu,
@@ -320,6 +357,8 @@ Lufia2ExecutionResult Lufia2TextRunMenuCommand(const Lufia2Memory *memory,
                                                Lufia2PushedChildCall child,
                                                void *context) {
     switch (handler) {
+    case GIVE_ITEM_PAGE_ZERO:
+    case GIVE_ITEM_PAGE_ONE:
     case OPEN_SCENE_MENU:
     case OPEN_MAIN_MENU:
     case OPEN_SCRIPT_MENU:
