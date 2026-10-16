@@ -154,6 +154,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:D19F` | `Lufia2FieldRestoreRegionObjects` | verified | `src/field/field_event_object_region.c` |
 | `$80:D1E1` | `Lufia2FieldRemoveRegionObjects` | verified | `src/field/field_event_object_region.c` |
 | `$80:D227` | `Lufia2FieldMarkRegionObjects` | verified | `src/field/field_event_map_state.c` |
+| `$80:D533` | `Lufia2FieldSpawnActorsInArea` | verified | `src/field/field_area_spawn.c` |
+| `$80:D583` | `Lufia2FieldRandomAreaCoordinate` | verified | `src/field/field_area_spawn.c` |
 | `$80:D9F0` | `Lufia2FieldReadEventVariableOperands` | verified | `src/field/field_event_coordinate.c` |
 | `$80:DCDA` | `Lufia2FieldPushPendingObject` | verified | `src/field/field_event_objects.c` |
 | `$80:E722` | `Lufia2FieldStartEvent` | verified | `src/field/field_event_script.c` |

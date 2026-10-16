@@ -108,4 +108,6 @@ Lufia2ExecutionResult Lufia2FieldSectionSize(
 /* Bank $7F base of the tile and attribute planes. */
 #define FIELD_BANK_7F 0x7f0000u
 
+void Lufia2FieldSpawnAreaBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #endif

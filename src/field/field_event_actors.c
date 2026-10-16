@@ -1508,45 +1508,12 @@ static unsigned EventOpHideActor(const Lufia2Memory *memory, Lufia2CpuState *cpu
     return EVENT_OPCODE_NEXT;
 }
 
-/* $80:D583: 16 * (A + random(B)) + random(16) in A; leaves M=0. */
-static void EventRandomCoordinate(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
-    StoreADirect8(memory, cpu, DP_SCRATCH_A); /* D583 */
-    ExchangeAccumulatorBytes(cpu);
-    SimulateJslFrame(memory, cpu, 0x80u, 0xd589u);
-    Lufia2RandomScale(memory, cpu);                            /* $80:8299 */
-    SimulateRtlFrame(memory, cpu);
-    StoreADirect8(memory, cpu, DP_SCRATCH_B);
-    LoadA8(cpu, 0x10u);
-    SimulateJslFrame(memory, cpu, 0x80u, 0xd591u);
-    Lufia2RandomScale(memory, cpu);
-    SimulateRtlFrame(memory, cpu);
-    StoreADirect8(memory, cpu, DP_SCRATCH_C);
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_D), 0x00u);
-    TransferDirectToA(cpu);                                    /* D596 */
-    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
-    cpu->carry = 0;
-    Adc8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
-    SetAccumulatorWidth(cpu, 0);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
-    SimulateRtsFrame(memory, cpu);
-}
-
 /* $78: spawn actors at random positions in an area. */
 static unsigned EventOpSpawnInArea(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint32_t *handoff) {
-    unsigned axis;
-
-    Lufia2EventNextByte(memory, cpu, 0xd518u);                 /* D516 */
+    Lufia2EventNextByte(memory, cpu, 0xd518u); /* D516 */
     Lufia2EventValue(memory, cpu, 0xd51bu);
     if (!Lufia2EventArea(memory, cpu, 0xd51eu, handoff))
         return EVENT_OPCODE_HANDOFF;
@@ -1556,51 +1523,7 @@ static unsigned EventOpSpawnInArea(
     Lufia2EventValue(memory, cpu, 0xd529u);
     StoreADirect8(memory, cpu, 0x01u);
     SimulateJslFrame(memory, cpu, 0x80u, 0xd52fu);
-    TransferDirectToA(cpu);                                    /* D533 */
-    for (axis = 0; axis < 2u; ++axis) {
-        LoadA8(cpu, DirectByte(memory, cpu, (uint8_t)(0xa1u + axis)));
-        cpu->carry = 1;
-        Sbc8(cpu, DirectByte(memory, cpu, (uint8_t)(0x9fu + axis)));
-        DecrementA8(cpu);
-        StoreADirect8(memory, cpu, (uint8_t)(0xa1u + axis));
-    }
-    LoadA8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));
-    PushAccumulator8(memory, cpu);
-    do {
-        uint8_t count;
-
-        for (axis = 0; axis < 2u; ++axis) {
-            LoadA8(cpu, DirectByte(memory, cpu, (uint8_t)(0xa1u + axis)));  /* D547 */
-            ExchangeAccumulatorBytes(cpu);
-            LoadA8(cpu, DirectByte(memory, cpu, (uint8_t)(0x9fu + axis)));
-            EventRandomCoordinate(memory, cpu, axis ? 0xd55au : 0xd54eu);
-            StoreADirect16(memory, cpu, axis ? DP_PROBE_Y : DP_PROBE_X);
-            SetAccumulatorWidth(cpu, 1);
-        }
-        LoadA8(cpu, DirectByte(memory, cpu, 0x01u));           /* D55F */
-        SimulateJslFrame(memory, cpu, 0x80u, 0xd564u);
-        cpu->program_bank = 0x83u;
-        Lufia2ActorSpawn(memory, cpu);                         /* $83:DF87 */
-        SimulateRtlFrame(memory, cpu);
-        cpu->program_bank = 0x80u;
-        LoadXDirect16(memory, cpu, DP_SLOT_WORD_OFFSET);
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, Read16Direct(memory, cpu, DP_PROBE_X));
-        Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X, cpu->x),
-                    cpu->accumulator);
-        LoadA16(cpu, Read16Direct(memory, cpu, DP_PROBE_Y));
-        Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_Y, cpu->x),
-                    cpu->accumulator);
-        SetAccumulatorWidth(cpu, 1);
-        count = (uint8_t)(DirectByte(memory, cpu, 0x00u) - 1u);  /* D577 */
-        Write8(memory, DirectAddress(cpu, 0x00u), count);
-        SetNz8(cpu, count);
-    } while (!cpu->zero);
-    LoadA8(cpu, Pull8(memory, cpu));                           /* D57B */
-    StoreADirect8(memory, cpu, DP_ACTOR_SLOT);
-    SimulateJslFrame(memory, cpu, 0x80u, 0xd581u);
-    Lufia2ActorRecordOffsets(memory, cpu);
-    SimulateRtlFrame(memory, cpu);
+    Lufia2FieldSpawnAreaBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     return EVENT_OPCODE_NEXT;
 }

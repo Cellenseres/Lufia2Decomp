@@ -1449,4 +1449,9 @@ Lufia2ExecutionResult Lufia2FieldMarkVisibleActorCells(const Lufia2Memory *memor
 Lufia2ExecutionResult Lufia2FieldMarkListedCells(const Lufia2Memory *memory,
                                                  Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldSpawnActorsInArea(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldRandomAreaCoordinate(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu);
+
 #endif
