@@ -60,15 +60,14 @@ static void PrepareNmi(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         OpStz(memory, cpu, OpAbs(cpu, SNES_HDMAEN));
 }
 
-static Lufia2ExecutionResult FinishNmi(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                       Lufia2ExecutionCheckpoint checkpoint,
-                                       void *context) {
+static void DisplayNmiAndTickPlayTime(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
     OpSta(memory, cpu, OpAbs(cpu, SNES_INIDISP));
     NmiTickPlayTime(memory, cpu);
-    if (checkpoint)
-        checkpoint(context, cpu, 0x808699u);
-    OpRepWidths(cpu, 0x20u);
+}
+
+static Lufia2ExecutionResult RestoreNmiFrame(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu) {
     OpStepMem(memory, cpu, OpDp(cpu, DP_NMI_FRAME_COUNTER), 1);
     OpStepMem(memory, cpu, OpDp(cpu, NMI_FRAME_COUNTER_SECONDARY), 1);
     OpLda(memory, cpu, NMI_RESET_CONTROL);
@@ -88,6 +87,16 @@ static Lufia2ExecutionResult FinishNmi(const Lufia2Memory *memory, Lufia2CpuStat
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionHandoff(cpu, 0x8086bfu);
+}
+
+static Lufia2ExecutionResult FinishNmi(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                       Lufia2ExecutionCheckpoint checkpoint,
+                                       void *context) {
+    DisplayNmiAndTickPlayTime(memory, cpu);
+    if (checkpoint)
+        checkpoint(context, cpu, 0x808699u);
+    OpRepWidths(cpu, 0x20u);
+    return RestoreNmiFrame(memory, cpu);
 }
 
 typedef enum NmiPhase {
@@ -196,4 +205,26 @@ Lufia2ExecutionResult Lufia2MainNmiResume(const Lufia2Memory *memory,
         cpu->stack > 0x1ff3u)
         return ExecutionHandoff(cpu, entry);
     return RunNmiPhases(memory, cpu, phase, NULL, checkpoint, context);
+}
+
+static bool NmiFrameSliceSupported(const Lufia2CpuState *cpu, bool byte_mode) {
+    return cpu->program_bank == 0x80u && cpu->data_bank == 0x80u && !cpu->decimal &&
+           !cpu->direct_page && cpu->index_is_8_bit == 1u &&
+           cpu->accumulator_is_8_bit == byte_mode && cpu->stack >= 0x1f00u &&
+           cpu->stack <= 0x1ff3u;
+}
+
+Lufia2ExecutionResult Lufia2NmiDisplayAndClock(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu) {
+    if (!NmiFrameSliceSupported(cpu, true))
+        return ExecutionHandoff(cpu, 0x808664u);
+    DisplayNmiAndTickPlayTime(memory, cpu);
+    return ExecutionHandoff(cpu, 0x808699u);
+}
+
+Lufia2ExecutionResult Lufia2NmiRestoreInterruptFrame(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu) {
+    if (!NmiFrameSliceSupported(cpu, false))
+        return ExecutionHandoff(cpu, 0x80869bu);
+    return RestoreNmiFrame(memory, cpu);
 }
