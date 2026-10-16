@@ -1439,10 +1439,6 @@ Lufia2ExecutionResult Lufia2FieldDispatchEventOpcode(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
-#ifdef __cplusplus
-}
-#endif
-
 Lufia2ExecutionResult Lufia2FieldMarkVisibleActorCells(const Lufia2Memory *memory,
                                                        Lufia2CpuState *cpu);
 
@@ -1453,5 +1449,9 @@ Lufia2ExecutionResult Lufia2FieldSpawnActorsInArea(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2FieldRandomAreaCoordinate(const Lufia2Memory *memory,
                                                       Lufia2CpuState *cpu);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
