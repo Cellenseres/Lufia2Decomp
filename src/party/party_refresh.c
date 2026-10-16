@@ -16,7 +16,7 @@ static Lufia2ExecutionResult RefreshChildUnwound(uint32_t site) {
 
 Lufia2ExecutionResult Lufia2PartySelectActiveEquipmentMember(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)
+    if (cpu->decimal)
         return ExecutionHandoff(cpu, 0x829971u);
     PushY(memory, cpu);
     Push8(memory, cpu, PackStatus(cpu));
