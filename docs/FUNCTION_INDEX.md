@@ -1416,6 +1416,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:C2D9` | `Lufia2WorldMapSubmitSceneWindowRecord` | verified | `src/world/world_scene_windows.c` |
 | `$86:C321` | `Lufia2WorldMapSelectSceneWindowRecord` | verified | `src/world/world_scene_windows.c` |
 | `$86:C336` | `Lufia2WorldMapLoadSceneWindowRecord` | verified | `src/world/world_scene_windows.c` |
+| `$86:C358` | `Lufia2WorldMapBuildCircularWindow` | verified | `src/world/world_circle_windows.c` |
+| `$86:C40A` | `Lufia2WorldMapAppendUpperCircleRows` | verified | `src/world/world_circle_windows.c` |
+| `$86:C444` | `Lufia2WorldMapAppendLowerCircleRows` | verified | `src/world/world_circle_windows.c` |
+| `$86:C4A8` | `Lufia2WorldMapBuildCircleExtentTable` | verified | `src/world/world_circle_windows.c` |
 | `$86:C582` | `Lufia2WorldMapPrepareSceneWindowTables` | verified | `src/world/world_scene_layout.c` |
 | `$86:CBBF` | `Lufia2WorldMapClearDisplayPalette` | verified | `src/world/world_frame_callers.c` |
 | `$86:CBF0` | `Lufia2WorldMapBuildSkylineHdma` | verified | `src/world/world_math_resources.c` |
@@ -1463,6 +1467,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:E6C4` | `Lufia2WorldMapInitializeObjectRecords` | verified | `src/world/world_map_objects.c` |
 | `$86:E6F3` | `Lufia2WorldMapSelectObjectRecord` | verified | `src/world/world_map_objects.c` |
 | `$86:E709` | `Lufia2WorldMapIndexObjectRecord` | verified | `src/world/world_map_objects.c` |
+| `$86:E84F` | `Lufia2WorldMapPrepareSceneSprites` | verified | `src/world/world_scene_sprites.c` |
+| `$86:E8B5` | `Lufia2WorldMapClearSceneSpriteRecords` | verified | `src/world/world_scene_sprites.c` |
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |
 | `$8E:B000` | `Lufia2FieldRunMenu` | verified | `src/field/field_menu.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |

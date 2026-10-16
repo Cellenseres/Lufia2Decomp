@@ -392,7 +392,7 @@ name = "actor_fine_y"
 width = 2
 count = 40
 owner = "actor"
-notes = "1/16-tile y position per slot, indexed by 2 * slot; $83:A746 sets it from the tile row."
+notes = "1/16-tile y position per slot, indexed by 2 * slot; $83:A746 sets it from the tile row. Scene circle helper86:C4A8 reuses7F:DE00..DEFF for its extent table;this is an alias,not independent storage."
 
 [[location]]
 address = "7F:DEEE"
@@ -400,7 +400,7 @@ name = "object_script"
 width = 3
 count = 32
 owner = "object"
-notes = "24-bit object script cursor, indexed by 3 * slot; $83:DFFD seeds it from table $91:8EC7."
+notes = "24-bit object script cursor, indexed by 3 * slot; $83:DFFD seeds it from table $91:8EC7. Scene circle helper86:C4A8 reuses7F:DE00..DEFF for its extent table;this is an alias,not independent storage."
 
 [[location]]
 address = "7F:E216"
@@ -1871,7 +1871,7 @@ name = "object_fine_x"
 width = 2
 count = 32
 owner = "object"
-notes = "Object slots after the actor entries of $7F:DDAE; opcode $2F copies actor 0 into it."
+notes = "Object slots after the actor entries of $7F:DDAE; opcode $2F copies actor 0 into it. Scene circle helper86:C4A8 reuses7F:DE00..DEFF for its extent table;this is an alias,not independent storage."
 
 [[location]]
 address = "7F:DE8E"
@@ -1879,7 +1879,7 @@ name = "object_fine_y"
 width = 2
 count = 32
 owner = "object"
-notes = "Object slots after the actor entries of $7F:DE3E; opcode $2F copies actor 0 into it."
+notes = "Object slots after the actor entries of $7F:DE3E; opcode $2F copies actor 0 into it. Scene circle helper86:C4A8 reuses7F:DE00..DEFF for its extent table;this is an alias,not independent storage."
 
 [[location]]
 address = "7F:DFAE"
@@ -5846,3 +5846,27 @@ width = 1
 count = 114
 owner = "world"
 notes = "86:C582 clears two aliased six-record tables:6-byte records at1E50 and15-byte records at1E68. The long table clears words0A/0C;the short table clears02/04."
+
+[[location]]
+address = "7E:1467"
+name = "world_scene_sprite_index"
+width = 2
+count = 1
+owner = "world"
+notes = "86:E84F resets the shared world OAM index before initializing sixteen entries.86:E5BB and related sprite builders also use this word."
+
+[[location]]
+address = "7E:1EC2"
+name = "world_scene_sprite_record_storage"
+width = 1
+count = 96
+owner = "world"
+notes = "86:E84F clears two adjacent eight-record groups viaE8B5.Each six-byte record clears words0/2 and sets byte5 toFF;byte4 remains unchanged."
+
+[[location]]
+address = "7E:1219"
+name = "world_scene_unk_1219"
+width = 1
+count = 1
+owner = "world"
+notes = "86:E84F subtracts this byte from1211,adds40 and writes scene parameter1237.Purpose remains neutral."

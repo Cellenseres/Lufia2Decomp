@@ -486,7 +486,7 @@ enum {
 /* Absolute work RAM: the sprite counter (bits 0-1 pick the 2-bit field of a
  * high-table byte, the rest is the byte index) and the OAM high table. */
 enum {
-    SPRITE_COUNTER = 0x1467u,
+    SPRITE_COUNTER = WRAM_WORLD_SCENE_SPRITE_INDEX,
     OAM_HIGH_TABLE = 0x0300u
 };
 

@@ -12129,3 +12129,51 @@ source = "src/world/world_scene_windows.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:C358"
+name = "Lufia2WorldMapBuildCircularWindow"
+source = "src/world/world_circle_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C40A"
+name = "Lufia2WorldMapAppendUpperCircleRows"
+source = "src/world/world_circle_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C444"
+name = "Lufia2WorldMapAppendLowerCircleRows"
+source = "src/world/world_circle_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C4A8"
+name = "Lufia2WorldMapBuildCircleExtentTable"
+source = "src/world/world_circle_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E84F"
+name = "Lufia2WorldMapPrepareSceneSprites"
+source = "src/world/world_scene_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E8B5"
+name = "Lufia2WorldMapClearSceneSpriteRecords"
+source = "src/world/world_scene_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
