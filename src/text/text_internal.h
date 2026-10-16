@@ -78,6 +78,10 @@ Lufia2ExecutionResult Lufia2TextRunCaveTransition(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2TextRunFieldCommand(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t handler,
+    Lufia2PushedChildCall child, void *context);
+
 Lufia2ExecutionResult Lufia2TextRunMenuCommand(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t handler,
     Lufia2PushedChildCall child, void *context);

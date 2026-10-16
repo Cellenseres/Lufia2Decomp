@@ -1486,10 +1486,17 @@ static unsigned TextScriptOpcode(
 
     if (services->child) {
         const uint8_t script_bank = cpu->data_bank;
-        services->result = handler == 0xabd0u ?
-            Lufia2TextRunCaveTransition(memory, cpu, services->child, services->context) :
-            Lufia2TextRunMenuCommand(memory, cpu, handler, services->child,
-                                   services->context);
+        if (handler == 0xabd0u)
+            services->result = Lufia2TextRunCaveTransition(
+                memory, cpu, services->child, services->context);
+        else {
+            services->result = Lufia2TextRunFieldCommand(
+                memory, cpu, handler, services->child, services->context);
+            if (services->result.flow == LUFIA2_EXECUTION_RETURNED &&
+                !services->result.pc)
+                services->result = Lufia2TextRunMenuCommand(
+                    memory, cpu, handler, services->child, services->context);
+        }
         if (services->result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
             return TEXT_OPCODE_CHILD_UNWOUND;
         if (services->result.flow == LUFIA2_EXECUTION_BOUNDARY) {

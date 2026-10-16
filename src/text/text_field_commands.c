@@ -1,9 +1,12 @@
+#include <stddef.h>
+
 #include "actor/actor_internal.h"
 #include "core/cpu_ops.h"
 #include "field/event_script_internal.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
+#include "text/text_child_service.h"
 
 enum {
     CHOOSE_COLLECTED_OBJECTS = 0xac6au,
@@ -93,20 +96,26 @@ static uint8_t RunFieldCommandChild(void *context, Lufia2CpuState *cpu,
     return 1u;
 }
 
-static uint32_t CallFieldCommandChild(const Lufia2Memory *memory,
-                                      Lufia2CpuState *cpu, uint32_t target,
-                                      uint16_t back) {
+static uint32_t CallFieldCommandChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                      uint32_t target, uint16_t back,
+                                      TextChildService *child_service) {
+    if (child_service) {
+        const uint32_t site = 0x800000u | (uint16_t)(back - 3u);
+        return TextCallChild(child_service, site, target, 3u)
+                   ? 0u
+                   : child_service->result.pc;
+    }
     SimulateJslFrame(memory, cpu, 0x80u, back);
     FieldCommandService service = {memory, 0u};
-    RunFieldCommandChild(&service, cpu, target,
-                         0x800000u | (uint16_t)(back - 3u), 3u);
+    RunFieldCommandChild(&service, cpu, target, 0x800000u | (uint16_t)(back - 3u), 3u);
     return service.handoff;
 }
 
-static uint32_t ChooseCollectedObjects(const Lufia2Memory *memory,
-                                       Lufia2CpuState *cpu) {
+static uint32_t ChooseCollectedObjects(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                       TextChildService *service) {
     PushY(memory, cpu);
-    const uint32_t handoff = CallFieldCommandChild(memory, cpu, 0x8ebcadu, 0xac6eu);
+    const uint32_t handoff =
+        CallFieldCommandChild(memory, cpu, 0x8ebcadu, 0xac6eu, service);
     if (handoff)
         return handoff;
     OpPullY(memory, cpu);
@@ -114,18 +123,18 @@ static uint32_t ChooseCollectedObjects(const Lufia2Memory *memory,
 }
 
 static uint32_t EnterArea(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                          bool keep_map) {
+                          bool keep_map, TextChildService *service) {
     Lufia2TextNextByte(memory, cpu, keep_map ? 0xbdccu : 0xbbedu);
     ExchangeAccumulatorBytes(cpu);
     OpLoadA(cpu, 9u);
     ExchangeAccumulatorBytes(cpu);
     OpLdx(cpu, 6u);
     uint32_t handoff = CallFieldCommandChild(memory, cpu, 0x80bfaau,
-                                             keep_map ? 0xbdd7u : 0xbbf8u);
+                                             keep_map ? 0xbdd7u : 0xbbf8u, service);
     if (handoff)
         return handoff;
     handoff = CallFieldCommandChild(memory, cpu, 0x83b76eu,
-                                    keep_map ? 0xbddbu : 0xbbfcu);
+                                    keep_map ? 0xbddbu : 0xbbfcu, service);
     if (handoff)
         return handoff;
     if (keep_map) {
@@ -141,13 +150,14 @@ static uint32_t EnterArea(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return LUFIA2_TEXT_COMMAND_YIELD;
 }
 
-static uint32_t PublishRegion(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static uint32_t PublishRegion(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              TextChildService *service) {
     PushDataBank(memory, cpu);
     PushY(memory, cpu);
-    uint32_t handoff = CallFieldCommandChild(memory, cpu, 0x80f821u, 0xbdc0u);
+    uint32_t handoff = CallFieldCommandChild(memory, cpu, 0x80f821u, 0xbdc0u, service);
     if (handoff)
         return handoff;
-    handoff = CallFieldCommandChild(memory, cpu, 0x838e4cu, 0xbdc4u);
+    handoff = CallFieldCommandChild(memory, cpu, 0x838e4cu, 0xbdc4u, service);
     if (handoff)
         return handoff;
     OpPullY(memory, cpu);
@@ -432,6 +442,30 @@ static uint32_t StartActorAction(const Lufia2Memory *memory, Lufia2CpuState *cpu
     return LUFIA2_TEXT_COMMAND_NEXT;
 }
 
+Lufia2ExecutionResult Lufia2TextRunFieldCommand(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu, uint16_t handler,
+                                                Lufia2PushedChildCall child,
+                                                void *context) {
+    if (handler != CHOOSE_COLLECTED_OBJECTS && handler != ENTER_AREA &&
+        handler != ENTER_AREA_AND_KEEP_MAP && handler != PUBLISH_REGION)
+        return ExecutionReturned(0u);
+    if (!child || cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x800000u | handler);
+    TextChildService service = {memory, cpu, child, context, ExecutionReturned(0u)};
+    uint32_t flow;
+    if (handler == CHOOSE_COLLECTED_OBJECTS)
+        flow = ChooseCollectedObjects(memory, cpu, &service);
+    else if (handler == PUBLISH_REGION)
+        flow = PublishRegion(memory, cpu, &service);
+    else
+        flow = EnterArea(memory, cpu, handler == ENTER_AREA_AND_KEEP_MAP, &service);
+    if (service.result.flow != LUFIA2_EXECUTION_RETURNED)
+        return service.result;
+    return ExecutionReturned(flow);
+}
+
 uint32_t Lufia2TextExecuteFieldCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                        uint16_t handler) {
     if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
@@ -440,12 +474,12 @@ uint32_t Lufia2TextExecuteFieldCommand(const Lufia2Memory *memory, Lufia2CpuStat
         return 0u;
     switch (handler) {
     case CHOOSE_COLLECTED_OBJECTS:
-        return ChooseCollectedObjects(memory, cpu);
+        return ChooseCollectedObjects(memory, cpu, NULL);
     case ENTER_AREA:
     case ENTER_AREA_AND_KEEP_MAP:
-        return EnterArea(memory, cpu, handler == ENTER_AREA_AND_KEEP_MAP);
+        return EnterArea(memory, cpu, handler == ENTER_AREA_AND_KEEP_MAP, NULL);
     case PUBLISH_REGION:
-        return PublishRegion(memory, cpu);
+        return PublishRegion(memory, cpu, NULL);
     case PREPARE_OBJECT_ACTOR:
         return PrepareObjectActor(memory, cpu);
     case RADIAL_AT_ACTOR_3C:
