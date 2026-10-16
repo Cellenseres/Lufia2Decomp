@@ -12,9 +12,10 @@
 #include "system/wram.h"
 
 enum {
-    MAP_WIDTH = 0x05b9u,                /* cells per row, word */
-    MAP_HEIGHT = 0x05bbu,               /* rows, word */
-    ATTRIBUTES = 0x7e4000u,             /* one byte per cell */
+    MAP_WIDTH = 0x05b9u,    /* cells per row, word */
+    MAP_HEIGHT = 0x05bbu,   /* rows, word */
+    ATTRIBUTES = 0x7e4000u, /* one byte per cell */
+    ATTRIBUTE_LIST_LIMIT = 65536u,
 };
 
 /* Cell X |= bit in the attribute map. */
@@ -29,10 +30,7 @@ static void AttributeSet(
 }
 
 /* $80:EF2F: occupancy bit 0 under visible map actors. */
-static void AttributeActors(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJslFrame(memory, cpu, 0x80u, 0xee33u);
+static void MarkVisibleActorCells(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Push8(memory, cpu, 0x80u);
     PullDataBank(memory, cpu);
     LoadY16(cpu, 0x0027u);
@@ -76,14 +74,27 @@ static void AttributeActors(
         }
         LoadY16(cpu, (uint16_t)(cpu->y - 1u));
     } while (!cpu->negative);
+}
+
+static void AttributeActors(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJslFrame(memory, cpu, 0x80u, 0xee33u);
+    MarkVisibleActorCells(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
+Lufia2ExecutionResult Lufia2FieldMarkVisibleActorCells(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80ef2fu);
+    MarkVisibleActorCells(memory, cpu);
+    return ExecutionReturned(0x80ef8du);
+}
+
 /* $80:EEEB: bit 2 at each listed cell; DB = $7E. */
-static void AttributeListBit2(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0xee77u);
+static Lufia2ExecutionResult MarkListedCells(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu) {
     LoadA8(cpu, 0x7eu);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
@@ -91,11 +102,11 @@ static void AttributeListBit2(
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ef000u, cpu->x)));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
-    for (;;) {
+    for (unsigned visited = 0u; visited < ATTRIBUTE_LIST_LIMIT; ++visited) {
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef000u, cpu->x)));
         Compare8(cpu, A8(cpu), 0xffu);
         if (cpu->zero)
-            break;
+            return ExecutionReturned(0x80ef2eu);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ef002u, cpu->x)));
         Write8(memory, 0x004202u, A8(cpu));
         LoadAAbsolute8(memory, cpu, MAP_WIDTH, 0);
@@ -115,7 +126,27 @@ static void AttributeListBit2(
         Or8(cpu, 0x04u);
         StoreAAbsolute8(memory, cpu, 0x4000u, cpu->y);
     }
-    SimulateRtsFrame(memory, cpu);
+    Lufia2ExecutionResult result = ExecutionHandoff(cpu, 0x80eef8u);
+    result.dispatches = ATTRIBUTE_LIST_LIMIT;
+    return result;
+}
+
+static Lufia2ExecutionResult AttributeListBit2(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xee77u);
+    const Lufia2ExecutionResult result = MarkListedCells(memory, cpu);
+    if (result.flow == LUFIA2_EXECUTION_RETURNED)
+        SimulateRtsFrame(memory, cpu);
+    return result;
+}
+
+Lufia2ExecutionResult Lufia2FieldMarkListedCells(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80eeebu);
+    return MarkListedCells(memory, cpu);
 }
 
 /* $80:ED9C: attribute map $7E:4000 of map A. */
@@ -239,7 +270,9 @@ Lufia2ExecutionResult Lufia2FieldBuildAttributes(
         IncrementX16(cpu);
     }
     LoadX16(cpu, 0x001eu);
-    AttributeListBit2(memory, cpu);
+    const Lufia2ExecutionResult listed = AttributeListBit2(memory, cpu);
+    if (listed.flow != LUFIA2_EXECUTION_RETURNED)
+        return listed;
     LoadX16(cpu, 0x0000u);
     do {
         PushIndex(memory, cpu);
