@@ -1465,28 +1465,45 @@ static unsigned EventOpActorSlot(
 }
 
 /* $60 hides, $61 shows listed actor n. */
-static unsigned EventOpHideActor(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t handler,
-    uint32_t *handoff) {
+static unsigned EventOpHideActor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t handler, EventRun *run, uint32_t *handoff) {
     const uint8_t hide = handler == EVENT_OP_HIDE_ACTOR;
 
-    EventSaveSlot(memory, cpu, (uint16_t)(handler + 2u));      /* DDB5 */
+    EventSaveSlot(memory, cpu, (uint16_t)(handler + 2u));
     Lufia2EventNextByte(memory, cpu, (uint16_t)(handler + 5u));
     cpu->carry = 0;
     Adc8(cpu, 0x4fu);
     Lufia2EventFindActorId(memory, cpu, (uint16_t)(handler + 0x0cu));
-    SimulateJslFrame(memory, cpu, 0x80u, (uint16_t)(handler + 0x10u));
-    cpu->program_bank = 0x8eu;
-    if (hide) {
-        Lufia2FieldHideActorState(memory, cpu);
-    } else if (Lufia2FieldRevealActorState(memory, cpu)) {
-        *handoff = 0x8ebb12u;
-        return EVENT_OPCODE_HANDOFF;
+    if (!hide && run && run->child && cpu->program_bank == 0x80u &&
+        cpu->accumulator_is_8_bit == 1u && !cpu->index_is_8_bit && !cpu->direct_page &&
+        !cpu->decimal && cpu->stack >= 0x1f23u && cpu->stack <= 0x1fffu) {
+        const uint8_t data_bank = cpu->data_bank;
+        const uint32_t site = 0x800000u | (uint16_t)(handler + 0x0du);
+        if (!CallChildWithFrame(memory, cpu, run->child, run->child_context, site,
+                                0x8ebaf6u, 3u, 0x80u)) {
+            run->unwind_site = site;
+            cpu->resume_pc = *handoff = site;
+            return EVENT_OPCODE_HANDOFF;
+        }
+        if (cpu->program_bank != 0x80u || cpu->data_bank != data_bank ||
+            cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit ||
+            cpu->direct_page || cpu->decimal) {
+            cpu->resume_pc = *handoff =
+                ((uint32_t)cpu->program_bank << 16) | (uint16_t)(site + 4u);
+            return EVENT_OPCODE_HANDOFF;
+        }
+    } else {
+        SimulateJslFrame(memory, cpu, 0x80u, (uint16_t)(handler + 0x10u));
+        cpu->program_bank = 0x8eu;
+        if (hide) {
+            Lufia2FieldHideActorState(memory, cpu);
+        } else if (Lufia2FieldRevealActorState(memory, cpu)) {
+            *handoff = 0x8ebb12u;
+            return EVENT_OPCODE_HANDOFF;
+        }
+        SimulateRtlFrame(memory, cpu);
+        cpu->program_bank = 0x80u;
     }
-    SimulateRtlFrame(memory, cpu);
-    cpu->program_bank = 0x80u;
     EventRestoreSlot(memory, cpu, (uint16_t)(handler + 0x13u));
     return EVENT_OPCODE_NEXT;
 }
@@ -2164,7 +2181,7 @@ unsigned Lufia2EventActorOpcode(
         return EventOpActorSlot(memory, cpu, handler, handoff);
     case EVENT_OP_HIDE_ACTOR:
     case EVENT_OP_SHOW_ACTOR:
-        return EventOpHideActor(memory, cpu, handler, handoff);
+        return EventOpHideActor(memory, cpu, handler, run, handoff);
     case EVENT_OP_SPAWN_IN_AREA:
         return EventOpSpawnInArea(memory, cpu, handoff);
     case EVENT_OP_OBJECT_TILES_AT:
