@@ -792,13 +792,16 @@ static unsigned TextOpWaitForParty(const Lufia2Memory *memory, Lufia2CpuState *c
     return TEXT_OPCODE_NEXT;
 }
 
+static unsigned TextFinishScript(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint32_t *handoff, TextCommandServices *services);
+
 /* $00/$42: end, or return from a sub-script. */
-static unsigned TextOpEnd(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t *handoff) {
+static unsigned TextOpEnd(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                          uint32_t *handoff, TextCommandServices *services) {
     LoadAAbsolute8(memory, cpu, TEXT_CALLER_BANK, 0);
     if (cpu->zero) {
+        if (TextCommandContext(cpu, services))
+            return TextFinishScript(memory, cpu, handoff, services);
         *handoff = 0x809d69u;
         return TEXT_OPCODE_HANDOFF;
     }
@@ -1097,8 +1100,9 @@ static void TextSetCameraCell(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     SimulateRtsFrame(memory, cpu);
 }
 
-static void TextFollowCameraActor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0xb544u);
+static void TextFollowCameraActor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
     StoreZeroAbsolute8(memory, cpu, WRAM_FIELD_CAMERA_ACTOR, 0u);
     StoreZeroAbsolute8(memory, cpu, WRAM_FIELD_CAMERA_ACTOR + 1u, 0u);
     LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0u);
@@ -1136,6 +1140,46 @@ static void TextFollowCameraActor(const Lufia2Memory *memory, Lufia2CpuState *cp
         }
     }
     SimulateRtsFrame(memory, cpu);
+}
+
+static unsigned TextFinishScript(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint32_t *handoff, TextCommandServices *services) {
+    LoadAAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0u);
+    BitImmediate8(cpu, 1u);
+    bool finish_window = !cpu->zero;
+    if (finish_window) {
+        LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0u);
+        BitImmediate8(cpu, 2u);
+        finish_window = cpu->zero;
+    }
+    if (finish_window) {
+        StoreZeroAbsolute8(memory, cpu, TEXT_PROMPT_TIMER, 0u);
+        LoadAAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0u);
+        BitImmediate8(cpu, 0x80u);
+        if (cpu->zero) {
+            LoadA8(cpu, 0x88u);
+            StoreAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0u);
+            return TEXT_OPCODE_EXIT;
+        }
+        LoadA8(cpu, 0x20u);
+        TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 1u);
+        LoadA8(cpu, 0xf0u);
+        Write8(memory, 0x7fd0c1u, A8(cpu));
+    } else {
+        TextFollowCameraActor(memory, cpu, 0x9d97u);
+        SetAccumulatorWidth(cpu, 1u);
+        if (cpu->carry) {
+            LoadA8(cpu, 2u);
+            StoreAAbsolute8(memory, cpu, WRAM_UNK_7E05A8, 0u);
+            Lufia2TextPrevByte(memory, cpu, 0x9da3u);
+            return TEXT_OPCODE_EXIT;
+        }
+    }
+    Lufia2TextReleaseActors(memory, cpu, 0x9da8u);
+    StoreZeroAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0u);
+    const unsigned flow =
+        TextCallCommandChild(memory, cpu, services, 0x809dacu, 0x80ef2fu, handoff);
+    return flow == TEXT_OPCODE_NEXT ? TEXT_OPCODE_EXIT : flow;
 }
 
 static unsigned TextMoveCameraTarget(const Lufia2Memory *memory, Lufia2CpuState *cpu,
@@ -1240,7 +1284,7 @@ static unsigned TextStartCameraScroll(const Lufia2Memory *memory, Lufia2CpuState
     LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
     And8(cpu, 0x0fu);
     StoreAAbsolute8(memory, cpu, WRAM_UNK_7E05A8, 0u);
-    TextFollowCameraActor(memory, cpu);
+    TextFollowCameraActor(memory, cpu, 0xb544u);
     if (!cpu->carry)
         return TEXT_OPCODE_NEXT;
     SetAccumulatorWidth(cpu, 1u);
@@ -1873,6 +1917,10 @@ static unsigned TextScriptOpcode(
                 !services->result.pc)
                 services->result = Lufia2TextRunMenuCommand(
                     memory, cpu, handler, services->child, services->context);
+            if (services->result.flow == LUFIA2_EXECUTION_RETURNED &&
+                !services->result.pc)
+                services->result = Lufia2TextRunSystemCommand(
+                    memory, cpu, handler, services->child, services->context);
         }
         if (services->result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
             return TEXT_OPCODE_CHILD_UNWOUND;
@@ -2047,7 +2095,7 @@ static unsigned TextScriptOpcode(
     case TEXT_OP_WAIT_FOR_PARTY:
         return TextOpWaitForParty(memory, cpu, handoff, services);
     case TEXT_OP_END:
-        return TextOpEnd(memory, cpu, handoff);
+        return TextOpEnd(memory, cpu, handoff, services);
     case TEXT_OP_SKIP_BRANCH:
         return TextOpSkipBranch(memory, cpu, handoff);
     case TEXT_OP_HIDE_ACTOR:

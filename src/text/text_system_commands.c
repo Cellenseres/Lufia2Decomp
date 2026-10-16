@@ -1,8 +1,10 @@
+#include <stddef.h>
 #include "core/cpu_ops.h"
 #include "lufia2/field.h"
 #include "lufia2/system.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
+#include "text/text_child_service.h"
 
 enum {
     RETURN_TEXT = 0x9db0u,
@@ -78,7 +80,24 @@ static uint8_t RunSoundChild(void *context, Lufia2CpuState *cpu, uint32_t target
 }
 
 static uint32_t CallSoundService(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                 uint32_t target, uint16_t back) {
+                                 uint32_t target, uint16_t back,
+                                 TextChildService *child_service) {
+    if (child_service) {
+        const uint32_t site = 0x800000u | (uint16_t)(back - 3u);
+        const uint8_t script_bank = cpu->data_bank;
+        const uint16_t caller_stack = cpu->stack;
+        if (!TextCallChild(child_service, site, target, 3u)) {
+            if (child_service->result.flow == LUFIA2_EXECUTION_BOUNDARY)
+                child_service->result = ExecutionHandoff(
+                    cpu, ((uint32_t)cpu->program_bank << 16) | (uint16_t)(site + 4u));
+            return child_service->result.pc;
+        }
+        if (cpu->data_bank != script_bank || cpu->stack != caller_stack) {
+            child_service->result = ExecutionHandoff(cpu, site + 4u);
+            return child_service->result.pc;
+        }
+        return 0u;
+    }
     SimulateJslFrame(memory, cpu, 0x80u, back);
     TextSoundService service = {memory, 0u};
     RunSoundChild(&service, cpu, target, 0x800000u | (uint16_t)(back - 3u), 3u);
@@ -86,17 +105,17 @@ static uint32_t CallSoundService(const Lufia2Memory *memory, Lufia2CpuState *cpu
 }
 
 static uint32_t FadeMusic(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                          uint16_t handler) {
+                          uint16_t handler, TextChildService *service) {
     uint32_t handoff;
     if (handler == FADE_MUSIC) {
         OpLoadA(cpu, 0x3cu);
         OpSta(memory, cpu, MUSIC_FADE_FRAMES);
-        handoff = CallSoundService(memory, cpu, 0x8096ccu, 0xb87au);
+        handoff = CallSoundService(memory, cpu, 0x8096ccu, 0xb87au, service);
         if (handoff)
             return handoff;
-        handoff = CallSoundService(memory, cpu, 0x809692u, 0xb87eu);
+        handoff = CallSoundService(memory, cpu, 0x809692u, 0xb87eu, service);
     } else {
-        handoff = CallSoundService(memory, cpu, 0x809528u, 0xb8b4u);
+        handoff = CallSoundService(memory, cpu, 0x809528u, 0xb8b4u, service);
     }
     if (handoff)
         return handoff;
@@ -105,32 +124,34 @@ static uint32_t FadeMusic(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return LUFIA2_TEXT_COMMAND_NEXT;
 }
 
-static uint32_t PrepareSong(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static uint32_t PrepareSong(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            TextChildService *service) {
     Lufia2TextNextByte(memory, cpu, 0xb889u);
     OpCmp(memory, cpu, OpAbs(cpu, LAST_TEXT_SONG));
     if (!cpu->zero) {
         OpSta(memory, cpu, OpAbs(cpu, LAST_TEXT_SONG));
-        uint32_t handoff = CallSoundService(memory, cpu, 0x80969fu, 0xb895u);
+        uint32_t handoff = CallSoundService(memory, cpu, 0x80969fu, 0xb895u, service);
         if (handoff)
             return handoff;
-        handoff = CallSoundService(memory, cpu, 0x848311u, 0xb899u);
+        handoff = CallSoundService(memory, cpu, 0x848311u, 0xb899u, service);
         if (handoff)
             return handoff;
     }
     return LUFIA2_TEXT_COMMAND_NEXT;
 }
 
-static uint32_t ImmediateSound(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static uint32_t ImmediateSound(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               TextChildService *service) {
     Lufia2TextNextByte(memory, cpu, 0xb8bfu);
-    const uint32_t handoff = CallSoundService(memory, cpu, 0x848775u, 0xb8c3u);
+    const uint32_t handoff = CallSoundService(memory, cpu, 0x848775u, 0xb8c3u, service);
     return handoff ? handoff : LUFIA2_TEXT_COMMAND_NEXT;
 }
 
 static uint32_t WaitSound(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                          uint16_t handler) {
+                          uint16_t handler, TextChildService *service) {
     const bool flag = handler == WAIT_SOUND_FLAG;
     const uint32_t handoff = CallSoundService(memory, cpu, flag ? 0x8095f0u : 0x8096f2u,
-                                              flag ? 0xb8dfu : 0xb8cau);
+                                              flag ? 0xb8dfu : 0xb8cau, service);
     if (handoff)
         return handoff;
     if (flag) {
@@ -148,7 +169,8 @@ static uint32_t WaitSound(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return LUFIA2_TEXT_COMMAND_YIELD;
 }
 
-static uint32_t ToggleWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static uint32_t ToggleWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             TextChildService *service) {
     OpLoadA(cpu, 0x80u);
     OpTestBits(memory, cpu, OpAbs(cpu, TEXT_WINDOW_STATE), 1u);
     if (cpu->zero)
@@ -156,6 +178,11 @@ static uint32_t ToggleWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpStz(memory, cpu, OpAbs(cpu, TEXT_WINDOW_STATE));
     Lufia2TextReleaseActors(memory, cpu, 0x9da8u);
     OpStz(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
+    if (service) {
+        const uint32_t handoff =
+            CallSoundService(memory, cpu, 0x80ef2fu, 0x9dafu, service);
+        return handoff ? handoff : LUFIA2_TEXT_COMMAND_YIELD;
+    }
     SimulateJslFrame(memory, cpu, 0x80u, 0x9dafu);
     return 0x80ef2fu;
 }
@@ -172,8 +199,8 @@ static uint32_t ResetScreenEffects(const Lufia2Memory *memory, Lufia2CpuState *c
     return LUFIA2_TEXT_COMMAND_NEXT;
 }
 
-uint32_t Lufia2TextExecuteSystemCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                        uint16_t handler) {
+static uint32_t RunSystemCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t handler, TextChildService *service) {
     if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
         cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
         cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
@@ -189,20 +216,43 @@ uint32_t Lufia2TextExecuteSystemCommand(const Lufia2Memory *memory, Lufia2CpuSta
         cpu->program_bank = 0x83u;
         return 0x83acefu;
     case TOGGLE_WINDOW:
-        return ToggleWindow(memory, cpu);
+        return ToggleWindow(memory, cpu, service);
     case FADE_MUSIC:
     case RESET_SOUND:
-        return FadeMusic(memory, cpu, handler);
+        return FadeMusic(memory, cpu, handler, service);
     case PREPARE_SONG:
-        return PrepareSong(memory, cpu);
+        return PrepareSong(memory, cpu, service);
     case IMMEDIATE_SOUND:
-        return ImmediateSound(memory, cpu);
+        return ImmediateSound(memory, cpu, service);
     case WAIT_SOUND_VALUE:
     case WAIT_SOUND_FLAG:
-        return WaitSound(memory, cpu, handler);
+        return WaitSound(memory, cpu, handler, service);
     case RESET_SCREEN_EFFECTS:
         return ResetScreenEffects(memory, cpu);
     default:
         return 0u;
     }
+}
+
+Lufia2ExecutionResult Lufia2TextRunSystemCommand(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu, uint16_t handler,
+                                                 Lufia2PushedChildCall child,
+                                                 void *context) {
+    if (handler != FADE_MUSIC && handler != RESET_SOUND && handler != PREPARE_SONG &&
+        handler != IMMEDIATE_SOUND && handler != WAIT_SOUND_VALUE &&
+        handler != WAIT_SOUND_FLAG && handler != TOGGLE_WINDOW)
+        return ExecutionReturned(0u);
+    if (!child || cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x800000u | handler);
+    TextChildService service = {memory, cpu, child, context, ExecutionReturned(0u)};
+    const uint32_t flow = RunSystemCommand(memory, cpu, handler, &service);
+    return service.result.flow == LUFIA2_EXECUTION_RETURNED ? ExecutionReturned(flow)
+                                                            : service.result;
+}
+
+uint32_t Lufia2TextExecuteSystemCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                        uint16_t handler) {
+    return RunSystemCommand(memory, cpu, handler, NULL);
 }
