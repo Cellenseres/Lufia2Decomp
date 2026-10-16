@@ -42,19 +42,24 @@ static bool CallWindowChild(SceneWindow *window, uint32_t site, uint32_t target,
     return true;
 }
 
-Lufia2ExecutionResult Lufia2WorldMapSelectSceneWindowRecord(const Lufia2Memory *memory,
-                                                            Lufia2CpuState *cpu) {
-    if (!WorldSceneResourceEntry(cpu))
-        return ExecutionHandoff(cpu, 0x86c321u);
+static void SelectSceneRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              uint8_t size, uint16_t base) {
     OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
-    OpLoadA(cpu, WINDOW_RECORD_SIZE);
+    OpLoadA(cpu, size);
     OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
     OpRepWidths(cpu, 0x20u);
-    OpLoadA(cpu, WINDOW_RECORD_BASE);
+    OpLoadA(cpu, base);
     cpu->carry = 0u;
     OpAdc(memory, cpu, OpAbs(cpu, SNES_RDMPYL));
     OpTax(cpu);
     OpSepWidths(cpu, 0x20u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapSelectSceneWindowRecord(const Lufia2Memory *memory,
+                                                            Lufia2CpuState *cpu) {
+    if (!WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86c321u);
+    SelectSceneRecord(memory, cpu, WINDOW_RECORD_SIZE, WINDOW_RECORD_BASE);
     return ExecutionReturned(0x86c335u);
 }
 
@@ -75,8 +80,8 @@ Lufia2ExecutionResult Lufia2WorldMapLoadSceneWindowRecord(const Lufia2Memory *me
 }
 
 static void ReadWindowShape(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    static const uint8_t parameters[] = {WINDOW_CENTER_X, WINDOW_CENTER_Y, WINDOW_RADIUS,
-                                         WINDOW_PARAMETER_56};
+    static const uint8_t parameters[] = {WINDOW_CENTER_X, WINDOW_CENTER_Y,
+                                         WINDOW_RADIUS, WINDOW_PARAMETER_56};
     for (uint8_t field = 0u; field < 4u; ++field) {
         OpLda(memory, cpu, WorldSceneObjectField(cpu, field));
         OpSta(memory, cpu, OpDp(cpu, parameters[field]));
@@ -114,5 +119,75 @@ Lufia2ExecutionResult Lufia2WorldMapSubmitSceneWindowRecord(const Lufia2Memory *
     OpLoadA(cpu, Pull8(memory, cpu));
     OpStepMem(memory, cpu,
               OpAbs(cpu, cpu->zero ? WINDOW_FIRST_BUFFER : WINDOW_SECOND_BUFFER), true);
+    return window.result;
+}
+
+Lufia2ExecutionResult Lufia2WorldMapSelectSlopedWindowRecord(const Lufia2Memory *memory,
+                                                             Lufia2CpuState *cpu) {
+    if (!WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86c536u);
+    SelectSceneRecord(memory, cpu, 15u, WINDOW_RECORD_BASE + 0x18u);
+    return ExecutionReturned(0x86c54au);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapLoadSlopedWindowRecord(const Lufia2Memory *memory,
+                                                           Lufia2CpuState *cpu,
+                                                           Lufia2PushedChildCall child,
+                                                           void *context) {
+    if (!child || !WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86c54bu);
+    SceneWindow window = {memory, cpu, child, context, ExecutionReturned(0x86c581u)};
+    if (!CallWindowChild(&window, 0x86c54bu, 0x86c536u, 2u))
+        return window.result;
+    static const uint8_t words[] = {0u, 2u, 6u, 8u, 10u};
+    static const uint8_t bytes[] = {4u, 5u, 12u, 13u};
+    OpRepWidths(cpu, 0x20u);
+    for (unsigned field = 0u; field < 5u; ++field) {
+        OpLda(memory, cpu, OpAbsY(cpu, words[field]));
+        OpSta(memory, cpu, WorldSceneObjectField(cpu, words[field]));
+    }
+    OpSepWidths(cpu, 0x20u);
+    for (unsigned field = 0u; field < 4u; ++field) {
+        OpLda(memory, cpu, OpAbsY(cpu, bytes[field]));
+        OpSta(memory, cpu, WorldSceneObjectField(cpu, bytes[field]));
+    }
+    OpStz(memory, cpu, WorldSceneObjectField(cpu, 14u));
+    return window.result;
+}
+
+static void ReadSlopedWindowShape(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLdy(cpu, OpRead16(memory, WorldSceneObjectField(cpu, 0u)));
+    OpWrite16(memory, OpDp(cpu, WINDOW_CENTER_X), cpu->y);
+    OpLdy(cpu, OpRead16(memory, WorldSceneObjectField(cpu, 2u)));
+    OpWrite16(memory, OpDp(cpu, WINDOW_CENTER_Y), cpu->y);
+    OpLda(memory, cpu, WorldSceneObjectField(cpu, 4u));
+    OpSta(memory, cpu, OpDp(cpu, 0x22u));
+    OpLda(memory, cpu, WorldSceneObjectField(cpu, 5u));
+    OpSta(memory, cpu, OpDp(cpu, 0x23u));
+    static const uint8_t source[] = {6u, 8u, 10u};
+    for (unsigned field = 0u; field < 3u; ++field) {
+        OpLdy(cpu, OpRead16(memory, WorldSceneObjectField(cpu, source[field])));
+        OpWrite16(memory, OpDp(cpu, (uint8_t)(0x24u + field * 2u)), cpu->y);
+    }
+}
+
+Lufia2ExecutionResult
+Lufia2WorldMapSubmitSlopedWindowRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                       Lufia2PushedChildCall child, void *context) {
+    if (!child || !WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86c4e0u);
+    SceneWindow window = {memory, cpu, child, context, ExecutionReturned(0x86c535u)};
+    if (!CallWindowChild(&window, 0x86c4e0u, 0x86c536u, 2u))
+        return window.result;
+    ReadSlopedWindowShape(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, WINDOW_LAYER));
+    OpAndValue(cpu, 1u);
+    PushAccumulator8(memory, cpu);
+    SelectWindowBuffer(memory, cpu, !cpu->zero);
+    if (!CallWindowChild(&window, 0x86c526u, 0x86c5f8u, 3u))
+        return window.result;
+    OpLoadA(cpu, Pull8(memory, cpu));
+    OpStepMem(memory, cpu,
+              OpAbs(cpu, cpu->zero ? WINDOW_FIRST_BUFFER : WINDOW_SECOND_BUFFER), 1);
     return window.result;
 }

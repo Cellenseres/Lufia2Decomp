@@ -12289,3 +12289,75 @@ source = "src/world/world_scene_sprites.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:C536"
+name = "Lufia2WorldMapSelectSlopedWindowRecord"
+source = "src/world/world_scene_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C54B"
+name = "Lufia2WorldMapLoadSlopedWindowRecord"
+source = "src/world/world_scene_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C4E0"
+name = "Lufia2WorldMapSubmitSlopedWindowRecord"
+source = "src/world/world_scene_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C5F8"
+name = "Lufia2WorldMapBuildSlopedWindow"
+source = "src/world/world_sloped_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:CB21"
+name = "Lufia2WorldMapClipWindowEndpoint"
+source = "src/world/world_window_clipping.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:CB49"
+name = "Lufia2WorldMapClipWindowLowerRight"
+source = "src/world/world_window_clipping.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:CB9E"
+name = "Lufia2WorldMapResolveWindowRightIntersection"
+source = "src/world/world_window_clipping.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:B039"
+name = "Lufia2WorldMapStepExpandingSceneWindows"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B1DE"
+name = "Lufia2WorldMapStepSceneWindowAnimations"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

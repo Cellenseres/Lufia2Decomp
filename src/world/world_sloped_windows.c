@@ -1,6 +1,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/world_map.h"
+#include "world/world_scene_resources_internal.h"
 
 enum {
     EDGE_INCREMENT = 0u,
@@ -401,4 +402,353 @@ Lufia2ExecutionResult Lufia2WorldMapBuildUpperWindowBand(const Lufia2Memory *mem
     OpIncA(cpu);
     ClearWindowTrailingRows(memory, cpu);
     return ExecutionReturned(0x86ca05u);
+}
+
+enum {
+    SLOPED_ANGLE = 0x22u,
+    SLOPED_ANGLE_WIDTH = 0x23u,
+    SLOPED_DISTANCE = 0x24u,
+    SLOPED_UPPER_ANGLE = 0x13u,
+    SLOPED_LOWER_ANGLE = 0x14u,
+    SLOPED_POINT_X = 0x15u,
+    SLOPED_POINT_Y = 0x17u,
+    SLOPED_OTHER_X = 0x19u,
+    SLOPED_OTHER_Y = 0x1cu,
+    SLOPED_CLIP_ANGLE = 0x11u,
+    SLOPED_MOTION_ANGLE = 0x1248u,
+    SLOPED_MOTION_DISTANCE = 0x1249u,
+    SLOPED_CENTER_X = 0x58u
+};
+
+typedef struct SlopedWindow {
+    const Lufia2Memory *memory;
+    Lufia2CpuState *cpu;
+    Lufia2PushedChildCall child;
+    void *context;
+    Lufia2ExecutionResult result;
+    uint8_t bank;
+} SlopedWindow;
+
+static bool CallSlopedWindowChild(SlopedWindow *window, uint32_t site,
+                                  uint32_t target) {
+    if (!CallChildWithFrame(window->memory, window->cpu, window->child, window->context,
+                            site, target, 2u, 0x86u)) {
+        window->result = ExecutionReturned(site);
+        window->result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        return false;
+    }
+    const Lufia2CpuState *cpu = window->cpu;
+    if (cpu->program_bank != 0x86u || cpu->data_bank != window->bank ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->direct_page ||
+        cpu->decimal) {
+        window->result = ExecutionHandoff(window->cpu, site + 3u);
+        return false;
+    }
+    return true;
+}
+
+static void PrepareSlopedWindowAngles(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_ANGLE_WIDTH));
+    OpLsrA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, EDGE_INCREMENT));
+    OpAdc(memory, cpu, OpDp(cpu, SLOPED_ANGLE));
+    OpSta(memory, cpu, OpDp(cpu, SLOPED_UPPER_ANGLE));
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_ANGLE));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, EDGE_INCREMENT)));
+    OpSta(memory, cpu, OpDp(cpu, SLOPED_LOWER_ANGLE));
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_DISTANCE));
+    OpLsrA(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, SLOPED_MOTION_DISTANCE));
+    OpAdcValue(cpu, 0u);
+    PushAccumulator16(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_ANGLE));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, 0x40u);
+    OpSta(memory, cpu, OpAbs(cpu, SLOPED_MOTION_ANGLE));
+}
+
+static void AddSlopedWindowCenter(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_CENTER_X));
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpDp(cpu, 8u));
+    OpSta(memory, cpu, OpDp(cpu, SLOPED_POINT_X));
+    OpLda(memory, cpu, OpDp(cpu, WINDOW_CENTER_Y));
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpDp(cpu, 0x0bu));
+    OpSta(memory, cpu, OpDp(cpu, SLOPED_POINT_Y));
+    OpSepWidths(cpu, 0x20u);
+}
+
+static bool PositionSlopedWindowEndpoints(SlopedWindow *window) {
+    const Lufia2Memory *memory = window->memory;
+    Lufia2CpuState *cpu = window->cpu;
+    PrepareSlopedWindowAngles(memory, cpu);
+    if (!CallSlopedWindowChild(window, 0x86c627u, 0x86a417u))
+        return false;
+    AddSlopedWindowCenter(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_LOWER_ANGLE));
+    OpSta(memory, cpu, OpDp(cpu, SLOPED_CLIP_ANGLE));
+    if (!CallSlopedWindowChild(window, 0x86c640u, 0x86cb21u))
+        return false;
+    OpLdx(cpu, OpRead16(memory, OpDp(cpu, SLOPED_POINT_X)));
+    OpWrite16(memory, OpDp(cpu, SLOPED_OTHER_X), cpu->x);
+    OpLdx(cpu, OpRead16(memory, OpDp(cpu, SLOPED_POINT_Y)));
+    OpWrite16(memory, OpDp(cpu, SLOPED_OTHER_Y), cpu->x);
+    OpPullX(memory, cpu);
+    OpWrite16(memory, OpAbs(cpu, SLOPED_MOTION_DISTANCE), cpu->x);
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_ANGLE));
+    cpu->carry = 0u;
+    OpAdcValue(cpu, 0x40u);
+    OpSta(memory, cpu, OpAbs(cpu, SLOPED_MOTION_ANGLE));
+    if (!CallSlopedWindowChild(window, 0x86c657u, 0x86a417u))
+        return false;
+    AddSlopedWindowCenter(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_UPPER_ANGLE));
+    OpSta(memory, cpu, OpDp(cpu, SLOPED_CLIP_ANGLE));
+    return CallSlopedWindowChild(window, 0x86c670u, 0x86cb21u);
+}
+
+static bool DrawSlopedBandEdge(SlopedWindow *window, bool upper, bool other) {
+    const Lufia2Memory *memory = window->memory;
+    Lufia2CpuState *cpu = window->cpu;
+    uint8_t point_y = other ? SLOPED_OTHER_Y : SLOPED_POINT_Y;
+    OpLda(memory, cpu, OpDp(cpu, (uint8_t)(point_y + 1u)));
+    if (!cpu->zero)
+        return true;
+    OpLda(memory, cpu, OpDp(cpu, other ? SLOPED_LOWER_ANGLE : SLOPED_UPPER_ANGLE));
+    OpSta(memory, cpu, OpDp(cpu, EDGE_ANGLE));
+    OpLda(memory, cpu, OpDp(cpu, other ? SLOPED_OTHER_X : SLOPED_POINT_X));
+    OpSta(memory, cpu, OpDp(cpu, EDGE_POSITION + 1u));
+    OpLda(memory, cpu, OpDp(cpu, point_y));
+    OpSta(memory, cpu, OpDp(cpu, EDGE_START_ROW));
+    if (upper) {
+        OpIncA(cpu);
+    } else {
+        OpSta(memory, cpu, OpDp(cpu, other ? WINDOW_SECOND_START : WINDOW_FIRST_START));
+        OpLoadA(cpu, WINDOW_SCREEN_HEIGHT);
+        cpu->carry = 1u;
+        OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, point_y)));
+    }
+    OpSta(memory, cpu, OpDp(cpu, EDGE_ROWS));
+    uint32_t site =
+        upper ? (other ? 0x86c73fu : 0x86c722u) : (other ? 0x86c6f8u : 0x86c6d2u);
+    if (!CallSlopedWindowChild(window, site, 0x86ca06u))
+        return false;
+    if (upper) {
+        OpLda(memory, cpu, OpDp(cpu, EDGE_ROWS));
+    } else {
+        OpLoadA(cpu, WINDOW_SCREEN_HEIGHT);
+        cpu->carry = 1u;
+        OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, EDGE_ROWS)));
+    }
+    OpSta(memory, cpu, OpDp(cpu, other ? WINDOW_SECOND_END : WINDOW_FIRST_END));
+    return true;
+}
+
+static bool DrawSlopedWindowBand(SlopedWindow *window, bool upper) {
+    const Lufia2Memory *memory = window->memory;
+    Lufia2CpuState *cpu = window->cpu;
+    OpLdy(cpu, upper ? 0u : 0xe0e0u);
+    OpWrite16(memory, OpDp(cpu, WINDOW_FIRST_END), cpu->y);
+    if (!upper) {
+        OpLdy(cpu, 0u);
+        OpWrite16(memory, OpDp(cpu, WINDOW_FIRST_START), cpu->y);
+    }
+    OpLdy(cpu, upper ? 0x12u : 0x13u);
+    if (!DrawSlopedBandEdge(window, upper, false))
+        return false;
+    OpLdy(cpu, upper ? 0x13u : 0x12u);
+    if (!DrawSlopedBandEdge(window, upper, true))
+        return false;
+    if (upper) {
+        OpLda(memory, cpu, OpDp(cpu, SLOPED_POINT_Y));
+        OpSta(memory, cpu, OpDp(cpu, WINDOW_FIRST_START));
+        OpLda(memory, cpu, OpDp(cpu, SLOPED_OTHER_Y));
+        OpSta(memory, cpu, OpDp(cpu, WINDOW_SECOND_START));
+    }
+    return CallSlopedWindowChild(window, upper ? 0x86c74eu : 0x86c702u,
+                                 upper ? 0x86c928u : 0x86c854u);
+}
+
+static bool DrawSplitWindowEdge(SlopedWindow *window, bool other) {
+    const Lufia2Memory *memory = window->memory;
+    Lufia2CpuState *cpu = window->cpu;
+    uint8_t point_y = other ? SLOPED_OTHER_Y : SLOPED_POINT_Y;
+    OpLda(memory, cpu, OpDp(cpu, (uint8_t)(point_y + 1u)));
+    if (!cpu->zero)
+        return true;
+    OpLda(memory, cpu, OpDp(cpu, point_y));
+    OpSta(memory, cpu, OpDp(cpu, EDGE_INCREMENT));
+    OpLda(memory, cpu, OpDp(cpu, other ? SLOPED_LOWER_ANGLE : SLOPED_UPPER_ANGLE));
+    OpSta(memory, cpu, OpDp(cpu, EDGE_ANGLE));
+    if (!CallSlopedWindowChild(window, other ? 0x86c789u : 0x86c76au, 0x86c831u))
+        return false;
+    OpLda(memory, cpu, OpDp(cpu, other ? SLOPED_OTHER_X : SLOPED_POINT_X));
+    OpSta(memory, cpu, OpDp(cpu, EDGE_POSITION + 1u));
+    OpLda(memory, cpu, OpDp(cpu, point_y));
+    OpSta(memory, cpu, OpDp(cpu, EDGE_START_ROW));
+    if (!CallSlopedWindowChild(window, other ? 0x86c794u : 0x86c775u, 0x86ca06u) ||
+        !CallSlopedWindowChild(window, other ? 0x86c797u : 0x86c778u, 0x86c843u))
+        return false;
+    OpSta(memory, cpu, OpDp(cpu, other ? WINDOW_SECOND_END : WINDOW_FIRST_END));
+    return true;
+}
+
+static void ClearSplitWindowMargins(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, WINDOW_FIRST_END));
+    OpCmp(memory, cpu, OpDp(cpu, WINDOW_SECOND_END));
+    OpRepWidths(cpu, 0x20u);
+    if (cpu->carry) {
+        OpLda(memory, cpu, OpDp(cpu, WINDOW_FIRST_END));
+        ExchangeAccumulatorBytes(cpu);
+        OpSta(memory, cpu, OpDp(cpu, WINDOW_FIRST_END));
+    }
+    OpAndValue(cpu, 0xffu);
+    if (!cpu->zero) {
+        OpTay(cpu);
+        OpLdx(cpu, OpRead16(memory, OpDp(cpu, WINDOW_BUFFER)));
+        FillEmptyWindowRows(memory, cpu);
+    }
+    OpLda(memory, cpu, OpDp(cpu, WINDOW_SECOND_END));
+    OpAndValue(cpu, 0xffu);
+    OpCmpValue(cpu, WINDOW_SCREEN_HEIGHT);
+    if (!cpu->carry) {
+        OpSta(memory, cpu, OpDp(cpu, EDGE_INCREMENT));
+        OpAslA(cpu);
+        OpAdc(memory, cpu, OpDp(cpu, WINDOW_BUFFER));
+        OpTax(cpu);
+        OpLoadA(cpu, WINDOW_SCREEN_HEIGHT);
+        cpu->carry = 1u;
+        OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, EDGE_INCREMENT)));
+        OpTay(cpu);
+        FillEmptyWindowRows(memory, cpu);
+    }
+    OpSepWidths(cpu, 0x20u);
+}
+
+static void FillSplitWindowInterior(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_OTHER_Y));
+    OpSta(memory, cpu, OpDp(cpu, WINDOW_SECOND_END));
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_POINT_Y));
+    OpCmp(memory, cpu, OpDp(cpu, WINDOW_SECOND_END));
+    if (cpu->carry) {
+        OpSta(memory, cpu, OpDp(cpu, WINDOW_SECOND_END));
+        OpLda(memory, cpu, OpDp(cpu, SLOPED_OTHER_Y));
+    }
+    OpSta(memory, cpu, OpDp(cpu, WINDOW_FIRST_END));
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_OTHER_X));
+    OpSta(memory, cpu, OpDp(cpu, 1u));
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_POINT_X));
+    OpCmp(memory, cpu, OpDp(cpu, 1u));
+    if (cpu->carry) {
+        OpSta(memory, cpu, OpDp(cpu, 1u));
+        OpLda(memory, cpu, OpDp(cpu, SLOPED_OTHER_X));
+    }
+    OpSta(memory, cpu, OpDp(cpu, EDGE_INCREMENT));
+    OpLda(memory, cpu, OpDp(cpu, WINDOW_FIRST_END));
+    OpCmpValue(cpu, WINDOW_SCREEN_HEIGHT);
+    if (cpu->carry)
+        return;
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpAdc(memory, cpu, OpDp(cpu, WINDOW_BUFFER));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpDp(cpu, WINDOW_SECOND_END));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, WINDOW_FIRST_END)));
+    OpAndValue(cpu, 0xffu);
+    OpIncA(cpu);
+    OpTay(cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_ANGLE));
+    if (!cpu->negative) {
+        OpLdx(cpu, (uint16_t)(cpu->x + 1u));
+        OpLda(memory, cpu, OpDp(cpu, EDGE_INCREMENT));
+    } else {
+        OpLda(memory, cpu, OpDp(cpu, 1u));
+    }
+    do {
+        OpSta(memory, cpu, OpAbsX(cpu, WINDOW_ROW_OFFSET));
+        OpLdx(cpu, (uint16_t)(cpu->x + 1u));
+        OpLdx(cpu, (uint16_t)(cpu->x + 1u));
+        OpDey(cpu);
+    } while (!cpu->zero);
+}
+
+static bool DrawSplitSlopedWindow(SlopedWindow *window) {
+    const Lufia2Memory *memory = window->memory;
+    Lufia2CpuState *cpu = window->cpu;
+    OpLdy(cpu, 0x12u);
+    OpLda(memory, cpu, OpDp(cpu, SLOPED_ANGLE));
+    if (!cpu->negative)
+        OpLdy(cpu, (uint16_t)(cpu->y + 1u));
+    if (!DrawSplitWindowEdge(window, false) || !DrawSplitWindowEdge(window, true))
+        return false;
+    ClearSplitWindowMargins(memory, cpu);
+    FillSplitWindowInterior(memory, cpu);
+    return true;
+}
+
+Lufia2ExecutionResult Lufia2WorldMapBuildSlopedWindow(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu,
+                                                      Lufia2PushedChildCall child,
+                                                      void *context) {
+    if (!child || !WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86c5f8u);
+    Push8(memory, cpu, PackStatus(cpu));
+    OpSepWidths(cpu, 0x20u);
+    OpRepWidths(cpu, 0x10u);
+    OpLdy(cpu, OpRead16(memory, OpDp(cpu, WINDOW_HEIGHT)));
+    SlopedWindow window = {memory, cpu, child, context, ExecutionReturned(0x86c755u),
+                           0x86u};
+    bool empty = cpu->zero;
+    if (!empty) {
+        if (!PositionSlopedWindowEndpoints(&window))
+            return window.result;
+        OpLda(memory, cpu, OpDp(cpu, SLOPED_POINT_Y + 1u));
+        OpAndValue(cpu, OpReadM(memory, cpu, OpDp(cpu, SLOPED_OTHER_Y + 1u)));
+        empty = cpu->negative;
+    }
+    if (empty) {
+        OpLoadA(cpu, 0u);
+        OpSta(memory, cpu, DirectLongPointer(memory, cpu, WINDOW_BUFFER));
+        UnpackStatus(cpu, Pull8(memory, cpu));
+        return ExecutionReturned(0x86c67eu);
+    }
+    PushDataBank(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, WINDOW_BUFFER + 2u));
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    window.bank = cpu->data_bank;
+    OpLdy(cpu, 0xff00u);
+    if (!CallSlopedWindowChild(&window, 0x86c687u, 0x86cad7u))
+        return window.result;
+    OpStz(memory, cpu, OpDp(cpu, EDGE_INCREMENT));
+    static const uint8_t angles[] = {SLOPED_UPPER_ANGLE, SLOPED_LOWER_ANGLE};
+    for (unsigned edge = 0u; edge < 2u; ++edge) {
+        OpLda(memory, cpu, OpDp(cpu, angles[edge]));
+        cpu->carry = 1u;
+        OpSbcValue(cpu, 0x40u);
+        if (!cpu->negative)
+            OpStepMem(memory, cpu, OpDp(cpu, EDGE_INCREMENT), 1);
+    }
+    OpLsrMem(memory, cpu, OpDp(cpu, EDGE_INCREMENT));
+    if (cpu->carry) {
+        if (!DrawSplitSlopedWindow(&window))
+            return window.result;
+    } else {
+        OpLda(memory, cpu, OpDp(cpu, SLOPED_ANGLE));
+        cpu->carry = 1u;
+        OpSbcValue(cpu, 0x40u);
+        if (!DrawSlopedWindowBand(&window, cpu->negative))
+            return window.result;
+    }
+    PullDataBank(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return window.result;
 }

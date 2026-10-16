@@ -1388,8 +1388,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:AFA8` | `Lufia2WorldMapRunSceneTrack5` | verified | `src/world/world_scene_sequence.c` |
 | `$86:AFB2` | `Lufia2WorldMapRunGroupScene0` | verified | `src/world/world_scene_resources.c` |
 | `$86:AFE3` | `Lufia2WorldMapRunGroupScene1` | verified | `src/world/world_scene_resources.c` |
+| `$86:B039` | `Lufia2WorldMapStepExpandingSceneWindows` | verified | `src/world/world_scene_window_frames.c` |
 | `$86:B15A` | `Lufia2WorldMapRunGroupScene2` | verified | `src/world/world_scene_resources.c` |
 | `$86:B19A` | `Lufia2WorldMapLoadGroupSceneBuffer` | verified | `src/world/world_scene_resources.c` |
+| `$86:B1DE` | `Lufia2WorldMapStepSceneWindowAnimations` | verified | `src/world/world_scene_window_frames.c` |
 | `$86:B59E` | `Lufia2WorldMapRunObjectScene` | verified | `src/world/world_scene_resources.c` |
 | `$86:B63B` | `Lufia2WorldMapRunGroupTransitionScene` | verified | `src/world/world_scene_resources.c` |
 | `$86:BB5C` | `Lufia2WorldMapRunNearbyGroupScene` | verified | `src/world/world_scene_resources.c` |
@@ -1420,7 +1422,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:C40A` | `Lufia2WorldMapAppendUpperCircleRows` | verified | `src/world/world_circle_windows.c` |
 | `$86:C444` | `Lufia2WorldMapAppendLowerCircleRows` | verified | `src/world/world_circle_windows.c` |
 | `$86:C4A8` | `Lufia2WorldMapBuildCircleExtentTable` | verified | `src/world/world_circle_windows.c` |
+| `$86:C4E0` | `Lufia2WorldMapSubmitSlopedWindowRecord` | verified | `src/world/world_scene_windows.c` |
+| `$86:C536` | `Lufia2WorldMapSelectSlopedWindowRecord` | verified | `src/world/world_scene_windows.c` |
+| `$86:C54B` | `Lufia2WorldMapLoadSlopedWindowRecord` | verified | `src/world/world_scene_windows.c` |
 | `$86:C582` | `Lufia2WorldMapPrepareSceneWindowTables` | verified | `src/world/world_scene_layout.c` |
+| `$86:C5F8` | `Lufia2WorldMapBuildSlopedWindow` | verified | `src/world/world_sloped_windows.c` |
 | `$86:C831` | `Lufia2WorldMapCountWindowEdgeRows` | verified | `src/world/world_sloped_windows.c` |
 | `$86:C843` | `Lufia2WorldMapResolveWindowEdgeEnd` | verified | `src/world/world_sloped_windows.c` |
 | `$86:C854` | `Lufia2WorldMapBuildLowerWindowBand` | verified | `src/world/world_sloped_windows.c` |
@@ -1431,6 +1437,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:CA83` | `Lufia2WorldMapDrawLowerLeftWindowEdge` | verified | `src/world/world_sloped_windows.c` |
 | `$86:CAB2` | `Lufia2WorldMapDrawUpperLeftWindowEdge` | verified | `src/world/world_sloped_windows.c` |
 | `$86:CAD7` | `Lufia2WorldMapInitializeWindowRows` | verified | `src/world/world_sloped_windows.c` |
+| `$86:CB21` | `Lufia2WorldMapClipWindowEndpoint` | verified | `src/world/world_window_clipping.c` |
+| `$86:CB49` | `Lufia2WorldMapClipWindowLowerRight` | verified | `src/world/world_window_clipping.c` |
+| `$86:CB9E` | `Lufia2WorldMapResolveWindowRightIntersection` | verified | `src/world/world_window_clipping.c` |
 | `$86:CBBF` | `Lufia2WorldMapClearDisplayPalette` | verified | `src/world/world_frame_callers.c` |
 | `$86:CBF0` | `Lufia2WorldMapBuildSkylineHdma` | verified | `src/world/world_math_resources.c` |
 | `$86:CC3C` | `Lufia2WorldMapBuildScene` | verified | `src/world/world_scene.c` |
