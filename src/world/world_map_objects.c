@@ -341,7 +341,7 @@ static uint8_t TileBaseOf(Lufia2Wram wram, uint16_t pointer) {
     return (uint8_t)(base & TILE_BASE_MASK);
 }
 
-/* $86:E0B9: starts animation A on object X. M1X0. */
+/* Starts animation A; preserves the initial store width. */
 Lufia2ExecutionResult Lufia2WorldMapStartAnimation(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -351,14 +351,18 @@ Lufia2ExecutionResult Lufia2WorldMapStartAnimation(
     uint16_t pointer;
     uint8_t tile_base;
 
-    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+    if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x86e0b9u);
     wram = WramViewOfCaller(memory, cpu);
     object = cpu->x;
-    WramWriteAt(wram, OBJECT_ANIMATION, object, A8(cpu));
+    if (cpu->accumulator_is_8_bit)
+        WramWriteAt(wram, OBJECT_ANIMATION, object, A8(cpu));
+    else
+        WramWrite16At(wram, OBJECT_ANIMATION, object, cpu->accumulator);
     record = FindPoseRecord(wram, object, (uint16_t)(A8(cpu) << 1));
     pointer = ReadAbsolute16(wram, RECORD_POINTER, record);
     WramWrite16At(wram, OBJECT_FRAME_POINTER, object, pointer);
+    cpu->accumulator_is_8_bit = true;
     (void)LoadFrameStep(wram, object, record, true);
     cpu->y = WramRead16At(wram, OBJECT_FRAME_POINTER, object);
     if (IsNegative16(cpu->y))

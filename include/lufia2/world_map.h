@@ -60,8 +60,7 @@ Lufia2ExecutionResult Lufia2WorldMapClearSprites(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $86:E0B9 starts animation A on object X: loads its first frame record
- * and tile base. M1X0 only (else handed back). */
+  /* $86:E0B9 starts animation A on object X. M0X0/M1X0; exits M1X0. */
 Lufia2ExecutionResult Lufia2WorldMapStartAnimation(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

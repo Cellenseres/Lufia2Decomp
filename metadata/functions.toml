@@ -3209,6 +3209,7 @@ status = "verified"
 
 # World map object animation: start and per-frame step.
 [[function]]
+# M0X0 entry also verified; both widths exit M1X0.
 address = "86:E0B9"
 name = "Lufia2WorldMapStartAnimation"
 source = "src/world/world_map_objects.c"
