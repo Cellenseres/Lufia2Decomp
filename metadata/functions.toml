@@ -12177,3 +12177,83 @@ source = "src/world/world_scene_sprites.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:C831"
+name = "Lufia2WorldMapCountWindowEdgeRows"
+source = "src/world/world_sloped_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C843"
+name = "Lufia2WorldMapResolveWindowEdgeEnd"
+source = "src/world/world_sloped_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C854"
+name = "Lufia2WorldMapBuildLowerWindowBand"
+source = "src/world/world_sloped_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C928"
+name = "Lufia2WorldMapBuildUpperWindowBand"
+source = "src/world/world_sloped_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:CA06"
+name = "Lufia2WorldMapDrawSlopedWindowEdge"
+source = "src/world/world_sloped_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:CA2F"
+name = "Lufia2WorldMapDrawUpperRightWindowEdge"
+source = "src/world/world_sloped_windows.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "86:CA5E"
+name = "Lufia2WorldMapDrawLowerRightWindowEdge"
+source = "src/world/world_sloped_windows.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "86:CA83"
+name = "Lufia2WorldMapDrawLowerLeftWindowEdge"
+source = "src/world/world_sloped_windows.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "86:CAB2"
+name = "Lufia2WorldMapDrawUpperLeftWindowEdge"
+source = "src/world/world_sloped_windows.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "86:CAD7"
+name = "Lufia2WorldMapInitializeWindowRows"
+source = "src/world/world_sloped_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

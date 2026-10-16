@@ -1421,6 +1421,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:C444` | `Lufia2WorldMapAppendLowerCircleRows` | verified | `src/world/world_circle_windows.c` |
 | `$86:C4A8` | `Lufia2WorldMapBuildCircleExtentTable` | verified | `src/world/world_circle_windows.c` |
 | `$86:C582` | `Lufia2WorldMapPrepareSceneWindowTables` | verified | `src/world/world_scene_layout.c` |
+| `$86:C831` | `Lufia2WorldMapCountWindowEdgeRows` | verified | `src/world/world_sloped_windows.c` |
+| `$86:C843` | `Lufia2WorldMapResolveWindowEdgeEnd` | verified | `src/world/world_sloped_windows.c` |
+| `$86:C854` | `Lufia2WorldMapBuildLowerWindowBand` | verified | `src/world/world_sloped_windows.c` |
+| `$86:C928` | `Lufia2WorldMapBuildUpperWindowBand` | verified | `src/world/world_sloped_windows.c` |
+| `$86:CA06` | `Lufia2WorldMapDrawSlopedWindowEdge` | verified | `src/world/world_sloped_windows.c` |
+| `$86:CA2F` | `Lufia2WorldMapDrawUpperRightWindowEdge` | verified | `src/world/world_sloped_windows.c` |
+| `$86:CA5E` | `Lufia2WorldMapDrawLowerRightWindowEdge` | verified | `src/world/world_sloped_windows.c` |
+| `$86:CA83` | `Lufia2WorldMapDrawLowerLeftWindowEdge` | verified | `src/world/world_sloped_windows.c` |
+| `$86:CAB2` | `Lufia2WorldMapDrawUpperLeftWindowEdge` | verified | `src/world/world_sloped_windows.c` |
+| `$86:CAD7` | `Lufia2WorldMapInitializeWindowRows` | verified | `src/world/world_sloped_windows.c` |
 | `$86:CBBF` | `Lufia2WorldMapClearDisplayPalette` | verified | `src/world/world_frame_callers.c` |
 | `$86:CBF0` | `Lufia2WorldMapBuildSkylineHdma` | verified | `src/world/world_math_resources.c` |
 | `$86:CC3C` | `Lufia2WorldMapBuildScene` | verified | `src/world/world_scene.c` |

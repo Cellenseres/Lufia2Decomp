@@ -477,6 +477,7 @@ add_library(lufia2_decomp STATIC
     src/world/world_scene_layout.c
     src/world/world_scene_resources.c
     src/world/world_scene_windows.c
+    src/world/world_sloped_windows.c
     src/world/world_scene_sprites.c
     src/world/world_circle_windows.c
     src/world/world_map_objects.c
