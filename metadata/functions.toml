@@ -11905,3 +11905,115 @@ source = "src/world/world_motion_services.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:AFB2"
+name = "Lufia2WorldMapRunGroupScene0"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AFE3"
+name = "Lufia2WorldMapRunGroupScene1"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BF70"
+name = "Lufia2WorldMapRunResourceScene0"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BFF5"
+name = "Lufia2WorldMapRunResourceScene1"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C002"
+name = "Lufia2WorldMapRunResourceScene2"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C00F"
+name = "Lufia2WorldMapRunResourceScene3"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C041"
+name = "Lufia2WorldMapRunResourceScene4"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C2B3"
+name = "Lufia2WorldMapPositionSceneGroup"
+source = "src/world/world_scene_layout.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C582"
+name = "Lufia2WorldMapPrepareSceneWindowTables"
+source = "src/world/world_scene_layout.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:966C"
+name = "Lufia2WorldMapDarkenScenePalette"
+source = "src/world/world_scene_layout.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BB8C"
+name = "Lufia2WorldMapInstallScenePalette"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BF99"
+name = "Lufia2WorldMapUploadSceneGraphics"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BBE6"
+name = "Lufia2WorldMapLoadSceneBuffer"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C08C"
+name = "Lufia2WorldMapLoadAlternateSceneBuffer"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

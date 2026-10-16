@@ -125,7 +125,7 @@ name = "cgram_buffer"
 width = 2
 count = 256
 owner = "system"
-notes = "CGRAM shadow, one BGR555 word per color; the palette effects write colors here and set $73 bit 0 for the upload. The extent follows the 512-byte CGRAM. The preview controller writes color33 through the bank-relative shadow address0362."
+notes = "CGRAM shadow, one BGR555 word per color; the palette effects write colors here and set $73 bit 0 for the upload. The extent follows the 512-byte CGRAM. The preview controller writes color33 through the bank-relative shadow address0362. World scene BB8C darkens112 colors from0340 using966C,stages them at7FDC20..DCFF and copies them back withMVN."
 
 [[location]]
 address = "7E:0581"
@@ -663,7 +663,7 @@ name = "field_streamed_row_vram"
 width = 2
 count = 4
 owner = "field"
-notes = "$80:F5DB queues the VRAM word address of a streamed row for the NMI upload at $80:A0E1; zero means nothing pending. Indexed by layer*2. In battle this area holds PPU window shadows:123E WOBJSEL,1241 WH2,1242 WH3. Effect opcode5F sets the second window limits and WOBJSEL. World mode reuses byte1242 as the paired-object phase: A2E7 selects zero/up1/downFF; A338 restores it after DEC/INC for object19/20 animations."
+notes = "$80:F5DB queues the VRAM word address of a streamed row for the NMI upload at $80:A0E1; zero means nothing pending. Indexed by layer*2. In battle this area holds PPU window shadows:123E WOBJSEL,1241 WH2,1242 WH3. Effect opcode5F sets the second window limits and WOBJSEL. World mode reuses byte1242 as the paired-object phase: A2E7 selects zero/up1/downFF; A338 restores it after DEC/INC for object19/20 animations. World scene C2B3 reuses123E as actor-group vertical spacing,including incoming SBC carry."
 
 [[location]]
 address = "7E:1246"
@@ -761,7 +761,7 @@ name = "field_map_record_byte8"
 width = 1
 count = 224
 owner = "field"
-notes = "$83:B635 publishes byte 8 of each ten-byte header record, indexed by its ID."
+notes = "$83:B635 publishes byte 8 of each ten-byte header record, indexed by its ID. World scene C582 reuses7FD400..DBFF of the field/actor pool for four window streams;no overlapping new metadata span."
 
 [[location]]
 address = "7F:D466"
@@ -858,7 +858,7 @@ name = "actor_display_offset_x"
 width = 2
 count = 40
 owner = "field"
-notes = "$83:F6B0 and $83:F5EA clear the actor display-offset word through DPA9."
+notes = "$83:F6B0 and $83:F5EA clear the actor display-offset word through DPA9. World scene BB8C temporarily overlaps this field with palette work7FDC20..DCFF;not a separate allocation."
 
 [[location]]
 address = "7F:DD1C"
@@ -5838,3 +5838,11 @@ name = "world_map_resource_dirty"
 width = 1
 owner = "world"
 notes = "World resource-load state.86:AEB1 andD34A clear it after selecting/loading resources; existing world callers use it as a dirty flag."
+
+[[location]]
+address = "7E:1E50"
+name = "world_scene_window_record_storage"
+width = 1
+count = 114
+owner = "world"
+notes = "86:C582 clears two aliased six-record tables:6-byte records at1E50 and15-byte records at1E68. The long table clears words0A/0C;the short table clears02/04."
