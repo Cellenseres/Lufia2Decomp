@@ -1,8 +1,10 @@
+#include <stddef.h>
 #include "core/cpu_ops.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
+#include "text/text_child_service.h"
 
 enum {
     REBUILD_ATTRIBUTES = 0xa2b0u,
@@ -19,9 +21,25 @@ enum {
 typedef Lufia2ExecutionResult (*CameraStep)(const Lufia2Memory *, Lufia2CpuState *);
 
 static uint32_t CallCameraStep(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                               CameraStep step, uint8_t bank, uint16_t back) {
+                               CameraStep step, uint32_t target, uint16_t back,
+                               TextChildService *service) {
+    if (service) {
+        const uint32_t site = 0x800000u | (uint16_t)(back - 3u);
+        const uint16_t caller_stack = cpu->stack;
+        if (!TextCallChild(service, site, target, 3u)) {
+            if (service->result.flow == LUFIA2_EXECUTION_BOUNDARY)
+                service->result = ExecutionHandoff(
+                    cpu, ((uint32_t)cpu->program_bank << 16) | (uint16_t)(back + 1u));
+            return service->result.pc;
+        }
+        if (cpu->stack != caller_stack) {
+            service->result = ExecutionHandoff(cpu, site + 4u);
+            return service->result.pc;
+        }
+        return 0u;
+    }
     SimulateJslFrame(memory, cpu, 0x80u, back);
-    cpu->program_bank = bank;
+    cpu->program_bank = (uint8_t)(target >> 16);
     const Lufia2ExecutionResult result = step(memory, cpu);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result.pc;
@@ -40,7 +58,9 @@ static uint8_t PreservePublishChild(void *context, Lufia2CpuState *cpu, uint32_t
 }
 
 static uint32_t PublishLayers(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                              uint16_t back) {
+                              uint16_t back, TextChildService *service) {
+    if (service)
+        return CallCameraStep(memory, cpu, NULL, 0x838e4cu, back, service);
     SimulateJslFrame(memory, cpu, 0x80u, back);
     cpu->program_bank = 0x83u;
     uint32_t handoff = 0u;
@@ -83,7 +103,7 @@ static void ReadCameraCell(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 }
 
 static uint32_t CenterLayers(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                             uint16_t handler) {
+                             uint16_t handler, TextChildService *service) {
     if (handler == CENTER_LAYERS_AT_CELL) {
         ReadCameraCell(memory, cpu, handler);
     } else {
@@ -99,20 +119,20 @@ static uint32_t CenterLayers(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpSta(memory, cpu, OpDp(cpu, 0x58u));
     OpStz(memory, cpu, OpDp(cpu, 0x59u));
     PushY(memory, cpu);
-    uint32_t handoff =
-        CallCameraStep(memory, cpu, Lufia2FieldSetupLayerScroll, 0x83u, 0xb368u);
+    uint32_t handoff = CallCameraStep(memory, cpu, Lufia2FieldSetupLayerScroll,
+                                      0x838d42u, 0xb368u, service);
     if (handoff)
         return handoff;
     CenterCamera(memory, cpu, 0xb36bu);
-    handoff = PublishLayers(memory, cpu, 0xb36fu);
+    handoff = PublishLayers(memory, cpu, 0xb36fu, service);
     if (handoff)
         return handoff;
     OpPullY(memory, cpu);
     return LUFIA2_TEXT_COMMAND_NEXT;
 }
 
-uint32_t Lufia2TextExecuteCameraCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                        uint16_t handler) {
+static uint32_t RunCameraCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t handler, TextChildService *service) {
     if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
         cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
         cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
@@ -124,8 +144,8 @@ uint32_t Lufia2TextExecuteCameraCommand(const Lufia2Memory *memory, Lufia2CpuSta
             PushY(memory, cpu);
         OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_LAYER_TABLE_OFFSET));
         const uint32_t handoff =
-            CallCameraStep(memory, cpu, Lufia2FieldBuildAttributes, 0x80u,
-                           handler == REBUILD_ATTRIBUTES ? 0xa2b6u : 0xb728u);
+            CallCameraStep(memory, cpu, Lufia2FieldBuildAttributes, 0x80ed9cu,
+                           handler == REBUILD_ATTRIBUTES ? 0xa2b6u : 0xb728u, service);
         if (handoff)
             return handoff;
         if (handler == REBUILD_ATTRIBUTES_SAVED)
@@ -134,9 +154,9 @@ uint32_t Lufia2TextExecuteCameraCommand(const Lufia2Memory *memory, Lufia2CpuSta
     }
     case CENTER_LAYERS_AT_CELL:
     case CENTER_LAYERS_AT_SCENE:
-        return CenterLayers(memory, cpu, handler);
+        return CenterLayers(memory, cpu, handler, service);
     case PUBLISH_LAYERS: {
-        const uint32_t handoff = PublishLayers(memory, cpu, 0xb497u);
+        const uint32_t handoff = PublishLayers(memory, cpu, 0xb497u, service);
         return handoff ? handoff : LUFIA2_TEXT_COMMAND_NEXT;
     }
     case CENTER_CAMERA_AT_LEADER:
@@ -153,8 +173,8 @@ uint32_t Lufia2TextExecuteCameraCommand(const Lufia2Memory *memory, Lufia2CpuSta
         OpSta(memory, cpu, OpAbs(cpu, FIELD_LAYER_SCROLL_SPEED));
         return LUFIA2_TEXT_COMMAND_NEXT;
     case RESTORE_SCENE_DISPLAY: {
-        const uint32_t handoff =
-            CallCameraStep(memory, cpu, Lufia2FieldSetSceneDisplay, 0x80u, 0xaf6eu);
+        const uint32_t handoff = CallCameraStep(memory, cpu, Lufia2FieldSetSceneDisplay,
+                                                0x80f2f3u, 0xaf6eu, service);
         if (handoff)
             return handoff;
         OpLoadA(cpu, 0x80u);
@@ -164,4 +184,30 @@ uint32_t Lufia2TextExecuteCameraCommand(const Lufia2Memory *memory, Lufia2CpuSta
     default:
         return 0u;
     }
+}
+
+Lufia2ExecutionResult Lufia2TextRunCameraCommand(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu, uint16_t handler,
+                                                 Lufia2PushedChildCall child,
+                                                 void *context) {
+    if (handler != REBUILD_ATTRIBUTES && handler != REBUILD_ATTRIBUTES_SAVED &&
+        handler != CENTER_LAYERS_AT_CELL && handler != CENTER_LAYERS_AT_SCENE &&
+        handler != PUBLISH_LAYERS && handler != RESTORE_SCENE_DISPLAY)
+        return ExecutionReturned(0u);
+    if (!child || cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x800000u | handler);
+    TextChildService service = {memory, cpu, child, context, ExecutionReturned(0u)};
+    const uint32_t flow = RunCameraCommand(memory, cpu, handler, &service);
+    if (service.result.flow != LUFIA2_EXECUTION_RETURNED)
+        return service.result;
+    if (flow != LUFIA2_TEXT_COMMAND_NEXT && flow != LUFIA2_TEXT_COMMAND_YIELD)
+        return ExecutionHandoff(cpu, flow);
+    return ExecutionReturned(flow);
+}
+
+uint32_t Lufia2TextExecuteCameraCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                        uint16_t handler) {
+    return RunCameraCommand(memory, cpu, handler, NULL);
 }

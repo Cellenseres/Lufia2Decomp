@@ -1921,6 +1921,14 @@ static unsigned TextScriptOpcode(
                 !services->result.pc)
                 services->result = Lufia2TextRunSystemCommand(
                     memory, cpu, handler, services->child, services->context);
+            if (services->result.flow == LUFIA2_EXECUTION_RETURNED &&
+                !services->result.pc)
+                services->result = Lufia2TextRunCameraCommand(
+                    memory, cpu, handler, services->child, services->context);
+            if (services->result.flow == LUFIA2_EXECUTION_RETURNED &&
+                !services->result.pc)
+                services->result = Lufia2TextRunRenderCommand(
+                    memory, cpu, handler, services->child, services->context);
         }
         if (services->result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
             return TEXT_OPCODE_CHILD_UNWOUND;
