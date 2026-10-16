@@ -59,27 +59,11 @@ enum {
     TEXT_UNK_7FD4F7 = 0x7fd4f7u,
 };
 
-/* $80:C0B7: next text byte from DB:Y; Y past $FFFF moves the bank. */
-void Lufia2TextNextByte(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
+/* X16; helper callers keep frames clear of script state. */
+void Lufia2TextNextByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                        uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);              /* C0B7 */
-    IncrementY16(cpu);
-    if (!cpu->negative) {
-        PushAccumulator8(memory, cpu);                         /* C0BD */
-        Push8(memory, cpu, PackStatus(cpu));
-        SetAccumulatorWidth(cpu, 1);
-        LoadAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
-        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
-        PushAccumulator8(memory, cpu);
-        PullDataBank(memory, cpu);
-        UnpackStatus(cpu, Pull8(memory, cpu));
-        LoadA8(cpu, Pull8(memory, cpu));
-        LoadY16(cpu, 0x8000u);
-    }
+    (void)Lufia2SceneScriptReadOperand(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -337,42 +321,17 @@ static void TextFlagBit(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $80:C0D0: next two text bytes as a word in A. */
-void Lufia2TextNextWord(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
+void Lufia2TextNextWord(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                        uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    Lufia2TextNextByte(memory, cpu, 0xc0d2u);                        /* C0D0 */
-    PushAccumulator8(memory, cpu);
-    Lufia2TextNextByte(memory, cpu, 0xc0d6u);
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Pull8(memory, cpu));
+    (void)Lufia2SceneScriptReadWordBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $80:C102: Y = A; below $8000 the script moves to the next bank. */
-void Lufia2TextSetScriptPointer(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
+void Lufia2TextSetScriptPointer(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadA16(cpu, cpu->accumulator);                            /* C102 */
-    if (cpu->negative) {
-        LoadY16(cpu, cpu->accumulator);
-    } else {
-        Push8(memory, cpu, PackStatus(cpu));                   /* C109 */
-        cpu->carry = 0;
-        Add16Value(cpu, 0x8000u);
-        LoadY16(cpu, cpu->accumulator);
-        SetAccumulatorWidth(cpu, 1);
-        LoadAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
-        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        StoreAAbsolute8(memory, cpu, TEXT_SCRIPT_BANK, 0);
-        PushAccumulator8(memory, cpu);
-        PullDataBank(memory, cpu);
-        UnpackStatus(cpu, Pull8(memory, cpu));
-    }
+    (void)Lufia2SceneScriptSeekRelativeBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -1568,6 +1527,10 @@ static unsigned TextScriptOpcode(
         return TEXT_OPCODE_HANDOFF;
     }
     const uint32_t script_flow = Lufia2TextExecuteScriptCommand(memory, cpu, handler);
+    if (services->child && script_flow == 0x80a3c6u) {
+        Lufia2TextGoto(memory, cpu);
+        return TEXT_OPCODE_NEXT;
+    }
     if (script_flow == LUFIA2_TEXT_COMMAND_NEXT)
         return TEXT_OPCODE_NEXT;
     if (script_flow == LUFIA2_TEXT_COMMAND_YIELD)

@@ -1,5 +1,6 @@
 #include "core/cpu_ops.h"
 #include "lufia2/field.h"
+#include "field/field_internal.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
@@ -30,24 +31,33 @@ static bool SceneRecordCall(
     return false;
 }
 
-Lufia2ExecutionResult Lufia2SceneScriptReadWord(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!SceneRecordContext(cpu, true))
-        return ExecutionHandoff(cpu, 0x80c0d0u);
+Lufia2ExecutionResult Lufia2SceneScriptReadWordBody(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
     if (!SceneRecordCall(memory, cpu, Lufia2SceneScriptReadOperand, 0xc0d2u))
         return ExecutionHandoff(cpu, cpu->resume_pc);
-    PushAccumulator8(memory, cpu);
+    if (cpu->accumulator_is_8_bit)
+        PushAccumulator8(memory, cpu);
+    else
+        PushAccumulator16(memory, cpu);
     if (!SceneRecordCall(memory, cpu, Lufia2SceneScriptReadOperand, 0xc0d6u))
         return ExecutionHandoff(cpu, cpu->resume_pc);
     ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Pull8(memory, cpu));
+    if (cpu->accumulator_is_8_bit)
+        LoadA8(cpu, Pull8(memory, cpu));
+    else
+        PullAccumulator16(memory, cpu);
     return ExecutionReturned(0x80c0d9u);
 }
 
-Lufia2ExecutionResult Lufia2SceneScriptSeekRelative(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!SceneRecordContext(cpu, false))
-        return ExecutionHandoff(cpu, 0x80c102u);
+Lufia2ExecutionResult Lufia2SceneScriptReadWord(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu) {
+    if (!SceneRecordContext(cpu, true) && !SceneRecordContext(cpu, false))
+        return ExecutionHandoff(cpu, 0x80c0d0u);
+    return Lufia2SceneScriptReadWordBody(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2SceneScriptSeekRelativeBody(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu) {
     OpOraValue(cpu, 0u);
     if (cpu->negative) {
         OpTay(cpu);
@@ -65,6 +75,13 @@ Lufia2ExecutionResult Lufia2SceneScriptSeekRelative(
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x80c11bu);
+}
+
+Lufia2ExecutionResult Lufia2SceneScriptSeekRelative(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (!SceneRecordContext(cpu, false))
+        return ExecutionHandoff(cpu, 0x80c102u);
+    return Lufia2SceneScriptSeekRelativeBody(memory, cpu);
 }
 
 static bool SceneRecordReadOffset(

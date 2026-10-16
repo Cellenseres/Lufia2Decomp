@@ -7,6 +7,14 @@
 #include "lufia2/field.h"
 #include "system/wram.h"
 
+/* M0X0, binary arithmetic; caller supplies the original frame. */
+Lufia2ExecutionResult Lufia2SceneScriptSeekRelativeBody(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Native frames, sixteen-bit indexes, either accumulator width. */
+Lufia2ExecutionResult Lufia2SceneScriptReadWordBody(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $83:80CD: field idle test; zero = no event running. */
 void Lufia2FieldIdleBody(
     const Lufia2Memory *memory,

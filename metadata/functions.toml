@@ -2980,7 +2980,7 @@ address = "80:C0B7"
 name = "Lufia2SceneScriptReadOperand"
 source = "src/field/scene_script.c"
 entry_mx = "M1X0"
-exit_mx = "M1X0"
+exit_mx = "dynamic"
 status = "verified"
 
 # Blue-item carry list and full Cave exit, with explicit child call contracts.
@@ -4852,7 +4852,7 @@ address = "80:C0D0"
 name = "Lufia2SceneScriptReadWord"
 source = "src/field/field_scene_records.c"
 entry_mx = "M1X0"
-exit_mx = "M1X0"
+exit_mx = "dynamic"
 status = "verified"
 
 [[function]]
