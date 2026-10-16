@@ -2,6 +2,7 @@
 #include "lufia2/world_map.h"
 #include "system/wram.h"
 #include "world/world_scene_resources_internal.h"
+#include "world/world_scene_internal.h"
 
 enum {
     SCENE_GROUP_START = WRAM_WORLD_MAP_OBJECT_TABLE + 2u * 0x1du,
@@ -22,6 +23,24 @@ enum {
     PALETTE_RESULT = 4u,
     PALETTE_RESULT_OFFSET = 0x7fd8e0u
 };
+
+Lufia2ExecutionResult Lufia2WorldMapOffsetSceneObject(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu) {
+    if (!WorldSceneResourceMode(cpu, false))
+        return ExecutionHandoff(cpu, 0x86bec4u);
+    enum { HORIZONTAL_OFFSET = 4u, VERTICAL_OFFSET = 6u };
+    OpSta(memory, cpu, OpDp(cpu, HORIZONTAL_OFFSET));
+    OpWrite16(memory, OpDp(cpu, VERTICAL_OFFSET), cpu->y);
+    OpLda(memory, cpu, OpAbs(cpu, SCENE_GROUP_ANCHOR + 2u));
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpDp(cpu, HORIZONTAL_OFFSET));
+    OpSta(memory, cpu, WorldSceneObjectField(cpu, 2u));
+    OpLda(memory, cpu, OpAbs(cpu, SCENE_GROUP_ANCHOR + 5u));
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpDp(cpu, VERTICAL_OFFSET));
+    OpSta(memory, cpu, WorldSceneObjectField(cpu, 5u));
+    return ExecutionReturned(0x86bed8u);
+}
 
 Lufia2ExecutionResult Lufia2WorldMapPositionSceneGroup(const Lufia2Memory *memory,
                                                        Lufia2CpuState *cpu) {

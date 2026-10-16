@@ -12017,3 +12017,115 @@ source = "src/world/world_scene_resources.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:B15A"
+name = "Lufia2WorldMapRunGroupScene2"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B59E"
+name = "Lufia2WorldMapRunObjectScene"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B63B"
+name = "Lufia2WorldMapRunGroupTransitionScene"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BB5C"
+name = "Lufia2WorldMapRunNearbyGroupScene"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BE30"
+name = "Lufia2WorldMapRunOffsetGroupScene"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C04E"
+name = "Lufia2WorldMapRunDualObjectScene"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B19A"
+name = "Lufia2WorldMapLoadGroupSceneBuffer"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BBC4"
+name = "Lufia2WorldMapPositionNearbySceneGroup"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BE72"
+name = "Lufia2WorldMapStartSceneObjectAnimation"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BE7A"
+name = "Lufia2WorldMapPositionOffsetSceneGroup"
+source = "src/world/world_scene_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BEC4"
+name = "Lufia2WorldMapOffsetSceneObject"
+source = "src/world/world_scene_layout.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:C321"
+name = "Lufia2WorldMapSelectSceneWindowRecord"
+source = "src/world/world_scene_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C336"
+name = "Lufia2WorldMapLoadSceneWindowRecord"
+source = "src/world/world_scene_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C2D9"
+name = "Lufia2WorldMapSubmitSceneWindowRecord"
+source = "src/world/world_scene_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
