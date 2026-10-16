@@ -68,8 +68,19 @@ static bool RunEnabledSceneUpdate(WorldFrameScript *script, uint8_t control,
     return script->cpu->zero || FrameScriptCall(script, site, target);
 }
 
-static Lufia2ExecutionResult RunSceneFrames(WorldFrameScript *script) {
+static bool AdvanceSceneFrame(WorldFrameScript *script) {
     const Lufia2Memory *memory = script->memory;
+    Lufia2CpuState *cpu = script->cpu;
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
+    if (cpu->negative)
+        return false;
+    OpLdx(cpu, OpRead16(memory, OpAbs(cpu, SCRIPT_FRAME)));
+    OpInx(cpu);
+    OpWrite16(memory, OpAbs(cpu, SCRIPT_FRAME), cpu->x);
+    return true;
+}
+
+static Lufia2ExecutionResult RunSceneFrames(WorldFrameScript *script) {
     Lufia2CpuState *cpu = script->cpu;
     for (unsigned frame = 0u; frame < SCRIPT_SLICE_LIMIT; ++frame) {
         if (!FrameScriptCall(script, 0x86c1ecu, 0x8694d4u))
@@ -87,14 +98,20 @@ static Lufia2ExecutionResult RunSceneFrames(WorldFrameScript *script) {
         if (!FrameScriptCall(script, 0x86c231u, 0x86973eu) ||
             !FrameScriptCall(script, 0x86c234u, 0x86974fu))
             return script->result;
-        OpLda(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
-        if (cpu->negative)
+        if (!AdvanceSceneFrame(script))
             return ExecutionReturned(0x86c245u);
-        OpLdx(cpu, OpRead16(memory, OpAbs(cpu, SCRIPT_FRAME)));
-        OpInx(cpu);
-        OpWrite16(memory, OpAbs(cpu, SCRIPT_FRAME), cpu->x);
     }
     return ExecutionHandoff(cpu, 0x86c1ecu);
+}
+
+static Lufia2ExecutionResult StartSceneFrames(WorldFrameScript *script) {
+    const Lufia2Memory *memory = script->memory;
+    Lufia2CpuState *cpu = script->cpu;
+    OpLdx(cpu, OpRead16(memory, OpAbs(cpu, SCRIPT_POINTER)));
+    OpLda(memory, cpu, OpAbsX(cpu, 2u));
+    if (!FrameScriptCall(script, 0x86c1e9u, 0x86d385u))
+        return script->result;
+    return RunSceneFrames(script);
 }
 
 Lufia2ExecutionResult Lufia2WorldMapRunSceneScript(const Lufia2Memory *memory,
@@ -112,11 +129,7 @@ Lufia2ExecutionResult Lufia2WorldMapRunSceneScript(const Lufia2Memory *memory,
         !FrameScriptCall(&script, 0x86c1ddu, 0x86973eu) ||
         !FrameScriptCall(&script, 0x86c1e0u, 0x86974fu))
         return script.result;
-    OpLdx(cpu, OpRead16(memory, OpAbs(cpu, SCRIPT_POINTER)));
-    OpLda(memory, cpu, OpAbsX(cpu, 2u));
-    if (!FrameScriptCall(&script, 0x86c1e9u, 0x86d385u))
-        return script.result;
-    return RunSceneFrames(&script);
+    return StartSceneFrames(&script);
 }
 
 static bool RunSceneCallback(WorldFrameScript *script, uint32_t jump,
@@ -206,4 +219,28 @@ Lufia2ExecutionResult Lufia2WorldMapStartSceneActors(const Lufia2Memory *memory,
             return script.result;
     }
     return script.result;
+}
+
+Lufia2ExecutionResult Lufia2WorldMapResumeSceneScript(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu,
+                                                      Lufia2PushedChildCall child,
+                                                      void *context) {
+    if (!FrameScriptEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x86c1e3u);
+    WorldFrameScript script = {memory, cpu, child, context,
+                               ExecutionReturned(0x86c245u)};
+    return StartSceneFrames(&script);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapResumeSceneFrame(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu,
+                                                     Lufia2PushedChildCall child,
+                                                     void *context) {
+    if (!FrameScriptEntry(cpu, child))
+        return ExecutionHandoff(cpu, 0x86c237u);
+    WorldFrameScript script = {memory, cpu, child, context,
+                               ExecutionReturned(0x86c245u)};
+    if (!AdvanceSceneFrame(&script))
+        return script.result;
+    return RunSceneFrames(&script);
 }

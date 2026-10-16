@@ -12650,3 +12650,57 @@ source = "src/world/world_scene_window_frames.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Explicit continuation; shared body with its original owner.
+[[function]]
+address = "86:C1E3"
+name = "Lufia2WorldMapResumeSceneScript"
+source = "src/world/world_frame_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Explicit continuation; shared body with its original owner.
+[[function]]
+address = "86:C237"
+name = "Lufia2WorldMapResumeSceneFrame"
+source = "src/world/world_frame_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Explicit continuation; shared body with its original owner.
+[[function]]
+address = "86:B38E"
+name = "Lufia2WorldMapResumePaletteWait0"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Explicit continuation; shared body with its original owner.
+[[function]]
+address = "86:B391"
+name = "Lufia2WorldMapResumePaletteWait1"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Explicit continuation; shared body with its original owner.
+[[function]]
+address = "86:B394"
+name = "Lufia2WorldMapResumePaletteWait2"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+# Explicit continuation; shared body with its original owner.
+[[function]]
+address = "86:B397"
+name = "Lufia2WorldMapResumePaletteWait3"
+source = "src/world/world_scene_window_frames.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

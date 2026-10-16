@@ -590,6 +590,31 @@ static void RestoreScenePaletteWork(const Lufia2Memory *memory, Lufia2CpuState *
     OpWrite16(memory, OpAbs(cpu, WRAM_WORLD_MAP_PALETTE_TRANSFER_LENGTH), cpu->x);
 }
 
+static Lufia2ExecutionResult RunPaletteFadeSteps(WindowFrame *frame, bool begin_step,
+                                                 unsigned first_wait) {
+    const Lufia2Memory *memory = frame->memory;
+    Lufia2CpuState *cpu = frame->cpu;
+    do {
+        if (begin_step) {
+            OpLdx(cpu, 0x421u);
+            OpWrite16(memory, OpDp(cpu, ANIMATION_PALETTE_STEP), cpu->x);
+            OpLdx(cpu, ANIMATION_PALETTE_INPUT);
+            OpLoadA(cpu, 0xf0u);
+            OpSta(memory, cpu, OpDp(cpu, ANIMATION_COLORS_LEFT));
+            if (!CallWindowFrameChild(frame, 0x86b360u, 0x86966cu))
+                return frame->result;
+            RestoreScenePaletteWork(memory, cpu);
+        }
+        for (unsigned wait = first_wait; wait < 4u; ++wait)
+            if (!CallWindowFrameChild(frame, 0x86b38bu + wait * 3u, 0x86974fu))
+                return frame->result;
+        OpStepMem(memory, cpu, OpDp(cpu, FRAME_WINDOW_INDEX), -1);
+        begin_step = true;
+        first_wait = 0u;
+    } while (!cpu->zero);
+    return frame->result;
+}
+
 Lufia2ExecutionResult Lufia2WorldMapCycleScenePaletteFade(const Lufia2Memory *memory,
                                                           Lufia2CpuState *cpu,
                                                           Lufia2PushedChildCall child,
@@ -599,19 +624,45 @@ Lufia2ExecutionResult Lufia2WorldMapCycleScenePaletteFade(const Lufia2Memory *me
     WindowFrame frame = {memory, cpu, child, context, ExecutionReturned(0x86b39bu)};
     OpLoadA(cpu, 10u);
     OpSta(memory, cpu, OpDp(cpu, FRAME_WINDOW_INDEX));
-    do {
-        OpLdx(cpu, 0x421u);
-        OpWrite16(memory, OpDp(cpu, ANIMATION_PALETTE_STEP), cpu->x);
-        OpLdx(cpu, ANIMATION_PALETTE_INPUT);
-        OpLoadA(cpu, 0xf0u);
-        OpSta(memory, cpu, OpDp(cpu, ANIMATION_COLORS_LEFT));
-        if (!CallWindowFrameChild(&frame, 0x86b360u, 0x86966cu))
-            return frame.result;
-        RestoreScenePaletteWork(memory, cpu);
-        for (unsigned wait = 0u; wait < 4u; ++wait)
-            if (!CallWindowFrameChild(&frame, 0x86b38bu + wait * 3u, 0x86974fu))
-                return frame.result;
-        OpStepMem(memory, cpu, OpDp(cpu, FRAME_WINDOW_INDEX), -1);
-    } while (!cpu->zero);
-    return frame.result;
+    return RunPaletteFadeSteps(&frame, true, 0u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapResumePaletteWait0(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu,
+                                                       Lufia2PushedChildCall child,
+                                                       void *context) {
+    if (!child || !WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86b38eu);
+    WindowFrame frame = {memory, cpu, child, context, ExecutionReturned(0x86b39bu)};
+    return RunPaletteFadeSteps(&frame, false, 1u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapResumePaletteWait1(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu,
+                                                       Lufia2PushedChildCall child,
+                                                       void *context) {
+    if (!child || !WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86b391u);
+    WindowFrame frame = {memory, cpu, child, context, ExecutionReturned(0x86b39bu)};
+    return RunPaletteFadeSteps(&frame, false, 2u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapResumePaletteWait2(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu,
+                                                       Lufia2PushedChildCall child,
+                                                       void *context) {
+    if (!child || !WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86b394u);
+    WindowFrame frame = {memory, cpu, child, context, ExecutionReturned(0x86b39bu)};
+    return RunPaletteFadeSteps(&frame, false, 3u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapResumePaletteWait3(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu,
+                                                       Lufia2PushedChildCall child,
+                                                       void *context) {
+    if (!child || !WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86b397u);
+    WindowFrame frame = {memory, cpu, child, context, ExecutionReturned(0x86b39bu)};
+    return RunPaletteFadeSteps(&frame, false, 4u);
 }

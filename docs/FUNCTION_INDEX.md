@@ -1393,6 +1393,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:B19A` | `Lufia2WorldMapLoadGroupSceneBuffer` | verified | `src/world/world_scene_resources.c` |
 | `$86:B1DE` | `Lufia2WorldMapStepSceneWindowAnimations` | verified | `src/world/world_scene_window_frames.c` |
 | `$86:B350` | `Lufia2WorldMapCycleScenePaletteFade` | verified | `src/world/world_scene_window_frames.c` |
+| `$86:B38E` | `Lufia2WorldMapResumePaletteWait0` | verified | `src/world/world_scene_window_frames.c` |
+| `$86:B391` | `Lufia2WorldMapResumePaletteWait1` | verified | `src/world/world_scene_window_frames.c` |
+| `$86:B394` | `Lufia2WorldMapResumePaletteWait2` | verified | `src/world/world_scene_window_frames.c` |
+| `$86:B397` | `Lufia2WorldMapResumePaletteWait3` | verified | `src/world/world_scene_window_frames.c` |
 | `$86:B454` | `Lufia2WorldMapGrowSceneWindow` | verified | `src/world/world_scene_window_frames.c` |
 | `$86:B47E` | `Lufia2WorldMapRotateSceneWindow` | verified | `src/world/world_scene_window_frames.c` |
 | `$86:B4BE` | `Lufia2WorldMapContractSceneWindow` | verified | `src/world/world_scene_window_frames.c` |
@@ -1447,6 +1451,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:C04E` | `Lufia2WorldMapRunDualObjectScene` | verified | `src/world/world_scene_resources.c` |
 | `$86:C08C` | `Lufia2WorldMapLoadAlternateSceneBuffer` | verified | `src/world/world_scene_resources.c` |
 | `$86:C1D2` | `Lufia2WorldMapRunSceneScript` | verified | `src/world/world_frame_script.c` |
+| `$86:C1E3` | `Lufia2WorldMapResumeSceneScript` | verified | `src/world/world_frame_script.c` |
+| `$86:C237` | `Lufia2WorldMapResumeSceneFrame` | verified | `src/world/world_frame_script.c` |
 | `$86:C246` | `Lufia2WorldMapStepSceneScript` | verified | `src/world/world_frame_script.c` |
 | `$86:C284` | `Lufia2WorldMapStartSceneActors` | verified | `src/world/world_frame_script.c` |
 | `$86:C2AD` | `Lufia2WorldMapStartSceneActor` | verified | `src/world/world_frame_script.c` |

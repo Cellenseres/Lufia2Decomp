@@ -920,6 +920,26 @@ Lufia2ExecutionResult Lufia2WorldMapCycleScenePaletteFade(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+/* Original scene continuations after frame waits. */
+Lufia2ExecutionResult Lufia2WorldMapResumeSceneScript(const Lufia2Memory *,
+                                                      Lufia2CpuState *,
+                                                      Lufia2PushedChildCall, void *);
+Lufia2ExecutionResult Lufia2WorldMapResumeSceneFrame(const Lufia2Memory *,
+                                                     Lufia2CpuState *,
+                                                     Lufia2PushedChildCall, void *);
+Lufia2ExecutionResult Lufia2WorldMapResumePaletteWait0(const Lufia2Memory *,
+                                                       Lufia2CpuState *,
+                                                       Lufia2PushedChildCall, void *);
+Lufia2ExecutionResult Lufia2WorldMapResumePaletteWait1(const Lufia2Memory *,
+                                                       Lufia2CpuState *,
+                                                       Lufia2PushedChildCall, void *);
+Lufia2ExecutionResult Lufia2WorldMapResumePaletteWait2(const Lufia2Memory *,
+                                                       Lufia2CpuState *,
+                                                       Lufia2PushedChildCall, void *);
+Lufia2ExecutionResult Lufia2WorldMapResumePaletteWait3(const Lufia2Memory *,
+                                                       Lufia2CpuState *,
+                                                       Lufia2PushedChildCall, void *);
+
 #ifdef __cplusplus
 }
 #endif
