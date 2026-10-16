@@ -5,6 +5,7 @@
 
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
+#include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "core/joypad.h"
 #include "core/wram_view.h"
@@ -421,6 +422,181 @@ enum {
     TEXT_OPCODE_CHILD_UNWOUND
 };
 
+enum {
+    TEXT_MOTION_SCRIPT_ID = 0u,
+    TEXT_MOTION_ACTOR_ID = 1u,
+    TEXT_MOTION_SCRIPT_OFFSET = 2u,
+    TEXT_MOTION_FLAGS = 0x22u,
+    TEXT_MOTION_HEADER_FLAGS = 0x7ef003u,
+    TEXT_MOTION_HEADER_SCRIPT = 0x7ef004u,
+    TEXT_CAMERA_OFFSET_X = 0x58u,
+    TEXT_CAMERA_OFFSET_Y = 0x5au,
+    TEXT_CAMERA_DISTANCE = 0x63u,
+    TEXT_CAMERA_DIRECTIONS = 0xb5bcu,
+    TEXT_PARTY_UPDATE_ARGUMENT = 0x97u,
+    TEXT_CAMERA_CELL_MODE = 0x60u,
+    TEXT_CAMERA_ACTOR_MODE = 0x70u,
+};
+
+typedef struct TextCommandServices {
+    Lufia2PushedChildCall child;
+    void *context;
+    Lufia2ExecutionResult result;
+} TextCommandServices;
+
+static bool TextCommandContext(const Lufia2CpuState *cpu,
+                               const TextCommandServices *services) {
+    return services->child && cpu->program_bank == 0x80u &&
+           cpu->accumulator_is_8_bit == 1u && !cpu->index_is_8_bit &&
+           !cpu->direct_page && !cpu->decimal && cpu->stack >= 0x1f23u &&
+           cpu->stack <= 0x1ffcu;
+}
+
+static unsigned TextCallCommandChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                     TextCommandServices *services, uint32_t site,
+                                     uint32_t target, uint32_t *handoff) {
+    const uint8_t script_bank = cpu->data_bank;
+    const uint16_t caller_stack = cpu->stack;
+    if (!CallChildWithFrame(memory, cpu, services->child, services->context, site,
+                            target, 3u, 0x80u)) {
+        services->result =
+            (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
+        return TEXT_OPCODE_CHILD_UNWOUND;
+    }
+    if (cpu->program_bank != 0x80u || cpu->data_bank != script_bank ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit || cpu->direct_page ||
+        cpu->decimal || cpu->stack != caller_stack) {
+        *handoff = ((uint32_t)cpu->program_bank << 16) | (uint16_t)(site + 4u);
+        return TEXT_OPCODE_HANDOFF;
+    }
+    return TEXT_OPCODE_NEXT;
+}
+
+static bool TextFindMotionScript(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint32_t *handoff) {
+    SimulateJsrFrame(memory, cpu, 0xa864u);
+    LoadX16(cpu, 0x12u);
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, 6u);
+    ExchangeAccumulatorBytes(cpu);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xbfe3u);
+    const Lufia2ExecutionResult result = Lufia2FieldFindHeaderRecord(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        *handoff = result.pc;
+        return false;
+    }
+    SimulateRtlFrame(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    return true;
+}
+
+static unsigned TextStartActorMotion(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                     uint32_t *handoff) {
+    SimulateJslFrame(memory, cpu, 0x80u, 0xa837u);
+    (void)Lufia2FieldMarkObjectSlots(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    Lufia2TextNextByte(memory, cpu, 0xa83au);
+    StoreADirect8(memory, cpu, TEXT_MOTION_SCRIPT_ID);
+    Lufia2TextNextByte(memory, cpu, 0xa83fu);
+    StoreADirect8(memory, cpu, TEXT_MOTION_ACTOR_ID);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xa845u);
+    Lufia2TextFindWindowActor(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    if (cpu->carry)
+        return TEXT_OPCODE_NEXT;
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
+    BitImmediate8(cpu, 0x80u);
+    if (!cpu->zero) {
+        for (unsigned byte = 0u; byte < 3u; ++byte)
+            Lufia2TextPrevByte(memory, cpu, (uint16_t)(0xa856u + byte * 3u));
+        return TEXT_OPCODE_EXIT;
+    }
+    LoadA8(cpu, DirectByte(memory, cpu, TEXT_MOTION_SCRIPT_ID));
+    if (!TextFindMotionScript(memory, cpu, handoff))
+        return TEXT_OPCODE_HANDOFF;
+    if (cpu->carry)
+        return TEXT_OPCODE_NEXT;
+    SetAccumulatorWidth(cpu, 0u);
+    LoadA16(cpu,
+            Read16Long(memory, LongIndexedAddress(TEXT_MOTION_HEADER_SCRIPT, cpu->x)));
+    cpu->carry = 0u;
+    Add16Immediate(cpu, 0xf000u);
+    Write16Direct(memory, cpu, TEXT_MOTION_SCRIPT_OFFSET, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1u);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(TEXT_MOTION_HEADER_FLAGS, cpu->x)));
+    StoreADirect8(memory, cpu, TEXT_MOTION_FLAGS);
+    LoadA8(cpu, DirectByte(memory, cpu, TEXT_MOTION_ACTOR_ID));
+    SimulateJslFrame(memory, cpu, 0x80u, 0xa883u);
+    Lufia2TextFindWindowActor(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    if (cpu->carry)
+        return TEXT_OPCODE_NEXT;
+    SetAccumulatorWidth(cpu, 0u);
+    LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
+    LoadA16(cpu, Read16Direct(memory, cpu, TEXT_MOTION_SCRIPT_OFFSET));
+    Write16Long(memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_SCRIPT, cpu->x),
+                cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1u);
+    LoadA8(cpu, 0x7eu);
+    Write8(memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_SCRIPT + 2u, cpu->x), A8(cpu));
+    SimulateJslFrame(memory, cpu, 0x80u, 0xa89bu);
+    cpu->program_bank = 0x83u;
+    Lufia2ActorClearMapOccupancy(memory, cpu);
+    cpu->program_bank = 0x80u;
+    SimulateRtlFrame(memory, cpu);
+    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
+    LoadA8(cpu, 8u);
+    Write8(memory, LongIndexedAddress(WRAM_UNK_7FE4DE, cpu->x), A8(cpu));
+    LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0u);
+    BitImmediate8(cpu, 8u);
+    if (cpu->zero) {
+        LoadA8(cpu, DirectByte(memory, cpu, TEXT_MOTION_FLAGS));
+        BitImmediate8(cpu, 0x40u);
+        if (cpu->zero) {
+            TransferXToA(cpu);
+            AslA8(cpu);
+            StoreAAbsolute8(memory, cpu, WRAM_FIELD_CAMERA_ACTOR, 0u);
+            LoadA8(cpu, 2u);
+            StoreAAbsolute8(memory, cpu, WRAM_UNK_7E05A8, 0u);
+        }
+    }
+    LoadA8(cpu, DirectByte(memory, cpu, TEXT_MOTION_FLAGS));
+    BitImmediate8(cpu, 0x20u);
+    bool update_motion = !cpu->zero;
+    if (update_motion) {
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
+        And8(cpu, 0xfeu);
+        Or8(cpu, 0x30u);
+    } else {
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
+        BitImmediate8(cpu, 8u);
+        update_motion = cpu->zero;
+        if (update_motion) {
+            And8(cpu, 0xfeu);
+            Or8(cpu, 8u);
+        }
+    }
+    if (update_motion) {
+        StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
+        And8(cpu, 0x80u);
+        if (cpu->zero) {
+            TransferDirectToA(cpu);
+            Write8(memory, LongIndexedAddress(WRAM_ACTOR_PRIMARY_TIMER, cpu->x),
+                   A8(cpu));
+        }
+    }
+    LoadA8(cpu, DirectByte(memory, cpu, TEXT_MOTION_FLAGS));
+    And8(cpu, 0x10u);
+    if (!cpu->zero)
+        return TEXT_OPCODE_NEXT;
+    LoadA8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));
+    StoreAAbsolute8(memory, cpu, TEXT_WAIT_ACTOR, 0u);
+    Lufia2TextPrevByte(memory, cpu, 0xa8eeu);
+    Lufia2TextPrevByte(memory, cpu, 0xa8f1u);
+    return TEXT_OPCODE_EXIT;
+}
+
 /* $80:9D3E: measure upcoming text and prepare its window (opcode $08). */
 static unsigned TextOpenWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint32_t *handoff) {
@@ -505,12 +681,12 @@ enum TextOpcodeHandler {
 };
 
 /* $33: wait until actor $1269 stops moving. */
-static unsigned TextOpWaitForActor(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t *handoff) {
+static unsigned TextOpWaitForActor(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                   uint32_t *handoff, TextCommandServices *services) {
     LoadAAbsolute8(memory, cpu, TEXT_WAIT_ACTOR, 0);
     if (cpu->negative) {
+        if (TextCommandContext(cpu, services))
+            return TextStartActorMotion(memory, cpu, handoff);
         *handoff = 0x80a834u;
         return TEXT_OPCODE_HANDOFF;
     }
@@ -552,14 +728,32 @@ static unsigned TextOpWaitFrames(
 }
 
 /* $3C: wait until no party actor is moving. */
-static unsigned TextOpWaitForParty(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t *handoff) {
+static unsigned TextOpWaitForParty(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                   uint32_t *handoff, TextCommandServices *services) {
     unsigned i;
 
     LoadAAbsolute8(memory, cpu, TEXT_WAIT_ACTOR, 0);
     if (cpu->negative) {
+        if (TextCommandContext(cpu, services)) {
+            LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0u);
+            StoreADirect8(memory, cpu, DP_PROBE_X);
+            LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0u);
+            StoreADirect8(memory, cpu, DP_PROBE_Y);
+            PushY(memory, cpu);
+            LoadA8(cpu, 0x0fu);
+            StoreADirect8(memory, cpu, TEXT_PARTY_UPDATE_ARGUMENT);
+            LoadY16(cpu, 1u);
+            const unsigned flow = TextCallCommandChild(memory, cpu, services, 0x80b3f1u,
+                                                       0x80b404u, handoff);
+            if (flow != TEXT_OPCODE_NEXT)
+                return flow;
+            OpPullY(memory, cpu);
+            LoadAAbsolute8(memory, cpu, TEXT_WAIT_ACTOR, 0u);
+            if (!cpu->zero)
+                return TEXT_OPCODE_NEXT;
+            Lufia2TextPrevByte(memory, cpu, 0xb400u);
+            return TEXT_OPCODE_EXIT;
+        }
         *handoff = 0x80b3dfu;
         return TEXT_OPCODE_HANDOFF;
     }
@@ -750,10 +944,8 @@ static unsigned TextOpHideActor(
 }
 
 /* $4B: change music. */
-static unsigned TextOpMusic(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t *handoff) {
+static unsigned TextOpMusic(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            uint32_t *handoff, TextCommandServices *services) {
     Lufia2TextNextByte(memory, cpu, 0xb84bu);                        /* B849 */
     Compare8(cpu, A8(cpu),
              Read8(memory, AbsoluteIndexedAddress(cpu, TEXT_MUSIC_TRACK, 0)));
@@ -766,6 +958,19 @@ static unsigned TextOpMusic(
     if (!cpu->zero)
         return TEXT_OPCODE_NEXT;
     LoadAAbsolute8(memory, cpu, TEXT_MUSIC_TRACK, 0);          /* B85F */
+    if (TextCommandContext(cpu, services)) {
+        static const struct {
+            uint32_t site, target;
+        } calls[] = {
+            {0x80b862u, 0x8093feu}, {0x80b866u, 0x848328u}, {0x80b86au, 0x848311u}};
+        for (unsigned i = 0u; i < sizeof calls / sizeof calls[0]; ++i) {
+            const unsigned flow = TextCallCommandChild(
+                memory, cpu, services, calls[i].site, calls[i].target, handoff);
+            if (flow != TEXT_OPCODE_NEXT)
+                return flow;
+        }
+        return TEXT_OPCODE_NEXT;
+    }
     *handoff = 0x80b862u;                                      /* JSL $80:93FE */
     return TEXT_OPCODE_HANDOFF;
 }
@@ -866,11 +1071,187 @@ static unsigned TextOpWaitSeconds(
     return TEXT_OPCODE_NEXT;
 }
 
+static void TextSetCameraCell(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+    And8(cpu, 0x0fu);
+    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E05A8, 0u);
+    TransferDirectToA(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_C));
+    OpIncA(cpu);
+    SetAccumulatorWidth(cpu, 0u);
+    for (unsigned shift = 0u; shift < 4u; ++shift)
+        AslA16(cpu);
+    Write16Long(memory, FIELD_SCRIPTED_CAMERA_X, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1u);
+    TransferDirectToA(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_D));
+    SetAccumulatorWidth(cpu, 0u);
+    for (unsigned shift = 0u; shift < 4u; ++shift)
+        AslA16(cpu);
+    Write16Long(memory, FIELD_SCRIPTED_CAMERA_Y, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1u);
+    LoadA8(cpu, 8u);
+    TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 1u);
+    SimulateRtsFrame(memory, cpu);
+}
+
+static void TextFollowCameraActor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xb544u);
+    StoreZeroAbsolute8(memory, cpu, WRAM_FIELD_CAMERA_ACTOR, 0u);
+    StoreZeroAbsolute8(memory, cpu, WRAM_FIELD_CAMERA_ACTOR + 1u, 0u);
+    LoadAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0u);
+    And8(cpu, 0xf7u);
+    StoreAAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 0u);
+    BitImmediate8(cpu, 0x40u);
+    if (!cpu->zero) {
+        cpu->carry = 0u;
+        SimulateRtsFrame(memory, cpu);
+        return;
+    }
+    SetAccumulatorWidth(cpu, 0u);
+    LoadA16(cpu, Read16Long(memory, WRAM_ACTOR_FINE_X));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, FIELD_SCREEN_HALF_WIDTH);
+    Write16Direct(memory, cpu, DP_SCRATCH_A, cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, WRAM_ACTOR_FINE_Y));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, FIELD_SCREEN_HALF_HEIGHT);
+    Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_TABLE_OFFSET, 0u));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
+    Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_SCRATCH_A));
+    cpu->carry = 1u;
+    if (cpu->zero) {
+        LoadA16(cpu,
+                Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_Y, cpu->x));
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, DP_SCRATCH_C));
+        cpu->carry = 1u;
+        if (cpu->zero) {
+            SetAccumulatorWidth(cpu, 1u);
+            StoreZeroAbsolute8(memory, cpu, WRAM_UNK_7E05A8, 0u);
+            StoreZeroAbsolute8(memory, cpu, WRAM_UNK_7E05A8 + 1u, 0u);
+            cpu->carry = 0u;
+        }
+    }
+    SimulateRtsFrame(memory, cpu);
+}
+
+static unsigned TextMoveCameraTarget(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                     uint32_t *handoff) {
+    SetAccumulatorWidth(cpu, 0u);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_TABLE_OFFSET, 0u));
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
+    Write16Direct(memory, cpu, TEXT_CAMERA_OFFSET_X, cpu->accumulator);
+    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_Y, cpu->x));
+    Write16Direct(memory, cpu, TEXT_CAMERA_OFFSET_Y, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1u);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, 0u);
+    SetAccumulatorWidth(cpu, 0u);
+    for (unsigned shift = 0u; shift < 4u; ++shift)
+        LsrA16(cpu);
+    Write16Direct(memory, cpu, TEXT_CAMERA_DISTANCE, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1u);
+    TransferDirectToA(cpu);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+    for (unsigned shift = 0u; shift < 3u; ++shift)
+        LsrA8(cpu);
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 0u);
+    const uint16_t target =
+        Read16ProgramIndexed(memory, cpu, TEXT_CAMERA_DIRECTIONS, cpu->x);
+    SimulateJsrFrame(memory, cpu, 0xb57bu);
+    uint8_t coordinate;
+    switch (target) {
+    case 0xb5c6u:
+    case 0xb5ceu:
+        coordinate = TEXT_CAMERA_OFFSET_Y;
+        break;
+    case 0xb5d6u:
+    case 0xb5deu:
+        coordinate = TEXT_CAMERA_OFFSET_X;
+        break;
+    default:
+        *handoff = ((uint32_t)cpu->program_bank << 16) | target;
+        return TEXT_OPCODE_HANDOFF;
+    }
+    LoadA16(cpu, Read16Direct(memory, cpu, coordinate));
+    const bool subtract = target == 0xb5c6u || target == 0xb5d6u;
+    cpu->carry = subtract;
+    const uint16_t distance = Read16Direct(memory, cpu, TEXT_CAMERA_DISTANCE);
+    if (subtract)
+        OpSbcValue(cpu, distance);
+    else
+        OpAdcValue(cpu, distance);
+    Write16Direct(memory, cpu, coordinate, cpu->accumulator);
+    SimulateRtsFrame(memory, cpu);
+    LoadA16(cpu, Read16Direct(memory, cpu, TEXT_CAMERA_OFFSET_X));
+    Write16Long(memory, FIELD_SCRIPTED_CAMERA_X, cpu->accumulator);
+    LoadA16(cpu, Read16Direct(memory, cpu, TEXT_CAMERA_OFFSET_Y));
+    Write16Long(memory, FIELD_SCRIPTED_CAMERA_Y, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1u);
+    LoadA8(cpu, 8u);
+    TestBitsAbsolute8(memory, cpu, WRAM_SCREEN_EFFECTS, 1u);
+    return TEXT_OPCODE_NEXT;
+}
+
+static unsigned TextStartCameraScroll(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                      uint32_t *handoff) {
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+    And8(cpu, 0xf0u);
+    Compare8(cpu, A8(cpu), TEXT_CAMERA_CELL_MODE);
+    if (cpu->zero) {
+        LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
+        StoreADirect8(memory, cpu, DP_SCRATCH_C);
+        Lufia2TextNextByte(memory, cpu, 0xb50cu);
+        StoreADirect8(memory, cpu, DP_SCRATCH_D);
+        TextSetCameraCell(memory, cpu, 0xb511u);
+        return TEXT_OPCODE_NEXT;
+    }
+    Compare8(cpu, A8(cpu), TEXT_CAMERA_ACTOR_MODE);
+    if (cpu->zero) {
+        LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+        StoreADirect8(memory, cpu, DP_SCRATCH_C);
+        LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
+        const uint32_t child = Lufia2TextReadSceneCell(memory, cpu, 0xb522u);
+        if (child) {
+            *handoff = child;
+            return TEXT_OPCODE_HANDOFF;
+        }
+        LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_C));
+        StoreADirect8(memory, cpu, DP_SCRATCH_A);
+        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E120A, 0u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_C);
+        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E120B, 0u);
+        StoreADirect8(memory, cpu, DP_SCRATCH_D);
+        TextSetCameraCell(memory, cpu, 0xb533u);
+        return TEXT_OPCODE_NEXT;
+    }
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
+    if (!cpu->zero) {
+        LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+        And8(cpu, 0x0fu);
+        StoreAAbsolute8(memory, cpu, WRAM_UNK_7E05A8, 0u);
+        return TextMoveCameraTarget(memory, cpu, handoff);
+    }
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
+    And8(cpu, 0x0fu);
+    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E05A8, 0u);
+    TextFollowCameraActor(memory, cpu);
+    if (!cpu->carry)
+        return TEXT_OPCODE_NEXT;
+    SetAccumulatorWidth(cpu, 1u);
+    for (unsigned byte = 0u; byte < 3u; ++byte)
+        Lufia2TextPrevByte(memory, cpu, (uint16_t)(0xb4f4u + byte * 3u));
+    return TEXT_OPCODE_EXIT;
+}
+
 /* $41: scroll the view or wait for it. */
-static unsigned TextOpScrollView(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t *handoff) {
+static unsigned TextOpScrollView(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint32_t *handoff, TextCommandServices *services) {
     Lufia2TextNextByte(memory, cpu, 0xb4c6u);                        /* B4C4 */
     StoreADirect8(memory, cpu, DP_SCRATCH_A);
     Lufia2TextNextByte(memory, cpu, 0xb4cbu);
@@ -878,6 +1259,8 @@ static unsigned TextOpScrollView(
     LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
     Compare8(cpu, A8(cpu), 0xffu);
     if (!cpu->zero) {
+        if (TextCommandContext(cpu, services))
+            return TextStartCameraScroll(memory, cpu, handoff);
         *handoff = 0x80b4feu;
         return TEXT_OPCODE_HANDOFF;
     }
@@ -1448,12 +1831,6 @@ static unsigned TextOpSetSpeaker(const Lufia2Memory *memory, Lufia2CpuState *cpu
     return TextOpenWindow(memory, cpu, handoff);
 }
 
-typedef struct TextCommandServices {
-    Lufia2PushedChildCall child;
-    void *context;
-    Lufia2ExecutionResult result;
-} TextCommandServices;
-
 /* Script opcodes behind JMP ($CA14,x); others hand off. */
 static unsigned TextScriptOpcode(
     const Lufia2Memory *memory,
@@ -1664,11 +2041,11 @@ static unsigned TextScriptOpcode(
     case TEXT_OP_OPEN_WINDOW:
         return TextOpenWindow(memory, cpu, handoff);
     case TEXT_OP_WAIT_FOR_ACTOR:
-        return TextOpWaitForActor(memory, cpu, handoff);
+        return TextOpWaitForActor(memory, cpu, handoff, services);
     case TEXT_OP_WAIT_FRAMES:
         return TextOpWaitFrames(memory, cpu);
     case TEXT_OP_WAIT_FOR_PARTY:
-        return TextOpWaitForParty(memory, cpu, handoff);
+        return TextOpWaitForParty(memory, cpu, handoff, services);
     case TEXT_OP_END:
         return TextOpEnd(memory, cpu, handoff);
     case TEXT_OP_SKIP_BRANCH:
@@ -1676,7 +2053,7 @@ static unsigned TextScriptOpcode(
     case TEXT_OP_HIDE_ACTOR:
         return TextOpHideActor(memory, cpu);
     case TEXT_OP_MUSIC:
-        return TextOpMusic(memory, cpu, handoff);
+        return TextOpMusic(memory, cpu, handoff, services);
     case TEXT_OP_WAIT_FOR_BUTTON:
         return TextOpWaitForButton(memory, cpu);
     case TEXT_OP_CHOICE:
@@ -1686,7 +2063,7 @@ static unsigned TextScriptOpcode(
     case TEXT_OP_WAIT_SECONDS:
         return TextOpWaitSeconds(memory, cpu);
     case TEXT_OP_SCROLL_VIEW:
-        return TextOpScrollView(memory, cpu, handoff);
+        return TextOpScrollView(memory, cpu, handoff, services);
     case TEXT_OP_NEW_LINE:
         return TextOpNewLine(memory, cpu);
     case TEXT_OP_SUB_SCRIPT_05:
