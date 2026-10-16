@@ -1,4 +1,7 @@
+#include <stddef.h>
+
 #include "core/cpu_ops.h"
+#include "core/child_call.h"
 #include "lufia2/field.h"
 #include "lufia2/title.h"
 #include "system/wram.h"
@@ -24,6 +27,9 @@ enum {
 typedef struct TextMenuService {
     const Lufia2Memory *memory;
     uint32_t handoff;
+    Lufia2PushedChildCall child;
+    void *context;
+    bool unwound;
 } TextMenuService;
 
 static uint8_t RunMenuChild(void *context, Lufia2CpuState *cpu, uint32_t target,
@@ -66,12 +72,28 @@ static uint8_t RunMenuChild(void *context, Lufia2CpuState *cpu, uint32_t target,
     return 1u;
 }
 
-static uint32_t CallMenuService(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+static uint32_t MenuCall(TextMenuService *service, Lufia2CpuState *cpu, uint32_t target,
+                         uint32_t site, uint8_t frame) {
+    service->handoff = 0u;
+    if (service->child) {
+        if (!CallChildWithFrame(service->memory, cpu, service->child, service->context,
+                                site, target, frame, 0x80u)) {
+            service->unwound = true;
+            service->handoff = site;
+        }
+    } else {
+        if (frame == 3u)
+            SimulateJslFrame(service->memory, cpu, 0x80u, (uint16_t)(site + 3u));
+        else
+            SimulateJsrFrame(service->memory, cpu, (uint16_t)(site + 2u));
+        RunMenuChild(service, cpu, target, site, frame);
+    }
+    return service->handoff;
+}
+
+static uint32_t CallMenuService(TextMenuService *service, Lufia2CpuState *cpu,
                                 uint32_t target, uint16_t back) {
-    SimulateJslFrame(memory, cpu, 0x80u, back);
-    TextMenuService service = {memory, 0u};
-    RunMenuChild(&service, cpu, target, 0x800000u | (uint16_t)(back - 3u), 3u);
-    return service.handoff;
+    return MenuCall(service, cpu, target, 0x800000u | (uint16_t)(back - 3u), 3u);
 }
 
 static uint32_t RequestMapChange(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -92,7 +114,7 @@ static uint32_t RequestMapChange(const Lufia2Memory *memory, Lufia2CpuState *cpu
 }
 
 static uint32_t OpenFieldMenu(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                              bool scene_menu) {
+                              TextMenuService *service, bool scene_menu) {
     if (scene_menu)
         Lufia2TextNextByte(memory, cpu, 0xa32du);
     OpWriteX(memory, cpu, OpAbs(cpu, TEXT_SCRIPT_POINTER), cpu->y);
@@ -105,54 +127,109 @@ static uint32_t OpenFieldMenu(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         OpStz(memory, cpu, OpDp(cpu, DP_MENU_PHASE));
     }
     uint32_t handoff =
-        CallMenuService(memory, cpu, 0x83afeau, scene_menu ? 0xa339u : 0xa37eu);
+        CallMenuService(service, cpu, 0x83afeau, scene_menu ? 0xa339u : 0xa37eu);
     if (handoff)
         return handoff;
     OpStz(memory, cpu, OpDp(cpu, DP_MENU_FINISHED));
+    if (service->child && !cpu->accumulator_is_8_bit)
+        return scene_menu ? 0x80a33cu : 0x80a381u;
     if (scene_menu) {
         OpLoadA(cpu, 0x0fu);
         OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E0563));
-        handoff = CallMenuService(memory, cpu, 0x82d69cu, 0xa344u);
+        handoff = CallMenuService(service, cpu, 0x82d69cu, 0xa344u);
     } else {
         OpLoadA(cpu, 1u);
         OpTestBits(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE), false);
         PushY(memory, cpu);
-        handoff = CallMenuService(memory, cpu, 0x82e746u, 0xa38au);
+        handoff = CallMenuService(service, cpu, 0x82e746u, 0xa38au);
     }
-    return handoff ? handoff : scene_menu ? 0x80a345u : 0x80a38bu;
+    if (handoff)
+        return handoff;
+    if (!service->child)
+        return scene_menu ? 0x80a345u : 0x80a38bu;
+    if (scene_menu) {
+        handoff = MenuCall(service, cpu, 0x80a350u, 0x80a345u, 2u);
+        if (handoff)
+            return handoff;
+        if (!cpu->accumulator_is_8_bit)
+            return 0x80a348u;
+        OpLoadA(cpu, 1u);
+        OpTestBits(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE), false);
+    } else {
+        OpPullY(memory, cpu);
+        handoff = MenuCall(service, cpu, 0x80a350u, 0x80a38cu, 2u);
+        if (handoff)
+            return handoff;
+    }
+    return LUFIA2_TEXT_COMMAND_YIELD;
 }
 
-static uint32_t OpenScriptMenu(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static uint32_t OpenScriptMenu(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               TextMenuService *service) {
     PushDataBank(memory, cpu);
     PushY(memory, cpu);
-    uint32_t handoff = CallMenuService(memory, cpu, 0x83afeau, 0xa522u);
+    uint32_t handoff = CallMenuService(service, cpu, 0x83afeau, 0xa522u);
     if (handoff)
         return handoff;
     OpStz(memory, cpu, OpDp(cpu, DP_MENU_PHASE));
+    if (service->child && !cpu->accumulator_is_8_bit)
+        return 0x80a525u;
     OpLoadA(cpu, 7u);
     OpSta(memory, cpu, OpDp(cpu, DP_MENU_STATE));
-    handoff = CallMenuService(memory, cpu, 0x82e746u, 0xa52cu);
-    return handoff ? handoff : 0x80a52du;
+    handoff = CallMenuService(service, cpu, 0x82e746u, 0xa52cu);
+    if (handoff || !service->child)
+        return handoff ? handoff : 0x80a52du;
+    Push8(memory, cpu, cpu->program_bank);
+    PullDataBank(memory, cpu);
+    if (!cpu->accumulator_is_8_bit)
+        return 0x80a52fu;
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, WRAM_SCENE_RELOAD_UNK_D0C2);
+    OpSta(memory, cpu, WRAM_SCENE_RELOAD_UNK_D0C2 + 1u);
+    handoff = MenuCall(service, cpu, 0x8385dcu, 0x80a539u, 3u);
+    if (handoff)
+        return handoff;
+    handoff = MenuCall(service, cpu, 0x80a368u, 0x80a53du, 2u);
+    if (handoff)
+        return handoff;
+    OpPullY(memory, cpu);
+    PullDataBank(memory, cpu);
+    if (!cpu->accumulator_is_8_bit)
+        return 0x80a542u;
+    OpLoadA(cpu, 1u);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE), true);
+    return LUFIA2_TEXT_COMMAND_NEXT;
 }
 
-static uint32_t OpenParameterizedMenu(const Lufia2Memory *memory,
-                                       Lufia2CpuState *cpu) {
+static uint32_t OpenParameterizedMenu(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                      TextMenuService *service) {
     Lufia2TextNextByte(memory, cpu, 0xbd9bu);
     OpSta(memory, cpu, OpDp(cpu, DP_MENU_PHASE));
     PushDataBank(memory, cpu);
     PushY(memory, cpu);
     OpLoadA(cpu, 3u);
     OpSta(memory, cpu, OpDp(cpu, DP_MENU_STATE));
-    uint32_t handoff = CallMenuService(memory, cpu, 0x83afeau, 0xbda7u);
+    uint32_t handoff = CallMenuService(service, cpu, 0x83afeau, 0xbda7u);
     if (handoff)
         return handoff;
     OpStz(memory, cpu, OpDp(cpu, DP_MENU_FINISHED));
-    handoff = CallMenuService(memory, cpu, 0x82e746u, 0xbdadu);
-    return handoff ? handoff : 0x80bdaeu;
+    handoff = CallMenuService(service, cpu, 0x82e746u, 0xbdadu);
+    if (handoff || !service->child)
+        return handoff ? handoff : 0x80bdaeu;
+    handoff = MenuCall(service, cpu, 0x80a350u, 0x80bdaeu, 2u);
+    if (handoff)
+        return handoff;
+    OpPullY(memory, cpu);
+    PullDataBank(memory, cpu);
+    if (!cpu->accumulator_is_8_bit)
+        return 0x80bdb3u;
+    OpLoadA(cpu, 1u);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE), true);
+    return LUFIA2_TEXT_COMMAND_NEXT;
 }
 
 static uint32_t GiveItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                         bool second_page) {
+                         TextMenuService *service, bool second_page) {
     if (second_page)
         OpLoadA(cpu, 1u);
     else
@@ -169,7 +246,7 @@ static uint32_t GiveItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_ITEM_QUANTITY));
     OpLda(memory, cpu, ITEM_REWARD_ID);
     OpSta(memory, cpu, OpAbs(cpu, 0x09cfu));
-    uint32_t handoff = CallMenuService(memory, cpu, 0x8ec1c5u, 0xa44cu);
+    uint32_t handoff = CallMenuService(service, cpu, 0x8ec1c5u, 0xa44cu);
     if (handoff)
         return handoff;
     OpSepWidths(cpu, 0x20u);
@@ -177,43 +254,91 @@ static uint32_t GiveItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpSta(memory, cpu, OpDp(cpu, DP_MENU_PHASE));
     OpLoadA(cpu, 4u);
     OpSta(memory, cpu, OpDp(cpu, DP_MENU_STATE));
-    handoff = CallMenuService(memory, cpu, 0x82e746u, 0xa45au);
+    handoff = CallMenuService(service, cpu, 0x82e746u, 0xa45au);
     return handoff ? handoff : 0x80a45bu;
 }
 
-static uint32_t StartBattle(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static uint32_t StartBattle(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            TextMenuService *service) {
     OpLda(memory, cpu, OpAbs(cpu, 0x0bbbu));
     OpSta(memory, cpu, 0x7fd4f7u);
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, 0x7ff8a3u);
     Lufia2TextNextByte(memory, cpu, 0xb918u);
     OpSta(memory, cpu, 0x7ff8a4u);
-    const uint32_t handoff = CallMenuService(memory, cpu, 0x83845bu, 0xb920u);
-    return handoff ? handoff : 0x80b921u;
+    uint32_t handoff = CallMenuService(service, cpu, 0x83845bu, 0xb920u);
+    if (handoff || !service->child)
+        return handoff ? handoff : 0x80b921u;
+    handoff = MenuCall(service, cpu, 0x80a368u, 0x80b921u, 2u);
+    if (handoff)
+        return handoff;
+    if (!cpu->accumulator_is_8_bit)
+        return 0x80b924u;
+    OpLoadA(cpu, 0x80u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
+    return LUFIA2_TEXT_COMMAND_NEXT;
 }
 
-uint32_t Lufia2TextExecuteMenuCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                      uint16_t handler) {
-    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
-        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
-        cpu->stack < 0x1f10u || cpu->stack > 0x1ffcu)
+static bool MenuContextValid(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x80u && cpu->accumulator_is_8_bit &&
+           !cpu->index_is_8_bit && !cpu->direct_page && !cpu->decimal &&
+           cpu->stack >= 0x1f10u && cpu->stack <= 0x1ffcu;
+}
+
+static uint32_t ExecuteMenuCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                   uint16_t handler, TextMenuService *service) {
+    if (!MenuContextValid(cpu))
         return 0u;
     switch (handler) {
     case OPEN_PARAMETERIZED_MENU:
-        return OpenParameterizedMenu(memory, cpu);
+        return OpenParameterizedMenu(memory, cpu, service);
     case REQUEST_MAP_CHANGE:
         return RequestMapChange(memory, cpu);
     case OPEN_SCENE_MENU:
     case OPEN_MAIN_MENU:
-        return OpenFieldMenu(memory, cpu, handler == OPEN_SCENE_MENU);
+        return OpenFieldMenu(memory, cpu, service, handler == OPEN_SCENE_MENU);
     case GIVE_ITEM_PAGE_ZERO:
     case GIVE_ITEM_PAGE_ONE:
-        return GiveItem(memory, cpu, handler == GIVE_ITEM_PAGE_ONE);
+        return GiveItem(memory, cpu, service, handler == GIVE_ITEM_PAGE_ONE);
     case OPEN_SCRIPT_MENU:
-        return OpenScriptMenu(memory, cpu);
+        return OpenScriptMenu(memory, cpu, service);
     case START_SCRIPTED_BATTLE:
-        return StartBattle(memory, cpu);
+        return StartBattle(memory, cpu, service);
     default:
         return 0u;
     }
+}
+
+uint32_t Lufia2TextExecuteMenuCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                      uint16_t handler) {
+    TextMenuService service = {memory, 0u, NULL, NULL, false};
+    return ExecuteMenuCommand(memory, cpu, handler, &service);
+}
+
+Lufia2ExecutionResult Lufia2TextRunMenuCommand(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu, uint16_t handler,
+                                               Lufia2PushedChildCall child,
+                                               void *context) {
+    switch (handler) {
+    case OPEN_SCENE_MENU:
+    case OPEN_MAIN_MENU:
+    case OPEN_SCRIPT_MENU:
+    case OPEN_PARAMETERIZED_MENU:
+    case START_SCRIPTED_BATTLE:
+        break;
+    default:
+        return ExecutionReturned(0u);
+    }
+    if (!child || !MenuContextValid(cpu))
+        return ExecutionHandoff(cpu, 0x800000u | handler);
+    TextMenuService service = {memory, 0u, child, context, false};
+    const uint32_t flow = ExecuteMenuCommand(memory, cpu, handler, &service);
+    if (service.unwound) {
+        Lufia2ExecutionResult result = ExecutionReturned(service.handoff);
+        result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        return result;
+    }
+    if (flow == LUFIA2_TEXT_COMMAND_NEXT || flow == LUFIA2_TEXT_COMMAND_YIELD)
+        return ExecutionReturned(flow);
+    return ExecutionHandoff(cpu, flow);
 }

@@ -74,6 +74,10 @@ uint32_t Lufia2TextExecuteRenderCommand(const Lufia2Memory *memory,
 uint32_t Lufia2TextExecuteTileCommand(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t handler);
 
+Lufia2ExecutionResult Lufia2TextRunMenuCommand(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t handler,
+    Lufia2PushedChildCall child, void *context);
+
 uint32_t Lufia2TextExecuteMenuCommand(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t handler);
 

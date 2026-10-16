@@ -1525,6 +1525,28 @@ static unsigned TextScriptOpcode(
         return TEXT_OPCODE_HANDOFF;
     }
 
+    if (services->child) {
+        const uint8_t script_bank = cpu->data_bank;
+        services->result = Lufia2TextRunMenuCommand(
+            memory, cpu, handler, services->child, services->context);
+        if (services->result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
+            return TEXT_OPCODE_CHILD_UNWOUND;
+        if (services->result.flow == LUFIA2_EXECUTION_BOUNDARY) {
+            *handoff = services->result.pc;
+            return TEXT_OPCODE_HANDOFF;
+        }
+        if (services->result.pc == LUFIA2_TEXT_COMMAND_NEXT) {
+            if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+                cpu->direct_page || cpu->decimal || cpu->data_bank != script_bank) {
+                *handoff = LUFIA2_TEXT_COMMAND_NEXT;
+                return TEXT_OPCODE_HANDOFF;
+            }
+            return TEXT_OPCODE_NEXT;
+        }
+        if (services->result.pc == LUFIA2_TEXT_COMMAND_YIELD)
+            return TEXT_OPCODE_EXIT;
+    }
+
     const uint32_t cave_flow = Lufia2TextExecuteCaveCommand(memory, cpu, handler);
     if (cave_flow == LUFIA2_TEXT_COMMAND_NEXT)
         return TEXT_OPCODE_NEXT;
