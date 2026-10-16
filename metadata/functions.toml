@@ -12361,3 +12361,51 @@ source = "src/world/world_scene_window_frames.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:B51C"
+name = "Lufia2WorldMapStepSceneSparkSprites"
+source = "src/world/world_scene_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B56D"
+name = "Lufia2WorldMapSpawnSceneSparkSprite"
+source = "src/world/world_scene_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BC0F"
+name = "Lufia2WorldMapStepBurstSceneFrame"
+source = "src/world/world_scene_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BCA6"
+name = "Lufia2WorldMapAdvanceSceneOrbit"
+source = "src/world/world_scene_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BD9F"
+name = "Lufia2WorldMapStepSceneCirclePulse"
+source = "src/world/world_scene_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BDF6"
+name = "Lufia2WorldMapStartSceneCirclePulse"
+source = "src/world/world_scene_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
