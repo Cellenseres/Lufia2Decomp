@@ -1431,6 +1431,10 @@ Lufia2ExecutionResult Lufia2FieldDiagnosticsRunMenu(
 Lufia2ExecutionResult Lufia2FieldSetupObjectActorSpriteFar(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldDispatchEventOpcode(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

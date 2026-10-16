@@ -140,6 +140,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C9C0` | `Lufia2TextExpandSceneString` | verified | `src/text/scene_text_resources.c` |
 | `$80:CBAE` | `Lufia2FieldEventTimerTickWithServices` | verified | `src/field/field_event_script.c` |
 | `$80:CC26` | `Lufia2FieldRequestTilemapUploads` | verified | `src/field/field_redraw_flags.c` |
+| `$80:CC35` | `Lufia2FieldDispatchEventOpcode` | verified | `src/field/field_event_script.c` |
 | `$80:CE5C` | `Lufia2FieldReadObjectRegionDestination` | verified | `src/field/field_event_object_region.c` |
 | `$80:CE7E` | `Lufia2FieldReadObjectRegionArea` | verified | `src/field/field_event_object_region.c` |
 | `$80:D077` | `Lufia2FieldReadObjectRegionPosition` | verified | `src/field/field_event_object_region.c` |
@@ -929,6 +930,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:DFA5` | `Lufia2ActorInitializeSpawnSlot` | verified | `src/actor/actor_slots.c` |
 | `$83:E033` | `Lufia2FieldSetObjectDrawFlags` | verified | `src/field/field_event_actors.c` |
 | `$83:E03E` | `Lufia2ObjectSlotsUpdate` | verified | `src/actor/object_vm.c` |
+| `$83:E0FC` | `Lufia2ObjectBeginOpcodeDispatch` | verified | `src/actor/object_vm.c` |
+| `$83:E10F` | `Lufia2ObjectDispatchOpcode` | verified | `src/actor/object_vm.c` |
 | `$83:E200` | `Lufia2ObjectSelectSpriteFrame` | verified | `src/actor/object_vm.c` |
 | `$83:E60E` | `Lufia2ObjectInterpolateCoordinate` | verified | `src/field/field_object_motion.c` |
 | `$83:E6AA` | `Lufia2ObjectApproachCoordinate` | verified | `src/field/field_object_motion.c` |

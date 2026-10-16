@@ -1369,6 +1369,36 @@ static unsigned EventScriptOpcode(
     }
 }
 
+enum { EVENT_OPCODE_TABLE = 0xe5a4u };
+
+static uint16_t EventOpcodeHandler(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const uint16_t table_offset = (uint16_t)(A8(cpu) * 2u);
+    cpu->accumulator = table_offset;
+    cpu->carry = 0;
+    TransferAToX(cpu);
+    return Read16Bank(memory, 0x80u, (uint16_t)(EVENT_OPCODE_TABLE + cpu->x));
+}
+
+Lufia2ExecutionResult Lufia2FieldDispatchEventOpcode(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu,
+                                                     Lufia2PushedChildCall child,
+                                                     void *context) {
+    if (!child || cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80cc35u);
+    if (!CallChildWithFrame(memory, cpu, child, context, 0x80cc35u, 0x80e8b9u, 2u,
+                            0x80u))
+        return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, 0x80cc35u, 0u};
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page)
+        return ExecutionHandoff(cpu, ((uint32_t)cpu->program_bank << 16) | 0xcc38u);
+    const uint16_t handler = EventOpcodeHandler(memory, cpu);
+    Lufia2ExecutionResult result = ExecutionHandoff(cpu, 0x800000u | handler);
+    result.dispatches = 1u;
+    return result;
+}
+
 /* $80:CC35: run the script until it yields; 0 = handoff at CC3F. */
 static uint8_t EventRunScript(
     const Lufia2Memory *memory,
@@ -1379,13 +1409,7 @@ static uint8_t EventRunScript(
         uint32_t handoff = EVENT_OPCODE_LIMIT_HANDOFF;
 
         Lufia2EventNextByte(memory, cpu, 0xcc37u);                   /* CC35 */
-        AslA8(cpu);
-        ExchangeAccumulatorBytes(cpu);
-        LoadA8(cpu, 0x00u);
-        RolA8(cpu);
-        ExchangeAccumulatorBytes(cpu);
-        TransferAToX(cpu);
-        handler = Read16Bank(memory, 0x80u, (uint16_t)(0xe5a4u + cpu->x));
+        handler = EventOpcodeHandler(memory, cpu);
         switch (EventScriptOpcode(memory, cpu,
                     run->total < EVENT_OPCODE_LIMIT ? handler : 0u, run,
                     &handoff)) {

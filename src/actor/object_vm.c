@@ -20,6 +20,7 @@ enum {
     OBJECT_FRAME_DATA_SIZES = 0x83abf8u,
     OBJECT_ANIMATION_RECORDS = 0x83f388u,
     OBJECT_SCRIPT_TABLE = 0x8ec7u, /* bank $91, operands are offsets from it */
+    OBJECT_OPCODE_TABLE = 0xf2c8u,
     SINE_TABLE = 0x8084edu,
     COSINE_TABLE = 0x80852du,
 };
@@ -2934,14 +2935,9 @@ static ObjectFlow ObjectExecute(
     }
 }
 
-/* $83:E0FC: run object $A7's script until it yields. */
-static uint8_t ObjectRunScript(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t *dispatches) {
-    unsigned steps;
-
-    PushDataBank(memory, cpu);                                 /* E0FC */
+static void ObjectLoadScriptPointer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushDataBank(memory, cpu);
     LoadXDirect(memory, cpu, DP_SLOT_RECORD_OFFSET);
     LoadA8(cpu, Read8(memory, LongIndexedAddress((WRAM_OBJECT_SCRIPT + 2u), cpu->x)));
     PushAccumulator8(memory, cpu);
@@ -2950,20 +2946,63 @@ static uint8_t ObjectRunScript(
     ExchangeAccumulatorBytes(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SCRIPT, cpu->x)));
     TransferAToY(cpu);
+}
+
+static uint16_t ObjectReadOpcodeTarget(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TransferDirectToA(cpu);
+    const uint8_t opcode = AbsoluteByte(memory, cpu, 0u, cpu->y);
+    const uint8_t group_offset = (uint8_t)((opcode >> 4) * 2u);
+    cpu->accumulator = (uint16_t)((cpu->direct_page & 0xff00u) | group_offset);
+    cpu->carry = (opcode & 0x04u) != 0u;
+    TransferAToX(cpu);
+    return Read16ProgramIndexed(memory, cpu, OBJECT_OPCODE_TABLE, cpu->x);
+}
+
+static bool ObjectOpcodeContext(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x83u && cpu->accumulator_is_8_bit &&
+           !cpu->index_is_8_bit && !cpu->decimal && !cpu->direct_page &&
+           cpu->stack >= 0x1f20u && cpu->stack <= 0x1ffcu;
+}
+
+static Lufia2ExecutionResult ObjectDispatchOpcode(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    const uint16_t handler = ObjectReadOpcodeTarget(memory, cpu);
+    Lufia2ExecutionResult result = ExecutionHandoff(cpu, 0x830000u | handler);
+    result.dispatches = 1u;
+    return result;
+}
+
+Lufia2ExecutionResult Lufia2ObjectDispatchOpcode(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    if (!ObjectOpcodeContext(cpu))
+        return ExecutionHandoff(cpu, 0x83e10fu);
+    return ObjectDispatchOpcode(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2ObjectBeginOpcodeDispatch(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu) {
+    if (!ObjectOpcodeContext(cpu))
+        return ExecutionHandoff(cpu, 0x83e0fcu);
+    ObjectLoadScriptPointer(memory, cpu);
+    return ObjectDispatchOpcode(memory, cpu);
+}
+
+/* $83:E0FC: run object $A7's script until it yields. */
+
+static uint8_t ObjectRunScript(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu,
+    uint32_t *dispatches) {
+    unsigned steps;
+
+    ObjectLoadScriptPointer(memory, cpu);
     /* A script that never yields spins the ROM forever. */
     for (steps = 0; steps < 0x10000u; ++steps) {
         uint16_t handler;
         ObjectFlow flow;
 
         ++*dispatches;
-        TransferDirectToA(cpu);                                /* E10F */
-        LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
-        LsrA8(cpu);
-        LsrA8(cpu);
-        LsrA8(cpu);
-        And8(cpu, 0x1eu);
-        TransferAToX(cpu);
-        handler = Read16ProgramIndexed(memory, cpu, 0xf2c8u, cpu->x);
+        handler = ObjectReadOpcodeTarget(memory, cpu);
         flow = ObjectExecute(memory, cpu, handler);
         if (flow == OBJECT_FLOW_RETURN)
             return 1;
