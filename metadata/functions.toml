@@ -2660,7 +2660,7 @@ address = "80:8638"
 name = "Lufia2MainNmi"
 source = "src/system/nmi.c"
 entry_mx = "M0X0"
-exit_mx = "M0X0"
+exit_mx = "dynamic"
 status = "verified"
 
 [[function]]
