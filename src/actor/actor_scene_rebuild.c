@@ -22,7 +22,9 @@ enum {
 };
 
 static bool ActorSceneOwnerContext(const Lufia2CpuState *cpu) {
-    return cpu->program_bank == 0x83u && cpu->data_bank == 0x83u &&
+    const bool system_bank = cpu->data_bank < 0x40u ||
+        (cpu->data_bank >= 0x80u && cpu->data_bank < 0xc0u);
+    return cpu->program_bank == 0x83u && system_bank &&
         !cpu->direct_page && !cpu->decimal;
 }
 
