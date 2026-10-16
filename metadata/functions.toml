@@ -12779,3 +12779,35 @@ source = "src/field/field_area_spawn.c"
 entry_mx = "M1X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "83:DA8A"
+name = "Lufia2ActorStopSecondaryScript"
+source = "src/actor/actor_secondary.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:DA71"
+name = "Lufia2ActorMarkLeaderScriptStop"
+source = "src/actor/actor_secondary.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:DA5B"
+name = "Lufia2ActorPrepareStepProbe"
+source = "src/actor/actor_secondary.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:D9C6"
+name = "Lufia2ActorCommitTileStep"
+source = "src/actor/actor_secondary.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

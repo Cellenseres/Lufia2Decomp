@@ -932,6 +932,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:D93E` | `Lufia2FieldProbeContactEdgeLeft` | verified | `src/field/field_contact_edges.c` |
 | `$83:D948` | `Lufia2FieldProbeContactEdgeUp` | verified | `src/field/field_contact_edges.c` |
 | `$83:D952` | `Lufia2FieldProbeContactEdgeRight` | verified | `src/field/field_contact_edges.c` |
+| `$83:D9C6` | `Lufia2ActorCommitTileStep` | verified | `src/actor/actor_secondary.c` |
+| `$83:DA5B` | `Lufia2ActorPrepareStepProbe` | verified | `src/actor/actor_secondary.c` |
+| `$83:DA71` | `Lufia2ActorMarkLeaderScriptStop` | verified | `src/actor/actor_secondary.c` |
+| `$83:DA8A` | `Lufia2ActorStopSecondaryScript` | verified | `src/actor/actor_secondary.c` |
 | `$83:DF87` | `Lufia2ActorSpawnFromId` | verified | `src/field/field_object_transition.c` |
 | `$83:DFA5` | `Lufia2ActorInitializeSpawnSlot` | verified | `src/actor/actor_slots.c` |
 | `$83:E033` | `Lufia2FieldSetObjectDrawFlags` | verified | `src/field/field_event_actors.c` |

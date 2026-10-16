@@ -322,6 +322,15 @@ Lufia2ExecutionResult Lufia2ObjectDispatchOpcode(
 Lufia2ExecutionResult Lufia2ObjectBeginOpcodeDispatch(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2ActorStopSecondaryScript(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2ActorMarkLeaderScriptStop(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2ActorPrepareStepProbe(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2ActorCommitTileStep(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

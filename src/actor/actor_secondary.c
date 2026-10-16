@@ -119,26 +119,24 @@ static Lufia2ActorScriptDispatchResult SecondaryRedispatch(
 }
 
 /* $83:DA8A: clear $0622 bit 7 and the walk counter. */
-static void SecondaryStopScript(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static void StopSecondaryScript(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     And8(cpu, 0x7fu);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     TransferDirectToA(cpu);                                    /* DA94 */
     Write8(memory, LongIndexedAddress(WRAM_ACTOR_WALK_COUNTER, cpu->x), A8(cpu));
+}
+
+static void SecondaryStopScript(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    StopSecondaryScript(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
 /* $83:DA71: leader stop sets $05B5 bit 4. */
-static void SecondaryLeaderStopFlag(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static void MarkLeaderScriptStop(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadYDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* DA71 */
     if (cpu->zero) {
         uint8_t mark;
@@ -156,15 +154,17 @@ static void SecondaryLeaderStopFlag(
             TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
         }
     }
+}
+
+static void SecondaryLeaderStopFlag(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                    uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    MarkLeaderScriptStop(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
 /* $83:DA5B: probe = actor tile moved one step by facing. */
-static uint8_t SecondaryAdvanceProbe(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static uint8_t AdvanceActorStepProbe(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* DA5B */
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);
     Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
@@ -176,8 +176,16 @@ static uint8_t SecondaryAdvanceProbe(
         return 0;
     SimulateRtlFrame(memory, cpu);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* DA6E */
-    SimulateRtsFrame(memory, cpu);
     return 1;
+}
+
+static uint8_t SecondaryAdvanceProbe(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                     uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    if (!AdvanceActorStepProbe(memory, cpu))
+        return 0u;
+    SimulateRtsFrame(memory, cpu);
+    return 1u;
 }
 
 /* $83:D87D: probe the step in direction A from the actor tile. */
@@ -220,11 +228,7 @@ static void SecondaryOccupancy(
 }
 
 /* $83:D9C6: move occupancy and the actor one step by facing. */
-static uint8_t SecondaryCommitStep(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static uint8_t CommitActorTileStep(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->y);              /* D9C6 */
     Write8(memory, DirectAddress(cpu, DP_PROBE_X), A8(cpu));
     LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->y);
@@ -273,8 +277,16 @@ static uint8_t SecondaryCommitStep(
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
-    SimulateRtsFrame(memory, cpu);
     return 1;
+}
+
+static uint8_t SecondaryCommitStep(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                   uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    if (!CommitActorTileStep(memory, cpu))
+        return 0u;
+    SimulateRtsFrame(memory, cpu);
+    return 1u;
 }
 
 /* $83:DD18 targets: signed step along facing, M=1 on exit. */
@@ -1755,4 +1767,44 @@ Lufia2ExecutionResult Lufia2ActorSecondaryUpdate(
     result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.pc = handler;
     return result;
+}
+
+static bool SecondaryMovementContext(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x83u && cpu->accumulator_is_8_bit &&
+           !cpu->index_is_8_bit && !cpu->decimal && !cpu->direct_page &&
+           cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2ActorStopSecondaryScript(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu) {
+    if (!SecondaryMovementContext(cpu))
+        return ExecutionHandoff(cpu, 0x830000u | 0xda8au);
+    StopSecondaryScript(memory, cpu);
+    return ExecutionReturned(0x830000u | 0xda99u);
+}
+
+Lufia2ExecutionResult Lufia2ActorMarkLeaderScriptStop(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu) {
+    if (!SecondaryMovementContext(cpu))
+        return ExecutionHandoff(cpu, 0x830000u | 0xda71u);
+    MarkLeaderScriptStop(memory, cpu);
+    return ExecutionReturned(0x830000u | 0xda89u);
+}
+
+Lufia2ExecutionResult Lufia2ActorPrepareStepProbe(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (!SecondaryMovementContext(cpu))
+        return ExecutionHandoff(cpu, 0x830000u | 0xda5bu);
+    if (!AdvanceActorStepProbe(memory, cpu))
+        return ExecutionHandoff(cpu, cpu->resume_pc);
+    return ExecutionReturned(0x830000u | 0xda70u);
+}
+
+Lufia2ExecutionResult Lufia2ActorCommitTileStep(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu) {
+    if (!SecondaryMovementContext(cpu))
+        return ExecutionHandoff(cpu, 0x830000u | 0xd9c6u);
+    if (!CommitActorTileStep(memory, cpu))
+        return ExecutionHandoff(cpu, cpu->resume_pc);
+    return ExecutionReturned(0x830000u | 0xda5au);
 }
