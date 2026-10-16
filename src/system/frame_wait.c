@@ -90,3 +90,30 @@ Lufia2ExecutionResult Lufia2WorldWaitFrames(const Lufia2Memory *memory,
     }
     return ExecutionHandoff(cpu, 0x869748u);
 }
+
+Lufia2ExecutionResult Lufia2FrameWaitRestoreRegisters(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu,
+                                                      uint32_t entry) {
+    uint32_t return_pc;
+    switch (entry) {
+    case 0x8293ccu:
+        return_pc = 0x8293ceu;
+        break;
+    case 0x868b52u:
+        return_pc = 0x868b54u;
+        break;
+    case 0x869756u:
+        return_pc = 0x869757u;
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    if (cpu->program_bank != entry >> 16 || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u || cpu->stack < 0x1f00u || cpu->stack > 0x1ff8u ||
+        (entry != 0x869756u && !cpu->accumulator_is_8_bit))
+        return ExecutionHandoff(cpu, entry);
+    if (entry != 0x869756u)
+        UnpackStatus(cpu, Pull8(memory, cpu));
+    RestoreAccumulator(memory, cpu);
+    return ExecutionHandoff(cpu, return_pc);
+}

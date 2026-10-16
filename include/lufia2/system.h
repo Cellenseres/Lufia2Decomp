@@ -462,6 +462,9 @@ Lufia2ExecutionResult Lufia2SineAngle(
 Lufia2ExecutionResult Lufia2CosineAngle(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FrameWaitRestoreRegisters(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
 #ifdef __cplusplus
 }
 #endif

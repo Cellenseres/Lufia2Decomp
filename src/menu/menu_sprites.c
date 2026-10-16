@@ -1,6 +1,7 @@
 /* Menu sprite animations ($86:8CF5). */
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/menu.h"
 #include "menu/menu_sprite_slots.h"
 #include "system/dp_scratch.h"
@@ -344,4 +345,15 @@ Lufia2ExecutionResult Lufia2SpriteFrame(
     StoreADirect8(memory, cpu, 0x72u);
     SimulateJsrFrame(memory, cpu, 0x8b6eu);
     return ExecutionHandoff(cpu, 0x868b48u);
+}
+
+Lufia2ExecutionResult Lufia2SpriteFrameRestoreRegisters(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x86u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || cpu->stack < 0x1f00u || cpu->stack > 0x1ff7u)
+        return ExecutionHandoff(cpu, 0x868b6fu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    OpPullX(memory, cpu);
+    OpPullY(memory, cpu);
+    return ExecutionHandoff(cpu, 0x868b72u);
 }
