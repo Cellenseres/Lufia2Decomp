@@ -724,6 +724,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:FD15` | `Lufia2PartyClearEquipment` | verified | `src/party/party_equipment.c` |
 | `$82:FD3D` | `Lufia2PartyLearnSelectedSpell` | verified | `src/party/capsule_abilities.c` |
 | `$83:8000` | `Lufia2FieldRunLoop` | verified | `src/field/field_session_setup.c` |
+| `$83:8007` | `Lufia2FieldResumeFrame` | verified | `src/field/field_session_setup.c` |
 | `$83:80CD` | `Lufia2FieldIdleTest` | verified | `src/field/field_update.c` |
 | `$83:8103` | `Lufia2FieldProcessRequests` | verified | `src/field/field_recovery.c` |
 | `$83:812E` | `Lufia2FieldPollHpRecovery` | verified | `src/field/field_recovery.c` |

@@ -1136,18 +1136,14 @@ static Lufia2ExecutionResult FieldLoopChangeMap(
     return ExecutionHandoff(cpu, 0x83b18eu);
 }
 
-Lufia2ExecutionResult Lufia2FieldRunLoop(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (cpu->program_bank != 0x83u || cpu->direct_page || cpu->decimal || !child)
-        return ExecutionHandoff(cpu, 0x838000u);
-    OpSepWidths(cpu, 0x30u);
-    Push8(memory, cpu, cpu->program_bank);
-    PullDataBank(memory, cpu);
+static Lufia2ExecutionResult RunFieldFrames(const Lufia2Memory *memory,
+                                            Lufia2CpuState *cpu,
+                                            Lufia2PushedChildCall child, void *context,
+                                            bool wait_first) {
     Lufia2ExecutionResult result;
     for (unsigned frame = 0u; frame < FIELD_LOOP_FRAME_LIMIT; ++frame) {
-        if (!FieldLoopChild(memory, cpu, child, context,
-                0x838004u, 0x83900cu, 2u, &result))
+        if ((frame || wait_first) && !FieldLoopChild(memory, cpu, child, context,
+                                                     0x838004u, 0x83900cu, 2u, &result))
             return result;
         OpLoadA(cpu, 0xffu);
         OpSta(memory, cpu, OpAbs(cpu, WRAM_SOUND_COMMAND));
@@ -1169,8 +1165,8 @@ Lufia2ExecutionResult Lufia2FieldRunLoop(
                     OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_RELOAD_FLAGS));
                     OpBitValue(cpu, 8u);
                     if (!cpu->zero) {
-                        if (!FieldLoopChild(memory, cpu, child, context,
-                                0x838031u, 0x8384e1u, 2u, &result))
+                        if (!FieldLoopChild(memory, cpu, child, context, 0x838031u,
+                                            0x8384e1u, 2u, &result))
                             return result;
                         continue;
                     }
@@ -1184,8 +1180,8 @@ Lufia2ExecutionResult Lufia2FieldRunLoop(
         OpLoadA(cpu, 0x20u);
         OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
         if (!cpu->zero) {
-            if (!FieldLoopChild(memory, cpu, child, context,
-                    0x838069u, 0x8eb28fu, 3u, &result))
+            if (!FieldLoopChild(memory, cpu, child, context, 0x838069u, 0x8eb28fu, 3u,
+                                &result))
                 return result;
             continue;
         }
@@ -1193,34 +1189,55 @@ Lufia2ExecutionResult Lufia2FieldRunLoop(
             return result;
         OpLda(memory, cpu, OpAbs(cpu, WRAM_SOUND_COMMAND));
         OpCmpValue(cpu, 0xffu);
-        if (!cpu->zero && !FieldLoopChild(memory, cpu, child, context,
-                0x838099u, 0x80953bu, 3u, &result))
+        if (!cpu->zero && !FieldLoopChild(memory, cpu, child, context, 0x838099u,
+                                          0x80953bu, 3u, &result))
             return result;
         OpLda(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
         if (cpu->negative)
             continue;
         OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E057C));
-        if (!cpu->zero && !FieldLoopChild(memory, cpu, child, context,
-                0x8380aau, 0x8ebb2eu, 3u, &result))
+        if (!cpu->zero && !FieldLoopChild(memory, cpu, child, context, 0x8380aau,
+                                          0x8ebb2eu, 3u, &result))
             return result;
         OpLoadA(cpu, 0x40u);
-        if (!FieldLoopChild(memory, cpu, child, context,
-                0x8380b0u, 0x83867bu, 2u, &result))
+        if (!FieldLoopChild(memory, cpu, child, context, 0x8380b0u, 0x83867bu, 2u,
+                            &result))
             return result;
         if (cpu->zero)
             continue;
         OpLda(memory, cpu, WRAM_FIELD_CONTROL_FLAGS);
         if (!cpu->zero)
             continue;
-        if (!FieldLoopChild(memory, cpu, child, context,
-                0x8380bbu, 0x8380cdu, 2u, &result))
+        if (!FieldLoopChild(memory, cpu, child, context, 0x8380bbu, 0x8380cdu, 2u,
+                            &result))
             return result;
         if (!cpu->zero)
             continue;
         OpLda(memory, cpu, WRAM_UNK_7FD0FE);
-        if (cpu->zero && !FieldLoopChild(memory, cpu, child, context,
-                0x8380c6u, 0x8eb000u, 3u, &result))
+        if (cpu->zero && !FieldLoopChild(memory, cpu, child, context, 0x8380c6u,
+                                         0x8eb000u, 3u, &result))
             return result;
     }
     return ExecutionHandoff(cpu, 0x838004u);
+}
+
+Lufia2ExecutionResult Lufia2FieldRunLoop(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu,
+                                         Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x83u || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x838000u);
+    OpSepWidths(cpu, 0x30u);
+    Push8(memory, cpu, cpu->program_bank);
+    PullDataBank(memory, cpu);
+    return RunFieldFrames(memory, cpu, child, context, true);
+}
+
+Lufia2ExecutionResult Lufia2FieldResumeFrame(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu,
+                                             Lufia2PushedChildCall child,
+                                             void *context) {
+    if (cpu->program_bank != 0x83u || cpu->data_bank != 0x83u || cpu->direct_page ||
+        cpu->decimal || !cpu->accumulator_is_8_bit || !child)
+        return ExecutionHandoff(cpu, 0x838007u);
+    return RunFieldFrames(memory, cpu, child, context, false);
 }

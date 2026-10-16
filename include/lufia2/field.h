@@ -1394,6 +1394,10 @@ Lufia2ExecutionResult Lufia2FieldWrapLayerScroll(
 Lufia2ExecutionResult Lufia2FieldRunLoop(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2FieldResumeFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 Lufia2ExecutionResult Lufia2FieldRunMapTransition(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

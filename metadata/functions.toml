@@ -12731,3 +12731,11 @@ source = "src/actor/object_vm.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:8007"
+name = "Lufia2FieldResumeFrame"
+source = "src/field/field_session_setup.c"
+entry_mx = "M1X1"
+exit_mx = "dynamic"
+status = "verified"
