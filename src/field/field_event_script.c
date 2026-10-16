@@ -1459,15 +1459,12 @@ static uint8_t EventResumeSlot(
 }
 
 /* $80:CBAE: count down the slot timers; 0 = handoff. */
-uint8_t Lufia2FieldEventTimerBody(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    unsigned *passes) {
-    EventRun run = {0, 0, {0}, {0}, {0}, {0}, {0}, 0, 0};
+static uint8_t RunEventTimerBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 EventRun *run, unsigned *passes) {
 
     *passes = 0;
     cpu->program_bank = 0x80u;
-    PushDataBank(memory, cpu);                                 /* CBAE */
+    PushDataBank(memory, cpu); /* CBAE */
     Push8(memory, cpu, PackStatus(cpu));
     SetIndexWidth(cpu, 0);
     Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_EVENT_REDRAW, 0), 0x00u);
@@ -1477,7 +1474,7 @@ uint8_t Lufia2FieldEventTimerBody(
     do {
         const uint32_t timer = LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x);
 
-        LoadA8(cpu, Read8(memory, timer));                     /* CBBD */
+        LoadA8(cpu, Read8(memory, timer)); /* CBBD */
         if (cpu->negative) {
             /* An armed $80 wraps to $7F and disarms. */
             DecrementA8(cpu);
@@ -1489,41 +1486,46 @@ uint8_t Lufia2FieldEventTimerBody(
                     cpu->resume_pc = 0x80cbccu;
                     return 0;
                 }
-                if (!EventResumeSlot(memory, cpu, &run)) {
+                if (!EventResumeSlot(memory, cpu, run)) {
                     /* Visits before the handoff pc at its depth. */
-                    *passes = run.has_visits ? run.visits
+                    *passes = run->has_visits ? run->visits
                               : cpu->resume_pc == EVENT_OPCODE_LIMIT_HANDOFF
-                                  ? run.passes[run.depth]
+                                  ? run->passes[run->depth]
                                   : 0;
                     return 0;
                 }
             }
         }
-        IncrementX16(cpu);                                     /* CBF0 */
+        IncrementX16(cpu); /* CBF0 */
         Compare16(cpu, cpu->x, EVENT_SLOT_COUNT);
     } while (!cpu->carry);
-    LoadX16(cpu, 0x0007u);                                     /* CBF6 */
+    LoadX16(cpu, 0x0007u); /* CBF6 */
     for (;;) {
-        LoadA8(cpu, Read8(memory,
-            LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x)));
+        LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x)));
         if (cpu->negative) {
-            LoadA8(cpu, FIELD_FLAG_EVENT_ARMED);               /* CBFF */
+            LoadA8(cpu, FIELD_FLAG_EVENT_ARMED); /* CBFF */
             TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
             break;
         }
-        LoadX16(cpu, (uint16_t)(cpu->x - 1u));                 /* CC06 */
+        LoadX16(cpu, (uint16_t)(cpu->x - 1u)); /* CC06 */
         if (cpu->negative)
             break;
     }
     /* Read with the last script bank as DB. */
-    LoadAAbsolute8(memory, cpu, WRAM_EVENT_REDRAW, 0);         /* CC09 */
+    LoadAAbsolute8(memory, cpu, WRAM_EVENT_REDRAW, 0); /* CC09 */
     if (!cpu->zero) {
         cpu->resume_pc = 0x80cc0eu;
         return 0;
     }
-    UnpackStatus(cpu, Pull8(memory, cpu));                     /* CC23 */
+    UnpackStatus(cpu, Pull8(memory, cpu)); /* CC23 */
     PullDataBank(memory, cpu);
     return 1;
+}
+
+uint8_t Lufia2FieldEventTimerBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  unsigned *passes) {
+    EventRun run = {0};
+    return RunEventTimerBody(memory, cpu, &run, passes);
 }
 
 /* $80:CBAE from a JSL; M=0 decodes differently, LLE. */
@@ -1568,14 +1570,25 @@ static uint8_t EventRedrawChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 }
 
 Lufia2ExecutionResult
-Lufia2FieldEventTimerTickWithServices(const Lufia2Memory *memory,
-                                           Lufia2CpuState *cpu,
-                                           Lufia2PushedChildCall child, void *context) {
+Lufia2FieldEventTimerTickWithServices(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                      Lufia2PushedChildCall child, void *context) {
     if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit || cpu->decimal ||
         !child)
         return ExecutionHandoff(cpu, 0x80cbaeu);
     const uint32_t resume_pc = cpu->resume_pc;
-    Lufia2ExecutionResult result = Lufia2FieldEventTimerTick(memory, cpu);
+    EventRun run = {0};
+    if (!cpu->direct_page) {
+        run.child = child;
+        run.child_context = context;
+    }
+    unsigned passes;
+    Lufia2ExecutionResult result = ExecutionReturned(0x80cc25u);
+    if (!RunEventTimerBody(memory, cpu, &run, &passes)) {
+        result.pc = run.unwind_site ? run.unwind_site : cpu->resume_pc;
+        result.flow = run.unwind_site ? LUFIA2_EXECUTION_CHILD_UNWOUND
+                                      : LUFIA2_EXECUTION_BOUNDARY;
+        result.dispatches = passes;
+    }
     if (result.flow != LUFIA2_EXECUTION_BOUNDARY || result.pc != 0x80cc0eu ||
         cpu->direct_page)
         return result;

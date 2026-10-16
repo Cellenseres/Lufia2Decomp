@@ -304,6 +304,9 @@ typedef struct EventRun {
     unsigned layer_redraws[EVENT_NEST_LIMIT];
     unsigned visits;
     uint8_t has_visits;
+    Lufia2PushedChildCall child;
+    void *child_context;
+    uint32_t unwind_site;
 } EventRun;
 
 /* Actor, position and point opcodes; others hand off. */
