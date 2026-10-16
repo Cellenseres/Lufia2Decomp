@@ -9,15 +9,15 @@ enum {
     TEXT_SPEAKER_REQUEST = 0x09acu
 };
 
-static bool EventControlContext(const Lufia2CpuState *cpu) {
+static bool EventControlContext(const Lufia2CpuState *cpu, uint16_t maximum_stack) {
     return cpu->program_bank == 0x83u && cpu->accumulator_is_8_bit &&
         !cpu->index_is_8_bit && !cpu->decimal && !cpu->direct_page &&
-        cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+        cpu->stack >= 0x1f00u && cpu->stack <= maximum_stack;
 }
 
 Lufia2ExecutionResult Lufia2FieldPrepareEventControl(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!EventControlContext(cpu))
+    if (!EventControlContext(cpu, 0x1ffdu))
         return ExecutionHandoff(cpu, 0x83bb76u);
     OpLoadA(cpu, 0x80u);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
@@ -57,7 +57,7 @@ static bool EventControlCall(
 
 Lufia2ExecutionResult Lufia2FieldBeginEventControl(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!EventControlContext(cpu) || cpu->stack < 0x1f30u)
+    if (!EventControlContext(cpu, 0x1ffcu) || cpu->stack < 0x1f30u)
         return ExecutionHandoff(cpu, 0x83b727u);
     OpSta(memory, cpu, FIELD_EVENT_REQUEST);
     if (!EventControlCall(memory, cpu, Lufia2SceneScriptFindRecord,
