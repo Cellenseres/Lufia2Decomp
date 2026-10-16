@@ -228,3 +228,20 @@ Lufia2ExecutionResult Lufia2NmiRestoreInterruptFrame(const Lufia2Memory *memory,
         return ExecutionHandoff(cpu, 0x80869bu);
     return RestoreNmiFrame(memory, cpu);
 }
+
+Lufia2ExecutionResult Lufia2NmiSaveInterruptFrame(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    const uint32_t entry = ((uint32_t)cpu->program_bank << 16) | 0x862du;
+    if ((cpu->program_bank != 0u && cpu->program_bank != 0x80u) ||
+        cpu->accumulator_is_8_bit > 1u || cpu->index_is_8_bit > 1u ||
+        cpu->stack < 0x1f08u || cpu->stack > 0x1ffbu)
+        return ExecutionHandoff(cpu, entry);
+    Push8(memory, cpu, PackStatus(cpu));
+    PushDataBank(memory, cpu);
+    OpRepWidths(cpu, 0x30u);
+    PushAccumulator16(memory, cpu);
+    OpPushX(memory, cpu);
+    PushY(memory, cpu);
+    cpu->program_bank = 0x80u;
+    return ExecutionHandoff(cpu, 0x808638u);
+}

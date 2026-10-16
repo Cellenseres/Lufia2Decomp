@@ -103,6 +103,10 @@ Lufia2ExecutionResult Lufia2NmiDisplayAndClock(
 Lufia2ExecutionResult Lufia2NmiRestoreInterruptFrame(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Native NMI entry; preserves the hardware interrupt frame. */
+Lufia2ExecutionResult Lufia2NmiSaveInterruptFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $80:8E9D decompress resource $54 to $7E/$7F:[$60]; any width. */
 Lufia2ExecutionResult Lufia2DecompressResource(
     const Lufia2Memory *memory,
