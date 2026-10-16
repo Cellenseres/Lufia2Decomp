@@ -1477,6 +1477,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:E6C4` | `Lufia2WorldMapInitializeObjectRecords` | verified | `src/world/world_map_objects.c` |
 | `$86:E6F3` | `Lufia2WorldMapSelectObjectRecord` | verified | `src/world/world_map_objects.c` |
 | `$86:E709` | `Lufia2WorldMapIndexObjectRecord` | verified | `src/world/world_map_objects.c` |
+| `$86:E71E` | `Lufia2WorldMapAnimateSceneSpriteTrails` | verified | `src/world/world_scene_sprites.c` |
+| `$86:E7A2` | `Lufia2WorldMapSpawnSceneSpriteTrail` | verified | `src/world/world_scene_sprites.c` |
+| `$86:E7CE` | `Lufia2WorldMapAdvanceSceneSpriteTrail` | verified | `src/world/world_scene_sprites.c` |
+| `$86:E804` | `Lufia2WorldMapDrawSceneSpriteTrail` | verified | `src/world/world_scene_sprites.c` |
 | `$86:E84F` | `Lufia2WorldMapPrepareSceneSprites` | verified | `src/world/world_scene_sprites.c` |
 | `$86:E8B5` | `Lufia2WorldMapClearSceneSpriteRecords` | verified | `src/world/world_scene_sprites.c` |
 | `$86:E8CE` | `Lufia2WorldSpriteChain` | verified | `src/world/world_map.c` |

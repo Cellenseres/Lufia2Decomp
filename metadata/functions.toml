@@ -12257,3 +12257,35 @@ source = "src/world/world_sloped_windows.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:E71E"
+name = "Lufia2WorldMapAnimateSceneSpriteTrails"
+source = "src/world/world_scene_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E7A2"
+name = "Lufia2WorldMapSpawnSceneSpriteTrail"
+source = "src/world/world_scene_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E7CE"
+name = "Lufia2WorldMapAdvanceSceneSpriteTrail"
+source = "src/world/world_scene_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E804"
+name = "Lufia2WorldMapDrawSceneSpriteTrail"
+source = "src/world/world_scene_sprites.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

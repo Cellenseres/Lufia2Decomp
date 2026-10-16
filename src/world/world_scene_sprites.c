@@ -143,3 +143,214 @@ Lufia2ExecutionResult Lufia2WorldMapPrepareSceneSprites(const Lufia2Memory *memo
     }
     return ExecutionHandoff(cpu, 0x86e859u);
 }
+
+enum {
+    TRAIL_POSITION_X = 0u,
+    TRAIL_POSITION_Y = 2u,
+    TRAIL_AGE = 4u,
+    TRAIL_TILE = 5u,
+    TRAIL_RECORD_SIZE = 6u,
+    TRAIL_LENGTH = 7u,
+    TRAIL_SAVED_X = 4u,
+    TRAIL_SAVED_Y = 6u,
+    TRAIL_STEP_X = 8u,
+    TRAIL_STEP_Y = 0x0bu,
+    TRAIL_RECORDS = WRAM_WORLD_SCENE_SPRITE_RECORD_STORAGE,
+    TRAIL_SECOND_GROUP = TRAIL_RECORDS + 8u * TRAIL_RECORD_SIZE,
+    TRAIL_FRAME_COUNTER = WRAM_FIELD_LAYER_SCROLL_Y,
+    TRAIL_ANGLE = WRAM_FIELD_STREAMED_COLUMN_SOURCE + 1u,
+    TRAIL_DISTANCE = WRAM_FIELD_STREAMED_COLUMN_SOURCE + 2u,
+    TRAIL_ORIGIN_X = WRAM_FIELD_STREAMED_ROW_SOURCE + 3u,
+    TRAIL_ORIGIN_Y = WRAM_FIELD_STREAMED_COLUMN_SOURCE - 2u,
+    TRAIL_MOTION_ANGLE = 0x1248u,
+    TRAIL_MOTION_DISTANCE = 0x1249u
+};
+
+static void MoveTrailRecord(Lufia2CpuState *cpu, bool forward) {
+    OpRepWidths(cpu, 0x20u);
+    OpTxa(cpu);
+    cpu->carry = forward ? 0u : 1u;
+    if (forward)
+        OpAdcValue(cpu, TRAIL_RECORD_SIZE);
+    else
+        OpSbcValue(cpu, TRAIL_RECORD_SIZE);
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapSpawnSceneSpriteTrail(const Lufia2Memory *memory,
+                                                          Lufia2CpuState *cpu) {
+    if (!WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86e7a2u);
+    OpLdy(cpu, OpRead16(memory, WorldSceneObjectField(cpu, TRAIL_POSITION_X)));
+    OpWrite16(memory, OpDp(cpu, TRAIL_SAVED_X), cpu->y);
+    OpLdy(cpu, OpRead16(memory, WorldSceneObjectField(cpu, TRAIL_POSITION_Y)));
+    OpWrite16(memory, OpDp(cpu, TRAIL_SAVED_Y), cpu->y);
+    OpLdy(cpu, TRAIL_LENGTH);
+    do {
+        MoveTrailRecord(cpu, true);
+        OpLda(memory, cpu, WorldSceneObjectField(cpu, TRAIL_TILE));
+        if (cpu->negative) {
+            OpLoadA(cpu, 0x20u);
+            OpSta(memory, cpu, WorldSceneObjectField(cpu, TRAIL_TILE));
+            OpStz(memory, cpu, WorldSceneObjectField(cpu, TRAIL_AGE));
+            OpLdy(cpu, OpRead16(memory, OpDp(cpu, TRAIL_SAVED_X)));
+            OpWrite16(memory, WorldSceneObjectField(cpu, TRAIL_POSITION_X), cpu->y);
+            OpLdy(cpu, OpRead16(memory, OpDp(cpu, TRAIL_SAVED_Y)));
+            OpWrite16(memory, WorldSceneObjectField(cpu, TRAIL_POSITION_Y), cpu->y);
+            return ExecutionReturned(0x86e7cdu);
+        }
+        OpDey(cpu);
+    } while (!cpu->zero);
+    return ExecutionReturned(0x86e7beu);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapAdvanceSceneSpriteTrail(const Lufia2Memory *memory,
+                                                            Lufia2CpuState *cpu) {
+    if (!WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86e7ceu);
+    OpLda(memory, cpu, OpAbs(cpu, TRAIL_FRAME_COUNTER));
+    OpLsrA(cpu);
+    OpAndValue(cpu, 3u);
+    OpAslA(cpu);
+    OpSta(memory, cpu, WorldSceneObjectField(cpu, TRAIL_TILE));
+    OpLdy(cpu, TRAIL_LENGTH);
+    do {
+        MoveTrailRecord(cpu, true);
+        OpLda(memory, cpu, WorldSceneObjectField(cpu, TRAIL_TILE));
+        if (!cpu->negative) {
+            OpLda(memory, cpu, WorldSceneObjectField(cpu, TRAIL_AGE));
+            OpCmpValue(cpu, 6u);
+            if (cpu->carry) {
+                OpStz(memory, cpu, WorldSceneObjectField(cpu, TRAIL_AGE));
+                OpLda(memory, cpu, WorldSceneObjectField(cpu, TRAIL_TILE));
+                OpIncA(cpu);
+                OpIncA(cpu);
+                OpSta(memory, cpu, WorldSceneObjectField(cpu, TRAIL_TILE));
+                OpCmpValue(cpu, 0x2cu);
+                if (cpu->carry) {
+                    OpLoadA(cpu, 0xffu);
+                    OpSta(memory, cpu, WorldSceneObjectField(cpu, TRAIL_TILE));
+                }
+            }
+            OpStepMem(memory, cpu, WorldSceneObjectField(cpu, TRAIL_AGE), 1);
+        }
+        OpDey(cpu);
+    } while (!cpu->zero);
+    return ExecutionReturned(0x86e803u);
+}
+
+static void PreviousTrailSprite(Lufia2CpuState *cpu) {
+    for (unsigned byte = 0u; byte < 4u; ++byte)
+        OpDey(cpu);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapDrawSceneSpriteTrail(const Lufia2Memory *memory,
+                                                         Lufia2CpuState *cpu) {
+    if (!WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86e804u);
+    OpLoadA(cpu, TRAIL_LENGTH);
+    OpSta(memory, cpu, OpDp(cpu, TRAIL_AGE));
+    do {
+        OpLda(memory, cpu, WorldSceneObjectField(cpu, TRAIL_TILE));
+        if (!cpu->negative) {
+            OpSta(memory, cpu, OpAbsY(cpu, WRAM_FIELD_OAM_LOW_BUFFER + 2u));
+            OpRepWidths(cpu, 0x20u);
+            OpLda(memory, cpu, WorldSceneObjectField(cpu, TRAIL_POSITION_X));
+            cpu->carry = 0u;
+            OpAdc(memory, cpu, OpDp(cpu, TRAIL_STEP_X));
+            OpSta(memory, cpu, WorldSceneObjectField(cpu, TRAIL_POSITION_X));
+            ExchangeAccumulatorBytes(cpu);
+            OpSta(memory, cpu, OpAbsY(cpu, WRAM_FIELD_OAM_LOW_BUFFER));
+            OpLda(memory, cpu, WorldSceneObjectField(cpu, TRAIL_POSITION_Y));
+            cpu->carry = 0u;
+            OpAdc(memory, cpu, OpDp(cpu, TRAIL_STEP_Y));
+            OpSta(memory, cpu, WorldSceneObjectField(cpu, TRAIL_POSITION_Y));
+            ExchangeAccumulatorBytes(cpu);
+            OpSepWidths(cpu, 0x20u);
+            OpSta(memory, cpu, OpAbsY(cpu, WRAM_FIELD_OAM_LOW_BUFFER + 1u));
+            PreviousTrailSprite(cpu);
+        }
+        MoveTrailRecord(cpu, false);
+        OpStepMem(memory, cpu, OpDp(cpu, TRAIL_AGE), -1);
+    } while (!cpu->zero);
+    static const uint8_t fields[] = {1u, 3u, TRAIL_TILE};
+    for (unsigned field = 0u; field < 3u; ++field) {
+        OpLda(memory, cpu, WorldSceneObjectField(cpu, fields[field]));
+        OpSta(memory, cpu, OpAbsY(cpu, (uint16_t)(WRAM_FIELD_OAM_LOW_BUFFER + field)));
+    }
+    PreviousTrailSprite(cpu);
+    return ExecutionReturned(0x86e84eu);
+}
+
+static void PlaceSceneTrailOrigin(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  uint16_t record, bool opposite) {
+    static const uint16_t origins[] = {TRAIL_ORIGIN_X, TRAIL_ORIGIN_Y};
+    static const uint8_t steps[] = {TRAIL_STEP_X + 1u, TRAIL_STEP_Y + 1u};
+    for (unsigned axis = 0u; axis < 2u; ++axis) {
+        OpLda(memory, cpu, OpAbs(cpu, origins[axis]));
+        cpu->carry = opposite ? 1u : 0u;
+        if (opposite)
+            OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, steps[axis])));
+        else
+            OpAdc(memory, cpu, OpDp(cpu, steps[axis]));
+        OpSta(memory, cpu, OpAbs(cpu, (uint16_t)(record + axis * 2u + 1u)));
+    }
+}
+
+Lufia2ExecutionResult
+Lufia2WorldMapAnimateSceneSpriteTrails(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                       Lufia2PushedChildCall child, void *context) {
+    if (!child || !WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86e71eu);
+    SceneSpriteSetup setup = {memory, cpu, child, context,
+                              ExecutionReturned(0x86e7a1u)};
+    if (!CallSpriteSetupChild(&setup, 0x86e71eu, 0x86e650u))
+        return setup.result;
+    OpLda(memory, cpu, OpAbs(cpu, TRAIL_ANGLE));
+    OpSta(memory, cpu, OpAbs(cpu, TRAIL_MOTION_ANGLE));
+    OpLdy(cpu, OpRead16(memory, OpAbs(cpu, TRAIL_DISTANCE)));
+    OpWrite16(memory, OpAbs(cpu, TRAIL_MOTION_DISTANCE), cpu->y);
+    if (!CallSpriteSetupChild(&setup, 0x86e72du, 0x86a417u))
+        return setup.result;
+    PlaceSceneTrailOrigin(memory, cpu, TRAIL_RECORDS, false);
+    PlaceSceneTrailOrigin(memory, cpu, TRAIL_SECOND_GROUP, true);
+    OpLda(memory, cpu, OpAbs(cpu, TRAIL_FRAME_COUNTER));
+    OpAndValue(cpu, 7u);
+    if (cpu->zero) {
+        OpLdx(cpu, TRAIL_RECORDS);
+        if (!CallSpriteSetupChild(&setup, 0x86e75eu, 0x86e7a2u))
+            return setup.result;
+        OpLdx(cpu, TRAIL_SECOND_GROUP);
+        if (!CallSpriteSetupChild(&setup, 0x86e764u, 0x86e7a2u))
+            return setup.result;
+    }
+    OpLdx(cpu, TRAIL_RECORDS);
+    if (!CallSpriteSetupChild(&setup, 0x86e76au, 0x86e7ceu))
+        return setup.result;
+    OpLdx(cpu, TRAIL_SECOND_GROUP);
+    if (!CallSpriteSetupChild(&setup, 0x86e770u, 0x86e7ceu))
+        return setup.result;
+    OpLda(memory, cpu, OpAbs(cpu, TRAIL_SECOND_GROUP + TRAIL_TILE));
+    cpu->carry = 0u;
+    OpAdcValue(cpu, 8u);
+    OpSta(memory, cpu, OpAbs(cpu, TRAIL_SECOND_GROUP + TRAIL_TILE));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E1211));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpAbs(cpu, WRAM_WORLD_SCENE_UNK_1219)));
+    cpu->carry = 0u;
+    OpAdcValue(cpu, 0x80u);
+    OpSta(memory, cpu, OpAbs(cpu, TRAIL_MOTION_ANGLE));
+    OpLdy(cpu, 0x180u);
+    OpWrite16(memory, OpAbs(cpu, TRAIL_MOTION_DISTANCE), cpu->y);
+    if (!CallSpriteSetupChild(&setup, 0x86e78fu, 0x86a417u))
+        return setup.result;
+    OpLdy(cpu, 0x3cu);
+    OpLdx(cpu, TRAIL_RECORDS + TRAIL_LENGTH * TRAIL_RECORD_SIZE);
+    if (!CallSpriteSetupChild(&setup, 0x86e798u, 0x86e804u))
+        return setup.result;
+    OpLdx(cpu, TRAIL_SECOND_GROUP + TRAIL_LENGTH * TRAIL_RECORD_SIZE);
+    if (!CallSpriteSetupChild(&setup, 0x86e79eu, 0x86e804u))
+        return setup.result;
+    return setup.result;
+}

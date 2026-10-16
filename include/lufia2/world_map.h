@@ -736,6 +736,19 @@ Lufia2ExecutionResult Lufia2WorldMapDrawUpperLeftWindowEdge(
 Lufia2ExecutionResult Lufia2WorldMapInitializeWindowRows(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2WorldMapAnimateSceneSpriteTrails(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2WorldMapSpawnSceneSpriteTrail(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2WorldMapAdvanceSceneSpriteTrail(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2WorldMapDrawSceneSpriteTrail(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
