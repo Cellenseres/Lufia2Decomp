@@ -329,7 +329,7 @@ uint32_t Lufia2ActorMovementStep(
         SetNz8(cpu, value);
         return 0x83fb2du;
     default:
-        cpu->resume_pc = 0x83fb17u;
+        cpu->resume_pc = ((uint32_t)cpu->program_bank << 16) | target;
         return 0;
     }
 }
