@@ -93,10 +93,9 @@ static bool StatusTickApply(BattleContext *battle) {
 }
 
 /* $81:C652: apply the status-bit-1 HP effect to the staged target. */
-static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
+static bool ApplyTargetStatusTick(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
-    SimulateJsrFrame(memory, cpu, (uint16_t)(call_site + 2u));
     OpLda(memory, cpu, OpDp(cpu, 0u));
     OpOra(memory, cpu, OpDp(cpu, 1u));
     OpSta(memory, cpu, OpDp(cpu, 3u));
@@ -120,7 +119,14 @@ static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
         if (!cpu->zero && !StatusTickApply(battle))
             return false;
     }
-    SimulateRtsFrame(memory, cpu);
+    return true;
+}
+
+static bool BattleApplyStatusTick(BattleContext *battle, uint16_t call_site) {
+    SimulateJsrFrame(battle->memory, battle->cpu, (uint16_t)(call_site + 2u));
+    if (!ApplyTargetStatusTick(battle))
+        return false;
+    SimulateRtsFrame(battle->memory, battle->cpu);
     return true;
 }
 
@@ -174,4 +180,18 @@ Lufia2ExecutionResult Lufia2BattleStatusTick(
     }
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x81c651u);
+}
+
+Lufia2ExecutionResult Lufia2BattleApplyTargetStatusTick(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu,
+                                                        Lufia2PushedChildCall child,
+                                                        void *context) {
+    if (!child || cpu->program_bank != 0x81u || (cpu->data_bank & 0x7fu) >= 0x40u ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal ||
+        cpu->direct_page || cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x81c652u);
+    BattleContext battle = BattleContextCreate(memory, cpu, child, context, 0x81u);
+    if (!ApplyTargetStatusTick(&battle))
+        return BattleChildUnwound(&battle);
+    return ExecutionReturned(0x81c738u);
 }

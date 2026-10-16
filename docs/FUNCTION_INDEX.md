@@ -425,8 +425,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:C321` | `Lufia2BattleFadeOutWindows` | verified | `src/battle/battle_window_fades.c` |
 | `$81:C339` | `Lufia2BattleFadeInWindows` | verified | `src/battle/battle_window_fades.c` |
 | `$81:C35F` | `Lufia2BattlePopups` | verified | `src/battle/battle_popup.c` |
+| `$81:C3EE` | `Lufia2BattleBuildSlotPopup` | verified | `src/battle/battle_popup.c` |
+| `$81:C477` | `Lufia2BattleBuildPopupRecord` | verified | `src/battle/battle_popup.c` |
 | `$81:C5CF` | `Lufia2BattleTargetPointer` | verified | `src/battle/battle_util.c` |
 | `$81:C600` | `Lufia2BattleStatusTick` | verified | `src/battle/battle_status_tick.c` |
+| `$81:C652` | `Lufia2BattleApplyTargetStatusTick` | verified | `src/battle/battle_status_tick.c` |
 | `$81:C739` | `Lufia2BattleCollectCommands` | verified | `src/battle/battle_commands.c` |
 | `$81:CB77` | `Lufia2BattleChooseCommand` | verified | `src/battle/battle_command.c` |
 | `$81:CC2E` | `Lufia2BattleChoosePartyAction` | verified | `src/battle/battle_party_commands.c` |

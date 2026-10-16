@@ -1986,6 +1986,15 @@ Lufia2ExecutionResult Lufia2BattleRunSpritePreviewWithExit(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2BattleBuildSlotPopup(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleBuildPopupRecord(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleApplyTargetStatusTick(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu,
+                                                        Lufia2PushedChildCall child,
+                                                        void *context);
+
 #ifdef __cplusplus
 }
 #endif

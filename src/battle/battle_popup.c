@@ -1,6 +1,7 @@
 /* Battle damage popups ($81:C35F). */
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/battle.h"
 #include "system/wram.h"
 
@@ -275,7 +276,7 @@ static void ScanValues(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             break;
         IncrementX16(cpu);
         IncrementX16(cpu);
-        Decrement16Direct(memory, cpu, 0x13u);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x13u), -1);
         if (cpu->zero)
             break;
     }
@@ -293,6 +294,7 @@ static void SlotValue(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreXDirect16(memory, cpu, 0x15u);
     LoadX16(cpu, Read16Direct(memory, cpu, 0x19u));
     LoadA8(cpu, Read8(memory, LongIndexedAddress(SLOTS + 2u, cpu->x)));
+    Compare8(cpu, A8(cpu), 0x08u);
     if (A8(cpu) == 0x08u) {
         LoadA8(cpu, 0x10u);                                    /* C46D */
         StoreADirect8(memory, cpu, 0x13u);
@@ -316,6 +318,7 @@ static void SlotValue(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             StoreADirect16(memory, cpu, 0x13u);
             ScanValues(memory, cpu);
         } else {
+            Compare8(cpu, mode, 0x03u);
             LoadA8(cpu, Read8(memory, LongIndexedAddress(SLOTS + 2u, cpu->x)));   /* C432 */
             SetAccumulatorWidth(cpu, 0);
             And16(cpu, 0x00ffu);
@@ -371,7 +374,10 @@ Lufia2ExecutionResult Lufia2BattlePopups(
     StoreXDirect16(memory, cpu, 0x1cu);
     do {
         LoadA8(cpu, Read8(memory, LongIndexedAddress(SLOTS, cpu->x)));
-        if (ShowsSlot(A8(cpu), DirectByte(memory, cpu, 0x11u))) {
+        const uint8_t type = A8(cpu);
+        const bool has_popup_type =
+            type == 0x80u || type == 0x04u || type == 0x03u || type == 0x02u;
+        if (has_popup_type && ShowsSlot(type, DirectByte(memory, cpu, 0x11u))) {
             PushIndex(memory, cpu);                            /* C3C1 */
             StoreXDirect16(memory, cpu, 0x19u);
             SimulateJsrFrame(memory, cpu, 0xc3c6u);
@@ -382,8 +388,7 @@ Lufia2ExecutionResult Lufia2BattlePopups(
             cpu->carry = 0;
             Add16Value(cpu, 0x000bu);
             StoreADirect16(memory, cpu, 0x1cu);
-            StoreWordAbsolute(memory, cpu, 0x4f0au,
-                (uint16_t)(Read16AbsoluteIndexed(memory, cpu, 0x4f0au, 0) + 1u));
+            OpStepMem(memory, cpu, OpAbs(cpu, 0x4f0au), 1);
             cpu->x = PullIndexValue(memory, cpu);
         }
         SetAccumulatorWidth(cpu, 0);                           /* C3D5 */
@@ -402,4 +407,26 @@ Lufia2ExecutionResult Lufia2BattlePopups(
     PullAccumulator16(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x81c3edu);
+}
+
+static bool PopupRecordContext(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x81u && cpu->data_bank == 0x7eu &&
+           cpu->accumulator_is_8_bit && !cpu->index_is_8_bit && !cpu->decimal &&
+           !cpu->direct_page && cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2BattleBuildSlotPopup(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    if (!PopupRecordContext(cpu))
+        return ExecutionHandoff(cpu, 0x81c3eeu);
+    SlotValue(memory, cpu);
+    return ExecutionReturned(0x81c476u);
+}
+
+Lufia2ExecutionResult Lufia2BattleBuildPopupRecord(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    if (!PopupRecordContext(cpu))
+        return ExecutionHandoff(cpu, 0x81c477u);
+    BuildPopup(memory, cpu);
+    return ExecutionReturned(0x81c585u);
 }
