@@ -120,6 +120,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_mirror_sprites.c
     src/battle/battle_message_copy.c
     src/battle/battle_outcome.c
+    src/battle/battle_action_prepare.c
     src/battle/battle_actions.c
     src/battle/battle_status_tick.c
     src/battle/battle_command.c
@@ -363,6 +364,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_animation_regions.c
     src/field/field_animation_slots.c
     src/field/field_animation_cells.c
+    src/item/inventory_consume.c
     src/item/inventory.c
     src/item/item_commands.c
     src/item/packed_item_counts.c

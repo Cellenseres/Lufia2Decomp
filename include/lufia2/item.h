@@ -111,6 +111,13 @@ Lufia2ExecutionResult Lufia2ItemIncrementPackedCount(
 Lufia2ExecutionResult Lufia2ItemDecrementPackedCount(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2InventoryRemoveQuantity(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2InventoryConsumeRequestedItem(const Lufia2Memory *memory,
+                                                          Lufia2CpuState *cpu,
+                                                          Lufia2PushedChildCall child,
+                                                          void *context);
+
 #ifdef __cplusplus
 }
 #endif

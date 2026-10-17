@@ -5879,3 +5879,67 @@ count = 1
 owner = "title"
 aliases = ["WRAM_SELECT_SCREEN_VRAM_OFFSET"]
 notes = "86:8695 advances this byte as the tile animation frame.86:8784 initializes it to20;86:87E0 reads its low byte as a VRAM destination offset added to1800.The high byte at15B9 is masked away in that NMI path."
+
+[[location]]
+address = "7E:09F4"
+name = "battle_action_work_byte"
+width = 1
+count = 1
+owner = "battle"
+notes = "Shared transient byte:81F114 quantity work;85CE21 action stage byte. Its original reuse is preserved."
+
+[[location]]
+address = "7E:09FC"
+name = "battle_action_bias"
+width = 1
+count = 1
+owner = "battle"
+notes = "85D025 forms an eight-bit action bias here before copying its zero-extended value intoF452."
+
+[[location]]
+address = "7E:13DB"
+name = "battle_enemy_sprite_flags"
+width = 1
+count = 1
+owner = "battle"
+notes = "85:948C clears bit80 in six enemy-sprite flag bytes atstride15 when the corresponding enemy record has bit04. Base marker only; context reuses sprite storage."
+
+[[location]]
+address = "7F:F4D6"
+name = "battle_action_saved_target_word"
+width = 2
+count = 1
+owner = "battle"
+notes = "85CF68 copies this word into the target word atF450 before collecting action adjustments."
+
+[[location]]
+address = "7F:F4D8"
+name = "battle_action_initial_target_mask"
+width = 1
+count = 1
+owner = "battle"
+notes = "85CE6F counts bits0..5 and visits each set target bit from this mask; bit7 is retained separately."
+
+[[location]]
+address = "7F:F4E2"
+name = "battle_action_result_flags"
+width = 2
+count = 1
+owner = "battle"
+notes = "85CE21 tests bit02 then writes00C3 before conditional action processing."
+
+[[location]]
+address = "7F:F5EE"
+name = "battle_action_result_buffer"
+width = 30
+count = 1
+owner = "battle"
+notes = "85D94F assembles this30-byte result buffer then copies it through the WRAM port whenF450 is nonzero."
+
+[[location]]
+address = "7F:F60C"
+name = "battle_action_result_records"
+width = 1
+count = 1
+owner = "battle"
+notes = "Base marker:85CE21 clears014Abytes;85CF68 visits11records ofstride1E throughF755. Storage overlaps the existing F65B encounter marker; this location does not declare a disjoint allocation."

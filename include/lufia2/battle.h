@@ -1995,6 +1995,38 @@ Lufia2ExecutionResult Lufia2BattleApplyTargetStatusTick(const Lufia2Memory *memo
                                                         Lufia2PushedChildCall child,
                                                         void *context);
 
+Lufia2ExecutionResult Lufia2BattleResetTargetMotion(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu,
+                                                    Lufia2PushedChildCall child,
+                                                    void *context);
+Lufia2ExecutionResult
+Lufia2BattleRefreshInactiveEnemySprites(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                        Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2BattlePrepareAlternateAction(const Lufia2Memory *memory,
+                                                         Lufia2CpuState *cpu,
+                                                         Lufia2PushedChildCall child,
+                                                         void *context);
+Lufia2ExecutionResult Lufia2BattleBuildActionAdjustments(const Lufia2Memory *memory,
+                                                         Lufia2CpuState *cpu,
+                                                         Lufia2PushedChildCall child,
+                                                         void *context);
+Lufia2ExecutionResult Lufia2BattleCalculateActionBias(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu,
+                                                      Lufia2PushedChildCall child,
+                                                      void *context);
+Lufia2ExecutionResult Lufia2BattleStoreActionResult(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu,
+                                                    Lufia2PushedChildCall child,
+                                                    void *context);
+Lufia2ExecutionResult Lufia2BattleInvalidateTurnQueueActor(const Lufia2Memory *memory,
+                                                           Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleRemoveTurnQueueActor(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleAccumulateActionAdjustment(const Lufia2Memory *memory,
+                                                             Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleReadActorBiasFlag(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

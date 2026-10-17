@@ -13435,3 +13435,99 @@ source = "src/menu/menu_select_control.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:F114"
+name = "Lufia2InventoryRemoveQuantity"
+source = "src/item/inventory_consume.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F15B"
+name = "Lufia2InventoryConsumeRequestedItem"
+source = "src/item/inventory_consume.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:EBF4"
+name = "Lufia2BattleResetTargetMotion"
+source = "src/battle/battle_action_prepare.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "85:948C"
+name = "Lufia2BattleRefreshInactiveEnemySprites"
+source = "src/battle/battle_action_prepare.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CE21"
+name = "Lufia2BattlePrepareAlternateAction"
+source = "src/battle/battle_action_prepare.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "85:CF68"
+name = "Lufia2BattleBuildActionAdjustments"
+source = "src/battle/battle_action_prepare.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:D025"
+name = "Lufia2BattleCalculateActionBias"
+source = "src/battle/battle_action_prepare.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:D94F"
+name = "Lufia2BattleStoreActionResult"
+source = "src/battle/battle_action_prepare.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:D9F0"
+name = "Lufia2BattleInvalidateTurnQueueActor"
+source = "src/battle/battle_action_prepare.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:937D"
+name = "Lufia2BattleRemoveTurnQueueActor"
+source = "src/battle/battle_action_prepare.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CFAB"
+name = "Lufia2BattleAccumulateActionAdjustment"
+source = "src/battle/battle_action_prepare.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:D080"
+name = "Lufia2BattleReadActorBiasFlag"
+source = "src/battle/battle_action_prepare.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

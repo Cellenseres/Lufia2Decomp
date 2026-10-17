@@ -499,6 +499,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:EB34` | `Lufia2BattlePaletteCopy` | verified | `src/battle/battle_util.c` |
 | `$81:EB62` | `Lufia2BattlePaletteSplit` | verified | `src/battle/battle_util.c` |
 | `$81:EB93` | `Lufia2BattleRefreshPartyStatusSprites` | verified | `src/battle/battle_party_status.c` |
+| `$81:EBF4` | `Lufia2BattleResetTargetMotion` | verified | `src/battle/battle_action_prepare.c` |
 | `$81:EC35` | `Lufia2StartDefaultRecords` | verified | `src/system/default_records.c` |
 | `$81:EC41` | `Lufia2BattleClearF000` | verified | `src/battle/battle_util.c` |
 | `$81:EC56` | `Lufia2InitializeDefaultRecords` | verified | `src/system/default_records.c` |
@@ -508,6 +509,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F057` | `Lufia2InventoryCount` | verified | `src/item/inventory.c` |
 | `$81:F085` | `Lufia2InventoryReceive` | verified | `src/item/inventory_receive.c` |
 | `$81:F0A2` | `Lufia2InventoryAdd` | verified | `src/item/inventory.c` |
+| `$81:F114` | `Lufia2InventoryRemoveQuantity` | verified | `src/item/inventory_consume.c` |
+| `$81:F15B` | `Lufia2InventoryConsumeRequestedItem` | verified | `src/item/inventory_consume.c` |
 | `$81:F194` | `Lufia2ItemRecordByte` | verified | `src/item/item_records.c` |
 | `$81:F1C5` | `Lufia2LoadItemRecord` | verified | `src/item/item_records.c` |
 | `$81:F291` | `Lufia2ItemTextPointer` | verified | `src/item/item_records.c` |
@@ -1158,11 +1161,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:92FF` | `Lufia2BattleQueueStagedPartyAction` | verified | `src/battle/battle_party_actions.c` |
 | `$85:9326` | `Lufia2BattleSetPartyCommandBytes` | verified | `src/battle/battle_party_layouts.c` |
 | `$85:9337` | `Lufia2BattleInsertTurn` | verified | `src/battle/battle_turn_queue.c` |
+| `$85:937D` | `Lufia2BattleRemoveTurnQueueActor` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:93B7` | `Lufia2BattleCheckOutcome` | verified | `src/battle/battle_outcome.c` |
 | `$85:9419` | `Lufia2BattleReversePartyOrder` | verified | `src/battle/battle_loop_children.c` |
 | `$85:942D` | `Lufia2BattleSwapFirstTwoMembers` | verified | `src/battle/battle_party_layouts.c` |
 | `$85:9445` | `Lufia2BattleSwapFirstThirdMembers` | verified | `src/battle/battle_party_layouts.c` |
 | `$85:9460` | `Lufia2BattleReversePartyMembers` | verified | `src/battle/battle_party_layouts.c` |
+| `$85:948C` | `Lufia2BattleRefreshInactiveEnemySprites` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:94E7` | `Lufia2BattleCopyMessageName` | verified | `src/battle/battle_message_copy.c` |
 | `$85:9510` | `Lufia2BattleCopyRecordName` | verified | `src/battle/battle_action_message.c` |
 | `$85:9532` | `Lufia2BattleLoadStatusMessage` | verified | `src/battle/battle_action_message.c` |
@@ -1284,7 +1289,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:CDAA` | `Lufia2BattleLoadTurnRecord` | verified | `src/battle/battle_action_work.c` |
 | `$85:CDD0` | `Lufia2BattleLoadActionRecord` | verified | `src/battle/battle_action_work.c` |
 | `$85:CDFA` | `Lufia2BattleActionRecordPointer` | verified | `src/battle/battle_action_work.c` |
+| `$85:CE21` | `Lufia2BattlePrepareAlternateAction` | verified | `src/battle/battle_action_prepare.c` |
+| `$85:CF68` | `Lufia2BattleBuildActionAdjustments` | verified | `src/battle/battle_action_prepare.c` |
+| `$85:CFAB` | `Lufia2BattleAccumulateActionAdjustment` | verified | `src/battle/battle_action_prepare.c` |
+| `$85:D025` | `Lufia2BattleCalculateActionBias` | verified | `src/battle/battle_action_prepare.c` |
+| `$85:D080` | `Lufia2BattleReadActorBiasFlag` | verified | `src/battle/battle_action_prepare.c` |
+| `$85:D94F` | `Lufia2BattleStoreActionResult` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
+| `$85:D9F0` | `Lufia2BattleInvalidateTurnQueueActor` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:DA71` | `Lufia2BattleClearPartyModifiers` | verified | `src/battle/battle_record_reset.c` |
 | `$85:DA9C` | `Lufia2BattleClearEnemyModifiers` | verified | `src/battle/battle_record_reset.c` |
 | `$85:DAC7` | `Lufia2SystemCalculateVectorAngle` | verified | `src/system/vector_angle.c` |
