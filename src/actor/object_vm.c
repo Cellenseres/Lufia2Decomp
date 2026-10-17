@@ -176,25 +176,26 @@ static void ObjectSignNibble(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 }
 
 /* $83:E1AD / $83:E1B9: add A16 to a position word. */
+static void ObjectAddPositionBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  uint32_t base) {
+    cpu->carry = 0;
+    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(base, cpu->x)));
+    Write16Long(memory, LongIndexedAddress(base, cpu->x), cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+}
+
 static void ObjectAddPosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint32_t base,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(base, cpu->x)));
-    Write16Long(memory, LongIndexedAddress(base, cpu->x), cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
+    ObjectAddPositionBody(memory, cpu, base);
     SimulateRtsFrame(memory, cpu);
 }
 
 /* $83:EED8: random offset around 0 of width operand. */
-static void ObjectJitter(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static void ObjectJitterBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, 0x00u, cpu->y); /* EED8 */
     LsrA8(cpu);
     Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
@@ -203,32 +204,38 @@ static void ObjectJitter(
     cpu->carry = 1;
     Sbc8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
     Lufia2SignExtendA8(memory, cpu, 0xeeeau);
+}
+
+static void ObjectJitter(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                         uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    ObjectJitterBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
 /* $83:ED63: low nibble into a handler table. */
+static void ObjectSubDispatchBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TransferDirectToA(cpu); /* ED63 */
+    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
+    OpIny(cpu);
+    And8(cpu, 0x0fu);
+    AslA8(cpu);
+    TransferAToX(cpu);
+}
+
 static uint16_t ObjectSubDispatch(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t table,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    TransferDirectToA(cpu);                                    /* ED63 */
-    LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
-    IncrementY16(cpu);
-    And8(cpu, 0x0fu);
-    AslA8(cpu);
-    TransferAToX(cpu);
+    ObjectSubDispatchBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     return Read16ProgramIndexed(memory, cpu, table, cpu->x);
 }
 
 /* $83:EE0E: copy animation state of slot X to $A7. */
-static void ObjectTakeAnimation(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static void ObjectTakeAnimationBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_A, cpu->x)));
     Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_B, cpu->x)));
@@ -251,6 +258,12 @@ static void ObjectTakeAnimation(
     LoadAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
     And8(cpu, 0xfbu);
     StoreAAbsolute8(memory, cpu, WRAM_OBJECT_STATE, cpu->x);
+}
+
+static void ObjectTakeAnimation(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    ObjectTakeAnimationBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -3142,4 +3155,67 @@ Lufia2ExecutionResult Lufia2ObjectSignExtendNibble(const Lufia2Memory *memory,
         return ExecutionHandoff(cpu, 0x83fb05u);
     ObjectSignNibbleBody(memory, cpu);
     return ExecutionReturned(0x83fb11u);
+}
+
+static uint8_t ObjectHelperEntryContext(const Lufia2CpuState *cpu, uint8_t position) {
+    return cpu->program_bank == 0x83u && !cpu->direct_page && !cpu->decimal &&
+           cpu->accumulator_is_8_bit == !position &&
+           (position || (cpu->data_bank & 0x7fu) < 0x40u || cpu->data_bank == 0x7eu) &&
+           cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2ObjectAddDisplayOffsetX(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (!ObjectHelperEntryContext(cpu, 1u))
+        return ExecutionHandoff(cpu, 0x83e1adu);
+    ObjectAddPositionBody(memory, cpu, WRAM_OBJECT_DISPLAY_OFFSET_X);
+    return ExecutionReturned(0x83e1b8u);
+}
+
+Lufia2ExecutionResult Lufia2ObjectAddDisplayOffsetY(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (!ObjectHelperEntryContext(cpu, 1u))
+        return ExecutionHandoff(cpu, 0x83e1b9u);
+    ObjectAddPositionBody(memory, cpu, WRAM_OBJECT_DISPLAY_OFFSET_Y);
+    return ExecutionReturned(0x83e1c4u);
+}
+
+Lufia2ExecutionResult Lufia2ObjectAddFinePositionX(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    if (!ObjectHelperEntryContext(cpu, 1u))
+        return ExecutionHandoff(cpu, 0x83ee9du);
+    ObjectAddPositionBody(memory, cpu, WRAM_OBJECT_FINE_X);
+    return ExecutionReturned(0x83eea8u);
+}
+
+Lufia2ExecutionResult Lufia2ObjectAddFinePositionY(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    if (!ObjectHelperEntryContext(cpu, 1u))
+        return ExecutionHandoff(cpu, 0x83eea9u);
+    ObjectAddPositionBody(memory, cpu, WRAM_OBJECT_FINE_Y);
+    return ExecutionReturned(0x83eeb4u);
+}
+
+Lufia2ExecutionResult Lufia2ObjectReadRandomOffset(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    if (!ObjectHelperEntryContext(cpu, 0u))
+        return ExecutionHandoff(cpu, 0x83eed8u);
+    ObjectJitterBody(memory, cpu);
+    return ExecutionReturned(0x83eeebu);
+}
+
+Lufia2ExecutionResult Lufia2ObjectReadSubcommand(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    if (!ObjectHelperEntryContext(cpu, 0u))
+        return ExecutionHandoff(cpu, 0x83ed63u);
+    ObjectSubDispatchBody(memory, cpu);
+    return ExecutionReturned(0x83ed6cu);
+}
+
+Lufia2ExecutionResult Lufia2ObjectCopyAnimationState(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu) {
+    if (!ObjectHelperEntryContext(cpu, 0u))
+        return ExecutionHandoff(cpu, 0x83ee0eu);
+    ObjectTakeAnimationBody(memory, cpu);
+    return ExecutionReturned(0x83ee47u);
 }

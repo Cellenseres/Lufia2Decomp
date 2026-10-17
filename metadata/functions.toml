@@ -13019,3 +13019,59 @@ source = "src/menu/menu_string.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:E1AD"
+name = "Lufia2ObjectAddDisplayOffsetX"
+source = "src/actor/object_vm.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:E1B9"
+name = "Lufia2ObjectAddDisplayOffsetY"
+source = "src/actor/object_vm.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:EE9D"
+name = "Lufia2ObjectAddFinePositionX"
+source = "src/actor/object_vm.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:EEA9"
+name = "Lufia2ObjectAddFinePositionY"
+source = "src/actor/object_vm.c"
+entry_mx = "M0X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:EED8"
+name = "Lufia2ObjectReadRandomOffset"
+source = "src/actor/object_vm.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:ED63"
+name = "Lufia2ObjectReadSubcommand"
+source = "src/actor/object_vm.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:EE0E"
+name = "Lufia2ObjectCopyAnimationState"
+source = "src/actor/object_vm.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

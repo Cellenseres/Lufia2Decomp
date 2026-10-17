@@ -343,6 +343,21 @@ Lufia2ExecutionResult Lufia2ActorReadSignedOperand(const Lufia2Memory *,
 Lufia2ExecutionResult Lufia2ObjectSignExtendNibble(const Lufia2Memory *,
                                                    Lufia2CpuState *);
 
+Lufia2ExecutionResult Lufia2ObjectAddDisplayOffsetX(const Lufia2Memory *,
+                                                    Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2ObjectAddDisplayOffsetY(const Lufia2Memory *,
+                                                    Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2ObjectAddFinePositionX(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2ObjectAddFinePositionY(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2ObjectReadRandomOffset(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2ObjectReadSubcommand(const Lufia2Memory *,
+                                                 Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2ObjectCopyAnimationState(const Lufia2Memory *,
+                                                     Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif
