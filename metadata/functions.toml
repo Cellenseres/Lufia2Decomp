@@ -13555,3 +13555,35 @@ source = "src/menu/menu_select_control.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "84:8862"
+name = "Lufia2AncientCaveAppendSavedItem"
+source = "src/cave/cave_entry.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:886D"
+name = "Lufia2AncientCaveTestBlueItem"
+source = "src/cave/cave_entry.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:8E98"
+name = "Lufia2BattleUploadVramQueue"
+source = "src/battle/battle_nmi.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:9265"
+name = "Lufia2BattleClearActionWorkspace"
+source = "src/battle/battle_frame.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

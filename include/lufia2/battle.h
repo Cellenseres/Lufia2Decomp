@@ -2036,6 +2036,11 @@ Lufia2ExecutionResult Lufia2BattleCheckEnemyGraphicsCapacity(const Lufia2Memory 
                                                              Lufia2PushedChildCall,
                                                              void *);
 
+Lufia2ExecutionResult Lufia2BattleUploadVramQueue(const Lufia2Memory *,
+                                                  Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2BattleClearActionWorkspace(const Lufia2Memory *,
+                                                       Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif

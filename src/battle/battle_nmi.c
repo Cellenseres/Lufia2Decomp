@@ -6,10 +6,8 @@
 #include "system/wram.h"
 
 /* $85:8E98: sixteen queued VRAM DMA uploads on channel 6. */
-static void BattleVramQueue(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0x8dccu);
+static void BattleVramQueueBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+
     LoadX16(cpu, 0x005au);                                     /* 8E98 */
     do {
         LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1a8fu, cpu->x));
@@ -32,6 +30,11 @@ static void BattleVramQueue(
         }
         LoadX16(cpu, (uint16_t)(cpu->x - 6u));                 /* 8EC9 */
     } while (!cpu->negative);
+}
+
+static void BattleVramQueue(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0x8dccu);
+    BattleVramQueueBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -215,4 +218,14 @@ Lufia2ExecutionResult Lufia2BattleNmiUploads(
     }
     PullDataBank(memory, cpu);                                 /* 8E96 */
     return result;
+}
+
+Lufia2ExecutionResult Lufia2BattleUploadVramQueue(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || cpu->direct_page || cpu->decimal ||
+        cpu->index_is_8_bit || cpu->accumulator_is_8_bit != 1u ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x858e98u);
+    BattleVramQueueBody(memory, cpu);
+    return ExecutionReturned(0x858ed1u);
 }

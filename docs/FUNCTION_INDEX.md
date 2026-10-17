@@ -1100,6 +1100,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:8766` | `Lufia2QueueDeferredSound` | verified | `src/system/sound.c` |
 | `$84:8775` | `Lufia2SendImmediateSound` | verified | `src/system/sound_commands.c` |
 | `$84:878A` | `Lufia2AncientCaveEnter` | verified | `src/cave/cave_entry.c` |
+| `$84:8862` | `Lufia2AncientCaveAppendSavedItem` | verified | `src/cave/cave_entry.c` |
+| `$84:886D` | `Lufia2AncientCaveTestBlueItem` | verified | `src/cave/cave_entry.c` |
 | `$84:8888` | `Lufia2AncientCaveResetParty` | verified | `src/cave/cave_reset.c` |
 | `$84:890B` | `Lufia2AncientCaveExit` | verified | `src/cave/cave_exit.c` |
 | `$84:8AF4` | `Lufia2AncientCaveCarryBlueItem` | verified | `src/cave/cave_exit.c` |
@@ -1141,6 +1143,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:8C98` | `Lufia2BattleSpritePartyEntry` | verified | `src/battle/battle_frame.c` |
 | `$85:8D2E` | `Lufia2BattlePartyTilemapEntry` | verified | `src/battle/battle_frame.c` |
 | `$85:8DC5` | `Lufia2BattleNmiUploads` | verified | `src/battle/battle_nmi.c` |
+| `$85:8E98` | `Lufia2BattleUploadVramQueue` | verified | `src/battle/battle_nmi.c` |
 | `$85:8F4A` | `Lufia2BattleRandomBit` | verified | `src/battle/battle_drift.c` |
 | `$85:8F67` | `Lufia2BattleRecoverStatuses` | verified | `src/battle/battle_status_recovery.c` |
 | `$85:8F8A` | `Lufia2BattleResolveRecoverableStatuses` | verified | `src/battle/battle_followup.c` |
@@ -1157,6 +1160,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:922D` | `Lufia2BattleToggleSpecialTargetState` | verified | `src/battle/battle_effect_target_toggle.c` |
 | `$85:9236` | `Lufia2BattlePartyStatusGate` | verified | `src/battle/battle_loop_children.c` |
 | `$85:9255` | `Lufia2BattleCheckPartyRecord` | verified | `src/battle/battle_loop_children.c` |
+| `$85:9265` | `Lufia2BattleClearActionWorkspace` | verified | `src/battle/battle_frame.c` |
 | `$85:9275` | `Lufia2BattleQueuePartyTurns` | verified | `src/battle/battle_turn_order.c` |
 | `$85:92CE` | `Lufia2BattlePublishPartyAction` | verified | `src/battle/battle_party_actions.c` |
 | `$85:92FF` | `Lufia2BattleQueueStagedPartyAction` | verified | `src/battle/battle_party_actions.c` |

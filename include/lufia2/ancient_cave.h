@@ -95,6 +95,11 @@ Lufia2ExecutionResult Lufia2CaveDrawRandomMean(const Lufia2Memory *, Lufia2CpuSt
 
 Lufia2ExecutionResult Lufia2CaveDrawTileBlock(const Lufia2Memory *, Lufia2CpuState *);
 
+Lufia2ExecutionResult Lufia2AncientCaveAppendSavedItem(const Lufia2Memory *,
+                                                       Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2AncientCaveTestBlueItem(const Lufia2Memory *,
+                                                    Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif

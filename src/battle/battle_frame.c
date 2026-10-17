@@ -737,6 +737,12 @@ Lufia2ExecutionResult Lufia2BattleSprites(
     return result;
 }
 
+static void ClearActionWorkspace(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushAndSetDataBank(memory, cpu, 0x7fu);
+    ClearDescendingX16(memory, cpu, 0xf44eu, 0x02fbu);
+    PullDataBank(memory, cpu);
+}
+
 /* $85:ECF0: per-frame battle upkeep from the $81:8877 loop. */
 Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     const Lufia2Memory *memory,
@@ -757,9 +763,7 @@ Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     LoadA8(cpu, 0xffu);
     Write8(memory, BATTLE_SPRITE_REBUILD_REQUEST, A8(cpu));
     SimulateJslFrame(memory, cpu, 0x85u, 0xed01u);             /* $85:9265 */
-    PushAndSetDataBank(memory, cpu, 0x7fu);
-    ClearDescendingX16(memory, cpu, 0xf44eu, 0x02fbu);
-    PullDataBank(memory, cpu);
+    ClearActionWorkspace(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     StoreZeroAbsolute8(memory, cpu, 0x1b8bu, 0);
     ClearDescendingX16(memory, cpu, 0x1b8cu, 0x0023u);
@@ -967,4 +971,14 @@ Lufia2ExecutionResult Lufia2BattleTileGridEntry(
         return ExecutionHandoff(cpu, 0x85972eu);
     BattleTileGrid(memory, cpu);
     return ExecutionReturned(0x85978fu);
+}
+
+Lufia2ExecutionResult Lufia2BattleClearActionWorkspace(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || cpu->direct_page || cpu->decimal ||
+        cpu->index_is_8_bit || cpu->accumulator_is_8_bit != 1u ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x859265u);
+    ClearActionWorkspace(memory, cpu);
+    return ExecutionReturned(0x859274u);
 }

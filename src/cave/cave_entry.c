@@ -18,9 +18,8 @@ enum {
     EQUIPMENT_BYTES = 12u
 };
 
-static void TestBlueItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                         uint16_t back) {
-    SimulateJsrFrame(memory, cpu, back);
+static void TestBlueItemBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+
     OpAndValue(cpu, 0x01ffu);
     OpSta(memory, cpu, OpDp(cpu, DP_BLUE_ITEM));
     OpLdx(cpu, 0u);
@@ -39,17 +38,28 @@ static void TestBlueItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
             break;
         }
     }
+}
+
+static void TestBlueItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                         uint16_t back) {
+    SimulateJsrFrame(memory, cpu, back);
+    TestBlueItemBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
-static void CarryBlueItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                          uint16_t back) {
-    SimulateJsrFrame(memory, cpu, back);
+static void CarryBlueItemBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_CARRIED_ITEM_BYTES)));
     OpSta(memory, cpu, OpLongX(cpu, WRAM_ANCIENT_CAVE_SAVED_ITEMS));
     OpInx(cpu);
     OpInx(cpu);
     OpWriteX(memory, cpu, OpDp(cpu, DP_CARRIED_ITEM_BYTES), cpu->x);
+}
+
+static void CarryBlueItem(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                          uint16_t back) {
+    SimulateJsrFrame(memory, cpu, back);
+    CarryBlueItemBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -189,4 +199,24 @@ Lufia2ExecutionResult Lufia2AncientCaveEnter(const Lufia2Memory *memory,
     }
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x848861u);
+}
+
+Lufia2ExecutionResult Lufia2AncientCaveAppendSavedItem(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x84u || cpu->direct_page || cpu->decimal ||
+        cpu->index_is_8_bit || cpu->accumulator_is_8_bit != 0u ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x848862u);
+    CarryBlueItemBody(memory, cpu);
+    return ExecutionReturned(0x84886cu);
+}
+
+Lufia2ExecutionResult Lufia2AncientCaveTestBlueItem(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x84u || cpu->direct_page || cpu->decimal ||
+        cpu->index_is_8_bit || cpu->accumulator_is_8_bit != 0u ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x84886du);
+    TestBlueItemBody(memory, cpu);
+    return ExecutionReturned(cpu->carry ? 0x848887u : 0x848885u);
 }
