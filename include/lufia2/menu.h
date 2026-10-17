@@ -823,6 +823,27 @@ Lufia2ExecutionResult Lufia2SelectScreenInitializeLayout(const Lufia2Memory *,
 Lufia2ExecutionResult Lufia2SelectScreenControl(const Lufia2Memory *, Lufia2CpuState *,
                                                 Lufia2PushedChildCall, void *);
 
+Lufia2ExecutionResult Lufia2SelectScreenFadeIn(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu,
+                                               Lufia2PushedChildCall child,
+                                               void *context);
+Lufia2ExecutionResult Lufia2SelectScreenFadeOut(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu,
+                                                Lufia2PushedChildCall child,
+                                                void *context);
+Lufia2ExecutionResult Lufia2SelectScreenWaitForInput(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu,
+                                                     Lufia2PushedChildCall child,
+                                                     void *context);
+Lufia2ExecutionResult Lufia2SelectScreenConfigureObject(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu,
+                                                        Lufia2PushedChildCall child,
+                                                        void *context);
+Lufia2ExecutionResult Lufia2SelectScreenWaitForObjects(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu,
+                                                       Lufia2PushedChildCall child,
+                                                       void *context);
+
 #ifdef __cplusplus
 }
 #endif

@@ -13379,3 +13379,43 @@ source = "src/menu/menu_select_control.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:8305"
+name = "Lufia2SelectScreenFadeIn"
+source = "src/menu/menu_select_transitions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:830F"
+name = "Lufia2SelectScreenFadeOut"
+source = "src/menu/menu_select_transitions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8339"
+name = "Lufia2SelectScreenWaitForInput"
+source = "src/menu/menu_select_transitions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:835B"
+name = "Lufia2SelectScreenConfigureObject"
+source = "src/menu/menu_select_transitions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:82C8"
+name = "Lufia2SelectScreenWaitForObjects"
+source = "src/menu/menu_select_transitions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

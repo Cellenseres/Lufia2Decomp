@@ -1328,6 +1328,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:817A` | `Lufia2SelectScreenLoadMaps` | verified | `src/menu/menu_graphics_setup.c` |
 | `$86:81A9` | `Lufia2SelectScreenNmi` | verified | `src/menu/menu.c` |
 | `$86:81D0` | `Lufia2SelectScreenControl` | verified | `src/menu/menu_select_control.c` |
+| `$86:82C8` | `Lufia2SelectScreenWaitForObjects` | verified | `src/menu/menu_select_transitions.c` |
+| `$86:8305` | `Lufia2SelectScreenFadeIn` | verified | `src/menu/menu_select_transitions.c` |
+| `$86:830F` | `Lufia2SelectScreenFadeOut` | verified | `src/menu/menu_select_transitions.c` |
+| `$86:8339` | `Lufia2SelectScreenWaitForInput` | verified | `src/menu/menu_select_transitions.c` |
+| `$86:835B` | `Lufia2SelectScreenConfigureObject` | verified | `src/menu/menu_select_transitions.c` |
 | `$86:838C` | `Lufia2TitleObjects` | verified | `src/title/title.c` |
 | `$86:83F2` | `Lufia2TitleProjectObject` | verified | `src/title/title.c` |
 | `$86:8503` | `Lufia2TitleApplyProductSign` | verified | `src/title/title.c` |
