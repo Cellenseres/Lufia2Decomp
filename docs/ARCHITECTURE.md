@@ -62,6 +62,11 @@ world-point filter can only reject otherwise visible actors. Consumers own the
 policy and context; this library never reads renderer globals or room metadata.
 Sorting, uploads and OAM remain one implementation for both paths.
 
+`Lufia2FieldCellDisplayed` applies the field streamers' displayed-cell rule
+to a bank `$7F` snapshot. Cells with both edge bits set use layer 0's first
+cell; layers 2-3 use the alternate metatile table. This consumer helper has
+no ROM entry or binding. Reads crossing the bank boundary are rejected.
+
 `Lufia2Memory` also carries an optional execution checkpoint and its context.
 Inlined children inherit this observer through the same memory interface. A
 checkpoint reports the CPU at an exact original instruction, with that

@@ -1,3 +1,10 @@
+# Displayed field cells
+
+`Lufia2FieldCellViewOpen` and `Lufia2FieldCellDisplayed` expose the field
+streamers' cell substitution and metatile layout over a bank `$7F` snapshot.
+They are consumer helpers, without a ROM entry, binding or verification status.
+The original drawing routines are unchanged.
+
 # Native entries for existing semantic workers - 2026-10-17
 
 Four real original call targets now expose their existing shared implementations:

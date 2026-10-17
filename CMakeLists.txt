@@ -102,6 +102,7 @@ add_library(lufia2_decomp STATIC
     src/field/menu_actor_updates.c
     src/field/field_object_flags.c
     src/field/field_cell_edges.c
+    src/field/field_cell_view.c
     src/field/field_scene_actors.c
     src/field/field_session_setup.c
     src/system/block_move.c
