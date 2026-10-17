@@ -69,15 +69,9 @@ cmake -S . -B build
 cmake --build build --config Release
 ```
 
-With Python 3 available, standalone builds also register ROM-free CLI tests:
-
-```sh
-ctest --test-dir build -C Release --output-on-failure --no-tests=error
-```
-
-CI builds the library and tools with GCC and Clang warnings treated as errors,
-then exercises decoding, invalid inputs and command exit codes. Consumer
-`add_subdirectory` builds do not register these tests or require Python.
+CI builds the library and tools with GCC and Clang warnings treated as errors.
+Local CLI tests are registered only when their private sources are present.
+Consumer `add_subdirectory` builds do not register tests or require Python.
 
 This builds the static library `lufia2_decomp` (alias `Lufia2::Decomp`).
 

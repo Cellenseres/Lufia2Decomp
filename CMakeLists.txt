@@ -543,7 +543,8 @@ endif()
 
 if(_lufia2_top_level)
     include(CTest)
-    if(BUILD_TESTING AND LUFIA2_BUILD_TOOLS)
+    if(BUILD_TESTING AND LUFIA2_BUILD_TOOLS
+            AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_resource_cli.py")
         find_package(Python3 COMPONENTS Interpreter)
         if(Python3_Interpreter_FOUND)
             add_test(NAME resource-cli

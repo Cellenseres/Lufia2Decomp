@@ -9,3 +9,6 @@ __pycache__/
 *.smc
 *.fig
 *.bin
+
+# Private development tests
+/tests/
