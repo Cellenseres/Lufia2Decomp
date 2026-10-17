@@ -335,6 +335,14 @@ Lufia2ExecutionResult Lufia2ActorAllocateSprite(const Lufia2Memory *, Lufia2CpuS
 Lufia2ExecutionResult Lufia2ActorLoadSecondaryScript(const Lufia2Memory *,
                                                      Lufia2CpuState *);
 
+Lufia2ExecutionResult Lufia2ActorBuildOrbitOffsets(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2ActorScaleRadius(const Lufia2Memory *, Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2ActorReadSignedOperand(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2ObjectSignExtendNibble(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif

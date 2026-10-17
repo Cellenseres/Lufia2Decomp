@@ -953,6 +953,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:DA5B` | `Lufia2ActorPrepareStepProbe` | verified | `src/actor/actor_secondary.c` |
 | `$83:DA71` | `Lufia2ActorMarkLeaderScriptStop` | verified | `src/actor/actor_secondary.c` |
 | `$83:DA8A` | `Lufia2ActorStopSecondaryScript` | verified | `src/actor/actor_secondary.c` |
+| `$83:DE76` | `Lufia2ActorBuildOrbitOffsets` | verified | `src/actor/actor_secondary.c` |
+| `$83:DE9F` | `Lufia2ActorScaleRadius` | verified | `src/actor/actor_secondary.c` |
 | `$83:DF87` | `Lufia2ActorSpawnFromId` | verified | `src/field/field_object_transition.c` |
 | `$83:DFA5` | `Lufia2ActorInitializeSpawnSlot` | verified | `src/actor/actor_slots.c` |
 | `$83:DFFD` | `Lufia2ActorLoadSecondaryScript` | verified | `src/actor/actor_slots.c` |
@@ -1013,7 +1015,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:FA3F` | `Lufia2ActorMarkMapOccupancy` | verified | `src/actor/actor_movement.c` |
 | `$83:FA81` | `Lufia2ActorMoveFinePosition` | verified | `src/actor/actor_movement.c` |
 | `$83:FACB` | `Lufia2ActorAddDisplayOffset` | verified | `src/actor/actor_movement.c` |
+| `$83:FAF4` | `Lufia2ActorReadSignedOperand` | verified | `src/actor/actor_secondary.c` |
 | `$83:FAFA` | `Lufia2ActorExtendSignedByte` | verified | `src/actor/actor_bootstrap.c` |
+| `$83:FB05` | `Lufia2ObjectSignExtendNibble` | verified | `src/actor/object_vm.c` |
 | `$83:FB12` | `Lufia2ActorMovementStep` | verified | `src/actor/actor_movement.c` |
 | `$83:FB2E` | `Lufia2FieldProbeObjectAttributes` | verified | `src/field/field_probe_records.c` |
 | `$83:FB51` | `Lufia2FieldProbeObjectState` | verified | `src/field/field_probe_records.c` |

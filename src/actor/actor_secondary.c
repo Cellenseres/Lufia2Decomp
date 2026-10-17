@@ -596,11 +596,7 @@ static void SecondaryWave(
 }
 
 /* $83:DE9F: radius times magnitude via Mode 7. */
-static void SecondaryScaleRadius(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static void SecondaryScaleRadiusBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     And8(cpu, 0x7fu);                                          /* DE9F */
     StoreAAbsolute8(memory, cpu, SNES_M7B, 0);
     LoadA8(cpu, 0x00u);
@@ -627,15 +623,17 @@ static void SecondaryScaleRadius(
         cpu->carry = (value & 0x8000u) != 0;
         LoadA16(cpu, (uint16_t)((value << 1) | carry));
     }
+}
+
+static void SecondaryScaleRadius(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    SecondaryScaleRadiusBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
 /* $83:DE76: orbit offsets into $54/$56; M=0 exit. */
-static void SecondaryOrbitOffsets(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static void SecondaryOrbitOffsetsBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, 0x2au);                           /* DE76 */
     LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_3, cpu->x);
     ExchangeAccumulatorBytes(cpu);
@@ -653,15 +651,18 @@ static void SecondaryOrbitOffsets(
     SecondaryScaleRadius(memory, cpu, 0xde99u);
     Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->accumulator);
     LoadXDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
+}
+
+static void SecondaryOrbitOffsets(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    SecondaryOrbitOffsetsBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
 /* $83:FAF4: signed operand at X+1; M=0 exit. */
-static void SecondarySignedOperand(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static void SecondarySignedOperandBody(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);                               /* FAF4 */
     TransferDirectToA(cpu);
     LoadAAbsolute8(memory, cpu, SECONDARY_OPERAND_1, cpu->x);
@@ -672,6 +673,12 @@ static void SecondarySignedOperand(
         ExchangeAccumulatorBytes(cpu);
     }
     SetAccumulatorWidth(cpu, 0);
+}
+
+static void SecondarySignedOperand(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                   uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    SecondarySignedOperandBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -1807,4 +1814,34 @@ Lufia2ExecutionResult Lufia2ActorCommitTileStep(const Lufia2Memory *memory,
     if (!CommitActorTileStep(memory, cpu))
         return ExecutionHandoff(cpu, cpu->resume_pc);
     return ExecutionReturned(0x830000u | 0xda5au);
+}
+
+Lufia2ExecutionResult Lufia2ActorBuildOrbitOffsets(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu || !cpu->accumulator_is_8_bit ||
+        ((cpu->data_bank & 0x7fu) >= 0x40u && cpu->data_bank != 0x7eu))
+        return ExecutionHandoff(cpu, 0x83de76u);
+    SecondaryOrbitOffsetsBody(memory, cpu);
+    return ExecutionReturned(0x83de9eu);
+}
+
+Lufia2ExecutionResult Lufia2ActorScaleRadius(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu || !cpu->accumulator_is_8_bit ||
+        ((cpu->data_bank & 0x7fu) >= 0x40u && cpu->data_bank != 0x7eu))
+        return ExecutionHandoff(cpu, 0x83de9fu);
+    SecondaryScaleRadiusBody(memory, cpu);
+    return ExecutionReturned(0x83debcu);
+}
+
+Lufia2ExecutionResult Lufia2ActorReadSignedOperand(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu ||
+        ((cpu->data_bank & 0x7fu) >= 0x40u && cpu->data_bank != 0x7eu))
+        return ExecutionHandoff(cpu, 0x83faf4u);
+    SecondarySignedOperandBody(memory, cpu);
+    return ExecutionReturned(0x83fb04u);
 }

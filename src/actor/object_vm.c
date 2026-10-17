@@ -156,11 +156,8 @@ static ObjectFlow ObjectAdvance(
 }
 
 /* $83:FB05: sign-extend nibble A; M=0 exit. */
-static void ObjectSignNibble(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static void ObjectSignNibbleBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
     BitImmediate8(cpu, 0x08u);                                 /* FB05 */
     if (!cpu->zero) {
         Or8(cpu, 0xf0u);
@@ -169,6 +166,12 @@ static void ObjectSignNibble(
         ExchangeAccumulatorBytes(cpu);
     }
     SetAccumulatorWidth(cpu, 0);
+}
+
+static void ObjectSignNibble(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    ObjectSignNibbleBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -3130,4 +3133,13 @@ Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
     } while (!cpu->zero);
     SetIndexWidth(cpu, 1);                                     /* E0F9 */
     return result;
+}
+
+Lufia2ExecutionResult Lufia2ObjectSignExtendNibble(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83fb05u);
+    ObjectSignNibbleBody(memory, cpu);
+    return ExecutionReturned(0x83fb11u);
 }
