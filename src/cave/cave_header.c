@@ -1,6 +1,6 @@
 /* Ancient Cave room records in the generated map header. */
 
-#include "cave/wram.h"
+#include "cave/cave_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/ancient_cave.h"
 #include "system/wram.h"
@@ -17,35 +17,11 @@ enum {
 
 enum {
     CAVE_HEADER_COUNT = 0x58,
-    CAVE_ROOM_ID = 0x54,
-    CAVE_ROOM_COORDINATE_STEP = 0x55,
 };
-
-static void CaveRoomHeaderCoordinates(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpSta(memory, cpu, OpDp(cpu, CAVE_ROOM_ID));
-    OpAndValue(cpu, 0x000fu);
-    OpAslA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, CAVE_ROOM_COORDINATE_STEP));
-    OpAslA(cpu);
-    OpAdc(memory, cpu, OpDp(cpu, CAVE_ROOM_COORDINATE_STEP));
-    ExchangeAccumulatorBytes(cpu);
-    OpLda(memory, cpu, OpDp(cpu, CAVE_ROOM_ID));
-    OpAndValue(cpu, 0x00f0u);
-    cpu->carry = 1;
-    OpSbcValue(cpu, 0x0010u);
-    OpLsrA(cpu);
-    OpLsrA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, CAVE_ROOM_COORDINATE_STEP));
-    OpLsrA(cpu);
-    OpAdc(memory, cpu, OpDp(cpu, CAVE_ROOM_COORDINATE_STEP));
-}
 
 Lufia2ExecutionResult Lufia2CaveRoomHeaderCoordinates(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0x9b46u);
-    CaveRoomHeaderCoordinates(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
+    Lufia2CaveCellPosition(memory, cpu, 0x9b44u);
     return ExecutionReturned(0x839b47u);
 }
 

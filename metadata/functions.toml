@@ -13075,3 +13075,123 @@ source = "src/actor/object_vm.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:9B18"
+name = "Lufia2CaveClearVisitedCells"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9B27"
+name = "Lufia2CaveCountOccupiedCells"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9B3C"
+name = "Lufia2CaveOffsetStairPosition"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9B48"
+name = "Lufia2CaveResolveCellOrigin"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9B62"
+name = "Lufia2CaveLinkRoomCells"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9BDD"
+name = "Lufia2CaveMergeRoomCells"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9CA0"
+name = "Lufia2CaveFillRoomRectangle"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9CCB"
+name = "Lufia2CaveResolveCellIndex"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9CD6"
+name = "Lufia2CaveResolveBlockOffset"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9CF3"
+name = "Lufia2CaveResolveTileOffset"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9D68"
+name = "Lufia2CaveResolveWordTileOffset"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9D11"
+name = "Lufia2CavePickUnvisitedCell"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9D23"
+name = "Lufia2CaveFindUnvisitedCell"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9D39"
+name = "Lufia2CaveAppendRoomLink"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:9D46"
+name = "Lufia2CaveReplaceUpperTileIndex"
+source = "src/cave/cave_grid.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

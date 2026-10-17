@@ -49,6 +49,34 @@ Lufia2ExecutionResult Lufia2CaveBuildMapHeader(
 Lufia2ExecutionResult Lufia2CaveRoomHeaderCoordinates(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2CaveClearVisitedCells(const Lufia2Memory *,
+                                                  Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveCountOccupiedCells(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveOffsetStairPosition(const Lufia2Memory *,
+                                                    Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveResolveCellOrigin(const Lufia2Memory *,
+                                                  Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveLinkRoomCells(const Lufia2Memory *, Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveMergeRoomCells(const Lufia2Memory *, Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveFillRoomRectangle(const Lufia2Memory *,
+                                                  Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveResolveCellIndex(const Lufia2Memory *,
+                                                 Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveResolveBlockOffset(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveResolveTileOffset(const Lufia2Memory *,
+                                                  Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveResolveWordTileOffset(const Lufia2Memory *,
+                                                      Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CavePickUnvisitedCell(const Lufia2Memory *,
+                                                  Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveFindUnvisitedCell(const Lufia2Memory *,
+                                                  Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveAppendRoomLink(const Lufia2Memory *, Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveReplaceUpperTileIndex(const Lufia2Memory *,
+                                                      Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif
