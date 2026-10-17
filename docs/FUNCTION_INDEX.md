@@ -843,10 +843,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:ABE9` | `Lufia2SpriteComputeVramBase` | verified | `src/actor/actor_sprite_resources.c` |
 | `$83:AC7A` | `Lufia2FieldResetSpriteBuffer` | verified | `src/field/field_bootstrap.c` |
 | `$83:ACB7` | `Lufia2FieldBeginSessionSetup` | verified | `src/field/field_session_setup.c` |
+| `$83:ACEF` | `Lufia2FieldSelectSessionSetup` | verified | `src/field/field_session_setup.c` |
 | `$83:AD23` | `Lufia2FieldResumeSessionSetup` | verified | `src/field/field_session_setup.c` |
 | `$83:ADCA` | `Lufia2FieldResetScene` | verified | `src/field/field_scene_reset.c` |
 | `$83:ADDF` | `Lufia2FieldResetSavedScene` | verified | `src/field/field_scene_reset.c` |
 | `$83:AEB5` | `Lufia2FieldColourEffectsWithServices` | verified | `src/field/field_effects.c` |
+| `$83:AEED` | `Lufia2FieldAdvancePaletteCycles` | verified | `src/field/field_effects.c` |
+| `$83:AF54` | `Lufia2FieldStepWaveTable` | verified | `src/field/field_effects.c` |
 | `$83:AFCD` | `Lufia2FieldFadeIn` | verified | `src/field/field_display_callers.c` |
 | `$83:AFEA` | `Lufia2FieldFadeOut` | verified | `src/field/field_display_callers.c` |
 | `$83:B007` | `Lufia2FieldUploadFixedGraphics` | verified | `src/field/field_object_graphics.c` |

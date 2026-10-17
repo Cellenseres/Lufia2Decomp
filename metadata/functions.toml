@@ -12907,3 +12907,27 @@ source = "src/field/field_event_conditions.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:ACEF"
+name = "Lufia2FieldSelectSessionSetup"
+source = "src/field/field_session_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:AEED"
+name = "Lufia2FieldAdvancePaletteCycles"
+source = "src/field/field_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "83:AF54"
+name = "Lufia2FieldStepWaveTable"
+source = "src/field/field_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

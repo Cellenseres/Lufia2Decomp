@@ -1469,6 +1469,15 @@ Lufia2ExecutionResult Lufia2FieldFindEventConditionList(const Lufia2Memory *memo
 Lufia2ExecutionResult Lufia2FieldTestConditionList(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldSelectSessionSetup(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu,
+                                                    Lufia2PushedChildCall child,
+                                                    void *context);
+
+Lufia2ExecutionResult Lufia2FieldAdvancePaletteCycles(const Lufia2Memory *,
+                                                      Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2FieldStepWaveTable(const Lufia2Memory *, Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif

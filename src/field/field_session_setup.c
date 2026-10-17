@@ -157,42 +157,13 @@ static Lufia2ExecutionResult SelectSessionDestination(
     return PrepareSessionMap(memory, cpu, child, context);
 }
 
-Lufia2ExecutionResult Lufia2FieldBeginSessionSetup(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (!child || cpu->program_bank != 0x83u)
-        return ExecutionHandoff(cpu,
-            ((uint32_t)cpu->program_bank << 16) | 0xacb7u);
+static Lufia2ExecutionResult RunSessionSelection(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu,
+                                                 Lufia2PushedChildCall child,
+                                                 void *context) {
     SessionWidthsAndBank(memory, cpu);
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, WRAM_UNK_7E0520);
-    Lufia2ExecutionResult result = SessionChild(memory, cpu, child, context,
-        0x83acc3u, 0x83adcau, 3u);
-    if (result.flow != LUFIA2_EXECUTION_RETURNED)
-        return result;
-    if (!cpu->accumulator_is_8_bit)
-        return ExecutionHandoff(cpu, 0x83acc7u);
-    OpLda(memory, cpu, OpDp(cpu, DP_SESSION_UNK_47));
-    OpBitValue(cpu, 0x80u);
-    if (cpu->zero) {
-        OpLoadA(cpu, 2u);
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_MAP));
-        OpStz(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_PARAMETERS));
-        OpLoadA(cpu, 1u);
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05B8));
-        OpLoadA(cpu, 6u);
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_X));
-        OpLoadA(cpu, 1u);
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_RELOAD_FLAGS));
-        OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E099D));
-        return PrepareSessionMap(memory, cpu, child, context);
-    }
-    /* Selection repeats the original initialization. */
-    SessionWidthsAndBank(memory, cpu);
-    result = SessionChild(memory, cpu, child, context,
-        0x83acf5u, 0x83adcau, 3u);
+    Lufia2ExecutionResult result =
+        SessionChild(memory, cpu, child, context, 0x83acf5u, 0x83adcau, 3u);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
     result = SessionChild(memory, cpu, child, context,
@@ -229,6 +200,41 @@ Lufia2ExecutionResult Lufia2FieldBeginSessionSetup(
     if (cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x83ad23u);
     return Lufia2FieldResumeSessionSetup(memory, cpu, child, context);
+}
+
+Lufia2ExecutionResult Lufia2FieldBeginSessionSetup(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu,
+                                                   Lufia2PushedChildCall child,
+                                                   void *context) {
+    if (!child || cpu->program_bank != 0x83u)
+        return ExecutionHandoff(cpu, ((uint32_t)cpu->program_bank << 16) | 0xacb7u);
+    SessionWidthsAndBank(memory, cpu);
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, WRAM_UNK_7E0520);
+    Lufia2ExecutionResult result =
+        SessionChild(memory, cpu, child, context, 0x83acc3u, 0x83adcau, 3u);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
+    if (!cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83acc7u);
+    OpLda(memory, cpu, OpDp(cpu, DP_SESSION_UNK_47));
+    OpBitValue(cpu, 0x80u);
+    if (cpu->zero) {
+        OpLoadA(cpu, 2u);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_MAP));
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_PARAMETERS));
+        OpLoadA(cpu, 1u);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05B8));
+        OpLoadA(cpu, 6u);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_X));
+        OpLoadA(cpu, 1u);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_RELOAD_FLAGS));
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E099D));
+        return PrepareSessionMap(memory, cpu, child, context);
+    }
+    return RunSessionSelection(memory, cpu, child, context);
 }
 
 static Lufia2ExecutionResult SessionMapChild(
@@ -1240,4 +1246,14 @@ Lufia2ExecutionResult Lufia2FieldResumeFrame(const Lufia2Memory *memory,
         cpu->decimal || !cpu->accumulator_is_8_bit || !child)
         return ExecutionHandoff(cpu, 0x838007u);
     return RunFieldFrames(memory, cpu, child, context, false);
+}
+
+Lufia2ExecutionResult Lufia2FieldSelectSessionSetup(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu,
+                                                    Lufia2PushedChildCall child,
+                                                    void *context) {
+    if (!child || cpu->program_bank != 0x83u || cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1fffu)
+        return ExecutionHandoff(cpu, 0x83acefu);
+    return RunSessionSelection(memory, cpu, child, context);
 }

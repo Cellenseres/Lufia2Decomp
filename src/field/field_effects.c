@@ -84,21 +84,16 @@ static uint8_t FieldPaletteAdvance(const Lufia2Memory *memory, Lufia2CpuState *c
 }
 
 /* $83:AEED: palette cycles from bank $A1; 0 = cap hit. */
-static uint8_t FieldPaletteCycles(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t *visits) {
+static uint8_t FieldPaletteCyclesBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                      uint32_t *visits) {
 
-    SimulateJsrFrame(memory, cpu, 0xaee6u);
-    LoadA8(cpu, Read8(memory, 0x0009a9u));                     /* AEED */
+    LoadA8(cpu, Read8(memory, 0x0009a9u)); /* AEED */
     BitImmediate8(cpu, 0x06u);
     if (!cpu->zero) {
-        SimulateRtsFrame(memory, cpu);
         return 1;
     }
     LoadA8(cpu, Read8(memory, WRAM_FIELD_SCENE_RECORD_COUNT));
     if (cpu->zero) {
-        SimulateRtsFrame(memory, cpu);
         return 1;
     }
     Write8(memory, DirectAddress(cpu, DP_SCRATCH_E), A8(cpu));
@@ -115,8 +110,16 @@ static uint8_t FieldPaletteCycles(
         IncrementX16(cpu);
         DecrementDirect8(memory, cpu, DP_SCRATCH_E);
     } while (!cpu->zero);
-    SimulateRtsFrame(memory, cpu);
     return 1;
+}
+
+static uint8_t FieldPaletteCycles(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  uint32_t *visits) {
+    SimulateJsrFrame(memory, cpu, 0xaee6u);
+    if (!FieldPaletteCyclesBody(memory, cpu, visits))
+        return 0u;
+    SimulateRtsFrame(memory, cpu);
+    return 1u;
 }
 
 /* Body of $83:AF54 without its JSR frame. */
@@ -694,4 +697,26 @@ Lufia2ExecutionResult Lufia2FieldScreenEffects(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     return Lufia2FieldUpdateScreenEffects(
         memory, cpu, ScreenEffectChild, (void *)memory);
+}
+
+static bool FieldPaletteEntryContext(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x83u && cpu->data_bank == 0x7fu &&
+           cpu->accumulator_is_8_bit && !cpu->index_is_8_bit && !cpu->decimal &&
+           !cpu->direct_page && cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+}
+Lufia2ExecutionResult Lufia2FieldAdvancePaletteCycles(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu) {
+    if (!FieldPaletteEntryContext(cpu))
+        return ExecutionHandoff(cpu, 0x83aeedu);
+    Lufia2ExecutionResult result = ExecutionReturned(0x83af53u);
+    if (!FieldPaletteCyclesBody(memory, cpu, &result.dispatches))
+        return ExecutionHandoff(cpu, cpu->resume_pc);
+    return result;
+}
+Lufia2ExecutionResult Lufia2FieldStepWaveTable(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu) {
+    if (!FieldPaletteEntryContext(cpu))
+        return ExecutionHandoff(cpu, 0x83af54u);
+    FieldWaveTableBody(memory, cpu);
+    return ExecutionReturned(0x83afccu);
 }
