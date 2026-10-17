@@ -787,6 +787,14 @@ Lufia2ExecutionResult Lufia2MenuDispatchMainSelection(
 Lufia2ExecutionResult Lufia2SpriteFrameRestoreRegisters(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2MenuReadPointerOperand(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2MenuReadOffsetPointerOperand(const Lufia2Memory *,
+                                                         Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2MenuLoadNumberBytes(const Lufia2Memory *, Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2MenuReadBranchOperands(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif

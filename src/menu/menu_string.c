@@ -290,7 +290,7 @@ static int MenuSubString(MenuVm *vm) {
 }
 
 /* $80:8C6C: 1-3 bytes from ($56) into $0570. */
-static void MenuLoadNumber(const MenuVm *vm) {
+static uint8_t MenuLoadNumberBody(const MenuVm *vm, uint32_t *handoff) {
     const Lufia2Memory *memory = vm->memory;
     Lufia2CpuState *cpu = vm->cpu;
 
@@ -299,6 +299,10 @@ static void MenuLoadNumber(const MenuVm *vm) {
     StoreZeroAbsolute8(memory, cpu, (uint16_t)(NUMBER + 2u), 0);
     LoadAAbsolute8(memory, cpu, FORMAT, 0);
     LoadY16(cpu, 0x0000u);
+    if (handoff && !A8(cpu)) {
+        *handoff = 0x808c7bu;
+        return 0u;
+    }
     do {
         ExchangeAccumulatorBytes(cpu);                         /* 8C7B */
         LoadA8(cpu, Indirect8(vm, 0x56u, cpu->y));
@@ -310,19 +314,21 @@ static void MenuLoadNumber(const MenuVm *vm) {
     LoadAAbsolute8(memory, cpu, FORMAT, 0);
     And8(cpu, 0x04u);
     if (cpu->zero)
-        return;
+        return 1u;
     ExchangeAccumulatorBytes(cpu);
     if (!cpu->negative)
-        return;
+        return 1u;
     for (;;) {                                                 /* 8C90 */
         Compare16(cpu, cpu->y, 0x0003u);
         if (cpu->zero)
-            return;
+            return 1u;
         LoadA8(cpu, 0xffu);
         StoreAAbsolute8(memory, cpu, NUMBER, cpu->y);
         IncrementY16(cpu);
     }
 }
+
+static void MenuLoadNumber(const MenuVm *vm) { (void)MenuLoadNumberBody(vm, 0); }
 
 /* $80:89D0 */
 static void MenuDigit(const MenuVm *vm) {
@@ -1181,4 +1187,58 @@ Lufia2ExecutionResult Lufia2MenuSetTextPalette(
     vm.cpu = cpu;
     MenuPalette(&vm);
     return ExecutionReturned(0x808d6bu);
+}
+
+static uint8_t MenuOperandEntryContext(const Lufia2CpuState *cpu,
+                                       uint8_t needs_byte_mode) {
+    return cpu->program_bank == 0x80u && !cpu->direct_page && !cpu->decimal &&
+           !cpu->index_is_8_bit && (!needs_byte_mode || cpu->accumulator_is_8_bit) &&
+           ((cpu->data_bank & 0x7fu) < 0x40u || cpu->data_bank == 0x7eu) &&
+           cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2MenuReadPointerOperand(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    if (!MenuOperandEntryContext(cpu, 0u))
+        return ExecutionHandoff(cpu, 0x808ba7u);
+    MenuVm vm = {0};
+    vm.memory = memory;
+    vm.cpu = cpu;
+    MenuPointer(&vm);
+    return ExecutionReturned(0x808bb1u);
+}
+
+Lufia2ExecutionResult Lufia2MenuReadOffsetPointerOperand(const Lufia2Memory *memory,
+                                                         Lufia2CpuState *cpu) {
+    if (!MenuOperandEntryContext(cpu, 0u))
+        return ExecutionHandoff(cpu, 0x808bb2u);
+    MenuVm vm = {0};
+    vm.memory = memory;
+    vm.cpu = cpu;
+    MenuPointerOffset(&vm);
+    return ExecutionReturned(0x808bc9u);
+}
+
+Lufia2ExecutionResult Lufia2MenuLoadNumberBytes(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu) {
+    if (!MenuOperandEntryContext(cpu, 1u))
+        return ExecutionHandoff(cpu, 0x808c6cu);
+    MenuVm vm = {0};
+    vm.memory = memory;
+    vm.cpu = cpu;
+    uint32_t handoff = 0u;
+    if (!MenuLoadNumberBody(&vm, &handoff))
+        return ExecutionHandoff(cpu, handoff);
+    return ExecutionReturned(0x808c9du);
+}
+
+Lufia2ExecutionResult Lufia2MenuReadBranchOperands(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    if (!MenuOperandEntryContext(cpu, 0u))
+        return ExecutionHandoff(cpu, 0x808c9eu);
+    MenuVm vm = {0};
+    vm.memory = memory;
+    vm.cpu = cpu;
+    MenuOperands(&vm);
+    return ExecutionReturned(0x808cfbu);
 }

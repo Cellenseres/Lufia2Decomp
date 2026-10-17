@@ -35,6 +35,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:88DA` | `Lufia2MenuWriteCharacter` | verified | `src/menu/menu_character.c` |
 | `$80:89AA` | `Lufia2MenuFormatNumberDigits` | verified | `src/menu/menu_string.c` |
 | `$80:89D0` | `Lufia2MenuAppendNumberDigit` | verified | `src/menu/menu_string.c` |
+| `$80:8BA7` | `Lufia2MenuReadPointerOperand` | verified | `src/menu/menu_string.c` |
+| `$80:8BB2` | `Lufia2MenuReadOffsetPointerOperand` | verified | `src/menu/menu_string.c` |
+| `$80:8C6C` | `Lufia2MenuLoadNumberBytes` | verified | `src/menu/menu_string.c` |
+| `$80:8C9E` | `Lufia2MenuReadBranchOperands` | verified | `src/menu/menu_string.c` |
 | `$80:8D5D` | `Lufia2MenuSetTextPalette` | verified | `src/menu/menu_string.c` |
 | `$80:8DB3` | `Lufia2MenuWriteGlyph` | verified | `src/menu/menu_string.c` |
 | `$80:8DF9` | `Lufia2MenuAdvanceTextRow` | verified | `src/menu/menu_string.c` |

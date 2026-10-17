@@ -12987,3 +12987,35 @@ source = "src/actor/object_vm.c"
 entry_mx = "M1X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "80:8BA7"
+name = "Lufia2MenuReadPointerOperand"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:8BB2"
+name = "Lufia2MenuReadOffsetPointerOperand"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:8C6C"
+name = "Lufia2MenuLoadNumberBytes"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:8C9E"
+name = "Lufia2MenuReadBranchOperands"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
