@@ -13299,3 +13299,43 @@ source = "src/world/world_map.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:80DB"
+name = "Lufia2SelectScreenLoadGraphics"
+source = "src/menu/menu_graphics_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8157"
+name = "Lufia2SelectScreenLoadPalette"
+source = "src/menu/menu_graphics_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:817A"
+name = "Lufia2SelectScreenLoadMaps"
+source = "src/menu/menu_graphics_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8033"
+name = "Lufia2SelectScreenConfigureDisplay"
+source = "src/menu/menu_graphics_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8000"
+name = "Lufia2SelectScreenRun"
+source = "src/menu/menu_graphics_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

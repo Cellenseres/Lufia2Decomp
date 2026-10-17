@@ -4,10 +4,16 @@
 /* SNES MMIO addresses, official register names. */
 
 #define SNES_INIDISP 0x2100u
+#define SNES_OBSEL 0x2101u
 #define SNES_OAMADDL 0x2102u
 #define SNES_BGMODE 0x2105u
 #define SNES_MOSAIC 0x2106u
+#define SNES_BG1SC 0x2107u
+#define SNES_BG2SC 0x2108u
 #define SNES_BG3SC 0x2109u
+#define SNES_BG4SC 0x210au
+#define SNES_BG12NBA 0x210bu
+#define SNES_BG34NBA 0x210cu
 #define SNES_BG1HOFS 0x210du
 #define SNES_BG1VOFS 0x210eu
 #define SNES_BG2HOFS 0x210fu

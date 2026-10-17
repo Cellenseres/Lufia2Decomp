@@ -1321,6 +1321,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:EE82` | `Lufia2BattleClearPartyStatuses` | verified | `src/battle/battle_record_reset.c` |
 | `$85:EE9B` | `Lufia2BattleClearSelectedPartyStatus` | verified | `src/battle/battle_record_reset.c` |
 | `$85:EEA1` | `Lufia2BattleStoreRemainingEncounter` | verified | `src/battle/battle_encounter_state.c` |
+| `$86:8000` | `Lufia2SelectScreenRun` | verified | `src/menu/menu_graphics_setup.c` |
+| `$86:8033` | `Lufia2SelectScreenConfigureDisplay` | verified | `src/menu/menu_graphics_setup.c` |
+| `$86:80DB` | `Lufia2SelectScreenLoadGraphics` | verified | `src/menu/menu_graphics_setup.c` |
+| `$86:8157` | `Lufia2SelectScreenLoadPalette` | verified | `src/menu/menu_graphics_setup.c` |
+| `$86:817A` | `Lufia2SelectScreenLoadMaps` | verified | `src/menu/menu_graphics_setup.c` |
 | `$86:81A9` | `Lufia2SelectScreenNmi` | verified | `src/menu/menu.c` |
 | `$86:838C` | `Lufia2TitleObjects` | verified | `src/title/title.c` |
 | `$86:83F2` | `Lufia2TitleProjectObject` | verified | `src/title/title.c` |

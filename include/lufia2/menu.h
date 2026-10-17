@@ -795,6 +795,20 @@ Lufia2ExecutionResult Lufia2MenuLoadNumberBytes(const Lufia2Memory *, Lufia2CpuS
 Lufia2ExecutionResult Lufia2MenuReadBranchOperands(const Lufia2Memory *,
                                                    Lufia2CpuState *);
 
+Lufia2ExecutionResult Lufia2SelectScreenLoadGraphics(const Lufia2Memory *,
+                                                     Lufia2CpuState *,
+                                                     Lufia2PushedChildCall, void *);
+Lufia2ExecutionResult Lufia2SelectScreenLoadPalette(const Lufia2Memory *,
+                                                    Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2SelectScreenLoadMaps(const Lufia2Memory *, Lufia2CpuState *,
+                                                 Lufia2PushedChildCall, void *);
+
+Lufia2ExecutionResult Lufia2SelectScreenConfigureDisplay(const Lufia2Memory *,
+                                                         Lufia2CpuState *,
+                                                         Lufia2PushedChildCall, void *);
+Lufia2ExecutionResult Lufia2SelectScreenRun(const Lufia2Memory *, Lufia2CpuState *,
+                                            Lufia2PushedChildCall, void *);
+
 #ifdef __cplusplus
 }
 #endif
