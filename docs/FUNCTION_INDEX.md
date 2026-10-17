@@ -1143,6 +1143,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:8DC5` | `Lufia2BattleNmiUploads` | verified | `src/battle/battle_nmi.c` |
 | `$85:8F4A` | `Lufia2BattleRandomBit` | verified | `src/battle/battle_drift.c` |
 | `$85:8F67` | `Lufia2BattleRecoverStatuses` | verified | `src/battle/battle_status_recovery.c` |
+| `$85:8F8A` | `Lufia2BattleResolveRecoverableStatuses` | verified | `src/battle/battle_followup.c` |
 | `$85:903F` | `Lufia2BattleShowStatusUpdates` | verified | `src/battle/battle_status_support.c` |
 | `$85:9099` | `Lufia2BattleExpireStatuses` | verified | `src/battle/battle_status_recovery.c` |
 | `$85:90BC` | `Lufia2BattleTickStatusMessage` | verified | `src/battle/battle_status_support.c` |
@@ -1315,6 +1316,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:DF35` | `Lufia2BattleFindEnemySpriteGroup` | verified | `src/battle/battle_enemy_sprite_setup.c` |
 | `$85:DF44` | `Lufia2BattleBuildEnemyGraphicsGroups` | verified | `src/battle/battle_status_cache.c` |
 | `$85:DFB9` | `Lufia2BattleReleaseDefeatedEnemies` | verified | `src/battle/battle_status_cache.c` |
+| `$85:E0E4` | `Lufia2BattleCheckEnemyGraphicsCapacity` | verified | `src/battle/battle_followup.c` |
 | `$85:E7BC` | `Lufia2BattlePlayTransition` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAE4` | `Lufia2BattleAdvanceTransitionFrame` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAEF` | `Lufia2BattleFadeSpecialExit` | verified | `src/battle/battle_exit.c` |
@@ -1388,6 +1390,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9009` | `Lufia2MenuCopyImageRow256` | verified | `src/menu/menu_image_load.c` |
 | `$86:9022` | `Lufia2MenuLoadImageGrid` | verified | `src/menu/menu_image_load.c` |
 | `$86:906A` | `Lufia2MenuCopyImageRow128` | verified | `src/menu/menu_image_load.c` |
+| `$86:9093` | `Lufia2SelectScreenQueueTilemapCopy` | verified | `src/menu/menu_select_control.c` |
 | `$86:90C0` | `Lufia2MenuLoadPalette0` | verified | `src/menu/menu_image_load.c` |
 | `$86:90D3` | `Lufia2MenuLoadPalette1` | verified | `src/menu/menu_image_load.c` |
 | `$86:90E6` | `Lufia2MenuLoadPalette2` | verified | `src/menu/menu_image_load.c` |

@@ -315,3 +315,29 @@ Lufia2SelectScreenPlayAlternateSequence(const Lufia2Memory *memory, Lufia2CpuSta
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x8682c7u);
 }
+
+Lufia2ExecutionResult Lufia2SelectScreenQueueTilemapCopy(const Lufia2Memory *memory,
+                                                         Lufia2CpuState *cpu,
+                                                         Lufia2PushedChildCall child,
+                                                         void *context) {
+    enum {
+        COPY_SOURCE = 0x5du,
+        COPY_SOURCE_BANK = 0x5fu,
+        COPY_BYTES = 0x60u,
+        COPY_VRAM = 0x58u
+    };
+    if (!child || !SelectControlContext(cpu, 0u) || cpu->stack < 0x1f20u)
+        return ExecutionHandoff(cpu, 0x869093u);
+    OpLdx(cpu, 0x6000u);
+    OpWriteX(memory, cpu, OpDp(cpu, COPY_SOURCE), cpu->x);
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpDp(cpu, COPY_SOURCE_BANK));
+    OpLdx(cpu, 0x3000u);
+    OpWriteX(memory, cpu, OpDp(cpu, COPY_BYTES), cpu->x);
+    OpLdx(cpu, 0x1c00u);
+    OpWriteX(memory, cpu, OpDp(cpu, COPY_VRAM), cpu->x);
+    if (!CallChildWithFrame(memory, cpu, child, context, 0x8690a6u, 0x828044u, 3u,
+                            0x86u))
+        return SelectControlUnwound(0x8690a6u);
+    return ExecutionReturned(0x8690aau);
+}

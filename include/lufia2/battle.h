@@ -2027,6 +2027,15 @@ Lufia2ExecutionResult Lufia2BattleAccumulateActionAdjustment(const Lufia2Memory 
 Lufia2ExecutionResult Lufia2BattleReadActorBiasFlag(const Lufia2Memory *memory,
                                                     Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleResolveRecoverableStatuses(const Lufia2Memory *,
+                                                             Lufia2CpuState *,
+                                                             Lufia2PushedChildCall,
+                                                             void *);
+Lufia2ExecutionResult Lufia2BattleCheckEnemyGraphicsCapacity(const Lufia2Memory *,
+                                                             Lufia2CpuState *,
+                                                             Lufia2PushedChildCall,
+                                                             void *);
+
 #ifdef __cplusplus
 }
 #endif

@@ -13531,3 +13531,27 @@ source = "src/battle/battle_action_prepare.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:8F8A"
+name = "Lufia2BattleResolveRecoverableStatuses"
+source = "src/battle/battle_followup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:E0E4"
+name = "Lufia2BattleCheckEnemyGraphicsCapacity"
+source = "src/battle/battle_followup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9093"
+name = "Lufia2SelectScreenQueueTilemapCopy"
+source = "src/menu/menu_select_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
