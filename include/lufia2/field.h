@@ -1478,6 +1478,9 @@ Lufia2ExecutionResult Lufia2FieldAdvancePaletteCycles(const Lufia2Memory *,
                                                       Lufia2CpuState *);
 Lufia2ExecutionResult Lufia2FieldStepWaveTable(const Lufia2Memory *, Lufia2CpuState *);
 
+Lufia2ExecutionResult Lufia2FieldResolveEventArea(const Lufia2Memory *,
+                                                  Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif

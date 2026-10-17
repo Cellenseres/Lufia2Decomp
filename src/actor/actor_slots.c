@@ -215,3 +215,12 @@ Lufia2ExecutionResult Lufia2ActorInitializeSpawnSlot(
     SecondarySpawnInit(memory, cpu);
     return ExecutionReturned(0x83dffcu);
 }
+
+Lufia2ExecutionResult Lufia2ActorLoadSecondaryScript(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x83dffdu);
+    Lufia2ObjectLoadSecondaryScript(memory, cpu);
+    return ExecutionReturned(0x83e017u);
+}

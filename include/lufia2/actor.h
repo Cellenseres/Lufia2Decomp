@@ -331,6 +331,10 @@ Lufia2ExecutionResult Lufia2ActorPrepareStepProbe(const Lufia2Memory *memory,
 Lufia2ExecutionResult Lufia2ActorCommitTileStep(const Lufia2Memory *memory,
                                                 Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2ActorAllocateSprite(const Lufia2Memory *, Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2ActorLoadSecondaryScript(const Lufia2Memory *,
+                                                     Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif

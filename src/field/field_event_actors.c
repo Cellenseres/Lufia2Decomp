@@ -314,13 +314,9 @@ static unsigned EventOpSpawn(
 }
 
 /* $80:E92A: box $9F-$A2 of an operand. */
-uint8_t Lufia2EventArea(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address,
-    uint32_t *handoff) {
-    SimulateJsrFrame(memory, cpu, return_address);
-    Compare8(cpu, A8(cpu), 0xfbu);                             /* E92A */
+static uint8_t ResolveEventAreaBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                    uint32_t *handoff) {
+    Compare8(cpu, A8(cpu), 0xfbu); /* E92A */
     if (cpu->zero) {
         LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);
         LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_SLOT_X, cpu->x)));
@@ -331,7 +327,6 @@ uint8_t Lufia2EventArea(
         StoreADirect8(memory, cpu, 0xa0u);
         LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
         StoreADirect8(memory, cpu, 0xa2u);
-        SimulateRtsFrame(memory, cpu);
         return 1;
     }
     Compare8(cpu, A8(cpu), 0xe0u);                             /* E945 */
@@ -350,7 +345,6 @@ uint8_t Lufia2EventArea(
             LoadA8(cpu, Read8(memory, LongIndexedAddress(kBox[i], cpu->x)));
             StoreADirect8(memory, cpu, (uint8_t)(0x9fu + i));
         }
-        SimulateRtsFrame(memory, cpu);
         return 1;
     }
     Compare8(cpu, A8(cpu), 0x60u);                             /* E96B */
@@ -375,7 +369,6 @@ uint8_t Lufia2EventArea(
             StoreADirect16(memory, cpu, 0xa1u);
             SetAccumulatorWidth(cpu, 1);
         }
-        SimulateRtsFrame(memory, cpu);
         return 1;
     }
     if (!Lufia2EventPosition(memory, cpu, 0xe996u, handoff))        /* E994 */
@@ -383,8 +376,16 @@ uint8_t Lufia2EventArea(
     StoreADirect8(memory, cpu, 0x9fu);
     ExchangeAccumulatorBytes(cpu);
     StoreADirect8(memory, cpu, 0xa0u);
-    SimulateRtsFrame(memory, cpu);
     return 1;
+}
+
+uint8_t Lufia2EventArea(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                        uint16_t return_address, uint32_t *handoff) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    if (!ResolveEventAreaBody(memory, cpu, handoff))
+        return 0u;
+    SimulateRtsFrame(memory, cpu);
+    return 1u;
 }
 
 /* $55/$69: script point n = box of an operand ($80:E92A). */
@@ -2128,4 +2129,17 @@ unsigned Lufia2EventActorOpcode(
     default:
         return Lufia2EventConditionOpcode(memory, cpu, handler, handoff);
     }
+}
+
+Lufia2ExecutionResult Lufia2FieldResolveEventArea(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        ((cpu->data_bank & 0x7fu) >= 0x40u && cpu->data_bank != 0x7eu) ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80e92au);
+    uint32_t handoff = 0u;
+    if (!ResolveEventAreaBody(memory, cpu, &handoff))
+        return ExecutionHandoff(cpu, handoff);
+    return ExecutionReturned(0x80e99cu);
 }

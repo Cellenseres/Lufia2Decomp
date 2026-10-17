@@ -3,6 +3,7 @@
 #include "actor/actor_internal.h"
 #include "sprite_allocation_internal.h"
 #include "core/cpu_internal.h"
+#include <stddef.h>
 #include "lufia2/actor.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
@@ -97,11 +98,8 @@ void Lufia2ActorSpriteTables(
 }
 
 /* $83:AA50: allocate sprite slots for the actor. */
-static void ActorAllocSprite(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static uint8_t ActorAllocSpriteBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                    uint32_t *handoff) {
     Push8(memory, cpu, PackStatus(cpu));                       /* AA50 */
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 1);
@@ -110,6 +108,10 @@ static void ActorAllocSprite(
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
     TransferAToX(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83abf4u, cpu->x)));
+    if (handoff && !A8(cpu)) {
+        *handoff = 0x83aa5fu;
+        return 0u;
+    }
     Lufia2SpriteAllocSlots(memory, cpu, 0xaa62u);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* AA63 */
     Write8(memory, LongIndexedAddress(0x7fe25eu, cpu->x), A8(cpu));
@@ -121,6 +123,13 @@ static void ActorAllocSprite(
         cpu->accumulator);
     Lufia2ActorSpriteTables(memory, cpu, 0xaa7au);
     UnpackStatus(cpu, Pull8(memory, cpu));                     /* AA7B */
+    return 1u;
+}
+
+static void ActorAllocSprite(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    ActorAllocSpriteBody(memory, cpu, NULL);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -343,4 +352,16 @@ Lufia2ExecutionResult Lufia2SpriteGraphicsUpload(
     Write8(memory, AbsoluteIndexedAddress(cpu, 0x0732u, 0), 0x00u);
     Write8(memory, AbsoluteIndexedAddress(cpu, 0x0733u, 0), 0x00u);
     return result;
+}
+
+Lufia2ExecutionResult Lufia2ActorAllocateSprite(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->decimal || cpu->direct_page ||
+        ((cpu->data_bank & 0x7fu) >= 0x40u && cpu->data_bank != 0x7eu) ||
+        cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x83aa50u);
+    uint32_t handoff = 0u;
+    if (!ActorAllocSpriteBody(memory, cpu, &handoff))
+        return ExecutionHandoff(cpu, handoff);
+    return ExecutionReturned(0x83aa7cu);
 }

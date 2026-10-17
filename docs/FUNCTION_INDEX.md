@@ -179,6 +179,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:E8E2` | `Lufia2FieldPublishEventPointer` | verified | `src/field/field_event_pointer.c` |
 | `$80:E8F4` | `Lufia2FieldSetEventPointer` | verified | `src/field/field_event_reader.c` |
 | `$80:E912` | `Lufia2FieldLookupEventActor` | verified | `src/field/field_event_coordinate.c` |
+| `$80:E92A` | `Lufia2FieldResolveEventArea` | verified | `src/field/field_event_actors.c` |
 | `$80:E9BC` | `Lufia2FieldResolveEventVariable` | verified | `src/field/field_event_value.c` |
 | `$80:E9ED` | `Lufia2FieldResolveEventValue` | verified | `src/field/field_event_value.c` |
 | `$80:EA09` | `Lufia2FieldResolveEventPosition` | verified | `src/field/field_event_coordinate.c` |
@@ -832,6 +833,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:A9D0` | `Lufia2ActorRefreshSpriteDescriptor` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:A9E5` | `Lufia2ActorReadSpriteDescriptor` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:AA30` | `Lufia2ActorSetSpriteHeightOffset` | verified | `src/actor/actor_bootstrap.c` |
+| `$83:AA50` | `Lufia2ActorAllocateSprite` | verified | `src/actor/actor_sprites.c` |
 | `$83:AA7D` | `Lufia2ActorSelectSpriteTables` | verified | `src/actor/actor_bootstrap.c` |
 | `$83:AAAF` | `Lufia2ActorReleaseSceneSprite` | verified | `src/actor/party_scene.c` |
 | `$83:AAE1` | `Lufia2ActorUploadSceneSprite` | verified | `src/actor/party_scene.c` |
@@ -953,6 +955,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:DA8A` | `Lufia2ActorStopSecondaryScript` | verified | `src/actor/actor_secondary.c` |
 | `$83:DF87` | `Lufia2ActorSpawnFromId` | verified | `src/field/field_object_transition.c` |
 | `$83:DFA5` | `Lufia2ActorInitializeSpawnSlot` | verified | `src/actor/actor_slots.c` |
+| `$83:DFFD` | `Lufia2ActorLoadSecondaryScript` | verified | `src/actor/actor_slots.c` |
 | `$83:E033` | `Lufia2FieldSetObjectDrawFlags` | verified | `src/field/field_event_actors.c` |
 | `$83:E03E` | `Lufia2ObjectSlotsUpdate` | verified | `src/actor/object_vm.c` |
 | `$83:E0FC` | `Lufia2ObjectBeginOpcodeDispatch` | verified | `src/actor/object_vm.c` |
