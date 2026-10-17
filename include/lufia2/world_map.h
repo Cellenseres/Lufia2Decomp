@@ -940,6 +940,13 @@ Lufia2ExecutionResult Lufia2WorldMapResumePaletteWait3(const Lufia2Memory *,
                                                        Lufia2CpuState *,
                                                        Lufia2PushedChildCall, void *);
 
+Lufia2ExecutionResult Lufia2WorldMapUploadTileQueue(const Lufia2Memory *,
+                                                    Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2WorldMapUploadTileColumn(const Lufia2Memory *,
+                                                     Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2WorldMapUploadTileBlock(const Lufia2Memory *,
+                                                    Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif

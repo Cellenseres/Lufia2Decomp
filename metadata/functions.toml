@@ -13267,3 +13267,35 @@ source = "src/cave/cave_random.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "83:9D88"
+name = "Lufia2CaveDrawTileBlock"
+source = "src/cave/cave_grid.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:D1A1"
+name = "Lufia2WorldMapUploadTileQueue"
+source = "src/world/world_map.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:D1E8"
+name = "Lufia2WorldMapUploadTileColumn"
+source = "src/world/world_map.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:D271"
+name = "Lufia2WorldMapUploadTileBlock"
+source = "src/world/world_map.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

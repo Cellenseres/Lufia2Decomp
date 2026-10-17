@@ -1,5 +1,7 @@
 /* Ancient Cave room grid; bound leaf routines stay op-level. */
 
+#include <stddef.h>
+
 #include "cave/cave_internal.h"
 #include "system/dp_scratch.h"
 
@@ -501,12 +503,9 @@ void Lufia2CaveSetUpperTile(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 }
 
 /* $83:9D88: draw block $22 at tile offset Y. */
-void Lufia2CaveDrawBlock(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t site) {
-    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
-    OpWriteX(memory, cpu, OpDp(cpu, 0x60u), cpu->y);       /* 9D88 */
+static void CaveDrawTileBlockBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  uint32_t *handoff) {
+    OpWriteX(memory, cpu, OpDp(cpu, 0x60u), cpu->y);
     TransferDirectToA(cpu);
     OpLda(memory, cpu, OpDp(cpu, 0x22u));
     OpRepWidths(cpu, 0x20u);
@@ -516,42 +515,57 @@ void Lufia2CaveDrawBlock(
     OpLda(memory, cpu, OpLongX(cpu, 0x93d69bu));
     OpSta(memory, cpu, OpDp(cpu, 0x5du));
     OpSepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpLongX(cpu, 0x93d69du));           /* 9D9A */
+    OpLda(memory, cpu, OpLongX(cpu, 0x93d69du));
+    const uint8_t width = A8(cpu);
     OpSta(memory, cpu, OpDp(cpu, 0x5au));
     OpStz(memory, cpu, OpDp(cpu, 0x5bu));
     OpLda(memory, cpu, OpLongX(cpu, 0x93d69eu));
+    const uint8_t height = A8(cpu);
     OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_C));
     OpStz(memory, cpu, OpDp(cpu, DP_SCRATCH_D));
     OpRepWidths(cpu, 0x20u);
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x5du)));  /* 9DAC */
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x5du)));
+    const uint32_t last_write = (uint32_t)cpu->y + (height ? height - 1u : 0u) * 193u +
+                                (width ? width - 1u : 0u) * 2u + 0x3f0fu;
+    /* Bank crossing can overwrite direct-page counters. */
+    if (handoff && (!width || !height || last_write > 0xffffu)) {
+        *handoff = 0x839daeu;
+        return;
+    }
     do {
-        OpLda(memory, cpu, OpDp(cpu, 0x5au));              /* 9DAE */
+        OpLda(memory, cpu, OpDp(cpu, 0x5au));
         OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_E));
         do {
-            OpLda(memory, cpu, OpLongX(cpu, 0x7e400au));   /* 9DB2 */
+            OpLda(memory, cpu, OpLongX(cpu, 0x7e400au));
             if (!cpu->zero)
                 OpSta(memory, cpu, OpAbsY(cpu, 0x000au));
-            OpLda(memory, cpu, OpLongX(cpu, 0x7e4fceu));   /* 9DBB */
+            OpLda(memory, cpu, OpLongX(cpu, 0x7e4fceu));
             if (!cpu->zero)
                 OpSta(memory, cpu, OpAbsY(cpu, 0x3f0eu));
-            OpInx(cpu);                                      /* 9DC4 */
+            OpInx(cpu);
             OpInx(cpu);
             OpIny(cpu);
             OpIny(cpu);
             OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_E), -1);
         } while (!cpu->zero);
-        OpLda(memory, cpu, OpDp(cpu, 0x5du));              /* 9DCC */
+        OpLda(memory, cpu, OpDp(cpu, 0x5du));
         cpu->carry = 0;
         OpAdcValue(cpu, 0x0060u);
         OpSta(memory, cpu, OpDp(cpu, 0x5du));
         OpTax(cpu);
         OpLda(memory, cpu, OpDp(cpu, 0x60u));
-        OpAdcValue(cpu, 0x00c0u);                            /* no CLC */
+        OpAdcValue(cpu, 0x00c0u);
         OpSta(memory, cpu, OpDp(cpu, 0x60u));
         OpTay(cpu);
         OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_C), -1);
     } while (!cpu->zero);
-    OpSepWidths(cpu, 0x20u);                                       /* 9DE1 */
+    OpSepWidths(cpu, 0x20u);
+}
+
+void Lufia2CaveDrawBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                         uint16_t site) {
+    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
+    CaveDrawTileBlockBody(memory, cpu, NULL);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -668,4 +682,13 @@ Lufia2ExecutionResult Lufia2CaveReplaceUpperTileIndex(const Lufia2Memory *memory
     if (!CaveGridEntryContext(cpu, 0u, 1u))
         return ExecutionHandoff(cpu, 0x839d46u);
     return ExecutionReturned(Lufia2CaveSetUpperTileBody(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2CaveDrawTileBlock(const Lufia2Memory *memory,
+                                              Lufia2CpuState *cpu) {
+    if (!CaveGridEntryContext(cpu, 1u, 1u))
+        return ExecutionHandoff(cpu, 0x839d88u);
+    uint32_t handoff = 0u;
+    CaveDrawTileBlockBody(memory, cpu, &handoff);
+    return handoff ? ExecutionHandoff(cpu, handoff) : ExecutionReturned(0x839de3u);
 }

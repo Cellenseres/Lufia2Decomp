@@ -84,11 +84,9 @@ static void WorldMapUploadRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 }
 
 /* $86:D1E8: tile column upload, rows of $0100 words. */
-static void WorldMapColumnUpload(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0xd1d8u);
-    SetAccumulatorWidth(cpu, 0);                               /* D1E8 */
+static uint32_t WorldMapColumnUploadBody(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu) {
+    SetAccumulatorWidth(cpu, 0);
     And16(cpu, 0x00ffu);
     AslA16(cpu);
     TransferAToX(cpu);
@@ -109,10 +107,10 @@ static void WorldMapColumnUpload(
         LoadA8(cpu, 0xc0u);
         StoreADirect8(memory, cpu, UPLOAD_DP_CHANNELS);
     }
-    LoadAAbsolute8(memory, cpu, 0x0002u, cpu->y);              /* D214 */
+    LoadAAbsolute8(memory, cpu, 0x0002u, cpu->y);
     StoreADirect8(memory, cpu, UPLOAD_DP_ROWS_LEFT);
     WorldMapUploadRows(memory, cpu, true);
-    LoadAAbsolute8(memory, cpu, 0xd26cu, cpu->x);              /* D23C */
+    LoadAAbsolute8(memory, cpu, 0xd26cu, cpu->x);
     cpu->carry = 1;
     Sbc8(cpu, AbsoluteByte(memory, cpu, 0x0002u, cpu->y));
     if (!cpu->zero) {
@@ -121,17 +119,21 @@ static void WorldMapColumnUpload(
         StoreADirect8(memory, cpu, UPLOAD_DP_SECOND_SIZE);
         WorldMapUploadRows(memory, cpu, false);
     }
+    return 0x86d26au;
+}
+
+static void WorldMapColumnUpload(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xd1d8u);
+    (void)WorldMapColumnUploadBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
 /* $86:D271: block upload, two passes of rows $0200 apart. */
-static void WorldMapBlockUpload(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static uint32_t WorldMapBlockUploadBody(const Lufia2Memory *memory,
+                                        Lufia2CpuState *cpu) {
     unsigned pass;
 
-    SimulateJsrFrame(memory, cpu, 0xd1ddu);
-    SetAccumulatorWidth(cpu, 0);                               /* D271 */
+    SetAccumulatorWidth(cpu, 0);
     And16(cpu, 0x007fu);
     AslA16(cpu);
     TransferAToX(cpu);
@@ -147,11 +149,11 @@ static void WorldMapBlockUpload(
     StoreADirect8(memory, cpu, UPLOAD_DP_BLOCK_PASS2_LEFT);
     for (pass = 0; pass < 2u; ++pass) {
         if (pass)
-            IncrementDirect8(memory, cpu, UPLOAD_DP_VRAM_ADDRESS_HIGH); /* D2B0 */
+            IncrementDirect8(memory, cpu, UPLOAD_DP_VRAM_ADDRESS_HIGH);
         LoadXDirect16(memory, cpu, UPLOAD_DP_VRAM_ADDRESS);
         cpu->carry = 0;
         do {
-            SetAccumulatorWidth(cpu, 0);                       /* D295 */
+            SetAccumulatorWidth(cpu, 0);
             LoadADirect16(memory, cpu, UPLOAD_DP_FIRST_SIZE);
             Write16Absolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
             TransferXToA(cpu);
@@ -165,15 +167,19 @@ static void WorldMapBlockUpload(
                              pass ? UPLOAD_DP_BLOCK_PASS2_LEFT : UPLOAD_DP_ROWS_LEFT);
         } while (!cpu->zero);
     }
+    return 0x86d2cfu;
+}
+
+static void WorldMapBlockUpload(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xd1ddu);
+    (void)WorldMapBlockUploadBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
 /* $86:D1A1: pending map tile uploads, $1365 entries. */
-static void WorldMapTileUploads(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    SimulateJsrFrame(memory, cpu, 0xcf14u);
-    LoadA8(cpu, 0x18u);                                        /* D1A1 */
+static uint32_t WorldMapTileUploadsBody(const Lufia2Memory *memory,
+                                        Lufia2CpuState *cpu) {
+    LoadA8(cpu, 0x18u);
     StoreAAbsolute8(memory, cpu, SNES_BBAD(6), 0);
     StoreAAbsolute8(memory, cpu, SNES_BBAD(7), 0);
     StoreAImmediate8(memory, cpu, 0x01u, SNES_DMAP(6));
@@ -185,7 +191,7 @@ static void WorldMapTileUploads(
     Write8(memory, DirectAddress(cpu, 0x36u), 0x00u);
     LoadX16(cpu, 0x1367u);
     do {
-        PushIndex(memory, cpu);                                /* D1C5 */
+        PushIndex(memory, cpu);
         LoadY16(cpu, Read16DirectIndexed(memory, cpu, 0x40u, cpu->x));
         if (!cpu->zero) {
             StoreYDirect16(memory, cpu, 0x39u);
@@ -196,7 +202,7 @@ static void WorldMapTileUploads(
             else
                 WorldMapBlockUpload(memory, cpu);
         }
-        cpu->x = PullIndexValue(memory, cpu);                  /* D1DE */
+        cpu->x = PullIndexValue(memory, cpu);
         IncrementX16(cpu);
         IncrementX16(cpu);
         {
@@ -207,6 +213,12 @@ static void WorldMapTileUploads(
             SetNz8(cpu, left);
         }
     } while (!cpu->zero);
+    return 0x86d1e6u;
+}
+
+static void WorldMapTileUploads(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJsrFrame(memory, cpu, 0xcf14u);
+    (void)WorldMapTileUploadsBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -1193,4 +1205,35 @@ Lufia2ExecutionResult Lufia2WorldSpriteChain(
     StoreAAbsolute8(memory, cpu, 0x0102u, cpu->x);
     SetIndexWidth(cpu, 0);
     return ExecutionReturned(0x86e9d3u);                       /* RTS */
+}
+
+static uint8_t WorldMapTileUploadContext(const Lufia2CpuState *cpu,
+                                         unsigned any_accumulator) {
+    const uint8_t bank = cpu->data_bank;
+    const uint8_t mapped_bank =
+        bank < 0x40u || bank == 0x7eu || (bank >= 0x80u && bank < 0xc0u);
+    return cpu->program_bank == 0x86u && !cpu->direct_page && !cpu->decimal &&
+           !cpu->index_is_8_bit && (any_accumulator || cpu->accumulator_is_8_bit) &&
+           mapped_bank && cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2WorldMapUploadTileQueue(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (!WorldMapTileUploadContext(cpu, 0u))
+        return ExecutionHandoff(cpu, 0x86d1a1u);
+    return ExecutionReturned(WorldMapTileUploadsBody(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2WorldMapUploadTileColumn(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu) {
+    if (!WorldMapTileUploadContext(cpu, 1u))
+        return ExecutionHandoff(cpu, 0x86d1e8u);
+    return ExecutionReturned(WorldMapColumnUploadBody(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2WorldMapUploadTileBlock(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (!WorldMapTileUploadContext(cpu, 1u))
+        return ExecutionHandoff(cpu, 0x86d271u);
+    return ExecutionReturned(WorldMapBlockUploadBody(memory, cpu));
 }

@@ -834,6 +834,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:9D39` | `Lufia2CaveAppendRoomLink` | verified | `src/cave/cave_grid.c` |
 | `$83:9D46` | `Lufia2CaveReplaceUpperTileIndex` | verified | `src/cave/cave_grid.c` |
 | `$83:9D68` | `Lufia2CaveResolveWordTileOffset` | verified | `src/cave/cave_grid.c` |
+| `$83:9D88` | `Lufia2CaveDrawTileBlock` | verified | `src/cave/cave_grid.c` |
 | `$83:9DE4` | `Lufia2CaveDrawRandomMean` | verified | `src/cave/cave_random.c` |
 | `$83:9E11` | `Lufia2CaveDrawRandomIndex` | verified | `src/cave/cave_random.c` |
 | `$83:9E1B` | `Lufia2CaveDrawRandomBelow` | verified | `src/cave/cave_random.c` |
@@ -1561,6 +1562,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:CD91` | `Lufia2WorldMapLoadResourceColors` | verified | `src/world/world_math_resources.c` |
 | `$86:CDF5` | `Lufia2WorldMapBindResourcePointers` | verified | `src/world/world_resource_pointers.c` |
 | `$86:CEF6` | `Lufia2WorldMapNmiUploads` | verified | `src/world/world_map.c` |
+| `$86:D1A1` | `Lufia2WorldMapUploadTileQueue` | verified | `src/world/world_map.c` |
+| `$86:D1E8` | `Lufia2WorldMapUploadTileColumn` | verified | `src/world/world_map.c` |
+| `$86:D271` | `Lufia2WorldMapUploadTileBlock` | verified | `src/world/world_map.c` |
 | `$86:D2D6` | `Lufia2WorldMapResetSceneState` | verified | `src/world/world_scene.c` |
 | `$86:D32D` | `Lufia2WorldMapResetDisplayState` | verified | `src/world/world_frame_callers.c` |
 | `$86:D330` | `Lufia2WorldMapFinishDisplayReset` | verified | `src/world/world_frame_callers.c` |

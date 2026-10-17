@@ -93,6 +93,8 @@ Lufia2ExecutionResult Lufia2CaveDrawRandomBelow(const Lufia2Memory *, Lufia2CpuS
 Lufia2ExecutionResult Lufia2CaveDrawRandomIndex(const Lufia2Memory *, Lufia2CpuState *);
 Lufia2ExecutionResult Lufia2CaveDrawRandomMean(const Lufia2Memory *, Lufia2CpuState *);
 
+Lufia2ExecutionResult Lufia2CaveDrawTileBlock(const Lufia2Memory *, Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif
