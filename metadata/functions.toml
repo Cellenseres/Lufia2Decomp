@@ -13339,3 +13339,43 @@ source = "src/menu/menu_graphics_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:89FD"
+name = "Lufia2SelectScreenClearSpriteStatus"
+source = "src/menu/menu_select_control.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "86:87D3"
+name = "Lufia2SelectScreenClearState"
+source = "src/menu/menu_select_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8865"
+name = "Lufia2SelectScreenConfigureHdmaSlot"
+source = "src/menu/menu_select_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8784"
+name = "Lufia2SelectScreenInitializeLayout"
+source = "src/menu/menu_select_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:81D0"
+name = "Lufia2SelectScreenControl"
+source = "src/menu/menu_select_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

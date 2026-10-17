@@ -1327,6 +1327,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:8157` | `Lufia2SelectScreenLoadPalette` | verified | `src/menu/menu_graphics_setup.c` |
 | `$86:817A` | `Lufia2SelectScreenLoadMaps` | verified | `src/menu/menu_graphics_setup.c` |
 | `$86:81A9` | `Lufia2SelectScreenNmi` | verified | `src/menu/menu.c` |
+| `$86:81D0` | `Lufia2SelectScreenControl` | verified | `src/menu/menu_select_control.c` |
 | `$86:838C` | `Lufia2TitleObjects` | verified | `src/title/title.c` |
 | `$86:83F2` | `Lufia2TitleProjectObject` | verified | `src/title/title.c` |
 | `$86:8503` | `Lufia2TitleApplyProductSign` | verified | `src/title/title.c` |
@@ -1339,8 +1340,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:866A` | `Lufia2TitleActivateObject` | verified | `src/title/title.c` |
 | `$86:86ED` | `Lufia2TitleLayers` | verified | `src/title/title.c` |
 | `$86:8740` | `Lufia2TitleCopyTileRows` | verified | `src/title/title.c` |
+| `$86:8784` | `Lufia2SelectScreenInitializeLayout` | verified | `src/menu/menu_select_control.c` |
+| `$86:87D3` | `Lufia2SelectScreenClearState` | verified | `src/menu/menu_select_control.c` |
+| `$86:8865` | `Lufia2SelectScreenConfigureHdmaSlot` | verified | `src/menu/menu_select_control.c` |
 | `$86:88BE` | `Lufia2TitleParticleSprites` | verified | `src/title/title.c` |
 | `$86:8996` | `Lufia2TitlePaletteCycle` | verified | `src/title/title.c` |
+| `$86:89FD` | `Lufia2SelectScreenClearSpriteStatus` | verified | `src/menu/menu_select_control.c` |
 | `$86:8B1C` | `Lufia2MenuFadeDisplayIn` | verified | `src/menu/menu_presentation_callers.c` |
 | `$86:8B32` | `Lufia2MenuFadeDisplayOut` | verified | `src/menu/menu_presentation_callers.c` |
 | `$86:8B48` | `Lufia2MenuWaitForNextFrame` | verified | `src/system/frame_wait.c` |

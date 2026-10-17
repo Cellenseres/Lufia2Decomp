@@ -5870,3 +5870,12 @@ width = 1
 count = 1
 owner = "world"
 notes = "86:E84F subtracts this byte from1211,adds40 and writes scene parameter1237.Purpose remains neutral."
+
+[[location]]
+address = "7E:15B8"
+name = "title_animation_frame"
+width = 1
+count = 1
+owner = "title"
+aliases = ["WRAM_SELECT_SCREEN_VRAM_OFFSET"]
+notes = "86:8695 advances this byte as the tile animation frame.86:8784 initializes it to20;86:87E0 reads its low byte as a VRAM destination offset added to1800.The high byte at15B9 is masked away in that NMI path."

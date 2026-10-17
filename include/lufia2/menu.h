@@ -809,6 +809,20 @@ Lufia2ExecutionResult Lufia2SelectScreenConfigureDisplay(const Lufia2Memory *,
 Lufia2ExecutionResult Lufia2SelectScreenRun(const Lufia2Memory *, Lufia2CpuState *,
                                             Lufia2PushedChildCall, void *);
 
+Lufia2ExecutionResult Lufia2SelectScreenClearSpriteStatus(const Lufia2Memory *,
+                                                          Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2SelectScreenClearState(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2SelectScreenConfigureHdmaSlot(const Lufia2Memory *,
+                                                          Lufia2CpuState *,
+                                                          Lufia2PushedChildCall,
+                                                          void *);
+Lufia2ExecutionResult Lufia2SelectScreenInitializeLayout(const Lufia2Memory *,
+                                                         Lufia2CpuState *,
+                                                         Lufia2PushedChildCall, void *);
+Lufia2ExecutionResult Lufia2SelectScreenControl(const Lufia2Memory *, Lufia2CpuState *,
+                                                Lufia2PushedChildCall, void *);
+
 #ifdef __cplusplus
 }
 #endif
