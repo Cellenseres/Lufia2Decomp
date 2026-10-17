@@ -62,6 +62,14 @@ world-point filter can only reject otherwise visible actors. Consumers own the
 policy and context; this library never reads renderer globals or room metadata.
 Sorting, uploads and OAM remain one implementation for both paths.
 
+`Lufia2FieldCellDisplayed` is a pure helper over a copy of bank `$7F`, not an
+original routine, so it has no metadata entry or status. It applies the
+displayed-cell rule of the streamers `$80:F5ED`, `$80:F64E` and `$80:F6C6`: a
+cell word with both edge bits (`$3000`) set is drawn as the cell at
+`[$7F:D008]`, and layers 2-3 take metatiles from `$7F:D040`. `$83:8E85`
+uses the same substitution but always `$7F:D03C`. Consumers use it to draw
+outside the original 256-pixel view; the reconstructed writers do not call it.
+
 `Lufia2Memory` also carries an optional execution checkpoint and its context.
 Inlined children inherit this observer through the same memory interface. A
 checkpoint reports the CPU at an exact original instruction, with that

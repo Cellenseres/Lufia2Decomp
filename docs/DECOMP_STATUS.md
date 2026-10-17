@@ -1,3 +1,28 @@
+# Displayed-cell helper - 2026-10-17
+
+`src/field/field_cell_view.c` adds `Lufia2FieldCellViewOpen` and
+`Lufia2FieldCellDisplayed`, a pure helper for consumers that draw field cells
+outside the original view. It is not a ROM function: no `functions.toml`
+entry, no status, no binding. It reads the layer pointers, sizes and metatile
+bases from `$7F:D008-$7F:D041`, substitutes the cell at `[$7F:D008]` for a
+word with both edge bits set and returns the four metatile tiles. Out-of-table
+cells and reads past `$7F:FFFF` are rejected instead of wrapped.
+
+A local differential test built random bank `$7F` states (all four edge-bit
+states, four layers, both metatile bases, random scroll) and compared every
+metatile that `$80:F47A`, `$80:F4FD`, `$80:F518`, `$80:F589` and `$80:F5A2`
+wrote to the layer buffer with the helper. Against the decomp writers: 639,120
+metatiles over 500 seeds, 0 mismatches. Against the original ROM code run on
+interp816 with the same states: 2,555,632 metatiles over 2,000 seeds, 0
+mismatches. Two helper mutations (no substitution, wrong metatile base) fail
+both runs. `$83:8E85` was checked by reading only. No reconstructed routine
+changed.
+
+ROM data: the Ancient Cave block sets (resources 361-363, chosen through
+`$83:9F59`) carry edge bits in their second layer: 392, 392 and 408 cells
+`$1000` and 14, 10 and 10 cells `$2000`, so their floors carry room edges
+in the cell map like regular dungeon maps.
+
 # Native entries for existing semantic workers - 2026-10-17
 
 Four real original call targets now expose their existing shared implementations:

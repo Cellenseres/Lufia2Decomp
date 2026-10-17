@@ -210,6 +210,34 @@ Lufia2ExecutionResult Lufia2FieldActorSpritesWithVisibility(
     Lufia2CpuState *cpu,
     const Lufia2FieldActorVisibility *visibility);
 
+/* Displayed-cell rule of $80:F5ED, $80:F64E and $80:F6C6, read from a
+ * 64 KiB copy of bank $7F. A pure helper, not an original routine. */
+enum { LUFIA2_FIELD_CELL_LAYERS = 4 };
+
+typedef struct Lufia2FieldCellView {
+    const uint8_t *bank_7f;
+    uint16_t cell_base[LUFIA2_FIELD_CELL_LAYERS];
+    uint16_t width[LUFIA2_FIELD_CELL_LAYERS];
+    uint16_t height[LUFIA2_FIELD_CELL_LAYERS];
+    uint16_t metatile_base;
+    uint16_t alternate_metatile_base;
+} Lufia2FieldCellView;
+
+typedef struct Lufia2FieldDisplayedCell {
+    uint16_t word;     /* cell word as stored */
+    uint16_t source;   /* bank $7F offset of the cell drawn instead */
+    uint16_t metatile; /* metatile index of that cell */
+    uint16_t tiles[4]; /* top left, bottom left, top right, bottom right */
+    uint8_t hidden;    /* both edge bits set */
+} Lufia2FieldDisplayedCell;
+
+void Lufia2FieldCellViewOpen(Lufia2FieldCellView *view, const uint8_t *bank_7f);
+
+/* Nonzero when the cell lies inside the layer table and the bank. */
+uint8_t Lufia2FieldCellDisplayed(const Lufia2FieldCellView *view, unsigned layer,
+                                 unsigned cell_x, unsigned cell_y,
+                                 Lufia2FieldDisplayedCell *out);
+
 /* $83:B53B: regular map resources, attribute fill and setup. M1, either X
  * width, native binary mode. Checkpoints B548 and loaded-only B580. */
 Lufia2ExecutionResult Lufia2FieldInstallMap(
