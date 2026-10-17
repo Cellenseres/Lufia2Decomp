@@ -14,16 +14,20 @@
 #define EVENT_LIST_LIMIT 65536u
 
 /* $80:E4C5: result bytes into the slot; N = result. */
+static void StoreConditionResult(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT); /* E4C5 */
+    LoadA8(cpu, Read8(memory, EVENT_CONDITION_OPERAND));
+    Write8(memory, LongIndexedAddress(EVENT_SLOT_VARIABLES, cpu->x), A8(cpu));
+    LoadA8(cpu, Read8(memory, EVENT_CONDITION));
+    Write8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x), A8(cpu));
+}
+
 static void EventStoreResult(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* E4C5 */
-    LoadA8(cpu, Read8(memory, EVENT_CONDITION_OPERAND));
-    Write8(memory, LongIndexedAddress(EVENT_SLOT_VARIABLES, cpu->x), A8(cpu));
-    LoadA8(cpu, Read8(memory, EVENT_CONDITION));
-    Write8(memory, LongIndexedAddress(EVENT_SLOT_BITS, cpu->x), A8(cpu));
+    StoreConditionResult(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -64,13 +68,17 @@ static unsigned EventKeepResult(
 }
 
 /* $80:E55B: invert the result. */
+static void NegateConditionResult(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, (uint8_t)(Read8(memory, EVENT_CONDITION) ^ 0xffu));
+    Write8(memory, EVENT_CONDITION, A8(cpu));
+}
+
 static void EventNegate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadA8(cpu, (uint8_t)(Read8(memory, EVENT_CONDITION) ^ 0xffu));
-    Write8(memory, EVENT_CONDITION, A8(cpu));
+    NegateConditionResult(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -98,13 +106,9 @@ static unsigned EventCompareFlag(
 }
 
 /* $80:E132: true when the leader stands on the position. */
-static uint8_t EventLeaderAt(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address,
-    uint32_t *handoff) {
-    SimulateJsrFrame(memory, cpu, return_address);
-    if (!Lufia2EventPosition(memory, cpu, 0xe134u, handoff))   /* E132 */
+static uint8_t TestLeaderPosition(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  uint32_t *handoff) {
+    if (!Lufia2EventPosition(memory, cpu, 0xe134u, handoff)) /* E132 */
         return 0;
     Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, WRAM_ACTOR_TILE_X, 0));
     if (cpu->zero) {
@@ -115,41 +119,53 @@ static uint8_t EventLeaderAt(
             Write8(memory, EVENT_CONDITION, A8(cpu));
         }
     }
+    return 1;
+}
+
+static uint8_t EventLeaderAt(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             uint16_t return_address, uint32_t *handoff) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    if (!TestLeaderPosition(memory, cpu, handoff))
+        return 0;
     SimulateRtsFrame(memory, cpu);
     return 1;
 }
 
-/* Carry = b <= value < e, as CMP/BCC/BCS pairs. */
-static uint8_t EventInRange(
-    Lufia2CpuState *cpu, uint8_t value, uint8_t low, uint8_t high) {
-    Compare8(cpu, value, low);
+/* Read the upper bound only after the lower. */
+static uint8_t EventInRange(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            uint8_t value, uint8_t low_offset, uint8_t high_offset) {
+    Compare8(cpu, value, DirectByte(memory, cpu, low_offset));
     if (!cpu->carry)
         return 0;
-    Compare8(cpu, value, high);
+    Compare8(cpu, value, DirectByte(memory, cpu, high_offset));
     return !cpu->carry;
 }
 
 /* $80:E15A: carry = leader inside the box of an operand. */
+static uint8_t TestLeaderArea(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              uint32_t *handoff) {
+    if (!Lufia2EventArea(memory, cpu, 0xe15cu, handoff)) /* E15A */
+        return 0;
+    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);
+    if (EventInRange(memory, cpu, A8(cpu), 0x9fu, 0xa1u)) {
+        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
+        if (EventInRange(memory, cpu, A8(cpu), 0xa0u, 0xa2u)) {
+            cpu->carry = 1;
+            return 1;
+        }
+    }
+    cpu->carry = 0; /* E175 */
+    return 1;
+}
+
 static uint8_t EventLeaderInArea(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address,
     uint32_t *handoff) {
     SimulateJsrFrame(memory, cpu, return_address);
-    if (!Lufia2EventArea(memory, cpu, 0xe15cu, handoff))       /* E15A */
+    if (!TestLeaderArea(memory, cpu, handoff))
         return 0;
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, 0);
-    if (EventInRange(cpu, A8(cpu), DirectByte(memory, cpu, 0x9fu),
-                     DirectByte(memory, cpu, 0xa1u))) {
-        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, 0);
-        if (EventInRange(cpu, A8(cpu), DirectByte(memory, cpu, 0xa0u),
-                         DirectByte(memory, cpu, 0xa2u))) {
-            cpu->carry = 1;
-            SimulateRtsFrame(memory, cpu);
-            return 1;
-        }
-    }
-    cpu->carry = 0;                                            /* E175 */
     SimulateRtsFrame(memory, cpu);
     return 1;
 }
@@ -166,13 +182,9 @@ static void EventBitCellMask(
 }
 
 /* $80:E458: carry = a map cell in the box has a $AE bit. */
-static uint8_t EventCellsInArea(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address,
-    uint32_t *handoff) {
-    SimulateJsrFrame(memory, cpu, return_address);
-    if (!Lufia2EventArea(memory, cpu, 0xe45au, handoff))       /* E458 */
+static uint8_t FindCellBitsInArea(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  uint32_t *handoff) {
+    if (!Lufia2EventArea(memory, cpu, 0xe45au, handoff)) /* E458 */
         return 0;
     SetAccumulatorWidth(cpu, 0);
     LoadADirect16(memory, cpu, 0xa1u);
@@ -196,7 +208,6 @@ static uint8_t EventCellsInArea(
                 LoadA8(cpu, 0xffu);                            /* E499 */
                 Write8(memory, EVENT_CONDITION, A8(cpu));
                 cpu->carry = 1;
-                SimulateRtsFrame(memory, cpu);
                 return 1;
             }
             IncrementX16(cpu);
@@ -213,6 +224,14 @@ static uint8_t EventCellsInArea(
     TransferDirectToA(cpu);                                    /* E492 */
     Write8(memory, EVENT_CONDITION, A8(cpu));
     cpu->carry = 0;
+    return 1;
+}
+
+static uint8_t EventCellsInArea(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint16_t return_address, uint32_t *handoff) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    if (!FindCellBitsInArea(memory, cpu, handoff))
+        return 0;
     SimulateRtsFrame(memory, cpu);
     return 1;
 }
@@ -225,11 +244,9 @@ static void EventObjectsInBox(
     LoadX16(cpu, 0x0000u);
     for (;;) {
         LoadAAbsolute8(memory, cpu, 0xd69cu, cpu->x);          /* CD93 */
-        if (EventInRange(cpu, A8(cpu), DirectByte(memory, cpu, 0x9fu),
-                         DirectByte(memory, cpu, 0xa1u))) {
+        if (EventInRange(memory, cpu, A8(cpu), 0x9fu, 0xa1u)) {
             LoadAAbsolute8(memory, cpu, 0xd6ccu, cpu->x);
-            if (EventInRange(cpu, A8(cpu), DirectByte(memory, cpu, 0xa0u),
-                             DirectByte(memory, cpu, 0xa2u))) {
+            if (EventInRange(memory, cpu, A8(cpu), 0xa0u, 0xa2u)) {
                 LoadA8(cpu, DirectByte(memory, cpu, DP_EVENT_CELL_MASK));
                 Compare8(cpu, A8(cpu), AbsoluteByte(memory, cpu, 0xd6fcu, cpu->x));
                 if (cpu->zero)
@@ -258,15 +275,22 @@ static void EventObjectsInBox(
 }
 
 /* $80:CD88: objects of type $AE in the box of an operand. */
+static uint8_t FindObjectInArea(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint32_t *handoff) {
+    if (!Lufia2EventArea(memory, cpu, 0xcd8au, handoff)) /* CD88 */
+        return 0;
+    EventObjectsInBox(memory, cpu);
+    return 1;
+}
+
 static uint8_t EventObjectsInArea(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address,
     uint32_t *handoff) {
     SimulateJsrFrame(memory, cpu, return_address);
-    if (!Lufia2EventArea(memory, cpu, 0xcd8au, handoff))       /* CD88 */
+    if (!FindObjectInArea(memory, cpu, handoff))
         return 0;
-    EventObjectsInBox(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     return 1;
 }
@@ -290,15 +314,11 @@ static void EventStorePointer(
 }
 
 /* $80:E78D: list entry Y/2; carry when missing. */
-uint8_t Lufia2EventFindList(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
+static uint8_t FindEventConditionList(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     unsigned steps;
     uint8_t key;
 
-    SimulateJslFrame(memory, cpu, 0x80u, return_address);
-    PushDataBank(memory, cpu);                                 /* E78D */
+    PushDataBank(memory, cpu); /* E78D */
     Write16Direct(memory, cpu, DP_SCRATCH_C, cpu->y);
     key = DirectByte(memory, cpu, DP_SCRATCH_C);
     cpu->carry = key & 1u;
@@ -346,20 +366,24 @@ uint8_t Lufia2EventFindList(
     }
     SetAccumulatorWidth(cpu, 1);                               /* E7DB */
     PullDataBank(memory, cpu);
+    return 1;
+}
+
+uint8_t Lufia2EventFindList(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    if (!FindEventConditionList(memory, cpu))
+        return 0;
     SimulateRtlFrame(memory, cpu);
     return 1;
 }
 
 /* $80:E566: test the condition list $7F:D19B. */
-static uint8_t EventConditionList(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address,
-    uint32_t *handoff) {
+static uint8_t TestConditionList(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint32_t *handoff) {
     unsigned entries;
 
-    SimulateJsrFrame(memory, cpu, return_address);
-    StoreXDirect16(memory, cpu, 0x8bu);                        /* E566 */
+    StoreXDirect16(memory, cpu, 0x8bu); /* E566 */
     LoadA8(cpu, Read8(memory, EVENT_SCRIPT_BANK));
     PushAccumulator8(memory, cpu);
     PushDataBank(memory, cpu);
@@ -397,7 +421,8 @@ static uint8_t EventConditionList(
         else if (test == 0xcd88u)
             found = EventObjectsInArea(memory, cpu, 0xe58du, handoff);
         else {
-            *handoff = 0x80e58bu;
+            SimulateJsrFrame(memory, cpu, 0xe58du);
+            cpu->resume_pc = *handoff = 0x800000u | test;
             return 0;
         }
         if (!found)
@@ -412,6 +437,14 @@ static uint8_t EventConditionList(
     PullDataBank(memory, cpu);
     LoadA8(cpu, Pull8(memory, cpu));
     Write8(memory, EVENT_SCRIPT_BANK, A8(cpu));
+    return 1;
+}
+
+static uint8_t EventConditionList(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  uint16_t return_address, uint32_t *handoff) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    if (!TestConditionList(memory, cpu, handoff))
+        return 0;
     SimulateRtsFrame(memory, cpu);
     return 1;
 }
@@ -1129,4 +1162,94 @@ unsigned Lufia2EventConditionOpcode(
     default:
         return EVENT_OPCODE_HANDOFF;
     }
+}
+
+static bool EventConditionEntryContext(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x80u &&
+           ((cpu->data_bank & 0x7fu) < 0x40u || cpu->data_bank == 0x7eu) &&
+           cpu->accumulator_is_8_bit && !cpu->index_is_8_bit && !cpu->decimal &&
+           !cpu->direct_page && cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2FieldStoreConditionResult(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu) {
+    if (!EventConditionEntryContext(cpu))
+        return ExecutionHandoff(cpu, 0x80e4c5u);
+    StoreConditionResult(memory, cpu);
+    return ExecutionReturned(0x80e4d7u);
+}
+
+Lufia2ExecutionResult Lufia2FieldNegateConditionResult(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu) {
+    if (!EventConditionEntryContext(cpu))
+        return ExecutionHandoff(cpu, 0x80e55bu);
+    NegateConditionResult(memory, cpu);
+    return ExecutionReturned(0x80e565u);
+}
+
+Lufia2ExecutionResult Lufia2FieldTestLeaderPosition(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (!EventConditionEntryContext(cpu))
+        return ExecutionHandoff(cpu, 0x80e132u);
+    uint32_t handoff = 0u;
+    if (!TestLeaderPosition(memory, cpu, &handoff))
+        return ExecutionHandoff(cpu, handoff);
+    return ExecutionReturned(0x80e146u);
+}
+
+Lufia2ExecutionResult Lufia2FieldTestLeaderArea(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu) {
+    if (!EventConditionEntryContext(cpu))
+        return ExecutionHandoff(cpu, 0x80e15au);
+    uint32_t handoff = 0u;
+    if (!TestLeaderArea(memory, cpu, &handoff))
+        return ExecutionHandoff(cpu, handoff);
+    return ExecutionReturned(cpu->carry ? 0x80e174u : 0x80e176u);
+}
+
+Lufia2ExecutionResult Lufia2FieldFindObjectInBox(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    if (!EventConditionEntryContext(cpu))
+        return ExecutionHandoff(cpu, 0x80cd8bu);
+    EventObjectsInBox(memory, cpu);
+    return ExecutionReturned(0x80cdd1u);
+}
+
+Lufia2ExecutionResult Lufia2FieldFindObjectInArea(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (!EventConditionEntryContext(cpu))
+        return ExecutionHandoff(cpu, 0x80cd88u);
+    uint32_t handoff = 0u;
+    if (!FindObjectInArea(memory, cpu, &handoff))
+        return ExecutionHandoff(cpu, handoff);
+    return ExecutionReturned(0x80cdd1u);
+}
+
+Lufia2ExecutionResult Lufia2FieldFindCellBitsInArea(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (!EventConditionEntryContext(cpu))
+        return ExecutionHandoff(cpu, 0x80e458u);
+    uint32_t handoff = 0u;
+    if (!FindCellBitsInArea(memory, cpu, &handoff))
+        return ExecutionHandoff(cpu, handoff);
+    return ExecutionReturned(cpu->carry ? 0x80e4a0u : 0x80e498u);
+}
+
+Lufia2ExecutionResult Lufia2FieldFindEventConditionList(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu) {
+    if (!EventConditionEntryContext(cpu))
+        return ExecutionHandoff(cpu, 0x80e78du);
+    if (!FindEventConditionList(memory, cpu))
+        return ExecutionHandoff(cpu, cpu->resume_pc);
+    return ExecutionReturned(0x80e7deu);
+}
+
+Lufia2ExecutionResult Lufia2FieldTestConditionList(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    if (!EventConditionEntryContext(cpu))
+        return ExecutionHandoff(cpu, 0x80e566u);
+    uint32_t handoff = 0u;
+    if (!TestConditionList(memory, cpu, &handoff))
+        return ExecutionHandoff(cpu, handoff);
+    return ExecutionReturned(0x80e59du);
 }

@@ -12835,3 +12835,75 @@ source = "src/battle/battle_status_tick.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:E4C5"
+name = "Lufia2FieldStoreConditionResult"
+source = "src/field/field_event_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:E55B"
+name = "Lufia2FieldNegateConditionResult"
+source = "src/field/field_event_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:E132"
+name = "Lufia2FieldTestLeaderPosition"
+source = "src/field/field_event_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:E15A"
+name = "Lufia2FieldTestLeaderArea"
+source = "src/field/field_event_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:CD8B"
+name = "Lufia2FieldFindObjectInBox"
+source = "src/field/field_event_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:CD88"
+name = "Lufia2FieldFindObjectInArea"
+source = "src/field/field_event_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:E458"
+name = "Lufia2FieldFindCellBitsInArea"
+source = "src/field/field_event_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:E78D"
+name = "Lufia2FieldFindEventConditionList"
+source = "src/field/field_event_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:E566"
+name = "Lufia2FieldTestConditionList"
+source = "src/field/field_event_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

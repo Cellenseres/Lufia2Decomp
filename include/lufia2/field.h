@@ -1450,6 +1450,25 @@ Lufia2ExecutionResult Lufia2FieldSpawnActorsInArea(const Lufia2Memory *memory,
 Lufia2ExecutionResult Lufia2FieldRandomAreaCoordinate(const Lufia2Memory *memory,
                                                       Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldStoreConditionResult(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldNegateConditionResult(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldTestLeaderPosition(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldTestLeaderArea(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldFindObjectInBox(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldFindObjectInArea(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldFindCellBitsInArea(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldFindEventConditionList(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldTestConditionList(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

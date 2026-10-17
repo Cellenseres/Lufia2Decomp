@@ -142,6 +142,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:CBAE` | `Lufia2FieldEventTimerTickWithServices` | verified | `src/field/field_event_script.c` |
 | `$80:CC26` | `Lufia2FieldRequestTilemapUploads` | verified | `src/field/field_redraw_flags.c` |
 | `$80:CC35` | `Lufia2FieldDispatchEventOpcode` | verified | `src/field/field_event_script.c` |
+| `$80:CD88` | `Lufia2FieldFindObjectInArea` | verified | `src/field/field_event_conditions.c` |
+| `$80:CD8B` | `Lufia2FieldFindObjectInBox` | verified | `src/field/field_event_conditions.c` |
 | `$80:CE5C` | `Lufia2FieldReadObjectRegionDestination` | verified | `src/field/field_event_object_region.c` |
 | `$80:CE7E` | `Lufia2FieldReadObjectRegionArea` | verified | `src/field/field_event_object_region.c` |
 | `$80:D077` | `Lufia2FieldReadObjectRegionPosition` | verified | `src/field/field_event_object_region.c` |
@@ -158,7 +160,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:D583` | `Lufia2FieldRandomAreaCoordinate` | verified | `src/field/field_area_spawn.c` |
 | `$80:D9F0` | `Lufia2FieldReadEventVariableOperands` | verified | `src/field/field_event_coordinate.c` |
 | `$80:DCDA` | `Lufia2FieldPushPendingObject` | verified | `src/field/field_event_objects.c` |
+| `$80:E132` | `Lufia2FieldTestLeaderPosition` | verified | `src/field/field_event_conditions.c` |
+| `$80:E15A` | `Lufia2FieldTestLeaderArea` | verified | `src/field/field_event_conditions.c` |
+| `$80:E458` | `Lufia2FieldFindCellBitsInArea` | verified | `src/field/field_event_conditions.c` |
+| `$80:E4C5` | `Lufia2FieldStoreConditionResult` | verified | `src/field/field_event_conditions.c` |
+| `$80:E55B` | `Lufia2FieldNegateConditionResult` | verified | `src/field/field_event_conditions.c` |
+| `$80:E566` | `Lufia2FieldTestConditionList` | verified | `src/field/field_event_conditions.c` |
 | `$80:E722` | `Lufia2FieldStartEvent` | verified | `src/field/field_event_script.c` |
+| `$80:E78D` | `Lufia2FieldFindEventConditionList` | verified | `src/field/field_event_conditions.c` |
 | `$80:E7DF` | `Lufia2FieldStartPositionEvent` | verified | `src/field/field_event_triggers.c` |
 | `$80:E7FA` | `Lufia2FieldStartEventAtProbe` | verified | `src/field/field_event_triggers.c` |
 | `$80:E817` | `Lufia2FieldStartFacingPointEvent` | verified | `src/field/field_leader_interaction.c` |
