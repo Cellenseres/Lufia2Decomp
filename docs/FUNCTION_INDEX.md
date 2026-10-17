@@ -812,6 +812,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:9000` | `Lufia2FieldPixelCellCeiling` | verified | `src/field/field_scroll.c` |
 | `$83:9004` | `Lufia2FieldPixelCellFloor` | verified | `src/field/field_scroll.c` |
 | `$83:900C` | `Lufia2FieldWaitForNextFrame` | verified | `src/system/frame_wait.c` |
+| `$83:99C8` | `Lufia2CaveResolveTilePosition` | verified | `src/cave/cave_objects.c` |
+| `$83:99D3` | `Lufia2CaveProbeObjectPlacement` | verified | `src/cave/cave_objects.c` |
+| `$83:9A1C` | `Lufia2CavePlaceRandomObject` | verified | `src/cave/cave_objects.c` |
+| `$83:9A6B` | `Lufia2CaveProbeNearbyChest` | verified | `src/cave/cave_objects.c` |
+| `$83:9A9F` | `Lufia2CaveProbeChestAtPosition` | verified | `src/cave/cave_objects.c` |
+| `$83:9ABC` | `Lufia2CaveTryPlaceRoomChest` | verified | `src/cave/cave_objects.c` |
 | `$83:9B18` | `Lufia2CaveClearVisitedCells` | verified | `src/cave/cave_grid.c` |
 | `$83:9B27` | `Lufia2CaveCountOccupiedCells` | verified | `src/cave/cave_grid.c` |
 | `$83:9B3C` | `Lufia2CaveOffsetStairPosition` | verified | `src/cave/cave_grid.c` |
@@ -828,6 +834,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:9D39` | `Lufia2CaveAppendRoomLink` | verified | `src/cave/cave_grid.c` |
 | `$83:9D46` | `Lufia2CaveReplaceUpperTileIndex` | verified | `src/cave/cave_grid.c` |
 | `$83:9D68` | `Lufia2CaveResolveWordTileOffset` | verified | `src/cave/cave_grid.c` |
+| `$83:9DE4` | `Lufia2CaveDrawRandomMean` | verified | `src/cave/cave_random.c` |
+| `$83:9E11` | `Lufia2CaveDrawRandomIndex` | verified | `src/cave/cave_random.c` |
+| `$83:9E1B` | `Lufia2CaveDrawRandomBelow` | verified | `src/cave/cave_random.c` |
 | `$83:9E31` | `Lufia2AncientCaveGenerateFloor` | verified | `src/cave/ancient_cave.c` |
 | `$83:9FA9` | `Lufia2FieldNmiUploads` | verified | `src/field/field_nmi.c` |
 | `$83:A21A` | `Lufia2FieldActorSprites` | verified | `src/field/field_sprites.c` |

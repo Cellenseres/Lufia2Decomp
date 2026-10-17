@@ -77,6 +77,22 @@ Lufia2ExecutionResult Lufia2CaveAppendRoomLink(const Lufia2Memory *, Lufia2CpuSt
 Lufia2ExecutionResult Lufia2CaveReplaceUpperTileIndex(const Lufia2Memory *,
                                                       Lufia2CpuState *);
 
+Lufia2ExecutionResult Lufia2CaveResolveTilePosition(const Lufia2Memory *,
+                                                    Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveProbeObjectPlacement(const Lufia2Memory *,
+                                                     Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CavePlaceRandomObject(const Lufia2Memory *,
+                                                  Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveProbeNearbyChest(const Lufia2Memory *,
+                                                 Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveProbeChestAtPosition(const Lufia2Memory *,
+                                                     Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveTryPlaceRoomChest(const Lufia2Memory *,
+                                                  Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveDrawRandomBelow(const Lufia2Memory *, Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveDrawRandomIndex(const Lufia2Memory *, Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveDrawRandomMean(const Lufia2Memory *, Lufia2CpuState *);
+
 #ifdef __cplusplus
 }
 #endif

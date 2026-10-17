@@ -3,29 +3,31 @@
 #include "cave/cave_internal.h"
 #include "system/dp_scratch.h"
 
-/* $83:99C8: $91 = A, $8F = B, Y = tile offset; returns M0. */
+/* $83:99C8: Resolve a packed tile position. */
+static uint32_t Lufia2CaveTileAtBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW)); /* 99C8 */
+    ExchangeAccumulatorBytes(cpu);
+    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
+    Lufia2CaveTileOffsetY(memory, cpu, 0x99cdu);
+    OpRepWidths(cpu, 0x20u);
+    return 0x8399d2u; /* 99D2 */
+}
+
 void Lufia2CaveTileAt(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t site) {
     SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
-    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_ROW));                  /* 99C8 */
-    ExchangeAccumulatorBytes(cpu);
-    OpSta(memory, cpu, OpDp(cpu, CAVE_DP_TILE_COLUMN));
-    Lufia2CaveTileOffsetY(memory, cpu, 0x99cdu);
-    OpRepWidths(cpu, 0x20u);
-    SimulateRtsFrame(memory, cpu);                             /* 99D2 */
+    (void)Lufia2CaveTileAtBody(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:99D3: carry when $8F,$91 is taken; X kept. */
-void Lufia2CaveNearStartOrPlaced(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t site) {
+/* $83:99D3: Probe the start area and placed objects. */
+static uint32_t Lufia2CaveNearStartOrPlacedBody(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu) {
     uint8_t found = 0;
 
-    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
-    OpPushX(memory, cpu);                                    /* 99D3 */
+    OpPushX(memory, cpu); /* 99D3 */
     OpLda(memory, cpu, OpAbs(cpu, CAVE_START_COLUMN));
     OpDecA(cpu);
     OpDecA(cpu);
@@ -79,15 +81,19 @@ void Lufia2CaveNearStartOrPlaced(
     }
     cpu->carry = found;                                        /* 99F3/9A19 */
     OpPullX(memory, cpu);
-    SimulateRtsFrame(memory, cpu);                             /* 9A1B */
+    return 0x839a1bu; /* 9A1B */
 }
 
-/* $83:9A1C: add a random object at $8F,$91; X kept. */
-void Lufia2CaveAddObject(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t site) {
+void Lufia2CaveNearStartOrPlaced(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t site) {
     SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
+    (void)Lufia2CaveNearStartOrPlacedBody(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+}
+
+/* $83:9A1C: Place a random object when capacity allows. */
+static uint32_t Lufia2CaveAddObjectBody(const Lufia2Memory *memory,
+                                        Lufia2CpuState *cpu) {
     OpPushX(memory, cpu);                                    /* 9A1C */
     OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, CAVE_OBJECT_COUNT)));
     OpCpx(cpu, 0x0014u);
@@ -125,6 +131,13 @@ void Lufia2CaveAddObject(
         OpWriteX(memory, cpu, OpAbs(cpu, CAVE_OBJECT_COUNT), cpu->y);
     }
     OpPullX(memory, cpu);                                    /* 9A69 */
+    return 0x839a6au;
+}
+
+void Lufia2CaveAddObject(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                         uint16_t site) {
+    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
+    (void)Lufia2CaveAddObjectBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -159,7 +172,7 @@ static void CaveNearChestBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Lufia2CaveChestAt(memory, cpu, 0x9a9bu);
 }
 
-/* $83:9A6B: carry when a chest is near $8F,$91. */
+/* $83:9A6B: Probe neighbouring chest positions. */
 void Lufia2CaveNearChest(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                          uint16_t site) {
     SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
@@ -167,12 +180,8 @@ void Lufia2CaveNearChest(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     SimulateRtsFrame(memory, cpu);                             /* 9A9E */
 }
 
-/* $83:9A9F: carry set when a chest is at $54,$55. */
-void Lufia2CaveChestAt(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t site) {
-    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
+/* $83:9A9F: Probe the chest list at a position. */
+static uint32_t Lufia2CaveChestAtBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, 0x0000u);                                     /* 9A9F */
     for (;;) {
         OpCompareIndex(cpu, cpu->x,                          /* 9AA2 */
@@ -193,6 +202,12 @@ void Lufia2CaveChestAt(
         }
         OpInx(cpu);                                          /* 9AB7 */
     }
+    return cpu->carry ? 0x839ab6u : 0x839abbu;
+}
+
+void Lufia2CaveChestAt(const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t site) {
+    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
+    (void)Lufia2CaveChestAtBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -247,10 +262,62 @@ static void CaveAddChestBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     cpu->carry = 0;                                            /* 9B16 */
 }
 
-/* $83:9ABC: try one chest in room A; carry = rejected. */
+/* $83:9ABC: Try placing a chest in this room. */
 void Lufia2CaveAddChest(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                         uint16_t site) {
     SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
     CaveAddChestBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);                             /* 9B17 */
+}
+
+static uint8_t CavePlacementEntryContext(const Lufia2CpuState *cpu, unsigned work_bank,
+                                         unsigned allow_byte_index) {
+    return cpu->program_bank == 0x83u && !cpu->direct_page && !cpu->decimal &&
+           cpu->accumulator_is_8_bit && (allow_byte_index || !cpu->index_is_8_bit) &&
+           (!work_bank || cpu->data_bank == 0x7fu) && cpu->stack >= 0x1f00u &&
+           cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2CaveResolveTilePosition(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (!CavePlacementEntryContext(cpu, 0u, 1u))
+        return ExecutionHandoff(cpu, 0x8399c8u);
+    return ExecutionReturned(Lufia2CaveTileAtBody(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2CaveProbeObjectPlacement(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu) {
+    if (!CavePlacementEntryContext(cpu, 1u, 0u))
+        return ExecutionHandoff(cpu, 0x8399d3u);
+    return ExecutionReturned(Lufia2CaveNearStartOrPlacedBody(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2CavePlaceRandomObject(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (!CavePlacementEntryContext(cpu, 1u, 0u))
+        return ExecutionHandoff(cpu, 0x839a1cu);
+    return ExecutionReturned(Lufia2CaveAddObjectBody(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2CaveProbeNearbyChest(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    if (!CavePlacementEntryContext(cpu, 1u, 0u))
+        return ExecutionHandoff(cpu, 0x839a6bu);
+    CaveNearChestBody(memory, cpu);
+    return ExecutionReturned(0x839a9eu);
+}
+
+Lufia2ExecutionResult Lufia2CaveProbeChestAtPosition(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu) {
+    if (!CavePlacementEntryContext(cpu, 1u, 0u))
+        return ExecutionHandoff(cpu, 0x839a9fu);
+    return ExecutionReturned(Lufia2CaveChestAtBody(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2CaveTryPlaceRoomChest(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (!CavePlacementEntryContext(cpu, 1u, 0u))
+        return ExecutionHandoff(cpu, 0x839abcu);
+    CaveAddChestBody(memory, cpu);
+    return ExecutionReturned(0x839b17u);
 }
