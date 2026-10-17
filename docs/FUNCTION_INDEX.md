@@ -1328,6 +1328,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:817A` | `Lufia2SelectScreenLoadMaps` | verified | `src/menu/menu_graphics_setup.c` |
 | `$86:81A9` | `Lufia2SelectScreenNmi` | verified | `src/menu/menu.c` |
 | `$86:81D0` | `Lufia2SelectScreenControl` | verified | `src/menu/menu_select_control.c` |
+| `$86:81FB` | `Lufia2SelectScreenPlaySequence` | verified | `src/menu/menu_select_control.c` |
+| `$86:8298` | `Lufia2SelectScreenPlayAlternateSequence` | verified | `src/menu/menu_select_control.c` |
 | `$86:82C8` | `Lufia2SelectScreenWaitForObjects` | verified | `src/menu/menu_select_transitions.c` |
 | `$86:8305` | `Lufia2SelectScreenFadeIn` | verified | `src/menu/menu_select_transitions.c` |
 | `$86:830F` | `Lufia2SelectScreenFadeOut` | verified | `src/menu/menu_select_transitions.c` |

@@ -844,6 +844,14 @@ Lufia2ExecutionResult Lufia2SelectScreenWaitForObjects(const Lufia2Memory *memor
                                                        Lufia2PushedChildCall child,
                                                        void *context);
 
+Lufia2ExecutionResult Lufia2SelectScreenPlaySequence(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu,
+                                                     Lufia2PushedChildCall child,
+                                                     void *context);
+Lufia2ExecutionResult
+Lufia2SelectScreenPlayAlternateSequence(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                        Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

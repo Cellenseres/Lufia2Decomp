@@ -13419,3 +13419,19 @@ source = "src/menu/menu_select_transitions.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:81FB"
+name = "Lufia2SelectScreenPlaySequence"
+source = "src/menu/menu_select_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:8298"
+name = "Lufia2SelectScreenPlayAlternateSequence"
+source = "src/menu/menu_select_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

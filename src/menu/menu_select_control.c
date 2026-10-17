@@ -189,3 +189,129 @@ Lufia2ExecutionResult Lufia2SelectScreenControl(const Lufia2Memory *memory,
     cpu->carry = result_flag;
     return ExecutionReturned(result_flag ? 0x8681fau : 0x8681f7u);
 }
+
+typedef enum SelectSequenceAction {
+    SELECT_SEQUENCE_WAIT,
+    SELECT_SEQUENCE_OBJECT,
+    SELECT_SEQUENCE_DRAIN
+} SelectSequenceAction;
+
+typedef struct SelectSequenceStep {
+    SelectSequenceAction action;
+    uint32_t site;
+    uint16_t object, script;
+    uint8_t style;
+} SelectSequenceStep;
+
+static uint8_t SelectSequenceSteps(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                   Lufia2PushedChildCall child, void *context,
+                                   const SelectSequenceStep *steps, unsigned count,
+                                   uint8_t *interrupted,
+                                   Lufia2ExecutionResult *unwound) {
+    for (unsigned step = 0u; step < count; ++step) {
+        const SelectSequenceStep *current = &steps[step];
+        uint32_t target;
+        if (current->action == SELECT_SEQUENCE_WAIT) {
+            OpLdx(cpu, current->object);
+            target = 0x868339u;
+        } else if (current->action == SELECT_SEQUENCE_OBJECT) {
+            OpLoadA(cpu, current->style);
+            OpLdx(cpu, current->object);
+            OpLdy(cpu, current->script);
+            target = 0x86835bu;
+        } else {
+            target = 0x8682c8u;
+        }
+        if (!SelectControlCall(memory, cpu, child, context, current->site, target)) {
+            *unwound = SelectControlUnwound(current->site);
+            return 0u;
+        }
+        if (current->action != SELECT_SEQUENCE_OBJECT && cpu->carry) {
+            *interrupted = 1u;
+            return 1u;
+        }
+    }
+    *interrupted = 0u;
+    return 1u;
+}
+
+static uint8_t SelectSequenceCleanup(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                     Lufia2PushedChildCall child, void *context,
+                                     const uint32_t sites[3],
+                                     Lufia2ExecutionResult *unwound) {
+    static const uint32_t targets[] = {0x8096ccu, 0x809692u, 0x86830fu};
+    OpLoadA(cpu, 0x80u);
+    for (unsigned call = 0u; call < 3u; ++call) {
+        if (!CallChildWithFrame(memory, cpu, child, context, sites[call], targets[call],
+                                call < 2u ? 3u : 2u, 0x86u)) {
+            *unwound = SelectControlUnwound(sites[call]);
+            return 0u;
+        }
+    }
+    return 1u;
+}
+
+Lufia2ExecutionResult Lufia2SelectScreenPlaySequence(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu,
+                                                     Lufia2PushedChildCall child,
+                                                     void *context) {
+    static const SelectSequenceStep steps[] = {
+        {SELECT_SEQUENCE_WAIT, 0x8681feu, 0x0030u, 0u, 0u},
+        {SELECT_SEQUENCE_OBJECT, 0x86820eu, 0x0000u, 0u, 0u},
+        {SELECT_SEQUENCE_DRAIN, 0x868211u, 0u, 0u, 0u},
+        {SELECT_SEQUENCE_OBJECT, 0x86821eu, 0x0013u, 2u, 0u},
+        {SELECT_SEQUENCE_DRAIN, 0x868221u, 0u, 0u, 0u},
+        {SELECT_SEQUENCE_OBJECT, 0x86822eu, 0x0026u, 4u, 0u},
+        {SELECT_SEQUENCE_DRAIN, 0x868231u, 0u, 0u, 0u},
+        {SELECT_SEQUENCE_WAIT, 0x868239u, 0x0210u, 0u, 0u},
+        {SELECT_SEQUENCE_OBJECT, 0x868246u, 0x0039u, 0u, 0u},
+        {SELECT_SEQUENCE_OBJECT, 0x868251u, 0x004cu, 2u, 2u},
+        {SELECT_SEQUENCE_OBJECT, 0x86825cu, 0x005fu, 4u, 4u},
+        {SELECT_SEQUENCE_DRAIN, 0x86825fu, 0u, 0u, 0u},
+        {SELECT_SEQUENCE_WAIT, 0x868267u, 0x00d8u, 0u, 0u},
+        {SELECT_SEQUENCE_OBJECT, 0x868274u, 0x0072u, 6u, 0u},
+        {SELECT_SEQUENCE_DRAIN, 0x868277u, 0u, 0u, 0u},
+        {SELECT_SEQUENCE_WAIT, 0x86827fu, 0x0070u, 0u, 0u}};
+    static const uint32_t cleanup_sites[] = {0x86828bu, 0x86828fu, 0x868293u};
+    if (!child || cpu->data_bank != 0x7eu || !SelectControlContext(cpu, 0u))
+        return ExecutionHandoff(cpu, 0x8681fbu);
+    Lufia2ExecutionResult unwound;
+    uint8_t interrupted;
+    if (!SelectSequenceSteps(memory, cpu, child, context, steps,
+                             sizeof steps / sizeof steps[0], &interrupted, &unwound))
+        return unwound;
+    if (interrupted) {
+        if (!SelectSequenceCleanup(memory, cpu, child, context, cleanup_sites,
+                                   &unwound))
+            return unwound;
+        cpu->carry = 1u;
+        return ExecutionReturned(0x868297u);
+    }
+    if (!SelectControlCall(memory, cpu, child, context, 0x868284u, 0x86830fu))
+        return SelectControlUnwound(0x868284u);
+    cpu->carry = 0u;
+    return ExecutionReturned(0x868288u);
+}
+
+Lufia2ExecutionResult
+Lufia2SelectScreenPlayAlternateSequence(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                        Lufia2PushedChildCall child, void *context) {
+    static const SelectSequenceStep steps[] = {
+        {SELECT_SEQUENCE_WAIT, 0x86829bu, 0x0040u, 0u, 0u},
+        {SELECT_SEQUENCE_OBJECT, 0x8682a8u, 0x0085u, 6u, 0u},
+        {SELECT_SEQUENCE_DRAIN, 0x8682abu, 0u, 0u, 0u},
+        {SELECT_SEQUENCE_WAIT, 0x8682b3u, 0x0064u, 0u, 0u}};
+    static const uint32_t cleanup_sites[] = {0x8682bbu, 0x8682bfu, 0x8682c3u};
+    if (!child || cpu->data_bank != 0x7eu || !SelectControlContext(cpu, 0u))
+        return ExecutionHandoff(cpu, 0x868298u);
+    Lufia2ExecutionResult unwound;
+    uint8_t interrupted;
+    if (!SelectSequenceSteps(memory, cpu, child, context, steps,
+                             sizeof steps / sizeof steps[0], &interrupted, &unwound))
+        return unwound;
+    Push8(memory, cpu, PackStatus(cpu));
+    if (!SelectSequenceCleanup(memory, cpu, child, context, cleanup_sites, &unwound))
+        return unwound;
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x8682c7u);
+}
