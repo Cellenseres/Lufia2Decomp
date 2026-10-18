@@ -585,6 +585,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:8230` | `Lufia2MenuDrawWindowSideEdge` | verified | `src/menu/menu_window.c` |
 | `$82:8259` | `Lufia2MenuDrawWindowThreeRowCorner` | verified | `src/menu/menu_window.c` |
 | `$82:8345` | `Lufia2MenuSaveTileLayers` | verified | `src/menu/menu_layer_backup.c` |
+| `$82:836A` | `Lufia2MenuRestoreTileLayers` | verified | `src/menu/menu_layer_backup.c` |
 | `$82:838F` | `Lufia2MenuClearLayers` | verified | `src/menu/menu_tilemap.c` |
 | `$82:83EB` | `Lufia2MenuClearTileRectangle` | verified | `src/menu/menu_tile_clear.c` |
 | `$82:8704` | `Lufia2MenuPresentMainDisplay` | verified | `src/menu/menu_display_callers.c` |
@@ -627,6 +628,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:93CF` | `Lufia2MenuPlacePartyPortraits` | verified | `src/menu/menu_display_callers.c` |
 | `$82:93F6` | `Lufia2MenuPrepareDisplayText` | verified | `src/menu/menu_presentation_callers.c` |
 | `$82:942F` | `Lufia2MenuSubtractExperienceTotals` | verified | `src/menu/menu_selection_helpers.c` |
+| `$82:9449` | `Lufia2MenuCollectWarpDestinations` | verified | `src/menu/menu_warp_selection.c` |
 | `$82:94C0` | `Lufia2MenuDrawCharacterSummary` | verified | `src/menu/menu_field_dispatch.c` |
 | `$82:950E` | `Lufia2MenuMemberStatus` | verified | `src/menu/menu_screen.c` |
 | `$82:9588` | `Lufia2MenuResetEffectSprites` | verified | `src/menu/menu_effect_presentation.c` |
@@ -686,7 +688,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:ADB4` | `Lufia2MenuAnimateListDown` | verified | `src/menu/menu_list_motion.c` |
 | `$82:AE53` | `Lufia2MenuMoveListMarkerUp` | verified | `src/menu/menu_list_motion.c` |
 | `$82:AE64` | `Lufia2MenuAddEffectTarget` | verified | `src/menu/menu_effect_presentation.c` |
+| `$82:AE6F` | `Lufia2MenuHandleSpecialItemEffect` | verified | `src/menu/menu_special_effects.c` |
+| `$82:AEF3` | `Lufia2MenuConfirmSpecialItemUse` | verified | `src/menu/menu_special_effects.c` |
+| `$82:AF00` | `Lufia2MenuHandleSpecialSpellEffect` | verified | `src/menu/menu_special_effects.c` |
+| `$82:AF78` | `Lufia2MenuConfirmSpecialSpellUse` | verified | `src/menu/menu_special_effects.c` |
+| `$82:AF8E` | `Lufia2MenuSelectWarpDestination` | verified | `src/menu/menu_warp_selection.c` |
+| `$82:B03F` | `Lufia2MenuRestoreWarpScroll` | verified | `src/menu/menu_warp_selection.c` |
 | `$82:B104` | `Lufia2MenuRunItemSelection` | verified | `src/menu/menu_dispatch_callers.c` |
+| `$82:B14B` | `Lufia2MenuDispatchItemAction` | verified | `src/menu/menu_special_effects.c` |
 | `$82:B2C5` | `Lufia2MenuEquipUpgrade` | verified | `src/menu/menu_screen.c` |
 | `$82:B3AD` | `Lufia2MenuSortSpells` | verified | `src/menu/menu_list_sort.c` |
 | `$82:B42D` | `Lufia2MenuSwapSpellSelection` | verified | `src/menu/menu_list_actions.c` |

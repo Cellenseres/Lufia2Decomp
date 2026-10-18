@@ -14395,3 +14395,75 @@ source = "src/field/group_object_conditions.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "82:AE6F"
+name = "Lufia2MenuHandleSpecialItemEffect"
+source = "src/menu/menu_special_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:AF00"
+name = "Lufia2MenuHandleSpecialSpellEffect"
+source = "src/menu/menu_special_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:AF8E"
+name = "Lufia2MenuSelectWarpDestination"
+source = "src/menu/menu_warp_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:AEF3"
+name = "Lufia2MenuConfirmSpecialItemUse"
+source = "src/menu/menu_special_effects.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "82:AF78"
+name = "Lufia2MenuConfirmSpecialSpellUse"
+source = "src/menu/menu_special_effects.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "82:B14B"
+name = "Lufia2MenuDispatchItemAction"
+source = "src/menu/menu_special_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9449"
+name = "Lufia2MenuCollectWarpDestinations"
+source = "src/menu/menu_warp_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B03F"
+name = "Lufia2MenuRestoreWarpScroll"
+source = "src/menu/menu_warp_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:836A"
+name = "Lufia2MenuRestoreTileLayers"
+source = "src/menu/menu_layer_backup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

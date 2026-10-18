@@ -110,6 +110,8 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_selection_helpers.c
     src/menu/menu_glyph_buffer.c
     src/menu/menu_layer_backup.c
+    src/menu/menu_special_effects.c
+    src/menu/menu_warp_selection.c
     src/field/group_object_conditions.c
     src/item/inventory_actions.c
     src/menu/menu_list_sort.c
