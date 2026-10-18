@@ -131,14 +131,18 @@ Lufia2ExecutionResult Lufia2FieldTextWindowTimer(const Lufia2Memory *memory,
 }
 
 static Lufia2ExecutionResult FinishFieldTextTick(const Lufia2Memory *memory,
-                                                 Lufia2CpuState *cpu) {
+                                                 Lufia2CpuState *cpu,
+                                                 Lufia2PushedChildCall child,
+                                                 void *context) {
     Lufia2ExecutionResult result = ExecutionReturned(0x809cb7u);
     OpLda(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
     OpAndValue(cpu, 0x0au);
     if (!cpu->zero)
-        return Lufia2TextPromptTick(memory, cpu, result);
+        return Lufia2TextPromptTickWithServices(memory, cpu, result, child, context);
     OpLda(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
-    return cpu->negative ? Lufia2TextEngineStepBody(memory, cpu, result) : result;
+    return cpu->negative ? Lufia2TextEngineStepBodyWithServices(memory, cpu, result,
+                                                                child, context)
+                         : result;
 }
 
 Lufia2ExecutionResult Lufia2FieldEventTickWithServices(const Lufia2Memory *memory,
@@ -155,7 +159,7 @@ Lufia2ExecutionResult Lufia2FieldEventTickWithServices(const Lufia2Memory *memor
         !FieldRequestChild(memory, cpu, child, context, 0x809c76u, 0x80c21au, 2u,
                            index_width, &result))
         return result;
-    return FinishFieldTextTick(memory, cpu);
+    return FinishFieldTextTick(memory, cpu, child, context);
 }
 
 /* $83:80CD: field idle test; zero = no event running. */
@@ -224,7 +228,7 @@ Lufia2ExecutionResult Lufia2FieldEventTick(const Lufia2Memory *memory,
     SimulateJsrFrame(memory, cpu, 0x9c78u);
     (void)TickTextWindowCountdown(memory, cpu, NULL, NULL);
     SimulateRtsFrame(memory, cpu);
-    return FinishFieldTextTick(memory, cpu);
+    return FinishFieldTextTick(memory, cpu, NULL, NULL);
 }
 
 

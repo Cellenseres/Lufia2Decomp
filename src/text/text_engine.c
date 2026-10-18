@@ -2444,6 +2444,14 @@ static Lufia2ExecutionResult TextEngineRun(
     return TextEngineExit(memory, cpu, result);
 }
 
+Lufia2ExecutionResult Lufia2TextEngineStepBodyWithServices(const Lufia2Memory *memory,
+                                                           Lufia2CpuState *cpu,
+                                                           Lufia2ExecutionResult result,
+                                                           Lufia2PushedChildCall child,
+                                                           void *context) {
+    return TextEngineRun(memory, cpu, result, child, context);
+}
+
 Lufia2ExecutionResult Lufia2TextEngineStepBody(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2ExecutionResult result) {
@@ -2470,11 +2478,12 @@ void Lufia2TextReleaseActors(
 }
 
 /* $80:9C80: text box waits for its timer or the A/X buttons. */
-Lufia2ExecutionResult Lufia2TextPromptTick(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    Lufia2ExecutionResult result) {
-    LoadAAbsolute8(memory, cpu, TEXT_PROMPT_TIMER, 0);         /* 9C80 */
+Lufia2ExecutionResult Lufia2TextPromptTickWithServices(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu,
+                                                       Lufia2ExecutionResult result,
+                                                       Lufia2PushedChildCall child,
+                                                       void *context) {
+    LoadAAbsolute8(memory, cpu, TEXT_PROMPT_TIMER, 0); /* 9C80 */
     if (!cpu->zero) {
         const uint32_t timer = AbsoluteIndexedAddress(cpu, TEXT_PROMPT_ELAPSED, 0);
         const uint8_t count = (uint8_t)(Read8(memory, timer) + 1u);
@@ -2489,7 +2498,7 @@ Lufia2ExecutionResult Lufia2TextPromptTick(
                                JOYPAD_LOW_BYTE))
             return result;
     }
-    LoadA8(cpu, 0x08u);                                        /* 9C96 */
+    LoadA8(cpu, 0x08u); /* 9C96 */
     TestBitsAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
     if (!cpu->zero) {
         StoreZeroAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
@@ -2497,10 +2506,16 @@ Lufia2ExecutionResult Lufia2TextPromptTick(
         Lufia2TextReleaseActors(memory, cpu, 0x9ca5u);
         return result;
     }
-    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);           /* 9CA8 */
+    LoadAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0); /* 9CA8 */
     And8(cpu, 0xfdu);
     StoreAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
-    return Lufia2TextEngineStepBody(memory, cpu, result);
+    return Lufia2TextEngineStepBodyWithServices(memory, cpu, result, child, context);
+}
+
+Lufia2ExecutionResult Lufia2TextPromptTick(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu,
+                                           Lufia2ExecutionResult result) {
+    return Lufia2TextPromptTickWithServices(memory, cpu, result, NULL, NULL);
 }
 
 /* $80:9CB8: text engine step, JSL entry. */

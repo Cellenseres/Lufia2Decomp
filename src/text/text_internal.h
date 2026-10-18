@@ -175,4 +175,12 @@ Lufia2ExecutionResult Lufia2TextPromptTick(
     Lufia2CpuState *cpu,
     Lufia2ExecutionResult result);
 
+Lufia2ExecutionResult Lufia2TextEngineStepBodyWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionResult result, Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2TextPromptTickWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionResult result, Lufia2PushedChildCall child, void *context);
+
 #endif
