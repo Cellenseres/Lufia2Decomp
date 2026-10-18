@@ -123,6 +123,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_outcome.c
     src/battle/battle_action_prepare.c
     src/battle/battle_action_support.c
+    src/battle/battle_target_action.c
     src/battle/battle_followup.c
     src/battle/battle_actions.c
     src/battle/battle_status_tick.c

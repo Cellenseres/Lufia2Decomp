@@ -2812,7 +2812,7 @@ name = "battle_action_work"
 width = 1
 count = 136
 owner = "battle"
-notes = "Original action work; saved and restored as 136 bytes. Offset 0A holds the one-based status message ID; zero skips the table."
+notes = "Original action work; saved and restored as136bytes. Offset0A is the one-based status message ID.85D0CD consumes source/target, flags, signed HP/MP changes, variance, status chances and defense here; all accesses remain live."
 
 [[location]]
 address = "7F:FAB6"
@@ -5959,3 +5959,35 @@ width = 1
 count = 1
 owner = "battle"
 notes = "85CE6F passes the target count to85D0CD; the dispatcher reuses this byte for its action outcome."
+
+[[location]]
+address = "7E:0A2E"
+name = "battle_applied_hp_change"
+width = 2
+count = 1
+owner = "battle"
+notes = "85D0CD records the requested scaled HP change before clamping the actor value."
+
+[[location]]
+address = "7E:0A30"
+name = "battle_applied_mp_change"
+width = 2
+count = 1
+owner = "battle"
+notes = "85D0CD records the requested scaled MP change before clamping the actor value."
+
+[[location]]
+address = "7E:0A35"
+name = "battle_added_status"
+width = 1
+count = 1
+owner = "battle"
+notes = "85D0CD records newly added status bits; lethal HP loss also sets bit04."
+
+[[location]]
+address = "7E:0A36"
+name = "battle_removed_status"
+width = 1
+count = 1
+owner = "battle"
+notes = "85D0CD records removed status bits before writing the actor status."

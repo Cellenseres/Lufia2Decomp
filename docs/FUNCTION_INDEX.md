@@ -1302,6 +1302,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:CFAB` | `Lufia2BattleAccumulateActionAdjustment` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:D025` | `Lufia2BattleCalculateActionBias` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:D080` | `Lufia2BattleReadActorBiasFlag` | verified | `src/battle/battle_action_prepare.c` |
+| `$85:D0CD` | `Lufia2BattleApplyTargetAction` | verified | `src/battle/battle_target_action.c` |
 | `$85:D94F` | `Lufia2BattleStoreActionResult` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
 | `$85:D9F0` | `Lufia2BattleInvalidateTurnQueueActor` | verified | `src/battle/battle_action_prepare.c` |
