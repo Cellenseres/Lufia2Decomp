@@ -601,6 +601,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:8CC1` | `Lufia2MenuInitializeScrollStep` | verified | `src/menu/menu_list_scroll.c` |
 | `$82:8CE9` | `Lufia2MenuScrollListPage` | verified | `src/menu/menu_list_scroll.c` |
 | `$82:9214` | `Lufia2MenuClearSpriteMask` | verified | `src/menu/menu_cursor_callers.c` |
+| `$82:922D` | `Lufia2MenuClearSecondarySpriteMask` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:9246` | `Lufia2MenuPollSelectionChoice` | verified | `src/menu/menu_context_services.c` |
 | `$82:92F9` | `Lufia2MenuRestoreSelectionCursor` | verified | `src/menu/menu_context_services.c` |
 | `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |

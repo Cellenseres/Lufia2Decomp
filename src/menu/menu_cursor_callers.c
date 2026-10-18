@@ -48,13 +48,8 @@ static Lufia2ExecutionResult CursorUnwound(uint32_t site) {
     return result;
 }
 
-Lufia2ExecutionResult Lufia2MenuClearSpriteMask(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    (void)child;
-    (void)context;
-    if (!CursorCallerReady(cpu))
-        return ExecutionHandoff(cpu, 0x829214u);
+static void ClearMaskedSpriteFlags(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint16_t flags_base) {
     Push8(memory, cpu, PackStatus(cpu));
     OpRepWidths(cpu, 0x30u);
     OpTxa(cpu);
@@ -63,14 +58,35 @@ Lufia2ExecutionResult Lufia2MenuClearSpriteMask(
         OpLsrA(cpu);
         if (cpu->carry) {
             OpSepWidths(cpu, 0x20u);
-            OpStz(memory, cpu, OpAbsX(cpu, MENU_SPRITE_ACTIVE));
+            OpStz(memory, cpu, OpAbsX(cpu, flags_base));
             OpRepWidths(cpu, 0x20u);
         }
         OpInx(cpu);
         OpCpx(cpu, 16u);
     } while (!cpu->zero);
     UnpackStatus(cpu, Pull8(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2MenuClearSpriteMask(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    (void)child;
+    (void)context;
+    if (!CursorCallerReady(cpu))
+        return ExecutionHandoff(cpu, 0x829214u);
+    ClearMaskedSpriteFlags(memory, cpu, MENU_SPRITE_ACTIVE);
     return ExecutionReturned(0x82922cu);
+}
+
+Lufia2ExecutionResult Lufia2MenuClearSecondarySpriteMask(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    (void)child;
+    (void)context;
+    if (!CursorCallerReady(cpu))
+        return ExecutionHandoff(cpu, 0x82922du);
+    ClearMaskedSpriteFlags(memory, cpu, MENU_SPRITE_ACTIVE + 16u);
+    return ExecutionReturned(0x829245u);
 }
 
 Lufia2ExecutionResult Lufia2MenuLoadCursorGrid(
