@@ -99,6 +99,8 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_cursor_callers.c
     src/menu/menu_presentation_callers.c
     src/menu/menu_list_actions.c
+    src/menu/menu_effect_presentation.c
+    src/item/inventory_menu_consume.c
     src/item/inventory_actions.c
     src/menu/menu_list_sort.c
     src/menu/menu_list_controls.c

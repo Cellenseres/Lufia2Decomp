@@ -5736,7 +5736,7 @@ address = "7E:0A38"
 name = "battle_preview_sprite_id"
 width = 1
 owner = "battle"
-notes = "ROM-selected sprite ID retained across preview record initialization."
+notes = "ROM-selected sprite ID retained across preview record initialization. During menu use,82:95FA reads a word at this base plus three times the member index for effect digits."
 
 [[location]]
 address = "7E:11DC"
@@ -6055,3 +6055,27 @@ width = 1
 count = 1
 owner = "menu"
 notes = "82:B564 folds four live target-marker bytes into this byte. Item/spell-use owners clear it before selecting targets and restoreFF on cleanup;effect children consume the live value."
+
+[[location]]
+address = "7E:0A62"
+name = "menu_effect_kind"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:95BF reads this kind byte to select the ROM label animation and copies it to151F."
+
+[[location]]
+address = "7E:151F"
+name = "menu_effect_kind_copy"
+width = 2
+count = 1
+owner = "menu"
+notes = "82:95BF copies the effect kind into the low byte and clears the high byte;95FA chooses digits,blank digits or target removal from it."
+
+[[location]]
+address = "7E:1521"
+name = "menu_effect_label_animation"
+width = 2
+count = 1
+owner = "menu"
+notes = "82:95BF loads the low byte from829794 using the effect kind and clears the high byte;96BE selects it for five label sprites per target."

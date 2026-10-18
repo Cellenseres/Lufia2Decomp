@@ -14091,3 +14091,99 @@ source = "src/item/inventory_actions.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:AE64"
+name = "Lufia2MenuAddEffectTarget"
+source = "src/menu/menu_effect_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9588"
+name = "Lufia2MenuResetEffectSprites"
+source = "src/menu/menu_effect_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9E2F"
+name = "Lufia2MenuUpdateItemCapacityHint"
+source = "src/menu/menu_effect_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F034"
+name = "Lufia2InventoryConsumeMenuItem"
+source = "src/item/inventory_menu_consume.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "82:95BF"
+name = "Lufia2MenuShowUseEffect"
+source = "src/menu/menu_effect_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:95FA"
+name = "Lufia2MenuPositionEffectSprites"
+source = "src/menu/menu_effect_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:970B"
+name = "Lufia2MenuLoadEffectDigitAnimation"
+source = "src/menu/menu_effect_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:975D"
+name = "Lufia2MenuRevealEffectLabel"
+source = "src/menu/menu_effect_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9765"
+name = "Lufia2MenuRevealFirstEffectDigit"
+source = "src/menu/menu_effect_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9770"
+name = "Lufia2MenuRevealSecondEffectDigit"
+source = "src/menu/menu_effect_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:977B"
+name = "Lufia2MenuRevealThirdEffectDigit"
+source = "src/menu/menu_effect_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9786"
+name = "Lufia2MenuRevealEffectSuffix"
+source = "src/menu/menu_effect_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

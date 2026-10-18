@@ -522,6 +522,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:ED35` | `Lufia2PartyResetDefaultRecords` | verified | `src/system/default_records.c` |
 | `$81:ED8E` | `Lufia2PartyUnpackMember` | verified | `src/party/stats.c` |
 | `$81:EE94` | `Lufia2PartyUnpackMemberBare` | verified | `src/party/stats.c` |
+| `$81:F034` | `Lufia2InventoryConsumeMenuItem` | verified | `src/item/inventory_menu_consume.c` |
 | `$81:F057` | `Lufia2InventoryCount` | verified | `src/item/inventory.c` |
 | `$81:F085` | `Lufia2InventoryReceive` | verified | `src/item/inventory_receive.c` |
 | `$81:F0A2` | `Lufia2InventoryAdd` | verified | `src/item/inventory.c` |
@@ -616,6 +617,15 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:93F6` | `Lufia2MenuPrepareDisplayText` | verified | `src/menu/menu_presentation_callers.c` |
 | `$82:94C0` | `Lufia2MenuDrawCharacterSummary` | verified | `src/menu/menu_field_dispatch.c` |
 | `$82:950E` | `Lufia2MenuMemberStatus` | verified | `src/menu/menu_screen.c` |
+| `$82:9588` | `Lufia2MenuResetEffectSprites` | verified | `src/menu/menu_effect_presentation.c` |
+| `$82:95BF` | `Lufia2MenuShowUseEffect` | verified | `src/menu/menu_effect_presentation.c` |
+| `$82:95FA` | `Lufia2MenuPositionEffectSprites` | verified | `src/menu/menu_effect_presentation.c` |
+| `$82:970B` | `Lufia2MenuLoadEffectDigitAnimation` | verified | `src/menu/menu_effect_presentation.c` |
+| `$82:975D` | `Lufia2MenuRevealEffectLabel` | verified | `src/menu/menu_effect_presentation.c` |
+| `$82:9765` | `Lufia2MenuRevealFirstEffectDigit` | verified | `src/menu/menu_effect_presentation.c` |
+| `$82:9770` | `Lufia2MenuRevealSecondEffectDigit` | verified | `src/menu/menu_effect_presentation.c` |
+| `$82:977B` | `Lufia2MenuRevealThirdEffectDigit` | verified | `src/menu/menu_effect_presentation.c` |
+| `$82:9786` | `Lufia2MenuRevealEffectSuffix` | verified | `src/menu/menu_effect_presentation.c` |
 | `$82:97E3` | `Lufia2MenuPlaySelectionFeedback` | verified | `src/menu/menu_price_followup.c` |
 | `$82:9808` | `Lufia2MenuCreditSelectionGold` | verified | `src/menu/menu_context_services.c` |
 | `$82:983D` | `Lufia2MenuSpendSelectionGold` | verified | `src/menu/menu_price_followup.c` |
@@ -633,6 +643,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9C10` | `Lufia2MenuInitializeListScroll` | verified | `src/menu/menu_list_controls.c` |
 | `$82:9C52` | `Lufia2MenuInitializeListCursor` | verified | `src/menu/menu_list_motion.c` |
 | `$82:9CB2` | `Lufia2MenuWarpList` | verified | `src/menu/menu_screen.c` |
+| `$82:9E2F` | `Lufia2MenuUpdateItemCapacityHint` | verified | `src/menu/menu_effect_presentation.c` |
 | `$82:9EF2` | `Lufia2MenuBuildAlternateCursor` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
 | `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
@@ -657,6 +668,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:ADA3` | `Lufia2MenuMoveListMarkerDown` | verified | `src/menu/menu_list_motion.c` |
 | `$82:ADB4` | `Lufia2MenuAnimateListDown` | verified | `src/menu/menu_list_motion.c` |
 | `$82:AE53` | `Lufia2MenuMoveListMarkerUp` | verified | `src/menu/menu_list_motion.c` |
+| `$82:AE64` | `Lufia2MenuAddEffectTarget` | verified | `src/menu/menu_effect_presentation.c` |
 | `$82:B104` | `Lufia2MenuRunItemSelection` | verified | `src/menu/menu_dispatch_callers.c` |
 | `$82:B2C5` | `Lufia2MenuEquipUpgrade` | verified | `src/menu/menu_screen.c` |
 | `$82:B3AD` | `Lufia2MenuSortSpells` | verified | `src/menu/menu_list_sort.c` |
