@@ -146,6 +146,11 @@ Lufia2ExecutionResult Lufia2BattleRestoreWorkArea(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* Restore inventory reservations before revisiting a party command. */
+Lufia2ExecutionResult Lufia2BattleRestoreSelectedItems(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $85:89E5: clear six Battle sprite offset pairs. */
 Lufia2ExecutionResult Lufia2BattleClearSpriteOffsets(
     const Lufia2Memory *memory,

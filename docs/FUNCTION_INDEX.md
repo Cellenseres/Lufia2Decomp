@@ -1198,6 +1198,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9671` | `Lufia2BattleClearMessage` | verified | `src/battle/battle_message_display.c` |
 | `$85:96A2` | `Lufia2BattleSaveWorkArea` | verified | `src/battle/battle_loop_children.c` |
 | `$85:96B0` | `Lufia2BattleRestoreWorkArea` | verified | `src/battle/battle_loop_children.c` |
+| `$85:96BE` | `Lufia2BattleRestoreSelectedItems` | verified | `src/battle/battle_loop_children.c` |
 | `$85:972E` | `Lufia2BattleTileGridEntry` | verified | `src/battle/battle_frame.c` |
 | `$85:9790` | `Lufia2BattleTileRow` | verified | `src/battle/battle_frame_setup.c` |
 | `$85:97D1` | `Lufia2BattlePrepareSpecialPartyGrid` | verified | `src/battle/battle_special_party_grid.c` |

@@ -200,3 +200,64 @@ Lufia2ExecutionResult Lufia2BattleReversePartyOrder(
         return ExecutionHandoff(cpu, 0x850000u | target);
     }
 }
+
+enum {
+    DP_RESELECTED_PARTY_SLOT = 0x54u,
+    RESELECT_ITEM_MASK = 0x01ffu,
+    RESELECT_ITEM_QUANTITY = 0x0200u,
+    RESELECT_ACTION_PARAMETER = 2u
+};
+
+static bool BattleItemReselectionContext(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x85u && cpu->accumulator_is_8_bit &&
+           !cpu->index_is_8_bit && !cpu->direct_page && !cpu->decimal;
+}
+
+Lufia2ExecutionResult Lufia2BattleRestoreSelectedItems(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu,
+                                                       Lufia2PushedChildCall child,
+                                                       void *child_context) {
+    static const uint32_t actions[] = {WRAM_BATTLE_PARTY_COMMAND_BYTE_0_LONG,
+                                       WRAM_BATTLE_PARTY_COMMAND_BYTE_1_LONG,
+                                       WRAM_BATTLE_PARTY_COMMAND_BYTE_2_LONG};
+    static const uint16_t consume_sites[] = {0x96e5u, 0x9706u, 0x9727u};
+    if (!child || !BattleItemReselectionContext(cpu) || cpu->stack < 0x1f00u ||
+        cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x8596beu);
+    BattleContext battle =
+        BattleContextCreate(memory, cpu, child, child_context, 0x85u);
+    OpPushX(memory, cpu);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_RESELECTED_PARTY_SLOT), cpu->x);
+    if (!BattleCall(&battle, 0x96c1u, 0x8596b0u, 3u))
+        return BattleChildUnwound(&battle);
+    if (!BattleItemReselectionContext(cpu))
+        return ExecutionHandoff(cpu, 0x8596c5u);
+    OpLdx(cpu, 0u);
+    OpCpx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_RESELECTED_PARTY_SLOT)));
+    if (!cpu->zero) {
+        for (unsigned member = 0u; member < 3u; ++member) {
+            OpLda(memory, cpu, actions[member]);
+            OpCmpValue(cpu, BATTLE_ACTION_ITEM);
+            if (cpu->zero) {
+                OpRepWidths(cpu, 0x20u);
+                OpLda(memory, cpu, actions[member] + RESELECT_ACTION_PARAMETER);
+                OpAndValue(cpu, RESELECT_ITEM_MASK);
+                OpOraValue(cpu, RESELECT_ITEM_QUANTITY);
+                OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
+                OpSepWidths(cpu, 0x20u);
+                if (!BattleCall(&battle, consume_sites[member], 0x81f15bu, 3u))
+                    return BattleChildUnwound(&battle);
+                if (!BattleItemReselectionContext(cpu))
+                    return ExecutionHandoff(cpu,
+                                            0x850000u | (consume_sites[member] + 4u));
+            }
+            if (member < 2u) {
+                OpStepMem(memory, cpu, OpDp(cpu, DP_RESELECTED_PARTY_SLOT), -1);
+                if (cpu->zero)
+                    break;
+            }
+        }
+    }
+    OpPullX(memory, cpu);
+    return ExecutionReturned(0x85972cu);
+}

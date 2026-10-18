@@ -13771,3 +13771,11 @@ source = "src/field/field_event_actors.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:96BE"
+name = "Lufia2BattleRestoreSelectedItems"
+source = "src/battle/battle_loop_children.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
