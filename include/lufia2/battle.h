@@ -2098,6 +2098,14 @@ Lufia2ExecutionResult Lufia2BattleApplyTargetAction(const Lufia2Memory *memory,
                                                     Lufia2PushedChildCall child,
                                                     void *context);
 
+Lufia2ExecutionResult Lufia2BattleCollectMenuEffectValues(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2BattleReadMenuEffectValue(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

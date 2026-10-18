@@ -522,6 +522,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:ED35` | `Lufia2PartyResetDefaultRecords` | verified | `src/system/default_records.c` |
 | `$81:ED8E` | `Lufia2PartyUnpackMember` | verified | `src/party/stats.c` |
 | `$81:EE94` | `Lufia2PartyUnpackMemberBare` | verified | `src/party/stats.c` |
+| `$81:EF93` | `Lufia2ApplyMenuItem` | verified | `src/item/menu_application.c` |
+| `$81:EFDF` | `Lufia2CheckMenuItemTargets` | verified | `src/item/menu_application.c` |
 | `$81:F034` | `Lufia2InventoryConsumeMenuItem` | verified | `src/item/inventory_menu_consume.c` |
 | `$81:F057` | `Lufia2InventoryCount` | verified | `src/item/inventory.c` |
 | `$81:F085` | `Lufia2InventoryReceive` | verified | `src/item/inventory_receive.c` |
@@ -533,6 +535,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F1C5` | `Lufia2LoadItemRecord` | verified | `src/item/item_records.c` |
 | `$81:F291` | `Lufia2ItemTextPointer` | verified | `src/item/item_records.c` |
 | `$81:F2A9` | `Lufia2ItemNameTrimmed` | verified | `src/item/item_records.c` |
+| `$81:F2E7` | `Lufia2ApplyMenuSpell` | verified | `src/item/menu_application.c` |
+| `$81:F34D` | `Lufia2CheckMenuSpellTargets` | verified | `src/item/menu_application.c` |
+| `$81:F3BC` | `Lufia2ConsumeMenuSpellMp` | verified | `src/item/menu_application.c` |
 | `$81:F3F4` | `Lufia2SpellRecordByteC` | verified | `src/item/item_records.c` |
 | `$81:F404` | `Lufia2SpellRecordByte8` | verified | `src/item/item_records.c` |
 | `$81:F414` | `Lufia2LoadSpellRecord` | verified | `src/item/item_records.c` |
@@ -1353,6 +1358,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:CCCE` | `Lufia2BattleClearActionWork` | verified | `src/battle/battle_action_work.c` |
 | `$85:CCE3` | `Lufia2BattleClearSavedActionWork` | verified | `src/battle/battle_action_work.c` |
 | `$85:CCF8` | `Lufia2BattleClearActionRecords` | verified | `src/battle/battle_action_work.c` |
+| `$85:CD10` | `Lufia2BattleCollectMenuEffectValues` | verified | `src/battle/menu_effect_values.c` |
+| `$85:CD5D` | `Lufia2BattleReadMenuEffectValue` | verified | `src/battle/menu_effect_values.c` |
 | `$85:CD8C` | `Lufia2BattleSaveActionWork` | verified | `src/battle/battle_action_work.c` |
 | `$85:CD9B` | `Lufia2BattleRestoreActionWork` | verified | `src/battle/battle_action_work.c` |
 | `$85:CDAA` | `Lufia2BattleLoadTurnRecord` | verified | `src/battle/battle_action_work.c` |

@@ -6079,3 +6079,19 @@ width = 2
 count = 1
 owner = "menu"
 notes = "82:95BF loads the low byte from829794 using the effect kind and clears the high byte;96BE selects it for five label sprites per target."
+
+[[location]]
+address = "7E:0A0F"
+name = "menu_spell_mp_cost"
+width = 2
+count = 1
+owner = "menu"
+notes = "81F34D writes the spell-record cost byte and clears the high byte before its MP comparison;81F3BC subtracts only the low byte.81F2E7 writes only the low byte."
+
+[[location]]
+address = "7E:0A37"
+name = "menu_member_effect_results"
+width = 1
+count = 1
+owner = "menu"
+notes = "85CD10 writes four three-byte kind/value records for82:95BF and95FA. The value word of member0 is the existing0A38 battle-preview marker;storage is intentionally phase-dependent,not disjoint."

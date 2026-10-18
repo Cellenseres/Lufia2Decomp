@@ -14187,3 +14187,59 @@ source = "src/menu/menu_effect_presentation.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:EF93"
+name = "Lufia2ApplyMenuItem"
+source = "src/item/menu_application.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "81:EFDF"
+name = "Lufia2CheckMenuItemTargets"
+source = "src/item/menu_application.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "81:F2E7"
+name = "Lufia2ApplyMenuSpell"
+source = "src/item/menu_application.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "81:F34D"
+name = "Lufia2CheckMenuSpellTargets"
+source = "src/item/menu_application.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "81:F3BC"
+name = "Lufia2ConsumeMenuSpellMp"
+source = "src/item/menu_application.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "85:CD10"
+name = "Lufia2BattleCollectMenuEffectValues"
+source = "src/battle/menu_effect_values.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:CD5D"
+name = "Lufia2BattleReadMenuEffectValue"
+source = "src/battle/menu_effect_values.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
