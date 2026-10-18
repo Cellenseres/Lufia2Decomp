@@ -5991,3 +5991,27 @@ width = 1
 count = 1
 owner = "battle"
 notes = "85D0CD records removed status bits before writing the actor status."
+
+[[location]]
+address = "7E:1351"
+name = "battle_enemy_auxiliary_flags"
+width = 1
+count = 6
+owner = "battle"
+notes = "Six trailing enemy display bytes;85:E174 reorders them with the other seven arrays."
+
+[[location]]
+address = "7E:14BC"
+name = "battle_enemy_auxiliary_records"
+width = 1
+count = 1
+owner = "battle"
+notes = "Base of six seven-byte enemy records reordered by85:E174 through the live multiplier. Phase-dependent span overlaps separately named menu fields; no disjoint allocation claimed."
+
+[[location]]
+address = "7F:F5A6"
+name = "battle_enemy_action_records"
+width = 1
+count = 72
+owner = "battle"
+notes = "Six twelve-byte enemy action records;85:E174 reorders records and remaps their two target masks."

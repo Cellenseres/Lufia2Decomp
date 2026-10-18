@@ -1345,6 +1345,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:DFB9` | `Lufia2BattleReleaseDefeatedEnemies` | verified | `src/battle/battle_status_cache.c` |
 | `$85:E02D` | `Lufia2BattleFindEnemyGraphicsPlacement` | verified | `src/battle/battle_followup.c` |
 | `$85:E0E4` | `Lufia2BattleCheckEnemyGraphicsCapacity` | verified | `src/battle/battle_followup.c` |
+| `$85:E174` | `Lufia2BattleReorderEnemies` | verified | `src/battle/battle_followup.c` |
+| `$85:E412` | `Lufia2BattleInsertEnemy` | verified | `src/battle/battle_followup.c` |
+| `$85:E4E5` | `Lufia2BattlePrepareEnemyInsertion` | verified | `src/battle/battle_followup.c` |
 | `$85:E7BC` | `Lufia2BattlePlayTransition` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAE4` | `Lufia2BattleAdvanceTransitionFrame` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAEF` | `Lufia2BattleFadeSpecialExit` | verified | `src/battle/battle_exit.c` |

@@ -13779,3 +13779,27 @@ source = "src/battle/battle_loop_children.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:E174"
+name = "Lufia2BattleReorderEnemies"
+source = "src/battle/battle_followup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:E412"
+name = "Lufia2BattleInsertEnemy"
+source = "src/battle/battle_followup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:E4E5"
+name = "Lufia2BattlePrepareEnemyInsertion"
+source = "src/battle/battle_followup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
