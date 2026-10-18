@@ -13867,3 +13867,59 @@ source = "src/menu/menu_input_waits.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:F2CE"
+name = "Lufia2SaveDrawSlotPreviews"
+source = "src/menu/save_menu_portraits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F2FE"
+name = "Lufia2SaveDrawSlotPreview"
+source = "src/menu/save_menu_portraits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F383"
+name = "Lufia2SaveInitializePortraitTables"
+source = "src/menu/save_menu_portraits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F395"
+name = "Lufia2SavePlaceSlotPortraits"
+source = "src/menu/save_menu_portraits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F3DD"
+name = "Lufia2SaveUnhighlightPortraits"
+source = "src/menu/save_menu_portraits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F3FC"
+name = "Lufia2SaveHighlightSlotPortraits"
+source = "src/menu/save_menu_portraits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F427"
+name = "Lufia2SaveDrawPortraitLevels"
+source = "src/menu/save_menu_portraits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

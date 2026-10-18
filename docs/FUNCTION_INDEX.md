@@ -732,6 +732,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F190` | `Lufia2SavePrepareAlternateActionDisplay` | verified | `src/menu/save_menu_actions.c` |
 | `$82:F20A` | `Lufia2SaveBuildMenuSlots` | verified | `src/menu/save_menu_build.c` |
 | `$82:F22B` | `Lufia2SaveBuildMenuSlot` | verified | `src/menu/save_menu_build.c` |
+| `$82:F2CE` | `Lufia2SaveDrawSlotPreviews` | verified | `src/menu/save_menu_portraits.c` |
+| `$82:F2FE` | `Lufia2SaveDrawSlotPreview` | verified | `src/menu/save_menu_portraits.c` |
+| `$82:F383` | `Lufia2SaveInitializePortraitTables` | verified | `src/menu/save_menu_portraits.c` |
+| `$82:F395` | `Lufia2SavePlaceSlotPortraits` | verified | `src/menu/save_menu_portraits.c` |
+| `$82:F3DD` | `Lufia2SaveUnhighlightPortraits` | verified | `src/menu/save_menu_portraits.c` |
+| `$82:F3FC` | `Lufia2SaveHighlightSlotPortraits` | verified | `src/menu/save_menu_portraits.c` |
+| `$82:F427` | `Lufia2SaveDrawPortraitLevels` | verified | `src/menu/save_menu_portraits.c` |
 | `$82:F481` | `Lufia2SaveRestoreMenuSelection` | verified | `src/menu/save_menu_build.c` |
 | `$82:F496` | `Lufia2MenuPrepareAlternateGraphics` | verified | `src/menu/menu_record_services.c` |
 | `$82:F4F4` | `Lufia2MenuPrepareNameEntryTilePointers` | verified | `src/menu/name_entry.c` |

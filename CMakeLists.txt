@@ -409,6 +409,7 @@ add_library(lufia2_decomp STATIC
     src/system/save.c
     src/system/default_records.c
     src/menu/menu_selection_palettes.c
+    src/menu/save_menu_portraits.c
     src/menu/save_menu_build.c
     src/menu/save_menu_parent.c
     src/menu/save_menu_actions.c
