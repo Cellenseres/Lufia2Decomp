@@ -13971,3 +13971,123 @@ source = "src/item/item_records.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "82:AAFF"
+name = "Lufia2MenuDispatchListAction"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:AB46"
+name = "Lufia2MenuClearListSelection"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:AB5B"
+name = "Lufia2MenuClearSelectionWithFeedback"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:AB89"
+name = "Lufia2MenuSwapInventorySelection"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:AB9A"
+name = "Lufia2MenuDiscardInventorySelection"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:ABB1"
+name = "Lufia2MenuUseSelectedItem"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B42D"
+name = "Lufia2MenuSwapSpellSelection"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B45B"
+name = "Lufia2MenuUseSelectedSpell"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B564"
+name = "Lufia2MenuCountSpellTargets"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B58A"
+name = "Lufia2MenuFillSpellTargets"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B59A"
+name = "Lufia2MenuPrepareSpellTargets"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B5CF"
+name = "Lufia2MenuReadSelectedSpell"
+source = "src/menu/menu_list_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FBEE"
+name = "Lufia2InventoryReadSelectedItem"
+source = "src/item/inventory_actions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FC08"
+name = "Lufia2InventorySwapSelectedItems"
+source = "src/item/inventory_actions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:FC1F"
+name = "Lufia2InventoryDiscardSelectedItem"
+source = "src/item/inventory_actions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

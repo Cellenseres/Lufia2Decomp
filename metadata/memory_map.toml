@@ -529,7 +529,7 @@ name = "battle_party_ids"
 width = 1
 count = 4
 owner = "battle"
-notes = "$81:D9E1 and $81:D12F map battle party slots to character ids. In menu phase,9C10 writes153F as a secondary list limit;the allocation is reused,not duplicated. In menu phase,8D47 zeros153D as the high byte of153C and sets153F from the eighth list parameter;no overlapping allocation is added."
+notes = "$81:D9E1 and $81:D12F map battle party slots to character ids. In menu phase,9C10 writes153F as a secondary list limit;the allocation is reused,not duplicated. In menu phase,8D47 zeros153D as the high byte of153C and sets153F from the eighth list parameter;no overlapping allocation is added. In82:ABB1,153E (offset1) selects item-record flag01 when equal2,otherwise flag40."
 
 [[location]]
 address = "7E:15D7"
@@ -6047,3 +6047,11 @@ width = 1
 count = 1
 owner = "menu"
 notes = "82:B60A loads this byte from8E:D8BB using14B3 after choosing a spell-list member. Retains the original table-derived byte independently of the party slot."
+
+[[location]]
+address = "7E:0A04"
+name = "menu_effect_target_mask"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:B564 folds four live target-marker bytes into this byte. Item/spell-use owners clear it before selecting targets and restoreFF on cleanup;effect children consume the live value."

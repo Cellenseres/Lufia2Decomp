@@ -645,6 +645,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:A711` | `Lufia2MenuRunListSelection` | verified | `src/menu/menu_list_controls.c` |
 | `$82:A918` | `Lufia2MenuListCursor` | verified | `src/menu/menu_screen.c` |
 | `$82:A9B5` | `Lufia2MenuSortInventory` | verified | `src/menu/menu_list_sort.c` |
+| `$82:AAFF` | `Lufia2MenuDispatchListAction` | verified | `src/menu/menu_list_actions.c` |
+| `$82:AB46` | `Lufia2MenuClearListSelection` | verified | `src/menu/menu_list_actions.c` |
+| `$82:AB5B` | `Lufia2MenuClearSelectionWithFeedback` | verified | `src/menu/menu_list_actions.c` |
+| `$82:AB89` | `Lufia2MenuSwapInventorySelection` | verified | `src/menu/menu_list_actions.c` |
+| `$82:AB9A` | `Lufia2MenuDiscardInventorySelection` | verified | `src/menu/menu_list_actions.c` |
+| `$82:ABB1` | `Lufia2MenuUseSelectedItem` | verified | `src/menu/menu_list_actions.c` |
 | `$82:AC84` | `Lufia2MenuDrawListPage` | verified | `src/menu/menu_list_motion.c` |
 | `$82:ACDB` | `Lufia2MenuListRow` | verified | `src/menu/menu_screen.c` |
 | `$82:AD20` | `Lufia2MenuAnimateListUp` | verified | `src/menu/menu_list_motion.c` |
@@ -654,6 +660,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:B104` | `Lufia2MenuRunItemSelection` | verified | `src/menu/menu_dispatch_callers.c` |
 | `$82:B2C5` | `Lufia2MenuEquipUpgrade` | verified | `src/menu/menu_screen.c` |
 | `$82:B3AD` | `Lufia2MenuSortSpells` | verified | `src/menu/menu_list_sort.c` |
+| `$82:B42D` | `Lufia2MenuSwapSpellSelection` | verified | `src/menu/menu_list_actions.c` |
+| `$82:B45B` | `Lufia2MenuUseSelectedSpell` | verified | `src/menu/menu_list_actions.c` |
+| `$82:B564` | `Lufia2MenuCountSpellTargets` | verified | `src/menu/menu_list_actions.c` |
+| `$82:B58A` | `Lufia2MenuFillSpellTargets` | verified | `src/menu/menu_list_actions.c` |
+| `$82:B59A` | `Lufia2MenuPrepareSpellTargets` | verified | `src/menu/menu_list_actions.c` |
+| `$82:B5CF` | `Lufia2MenuReadSelectedSpell` | verified | `src/menu/menu_list_actions.c` |
 | `$82:B5ED` | `Lufia2MenuPrepareSpellMember` | verified | `src/menu/menu_list_sort.c` |
 | `$82:B60A` | `Lufia2MenuSelectAdjacentSpellMember` | verified | `src/menu/menu_list_sort.c` |
 | `$82:C261` | `Lufia2CapsuleLoadStats` | verified | `src/party/capsule.c` |
@@ -777,6 +789,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:FB51` | `Lufia2ItemCheckPossessionBit` | verified | `src/item/inventory.c` |
 | `$82:FB94` | `Lufia2InventoryFindEmptySlot` | verified | `src/item/inventory_selection.c` |
 | `$82:FBE5` | `Lufia2MenuSelectedListOffset` | verified | `src/menu/menu_list_scroll.c` |
+| `$82:FBEE` | `Lufia2InventoryReadSelectedItem` | verified | `src/item/inventory_actions.c` |
+| `$82:FC08` | `Lufia2InventorySwapSelectedItems` | verified | `src/item/inventory_actions.c` |
+| `$82:FC1F` | `Lufia2InventoryDiscardSelectedItem` | verified | `src/item/inventory_actions.c` |
 | `$82:FC97` | `Lufia2ItemIncrementPackedCount` | verified | `src/item/packed_item_counts.c` |
 | `$82:FCC7` | `Lufia2ItemDecrementPackedCount` | verified | `src/item/packed_item_counts.c` |
 | `$82:FCED` | `Lufia2ItemSelectPackedCount` | verified | `src/item/packed_item_counts.c` |
