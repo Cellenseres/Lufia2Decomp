@@ -13827,3 +13827,11 @@ source = "src/battle/battle_palette_fade.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "8E:E5EF"
+name = "Lufia2MenuRunScenarioViewer"
+source = "src/menu/menu_scenario_view.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

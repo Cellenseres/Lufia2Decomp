@@ -1713,6 +1713,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:C338` | `Lufia2FieldSelectObjectCondition` | verified | `src/field/field_object_conditions.c` |
 | `$8E:C34F` | `Lufia2FieldResolveObjectCondition` | verified | `src/field/field_object_conditions.c` |
 | `$8E:C36D` | `Lufia2FieldReadMapResourceFlags` | verified | `src/field/field_camera_services.c` |
+| `$8E:E5EF` | `Lufia2MenuRunScenarioViewer` | verified | `src/menu/menu_scenario_view.c` |
 | `$8E:E6EA` | `Lufia2MenuResetSaveSelectionRecords` | verified | `src/menu/menu_selection_reset.c` |
 | `$8E:E710` | `Lufia2MenuSaveSelectionState` | verified | `src/menu/menu_selection_save.c` |
 | `$8E:E751` | `Lufia2MenuRestoreSelectionState` | verified | `src/menu/menu_selection_state.c` |
