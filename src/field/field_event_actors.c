@@ -2009,9 +2009,15 @@ static unsigned EventOpImmediateSound(
 typedef Lufia2ExecutionResult (*EventConditionStep)(
     const Lufia2Memory *, Lufia2CpuState *);
 
-static bool EventConditionCall(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    EventConditionStep step, uint8_t bank, uint16_t back, unsigned frame) {
+static bool EventConditionCall(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               EventConditionStep step, uint32_t target, uint8_t bank,
+                               uint16_t back, unsigned frame, EventRun *run,
+                               uint32_t *handoff) {
+    if (run) {
+        const uint32_t site = 0x800000u | (uint16_t)(back - frame);
+        return CallCellProbeChild(memory, cpu, run, site, target, (uint8_t)frame,
+                                  handoff);
+    }
     if (frame == 3u)
         SimulateJslFrame(memory, cpu, 0x80u, back);
     else
@@ -2049,9 +2055,7 @@ static unsigned MissingConditionalObject(const Lufia2Memory *memory,
     OpLda(memory, cpu, OpDp(cpu, DP_CONDITIONAL_OBJECT_ID));
     OpSta(memory, cpu, WRAM_UNK_7E120A);
     OpLdx(cpu, ROM_MISSING_OBJECT_MESSAGE);
-    if (!run || !run->child || cpu->program_bank != 0x80u || cpu->data_bank != 0x91u ||
-        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit || cpu->direct_page ||
-        cpu->decimal || cpu->stack < 0x1f23u || cpu->stack > 0x1fffu) {
+    if (!run || !run->child || !CellProbeContext(cpu) || cpu->data_bank != 0x91u) {
         SimulateJslFrame(memory, cpu, 0x80u, 0xd626u);
         cpu->program_bank = 0x85u;
         return ConditionalObjectHandoff(cpu, handoff, 0x858415u);
@@ -2061,9 +2065,8 @@ static unsigned MissingConditionalObject(const Lufia2Memory *memory,
         run->unwind_site = 0x80d623u;
         return ConditionalObjectHandoff(cpu, handoff, run->unwind_site);
     }
-    if (cpu->program_bank != 0x80u || cpu->data_bank != 0x91u ||
-        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->direct_page ||
-        cpu->decimal)
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal)
         return ConditionalObjectHandoff(cpu, handoff,
                                         ((uint32_t)cpu->program_bank << 16) | 0xd627u);
     return FinishConditionalObjectRegion(memory, cpu);
@@ -2081,8 +2084,11 @@ static unsigned EventOpConditionalObjectRegion(const Lufia2Memory *memory,
     ExchangeAccumulatorBytes(cpu);
     OpLda(memory, cpu, WRAM_FIELD_OBJECT_CONDITION_LIST_OFFSET);
     OpTay(cpu);
-    bool found = false;
-    for (unsigned visited = 0; visited < EVENT_SEARCH_LIMIT; ++visited) {
+    const bool complete = run && run->child && CellProbeContext(cpu);
+    unsigned visited = 0u;
+    for (;;) {
+        if (!complete && visited++ == EVENT_SEARCH_LIMIT)
+            return ConditionalObjectHandoff(cpu, handoff, 0x80d607u);
         TransferDirectToA(cpu);
         OpLda(memory, cpu, OpAbsY(cpu, ROM_OBJECT_CONDITION_LIST));
         OpCmpValue(cpu, 0xffu);
@@ -2091,30 +2097,29 @@ static unsigned EventOpConditionalObjectRegion(const Lufia2Memory *memory,
         OpAndValue(cpu, 31u);
         OpCmp(memory, cpu, OpDp(cpu, DP_CONDITIONAL_OBJECT_ID));
         if (cpu->zero) {
-            found = true;
             break;
         }
         OpIny(cpu);
         OpIny(cpu);
         OpIny(cpu);
     }
-    if (!found)
-        return ConditionalObjectHandoff(cpu, handoff, 0x80d607u);
     OpLda(memory, cpu, OpAbsY(cpu, ROM_OBJECT_CONDITION_LIST));
     OpAndValue(cpu, 31u);
     OpSta(memory, cpu, WRAM_FIELD_SELECTED_OBJECT_RECORD_ID);
-    if (!EventConditionCall(memory, cpu, Lufia2FieldLoadObjectActionHeader, 0x83u,
-                            0xd635u, 3u) ||
-        !EventConditionCall(memory, cpu, Lufia2FieldLoadObjectRegionHeader, 0x83u,
-                            0xd639u, 3u))
-        return ConditionalObjectHandoff(cpu, handoff, cpu->resume_pc);
+    if (!EventConditionCall(memory, cpu, Lufia2FieldLoadObjectActionHeader, 0x8387a3u,
+                            0x83u, 0xd635u, 3u, complete ? run : NULL, handoff) ||
+        !EventConditionCall(memory, cpu, Lufia2FieldLoadObjectRegionHeader, 0x838874u,
+                            0x83u, 0xd639u, 3u, complete ? run : NULL, handoff))
+        return ConditionalObjectHandoff(cpu, handoff,
+                                        complete ? *handoff : cpu->resume_pc);
     StoreXDirect16(memory, cpu, DP_CONDITIONAL_OBJECT_RECORD);
     OpTyx(cpu);
-    if (!EventConditionCall(memory, cpu, Lufia2FieldSelectObjectCondition, 0x8eu,
-                            0xd640u, 3u) ||
-        !EventConditionCall(memory, cpu, Lufia2FieldResolveObjectCondition, 0x8eu,
-                            0xd644u, 3u))
-        return ConditionalObjectHandoff(cpu, handoff, cpu->resume_pc);
+    if (!EventConditionCall(memory, cpu, Lufia2FieldSelectObjectCondition, 0x8ec338u,
+                            0x8eu, 0xd640u, 3u, complete ? run : NULL, handoff) ||
+        !EventConditionCall(memory, cpu, Lufia2FieldResolveObjectCondition, 0x8ec34fu,
+                            0x8eu, 0xd644u, 3u, complete ? run : NULL, handoff))
+        return ConditionalObjectHandoff(cpu, handoff,
+                                        complete ? *handoff : cpu->resume_pc);
     OpAndValue(cpu, Read8(memory, OpAbsX(cpu, WRAM_UNK_7E093B)));
     const uint32_t coordinates = EVENT_LIST_RECORD + (cpu->zero ? 6u : 2u);
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_CONDITIONAL_OBJECT_RECORD)));
@@ -2126,9 +2131,10 @@ static unsigned EventOpConditionalObjectRegion(const Lufia2Memory *memory,
     SetAccumulatorWidth(cpu, 1u);
     OpLda(memory, cpu, OpLongX(cpu, EVENT_LIST_RECORD + 1u));
     OpSta(memory, cpu, WRAM_FIELD_OBJECT_FLAGS);
-    if (!EventConditionCall(memory, cpu, Lufia2FieldUpdateEventObjectRegion, 0x80u,
-                            0xd680u, 2u))
-        return ConditionalObjectHandoff(cpu, handoff, cpu->resume_pc);
+    if (!EventConditionCall(memory, cpu, Lufia2FieldUpdateEventObjectRegion, 0x80d0bau,
+                            0x80u, 0xd680u, 2u, complete ? run : NULL, handoff))
+        return ConditionalObjectHandoff(cpu, handoff,
+                                        complete ? *handoff : cpu->resume_pc);
     return FinishConditionalObjectRegion(memory, cpu);
 }
 
@@ -2270,4 +2276,23 @@ Lufia2ExecutionResult Lufia2FieldPlaceSpawnedActor(const Lufia2Memory *memory,
         return ExecutionHandoff(cpu, 0x83e018u);
     PlaceSpawnedActor(memory, cpu);
     return ExecutionReturned(0x83e032u);
+}
+
+Lufia2ExecutionResult
+Lufia2FieldUpdateConditionalObjectRegion(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu,
+                                         Lufia2PushedChildCall child, void *context) {
+    if (!child || !CellProbeContext(cpu) || cpu->stack < 0x1f20u)
+        return ExecutionHandoff(cpu, 0x80d5f2u);
+    EventRun run = {0};
+    run.child = child;
+    run.child_context = context;
+    uint32_t handoff = 0u;
+    if (EventOpConditionalObjectRegion(memory, cpu, &run, &handoff) ==
+        EVENT_OPCODE_NEXT)
+        return ExecutionHandoff(cpu, 0x80cc35u);
+    if (run.unwind_site)
+        return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, run.unwind_site,
+                                       0u};
+    return ExecutionHandoff(cpu, handoff);
 }

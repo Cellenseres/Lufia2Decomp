@@ -485,6 +485,10 @@ unsigned Lufia2EventObjectRegionOpcode(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t handler, uint32_t *handoff);
 
+unsigned Lufia2EventRefreshOpcodeWithServices(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t handler, EventRun *run, uint32_t *handoff);
+
 unsigned Lufia2EventRefreshOpcode(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t handler, uint32_t *handoff);

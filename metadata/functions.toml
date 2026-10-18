@@ -13723,3 +13723,35 @@ source = "src/field/field_event_actors.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:D5BC"
+name = "Lufia2FieldRefreshEventParty"
+source = "src/field/field_event_actor_refresh.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:D5EB"
+name = "Lufia2FieldRefreshEventPartyClearMode"
+source = "src/field/field_event_actor_refresh.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:DB9D"
+name = "Lufia2FieldCenterEventLayers"
+source = "src/field/field_event_actor_refresh.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:D5F2"
+name = "Lufia2FieldUpdateConditionalObjectRegion"
+source = "src/field/field_event_actors.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

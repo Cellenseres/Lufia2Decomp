@@ -170,7 +170,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:D2FB` | `Lufia2FieldProbeEventCell` | verified | `src/field/field_event_actors.c` |
 | `$80:D533` | `Lufia2FieldSpawnActorsInArea` | verified | `src/field/field_area_spawn.c` |
 | `$80:D583` | `Lufia2FieldRandomAreaCoordinate` | verified | `src/field/field_area_spawn.c` |
+| `$80:D5BC` | `Lufia2FieldRefreshEventParty` | verified | `src/field/field_event_actor_refresh.c` |
+| `$80:D5EB` | `Lufia2FieldRefreshEventPartyClearMode` | verified | `src/field/field_event_actor_refresh.c` |
+| `$80:D5F2` | `Lufia2FieldUpdateConditionalObjectRegion` | verified | `src/field/field_event_actors.c` |
 | `$80:D9F0` | `Lufia2FieldReadEventVariableOperands` | verified | `src/field/field_event_coordinate.c` |
+| `$80:DB9D` | `Lufia2FieldCenterEventLayers` | verified | `src/field/field_event_actor_refresh.c` |
 | `$80:DCDA` | `Lufia2FieldPushPendingObject` | verified | `src/field/field_event_objects.c` |
 | `$80:E132` | `Lufia2FieldTestLeaderPosition` | verified | `src/field/field_event_conditions.c` |
 | `$80:E15A` | `Lufia2FieldTestLeaderArea` | verified | `src/field/field_event_conditions.c` |

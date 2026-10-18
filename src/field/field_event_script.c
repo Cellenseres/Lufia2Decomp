@@ -1278,7 +1278,7 @@ static unsigned EventScriptOpcode(
         handler == EVENT_OP_REFRESH_PARTY_CLEAR_MODE ||
         handler == EVENT_OP_CENTER_LAYERS) {
         run->total += 255u;
-        return Lufia2EventRefreshOpcode(memory, cpu, handler, handoff);
+        return Lufia2EventRefreshOpcodeWithServices(memory, cpu, handler, run, handoff);
     }
     if (handler == EVENT_OP_BEGIN_SCENE_CONTROL) {
         run->total += 255u;
