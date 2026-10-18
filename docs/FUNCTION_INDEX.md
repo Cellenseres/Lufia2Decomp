@@ -165,6 +165,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:D19F` | `Lufia2FieldRestoreRegionObjects` | verified | `src/field/field_event_object_region.c` |
 | `$80:D1E1` | `Lufia2FieldRemoveRegionObjects` | verified | `src/field/field_event_object_region.c` |
 | `$80:D227` | `Lufia2FieldMarkRegionObjects` | verified | `src/field/field_event_map_state.c` |
+| `$80:D2BB` | `Lufia2FieldSendEventSound` | verified | `src/field/field_event_actors.c` |
 | `$80:D2E1` | `Lufia2FieldBranchIfCellType` | verified | `src/field/field_event_actors.c` |
 | `$80:D2EE` | `Lufia2FieldBranchUnlessCellType` | verified | `src/field/field_event_actors.c` |
 | `$80:D2FB` | `Lufia2FieldProbeEventCell` | verified | `src/field/field_event_actors.c` |
@@ -180,6 +181,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:E15A` | `Lufia2FieldTestLeaderArea` | verified | `src/field/field_event_conditions.c` |
 | `$80:E458` | `Lufia2FieldFindCellBitsInArea` | verified | `src/field/field_event_conditions.c` |
 | `$80:E4C5` | `Lufia2FieldStoreConditionResult` | verified | `src/field/field_event_conditions.c` |
+| `$80:E50B` | `Lufia2FieldApplyEventAreaTransition` | verified | `src/field/field_event_actors.c` |
 | `$80:E55B` | `Lufia2FieldNegateConditionResult` | verified | `src/field/field_event_conditions.c` |
 | `$80:E566` | `Lufia2FieldTestConditionList` | verified | `src/field/field_event_conditions.c` |
 | `$80:E722` | `Lufia2FieldStartEvent` | verified | `src/field/field_event_script.c` |

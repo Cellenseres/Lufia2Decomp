@@ -1916,6 +1916,35 @@ static bool EventAreaReturn(
     return false;
 }
 
+typedef Lufia2ExecutionResult (*EventActorStep)(
+    const Lufia2Memory *, Lufia2CpuState *);
+
+static bool EventActorCall(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                           EventActorStep step, uint32_t target, uint8_t bank,
+                           uint16_t back, unsigned frame, EventRun *run,
+                           uint32_t *handoff) {
+    if (run) {
+        const uint32_t site = 0x800000u | (uint16_t)(back - frame);
+        return CallCellProbeChild(memory, cpu, run, site, target, (uint8_t)frame,
+                                  handoff);
+    }
+    if (frame == 3u)
+        SimulateJslFrame(memory, cpu, 0x80u, back);
+    else
+        SimulateJsrFrame(memory, cpu, back);
+    cpu->program_bank = bank;
+    Lufia2ExecutionResult result = step(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        *handoff = cpu->resume_pc;
+        return false;
+    }
+    if (!EventAreaReturn(memory, cpu, back, 0x80u, frame)) {
+        *handoff = cpu->resume_pc;
+        return false;
+    }
+    return true;
+}
+
 static uint8_t EventAreaChild(
     void *context, Lufia2CpuState *cpu,
     uint32_t target, uint32_t site, uint8_t frame) {
@@ -1937,43 +1966,35 @@ static uint8_t EventAreaChild(
     return EventAreaReturn(memory, cpu, (uint16_t)(site + 3u), 0x83u, frame);
 }
 
-static unsigned EventOpApplyAreaTransition(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t *handoff) {
+static Lufia2ExecutionResult ApplyLegacyEventArea(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    return Lufia2FieldApplyAreaTransition(memory, cpu, EventAreaChild, (void *)memory);
+}
+
+static unsigned EventOpApplyAreaTransition(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu, EventRun *run,
+                                           uint32_t *handoff) {
+    EventRun *services = run && run->child && CellProbeContext(cpu) ? run : NULL;
     Lufia2EventNextByte(memory, cpu, 0xe50du);
     PushDataBank(memory, cpu);
     PushY(memory, cpu);
-    SimulateJsrFrame(memory, cpu, 0xe512u);
-    Lufia2ExecutionResult result = Lufia2FieldSaveActorSlot(memory, cpu);
-    if (result.flow != LUFIA2_EXECUTION_RETURNED ||
-        !EventAreaReturn(memory, cpu, 0xe512u, 0x80u, 2u))
-        goto boundary;
+    if (!EventActorCall(memory, cpu, Lufia2FieldSaveActorSlot, 0x80ea47u, 0x80u,
+                        0xe512u, 2u, services, handoff))
+        return EVENT_OPCODE_HANDOFF;
     ExchangeAccumulatorBytes(cpu);
     OpLoadA(cpu, 9u);
     ExchangeAccumulatorBytes(cpu);
     OpLdx(cpu, 6u);
-    SimulateJslFrame(memory, cpu, 0x80u, 0xe51du);
-    result = Lufia2FieldFindHeaderRecord(memory, cpu);
-    if (result.flow != LUFIA2_EXECUTION_RETURNED ||
-        !EventAreaReturn(memory, cpu, 0xe51du, 0x80u, 3u))
-        goto boundary;
-    SimulateJslFrame(memory, cpu, 0x80u, 0xe521u);
-    cpu->program_bank = 0x83u;
-    result = Lufia2FieldApplyAreaTransition(memory, cpu, EventAreaChild, (void *)memory);
-    if (result.flow != LUFIA2_EXECUTION_RETURNED ||
-        !EventAreaReturn(memory, cpu, 0xe521u, 0x80u, 3u))
-        goto boundary;
-    SimulateJsrFrame(memory, cpu, 0xe524u);
-    result = Lufia2FieldRestoreActorSlot(memory, cpu);
-    if (result.flow != LUFIA2_EXECUTION_RETURNED ||
-        !EventAreaReturn(memory, cpu, 0xe524u, 0x80u, 2u))
-        goto boundary;
+    if (!EventActorCall(memory, cpu, Lufia2FieldFindHeaderRecord, 0x80bfaau, 0x80u,
+                        0xe51du, 3u, services, handoff) ||
+        !EventActorCall(memory, cpu, ApplyLegacyEventArea, 0x83b76eu, 0x83u, 0xe521u,
+                        3u, services, handoff) ||
+        !EventActorCall(memory, cpu, Lufia2FieldRestoreActorSlot, 0x80ea50u, 0x80u,
+                        0xe524u, 2u, services, handoff))
+        return EVENT_OPCODE_HANDOFF;
     OpPullY(memory, cpu);
     PullDataBank(memory, cpu);
     return EVENT_OPCODE_NEXT;
-
-boundary:
-    *handoff = cpu->resume_pc;
-    return EVENT_OPCODE_HANDOFF;
 }
 
 static uint8_t EventSoundChild(
@@ -1992,41 +2013,19 @@ static uint8_t EventSoundChild(
     return EventAreaReturn(memory, cpu, (uint16_t)(site + frame), 0x84u, frame);
 }
 
-static unsigned EventOpImmediateSound(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t *handoff) {
-    Lufia2EventNextByte(memory, cpu, 0xd2bdu);
-    SimulateJslFrame(memory, cpu, 0x80u, 0xd2c1u);
-    cpu->program_bank = 0x84u;
-    Lufia2ExecutionResult result = Lufia2SendImmediateSound(
-        memory, cpu, EventSoundChild, (void *)memory);
-    if (result.flow == LUFIA2_EXECUTION_RETURNED &&
-        EventAreaReturn(memory, cpu, 0xd2c1u, 0x80u, 3u))
-        return EVENT_OPCODE_NEXT;
-    *handoff = cpu->resume_pc;
-    return EVENT_OPCODE_HANDOFF;
+static Lufia2ExecutionResult SendLegacyEventSound(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    return Lufia2SendImmediateSound(memory, cpu, EventSoundChild, (void *)memory);
 }
 
-typedef Lufia2ExecutionResult (*EventConditionStep)(
-    const Lufia2Memory *, Lufia2CpuState *);
-
-static bool EventConditionCall(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                               EventConditionStep step, uint32_t target, uint8_t bank,
-                               uint16_t back, unsigned frame, EventRun *run,
-                               uint32_t *handoff) {
-    if (run) {
-        const uint32_t site = 0x800000u | (uint16_t)(back - frame);
-        return CallCellProbeChild(memory, cpu, run, site, target, (uint8_t)frame,
-                                  handoff);
-    }
-    if (frame == 3u)
-        SimulateJslFrame(memory, cpu, 0x80u, back);
-    else
-        SimulateJsrFrame(memory, cpu, back);
-    cpu->program_bank = bank;
-    Lufia2ExecutionResult result = step(memory, cpu);
-    if (result.flow != LUFIA2_EXECUTION_RETURNED)
-        return false;
-    return EventAreaReturn(memory, cpu, back, 0x80u, frame);
+static unsigned EventOpImmediateSound(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                      EventRun *run, uint32_t *handoff) {
+    EventRun *services = run && run->child && CellProbeContext(cpu) ? run : NULL;
+    Lufia2EventNextByte(memory, cpu, 0xd2bdu);
+    return EventActorCall(memory, cpu, SendLegacyEventSound, 0x848775u, 0x84u, 0xd2c1u,
+                          3u, services, handoff)
+               ? EVENT_OPCODE_NEXT
+               : EVENT_OPCODE_HANDOFF;
 }
 
 enum {
@@ -2106,17 +2105,17 @@ static unsigned EventOpConditionalObjectRegion(const Lufia2Memory *memory,
     OpLda(memory, cpu, OpAbsY(cpu, ROM_OBJECT_CONDITION_LIST));
     OpAndValue(cpu, 31u);
     OpSta(memory, cpu, WRAM_FIELD_SELECTED_OBJECT_RECORD_ID);
-    if (!EventConditionCall(memory, cpu, Lufia2FieldLoadObjectActionHeader, 0x8387a3u,
+    if (!EventActorCall(memory, cpu, Lufia2FieldLoadObjectActionHeader, 0x8387a3u,
                             0x83u, 0xd635u, 3u, complete ? run : NULL, handoff) ||
-        !EventConditionCall(memory, cpu, Lufia2FieldLoadObjectRegionHeader, 0x838874u,
+        !EventActorCall(memory, cpu, Lufia2FieldLoadObjectRegionHeader, 0x838874u,
                             0x83u, 0xd639u, 3u, complete ? run : NULL, handoff))
         return ConditionalObjectHandoff(cpu, handoff,
                                         complete ? *handoff : cpu->resume_pc);
     StoreXDirect16(memory, cpu, DP_CONDITIONAL_OBJECT_RECORD);
     OpTyx(cpu);
-    if (!EventConditionCall(memory, cpu, Lufia2FieldSelectObjectCondition, 0x8ec338u,
+    if (!EventActorCall(memory, cpu, Lufia2FieldSelectObjectCondition, 0x8ec338u,
                             0x8eu, 0xd640u, 3u, complete ? run : NULL, handoff) ||
-        !EventConditionCall(memory, cpu, Lufia2FieldResolveObjectCondition, 0x8ec34fu,
+        !EventActorCall(memory, cpu, Lufia2FieldResolveObjectCondition, 0x8ec34fu,
                             0x8eu, 0xd644u, 3u, complete ? run : NULL, handoff))
         return ConditionalObjectHandoff(cpu, handoff,
                                         complete ? *handoff : cpu->resume_pc);
@@ -2131,7 +2130,7 @@ static unsigned EventOpConditionalObjectRegion(const Lufia2Memory *memory,
     SetAccumulatorWidth(cpu, 1u);
     OpLda(memory, cpu, OpLongX(cpu, EVENT_LIST_RECORD + 1u));
     OpSta(memory, cpu, WRAM_FIELD_OBJECT_FLAGS);
-    if (!EventConditionCall(memory, cpu, Lufia2FieldUpdateEventObjectRegion, 0x80d0bau,
+    if (!EventActorCall(memory, cpu, Lufia2FieldUpdateEventObjectRegion, 0x80d0bau,
                             0x80u, 0xd680u, 2u, complete ? run : NULL, handoff))
         return ConditionalObjectHandoff(cpu, handoff,
                                         complete ? *handoff : cpu->resume_pc);
@@ -2148,9 +2147,9 @@ unsigned Lufia2EventActorOpcode(
     case EVENT_OP_CONDITIONAL_OBJECT_REGION:
         return EventOpConditionalObjectRegion(memory, cpu, run, handoff);
     case EVENT_OP_IMMEDIATE_SOUND:
-        return EventOpImmediateSound(memory, cpu, handoff);
+        return EventOpImmediateSound(memory, cpu, run, handoff);
     case EVENT_OP_APPLY_AREA_TRANSITION:
-        return EventOpApplyAreaTransition(memory, cpu, handoff);
+        return EventOpApplyAreaTransition(memory, cpu, run, handoff);
     case EVENT_OP_OFFSET_POINT_X:
     case EVENT_OP_OFFSET_POINT_Y:
         return EventOpOffsetPoint(memory, cpu, handler);
@@ -2295,4 +2294,37 @@ Lufia2FieldUpdateConditionalObjectRegion(const Lufia2Memory *memory,
         return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, run.unwind_site,
                                        0u};
     return ExecutionHandoff(cpu, handoff);
+}
+
+static Lufia2ExecutionResult RunEventActorService(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu,
+                                                  Lufia2PushedChildCall child,
+                                                  void *context, uint16_t handler) {
+    if (!child || !CellProbeContext(cpu) || cpu->stack < 0x1f20u)
+        return ExecutionHandoff(cpu, 0x800000u | handler);
+    EventRun run = {0};
+    run.child = child;
+    run.child_context = context;
+    uint32_t handoff = 0u;
+    if (Lufia2EventActorOpcode(memory, cpu, handler, &run, &handoff) ==
+        EVENT_OPCODE_NEXT)
+        return ExecutionHandoff(cpu, 0x80cc35u);
+    if (run.unwind_site)
+        return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, run.unwind_site,
+                                       0u};
+    return ExecutionHandoff(cpu, handoff);
+}
+
+Lufia2ExecutionResult Lufia2FieldApplyEventAreaTransition(const Lufia2Memory *memory,
+                                                          Lufia2CpuState *cpu,
+                                                          Lufia2PushedChildCall child,
+                                                          void *context) {
+    return RunEventActorService(memory, cpu, child, context, 0xe50bu);
+}
+
+Lufia2ExecutionResult Lufia2FieldSendEventSound(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu,
+                                                Lufia2PushedChildCall child,
+                                                void *context) {
+    return RunEventActorService(memory, cpu, child, context, 0xd2bbu);
 }
