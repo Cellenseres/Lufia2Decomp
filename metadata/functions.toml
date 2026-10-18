@@ -13803,3 +13803,27 @@ source = "src/battle/battle_followup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:E5C2"
+name = "Lufia2BattleFlashActionActor"
+source = "src/battle/battle_action_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "81:B336"
+name = "Lufia2BattleGrayPaletteToBuffer"
+source = "src/battle/battle_palette_fade.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:B367"
+name = "Lufia2BattleGraySourcePalette"
+source = "src/battle/battle_palette_fade.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

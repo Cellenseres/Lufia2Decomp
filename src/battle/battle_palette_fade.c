@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "core/plain_ops.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
@@ -152,4 +153,58 @@ Lufia2ExecutionResult Lufia2BattlePaletteBrightness(
     LoadA8(cpu, PALETTE_UPLOAD);
     WramWrite(wram, DP_PALETTE_DIRTY, PALETTE_UPLOAD);
     return ExecutionReturned(0x81b3f7u);
+}
+
+static Lufia2ExecutionResult GrayPalette(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu, bool source_palette) {
+    const uint32_t entry = source_palette ? 0x81b367u : 0x81b336u;
+    const uint16_t gray_site = source_palette ? 0xb382u : 0xb351u;
+    enum { DP_GRAY_REMAINING = 0x13u };
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, entry);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpDp(cpu, DP_FIRST_ENTRY));
+    OpRepWidths(cpu, 0x20u);
+    ExchangeAccumulatorBytes(cpu);
+    OpLsrA(cpu);
+    OpLsrA(cpu);
+    OpLsrA(cpu);
+    OpTax(cpu);
+    OpLoadA(cpu, ENTRY_COUNT);
+    OpSta(memory, cpu, OpDp(cpu, DP_GRAY_REMAINING));
+    OpSepWidths(cpu, 0x20u);
+    do {
+        OpInx(cpu);
+        OpInx(cpu);
+        OpRepWidths(cpu, 0x20u);
+        OpLda(memory, cpu, OpLongX(cpu, SOURCE_PALETTE));
+        OpSta(memory, cpu, OpDp(cpu, DP_COLOR));
+        SimulateJsrFrame(memory, cpu, (uint16_t)(gray_site + 2u));
+        (void)Lufia2ColorToGray(memory, cpu);
+        SimulateRtsFrame(memory, cpu);
+        OpLda(memory, cpu, OpDp(cpu, DP_COLOR));
+        if (source_palette) {
+            OpSta(memory, cpu, OpLongX(cpu, SOURCE_PALETTE));
+        } else {
+            OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffffu));
+            OpSta(memory, cpu, OpAbsX(cpu, PALETTE_BUFFER));
+        }
+        OpSepWidths(cpu, 0x20u);
+        OpStepMem(memory, cpu, OpDp(cpu, DP_GRAY_REMAINING), -1);
+    } while (!cpu->zero);
+    OpLoadA(cpu, PALETTE_UPLOAD);
+    OpSta(memory, cpu, OpDp(cpu, DP_PALETTE_DIRTY));
+    return ExecutionReturned(source_palette ? 0x81b395u : 0x81b366u);
+}
+
+Lufia2ExecutionResult Lufia2BattleGrayPaletteToBuffer(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu) {
+    return GrayPalette(memory, cpu, false);
+}
+
+Lufia2ExecutionResult Lufia2BattleGraySourcePalette(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    return GrayPalette(memory, cpu, true);
 }

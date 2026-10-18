@@ -2055,6 +2055,14 @@ Lufia2ExecutionResult
 Lufia2BattleFindEnemyGraphicsPlacement(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                        Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2BattleFlashActionActor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2BattleGrayPaletteToBuffer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleGraySourcePalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2BattleReorderEnemies(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2BattleInsertEnemy(

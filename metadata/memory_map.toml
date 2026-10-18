@@ -2732,7 +2732,7 @@ address = "7E:1399"
 width = 1
 count = 1
 owner = "battle"
-notes = "Base of original thirteen-byte effect position records."
+notes = "Base of original thirteen-byte effect position records. E5C2 uses offset3 at stride13 as party palette/flash state."
 
 [[location]]
 name = "battle_effect_party_positions"
@@ -5902,7 +5902,7 @@ name = "battle_enemy_sprite_flags"
 width = 1
 count = 1
 owner = "battle"
-notes = "85:948C clears bit80 in six enemy-sprite flag bytes atstride15 when the corresponding enemy record has bit04. Base marker only; context reuses sprite storage."
+notes = "85:948C clears bit80 in six enemy-sprite flag bytes atstride15 when the corresponding enemy record has bit04. Base marker only; context reuses sprite storage. E5C2 uses offset2 at stride15 as enemy palette/flash state."
 
 [[location]]
 address = "7F:F4D6"

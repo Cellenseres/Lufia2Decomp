@@ -1,4 +1,6 @@
 #include "battle/battle_internal.h"
+#include "core/child_call.h"
+#include "core/snes_registers.h"
 
 enum {
     ACTION_PENDING = WRAM_BATTLE_ACTION_EFFECT_PENDING & 0xffffu,
@@ -274,4 +276,271 @@ Lufia2ExecutionResult Lufia2BattleRunActionPresentation(
         !PresentationWait(&action, 60u, 0xb123u, 0xb124u, 0xb12eu))
         return action.result;
     return ExecutionHandoff(cpu, 0x818855u);
+}
+
+enum {
+    DP_FLASH_PALETTE = 0x11u,
+    DP_FLASH_ACTOR = 0x22u,
+    DP_FLASH_ORIGINAL_PALETTE = 0x23u,
+    DP_FLASH_FRAME_PALETTE = 0x24u,
+    DP_FLASH_SPRITE_OFFSET = 0x2au,
+    FLASH_ACTOR_SLOTS = 0x97fe26u,
+    FLASH_ENEMY_STATE = WRAM_BATTLE_ENEMY_SPRITE_FLAGS + 2u,
+    FLASH_PARTY_STATE = WRAM_BATTLE_EFFECT_ENEMY_POSITIONS + 3u,
+    FLASH_PALETTE_BYTES = 32u,
+    FLASH_ENEMY_PALETTES = (WRAM_UNK_7FF1DB + 9u * FLASH_PALETTE_BYTES) & 0xffffu,
+    FLASH_PARTY_PALETTES = (WRAM_UNK_7FF1DB + 12u * FLASH_PALETTE_BYTES) & 0xffffu,
+    FLASH_TEMP_PALETTE = (WRAM_UNK_7FF1DB + 14u * FLASH_PALETTE_BYTES) & 0xffffu,
+    FLASH_ENEMY_SPRITE_BYTES = 15u,
+    FLASH_PARTY_SPRITE_BYTES = 13u
+};
+
+typedef enum ActorFlashKind {
+    ACTOR_FLASH_ENEMY,
+    ACTOR_FLASH_PARTY,
+    ACTOR_FLASH_CAPSULE
+} ActorFlashKind;
+
+typedef struct ActorFlash {
+    const Lufia2Memory *memory;
+    Lufia2CpuState *cpu;
+    Lufia2PushedChildCall child;
+    void *context;
+    Lufia2ExecutionResult result;
+} ActorFlash;
+
+static bool ActorFlashContext(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x85u && !cpu->direct_page && !cpu->decimal &&
+           cpu->accumulator_is_8_bit && !cpu->index_is_8_bit;
+}
+
+static bool ActorFlashCall(ActorFlash *flash, uint32_t site, uint32_t target) {
+    Lufia2CpuState *cpu = flash->cpu;
+    if (!CallChildWithFrame(flash->memory, cpu, flash->child, flash->context, site,
+                            target, 3u, 0x85u)) {
+        flash->result =
+            (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
+        return false;
+    }
+    if (!ActorFlashContext(cpu)) {
+        flash->result = ExecutionHandoff(cpu, site + 4u);
+        return false;
+    }
+    return true;
+}
+
+static bool DrawActorFlashFrame(ActorFlash *flash, ActorFlashKind kind) {
+    const Lufia2Memory *memory = flash->memory;
+    Lufia2CpuState *cpu = flash->cpu;
+    if (kind == ACTOR_FLASH_CAPSULE)
+        return ActorFlashCall(flash, 0x85e709u, BATTLE_ROUTINE_FRAME_INPUT);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_FLASH_SPRITE_OFFSET)));
+    OpLda(memory, cpu, OpDp(cpu, DP_FLASH_FRAME_PALETTE));
+    OpSta(
+        memory, cpu,
+        OpAbsX(cpu, kind == ACTOR_FLASH_ENEMY ? FLASH_ENEMY_STATE : FLASH_PARTY_STATE));
+    if (!ActorFlashCall(flash, kind == ACTOR_FLASH_ENEMY ? 0x85e677u : 0x85e7adu,
+                        BATTLE_ROUTINE_SPRITES))
+        return false;
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    return ActorFlashCall(flash, kind == ACTOR_FLASH_ENEMY ? 0x85e681u : 0x85e7b7u,
+                          BATTLE_ROUTINE_FRAME_INPUT);
+}
+
+static bool RunActorFlashFrames(ActorFlash *flash, ActorFlashKind kind, uint16_t site,
+                                bool repeat) {
+    const Lufia2Memory *memory = flash->memory;
+    Lufia2CpuState *cpu = flash->cpu;
+    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
+    if (repeat) {
+        const uint16_t frame_site = kind == ACTOR_FLASH_ENEMY   ? 0xe668u
+                                    : kind == ACTOR_FLASH_PARTY ? 0xe79eu
+                                                                : 0xe701u;
+        OpLoadA(cpu, 5u);
+        do {
+            PushAccumulator8(memory, cpu);
+            SimulateJsrFrame(memory, cpu, (uint16_t)(frame_site + 2u));
+            if (!DrawActorFlashFrame(flash, kind))
+                return false;
+            SimulateRtsFrame(memory, cpu);
+            LoadA8(cpu, Pull8(memory, cpu));
+            OpDecA(cpu);
+        } while (!cpu->zero);
+    } else if (!DrawActorFlashFrame(flash, kind)) {
+        return false;
+    }
+    SimulateRtsFrame(memory, cpu);
+    return true;
+}
+
+static void SelectActorFlashPalette(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                    ActorFlashKind kind) {
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, FLASH_ACTOR_SLOTS));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+    OpLoadA(cpu, kind == ACTOR_FLASH_ENEMY ? FLASH_ENEMY_SPRITE_BYTES
+                                           : FLASH_PARTY_SPRITE_BYTES);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
+    OpWriteX(memory, cpu, OpDp(cpu, DP_FLASH_SPRITE_OFFSET), cpu->x);
+    OpLda(
+        memory, cpu,
+        OpAbsX(cpu, kind == ACTOR_FLASH_ENEMY ? FLASH_ENEMY_STATE : FLASH_PARTY_STATE));
+    PushAccumulator8(memory, cpu);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYA));
+    OpLoadA(cpu, FLASH_PALETTE_BYTES);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SNES_RDMPYL)));
+    OpLdy(cpu, 0u);
+    PushDataBank(memory, cpu);
+    OpLoadA(cpu, 0x7fu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    do {
+        OpLda(memory, cpu,
+              OpAbsX(cpu, kind == ACTOR_FLASH_ENEMY ? FLASH_ENEMY_PALETTES
+                                                    : FLASH_PARTY_PALETTES));
+        OpSta(memory, cpu, OpAbsY(cpu, FLASH_TEMP_PALETTE));
+        OpInx(cpu);
+        OpIny(cpu);
+        OpCpy(cpu, FLASH_PALETTE_BYTES);
+    } while (!cpu->zero);
+    PullDataBank(memory, cpu);
+}
+
+static void InvertActorFlashPalette(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpSta(memory, cpu, OpDp(cpu, DP_FLASH_ORIGINAL_PALETTE));
+    OpLdy(cpu, FLASH_PALETTE_BYTES - 1u);
+    PushDataBank(memory, cpu);
+    OpLoadA(cpu, 0x7fu);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    do {
+        OpLda(memory, cpu, OpAbsY(cpu, FLASH_TEMP_PALETTE));
+        LoadA8(cpu, A8(cpu) ^ 0xffu);
+        OpSta(memory, cpu, OpAbsY(cpu, FLASH_TEMP_PALETTE));
+        OpDey(cpu);
+    } while (!cpu->negative);
+    PullDataBank(memory, cpu);
+}
+
+static bool FlashOriginalPalette(ActorFlash *flash, ActorFlashKind kind) {
+    const Lufia2Memory *memory = flash->memory;
+    Lufia2CpuState *cpu = flash->cpu;
+    const bool enemy = kind == ACTOR_FLASH_ENEMY;
+    SelectActorFlashPalette(memory, cpu, kind);
+    OpLoadA(cpu, 14u);
+    OpSta(memory, cpu, OpDp(cpu, DP_FLASH_PALETTE));
+    if (!ActorFlashCall(flash, enemy ? 0x85e622u : 0x85e758u, 0x81b367u))
+        return false;
+    InvertActorFlashPalette(memory, cpu);
+    if (!ActorFlashCall(flash, enemy ? 0x85e63du : 0x85e773u,
+                        BATTLE_ROUTINE_COMMIT_PALETTES))
+        return false;
+    static const uint16_t enemy_sites[] = {0xe645u, 0xe64cu, 0xe653u, 0xe65au};
+    static const uint16_t party_sites[] = {0xe77bu, 0xe782u, 0xe789u, 0xe790u};
+    for (unsigned phase = 0u; phase < 4u; ++phase) {
+        if (phase & 1u)
+            OpLda(memory, cpu, OpDp(cpu, DP_FLASH_ORIGINAL_PALETTE));
+        else
+            OpLoadA(cpu, enemy ? 5u : 2u);
+        OpSta(memory, cpu, OpDp(cpu, DP_FLASH_FRAME_PALETTE));
+        if (!RunActorFlashFrames(flash, kind,
+                                 enemy ? enemy_sites[phase] : party_sites[phase],
+                                 phase != 3u))
+            return false;
+    }
+    return true;
+}
+
+static bool FlashFixedPalette(ActorFlash *flash, ActorFlashKind kind) {
+    const Lufia2Memory *memory = flash->memory;
+    Lufia2CpuState *cpu = flash->cpu;
+    const bool enemy = kind == ACTOR_FLASH_ENEMY;
+    static const uint32_t enemy_gray[] = {0x85e68au, 0x85e6a4u};
+    static const uint32_t capsule_gray[] = {0x85e6c6u, 0x85e6e0u};
+    static const uint32_t enemy_upload[] = {0x85e695u, 0x85e6afu};
+    static const uint32_t capsule_upload[] = {0x85e6d1u, 0x85e6ebu};
+    static const uint16_t enemy_frames[] = {0xe692u, 0xe69du, 0xe6acu, 0xe6b7u};
+    static const uint16_t capsule_frames[] = {0xe6ceu, 0xe6d9u, 0xe6e8u, 0xe6f3u};
+    for (unsigned phase = 0u; phase < 4u; ++phase) {
+        if (!(phase & 1u)) {
+            OpLoadA(cpu, enemy ? 5u : 15u);
+            OpSta(memory, cpu, OpDp(cpu, DP_FLASH_PALETTE));
+            if (!ActorFlashCall(
+                    flash, enemy ? enemy_gray[phase / 2u] : capsule_gray[phase / 2u],
+                    0x81b336u))
+                return false;
+        } else if (!ActorFlashCall(flash,
+                                   enemy ? enemy_upload[phase / 2u]
+                                         : capsule_upload[phase / 2u],
+                                   BATTLE_ROUTINE_COMMIT_PALETTES)) {
+            return false;
+        }
+        OpLoadA(cpu, 2u);
+        OpSta(memory, cpu, OpDp(cpu, DP_FLASH_FRAME_PALETTE));
+        if (!RunActorFlashFrames(flash, kind,
+                                 enemy ? enemy_frames[phase] : capsule_frames[phase],
+                                 phase != 3u))
+            return false;
+    }
+    return true;
+}
+
+Lufia2ExecutionResult Lufia2BattleFlashActionActor(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu,
+                                                   Lufia2PushedChildCall child,
+                                                   void *context) {
+    if (!child || cpu->program_bank != 0x85u || cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x85e5c2u);
+    ActorFlash flash = {memory, cpu, child, context, {0}};
+    Push8(memory, cpu, PackStatus(cpu));
+    PushDataBank(memory, cpu);
+    OpRepWidths(cpu, 0x30u);
+    PushAccumulator16(memory, cpu);
+    OpPushX(memory, cpu);
+    PushY(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpSta(memory, cpu, OpDp(cpu, DP_FLASH_ACTOR));
+    OpBitValue(cpu, 0x80u);
+    uint32_t end;
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EFFECT_SPECIAL_PARTY));
+        if (cpu->zero) {
+            TransferDirectToA(cpu);
+            OpLda(memory, cpu, OpDp(cpu, DP_FLASH_ACTOR));
+            OpAndValue(cpu, 0x7fu);
+            if (!FlashOriginalPalette(&flash, ACTOR_FLASH_ENEMY))
+                return flash.result;
+            end = 0x85e664u;
+        } else {
+            if (!FlashFixedPalette(&flash, ACTOR_FLASH_ENEMY))
+                return flash.result;
+            end = 0x85e6c1u;
+        }
+    } else {
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpDp(cpu, DP_FLASH_ACTOR));
+        OpAndValue(cpu, 0x7fu);
+        OpCmpValue(cpu, 0x10u);
+        if (cpu->zero) {
+            if (!FlashFixedPalette(&flash, ACTOR_FLASH_CAPSULE))
+                return flash.result;
+            end = 0x85e6fdu;
+        } else {
+            if (!FlashOriginalPalette(&flash, ACTOR_FLASH_PARTY))
+                return flash.result;
+            end = 0x85e79au;
+        }
+    }
+    OpRepWidths(cpu, 0x30u);
+    OpPullY(memory, cpu);
+    OpPullX(memory, cpu);
+    PullAccumulator16(memory, cpu);
+    PullDataBank(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(end);
 }

@@ -409,6 +409,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:B264` | `Lufia2BattleActiveMask` | verified | `src/battle/battle_util.c` |
 | `$81:B2B5` | `Lufia2BattleTargetRecord` | verified | `src/battle/battle_util.c` |
 | `$81:B2DB` | `Lufia2BattleTargetSlot` | verified | `src/battle/battle_util.c` |
+| `$81:B336` | `Lufia2BattleGrayPaletteToBuffer` | verified | `src/battle/battle_palette_fade.c` |
+| `$81:B367` | `Lufia2BattleGraySourcePalette` | verified | `src/battle/battle_palette_fade.c` |
 | `$81:B396` | `Lufia2BattlePaletteBrightness` | verified | `src/battle/battle_palette_fade.c` |
 | `$81:B3F8` | `Lufia2BattleScaleColor` | verified | `src/battle/battle_palette_fade.c` |
 | `$81:B444` | `Lufia2BattlePaletteFade` | verified | `src/battle/battle_util.c` |
@@ -1348,6 +1350,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:E174` | `Lufia2BattleReorderEnemies` | verified | `src/battle/battle_followup.c` |
 | `$85:E412` | `Lufia2BattleInsertEnemy` | verified | `src/battle/battle_followup.c` |
 | `$85:E4E5` | `Lufia2BattlePrepareEnemyInsertion` | verified | `src/battle/battle_followup.c` |
+| `$85:E5C2` | `Lufia2BattleFlashActionActor` | verified | `src/battle/battle_action_presentation.c` |
 | `$85:E7BC` | `Lufia2BattlePlayTransition` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAE4` | `Lufia2BattleAdvanceTransitionFrame` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAEF` | `Lufia2BattleFadeSpecialExit` | verified | `src/battle/battle_exit.c` |
