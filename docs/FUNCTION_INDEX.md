@@ -102,6 +102,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9C0F` | `Lufia2UploadBootSoundBlocks` | verified | `src/system/sound_boot_blocks.c` |
 | `$80:9C72` | `Lufia2FieldEventTickWithServices` | verified | `src/field/field_update.c` |
 | `$80:9CB8` | `Lufia2TextEngineStep` | verified | `src/text/text_engine.c` |
+| `$80:9D3E` | `Lufia2TextOpenWindowWithServices` | verified | `src/text/text_engine.c` |
 | `$80:A350` | `Lufia2SceneReloadAndFadeIn` | verified | `src/field/scene_bootstrap.c` |
 | `$80:A368` | `Lufia2SceneResetTextState` | verified | `src/field/scene_bootstrap.c` |
 | `$80:AD39` | `Lufia2FieldFaceActorGroupTowardActor` | verified | `src/field/field_interaction.c` |
@@ -131,8 +132,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C195` | `Lufia2FieldMarkObjectSlots` | verified | `src/field/field_object_flags.c` |
 | `$80:C1A7` | `Lufia2SceneApplyActorCell` | verified | `src/field/field_scene_actor_records.c` |
 | `$80:C1DF` | `Lufia2FieldSelectInteractionVariant` | verified | `src/field/field_interaction.c` |
+| `$80:C1FD` | `Lufia2TextCloseWindowWithServices` | verified | `src/text/text_engine.c` |
 | `$80:C21A` | `Lufia2FieldTextWindowTimer` | verified | `src/field/field_update.c` |
-| `$80:C23D` | `Lufia2TextPrepareWindow` | verified | `src/text/text_window.c` |
+| `$80:C23D` | `Lufia2TextPrepareWindowWithServices` | verified | `src/text/text_window.c` |
+| `$80:C2A1` | `Lufia2TextBuildSceneWindowInterior` | verified | `src/text/text_window.c` |
 | `$80:C305` | `Lufia2TextBuildWindow` | verified | `src/text/text_window.c` |
 | `$80:C56E` | `Lufia2TextQueueWindowRow` | verified | `src/text/text_window.c` |
 | `$80:C5DD` | `Lufia2TextWriteSceneWindowRow` | verified | `src/text/text_window.c` |

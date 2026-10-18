@@ -3471,7 +3471,7 @@ name = "scene_label_width"
 width = 1
 count = 1
 owner = "text"
-notes = "Original measured scene-label width and dictionary-reference countdown; phase dependent."
+notes = "Original measured scene-label width and dictionary-reference countdown; phase dependent. C2A1 also uses125B as its width and reads125C/125D as a word height; the high byte overlaps the scene-label row position."
 
 [[location]]
 address = "7E:125D"

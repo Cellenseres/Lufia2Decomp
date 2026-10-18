@@ -1,5 +1,6 @@
 /* Glyph buffer and window row upload setup ($80:C56E, C784, C23D). */
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
@@ -10,6 +11,7 @@
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
+#include "text/text_child_service.h"
 
 /* Slots in the actor tables. */
 enum { WINDOW_ACTOR_SLOTS = 40 };
@@ -527,22 +529,53 @@ Lufia2ExecutionResult Lufia2TextQueueWindowRow(
     return ExecutionReturned(0x80c5dcu);
 }
 
-/* $80:C23D: place the window or stop at C2A1. */
-Lufia2ExecutionResult Lufia2TextPrepareWindow(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static bool TextWindowContext(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x80u && !cpu->direct_page && !cpu->decimal &&
+           cpu->accumulator_is_8_bit && !cpu->index_is_8_bit && cpu->stack >= 0x1f10u &&
+           cpu->stack <= 0x1ffcu;
+}
+
+static Lufia2ExecutionResult FinishPreparedWindow(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    PullDataBank(memory, cpu);
+    cpu->y = PullIndexValue(memory, cpu);
+    LoadA8(cpu, 1);
+    TestBitsAbsolute8(memory, cpu, WRAM_UNK_7E09A9, 1);
+    LoadA8(cpu, WINDOW_UPLOAD_FLAG);
+    StoreADirect8(memory, cpu, DP_WINDOW_UPLOAD_FLAGS);
+    LoadA8(cpu, 1);
+    TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 1);
+    return ExecutionReturned(0x80c2a0u);
+}
+
+static Lufia2ExecutionResult PrepareTextWindow(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu,
+                                               Lufia2PushedChildCall child,
+                                               void *context) {
+    TextChildService service = {memory, cpu, child, context, ExecutionReturned(0u)};
     LoadA8(cpu, 1);
     TestBitsAbsolute8(memory, cpu, WRAM_UNK_7E09A9, 0);
     PushY(memory, cpu);
-    SimulateJslFrame(memory, cpu, 0x80u, 0xc246u);
-    Lufia2TextClearGlyphBuffer(memory, cpu);
-    SimulateRtlFrame(memory, cpu);
+    if (child) {
+        if (!TextCallChild(&service, 0x80c243u, 0x80c784u, 3u))
+            return service.result;
+    } else {
+        SimulateJslFrame(memory, cpu, 0x80u, 0xc246u);
+        Lufia2TextClearGlyphBuffer(memory, cpu);
+        SimulateRtlFrame(memory, cpu);
+    }
     PushDataBank(memory, cpu);
     LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);
     BitImmediate8(cpu, 2);
     if (cpu->zero) {
-        SimulateJsrFrame(memory, cpu, 0xc27bu);
-        Lufia2TextBuildWindow(memory, cpu);
-        SimulateRtsFrame(memory, cpu);
+        if (child) {
+            if (!TextCallChild(&service, 0x80c279u, 0x80c305u, 2u))
+                return service.result;
+        } else {
+            SimulateJsrFrame(memory, cpu, 0xc27bu);
+            Lufia2TextBuildWindow(memory, cpu);
+            SimulateRtsFrame(memory, cpu);
+        }
         LoadA8(cpu, WINDOW_STATE_MASK);
         TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 1);
         TransferDirectToA(cpu);
@@ -550,15 +583,7 @@ Lufia2ExecutionResult Lufia2TextPrepareWindow(
         Write8(memory, TEXT_WINDOW_ROW_MARK, A8(cpu));
         LoadX16(cpu, WINDOW_SCROLL_RESET);
         Write16Absolute(memory, cpu, TEXT_BG3_VOFS_SHADOW, cpu->x);
-        PullDataBank(memory, cpu);
-        cpu->y = PullIndexValue(memory, cpu);
-        LoadA8(cpu, 1);
-        TestBitsAbsolute8(memory, cpu, WRAM_UNK_7E09A9, 1);
-        LoadA8(cpu, WINDOW_UPLOAD_FLAG);
-        StoreADirect8(memory, cpu, DP_WINDOW_UPLOAD_FLAGS);
-        LoadA8(cpu, 1);
-        TestBitsAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 1);
-        return ExecutionReturned(0x80c2a0u);
+        return FinishPreparedWindow(memory, cpu);
     }
     LoadA8(cpu, DMA_MODE_WORD);
     StoreAAbsolute8(memory, cpu, SNES_DMAP(0), 0);
@@ -574,8 +599,100 @@ Lufia2ExecutionResult Lufia2TextPrepareWindow(
     Write16Absolute(memory, cpu, SNES_DASL(0), cpu->x);
     LoadA8(cpu, DMA_REQUEST | 1u);
     StoreADirect8(memory, cpu, WINDOW_UPLOAD_REQUEST(0));
-    SimulateJsrFrame(memory, cpu, 0xc276u);
-    return ExecutionHandoff(cpu, 0x80c2a1u);
+    if (!child) {
+        SimulateJsrFrame(memory, cpu, 0xc276u);
+        return ExecutionHandoff(cpu, 0x80c2a1u);
+    }
+    if (!TextCallChild(&service, 0x80c274u, 0x80c2a1u, 2u))
+        return service.result;
+    return FinishPreparedWindow(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2TextPrepareWindow(const Lufia2Memory *memory,
+                                              Lufia2CpuState *cpu) {
+    return PrepareTextWindow(memory, cpu, NULL, NULL);
+}
+
+Lufia2ExecutionResult Lufia2TextPrepareWindowWithServices(const Lufia2Memory *memory,
+                                                          Lufia2CpuState *cpu,
+                                                          Lufia2PushedChildCall child,
+                                                          void *context) {
+    if (!child || !TextWindowContext(cpu))
+        return ExecutionHandoff(cpu, 0x80c23du);
+    return PrepareTextWindow(memory, cpu, child, context);
+}
+
+Lufia2ExecutionResult Lufia2TextBuildSceneWindowInterior(const Lufia2Memory *memory,
+                                                         Lufia2CpuState *cpu,
+                                                         Lufia2PushedChildCall child,
+                                                         void *context) {
+    enum {
+        WIDTH = 0x63u,
+        HEIGHT = 0x5au,
+        TILE = 0x56u,
+        ROW_WIDTH = 0x58u,
+        ROW_OFFSET = 0x60u,
+        WIDTH_FIELD = WRAM_SCENE_LABEL_WIDTH,
+        HEIGHT_FIELD = WRAM_SCENE_LABEL_WIDTH + 1u,
+        TILEMAP = 0x7e0000u | TEXT_WINDOW_TILEMAP
+    };
+    if (!child || !TextWindowContext(cpu))
+        return ExecutionHandoff(cpu, 0x80c2a1u);
+    TextChildService service = {memory, cpu, child, context, ExecutionReturned(0u)};
+    if (!TextCallChild(&service, 0x80c2a1u, 0x80bf0bu, 2u))
+        return service.result;
+    PushY(memory, cpu);
+    OpLdx(cpu, 0x3600u);
+    OpLdy(cpu, 0x0b00u);
+    if (!TextCallChild(&service, 0x80c2abu, 0x80c61du, 2u))
+        return service.result;
+    OpPullY(memory, cpu);
+    if (!TextCallChild(&service, 0x80c2afu, 0x80bf0bu, 2u))
+        return service.result;
+    OpLda(memory, cpu, OpAbs(cpu, WIDTH_FIELD));
+    OpSta(memory, cpu, OpDp(cpu, WIDTH));
+    OpStz(memory, cpu, OpDp(cpu, WIDTH + 1u));
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 32u);
+    cpu->carry = 1u;
+    OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, WIDTH)));
+    OpAndValue(cpu, 0xfffeu);
+    cpu->carry = 0u;
+    OpAdcValue(cpu, 0x600u);
+    OpSta(memory, cpu, OpDp(cpu, ROW_OFFSET));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, HEIGHT_FIELD));
+    OpAslA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, HEIGHT));
+    OpLda(memory, cpu, OpDp(cpu, WIDTH));
+    OpSta(memory, cpu, OpDp(cpu, ROW_WIDTH));
+    OpLoadA(cpu, 0x2500u);
+    OpSta(memory, cpu, OpDp(cpu, TILE));
+    do {
+        OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, WIDTH)));
+        OpLda(memory, cpu, OpDp(cpu, TILE));
+        do {
+            OpSta(memory, cpu, OpLongX(cpu, TILEMAP));
+            OpIncA(cpu);
+            OpSta(memory, cpu, OpLongX(cpu, TILEMAP + 0x40u));
+            OpIncA(cpu);
+            OpInx(cpu);
+            OpInx(cpu);
+            OpDey(cpu);
+        } while (!cpu->zero);
+        OpLda(memory, cpu, OpDp(cpu, TILE));
+        cpu->carry = 0u;
+        OpAdcValue(cpu, 0x40u);
+        OpSta(memory, cpu, OpDp(cpu, TILE));
+        OpLda(memory, cpu, OpDp(cpu, ROW_OFFSET));
+        cpu->carry = 0u;
+        OpAdcValue(cpu, 0x80u);
+        OpSta(memory, cpu, OpDp(cpu, ROW_OFFSET));
+        OpTax(cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, HEIGHT), -1);
+    } while (!cpu->zero);
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x80c304u);
 }
 
 Lufia2ExecutionResult Lufia2TextWriteSceneWindowRow(

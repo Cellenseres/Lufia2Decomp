@@ -1667,7 +1667,7 @@ status = "verified"
 
 [[function]]
 address = "80:C23D"
-name = "Lufia2TextPrepareWindow"
+name = "Lufia2TextPrepareWindowWithServices"
 source = "src/text/text_window.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
@@ -13648,6 +13648,30 @@ status = "verified"
 address = "85:D0CD"
 name = "Lufia2BattleApplyTargetAction"
 source = "src/battle/battle_target_action.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:C2A1"
+name = "Lufia2TextBuildSceneWindowInterior"
+source = "src/text/text_window.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:C1FD"
+name = "Lufia2TextCloseWindowWithServices"
+source = "src/text/text_engine.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "80:9D3E"
+name = "Lufia2TextOpenWindowWithServices"
+source = "src/text/text_engine.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"

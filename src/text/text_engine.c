@@ -16,6 +16,7 @@
 #include "system/gold_internal.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
+#include "text/text_child_service.h"
 
 /* Text engine state beyond text_internal.h. */
 enum {
@@ -232,13 +233,12 @@ void Lufia2TextWindowClear(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $80:C1FD: close an open text window. */
-static void TextCloseWindow(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
-    LoadAAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0);         /* C1FD */
+static Lufia2ExecutionResult CloseTextWindow(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu,
+                                             Lufia2PushedChildCall child,
+                                             void *context) {
+    TextChildService service = {memory, cpu, child, context, ExecutionReturned(0u)};
+    LoadAAbsolute8(memory, cpu, TEXT_WINDOW_STATE, 0); /* C1FD */
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero) {
         LoadAAbsolute8(memory, cpu, WRAM_WINDOW_MODE, 0);
@@ -246,12 +246,35 @@ static void TextCloseWindow(
         if (cpu->zero) {
             StoreZeroAbsolute8(memory, cpu, TEXT_UNK_125D, 0);
             StoreZeroAbsolute8(memory, cpu, TEXT_UNK_125E, 0);
-            Lufia2TextWindowClear(memory, cpu, 0xc214u);
-            LoadA8(cpu, 0x08u);                                /* C215 */
+            if (child) {
+                if (!TextCallChild(&service, 0x80c211u, 0x848328u, 3u))
+                    return service.result;
+            } else {
+                Lufia2TextWindowClear(memory, cpu, 0xc214u);
+            }
+            LoadA8(cpu, 0x08u); /* C215 */
             StoreADirect8(memory, cpu, 0x74u);
         }
     }
+    return ExecutionReturned(0x80c219u);
+}
+
+static void TextCloseWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    (void)CloseTextWindow(memory, cpu, NULL, NULL);
     SimulateRtsFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2TextCloseWindowWithServices(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu,
+                                                        Lufia2PushedChildCall child,
+                                                        void *context) {
+    if (!child || cpu->program_bank != 0x80u || cpu->direct_page || cpu->decimal ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->stack < 0x1f10u ||
+        cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80c1fdu);
+    return CloseTextWindow(memory, cpu, child, context);
 }
 
 /* $80:9E54: call sub-script $09B0:$09AF from the $8E:EA00 table. */
@@ -597,9 +620,40 @@ static unsigned TextStartActorMotion(const Lufia2Memory *memory, Lufia2CpuState 
     return TEXT_OPCODE_EXIT;
 }
 
+Lufia2ExecutionResult Lufia2TextOpenWindowWithServices(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu,
+                                                       Lufia2PushedChildCall child,
+                                                       void *context) {
+    if (!child || cpu->program_bank != 0x80u || cpu->direct_page || cpu->decimal ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->stack < 0x1f10u ||
+        cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x809d3eu);
+    TextChildService service = {memory, cpu, child, context, ExecutionReturned(0u)};
+    OpLoadA(cpu, 0x81u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
+    if (!TextCallChild(&service, 0x809d43u, 0x80c652u, 2u) ||
+        !TextCallChild(&service, 0x809d46u, 0x80c23du, 2u))
+        return service.result;
+    return ExecutionHandoff(cpu, 0x809d00u);
+}
+
 /* $80:9D3E: measure upcoming text and prepare its window (opcode $08). */
 static unsigned TextOpenWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint32_t *handoff) {
+                               uint32_t *handoff, TextCommandServices *services) {
+    if (services->child) {
+        const uint32_t resume_pc = cpu->resume_pc;
+        services->result = Lufia2TextOpenWindowWithServices(
+            memory, cpu, services->child, services->context);
+        if (services->result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
+            return TEXT_OPCODE_CHILD_UNWOUND;
+        *handoff = services->result.pc;
+        if (services->result.flow == LUFIA2_EXECUTION_BOUNDARY &&
+            services->result.pc == 0x809d00u) {
+            cpu->resume_pc = resume_pc;
+            return TEXT_OPCODE_NEXT;
+        }
+        return TEXT_OPCODE_HANDOFF;
+    }
     Lufia2ExecutionResult child;
     LoadA8(cpu, 0x81u);
     StoreAAbsolute8(memory, cpu, WRAM_TEXT_STATE, 0);
@@ -613,7 +667,7 @@ static unsigned TextOpenWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         return TEXT_OPCODE_HANDOFF;
     }
     SimulateRtsFrame(memory, cpu);
-    return TEXT_OPCODE_NEXT;                                  /* 9D49 -> 9D00 */
+    return TEXT_OPCODE_NEXT; /* 9D49 -> 9D00 */
 }
 
 /* Handlers in the $80:CA14 opcode table. */
@@ -1846,7 +1900,8 @@ static unsigned TextOpColorFade(
 }
 
 static unsigned TextOpSetSpeaker(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                 uint16_t handler, uint32_t *handoff) {
+                                 uint16_t handler, uint32_t *handoff,
+                                 TextCommandServices *services) {
     static const struct {
         uint16_t handler;
         uint8_t actor;
@@ -1872,7 +1927,7 @@ static unsigned TextOpSetSpeaker(const Lufia2Memory *memory, Lufia2CpuState *cpu
     }
     StoreAAbsolute8(memory, cpu, TEXT_SPEAKER_ACTOR, 0);
     TextUpdateSpeaker(memory, cpu, 0xbc39u);
-    return TextOpenWindow(memory, cpu, handoff);
+    return TextOpenWindow(memory, cpu, handoff, services);
 }
 
 /* Script opcodes behind JMP ($CA14,x); others hand off. */
@@ -1976,7 +2031,7 @@ static unsigned TextScriptOpcode(
     if (script_flow == LUFIA2_TEXT_COMMAND_YIELD)
         return TEXT_OPCODE_EXIT;
     if (script_flow == 0x809d3eu)
-        return TextOpenWindow(memory, cpu, handoff);
+        return TextOpenWindow(memory, cpu, handoff, services);
     if (script_flow) {
         *handoff = script_flow;
         return TEXT_OPCODE_HANDOFF;
@@ -2093,9 +2148,9 @@ static unsigned TextScriptOpcode(
     case TEXT_OP_SPEAKER_5:
     case TEXT_OP_SPEAKER_4:
     case TEXT_OP_SPEAKER_6:
-        return TextOpSetSpeaker(memory, cpu, handler, handoff);
+        return TextOpSetSpeaker(memory, cpu, handler, handoff, services);
     case TEXT_OP_OPEN_WINDOW:
-        return TextOpenWindow(memory, cpu, handoff);
+        return TextOpenWindow(memory, cpu, handoff, services);
     case TEXT_OP_WAIT_FOR_ACTOR:
         return TextOpWaitForActor(memory, cpu, handoff, services);
     case TEXT_OP_WAIT_FRAMES:

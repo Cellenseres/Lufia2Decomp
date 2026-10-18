@@ -34,7 +34,7 @@ Lufia2ExecutionResult Lufia2TextQueueWindowRow(
 Lufia2ExecutionResult Lufia2TextBuildWindow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
-/* $80:C23D: returns after placement or hands off before the C2A1 frame wait. */
+/* Legacy placement API; scene mode retains its original continuation. */
 Lufia2ExecutionResult Lufia2TextPrepareWindow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
@@ -60,6 +60,26 @@ Lufia2ExecutionResult Lufia2TextUpdateSceneLabel(
 Lufia2ExecutionResult Lufia2TextRenderSceneLabel(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2TextBuildSceneWindowInterior(const Lufia2Memory *memory,
+                                                         Lufia2CpuState *cpu,
+                                                         Lufia2PushedChildCall child,
+                                                         void *context);
+
+Lufia2ExecutionResult Lufia2TextPrepareWindowWithServices(const Lufia2Memory *memory,
+                                                          Lufia2CpuState *cpu,
+                                                          Lufia2PushedChildCall child,
+                                                          void *context);
+
+Lufia2ExecutionResult Lufia2TextCloseWindowWithServices(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu,
+                                                        Lufia2PushedChildCall child,
+                                                        void *context);
+
+Lufia2ExecutionResult Lufia2TextOpenWindowWithServices(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu,
+                                                       Lufia2PushedChildCall child,
+                                                       void *context);
 
 #ifdef __cplusplus
 }
