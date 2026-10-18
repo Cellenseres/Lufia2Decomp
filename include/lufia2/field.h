@@ -1512,6 +1512,19 @@ Lufia2ExecutionResult Lufia2FieldResolveEventArea(const Lufia2Memory *,
 Lufia2ExecutionResult Lufia2FieldPlaceSpawnedActor(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Event cell probe and branch owners; DP0, M1X16. */
+Lufia2ExecutionResult Lufia2FieldProbeEventCell(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldBranchIfCellType(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2FieldBranchUnlessCellType(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

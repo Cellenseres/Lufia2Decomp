@@ -1,5 +1,7 @@
 /* Field event script opcodes for actors, positions and points. */
 
+#include <stddef.h>
+
 #include "actor/actor_internal.h"
 #include "core/cpu_ops.h"
 #include "core/child_call.h"
@@ -1089,35 +1091,147 @@ void Lufia2EventCellValue(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $0F/$6C: goto on bit 0 of the cell type. */
-static unsigned EventOpCellType(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t handler,
-    uint32_t *handoff) {
-    SimulateJsrFrame(memory, cpu, (uint16_t)(handler + 2u));  /* JSR D2FB */
-    Lufia2EventNextByte(memory, cpu, 0xd2fdu);
-    if (!Lufia2EventProbePosition(memory, cpu, 0xd300u, handoff))
-        return EVENT_OPCODE_HANDOFF;
-    PushY(memory, cpu);
-    SimulateJslFrame(memory, cpu, 0x80u, 0xd30au);
-    Lufia2EventCellValue(memory, cpu, 0x83u, 0xfb54u);               /* $83:FB51 */
-    BitImmediate8(cpu, 0xf0u);
-    if (cpu->zero) {
-        TransferDirectToA(cpu);
-    } else {
-        TransferAToX(cpu);
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_UNK_7FD296, cpu->x)));
+static bool CellProbeWidths(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x80u && !cpu->direct_page && !cpu->decimal &&
+           cpu->accumulator_is_8_bit && !cpu->index_is_8_bit;
+}
+
+static bool CellProbeContext(const Lufia2CpuState *cpu) {
+    return CellProbeWidths(cpu) && cpu->stack >= 0x1f10u && cpu->stack <= 0x1ffcu;
+}
+
+static bool CallCellProbeChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               EventRun *run, uint32_t site, uint32_t target,
+                               uint8_t frame, uint32_t *handoff) {
+    if (!CallChildWithFrame(memory, cpu, run->child, run->child_context, site, target,
+                            frame, 0x80u)) {
+        run->unwind_site = site;
+        *handoff = site;
+        return false;
     }
-    SimulateRtlFrame(memory, cpu);
+    if (!CellProbeWidths(cpu)) {
+        *handoff = ((uint32_t)cpu->program_bank << 16) | (uint16_t)(site + frame + 1u);
+        cpu->resume_pc = *handoff;
+        return false;
+    }
+    return true;
+}
+
+static unsigned ProbeEventCellPosition(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                       EventRun *run, uint32_t *handoff) {
+    if (run) {
+        if (!CallCellProbeChild(memory, cpu, run, 0x80d2fbu, 0x80e8b9u, 2u, handoff) ||
+            !CallCellProbeChild(memory, cpu, run, 0x80d2feu, 0x80ea09u, 2u, handoff))
+            return EVENT_OPCODE_HANDOFF;
+        OpSta(memory, cpu, OpDp(cpu, DP_PROBE_X));
+        ExchangeAccumulatorBytes(cpu);
+        OpSta(memory, cpu, OpDp(cpu, DP_PROBE_Y));
+    } else {
+        Lufia2EventNextByte(memory, cpu, 0xd2fdu);
+        if (!Lufia2EventProbePosition(memory, cpu, 0xd300u, handoff))
+            return EVENT_OPCODE_HANDOFF;
+    }
+    PushY(memory, cpu);
+    if (run) {
+        if (!CallCellProbeChild(memory, cpu, run, 0x80d307u, 0x83fb51u, 3u, handoff))
+            return EVENT_OPCODE_HANDOFF;
+    } else {
+        SimulateJslFrame(memory, cpu, 0x80u, 0xd30au);
+        Lufia2EventCellValue(memory, cpu, 0x83u, 0xfb54u); /* $83:FB51 */
+        BitImmediate8(cpu, 0xf0u);
+        if (cpu->zero) {
+            TransferDirectToA(cpu);
+        } else {
+            TransferAToX(cpu);
+            LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_UNK_7FD296, cpu->x)));
+        }
+        SimulateRtlFrame(memory, cpu);
+    }
     cpu->y = PullIndexValue(memory, cpu);
-    SimulateRtsFrame(memory, cpu);
+    return EVENT_OPCODE_NEXT;
+}
+
+static void FinishCellTypeBranch(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t handler) {
     BitImmediate8(cpu, 0x01u);
     if (cpu->zero == (handler == EVENT_OP_GOTO_IF_CELL_TYPE_BIT0))
         Lufia2EventSkipWord(memory, cpu);
     else
         Lufia2EventGoto(memory, cpu);
+}
+
+static unsigned BranchOnCellType(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t handler, EventRun *run, uint32_t *handoff) {
+    if (run) {
+        if (!CallCellProbeChild(memory, cpu, run, 0x800000u | handler, 0x80d2fbu, 2u,
+                                handoff))
+            return EVENT_OPCODE_HANDOFF;
+    } else {
+        SimulateJsrFrame(memory, cpu, (uint16_t)(handler + 2u));
+        if (ProbeEventCellPosition(memory, cpu, NULL, handoff) != EVENT_OPCODE_NEXT)
+            return EVENT_OPCODE_HANDOFF;
+        SimulateRtsFrame(memory, cpu);
+    }
+    FinishCellTypeBranch(memory, cpu, handler);
     return EVENT_OPCODE_NEXT;
+}
+
+Lufia2ExecutionResult Lufia2FieldProbeEventCell(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu,
+                                                Lufia2PushedChildCall child,
+                                                void *context) {
+    if (!child || !CellProbeContext(cpu))
+        return ExecutionHandoff(cpu, 0x80d2fbu);
+    EventRun run = {0};
+    run.child = child;
+    run.child_context = context;
+    uint32_t handoff = 0x80d2fbu;
+    if (ProbeEventCellPosition(memory, cpu, &run, &handoff) == EVENT_OPCODE_NEXT)
+        return ExecutionReturned(0x80d30cu);
+    if (run.unwind_site)
+        return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, run.unwind_site,
+                                       0u};
+    return ExecutionHandoff(cpu, handoff);
+}
+
+static Lufia2ExecutionResult RunCellTypeBranch(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu,
+                                               Lufia2PushedChildCall child,
+                                               void *context, uint16_t handler) {
+    if (!child || !CellProbeContext(cpu))
+        return ExecutionHandoff(cpu, 0x800000u | handler);
+    EventRun run = {0};
+    run.child = child;
+    run.child_context = context;
+    uint32_t handoff = 0x800000u | handler;
+    if (BranchOnCellType(memory, cpu, handler, &run, &handoff) == EVENT_OPCODE_NEXT)
+        return ExecutionHandoff(cpu, 0x80cc35u);
+    if (run.unwind_site)
+        return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, run.unwind_site,
+                                       0u};
+    return ExecutionHandoff(cpu, handoff);
+}
+
+Lufia2ExecutionResult Lufia2FieldBranchIfCellType(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu,
+                                                  Lufia2PushedChildCall child,
+                                                  void *context) {
+    return RunCellTypeBranch(memory, cpu, child, context,
+                             EVENT_OP_GOTO_IF_CELL_TYPE_BIT0);
+}
+
+Lufia2ExecutionResult Lufia2FieldBranchUnlessCellType(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu,
+                                                      Lufia2PushedChildCall child,
+                                                      void *context) {
+    return RunCellTypeBranch(memory, cpu, child, context,
+                             EVENT_OP_GOTO_UNLESS_CELL_TYPE_BIT0);
+}
+
+static unsigned EventOpCellType(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint16_t handler, EventRun *run, uint32_t *handoff) {
+    EventRun *services = run && run->child && CellProbeContext(cpu) ? run : NULL;
+    return BranchOnCellType(memory, cpu, handler, services, handoff);
 }
 
 /* $A7: $7F:D133 = map cell value at a position. */
@@ -2082,7 +2196,7 @@ unsigned Lufia2EventActorOpcode(
         return EventOpClaimedAction(memory, cpu, handoff);
     case EVENT_OP_GOTO_IF_CELL_TYPE_BIT0:
     case EVENT_OP_GOTO_UNLESS_CELL_TYPE_BIT0:
-        return EventOpCellType(memory, cpu, handler, handoff);
+        return EventOpCellType(memory, cpu, handler, run, handoff);
     case EVENT_OP_CELL_VALUE:
         return EventOpCellValue(memory, cpu, handoff);
     case EVENT_OP_CELL_HEIGHT:
