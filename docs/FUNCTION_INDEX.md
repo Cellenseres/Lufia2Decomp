@@ -541,6 +541,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F979` | `Lufia2PartyLevelUpCheck` | verified | `src/party/level_up.c` |
 | `$81:F9E9` | `Lufia2PartyExperienceForLevel` | verified | `src/party/experience.c` |
 | `$81:FAC9` | `Lufia2BattleRunRelativeScript` | verified | `src/battle/battle_relative_script.c` |
+| `$81:FB1A` | `Lufia2BattleRollEnemyItemDrop` | verified | `src/battle/battle_action_support.c` |
 | `$81:FB79` | `Lufia2CharacterSpriteByte` | verified | `src/battle/battle_character.c` |
 | `$81:FB8E` | `Lufia2SpriteCoordinatesPacked` | verified | `src/battle/battle_sprite_lookups.c` |
 | `$81:FBA2` | `Lufia2SpriteSizePacked` | verified | `src/battle/battle_character.c` |
@@ -1275,6 +1276,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:B208` | `Lufia2BattleCircleWindow` | verified | `src/battle/battle_circle_window.c` |
 | `$85:B26D` | `Lufia2BattleCircleWidths` | verified | `src/battle/battle_circle_window.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
+| `$85:C168` | `Lufia2BattleResolveActorRecord` | verified | `src/battle/battle_script.c` |
 | `$85:C4F1` | `Lufia2BattleExpandActionMessage` | verified | `src/battle/battle_message_parser.c` |
 | `$85:C60E` | `Lufia2SaveRestoreState` | verified | `src/system/save_state_restore.c` |
 | `$85:C754` | `Lufia2SaveUnpackPartyRecord` | verified | `src/system/save_party_unpack.c` |
@@ -1303,6 +1305,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:D94F` | `Lufia2BattleStoreActionResult` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
 | `$85:D9F0` | `Lufia2BattleInvalidateTurnQueueActor` | verified | `src/battle/battle_action_prepare.c` |
+| `$85:DA11` | `Lufia2BattleRunEquipmentScripts` | verified | `src/battle/battle_action_support.c` |
+| `$85:DA43` | `Lufia2BattleRunEquipmentItemScript` | verified | `src/battle/battle_action_support.c` |
+| `$85:DA5F` | `Lufia2BattleCharacterFromActor` | verified | `src/battle/battle_action_support.c` |
 | `$85:DA71` | `Lufia2BattleClearPartyModifiers` | verified | `src/battle/battle_record_reset.c` |
 | `$85:DA9C` | `Lufia2BattleClearEnemyModifiers` | verified | `src/battle/battle_record_reset.c` |
 | `$85:DAC7` | `Lufia2SystemCalculateVectorAngle` | verified | `src/system/vector_angle.c` |

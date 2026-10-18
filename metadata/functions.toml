@@ -13603,3 +13603,43 @@ source = "src/battle/battle_followup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:FB1A"
+name = "Lufia2BattleRollEnemyItemDrop"
+source = "src/battle/battle_action_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:C168"
+name = "Lufia2BattleResolveActorRecord"
+source = "src/battle/battle_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:DA11"
+name = "Lufia2BattleRunEquipmentScripts"
+source = "src/battle/battle_action_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:DA43"
+name = "Lufia2BattleRunEquipmentItemScript"
+source = "src/battle/battle_action_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:DA5F"
+name = "Lufia2BattleCharacterFromActor"
+source = "src/battle/battle_action_support.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -44,11 +44,7 @@
 #define BATTLE_SLOT_BASE 0x09fau
 
 /* $85:C168: battler byte A to its variable base in X. */
-static void BattleScriptSlot(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
+static uint8_t SelectActorRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreAAbsolute8(memory, cpu, BATTLE_SLOT_BITS, 0); /* C168 */
     BitImmediate8(cpu, 0x3fu);
     if (!cpu->zero) {
@@ -61,7 +57,7 @@ static void BattleScriptSlot(
             const uint32_t bits = AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BITS, 0);
             const uint8_t value = Read8(memory, bits);
 
-            LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));              /* C17A */
+            LoadA8(cpu, (uint8_t)(A8(cpu) + 1u)); /* C17A */
             cpu->carry = value & 1u;
             Write8(memory, bits, (uint8_t)(value >> 1));
             SetNz8(cpu, (uint8_t)(value >> 1));
@@ -69,18 +65,26 @@ static void BattleScriptSlot(
         cpu->carry = 0;
         Adc8(cpu, Read8(memory, AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BASE, 0)));
     }
-    SetAccumulatorWidth(cpu, 0);                               /* C184 */
+    SetAccumulatorWidth(cpu, 0); /* C184 */
     And16(cpu, 0x00ffu);
     AslA16(cpu);
     TransferAToX(cpu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_BATTLE_SCRIPT_CONTEXT, 0));
     And16(cpu, 0x00ffu);
+    const uint8_t zero_context = cpu->zero;
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
-                                       cpu->zero ? BATTLE_BASES_CONTEXT_ZERO
-                                                 : BATTLE_BASES_CONTEXT_SET,
+                                       zero_context ? BATTLE_BASES_CONTEXT_ZERO
+                                                    : BATTLE_BASES_CONTEXT_SET,
                                        cpu->x));
     TransferAToX(cpu);
     SetAccumulatorWidth(cpu, 1);
+    return zero_context;
+}
+
+static void BattleScriptSlot(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                             uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    (void)SelectActorRecord(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -1500,4 +1504,14 @@ Lufia2ExecutionResult Lufia2BattleScript(
             return result;
         }
     }
+}
+
+Lufia2ExecutionResult Lufia2BattleResolveActorRecord(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu) {
+    uint8_t bank = cpu->data_bank;
+    if (cpu->program_bank != 0x85u || cpu->direct_page || cpu->decimal ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->stack < 0x1f20u ||
+        cpu->stack > 0x1ffcu || !(bank < 0x40u || (bank >= 0x7eu && bank < 0xc0u)))
+        return ExecutionHandoff(cpu, 0x85c168u);
+    return ExecutionReturned(SelectActorRecord(memory, cpu) ? 0x85c1a0u : 0x85c199u);
 }

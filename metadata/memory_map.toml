@@ -1311,7 +1311,7 @@ name = "record_buffer"
 width = 1
 count = 54
 owner = "item"
-notes = "Work buffer of the record loaders. 81:F1C5 clears all 54 bytes, then stores the item name (12 bytes plus a zero at 0B83) and the compacted record from 0B84. 81:F414 stores eight spell name bytes, a DP-low terminator and eleven payload bytes; price word is offset10."
+notes = "Work buffer of the record loaders. 81:F1C5 clears all 54 bytes, then stores the item name (12 bytes plus a zero at 0B83) and the compacted record from 0B84. 81:F414 stores eight spell name bytes, a DP-low terminator and eleven payload bytes; price word is offset10. Item-record byte0B93 is the relative equipment-script offset consumed by85DA43."
 
 [[location]]
 address = "7E:0CD9"
@@ -4777,7 +4777,7 @@ name = "party_stat_member_index"
 width = 2
 count = 1
 owner = "system"
-notes = "Original member index for stat tables."
+notes = "Original member index for stat tables. 81FB1A reuses the low byte as enemy-record index and the high byte as item-drop threshold;85C168 reuses them as slot base and shifting actor bits."
 
 [[location]]
 address = "7E:09FE"
@@ -4785,7 +4785,7 @@ name = "party_stat_level"
 width = 2
 count = 1
 owner = "system"
-notes = "Original level for base stat tables."
+notes = "Original level for base stat tables. 81FB1A clears this word and conditionally writes the nine-bit dropped item plus0200."
 
 [[location]]
 address = "7E:0A1C"
@@ -5894,7 +5894,7 @@ name = "battle_action_bias"
 width = 1
 count = 1
 owner = "battle"
-notes = "85D025 forms an eight-bit action bias here before copying its zero-extended value intoF452."
+notes = "85D025 forms an eight-bit action bias here before copying its zero-extended value intoF452. 81FB1A also uses this address and its next byte as a packed item-drop descriptor."
 
 [[location]]
 address = "7E:13DB"
