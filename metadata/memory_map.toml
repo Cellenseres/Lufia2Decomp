@@ -6095,3 +6095,27 @@ width = 1
 count = 1
 owner = "menu"
 notes = "85CD10 writes four three-byte kind/value records for82:95BF and95FA. The value word of member0 is the existing0A38 battle-preview marker;storage is intentionally phase-dependent,not disjoint."
+
+[[location]]
+address = "7E:09F6"
+name = "menu_effect_negative_stats"
+width = 2
+count = 1
+owner = "menu"
+notes = "85D82C clears this word;85D8A1 sets bits for negative action changes,then copies the low byte to09FB."
+
+[[location]]
+address = "7E:09F8"
+name = "menu_effect_stat_bit"
+width = 2
+count = 1
+owner = "menu"
+notes = "85D82C starts at one;85D8A1 shifts this live word after each of seven requested stat changes."
+
+[[location]]
+address = "7E:0A00"
+name = "menu_effect_requested_statuses"
+width = 2
+count = 1
+owner = "menu"
+notes = "85D82C rotates sixteen original action status-byte tests into this word and inverts it;85D7CE intersects it with the live target status masks."

@@ -14243,3 +14243,59 @@ source = "src/battle/menu_effect_values.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:D711"
+name = "Lufia2BattleCheckAnyMenuEffectTarget"
+source = "src/battle/menu_target_eligibility.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:D7CE"
+name = "Lufia2BattleCheckMenuEffectTarget"
+source = "src/battle/menu_target_eligibility.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:D82C"
+name = "Lufia2BattleBuildRequestedEffectMasks"
+source = "src/battle/menu_target_eligibility.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:D8B9"
+name = "Lufia2BattleBuildTargetEffectMasks"
+source = "src/battle/menu_target_eligibility.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:D8A1"
+name = "Lufia2BattleAddRequestedStatChange"
+source = "src/battle/menu_target_eligibility.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:9C7D"
+name = "Lufia2MenuConfigureListCursor"
+source = "src/menu/menu_list_cursor_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9DF3"
+name = "Lufia2MenuConfigureItemUseCursor"
+source = "src/menu/menu_list_cursor_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

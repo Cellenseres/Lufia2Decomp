@@ -647,7 +647,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9B51` | `Lufia2MenuBuildListWindows` | verified | `src/menu/menu_list_controls.c` |
 | `$82:9C10` | `Lufia2MenuInitializeListScroll` | verified | `src/menu/menu_list_controls.c` |
 | `$82:9C52` | `Lufia2MenuInitializeListCursor` | verified | `src/menu/menu_list_motion.c` |
+| `$82:9C7D` | `Lufia2MenuConfigureListCursor` | verified | `src/menu/menu_list_cursor_setup.c` |
 | `$82:9CB2` | `Lufia2MenuWarpList` | verified | `src/menu/menu_screen.c` |
+| `$82:9DF3` | `Lufia2MenuConfigureItemUseCursor` | verified | `src/menu/menu_list_cursor_setup.c` |
 | `$82:9E2F` | `Lufia2MenuUpdateItemCapacityHint` | verified | `src/menu/menu_effect_presentation.c` |
 | `$82:9EF2` | `Lufia2MenuBuildAlternateCursor` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
@@ -1372,6 +1374,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:D025` | `Lufia2BattleCalculateActionBias` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:D080` | `Lufia2BattleReadActorBiasFlag` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:D0CD` | `Lufia2BattleApplyTargetAction` | verified | `src/battle/battle_target_action.c` |
+| `$85:D711` | `Lufia2BattleCheckAnyMenuEffectTarget` | verified | `src/battle/menu_target_eligibility.c` |
+| `$85:D7CE` | `Lufia2BattleCheckMenuEffectTarget` | verified | `src/battle/menu_target_eligibility.c` |
+| `$85:D82C` | `Lufia2BattleBuildRequestedEffectMasks` | verified | `src/battle/menu_target_eligibility.c` |
+| `$85:D8A1` | `Lufia2BattleAddRequestedStatChange` | verified | `src/battle/menu_target_eligibility.c` |
+| `$85:D8B9` | `Lufia2BattleBuildTargetEffectMasks` | verified | `src/battle/menu_target_eligibility.c` |
 | `$85:D94F` | `Lufia2BattleStoreActionResult` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:D9C9` | `Lufia2BattleEffectRecord` | verified | `src/battle/battle_status_support.c` |
 | `$85:D9F0` | `Lufia2BattleInvalidateTurnQueueActor` | verified | `src/battle/battle_action_prepare.c` |

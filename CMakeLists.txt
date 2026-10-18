@@ -103,6 +103,8 @@ add_library(lufia2_decomp STATIC
     src/item/inventory_menu_consume.c
     src/item/menu_application.c
     src/battle/menu_effect_values.c
+    src/battle/menu_target_eligibility.c
+    src/menu/menu_list_cursor_setup.c
     src/item/inventory_actions.c
     src/menu/menu_list_sort.c
     src/menu/menu_list_controls.c
