@@ -604,6 +604,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9246` | `Lufia2MenuPollSelectionChoice` | verified | `src/menu/menu_context_services.c` |
 | `$82:92F9` | `Lufia2MenuRestoreSelectionCursor` | verified | `src/menu/menu_context_services.c` |
 | `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |
+| `$82:9330` | `Lufia2MenuWaitFramesOrButton` | verified | `src/menu/menu_input_waits.c` |
+| `$82:9353` | `Lufia2MenuWaitSpriteFrames` | verified | `src/menu/menu_input_waits.c` |
+| `$82:935D` | `Lufia2MenuWaitButtonMasks` | verified | `src/menu/menu_input_waits.c` |
+| `$82:9380` | `Lufia2MenuWaitSpriteMotionOrButton` | verified | `src/menu/menu_input_waits.c` |
 | `$82:939C` | `Lufia2MenuNmi` | verified | `src/menu/menu.c` |
 | `$82:93C2` | `Lufia2WaitMenuFrameChange` | verified | `src/menu/menu_frame_wait.c` |
 | `$82:93CF` | `Lufia2MenuPlacePartyPortraits` | verified | `src/menu/menu_display_callers.c` |

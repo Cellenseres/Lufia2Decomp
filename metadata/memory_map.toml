@@ -3503,7 +3503,7 @@ name = "menu_display_requests"
 width = 1
 count = 4
 owner = "menu"
-notes = "Four ordered menu requests: HDMA, window, sprite and selected tilemap. Original byte writes retain DB. The1566 byte selects list-scroll raster/upload rows with2,4,8,0x10 before sprite frames,then restores1;8E12 consumes the request."
+notes = "Four ordered menu requests: HDMA, window, sprite and selected tilemap. Original byte writes retain DB. The1566 byte selects list-scroll raster/upload rows with2,4,8,0x10 before sprite frames,then restores1;8E12 consumes the request. 82:9380 polls offset2 until sprite motion completes or a button interrupts."
 
 [[location]]
 address = "7E:156A"
@@ -4954,7 +4954,7 @@ address = "7E:156C"
 width = 2
 count = 1
 owner = "menu"
-notes = "Erase selection stores8080 before original82935D presentation service. Purpose remains unproven."
+notes = "82:935D tests the pressed-button word14AB against this first mask, returning clear carry on a match before checking156E. Erase selection initializes8080."
 
 [[location]]
 name = "unk_7E156E"
@@ -4962,7 +4962,7 @@ address = "7E:156E"
 width = 2
 count = 1
 owner = "menu"
-notes = "Erase selection stores8080 before original82935D presentation service. Purpose remains unproven."
+notes = "82:935D tests the pressed-button word14AB against this second mask after156C; a match returns set carry. Erase selection initializes8080."
 
 [[location]]
 address = "7F:D1A0"

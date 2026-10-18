@@ -13835,3 +13835,35 @@ source = "src/menu/menu_scenario_view.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:9330"
+name = "Lufia2MenuWaitFramesOrButton"
+source = "src/menu/menu_input_waits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9353"
+name = "Lufia2MenuWaitSpriteFrames"
+source = "src/menu/menu_input_waits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:935D"
+name = "Lufia2MenuWaitButtonMasks"
+source = "src/menu/menu_input_waits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9380"
+name = "Lufia2MenuWaitSpriteMotionOrButton"
+source = "src/menu/menu_input_waits.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

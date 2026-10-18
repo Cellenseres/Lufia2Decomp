@@ -88,6 +88,7 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_actor_callers.c
     src/field/field_menu.c
     src/menu/menu_main_screen.c
+    src/menu/menu_input_waits.c
     src/menu/menu_scenario_view.c
     src/menu/menu_main_dispatch.c
     src/menu/menu_selection_state.c
