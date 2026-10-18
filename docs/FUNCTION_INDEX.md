@@ -137,6 +137,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C23D` | `Lufia2TextPrepareWindowWithServices` | verified | `src/text/text_window.c` |
 | `$80:C2A1` | `Lufia2TextBuildSceneWindowInterior` | verified | `src/text/text_window.c` |
 | `$80:C305` | `Lufia2TextBuildWindow` | verified | `src/text/text_window.c` |
+| `$80:C52C` | `Lufia2TextDrawWindowBorderRow` | verified | `src/text/text_window.c` |
+| `$80:C557` | `Lufia2TextWindowTileOffset` | verified | `src/text/text_window.c` |
 | `$80:C56E` | `Lufia2TextQueueWindowRow` | verified | `src/text/text_window.c` |
 | `$80:C5DD` | `Lufia2TextWriteSceneWindowRow` | verified | `src/text/text_window.c` |
 | `$80:C61D` | `Lufia2TextClearUploadRows` | verified | `src/text/scene_text_resources.c` |
@@ -994,6 +996,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:DF87` | `Lufia2ActorSpawnFromId` | verified | `src/field/field_object_transition.c` |
 | `$83:DFA5` | `Lufia2ActorInitializeSpawnSlot` | verified | `src/actor/actor_slots.c` |
 | `$83:DFFD` | `Lufia2ActorLoadSecondaryScript` | verified | `src/actor/actor_slots.c` |
+| `$83:E018` | `Lufia2FieldPlaceSpawnedActor` | verified | `src/field/field_event_actors.c` |
 | `$83:E033` | `Lufia2FieldSetObjectDrawFlags` | verified | `src/field/field_event_actors.c` |
 | `$83:E03E` | `Lufia2ObjectSlotsUpdate` | verified | `src/actor/object_vm.c` |
 | `$83:E0FC` | `Lufia2ObjectBeginOpcodeDispatch` | verified | `src/actor/object_vm.c` |

@@ -13675,3 +13675,27 @@ source = "src/text/text_engine.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:C557"
+name = "Lufia2TextWindowTileOffset"
+source = "src/text/text_window.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "80:C52C"
+name = "Lufia2TextDrawWindowBorderRow"
+source = "src/text/text_window.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:E018"
+name = "Lufia2FieldPlaceSpawnedActor"
+source = "src/field/field_event_actors.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

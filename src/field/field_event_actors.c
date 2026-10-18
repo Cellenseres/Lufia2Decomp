@@ -257,6 +257,26 @@ uint8_t Lufia2EventPosition(
     return 1;
 }
 
+static void PlaceSpawnedActor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadXDirect16(memory, cpu, DP_SLOT_WORD_OFFSET);
+    SetAccumulatorWidth(cpu, 0);
+    LoadADirect16(memory, cpu, DP_PROBE_X);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X, cpu->x),
+                cpu->accumulator);
+    LoadADirect16(memory, cpu, DP_PROBE_Y);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    AslA16(cpu);
+    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_Y, cpu->x),
+                cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+}
+
 /* $24/$25: spawn a secondary actor at a tile position. */
 static unsigned EventOpSpawn(
     const Lufia2Memory *memory,
@@ -287,23 +307,7 @@ static unsigned EventOpSpawn(
     SimulateRtlFrame(memory, cpu);
     /* $83:E018: fine position of actor $A9 from $8F/$91. */
     SimulateJslFrame(memory, cpu, 0x80u, 0xd50bu);
-    LoadXDirect16(memory, cpu, DP_SLOT_WORD_OFFSET);
-    SetAccumulatorWidth(cpu, 0);
-    LoadADirect16(memory, cpu, DP_PROBE_X);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_X, cpu->x),
-                cpu->accumulator);
-    LoadADirect16(memory, cpu, DP_PROBE_Y);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    Write16Long(memory, LongIndexedAddress(WRAM_OBJECT_FINE_Y, cpu->x),
-                cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
+    PlaceSpawnedActor(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     LoadA8(cpu, Pull8(memory, cpu));                           /* D50C */
     StoreADirect8(memory, cpu, DP_ACTOR_SLOT);
@@ -2142,4 +2146,14 @@ Lufia2ExecutionResult Lufia2FieldResolveEventArea(const Lufia2Memory *memory,
     if (!ResolveEventAreaBody(memory, cpu, &handoff))
         return ExecutionHandoff(cpu, handoff);
     return ExecutionReturned(0x80e99cu);
+}
+
+Lufia2ExecutionResult Lufia2FieldPlaceSpawnedActor(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->direct_page || cpu->decimal ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->stack < 0x1f10u ||
+        cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x83e018u);
+    PlaceSpawnedActor(memory, cpu);
+    return ExecutionReturned(0x83e032u);
 }

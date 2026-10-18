@@ -703,3 +703,23 @@ Lufia2ExecutionResult Lufia2TextWriteSceneWindowRow(
     TextWriteWindowRow(memory, cpu);
     return ExecutionReturned(0x80c61cu);
 }
+
+Lufia2ExecutionResult Lufia2TextWindowTileOffset(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->direct_page || cpu->decimal ||
+        cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->stack < 0x1f10u ||
+        cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80c557u);
+    TextWindowTileOffset(memory, cpu);
+    return ExecutionReturned(0x80c56du);
+}
+
+Lufia2ExecutionResult Lufia2TextDrawWindowBorderRow(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->direct_page || cpu->decimal ||
+        cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->stack < 0x1f10u ||
+        cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80c52cu);
+    TextWindowBorderRow(memory, cpu);
+    return ExecutionReturned(0x80c556u);
+}

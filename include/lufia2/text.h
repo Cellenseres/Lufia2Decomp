@@ -81,6 +81,12 @@ Lufia2ExecutionResult Lufia2TextOpenWindowWithServices(const Lufia2Memory *memor
                                                        Lufia2PushedChildCall child,
                                                        void *context);
 
+/* Original coordinate helpers; DP0, binary, X16. */
+Lufia2ExecutionResult Lufia2TextWindowTileOffset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2TextDrawWindowBorderRow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
