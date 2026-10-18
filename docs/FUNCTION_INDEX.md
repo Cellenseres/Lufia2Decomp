@@ -1295,6 +1295,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:CDD0` | `Lufia2BattleLoadActionRecord` | verified | `src/battle/battle_action_work.c` |
 | `$85:CDFA` | `Lufia2BattleActionRecordPointer` | verified | `src/battle/battle_action_work.c` |
 | `$85:CE21` | `Lufia2BattlePrepareAlternateAction` | verified | `src/battle/battle_action_prepare.c` |
+| `$85:CE6F` | `Lufia2BattlePrepareTargetedAction` | verified | `src/battle/battle_followup.c` |
 | `$85:CF68` | `Lufia2BattleBuildActionAdjustments` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:CFAB` | `Lufia2BattleAccumulateActionAdjustment` | verified | `src/battle/battle_action_prepare.c` |
 | `$85:D025` | `Lufia2BattleCalculateActionBias` | verified | `src/battle/battle_action_prepare.c` |
@@ -1320,6 +1321,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:DF35` | `Lufia2BattleFindEnemySpriteGroup` | verified | `src/battle/battle_enemy_sprite_setup.c` |
 | `$85:DF44` | `Lufia2BattleBuildEnemyGraphicsGroups` | verified | `src/battle/battle_status_cache.c` |
 | `$85:DFB9` | `Lufia2BattleReleaseDefeatedEnemies` | verified | `src/battle/battle_status_cache.c` |
+| `$85:E02D` | `Lufia2BattleFindEnemyGraphicsPlacement` | verified | `src/battle/battle_followup.c` |
 | `$85:E0E4` | `Lufia2BattleCheckEnemyGraphicsCapacity` | verified | `src/battle/battle_followup.c` |
 | `$85:E7BC` | `Lufia2BattlePlayTransition` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAE4` | `Lufia2BattleAdvanceTransitionFrame` | verified | `src/battle/battle_transition_setup.c` |

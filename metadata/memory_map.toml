@@ -321,7 +321,7 @@ address = "7E:1269"
 name = "text_wait_actor"
 width = 1
 owner = "text"
-notes = "Actor the text engine waits for (opcode $33), set to $FF when the wait ends. $83:C7F8 tests its sign. Battle messages reuse this address as a 37-byte name buffer."
+notes = "Actor the text engine waits for (opcode $33), set to $FF when the wait ends. $83:C7F8 tests its sign. Battle messages reuse this address as a 37-byte name buffer. 85E02D uses its first32 bytes as enemy-column occupancy and free-run workspace."
 
 [[location]]
 address = "7E:1291"
@@ -3401,7 +3401,7 @@ name = "battle_message_window_columns"
 width = 1
 count = 1
 owner = "battle"
-notes = "Original action message window column count."
+notes = "Original action message window column count. 85CE6F reuses this byte as the current target bit."
 
 [[location]]
 address = "7E:09F3"
@@ -3409,7 +3409,7 @@ name = "battle_message_window_rows"
 width = 1
 count = 1
 owner = "battle"
-notes = "Original action message window row count."
+notes = "Original action message window row count. 85CE6F reuses this byte as the six-bit target count."
 
 [[location]]
 address = "7E:1B23"
@@ -5943,3 +5943,19 @@ width = 1
 count = 1
 owner = "battle"
 notes = "Base marker:85CE21 clears014Abytes;85CF68 visits11records ofstride1E throughF755. Storage overlaps the existing F65B encounter marker; this location does not declare a disjoint allocation."
+
+[[location]]
+address = "7E:0A05"
+name = "battle_action_target_count"
+width = 1
+count = 1
+owner = "battle"
+notes = "85CE6F stores the six-bit target count before action dispatch."
+
+[[location]]
+address = "7E:0A2D"
+name = "battle_dispatch_target_count"
+width = 1
+count = 1
+owner = "battle"
+notes = "85CE6F passes the target count to85D0CD; the dispatcher reuses this byte for its action outcome."

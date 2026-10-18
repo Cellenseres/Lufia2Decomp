@@ -2041,6 +2041,15 @@ Lufia2ExecutionResult Lufia2BattleUploadVramQueue(const Lufia2Memory *,
 Lufia2ExecutionResult Lufia2BattleClearActionWorkspace(const Lufia2Memory *,
                                                        Lufia2CpuState *);
 
+Lufia2ExecutionResult Lufia2BattlePrepareTargetedAction(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu,
+                                                        Lufia2PushedChildCall child,
+                                                        void *context);
+
+Lufia2ExecutionResult
+Lufia2BattleFindEnemyGraphicsPlacement(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                       Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif
