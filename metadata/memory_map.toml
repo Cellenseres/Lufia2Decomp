@@ -6023,3 +6023,27 @@ width = 1
 count = 72
 owner = "menu"
 notes = "Four18-byte save/load previews built by82:F20A/F22B and drawn byF2CE/F2FE. Each holds count0,animation IDs7..10,display levels11..14 and control bytes15..17. This begins immediately after the existing347-byteA498 snapshot. Other bytes remain neutral."
+
+[[location]]
+address = "7E:151B"
+name = "menu_spell_member"
+width = 2
+count = 1
+owner = "menu"
+notes = "82:B60A changes the low byte with party-count wrap,then stores the zero-extended slot here and in14B3.82:B5ED publishes it throughDP22 to9971."
+
+[[location]]
+address = "7E:151D"
+name = "menu_spell_member_mp"
+width = 2
+count = 1
+owner = "menu"
+notes = "82:B5ED copies the selected character-record word atoffset13 before advancing DP2A by96 to the36-byte spell list. Spell-row affordability reads this word."
+
+[[location]]
+address = "7E:0A03"
+name = "menu_spell_list_id"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:B60A loads this byte from8E:D8BB using14B3 after choosing a spell-list member. Retains the original table-derived byte independently of the party slot."

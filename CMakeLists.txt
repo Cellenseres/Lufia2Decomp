@@ -98,6 +98,7 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_display_callers.c
     src/menu/menu_cursor_callers.c
     src/menu/menu_presentation_callers.c
+    src/menu/menu_list_sort.c
     src/menu/menu_list_controls.c
     src/menu/menu_list_scroll.c
     src/menu/menu_list_motion.c

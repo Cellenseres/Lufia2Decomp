@@ -528,6 +528,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F114` | `Lufia2InventoryRemoveQuantity` | verified | `src/item/inventory_consume.c` |
 | `$81:F15B` | `Lufia2InventoryConsumeRequestedItem` | verified | `src/item/inventory_consume.c` |
 | `$81:F194` | `Lufia2ItemRecordByte` | verified | `src/item/item_records.c` |
+| `$81:F1AB` | `Lufia2ItemRecordWord7` | verified | `src/item/item_records.c` |
 | `$81:F1C5` | `Lufia2LoadItemRecord` | verified | `src/item/item_records.c` |
 | `$81:F291` | `Lufia2ItemTextPointer` | verified | `src/item/item_records.c` |
 | `$81:F2A9` | `Lufia2ItemNameTrimmed` | verified | `src/item/item_records.c` |
@@ -643,6 +644,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:A658` | `Lufia2MenuRunListInput` | verified | `src/menu/menu_list_controls.c` |
 | `$82:A711` | `Lufia2MenuRunListSelection` | verified | `src/menu/menu_list_controls.c` |
 | `$82:A918` | `Lufia2MenuListCursor` | verified | `src/menu/menu_screen.c` |
+| `$82:A9B5` | `Lufia2MenuSortInventory` | verified | `src/menu/menu_list_sort.c` |
 | `$82:AC84` | `Lufia2MenuDrawListPage` | verified | `src/menu/menu_list_motion.c` |
 | `$82:ACDB` | `Lufia2MenuListRow` | verified | `src/menu/menu_screen.c` |
 | `$82:AD20` | `Lufia2MenuAnimateListUp` | verified | `src/menu/menu_list_motion.c` |
@@ -651,6 +653,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:AE53` | `Lufia2MenuMoveListMarkerUp` | verified | `src/menu/menu_list_motion.c` |
 | `$82:B104` | `Lufia2MenuRunItemSelection` | verified | `src/menu/menu_dispatch_callers.c` |
 | `$82:B2C5` | `Lufia2MenuEquipUpgrade` | verified | `src/menu/menu_screen.c` |
+| `$82:B3AD` | `Lufia2MenuSortSpells` | verified | `src/menu/menu_list_sort.c` |
+| `$82:B5ED` | `Lufia2MenuPrepareSpellMember` | verified | `src/menu/menu_list_sort.c` |
+| `$82:B60A` | `Lufia2MenuSelectAdjacentSpellMember` | verified | `src/menu/menu_list_sort.c` |
 | `$82:C261` | `Lufia2CapsuleLoadStats` | verified | `src/party/capsule.c` |
 | `$82:C2AE` | `Lufia2CapsuleInitializeSavedRecords` | verified | `src/menu/menu_context_services.c` |
 | `$82:C2FD` | `Lufia2CapsuleReset` | verified | `src/party/capsule.c` |

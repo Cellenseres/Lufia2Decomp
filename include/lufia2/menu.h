@@ -908,6 +908,22 @@ Lufia2ExecutionResult Lufia2SelectScreenQueueTilemapCopy(const Lufia2Memory *,
                                                          Lufia2CpuState *,
                                                          Lufia2PushedChildCall, void *);
 
+Lufia2ExecutionResult Lufia2MenuSortInventory(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuSortSpells(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuPrepareSpellMember(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuSelectAdjacentSpellMember(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

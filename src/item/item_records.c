@@ -1,6 +1,7 @@
 /* Item and spell records ($81:F1C5, $81:F414). */
 
 #include "core/cpu_internal.h"
+#include "core/child_call.h"
 #include "lufia2/item.h"
 
 enum {
@@ -291,4 +292,32 @@ Lufia2ExecutionResult Lufia2SpellTextPointer(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SpellRecordAddress(memory, cpu);
     return ExecutionReturned(0x81f45du);
+}
+
+Lufia2ExecutionResult Lufia2ItemRecordWord7(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || cpu->program_bank != 0x81u || cpu->index_is_8_bit ||
+        cpu->direct_page || cpu->decimal || cpu->stack < 0x1f00u ||
+        cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x81f1abu);
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 1u);
+    SetIndexWidth(cpu, 0u);
+    if (!CallChildWithFrame(memory, cpu, child, context,
+                            0x81f1b0u, 0x81f291u, 3u, 0x81u))
+        return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, 0x81f1b0u, 0u};
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x81f1b4u);
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, ITEM_RECORD, 0u));
+    PushDataBank(memory, cpu);
+    LoadA8(cpu, 0x96u);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 7u, cpu->y));
+    PullDataBank(memory, cpu);
+    Write16Absolute(memory, cpu, FIELDS + 7u, cpu->x);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x81f1c4u);
 }

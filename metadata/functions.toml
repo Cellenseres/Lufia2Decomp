@@ -13931,3 +13931,43 @@ source = "src/menu/menu_cursor_callers.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "82:A9B5"
+name = "Lufia2MenuSortInventory"
+source = "src/menu/menu_list_sort.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B3AD"
+name = "Lufia2MenuSortSpells"
+source = "src/menu/menu_list_sort.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B5ED"
+name = "Lufia2MenuPrepareSpellMember"
+source = "src/menu/menu_list_sort.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B60A"
+name = "Lufia2MenuSelectAdjacentSpellMember"
+source = "src/menu/menu_list_sort.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F1AB"
+name = "Lufia2ItemRecordWord7"
+source = "src/item/item_records.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
