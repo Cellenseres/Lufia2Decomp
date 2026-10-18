@@ -105,6 +105,12 @@ add_library(lufia2_decomp STATIC
     src/battle/menu_effect_values.c
     src/battle/menu_target_eligibility.c
     src/menu/menu_list_cursor_setup.c
+    src/item/menu_action_actor.c
+    src/menu/menu_item_setup.c
+    src/menu/menu_selection_helpers.c
+    src/menu/menu_glyph_buffer.c
+    src/menu/menu_layer_backup.c
+    src/field/group_object_conditions.c
     src/item/inventory_actions.c
     src/menu/menu_list_sort.c
     src/menu/menu_list_controls.c

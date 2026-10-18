@@ -14299,3 +14299,99 @@ source = "src/menu/menu_list_cursor_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:FAF5"
+name = "Lufia2MenuResolveActionActor"
+source = "src/item/menu_action_actor.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9D55"
+name = "Lufia2MenuPrepareItemSelection"
+source = "src/menu/menu_item_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9DD3"
+name = "Lufia2MenuRefreshItemSelection"
+source = "src/menu/menu_item_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F9C9"
+name = "Lufia2MenuBuildEquipmentAttributes"
+source = "src/menu/menu_selection_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9984"
+name = "Lufia2MenuHighlightPartySelection"
+source = "src/menu/menu_selection_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:942F"
+name = "Lufia2MenuSubtractExperienceTotals"
+source = "src/menu/menu_selection_helpers.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9073"
+name = "Lufia2MenuBuildGlyphBuffer"
+source = "src/menu/menu_glyph_buffer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:90F6"
+name = "Lufia2MenuPadGlyphRow"
+source = "src/menu/menu_glyph_buffer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9113"
+name = "Lufia2MenuUploadGlyphBuffer"
+source = "src/menu/menu_glyph_buffer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9133"
+name = "Lufia2MenuPlaceGlyphRectangle"
+source = "src/menu/menu_glyph_buffer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:8345"
+name = "Lufia2MenuSaveTileLayers"
+source = "src/menu/menu_layer_backup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B7E2"
+name = "Lufia2FieldCountGroupObjectConditions"
+source = "src/field/group_object_conditions.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"

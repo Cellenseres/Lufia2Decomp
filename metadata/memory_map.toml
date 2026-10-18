@@ -6119,3 +6119,27 @@ width = 2
 count = 1
 owner = "menu"
 notes = "85D82C rotates sixteen original action status-byte tests into this word and inverts it;85D7CE intersects it with the live target status masks."
+
+[[location]]
+address = "7E:09AF"
+name = "menu_glyph_character"
+width = 1
+count = 1
+owner = "menu"
+notes = "829073 writes the original glyph code;8290F6 writes a blank word spanning09AF/09B0 before80C7C2."
+
+[[location]]
+address = "7E:09B0"
+name = "menu_glyph_attribute"
+width = 1
+count = 1
+owner = "menu"
+notes = "829073 decodes original control bytes5..7 and15 into this live glyph attribute."
+
+[[location]]
+address = "7E:1525"
+name = "menu_equipment_attributes"
+width = 1
+count = 5
+owner = "menu"
+notes = "82F9C9 writes5 or7 for each of six original equipment slots. The last byte intentionally aliases the existing battle sprite timer storage in another scene."

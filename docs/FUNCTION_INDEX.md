@@ -564,6 +564,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F979` | `Lufia2PartyLevelUpCheck` | verified | `src/party/level_up.c` |
 | `$81:F9E9` | `Lufia2PartyExperienceForLevel` | verified | `src/party/experience.c` |
 | `$81:FAC9` | `Lufia2BattleRunRelativeScript` | verified | `src/battle/battle_relative_script.c` |
+| `$81:FAF5` | `Lufia2MenuResolveActionActor` | verified | `src/item/menu_action_actor.c` |
 | `$81:FB1A` | `Lufia2BattleRollEnemyItemDrop` | verified | `src/battle/battle_action_support.c` |
 | `$81:FB79` | `Lufia2CharacterSpriteByte` | verified | `src/battle/battle_character.c` |
 | `$81:FB8E` | `Lufia2SpriteCoordinatesPacked` | verified | `src/battle/battle_sprite_lookups.c` |
@@ -583,6 +584,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:820B` | `Lufia2MenuDrawWindowCorner` | verified | `src/menu/menu_window.c` |
 | `$82:8230` | `Lufia2MenuDrawWindowSideEdge` | verified | `src/menu/menu_window.c` |
 | `$82:8259` | `Lufia2MenuDrawWindowThreeRowCorner` | verified | `src/menu/menu_window.c` |
+| `$82:8345` | `Lufia2MenuSaveTileLayers` | verified | `src/menu/menu_layer_backup.c` |
 | `$82:838F` | `Lufia2MenuClearLayers` | verified | `src/menu/menu_tilemap.c` |
 | `$82:83EB` | `Lufia2MenuClearTileRectangle` | verified | `src/menu/menu_tile_clear.c` |
 | `$82:8704` | `Lufia2MenuPresentMainDisplay` | verified | `src/menu/menu_display_callers.c` |
@@ -607,6 +609,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:8C9C` | `Lufia2MenuInitializeScrollSprite` | verified | `src/menu/menu_list_scroll.c` |
 | `$82:8CC1` | `Lufia2MenuInitializeScrollStep` | verified | `src/menu/menu_list_scroll.c` |
 | `$82:8CE9` | `Lufia2MenuScrollListPage` | verified | `src/menu/menu_list_scroll.c` |
+| `$82:9073` | `Lufia2MenuBuildGlyphBuffer` | verified | `src/menu/menu_glyph_buffer.c` |
+| `$82:90F6` | `Lufia2MenuPadGlyphRow` | verified | `src/menu/menu_glyph_buffer.c` |
+| `$82:9113` | `Lufia2MenuUploadGlyphBuffer` | verified | `src/menu/menu_glyph_buffer.c` |
+| `$82:9133` | `Lufia2MenuPlaceGlyphRectangle` | verified | `src/menu/menu_glyph_buffer.c` |
 | `$82:9214` | `Lufia2MenuClearSpriteMask` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:922D` | `Lufia2MenuClearSecondarySpriteMask` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:9246` | `Lufia2MenuPollSelectionChoice` | verified | `src/menu/menu_context_services.c` |
@@ -620,6 +626,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:93C2` | `Lufia2WaitMenuFrameChange` | verified | `src/menu/menu_frame_wait.c` |
 | `$82:93CF` | `Lufia2MenuPlacePartyPortraits` | verified | `src/menu/menu_display_callers.c` |
 | `$82:93F6` | `Lufia2MenuPrepareDisplayText` | verified | `src/menu/menu_presentation_callers.c` |
+| `$82:942F` | `Lufia2MenuSubtractExperienceTotals` | verified | `src/menu/menu_selection_helpers.c` |
 | `$82:94C0` | `Lufia2MenuDrawCharacterSummary` | verified | `src/menu/menu_field_dispatch.c` |
 | `$82:950E` | `Lufia2MenuMemberStatus` | verified | `src/menu/menu_screen.c` |
 | `$82:9588` | `Lufia2MenuResetEffectSprites` | verified | `src/menu/menu_effect_presentation.c` |
@@ -638,6 +645,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9918` | `Lufia2AdjustPurchasePrice` | verified | `src/menu/menu_spell_shop.c` |
 | `$82:994E` | `Lufia2PartyRebuildAllEquipmentStats` | verified | `src/party/party_equipment.c` |
 | `$82:9971` | `Lufia2PartySelectActiveEquipmentMember` | verified | `src/party/party_refresh.c` |
+| `$82:9984` | `Lufia2MenuHighlightPartySelection` | verified | `src/menu/menu_selection_helpers.c` |
 | `$82:999B` | `Lufia2MenuInitializePartyPortraits` | verified | `src/menu/menu_display_callers.c` |
 | `$82:99BE` | `Lufia2MenuInitializePartyPortrait` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9A4E` | `Lufia2MenuRunMainScreen` | verified | `src/menu/menu_main_screen.c` |
@@ -649,6 +657,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9C52` | `Lufia2MenuInitializeListCursor` | verified | `src/menu/menu_list_motion.c` |
 | `$82:9C7D` | `Lufia2MenuConfigureListCursor` | verified | `src/menu/menu_list_cursor_setup.c` |
 | `$82:9CB2` | `Lufia2MenuWarpList` | verified | `src/menu/menu_screen.c` |
+| `$82:9D55` | `Lufia2MenuPrepareItemSelection` | verified | `src/menu/menu_item_setup.c` |
+| `$82:9DD3` | `Lufia2MenuRefreshItemSelection` | verified | `src/menu/menu_item_setup.c` |
 | `$82:9DF3` | `Lufia2MenuConfigureItemUseCursor` | verified | `src/menu/menu_list_cursor_setup.c` |
 | `$82:9E2F` | `Lufia2MenuUpdateItemCapacityHint` | verified | `src/menu/menu_effect_presentation.c` |
 | `$82:9EF2` | `Lufia2MenuBuildAlternateCursor` | verified | `src/menu/menu_display_callers.c` |
@@ -796,6 +806,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F846` | `Lufia2PartyRebuildEquipmentModifiers` | verified | `src/party/party_equipment.c` |
 | `$82:F893` | `Lufia2MenuTestEquipmentItemFlag` | verified | `src/menu/menu_record_services.c` |
 | `$82:F8C6` | `Lufia2MenuAdvanceFlaggedEquipment` | verified | `src/menu/menu_price_followup.c` |
+| `$82:F9C9` | `Lufia2MenuBuildEquipmentAttributes` | verified | `src/menu/menu_selection_helpers.c` |
 | `$82:F9E8` | `Lufia2InventoryStorePackedSlot` | verified | `src/item/inventory_selection.c` |
 | `$82:F9F2` | `Lufia2InventoryAddMenuItem` | verified | `src/item/inventory_selection.c` |
 | `$82:FA2E` | `Lufia2InventoryRegisterPossession` | verified | `src/item/inventory_selection.c` |
@@ -1743,6 +1754,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:B63B` | `Lufia2FieldTryItemRegion` | verified | `src/field/field_item_regions.c` |
 | `$8E:B760` | `Lufia2FieldShowObjectItemNotice` | verified | `src/field/field_item_regions.c` |
 | `$8E:B7CD` | `Lufia2FieldReadBankedStreamByte` | verified | `src/field/field_camera_services.c` |
+| `$8E:B7E2` | `Lufia2FieldCountGroupObjectConditions` | verified | `src/field/group_object_conditions.c` |
 | `$8E:B847` | `Lufia2CaveBuildMapHeader` | verified | `src/cave/cave_header.c` |
 | `$8E:B993` | `Lufia2RestoreSavedFieldState` | verified | `src/system/field_save_state.c` |
 | `$8E:BA0D` | `Lufia2CaptureFieldSaveState` | verified | `src/system/field_save_state.c` |
