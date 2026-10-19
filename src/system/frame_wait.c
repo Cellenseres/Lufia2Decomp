@@ -1,5 +1,6 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "lufia2/frame_wait.h"
 #include "lufia2/system.h"
 #include "system/wram.h"
 
@@ -162,6 +163,38 @@ static void RestoreAccumulator(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
         LoadA8(cpu, Pull8(memory, cpu));
     else
         PullAccumulator16(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2FrameWaitSaveRegistersStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != entry >> 16 || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x8293c2u:
+    case 0x868b48u:
+    case 0x86974fu:
+    case 0x84a5a8u:
+        EmitExecutionCheckpoint(memory, cpu, entry);
+        SaveAccumulator(memory, cpu);
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x8293c3u:
+    case 0x868b49u:
+    case 0x809378u:
+    case 0x84a5a9u:
+        EmitExecutionCheckpoint(memory, cpu, entry);
+        Push8(memory, cpu, PackStatus(cpu));
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x8293c4u:
+    case 0x868b4au:
+    case 0x809379u:
+    case 0x84a5aau:
+        EmitExecutionCheckpoint(memory, cpu, entry);
+        OpSepWidths(cpu, 0x20u);
+        return ExecutionHandoff(cpu, entry + 2u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
 }
 
 Lufia2ExecutionResult Lufia2FieldWaitForNextFrame(const Lufia2Memory *memory,
