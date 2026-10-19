@@ -3,6 +3,7 @@
 #include "core/snes_registers.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
+#include "lufia2/field_phase.h"
 #include "system/wram.h"
 
 enum {
@@ -1075,6 +1076,213 @@ enum {
     FIELD_LOOP_FRAME_LIMIT = 4096u,
     DP_FIELD_SECOND_PAD_HIGH = DP_BUTTONS_HELD + 3u,
 };
+
+Lufia2ExecutionResult Lufia2FieldFrameStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    static const struct {
+        uint32_t site;
+        uint32_t target;
+        uint8_t frame_bytes;
+    } services[] = {
+        {0x838004u, 0x83900cu, 2u},
+        {0x838031u, 0x8384e1u, 2u},
+        {0x83804fu, 0x83afeau, 3u},
+        {0x838069u, 0x8eb28fu, 3u},
+        {0x838070u, 0x83aeb5u, 2u},
+        {0x838073u, 0x809c72u, 3u},
+        {0x838077u, 0x8383a0u, 2u},
+        {0x83807au, 0x838682u, 2u},
+        {0x83807du, 0x83bb93u, 3u},
+        {0x838081u, 0x83e03eu, 2u},
+        {0x838084u, 0x8ebd77u, 3u},
+        {0x838088u, 0x83a21au, 3u},
+        {0x83808cu, 0x8381c6u, 2u},
+        {0x83808fu, 0x838103u, 2u},
+        {0x838099u, 0x80953bu, 3u},
+        {0x8380aau, 0x8ebb2eu, 3u},
+        {0x8380b0u, 0x83867bu, 2u},
+        {0x8380bbu, 0x8380cdu, 2u},
+        {0x8380c6u, 0x8eb000u, 3u}
+    };
+    if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    for (unsigned service = 0u; service < sizeof services / sizeof services[0]; ++service) {
+        if (entry != services[service].site)
+            continue;
+        const uint32_t target = services[service].target;
+        if (services[service].frame_bytes == 3u) {
+            SimulateJslFrame(memory, cpu, cpu->program_bank, (uint16_t)(entry + 3u));
+            cpu->program_bank = (uint8_t)(target >> 16);
+        } else {
+            SimulateJsrFrame(memory, cpu, (uint16_t)(entry + 2u));
+        }
+        return ExecutionHandoff(cpu, target);
+    }
+    switch (entry) {
+    case 0x838000u:
+        UnpackStatus(cpu, (uint8_t)(PackStatus(cpu) | 0x30u));
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x838002u:
+        Push8(memory, cpu, cpu->program_bank);
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x838003u:
+        PullDataBank(memory, cpu);
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x83803du:
+        UnpackStatus(cpu, (uint8_t)(PackStatus(cpu) & ~0x20u));
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x83804du:
+        UnpackStatus(cpu, (uint8_t)(PackStatus(cpu) | 0x20u));
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x838042u:
+        if (cpu->accumulator_is_8_bit)
+            PushAccumulator8(memory, cpu);
+        else
+            PushAccumulator16(memory, cpu);
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x838049u:
+        if (cpu->accumulator_is_8_bit)
+            LoadA8(cpu, Pull8(memory, cpu));
+        else
+            PullAccumulator16(memory, cpu);
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x83800fu:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x838017u : entry + 2u);
+    case 0x838015u:
+        return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : 0x838004u);
+    case 0x83801cu:
+    case 0x838021u:
+        return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : 0x838062u);
+    case 0x838028u:
+    case 0x83803bu:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x838062u : entry + 2u);
+    case 0x83802fu:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x838036u : entry + 2u);
+    case 0x838034u:
+    case 0x83806du:
+    case 0x8380a2u:
+    case 0x8380cau:
+        return ExecutionHandoff(cpu, 0x838004u);
+    case 0x83805fu:
+        return ExecutionHandoff(cpu, 0x83b18eu);
+    case 0x838067u:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x838070u : entry + 2u);
+    case 0x838097u:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x83809du : entry + 2u);
+    case 0x8380a0u:
+        return ExecutionHandoff(cpu, cpu->negative ? entry + 2u : 0x8380a5u);
+    case 0x8380a8u:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x8380aeu : entry + 2u);
+    case 0x8380b3u:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x8380cau : entry + 2u);
+    case 0x8380b9u:
+    case 0x8380beu:
+    case 0x8380c4u:
+        return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : 0x8380cau);
+    default:
+        break;
+    }
+    if (!cpu->accumulator_is_8_bit) {
+        switch (entry) {
+        case 0x83803fu:
+            OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
+            break;
+        case 0x838043u:
+            OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_MAP));
+            break;
+        case 0x838046u:
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
+            break;
+        case 0x83804au:
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_MAP));
+            break;
+        default:
+            return ExecutionHandoff(cpu, entry);
+        }
+        return ExecutionHandoff(cpu, entry + 3u);
+    }
+    switch (entry) {
+    case 0x838007u:
+        OpLoadA(cpu, 0xffu);
+        break;
+    case 0x838009u:
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_SOUND_COMMAND));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83800cu:
+    case 0x8380a5u:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E057C));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x838011u:
+        OpLoadA(cpu, 0x10u);
+        break;
+    case 0x838013u:
+        OpBit(memory, cpu, OpDp(cpu, DP_FIELD_SECOND_PAD_HIGH));
+        break;
+    case 0x838017u:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83801au:
+        OpBitValue(cpu, 0x80u);
+        break;
+    case 0x83801eu:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_REQUESTS));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x838023u:
+        OpLoadA(cpu, 0x80u);
+        break;
+    case 0x838025u:
+    case 0x838038u:
+    case 0x838064u:
+        OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83802au:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_RELOAD_FLAGS));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83802du:
+        OpBitValue(cpu, 8u);
+        break;
+    case 0x838036u:
+        OpLoadA(cpu, 8u);
+        break;
+    case 0x838053u:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05A8));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x838056u:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05A9));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x838059u:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_SCREEN_EFFECTS));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83805cu:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x838062u:
+        OpLoadA(cpu, 0x20u);
+        break;
+    case 0x838092u:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_SOUND_COMMAND));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x838095u:
+        OpCmpValue(cpu, 0xffu);
+        break;
+    case 0x83809du:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x8380aeu:
+        OpLoadA(cpu, 0x40u);
+        break;
+    case 0x8380b5u:
+        OpLda(memory, cpu, WRAM_FIELD_CONTROL_FLAGS);
+        return ExecutionHandoff(cpu, entry + 4u);
+    case 0x8380c0u:
+        OpLda(memory, cpu, WRAM_UNK_7FD0FE);
+        return ExecutionHandoff(cpu, entry + 4u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    return ExecutionHandoff(cpu, entry + 2u);
+}
 
 static uint8_t FieldLoopChild(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
