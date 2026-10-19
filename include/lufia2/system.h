@@ -465,6 +465,12 @@ Lufia2ExecutionResult Lufia2CosineAngle(
 Lufia2ExecutionResult Lufia2FrameWaitRestoreRegisters(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 
+/* Original sound-handshake branches and bounded boot transfer phases. */
+uint32_t Lufia2SoundPollBranchTarget(uint32_t entry, uint8_t zero, uint8_t overflow);
+Lufia2ExecutionResult Lufia2SoundPollBranchStep(Lufia2CpuState *cpu, uint32_t entry);
+Lufia2ExecutionResult Lufia2BootSoundTransferStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
 /* Transfer phases stop before original polls and bank calls. */
 Lufia2ExecutionResult Lufia2SoundUploadStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);

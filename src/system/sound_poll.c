@@ -54,3 +54,75 @@ Lufia2ExecutionResult Lufia2SoundPollStep(const Lufia2Memory *memory,
         OpCmp(memory, cpu, port);
     return ExecutionHandoff(cpu, entry + fetched);
 }
+
+uint32_t Lufia2SoundPollBranchTarget(uint32_t entry, uint8_t zero, uint8_t overflow) {
+    uint32_t target;
+    bool take = !zero;
+    switch (entry) {
+    case 0x80994fu:
+        target = 0x80994bu;
+        break;
+    case 0x80999bu:
+        target = 0x809997u;
+        break;
+    case 0x8098fau:
+        target = 0x8098f7u;
+        break;
+    case 0x809811u:
+        target = 0x80980du;
+        take = zero != 0u;
+        break;
+    case 0x80986cu:
+        target = 0x809868u;
+        break;
+    case 0x809a13u:
+        target = 0x809a0fu;
+        break;
+    case 0x809a1bu:
+        target = 0x809a17u;
+        break;
+    case 0x809a2au:
+        target = 0x809a26u;
+        break;
+    case 0x809a30u:
+        target = 0x809a2cu;
+        break;
+    case 0x80939du:
+        target = 0x809399u;
+        break;
+    case 0x8093a5u:
+        target = 0x8093a1u;
+        break;
+    case 0x809c1bu:
+        target = 0x809c18u;
+        break;
+    case 0x809c33u:
+        target = 0x809c30u;
+        break;
+    case 0x809c43u:
+        target = 0x809c40u;
+        break;
+    case 0x809c6cu:
+        target = 0x809c69u;
+        break;
+    case 0x809c47u:
+        target = 0x809c45u;
+        take = zero != 0u;
+        break;
+    case 0x809c6eu:
+        target = 0x809c23u;
+        take = overflow != 0u;
+        break;
+    default:
+        return entry;
+    }
+    return take ? target : entry + 2u;
+}
+
+Lufia2ExecutionResult Lufia2SoundPollBranchStep(Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    return ExecutionHandoff(
+        cpu, Lufia2SoundPollBranchTarget(entry, cpu->zero, cpu->overflow));
+}
