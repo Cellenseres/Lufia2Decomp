@@ -452,6 +452,10 @@ Lufia2ExecutionResult Lufia2ClearStartupWorkRam(
 Lufia2ExecutionResult Lufia2StartFieldSystem(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Reset takes E separately and always enters native mode. */
+Lufia2ExecutionResult Lufia2ResetSystem(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint8_t entry_emulation);
+
 Lufia2ExecutionResult Lufia2RunBootSequence(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

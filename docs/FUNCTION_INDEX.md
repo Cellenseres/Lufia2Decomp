@@ -8,6 +8,7 @@ Generated from `metadata/functions.toml`; update it with
 | Address | Symbol | Status | Source |
 | --- | --- | --- | --- |
 | `$00:057D` | `Lufia2RamBlockMove` | verified | `src/system/block_move.c` |
+| `$80:8000` | `Lufia2ResetSystem` | verified | `src/system/boot.c` |
 | `$80:8035` | `Lufia2RunBootSequence` | verified | `src/system/boot.c` |
 | `$80:80D3` | `Lufia2ClearStartupWorkRam` | verified | `src/system/boot.c` |
 | `$80:80E1` | `Lufia2InitializeRuntimeDefaults` | verified | `src/system/screen.c` |

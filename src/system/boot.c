@@ -24,6 +24,9 @@ enum {
     ROM_BOOT_NMI_WAIT = 0x808084u,
 
     BOOT_LAST_CLEAR_WORD = 0x1dfeu,
+    BOOT_STACK_TOP = 0x1fffu,
+    BOOT_FORCED_BLANK = 0x8fu,
+    DP_BOOT_UNK_6F = 0x6fu,
     BOOT_WAIT_READ_BUDGET = 4096u,
     DP_BOOT_NMI_BANK = 0x6au,
     DP_BOOT_SAVE_FLAGS = 0x54u,
@@ -37,6 +40,48 @@ enum {
     SRAM_BOOT_FLAGS = 0x700000u,
     SRAM_BOOT_MIRROR = 0x702000u
 };
+
+static void DisableBootVideo(const Lufia2Memory *memory, uint8_t bank,
+                             uint16_t old_page) {
+    const uint32_t bank_base = (uint32_t)bank << 16;
+
+    Write8(memory, bank_base | SNES_INIDISP, BOOT_FORCED_BLANK);
+    Write8(memory, (uint16_t)(old_page + DP_BOOT_NMI_BANK), 0u);
+    Write8(memory, (uint16_t)(old_page + DP_BOOT_UNK_6F), 0u);
+    Write8(memory, bank_base | SNES_NMITIMEN, 0u);
+    Write8(memory, bank_base | SNES_MDMAEN, 0u);
+    Write8(memory, bank_base | SNES_HDMAEN, 0u);
+}
+
+static void ClearBootWorkBytes(const Lufia2Memory *memory) {
+    Write8(memory, WRAM_UNK_7E0520, 0u);
+    Write8(memory, DP_BOOT_NMI_BANK, 0u);
+    Write8(memory, DP_BOOT_UNK_6F, 0u);
+}
+
+Lufia2ExecutionResult Lufia2ResetSystem(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint8_t entry_emulation) {
+    const uint32_t entry = cpu->program_bank == 0u ? 0x008000u : ROM_BOOT_RESET_OWNER;
+    if ((cpu->program_bank != 0x80u && cpu->program_bank != 0u) || entry_emulation > 1u ||
+        (entry_emulation && (!cpu->accumulator_is_8_bit || !cpu->index_is_8_bit ||
+            cpu->x > 0xffu || cpu->y > 0xffu || (cpu->stack & 0xff00u) != 0x100u)))
+        return ExecutionHandoff(cpu, entry);
+    cpu->irq_disable = 1u;
+    cpu->decimal = 0u;
+    cpu->carry = entry_emulation;
+    SetAccumulatorWidth(cpu, 1u);
+    SetIndexWidth(cpu, 1u);
+    LoadA8(cpu, 0u);
+    PushAccumulator8(memory, cpu);
+    PullDataBank(memory, cpu);
+    DisableBootVideo(memory, cpu->data_bank, cpu->direct_page);
+    cpu->stack = BOOT_STACK_TOP;
+    cpu->direct_page = 0u;
+    LoadA16(cpu, 0u);
+    ClearBootWorkBytes(memory);
+    cpu->program_bank = 0x80u;
+    return ExecutionHandoff(cpu, ROM_BOOT_CONTROLLER);
+}
 
 static uint8_t BootChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                          Lufia2PushedChildCall child, void *context, uint32_t site,
