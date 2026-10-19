@@ -1,6 +1,7 @@
 /* Menu NMI, input and window animation. */
 
 #include "lufia2/menu.h"
+#include "lufia2/menu_input_phase.h"
 #include "core/cpu_internal.h"
 #include "menu/menu_sprite_slots.h"
 #include "system/wram.h"
@@ -16,6 +17,55 @@
 #define MENU_SPRITE_REQUEST 0x1567u
 #define SELECT_TILEMAP_REQUEST 0x1568u
 #define MENU_WINDOW_REFRESH 0x156au
+
+Lufia2ExecutionResult Lufia2MenuWindowStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x82u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x829313u:
+        LoadAAbsolute8(memory, cpu, MENU_WINDOW_REFRESH, 0);
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x829316u:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x82932fu : entry + 2u);
+    case 0x829318u:
+        LoadA8(cpu, 0x20u);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x82931au:
+        StoreAAbsolute8(memory, cpu, WRAM_MENU_DRAW_MODE, 0);
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x82931du:
+        LoadA8(cpu, 0x8eu);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x82931fu:
+        StoreADirect8(memory, cpu, 0x5fu);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x829321u:
+        LoadY16(cpu, Read16Pair(memory, entry + 1u, entry + 2u));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x829324u:
+        LoadX16(cpu, Read16Pair(memory, entry + 1u, entry + 2u));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x829327u:
+        SimulateJslFrame(memory, cpu, cpu->program_bank, (uint16_t)(entry + 3u));
+        cpu->program_bank = 0x80u;
+        return ExecutionHandoff(cpu, 0x808878u);
+    case 0x82932bu:
+        LoadA8(cpu, 8u);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x82932du:
+        TestBitsDirect(memory, cpu, 0x74u, 1u);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x82932fu: {
+        const uint16_t low = Pull8(memory, cpu);
+        const uint16_t address = (uint16_t)(low | ((uint16_t)Pull8(memory, cpu) << 8));
+        return ExecutionHandoff(cpu, 0x820000u | (uint16_t)(address + 1u));
+    }
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+}
 
 /* $82:8DA6: HDMA table [$F4] to [$F7], channel $F3 setup. */
 static void MenuHdmaUpdate(

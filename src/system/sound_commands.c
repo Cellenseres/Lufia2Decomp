@@ -1,5 +1,6 @@
 #include "core/cpu_ops.h"
 #include "lufia2/system.h"
+#include "lufia2/sound_phase.h"
 #include "system/wram.h"
 
 enum {
@@ -24,6 +25,72 @@ static void SoundPullAccumulator(
         LoadA8(cpu, Pull8(memory, cpu));
     else
         PullAccumulator16(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2SoundCommandStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x80953bu:
+        SoundPushAccumulator(memory, cpu);
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x80953cu:
+    case 0x8099fdu:
+        Push8(memory, cpu, PackStatus(cpu));
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x80953du:
+    case 0x8099feu:
+        UnpackStatus(cpu, (uint8_t)(PackStatus(cpu) | 0x20u));
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x80953fu:
+        UnpackStatus(cpu, (uint8_t)(PackStatus(cpu) & ~0x10u));
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x809543u:
+        return ExecutionHandoff(cpu, cpu->carry ? 0x809551u : entry + 2u);
+    case 0x80954bu:
+    case 0x80954eu:
+        SimulateJsrFrame(memory, cpu, (uint16_t)(entry + 2u));
+        return ExecutionHandoff(cpu, entry == 0x80954bu ? 0x8099fdu : 0x809a0au);
+    case 0x809551u:
+    case 0x809a08u:
+        UnpackStatus(cpu, Pull8(memory, cpu));
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x809552u:
+        SoundPullAccumulator(memory, cpu);
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x809553u:
+    case 0x809a09u: {
+        const uint16_t low = Pull8(memory, cpu);
+        const uint16_t address = (uint16_t)(low | ((uint16_t)Pull8(memory, cpu) << 8));
+        if (entry == 0x809553u)
+            cpu->program_bank = Pull8(memory, cpu);
+        return ExecutionHandoff(cpu,
+            ((uint32_t)cpu->program_bank << 16) | (uint16_t)(address + 1u));
+    }
+    default:
+        break;
+    }
+    if (!cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x809541u:
+        OpCmpValue(cpu, SOUND_COMMAND_LIMIT);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x809545u:
+        OpSta(memory, cpu, SOUND_COMMAND_PORT);
+        return ExecutionHandoff(cpu, entry + 4u);
+    case 0x809549u:
+        OpLoadA(cpu, SOUND_DRIVER_COMMAND_MODE);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x809a00u:
+    case 0x809a04u:
+        OpSta(memory, cpu, entry == 0x809a00u ? SOUND_MODE_PORT : SOUND_MODE_MIRROR_PORT);
+        return ExecutionHandoff(cpu, entry + 4u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
 }
 
 Lufia2ExecutionResult Lufia2WriteSoundDriverMode(

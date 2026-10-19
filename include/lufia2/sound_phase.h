@@ -11,6 +11,8 @@ Lufia2ExecutionResult Lufia2SoundHeaderStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 Lufia2ExecutionResult Lufia2SoundReplyStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+Lufia2ExecutionResult Lufia2SoundCommandStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 
 #ifdef __cplusplus
 }
