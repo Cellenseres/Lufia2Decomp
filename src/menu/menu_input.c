@@ -8,6 +8,7 @@
 #include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/menu.h"
+#include "lufia2/menu_input_phase.h"
 
 enum {
     CURSOR_SLOT = 0x14a9u,
@@ -126,6 +127,27 @@ static bool ReturnTo(MenuCall *call, uint16_t return_address, uint32_t rts) {
 
 static uint8_t ItemByte(const MenuCall *call, uint32_t table) {
     return WramReadAt(call->wram, table, call->cpu->x);
+}
+
+Lufia2ExecutionResult Lufia2MenuPrepareCursorPoll(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x82u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, LOOP_POLL);
+
+    EmitExecutionCheckpoint(memory, cpu, LOOP_POLL);
+    LoadX16(cpu, WramRead16(WramViewOfCaller(memory, cpu), CURSOR_SLOT));
+    for (unsigned slot = 0; slot < FIRST_CURSOR_SLOT; ++slot) {
+        EmitExecutionCheckpoint(memory, cpu, 0x828b0fu + slot);
+        LoadX16(cpu, (uint16_t)(cpu->x - 1u));
+    }
+    EmitExecutionCheckpoint(memory, cpu, 0x828b14u);
+    LoadA8(cpu, WramReadAt(WramViewOfCaller(memory, cpu), ITEM_FLAGS, cpu->x));
+    EmitExecutionCheckpoint(memory, cpu, 0x828b17u);
+    And8(cpu, KEPT_FLAGS);
+    EmitExecutionCheckpoint(memory, cpu, 0x828b19u);
+    WramWriteAt(WramViewOfCaller(memory, cpu), ITEM_FLAGS, cpu->x, A8(cpu));
+    return ExecutionHandoff(cpu, 0x828b1cu);
 }
 
 static void LoadItem(MenuCall *call, uint32_t table) {
