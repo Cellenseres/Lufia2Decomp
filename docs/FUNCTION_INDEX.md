@@ -584,6 +584,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:820B` | `Lufia2MenuDrawWindowCorner` | verified | `src/menu/menu_window.c` |
 | `$82:8230` | `Lufia2MenuDrawWindowSideEdge` | verified | `src/menu/menu_window.c` |
 | `$82:8259` | `Lufia2MenuDrawWindowThreeRowCorner` | verified | `src/menu/menu_window.c` |
+| `$82:82E2` | `Lufia2MenuDrawWindowDivider` | verified | `src/menu/menu_divider.c` |
 | `$82:8345` | `Lufia2MenuSaveTileLayers` | verified | `src/menu/menu_layer_backup.c` |
 | `$82:836A` | `Lufia2MenuRestoreTileLayers` | verified | `src/menu/menu_layer_backup.c` |
 | `$82:838F` | `Lufia2MenuClearLayers` | verified | `src/menu/menu_tilemap.c` |
@@ -662,6 +663,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9D55` | `Lufia2MenuPrepareItemSelection` | verified | `src/menu/menu_item_setup.c` |
 | `$82:9DD3` | `Lufia2MenuRefreshItemSelection` | verified | `src/menu/menu_item_setup.c` |
 | `$82:9DF3` | `Lufia2MenuConfigureItemUseCursor` | verified | `src/menu/menu_list_cursor_setup.c` |
+| `$82:9E07` | `Lufia2MenuConfigurePendingItemTargetCursor` | verified | `src/menu/menu_list_cursor_setup.c` |
+| `$82:9E1B` | `Lufia2MenuConfigurePendingItemActionCursor` | verified | `src/menu/menu_list_cursor_setup.c` |
 | `$82:9E2F` | `Lufia2MenuUpdateItemCapacityHint` | verified | `src/menu/menu_effect_presentation.c` |
 | `$82:9EF2` | `Lufia2MenuBuildAlternateCursor` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
@@ -696,6 +699,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:B03F` | `Lufia2MenuRestoreWarpScroll` | verified | `src/menu/menu_warp_selection.c` |
 | `$82:B104` | `Lufia2MenuRunItemSelection` | verified | `src/menu/menu_dispatch_callers.c` |
 | `$82:B14B` | `Lufia2MenuDispatchItemAction` | verified | `src/menu/menu_special_effects.c` |
+| `$82:B183` | `Lufia2MenuRunPendingItemActions` | verified | `src/menu/menu_pending_item.c` |
+| `$82:B1CE` | `Lufia2MenuCloseItemSelection` | verified | `src/menu/menu_pending_item.c` |
+| `$82:B1FE` | `Lufia2MenuUsePendingItem` | verified | `src/menu/menu_pending_item.c` |
 | `$82:B2C5` | `Lufia2MenuEquipUpgrade` | verified | `src/menu/menu_screen.c` |
 | `$82:B3AD` | `Lufia2MenuSortSpells` | verified | `src/menu/menu_list_sort.c` |
 | `$82:B42D` | `Lufia2MenuSwapSpellSelection` | verified | `src/menu/menu_list_actions.c` |
@@ -836,6 +842,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:FCED` | `Lufia2ItemSelectPackedCount` | verified | `src/item/packed_item_counts.c` |
 | `$82:FD15` | `Lufia2PartyClearEquipment` | verified | `src/party/party_equipment.c` |
 | `$82:FD3D` | `Lufia2PartyLearnSelectedSpell` | verified | `src/party/capsule_abilities.c` |
+| `$82:FD81` | `Lufia2MenuShowRecordDescription` | verified | `src/menu/menu_description.c` |
+| `$82:FDEC` | `Lufia2MenuDispatchDescriptionLayout` | verified | `src/menu/menu_description.c` |
+| `$82:FDF6` | `Lufia2MenuDrawFramedDescription` | verified | `src/menu/menu_description.c` |
+| `$82:FE44` | `Lufia2MenuDrawInlineDescription` | verified | `src/menu/menu_description.c` |
+| `$82:FE98` | `Lufia2MenuConfigureDescriptionMask` | verified | `src/menu/menu_description.c` |
+| `$82:FEC0` | `Lufia2MenuClearDescriptionMask` | verified | `src/menu/menu_description.c` |
+| `$82:FEC8` | `Lufia2MenuLoadDescriptionRecord` | verified | `src/menu/menu_description.c` |
+| `$82:FEFE` | `Lufia2MenuLoadSecondaryDescription` | verified | `src/menu/menu_description.c` |
+| `$82:FF3A` | `Lufia2MenuDrawCenteredRecordName` | verified | `src/menu/menu_record_name.c` |
+| `$82:FF99` | `Lufia2MenuDrawSecondaryDescriptionPrompt` | verified | `src/menu/menu_description.c` |
 | `$83:8000` | `Lufia2FieldRunLoop` | verified | `src/field/field_session_setup.c` |
 | `$83:8007` | `Lufia2FieldResumeFrame` | verified | `src/field/field_session_setup.c` |
 | `$83:80CD` | `Lufia2FieldIdleTest` | verified | `src/field/field_update.c` |

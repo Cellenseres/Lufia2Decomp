@@ -6151,3 +6151,35 @@ width = 2
 count = 1
 owner = "menu"
 notes = "82AF8E copies the original selected warp record word from7E9400 here. Its component meaning is not assumed."
+
+[[location]]
+address = "7E:1511"
+name = "menu_description_layout"
+width = 2
+count = 1
+owner = "menu"
+notes = "FD81 stores the requested layout word;FDEC uses its low byte with the original two-word inline table,without clamping raw selectors."
+
+[[location]]
+address = "7E:1515"
+name = "menu_description_text_modes"
+width = 2
+count = 1
+owner = "menu"
+notes = "FD81 stores the input Y word. The low byte selects93F6 display text while open;the high byte selects it after closing."
+
+[[location]]
+address = "7E:1517"
+name = "menu_description_record_kind"
+width = 2
+count = 1
+owner = "menu"
+notes = "FEC8 writes0 for item and1 for spell. FEFE writes2 for the secondary description and FF99 tests this original word."
+
+[[location]]
+address = "7E:1519"
+name = "menu_description_secondary_id"
+width = 2
+count = 1
+owner = "menu"
+notes = "FEC8 copies item record word0BAB here;FEFE uses the original848F10 pointer table and message ID300+value. Its record interpretation is retained."

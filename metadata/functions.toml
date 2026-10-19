@@ -14467,3 +14467,131 @@ source = "src/menu/menu_layer_backup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:B183"
+name = "Lufia2MenuRunPendingItemActions"
+source = "src/menu/menu_pending_item.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B1CE"
+name = "Lufia2MenuCloseItemSelection"
+source = "src/menu/menu_pending_item.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B1FE"
+name = "Lufia2MenuUsePendingItem"
+source = "src/menu/menu_pending_item.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9E07"
+name = "Lufia2MenuConfigurePendingItemTargetCursor"
+source = "src/menu/menu_list_cursor_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9E1B"
+name = "Lufia2MenuConfigurePendingItemActionCursor"
+source = "src/menu/menu_list_cursor_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FD81"
+name = "Lufia2MenuShowRecordDescription"
+source = "src/menu/menu_description.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FEC8"
+name = "Lufia2MenuLoadDescriptionRecord"
+source = "src/menu/menu_description.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FDEC"
+name = "Lufia2MenuDispatchDescriptionLayout"
+source = "src/menu/menu_description.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FDF6"
+name = "Lufia2MenuDrawFramedDescription"
+source = "src/menu/menu_description.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FE44"
+name = "Lufia2MenuDrawInlineDescription"
+source = "src/menu/menu_description.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FE98"
+name = "Lufia2MenuConfigureDescriptionMask"
+source = "src/menu/menu_description.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FEC0"
+name = "Lufia2MenuClearDescriptionMask"
+source = "src/menu/menu_description.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FEFE"
+name = "Lufia2MenuLoadSecondaryDescription"
+source = "src/menu/menu_description.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FF3A"
+name = "Lufia2MenuDrawCenteredRecordName"
+source = "src/menu/menu_record_name.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FF99"
+name = "Lufia2MenuDrawSecondaryDescriptionPrompt"
+source = "src/menu/menu_description.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:82E2"
+name = "Lufia2MenuDrawWindowDivider"
+source = "src/menu/menu_divider.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

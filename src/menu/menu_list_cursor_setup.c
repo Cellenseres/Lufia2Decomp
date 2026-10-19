@@ -60,3 +60,39 @@ Lufia2ExecutionResult Lufia2MenuConfigureItemUseCursor(const Lufia2Memory *memor
         return call.result;
     return ExecutionReturned(0x829e06u);
 }
+
+Lufia2ExecutionResult
+Lufia2MenuConfigurePendingItemTargetCursor(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu,
+                                           Lufia2PushedChildCall child, void *context) {
+    if (!MenuActionReady(cpu, child, 1u))
+        return ExecutionHandoff(cpu, 0x829e07u);
+    MenuActionCall call = {memory, cpu, child, context, {0}};
+    OpLdx(cpu, 0xe7u);
+    OpWriteX(memory, cpu, OpDp(cpu, LIST_CURSOR_GRID), cpu->x);
+    OpLdx(cpu, 0x0406u);
+    OpWriteX(memory, cpu, OpDp(cpu, LIST_CURSOR_STYLE), cpu->x);
+    OpLdx(cpu, 9u);
+    OpLdy(cpu, 10u);
+    if (!MenuActionChild(&call, 0x829e17u, 0x8289ecu, 2u, 1u))
+        return call.result;
+    return ExecutionReturned(0x829e1au);
+}
+
+Lufia2ExecutionResult
+Lufia2MenuConfigurePendingItemActionCursor(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu,
+                                           Lufia2PushedChildCall child, void *context) {
+    if (!MenuActionReady(cpu, child, 1u))
+        return ExecutionHandoff(cpu, 0x829e1bu);
+    MenuActionCall call = {memory, cpu, child, context, {0}};
+    OpLdx(cpu, 0xeeu);
+    OpWriteX(memory, cpu, OpDp(cpu, LIST_CURSOR_GRID), cpu->x);
+    OpLdx(cpu, 0x0401u);
+    OpWriteX(memory, cpu, OpDp(cpu, LIST_CURSOR_STYLE), cpu->x);
+    OpLdx(cpu, 7u);
+    OpLdy(cpu, 9u);
+    if (!MenuActionChild(&call, 0x829e2bu, 0x8289ecu, 2u, 1u))
+        return call.result;
+    return ExecutionReturned(0x829e2eu);
+}
