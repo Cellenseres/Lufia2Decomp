@@ -5,6 +5,7 @@
 
 #include "core/child_call.h"
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/menu.h"
@@ -148,6 +149,90 @@ Lufia2ExecutionResult Lufia2MenuPrepareCursorPoll(
     EmitExecutionCheckpoint(memory, cpu, 0x828b19u);
     WramWriteAt(WramViewOfCaller(memory, cpu), ITEM_FLAGS, cpu->x, A8(cpu));
     return ExecutionHandoff(cpu, 0x828b1cu);
+}
+
+Lufia2ExecutionResult Lufia2MenuInputStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x82u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x828b08u:
+    case 0x828b27u:
+        Compare8(cpu, A8(cpu), entry == LOOP_ENTRY ? 0u : MOVE_CODE);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x828b0au:
+        return ExecutionHandoff(cpu, cpu->zero ? LOOP_POLL : 0x828b36u);
+    case 0x828b0cu:
+        LoadX16(cpu, OpRead16(memory, OpAbs(cpu, CURSOR_SLOT)));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x828b0fu:
+    case 0x828b10u:
+    case 0x828b11u:
+    case 0x828b12u:
+    case 0x828b13u:
+        OpDex(cpu);
+        break;
+    case 0x828b14u:
+    case 0x828b2bu:
+        LoadA8(cpu, Read8(memory, OpAbsX(cpu, ITEM_FLAGS)));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x828b17u:
+        And8(cpu, KEPT_FLAGS);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x828b19u:
+        Write8(memory, OpAbsX(cpu, ITEM_FLAGS), A8(cpu));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x828b1cu:
+        SimulateJslFrame(memory, cpu, 0x82u, 0x8b1fu);
+        return ExecutionHandoff(cpu, 0x828b4bu);
+    case 0x828b20u:
+    case 0x828b25u:
+        return ExecutionHandoff(cpu, cpu->carry ? 0x828b36u : entry + 2u);
+    case 0x828b22u:
+        SimulateJsrFrame(memory, cpu, 0x8b24u);
+        return ExecutionHandoff(cpu, CURSOR_ENTRY);
+    case 0x828b29u:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x828b2bu : 0x828b4au);
+    case 0x828b2eu:
+    case 0x828b31u:
+        AslA8(cpu);
+        break;
+    case 0x828b2fu:
+        return ExecutionHandoff(cpu, cpu->carry ? 0x828b45u : 0x828b31u);
+    case 0x828b32u:
+        return ExecutionHandoff(cpu, cpu->carry ? 0x828b48u : 0x828b34u);
+    case 0x828b34u:
+        return ExecutionHandoff(cpu, 0x828b42u);
+    case 0x828b36u:
+        SimulateJsrFrame(memory, cpu, 0x8b38u);
+        return ExecutionHandoff(cpu, 0x829313u);
+    case 0x828b39u:
+        SimulateJsrFrame(memory, cpu, 0x8b3bu);
+        return ExecutionHandoff(cpu, 0x82c627u);
+    case 0x828b3cu:
+        SimulateJslFrame(memory, cpu, 0x82u, 0x8b3fu);
+        cpu->program_bank = 0x86u;
+        return ExecutionHandoff(cpu, SPRITE_FRAME);
+    case 0x828b40u:
+        return ExecutionHandoff(cpu, LOOP_POLL);
+    case 0x828b42u:
+    case 0x828b45u:
+    case 0x828b48u:
+        LoadA8(cpu, entry == 0x828b42u ? MOVE_CODE :
+                     entry == 0x828b45u ? TOP_CODE : BOTTOM_CODE);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x828b44u:
+    case 0x828b47u:
+    case 0x828b4au: {
+        const uint16_t low = Pull8(memory, cpu);
+        const uint16_t address = (uint16_t)(low | ((uint16_t)Pull8(memory, cpu) << 8));
+        return ExecutionHandoff(cpu, 0x820000u | (uint16_t)(address + 1u));
+    }
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    return ExecutionHandoff(cpu, entry + 1u);
 }
 
 static void LoadItem(MenuCall *call, uint32_t table) {
