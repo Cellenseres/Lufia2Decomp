@@ -5,42 +5,76 @@
 
 enum { FRAME_POLL_LIMIT = 65536, FRAME_COUNT_LIMIT = 4096 };
 
-Lufia2ExecutionResult Lufia2FrameWaitPollStep(const Lufia2Memory *memory,
-                                              Lufia2CpuState *cpu, uint32_t entry) {
+Lufia2ExecutionResult Lufia2FrameWaitCounterStep(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu,
+                                                 uint32_t entry) {
     if (cpu->program_bank != entry >> 16 || cpu->accumulator_is_8_bit > 1u ||
         cpu->index_is_8_bit > 1u)
         return ExecutionHandoff(cpu, entry);
-    uint32_t poll;
+    uint32_t counter;
     switch (entry) {
+    case 0x8293c6u:
     case 0x8293c8u:
     case 0x8293cau:
-        poll = 0x8293c8u;
+        counter = 0x8293c6u;
         break;
+    case 0x83900cu:
     case 0x83900eu:
     case 0x839010u:
-        poll = 0x83900eu;
+        counter = 0x83900cu;
         break;
+    case 0x8eb550u:
     case 0x8eb552u:
     case 0x8eb554u:
-        poll = 0x8eb552u;
+        counter = 0x8eb550u;
         break;
+    case 0x868b4cu:
     case 0x868b4eu:
     case 0x868b50u:
-        poll = 0x868b4eu;
+        counter = 0x868b4cu;
         break;
+    case 0x869750u:
     case 0x869752u:
     case 0x869754u:
-        poll = 0x869752u;
+        counter = 0x869750u;
+        break;
+    case 0x848d4du:
+    case 0x848d4fu:
+    case 0x848d51u:
+        counter = 0x848d4du;
         break;
     default:
         return ExecutionHandoff(cpu, entry);
     }
     EmitExecutionCheckpoint(memory, cpu, entry);
-    if (entry == poll) {
+    if (entry == counter) {
+        OpLda(memory, cpu, OpDp(cpu, DP_NMI_FRAME_COUNTER));
+        return ExecutionHandoff(cpu, entry + 2u);
+    }
+    if (entry == counter + 2u) {
         OpCmp(memory, cpu, OpDp(cpu, DP_NMI_FRAME_COUNTER));
         return ExecutionHandoff(cpu, entry + 2u);
     }
-    return ExecutionHandoff(cpu, cpu->zero ? poll : entry + 2u);
+    return ExecutionHandoff(cpu, cpu->zero ? counter + 2u : entry + 2u);
+}
+
+Lufia2ExecutionResult Lufia2FrameWaitPollStep(const Lufia2Memory *memory,
+                                              Lufia2CpuState *cpu, uint32_t entry) {
+    switch (entry) {
+    case 0x8293c8u:
+    case 0x8293cau:
+    case 0x83900eu:
+    case 0x839010u:
+    case 0x8eb552u:
+    case 0x8eb554u:
+    case 0x868b4eu:
+    case 0x868b50u:
+    case 0x869752u:
+    case 0x869754u:
+        return Lufia2FrameWaitCounterStep(memory, cpu, entry);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
 }
 
 static Lufia2ExecutionResult WaitForFrameChange(const Lufia2Memory *memory,
@@ -74,6 +108,13 @@ Lufia2ExecutionResult Lufia2FieldWaitForNextFrame(const Lufia2Memory *memory,
     if (cpu->program_bank != 0x83u)
         return ExecutionHandoff(cpu, 0x83900cu);
     return WaitForFrameChange(memory, cpu, 0x83900eu, 0x839012u);
+}
+
+Lufia2ExecutionResult Lufia2AncientCaveWaitForNextFrame(const Lufia2Memory *memory,
+                                                        Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x84u)
+        return ExecutionHandoff(cpu, 0x848d4du);
+    return WaitForFrameChange(memory, cpu, 0x848d4fu, 0x848d53u);
 }
 
 Lufia2ExecutionResult Lufia2ItemRegionWaitForNextFrame(const Lufia2Memory *memory,

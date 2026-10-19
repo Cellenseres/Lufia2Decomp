@@ -1215,6 +1215,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:8AF4` | `Lufia2AncientCaveCarryBlueItem` | verified | `src/cave/cave_exit.c` |
 | `$84:8B9C` | `Lufia2AncientCaveDefeat` | verified | `src/cave/cave_reset.c` |
 | `$84:8BC7` | `Lufia2BattleVisualTransition` | verified | `src/battle/battle_transition.c` |
+| `$84:8D4D` | `Lufia2AncientCaveWaitForNextFrame` | verified | `src/system/frame_wait.c` |
 | `$84:8D54` | `Lufia2FieldScaleScenePalette` | verified | `src/field/field_palette_scale.c` |
 | `$84:8E07` | `Lufia2FieldFadeScenePalette` | verified | `src/field/field_effects.c` |
 | `$84:9B3E` | `Lufia2BattleRunSpritePreviewWithExit` | verified | `src/battle/battle_frame_setup.c` |
