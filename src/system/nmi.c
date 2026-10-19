@@ -278,6 +278,26 @@ Lufia2ExecutionResult Lufia2NmiReturnInterrupt(
     return ExecutionHandoff(cpu, ((uint32_t)cpu->program_bank << 16) | address);
 }
 
+Lufia2ExecutionResult Lufia2NmiInvokeCallback(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t pc) {
+    if (cpu->program_bank != 0x80u || (pc != 0x800067u && pc != 0x80006cu))
+        return ExecutionHandoff(cpu, pc);
+    const uint16_t address = Read16Pair(memory, pc + 1u, pc + 2u);
+    const uint8_t bank = Read8(memory, pc + 3u);
+    SimulateJslFrame(memory, cpu, cpu->program_bank, (uint16_t)(pc + 3u));
+    cpu->program_bank = bank;
+    return ExecutionHandoff(cpu, ((uint32_t)bank << 16) | address);
+}
+
+Lufia2ExecutionResult Lufia2NmiReturnCallback(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t pc) {
+    if (cpu->program_bank != 0x80u || (pc != 0x80006bu && pc != 0x800070u))
+        return ExecutionHandoff(cpu, pc);
+    const uint16_t low = Pull8(memory, cpu);
+    const uint16_t address = (uint16_t)(low | ((uint16_t)Pull8(memory, cpu) << 8));
+    return ExecutionHandoff(cpu, 0x800000u | (uint16_t)(address + 1u));
+}
+
 Lufia2ExecutionResult Lufia2NmiSaveInterruptFrame(const Lufia2Memory *memory,
                                                   Lufia2CpuState *cpu) {
     const uint32_t entry = ((uint32_t)cpu->program_bank << 16) | 0x862du;
