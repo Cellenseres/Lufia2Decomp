@@ -1,5 +1,6 @@
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "battle/sprite_render_internal.h"
 
 enum {
     CHARACTER_SPRITE_TABLE = 0x9685c0u,
@@ -31,10 +32,8 @@ static void SelectLookupEntry(Lufia2CpuState *cpu) {
     LoadX16(cpu, cpu->accumulator);
 }
 
-Lufia2ExecutionResult Lufia2CharacterSpriteWord(
+Lufia2ExecutionResult Lufia2BattleReadCharacterSpriteWord(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!LookupContext(cpu))
-        return ExecutionHandoff(cpu, 0x81fbc6u);
     SaveLookupRegisters(memory, cpu);
     SelectLookupEntry(cpu);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(CHARACTER_SPRITE_TABLE, cpu->x)));
@@ -44,10 +43,15 @@ Lufia2ExecutionResult Lufia2CharacterSpriteWord(
     return ExecutionReturned(0x81fbdau);
 }
 
-Lufia2ExecutionResult Lufia2SpriteCoordinatesPacked(
+Lufia2ExecutionResult Lufia2CharacterSpriteWord(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!LookupContext(cpu))
-        return ExecutionHandoff(cpu, 0x81fb8eu);
+        return ExecutionHandoff(cpu, 0x81fbc6u);
+    return Lufia2BattleReadCharacterSpriteWord(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleReadSpriteCoordinates(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SaveLookupRegisters(memory, cpu);
     if (cpu->accumulator_is_8_bit)
         DecrementA8(cpu);
@@ -58,4 +62,11 @@ Lufia2ExecutionResult Lufia2SpriteCoordinatesPacked(
     LoadA16(cpu, cpu->accumulator & SPRITE_COORDINATES_MASK);
     RestoreLookupRegisters(memory, cpu);
     return ExecutionReturned(0x81fba1u);
+}
+
+Lufia2ExecutionResult Lufia2SpriteCoordinatesPacked(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!LookupContext(cpu))
+        return ExecutionHandoff(cpu, 0x81fb8eu);
+    return Lufia2BattleReadSpriteCoordinates(memory, cpu);
 }

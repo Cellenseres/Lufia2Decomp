@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "battle/sprite_render_internal.h"
 #include "system/wram.h"
 
 enum {
@@ -21,41 +22,6 @@ static void SetBank(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     PullDataBank(memory, cpu);
 }
 
-/* $81:FBC6: A = sprite of character A. */
-static void CharacterSprite(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    Push8(memory, cpu, PackStatus(cpu));
-    PushIndex(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    SetIndexWidth(cpu, 0);
-    And16(cpu, 0x00ffu);
-    AslA16(cpu);
-    TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x9685c0u, cpu->x)));
-    TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x9685cfu, cpu->x)));
-    cpu->x = PullIndexValue(memory, cpu);
-    UnpackStatus(cpu, Pull8(memory, cpu));
-}
-
-/* $81:FB8E: A = size of sprite A - 1, $1F1F masked. */
-static void SpriteSize(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    Push8(memory, cpu, PackStatus(cpu));
-    PushIndex(memory, cpu);
-    if (cpu->accumulator_is_8_bit)
-        DecrementA8(cpu);
-    else
-        LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
-    SetAccumulatorWidth(cpu, 0);
-    SetIndexWidth(cpu, 0);
-    And16(cpu, 0x00ffu);
-    AslA16(cpu);
-    TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x97ca64u, cpu->x)));
-    And16(cpu, 0x1f1fu);
-    cpu->x = PullIndexValue(memory, cpu);
-    UnpackStatus(cpu, Pull8(memory, cpu));
-}
-
 /* Party member A: sprite size of its character. */
 static void MemberSize(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t sprite_return, uint16_t size_return) {
@@ -65,10 +31,10 @@ static void MemberSize(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     TransferAToX(cpu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0050u, cpu->x));
     Jsl81(memory, cpu, sprite_return);
-    CharacterSprite(memory, cpu);
+    (void)Lufia2BattleReadCharacterSpriteWord(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     Jsl81(memory, cpu, size_return);
-    SpriteSize(memory, cpu);
+    (void)Lufia2BattleReadSpriteCoordinates(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 

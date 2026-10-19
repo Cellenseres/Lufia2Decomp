@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "battle/sprite_render_internal.h"
 #include "system/wram.h"
 
 /* Mask bit per record without status bit 2. */
@@ -335,84 +336,64 @@ Lufia2ExecutionResult Lufia2BattleTargetPointer(
     return ExecutionReturned(enemy ? 0x81c5ffu : 0x81c5f0u);
 }
 
-/* Next 2x2 tile: +2, skipping to the next row pair. */
-static void NextTile16(Lufia2CpuState *cpu) {
-    Add16Value(cpu, 0x0002u);
-    if ((cpu->accumulator & 0x000fu) == 0) {
-        cpu->zero = 1;
-        Add16Value(cpu, 0x0010u);
-    } else {
-        cpu->zero = 0;
-    }
-}
-
-/* Tile $00 as a 2x2 sheet index. */
-static void SheetTile(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadA8(cpu, DirectByte(memory, cpu, 0x00u));
-    AslA8(cpu);
-    StoreADirect8(memory, cpu, 0x11u);
-    And8(cpu, 0xf0u);
-    Adc8(cpu, DirectByte(memory, cpu, 0x11u));
-    StoreADirect8(memory, cpu, 0x11u);
-}
-
-static void Bank7E(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    PushDataBank(memory, cpu);
-    LoadA8(cpu, 0x7eu);
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
-}
-
-static uint8_t DecDirect(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint8_t offset) {
-    const uint8_t value = (uint8_t)(DirectByte(memory, cpu, offset) - 1u);
-
-    Write8(memory, (uint16_t)(cpu->direct_page + offset), value);
-    SetNz8(cpu, value);
-    return value;
-}
-
-/* $81:BE58: $02 x $03 2x2 tiles from $00, attribute $04, at $7E:$08. */
-Lufia2ExecutionResult Lufia2BattleTileBlock(
+/* Draw two-row tiles from the shared grid. */
+Lufia2ExecutionResult Lufia2BattleDrawTileGrid(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Bank7E(memory, cpu);
-    SheetTile(memory, cpu);
-    LoadX16(cpu, Read16Direct(memory, cpu, 0x08u));
-    StoreXDirect16(memory, cpu, 0x19u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x03u));
-    StoreADirect8(memory, cpu, 0x14u);
+    PushAndSetDataBank(memory, cpu, 0x7eu);
+    LoadA8(cpu, DirectByte(memory, cpu, BATTLE_GRID_TILE));
+    AslA8(cpu);
+    StoreADirect8(memory, cpu, BATTLE_GRID_ROW_TILE);
+    And8(cpu, 0xf0u);
+    OpAdcValue(cpu, DirectByte(memory, cpu, BATTLE_GRID_ROW_TILE));
+    StoreADirect8(memory, cpu, BATTLE_GRID_ROW_TILE);
+    LoadXDirect16(memory, cpu, BATTLE_GRID_WRITE_OFFSET);
+    StoreXDirect16(memory, cpu, BATTLE_GRID_TILE_ROW_BASE);
+    LoadA8(cpu, DirectByte(memory, cpu, BATTLE_GRID_HEIGHT));
+    StoreADirect8(memory, cpu, BATTLE_GRID_ROWS_LEFT);
     for (;;) {
-        LoadA8(cpu, DirectByte(memory, cpu, 0x02u));           /* BE70 */
-        StoreADirect8(memory, cpu, 0x13u);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x04u));
+        LoadA8(cpu, DirectByte(memory, cpu, BATTLE_GRID_WIDTH));
+        StoreADirect8(memory, cpu, BATTLE_GRID_COLUMNS_LEFT);
+        LoadA8(cpu, DirectByte(memory, cpu, BATTLE_GRID_ATTRIBUTES));
         ExchangeAccumulatorBytes(cpu);
-        LoadA8(cpu, DirectByte(memory, cpu, 0x11u));
+        LoadA8(cpu, DirectByte(memory, cpu, BATTLE_GRID_ROW_TILE));
         do {
-            SetAccumulatorWidth(cpu, 0);                       /* BE79 */
-            StoreAAbsolute16(memory, cpu, 0x0000u, cpu->x);
+            SetAccumulatorWidth(cpu, 0);
+            Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x0000u, cpu->x),
+                cpu->accumulator);
             TransferAToY(cpu);
-            LoadA16(cpu, (uint16_t)(cpu->accumulator + 1u));
-            StoreAAbsolute16(memory, cpu, 0x0002u, cpu->x);
+            IncrementA16(cpu);
+            Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x0002u, cpu->x),
+                cpu->accumulator);
             LoadA16(cpu, cpu->y);
             cpu->carry = 0;
-            Add16Value(cpu, 0x0010u);
-            StoreAAbsolute16(memory, cpu, 0x0040u, cpu->x);
-            LoadA16(cpu, (uint16_t)(cpu->accumulator + 1u));
-            StoreAAbsolute16(memory, cpu, 0x0042u, cpu->x);
+            OpAdcValue(cpu, 0x0010u);
+            Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x0040u, cpu->x),
+                cpu->accumulator);
+            IncrementA16(cpu);
+            Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x0042u, cpu->x),
+                cpu->accumulator);
             LoadA16(cpu, cpu->y);
-            NextTile16(cpu);
+            OpAdcValue(cpu, 0x0002u);
+            cpu->zero = (cpu->accumulator & 0x000fu) == 0;
+            if (cpu->zero)
+                OpAdcValue(cpu, 0x0010u);
             SetAccumulatorWidth(cpu, 1);
-            LoadX16(cpu, (uint16_t)(cpu->x + 4u));
-        } while (DecDirect(memory, cpu, 0x13u));
-        StoreADirect8(memory, cpu, 0x11u);
-        if (!DecDirect(memory, cpu, 0x14u))
+            IncrementX16(cpu);
+            IncrementX16(cpu);
+            IncrementX16(cpu);
+            IncrementX16(cpu);
+            DecrementDirect8(memory, cpu, BATTLE_GRID_COLUMNS_LEFT);
+        } while (!cpu->zero);
+        StoreADirect8(memory, cpu, BATTLE_GRID_ROW_TILE);
+        DecrementDirect8(memory, cpu, BATTLE_GRID_ROWS_LEFT);
+        if (cpu->zero)
             break;
         SetAccumulatorWidth(cpu, 0);
         LoadA16(cpu, Read16Direct(memory, cpu, 0x19u));
         cpu->carry = 0;
-        Add16Value(cpu, 0x0080u);
-        StoreADirect16(memory, cpu, 0x19u);
+        OpAdcValue(cpu, 0x0080u);
+        Write16Direct(memory, cpu, BATTLE_GRID_TILE_ROW_BASE, cpu->accumulator);
         TransferAToX(cpu);
         SetAccumulatorWidth(cpu, 1);
     }
@@ -420,65 +401,15 @@ Lufia2ExecutionResult Lufia2BattleTileBlock(
     return ExecutionReturned(0x81bebbu);
 }
 
+Lufia2ExecutionResult Lufia2BattleTileBlock(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return Lufia2BattleDrawTileGrid(memory, cpu);
+}
+
 /* $81:BD4B: $02 x $03 sprites; A = count. */
 Lufia2ExecutionResult Lufia2BattleSpriteBlock(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    Bank7E(memory, cpu);
-    Write8(memory, (uint16_t)(cpu->direct_page + 0x15u), 0x00u);
-    TransferDirectToA(cpu);
-    cpu->carry = 1;
-    Sbc8(cpu, DirectByte(memory, cpu, 0x07u));
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x06u));
-    TransferAToY(cpu);
-    Write16Direct(memory, cpu, 0x17u, cpu->y);
-    Write16Direct(memory, cpu, 0x1cu, cpu->y);
-    SheetTile(memory, cpu);
-    LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x05u) - 1u));
-    StoreADirect8(memory, cpu, 0x16u);
-    LoadX16(cpu, Read16Direct(memory, cpu, 0x08u));
-    do {
-        LoadA8(cpu, DirectByte(memory, cpu, 0x02u));           /* BD70 */
-        StoreADirect8(memory, cpu, 0x13u);
-        do {
-            static const uint8_t kFields[4] = {0x17u, 0x16u, 0x11u, 0x04u};
-            unsigned i;
-
-            for (i = 0; i < 4u; ++i) {
-                LoadA8(cpu, DirectByte(memory, cpu, kFields[i]));
-                StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x);
-                IncrementX16(cpu);
-            }
-            LoadA8(cpu, (uint8_t)(DirectByte(memory, cpu, 0x18u) & 0x03u));
-            StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x);
-            IncrementX16(cpu);
-            Write8(memory, (uint16_t)(cpu->direct_page + 0x15u),
-                (uint8_t)(DirectByte(memory, cpu, 0x15u) + 1u));
-            SetAccumulatorWidth(cpu, 0);
-            LoadA16(cpu, Read16Direct(memory, cpu, 0x17u));
-            cpu->carry = 0;
-            Add16Value(cpu, 0x0010u);
-            StoreADirect16(memory, cpu, 0x17u);
-            SetAccumulatorWidth(cpu, 1);
-            LoadA8(cpu, DirectByte(memory, cpu, 0x11u));
-            cpu->carry = 0;
-            Adc8(cpu, 0x02u);
-            if ((A8(cpu) & 0x0fu) == 0)
-                Adc8(cpu, 0x10u);
-            StoreADirect8(memory, cpu, 0x11u);
-        } while (DecDirect(memory, cpu, 0x13u));
-        LoadA8(cpu, DirectByte(memory, cpu, 0x16u));
-        cpu->carry = 0;
-        Adc8(cpu, 0x10u);
-        StoreADirect8(memory, cpu, 0x16u);
-        LoadY16(cpu, Read16Direct(memory, cpu, 0x1cu));
-        Write16Direct(memory, cpu, 0x17u, cpu->y);
-    } while (DecDirect(memory, cpu, 0x03u));
-    StoreXDirect16(memory, cpu, 0x08u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x15u));
-    PullDataBank(memory, cpu);
-    return ExecutionReturned(0x81bdc7u);
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return Lufia2BattleDrawSpriteGrid(memory, cpu, false);
 }
 
 /* Blend A toward $CA through $81:B505, called at pc. */
@@ -614,6 +545,7 @@ Lufia2ExecutionResult Lufia2BattlePaletteFade(
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "battle/sprite_render_internal.h"
 
 static void SetPaletteBank(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t bank) {
