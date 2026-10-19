@@ -1,6 +1,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/menu.h"
+#include "lufia2/select_phase.h"
 #include "system/wram.h"
 #include <stddef.h>
 
@@ -9,6 +10,114 @@ enum {
     SELECT_OBJECT_UPLOAD = 0x72u,
     SELECT_RECORD_SCRIPT = 11u
 };
+
+static Lufia2ExecutionResult BeginSelectUpdate(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint32_t entry, uint32_t target, bool long_call) {
+    if (long_call) {
+        SimulateJslFrame(memory, cpu, cpu->program_bank, (uint16_t)(entry + 3u));
+        cpu->program_bank = (uint8_t)(target >> 16);
+    } else {
+        SimulateJsrFrame(memory, cpu, (uint16_t)(entry + 2u));
+    }
+    return ExecutionHandoff(cpu, target);
+}
+
+Lufia2ExecutionResult Lufia2SelectTransitionStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x86u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x8682c8u: LoadA8(cpu, 0x26u); break;
+    case 0x8682f5u:
+    case 0x86832cu: LoadA8(cpu, 0x80u); break;
+    case 0x868308u: LoadA8(cpu, 0x84u); break;
+    case 0x868312u: LoadA8(cpu, 0xc4u); break;
+    case 0x8682cau: return BeginSelectUpdate(memory, cpu, entry, 0x80953bu, true);
+    case 0x8682ceu:
+    case 0x86833au: return BeginSelectUpdate(memory, cpu, entry, 0x828b4bu, true);
+    case 0x8682eeu:
+    case 0x868325u: return BeginSelectUpdate(memory, cpu, entry, 0x868bcfu, true);
+    case 0x8682e0u:
+    case 0x86831au: return BeginSelectUpdate(memory, cpu, entry, 0x868637u, false);
+    case 0x8682e5u:
+    case 0x868317u:
+    case 0x86834cu: return BeginSelectUpdate(memory, cpu, entry, 0x8686edu, false);
+    case 0x8682e8u:
+    case 0x86831fu: return BeginSelectUpdate(memory, cpu, entry, 0x86838cu, false);
+    case 0x8682ebu:
+    case 0x868322u: return BeginSelectUpdate(memory, cpu, entry, 0x868996u, false);
+    case 0x8682f2u:
+    case 0x868329u: return BeginSelectUpdate(memory, cpu, entry, 0x8688beu, false);
+    case 0x8682f9u:
+    case 0x868330u:
+    case 0x86834fu: return BeginSelectUpdate(memory, cpu, entry, 0x868b48u, false);
+    case 0x8682feu: return BeginSelectUpdate(memory, cpu, entry, 0x8689fdu, false);
+    case 0x8682d2u:
+    case 0x86833eu:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_MENU_PRESSED_A));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x8682d9u:
+    case 0x868345u:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_MENU_PRESSED_B));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x8682d5u:
+    case 0x868341u: OpBitValue(cpu, 0x80u); break;
+    case 0x8682dcu:
+    case 0x868348u: OpBitValue(cpu, 0x90u); break;
+    case 0x8682d7u:
+    case 0x8682deu:
+        return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : 0x868303u);
+    case 0x868343u:
+    case 0x86834au:
+        return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : 0x868358u);
+    case 0x8682e3u:
+        return ExecutionHandoff(cpu, cpu->carry ? 0x8682feu : 0x8682e5u);
+    case 0x86831du:
+        return ExecutionHandoff(cpu, cpu->carry ? 0x868330u : 0x86831fu);
+    case 0x868336u:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x868338u : 0x868317u);
+    case 0x868354u:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x868356u : 0x868339u);
+    case 0x8682fcu: return ExecutionHandoff(cpu, 0x8682ceu);
+    case 0x86830du: return ExecutionHandoff(cpu, 0x868317u);
+    case 0x8682f7u:
+    case 0x86832eu:
+        OpSta(memory, cpu, OpDp(cpu, SELECT_OBJECT_UPLOAD));
+        break;
+    case 0x868305u:
+    case 0x86830fu:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_FADE_LEVEL));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x86830au:
+    case 0x868314u:
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x868333u:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x868301u:
+    case 0x868356u: cpu->carry = 0u; return ExecutionHandoff(cpu, entry + 1u);
+    case 0x868303u:
+    case 0x868359u: cpu->carry = 1u; return ExecutionHandoff(cpu, entry + 1u);
+    case 0x868339u: OpPushX(memory, cpu); return ExecutionHandoff(cpu, entry + 1u);
+    case 0x868352u:
+    case 0x868358u: OpPullX(memory, cpu); return ExecutionHandoff(cpu, entry + 1u);
+    case 0x868353u: OpDex(cpu); return ExecutionHandoff(cpu, entry + 1u);
+    case 0x868302u:
+    case 0x868304u:
+    case 0x868338u:
+    case 0x868357u:
+    case 0x86835au: {
+        const uint16_t low = Pull8(memory, cpu);
+        const uint16_t address = (uint16_t)(low | ((uint16_t)Pull8(memory, cpu) << 8));
+        return ExecutionHandoff(cpu, 0x860000u | (uint16_t)(address + 1u));
+    }
+    default: return ExecutionHandoff(cpu, entry);
+    }
+    return ExecutionHandoff(cpu, entry + 2u);
+}
 
 static uint8_t SelectTransitionContext(const Lufia2CpuState *cpu,
                                        uint8_t either_accumulator_width) {
