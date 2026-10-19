@@ -197,6 +197,33 @@ Lufia2ExecutionResult Lufia2FrameWaitSaveRegistersStep(
     }
 }
 
+Lufia2ExecutionResult Lufia2FrameWaitReturnStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != entry >> 16)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x8293ceu:
+    case 0x839012u:
+    case 0x8eb556u:
+    case 0x868b54u:
+    case 0x869757u:
+    case 0x80bf11u:
+    case 0x848d53u:
+    case 0x809382u:
+    case 0x848369u:
+    case 0x84a5b4u:
+    case 0x858522u:
+    case 0x8eb28eu: {
+        const uint16_t low = Pull8(memory, cpu);
+        const uint16_t address = (uint16_t)(low | ((uint16_t)Pull8(memory, cpu) << 8));
+        return ExecutionHandoff(cpu, ((uint32_t)cpu->program_bank << 16) |
+                                       (uint16_t)(address + 1u));
+    }
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+}
+
 Lufia2ExecutionResult Lufia2FieldWaitForNextFrame(const Lufia2Memory *memory,
                                                   Lufia2CpuState *cpu) {
     if (cpu->program_bank != 0x83u)
