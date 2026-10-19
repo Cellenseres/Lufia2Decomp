@@ -2,6 +2,7 @@
 #include "core/wram_view.h"
 #include "core/child_call.h"
 #include "battle/status_target_internal.h"
+#include "battle/status_cache_internal.h"
 
 enum {
     STATUS_TEXT_LENGTH = 0x1266u,
@@ -78,11 +79,10 @@ Lufia2ExecutionResult Lufia2BattleStatusPhrase(const Lufia2Memory *memory,
     return ExecutionReturned(0x85919bu);
 }
 
-/* $85:91A1: synchronize five party status markers. */
-Lufia2ExecutionResult Lufia2BattleSyncStatusMarkers(const Lufia2Memory *memory,
-                                                    Lufia2CpuState *cpu) {
+void Lufia2BattleUpdateStatusMarkers(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t marker_bank) {
     PushDataBank(memory, cpu);
-    Push8(memory, cpu, cpu->program_bank);
+    Push8(memory, cpu, marker_bank);
     PullDataBank(memory, cpu);
     {
         const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -93,7 +93,7 @@ Lufia2ExecutionResult Lufia2BattleSyncStatusMarkers(const Lufia2Memory *memory,
             SetAccumulatorWidth(cpu, 0);
             LoadA16(cpu, WramRead16At(wram, WRAM_BATTLE_PARTY_RECORDS, cpu->x));
             if (!cpu->zero) {
-                /* Marker follows the battler's status; new ones start at $FF. */
+                /* New status markers start at $FF. */
                 OpPushX(memory, cpu);
                 TransferAToX(cpu);
                 SetAccumulatorWidth(cpu, 1);
@@ -124,6 +124,11 @@ Lufia2ExecutionResult Lufia2BattleSyncStatusMarkers(const Lufia2Memory *memory,
     }
     SetAccumulatorWidth(cpu, 1);
     PullDataBank(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleSyncStatusMarkers(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2BattleUpdateStatusMarkers(memory, cpu, cpu->program_bank);
     return ExecutionReturned(0x8591dfu);
 }
 

@@ -1,6 +1,7 @@
 /* Battle sprites, tilemap and frame upkeep. */
 
 #include "battle/battle_internal.h"
+#include "battle/status_cache_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
 #include "battle/sprite_render_internal.h"
@@ -512,55 +513,6 @@ static uint16_t BattleSprites(
     return 0x8aaeu;
 }
 
-/* $85:91A1: refresh the five $147A state bytes. */
-static void BattleSlotStates(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    PushDataBank(memory, cpu);
-    Push8(memory, cpu, 0x85u);                                 /* PHK */
-    PullDataBank(memory, cpu);
-    LoadY16(cpu, 0x0000u);
-    LoadX16(cpu, cpu->y);                                      /* TYX */
-    do {
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu,
-                Read16AbsoluteIndexed(memory, cpu, WRAM_BATTLE_PARTY_RECORDS, cpu->x));
-        if (!cpu->zero) {
-            PushIndex(memory, cpu);
-            TransferAToX(cpu);
-            SetAccumulatorWidth(cpu, 1);
-            LoadAAbsolute8(memory, cpu, (WRAM_BATTLE_STATUS_ICON_RECORDS + 1u), cpu->y);
-            ExchangeAccumulatorBytes(cpu);
-            LoadAAbsolute8(memory, cpu, 0x000fu, cpu->x);
-            StoreAAbsolute8(memory, cpu, (WRAM_BATTLE_STATUS_ICON_RECORDS + 1u),
-                            cpu->y);
-            if (cpu->zero) {
-                TransferDirectToA(cpu);
-                StoreAAbsolute8(memory, cpu, WRAM_BATTLE_STATUS_ICON_RECORDS, cpu->y);
-            } else {
-                ExchangeAccumulatorBytes(cpu);
-                if (cpu->zero) {
-                    LoadA8(cpu, 0xffu);
-                    StoreAAbsolute8(memory, cpu, (WRAM_BATTLE_STATUS_ICON_RECORDS + 2u),
-                                    cpu->y);
-                    StoreAAbsolute8(memory, cpu, WRAM_BATTLE_STATUS_ICON_RECORDS,
-                                    cpu->y);
-                }
-            }
-            cpu->x = PullIndexValue(memory, cpu);
-        }
-        IncrementX16(cpu);
-        IncrementX16(cpu);
-        IncrementY16(cpu);
-        IncrementY16(cpu);
-        IncrementY16(cpu);
-        IncrementY16(cpu);
-        Compare16(cpu, cpu->y, 0x0014u);
-    } while (!cpu->zero);
-    SetAccumulatorWidth(cpu, 1);
-    PullDataBank(memory, cpu);
-}
-
 /* Native M=1 X=0 runs here; otherwise hand off. */
 static Lufia2ExecutionResult BattleFrameEntry(
     Lufia2CpuState *cpu, uint32_t entry, uint32_t exit) {
@@ -607,7 +559,7 @@ Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
     SimulateJslFrame(memory, cpu, 0x85u, 0xecf3u);
-    BattleSlotStates(memory, cpu);
+    Lufia2BattleUpdateStatusMarkers(memory, cpu, 0x85u);
     SimulateRtlFrame(memory, cpu);
     SimulateJslFrame(memory, cpu, 0x85u, 0xecf7u);
     (void)BattleSprites(memory, cpu);

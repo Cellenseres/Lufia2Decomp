@@ -2,6 +2,7 @@
 #include "core/cpu_ops.h"
 #include "system/wram.h"
 #include "lufia2/battle.h"
+#include "battle/status_cache_internal.h"
 
 enum {
     PARTY_RECORDS = WRAM_MENU_PARTY_CHARACTER_OFFSET & 0xffffu,
@@ -59,12 +60,17 @@ Lufia2ExecutionResult Lufia2BattleClearEnemyModifiers(
     return ExecutionReturned(0x85dac6u);
 }
 
+void Lufia2BattleClearRecordStatus(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->zero)
+        OpStz(memory, cpu, OpAbsX(cpu, RECORD_STATUS));
+}
+
 Lufia2ExecutionResult Lufia2BattleClearSelectedPartyStatus(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!RecordResetContext(cpu, 0x1f00u, 0x1ffcu))
         return ExecutionHandoff(cpu, 0x85ee9bu);
-    if (!cpu->zero)
-        OpStz(memory, cpu, OpAbsX(cpu, RECORD_STATUS));
+    Lufia2BattleClearRecordStatus(memory, cpu);
     return ExecutionReturned(0x85eea0u);
 }
 

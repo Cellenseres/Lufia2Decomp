@@ -3,6 +3,7 @@
 #include "core/snes_registers.h"
 #include "system/wram.h"
 #include "lufia2/battle.h"
+#include "battle/status_cache_internal.h"
 
 enum {
     PARTY_RECORDS = WRAM_BATTLE_PARTY_RECORDS & 0xffffu,
@@ -16,12 +17,8 @@ enum {
     ENEMY_GROUP_KEYS = WRAM_BATTLE_ENEMY_SPRITE_GROUP_KEYS & 0xffffu
 };
 
-Lufia2ExecutionResult Lufia2BattleSnapshotStatuses(
+void Lufia2BattleCaptureStatuses(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
-        cpu->index_is_8_bit || cpu->decimal || cpu->stack < 0x1f00u ||
-        cpu->stack > 0x1ffbu)
-        return ExecutionHandoff(cpu, 0x85ed51u);
     for (unsigned member = 0u; member < 5u; ++member) {
         LoadA16(cpu, cpu->direct_page);
         OpLdx(cpu, OpReadX(memory, cpu,
@@ -36,6 +33,15 @@ Lufia2ExecutionResult Lufia2BattleSnapshotStatuses(
         OpSta(memory, cpu, OpAbs(cpu,
             (uint16_t)(STATUS_CACHE + 5u + enemy)));
     }
+}
+
+Lufia2ExecutionResult Lufia2BattleSnapshotStatuses(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->stack < 0x1f00u ||
+        cpu->stack > 0x1ffbu)
+        return ExecutionHandoff(cpu, 0x85ed51u);
+    Lufia2BattleCaptureStatuses(memory, cpu);
     return ExecutionReturned(0x85edb1u);
 }
 

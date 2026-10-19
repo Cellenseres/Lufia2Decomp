@@ -1,20 +1,10 @@
 #include "battle/battle_internal.h"
+#include "battle/status_cache_internal.h"
 
 /* $85:ED51: five pointer-based and six fixed status bytes. */
 static void BattleSnapshotStatus(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SimulateJslFrame(memory, cpu, 0x85u, 0x93bdu);
-    for (unsigned i = 0; i < 5u; ++i) {
-        TransferDirectToA(cpu);
-        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu,
-            (uint16_t)(WRAM_BATTLE_PARTY_RECORDS + 2u * i))));
-        if (!cpu->zero)
-            OpLda(memory, cpu, OpAbsX(cpu, 0x000fu));
-        OpSta(memory, cpu, OpAbs(cpu, (uint16_t)(0x1c01u + i)));
-    }
-    for (unsigned i = 0; i < 6u; ++i) {
-        OpLda(memory, cpu, OpAbs(cpu, (uint16_t)(0x162au + 0xbeu * i)));
-        OpSta(memory, cpu, OpAbs(cpu, (uint16_t)(0x1c06u + i)));
-    }
+    Lufia2BattleCaptureStatuses(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
@@ -25,8 +15,7 @@ static void BattleClearPartyStatus(const Lufia2Memory *memory, Lufia2CpuState *c
         OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu,
             (uint16_t)(WRAM_BATTLE_PARTY_RECORDS + 2u * i))));
         SimulateJsrFrame(memory, cpu, (uint16_t)(0xee87u + 6u * i));
-        if (!cpu->zero)
-            OpStz(memory, cpu, OpAbsX(cpu, 0x000fu));
+        Lufia2BattleClearRecordStatus(memory, cpu);
         SimulateRtsFrame(memory, cpu);
     }
     SimulateRtlFrame(memory, cpu);
