@@ -9,7 +9,7 @@ extern "C" {
 
 typedef enum Lufia2MenuFieldBuffer {
     LUFIA2_MENU_FIELD_SNAPSHOT,
-    LUFIA2_MENU_MESSAGE_SNAPSHOT
+    LUFIA2_MENU_INVENTORY_SNAPSHOT
 } Lufia2MenuFieldBuffer;
 
 /* Bounded original buffer loops; X is the byte index. */

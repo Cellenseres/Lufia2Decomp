@@ -3631,7 +3631,7 @@ name = "unk_7FF080"
 width = 1
 count = 1
 owner = "menu"
-notes = "Main debug shortcut writes FF into233 indexed bytes at this base. It overlaps the phase-dependent message-resource buffer; no disjoint allocation is claimed."
+notes = "Main debug shortcut writes FF into233 indexed bytes at this base. In inventory/save context82:FCED selects two item-count nibbles per byte for IDs0000..01FF;85:C67B/C998 transfer the first256 bytes. It overlaps the phase-dependent message-resource buffer; no disjoint allocation is claimed."
 
 [[location]]
 address = "7E:14CD"

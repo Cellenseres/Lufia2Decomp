@@ -2,6 +2,7 @@
 #include "core/cpu_ops.h"
 #include "lufia2/system.h"
 #include "system/wram.h"
+#include "system/save_buffers_internal.h"
 
 enum {
     DP_CHECKSUM = 0x22u,
@@ -17,8 +18,63 @@ enum {
     SAVE_PARTY_COUNT = 0x0a7au,
     SAVE_PARTY_MEMBERS = 0x0a7bu,
     SAVE_FIELD_STATE = 0x0a8au,
+    SAVE_PACKED_ITEM_COUNTS = WRAM_UNK_7FF080 & 0xffffu,
     SAVE_ACTIVE_PARTY = 0x0a80u
 };
+
+static void CopySaveBufferBytes(const Lufia2Memory *memory,
+                                Lufia2CpuState *cpu,
+                                Lufia2SaveBuffer buffer,
+                                Lufia2SaveBufferDirection direction,
+                                unsigned max_bytes) {
+    if (!max_bytes)
+        return;
+    const bool counts = buffer == LUFIA2_SAVE_PACKED_ITEM_COUNTS;
+    const uint16_t state_base = counts ? SAVE_PACKED_ITEM_COUNTS : SAVE_FIELD_STATE;
+    do {
+        if (direction == LUFIA2_SAVE_FROM_RECORD) {
+            const uint32_t record_address = counts
+                ? OpLongX(cpu, 0x7e0000u) : OpAbsX(cpu, 0u);
+            OpLda(memory, cpu, record_address);
+            OpSta(memory, cpu, OpAbsY(cpu, state_base));
+        } else {
+            OpLda(memory, cpu, OpAbsY(cpu, state_base));
+            const uint32_t record_address = counts
+                ? OpLongX(cpu, 0x7e0000u) : OpAbsX(cpu, 0u);
+            OpSta(memory, cpu, record_address);
+        }
+        OpInx(cpu);
+        OpDey(cpu);
+    } while (--max_bytes && !cpu->negative);
+}
+
+void Lufia2SaveCopyBuffer(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                         Lufia2SaveBuffer buffer,
+                         Lufia2SaveBufferDirection direction) {
+    CopySaveBufferBytes(memory, cpu, buffer, direction, UINT16_MAX + 1u);
+}
+
+Lufia2ExecutionResult Lufia2SaveCopyBufferSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2SaveBuffer buffer, Lufia2SaveBufferDirection direction,
+    unsigned max_bytes) {
+    const bool counts = buffer == LUFIA2_SAVE_PACKED_ITEM_COUNTS;
+    const bool restoring = direction == LUFIA2_SAVE_FROM_RECORD;
+    const uint32_t entry = restoring
+        ? (counts ? 0x85c67bu : 0x85c669u)
+        : (counts ? 0x85c998u : 0x85c986u);
+    if ((buffer != LUFIA2_SAVE_FIELD_STATE && !counts) ||
+        (direction != LUFIA2_SAVE_TO_RECORD && !restoring) ||
+        cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->y > (counts ? 0xffu : 0xe9u))
+        return ExecutionHandoff(cpu, entry);
+    const unsigned remaining = cpu->y + 1u;
+    const unsigned count = max_bytes < remaining ? max_bytes : remaining;
+    CopySaveBufferBytes(memory, cpu, buffer, direction, count);
+    const uint32_t next = count && cpu->negative
+        ? entry + (counts ? 11u : 10u) : entry;
+    return ExecutionHandoff(cpu, next);
+}
 
 static void RestoreSaveFieldState(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdy(cpu, 4u);
@@ -36,21 +92,13 @@ static void RestoreSaveFieldState(const Lufia2Memory *memory, Lufia2CpuState *cp
         OpDey(cpu);
     } while (!cpu->negative);
     OpLdy(cpu, 0xe9u);
-    do {
-        OpLda(memory, cpu, OpAbsX(cpu, 0u));
-        OpSta(memory, cpu, OpAbsY(cpu, SAVE_FIELD_STATE));
-        OpInx(cpu);
-        OpDey(cpu);
-    } while (!cpu->negative);
+    Lufia2SaveCopyBuffer(memory, cpu, LUFIA2_SAVE_FIELD_STATE,
+                         LUFIA2_SAVE_FROM_RECORD);
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7fu);
     OpLdy(cpu, 0xffu);
-    do {
-        OpLda(memory, cpu, LongIndexedAddress(0x7e0000u, cpu->x));
-        OpSta(memory, cpu, OpAbsY(cpu, 0xf080u));
-        OpInx(cpu);
-        OpDey(cpu);
-    } while (!cpu->negative);
+    Lufia2SaveCopyBuffer(memory, cpu, LUFIA2_SAVE_PACKED_ITEM_COUNTS,
+                         LUFIA2_SAVE_FROM_RECORD);
     PullDataBank(memory, cpu);
 }
 

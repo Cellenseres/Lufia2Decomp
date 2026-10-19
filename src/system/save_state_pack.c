@@ -2,6 +2,7 @@
 #include "core/cpu_ops.h"
 #include "lufia2/system.h"
 #include "system/wram.h"
+#include "system/save_buffers_internal.h"
 
 enum {
     DP_CHECKSUM = 0x22u,
@@ -14,8 +15,7 @@ enum {
     SAVE_PARTY_MEMBER_INDEX = WRAM_PARTY_STAT_MEMBER_INDEX,
     SAVE_PARTY_HEADER = 0x0badu,
     SAVE_CAPSULE_RECORD = 0x119du,
-    SAVE_FIELD_HEADER = 0x0a7bu,
-    SAVE_FIELD_STATE = 0x0a8au
+    SAVE_FIELD_HEADER = 0x0a7bu
 };
 
 static void StoreSaveByte(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -36,19 +36,13 @@ static void PackSaveFieldState(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
         StoreSaveByte(memory, cpu);
     } while (!cpu->negative);
     OpLdy(cpu, 0xe9u);
-    do {
-        OpLda(memory, cpu, OpAbsY(cpu, SAVE_FIELD_STATE));
-        StoreSaveByte(memory, cpu);
-    } while (!cpu->negative);
+    Lufia2SaveCopyBuffer(memory, cpu, LUFIA2_SAVE_FIELD_STATE,
+                         LUFIA2_SAVE_TO_RECORD);
     PushDataBank(memory, cpu);
     OpSetDataBank(memory, cpu, 0x7fu);
     OpLdy(cpu, 0xffu);
-    do {
-        OpLda(memory, cpu, OpAbsY(cpu, 0xf080u));
-        OpSta(memory, cpu, LongIndexedAddress(0x7e0000u, cpu->x));
-        OpInx(cpu);
-        OpDey(cpu);
-    } while (!cpu->negative);
+    Lufia2SaveCopyBuffer(memory, cpu, LUFIA2_SAVE_PACKED_ITEM_COUNTS,
+                         LUFIA2_SAVE_TO_RECORD);
     PullDataBank(memory, cpu);
 }
 

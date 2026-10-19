@@ -17,9 +17,9 @@ enum {
     FIELD_SNAPSHOT_SOURCE = WRAM_UNK_7E93C0,
     FIELD_SNAPSHOT_DESTINATION = WRAM_FIELD_OAM_LOW_BUFFER,
     FIELD_SNAPSHOT_BYTES = WRAM_UNK_7E93C0_COUNT,
-    MESSAGE_SNAPSHOT_SOURCE = WRAM_UNK_7EA498,
-    MESSAGE_SNAPSHOT_DESTINATION = WRAM_UNK_7FF080,
-    MESSAGE_SNAPSHOT_BYTES = WRAM_UNK_7EA498_COUNT,
+    INVENTORY_SNAPSHOT_SOURCE = WRAM_UNK_7EA498,
+    INVENTORY_SNAPSHOT_DESTINATION = WRAM_UNK_7FF080,
+    INVENTORY_SNAPSHOT_BYTES = WRAM_UNK_7EA498_COUNT,
     EQUIPMENT_ITEM_MASK = 0x01ffu,
     EQUIPMENT_ITEM_FLAG = 0x08u
 };
@@ -107,14 +107,14 @@ Lufia2ExecutionResult Lufia2MenuDrawSelectionMessage(
 }
 
 static void RestoreFieldBufferBytes(const Lufia2Memory *memory,
-                                    Lufia2CpuState *cpu, bool message,
+                                    Lufia2CpuState *cpu, bool inventory,
                                     unsigned count) {
-    const uint32_t source = message ? MESSAGE_SNAPSHOT_SOURCE : FIELD_SNAPSHOT_SOURCE;
-    const uint16_t limit = message ? MESSAGE_SNAPSHOT_BYTES : FIELD_SNAPSHOT_BYTES;
+    const uint32_t source = inventory ? INVENTORY_SNAPSHOT_SOURCE : FIELD_SNAPSHOT_SOURCE;
+    const uint16_t limit = inventory ? INVENTORY_SNAPSHOT_BYTES : FIELD_SNAPSHOT_BYTES;
     while (count--) {
         OpLda(memory, cpu, OpLongX(cpu, source));
-        const uint32_t destination = message
-            ? OpLongX(cpu, MESSAGE_SNAPSHOT_DESTINATION)
+        const uint32_t destination = inventory
+            ? OpLongX(cpu, INVENTORY_SNAPSHOT_DESTINATION)
             : OpAbsX(cpu, FIELD_SNAPSHOT_DESTINATION);
         OpSta(memory, cpu, destination);
         OpInx(cpu);
@@ -125,19 +125,19 @@ static void RestoreFieldBufferBytes(const Lufia2Memory *memory,
 Lufia2ExecutionResult Lufia2MenuRestoreFieldBufferSpan(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2MenuFieldBuffer buffer, unsigned max_bytes) {
-    const bool message = buffer == LUFIA2_MENU_MESSAGE_SNAPSHOT;
-    const uint32_t entry = message ? 0x82f695u : 0x82f685u;
-    const uint16_t limit = message ? MESSAGE_SNAPSHOT_BYTES : FIELD_SNAPSHOT_BYTES;
-    if ((buffer != LUFIA2_MENU_FIELD_SNAPSHOT && !message) ||
+    const bool inventory = buffer == LUFIA2_MENU_INVENTORY_SNAPSHOT;
+    const uint32_t entry = inventory ? 0x82f695u : 0x82f685u;
+    const uint16_t limit = inventory ? INVENTORY_SNAPSHOT_BYTES : FIELD_SNAPSHOT_BYTES;
+    if ((buffer != LUFIA2_MENU_FIELD_SNAPSHOT && !inventory) ||
         cpu->program_bank != 0x82u || !MenuRecordSupported(cpu, true) ||
         cpu->x >= limit)
         return ExecutionHandoff(cpu, entry);
     const unsigned remaining = limit - cpu->x;
     const unsigned count = max_bytes < remaining ? max_bytes : remaining;
-    RestoreFieldBufferBytes(memory, cpu, message, count);
+    RestoreFieldBufferBytes(memory, cpu, inventory, count);
     uint32_t next = entry;
-    if (cpu->x == limit)
-        next = message ? 0x82f6a3u : 0x82f692u;
+    if (count && cpu->zero)
+        next = inventory ? 0x82f6a3u : 0x82f692u;
     return ExecutionHandoff(cpu, next);
 }
 
@@ -148,7 +148,7 @@ Lufia2ExecutionResult Lufia2MenuRestoreSavedFieldBuffers(
     OpLdx(cpu, 0u);
     RestoreFieldBufferBytes(memory, cpu, false, FIELD_SNAPSHOT_BYTES);
     OpLdx(cpu, 0u);
-    RestoreFieldBufferBytes(memory, cpu, true, MESSAGE_SNAPSHOT_BYTES);
+    RestoreFieldBufferBytes(memory, cpu, true, INVENTORY_SNAPSHOT_BYTES);
     return ExecutionReturned(0x82f6a3u);
 }
 
