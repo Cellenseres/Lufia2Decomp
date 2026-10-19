@@ -471,6 +471,231 @@ static Lufia2ExecutionResult InstallSessionPosition(
     return ExecutionReturned(0x83b308u);
 }
 
+Lufia2ExecutionResult Lufia2FieldActorInstallStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    static const struct {
+        uint32_t site;
+        uint32_t target;
+        uint8_t frame_bytes;
+    } services[] = {
+        {0x83b323u, 0x80beafu, 3u},
+        {0x83b347u, 0x83b5adu, 2u},
+        {0x83b356u, 0x83ab4fu, 3u},
+        {0x83b394u, 0x80c01du, 3u},
+        {0x83b398u, 0x80c1a7u, 3u},
+        {0x83b3aau, 0x8ebc99u, 3u}
+    };
+    if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    for (unsigned service = 0u; service < sizeof services / sizeof services[0]; ++service) {
+        if (entry != services[service].site)
+            continue;
+        const uint32_t target = services[service].target;
+        if (services[service].frame_bytes == 3u) {
+            SimulateJslFrame(memory, cpu, cpu->program_bank, (uint16_t)(entry + 3u));
+            cpu->program_bank = (uint8_t)(target >> 16);
+        } else {
+            SimulateJsrFrame(memory, cpu, (uint16_t)(entry + 2u));
+        }
+        return ExecutionHandoff(cpu, target);
+    }
+    switch (entry) {
+    case 0x83b310u:
+        TransferDirectToA(cpu);
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x83b32fu:
+        return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : 0x83b335u);
+    case 0x83b337u:
+        return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : 0x83b33du);
+    case 0x83b33fu:
+        return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : 0x83b347u);
+    case 0x83b333u:
+    case 0x83b33bu:
+        return ExecutionHandoff(cpu, 0x83b343u);
+    case 0x83b34au:
+        UnpackStatus(cpu, (uint8_t)(PackStatus(cpu) & ~0x10u));
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x83b34cu:
+        if (cpu->index_is_8_bit)
+            return ExecutionHandoff(cpu, entry);
+        OpLdx(cpu, Read16Pair(memory, entry + 1u, entry + 2u));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b354u:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x83b39fu : entry + 2u);
+    case 0x83b360u:
+        return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : 0x83b39fu);
+    case 0x83b362u:
+        OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x83b375u:
+        OpPushX(memory, cpu);
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x83b37bu:
+        return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : 0x83b394u);
+    case 0x83b392u:
+        return ExecutionHandoff(cpu, 0x83b398u);
+    case 0x83b39cu:
+        OpPullX(memory, cpu);
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x83b39fu:
+        OpDex(cpu);
+        return ExecutionHandoff(cpu, entry + 1u);
+    case 0x83b3a0u:
+        return ExecutionHandoff(cpu, cpu->negative ? entry + 2u : 0x83b34fu);
+    case 0x83b3a8u:
+        return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : 0x83b3cfu);
+    case 0x83b3aeu:
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+        return ExecutionHandoff(cpu, entry + 2u);
+    default:
+        break;
+    }
+    if (!cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x83b30du:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_WINDOW_MODE));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b311u:
+        OpSta(memory, cpu, WRAM_UNK_7FF8A0);
+        return ExecutionHandoff(cpu, entry + 4u);
+    case 0x83b315u:
+    case 0x83b343u:
+        OpSta(memory, cpu, WRAM_UNK_7FD0FE);
+        return ExecutionHandoff(cpu, entry + 4u);
+    case 0x83b319u:
+        OpLoadA(cpu, 0xffu);
+        break;
+    case 0x83b31bu:
+        OpSta(memory, cpu, WRAM_FIELD_UNK_05C0);
+        return ExecutionHandoff(cpu, entry + 4u);
+    case 0x83b31fu:
+        OpSta(memory, cpu, WRAM_UNK_7E05C1);
+        return ExecutionHandoff(cpu, entry + 4u);
+    case 0x83b327u:
+        OpLda(memory, cpu, WRAM_FIELD_DESTINATION_PARAMETERS);
+        return ExecutionHandoff(cpu, entry + 4u);
+    case 0x83b32bu:
+        OpAndValue(cpu, 0x0fu);
+        break;
+    case 0x83b32du:
+        OpCmpValue(cpu, 4u);
+        break;
+    case 0x83b331u:
+        OpLoadA(cpu, 0x71u);
+        break;
+    case 0x83b335u:
+        OpCmpValue(cpu, 5u);
+        break;
+    case 0x83b339u:
+        OpLoadA(cpu, 0x72u);
+        break;
+    case 0x83b33du:
+        OpCmpValue(cpu, 6u);
+        break;
+    case 0x83b341u:
+        OpLoadA(cpu, 0x73u);
+        break;
+    case 0x83b34fu:
+    case 0x83b36au:
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E081E));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b352u:
+    case 0x83b379u:
+        OpCmpValue(cpu, 0xffu);
+        break;
+    case 0x83b35au:
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E085E));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b35du:
+    case 0x83b3a5u:
+        OpCmp(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b364u:
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E08DE));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b367u:
+        OpSta(memory, cpu, OpAbsY(cpu, WRAM_UNK_7E05D2));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b36du:
+        OpAndValue(cpu, 0x7fu);
+        break;
+    case 0x83b36fu:
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E081E));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b372u:
+        OpSta(memory, cpu, OpAbsY(cpu, WRAM_ACTOR_ID));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b376u:
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E089E));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b37du:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E120A));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b380u:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E120B));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b383u:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E120E));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b386u:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E120F));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b389u:
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E1210));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b38cu:
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E1211));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b38fu:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E1212));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b39du:
+        OpStepMem(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT), 1);
+        break;
+    case 0x83b3a2u:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E089D));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b3b0u:
+        OpLoadA(cpu, 0xfdu);
+        break;
+    case 0x83b3b2u:
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_ID));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b3b5u:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E091D));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b3b8u:
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E05D2));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b3bbu:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E08DD));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b3beu:
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_X));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b3c1u:
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E085D));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b3c4u:
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_Y));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b3c7u:
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x83b3cau:
+        OpAndValue(cpu, 0xfbu);
+        break;
+    case 0x83b3ccu:
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
+        return ExecutionHandoff(cpu, entry + 3u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    return ExecutionHandoff(cpu, entry + 2u);
+}
+
 static Lufia2ExecutionResult InstallSessionActors(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
