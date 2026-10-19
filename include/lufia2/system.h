@@ -475,6 +475,10 @@ Lufia2ExecutionResult Lufia2BootSoundTransferStep(
 Lufia2ExecutionResult Lufia2SoundUploadStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 
+/* One complete original poll iteration, including its branch. */
+Lufia2ExecutionResult Lufia2SoundPollIteration(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
 /* One original poll; branch remains pending. */
 Lufia2ExecutionResult Lufia2SoundPollStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
