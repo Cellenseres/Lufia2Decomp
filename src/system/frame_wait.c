@@ -5,6 +5,44 @@
 
 enum { FRAME_POLL_LIMIT = 65536, FRAME_COUNT_LIMIT = 4096 };
 
+Lufia2ExecutionResult Lufia2FrameWaitPollStep(const Lufia2Memory *memory,
+                                              Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != entry >> 16 || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    uint32_t poll;
+    switch (entry) {
+    case 0x8293c8u:
+    case 0x8293cau:
+        poll = 0x8293c8u;
+        break;
+    case 0x83900eu:
+    case 0x839010u:
+        poll = 0x83900eu;
+        break;
+    case 0x8eb552u:
+    case 0x8eb554u:
+        poll = 0x8eb552u;
+        break;
+    case 0x868b4eu:
+    case 0x868b50u:
+        poll = 0x868b4eu;
+        break;
+    case 0x869752u:
+    case 0x869754u:
+        poll = 0x869752u;
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    EmitExecutionCheckpoint(memory, cpu, entry);
+    if (entry == poll) {
+        OpCmp(memory, cpu, OpDp(cpu, DP_NMI_FRAME_COUNTER));
+        return ExecutionHandoff(cpu, entry + 2u);
+    }
+    return ExecutionHandoff(cpu, cpu->zero ? poll : entry + 2u);
+}
+
 static Lufia2ExecutionResult WaitForFrameChange(const Lufia2Memory *memory,
                                                 Lufia2CpuState *cpu, uint32_t poll_pc,
                                                 uint32_t return_pc) {
