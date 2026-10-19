@@ -2,6 +2,7 @@
 
 #include "core/cpu_internal.h"
 #include "lufia2/battle.h"
+#include "battle/action_records_internal.h"
 #include "lufia2/item.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
@@ -13,19 +14,6 @@ enum {
     DP_ENTRY_COUNT = 0x17u,
     DP_LIST_MODE = 0x1bu,
 };
-
-/* $81:F45E: A = IP skill record of skill A ($84:8F10), 0 for none. */
-static void SkillRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
-    if (cpu->negative) {
-        TransferDirectToA(cpu);
-        return;
-    }
-    AslA16(cpu);
-    TransferAToX(cpu);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x848f10u, cpu->x)));
-    cpu->carry = 0;
-}
 
 /* Stores A at TABLE + offset + Y. */
 static void StoreTable16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
@@ -91,7 +79,7 @@ Lufia2ExecutionResult Lufia2BattleIpSkills(
         if (!cpu->zero) {
             PushIndex(memory, cpu);
             SimulateJslFrame(memory, cpu, 0x81u, 0xc1bfu);
-            SkillRecord(memory, cpu);
+            (void)Lufia2BattleReadIpRecordPointer(memory, cpu);
             SimulateRtlFrame(memory, cpu);
             TransferAToX(cpu);
             LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x840003u, cpu->x)));

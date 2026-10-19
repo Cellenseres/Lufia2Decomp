@@ -1,5 +1,6 @@
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "battle/action_records_internal.h"
 
 enum {
     IP_RECORD_POINTERS = 0x848f10u,
@@ -22,10 +23,8 @@ static void ActionRecordOffset(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Add16Value(cpu, (uint16_t)table);
 }
 
-Lufia2ExecutionResult Lufia2IpRecordPointer(
+Lufia2ExecutionResult Lufia2BattleReadIpRecordPointer(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!ActionRecordContext(cpu))
-        return ExecutionHandoff(cpu, 0x81f45eu);
     LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
     if (cpu->negative) {
         TransferDirectToA(cpu);
@@ -36,6 +35,13 @@ Lufia2ExecutionResult Lufia2IpRecordPointer(
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(IP_RECORD_POINTERS, cpu->x)));
     cpu->carry = false;
     return ExecutionReturned(0x81f468u);
+}
+
+Lufia2ExecutionResult Lufia2IpRecordPointer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ActionRecordContext(cpu))
+        return ExecutionHandoff(cpu, 0x81f45eu);
+    return Lufia2BattleReadIpRecordPointer(memory, cpu);
 }
 
 Lufia2ExecutionResult Lufia2IpNamePointer(
