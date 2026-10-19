@@ -508,6 +508,12 @@ Lufia2ExecutionResult Lufia2SoundPollIteration(
 Lufia2ExecutionResult Lufia2SoundPollStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 
+/* Individual transfer boundaries retain original CPU state. */
+Lufia2ExecutionResult Lufia2SoundUploadOpcodeStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+Lufia2ExecutionResult Lufia2BootSoundOpcodeStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
 #ifdef __cplusplus
 }
 #endif

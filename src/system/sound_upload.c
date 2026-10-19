@@ -315,3 +315,89 @@ Lufia2ExecutionResult Lufia2SendQueuedSoundChunk(const Lufia2Memory *memory,
     OpStepMem(memory, cpu, OpAbs(cpu, (WRAM_SOUND_UPLOAD_SOURCE_LENGTH + 1u)), -1);
     return ExecutionReturned(0x809885u);
 }
+
+Lufia2ExecutionResult Lufia2SoundUploadOpcodeStep(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, entry);
+    uint32_t next = entry + 2u;
+    switch (entry) {
+    case 0x809969u:
+        OpLda(memory, cpu, OpDp(cpu, SOUND_UPLOAD_LOW));
+        break;
+    case 0x80996fu:
+        OpLda(memory, cpu, OpDp(cpu, SOUND_UPLOAD_HIGH));
+        break;
+    case 0x809975u:
+    case 0x809993u:
+        OpLda(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE));
+        break;
+    case 0x80996bu:
+        OpSta(memory, cpu, SOUND_UPLOAD_DATA_PORT);
+        next = entry + 4u;
+        break;
+    case 0x809971u:
+        OpSta(memory, cpu, SOUND_UPLOAD_HIGH_PORT);
+        next = entry + 4u;
+        break;
+    case 0x809979u:
+        OpSta(memory, cpu, SOUND_UPLOAD_REPLY_PORT);
+        next = entry + 4u;
+        break;
+    case 0x809977u:
+        OpAndValue(cpu, 0x7fu);
+        break;
+    case 0x80997du:
+    case 0x809988u:
+        OpLda(memory, cpu, OpAbsY(cpu, 0u));
+        next = entry + 3u;
+        break;
+    case 0x809980u:
+        OpSta(memory, cpu, OpDp(cpu, SOUND_UPLOAD_LOW));
+        break;
+    case 0x80998bu:
+        OpSta(memory, cpu, OpDp(cpu, SOUND_UPLOAD_HIGH));
+        break;
+    case 0x809982u:
+    case 0x80998du:
+        OpIny(cpu);
+        next = entry + 1u;
+        break;
+    case 0x809983u:
+        next = cpu->zero ? 0x809985u : 0x809988u;
+        break;
+    case 0x80998eu:
+        next = cpu->zero ? 0x809990u : 0x809993u;
+        break;
+    case 0x809995u:
+        OpOraValue(cpu, 0x80u);
+        break;
+    case 0x80999du:
+    case 0x80999fu:
+        OpStepMem(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE), 1);
+        break;
+    case 0x8099a1u:
+        OpCpx(cpu, 3u);
+        next = entry + 3u;
+        break;
+    case 0x8099a4u:
+    case 0x8099a5u:
+        OpDex(cpu);
+        next = entry + 1u;
+        break;
+    case 0x8099a6u:
+        next = cpu->carry ? 0x809969u : 0x8099a8u;
+        break;
+    case 0x8099a8u:
+        OpLoadA(cpu, 0xffu);
+        break;
+    case 0x8099aau:
+        OpSta(memory, cpu, SOUND_UPLOAD_MODE_PORT);
+        next = entry + 4u;
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    return ExecutionHandoff(cpu, next);
+}

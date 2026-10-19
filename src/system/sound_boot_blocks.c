@@ -192,3 +192,98 @@ Lufia2ExecutionResult Lufia2BootSoundTransferStep(const Lufia2Memory *memory,
         return ExecutionHandoff(cpu, entry);
     }
 }
+
+Lufia2ExecutionResult Lufia2BootSoundOpcodeStep(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu, uint32_t entry) {
+    const bool wide = entry == 0x809c38u || entry == 0x809c3bu ||
+                      (entry >= 0x809c4cu && entry <= 0x809c58u);
+    if (cpu->program_bank != 0x80u || cpu->index_is_8_bit || cpu->decimal ||
+        cpu->accumulator_is_8_bit != !wide)
+        return ExecutionHandoff(cpu, entry);
+    uint32_t next = entry + 1u;
+    switch (entry) {
+    case 0x809c23u:
+    case 0x809c2cu:
+    case 0x809c4cu:
+    case 0x809c51u:
+        OpLda(memory, cpu, DirectLongIndirectY(memory, cpu, BOOT_SOUND_SOURCE));
+        next = entry + 2u;
+        break;
+    case 0x809c25u:
+    case 0x809c2eu:
+    case 0x809c4eu:
+    case 0x809c4fu:
+    case 0x809c53u:
+    case 0x809c54u:
+        OpIny(cpu);
+        break;
+    case 0x809c26u:
+    case 0x809c2bu:
+    case 0x809c2fu:
+        ExchangeAccumulatorBytes(cpu);
+        break;
+    case 0x809c27u:
+    case 0x809c5du:
+        OpLoadA(cpu, 0u);
+        next = entry + 2u;
+        break;
+    case 0x809c29u:
+        next = 0x809c36u;
+        break;
+    case 0x809c35u:
+        OpIncA(cpu);
+        break;
+    case 0x809c36u:
+    case 0x809c4au:
+        OpRepWidths(cpu, 0x20u);
+        next = entry + 2u;
+        break;
+    case 0x809c38u:
+    case 0x809c66u:
+        OpSta(memory, cpu, OpAbs(cpu, BOOT_SOUND_DATA_PORT));
+        next = entry + 3u;
+        break;
+    case 0x809c3bu:
+    case 0x809c58u:
+        OpSepWidths(cpu, 0x20u);
+        next = entry + 2u;
+        break;
+    case 0x809c3du:
+        OpDex(cpu);
+        break;
+    case 0x809c3eu:
+        next = cpu->zero ? 0x809c40u : 0x809c2bu;
+        break;
+    case 0x809c49u:
+        PushAccumulator8(memory, cpu);
+        break;
+    case 0x809c50u:
+        OpTax(cpu);
+        break;
+    case 0x809c55u:
+        OpSta(memory, cpu, OpAbs(cpu, BOOT_SOUND_ADDRESS_PORT));
+        next = entry + 3u;
+        break;
+    case 0x809c5au:
+        OpCpx(cpu, 1u);
+        next = entry + 3u;
+        break;
+    case 0x809c5fu:
+        RolA8(cpu);
+        break;
+    case 0x809c60u:
+        OpSta(memory, cpu, OpAbs(cpu, BOOT_SOUND_FLAG_PORT));
+        next = entry + 3u;
+        break;
+    case 0x809c63u:
+        OpAdcValue(cpu, 0x7fu);
+        next = entry + 2u;
+        break;
+    case 0x809c65u:
+        LoadA8(cpu, Pull8(memory, cpu));
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    return ExecutionHandoff(cpu, next);
+}
