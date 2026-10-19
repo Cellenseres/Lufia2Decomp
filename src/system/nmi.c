@@ -5,6 +5,7 @@
 #include "core/cpu_ops.h"
 #include "lufia2/system.h"
 #include "lufia2/nmi_finish.h"
+#include "lufia2/nmi_calls.h"
 #include "system/wram.h"
 
 enum {
@@ -236,6 +237,45 @@ Lufia2ExecutionResult Lufia2NmiPrepareFrameRestore(Lufia2CpuState *cpu) {
         return ExecutionHandoff(cpu, 0x808699u);
     UnpackStatus(cpu, (uint8_t)(PackStatus(cpu) & ~0x20u));
     return ExecutionHandoff(cpu, 0x80869bu);
+}
+
+Lufia2ExecutionResult Lufia2NmiBeginChild(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t pc) {
+    uint32_t target;
+    if (cpu->program_bank != 0x80u)
+        return ExecutionHandoff(cpu, pc);
+    switch (pc) {
+    case 0x808649u:
+        target = 0x808703u;
+        break;
+    case 0x808650u:
+        target = 0x800067u;
+        break;
+    case 0x808657u:
+        target = 0x80006cu;
+        break;
+    case 0x80865eu:
+        target = 0x8087a7u;
+        break;
+    case 0x808661u:
+        target = 0x8086c1u;
+        break;
+    default:
+        return ExecutionHandoff(cpu, pc);
+    }
+    SimulateJsrFrame(memory, cpu, (uint16_t)(pc + 2u));
+    return ExecutionHandoff(cpu, target);
+}
+
+Lufia2ExecutionResult Lufia2NmiReturnInterrupt(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u)
+        return ExecutionHandoff(cpu, 0x8086bfu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    const uint16_t low = Pull8(memory, cpu);
+    const uint16_t address = (uint16_t)(low | ((uint16_t)Pull8(memory, cpu) << 8));
+    cpu->program_bank = Pull8(memory, cpu);
+    return ExecutionHandoff(cpu, ((uint32_t)cpu->program_bank << 16) | address);
 }
 
 Lufia2ExecutionResult Lufia2NmiSaveInterruptFrame(const Lufia2Memory *memory,
