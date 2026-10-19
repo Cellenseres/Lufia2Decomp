@@ -1164,6 +1164,25 @@ Lufia2ExecutionResult Lufia2MenuDrawWindowDivider(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2SelectScreenStepResumption(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
+Lufia2ExecutionResult Lufia2SelectScreenResumeFade(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2SelectScreenResumeInputWait(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2SelectScreenResumeObjectWait(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2SelectScreenRepeatObjectWait(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

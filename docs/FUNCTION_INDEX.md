@@ -1473,9 +1473,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:81FB` | `Lufia2SelectScreenPlaySequence` | verified | `src/menu/menu_select_control.c` |
 | `$86:8298` | `Lufia2SelectScreenPlayAlternateSequence` | verified | `src/menu/menu_select_control.c` |
 | `$86:82C8` | `Lufia2SelectScreenWaitForObjects` | verified | `src/menu/menu_select_transitions.c` |
+| `$86:82CE` | `Lufia2SelectScreenResumeObjectWait` | verified | `src/menu/menu_select_transitions.c` |
+| `$86:82FC` | `Lufia2SelectScreenRepeatObjectWait` | verified | `src/menu/menu_select_transitions.c` |
 | `$86:8305` | `Lufia2SelectScreenFadeIn` | verified | `src/menu/menu_select_transitions.c` |
 | `$86:830F` | `Lufia2SelectScreenFadeOut` | verified | `src/menu/menu_select_transitions.c` |
+| `$86:8333` | `Lufia2SelectScreenResumeFade` | verified | `src/menu/menu_select_transitions.c` |
 | `$86:8339` | `Lufia2SelectScreenWaitForInput` | verified | `src/menu/menu_select_transitions.c` |
+| `$86:8352` | `Lufia2SelectScreenResumeInputWait` | verified | `src/menu/menu_select_transitions.c` |
 | `$86:835B` | `Lufia2SelectScreenConfigureObject` | verified | `src/menu/menu_select_transitions.c` |
 | `$86:838C` | `Lufia2TitleObjects` | verified | `src/title/title.c` |
 | `$86:83F2` | `Lufia2TitleProjectObject` | verified | `src/title/title.c` |
