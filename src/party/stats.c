@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "core/arithmetic_value.h"
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/party.h"
@@ -41,64 +42,73 @@ enum {
     OVERRIDE_2B = 0x7a,
 };
 
-static uint16_t RecordWord(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
-                           uint16_t offset) {
-    return Read16AbsoluteIndexed(memory, cpu, offset, cpu->x);
+typedef struct StatRecord {
+    const Lufia2Memory *memory;
+    uint32_t address;
+} StatRecord;
+
+static uint16_t RecordWord(StatRecord record, uint16_t offset) {
+    return Read16Long(record.memory, LongIndexedAddress(record.address, offset));
 }
 
-static void SetRecordWord(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
-                          uint16_t offset, uint16_t value) {
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, offset, cpu->x), value);
+static void SetRecordWord(StatRecord record, uint16_t offset, uint16_t value) {
+    Write16Long(record.memory, LongIndexedAddress(record.address, offset), value);
 }
 
 /* The first modifier's carry feeds the second. */
-static uint16_t SumStat(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                        const StatTotal *stat) {
-    LoadA16(cpu, RecordWord(memory, cpu, stat->base));
-    cpu->carry = 0;
-    OpAdcValue(cpu, RecordWord(memory, cpu, stat->modifier));
+static Word16Result SumStat(StatRecord record, const StatTotal *stat, bool decimal) {
+    const uint16_t base = RecordWord(record, stat->base);
+    const uint16_t modifier = RecordWord(record, stat->modifier);
+    Word16Result total = Sum16Mode(base, modifier, false, decimal);
+
     if (stat->second_modifier)
-        OpAdcValue(cpu, RecordWord(memory, cpu, stat->second_modifier));
-    return cpu->accumulator;
+        total = Sum16Mode(total.value, RecordWord(record, stat->second_modifier),
+            total.carry, decimal);
+    return total;
 }
 
-/* Replace a total by its record word when set. */
-static void ApplyOverride(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                          uint16_t override_offset, uint16_t total_offset) {
-    const uint16_t override = RecordWord(memory, cpu, override_offset);
+static uint16_t ApplyOverride(StatRecord record, uint16_t override_offset,
+                             uint16_t total_offset) {
+    const uint16_t override = RecordWord(record, override_offset);
 
-    LoadA16(cpu, override);
     if (override != 0)
-        SetRecordWord(memory, cpu, total_offset, override);
+        SetRecordWord(record, total_offset, override);
+    return override;
 }
 
-/* $81:F4ED: totals of the record at [$C1]. */
-static void DerivedStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    uint16_t total = 0;
-    size_t i;
+static Word16Result UpdateDerivedTotals(StatRecord record, bool decimal) {
+    Word16Result sum = {0};
 
-    LoadX16(cpu, Read16Direct(memory, cpu, DP_RECORD));
-    SetAccumulatorWidth(cpu, 0);
-    for (i = 0; i < sizeof kStatTotals / sizeof kStatTotals[0]; ++i) {
-        total = SumStat(memory, cpu, &kStatTotals[i]);
-        if (kStatTotals[i].capped && total >= TOTAL_CAP_LIMIT)
-            total = TOTAL_CAP_VALUE;
-        SetRecordWord(memory, cpu, kStatTotals[i].total, total);
+    for (size_t i = 0; i < sizeof kStatTotals / sizeof kStatTotals[0]; ++i) {
+        const StatTotal *stat = &kStatTotals[i];
+        sum = SumStat(record, stat, decimal);
+        const uint16_t total = stat->capped && sum.value >= TOTAL_CAP_LIMIT
+            ? TOTAL_CAP_VALUE : sum.value;
+        SetRecordWord(record, stat->total, total);
     }
 
-    /* $29 continues the last sum; $2B averages $2F and $2D. */
-    cpu->carry = 0;
-    OpAdcValue(cpu, RecordWord(memory, cpu, ADDEND_29));
-    SetRecordWord(memory, cpu, TOTAL_29, cpu->accumulator);
-    ApplyOverride(memory, cpu, OVERRIDE_29, TOTAL_29);
-    LoadA16(cpu, RecordWord(memory, cpu, TOTAL_2F));
-    cpu->carry = 0;
-    OpAdcValue(cpu, RecordWord(memory, cpu, TOTAL_2D));
-    LsrA16(cpu);
-    cpu->carry = 0;
-    OpAdcValue(cpu, RecordWord(memory, cpu, ADDEND_2B));
-    SetRecordWord(memory, cpu, TOTAL_2B, cpu->accumulator);
-    ApplyOverride(memory, cpu, OVERRIDE_2B, TOTAL_2B);
+    sum = Sum16Mode(sum.value, RecordWord(record, ADDEND_29), false, decimal);
+    SetRecordWord(record, TOTAL_29, sum.value);
+    (void)ApplyOverride(record, OVERRIDE_29, TOTAL_29);
+    const uint16_t first = RecordWord(record, TOTAL_2F);
+    const uint16_t second = RecordWord(record, TOTAL_2D);
+    sum = Sum16Mode(first, second, false, decimal);
+    sum = Sum16Mode((uint16_t)(sum.value >> 1), RecordWord(record, ADDEND_2B),
+        false, decimal);
+    SetRecordWord(record, TOTAL_2B, sum.value);
+    sum.value = ApplyOverride(record, OVERRIDE_2B, TOTAL_2B);
+    return sum;
+}
+
+static void DerivedStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadX16(cpu, Read16Direct(memory, cpu, DP_RECORD));
+    SetAccumulatorWidth(cpu, 0);
+    const StatRecord record = {memory, AbsoluteIndexedAddress(cpu, 0u, cpu->x)};
+    const Word16Result result = UpdateDerivedTotals(record, cpu->decimal != 0);
+
+    LoadA16(cpu, result.value);
+    cpu->carry = result.carry;
+    cpu->overflow = result.overflow;
     SetAccumulatorWidth(cpu, 1);
     EmitExecutionCheckpoint(memory, cpu, 0x81f576u);
 }

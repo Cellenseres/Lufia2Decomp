@@ -75,6 +75,13 @@ The CPU-helper dialect stays allowed for routines that are not converted yet.
 A converted routine does not touch emulated CPU state (carry, zero, negative,
 A/X/Y widths, DP/DB) unless a caller still depends on it.
 
+Instruction-per-PC switches belong to exceptional integration glue. They do
+not reconstruct another game algorithm merely by bypassing an opcode decoder.
+Prefer a complete operation with ordinary parameters and results, plus a thin
+CPU-state shell where required. Document unavoidable instruction boundaries
+separately from semantic function coverage. Fewer decoded instructions alone
+do not establish a production speedup.
+
 ### Conversion rule
 
 Behavior must stay identical to the original game. A function may be converted
