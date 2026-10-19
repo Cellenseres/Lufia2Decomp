@@ -1,5 +1,6 @@
 #include "core/cpu_ops.h"
 #include "lufia2/system.h"
+#include "lufia2/sound_phase.h"
 #include "system/wram.h"
 
 enum {
@@ -16,6 +17,70 @@ enum {
     SOUND_UPLOAD_MODE_PORT = 0x002143u,
     SOUND_UPLOAD_POLL_LIMIT = 65536u
 };
+
+Lufia2ExecutionResult Lufia2SoundHeaderStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u ||
+        (entry != 0x809910u &&
+         (cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit)))
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x8098ecu:
+        OpLda(memory, cpu, DirectLongIndirectY(memory, cpu, SOUND_UPLOAD_BASE));
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x8098eeu:
+        OpSta(memory, cpu, OpAbs(cpu, SOUND_UPLOAD_DATA_PORT));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x8098f1u:
+        OpTxa(cpu);
+        break;
+    case 0x8098f2u:
+    case 0x80990au:
+        OpSta(memory, cpu, OpAbs(cpu, SOUND_UPLOAD_REPLY_PORT));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x8098f5u:
+        OpOraValue(cpu, 0x80u);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x8098f7u:
+        return Lufia2SoundPollStep(memory, cpu, entry);
+    case 0x8098fau:
+        return Lufia2SoundPollBranchStep(cpu, entry);
+    case 0x8098fcu:
+        OpIny(cpu);
+        break;
+    case 0x8098fdu:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x8098ffu : 0x809904u);
+    case 0x8098ffu:
+        OpStepMem(memory, cpu, OpDp(cpu, SOUND_UPLOAD_BANK), 1);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x809901u:
+        OpLdy(cpu, Read16Pair(memory, entry + 1u, entry + 2u));
+        return ExecutionHandoff(cpu, entry + 3u);
+    case 0x809904u:
+        OpDex(cpu);
+        break;
+    case 0x809905u:
+        return ExecutionHandoff(cpu, cpu->zero ? 0x809907u : 0x8098ecu);
+    case 0x809907u:
+        OpPullX(memory, cpu);
+        break;
+    case 0x809908u:
+        OpLoadA(cpu, 0xffu);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x80990du:
+        SimulateJsrFrame(memory, cpu, 0x990fu);
+        return ExecutionHandoff(cpu, 0x809a0au);
+    case 0x809910u: {
+        const uint16_t low = Pull8(memory, cpu);
+        const uint16_t address = (uint16_t)(low | ((uint16_t)Pull8(memory, cpu) << 8));
+        return ExecutionHandoff(cpu, 0x800000u | (uint16_t)(address + 1u));
+    }
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    return ExecutionHandoff(cpu, entry + 1u);
+}
 
 static Lufia2ExecutionResult SoundUploadUnwound(uint32_t site) {
     Lufia2ExecutionResult result = ExecutionReturned(site);
