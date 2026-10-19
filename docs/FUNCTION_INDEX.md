@@ -593,6 +593,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:8345` | `Lufia2MenuSaveTileLayers` | verified | `src/menu/menu_layer_backup.c` |
 | `$82:836A` | `Lufia2MenuRestoreTileLayers` | verified | `src/menu/menu_layer_backup.c` |
 | `$82:838F` | `Lufia2MenuClearLayers` | verified | `src/menu/menu_tilemap.c` |
+| `$82:83B5` | `Lufia2MenuClearLayerRectangle` | verified | `src/menu/menu_tile_clear.c` |
 | `$82:83EB` | `Lufia2MenuClearTileRectangle` | verified | `src/menu/menu_tile_clear.c` |
 | `$82:8704` | `Lufia2MenuPresentMainDisplay` | verified | `src/menu/menu_display_callers.c` |
 | `$82:8720` | `Lufia2MenuCursor` | verified | `src/menu/menu_input.c` |
