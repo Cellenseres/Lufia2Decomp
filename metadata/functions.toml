@@ -3399,6 +3399,14 @@ status = "verified"
 
 # Menu tile map buffers and cursor placement.
 [[function]]
+address = "82:83B5"
+name = "Lufia2MenuClearLayerRectangle"
+source = "src/menu/menu_tile_clear.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
 address = "82:838F"
 name = "Lufia2MenuClearLayers"
 source = "src/menu/menu_tilemap.c"
