@@ -38,6 +38,11 @@ Lufia2ExecutionResult Lufia2FrameWaitCounterStep(const Lufia2Memory *memory,
     case 0x869754u:
         counter = 0x869750u;
         break;
+    case 0x80bf0bu:
+    case 0x80bf0du:
+    case 0x80bf0fu:
+        counter = 0x80bf0bu;
+        break;
     case 0x848d4du:
     case 0x848d4fu:
     case 0x848d51u:
@@ -108,6 +113,13 @@ Lufia2ExecutionResult Lufia2FieldWaitForNextFrame(const Lufia2Memory *memory,
     if (cpu->program_bank != 0x83u)
         return ExecutionHandoff(cpu, 0x83900cu);
     return WaitForFrameChange(memory, cpu, 0x83900eu, 0x839012u);
+}
+
+Lufia2ExecutionResult Lufia2TextWaitForNextFrame(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u)
+        return ExecutionHandoff(cpu, 0x80bf0bu);
+    return WaitForFrameChange(memory, cpu, 0x80bf0du, 0x80bf11u);
 }
 
 Lufia2ExecutionResult Lufia2AncientCaveWaitForNextFrame(const Lufia2Memory *memory,

@@ -2,6 +2,14 @@ format = 1
 rom = "lufia2-usa"
 
 [[function]]
+address = "80:BF0B"
+name = "Lufia2TextWaitForNextFrame"
+source = "src/system/frame_wait.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
 address = "84:8D4D"
 name = "Lufia2AncientCaveWaitForNextFrame"
 source = "src/system/frame_wait.c"

@@ -119,6 +119,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:BE75` | `Lufia2SceneRunTransitionRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BE89` | `Lufia2SceneRunStartRecord` | verified | `src/field/scene_bootstrap.c` |
 | `$80:BEAF` | `Lufia2SceneRunMapText` | verified | `src/field/scene_bootstrap.c` |
+| `$80:BF0B` | `Lufia2TextWaitForNextFrame` | verified | `src/system/frame_wait.c` |
 | `$80:BF12` | `Lufia2GoldAdd` | verified | `src/system/gold.c` |
 | `$80:BF43` | `Lufia2GoldSpend` | verified | `src/system/gold.c` |
 | `$80:BF6F` | `Lufia2FieldFindWindowActor` | verified | `src/field/field_actor_visibility.c` |

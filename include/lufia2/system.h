@@ -479,6 +479,9 @@ Lufia2ExecutionResult Lufia2SoundUploadStep(
 Lufia2ExecutionResult Lufia2FrameWaitCounterStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 
+Lufia2ExecutionResult Lufia2TextWaitForNextFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2AncientCaveWaitForNextFrame(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
