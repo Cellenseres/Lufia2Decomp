@@ -2574,9 +2574,9 @@ Lufia2ActorPrimaryScriptExecuteKnownHandler(const Lufia2Memory *memory,
 }
 
 /* $83:C7F8: per-frame primary script update of one actor. */
-Lufia2ExecutionResult Lufia2ActorPrimaryUpdate(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2ActorPrimaryUpdateWithChildren(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
     Lufia2ExecutionResult result;
     Lufia2ActorScriptDispatchResult dispatch;
     Lufia2ActorPrimaryFlow flow;
@@ -2602,9 +2602,23 @@ Lufia2ExecutionResult Lufia2ActorPrimaryUpdate(
     result.dispatches = 1;
     /* A script that never yields spins the ROM forever. */
     for (steps = 0; steps < PRIMARY_STEP_LIMIT; ++steps) {
-        const Lufia2ActorPrimaryScriptStepResult step =
-            Lufia2ActorPrimaryScriptExecuteKnownHandler(
-                memory, cpu, handler);
+        Lufia2ActorPrimaryScriptStepResult step;
+        if (child && (handler == 0x83cae1u || handler == 0x83cb71u)) {
+            const Lufia2ExecutionResult command = Lufia2ActorPrimaryPartyCommand(
+                memory, cpu, handler, child, context);
+            if (command.flow != LUFIA2_EXECUTION_RETURNED) {
+                result.flow = command.flow;
+                result.pc = command.pc;
+                return result;
+            }
+            if (command.pc == 0x83c8c7u)
+                step = PrimaryCommitCursor(memory, cpu);
+            else {
+                step = PrimaryStepStart(command.pc);
+                step.flow = LUFIA2_ACTOR_PRIMARY_SCRIPT_CONTINUE_C8D2;
+            }
+        } else
+            step = Lufia2ActorPrimaryScriptExecuteKnownHandler(memory, cpu, handler);
 
         if (step.flow == LUFIA2_ACTOR_PRIMARY_SCRIPT_REDISPATCHED) {
             handler = step.handler_pc;
@@ -2624,4 +2638,9 @@ Lufia2ExecutionResult Lufia2ActorPrimaryUpdate(
     result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.pc = handler;
     return result;
+}
+
+Lufia2ExecutionResult Lufia2ActorPrimaryUpdate(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return Lufia2ActorPrimaryUpdateWithChildren(memory, cpu, NULL, NULL);
 }

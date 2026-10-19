@@ -102,3 +102,10 @@ along a semantic boundary, never by line count alone:
 The semantic library remains `lufia2_decomp` (`Lufia2::Decomp`). The pure
 resource decoder is a separate target, `Lufia2::ResourceFormat`, reused by
 the semantic library and linked directly by the host for resource extraction.
+
+The primary actor VM has an optional pushed-child entry for its party scene
+commands. `Lufia2ActorPrimaryUpdateWithChildren` runs the original command
+children through the consumer and propagates unwinds. The legacy entry keeps
+its unsupported command boundary when no child service is available. Internal
+commands retain the primary VM's original continuations; they are not counted
+as additional callable ROM functions.

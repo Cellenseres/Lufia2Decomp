@@ -6,6 +6,10 @@
 #include "lufia2/actor.h"
 #include "system/dp_scratch.h"
 
+Lufia2ExecutionResult Lufia2ActorPrimaryPartyCommand(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t command,
+    Lufia2PushedChildCall child, void *context);
+
 /* $83:C0EF: leader position to $8F/$91. */
 void Lufia2ActorLeaderToProbe(
     const Lufia2Memory *memory,
