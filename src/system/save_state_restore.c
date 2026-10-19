@@ -102,16 +102,51 @@ static void RestoreSaveFieldState(const Lufia2Memory *memory, Lufia2CpuState *cp
     PullDataBank(memory, cpu);
 }
 
-static void RestoreSaveItemTail(
+static void CopySaveRecordTailBytes(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint32_t destination, uint16_t last) {
-    OpLdx(cpu, last);
+    Lufia2SaveRecordTail tail, Lufia2SaveBufferDirection direction,
+    unsigned max_bytes) {
+    if (!max_bytes)
+        return;
+    const uint32_t state_base = tail == LUFIA2_SAVE_CAPSULE_STATS
+        ? WRAM_CAPSULE_SAVED_STATS : WRAM_BATTLE_SAVED_SUBMENU_CHOICES;
     do {
-        OpLda(memory, cpu, OpAbsY(cpu, 0u));
-        OpSta(memory, cpu, LongIndexedAddress(destination, cpu->x));
+        if (direction == LUFIA2_SAVE_FROM_RECORD) {
+            OpLda(memory, cpu, OpAbsY(cpu, 0u));
+            OpSta(memory, cpu, OpLongX(cpu, state_base));
+        } else {
+            OpLda(memory, cpu, OpLongX(cpu, state_base));
+            OpSta(memory, cpu, OpAbsY(cpu, 0u));
+        }
         OpIny(cpu);
         OpDex(cpu);
-    } while (!cpu->negative);
+    } while (--max_bytes && !cpu->negative);
+}
+
+void Lufia2SaveCopyRecordTail(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2SaveRecordTail tail, Lufia2SaveBufferDirection direction) {
+    CopySaveRecordTailBytes(memory, cpu, tail, direction, UINT16_MAX + 1u);
+}
+
+Lufia2ExecutionResult Lufia2SaveCopyRecordTailSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2SaveRecordTail tail, Lufia2SaveBufferDirection direction,
+    unsigned max_bytes) {
+    const bool capsule = tail == LUFIA2_SAVE_CAPSULE_STATS;
+    const bool restoring = direction == LUFIA2_SAVE_FROM_RECORD;
+    const uint32_t entry = restoring
+        ? (capsule ? 0x85c6cbu : 0x85c6d9u)
+        : (capsule ? 0x85c9eeu : 0x85c9fcu);
+    if ((!capsule && tail != LUFIA2_SAVE_BATTLE_SUBMENU_CHOICES) ||
+        (direction != LUFIA2_SAVE_TO_RECORD && !restoring) ||
+        cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->x > (capsule ? 0x3eu : 0x1bu))
+        return ExecutionHandoff(cpu, entry);
+    const unsigned remaining = cpu->x + 1u;
+    const unsigned count = max_bytes < remaining ? max_bytes : remaining;
+    CopySaveRecordTailBytes(memory, cpu, tail, direction, count);
+    return ExecutionHandoff(cpu, count && cpu->negative ? entry + 11u : entry);
 }
 
 static void CountSavedPartyMembers(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -208,8 +243,12 @@ Lufia2ExecutionResult Lufia2SaveRestoreState(
     if (!RestoreSaveChild(memory, cpu, child, context, 0x85c6c4u, 0x85c8cfu, 2u))
         return RestoreSaveUnwound(0x85c6c4u);
     OpTxy(cpu);
-    RestoreSaveItemTail(memory, cpu, 0x7ff180u, 0x3eu);
-    RestoreSaveItemTail(memory, cpu, 0x7ff1bfu, 0x1bu);
+    OpLdx(cpu, 0x3eu);
+    Lufia2SaveCopyRecordTail(memory, cpu, LUFIA2_SAVE_CAPSULE_STATS,
+                            LUFIA2_SAVE_FROM_RECORD);
+    OpLdx(cpu, 0x1bu);
+    Lufia2SaveCopyRecordTail(memory, cpu, LUFIA2_SAVE_BATTLE_SUBMENU_CHOICES,
+                            LUFIA2_SAVE_FROM_RECORD);
     OpTyx(cpu);
     for (unsigned service = 0u; service < 5u; ++service) {
         if (service == 2u)

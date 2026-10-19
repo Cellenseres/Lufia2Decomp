@@ -17,6 +17,17 @@ typedef enum Lufia2SaveBufferDirection {
     LUFIA2_SAVE_FROM_RECORD
 } Lufia2SaveBufferDirection;
 
+typedef enum Lufia2SaveRecordTail {
+    LUFIA2_SAVE_CAPSULE_STATS,
+    LUFIA2_SAVE_BATTLE_SUBMENU_CHOICES
+} Lufia2SaveRecordTail;
+
+/* X descends through state; Y advances through the record. */
+Lufia2ExecutionResult Lufia2SaveCopyRecordTailSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2SaveRecordTail tail, Lufia2SaveBufferDirection direction,
+    unsigned max_bytes);
+
 /* X advances through the record; Y descends through state. */
 Lufia2ExecutionResult Lufia2SaveCopyBufferSpan(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

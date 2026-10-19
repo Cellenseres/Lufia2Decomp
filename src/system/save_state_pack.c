@@ -46,18 +46,6 @@ static void PackSaveFieldState(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     PullDataBank(memory, cpu);
 }
 
-static void PackSaveItemTail(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint32_t source, uint16_t last) {
-    OpLdx(cpu, last);
-    do {
-        OpLda(memory, cpu, LongIndexedAddress(source, cpu->x));
-        OpSta(memory, cpu, OpAbsY(cpu, 0u));
-        OpIny(cpu);
-        OpDex(cpu);
-    } while (!cpu->negative);
-}
-
 static Lufia2ExecutionResult SavePackUnwound(uint32_t site) {
     Lufia2ExecutionResult result = ExecutionReturned(site);
     result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
@@ -103,8 +91,12 @@ Lufia2ExecutionResult Lufia2SavePackState(
             0x85c9e7u, 0x85cb7bu, 2u, cpu->program_bank))
         return SavePackUnwound(0x85c9e7u);
     OpTxy(cpu);
-    PackSaveItemTail(memory, cpu, 0x7ff180u, 0x3eu);
-    PackSaveItemTail(memory, cpu, 0x7ff1bfu, 0x1bu);
+    OpLdx(cpu, 0x3eu);
+    Lufia2SaveCopyRecordTail(memory, cpu, LUFIA2_SAVE_CAPSULE_STATS,
+                            LUFIA2_SAVE_TO_RECORD);
+    OpLdx(cpu, 0x1bu);
+    Lufia2SaveCopyRecordTail(memory, cpu, LUFIA2_SAVE_BATTLE_SUBMENU_CHOICES,
+                            LUFIA2_SAVE_TO_RECORD);
     OpTyx(cpu);
     OpLdy(cpu, SAVE_RECORD_DATA);
     OpWriteX(memory, cpu, OpDp(cpu, DP_CHECKSUM_RECORD), cpu->y);
