@@ -2,6 +2,7 @@
 #include "core/cpu_ops.h"
 #include "system/wram.h"
 #include "lufia2/menu.h"
+#include "lufia2/menu_buffers.h"
 
 enum {
     DP_MESSAGE_SELECTION = 0x00u,
@@ -105,24 +106,49 @@ Lufia2ExecutionResult Lufia2MenuDrawSelectionMessage(
     return ExecutionReturned(0x82f65fu);
 }
 
+static void RestoreFieldBufferBytes(const Lufia2Memory *memory,
+                                    Lufia2CpuState *cpu, bool message,
+                                    unsigned count) {
+    const uint32_t source = message ? MESSAGE_SNAPSHOT_SOURCE : FIELD_SNAPSHOT_SOURCE;
+    const uint16_t limit = message ? MESSAGE_SNAPSHOT_BYTES : FIELD_SNAPSHOT_BYTES;
+    while (count--) {
+        OpLda(memory, cpu, OpLongX(cpu, source));
+        const uint32_t destination = message
+            ? OpLongX(cpu, MESSAGE_SNAPSHOT_DESTINATION)
+            : OpAbsX(cpu, FIELD_SNAPSHOT_DESTINATION);
+        OpSta(memory, cpu, destination);
+        OpInx(cpu);
+        OpCpx(cpu, limit);
+    }
+}
+
+Lufia2ExecutionResult Lufia2MenuRestoreFieldBufferSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2MenuFieldBuffer buffer, unsigned max_bytes) {
+    const bool message = buffer == LUFIA2_MENU_MESSAGE_SNAPSHOT;
+    const uint32_t entry = message ? 0x82f695u : 0x82f685u;
+    const uint16_t limit = message ? MESSAGE_SNAPSHOT_BYTES : FIELD_SNAPSHOT_BYTES;
+    if ((buffer != LUFIA2_MENU_FIELD_SNAPSHOT && !message) ||
+        cpu->program_bank != 0x82u || !MenuRecordSupported(cpu, true) ||
+        cpu->x >= limit)
+        return ExecutionHandoff(cpu, entry);
+    const unsigned remaining = limit - cpu->x;
+    const unsigned count = max_bytes < remaining ? max_bytes : remaining;
+    RestoreFieldBufferBytes(memory, cpu, message, count);
+    uint32_t next = entry;
+    if (cpu->x == limit)
+        next = message ? 0x82f6a3u : 0x82f692u;
+    return ExecutionHandoff(cpu, next);
+}
+
 Lufia2ExecutionResult Lufia2MenuRestoreSavedFieldBuffers(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!MenuRecordSupported(cpu, true))
         return ExecutionHandoff(cpu, 0x82f682u);
     OpLdx(cpu, 0u);
-    do {
-        OpLda(memory, cpu, OpLongX(cpu, FIELD_SNAPSHOT_SOURCE));
-        OpSta(memory, cpu, OpAbsX(cpu, FIELD_SNAPSHOT_DESTINATION));
-        OpInx(cpu);
-        OpCpx(cpu, FIELD_SNAPSHOT_BYTES);
-    } while (!cpu->zero);
+    RestoreFieldBufferBytes(memory, cpu, false, FIELD_SNAPSHOT_BYTES);
     OpLdx(cpu, 0u);
-    do {
-        OpLda(memory, cpu, OpLongX(cpu, MESSAGE_SNAPSHOT_SOURCE));
-        OpSta(memory, cpu, OpLongX(cpu, MESSAGE_SNAPSHOT_DESTINATION));
-        OpInx(cpu);
-        OpCpx(cpu, MESSAGE_SNAPSHOT_BYTES);
-    } while (!cpu->zero);
+    RestoreFieldBufferBytes(memory, cpu, true, MESSAGE_SNAPSHOT_BYTES);
     return ExecutionReturned(0x82f6a3u);
 }
 
