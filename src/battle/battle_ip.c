@@ -10,6 +10,8 @@ enum {
     TABLE = 0xdf00u,                    /* $7E, $30 bytes per slot */
     EQUIPMENT = 0x1357u,                /* 6 item words */
     LEVEL = 0xcau,
+    DP_ENTRY_COUNT = 0x17u,
+    DP_LIST_MODE = 0x1bu,
 };
 
 /* $81:F45E: A = IP skill record of skill A ($84:8F10), 0 for none. */
@@ -221,12 +223,11 @@ Lufia2ExecutionResult Lufia2BattleGlyph(
 }
 
 /* Two-row tile at Y with attributes; Y += 2. */
-static void TileRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint8_t attribute) {
+static void TileRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreAAbsolute8(memory, cpu, 0x0000u, cpu->y);
     ExchangeAccumulatorBytes(cpu);
     StoreAAbsolute8(memory, cpu, 0x0040u, cpu->y);
-    LoadA8(cpu, attribute);
+    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
     StoreAAbsolute8(memory, cpu, 0x0001u, cpu->y);
     StoreAAbsolute8(memory, cpu, 0x0041u, cpu->y);
     IncrementY16(cpu);
@@ -254,14 +255,14 @@ static void EntryChars(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         SimulateJsrFrame(memory, cpu, glyph_return);
         Lufia2BattleGlyph(memory, cpu);
         SimulateRtsFrame(memory, cpu);
-        TileRow(memory, cpu, DirectByte(memory, cpu, DP_SCRATCH_B));
+        TileRow(memory, cpu);
         DecrementDirect8(memory, cpu, DP_SCRATCH_A);
     } while (!cpu->zero);
 }
 
 /* Palette from the entry's first byte, then its icon tile. */
 static int EntryHead(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    unsigned skip, int glyph, uint16_t glyph_return) {
+    unsigned skip, int optional_glyph, uint16_t glyph_return) {
     LoadAAbsolute8(memory, cpu, TABLE, cpu->x);
     if (cpu->negative)
         return 0;
@@ -270,6 +271,11 @@ static int EntryHead(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Or8(cpu, 0x20u);
     StoreADirect8(memory, cpu, DP_SCRATCH_B);
     cpu->x = (uint16_t)(cpu->x + skip);
+    int glyph = 0;
+    if (optional_glyph) {
+        LoadA8(cpu, DirectByte(memory, cpu, DP_LIST_MODE));
+        glyph = !cpu->zero;
+    }
     LoadAAbsolute8(memory, cpu, TABLE, cpu->x);
     IncrementX16(cpu);
     if (glyph) {
@@ -308,7 +314,7 @@ static void BattleEntry(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 
     Bank7E(memory, cpu);
     TransferXToA(cpu);
-    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, 0x17u));
+    Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_ENTRY_COUNT));
     if (!cpu->carry) {
         SetAccumulatorWidth(cpu, 0);
         TransferXToA(cpu);
@@ -328,7 +334,7 @@ static void BattleEntry(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         }
         SetAccumulatorWidth(cpu, 1);
         if (kind == 0u) {
-            if (EntryHead(memory, cpu, 3u, DirectByte(memory, cpu, 0x1bu) != 0, 0xe045u)) {
+            if (EntryHead(memory, cpu, 3u, 1, 0xe045u)) {
                 EntryChars(memory, cpu, 0x0bu, 0xe070u);
                 PullDataBank(memory, cpu);
                 return;
@@ -361,7 +367,7 @@ static void BattleListRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     for (i = 0; i < 0x80u; ++i)
         StoreZeroAbsolute8(memory, cpu, SNES_WMDATA, 0);
     LoadA8(cpu, 0x00u);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x1bu));
+    LoadA8(cpu, DirectByte(memory, cpu, DP_LIST_MODE));
     mode = A8(cpu);
     for (i = 0; i < 6u; ++i)
         IncrementY16(cpu);
