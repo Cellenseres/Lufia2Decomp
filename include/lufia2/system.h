@@ -475,6 +475,17 @@ Lufia2ExecutionResult Lufia2BootSoundTransferStep(
 Lufia2ExecutionResult Lufia2SoundUploadStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 
+/* Additional waits retain support for existing counter steps. */
+Lufia2ExecutionResult Lufia2FrameWaitAdditionalStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
+Lufia2ExecutionResult Lufia2WaitFramePreserveStatus(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2WaitFramePreserveAccumulator(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2WaitForNextFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* One original frame-counter load, comparison or branch. */
 Lufia2ExecutionResult Lufia2FrameWaitCounterStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);

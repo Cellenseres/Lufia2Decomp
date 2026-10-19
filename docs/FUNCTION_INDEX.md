@@ -57,6 +57,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:91D3` | `Lufia2ResolveSaveFileAddress` | verified | `src/system/save.c` |
 | `$80:91DF` | `Lufia2InitializeStartupImage` | verified | `src/system/screen.c` |
 | `$80:92A4` | `Lufia2IntroNmi` | verified | `src/title/title.c` |
+| `$80:9378` | `Lufia2WaitFramePreserveStatus` | verified | `src/system/frame_wait.c` |
 | `$80:9383` | `Lufia2InitializeBootSound` | verified | `src/system/sound_startup.c` |
 | `$80:93D6` | `Lufia2ResetSoundResources` | verified | `src/system/sound_startup.c` |
 | `$80:93FE` | `Lufia2PlaySong` | verified | `src/system/music.c` |
@@ -1223,6 +1224,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:9CD4` | `Lufia2BattleUpdatePreviewBackground` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9D2C` | `Lufia2BattleBuildEnemyPreview` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9E1C` | `Lufia2FillWordBlock32` | verified | `src/system/block_move.c` |
+| `$84:A5A8` | `Lufia2WaitFramePreserveAccumulator` | verified | `src/system/frame_wait.c` |
 | `$85:8045` | `Lufia2FieldDiagnosticsRunMenu` | verified | `src/field/field_diagnostics_control.c` |
 | `$85:821C` | `Lufia2FieldDiagnosticsEditValue` | verified | `src/field/field_diagnostics.c` |
 | `$85:8267` | `Lufia2FieldDiagnosticsHideCursor` | verified | `src/field/field_diagnostics.c` |
@@ -1782,6 +1784,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
 | `$8E:B142` | `Lufia2FieldConsumePressedLow` | verified | `src/field/field_camera_services.c` |
 | `$8E:B149` | `Lufia2FieldConsumePressedHigh` | verified | `src/field/field_camera_services.c` |
+| `$8E:B288` | `Lufia2WaitForNextFrame` | verified | `src/system/frame_wait.c` |
 | `$8E:B28F` | `Lufia2FieldSwitchDisplayScene` | verified | `src/field/field_session_setup.c` |
 | `$8E:B550` | `Lufia2ItemRegionWaitForNextFrame` | verified | `src/system/frame_wait.c` |
 | `$8E:B5FB` | `Lufia2FieldBuildPrefixedName` | verified | `src/field/field_prefixed_name.c` |
