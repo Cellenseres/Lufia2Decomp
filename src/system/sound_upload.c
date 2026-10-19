@@ -23,8 +23,8 @@ static Lufia2ExecutionResult SoundUploadUnwound(uint32_t site) {
     return result;
 }
 
-static bool SoundUploadMatches(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t port) {
+static bool SoundUploadMatches(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               uint32_t port) {
     for (uint32_t polls = 0u; polls < SOUND_UPLOAD_POLL_LIMIT; ++polls) {
         OpCmp(memory, cpu, port);
         if (cpu->zero)
@@ -33,59 +33,137 @@ static bool SoundUploadMatches(
     return false;
 }
 
-static void SoundUploadAdvance(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint32_t site, bool save_bank) {
+static void SoundUploadCheckpoint(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                  uint32_t pc, bool stepped) {
+    if (stepped)
+        EmitExecutionCheckpoint(memory, cpu, pc);
+}
+
+static bool SoundUploadAdvance(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                               uint32_t site, bool save_bank, bool stepped) {
+    SoundUploadCheckpoint(memory, cpu, site - 3u, stepped);
     OpIny(cpu);
+    SoundUploadCheckpoint(memory, cpu, site - 2u, stepped);
     if (!cpu->zero)
-        return;
+        return true;
+    if (stepped)
+        return false;
     SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
     Lufia2AdvanceSoundSourceBank(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     if (save_bank)
         OpSta(memory, cpu, OpAbs(cpu, WRAM_SOUND_UPLOAD_SOURCE_BANK));
+    return true;
 }
 
-static void SoundUploadReadPair(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint32_t first_site, uint32_t second_site, bool save_bank) {
+static bool SoundUploadReadByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint32_t site, uint8_t destination, bool save_bank,
+                                bool stepped) {
+    SoundUploadCheckpoint(memory, cpu, site - 8u, stepped);
     OpLda(memory, cpu, OpAbsY(cpu, 0u));
-    OpSta(memory, cpu, OpDp(cpu, SOUND_UPLOAD_LOW));
-    SoundUploadAdvance(memory, cpu, first_site, save_bank);
-    OpLda(memory, cpu, OpAbsY(cpu, 0u));
-    OpSta(memory, cpu, OpDp(cpu, SOUND_UPLOAD_HIGH));
-    SoundUploadAdvance(memory, cpu, second_site, save_bank);
+    SoundUploadCheckpoint(memory, cpu, site - 5u, stepped);
+    OpSta(memory, cpu, OpDp(cpu, destination));
+    return SoundUploadAdvance(memory, cpu, site, save_bank, stepped);
 }
 
-static void SoundUploadSendPair(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void SoundUploadReadPair(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint32_t first_site, uint32_t second_site,
+                                bool save_bank) {
+    (void)SoundUploadReadByte(memory, cpu, first_site, SOUND_UPLOAD_LOW, save_bank,
+                              false);
+    (void)SoundUploadReadByte(memory, cpu, second_site, SOUND_UPLOAD_HIGH, save_bank,
+                              false);
+}
+
+static void SoundUploadSendPair(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                bool stepped) {
+    SoundUploadCheckpoint(memory, cpu, 0x809969u, stepped);
     OpLda(memory, cpu, OpDp(cpu, SOUND_UPLOAD_LOW));
+    SoundUploadCheckpoint(memory, cpu, 0x80996bu, stepped);
     OpSta(memory, cpu, SOUND_UPLOAD_DATA_PORT);
+    SoundUploadCheckpoint(memory, cpu, 0x80996fu, stepped);
     OpLda(memory, cpu, OpDp(cpu, SOUND_UPLOAD_HIGH));
+    SoundUploadCheckpoint(memory, cpu, 0x809971u, stepped);
     OpSta(memory, cpu, SOUND_UPLOAD_HIGH_PORT);
+    SoundUploadCheckpoint(memory, cpu, 0x809975u, stepped);
     OpLda(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE));
+    SoundUploadCheckpoint(memory, cpu, 0x809977u, stepped);
     OpAndValue(cpu, 0x7fu);
+    SoundUploadCheckpoint(memory, cpu, 0x809979u, stepped);
     OpSta(memory, cpu, SOUND_UPLOAD_REPLY_PORT);
 }
 
-static bool SoundUploadNextPair(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static bool SoundUploadNextPair(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                bool stepped) {
+    SoundUploadCheckpoint(memory, cpu, 0x80999du, stepped);
     OpStepMem(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE), 1);
+    SoundUploadCheckpoint(memory, cpu, 0x80999fu, stepped);
     OpStepMem(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE), 1);
+    SoundUploadCheckpoint(memory, cpu, 0x8099a1u, stepped);
     OpCpx(cpu, 3u);
+    SoundUploadCheckpoint(memory, cpu, 0x8099a4u, stepped);
     OpDex(cpu);
+    SoundUploadCheckpoint(memory, cpu, 0x8099a5u, stepped);
     OpDex(cpu);
+    SoundUploadCheckpoint(memory, cpu, 0x8099a6u, stepped);
     return cpu->carry != 0u;
 }
 
-static bool SoundUploadWait(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context, uint32_t site) {
+Lufia2ExecutionResult Lufia2SoundUploadStep(const Lufia2Memory *memory,
+                                            Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x809969u:
+        SoundUploadSendPair(memory, cpu, true);
+        return ExecutionHandoff(cpu, 0x80997du);
+    case 0x80999du:
+        if (SoundUploadNextPair(memory, cpu, true))
+            return ExecutionHandoff(cpu, 0x809969u);
+        EmitExecutionCheckpoint(memory, cpu, 0x8099a8u);
+        OpLoadA(cpu, 0xffu);
+        EmitExecutionCheckpoint(memory, cpu, 0x8099aau);
+        OpSta(memory, cpu, SOUND_UPLOAD_MODE_PORT);
+        return ExecutionHandoff(cpu, 0x8099aeu);
+    case 0x80997du:
+        if (!SoundUploadReadByte(memory, cpu, 0x809985u, SOUND_UPLOAD_LOW, false, true))
+            return ExecutionHandoff(cpu, 0x809985u);
+        break;
+    case 0x809988u:
+        break;
+    case 0x80998bu:
+        EmitExecutionCheckpoint(memory, cpu, 0x80998bu);
+        OpSta(memory, cpu, OpDp(cpu, SOUND_UPLOAD_HIGH));
+        if (!SoundUploadAdvance(memory, cpu, 0x809990u, false, true))
+            return ExecutionHandoff(cpu, 0x809990u);
+        EmitExecutionCheckpoint(memory, cpu, 0x809993u);
+        OpLda(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE));
+        EmitExecutionCheckpoint(memory, cpu, 0x809995u);
+        OpOraValue(cpu, 0x80u);
+        return ExecutionHandoff(cpu, 0x809997u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    if (!SoundUploadReadByte(memory, cpu, 0x809990u, SOUND_UPLOAD_HIGH, false, true))
+        return ExecutionHandoff(cpu, 0x809990u);
+    EmitExecutionCheckpoint(memory, cpu, 0x809993u);
+    OpLda(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE));
+    EmitExecutionCheckpoint(memory, cpu, 0x809995u);
+    OpOraValue(cpu, 0x80u);
+    return ExecutionHandoff(cpu, 0x809997u);
+}
+
+static bool SoundUploadWait(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            Lufia2PushedChildCall child, void *context, uint32_t site) {
     SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
     return child(context, cpu, 0x809a0au, site, 2u) != 0u;
 }
 
-Lufia2ExecutionResult Lufia2SendSoundPayload(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
+Lufia2ExecutionResult Lufia2SendSoundPayload(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu,
+                                             Lufia2PushedChildCall child,
+                                             void *context) {
     if (!child || cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
         cpu->index_is_8_bit || cpu->decimal)
         return ExecutionHandoff(cpu, 0x809945u);
@@ -96,13 +174,13 @@ Lufia2ExecutionResult Lufia2SendSoundPayload(
     OpStz(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE));
     SoundUploadReadPair(memory, cpu, 0x80995bu, 0x809966u, false);
     do {
-        SoundUploadSendPair(memory, cpu);
+        SoundUploadSendPair(memory, cpu, false);
         SoundUploadReadPair(memory, cpu, 0x809985u, 0x809990u, false);
         OpLda(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE));
         OpOraValue(cpu, 0x80u);
         if (!SoundUploadMatches(memory, cpu, SOUND_UPLOAD_REPLY_PORT))
             return ExecutionHandoff(cpu, 0x809997u);
-    } while (SoundUploadNextPair(memory, cpu));
+    } while (SoundUploadNextPair(memory, cpu, false));
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, SOUND_UPLOAD_MODE_PORT);
     if (!SoundUploadWait(memory, cpu, child, context, 0x8099aeu))
@@ -110,9 +188,10 @@ Lufia2ExecutionResult Lufia2SendSoundPayload(
     return ExecutionReturned(0x8099b1u);
 }
 
-Lufia2ExecutionResult Lufia2SendSoundResourceHeader(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
+Lufia2ExecutionResult Lufia2SendSoundResourceHeader(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu,
+                                                    Lufia2PushedChildCall child,
+                                                    void *context) {
     if (!child || cpu->program_bank != 0x80u || cpu->decimal)
         return ExecutionHandoff(cpu, 0x8098a5u);
     SetAccumulatorWidth(cpu, 1u);
@@ -181,9 +260,10 @@ Lufia2ExecutionResult Lufia2SendSoundResourceHeader(
     return ExecutionReturned(0x809910u);
 }
 
-Lufia2ExecutionResult Lufia2SendQueuedSoundChunk(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
+Lufia2ExecutionResult Lufia2SendQueuedSoundChunk(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu,
+                                                 Lufia2PushedChildCall child,
+                                                 void *context) {
     if (!child || cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
         cpu->index_is_8_bit || cpu->decimal)
         return ExecutionHandoff(cpu, 0x8097e5u);
@@ -220,14 +300,14 @@ Lufia2ExecutionResult Lufia2SendQueuedSoundChunk(
     OpStz(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE));
     SoundUploadReadPair(memory, cpu, 0x80981du, 0x80982bu, true);
     do {
-        SoundUploadSendPair(memory, cpu);
+        SoundUploadSendPair(memory, cpu, false);
         OpWriteX(memory, cpu, OpAbs(cpu, WRAM_SOUND_UPLOAD_SOURCE_CURSOR), cpu->y);
         SoundUploadReadPair(memory, cpu, 0x809850u, 0x80985eu, true);
         OpLda(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE));
         OpOraValue(cpu, 0x80u);
         if (!SoundUploadMatches(memory, cpu, SOUND_UPLOAD_REPLY_PORT))
             return ExecutionHandoff(cpu, 0x809868u);
-    } while (SoundUploadNextPair(memory, cpu));
+    } while (SoundUploadNextPair(memory, cpu, false));
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, SOUND_UPLOAD_MODE_PORT);
     if (!SoundUploadWait(memory, cpu, child, context, 0x80987fu))

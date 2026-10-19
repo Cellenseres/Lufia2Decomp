@@ -465,6 +465,10 @@ Lufia2ExecutionResult Lufia2CosineAngle(
 Lufia2ExecutionResult Lufia2FrameWaitRestoreRegisters(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 
+/* Transfer phases stop before original polls and bank calls. */
+Lufia2ExecutionResult Lufia2SoundUploadStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
 /* One original poll; branch remains pending. */
 Lufia2ExecutionResult Lufia2SoundPollStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
