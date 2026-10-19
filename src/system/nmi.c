@@ -4,6 +4,7 @@
 
 #include "core/cpu_ops.h"
 #include "lufia2/system.h"
+#include "lufia2/nmi_finish.h"
 #include "system/wram.h"
 
 enum {
@@ -227,6 +228,14 @@ Lufia2ExecutionResult Lufia2NmiRestoreInterruptFrame(const Lufia2Memory *memory,
     if (!NmiFrameSliceSupported(cpu, false))
         return ExecutionHandoff(cpu, 0x80869bu);
     return RestoreNmiFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2NmiPrepareFrameRestore(Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x808699u);
+    UnpackStatus(cpu, (uint8_t)(PackStatus(cpu) & ~0x20u));
+    return ExecutionHandoff(cpu, 0x80869bu);
 }
 
 Lufia2ExecutionResult Lufia2NmiSaveInterruptFrame(const Lufia2Memory *memory,
