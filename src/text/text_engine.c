@@ -1938,6 +1938,20 @@ static unsigned TextScriptOpcode(
     uint32_t *handoff,
     TextCommandServices *services) {
     unsigned i;
+    if (services->child &&
+        (handler == TEXT_OP_SKIP_BRANCH || handler == TEXT_OP_WINDOW_MODE)) {
+        services->result = handler == TEXT_OP_SKIP_BRANCH
+            ? Lufia2TextPlaceNextSceneActor(memory, cpu, services->child,
+                                           services->context)
+            : Lufia2TextSetWindowMode(memory, cpu, services->child,
+                                     services->context);
+        if (services->result.flow == LUFIA2_EXECUTION_RETURNED)
+            return TEXT_OPCODE_NEXT;
+        if (services->result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
+            return TEXT_OPCODE_CHILD_UNWOUND;
+        *handoff = services->result.pc;
+        return TEXT_OPCODE_HANDOFF;
+    }
     if (handler == 0xa2e1u && services->child) {
         services->result = Lufia2TextRecoverParty(
             memory, cpu, services->child, services->context);

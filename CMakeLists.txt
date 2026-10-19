@@ -476,6 +476,7 @@ add_library(lufia2_decomp STATIC
     src/text/text_engine.c
     src/text/text_recovery_command.c
     src/text/text_scene_display.c
+    src/text/text_scene_setup.c
     src/text/text_script_commands.c
     src/text/text_state_commands.c
     src/text/text_actor_commands.c
