@@ -203,6 +203,9 @@ typedef struct Lufia2FieldActorVisibility {
     uint16_t horizontal_padding;
     uint8_t (*accept)(void *context, uint16_t world_x, uint16_t world_y);
     void *context;
+    uint16_t vertical_padding;
+    /* Total OAM entries, including the 16 reserved entries; zero is unchecked. */
+    uint16_t oam_capacity;
 } Lufia2FieldActorVisibility;
 
 Lufia2ExecutionResult Lufia2FieldActorSpritesWithVisibility(

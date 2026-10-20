@@ -1,3 +1,10 @@
+# Buffered field sprite output - 2026-10-20
+
+The optional host policy supports vertical culling padding, correct X bits for
+wide sprite pieces, safe vertical clipping and an OAM entry capacity. The stock
+entry keeps its original behavior; 4,096 complete A21A ROM comparisons pass
+with matching CPU, WRAM and MMIO. No new functions are bound or promoted.
+
 # Native shop rows and equipment comparisons — 2026-10-20
 
 Six complete original routines now draw single shop item/spell rows

@@ -25,6 +25,11 @@ enum {
     SPRITE_DP_SORT_KEY = 0x63u,
     SPRITE_DP_LIST_INDEX = 0x5du,
     SPRITE_DP_ACTOR_COUNT = 0x60u,
+    SPRITE_SORTED_ACTORS = 0x7ee300u,
+    SPRITE_ENTRY_COUNTS = 0x83abf4u,
+    FIELD_OAM_CAPACITY = 128u,
+    FIELD_VISIBLE_HEIGHT = 224u,
+    FIELD_HIDDEN_OAM_Y = 240u,
 };
 
 /* OAM entry field offsets from the entry in X. */
@@ -554,10 +559,46 @@ static void FieldActorSetup(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     }
 }
 
+static void FieldWideOamX(const Lufia2Memory *memory,
+                          const Lufia2CpuState *cpu, unsigned size) {
+    const unsigned first = DirectByte(memory, cpu, OAM_DP_ENTRY);
+    const unsigned x = Read16Direct(memory, cpu, DP_PROBE_X);
+    const unsigned count = size == 3u ? 4u : 2u;
+    for (unsigned piece = 0; piece < count; ++piece) {
+        const unsigned entry = first + piece;
+        const unsigned shift = (entry & 3u) * 2u;
+        const unsigned high_x = ((x + (piece & 1u) * 16u) >> 8) & 1u;
+        const uint32_t address = AbsoluteIndexedAddress(
+            cpu, OAM_HIGH_TABLE, (uint16_t)(entry >> 2));
+        const uint8_t value = Read8(memory, address);
+        Write8(memory, address, (uint8_t)(
+            (value & ~(1u << shift)) | (high_x << shift)));
+    }
+}
+
+static void FieldClipOamY(const Lufia2Memory *memory,
+                          const Lufia2CpuState *cpu, unsigned size) {
+    static const unsigned pieces[4] = {1u, 2u, 2u, 4u};
+    const int y = (int16_t)Read16Direct(memory, cpu, DP_PROBE_Y);
+    const int height = size == 1u || size == 3u ? 32 : 16;
+    if (y >= 0 && y + height <= FIELD_VISIBLE_HEIGHT)
+        return;
+    const unsigned first = DirectByte(memory, cpu, OAM_DP_ENTRY);
+    for (unsigned piece = 0; piece < pieces[size]; ++piece) {
+        const unsigned row = size == 1u ? piece : size == 3u ? piece / 2u : 0u;
+        const int top = y + (int)row * 16;
+        if (top + 16 <= 0 || top >= FIELD_VISIBLE_HEIGHT) {
+            Write8(memory, AbsoluteIndexedAddress(cpu,
+                (uint16_t)(WRAM_FIELD_OAM_LOW_BUFFER + OAM_Y(first + piece)), 0),
+                FIELD_HIDDEN_OAM_Y);
+        }
+    }
+}
+
 /* $83:A33A: OAM entries for one sorted actor. */
 static uint8_t FieldActorOam(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+    Lufia2CpuState *cpu, const Lufia2FieldActorVisibility *visibility) {
     LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7ee300u, cpu->x)));
     StoreADirect8(memory, cpu, DP_ACTOR_SLOT);
     TransferAToX(cpu);
@@ -610,8 +651,24 @@ static uint8_t FieldActorOam(
         cpu->resume_pc = 0x83a461u;
         return 0;
     }
-    FieldOamEntries(memory, cpu, (uint8_t)(cpu->x >> 1));
+    const uint8_t size = (uint8_t)(cpu->x >> 1);
+    FieldOamEntries(memory, cpu, size);
+    if (visibility && visibility->horizontal_padding && size >= 2u)
+        FieldWideOamX(memory, cpu, size);
+    if (visibility && visibility->vertical_padding)
+        FieldClipOamY(memory, cpu, size);
     return 1;
+}
+
+static bool FieldActorFitsOam(const Lufia2Memory *memory,
+                             const Lufia2CpuState *cpu, unsigned capacity) {
+    const unsigned actor = Read8(memory, SPRITE_SORTED_ACTORS + cpu->x);
+    const unsigned shape = Read8(memory, WRAM_UNK_7FE216 + actor);
+    const unsigned entries = Read8(memory, SPRITE_ENTRY_COUNTS + shape);
+    const unsigned next = DirectByte(memory, cpu, OAM_DP_NEXT_ENTRY);
+    if (capacity > FIELD_OAM_CAPACITY)
+        capacity = FIELD_OAM_CAPACITY;
+    return entries && entries <= 4u && next + entries <= capacity;
 }
 
 /* $83:A21A: field OAM from the visible, Y-sorted actors. */
@@ -693,6 +750,15 @@ Lufia2ExecutionResult Lufia2FieldActorSpritesWithVisibility(
             memory, cpu, SPRITE_DP_WINDOW_RIGHT,
             (uint16_t)(Read16Direct(memory, cpu, SPRITE_DP_WINDOW_RIGHT) + padding));
     }
+    if (visibility && visibility->vertical_padding) {
+        const uint16_t padding = visibility->vertical_padding;
+        Write16Direct(
+            memory, cpu, SPRITE_DP_WINDOW_TOP,
+            (uint16_t)(Read16Direct(memory, cpu, SPRITE_DP_WINDOW_TOP) - padding));
+        Write16Direct(
+            memory, cpu, SPRITE_DP_WINDOW_BOTTOM,
+            (uint16_t)(Read16Direct(memory, cpu, SPRITE_DP_WINDOW_BOTTOM) + padding));
+    }
     FieldSortVisible(memory, cpu, visibility);
     Write8(memory, DirectAddress(cpu, SPRITE_DP_ACTOR_COUNT),
            (uint8_t)cpu->y);                                   /* A321 */
@@ -707,12 +773,15 @@ Lufia2ExecutionResult Lufia2FieldActorSpritesWithVisibility(
         LoadX8(cpu, 0x00u);
         Write8(memory, DirectAddress(cpu, SPRITE_DP_LIST_INDEX), 0x00u);
         do {
-            if (!FieldActorOam(memory, cpu)) {
-                result.flow = LUFIA2_EXECUTION_BOUNDARY;
-                result.pc = cpu->resume_pc;
-                return result;
+            if (!visibility || !visibility->oam_capacity ||
+                FieldActorFitsOam(memory, cpu, visibility->oam_capacity)) {
+                if (!FieldActorOam(memory, cpu, visibility)) {
+                    result.flow = LUFIA2_EXECUTION_BOUNDARY;
+                    result.pc = cpu->resume_pc;
+                    return result;
+                }
+                ++result.dispatches;
             }
-            ++result.dispatches;
             SetAccumulatorWidth(cpu, 1);                       /* A464 */
             SetIndexWidth(cpu, 1);
             LoadXDirect8(memory, cpu, SPRITE_DP_LIST_INDEX);

@@ -60,6 +60,10 @@ policy at its collection boundary. The stock entry passes no policy and retains
 original memory accesses and CPU behavior. Padding wraps in 16 bits; the pure
 world-point filter can only reject otherwise visible actors. Consumers own the
 policy and context; this library never reads renderer globals or room metadata.
+Horizontal padding also preserves each wide sprite piece's ninth X bit.
+Vertical padding clips off-screen pieces before their eight-bit Y can wrap.
+An optional OAM capacity bounds the emitted list, including its 16 reserved
+entries; zero keeps the original unchecked writes.
 Sorting, uploads and OAM remain one implementation for both paths.
 
 `Lufia2FieldCellDisplayed` applies the field streamers' displayed-cell rule
