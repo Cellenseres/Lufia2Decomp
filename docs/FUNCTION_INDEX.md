@@ -875,6 +875,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:EB9A` | `Lufia2MenuConfirmExit` | verified | `src/menu/menu_confirmation.c` |
 | `$82:EBF2` | `Lufia2MenuRunNameEntry` | verified | `src/menu/menu_dispatch_callers.c` |
 | `$82:ECAF` | `Lufia2SaveTestRecordList` | verified | `src/menu/save_menu_actions.c` |
+| `$82:ECC7` | `Lufia2SaveSelectCharacter` | verified | `src/menu/save_menu_selection.c` |
 | `$82:ECF3` | `Lufia2SaveSelectAlternatePartyMember` | verified | `src/menu/save_menu_actions.c` |
 | `$82:ED50` | `Lufia2MenuConfirmAlternateSelection` | verified | `src/menu/menu_confirmation.c` |
 | `$82:EDDF` | `Lufia2MenuApplyAlternateSelection` | verified | `src/menu/menu_price_followup.c` |
@@ -923,7 +924,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F7FD` | `Lufia2PartySubtractEquipmentComparison` | verified | `src/party/party_equipment_comparison.c` |
 | `$82:F846` | `Lufia2PartyRebuildEquipmentModifiers` | verified | `src/party/party_equipment.c` |
 | `$82:F893` | `Lufia2MenuTestEquipmentItemFlag` | verified | `src/menu/menu_record_services.c` |
+| `$82:F8AF` | `Lufia2InventoryRemoveFlaggedEquipment` | verified | `src/item/inventory_equipment_transfer.c` |
 | `$82:F8C6` | `Lufia2MenuAdvanceFlaggedEquipment` | verified | `src/menu/menu_price_followup.c` |
+| `$82:F8DC` | `Lufia2InventoryUnequipItem` | verified | `src/item/inventory_equipment_transfer.c` |
+| `$82:F925` | `Lufia2InventoryEquipItem` | verified | `src/item/inventory_equipment_transfer.c` |
 | `$82:F97D` | `Lufia2InventoryReplaceEquipment` | verified | `src/item/inventory_equipment_transfer.c` |
 | `$82:F9B6` | `Lufia2InventorySwapEquipmentSlot` | verified | `src/item/inventory_equipment_transfer.c` |
 | `$82:F9C9` | `Lufia2MenuBuildEquipmentAttributes` | verified | `src/menu/menu_selection_helpers.c` |

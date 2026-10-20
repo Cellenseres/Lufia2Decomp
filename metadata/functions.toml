@@ -15501,3 +15501,35 @@ source = "src/party/party_equipment_comparison.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:F8AF"
+name = "Lufia2InventoryRemoveFlaggedEquipment"
+source = "src/item/inventory_equipment_transfer.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F8DC"
+name = "Lufia2InventoryUnequipItem"
+source = "src/item/inventory_equipment_transfer.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F925"
+name = "Lufia2InventoryEquipItem"
+source = "src/item/inventory_equipment_transfer.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:ECC7"
+name = "Lufia2SaveSelectCharacter"
+source = "src/menu/save_menu_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
