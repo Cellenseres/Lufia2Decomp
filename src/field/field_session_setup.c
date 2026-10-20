@@ -1,10 +1,12 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "core/wram_view.h"
 #include "core/snes_registers.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "lufia2/field_phase.h"
 #include "lufia2/session_actors.h"
+#include "lufia2/field_frame_ops.h"
 #include "system/wram.h"
 
 enum {
@@ -1603,25 +1605,133 @@ static uint8_t FieldLoopUpdateServices(
     return 1u;
 }
 
+static bool TakeFieldFrameFlag(Lufia2Wram wram, uint8_t mask) {
+    const uint8_t flags = WramRead(wram, WRAM_FIELD_FLAGS);
+    WramWrite(wram, WRAM_FIELD_FLAGS, (uint8_t)(flags & ~mask));
+    return (flags & mask) != 0u;
+}
+
+Lufia2FieldFrameDecision Lufia2FieldSelectFrameAction(
+    const Lufia2Memory *memory, uint8_t bank, uint16_t direct_page) {
+    const Lufia2Wram wram = {memory, bank, direct_page};
+    Lufia2FieldFrameDecision decision = {LUFIA2_FIELD_FRAME_UPDATE, 0xffu, 0u, false};
+    WramWrite(wram, WRAM_SOUND_COMMAND, 0xffu);
+    if (WramRead(wram, WRAM_UNK_7E057C)) {
+        decision.value = 0x10u;
+        decision.second_pad = WramRead(wram, DP_FIELD_SECOND_PAD_HIGH);
+        decision.tested_second_pad = true;
+        if (decision.second_pad & 0x10u) {
+            decision.action = LUFIA2_FIELD_FRAME_WAIT;
+            return decision;
+        }
+    }
+    if (!(WramRead(wram, WRAM_ACTOR_STATE) & 0x80u) &&
+        !WramRead(wram, WRAM_FIELD_REQUESTS) && TakeFieldFrameFlag(wram, 0x80u)) {
+        decision.value = WramRead(wram, WRAM_FIELD_RELOAD_FLAGS);
+        if (decision.value & 8u) {
+            decision.action = LUFIA2_FIELD_FRAME_TRANSITION;
+            return decision;
+        }
+        if (TakeFieldFrameFlag(wram, 8u)) {
+            decision.action = LUFIA2_FIELD_FRAME_CHANGE_MAP;
+            decision.value = 8u;
+            return decision;
+        }
+    }
+    decision.value = 0x20u;
+    if (TakeFieldFrameFlag(wram, 0x20u))
+        decision.action = LUFIA2_FIELD_FRAME_CHANGE_SCENE;
+    return decision;
+}
+
+uint16_t Lufia2FieldSwapTransitionMaps(
+    const Lufia2Memory *memory, uint8_t bank, uint16_t stack) {
+    const Lufia2Wram wram = {memory, bank, 0u};
+    const uint16_t current = WramRead16(wram, WRAM_FIELD_MAP_ID);
+    const uint16_t saved_low = (uint16_t)(stack - 1u);
+    Write8(memory, stack, (uint8_t)(current >> 8));
+    Write8(memory, saved_low, (uint8_t)current);
+    const uint16_t destination = WramRead16(wram, WRAM_FIELD_DESTINATION_MAP);
+    WramWrite16(wram, WRAM_FIELD_MAP_ID, destination);
+    const uint8_t low = Read8(memory, saved_low);
+    const uint8_t high = Read8(memory, stack);
+    const uint16_t saved = low | ((uint16_t)high << 8);
+    WramWrite16(wram, WRAM_FIELD_DESTINATION_MAP, saved);
+    return saved;
+}
+
+void Lufia2FieldClearTransitionState(const Lufia2Memory *memory, uint8_t bank) {
+    const Lufia2Wram wram = {memory, bank, 0u};
+    WramWrite(wram, WRAM_UNK_7E05A8, 0u);
+    WramWrite(wram, WRAM_UNK_7E05A9, 0u);
+    WramWrite(wram, WRAM_SCREEN_EFFECTS, 0u);
+    WramWrite(wram, WRAM_PALETTE_FADE, 0u);
+}
+
+static Lufia2FieldFrameAction FieldLoopSelectAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->accumulator_is_8_bit) {
+        const Lufia2FieldFrameDecision decision = Lufia2FieldSelectFrameAction(
+            memory, cpu->data_bank, cpu->direct_page);
+        LoadA8(cpu, decision.value);
+        cpu->zero = decision.action == LUFIA2_FIELD_FRAME_UPDATE;
+        if (decision.tested_second_pad)
+            cpu->overflow = (decision.second_pad & 0x40u) != 0u;
+        if (decision.action == LUFIA2_FIELD_FRAME_WAIT)
+            cpu->negative = (decision.second_pad & 0x80u) != 0u;
+        return decision.action;
+    }
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_SOUND_COMMAND));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E057C));
+    if (!cpu->zero) {
+        OpLoadA(cpu, 0x10u);
+        OpBit(memory, cpu, OpDp(cpu, DP_FIELD_SECOND_PAD_HIGH));
+        if (!cpu->zero)
+            return LUFIA2_FIELD_FRAME_WAIT;
+    }
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE));
+    OpBitValue(cpu, 0x80u);
+    if (cpu->zero) {
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_REQUESTS));
+        if (cpu->zero) {
+            OpLoadA(cpu, 0x80u);
+            OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
+            if (!cpu->zero) {
+                OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_RELOAD_FLAGS));
+                OpBitValue(cpu, 8u);
+                if (!cpu->zero)
+                    return LUFIA2_FIELD_FRAME_TRANSITION;
+                OpLoadA(cpu, 8u);
+                OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
+                if (!cpu->zero)
+                    return LUFIA2_FIELD_FRAME_CHANGE_MAP;
+            }
+        }
+    }
+    OpLoadA(cpu, 0x20u);
+    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
+    return cpu->zero ? LUFIA2_FIELD_FRAME_UPDATE : LUFIA2_FIELD_FRAME_CHANGE_SCENE;
+}
+
 static Lufia2ExecutionResult FieldLoopChangeMap(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
     OpRepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
-    PushAccumulator16(memory, cpu);
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_MAP));
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
-    PullAccumulator16(memory, cpu);
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_FIELD_DESTINATION_MAP));
+    LoadA16(cpu, Lufia2FieldSwapTransitionMaps(memory, cpu->data_bank, cpu->stack));
     OpSepWidths(cpu, 0x20u);
     Lufia2ExecutionResult result;
     if (!FieldLoopChild(memory, cpu, child, context,
             0x83804fu, 0x83afeau, 3u, &result))
         return result;
-    OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05A8));
-    OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05A9));
-    OpStz(memory, cpu, OpAbs(cpu, WRAM_SCREEN_EFFECTS));
-    OpStz(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
+    if (cpu->accumulator_is_8_bit)
+        Lufia2FieldClearTransitionState(memory, cpu->data_bank);
+    else {
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05A8));
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E05A9));
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_SCREEN_EFFECTS));
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
+    }
     return ExecutionHandoff(cpu, 0x83b18eu);
 }
 
@@ -1634,43 +1744,20 @@ static Lufia2ExecutionResult RunFieldFrames(const Lufia2Memory *memory,
         if ((frame || wait_first) && !FieldLoopChild(memory, cpu, child, context,
                                                      0x838004u, 0x83900cu, 2u, &result))
             return result;
-        OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, OpAbs(cpu, WRAM_SOUND_COMMAND));
-        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E057C));
-        if (!cpu->zero) {
-            OpLoadA(cpu, 0x10u);
-            OpBit(memory, cpu, OpDp(cpu, DP_FIELD_SECOND_PAD_HIGH));
-            if (!cpu->zero)
-                continue;
+        const Lufia2FieldFrameAction action = FieldLoopSelectAction(memory, cpu);
+        if (action == LUFIA2_FIELD_FRAME_WAIT)
+            continue;
+        if (action == LUFIA2_FIELD_FRAME_TRANSITION) {
+            if (!FieldLoopChild(memory, cpu, child, context,
+                    0x838031u, 0x8384e1u, 2u, &result))
+                return result;
+            continue;
         }
-        OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE));
-        OpBitValue(cpu, 0x80u);
-        if (cpu->zero) {
-            OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_REQUESTS));
-            if (cpu->zero) {
-                OpLoadA(cpu, 0x80u);
-                OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
-                if (!cpu->zero) {
-                    OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_RELOAD_FLAGS));
-                    OpBitValue(cpu, 8u);
-                    if (!cpu->zero) {
-                        if (!FieldLoopChild(memory, cpu, child, context, 0x838031u,
-                                            0x8384e1u, 2u, &result))
-                            return result;
-                        continue;
-                    }
-                    OpLoadA(cpu, 8u);
-                    OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
-                    if (!cpu->zero)
-                        return FieldLoopChangeMap(memory, cpu, child, context);
-                }
-            }
-        }
-        OpLoadA(cpu, 0x20u);
-        OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
-        if (!cpu->zero) {
-            if (!FieldLoopChild(memory, cpu, child, context, 0x838069u, 0x8eb28fu, 3u,
-                                &result))
+        if (action == LUFIA2_FIELD_FRAME_CHANGE_MAP)
+            return FieldLoopChangeMap(memory, cpu, child, context);
+        if (action == LUFIA2_FIELD_FRAME_CHANGE_SCENE) {
+            if (!FieldLoopChild(memory, cpu, child, context,
+                    0x838069u, 0x8eb28fu, 3u, &result))
                 return result;
             continue;
         }
