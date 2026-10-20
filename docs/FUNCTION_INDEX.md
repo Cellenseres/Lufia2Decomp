@@ -596,7 +596,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:838F` | `Lufia2MenuClearLayers` | verified | `src/menu/menu_tilemap.c` |
 | `$82:83B5` | `Lufia2MenuClearLayerRectangle` | verified | `src/menu/menu_tile_clear.c` |
 | `$82:83EB` | `Lufia2MenuClearTileRectangle` | verified | `src/menu/menu_tile_clear.c` |
+| `$82:84D5` | `Lufia2MenuDrawInventoryRows` | verified | `src/menu/menu_screen.c` |
+| `$82:8526` | `Lufia2MenuDrawSpellRows` | verified | `src/menu/menu_screen.c` |
 | `$82:8636` | `Lufia2MenuDrawSpellShopRows` | verified | `src/menu/menu_spell_shop.c` |
+| `$82:8680` | `Lufia2MenuDrawPointerRows` | verified | `src/menu/menu_screen.c` |
+| `$82:86C4` | `Lufia2MenuDrawScenarioRows` | verified | `src/menu/menu_screen.c` |
 | `$82:8704` | `Lufia2MenuPresentMainDisplay` | verified | `src/menu/menu_display_callers.c` |
 | `$82:8720` | `Lufia2MenuCursor` | verified | `src/menu/menu_input.c` |
 | `$82:88A0` | `Lufia2MenuItemIndex` | verified | `src/menu/menu_cursor.c` |

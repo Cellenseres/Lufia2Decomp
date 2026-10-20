@@ -1699,7 +1699,7 @@ static int MenuPointerRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         LoadX16(cpu, Read16Direct(memory, cpu, 0x19u));
         IncrementX16(cpu);
         IncrementX16(cpu);
-        Decrement16Direct(memory, cpu, 0x15u);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x15u), -1);
     } while (!cpu->zero);
     SetAccumulatorWidth(cpu, 1);
     TsbDirect(memory, cpu, 0x74u, 0x08u);
@@ -1938,13 +1938,7 @@ static int ItemRow(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         LoadX16(cpu, Read16Direct(memory, cpu, 0x17u));
         if (DrawString(memory, cpu, 0x8516u, text))
             return 1;
-        {
-            const uint16_t word = Read16Direct(memory, cpu, 0x00u);   /* LSR $00 */
-
-            cpu->carry = word & 1u;
-            Write16Direct(memory, cpu, 0x00u, (uint16_t)(word >> 1));
-            SetNz16(cpu, (uint16_t)(word >> 1));
-        }
+        OpLsrMem(memory, cpu, OpDp(cpu, 0x00u));
         LoadY16(cpu, 0xc9b7u);
         LoadX16(cpu, Read16Direct(memory, cpu, 0x17u));
         if (DrawString(memory, cpu, 0x8521u, text))
@@ -1999,17 +1993,22 @@ static void ScenarioItem(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             StoreYDirect16(memory, cpu, DP_SCRATCH_E);
             LoadY16(cpu, 0x0010u);
             do {
-                Increment16Direct(memory, cpu, DP_SCRATCH_A);
+                OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_A), 1);
                 LsrA16(cpu);
                 if (cpu->carry) {
                     cpu->x = (uint16_t)(cpu->x - 1u);
                     SetNz16(cpu, cpu->x);
                     if (cpu->zero) {
-                        const uint16_t n =
-                            (uint16_t)(Read16Direct(memory, cpu, DP_SCRATCH_A) - 1u);
-
-                        Write16Direct(memory, cpu, DP_SCRATCH_A, (uint16_t)(n << 1));
-                        LoadX16(cpu, (uint16_t)(n << 1));
+                        OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_A), -1);
+                        const uint16_t index = Read16Direct(memory, cpu, DP_SCRATCH_A);
+                        const uint16_t doubled = (uint16_t)(index << 1);
+                        Write8(memory, DirectAddress(cpu, DP_SCRATCH_A + 1u),
+                               (uint8_t)(doubled >> 8));
+                        Write8(memory, DirectAddress(cpu, DP_SCRATCH_A),
+                               (uint8_t)doubled);
+                        cpu->carry = (index & 0x8000u) != 0u;
+                        SetNz16(cpu, doubled);
+                        LoadX16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
                         LoadA16(cpu,
                                 Read16Long(memory, LongIndexedAddress(
                                                        ROM_SCENARIO_ITEM_IDS, cpu->x)));
@@ -2100,11 +2099,53 @@ static int ListRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         cpu->carry = 0;
         Add16Value(cpu, 0x0080u);
         StoreADirect16(memory, cpu, 0x11u);
-        Decrement16Direct(memory, cpu, 0x15u);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x15u), -1);
     } while (!cpu->zero);
     SetAccumulatorWidth(cpu, 1);
     TsbDirect(memory, cpu, 0x74u, 0x08u);
     return 0;
+}
+
+static bool RowDrawReady(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x82u && cpu->accumulator_is_8_bit &&
+           !cpu->index_is_8_bit && !cpu->direct_page && !cpu->decimal &&
+           cpu->stack >= 0x1f20u && cpu->stack <= 0x1ffcu;
+}
+
+static Lufia2ExecutionResult DrawSelectionRows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned kind,
+    uint32_t entry, uint32_t end) {
+    if (!RowDrawReady(cpu))
+        return ExecutionHandoff(cpu, entry);
+    Lufia2ExecutionResult text;
+    if (ListRows(memory, cpu, kind, &text))
+        return text;
+    return ExecutionReturned(end);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawInventoryRows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return DrawSelectionRows(memory, cpu, 0u, 0x8284d5u, 0x8284f6u);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawSpellRows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return DrawSelectionRows(memory, cpu, 1u, 0x828526u, 0x82854eu);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawScenarioRows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return DrawSelectionRows(memory, cpu, 2u, 0x8286c4u, 0x8286e4u);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawPointerRows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!RowDrawReady(cpu))
+        return ExecutionHandoff(cpu, 0x828680u);
+    Lufia2ExecutionResult text;
+    if (MenuPointerRows(memory, cpu, &text))
+        return text;
+    return ExecutionReturned(0x8286c3u);
 }
 
 /* List mode $09D1. */
