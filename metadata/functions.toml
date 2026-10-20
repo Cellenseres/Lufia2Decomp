@@ -14909,3 +14909,107 @@ source = "src/party/capsule_form_masks.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:CF9D"
+name = "Lufia2CapsuleLoadFormGraphics"
+source = "src/party/capsule_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CFD4"
+name = "Lufia2CapsuleQueueFormTiles"
+source = "src/party/capsule_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CFFD"
+name = "Lufia2CapsuleQueueSavedFormTiles"
+source = "src/party/capsule_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D026"
+name = "Lufia2CapsuleArrangeFormTiles"
+source = "src/party/capsule_graphics.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:D13A"
+name = "Lufia2CapsuleRefreshFoodMeter"
+source = "src/party/capsule_food_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D150"
+name = "Lufia2CapsuleDrawFoodMeter"
+source = "src/party/capsule_food_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D378"
+name = "Lufia2CapsuleTickFormPalette"
+source = "src/party/capsule_palette.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D397"
+name = "Lufia2CapsuleRotateFormColors"
+source = "src/party/capsule_palette.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:D3AC"
+name = "Lufia2CapsuleAdvanceFormColors"
+source = "src/party/capsule_palette.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D443"
+name = "Lufia2CapsuleFadeFormColors"
+source = "src/party/capsule_palette.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D4A8"
+name = "Lufia2CapsuleBeginFormBlend"
+source = "src/party/capsule_palette.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D4D0"
+name = "Lufia2CapsuleEndFormBlend"
+source = "src/party/capsule_palette.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D4EE"
+name = "Lufia2CapsuleLoadFormEffects"
+source = "src/party/capsule_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

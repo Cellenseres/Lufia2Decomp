@@ -6199,3 +6199,11 @@ width = 1
 count = 1
 owner = "party"
 notes = "Menu82:C85A writes6 before setting the tile upload requests in DP73/74. Broader use remains unknown."
+
+[[location]]
+address = "7E:A920"
+name = "capsule_form_effect_records"
+width = 1
+count = 32
+owner = "party"
+notes = "Eight four-byte records cleared to0,0,0,18 by82:D4EE. They begin immediately after the form-mask sequence;D577 and its children animate them."
