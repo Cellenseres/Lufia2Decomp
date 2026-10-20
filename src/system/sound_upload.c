@@ -2,6 +2,7 @@
 #include "lufia2/system.h"
 #include "lufia2/sound_phase.h"
 #include "lufia2/sound_source.h"
+#include "lufia2/sound_progress.h"
 #include "core/wram_view.h"
 #include "system/wram.h"
 
@@ -19,6 +20,46 @@ enum {
     SOUND_UPLOAD_MODE_PORT = 0x002143u,
     SOUND_UPLOAD_POLL_LIMIT = 65536u
 };
+
+Lufia2SoundHeaderProgress Lufia2SoundAdvanceHeader(
+    const Lufia2Memory *memory, uint16_t direct_page,
+    uint16_t source, uint16_t remaining) {
+    Lufia2SoundHeaderProgress progress = {(uint16_t)(source + 1u), remaining};
+    if (!progress.source) {
+        const Lufia2Wram wram = {memory, 0u, direct_page};
+        WramStep8(wram, SOUND_UPLOAD_BANK, 1);
+        progress.source = 0x8000u;
+    }
+    progress.remaining = (uint16_t)(remaining - 1u);
+    return progress;
+}
+
+Lufia2SoundPayloadProgress Lufia2SoundAdvancePayload(
+    const Lufia2Memory *memory, uint16_t direct_page, uint16_t remaining) {
+    const Lufia2Wram wram = {memory, 0u, direct_page};
+    WramStep8(wram, SOUND_UPLOAD_SEQUENCE, 1);
+    WramStep8(wram, SOUND_UPLOAD_SEQUENCE, 1);
+    const Lufia2SoundPayloadProgress progress = {
+        (uint16_t)(remaining - 2u), remaining >= 3u};
+    return progress;
+}
+
+static void SoundUploadAdvanceHeader(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->accumulator_is_8_bit && !cpu->index_is_8_bit) {
+        const Lufia2SoundHeaderProgress progress = Lufia2SoundAdvanceHeader(
+            memory, cpu->direct_page, cpu->y, cpu->x);
+        cpu->y = progress.source;
+        cpu->x = progress.remaining;
+        SetNz16(cpu, cpu->x);
+    } else {
+        OpIny(cpu);
+        if (cpu->zero) {
+            OpStepMem(memory, cpu, OpDp(cpu, SOUND_UPLOAD_BANK), 1);
+            OpLdy(cpu, 0x8000u);
+        }
+        OpDex(cpu);
+    }
+}
 
 Lufia2ExecutionResult Lufia2SoundHeaderStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
@@ -187,6 +228,14 @@ static void SoundUploadSendPair(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 
 static bool SoundUploadNextPair(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                 bool stepped) {
+    if (!stepped && cpu->accumulator_is_8_bit && !cpu->index_is_8_bit) {
+        const Lufia2SoundPayloadProgress progress = Lufia2SoundAdvancePayload(
+            memory, cpu->direct_page, cpu->x);
+        cpu->x = progress.remaining;
+        cpu->carry = progress.more;
+        SetNz16(cpu, cpu->x);
+        return progress.more;
+    }
     SoundUploadCheckpoint(memory, cpu, 0x80999du, stepped);
     OpStepMem(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE), 1);
     SoundUploadCheckpoint(memory, cpu, 0x80999fu, stepped);
@@ -337,12 +386,7 @@ Lufia2ExecutionResult Lufia2SendSoundResourceHeader(const Lufia2Memory *memory,
         OpOraValue(cpu, 0x80u);
         if (!SoundUploadMatches(memory, cpu, OpAbs(cpu, SOUND_UPLOAD_REPLY_PORT)))
             return ExecutionHandoff(cpu, 0x8098f7u);
-        OpIny(cpu);
-        if (cpu->zero) {
-            OpStepMem(memory, cpu, OpDp(cpu, SOUND_UPLOAD_BANK), 1);
-            OpLdy(cpu, 0x8000u);
-        }
-        OpDex(cpu);
+        SoundUploadAdvanceHeader(memory, cpu);
     } while (!cpu->zero);
     OpPullX(memory, cpu);
     OpLoadA(cpu, 0xffu);
