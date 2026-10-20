@@ -242,12 +242,6 @@ Lufia2ExecutionResult Lufia2PartyBaseStats(
     return ExecutionReturned(0x81f978u);
 }
 
-/* DEC abs, 16-bit. */
-static void Decrement16Absolute(const Lufia2Memory *memory,
-    Lufia2CpuState *cpu, uint16_t address) {
-    OpStepMem(memory, cpu, OpAbs(cpu, address), -1);
-}
-
 enum {
     MEMBER_RECORD_POINTER = 0xb2u,
     MEMBER_RECORD_BANK = 0xb4u,
@@ -344,6 +338,39 @@ static void RestoreMemberIdentityState(const Lufia2Memory *memory, Lufia2CpuStat
     cpu->overflow = end.overflow;
 }
 
+typedef struct MemberWordRun {
+    uint16_t source;
+    uint16_t field;
+    uint16_t value;
+} MemberWordRun;
+
+static MemberWordRun RestoreMemberWords(
+    Lufia2Wram wram, uint16_t source, uint16_t field,
+    uint16_t count, bool stored) {
+    MemberWordRun run = {source, field, wram.direct_page};
+    WramWrite16(wram, COUNT, count);
+    do {
+        if (stored)
+            run.value = MemberSourceWord(wram, run.source, 0u);
+        MemberRecordWord(wram, run.field, run.value);
+        if (stored)
+            run.source = (uint16_t)(run.source + 2u);
+        run.field = (uint16_t)(run.field + 2u);
+    } while (WramStep16(wram, COUNT, -1) != 0u);
+    return run;
+}
+
+static void RestoreMemberWordState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t field, uint16_t count, bool stored) {
+    const MemberWordRun run = RestoreMemberWords(
+        WramViewOfCaller(memory, cpu), cpu->x, field, count, stored);
+    cpu->accumulator = run.value;
+    cpu->x = run.source;
+    cpu->y = run.field;
+    SetNz16(cpu, 0u);
+}
+
 /* Shared tail: stats, experience, derived stats, full HP and MP. */
 static void MemberFinish(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     const uint16_t returns[3]) {
@@ -418,18 +445,7 @@ Lufia2ExecutionResult Lufia2PartyUnpackMember(
     cpu->carry = header.carry;
     cpu->overflow = header.overflow;
     RestoreMemberIdentityState(memory, cpu);
-    LoadY16(cpu, 0x0066u);
-    LoadA16(cpu, 0x0007u);
-    StoreAAbsolute16(memory, cpu, COUNT, 0);
-    do {                                                       /* equipment */
-        LoadA16(cpu, SourceWord(memory, cpu, 0));
-        BlockStore16(memory, cpu, cpu->accumulator);
-        IncrementX16(cpu);
-        IncrementX16(cpu);
-        IncrementY16(cpu);
-        IncrementY16(cpu);
-        Decrement16Absolute(memory, cpu, COUNT);
-    } while (!cpu->zero);
+    RestoreMemberWordState(memory, cpu, 0x0066u, 7u, true);
     LoadY16(cpu, 0x00bcu);
     LoadA16(cpu, SourceWord(memory, cpu, 0));
     BlockStore16(memory, cpu, cpu->accumulator);
@@ -445,28 +461,8 @@ Lufia2ExecutionResult Lufia2PartyUnpackMemberBare(
 
     BlockPointer(memory, cpu);
     RestoreMemberIdentityState(memory, cpu);
-    LoadY16(cpu, 0x0066u);
-    LoadA16(cpu, 0x0007u);
-    StoreAAbsolute16(memory, cpu, COUNT, 0);
-    do {                                                       /* no equipment */
-        TransferDirectToA(cpu);
-        BlockStore16(memory, cpu, cpu->accumulator);
-        IncrementY16(cpu);
-        IncrementY16(cpu);
-        Decrement16Absolute(memory, cpu, COUNT);
-    } while (!cpu->zero);
-    LoadY16(cpu, 0x0074u);
-    LoadA16(cpu, 0x0009u);
-    StoreAAbsolute16(memory, cpu, COUNT, 0);
-    do {                                                       /* bonuses */
-        LoadA16(cpu, SourceWord(memory, cpu, 0));
-        BlockStore16(memory, cpu, cpu->accumulator);
-        IncrementX16(cpu);
-        IncrementX16(cpu);
-        IncrementY16(cpu);
-        IncrementY16(cpu);
-        Decrement16Absolute(memory, cpu, COUNT);
-    } while (!cpu->zero);
+    RestoreMemberWordState(memory, cpu, 0x0066u, 7u, false);
+    RestoreMemberWordState(memory, cpu, 0x0074u, 9u, true);
     LoadY16(cpu, 0x00bcu);
     SetAccumulatorWidth(cpu, 1);
     LoadAAbsolute8(memory, cpu, 0x0000u, cpu->x);
