@@ -15101,3 +15101,51 @@ source = "src/menu/menu_shop_session.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:DA8F"
+name = "Lufia2MenuRunShop"
+source = "src/menu/menu_shop_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DB15"
+name = "Lufia2MenuSelectShopItem"
+source = "src/menu/menu_shop_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E012"
+name = "Lufia2MenuShopSelectListMode"
+source = "src/menu/menu_shop_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DC69"
+name = "Lufia2MenuShopDrawListPanel"
+source = "src/menu/menu_shop_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DC8A"
+name = "Lufia2MenuShopDrawVisibleRows"
+source = "src/menu/menu_shop_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E327"
+name = "Lufia2MenuShopBuildSelectedList"
+source = "src/menu/menu_shop_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

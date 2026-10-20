@@ -804,10 +804,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:D749` | `Lufia2MenuShopParty` | verified | `src/menu/menu_screen.c` |
 | `$82:D905` | `Lufia2MenuSpellShopSetup` | verified | `src/menu/menu_spell_shop.c` |
 | `$82:DA5C` | `Lufia2MenuShopSelectListWindow` | verified | `src/menu/menu_shop_session.c` |
+| `$82:DA8F` | `Lufia2MenuRunShop` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DAD8` | `Lufia2MenuShopRefreshSelection` | verified | `src/menu/menu_shop_session.c` |
+| `$82:DB15` | `Lufia2MenuSelectShopItem` | verified | `src/menu/menu_shop_control.c` |
+| `$82:DC69` | `Lufia2MenuShopDrawListPanel` | verified | `src/menu/menu_shop_control.c` |
+| `$82:DC8A` | `Lufia2MenuShopDrawVisibleRows` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DCC1` | `Lufia2MenuShopRows` | verified | `src/menu/menu_screen.c` |
 | `$82:DCF4` | `Lufia2MenuShopRow` | verified | `src/menu/menu_screen.c` |
+| `$82:E012` | `Lufia2MenuShopSelectListMode` | verified | `src/menu/menu_shop_control.c` |
 | `$82:E297` | `Lufia2MenuShopSetup` | verified | `src/menu/menu_screen.c` |
+| `$82:E327` | `Lufia2MenuShopBuildSelectedList` | verified | `src/menu/menu_shop_control.c` |
 | `$82:E49E` | `Lufia2MenuShopTitle` | verified | `src/menu/menu_screen.c` |
 | `$82:E5E1` | `Lufia2MenuShopCompare` | verified | `src/menu/menu_screen.c` |
 | `$82:E746` | `Lufia2TitleStateDispatch` | verified | `src/title/title.c` |

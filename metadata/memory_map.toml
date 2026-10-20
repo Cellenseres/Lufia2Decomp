@@ -2135,7 +2135,7 @@ name = "menu_item_flags"
 width = 1
 count = 1
 owner = "menu"
-notes = "82:8720 indexes item flags; bits7/6 report the top/bottom edge,82:8B08 retains bit0 before polling. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
+notes = "Shop DB15 updates the flags at14C1+1 after remembering the selected row. 82:8720 indexes item flags; bits7/6 report the top/bottom edge,82:8B08 retains bit0 before polling. The native contract allows X0..255; this is an indexed table base, not a disjoint256-element allocation."
 
 [[location]]
 address = "7E:14C7"
@@ -4433,7 +4433,7 @@ name = "battle_capsule_slot_flag"
 width = 1
 count = 1
 owner = "battle"
-notes = "Selected capsule slot plus one; zero skips graphics loading."
+notes = "Shop phase: E012 writes mode2 for the first row when flag02 is set, mode1 for other rows, otherwise0. Selected capsule slot plus one; zero skips graphics loading."
 
 [[location]]
 address = "7E:154D"
@@ -4874,7 +4874,7 @@ name = "unk_7E93C0"
 width = 1
 count = 4312
 owner = "menu"
-notes = "Original menu snapshot copied bytewise to data-bank0100..11D7 by82:F682. In the capsule-form scene9CF0 is a48byte cumulative mask and9D20..A91F is its3072byte frame sequence, reusing this and later snapshot/save-preview storage."
+notes = "Shop phase reuses93C0..93CB for six source-pointer words,93D0..93DB for their counts, and93E0 onward for transformed item words. Original menu snapshot copied bytewise to data-bank0100..11D7 by82:F682. In the capsule-form scene9CF0 is a48byte cumulative mask and9D20..A91F is its3072byte frame sequence, reusing this and later snapshot/save-preview storage."
 
 [[location]]
 address = "7E:A498"
