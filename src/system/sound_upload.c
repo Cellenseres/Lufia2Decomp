@@ -1,6 +1,8 @@
 #include "core/cpu_ops.h"
 #include "lufia2/system.h"
 #include "lufia2/sound_phase.h"
+#include "lufia2/sound_source.h"
+#include "core/wram_view.h"
 #include "system/wram.h"
 
 enum {
@@ -131,9 +133,34 @@ static bool SoundUploadReadByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return SoundUploadAdvance(memory, cpu, site, save_bank, stepped);
 }
 
+Lufia2SoundSourcePair Lufia2SoundReadSourcePair(
+    const Lufia2Memory *memory, uint8_t bank, uint16_t direct_page, uint16_t source) {
+    Lufia2SoundSourcePair pair = {source, 0u, false};
+    if (source > 0xfffdu)
+        return pair;
+    const Lufia2Wram wram = {memory, bank, direct_page};
+    for (uint16_t field = SOUND_UPLOAD_LOW; field <= SOUND_UPLOAD_HIGH; ++field) {
+        pair.last_byte = Read8(memory, ((uint32_t)bank << 16) | pair.next);
+        WramWrite(wram, field, pair.last_byte);
+        ++pair.next;
+    }
+    pair.complete = true;
+    return pair;
+}
+
 static void SoundUploadReadPair(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                 uint32_t first_site, uint32_t second_site,
                                 bool save_bank) {
+    if (cpu->accumulator_is_8_bit && !cpu->index_is_8_bit) {
+        const Lufia2SoundSourcePair pair = Lufia2SoundReadSourcePair(
+            memory, cpu->data_bank, cpu->direct_page, cpu->y);
+        if (pair.complete) {
+            LoadA8(cpu, pair.last_byte);
+            cpu->y = pair.next;
+            SetNz16(cpu, cpu->y);
+            return;
+        }
+    }
     (void)SoundUploadReadByte(memory, cpu, first_site, SOUND_UPLOAD_LOW, save_bank,
                               false);
     (void)SoundUploadReadByte(memory, cpu, second_site, SOUND_UPLOAD_HIGH, save_bank,
