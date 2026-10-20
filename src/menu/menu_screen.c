@@ -4,6 +4,7 @@
 #include "core/wram_view.h"
 #include "lufia2/item.h"
 #include "lufia2/menu.h"
+#include "lufia2/menu_values.h"
 #include "lufia2/party.h"
 #include "lufia2/system.h"
 #include "menu/menu_sprite_slots.h"
@@ -519,7 +520,7 @@ static void MenuDigits3(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             continue;
         SimulateJsrFrame(memory, cpu, kReturns[i]);
         do {
-            Increment16Direct(memory, cpu, kSlots[i]);
+            OpStepMem(memory, cpu, OpDp(cpu, kSlots[i]), 1);
             Subtract16(cpu, kUnits[i]);
             Compare16(cpu, cpu->accumulator, kUnits[i]);
         } while (cpu->carry);
@@ -529,7 +530,7 @@ static void MenuDigits3(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!cpu->zero) {
         SimulateJsrFrame(memory, cpu, kReturns[2]);
         do {
-            Increment16Direct(memory, cpu, 0x04u);
+            OpStepMem(memory, cpu, OpDp(cpu, 0x04u), 1);
             LoadA16(cpu, (uint16_t)(cpu->accumulator - 1u));
         } while (!cpu->zero);
         SimulateRtsFrame(memory, cpu);
@@ -547,7 +548,7 @@ static void MenuNumberTail(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         do {
             cpu->carry = 0;
             Add16Value(cpu, 0x0010u);
-            Decrement16Direct(memory, cpu, 0x15u);
+            OpStepMem(memory, cpu, OpDp(cpu, 0x15u), -1);
         } while (!cpu->zero);
     }
     cpu->carry = 0;
@@ -1459,6 +1460,25 @@ static void EquipBonuses(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
+static void CountFlaggedEquipment(const Lufia2Memory *memory,
+                                   Lufia2CpuState *cpu) {
+    LoadX16(cpu, 0x0000u);
+    TransferXToA(cpu);
+    do {
+        PushIndex(memory, cpu);
+        PushAccumulator16(memory, cpu);
+        TransferXToA(cpu);
+        Jsr(memory, cpu, 0xf886u);
+        EquipFlagged(memory, cpu, 0xf895u);
+        Rts(memory, cpu);
+        PullAccumulator16(memory, cpu);
+        Add16Value(cpu, 0x0000u);
+        cpu->x = PullIndexValue(memory, cpu);
+        IncrementX16(cpu);
+        Compare16(cpu, cpu->x, 0x0006u);
+    } while (!cpu->zero);
+}
+
 /* $82:B2C5: upgrade flagged equipment of member $14B3. */
 Lufia2ExecutionResult Lufia2MenuEquipUpgrade(
     const Lufia2Memory *memory,
@@ -1489,21 +1509,7 @@ Lufia2ExecutionResult Lufia2MenuEquipUpgrade(
         Rts(memory, cpu);
         SetAccumulatorWidth(cpu, 0);
         Jsr(memory, cpu, 0xb2dcu);                             /* F87D count */
-        LoadX16(cpu, 0x0000u);
-        TransferXToA(cpu);
-        do {
-            PushIndex(memory, cpu);
-            PushAccumulator16(memory, cpu);
-            TransferXToA(cpu);
-            Jsr(memory, cpu, 0xf886u);
-            EquipFlagged(memory, cpu, 0xf895u);
-            Rts(memory, cpu);
-            PullAccumulator16(memory, cpu);
-            Add16Value(cpu, 0x0000u);
-            cpu->x = PullIndexValue(memory, cpu);
-            IncrementX16(cpu);
-            Compare16(cpu, cpu->x, 0x0006u);
-        } while (!cpu->zero);
+        CountFlaggedEquipment(memory, cpu);
         Rts(memory, cpu);
         Compare16(cpu, cpu->accumulator, 0x0000u);
         if (!cpu->zero) {
@@ -1515,12 +1521,11 @@ Lufia2ExecutionResult Lufia2MenuEquipUpgrade(
                 EquipFlagged(memory, cpu, 0xf895u);
                 Rts(memory, cpu);
                 if (cpu->carry) {
-                    const uint32_t at = (((uint32_t)cpu->data_bank << 16) +
+                    LoadA16(cpu, Indirect16At(memory, cpu, 0x2au, cpu->y));
+                    IncrementA16(cpu);
+                    const uint32_t destination = (((uint32_t)cpu->data_bank << 16) +
                         Read16Direct(memory, cpu, 0x2au) + cpu->y) & 0x00ffffffu;
-                    const uint16_t next = (uint16_t)(Read16Long(memory, at) + 1u);
-
-                    Write16Long(memory, at, next);
-                    SetNz16(cpu, next);
+                    Write16Long(memory, destination, cpu->accumulator);
                 }
                 PullAccumulator16(memory, cpu);
                 IncrementA16(cpu);
@@ -2147,6 +2152,44 @@ Lufia2ExecutionResult Lufia2MenuDrawPointerRows(
     if (MenuPointerRows(memory, cpu, &text))
         return text;
     return ExecutionReturned(0x8286c3u);
+}
+
+static bool MenuValueReady(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x82u && !cpu->accumulator_is_8_bit &&
+        !cpu->index_is_8_bit && !cpu->direct_page && !cpu->decimal &&
+        cpu->stack >= 0x1f20u && cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2MenuSplitSmallNumber(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!MenuValueReady(cpu))
+        return ExecutionHandoff(cpu, 0x8291abu);
+    MenuDigits3(memory, cpu);
+    return ExecutionReturned(0x8291d1u);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawSmallNumber(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!MenuValueReady(cpu))
+        return ExecutionHandoff(cpu, 0x829169u);
+    MenuSmallNumber(memory, cpu);
+    return ExecutionReturned(0x829188u);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawSmallNumberFull(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!MenuValueReady(cpu))
+        return ExecutionHandoff(cpu, 0x829189u);
+    MenuSmallNumberFull(memory, cpu);
+    return ExecutionReturned(0x8291aau);
+}
+
+Lufia2ExecutionResult Lufia2MenuCountFlaggedEquipment(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!MenuValueReady(cpu))
+        return ExecutionHandoff(cpu, 0x82f87du);
+    CountFlaggedEquipment(memory, cpu);
+    return ExecutionReturned(0x82f892u);
 }
 
 static bool ShopDataReady(const Lufia2CpuState *cpu, unsigned accumulator_mode) {

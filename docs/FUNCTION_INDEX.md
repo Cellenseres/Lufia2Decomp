@@ -630,6 +630,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:90F6` | `Lufia2MenuPadGlyphRow` | verified | `src/menu/menu_glyph_buffer.c` |
 | `$82:9113` | `Lufia2MenuUploadGlyphBuffer` | verified | `src/menu/menu_glyph_buffer.c` |
 | `$82:9133` | `Lufia2MenuPlaceGlyphRectangle` | verified | `src/menu/menu_glyph_buffer.c` |
+| `$82:9169` | `Lufia2MenuDrawSmallNumber` | verified | `src/menu/menu_screen.c` |
+| `$82:9189` | `Lufia2MenuDrawSmallNumberFull` | verified | `src/menu/menu_screen.c` |
+| `$82:91AB` | `Lufia2MenuSplitSmallNumber` | verified | `src/menu/menu_screen.c` |
 | `$82:9214` | `Lufia2MenuClearSpriteMask` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:922D` | `Lufia2MenuClearSecondarySpriteMask` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:9246` | `Lufia2MenuPollSelectionChoice` | verified | `src/menu/menu_context_services.c` |
@@ -942,6 +945,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F7B4` | `Lufia2PartyAddEquipmentComparison` | verified | `src/party/party_equipment_comparison.c` |
 | `$82:F7FD` | `Lufia2PartySubtractEquipmentComparison` | verified | `src/party/party_equipment_comparison.c` |
 | `$82:F846` | `Lufia2PartyRebuildEquipmentModifiers` | verified | `src/party/party_equipment.c` |
+| `$82:F87D` | `Lufia2MenuCountFlaggedEquipment` | verified | `src/menu/menu_screen.c` |
 | `$82:F893` | `Lufia2MenuTestEquipmentItemFlag` | verified | `src/menu/menu_record_services.c` |
 | `$82:F8AF` | `Lufia2InventoryRemoveFlaggedEquipment` | verified | `src/item/inventory_equipment_transfer.c` |
 | `$82:F8C6` | `Lufia2MenuAdvanceFlaggedEquipment` | verified | `src/menu/menu_price_followup.c` |

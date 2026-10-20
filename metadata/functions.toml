@@ -15838,3 +15838,35 @@ source = "src/text/text_cave_commands.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "82:91AB"
+name = "Lufia2MenuSplitSmallNumber"
+source = "src/menu/menu_screen.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:9169"
+name = "Lufia2MenuDrawSmallNumber"
+source = "src/menu/menu_screen.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:9189"
+name = "Lufia2MenuDrawSmallNumberFull"
+source = "src/menu/menu_screen.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F87D"
+name = "Lufia2MenuCountFlaggedEquipment"
+source = "src/menu/menu_screen.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

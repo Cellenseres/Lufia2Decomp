@@ -11,6 +11,7 @@
 #include "lufia2/field.h"
 #include "lufia2/item.h"
 #include "lufia2/menu.h"
+#include "lufia2/menu_values.h"
 #include "lufia2/party.h"
 #include "lufia2/resource_format.h"
 #include "lufia2/system.h"
