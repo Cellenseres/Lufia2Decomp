@@ -3,6 +3,7 @@
 
 #include "core/cpu_ops.h"
 #include "lufia2/system.h"
+#include "lufia2/music_samples.h"
 #include "system/wram.h"
 
 enum {
@@ -75,15 +76,42 @@ static uint32_t MusicSendSample(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return 0u;
 }
 
+uint16_t Lufia2MusicClearSampleSlots(const Lufia2Memory *memory, uint16_t slot) {
+    do {
+        Write8(memory, WRAM_MUSIC_SAMPLE_CACHE + slot, 0xffu);
+        slot = (uint16_t)(slot - 1u);
+    } while (!(slot & 0x8000u));
+    return slot;
+}
+
+Lufia2MusicSampleSearch Lufia2MusicFindSample(
+    const Lufia2Memory *memory, uint16_t slot, uint8_t sample) {
+    Lufia2MusicSampleSearch result = {slot, 0u, false};
+    do {
+        result.value = Read8(memory, WRAM_MUSIC_SAMPLE_CACHE + result.slot);
+        if (sample == result.value) {
+            result.found = true;
+            break;
+        }
+        result.slot = (uint16_t)(result.slot - 1u);
+    } while (!(result.slot & 0x8000u));
+    return result;
+}
+
 /* Mark every cache slot empty and restart the count. */
 static void MusicClearSampleCache(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushIndex(memory, cpu);
     OpLdx(cpu, 31u);
     OpLoadA(cpu, 0xffu);
-    do {
-        OpSta(memory, cpu, OpLongX(cpu, WRAM_MUSIC_SAMPLE_CACHE));
-        OpDex(cpu);
-    } while (!cpu->negative);
+    if (cpu->accumulator_is_8_bit && !cpu->index_is_8_bit) {
+        cpu->x = Lufia2MusicClearSampleSlots(memory, cpu->x);
+        SetNz16(cpu, cpu->x);
+    } else {
+        do {
+            OpSta(memory, cpu, OpLongX(cpu, WRAM_MUSIC_SAMPLE_CACHE));
+            OpDex(cpu);
+        } while (!cpu->negative);
+    }
     OpPullX(memory, cpu);
     OpStz(memory, cpu, OpDp(cpu, MUSIC_SAMPLE_COUNT));
     OpStz(memory, cpu, OpDp(cpu, MUSIC_SAMPLE_COUNT + 1u));
@@ -130,12 +158,21 @@ static Lufia2ExecutionResult MusicLoadSamples(
             if (cpu->zero) {
                 OpLda(memory, cpu, OpAbsY(cpu, MUSIC_SAMPLE_VALUES));
                 OpLdx(cpu, 31u);
-                do {
-                    OpCmp(memory, cpu, OpLongX(cpu, WRAM_MUSIC_SAMPLE_CACHE));
-                    if (cpu->zero)
-                        break;
-                    OpDex(cpu);
-                } while (!cpu->negative);
+                if (cpu->accumulator_is_8_bit && !cpu->index_is_8_bit) {
+                    const Lufia2MusicSampleSearch cached = Lufia2MusicFindSample(
+                        memory, cpu->x, A8(cpu));
+                    cpu->x = cached.slot;
+                    cpu->carry = A8(cpu) >= cached.value;
+                    cpu->zero = cached.found;
+                    cpu->negative = !cached.found;
+                } else {
+                    do {
+                        OpCmp(memory, cpu, OpLongX(cpu, WRAM_MUSIC_SAMPLE_CACHE));
+                        if (cpu->zero)
+                            break;
+                        OpDex(cpu);
+                    } while (!cpu->negative);
+                }
                 if (cpu->negative) {
                     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, MUSIC_SAMPLE_COUNT)));
                     OpSta(memory, cpu, OpLongX(cpu, WRAM_MUSIC_SAMPLE_CACHE));
