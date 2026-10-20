@@ -6,6 +6,8 @@
 #include "core/arithmetic_value.h"
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
+#include "core/wram_view.h"
+#include "system/wram.h"
 #include "lufia2/party.h"
 
 /* Totals: base word plus one or two modifiers. */
@@ -139,96 +141,102 @@ Lufia2ExecutionResult Lufia2PartyDerivedStats(
 }
 
 enum {
-    STATS = 0x0a1cu,                    /* 7 words */
-    MEMBER = 0x09fau,
-    LEVEL = 0x09feu,
+    STATS = WRAM_PARTY_BASE_STAT_WORK,                    /* 7 words */
+    MEMBER = WRAM_PARTY_STAT_MEMBER_INDEX,
+    LEVEL = WRAM_PARTY_STAT_LEVEL,
     COUNT = 0x09f2u,
 };
 
-/* $81:F87F: stats of member $09FA at level $09FE. */
-Lufia2ExecutionResult Lufia2PartyBaseStats(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    unsigned i;
+enum {
+    BASE_STAT_COUNT = 7u,
+    BASE_GROWTH_ROW = 0xb2u,
+    BASE_GROWTH_TABLE = 0xb62cu,
+    BASE_VALUES_TABLE = 0xb93cu,
+    BASE_GROWTH_ROW_LEVELS = 8u,
+    BASE_GROWTH_SCALE_SHIFT = 4u
+};
 
+static Byte8Result AddBaseStatByte(
+    Lufia2Wram wram, uint16_t field, uint8_t increment, bool decimal) {
+    const uint8_t previous = WramReadAt(wram, STATS, field);
+    const Byte8Result sum = Sum8Mode(increment, previous, false, decimal);
+    WramWriteAt(wram, STATS, field, sum.value);
+    if (sum.carry) {
+        const uint8_t high = WramReadAt(wram, STATS + 1u, field);
+        WramWriteAt(wram, STATS + 1u, field, (uint8_t)(high + 1u));
+    }
+    return sum;
+}
+
+static void AccumulateLevelGrowth(Lufia2Wram wram, bool decimal) {
+    for (unsigned stat = 0u; stat < BASE_STAT_COUNT; ++stat)
+        WramWrite16At(wram, STATS, (uint16_t)(stat * 2u), 0u);
+    const uint16_t member_offset = WramRead16(wram, SNES_RDMPYL);
+    const Word16Result first_row = Sum16Mode(BASE_GROWTH_TABLE, member_offset, false, decimal);
+    WramWrite16(wram, BASE_GROWTH_ROW, first_row.value);
+
+    uint16_t level = 1u;
+    while (level != WramRead16(wram, LEVEL)) {
+        const bool next_row = level % BASE_GROWTH_ROW_LEVELS == 0u;
+        level = (uint16_t)(level + 1u);
+        if (next_row) {
+            const uint16_t row = WramRead16(wram, BASE_GROWTH_ROW);
+            const Word16Result next = Sum16Mode(row, BASE_GROWTH_ROW_LEVELS, false, decimal);
+            WramWrite16(wram, BASE_GROWTH_ROW, next.value);
+        }
+        for (unsigned stat = 0u; stat < BASE_STAT_COUNT; ++stat) {
+            const uint16_t row = WramRead16(wram, BASE_GROWTH_ROW);
+            const uint32_t source = (((uint32_t)wram.data_bank << 16) + row + stat) & 0xffffffu;
+            const uint8_t increment = Read8(wram.memory, source);
+            (void)AddBaseStatByte(wram, (uint16_t)(stat * 2u), increment, decimal);
+        }
+    }
+}
+
+static uint16_t ScaleLevelGrowth(Lufia2Wram wram) {
+    uint16_t scaled = 0u;
+    for (unsigned stat = BASE_STAT_COUNT; stat > 0u; --stat) {
+        const uint16_t field = (uint16_t)((stat - 1u) * 2u);
+        scaled = WramRead16At(wram, STATS, field) >> BASE_GROWTH_SCALE_SHIFT;
+        WramWrite16At(wram, STATS, field, scaled);
+    }
+    return scaled;
+}
+
+static Byte8Result AddInitialBaseStats(
+    Lufia2Wram wram, uint16_t member_offset, bool decimal) {
+    Byte8Result total = {0};
+    for (unsigned stat = 0u; stat < BASE_STAT_COUNT; ++stat) {
+        const uint8_t base = WramReadAt(wram, BASE_VALUES_TABLE, member_offset);
+        total = AddBaseStatByte(wram, (uint16_t)(stat * 2u), base, decimal);
+        member_offset = (uint16_t)(member_offset + 2u);
+    }
+    return total;
+}
+
+/* Stats of the selected member at the requested level. */
+Lufia2ExecutionResult Lufia2PartyBaseStats(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadAAbsolute8(memory, cpu, MEMBER, 0);
     StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
     StoreA8Absolute(memory, cpu, SNES_WRMPYB, 0x0eu);
     PushIndex(memory, cpu);
     PushY(memory, cpu);
-    LoadX16(cpu, 0x0000u);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0)); /* member * 14 */
+    LoadX16(cpu, 0u);
+    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
     PushY(memory, cpu);
     StoreA8Absolute(memory, cpu, SNES_WRMPYB, 0x70u);
-    LoadX16(cpu, 0x0001u);
-    SetAccumulatorWidth(cpu, 0);
-    for (i = 0; i < 7u; ++i)
-        Write16Absolute(memory, cpu, (uint16_t)(STATS + 2u * i), 0);
-    LoadA16(cpu, 0xb62cu);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
-    StoreADirect16(memory, cpu, 0xb2u);
-    SetAccumulatorWidth(cpu, 1);
-    for (;;) {
-        Compare16(cpu, cpu->x, Read16AbsoluteIndexed(memory, cpu, LEVEL, 0));
-        if (cpu->zero)
-            break;
-        TransferXToA(cpu);
-        IncrementX16(cpu);
-        And8(cpu, 0x07u);
-        if (cpu->zero) {
-            SetAccumulatorWidth(cpu, 0);                       /* next row */
-            LoadA16(cpu, Read16Direct(memory, cpu, 0xb2u));
-            cpu->carry = 0;
-            Add16Value(cpu, 0x0008u);
-            StoreADirect16(memory, cpu, 0xb2u);
-            SetAccumulatorWidth(cpu, 1);
-        }
-        LoadY16(cpu, 0x0000u);
-        for (i = 0; i < 7u; ++i) {
-            const uint16_t sum = (uint16_t)(STATS + 2u * i);
-
-            if (i)
-                IncrementY16(cpu);
-            LoadA8(cpu, Read8(memory, (((uint32_t)cpu->data_bank << 16) +
-                Read16Direct(memory, cpu, 0xb2u) + cpu->y) & 0x00ffffffu));
-            cpu->carry = 0;
-            Adc8(cpu, AbsoluteByte(memory, cpu, sum, 0));
-            StoreAAbsolute8(memory, cpu, sum, 0);
-            if (cpu->carry) {
-                const uint32_t high = AbsoluteIndexedAddress(cpu, (uint16_t)(sum + 1u), 0);
-
-                Write8(memory, high, (uint8_t)(Read8(memory, high) + 1u));
-            }
-        }
-    }
-    SetAccumulatorWidth(cpu, 0);                               /* F945: / 16 */
-    LoadX16(cpu, 0x000cu);
-    do {
-        LoadA16(cpu, (uint16_t)(Read16AbsoluteIndexed(memory, cpu, STATS, cpu->x) >> 4));
-        StoreAAbsolute16(memory, cpu, STATS, cpu->x);
-        cpu->x = (uint16_t)(cpu->x - 2u);
-        SetNz16(cpu, cpu->x);
-    } while (!cpu->negative);
-    SetAccumulatorWidth(cpu, 1);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const bool decimal = cpu->decimal != 0u;
+    SetAccumulatorWidth(cpu, 0u);
+    AccumulateLevelGrowth(wram, decimal);
+    LoadA16(cpu, ScaleLevelGrowth(wram));
+    SetAccumulatorWidth(cpu, 1u);
     cpu->y = PullIndexValue(memory, cpu);
-    LoadX16(cpu, 0x0000u);
-    do {                                                       /* base */
-        LoadAAbsolute8(memory, cpu, 0xb93cu, cpu->y);
-        cpu->carry = 0;
-        Adc8(cpu, AbsoluteByte(memory, cpu, STATS, cpu->x));
-        StoreAAbsolute8(memory, cpu, STATS, cpu->x);
-        if (cpu->carry) {
-            const uint32_t high = AbsoluteIndexedAddress(cpu, (uint16_t)(STATS + 1u), cpu->x);
-
-            Write8(memory, high, (uint8_t)(Read8(memory, high) + 1u));
-        }
-        IncrementY16(cpu);
-        IncrementY16(cpu);
-        IncrementX16(cpu);
-        IncrementX16(cpu);
-        Compare16(cpu, cpu->x, 0x000eu);
-    } while (!cpu->zero);
+    const Byte8Result total = AddInitialBaseStats(wram, cpu->y, decimal);
+    LoadA8(cpu, total.value);
+    cpu->overflow = total.overflow;
+    cpu->carry = 1u;
     cpu->y = PullIndexValue(memory, cpu);
     cpu->x = PullIndexValue(memory, cpu);
     return ExecutionReturned(0x81f978u);
