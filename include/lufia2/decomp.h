@@ -15,6 +15,7 @@
 #include "lufia2/resource_format.h"
 #include "lufia2/system.h"
 #include "lufia2/text.h"
+#include "lufia2/text_scene.h"
 #include "lufia2/title.h"
 #include "lufia2/world_map.h"
 

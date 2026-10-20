@@ -4,13 +4,10 @@
 /* Shared text engine internals. */
 
 #include "lufia2/execution.h"
+#include "lufia2/text_scene.h"
 #include <stdbool.h>
 
 Lufia2ExecutionResult Lufia2TextRecoverParty(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context);
-
-Lufia2ExecutionResult Lufia2TextRunSceneOperation(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 

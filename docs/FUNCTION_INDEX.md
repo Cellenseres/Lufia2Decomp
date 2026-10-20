@@ -110,6 +110,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:AD39` | `Lufia2FieldFaceActorGroupTowardActor` | verified | `src/field/field_interaction.c` |
 | `$80:AD57` | `Lufia2FieldFaceActorTowardActor` | verified | `src/field/field_interaction.c` |
 | `$80:B404` | `Lufia2FieldQueueMenuActorUpdates` | verified | `src/field/menu_actor_updates.c` |
+| `$80:BA39` | `Lufia2TextRunSceneOperation` | verified | `src/text/text_cave_commands.c` |
 | `$80:BC3D` | `Lufia2TextPlaceNextSceneActor` | verified | `src/text/text_scene_setup.c` |
 | `$80:BC98` | `Lufia2TextPlaceActorFromScript` | verified | `src/text/text_scene_setup.c` |
 | `$80:BCBC` | `Lufia2TextSetWindowMode` | verified | `src/text/text_scene_setup.c` |

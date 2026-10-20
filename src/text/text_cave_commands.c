@@ -173,14 +173,28 @@ static uint16_t ReadSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *c
     return target;
 }
 
-static uint32_t FinishSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    SimulateRtsFrame(memory, cpu);
+static uint32_t ContinueSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS));
     OpBitValue(cpu, 0x40u);
     if (cpu->zero)
         return LUFIA2_TEXT_COMMAND_NEXT;
     OpStz(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
     return LUFIA2_TEXT_COMMAND_YIELD;
+}
+
+static uint32_t FinishSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    uint16_t back = Pull8(memory, cpu);
+    back |= (uint16_t)Pull8(memory, cpu) << 8;
+    if (back != 0xba44u)
+        return 0x800000u | (uint16_t)(back + 1u);
+    return ContinueSceneOperation(memory, cpu);
+}
+
+static Lufia2ExecutionResult SceneOperationResult(Lufia2CpuState *cpu,
+                                                  uint32_t next) {
+    if (next == LUFIA2_TEXT_COMMAND_NEXT || next == LUFIA2_TEXT_COMMAND_YIELD)
+        return ExecutionReturned(next);
+    return ExecutionHandoff(cpu, next);
 }
 
 static uint32_t StartSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu,
@@ -246,12 +260,19 @@ Lufia2ExecutionResult Lufia2TextRunSceneOperation(const Lufia2Memory *memory,
             Lufia2TextSceneDisplayCallback(memory, cpu, target, child, context);
         if (result.flow != LUFIA2_EXECUTION_RETURNED)
             return result;
-        return ExecutionReturned(FinishSceneOperation(memory, cpu));
+        return SceneOperationResult(cpu, FinishSceneOperation(memory, cpu));
     }
-    const uint32_t next = StartSceneOperation(memory, cpu, target);
-    if (next == LUFIA2_TEXT_COMMAND_NEXT || next == LUFIA2_TEXT_COMMAND_YIELD)
-        return ExecutionReturned(next);
-    return ExecutionHandoff(cpu, next);
+    if (target == 0xbb70u || target == 0xbaedu || target == 0xba67u)
+        return SceneOperationResult(cpu, StartSceneOperation(memory, cpu, target));
+    if (!child(context, cpu, 0x800000u | target, 0x80ba42u, 2u)) {
+        Lufia2ExecutionResult result = ExecutionReturned(0x80ba42u);
+        result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        return result;
+    }
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, (uint32_t)cpu->program_bank << 16 | 0xba45u);
+    return SceneOperationResult(cpu, ContinueSceneOperation(memory, cpu));
 }
 
 uint32_t Lufia2TextExecuteCaveCommand(const Lufia2Memory *memory, Lufia2CpuState *cpu,

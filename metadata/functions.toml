@@ -15829,3 +15829,12 @@ source = "src/menu/menu_screen.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Scene dispatch; original reset and wait owners remain explicit.
+[[function]]
+address = "80:BA39"
+name = "Lufia2TextRunSceneOperation"
+source = "src/text/text_cave_commands.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
