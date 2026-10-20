@@ -664,6 +664,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9984` | `Lufia2MenuHighlightPartySelection` | verified | `src/menu/menu_selection_helpers.c` |
 | `$82:999B` | `Lufia2MenuInitializePartyPortraits` | verified | `src/menu/menu_display_callers.c` |
 | `$82:99BE` | `Lufia2MenuInitializePartyPortrait` | verified | `src/menu/menu_display_callers.c` |
+| `$82:99F3` | `Lufia2MenuResetPartyAnimations` | verified | `src/menu/menu_party_animation_reset.c` |
 | `$82:9A4E` | `Lufia2MenuRunMainScreen` | verified | `src/menu/menu_main_screen.c` |
 | `$82:9AA3` | `Lufia2MenuResetSessionRecords` | verified | `src/menu/menu_context_services.c` |
 | `$82:9AE0` | `Lufia2MenuRefreshMainDisplay` | verified | `src/menu/menu_main_dispatch.c` |
@@ -808,6 +809,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:D702` | `Lufia2MenuShopInitializeSelection` | verified | `src/menu/menu_shop_session.c` |
 | `$82:D721` | `Lufia2MenuShopWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:D749` | `Lufia2MenuShopParty` | verified | `src/menu/menu_screen.c` |
+| `$82:D79D` | `Lufia2MenuShopConfigureItemCursor` | verified | `src/menu/menu_shop_presentation.c` |
 | `$82:D7BC` | `Lufia2MenuShopPrepareItemPurchase` | verified | `src/menu/menu_shop_preparation.c` |
 | `$82:D8A5` | `Lufia2MenuShopPrepareEquipmentPreview` | verified | `src/menu/menu_shop_purchase_windows.c` |
 | `$82:D8D4` | `Lufia2MenuShopPrepareSpellPurchase` | verified | `src/menu/menu_shop_purchase_windows.c` |
@@ -818,8 +820,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:DA8F` | `Lufia2MenuRunShop` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DAD8` | `Lufia2MenuShopRefreshSelection` | verified | `src/menu/menu_shop_session.c` |
 | `$82:DB15` | `Lufia2MenuSelectShopItem` | verified | `src/menu/menu_shop_control.c` |
+| `$82:DC10` | `Lufia2MenuRefreshShopPreview` | verified | `src/menu/menu_shop_presentation.c` |
 | `$82:DC69` | `Lufia2MenuShopDrawListPanel` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DC8A` | `Lufia2MenuShopDrawVisibleRows` | verified | `src/menu/menu_shop_control.c` |
+| `$82:DCA3` | `Lufia2MenuDrawShopList` | verified | `src/menu/menu_shop_presentation.c` |
 | `$82:DCC1` | `Lufia2MenuShopRows` | verified | `src/menu/menu_screen.c` |
 | `$82:DCDD` | `Lufia2MenuShopDrawItemRow` | verified | `src/menu/menu_shop_row.c` |
 | `$82:DCF4` | `Lufia2MenuShopRow` | verified | `src/menu/menu_screen.c` |
@@ -1927,6 +1931,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:C36D` | `Lufia2FieldReadMapResourceFlags` | verified | `src/field/field_camera_services.c` |
 | `$8E:E5EF` | `Lufia2MenuRunScenarioViewer` | verified | `src/menu/menu_scenario_view.c` |
 | `$8E:E6EA` | `Lufia2MenuResetSaveSelectionRecords` | verified | `src/menu/menu_selection_reset.c` |
+| `$8E:E700` | `Lufia2MenuClearSelectionScratch` | verified | `src/menu/menu_selection_reset.c` |
 | `$8E:E710` | `Lufia2MenuSaveSelectionState` | verified | `src/menu/menu_selection_save.c` |
 | `$8E:E751` | `Lufia2MenuRestoreSelectionState` | verified | `src/menu/menu_selection_state.c` |
 <!-- metadata-index:end -->

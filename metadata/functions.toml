@@ -15533,3 +15533,43 @@ source = "src/menu/save_menu_selection.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:D79D"
+name = "Lufia2MenuShopConfigureItemCursor"
+source = "src/menu/menu_shop_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:99F3"
+name = "Lufia2MenuResetPartyAnimations"
+source = "src/menu/menu_party_animation_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:E700"
+name = "Lufia2MenuClearSelectionScratch"
+source = "src/menu/menu_selection_reset.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DC10"
+name = "Lufia2MenuRefreshShopPreview"
+source = "src/menu/menu_shop_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DCA3"
+name = "Lufia2MenuDrawShopList"
+source = "src/menu/menu_shop_presentation.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

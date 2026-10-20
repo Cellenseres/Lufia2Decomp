@@ -1011,6 +1011,8 @@
 #define WRAM_BATTLE_EFFECT_SCRIPT_ENABLED 0x7ffab7u
 #define WRAM_MENU_SAVED_SELECTION_RECORDS 0x7ffabau
 #define WRAM_MENU_SAVED_SELECTION_RECORDS_COUNT 144u
+#define WRAM_MENU_SELECTION_SCRATCH 0x7ffb4au
+#define WRAM_MENU_SELECTION_SCRATCH_COUNT 72u
 /* memory-map:end */
 
 /* World mode reuses the streaming buffer. */

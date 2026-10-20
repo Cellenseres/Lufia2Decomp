@@ -1,6 +1,7 @@
 /* Menu screen building blocks and screens. */
 
 #include "core/cpu_ops.h"
+#include "core/wram_view.h"
 #include "lufia2/item.h"
 #include "lufia2/menu.h"
 #include "lufia2/party.h"
@@ -1331,7 +1332,7 @@ static int ShopRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         LoadX16(cpu, Read16Direct(memory, cpu, 0x19u));
         IncrementX16(cpu);
         IncrementX16(cpu);
-        Decrement16Direct(memory, cpu, 0x15u);
+        SetNz16(cpu, WramStep16(WramViewOfCaller(memory, cpu), 0x15u, -1));
     } while (!cpu->zero);
     SetAccumulatorWidth(cpu, 1);                               /* 862F */
     TsbDirect(memory, cpu, 0x74u, 0x08u);

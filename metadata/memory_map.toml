@@ -6239,3 +6239,11 @@ width = 1
 count = 1
 owner = "menu"
 notes = "D7BC stores the FC7D packed owned-count nibble as a word here; its high byte aliases154C purchase mode. The quantity bound and zero test use only the low byte. The symbol describes its use as a bound, not proven merchant inventory."
+
+[[location]]
+address = "7F:FB4A"
+name = "menu_selection_scratch"
+width = 1
+count = 72
+owner = "menu"
+notes = "Separate 72-byte buffer cleared by8E:E700 from shop82:DA94. Adjacent saved-selection records end atFB49; scratch contents are not assigned a stronger meaning."
