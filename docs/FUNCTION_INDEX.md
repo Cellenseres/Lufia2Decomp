@@ -663,6 +663,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9867` | `Lufia2MenuCreditExchangeBalance` | verified | `src/menu/menu_shop_exchange.c` |
 | `$82:989D` | `Lufia2MenuSpendExchangeBalance` | verified | `src/menu/menu_shop_exchange.c` |
 | `$82:98B5` | `Lufia2MenuCheckExchangeBalance` | verified | `src/menu/menu_shop_exchange.c` |
+| `$82:98C7` | `Lufia2MenuScaleShopPrice` | verified | `src/menu/menu_screen.c` |
 | `$82:9918` | `Lufia2AdjustPurchasePrice` | verified | `src/menu/menu_spell_shop.c` |
 | `$82:994E` | `Lufia2PartyRebuildAllEquipmentStats` | verified | `src/party/party_equipment.c` |
 | `$82:9971` | `Lufia2PartySelectActiveEquipmentMember` | verified | `src/party/party_refresh.c` |
@@ -856,6 +857,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E22C` | `Lufia2MenuShopAdjustQuantity` | verified | `src/menu/menu_shop_quantity.c` |
 | `$82:E297` | `Lufia2MenuShopSetup` | verified | `src/menu/menu_screen.c` |
 | `$82:E327` | `Lufia2MenuShopBuildSelectedList` | verified | `src/menu/menu_shop_control.c` |
+| `$82:E433` | `Lufia2MenuBuildOwnedItemList` | verified | `src/menu/menu_screen.c` |
+| `$82:E46B` | `Lufia2MenuCountShopWordList` | verified | `src/menu/menu_screen.c` |
+| `$82:E484` | `Lufia2MenuCountShopByteList` | verified | `src/menu/menu_screen.c` |
 | `$82:E49E` | `Lufia2MenuShopTitle` | verified | `src/menu/menu_screen.c` |
 | `$82:E522` | `Lufia2MenuShopPrepareEquipmentMembers` | verified | `src/menu/menu_shop_member_equipment.c` |
 | `$82:E569` | `Lufia2MenuShopMarkEquipmentMember` | verified | `src/menu/menu_shop_member_equipment.c` |
@@ -961,6 +965,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:FBEE` | `Lufia2InventoryReadSelectedItem` | verified | `src/item/inventory_actions.c` |
 | `$82:FC08` | `Lufia2InventorySwapSelectedItems` | verified | `src/item/inventory_actions.c` |
 | `$82:FC1F` | `Lufia2InventoryDiscardSelectedItem` | verified | `src/item/inventory_actions.c` |
+| `$82:FC7D` | `Lufia2MenuCountOwnedItem` | verified | `src/menu/menu_screen.c` |
 | `$82:FC97` | `Lufia2ItemIncrementPackedCount` | verified | `src/item/packed_item_counts.c` |
 | `$82:FCC7` | `Lufia2ItemDecrementPackedCount` | verified | `src/item/packed_item_counts.c` |
 | `$82:FCED` | `Lufia2ItemSelectPackedCount` | verified | `src/item/packed_item_counts.c` |

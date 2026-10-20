@@ -999,9 +999,9 @@ static void ShopCount(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         LoadA16(cpu, Read16Long(memory, DirectLongPointer(memory, cpu, 0x08u)));
         if (bytes)
             And16(cpu, 0x00ffu);
-        Increment16Direct(memory, cpu, 0x08u);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x08u), 1);
         if (!bytes)
-            Increment16Direct(memory, cpu, 0x08u);
+            OpStepMem(memory, cpu, OpDp(cpu, 0x08u), 1);
         Compare16(cpu, cpu->accumulator, bytes ? 0x00ffu : 0x0000u);
     } while (!cpu->zero);
     LoadA16(cpu, cpu->y);
@@ -1021,11 +1021,11 @@ static void ShopList(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 }
 
 /* $82:FC7D: A = owned count nibble of item X ($7F:F080). */
-static void ItemCount(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static uint32_t ItemCount(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     TransferXToA(cpu);
     And16(cpu, 0x01ffu);
     if (cpu->zero)
-        return;
+        return 0x82fc96u;
     LsrA16(cpu);
     TransferAToX(cpu);
     {
@@ -1034,7 +1034,7 @@ static void ItemCount(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7ff080u, cpu->x)));
         if (!high) {
             And16(cpu, 0x000fu);
-            return;
+            return 0x82fc8eu;
         }
         And16(cpu, 0x00f0u);
         LsrA16(cpu);
@@ -1042,6 +1042,7 @@ static void ItemCount(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         LsrA16(cpu);
         LsrA16(cpu);
     }
+    return 0x82fc96u;
 }
 
 /* $82:E433: owned items (count << 9 | id) into $7E:97E0, 0-terminated. */
@@ -1065,7 +1066,7 @@ static void ShopOwnedItems(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
             IncrementY16(cpu);
             IncrementY16(cpu);
         }
-        Increment16Direct(memory, cpu, 0x00u);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x00u), 1);
         LoadA16(cpu, Read16Direct(memory, cpu, 0x00u));
         Compare16(cpu, cpu->accumulator, 0x0200u);
     } while (!cpu->zero);
@@ -1105,11 +1106,11 @@ Lufia2ExecutionResult Lufia2MenuShopSetup(
     LoadA8(cpu, Read8(memory, DirectLongPointer(memory, cpu, 0x08u)));
     StoreAAbsolute8(memory, cpu, 0x1543u, 0);
     SetAccumulatorWidth(cpu, 0);
-    Increment16Direct(memory, cpu, 0x08u);
+    OpStepMem(memory, cpu, OpDp(cpu, 0x08u), 1);
     LoadA16(cpu, Read16Long(memory, DirectLongPointer(memory, cpu, 0x08u)));
     StoreAAbsolute16(memory, cpu, MENU_SHOP_FLAGS, 0);
-    Increment16Direct(memory, cpu, 0x08u);
-    Increment16Direct(memory, cpu, 0x08u);
+    OpStepMem(memory, cpu, OpDp(cpu, 0x08u), 1);
+    OpStepMem(memory, cpu, OpDp(cpu, 0x08u), 1);
     SetAccumulatorWidth(cpu, 1);
     StoreZeroAbsolute8(memory, cpu, WRAM_MENU_SHOP_LIST_COUNT, 0);
     LoadAAbsolute8(memory, cpu, MENU_SHOP_FLAGS, 0);
@@ -2146,6 +2147,54 @@ Lufia2ExecutionResult Lufia2MenuDrawPointerRows(
     if (MenuPointerRows(memory, cpu, &text))
         return text;
     return ExecutionReturned(0x8286c3u);
+}
+
+static bool ShopDataReady(const Lufia2CpuState *cpu, unsigned accumulator_mode) {
+    return cpu->program_bank == 0x82u && !cpu->index_is_8_bit &&
+           !cpu->direct_page && !cpu->decimal &&
+           cpu->stack >= 0x1f20u && cpu->stack <= 0x1ffcu &&
+           (accumulator_mode > 1u || cpu->accumulator_is_8_bit == accumulator_mode);
+}
+
+Lufia2ExecutionResult Lufia2MenuBuildOwnedItemList(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ShopDataReady(cpu, 1u))
+        return ExecutionHandoff(cpu, 0x82e433u);
+    ShopOwnedItems(memory, cpu);
+    return ExecutionReturned(0x82e46au);
+}
+
+static Lufia2ExecutionResult CountShopList(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, bool bytes) {
+    if (!ShopDataReady(cpu, 2u))
+        return ExecutionHandoff(cpu, bytes ? 0x82e484u : 0x82e46bu);
+    ShopCount(memory, cpu, bytes);
+    return ExecutionReturned(bytes ? 0x82e49du : 0x82e483u);
+}
+
+Lufia2ExecutionResult Lufia2MenuCountShopWordList(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return CountShopList(memory, cpu, false);
+}
+
+Lufia2ExecutionResult Lufia2MenuCountShopByteList(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return CountShopList(memory, cpu, true);
+}
+
+Lufia2ExecutionResult Lufia2MenuCountOwnedItem(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ShopDataReady(cpu, 0u))
+        return ExecutionHandoff(cpu, 0x82fc7du);
+    return ExecutionReturned(ItemCount(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2MenuScaleShopPrice(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ShopDataReady(cpu, 1u))
+        return ExecutionHandoff(cpu, 0x8298c7u);
+    ShopPriceTimes200(memory, cpu);
+    return ExecutionReturned(0x829917u);
 }
 
 /* List mode $09D1. */
