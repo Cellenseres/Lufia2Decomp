@@ -822,6 +822,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:DAD8` | `Lufia2MenuShopRefreshSelection` | verified | `src/menu/menu_shop_session.c` |
 | `$82:DB15` | `Lufia2MenuSelectShopItem` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DC10` | `Lufia2MenuRefreshShopPreview` | verified | `src/menu/menu_shop_presentation.c` |
+| `$82:DC49` | `Lufia2MenuShopReadSelectedRecord` | verified | `src/menu/menu_shop_selection.c` |
 | `$82:DC69` | `Lufia2MenuShopDrawListPanel` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DC8A` | `Lufia2MenuShopDrawVisibleRows` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DCA3` | `Lufia2MenuDrawShopList` | verified | `src/menu/menu_shop_presentation.c` |
@@ -858,6 +859,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E6BE` | `Lufia2MenuShopSetSpellMemberPose` | verified | `src/menu/menu_shop_member_spells.c` |
 | `$82:E6FC` | `Lufia2MenuShopSelectSpell` | verified | `src/menu/menu_shop_selection.c` |
 | `$82:E709` | `Lufia2MenuShopSelectItem` | verified | `src/menu/menu_shop_selection.c` |
+| `$82:E718` | `Lufia2MenuShopSelectInventoryItem` | verified | `src/menu/menu_shop_selection.c` |
 | `$82:E746` | `Lufia2TitleStateDispatch` | verified | `src/title/title.c` |
 | `$82:E75D` | `Lufia2TitleOpenSaveSelection` | verified | `src/menu/menu_selection_callers.c` |
 | `$82:E77C` | `Lufia2TitleRestoreSaveSelection` | verified | `src/menu/menu_selection_callers.c` |

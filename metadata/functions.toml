@@ -15717,3 +15717,19 @@ source = "src/menu/menu_spell_shop.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:E718"
+name = "Lufia2MenuShopSelectInventoryItem"
+source = "src/menu/menu_shop_selection.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:DC49"
+name = "Lufia2MenuShopReadSelectedRecord"
+source = "src/menu/menu_shop_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
