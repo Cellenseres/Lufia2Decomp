@@ -1315,6 +1315,14 @@ Lufia2ExecutionResult Lufia2MenuShopSelectSpell(
 Lufia2ExecutionResult Lufia2MenuShopSelectItem(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2MenuShopScrollUp(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuShopScrollDown(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

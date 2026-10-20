@@ -15357,3 +15357,35 @@ source = "src/menu/menu_shop_selection.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:DD18"
+name = "Lufia2MenuShopScrollUp"
+source = "src/menu/menu_shop_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DDAE"
+name = "Lufia2MenuShopScrollDown"
+source = "src/menu/menu_shop_scroll.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:FB04"
+name = "Lufia2InventoryCountOccupiedSlots"
+source = "src/item/inventory_slot_count.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F6F2"
+name = "Lufia2ItemFindEquipmentKind"
+source = "src/item/item_equipment_kind.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

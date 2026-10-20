@@ -169,6 +169,12 @@ Lufia2ExecutionResult Lufia2InventoryReplaceEquipment(
 Lufia2ExecutionResult Lufia2InventorySwapEquipmentSlot(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2InventoryCountOccupiedSlots(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2ItemFindEquipmentKind(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

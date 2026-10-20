@@ -819,6 +819,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:DC8A` | `Lufia2MenuShopDrawVisibleRows` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DCC1` | `Lufia2MenuShopRows` | verified | `src/menu/menu_screen.c` |
 | `$82:DCF4` | `Lufia2MenuShopRow` | verified | `src/menu/menu_screen.c` |
+| `$82:DD18` | `Lufia2MenuShopScrollUp` | verified | `src/menu/menu_shop_scroll.c` |
+| `$82:DDAE` | `Lufia2MenuShopScrollDown` | verified | `src/menu/menu_shop_scroll.c` |
 | `$82:DE53` | `Lufia2MenuShopShowMessage` | verified | `src/menu/menu_shop_quantity.c` |
 | `$82:DE75` | `Lufia2MenuShopFinishTransaction` | verified | `src/menu/menu_shop_quantity.c` |
 | `$82:DEA4` | `Lufia2MenuShopSellItem` | verified | `src/menu/menu_shop_transactions.c` |
@@ -901,6 +903,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F682` | `Lufia2MenuRestoreSavedFieldBuffers` | verified | `src/menu/menu_record_services.c` |
 | `$82:F6A4` | `Lufia2PartyClearSecondaryModifiers` | verified | `src/party/capsule_stat_callers.c` |
 | `$82:F6D4` | `Lufia2PartyClearPrimaryModifiers` | verified | `src/party/capsule_stat_callers.c` |
+| `$82:F6F2` | `Lufia2ItemFindEquipmentKind` | verified | `src/item/item_equipment_kind.c` |
 | `$82:F703` | `Lufia2PartySelectEquipmentSlot` | verified | `src/party/party_equipment.c` |
 | `$82:F710` | `Lufia2PartyLoadEquipmentItem` | verified | `src/party/party_equipment.c` |
 | `$82:F722` | `Lufia2PartyAccumulateEquipmentModifiers` | verified | `src/party/party_equipment.c` |
@@ -918,6 +921,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:FAA0` | `Lufia2InventoryIncreaseSlotQuantity` | verified | `src/item/inventory_selection.c` |
 | `$82:FAD0` | `Lufia2ItemSubtractSlotQuantity` | verified | `src/item/item_commands.c` |
 | `$82:FAF4` | `Lufia2InventorySlotAtQuantityLimit` | verified | `src/item/inventory_selection.c` |
+| `$82:FB04` | `Lufia2InventoryCountOccupiedSlots` | verified | `src/item/inventory_slot_count.c` |
 | `$82:FB1F` | `Lufia2ItemPossessionCount` | verified | `src/item/inventory.c` |
 | `$82:FB51` | `Lufia2ItemCheckPossessionBit` | verified | `src/item/inventory.c` |
 | `$82:FB94` | `Lufia2InventoryFindEmptySlot` | verified | `src/item/inventory_selection.c` |
