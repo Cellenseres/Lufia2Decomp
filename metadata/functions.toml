@@ -15221,3 +15221,83 @@ source = "src/menu/menu_shop_transactions.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:9867"
+name = "Lufia2MenuCreditExchangeBalance"
+source = "src/menu/menu_shop_exchange.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:989D"
+name = "Lufia2MenuSpendExchangeBalance"
+source = "src/menu/menu_shop_exchange.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:98B5"
+name = "Lufia2MenuCheckExchangeBalance"
+source = "src/menu/menu_shop_exchange.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E0A9"
+name = "Lufia2MenuShopBuyExchangeUnits"
+source = "src/menu/menu_shop_exchange.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E0E2"
+name = "Lufia2MenuShopExchangeUnitValue"
+source = "src/menu/menu_shop_exchange.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:DFC4"
+name = "Lufia2MenuShopPreviewEquipment"
+source = "src/menu/menu_shop_equipment.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E0F8"
+name = "Lufia2MenuShopEquipPurchase"
+source = "src/menu/menu_shop_equipment.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E140"
+name = "Lufia2MenuShopReceiveItem"
+source = "src/menu/menu_shop_equipment.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F97D"
+name = "Lufia2InventoryReplaceEquipment"
+source = "src/item/inventory_equipment_transfer.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F9B6"
+name = "Lufia2InventorySwapEquipmentSlot"
+source = "src/item/inventory_equipment_transfer.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

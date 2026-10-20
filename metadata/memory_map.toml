@@ -6215,3 +6215,19 @@ width = 2
 count = 1
 owner = "party"
 notes = "D62F rolls each trig sign into the low byte;D68C then shifts the full original word and conditionally negates the unaligned product word1575. The adjacent byte participates."
+
+[[location]]
+address = "7E:0B55"
+name = "menu_exchange_balance"
+width = 3
+count = 1
+owner = "menu"
+notes = "Original secondary shop balance. 9867 credits and conditionally caps its wrapped24-bit sum at98967F;989D spends and98B5 compares. Currency identity remains unclaimed."
+
+[[location]]
+address = "7E:09BD"
+name = "menu_exchange_price"
+width = 3
+count = 1
+owner = "menu"
+notes = "Original secondary shop price/product. E0A9 writes two product bytes plus one high byte;98C7 also builds it using hardware times200. Existing primary purchase price09BA stays separate."

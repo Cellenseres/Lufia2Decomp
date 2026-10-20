@@ -652,6 +652,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9808` | `Lufia2MenuCreditSelectionGold` | verified | `src/menu/menu_context_services.c` |
 | `$82:983D` | `Lufia2MenuSpendSelectionGold` | verified | `src/menu/menu_price_followup.c` |
 | `$82:9855` | `Lufia2MenuCheckSelectionGold` | verified | `src/menu/menu_price_followup.c` |
+| `$82:9867` | `Lufia2MenuCreditExchangeBalance` | verified | `src/menu/menu_shop_exchange.c` |
+| `$82:989D` | `Lufia2MenuSpendExchangeBalance` | verified | `src/menu/menu_shop_exchange.c` |
+| `$82:98B5` | `Lufia2MenuCheckExchangeBalance` | verified | `src/menu/menu_shop_exchange.c` |
 | `$82:9918` | `Lufia2AdjustPurchasePrice` | verified | `src/menu/menu_spell_shop.c` |
 | `$82:994E` | `Lufia2PartyRebuildAllEquipmentStats` | verified | `src/party/party_equipment.c` |
 | `$82:9971` | `Lufia2PartySelectActiveEquipmentMember` | verified | `src/party/party_refresh.c` |
@@ -815,8 +818,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:DE75` | `Lufia2MenuShopFinishTransaction` | verified | `src/menu/menu_shop_quantity.c` |
 | `$82:DEA4` | `Lufia2MenuShopSellItem` | verified | `src/menu/menu_shop_transactions.c` |
 | `$82:DF45` | `Lufia2MenuShopChoosePurchaseQuantity` | verified | `src/menu/menu_shop_transactions.c` |
+| `$82:DFC4` | `Lufia2MenuShopPreviewEquipment` | verified | `src/menu/menu_shop_equipment.c` |
 | `$82:E012` | `Lufia2MenuShopSelectListMode` | verified | `src/menu/menu_shop_control.c` |
 | `$82:E02C` | `Lufia2MenuShopBuyItem` | verified | `src/menu/menu_shop_transactions.c` |
+| `$82:E0A9` | `Lufia2MenuShopBuyExchangeUnits` | verified | `src/menu/menu_shop_exchange.c` |
+| `$82:E0E2` | `Lufia2MenuShopExchangeUnitValue` | verified | `src/menu/menu_shop_exchange.c` |
+| `$82:E0F8` | `Lufia2MenuShopEquipPurchase` | verified | `src/menu/menu_shop_equipment.c` |
+| `$82:E140` | `Lufia2MenuShopReceiveItem` | verified | `src/menu/menu_shop_equipment.c` |
 | `$82:E167` | `Lufia2MenuShopLearnSpell` | verified | `src/menu/menu_shop_spell.c` |
 | `$82:E1DE` | `Lufia2MenuShopStoreLearnedSpell` | verified | `src/menu/menu_shop_spell.c` |
 | `$82:E20C` | `Lufia2MenuShopComputeQuantityPrice` | verified | `src/menu/menu_shop_quantity.c` |
@@ -892,6 +900,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F846` | `Lufia2PartyRebuildEquipmentModifiers` | verified | `src/party/party_equipment.c` |
 | `$82:F893` | `Lufia2MenuTestEquipmentItemFlag` | verified | `src/menu/menu_record_services.c` |
 | `$82:F8C6` | `Lufia2MenuAdvanceFlaggedEquipment` | verified | `src/menu/menu_price_followup.c` |
+| `$82:F97D` | `Lufia2InventoryReplaceEquipment` | verified | `src/item/inventory_equipment_transfer.c` |
+| `$82:F9B6` | `Lufia2InventorySwapEquipmentSlot` | verified | `src/item/inventory_equipment_transfer.c` |
 | `$82:F9C9` | `Lufia2MenuBuildEquipmentAttributes` | verified | `src/menu/menu_selection_helpers.c` |
 | `$82:F9E8` | `Lufia2InventoryStorePackedSlot` | verified | `src/item/inventory_selection.c` |
 | `$82:F9F2` | `Lufia2InventoryAddMenuItem` | verified | `src/item/inventory_selection.c` |
