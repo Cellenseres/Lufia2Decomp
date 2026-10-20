@@ -15,7 +15,13 @@ enum {
     WARP_MAP_IDS = WRAM_UNK_7E93C0 + 4u,
     WARP_RECORD_WORDS = WRAM_UNK_7E93C0 + 0x40u,
     WARP_NAME_POINTERS = WRAM_UNK_7E93C0 + 0x7cu,
-    WARP_SECONDARY_LIMIT = WRAM_BATTLE_PARTY_IDS + 2u
+    WARP_SECONDARY_LIMIT = WRAM_BATTLE_PARTY_IDS + 2u,
+    DP_WARP_DRAW_INDEX = 0x00u,
+    DP_WARP_DRAW_TILEMAP = 0x11u,
+    DP_WARP_DRAW_ROWS = 0x15u,
+    WARP_INCOMING_ROW_TILEMAP = 0x374eu,
+    WARP_VISIBLE_ROWS = 6u,
+    WARP_SCROLL_REQUEST = WRAM_MENU_DISPLAY_REQUESTS + 1u
 };
 
 static void SelectWarpFlag(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -233,4 +239,86 @@ Lufia2ExecutionResult Lufia2MenuSelectWarpDestination(const Lufia2Memory *memory
         if (moved && !MoveWarpSelection(&call, A8(cpu)))
             return call.result;
     }
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawWarpScrollRow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!MenuActionReady(cpu, child, 1u))
+        return ExecutionHandoff(cpu, 0x82b072u);
+    MenuActionCall call = {memory, cpu, child, context, {0}};
+    OpLdx(cpu, WARP_INCOMING_ROW_TILEMAP);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_WARP_DRAW_TILEMAP), cpu->x);
+    OpLdx(cpu, 1u);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_WARP_DRAW_ROWS), cpu->x);
+    if (!MenuActionChild(&call, 0x82b07cu, 0x828680u, 2u, 1u))
+        return call.result;
+    return ExecutionReturned(0x82b07fu);
+}
+
+static bool AnimateWarpScroll(MenuActionCall *call, bool down) {
+    static const uint32_t up_sites[] = {0x82b098u, 0x82b0a1u, 0x82b0aau};
+    static const uint32_t down_sites[] = {0x82b0deu, 0x82b0e7u, 0x82b0f0u};
+    for (unsigned frame = 0u; frame < 3u; ++frame) {
+        const uint16_t request = (uint16_t)((down ? 8u : 2u) << (frame != 0u));
+        OpLoadA(call->cpu, request);
+        OpSta(call->memory, call->cpu, OpAbs(call->cpu, WARP_SCROLL_REQUEST));
+        if (!MenuActionChild(call, down ? down_sites[frame] : up_sites[frame],
+                             0x868b55u, 3u, 1u))
+            return false;
+    }
+    return true;
+}
+
+Lufia2ExecutionResult Lufia2MenuScrollWarpDestinationsUp(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!MenuActionReady(cpu, child, 1u))
+        return ExecutionHandoff(cpu, 0x82b080u);
+    MenuActionCall call = {memory, cpu, child, context, {0}};
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_TOP_ROW));
+    if (!cpu->zero) {
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_TOP_ROW), -1);
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_TOP_ROW)));
+        OpWriteX(memory, cpu, OpDp(cpu, DP_WARP_DRAW_INDEX), cpu->x);
+        if (!MenuActionChild(&call, 0x82b090u, 0x82b072u, 2u, 1u) ||
+            !AnimateWarpScroll(&call, false) ||
+            !MenuActionChild(&call, 0x82b0aeu, 0x828f5eu, 2u, 1u))
+            return call.result;
+        OpLoadA(cpu, 1u);
+        OpSta(memory, cpu, OpAbs(cpu, WARP_SCROLL_REQUEST));
+        OpRepWidths(cpu, 0x20u);
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_SCROLL_ROW), -1);
+    }
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x82b0bdu);
+}
+
+Lufia2ExecutionResult Lufia2MenuScrollWarpDestinationsDown(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!MenuActionReady(cpu, child, 1u))
+        return ExecutionHandoff(cpu, 0x82b0beu);
+    MenuActionCall call = {memory, cpu, child, context, {0}};
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_TOP_ROW));
+    OpCmp(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_OVERFLOW));
+    if (!cpu->carry) {
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_TOP_ROW));
+        cpu->carry = 0u;
+        OpAdcValue(cpu, WARP_VISIBLE_ROWS);
+        OpSta(memory, cpu, OpDp(cpu, DP_WARP_DRAW_INDEX));
+        OpStz(memory, cpu, OpDp(cpu, DP_WARP_DRAW_INDEX + 1u));
+        if (!MenuActionChild(&call, 0x82b0d3u, 0x82b072u, 2u, 1u))
+            return call.result;
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_TOP_ROW), 1);
+        if (!AnimateWarpScroll(&call, true) ||
+            !MenuActionChild(&call, 0x82b0f4u, 0x829009u, 2u, 1u))
+            return call.result;
+        OpLoadA(cpu, 1u);
+        OpSta(memory, cpu, OpAbs(cpu, WARP_SCROLL_REQUEST));
+        OpRepWidths(cpu, 0x20u);
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_SCROLL_ROW), 1);
+    }
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x82b103u);
 }

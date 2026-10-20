@@ -287,6 +287,19 @@ Lufia2ExecutionResult Lufia2MenuShopReadSelectedRecord(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+/* Incoming warp-list row; M1X0. */
+Lufia2ExecutionResult Lufia2MenuDrawWarpScrollRow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* Three original frame calls per moving warp-list row. */
+Lufia2ExecutionResult Lufia2MenuScrollWarpDestinationsUp(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2MenuScrollWarpDestinationsDown(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $82:D905 spell-shop price and windows; M1X0, binary mode.
  * Optional checkpoint after both word stores, before LDA #$20 at D922. */
 Lufia2ExecutionResult Lufia2MenuSpellShopSetup(

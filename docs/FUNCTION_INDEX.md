@@ -712,6 +712,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:AF78` | `Lufia2MenuConfirmSpecialSpellUse` | verified | `src/menu/menu_special_effects.c` |
 | `$82:AF8E` | `Lufia2MenuSelectWarpDestination` | verified | `src/menu/menu_warp_selection.c` |
 | `$82:B03F` | `Lufia2MenuRestoreWarpScroll` | verified | `src/menu/menu_warp_selection.c` |
+| `$82:B072` | `Lufia2MenuDrawWarpScrollRow` | verified | `src/menu/menu_warp_selection.c` |
+| `$82:B080` | `Lufia2MenuScrollWarpDestinationsUp` | verified | `src/menu/menu_warp_selection.c` |
+| `$82:B0BE` | `Lufia2MenuScrollWarpDestinationsDown` | verified | `src/menu/menu_warp_selection.c` |
 | `$82:B104` | `Lufia2MenuRunItemSelection` | verified | `src/menu/menu_dispatch_callers.c` |
 | `$82:B14B` | `Lufia2MenuDispatchItemAction` | verified | `src/menu/menu_special_effects.c` |
 | `$82:B183` | `Lufia2MenuRunPendingItemActions` | verified | `src/menu/menu_pending_item.c` |

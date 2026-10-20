@@ -15733,3 +15733,27 @@ source = "src/menu/menu_shop_selection.c"
 entry_mx = "M1X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:B072"
+name = "Lufia2MenuDrawWarpScrollRow"
+source = "src/menu/menu_warp_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B080"
+name = "Lufia2MenuScrollWarpDestinationsUp"
+source = "src/menu/menu_warp_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B0BE"
+name = "Lufia2MenuScrollWarpDestinationsDown"
+source = "src/menu/menu_warp_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
