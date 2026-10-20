@@ -1,9 +1,11 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/actor.h"
+#include "lufia2/scene_rebuild.h"
 #include "system/wram.h"
 
 enum {
+    SCENE_ACTOR_COUNT = 40u,
     SCENE_ACTOR_SLOT = 0xa7u,
     SCENE_ACTOR_WORD = 0xa9u,
     SCENE_ACTOR_PRESENTATION = WRAM_UNK_7E070A,
@@ -75,6 +77,58 @@ static void ActorSceneCopyAttributes(const Lufia2Memory *memory, Lufia2CpuState 
     }
 }
 
+static bool SceneActorHasSprite(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_SPRITE));
+    OpCmpValue(cpu, 0xfeu);
+    if (cpu->zero)
+        return false;
+    OpCmpValue(cpu, 0xffu);
+    return !cpu->zero;
+}
+
+static void SceneActorResetSpriteFlags(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
+    OpAndValue(cpu, 0x7fu);
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E066A));
+    OpAndValue(cpu, 6u);
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E066A));
+    OpLda(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_SPRITE));
+}
+
+Lufia2ExecutionResult Lufia2ActorRebuildScenePhase(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2SceneRebuildPhase phase, unsigned max_slots) {
+    static const uint32_t entries[] = {0x83a83bu, 0x83a852u, 0x83a8a2u};
+    if ((unsigned)phase >= sizeof(entries) / sizeof(entries[0]))
+        return ExecutionHandoff(cpu, 0u);
+    const uint32_t entry = entries[phase];
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit ||
+        !cpu->index_is_8_bit || cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, entry);
+    if (phase == LUFIA2_SCENE_REBUILD_FIND_SPRITE) {
+        if (cpu->x >= SCENE_ACTOR_COUNT || !max_slots ||
+            max_slots > SCENE_ACTOR_COUNT)
+            return ExecutionHandoff(cpu, entry);
+        for (unsigned visited = 0u; visited < max_slots; ++visited) {
+            if (SceneActorHasSprite(memory, cpu))
+                return ExecutionReturned(0x83a84cu);
+            OpDex(cpu);
+            if (cpu->negative)
+                return ExecutionReturned(0x83a979u);
+        }
+        return ExecutionReturned(entry);
+    }
+    if (phase == LUFIA2_SCENE_REBUILD_RESET_FLAGS) {
+        SceneActorResetSpriteFlags(memory, cpu);
+        return ExecutionReturned(0x83a867u);
+    }
+    ActorSceneSetPartyOffsets(memory, cpu);
+    return ExecutionReturned(0x83a8deu);
+}
+
 Lufia2ExecutionResult Lufia2ActorRebuildSceneState(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -89,25 +143,11 @@ Lufia2ExecutionResult Lufia2ActorRebuildSceneState(
         return ActorSceneOwnerUnwound(0x83a835u);
     OpLdx(cpu, 39u);
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_SPRITE));
-        OpCmpValue(cpu, 0xfeu);
-        bool active = !cpu->zero;
-        if (active) {
-            OpCmpValue(cpu, 0xffu);
-            active = !cpu->zero;
-        }
-        if (active) {
+        if (SceneActorHasSprite(memory, cpu)) {
             OpWriteX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT), cpu->x);
             if (!CallChildWithFrame(memory, cpu, child, context, 0x83a84eu, 0x83ab4fu, 3u, 0x83u))
                 return ActorSceneOwnerUnwound(0x83a84eu);
-            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
-            OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
-            OpAndValue(cpu, 0x7fu);
-            OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
-            OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E066A));
-            OpAndValue(cpu, 6u);
-            OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E066A));
-            OpLda(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_SPRITE));
+            SceneActorResetSpriteFlags(memory, cpu);
             if (!CallChildWithFrame(memory, cpu, child, context, 0x83a867u, 0x83a9d0u, 3u, 0x83u))
                 return ActorSceneOwnerUnwound(0x83a867u);
             OpLoadA(cpu, 0x20u);
