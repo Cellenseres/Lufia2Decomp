@@ -774,6 +774,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:CE23` | `Lufia2CapsuleExperienceRange` | verified | `src/party/capsule.c` |
 | `$82:CE52` | `Lufia2CapsuleBuildLevelExperience` | verified | `src/party/capsule_experience.c` |
 | `$82:CEAB` | `Lufia2CapsuleAdvanceExperienceStep` | verified | `src/party/capsule_experience.c` |
+| `$82:CF72` | `Lufia2CapsuleLoadFormPalette` | verified | `src/party/capsule_menu_assets.c` |
 | `$82:CF9D` | `Lufia2CapsuleLoadFormGraphics` | verified | `src/party/capsule_graphics.c` |
 | `$82:CFD4` | `Lufia2CapsuleQueueFormTiles` | verified | `src/party/capsule_graphics.c` |
 | `$82:CFFD` | `Lufia2CapsuleQueueSavedFormTiles` | verified | `src/party/capsule_graphics.c` |
@@ -781,6 +782,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:D07B` | `Lufia2MenuCapsuleStatus` | verified | `src/menu/menu_screen.c` |
 | `$82:D13A` | `Lufia2CapsuleRefreshFoodMeter` | verified | `src/party/capsule_food_display.c` |
 | `$82:D150` | `Lufia2CapsuleDrawFoodMeter` | verified | `src/party/capsule_food_display.c` |
+| `$82:D248` | `Lufia2CapsulePlaceSelectedSprite` | verified | `src/party/capsule_menu_assets.c` |
 | `$82:D270` | `Lufia2CapsuleRebuildStatBlock` | verified | `src/party/capsule_stat_callers.c` |
 | `$82:D283` | `Lufia2CapsuleBuildStatValues` | verified | `src/party/capsule_stat_growth.c` |
 | `$82:D31C` | `Lufia2CapsuleAccumulateStatGrowth` | verified | `src/party/capsule_stat_growth.c` |
@@ -796,9 +798,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:D5FC` | `Lufia2CapsuleStepFormEffectLife` | verified | `src/party/capsule_form_effects.c` |
 | `$82:D62F` | `Lufia2CapsulePlaceFormEffect` | verified | `src/party/capsule_form_effects.c` |
 | `$82:D68C` | `Lufia2CapsuleSignFormProduct` | verified | `src/party/capsule_form_effects.c` |
+| `$82:D69C` | `Lufia2MenuShopSession` | verified | `src/menu/menu_shop_session.c` |
+| `$82:D702` | `Lufia2MenuShopInitializeSelection` | verified | `src/menu/menu_shop_session.c` |
 | `$82:D721` | `Lufia2MenuShopWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:D749` | `Lufia2MenuShopParty` | verified | `src/menu/menu_screen.c` |
 | `$82:D905` | `Lufia2MenuSpellShopSetup` | verified | `src/menu/menu_spell_shop.c` |
+| `$82:DA5C` | `Lufia2MenuShopSelectListWindow` | verified | `src/menu/menu_shop_session.c` |
+| `$82:DAD8` | `Lufia2MenuShopRefreshSelection` | verified | `src/menu/menu_shop_session.c` |
 | `$82:DCC1` | `Lufia2MenuShopRows` | verified | `src/menu/menu_screen.c` |
 | `$82:DCF4` | `Lufia2MenuShopRow` | verified | `src/menu/menu_screen.c` |
 | `$82:E297` | `Lufia2MenuShopSetup` | verified | `src/menu/menu_screen.c` |

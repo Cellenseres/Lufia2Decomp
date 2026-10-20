@@ -15053,3 +15053,51 @@ source = "src/party/capsule_form_effects.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:CF72"
+name = "Lufia2CapsuleLoadFormPalette"
+source = "src/party/capsule_menu_assets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D248"
+name = "Lufia2CapsulePlaceSelectedSprite"
+source = "src/party/capsule_menu_assets.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D69C"
+name = "Lufia2MenuShopSession"
+source = "src/menu/menu_shop_session.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D702"
+name = "Lufia2MenuShopInitializeSelection"
+source = "src/menu/menu_shop_session.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DA5C"
+name = "Lufia2MenuShopSelectListWindow"
+source = "src/menu/menu_shop_session.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DAD8"
+name = "Lufia2MenuShopRefreshSelection"
+source = "src/menu/menu_shop_session.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
