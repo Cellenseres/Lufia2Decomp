@@ -1,16 +1,50 @@
 #include "core/cpu_ops.h"
 #include "lufia2/system.h"
+#include "system/wram.h"
 
 enum {
     SOUND_DATA_PORT = 0x2140u,
-    SOUND_SOURCE_POSITION = 0x0589u,
-    SOUND_SOURCE_BANK = 0x058bu,
-    SOUND_SOURCE_LENGTH = 0x058cu,
-    SOUND_TRANSFER_STATE = 0x058eu,
-    SOUND_DEFERRED_COMMAND = 0x058fu,
-    SOUND_RESOURCE_QUEUE = 0x0590u,
-    SOUND_QUEUE_SLOTS = 4u
+    SOUND_SOURCE_POSITION = WRAM_SOUND_UPLOAD_SOURCE_CURSOR,
+    SOUND_SOURCE_BANK = WRAM_SOUND_UPLOAD_SOURCE_BANK,
+    SOUND_SOURCE_LENGTH = WRAM_SOUND_UPLOAD_SOURCE_LENGTH,
+    SOUND_TRANSFER_STATE = WRAM_SOUND_PARAMETER_INHIBIT,
+    SOUND_DEFERRED_COMMAND = WRAM_SOUND_DEFERRED_COMMAND,
+    SOUND_RESOURCE_QUEUE = WRAM_SOUND_RESOURCE_OUTPUT,
+    SOUND_QUEUE_SLOTS = WRAM_SOUND_RESOURCE_OUTPUT_COUNT
 };
+
+typedef struct QueuedSoundResource {
+    uint16_t slot;
+    uint8_t id;
+} QueuedSoundResource;
+
+static QueuedSoundResource FindQueuedSoundResource(
+    const Lufia2Memory *memory, uint8_t data_bank) {
+    const uint32_t queue = ((uint32_t)data_bank << 16) | SOUND_RESOURCE_QUEUE;
+    QueuedSoundResource resource = {SOUND_QUEUE_SLOTS, 0xffu};
+
+    for (uint16_t slot = 0u; slot < SOUND_QUEUE_SLOTS; ++slot) {
+        const uint8_t id = Read8(memory, queue + slot);
+        if (id != 0xffu) {
+            resource.slot = slot;
+            resource.id = id;
+            break;
+        }
+    }
+    return resource;
+}
+
+static uint8_t PublishQueuedSoundSource(
+    const Lufia2Memory *memory, uint8_t data_bank, uint16_t direct_page,
+    uint16_t source, uint16_t length) {
+    const uint32_t bank = (uint32_t)data_bank << 16;
+
+    Write16Long(memory, bank | SOUND_SOURCE_LENGTH, length);
+    Write16Long(memory, bank | SOUND_SOURCE_POSITION, source);
+    const uint8_t source_bank = Read8(memory, (uint16_t)(direct_page + 0x5fu));
+    Write8(memory, bank | SOUND_SOURCE_BANK, source_bank);
+    return source_bank;
+}
 
 static void SoundSaveAccumulator(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -98,10 +132,15 @@ Lufia2ExecutionResult Lufia2BeginQueuedSoundResource(
     OpLda(memory, cpu, OpDp(cpu, 0x54u));
     if (!SoundCall(memory, cpu, child, context, 0x8098a5u, 0x809766u))
         return SoundUnwound(0x809766u);
-    OpWriteX(memory, cpu, OpAbs(cpu, SOUND_SOURCE_LENGTH), cpu->x);
-    OpWriteX(memory, cpu, OpAbs(cpu, SOUND_SOURCE_POSITION), cpu->y);
-    OpLda(memory, cpu, OpDp(cpu, 0x5fu));
-    OpSta(memory, cpu, OpAbs(cpu, SOUND_SOURCE_BANK));
+    if (cpu->accumulator_is_8_bit && !cpu->index_is_8_bit) {
+        LoadA8(cpu, PublishQueuedSoundSource(memory, cpu->data_bank,
+            cpu->direct_page, cpu->y, cpu->x));
+    } else {
+        OpWriteX(memory, cpu, OpAbs(cpu, SOUND_SOURCE_LENGTH), cpu->x);
+        OpWriteX(memory, cpu, OpAbs(cpu, SOUND_SOURCE_POSITION), cpu->y);
+        OpLda(memory, cpu, OpDp(cpu, 0x5fu));
+        OpSta(memory, cpu, OpAbs(cpu, SOUND_SOURCE_BANK));
+    }
     OpPullX(memory, cpu);
     OpWriteX(memory, cpu, OpAbs(cpu, SOUND_DATA_PORT), cpu->x);
     if (!SoundRequest(memory, cpu, child, context, 0x16u, 0x80977au))
@@ -129,23 +168,22 @@ Lufia2ExecutionResult Lufia2UpdateSoundResourceQueue(
     OpLda(memory, cpu, OpAbs(cpu, SOUND_TRANSFER_STATE));
     uint8_t transfer_pending = cpu->negative;
     if (!transfer_pending) {
-        OpLdy(cpu, 0u);
-        do {
-            OpLda(memory, cpu, OpAbsY(cpu, SOUND_RESOURCE_QUEUE));
-            OpCmpValue(cpu, 0xffu);
-            if (!cpu->zero) {
-                SoundSaveAccumulator(memory, cpu);
-                OpLoadA(cpu, 0xffu);
-                OpSta(memory, cpu, OpAbsY(cpu, SOUND_RESOURCE_QUEUE));
-                SoundRestoreAccumulator(memory, cpu);
-                if (!SoundCall(memory, cpu, child, context, 0x809747u, 0x8097aau))
-                    return SoundUnwound(0x8097aau);
-                transfer_pending = 1u;
-                break;
-            }
-            OpIny(cpu);
-            OpCpy(cpu, SOUND_QUEUE_SLOTS);
-        } while (!cpu->zero);
+        const QueuedSoundResource resource =
+            FindQueuedSoundResource(memory, cpu->data_bank);
+        LoadY16(cpu, resource.slot);
+        LoadA8(cpu, resource.id);
+        if (resource.slot < SOUND_QUEUE_SLOTS) {
+            Compare8(cpu, resource.id, 0xffu);
+            SoundSaveAccumulator(memory, cpu);
+            OpLoadA(cpu, 0xffu);
+            OpSta(memory, cpu, OpAbsY(cpu, SOUND_RESOURCE_QUEUE));
+            SoundRestoreAccumulator(memory, cpu);
+            if (!SoundCall(memory, cpu, child, context, 0x809747u, 0x8097aau))
+                return SoundUnwound(0x8097aau);
+            transfer_pending = 1u;
+        } else {
+            Compare16(cpu, resource.slot, SOUND_QUEUE_SLOTS);
+        }
         if (!transfer_pending) {
             OpLda(memory, cpu, OpAbs(cpu, SOUND_TRANSFER_STATE));
             if (!cpu->zero) {
