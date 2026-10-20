@@ -14741,3 +14741,139 @@ source = "src/party/capsule_feeding.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:C492"
+name = "Lufia2CapsuleGetFoodMeterAddress"
+source = "src/party/capsule_feed_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C53A"
+name = "Lufia2CapsuleRefreshSelectedForm"
+source = "src/party/capsule_feed_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C5A2"
+name = "Lufia2CapsuleResetFoodCursor"
+source = "src/party/capsule_feed_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C683"
+name = "Lufia2CapsuleFeedItem"
+source = "src/party/capsule_feed_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C784"
+name = "Lufia2CapsuleToggleFoodCache"
+source = "src/party/capsule_feed_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C78E"
+name = "Lufia2CapsuleAdvanceForm"
+source = "src/party/capsule_feed_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C818"
+name = "Lufia2CapsuleRefreshFormScene"
+source = "src/party/capsule_feed_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C85A"
+name = "Lufia2CapsuleLoadFormPanel"
+source = "src/party/capsule_feed_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C8B7"
+name = "Lufia2CapsuleClearFormPanel"
+source = "src/party/capsule_feed_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C8ED"
+name = "Lufia2CapsuleSaveFormTiles"
+source = "src/party/capsule_feed_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C929"
+name = "Lufia2CapsuleCopyFormTiles"
+source = "src/party/capsule_feed_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C93C"
+name = "Lufia2CapsuleClearFormTiles"
+source = "src/party/capsule_feed_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C958"
+name = "Lufia2CapsuleAnimateFormTiles"
+source = "src/party/capsule_feed_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CB10"
+name = "Lufia2CapsuleAnimateFood"
+source = "src/party/capsule_feed_particles.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CB55"
+name = "Lufia2CapsuleSpawnFoodParticle"
+source = "src/party/capsule_feed_particles.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CB8C"
+name = "Lufia2CapsuleStepFoodParticles"
+source = "src/party/capsule_feed_particles.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CBAF"
+name = "Lufia2CapsuleApplyFoodUnit"
+source = "src/party/capsule_feed_particles.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

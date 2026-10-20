@@ -4441,7 +4441,7 @@ name = "battle_capsule_graphics_id"
 width = 1
 count = 1
 owner = "battle"
-notes = "Capsule graphics ID copied from1144 during battle setup."
+notes = "Capsule graphics ID copied from1144 during battle setup. Reused as the item-derived food tier by menu82:C683."
 
 [[location]]
 address = "7E:1300"
@@ -4673,7 +4673,7 @@ name = "battle_enemy_initial_count"
 width = 1
 count = 1
 owner = "battle"
-notes = "Enemy count initialized from normal or special encounter records."
+notes = "Enemy count initialized from normal or special encounter records. Reused as the food message selector by menu82:CBD2."
 
 [[location]]
 address = "7E:15FE"
@@ -6183,3 +6183,19 @@ width = 2
 count = 1
 owner = "menu"
 notes = "FEC8 copies item record word0BAB here;FEFE uses the original848F10 pointer table and message ID300+value. Its record interpretation is retained."
+
+[[location]]
+address = "7E:154F"
+name = "capsule_food_amount"
+width = 1
+count = 1
+owner = "party"
+notes = "Food units consumed by82:CB10/CBAF. Particle count scales and wraps this byte before its original cap; the meter check compares exactly32."
+
+[[location]]
+address = "7E:1551"
+name = "capsule_panel_control"
+width = 1
+count = 1
+owner = "party"
+notes = "Menu82:C85A writes6 before setting the tile upload requests in DP73/74. Broader use remains unknown."

@@ -323,6 +323,9 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_effect_angle_motion.c
     src/party/capsule_menu_chain.c
     src/party/capsule_feeding.c
+    src/party/capsule_feed_actions.c
+    src/party/capsule_feed_particles.c
+    src/party/capsule_feed_display.c
     src/menu/menu_tile_clear.c
     src/party/capsule_status_address.c
     src/party/capsule_item_choice.c
