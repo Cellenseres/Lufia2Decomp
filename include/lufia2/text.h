@@ -114,6 +114,10 @@ Lufia2ExecutionResult Lufia2AlternateDisplayUploadTilemap(
 Lufia2ExecutionResult Lufia2AlternateDisplayAdvanceRow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2RunAlternateDisplay(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

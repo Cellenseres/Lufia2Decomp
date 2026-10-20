@@ -1906,6 +1906,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:B149` | `Lufia2FieldConsumePressedHigh` | verified | `src/field/field_camera_services.c` |
 | `$8E:B288` | `Lufia2WaitForNextFrame` | verified | `src/system/frame_wait.c` |
 | `$8E:B28F` | `Lufia2FieldSwitchDisplayScene` | verified | `src/field/field_session_setup.c` |
+| `$8E:B2EE` | `Lufia2RunAlternateDisplay` | verified | `src/text/alternate_display.c` |
 | `$8E:B4FC` | `Lufia2AlternateDisplayMeasureText` | verified | `src/text/alternate_display.c` |
 | `$8E:B50F` | `Lufia2AlternateDisplayDrawText` | verified | `src/text/alternate_display.c` |
 | `$8E:B534` | `Lufia2AlternateDisplayDrawTileStrip` | verified | `src/text/alternate_display.c` |

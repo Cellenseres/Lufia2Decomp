@@ -15701,3 +15701,11 @@ source = "src/text/alternate_display.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "8E:B2EE"
+name = "Lufia2RunAlternateDisplay"
+source = "src/text/alternate_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
