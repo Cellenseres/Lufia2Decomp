@@ -521,7 +521,7 @@ address = "7E:153C"
 name = "battle_party_count"
 width = 1
 owner = "battle"
-notes = "$85:9275 terminates the party turn scan with this count, 1..4. In menu phase,8D47 writes the seventh zero-high parameter word across153C..153D;the battle allocation is reused."
+notes = "Menu scroll transfers8F5E/9009 read this position as a word, including adjacent153D, in tilemap-address calculations; neither byte is discarded. $85:9275 terminates the party turn scan with this count, 1..4. In menu phase,8D47 writes the seventh zero-high parameter word across153C..153D;the battle allocation is reused."
 
 [[location]]
 address = "7E:153D"

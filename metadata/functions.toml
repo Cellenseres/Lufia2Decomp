@@ -15389,3 +15389,67 @@ source = "src/item/item_equipment_kind.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:8F5E"
+name = "Lufia2MenuShiftScrollTilesUp"
+source = "src/menu/menu_scroll_transfer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9009"
+name = "Lufia2MenuShiftScrollTilesDown"
+source = "src/menu/menu_scroll_transfer.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E522"
+name = "Lufia2MenuShopPrepareEquipmentMembers"
+source = "src/menu/menu_shop_member_equipment.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E569"
+name = "Lufia2MenuShopMarkEquipmentMember"
+source = "src/menu/menu_shop_member_equipment.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:E586"
+name = "Lufia2MenuShopRefreshEquipmentMembers"
+source = "src/menu/menu_shop_member_equipment.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E5AC"
+name = "Lufia2MenuShopLoadEquippedComparison"
+source = "src/menu/menu_shop_member_equipment.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:E691"
+name = "Lufia2MenuShopPrepareSpellMembers"
+source = "src/menu/menu_shop_member_spells.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:E6BE"
+name = "Lufia2MenuShopSetSpellMemberPose"
+source = "src/menu/menu_shop_member_spells.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

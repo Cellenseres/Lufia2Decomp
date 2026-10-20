@@ -618,6 +618,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:8C9C` | `Lufia2MenuInitializeScrollSprite` | verified | `src/menu/menu_list_scroll.c` |
 | `$82:8CC1` | `Lufia2MenuInitializeScrollStep` | verified | `src/menu/menu_list_scroll.c` |
 | `$82:8CE9` | `Lufia2MenuScrollListPage` | verified | `src/menu/menu_list_scroll.c` |
+| `$82:8F5E` | `Lufia2MenuShiftScrollTilesUp` | verified | `src/menu/menu_scroll_transfer.c` |
+| `$82:9009` | `Lufia2MenuShiftScrollTilesDown` | verified | `src/menu/menu_scroll_transfer.c` |
 | `$82:9073` | `Lufia2MenuBuildGlyphBuffer` | verified | `src/menu/menu_glyph_buffer.c` |
 | `$82:90F6` | `Lufia2MenuPadGlyphRow` | verified | `src/menu/menu_glyph_buffer.c` |
 | `$82:9113` | `Lufia2MenuUploadGlyphBuffer` | verified | `src/menu/menu_glyph_buffer.c` |
@@ -839,7 +841,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E297` | `Lufia2MenuShopSetup` | verified | `src/menu/menu_screen.c` |
 | `$82:E327` | `Lufia2MenuShopBuildSelectedList` | verified | `src/menu/menu_shop_control.c` |
 | `$82:E49E` | `Lufia2MenuShopTitle` | verified | `src/menu/menu_screen.c` |
+| `$82:E522` | `Lufia2MenuShopPrepareEquipmentMembers` | verified | `src/menu/menu_shop_member_equipment.c` |
+| `$82:E569` | `Lufia2MenuShopMarkEquipmentMember` | verified | `src/menu/menu_shop_member_equipment.c` |
+| `$82:E586` | `Lufia2MenuShopRefreshEquipmentMembers` | verified | `src/menu/menu_shop_member_equipment.c` |
+| `$82:E5AC` | `Lufia2MenuShopLoadEquippedComparison` | verified | `src/menu/menu_shop_member_equipment.c` |
 | `$82:E5E1` | `Lufia2MenuShopCompare` | verified | `src/menu/menu_screen.c` |
+| `$82:E691` | `Lufia2MenuShopPrepareSpellMembers` | verified | `src/menu/menu_shop_member_spells.c` |
+| `$82:E6BE` | `Lufia2MenuShopSetSpellMemberPose` | verified | `src/menu/menu_shop_member_spells.c` |
 | `$82:E6FC` | `Lufia2MenuShopSelectSpell` | verified | `src/menu/menu_shop_selection.c` |
 | `$82:E709` | `Lufia2MenuShopSelectItem` | verified | `src/menu/menu_shop_selection.c` |
 | `$82:E746` | `Lufia2TitleStateDispatch` | verified | `src/title/title.c` |
