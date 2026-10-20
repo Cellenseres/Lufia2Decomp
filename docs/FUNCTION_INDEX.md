@@ -1906,7 +1906,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$8E:B149` | `Lufia2FieldConsumePressedHigh` | verified | `src/field/field_camera_services.c` |
 | `$8E:B288` | `Lufia2WaitForNextFrame` | verified | `src/system/frame_wait.c` |
 | `$8E:B28F` | `Lufia2FieldSwitchDisplayScene` | verified | `src/field/field_session_setup.c` |
+| `$8E:B4FC` | `Lufia2AlternateDisplayMeasureText` | verified | `src/text/alternate_display.c` |
+| `$8E:B50F` | `Lufia2AlternateDisplayDrawText` | verified | `src/text/alternate_display.c` |
+| `$8E:B534` | `Lufia2AlternateDisplayDrawTileStrip` | verified | `src/text/alternate_display.c` |
 | `$8E:B550` | `Lufia2ItemRegionWaitForNextFrame` | verified | `src/system/frame_wait.c` |
+| `$8E:B557` | `Lufia2AlternateDisplayUploadTilemap` | verified | `src/text/alternate_display.c` |
+| `$8E:B578` | `Lufia2AlternateDisplayAdvanceRow` | verified | `src/text/alternate_display.c` |
 | `$8E:B5FB` | `Lufia2FieldBuildPrefixedName` | verified | `src/field/field_prefixed_name.c` |
 | `$8E:B63B` | `Lufia2FieldTryItemRegion` | verified | `src/field/field_item_regions.c` |
 | `$8E:B760` | `Lufia2FieldShowObjectItemNotice` | verified | `src/field/field_item_regions.c` |

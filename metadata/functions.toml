@@ -15661,3 +15661,43 @@ source = "src/world/world_scene_graphics.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "8E:B4FC"
+name = "Lufia2AlternateDisplayMeasureText"
+source = "src/text/alternate_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B50F"
+name = "Lufia2AlternateDisplayDrawText"
+source = "src/text/alternate_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B534"
+name = "Lufia2AlternateDisplayDrawTileStrip"
+source = "src/text/alternate_display.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "8E:B557"
+name = "Lufia2AlternateDisplayUploadTilemap"
+source = "src/text/alternate_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B578"
+name = "Lufia2AlternateDisplayAdvanceRow"
+source = "src/text/alternate_display.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
