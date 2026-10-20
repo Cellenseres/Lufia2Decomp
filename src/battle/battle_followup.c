@@ -557,52 +557,69 @@ enum {
     DP_ENEMY_RECORD_POINTER = 0xb2u
 };
 
-static void SortEnemyColumns(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLdx(cpu, 0u);
+typedef struct EnemyColumnOrder {
+    uint16_t last_order_pair;
+    uint8_t last_slot;
+    bool exchanged;
+} EnemyColumnOrder;
+
+static EnemyColumnOrder BuildEnemyColumnOrder(
+    const Lufia2Memory *memory, uint8_t data_bank, uint16_t direct_page) {
+    const uint32_t bank = (uint32_t)data_bank << 16;
+    const uint32_t keys = bank | ENEMY_SORT_KEYS;
+    const uint32_t order = bank | ENEMY_SORT_ORDER;
+    const uint16_t limit_address = (uint16_t)(direct_page + DP_ENEMY_ORDER_LIMIT);
+    EnemyColumnOrder result = {0u, 0u, false};
+
+    for (uint8_t slot = 0u; slot < ENEMY_COUNT; ++slot) {
+        uint8_t column = Read8(memory, (bank | ENEMY_DISPLAY_FIELDS) + slot);
+        if (column != 0xffu)
+            column = Read8(memory, (bank | ENEMY_COLUMN_ORIGINS) + slot);
+        Write8(memory, keys + slot, column);
+        Write8(memory, order + slot, slot);
+    }
+    Write8(memory, limit_address, ENEMY_COUNT - 1u);
+    uint8_t remaining;
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, ENEMY_DISPLAY_FIELDS));
-        OpCmpValue(cpu, 0xffu);
-        if (!cpu->zero)
-            OpLda(memory, cpu, OpAbsX(cpu, ENEMY_COLUMN_ORIGINS));
-        else
-            OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, OpAbsX(cpu, ENEMY_SORT_KEYS));
-        OpTxa(cpu);
-        OpSta(memory, cpu, OpAbsX(cpu, ENEMY_SORT_ORDER));
-        OpInx(cpu);
-        OpCpx(cpu, ENEMY_COUNT);
-    } while (!cpu->zero);
-    OpLdx(cpu, ENEMY_COUNT - 1u);
-    OpWriteX(memory, cpu, OpDp(cpu, DP_ENEMY_ORDER_LIMIT), cpu->x);
-    do {
-        OpLdx(cpu, 0u);
+        uint8_t slot = 0u;
         do {
-            OpLda(memory, cpu, OpAbsX(cpu, ENEMY_SORT_KEYS));
-            OpCmp(memory, cpu, OpAbsX(cpu, ENEMY_SORT_KEYS + 1u));
-            if (cpu->carry) {
-                OpRepWidths(cpu, 0x20u);
-                OpLda(memory, cpu, OpAbsX(cpu, ENEMY_SORT_KEYS));
-                ExchangeAccumulatorBytes(cpu);
-                OpSta(memory, cpu, OpAbsX(cpu, ENEMY_SORT_KEYS));
-                OpLda(memory, cpu, OpAbsX(cpu, ENEMY_SORT_ORDER));
-                ExchangeAccumulatorBytes(cpu);
-                OpSta(memory, cpu, OpAbsX(cpu, ENEMY_SORT_ORDER));
-                OpSepWidths(cpu, 0x20u);
+            const uint8_t left = Read8(memory, keys + slot);
+            const uint8_t right = Read8(memory, keys + slot + 1u);
+            if (left >= right) {
+                const uint16_t columns = Read16Long(memory, keys + slot);
+                Write16Long(memory, keys + slot,
+                    (uint16_t)((columns >> 8) | (columns << 8)));
+                const uint16_t pair = Read16Long(memory, order + slot);
+                Write16Long(memory, order + slot,
+                    (uint16_t)((pair >> 8) | (pair << 8)));
+                result.last_order_pair = pair;
+                result.exchanged = true;
             }
-            OpInx(cpu);
-            OpCpx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ENEMY_ORDER_LIMIT)));
-        } while (!cpu->zero);
-        OpStepMem(memory, cpu, OpDp(cpu, DP_ENEMY_ORDER_LIMIT), -1);
-    } while (!cpu->zero);
-    OpLoadA(cpu, 1u);
-    OpLdx(cpu, 0u);
-    do {
-        OpLdy(cpu, OpReadX(memory, cpu, OpAbsX(cpu, ENEMY_SORT_ORDER)));
-        OpSta(memory, cpu, OpAbsY(cpu, ENEMY_TARGET_BITS));
-        OpAslA(cpu);
-        OpInx(cpu);
-        OpCpx(cpu, ENEMY_COUNT);
-    } while (!cpu->zero);
+            ++slot;
+        } while (slot != Read8(memory, limit_address));
+        remaining = (uint8_t)(Read8(memory, limit_address) - 1u);
+        Write8(memory, limit_address, remaining);
+    } while (remaining);
+    uint8_t target_bit = 1u;
+    for (uint8_t slot = 0u; slot < ENEMY_COUNT; ++slot) {
+        result.last_slot = Read8(memory, order + slot);
+        Write8(memory, (bank | ENEMY_TARGET_BITS) + result.last_slot, target_bit);
+        target_bit = (uint8_t)(target_bit << 1);
+    }
+    return result;
+}
+
+static void SortEnemyColumns(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const EnemyColumnOrder order =
+        BuildEnemyColumnOrder(memory, cpu->data_bank, cpu->direct_page);
+    const uint16_t high = order.exchanged
+        ? (uint16_t)((order.last_order_pair & 0xffu) << 8)
+        : (cpu->accumulator & 0xff00u);
+
+    cpu->accumulator = high | (1u << ENEMY_COUNT);
+    cpu->x = ENEMY_COUNT;
+    cpu->y = order.last_slot;
+    Compare8(cpu, ENEMY_COUNT, ENEMY_COUNT);
 }
 
 static void ReorderEnemyDisplayFields(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -753,21 +770,32 @@ static void ReorderEnemyActions(const Lufia2Memory *memory, Lufia2CpuState *cpu)
     } while (!cpu->zero);
 }
 
+static uint8_t RemapEnemyTargetBits(
+    const Lufia2Memory *memory, uint8_t data_bank, uint16_t direct_page,
+    uint8_t target) {
+    const uint16_t mask_address = (uint16_t)(direct_page + DP_ENEMY_ORDER_LIMIT);
+    const uint32_t mapping = ((uint32_t)data_bank << 16) | ENEMY_TARGET_BITS;
+    uint8_t remapped = 0x80u;
+
+    Write8(memory, mask_address, target);
+    for (uint16_t slot = 0u; slot < ENEMY_COUNT; ++slot) {
+        const uint8_t pending = Read8(memory, mask_address);
+        Write8(memory, mask_address, (uint8_t)(pending >> 1));
+        if (pending & 1u)
+            remapped |= Read8(memory, mapping + slot);
+    }
+    return remapped;
+}
+
 static void RemapEnemyTarget(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                              uint16_t site) {
     SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
     OpBitValue(cpu, 0x80u);
     if (!cpu->zero) {
-        OpSta(memory, cpu, OpDp(cpu, DP_ENEMY_ORDER_LIMIT));
-        OpLoadA(cpu, 0x80u);
-        OpLdy(cpu, 0u);
-        do {
-            OpLsrMem(memory, cpu, OpDp(cpu, DP_ENEMY_ORDER_LIMIT));
-            if (cpu->carry)
-                OpOra(memory, cpu, OpAbsY(cpu, ENEMY_TARGET_BITS));
-            OpIny(cpu);
-            OpCpy(cpu, ENEMY_COUNT);
-        } while (!cpu->zero);
+        LoadA8(cpu, RemapEnemyTargetBits(memory, cpu->data_bank,
+                                       cpu->direct_page, A8(cpu)));
+        cpu->y = ENEMY_COUNT;
+        Compare16(cpu, ENEMY_COUNT, ENEMY_COUNT);
     }
     SimulateRtsFrame(memory, cpu);
 }
