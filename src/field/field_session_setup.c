@@ -4,6 +4,7 @@
 #include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "lufia2/field_phase.h"
+#include "lufia2/session_actors.h"
 #include "system/wram.h"
 
 enum {
@@ -745,16 +746,23 @@ static uint8_t RestoreReservedSessionActor(
     return state;
 }
 
-typedef struct SessionPresentation {
-    uint8_t mode;
-    uint8_t value;
-    bool changed;
-} SessionPresentation;
+uint8_t Lufia2FieldRestoreSessionActor(
+    const Lufia2Memory *memory, uint8_t bank,
+    uint16_t source, uint16_t destination) {
+    const SessionActorRecords records = {memory, (uint32_t)bank << 16};
+    return RestoreSessionActorIdentity(records, source, destination);
+}
 
-static SessionPresentation SelectSessionPresentation(uint8_t destination) {
+uint8_t Lufia2FieldRestoreReservedActor(
+    const Lufia2Memory *memory, uint8_t bank, uint16_t destination) {
+    const SessionActorRecords records = {memory, (uint32_t)bank << 16};
+    return RestoreReservedSessionActor(records, destination);
+}
+
+Lufia2SessionPresentation Lufia2FieldSelectSessionPresentation(uint8_t destination) {
     const uint8_t mode = destination & 0x0fu;
     const bool changed = mode >= 4u && mode <= 6u;
-    const SessionPresentation presentation = {
+    const Lufia2SessionPresentation presentation = {
         mode, changed ? (uint8_t)(mode + 0x6du) : mode, changed};
     return presentation;
 }
@@ -773,7 +781,7 @@ static Lufia2ExecutionResult InstallSessionActors(
         0x83b323u, 0x80beafu, 3u);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
-    const SessionPresentation presentation = SelectSessionPresentation(
+    const Lufia2SessionPresentation presentation = Lufia2FieldSelectSessionPresentation(
         Read8(memory, WRAM_FIELD_DESTINATION_PARAMETERS));
     LoadA8(cpu, presentation.value);
     cpu->carry = presentation.mode >= 4u;
@@ -810,9 +818,8 @@ static Lufia2ExecutionResult InstallSessionActors(
                     OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E081E));
                     return ExecutionHandoff(cpu, 0x83b36du);
                 }
-                const SessionActorRecords records = {
-                    memory, (uint32_t)cpu->data_bank << 16};
-                LoadA8(cpu, RestoreSessionActorIdentity(records, cpu->x, cpu->y));
+                LoadA8(cpu, Lufia2FieldRestoreSessionActor(
+                    memory, cpu->data_bank, cpu->x, cpu->y));
                 OpPushX(memory, cpu);
                 OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E089E));
                 OpCmpValue(cpu, 0xffu);
@@ -850,9 +857,7 @@ static Lufia2ExecutionResult InstallSessionActors(
         if (result.flow != LUFIA2_EXECUTION_RETURNED)
             return result;
         OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
-        const SessionActorRecords records = {
-            memory, (uint32_t)cpu->data_bank << 16};
-        LoadA8(cpu, RestoreReservedSessionActor(records, cpu->x));
+        LoadA8(cpu, Lufia2FieldRestoreReservedActor(memory, cpu->data_bank, cpu->x));
     }
     return ExecutionReturned(0x83b3cfu);
 }
