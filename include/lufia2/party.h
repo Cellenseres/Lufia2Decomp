@@ -216,6 +216,21 @@ Lufia2ExecutionResult Lufia2CapsuleRefreshMenuItem(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2CapsuleClassifyFood(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2CapsuleDrawFoodMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2CapsuleDescribeFood(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2CapsuleApplySpecialFood(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 Lufia2ExecutionResult Lufia2PartySelectEquipmentSlot(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

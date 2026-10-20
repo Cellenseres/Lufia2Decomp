@@ -741,7 +741,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:C5AF` | `Lufia2CapsuleRefreshMenuItem` | verified | `src/party/capsule_menu_chain.c` |
 | `$82:C5F3` | `Lufia2CapsuleUpdateItemCursor` | verified | `src/party/capsule_menu_chain.c` |
 | `$82:C627` | `Lufia2MenuCursorBlink` | verified | `src/menu/menu.c` |
+| `$82:C647` | `Lufia2CapsuleClassifyFood` | verified | `src/party/capsule_feeding.c` |
+| `$82:C672` | `Lufia2CapsuleDrawFoodMessage` | verified | `src/party/capsule_feeding.c` |
+| `$82:CBD2` | `Lufia2CapsuleDescribeFood` | verified | `src/party/capsule_feeding.c` |
 | `$82:CC3C` | `Lufia2CapsuleCheckMenuForm` | verified | `src/party/capsule_menu_chain.c` |
+| `$82:CC58` | `Lufia2CapsuleApplySpecialFood` | verified | `src/party/capsule_feeding.c` |
 | `$82:CCFE` | `Lufia2CapsuleBuildAbilityMask` | verified | `src/party/capsule_abilities.c` |
 | `$82:CD1F` | `Lufia2CapsuleTryLearn` | verified | `src/party/capsule.c` |
 | `$82:CD41` | `Lufia2CapsuleUnlockAbility` | verified | `src/party/capsule_abilities.c` |

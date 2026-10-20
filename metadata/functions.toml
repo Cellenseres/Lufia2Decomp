@@ -14709,3 +14709,35 @@ source = "src/system/boot.c"
 entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
+
+[[function]]
+address = "82:C647"
+name = "Lufia2CapsuleClassifyFood"
+source = "src/party/capsule_feeding.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C672"
+name = "Lufia2CapsuleDrawFoodMessage"
+source = "src/party/capsule_feeding.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CBD2"
+name = "Lufia2CapsuleDescribeFood"
+source = "src/party/capsule_feeding.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CC58"
+name = "Lufia2CapsuleApplySpecialFood"
+source = "src/party/capsule_feeding.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

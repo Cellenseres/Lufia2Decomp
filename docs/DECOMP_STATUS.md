@@ -1,3 +1,28 @@
+# Capsule food and special-form operations - 2026-10-20
+
+Four complete original routines now classify special food, draw its message,
+select food values and apply or reject special-form changes. The food tables
+remain ROM-backed; selected-ID word reads, live DP scratch, original form-bit
+updates, physical child frames and return flags are preserved. The complete
+feeding caller and its animation/redraw children remain separate work.
+
+One related checkpoint passes 275,986 original-body comparisons, 9,938
+finite-child composition cases and 34,450 production-ABI invocations with no
+positive fallbacks. All eighteen child sites are reached and forced to unwind;
+270 targeted redirect probes plus 45 initial probes preserve host-return modes
+and nonlocal returns. There are 524,307 semantic no-access guards, 3,072 actual
+bridge guards and four detected original-ROM mutations. CPU state, full WRAM,
+MMIO and ordered data accesses agree. The bus observer excludes bank82 ROM
+reads; ABI bookkeeping reads are separately excluded. Unimplemented children
+remain explicit services; no complete animation or cycle-timing proof is claimed.
+
+The semantic ROM proof is reused unchanged for the integration checkpoint.
+Full regression is deferred; tests stay private. Strict MSVC, GCC, Clang and
+the isolated consumer Release build pass. All 3,000 normal-input frame rows
+match the prior accepted state for CPU/WRAM, picture and audio. These four
+routines have zero hits in that replay; their semantic and ABI evidence is
+the separate ROM checkpoint. Both repositories share the combined checkpoint.
+
 # Semantic enemy ordering and target remapping - 2026-10-20
 
 The existing complete enemy-reordering owner now builds column order and
@@ -8149,7 +8174,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-1819 functions in `metadata/functions.toml`: 1819 verified, 0 draft, 0 identified, 0 disabled.
+1823 functions in `metadata/functions.toml`: 1823 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
