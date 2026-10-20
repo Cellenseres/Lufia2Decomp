@@ -248,63 +248,100 @@ static void Decrement16Absolute(const Lufia2Memory *memory,
     OpStepMem(memory, cpu, OpAbs(cpu, address), -1);
 }
 
+enum {
+    MEMBER_RECORD_POINTER = 0xb2u,
+    MEMBER_RECORD_BANK = 0xb4u,
+    MEMBER_STORED_LEVEL = 0x000eu,
+    MEMBER_NAME_PREFIX = 0x0094u,
+    MEMBER_NAME_FIRST = 0x0096u,
+    MEMBER_NAME_END = 0x00bau,
+    MEMBER_TRAILER_FIRST = 0x005fu,
+    MEMBER_TRAILER_SECOND = 0x0061u
+};
+
+static uint16_t MemberSourceWord(
+    Lufia2Wram wram, uint16_t source, uint16_t offset) {
+    const uint32_t address = (((uint32_t)wram.data_bank << 16) + source + offset) & 0xffffffu;
+    return Read16Long(wram.memory, address);
+}
+
+static uint32_t MemberRecordAddress(Lufia2Wram wram, uint16_t field) {
+    const uint16_t offset = WramRead16(wram, MEMBER_RECORD_POINTER);
+    const uint8_t bank = WramRead(wram, MEMBER_RECORD_BANK);
+    return ((((uint32_t)bank << 16) | offset) + field) & 0xffffffu;
+}
+
+static void MemberRecordWord(Lufia2Wram wram, uint16_t field, uint16_t value) {
+    Write16Long(wram.memory, MemberRecordAddress(wram, field), value);
+}
+
+static void MemberRecordByte(Lufia2Wram wram, uint16_t field, uint8_t value) {
+    Write8(wram.memory, MemberRecordAddress(wram, field), value);
+}
+
 static uint16_t SourceWord(const Lufia2Memory *memory, const Lufia2CpuState *cpu,
     uint16_t offset) {
-    return Read16AbsoluteIndexed(memory, cpu, offset, cpu->x);
+    return MemberSourceWord(WramViewOfCaller(memory, cpu), cpu->x, offset);
 }
 
 static void BlockStore16(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint16_t value) {
-    Write16Long(memory, DirectLongIndirectY(memory, cpu, 0xb2u), value);
+    MemberRecordWord(WramViewOfCaller(memory, cpu), cpu->y, value);
 }
 
 static void BlockStore8(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint8_t value) {
-    Write8(memory, DirectLongIndirectY(memory, cpu, 0xb2u), value);
+    MemberRecordByte(WramViewOfCaller(memory, cpu), cpu->y, value);
 }
 
-static void Advance(Lufia2CpuState *cpu, uint16_t bytes) {
-    cpu->x = (uint16_t)(cpu->x + bytes);
-    SetNz16(cpu, cpu->x);
+static Word16Result RestoreMemberHeader(
+    Lufia2Wram wram, uint16_t source, bool decimal) {
+    for (uint16_t field = 0u; field < 6u; field += 2u) {
+        const uint16_t value = MemberSourceWord(wram, source, field);
+        MemberRecordWord(wram, field, value);
+    }
+    return Sum16Mode(source, 6u, false, decimal);
 }
 
-/* Name at $96, $FF-padded to $BA. */
-static void MemberName(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    LoadY16(cpu, 0x0094u);
-    LoadA16(cpu, SourceWord(memory, cpu, 0));
-    Advance(cpu, 2u);
-    BlockStore16(memory, cpu, cpu->accumulator);
-    IncrementY16(cpu);
-    IncrementY16(cpu);
-    SetAccumulatorWidth(cpu, 1);
+static Word16Result RestoreMemberIdentity(
+    Lufia2Wram wram, uint16_t source, bool decimal) {
+    const uint16_t level = MemberSourceWord(wram, source, 0u);
+    source = (uint16_t)(source + 2u);
+    MemberRecordWord(wram, MEMBER_STORED_LEVEL, level);
+    const uint16_t prefix = MemberSourceWord(wram, source, 0u);
+    source = (uint16_t)(source + 2u);
+    MemberRecordWord(wram, MEMBER_NAME_PREFIX, prefix);
+
+    uint16_t field = MEMBER_NAME_FIRST;
     for (;;) {
-        LoadAAbsolute8(memory, cpu, 0x0000u, cpu->x);
-        cpu->x = (uint16_t)(cpu->x + 1u);
-        Compare8(cpu, A8(cpu), 0xffu);
-        if (cpu->zero)
+        const uint8_t letter = Read8(wram.memory, ((uint32_t)wram.data_bank << 16) | source);
+        source = (uint16_t)(source + 1u);
+        if (letter == 0xffu)
             break;
-        BlockStore8(memory, cpu, A8(cpu));
-        IncrementY16(cpu);
+        MemberRecordByte(wram, field, letter);
+        field = (uint16_t)(field + 1u);
     }
-    for (;;) {
-        Compare16(cpu, cpu->y, 0x00bau);
-        if (cpu->zero)
-            break;
-        BlockStore8(memory, cpu, A8(cpu));
-        IncrementY16(cpu);
+    while (field != MEMBER_NAME_END) {
+        MemberRecordByte(wram, field, 0xffu);
+        field = (uint16_t)(field + 1u);
     }
+    const uint16_t first = MemberSourceWord(wram, source, 0u);
+    MemberRecordWord(wram, MEMBER_TRAILER_FIRST, first);
+    const uint16_t second = MemberSourceWord(wram, source, 2u);
+    MemberRecordWord(wram, MEMBER_TRAILER_SECOND, second);
+    /* The stored trailer advances three source bytes. */
+    return Sum16Mode(source, 3u, false, decimal);
+}
+
+static void RestoreMemberIdentityState(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Word16Result end = RestoreMemberIdentity(
+        WramViewOfCaller(memory, cpu), cpu->x, cpu->decimal != 0u);
     SetAccumulatorWidth(cpu, 0);
-    LoadY16(cpu, 0x005fu);
-    LoadA16(cpu, SourceWord(memory, cpu, 0));
-    BlockStore16(memory, cpu, cpu->accumulator);
-    IncrementY16(cpu);
-    IncrementY16(cpu);
-    LoadA16(cpu, SourceWord(memory, cpu, 2u));
-    BlockStore16(memory, cpu, cpu->accumulator);
-    TransferXToA(cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, 0x0003u);
+    LoadY16(cpu, MEMBER_TRAILER_SECOND);
+    LoadA16(cpu, end.value);
     TransferAToX(cpu);
+    cpu->carry = end.carry;
+    cpu->overflow = end.overflow;
 }
 
 /* Shared tail: stats, experience, derived stats, full HP and MP. */
@@ -372,25 +409,15 @@ Lufia2ExecutionResult Lufia2PartyUnpackMember(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     static const uint16_t kReturns[3] = {0xee32u, 0xee3au, 0xee7du};
-    unsigned i;
 
     BlockPointer(memory, cpu);
-    LoadY16(cpu, 0x0000u);
-    for (i = 0; i < 3u; ++i) {
-        LoadA16(cpu, SourceWord(memory, cpu, (uint16_t)(2u * i)));
-        BlockStore16(memory, cpu, cpu->accumulator);
-        IncrementY16(cpu);
-        IncrementY16(cpu);
-    }
-    TransferXToA(cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, 0x0006u);
+    const Word16Result header = RestoreMemberHeader(
+        WramViewOfCaller(memory, cpu), cpu->x, cpu->decimal != 0u);
+    LoadA16(cpu, header.value);
     TransferAToX(cpu);
-    LoadY16(cpu, 0x000eu);
-    LoadA16(cpu, SourceWord(memory, cpu, 0));
-    Advance(cpu, 2u);
-    BlockStore16(memory, cpu, cpu->accumulator);
-    MemberName(memory, cpu);
+    cpu->carry = header.carry;
+    cpu->overflow = header.overflow;
+    RestoreMemberIdentityState(memory, cpu);
     LoadY16(cpu, 0x0066u);
     LoadA16(cpu, 0x0007u);
     StoreAAbsolute16(memory, cpu, COUNT, 0);
@@ -417,11 +444,7 @@ Lufia2ExecutionResult Lufia2PartyUnpackMemberBare(
     static const uint16_t kReturns[3] = {0xef31u, 0xef39u, 0xef7cu};
 
     BlockPointer(memory, cpu);
-    LoadY16(cpu, 0x000eu);
-    LoadA16(cpu, SourceWord(memory, cpu, 0));
-    Advance(cpu, 2u);
-    BlockStore16(memory, cpu, cpu->accumulator);
-    MemberName(memory, cpu);
+    RestoreMemberIdentityState(memory, cpu);
     LoadY16(cpu, 0x0066u);
     LoadA16(cpu, 0x0007u);
     StoreAAbsolute16(memory, cpu, COUNT, 0);
