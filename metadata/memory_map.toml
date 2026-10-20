@@ -6231,3 +6231,11 @@ width = 3
 count = 1
 owner = "menu"
 notes = "Original secondary shop price/product. E0A9 writes two product bytes plus one high byte;98C7 also builds it using hardware times200. Existing primary purchase price09BA stays separate."
+
+[[location]]
+address = "7E:154B"
+name = "menu_shop_stock_limit"
+width = 1
+count = 1
+owner = "menu"
+notes = "D7BC stores the FC7D packed owned-count nibble as a word here; its high byte aliases154C purchase mode. The quantity bound and zero test use only the low byte. The symbol describes its use as a bound, not proven merchant inventory."

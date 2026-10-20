@@ -333,6 +333,9 @@ add_library(lufia2_decomp STATIC
     src/party/capsule_menu_assets.c
     src/menu/menu_shop_session.c
     src/menu/menu_shop_control.c
+    src/menu/menu_shop_preparation.c
+    src/menu/menu_shop_purchase_windows.c
+    src/menu/menu_shop_selection.c
     src/item/inventory_equipment_transfer.c
     src/menu/menu_shop_equipment.c
     src/menu/menu_shop_exchange.c

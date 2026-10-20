@@ -805,7 +805,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:D702` | `Lufia2MenuShopInitializeSelection` | verified | `src/menu/menu_shop_session.c` |
 | `$82:D721` | `Lufia2MenuShopWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:D749` | `Lufia2MenuShopParty` | verified | `src/menu/menu_screen.c` |
+| `$82:D7BC` | `Lufia2MenuShopPrepareItemPurchase` | verified | `src/menu/menu_shop_preparation.c` |
+| `$82:D8A5` | `Lufia2MenuShopPrepareEquipmentPreview` | verified | `src/menu/menu_shop_purchase_windows.c` |
+| `$82:D8D4` | `Lufia2MenuShopPrepareSpellPurchase` | verified | `src/menu/menu_shop_purchase_windows.c` |
 | `$82:D905` | `Lufia2MenuSpellShopSetup` | verified | `src/menu/menu_spell_shop.c` |
+| `$82:D970` | `Lufia2MenuShopPrepareItemSale` | verified | `src/menu/menu_shop_preparation.c` |
+| `$82:DA13` | `Lufia2MenuShopCountEquippedItems` | verified | `src/menu/menu_shop_preparation.c` |
 | `$82:DA5C` | `Lufia2MenuShopSelectListWindow` | verified | `src/menu/menu_shop_session.c` |
 | `$82:DA8F` | `Lufia2MenuRunShop` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DAD8` | `Lufia2MenuShopRefreshSelection` | verified | `src/menu/menu_shop_session.c` |
@@ -833,6 +838,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E327` | `Lufia2MenuShopBuildSelectedList` | verified | `src/menu/menu_shop_control.c` |
 | `$82:E49E` | `Lufia2MenuShopTitle` | verified | `src/menu/menu_screen.c` |
 | `$82:E5E1` | `Lufia2MenuShopCompare` | verified | `src/menu/menu_screen.c` |
+| `$82:E6FC` | `Lufia2MenuShopSelectSpell` | verified | `src/menu/menu_shop_selection.c` |
+| `$82:E709` | `Lufia2MenuShopSelectItem` | verified | `src/menu/menu_shop_selection.c` |
 | `$82:E746` | `Lufia2TitleStateDispatch` | verified | `src/title/title.c` |
 | `$82:E75D` | `Lufia2TitleOpenSaveSelection` | verified | `src/menu/menu_selection_callers.c` |
 | `$82:E77C` | `Lufia2TitleRestoreSaveSelection` | verified | `src/menu/menu_selection_callers.c` |
