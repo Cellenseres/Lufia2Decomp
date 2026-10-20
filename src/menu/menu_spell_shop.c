@@ -5,7 +5,16 @@
 
 enum {
     SPELL_PRICE_TEXT_BANK = 0x5fu,
-    SPELL_PRICE_UPLOAD_FLAGS = 0x74u
+    SPELL_PRICE_UPLOAD_FLAGS = 0x74u,
+    DP_SPELL_SHOP_INDEX = 0x00u,
+    DP_SPELL_SHOP_TILEMAP = 0x11u,
+    DP_SPELL_SHOP_ROWS = 0x15u,
+    DP_SPELL_SHOP_SAVED_INDEX = 0x19u,
+    DP_SPELL_SHOP_LIST = 0xfcu,
+    SPELL_SHOP_NAME_TEMPLATE = 0xca0cu,
+    SPELL_SHOP_PRICE_TEMPLATE = 0xca12u,
+    SPELL_SHOP_RECORD_PRICE = WRAM_RECORD_BUFFER + 0x10u,
+    SPELL_SHOP_ROW_STRIDE = 0x80u
 };
 
 Lufia2ExecutionResult Lufia2AdjustPurchasePrice(
@@ -75,6 +84,49 @@ static uint8_t SpellPriceChild(
         if (!SpellPriceChild(memory, cpu, child, context, site, target, frame)) \
             return SpellPriceUnwound(site); \
     } while (0)
+
+Lufia2ExecutionResult Lufia2MenuDrawSpellShopRows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || cpu->program_bank != 0x82u || cpu->decimal ||
+        cpu->direct_page || !cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x828636u);
+    OpLoadA(cpu, 0x20u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
+    OpLoadA(cpu, 0x8eu);
+    OpSta(memory, cpu, OpDp(cpu, SPELL_PRICE_TEXT_BANK));
+    OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_SPELL_SHOP_INDEX)));
+    do {
+        OpSepWidths(cpu, 0x20u);
+        OpWriteX(memory, cpu, OpDp(cpu, DP_SPELL_SHOP_SAVED_INDEX), cpu->y);
+        OpLda(memory, cpu, DirectLongIndirectY(memory, cpu, DP_SPELL_SHOP_LIST));
+        OpCmpValue(cpu, 0xffu);
+        if (cpu->zero)
+            break;
+        OpSta(memory, cpu, OpDp(cpu, DP_SPELL_SHOP_INDEX));
+        OpLdy(cpu, SPELL_SHOP_NAME_TEMPLATE);
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_SPELL_SHOP_TILEMAP)));
+        SPELL_PRICE_CALL(0x828652u, 0x808878u, 3u);
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, SPELL_SHOP_RECORD_PRICE)));
+        SPELL_PRICE_CALL(0x828659u, 0x829918u, 2u);
+        OpWriteX(memory, cpu, OpAbs(cpu, SPELL_SHOP_RECORD_PRICE), cpu->x);
+        OpLdy(cpu, SPELL_SHOP_PRICE_TEMPLATE);
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_SPELL_SHOP_TILEMAP)));
+        SPELL_PRICE_CALL(0x828664u, 0x808878u, 3u);
+        OpRepWidths(cpu, 0x20u);
+        OpLda(memory, cpu, OpDp(cpu, DP_SPELL_SHOP_TILEMAP));
+        cpu->carry = 0u;
+        OpAdcValue(cpu, SPELL_SHOP_ROW_STRIDE);
+        OpSta(memory, cpu, OpDp(cpu, DP_SPELL_SHOP_TILEMAP));
+        OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_SPELL_SHOP_SAVED_INDEX)));
+        OpIny(cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, DP_SPELL_SHOP_ROWS), -1);
+    } while (!cpu->zero);
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 8u);
+    OpTestBits(memory, cpu, OpDp(cpu, SPELL_PRICE_UPLOAD_FLAGS), 1u);
+    return ExecutionReturned(0x82867fu);
+}
 
 Lufia2ExecutionResult Lufia2MenuSpellShopSetup(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

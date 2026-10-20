@@ -273,6 +273,11 @@ Lufia2ExecutionResult Lufia2SelectScreenNmi(
 Lufia2ExecutionResult Lufia2AdjustPurchasePrice(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Packed spell-shop names and prices; M1X0, DP0, binary. */
+Lufia2ExecutionResult Lufia2MenuDrawSpellShopRows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $82:D905 spell-shop price and windows; M1X0, binary mode.
  * Optional checkpoint after both word stores, before LDA #$20 at D922. */
 Lufia2ExecutionResult Lufia2MenuSpellShopSetup(

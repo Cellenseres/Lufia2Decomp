@@ -15709,3 +15709,11 @@ source = "src/text/alternate_display.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:8636"
+name = "Lufia2MenuDrawSpellShopRows"
+source = "src/menu/menu_spell_shop.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
