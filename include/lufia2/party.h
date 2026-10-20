@@ -436,6 +436,15 @@ Lufia2ExecutionResult Lufia2CapsuleLoadFormPalette(
 Lufia2ExecutionResult Lufia2CapsulePlaceSelectedSprite(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2PartyPrepareEquipmentComparison(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2PartyAddEquipmentComparison(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2PartySubtractEquipmentComparison(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

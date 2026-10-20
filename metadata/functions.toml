@@ -15453,3 +15453,51 @@ source = "src/menu/menu_shop_member_spells.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:DCDD"
+name = "Lufia2MenuShopDrawItemRow"
+source = "src/menu/menu_shop_row.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:DD06"
+name = "Lufia2MenuShopDrawSpellRow"
+source = "src/menu/menu_shop_row.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:9302"
+name = "Lufia2MenuPartyMemberMask"
+source = "src/menu/menu_party_mask.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F76B"
+name = "Lufia2PartyPrepareEquipmentComparison"
+source = "src/party/party_equipment_comparison.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F7B4"
+name = "Lufia2PartyAddEquipmentComparison"
+source = "src/party/party_equipment_comparison.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:F7FD"
+name = "Lufia2PartySubtractEquipmentComparison"
+source = "src/party/party_equipment_comparison.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

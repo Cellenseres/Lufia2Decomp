@@ -628,6 +628,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:922D` | `Lufia2MenuClearSecondarySpriteMask` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:9246` | `Lufia2MenuPollSelectionChoice` | verified | `src/menu/menu_context_services.c` |
 | `$82:92F9` | `Lufia2MenuRestoreSelectionCursor` | verified | `src/menu/menu_context_services.c` |
+| `$82:9302` | `Lufia2MenuPartyMemberMask` | verified | `src/menu/menu_party_mask.c` |
 | `$82:9313` | `Lufia2MenuWindowRequest` | verified | `src/menu/menu.c` |
 | `$82:9330` | `Lufia2MenuWaitFramesOrButton` | verified | `src/menu/menu_input_waits.c` |
 | `$82:9353` | `Lufia2MenuWaitSpriteFrames` | verified | `src/menu/menu_input_waits.c` |
@@ -820,7 +821,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:DC69` | `Lufia2MenuShopDrawListPanel` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DC8A` | `Lufia2MenuShopDrawVisibleRows` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DCC1` | `Lufia2MenuShopRows` | verified | `src/menu/menu_screen.c` |
+| `$82:DCDD` | `Lufia2MenuShopDrawItemRow` | verified | `src/menu/menu_shop_row.c` |
 | `$82:DCF4` | `Lufia2MenuShopRow` | verified | `src/menu/menu_screen.c` |
+| `$82:DD06` | `Lufia2MenuShopDrawSpellRow` | verified | `src/menu/menu_shop_row.c` |
 | `$82:DD18` | `Lufia2MenuShopScrollUp` | verified | `src/menu/menu_shop_scroll.c` |
 | `$82:DDAE` | `Lufia2MenuShopScrollDown` | verified | `src/menu/menu_shop_scroll.c` |
 | `$82:DE53` | `Lufia2MenuShopShowMessage` | verified | `src/menu/menu_shop_quantity.c` |
@@ -915,6 +918,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F703` | `Lufia2PartySelectEquipmentSlot` | verified | `src/party/party_equipment.c` |
 | `$82:F710` | `Lufia2PartyLoadEquipmentItem` | verified | `src/party/party_equipment.c` |
 | `$82:F722` | `Lufia2PartyAccumulateEquipmentModifiers` | verified | `src/party/party_equipment.c` |
+| `$82:F76B` | `Lufia2PartyPrepareEquipmentComparison` | verified | `src/party/party_equipment_comparison.c` |
+| `$82:F7B4` | `Lufia2PartyAddEquipmentComparison` | verified | `src/party/party_equipment_comparison.c` |
+| `$82:F7FD` | `Lufia2PartySubtractEquipmentComparison` | verified | `src/party/party_equipment_comparison.c` |
 | `$82:F846` | `Lufia2PartyRebuildEquipmentModifiers` | verified | `src/party/party_equipment.c` |
 | `$82:F893` | `Lufia2MenuTestEquipmentItemFlag` | verified | `src/menu/menu_record_services.c` |
 | `$82:F8C6` | `Lufia2MenuAdvanceFlaggedEquipment` | verified | `src/menu/menu_price_followup.c` |
