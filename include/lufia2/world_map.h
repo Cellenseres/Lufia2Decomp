@@ -947,6 +947,25 @@ Lufia2ExecutionResult Lufia2WorldMapUploadTileColumn(const Lufia2Memory *,
 Lufia2ExecutionResult Lufia2WorldMapUploadTileBlock(const Lufia2Memory *,
                                                     Lufia2CpuState *);
 
+Lufia2ExecutionResult Lufia2WorldMapRunAlternateScene(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2WorldMapCheckSceneCancellation(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2WorldMapPrepareSceneColorBands(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2WorldMapCycleAlternateScenePalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2WorldMapBrightenScenePalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

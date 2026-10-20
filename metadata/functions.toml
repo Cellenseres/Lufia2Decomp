@@ -15573,3 +15573,43 @@ source = "src/menu/menu_shop_presentation.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:92DF"
+name = "Lufia2WorldMapRunAlternateScene"
+source = "src/world/world_alternate_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:944E"
+name = "Lufia2WorldMapCheckSceneCancellation"
+source = "src/world/world_alternate_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9537"
+name = "Lufia2WorldMapPrepareSceneColorBands"
+source = "src/world/world_alternate_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:95CA"
+name = "Lufia2WorldMapCycleAlternateScenePalette"
+source = "src/world/world_alternate_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:9618"
+name = "Lufia2WorldMapBrightenScenePalette"
+source = "src/world/world_scene_layout.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

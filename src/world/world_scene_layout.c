@@ -146,10 +146,8 @@ static void SubtractPaletteComponent(const Lufia2Memory *memory, Lufia2CpuState 
     }
 }
 
-Lufia2ExecutionResult Lufia2WorldMapDarkenScenePalette(const Lufia2Memory *memory,
-                                                       Lufia2CpuState *cpu) {
-    if (!WorldSceneResourceEntry(cpu))
-        return ExecutionHandoff(cpu, 0x86966cu);
+static void PrepareScenePaletteOffset(const Lufia2Memory *memory,
+                                      Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, PALETTE_SUBTRACT_COLOR));
     OpAndValue(cpu, 0x1fu);
     OpSta(memory, cpu, OpDp(cpu, PALETTE_RED));
@@ -161,6 +159,13 @@ Lufia2ExecutionResult Lufia2WorldMapDarkenScenePalette(const Lufia2Memory *memor
     OpAndValue(cpu, 0x3e0u);
     OpSta(memory, cpu, OpDp(cpu, PALETTE_GREEN));
     OpSepWidths(cpu, 0x20u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapDarkenScenePalette(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu) {
+    if (!WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86966cu);
+    PrepareScenePaletteOffset(memory, cpu);
     cpu->carry = 1u;
     do {
         SubtractPaletteComponent(memory, cpu, 0u, 0x1fu, PALETTE_RED);
@@ -177,4 +182,43 @@ Lufia2ExecutionResult Lufia2WorldMapDarkenScenePalette(const Lufia2Memory *memor
         OpStepMem(memory, cpu, OpDp(cpu, PALETTE_COLORS_LEFT), -1);
     } while (!cpu->zero);
     return ExecutionReturned(0x8696bbu);
+}
+
+static void AddPaletteComponent(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint8_t offset, uint16_t mask,
+                                 uint8_t component, uint16_t overflow) {
+    OpLda(memory, cpu, ScenePaletteColor(cpu, offset));
+    OpAndValue(cpu, mask);
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpDp(cpu, component));
+    OpBitValue(cpu, overflow);
+    if (!cpu->zero)
+        OpLoadA(cpu, mask);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapBrightenScenePalette(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!WorldSceneResourceEntry(cpu))
+        return ExecutionHandoff(cpu, 0x869618u);
+    PrepareScenePaletteOffset(memory, cpu);
+    do {
+        AddPaletteComponent(memory, cpu, 0u, 0x1fu, PALETTE_RED, 0xe0u);
+        OpSta(memory, cpu, OpDp(cpu, PALETTE_RESULT));
+        OpLda(memory, cpu, ScenePaletteColor(cpu, 1u));
+        OpAndValue(cpu, 0x7cu);
+        cpu->carry = 0u;
+        OpAdc(memory, cpu, OpDp(cpu, PALETTE_BLUE));
+        if (cpu->negative)
+            OpLoadA(cpu, 0x7cu);
+        OpSta(memory, cpu, OpDp(cpu, PALETTE_RESULT + 1u));
+        OpRepWidths(cpu, 0x20u);
+        AddPaletteComponent(memory, cpu, 0u, 0x3e0u, PALETTE_GREEN, 0xfc00u);
+        OpOra(memory, cpu, OpDp(cpu, PALETTE_RESULT));
+        OpSta(memory, cpu, OpLongX(cpu, PALETTE_RESULT_OFFSET));
+        OpInx(cpu);
+        OpInx(cpu);
+        OpSepWidths(cpu, 0x20u);
+        OpStepMem(memory, cpu, OpDp(cpu, PALETTE_COLORS_LEFT), -1);
+    } while (!cpu->zero);
+    return ExecutionReturned(0x86966bu);
 }

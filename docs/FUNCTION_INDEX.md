@@ -1649,8 +1649,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:919E` | `Lufia2WorldMapRunSession` | verified | `src/world/world_scene.c` |
 | `$86:91FE` | `Lufia2WorldMapCellCenter` | verified | `src/world/world_cell_center.c` |
 | `$86:92A1` | `Lufia2WorldMapResetScene` | verified | `src/world/world_scene.c` |
+| `$86:92DF` | `Lufia2WorldMapRunAlternateScene` | verified | `src/world/world_alternate_scene.c` |
+| `$86:944E` | `Lufia2WorldMapCheckSceneCancellation` | verified | `src/world/world_alternate_scene.c` |
 | `$86:9470` | `Lufia2WorldMapLoadMotionRecords` | verified | `src/world/world_motion_services.c` |
 | `$86:94D4` | `Lufia2SceneTrackStep` | verified | `src/field/field_scene_tracks.c` |
+| `$86:9537` | `Lufia2WorldMapPrepareSceneColorBands` | verified | `src/world/world_alternate_scene.c` |
+| `$86:95CA` | `Lufia2WorldMapCycleAlternateScenePalette` | verified | `src/world/world_alternate_scene.c` |
+| `$86:9618` | `Lufia2WorldMapBrightenScenePalette` | verified | `src/world/world_scene_layout.c` |
 | `$86:966C` | `Lufia2WorldMapDarkenScenePalette` | verified | `src/world/world_scene_layout.c` |
 | `$86:96BC` | `Lufia2WorldMapHandleSceneInput` | verified | `src/world/world_scene.c` |
 | `$86:973E` | `Lufia2WorldMapDisableDisplay` | verified | `src/world/world_motion_services.c` |
