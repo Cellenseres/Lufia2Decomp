@@ -2,6 +2,7 @@
 #include "lufia2/world_map.h"
 #include "system/wram.h"
 #include "world/world_scene_internal.h"
+#include "world/world_scene_oam_internal.h"
 #include "world/world_scene_resources_internal.h"
 
 enum {
@@ -12,7 +13,6 @@ enum {
     SCENE_SPRITE_GROUP_SIZE = 16u,
     SCENE_SPRITES_LEFT = 4u,
     SCENE_SPRITE_HIGH_BITS = 5u,
-    SCENE_HIGH_BITS_DISPATCH = 0xe5dau,
     SCENE_WINDOW_PARAMETER_1231 = WRAM_FIELD_STREAMED_ROW_SOURCE + 3u,
     SCENE_WINDOW_PARAMETER_1234 = WRAM_FIELD_STREAMED_COLUMN_SOURCE - 2u,
     SCENE_WINDOW_PARAMETER_1237 = WRAM_FIELD_STREAMED_COLUMN_SOURCE + 1u,
@@ -75,22 +75,9 @@ static bool PrepareSceneSprite(SceneSpriteSetup *setup) {
     OpTay(cpu);
     OpLoadA(cpu, 0x3e00u);
     OpSta(memory, cpu, OpAbsY(cpu, WRAM_FIELD_OAM_LOW_BUFFER + 2u));
-    OpLda(memory, cpu, OpAbs(cpu, SCENE_SPRITE_INDEX));
-    OpAndValue(cpu, 3u);
-    OpAslA(cpu);
-    OpTax(cpu);
-    OpLda(memory, cpu, OpAbs(cpu, SCENE_SPRITE_INDEX));
-    OpLsrA(cpu);
-    OpLsrA(cpu);
-    OpTay(cpu);
-    OpSepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpAbsY(cpu, WRAM_FIELD_OAM_HIGH_BUFFER));
-    const uint16_t pointer = (uint16_t)(SCENE_HIGH_BITS_DISPATCH + cpu->x);
-    const uint16_t target =
-        Read16Pair(memory, 0x860000u | pointer, 0x860000u | (uint16_t)(pointer + 1u));
-    if (!CallSpriteSetupChild(setup, 0x86e87cu, 0x860000u | target))
+    if (!WorldSceneStoreSpriteHighBits(memory, cpu, setup->child, setup->context,
+                                       0x86e87cu, &setup->result))
         return false;
-    OpSta(memory, cpu, OpAbsY(cpu, WRAM_FIELD_OAM_HIGH_BUFFER));
     OpStepMem(memory, cpu, OpAbs(cpu, SCENE_SPRITE_INDEX), 1);
     OpStepMem(memory, cpu, OpDp(cpu, SCENE_SPRITES_LEFT), -1);
     return true;

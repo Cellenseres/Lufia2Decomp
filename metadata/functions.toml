@@ -15613,3 +15613,51 @@ source = "src/world/world_scene_layout.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:CE68"
+name = "Lufia2WorldMapLoadAlternateSceneGraphics"
+source = "src/world/world_scene_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:E9D4"
+name = "Lufia2WorldMapPrepareAlternateSceneSprites"
+source = "src/world/world_scene_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:EA43"
+name = "Lufia2WorldMapDrawSceneSpriteCommands"
+source = "src/world/world_scene_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:EA58"
+name = "Lufia2WorldMapExpandSceneSpriteCommand"
+source = "src/world/world_scene_graphics.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:EB11"
+name = "Lufia2WorldMapEmitLargeSceneSprite"
+source = "src/world/world_scene_graphics.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "86:EB52"
+name = "Lufia2WorldMapEmitSmallSceneSprite"
+source = "src/world/world_scene_graphics.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

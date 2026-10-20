@@ -552,6 +552,7 @@ add_library(lufia2_decomp STATIC
     src/world/world_scene_motion.c
     src/world/world_window_clipping.c
     src/world/world_scene_sprites.c
+    src/world/world_scene_graphics.c
     src/world/world_circle_windows.c
     src/world/world_map_objects.c
     src/world/world_map_player.c
