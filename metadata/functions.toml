@@ -15013,3 +15013,43 @@ source = "src/party/capsule_graphics.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:D577"
+name = "Lufia2CapsuleRunFormEffects"
+source = "src/party/capsule_form_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D5E9"
+name = "Lufia2CapsuleStepFormEffectAngle"
+source = "src/party/capsule_form_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D5FC"
+name = "Lufia2CapsuleStepFormEffectLife"
+source = "src/party/capsule_form_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D62F"
+name = "Lufia2CapsulePlaceFormEffect"
+source = "src/party/capsule_form_effects.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:D68C"
+name = "Lufia2CapsuleSignFormProduct"
+source = "src/party/capsule_form_effects.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

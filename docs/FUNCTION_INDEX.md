@@ -791,6 +791,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:D4A8` | `Lufia2CapsuleBeginFormBlend` | verified | `src/party/capsule_palette.c` |
 | `$82:D4D0` | `Lufia2CapsuleEndFormBlend` | verified | `src/party/capsule_palette.c` |
 | `$82:D4EE` | `Lufia2CapsuleLoadFormEffects` | verified | `src/party/capsule_graphics.c` |
+| `$82:D577` | `Lufia2CapsuleRunFormEffects` | verified | `src/party/capsule_form_effects.c` |
+| `$82:D5E9` | `Lufia2CapsuleStepFormEffectAngle` | verified | `src/party/capsule_form_effects.c` |
+| `$82:D5FC` | `Lufia2CapsuleStepFormEffectLife` | verified | `src/party/capsule_form_effects.c` |
+| `$82:D62F` | `Lufia2CapsulePlaceFormEffect` | verified | `src/party/capsule_form_effects.c` |
+| `$82:D68C` | `Lufia2CapsuleSignFormProduct` | verified | `src/party/capsule_form_effects.c` |
 | `$82:D721` | `Lufia2MenuShopWindows` | verified | `src/menu/menu_screen.c` |
 | `$82:D749` | `Lufia2MenuShopParty` | verified | `src/menu/menu_screen.c` |
 | `$82:D905` | `Lufia2MenuSpellShopSetup` | verified | `src/menu/menu_spell_shop.c` |

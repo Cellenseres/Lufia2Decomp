@@ -330,6 +330,7 @@ add_library(lufia2_decomp STATIC
     src/party/capsule_graphics.c
     src/party/capsule_food_display.c
     src/party/capsule_palette.c
+    src/party/capsule_form_effects.c
     src/menu/menu_tile_clear.c
     src/party/capsule_status_address.c
     src/party/capsule_item_choice.c
