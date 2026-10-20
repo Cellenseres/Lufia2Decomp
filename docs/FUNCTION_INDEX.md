@@ -811,7 +811,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:DC8A` | `Lufia2MenuShopDrawVisibleRows` | verified | `src/menu/menu_shop_control.c` |
 | `$82:DCC1` | `Lufia2MenuShopRows` | verified | `src/menu/menu_screen.c` |
 | `$82:DCF4` | `Lufia2MenuShopRow` | verified | `src/menu/menu_screen.c` |
+| `$82:DE53` | `Lufia2MenuShopShowMessage` | verified | `src/menu/menu_shop_quantity.c` |
+| `$82:DE75` | `Lufia2MenuShopFinishTransaction` | verified | `src/menu/menu_shop_quantity.c` |
+| `$82:DEA4` | `Lufia2MenuShopSellItem` | verified | `src/menu/menu_shop_transactions.c` |
+| `$82:DF45` | `Lufia2MenuShopChoosePurchaseQuantity` | verified | `src/menu/menu_shop_transactions.c` |
 | `$82:E012` | `Lufia2MenuShopSelectListMode` | verified | `src/menu/menu_shop_control.c` |
+| `$82:E02C` | `Lufia2MenuShopBuyItem` | verified | `src/menu/menu_shop_transactions.c` |
+| `$82:E167` | `Lufia2MenuShopLearnSpell` | verified | `src/menu/menu_shop_spell.c` |
+| `$82:E1DE` | `Lufia2MenuShopStoreLearnedSpell` | verified | `src/menu/menu_shop_spell.c` |
+| `$82:E20C` | `Lufia2MenuShopComputeQuantityPrice` | verified | `src/menu/menu_shop_quantity.c` |
+| `$82:E22C` | `Lufia2MenuShopAdjustQuantity` | verified | `src/menu/menu_shop_quantity.c` |
 | `$82:E297` | `Lufia2MenuShopSetup` | verified | `src/menu/menu_screen.c` |
 | `$82:E327` | `Lufia2MenuShopBuildSelectedList` | verified | `src/menu/menu_shop_control.c` |
 | `$82:E49E` | `Lufia2MenuShopTitle` | verified | `src/menu/menu_screen.c` |

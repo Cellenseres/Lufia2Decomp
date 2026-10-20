@@ -4425,7 +4425,7 @@ name = "battle_portrait_poses"
 width = 1
 count = 4
 owner = "battle"
-notes = "Current pose byte for each of four party portraits."
+notes = "Shop phase reuses1547 as quantity,1548 as its limit and1549 as quantity state. DE75 andDEA4 intentionally read the quantity/limit pair as one word; E20C reads only the quantity byte. Current pose byte for each of four party portraits."
 
 [[location]]
 address = "7E:154C"

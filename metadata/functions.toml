@@ -15149,3 +15149,75 @@ source = "src/menu/menu_shop_control.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:DEA4"
+name = "Lufia2MenuShopSellItem"
+source = "src/menu/menu_shop_transactions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DF45"
+name = "Lufia2MenuShopChoosePurchaseQuantity"
+source = "src/menu/menu_shop_transactions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E167"
+name = "Lufia2MenuShopLearnSpell"
+source = "src/menu/menu_shop_spell.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E1DE"
+name = "Lufia2MenuShopStoreLearnedSpell"
+source = "src/menu/menu_shop_spell.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E20C"
+name = "Lufia2MenuShopComputeQuantityPrice"
+source = "src/menu/menu_shop_quantity.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E22C"
+name = "Lufia2MenuShopAdjustQuantity"
+source = "src/menu/menu_shop_quantity.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DE53"
+name = "Lufia2MenuShopShowMessage"
+source = "src/menu/menu_shop_quantity.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DE75"
+name = "Lufia2MenuShopFinishTransaction"
+source = "src/menu/menu_shop_quantity.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E02C"
+name = "Lufia2MenuShopBuyItem"
+source = "src/menu/menu_shop_transactions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
