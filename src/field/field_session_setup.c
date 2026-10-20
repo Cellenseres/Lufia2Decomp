@@ -696,6 +696,69 @@ Lufia2ExecutionResult Lufia2FieldActorInstallStep(
     return ExecutionHandoff(cpu, entry + 2u);
 }
 
+typedef struct SessionActorRecords {
+    const Lufia2Memory *memory;
+    uint32_t bank;
+} SessionActorRecords;
+
+static uint32_t SessionRecordField(
+    SessionActorRecords records, uint16_t field, uint16_t slot) {
+    return (records.bank + field + slot) & 0x00ffffffu;
+}
+
+static uint8_t RestoreSessionActorIdentity(
+    SessionActorRecords records, uint16_t source, uint16_t destination) {
+    const uint8_t sprite = Read8(records.memory,
+        SessionRecordField(records, WRAM_UNK_7E08DE, source));
+    Write8(records.memory,
+        SessionRecordField(records, WRAM_UNK_7E05D2, destination), sprite);
+    const uint8_t identity = Read8(records.memory,
+        SessionRecordField(records, WRAM_UNK_7E081E, source)) & 0x7fu;
+    Write8(records.memory,
+        SessionRecordField(records, WRAM_UNK_7E081E, source), identity);
+    Write8(records.memory,
+        SessionRecordField(records, WRAM_ACTOR_ID, destination), identity);
+    return identity;
+}
+
+static uint8_t RestoreReservedSessionActor(
+    SessionActorRecords records, uint16_t destination) {
+    Write8(records.memory,
+        SessionRecordField(records, WRAM_ACTOR_ID, destination), 0xfdu);
+    static const struct {
+        uint16_t source;
+        uint16_t destination;
+    } fields[] = {
+        {WRAM_UNK_7E091D, WRAM_UNK_7E05D2},
+        {WRAM_UNK_7E08DD, WRAM_ACTOR_TILE_X},
+        {WRAM_UNK_7E085D, WRAM_ACTOR_TILE_Y}
+    };
+    for (unsigned field = 0u; field < sizeof fields / sizeof fields[0]; ++field) {
+        const uint8_t value = Read8(records.memory,
+            SessionRecordField(records, fields[field].source, 0u));
+        Write8(records.memory,
+            SessionRecordField(records, fields[field].destination, destination), value);
+    }
+    const uint32_t address = SessionRecordField(records, WRAM_ACTOR_STATE, destination);
+    const uint8_t state = Read8(records.memory, address) & 0xfbu;
+    Write8(records.memory, address, state);
+    return state;
+}
+
+typedef struct SessionPresentation {
+    uint8_t mode;
+    uint8_t value;
+    bool changed;
+} SessionPresentation;
+
+static SessionPresentation SelectSessionPresentation(uint8_t destination) {
+    const uint8_t mode = destination & 0x0fu;
+    const bool changed = mode >= 4u && mode <= 6u;
+    const SessionPresentation presentation = {
+        mode, changed ? (uint8_t)(mode + 0x6du) : mode, changed};
+    return presentation;
+}
+
 static Lufia2ExecutionResult InstallSessionActors(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -710,25 +773,14 @@ static Lufia2ExecutionResult InstallSessionActors(
         0x83b323u, 0x80beafu, 3u);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
         return result;
-    OpLda(memory, cpu, WRAM_FIELD_DESTINATION_PARAMETERS);
-    OpAndValue(cpu, 0x0fu);
-    OpCmpValue(cpu, 4u);
-    if (cpu->zero) {
-        OpLoadA(cpu, 0x71u);
-        OpSta(memory, cpu, WRAM_UNK_7FD0FE);
-    } else {
-        OpCmpValue(cpu, 5u);
-        if (cpu->zero) {
-            OpLoadA(cpu, 0x72u);
-            OpSta(memory, cpu, WRAM_UNK_7FD0FE);
-        } else {
-            OpCmpValue(cpu, 6u);
-            if (cpu->zero) {
-                OpLoadA(cpu, 0x73u);
-                OpSta(memory, cpu, WRAM_UNK_7FD0FE);
-            }
-        }
-    }
+    const SessionPresentation presentation = SelectSessionPresentation(
+        Read8(memory, WRAM_FIELD_DESTINATION_PARAMETERS));
+    LoadA8(cpu, presentation.value);
+    cpu->carry = presentation.mode >= 4u;
+    cpu->negative = presentation.mode < 4u;
+    cpu->zero = 0u;
+    if (presentation.changed)
+        Write8(memory, WRAM_UNK_7FD0FE, presentation.value);
     result = SessionMapChild(memory, cpu, child, context,
         0x83b347u, 0x83b5adu, 2u);
     if (result.flow != LUFIA2_EXECUTION_RETURNED)
@@ -752,14 +804,15 @@ static Lufia2ExecutionResult InstallSessionActors(
             OpCmp(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID));
             if (cpu->zero) {
                 OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
-                OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E08DE));
-                OpSta(memory, cpu, OpAbsY(cpu, WRAM_UNK_7E05D2));
-                OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E081E));
-                if (!cpu->accumulator_is_8_bit)
+                if (!cpu->accumulator_is_8_bit) {
+                    OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E08DE));
+                    OpSta(memory, cpu, OpAbsY(cpu, WRAM_UNK_7E05D2));
+                    OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E081E));
                     return ExecutionHandoff(cpu, 0x83b36du);
-                OpAndValue(cpu, 0x7fu);
-                OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E081E));
-                OpSta(memory, cpu, OpAbsY(cpu, WRAM_ACTOR_ID));
+                }
+                const SessionActorRecords records = {
+                    memory, (uint32_t)cpu->data_bank << 16};
+                LoadA8(cpu, RestoreSessionActorIdentity(records, cpu->x, cpu->y));
                 OpPushX(memory, cpu);
                 OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E089E));
                 OpCmpValue(cpu, 0xffu);
@@ -797,17 +850,9 @@ static Lufia2ExecutionResult InstallSessionActors(
         if (result.flow != LUFIA2_EXECUTION_RETURNED)
             return result;
         OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
-        OpLoadA(cpu, 0xfdu);
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_ID));
-        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E091D));
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E05D2));
-        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E08DD));
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_X));
-        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E085D));
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_Y));
-        OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
-        OpAndValue(cpu, 0xfbu);
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
+        const SessionActorRecords records = {
+            memory, (uint32_t)cpu->data_bank << 16};
+        LoadA8(cpu, RestoreReservedSessionActor(records, cpu->x));
     }
     return ExecutionReturned(0x83b3cfu);
 }
