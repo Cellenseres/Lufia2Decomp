@@ -14877,3 +14877,35 @@ source = "src/party/capsule_feed_particles.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:CA18"
+name = "Lufia2CapsuleApplyFormMask"
+source = "src/party/capsule_form_masks.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:CA62"
+name = "Lufia2CapsuleBuildFormMasks"
+source = "src/party/capsule_form_masks.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CAB1"
+name = "Lufia2CapsuleChooseFormMaskBit"
+source = "src/party/capsule_form_masks.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:CB00"
+name = "Lufia2CapsuleMergeFormMask"
+source = "src/party/capsule_form_masks.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

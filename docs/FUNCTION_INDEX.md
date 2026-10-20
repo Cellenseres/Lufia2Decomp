@@ -756,6 +756,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:C929` | `Lufia2CapsuleCopyFormTiles` | verified | `src/party/capsule_feed_display.c` |
 | `$82:C93C` | `Lufia2CapsuleClearFormTiles` | verified | `src/party/capsule_feed_display.c` |
 | `$82:C958` | `Lufia2CapsuleAnimateFormTiles` | verified | `src/party/capsule_feed_display.c` |
+| `$82:CA18` | `Lufia2CapsuleApplyFormMask` | verified | `src/party/capsule_form_masks.c` |
+| `$82:CA62` | `Lufia2CapsuleBuildFormMasks` | verified | `src/party/capsule_form_masks.c` |
+| `$82:CAB1` | `Lufia2CapsuleChooseFormMaskBit` | verified | `src/party/capsule_form_masks.c` |
+| `$82:CB00` | `Lufia2CapsuleMergeFormMask` | verified | `src/party/capsule_form_masks.c` |
 | `$82:CB10` | `Lufia2CapsuleAnimateFood` | verified | `src/party/capsule_feed_particles.c` |
 | `$82:CB55` | `Lufia2CapsuleSpawnFoodParticle` | verified | `src/party/capsule_feed_particles.c` |
 | `$82:CB8C` | `Lufia2CapsuleStepFoodParticles` | verified | `src/party/capsule_feed_particles.c` |
