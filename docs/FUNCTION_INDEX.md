@@ -614,6 +614,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:89C4` | `Lufia2MenuBuildCursorPair` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:89EC` | `Lufia2MenuMoveCursorPair` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:89FA` | `Lufia2MenuCursorSlide` | verified | `src/menu/menu_cursor_slide.c` |
+| `$82:8A9B` | `Lufia2MenuResumeVerticalCursorSlide` | verified | `src/menu/menu_cursor_slide.c` |
+| `$82:8AD6` | `Lufia2MenuResumeHorizontalCursorSlide` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8AD8` | `Lufia2MenuSlideCorrectX` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8AE9` | `Lufia2MenuSlideCorrectY` | verified | `src/menu/menu_cursor_slide.c` |
 | `$82:8AFA` | `Lufia2MenuSlideCount` | verified | `src/menu/menu_cursor_slide.c` |

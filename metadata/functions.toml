@@ -15886,3 +15886,19 @@ source = "src/menu/menu_screen.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:8AD6"
+name = "Lufia2MenuResumeHorizontalCursorSlide"
+source = "src/menu/menu_cursor_slide.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:8A9B"
+name = "Lufia2MenuResumeVerticalCursorSlide"
+source = "src/menu/menu_cursor_slide.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

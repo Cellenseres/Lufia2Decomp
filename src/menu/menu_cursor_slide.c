@@ -144,9 +144,9 @@ static void Distance(Lufia2Wram wram, Lufia2CpuState *cpu, uint32_t from,
     const uint8_t start = WramRead(wram, from);
     const uint8_t end = WramRead(wram, to);
     const bool backwards = start < end;
-    const Byte8Result gap =
-        backwards ? Difference8Mode(end, start, cpu->decimal)
-                  : Difference8Mode(start, end, cpu->decimal);
+    const uint8_t larger = WramRead(wram, backwards ? to : from);
+    const uint8_t smaller = WramRead(wram, backwards ? from : to);
+    const Byte8Result gap = Difference8Mode(larger, smaller, cpu->decimal);
 
     WramWrite(wram, delta, gap.value);
     WramWrite(wram, direction, backwards ? DIRECTION_BACK : 1u);
@@ -183,68 +183,55 @@ static bool ErrorRunsOut(Lufia2Wram wram, bool decimal, uint32_t error, uint32_t
     return !left.carry;
 }
 
-/* $82:89FA: slide between slots, preserving the frame-wait continuation. */
-Lufia2ExecutionResult Lufia2MenuCursorSlide(
+static bool SlideContext(const Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child) {
+    return child && cpu->program_bank == 0x82u && cpu->accumulator_is_8_bit &&
+        !cpu->index_is_8_bit && !cpu->direct_page && !cpu->decimal &&
+        cpu->stack >= 0x1f12u && cpu->stack <= 0x1ffcu &&
+        cpu->y < MENU_SPRITE_SLOTS && (cpu->data_bank < 0x40u ||
+            (cpu->data_bank >= 0x80u && cpu->data_bank < 0xc0u));
+}
+
+static Lufia2ExecutionResult SlideVertically(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
-    const uint16_t other = cpu->x;
-    uint16_t slot;
+    uint16_t slot = cpu->y;
     Byte8Result moved;
     uint8_t position;
     unsigned steps = 0;
-
-    if (!child || cpu->program_bank != 0x82u || !cpu->accumulator_is_8_bit ||
-        cpu->index_is_8_bit || cpu->direct_page != 0u || cpu->decimal ||
-        cpu->stack < 0x1f12u || cpu->stack > 0x1ffcu ||
-        cpu->x >= MENU_SPRITE_SLOTS || cpu->y >= MENU_SPRITE_SLOTS ||
-        !(cpu->data_bank < 0x40u ||
-          (cpu->data_bank >= 0x80u && cpu->data_bank < 0xc0u)))
-        return ExecutionHandoff(cpu, 0x8289fau);
-    WramWrite16(wram, SCRATCH_SLOT, other);
-    if (A8(cpu) != 0)
-        WramWrite16(wram, SCRATCH_SLOT, cpu->y);
-    WramWrite(wram, FROM_X, WramReadAt(wram, SLOT_X, cpu->y));
-    WramWrite(wram, FROM_Y, WramReadAt(wram, SLOT_Y, cpu->y));
-    WramWrite(wram, TO_X, WramReadAt(wram, SLOT_X, other));
-    WramWrite(wram, TO_Y, WramReadAt(wram, SLOT_Y, other));
-    slot = WramRead16(wram, SCRATCH_SLOT);
-    cpu->y = slot;
-    WramWriteAt(wram, SLOT_X, slot, WramRead(wram, TO_X));
-    WramWriteAt(wram, SLOT_Y, slot, WramRead(wram, TO_Y));
-    WramWrite(wram, WAIT_COUNT, WAIT_EVERY);
-    Distance(wram, cpu, FROM_X, TO_X, DELTA_X, DIRECTION_X);
-    Distance(wram, cpu, FROM_Y, TO_Y, DELTA_Y, DIRECTION_Y);
-    /* The spans reuse the words of the destination. */
-    cpu->x = WramRead16(wram, DELTA_X);
-    WramWrite16(wram, SPAN_X, cpu->x);
-    LoadA8(cpu, WramRead(wram, DELTA_X));
-    Compare8(cpu, A8(cpu), WramRead(wram, DELTA_Y));
-    if (!cpu->carry) {
-        SlideSubtract(wram, cpu->decimal, slot, SLOT_Y, DIRECTION_Y);
-        for (;;) {
-            if (steps++ == STEP_BUDGET)
-                return ExecutionHandoff(cpu, 0x828a75u);
-            if (ErrorRunsOut(wram, cpu->decimal, DELTA_Y, DELTA_X))
-                Correct(memory, cpu, false, 0x8a80u);
-            moved = SlideAdd(wram, cpu->decimal, slot, SLOT_Y, DIRECTION_Y);
-            LoadA8(cpu, moved.value);
-            Compare8(cpu, moved.value, WramRead(wram, FROM_Y));
-            if (cpu->zero) {
-                position = WramReadAt(wram, SLOT_X, slot);
-                LoadA8(cpu, position);
-                cpu->overflow = moved.overflow;
-                Compare8(cpu, position, WramRead(wram, FROM_X));
-                if (cpu->zero)
-                    return ExecutionReturned(SLIDE_DONE);
-            }
-            if (SlideStep(memory, cpu, moved.overflow, 0x8a9au, &result, child, context))
-                return result;
-            slot = cpu->y;
+    for (;;) {
+        if (steps++ == STEP_BUDGET)
+            return ExecutionHandoff(cpu, 0x828a75u);
+        if (ErrorRunsOut(wram, cpu->decimal, DELTA_Y, DELTA_X))
+            Correct(memory, cpu, false, 0x8a80u);
+        moved = SlideAdd(wram, cpu->decimal, slot, SLOT_Y, DIRECTION_Y);
+        LoadA8(cpu, moved.value);
+        Compare8(cpu, moved.value, WramRead(wram, FROM_Y));
+        if (cpu->zero) {
+            position = WramReadAt(wram, SLOT_X, slot);
+            LoadA8(cpu, position);
+            cpu->overflow = moved.overflow;
+            Compare8(cpu, position, WramRead(wram, FROM_X));
+            if (cpu->zero)
+                return ExecutionReturned(SLIDE_DONE);
         }
+        if (SlideStep(memory, cpu, moved.overflow, 0x8a9au, &result, child, context))
+            return result;
+        slot = cpu->y;
     }
-    SlideSubtract(wram, cpu->decimal, slot, SLOT_X, DIRECTION_X);
+}
+
+static Lufia2ExecutionResult SlideHorizontally(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    Lufia2ExecutionResult result;
+    uint16_t slot = cpu->y;
+    Byte8Result moved;
+    uint8_t position;
+    unsigned steps = 0;
     for (;;) {
         if (steps++ == STEP_BUDGET)
             return ExecutionHandoff(cpu, 0x828aa6u);
@@ -268,4 +255,57 @@ Lufia2ExecutionResult Lufia2MenuCursorSlide(
             return result;
         slot = cpu->y;
     }
+}
+
+/* $82:89FA: slide between slots, preserving the frame-wait continuation. */
+Lufia2ExecutionResult Lufia2MenuCursorSlide(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint16_t other = cpu->x;
+    uint16_t slot;
+
+    if (!SlideContext(cpu, child) || cpu->x >= MENU_SPRITE_SLOTS)
+        return ExecutionHandoff(cpu, 0x8289fau);
+    WramWrite16(wram, SCRATCH_SLOT, other);
+    if (A8(cpu) != 0)
+        WramWrite16(wram, SCRATCH_SLOT, cpu->y);
+    WramWrite(wram, FROM_X, WramReadAt(wram, SLOT_X, cpu->y));
+    WramWrite(wram, FROM_Y, WramReadAt(wram, SLOT_Y, cpu->y));
+    WramWrite(wram, TO_X, WramReadAt(wram, SLOT_X, other));
+    WramWrite(wram, TO_Y, WramReadAt(wram, SLOT_Y, other));
+    slot = WramRead16(wram, SCRATCH_SLOT);
+    cpu->y = slot;
+    WramWriteAt(wram, SLOT_X, slot, WramRead(wram, TO_X));
+    WramWriteAt(wram, SLOT_Y, slot, WramRead(wram, TO_Y));
+    WramWrite(wram, WAIT_COUNT, WAIT_EVERY);
+    Distance(wram, cpu, FROM_X, TO_X, DELTA_X, DIRECTION_X);
+    Distance(wram, cpu, FROM_Y, TO_Y, DELTA_Y, DIRECTION_Y);
+    /* The spans reuse the words of the destination. */
+    cpu->x = WramRead16(wram, DELTA_X);
+    WramWrite16(wram, SPAN_X, cpu->x);
+    LoadA8(cpu, WramRead(wram, DELTA_X));
+    Compare8(cpu, A8(cpu), WramRead(wram, DELTA_Y));
+    if (!cpu->carry) {
+        SlideSubtract(wram, cpu->decimal, slot, SLOT_Y, DIRECTION_Y);
+        return SlideVertically(memory, cpu, child, context);
+    }
+    SlideSubtract(wram, cpu->decimal, slot, SLOT_X, DIRECTION_X);
+    return SlideHorizontally(memory, cpu, child, context);
+}
+
+Lufia2ExecutionResult Lufia2MenuResumeHorizontalCursorSlide(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SlideContext(cpu, child))
+        return ExecutionHandoff(cpu, 0x828ad6u);
+    return SlideHorizontally(memory, cpu, child, context);
+}
+
+Lufia2ExecutionResult Lufia2MenuResumeVerticalCursorSlide(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SlideContext(cpu, child))
+        return ExecutionHandoff(cpu, 0x828a9bu);
+    return SlideVertically(memory, cpu, child, context);
 }

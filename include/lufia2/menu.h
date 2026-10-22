@@ -106,12 +106,16 @@ Lufia2ExecutionResult Lufia2MenuSlideCount(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
-/* $82:89FA cursor slide from slot Y to slot X. Requires a child, PB82,
- * M8/X16, DP0, binary arithmetic, S $1F12..$1FFC, a register/low-WRAM DB
- * mirror and slots below 48. Spans above 127, sprite timers that expire
- * during the slide, descriptors outside ROM or $7E:2000+ and more than 128
- * OAM pieces hand off before writes. $82:8AFA runs through its JSR sites. */
+/* Move a menu sprite toward another slot. */
 Lufia2ExecutionResult Lufia2MenuCursorSlide(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuResumeHorizontalCursorSlide(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuResumeVerticalCursorSlide(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
