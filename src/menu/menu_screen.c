@@ -1195,7 +1195,8 @@ static void ShopCompareStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 }
 
 /* $82:E664: member sprite X pose by equip flags. */
-static void ShopMemberPose(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static int ShopMemberPose(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionResult *out) {
     uint8_t pose;
 
     LoadA16(cpu, Indirect16At(memory, cpu, 0xedu, 0));
@@ -1210,8 +1211,18 @@ static void ShopMemberPose(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     StoreZeroAbsolute8(memory, cpu, MENU_SPRITE_FRAME_INDEX, cpu->x);
     SimulateJslFrame(memory, cpu, 0x82u, 0xe685u);
     (void)Lufia2SpriteSetAnimation(memory, cpu);
-    SimulateRtlFrame(memory, cpu);
+    const uint16_t low = Pull8(memory, cpu);
+    const uint16_t high = Pull8(memory, cpu);
+    const uint8_t bank = Pull8(memory, cpu);
+    const uint32_t next = ((uint32_t)bank << 16) |
+        (uint16_t)(((high << 8) | low) + 1u);
+    if (next != 0x82e686u) {
+        cpu->program_bank = bank;
+        *out = ExecutionHandoff(cpu, next);
+        return 1;
+    }
     SetAccumulatorWidth(cpu, 0);
+    return 0;
 }
 
 /* $82:E5E1: equipment comparison for each member. */
@@ -1233,27 +1244,43 @@ Lufia2ExecutionResult Lufia2MenuShopCompare(
             WRAM_MENU_PARTY_CHARACTER_OFFSET, cpu->x));
         StoreADirect16(memory, cpu, 0x2au);
         for (i = 0; i < 3u; ++i) {
-            LoadA16(cpu, (uint16_t)(Read16Direct(memory, cpu, 0x2au) + kOffsets[i]));
+            if (i)
+                LoadA16(cpu, Read16Direct(memory, cpu, 0x2au));
             cpu->carry = 0;
+            Add16Value(cpu, kOffsets[i]);
             StoreADirect16(memory, cpu, kPointers[i]);
         }
         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x82e689u, cpu->x)));
         TransferAToX(cpu);
         Jsr(memory, cpu, 0xe611u);
         ShopCompareStats(memory, cpu);
-        Rts(memory, cpu);
+        {
+            const uint16_t low = Pull8(memory, cpu);
+            const uint16_t high = Pull8(memory, cpu);
+            const uint16_t next = (uint16_t)(((high << 8) | low) + 1u);
+            if (next != 0xe612u)
+                return ExecutionHandoff(cpu, ((uint32_t)cpu->program_bank << 16) | next);
+        }
         cpu->x = PullIndexValue(memory, cpu);
         TransferXToA(cpu);
         LsrA16(cpu);
         PushIndex(memory, cpu);
         TransferAToX(cpu);
         Jsr(memory, cpu, 0xe619u);
-        ShopMemberPose(memory, cpu);
-        Rts(memory, cpu);
+        {
+            Lufia2ExecutionResult pose;
+            if (ShopMemberPose(memory, cpu, &pose))
+                return pose;
+            const uint16_t low = Pull8(memory, cpu);
+            const uint16_t high = Pull8(memory, cpu);
+            const uint16_t next = (uint16_t)(((high << 8) | low) + 1u);
+            if (next != 0xe61au)
+                return ExecutionHandoff(cpu, ((uint32_t)cpu->program_bank << 16) | next);
+        }
         cpu->x = PullIndexValue(memory, cpu);
         IncrementX16(cpu);
         IncrementX16(cpu);
-        Decrement16Direct(memory, cpu, 0x26u);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x26u), -1);
     } while (!cpu->zero);
     SetAccumulatorWidth(cpu, 1);
     return ExecutionReturned(0x82e623u);

@@ -1,3 +1,24 @@
+# Shop comparison fidelity - 2026-10-22
+
+The existing 82:E5E1 shop comparison now preserves the original first
+record value, subsequent pointer reloads, ADC flags and high-first DEC26
+writes. Sprite-table writes can alias a live return frame during the
+original zero-count underflow. The comparison follows the actual popped
+return address and hands an unexpected continuation back to the original
+owner. The original malformed-state behavior is retained.
+
+The combined direct and consumer-ABI checkpoint covers 6056 states each,
+including unchanged shop-list callers, all data banks, pointer overflows,
+pose branches and stack limits. Of these, 4504 use actual production
+bridges; the remainder exercise the unchanged private shop-row worker.
+All three original JSR call sites are composed with real return frames.
+Forty-one alias cases stop at their exact original continuation. Eleven
+fault controls detect the old mistakes and altered ROM instructions.
+Strict MSVC, standalone GCC/Clang and isolated Windows builds pass. The
+unchanged CLI executable and fixture retain their previous accepted result.
+No new algorithm, function, binding or gameplay timing change is claimed.
+There remain 1966 verified entries and zero drafts.
+
 # Actor coordinate timing boundary - 2026-10-22
 
 The existing `Lufia2ActorSyncFinePosition` body also matches the ROM in
