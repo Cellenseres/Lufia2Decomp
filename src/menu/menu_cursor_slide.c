@@ -7,6 +7,7 @@
 #include "core/plain_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/menu.h"
+#include "lufia2/menu_cursor_step.h"
 #include "menu/menu_sprite_slots.h"
 
 enum {
@@ -174,86 +175,127 @@ static void SlideSubtract(Lufia2Wram wram, bool decimal, uint16_t slot, uint32_t
 }
 
 /* Borrow from the error subtraction requests an axis correction. */
-static bool ErrorRunsOut(Lufia2Wram wram, bool decimal, uint32_t error, uint32_t other) {
+static Byte8Result SubtractCursorError(
+    Lufia2Wram wram, bool decimal, uint32_t error, uint32_t other) {
     Byte8Result left;
 
     left.value = WramRead(wram, error);
     left = Difference8Mode(left.value, WramRead(wram, other), decimal);
     WramWrite(wram, error, left.value);
-    return !left.carry;
+    return left;
 }
 
-static bool SlideContext(const Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child) {
-    return child && cpu->program_bank == 0x82u && cpu->accumulator_is_8_bit &&
+static bool ErrorRunsOut(Lufia2Wram wram, bool decimal, uint32_t error, uint32_t other) {
+    return !SubtractCursorError(wram, decimal, error, other).carry;
+}
+
+static bool SlideRegistersSupported(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x82u && cpu->accumulator_is_8_bit &&
         !cpu->index_is_8_bit && !cpu->direct_page && !cpu->decimal &&
         cpu->stack >= 0x1f12u && cpu->stack <= 0x1ffcu &&
         cpu->y < MENU_SPRITE_SLOTS && (cpu->data_bank < 0x40u ||
             (cpu->data_bank >= 0x80u && cpu->data_bank < 0xc0u));
 }
 
+static bool SlideContext(const Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child) {
+    return child && SlideRegistersSupported(cpu);
+}
+
+static bool AdvanceCursorVertically(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint16_t slot = cpu->y;
+    const Byte8Result moved =
+        SlideAdd(wram, cpu->decimal, slot, SLOT_Y, DIRECTION_Y);
+    LoadA8(cpu, moved.value);
+    Compare8(cpu, moved.value, WramRead(wram, FROM_Y));
+    if (cpu->zero) {
+        const uint8_t position = WramReadAt(wram, SLOT_X, slot);
+        LoadA8(cpu, position);
+        Compare8(cpu, position, WramRead(wram, FROM_X));
+    }
+    cpu->overflow = moved.overflow;
+    return cpu->zero != 0u;
+}
+
+static bool AdvanceCursorHorizontally(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint16_t slot = cpu->y;
+    const Byte8Result moved =
+        SlideAdd(wram, cpu->decimal, slot, SLOT_X, DIRECTION_X);
+    WramWrite(wram, SCRATCH_SLOT, moved.value);
+    WramWrite(wram, SCRATCH_ROW, WramReadAt(wram, SLOT_Y, slot));
+    uint8_t position = WramReadAt(wram, SLOT_X, slot);
+    LoadA8(cpu, position);
+    Compare8(cpu, position, WramRead(wram, FROM_X));
+    if (cpu->zero) {
+        position = WramReadAt(wram, SLOT_Y, slot);
+        LoadA8(cpu, position);
+        Compare8(cpu, position, WramRead(wram, FROM_Y));
+    }
+    cpu->overflow = moved.overflow;
+    return cpu->zero != 0u;
+}
+
+Lufia2ExecutionResult Lufia2MenuAdvanceCursorSlide(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2MenuSlideAxis axis, Lufia2MenuSlidePhase phase) {
+    if ((axis != LUFIA2_MENU_SLIDE_HORIZONTAL && axis != LUFIA2_MENU_SLIDE_VERTICAL) ||
+        (phase != LUFIA2_MENU_SLIDE_ERROR && phase != LUFIA2_MENU_SLIDE_POSITION))
+        return ExecutionHandoff(cpu, 0u);
+    const bool vertical = axis == LUFIA2_MENU_SLIDE_VERTICAL;
+    if (!SlideRegistersSupported(cpu))
+        return ExecutionHandoff(cpu, phase == LUFIA2_MENU_SLIDE_ERROR
+            ? (vertical ? 0x828a75u : 0x828aa6u)
+            : (vertical ? 0x828a81u : 0x828ab2u));
+    if (phase == LUFIA2_MENU_SLIDE_ERROR) {
+        const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+        const Byte8Result error = SubtractCursorError(wram, cpu->decimal,
+            vertical ? DELTA_Y : DELTA_X, vertical ? DELTA_X : DELTA_Y);
+        LeaveByteSum(cpu, error);
+        return ExecutionHandoff(cpu, vertical
+            ? (error.carry ? 0x828a81u : 0x828a7eu)
+            : (error.carry ? 0x828ab2u : 0x828aafu));
+    }
+    if (vertical ? AdvanceCursorVertically(memory, cpu)
+                 : AdvanceCursorHorizontally(memory, cpu))
+        return ExecutionReturned(SLIDE_DONE);
+    return ExecutionHandoff(cpu, vertical ? 0x828a98u : 0x828ad3u);
+}
+
 static Lufia2ExecutionResult SlideVertically(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
-    uint16_t slot = cpu->y;
-    Byte8Result moved;
-    uint8_t position;
     unsigned steps = 0;
     for (;;) {
         if (steps++ == STEP_BUDGET)
             return ExecutionHandoff(cpu, 0x828a75u);
-        if (ErrorRunsOut(wram, cpu->decimal, DELTA_Y, DELTA_X))
+        if (ErrorRunsOut(WramViewOfCaller(memory, cpu), cpu->decimal, DELTA_Y, DELTA_X))
             Correct(memory, cpu, false, 0x8a80u);
-        moved = SlideAdd(wram, cpu->decimal, slot, SLOT_Y, DIRECTION_Y);
-        LoadA8(cpu, moved.value);
-        Compare8(cpu, moved.value, WramRead(wram, FROM_Y));
-        if (cpu->zero) {
-            position = WramReadAt(wram, SLOT_X, slot);
-            LoadA8(cpu, position);
-            cpu->overflow = moved.overflow;
-            Compare8(cpu, position, WramRead(wram, FROM_X));
-            if (cpu->zero)
-                return ExecutionReturned(SLIDE_DONE);
-        }
-        if (SlideStep(memory, cpu, moved.overflow, 0x8a9au, &result, child, context))
+        if (AdvanceCursorVertically(memory, cpu))
+            return ExecutionReturned(SLIDE_DONE);
+        if (SlideStep(memory, cpu, cpu->overflow, 0x8a9au, &result, child, context))
             return result;
-        slot = cpu->y;
     }
 }
 
 static Lufia2ExecutionResult SlideHorizontally(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     Lufia2ExecutionResult result;
-    uint16_t slot = cpu->y;
-    Byte8Result moved;
-    uint8_t position;
     unsigned steps = 0;
     for (;;) {
         if (steps++ == STEP_BUDGET)
             return ExecutionHandoff(cpu, 0x828aa6u);
-        if (ErrorRunsOut(wram, cpu->decimal, DELTA_X, DELTA_Y))
+        if (ErrorRunsOut(WramViewOfCaller(memory, cpu), cpu->decimal, DELTA_X, DELTA_Y))
             Correct(memory, cpu, true, 0x8ab1u);
-        moved = SlideAdd(wram, cpu->decimal, slot, SLOT_X, DIRECTION_X);
-        WramWrite(wram, SCRATCH_SLOT, moved.value);
-        WramWrite(wram, SCRATCH_ROW, WramReadAt(wram, SLOT_Y, slot));
-        position = WramReadAt(wram, SLOT_X, slot);
-        LoadA8(cpu, position);
-        Compare8(cpu, position, WramRead(wram, FROM_X));
-        if (cpu->zero) {
-            position = WramReadAt(wram, SLOT_Y, slot);
-            LoadA8(cpu, position);
-            cpu->overflow = moved.overflow;
-            Compare8(cpu, position, WramRead(wram, FROM_Y));
-            if (cpu->zero)
-                return ExecutionReturned(SLIDE_DONE);
-        }
-        if (SlideStep(memory, cpu, moved.overflow, 0x8ad5u, &result, child, context))
+        if (AdvanceCursorHorizontally(memory, cpu))
+            return ExecutionReturned(SLIDE_DONE);
+        if (SlideStep(memory, cpu, cpu->overflow, 0x8ad5u, &result, child, context))
             return result;
-        slot = cpu->y;
     }
 }
 
