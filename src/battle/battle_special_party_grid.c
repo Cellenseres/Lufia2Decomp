@@ -28,7 +28,7 @@ static void CopySpecialPartyGraphics(
     OpLdx(cpu, 0u);
     do {
         OpLda(memory, cpu, OpAbsX(cpu,
-            (uint16_t)WRAM_BATTLE_SPECIAL_PARTY_GRID_GRAPHICS_SOURCE));
+            (uint16_t)(WRAM_BATTLE_SPECIAL_PARTY_GRID_GRAPHICS_SOURCE & 0xffffu)));
         OpSta(memory, cpu, SNES_WMDATA);
         OpInx(cpu);
         OpCpx(cpu, GRID_GRAPHICS_BYTES);
@@ -78,13 +78,13 @@ Lufia2ExecutionResult Lufia2BattlePrepareSpecialPartyGrid(
     PullDataBank(memory, cpu);
     OpLoadA(cpu, 9u);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_PALETTE_PHASE));
-    OpLdx(cpu, (uint16_t)WRAM_BATTLE_SPECIAL_PARTY_GRID_GRAPHICS_A_LONG);
+    OpLdx(cpu, (uint16_t)(WRAM_BATTLE_SPECIAL_PARTY_GRID_GRAPHICS_A_LONG & 0xffffu));
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_PARTY_SPRITE_REBUILD_STATE));
     CopySpecialPartyGraphics(memory, cpu);
     Push8(memory, cpu, cpu->program_bank);
     PullDataBank(memory, cpu);
-    OpLdx(cpu, (uint16_t)WRAM_BATTLE_SPECIAL_PARTY_GRID_GRAPHICS_B_LONG);
+    OpLdx(cpu, (uint16_t)(WRAM_BATTLE_SPECIAL_PARTY_GRID_GRAPHICS_B_LONG & 0xffffu));
     CopySpecialPartyGraphics(memory, cpu);
     ConfigureSpecialPartyGrid(memory, cpu);
     if (!CallChildWithFrame(memory, cpu, child, context,
