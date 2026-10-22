@@ -585,6 +585,25 @@ static void MenuSmallNumber(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Rts(memory, cpu);
 }
 
+static void MenuPartyStatValues(const Lufia2Memory *memory,
+                                Lufia2CpuState *cpu) {
+    LoadY16(cpu, 0x0000u);
+    do {
+        LoadA16(cpu, Read16Long(memory, (((uint32_t)cpu->data_bank << 16) +
+            Read16Direct(memory, cpu, 0x2au) + cpu->y) & 0x00ffffffu));
+        Jsr(memory, cpu, 0xe50bu);
+        MenuSmallNumber(memory, cpu);
+        Rts(memory, cpu);
+        TransferXToA(cpu);
+        cpu->carry = 0;
+        Add16Value(cpu, 0x0040u);
+        TransferAToX(cpu);
+        IncrementY16(cpu);
+        IncrementY16(cpu);
+        Compare16(cpu, cpu->y, 0x000eu);
+    } while (!cpu->zero);
+}
+
 /* $82:E4D5: seven stats of each member as small numbers; M1. */
 static void MenuPartyStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
@@ -604,26 +623,12 @@ static void MenuPartyStats(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x82e51au, cpu->x)));
         TransferAToX(cpu);
         Jsr(memory, cpu, 0xe4f9u);                             /* E504 */
-        LoadY16(cpu, 0x0000u);
-        do {
-            LoadA16(cpu, Read16Long(memory, (((uint32_t)cpu->data_bank << 16) +
-                Read16Direct(memory, cpu, 0x2au) + cpu->y) & 0x00ffffffu));
-            Jsr(memory, cpu, 0xe50bu);
-            MenuSmallNumber(memory, cpu);
-            Rts(memory, cpu);
-            TransferXToA(cpu);
-            cpu->carry = 0;
-            Add16Value(cpu, 0x0040u);
-            TransferAToX(cpu);
-            IncrementY16(cpu);
-            IncrementY16(cpu);
-            Compare16(cpu, cpu->y, 0x000eu);
-        } while (!cpu->zero);
+        MenuPartyStatValues(memory, cpu);
         Rts(memory, cpu);
         cpu->x = PullIndexValue(memory, cpu);
         IncrementX16(cpu);
         IncrementX16(cpu);
-        Decrement16Direct(memory, cpu, 0x26u);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x26u), -1);
     } while (!cpu->zero);
     SetAccumulatorWidth(cpu, 1);
 }
@@ -2390,4 +2395,22 @@ Lufia2ExecutionResult Lufia2MenuListCursor(
         return text;
     Rts(memory, cpu);
     return ExecutionReturned(0x82a9b4u);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawPartyStats(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x82u || cpu->index_is_8_bit ||
+        cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x82e4d5u);
+    MenuPartyStats(memory, cpu);
+    return ExecutionReturned(0x82e503u);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawPartyStatValues(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!MenuValueReady(cpu))
+        return ExecutionHandoff(cpu, 0x82e504u);
+    MenuPartyStatValues(memory, cpu);
+    return ExecutionReturned(0x82e519u);
 }

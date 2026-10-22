@@ -865,6 +865,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E46B` | `Lufia2MenuCountShopWordList` | verified | `src/menu/menu_screen.c` |
 | `$82:E484` | `Lufia2MenuCountShopByteList` | verified | `src/menu/menu_screen.c` |
 | `$82:E49E` | `Lufia2MenuShopTitle` | verified | `src/menu/menu_screen.c` |
+| `$82:E4D5` | `Lufia2MenuDrawPartyStats` | verified | `src/menu/menu_screen.c` |
+| `$82:E504` | `Lufia2MenuDrawPartyStatValues` | verified | `src/menu/menu_screen.c` |
 | `$82:E522` | `Lufia2MenuShopPrepareEquipmentMembers` | verified | `src/menu/menu_shop_member_equipment.c` |
 | `$82:E569` | `Lufia2MenuShopMarkEquipmentMember` | verified | `src/menu/menu_shop_member_equipment.c` |
 | `$82:E586` | `Lufia2MenuShopRefreshEquipmentMembers` | verified | `src/menu/menu_shop_member_equipment.c` |
