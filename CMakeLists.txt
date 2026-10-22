@@ -496,6 +496,11 @@ add_library(lufia2_decomp STATIC
     src/system/sound_boot_blocks.c
     src/system/sound_poll.c
     src/system/sound_driver.c
+    src/spc/spc_driver.c
+    src/spc/spc_music.c
+    src/spc/spc_effects.c
+    src/spc/spc_voice.c
+    src/spc/spc_mixer.c
     src/system/sound_tables.c
     src/system/sound_transfer.c
     src/system/sound_queue.c

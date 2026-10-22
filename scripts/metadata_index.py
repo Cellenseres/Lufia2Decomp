@@ -12,6 +12,10 @@ script validates it, regenerates the constants block in src/system/wram.h and
 rejects WRAM_/DP_ constants in other headers that repeat a catalogued address
 under an unlisted name.
 
+metadata/spc_functions.toml catalogues the SPC-700 driver routines and the C
+functions that implement them; the script validates it and regenerates the
+routine index in docs/SPC_DRIVER.md.
+
 With --check it writes nothing and fails when a generated block is stale.
 
 Requires Python 3.11+ (tomllib); no third-party packages.
@@ -35,6 +39,8 @@ STATUS = ROOT / "docs" / "DECOMP_STATUS.md"
 INDEX = ROOT / "docs" / "FUNCTION_INDEX.md"
 MEMORY_MAP = ROOT / "metadata" / "memory_map.toml"
 WRAM_HEADER = ROOT / "src" / "system" / "wram.h"
+SPC_FUNCTIONS = ROOT / "metadata" / "spc_functions.toml"
+SPC_DOC = ROOT / "docs" / "SPC_DRIVER.md"
 
 STATUSES = ("verified", "draft", "identified", "disabled")
 FIELDS = ("address", "name", "source", "entry_mx", "exit_mx", "status")
@@ -52,6 +58,56 @@ CONSTANT = re.compile(
 
 class MetadataError(ValueError):
     pass
+
+
+SPC_FIELDS = ("address", "name", "source", "status", "routine")
+SPC_ADDRESS = re.compile(r"^[0-9A-F]{4}$")
+
+
+def load_spc_routines() -> list[dict]:
+    """SPC-700 driver routines and the C functions that implement them."""
+    document = tomllib.loads(SPC_FUNCTIONS.read_text(encoding="utf-8"))
+    if document.get("format") != 1 or document.get("driver") != "lufia2-usa-90c000":
+        raise MetadataError(f"{SPC_FUNCTIONS.name}: expected format 1, driver lufia2-usa-90c000")
+    routines = document.get("routine", [])
+    errors = []
+    sources: dict[str, str] = {}
+    for index, entry in enumerate(routines):
+        where = f"{SPC_FUNCTIONS.name} routine[{index}]"
+        for key in SPC_FIELDS:
+            if not isinstance(entry.get(key), str) or not entry[key]:
+                errors.append(f"{where}: missing {key}")
+        extra = set(entry) - set(SPC_FIELDS)
+        if extra:
+            errors.append(f"{where}: unknown keys {sorted(extra)}")
+        if not SPC_ADDRESS.match(entry.get("address", "")):
+            errors.append(f"{where}: address must be AAAA (upper case)")
+        if entry.get("status") not in STATUSES:
+            errors.append(f"{where}: status must be one of {STATUSES}")
+        source = entry.get("source", "")
+        if source not in sources:
+            path = ROOT / source
+            sources[source] = path.read_text(encoding="utf-8") if path.is_file() else ""
+        if not sources[source]:
+            errors.append(f"{where}: missing source {source}")
+        elif not re.search(r"\b" + re.escape(entry.get("name", "")) + r"\(", sources[source]):
+            errors.append(f"{where}: {entry.get('name')} not defined in {source}")
+    duplicates = [a for a, n in Counter(r.get("address") for r in routines).items() if n > 1]
+    if duplicates:
+        errors.append(f"{SPC_FUNCTIONS.name}: duplicate addresses {sorted(duplicates)}")
+    if errors:
+        raise MetadataError("\n".join(errors))
+    return routines
+
+
+def spc_index_block(routines: list[dict]) -> str:
+    counts = Counter(r["status"] for r in routines)
+    summary = ", ".join(f"{counts[s]} {s}" for s in STATUSES if counts[s])
+    rows = [f"{len(routines)} routines: {summary}.", "",
+            "| ARAM | C function | Status | Routine |", "| --- | --- | --- | --- |"]
+    for r in sorted(routines, key=lambda r: r["address"]):
+        rows.append(f"| `${r['address']}` | `{r['name']}` | {r['status']} | {r['routine']} |")
+    return "\n".join(rows)
 
 
 def load_functions() -> list[dict]:
@@ -288,6 +344,9 @@ def main() -> int:
             WRAM_HEADER.read_text(encoding="utf-8"), "memory-map",
             wram_block(locations), WRAM_HEADER, html=False)
         check_header_constants(locations)
+        spc_routines = load_spc_routines()
+        updates[SPC_DOC] = replace_block(SPC_DOC.read_text(encoding="utf-8"), "spc-index",
+                                         spc_index_block(spc_routines), SPC_DOC)
     except (MetadataError, tomllib.TOMLDecodeError, OSError) as error:
         print(f"metadata_index: {error}", file=sys.stderr)
         return 2

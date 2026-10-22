@@ -1,0 +1,839 @@
+# SPC-700 sound driver routines (Lufia II image at $90:C000, entry $0300).
+# address: ARAM address of the original routine; name: the C function
+# that implements it. Validated by scripts/metadata_index.py.
+
+format = 1
+driver = "lufia2-usa-90c000"
+
+[[routine]]
+address = "0300"
+name = "Lufia2SpcDriverStart"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "entry: clear state, reset tracks and DSP, start handshake"
+
+[[routine]]
+address = "03FA"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $02: play song"
+
+[[routine]]
+address = "0406"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $03: stop music"
+
+[[routine]]
+address = "040C"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $0A: fade step = 256 / frames"
+
+[[routine]]
+address = "0419"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $06: fade out"
+
+[[routine]]
+address = "0420"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $07: play song fading in"
+
+[[routine]]
+address = "042C"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $08: report patterns played and keyed voices"
+
+[[routine]]
+address = "0435"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $09: master volume"
+
+[[routine]]
+address = "0440"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $0B: music group volume"
+
+[[routine]]
+address = "0448"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $0C: effect group volume"
+
+[[routine]]
+address = "0450"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $0D: output options (mono)"
+
+[[routine]]
+address = "0457"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $18: report output options"
+
+[[routine]]
+address = "045E"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $1A: music track volume, no handshake"
+
+[[routine]]
+address = "046B"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $1B: effect track volume"
+
+[[routine]]
+address = "047C"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $0E: reset the DSP"
+
+[[routine]]
+address = "0482"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $0F: report status"
+
+[[routine]]
+address = "0488"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $10: enabled music voices"
+
+[[routine]]
+address = "048E"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $11: set sample allocation end"
+
+[[routine]]
+address = "0495"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $13: set instrument slot"
+
+[[routine]]
+address = "049E"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $15: toggle double tempo"
+
+[[routine]]
+address = "04A9"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $14: sample header and data"
+
+[[routine]]
+address = "04B2"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $1D: sample header only"
+
+[[routine]]
+address = "04B8"
+name = "ReceiveSampleHeader"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "sample length, loop and instrument record"
+
+[[routine]]
+address = "0517"
+name = "ReceiveSampleHeader"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "one header byte handshake"
+
+[[routine]]
+address = "0527"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $1E: report keyed voices"
+
+[[routine]]
+address = "052D"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $1F: echo filter preset"
+
+[[routine]]
+address = "0538"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $20: echo feedback"
+
+[[routine]]
+address = "0545"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $21: echo volume"
+
+[[routine]]
+address = "054D"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $12: report sample allocation end"
+
+[[routine]]
+address = "0554"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $16: set upload cursor"
+
+[[routine]]
+address = "055E"
+name = "ReceiveBlock"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $17: block upload at the upload cursor"
+
+[[routine]]
+address = "0595"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $1C: two bytes at the upload cursor"
+
+[[routine]]
+address = "05B3"
+name = "RunCommand"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "command $01: block upload to an address"
+
+[[routine]]
+address = "05BA"
+name = "ReceiveBlock"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "block transfer, two bytes per handshake"
+
+[[routine]]
+address = "05EE"
+name = "Acknowledge"
+source = "src/spc/spc_driver.c"
+status = "verified"
+routine = "done handshake $CD/$EF"
+
+[[routine]]
+address = "3560"
+name = "SpcStartSong"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "start the song at $4400"
+
+[[routine]]
+address = "35FB"
+name = "SpcMusicTick"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "tempo timer tick of the music tracks"
+
+[[routine]]
+address = "3645"
+name = "SpcStopMusic"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "stop music, keep effects"
+
+[[routine]]
+address = "3691"
+name = "SpcProcessTrackEvents"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "read pattern events until a note"
+
+[[routine]]
+address = "3754"
+name = "RunPatternCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "dispatch of pattern commands $F0-$FF"
+
+[[routine]]
+address = "375D"
+name = "RunPatternCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$F0 vibrato amount"
+
+[[routine]]
+address = "3776"
+name = "RunPatternCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$F1 volume"
+
+[[routine]]
+address = "3785"
+name = "RunPatternCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$F2 pan"
+
+[[routine]]
+address = "3791"
+name = "RunPatternCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$F3 wait"
+
+[[routine]]
+address = "379A"
+name = "RunPatternCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$F4 tempo"
+
+[[routine]]
+address = "37AE"
+name = "RunPatternCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$F6 pitch scale"
+
+[[routine]]
+address = "37BA"
+name = "RunPatternCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$F7 instrument"
+
+[[routine]]
+address = "37D2"
+name = "StartLoop"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FB loop start"
+
+[[routine]]
+address = "3813"
+name = "EndLoop"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FC loop end"
+
+[[routine]]
+address = "386C"
+name = "NextPattern"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FD pattern end"
+
+[[routine]]
+address = "38BD"
+name = "SilenceTrack"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FE track off"
+
+[[routine]]
+address = "38D8"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF sub-command dispatch"
+
+[[routine]]
+address = "38E0"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 00 echo delay"
+
+[[routine]]
+address = "38EB"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 01 echo feedback"
+
+[[routine]]
+address = "38FB"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 02 echo filter"
+
+[[routine]]
+address = "390B"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 03 echo on"
+
+[[routine]]
+address = "3925"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 04 echo off"
+
+[[routine]]
+address = "393F"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 05 no operation"
+
+[[routine]]
+address = "3945"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 06 no operation"
+
+[[routine]]
+address = "394B"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 07 no operation"
+
+[[routine]]
+address = "3951"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 08 attack rate"
+
+[[routine]]
+address = "3965"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 09 decay rate"
+
+[[routine]]
+address = "397F"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 0A sustain level"
+
+[[routine]]
+address = "399A"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 0B sustain rate"
+
+[[routine]]
+address = "39B3"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 0C envelope setting"
+
+[[routine]]
+address = "39C2"
+name = "ChangeEnvelope"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "select ADSR1 of the track voice"
+
+[[routine]]
+address = "39D5"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 0D echo volume"
+
+[[routine]]
+address = "39E6"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 0E echo volume right"
+
+[[routine]]
+address = "39F8"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 0F echo volume left"
+
+[[routine]]
+address = "3A0A"
+name = "SpcSetEchoVolume"
+source = "src/spc/spc_mixer.c"
+status = "verified"
+routine = "echo volume relative to master"
+
+[[routine]]
+address = "3A18"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 10 noise clock"
+
+[[routine]]
+address = "3A33"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 11 noise on"
+
+[[routine]]
+address = "3A4D"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 12 noise off"
+
+[[routine]]
+address = "3A67"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 13 pitch modulation on"
+
+[[routine]]
+address = "3A81"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 14 pitch modulation off"
+
+[[routine]]
+address = "3A9B"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 15 tremolo depth"
+
+[[routine]]
+address = "3AA6"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 16 vibrato depth"
+
+[[routine]]
+address = "3AB1"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 17 tremolo speed"
+
+[[routine]]
+address = "3ABC"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 18 vibrato speed"
+
+[[routine]]
+address = "3AC7"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 19 invert left"
+
+[[routine]]
+address = "3AD3"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 1A invert right"
+
+[[routine]]
+address = "3ADF"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 1B no inversion"
+
+[[routine]]
+address = "3AED"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 1C invert echo left"
+
+[[routine]]
+address = "3AF5"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 1D invert echo right"
+
+[[routine]]
+address = "3AFD"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "$FF 1E no echo inversion"
+
+[[routine]]
+address = "3B07"
+name = "AdvancePattern"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "advance and read on when no wait"
+
+[[routine]]
+address = "3B12"
+name = "RunPatternCommand"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "wait operand of $F0-$F7"
+
+[[routine]]
+address = "3B1A"
+name = "AdvancePattern"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "advance the event cursor"
+
+[[routine]]
+address = "3B28"
+name = "SpcEnterPattern"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "next order-list pattern, transposes"
+
+[[routine]]
+address = "3B59"
+name = "RememberNote"
+source = "src/spc/spc_music.c"
+status = "verified"
+routine = "current note becomes the previous note"
+
+[[routine]]
+address = "3B74"
+name = "SpcQueueKeyOn"
+source = "src/spc/spc_voice.c"
+status = "verified"
+routine = "queue key-on of the track voice"
+
+[[routine]]
+address = "3B8F"
+name = "SpcQueueKeyOff"
+source = "src/spc/spc_voice.c"
+status = "verified"
+routine = "queue key-off of the track voice"
+
+[[routine]]
+address = "3BC0"
+name = "RunPatternCommand"
+source = "src/spc/spc_music.c"
+status = "disabled"
+routine = "$F5/$F8-$FA: corrupt the stack, unused"
+
+[[routine]]
+address = "3C08"
+name = "RunExtendedCommand"
+source = "src/spc/spc_music.c"
+status = "disabled"
+routine = "$FF 1F: corrupts the stack, unused"
+
+[[routine]]
+address = "3C3E"
+name = "SpcEffectsTick"
+source = "src/spc/spc_effects.c"
+status = "verified"
+routine = "64 Hz effect timer tick"
+
+[[routine]]
+address = "3C54"
+name = "EchoRestoreTick"
+source = "src/spc/spc_effects.c"
+status = "verified"
+routine = "restore echo after an effect"
+
+[[routine]]
+address = "3C61"
+name = "FadeTick"
+source = "src/spc/spc_effects.c"
+status = "verified"
+routine = "music fade in and out"
+
+[[routine]]
+address = "3C93"
+name = "SpcUpdateModulation"
+source = "src/spc/spc_voice.c"
+status = "verified"
+routine = "vibrato and tremolo oscillators"
+
+[[routine]]
+address = "3D04"
+name = "SpcStartEffect"
+source = "src/spc/spc_effects.c"
+status = "verified"
+routine = "command $04: start a sound effect"
+
+[[routine]]
+address = "3DC4"
+name = "EffectTracksTick"
+source = "src/spc/spc_effects.c"
+status = "verified"
+routine = "effect track events"
+
+[[routine]]
+address = "3E2C"
+name = "WriteMusicOwnedMasks"
+source = "src/spc/spc_effects.c"
+status = "verified"
+routine = "noise and pitch modulation masks"
+
+[[routine]]
+address = "3E33"
+name = "SpcStopAllEffects"
+source = "src/spc/spc_effects.c"
+status = "verified"
+routine = "command $05: stop all effects"
+
+[[routine]]
+address = "3E57"
+name = "SpcEffectGroupPointer"
+source = "src/spc/spc_effects.c"
+status = "verified"
+routine = "command $19: stop one effect group"
+
+[[routine]]
+address = "3E78"
+name = "SpcStopEffectGroup"
+source = "src/spc/spc_effects.c"
+status = "verified"
+routine = "stop effects on a group's channels"
+
+[[routine]]
+address = "3EBE"
+name = "ReleaseEffectTrack"
+source = "src/spc/spc_effects.c"
+status = "verified"
+routine = "give a voice back to music"
+
+[[routine]]
+address = "3F08"
+name = "SpcFlushKeys"
+source = "src/spc/spc_voice.c"
+status = "verified"
+routine = "write key-off and key-on"
+
+[[routine]]
+address = "3F30"
+name = "SpcResetTrack"
+source = "src/spc/spc_voice.c"
+status = "verified"
+routine = "default track state"
+
+[[routine]]
+address = "3F90"
+name = "SpcWritePitchModulation"
+source = "src/spc/spc_mixer.c"
+status = "verified"
+routine = "DSP PMON"
+
+[[routine]]
+address = "3F9C"
+name = "SpcWriteEchoEnable"
+source = "src/spc/spc_mixer.c"
+status = "verified"
+routine = "DSP EON"
+
+[[routine]]
+address = "3FA8"
+name = "SpcWriteNoiseEnable"
+source = "src/spc/spc_mixer.c"
+status = "verified"
+routine = "DSP NON"
+
+[[routine]]
+address = "3FB4"
+name = "SpcWriteMasterVolume"
+source = "src/spc/spc_mixer.c"
+status = "verified"
+routine = "DSP MVOL"
+
+[[routine]]
+address = "3FC2"
+name = "SpcWriteEchoFilter"
+source = "src/spc/spc_mixer.c"
+status = "verified"
+routine = "DSP FIR coefficients"
+
+[[routine]]
+address = "3FFD"
+name = "SpcUpdateTrackVolume"
+source = "src/spc/spc_voice.c"
+status = "verified"
+routine = "velocity x volume x group volume"
+
+[[routine]]
+address = "4018"
+name = "SpcWriteVolumes"
+source = "src/spc/spc_voice.c"
+status = "verified"
+routine = "voice and echo volumes, pan, tremolo"
+
+[[routine]]
+address = "40EF"
+name = "SpcWritePitches"
+source = "src/spc/spc_voice.c"
+status = "verified"
+routine = "voice pitches, scale and vibrato"
+
+[[routine]]
+address = "41BF"
+name = "SpcSetNotePitch"
+source = "src/spc/spc_voice.c"
+status = "verified"
+routine = "note to pitch with instrument tuning"
+
+[[routine]]
+address = "420F"
+name = "SpcSetInstrument"
+source = "src/spc/spc_voice.c"
+status = "verified"
+routine = "source and envelope of an instrument"
+
+[[routine]]
+address = "4242"
+name = "SpcResetDsp"
+source = "src/spc/spc_mixer.c"
+status = "verified"
+routine = "DSP defaults and startup wait"
+
+[[routine]]
+address = "42C4"
+name = "SpcSetupEcho"
+source = "src/spc/spc_mixer.c"
+status = "verified"
+routine = "echo delay and buffer clear"

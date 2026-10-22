@@ -1,3 +1,43 @@
+# SPC-700 sound driver rebuilt in C - 2026-10-22
+
+The sound driver the game uploads to the SPC-700 ($90:C000, entry $0300) is
+now a C module, `src/spc/`. It is the whole program: start-up handshake,
+all 33 CPU commands with their transfer protocols, the music sequencer
+(order lists, notes, the commands $F0-$FF and 31 $FF sub-commands, two
+loop levels, percussion), sound effects and their voice takeover, fades,
+vibrato and tremolo, echo setup and the S-DSP output of volume, pan and
+pitch. 119 original routines map to C functions in
+`metadata/spc_functions.toml`; `docs/SPC_DRIVER.md` describes the model.
+
+The driver runs as if the sound CPU were infinitely fast. The host calls
+`Lufia2SpcDriverRun` after a CPU port write or a timer tick; it returns when
+the driver waits in one of the original polling loops. Persistent state stays
+at its ARAM addresses. Hardware access goes through `Lufia2SpcHardware`
+(ports, S-DSP registers, timers, the original key-off settle time). With it a
+host no longer emulates the SPC-700; only the S-DSP remains, which the 3DS
+port can move to the DSP.
+
+Kept from the original: the S-SMP DIV overflow of command $0A, the 8-bit
+octave counter of $41BF, the per-pass rerun of the unacknowledged command
+$1A (also after ticks), $FD counting into the key masks for effect tracks and
+the 8-bit table index of $19. Not reproduced: the stack-corrupting pattern
+commands $F5, $F8-$FA and $FF 1F, which no data uses (catalogued disabled),
+and the endless rerun of commands $22 and above.
+
+The private differential harness runs the original on the reference SPC-700
+core next to the rebuild, with every CPU port write and timer tick as a
+separate event. ARAM except scratch $00-$1C, I/O and stack, the ports, the
+S-DSP registers and write sequence, the timers and the wait point agree
+after every event: start-up, 48 instrument definitions, all commands, all
+143 effects, the 63 ROM songs with interleaved effect, volume and tempo
+commands, 100 generated effect groups and 200-400 generated songs. Ten
+seeds pass, each with about 765000 events and up to 5.6 million S-DSP
+writes. Every original instruction runs except the disabled paths and one
+unreachable transfer branch. The reference core's DIV is replaced by the
+S-SMP algorithm for the comparison. Strict MSVC (/W4 /WX) and clang
+(-Wall -Wextra -Werror) builds of the module pass. Not yet integrated into
+a host; no runtime or speedup claim.
+
 # Shared small-number and equipment-count contracts - 2026-10-20
 
 Four existing menu algorithms now have complete native entry contracts:
