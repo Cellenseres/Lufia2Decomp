@@ -693,7 +693,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9E1B` | `Lufia2MenuConfigurePendingItemActionCursor` | verified | `src/menu/menu_list_cursor_setup.c` |
 | `$82:9E2F` | `Lufia2MenuUpdateItemCapacityHint` | verified | `src/menu/menu_effect_presentation.c` |
 | `$82:9EF2` | `Lufia2MenuBuildAlternateCursor` | verified | `src/menu/menu_display_callers.c` |
+| `$82:9F0C` | `Lufia2MenuPrepareEquipmentPortrait` | verified | `src/menu/menu_party_actions.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
+| `$82:9FB0` | `Lufia2MenuPresentEquipmentList` | verified | `src/menu/menu_party_actions.c` |
 | `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
 | `$82:A318` | `Lufia2MenuDrawStatus` | verified | `src/menu/menu_status.c` |
 | `$82:A432` | `Lufia2MenuRunMainInput` | verified | `src/menu/menu_main_dispatch.c` |
@@ -741,6 +743,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:B5CF` | `Lufia2MenuReadSelectedSpell` | verified | `src/menu/menu_list_actions.c` |
 | `$82:B5ED` | `Lufia2MenuPrepareSpellMember` | verified | `src/menu/menu_list_sort.c` |
 | `$82:B60A` | `Lufia2MenuSelectAdjacentSpellMember` | verified | `src/menu/menu_list_sort.c` |
+| `$82:B67C` | `Lufia2MenuReorderParty` | verified | `src/menu/menu_party_actions.c` |
+| `$82:B6EF` | `Lufia2MenuSwapPartyMembers` | verified | `src/menu/menu_party_actions.c` |
+| `$82:B7B2` | `Lufia2MenuOpenEquipment` | verified | `src/menu/menu_party_actions.c` |
 | `$82:C261` | `Lufia2CapsuleLoadStats` | verified | `src/party/capsule.c` |
 | `$82:C2AE` | `Lufia2CapsuleInitializeSavedRecords` | verified | `src/menu/menu_context_services.c` |
 | `$82:C2FD` | `Lufia2CapsuleReset` | verified | `src/party/capsule.c` |

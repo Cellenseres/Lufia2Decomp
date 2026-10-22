@@ -6247,3 +6247,19 @@ width = 1
 count = 72
 owner = "menu"
 notes = "Separate 72-byte buffer cleared by8E:E700 from shop82:DA94. Adjacent saved-selection records end atFB49; scratch contents are not assigned a stronger meaning."
+
+[[location]]
+address = "7E:14DD"
+name = "unk_7E14DD"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:B7B2 clears this byte while opening equipment selection; precise role remains neutral."
+
+[[location]]
+address = "7E:14EF"
+name = "unk_7E14EF"
+width = 1
+count = 1
+owner = "menu"
+notes = "82:B7B2 clears this byte while opening equipment selection; adjacent14EE is the list marker row."

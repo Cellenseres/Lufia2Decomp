@@ -15902,3 +15902,43 @@ source = "src/menu/menu_cursor_slide.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:B67C"
+name = "Lufia2MenuReorderParty"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B6EF"
+name = "Lufia2MenuSwapPartyMembers"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B7B2"
+name = "Lufia2MenuOpenEquipment"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9F0C"
+name = "Lufia2MenuPrepareEquipmentPortrait"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9FB0"
+name = "Lufia2MenuPresentEquipmentList"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

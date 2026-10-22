@@ -120,6 +120,7 @@ add_library(lufia2_decomp STATIC
     src/field/group_object_conditions.c
     src/item/inventory_actions.c
     src/menu/menu_list_sort.c
+    src/menu/menu_party_actions.c
     src/menu/menu_list_controls.c
     src/menu/menu_list_scroll.c
     src/menu/menu_list_motion.c
