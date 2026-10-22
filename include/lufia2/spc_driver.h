@@ -29,7 +29,8 @@ typedef struct Lufia2SpcHardware {
     void (*write_port)(void *context, unsigned port, uint8_t value);
     uint8_t (*read_dsp)(void *context, uint8_t reg);
     void (*write_dsp)(void *context, uint8_t reg, uint8_t value);
-    /* Idle time the original spends between two DSP writes. */
+    /* The original is busy this long before its next hardware access
+     * (key-off settle, echo buffer clear); later accesses follow it. */
     void (*delay)(void *context, unsigned cycles);
     /* $F1: timer enables (bits 0-2, a 0-to-1 edge restarts the timer). */
     void (*write_control)(void *context, uint8_t value);

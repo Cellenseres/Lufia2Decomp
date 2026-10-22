@@ -49,8 +49,8 @@ enum {
 
 enum { SPC_TIMER_TEMPO = 0, SPC_TIMER_EFFECTS = 1 };
 
-/* Busy-wait of the original between key-off and key-on. */
-enum { SPC_KEY_SETTLE_CYCLES = 64 * 4 + 2 };
+/* $3F11/$3F1F: MOV Y,#$40 then 64 DBNZ Y (6 cycles taken, 4 last). */
+enum { SPC_KEY_SETTLE_CYCLES = 2 + 63 * 6 + 4 };
 
 static inline SpcRam *SpcRamOf(const Lufia2SpcDriver *driver) {
     return (SpcRam *)driver->aram;

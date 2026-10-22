@@ -9,7 +9,8 @@ enum {
     DSP_RESET_TABLE_END = 0xFF,
     STARTUP_WAIT_TICKS = 15,
     STARTUP_TIMER_TARGET = 0x80,
-    ECHO_BYTES_PER_DELAY_STEP = 0x800,
+    /* $4307-$4313: 256 x (STA [dp]+Y, INC Y, BNE) plus the page step. */
+    ECHO_CLEAR_CYCLES_PER_PAGE = 3340,
 };
 
 /* Effects own their voices; music masks only reach voices music owns. */
@@ -87,12 +88,17 @@ void SpcSetupEcho(Lufia2SpcDriver *driver) {
 
     uint8_t page = start_page;
     uint8_t remaining = pages;
+    unsigned cleared = 0;
     do {
         for (unsigned offset = 0; offset < 0x100; ++offset)
             SpcWriteByte(driver, (uint16_t)((page << 8) | offset), 0);
         ++page;
+        ++cleared;
     } while (--remaining != 0);
 
+    /* Echo writes resume only after the original's clear loop: until the
+     * DSP's echo index wraps it still uses the previous buffer length. */
+    DspDelay(driver, cleared * ECHO_CLEAR_CYCLES_PER_PAGE);
     settings->dsp_flags &= DSP_FLAG_NOISE_CLOCK;
     DspWrite(driver, DSP_FLAGS, settings->dsp_flags);
 }
