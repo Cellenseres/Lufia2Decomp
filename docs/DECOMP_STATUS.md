@@ -1,3 +1,19 @@
+# Actor coordinate timing boundary - 2026-10-22
+
+The existing `Lufia2ActorSyncFinePosition` body also matches the ROM in
+197632 additional states covering both index widths, every data bank,
+byte-slot/coordinate combinations and stack limits. A candidate consumer
+guard passes the same 197632 cases through its actual ABI, 576 negative
+guards and nine deliberately faulty ROM controls.
+
+That guard expansion was not accepted. A paired 3000-frame boot/load/field
+run changes seventeen bytes below the current stack pointer, consistent
+with NMI wait positions 82:93C8/93CA, and shifts audio output. Frame CPU values
+and pixel hashes agree. Leaf equivalence alone does not establish the
+parent's hardware timing. The original consumer guard remains in place;
+no new function, native binding or runtime context was enabled. Counts
+remain 1966 verified entries and zero drafts.
+
 # Shared party-stat display contracts - 2026-10-22
 
 Two complete menu entries now share their existing C implementation:
