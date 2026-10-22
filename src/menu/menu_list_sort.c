@@ -1,6 +1,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/menu.h"
+#include "lufia2/menu_inventory_groups.h"
 #include "system/wram.h"
 
 enum {
@@ -26,7 +27,10 @@ enum {
     SORT_MEMBER_LISTS = 0x8ed8bbu,
     SORT_MEMBER_SKIP = 0x04u,
     SORT_PREVIOUS_MEMBER = 9u,
-    SORT_FIRST_SPELL_GROUP = 0x40u
+    SORT_FIRST_SPELL_GROUP = 0x40u,
+    EQUIPMENT_GROUP_COUNT = 6u,
+    EQUIPMENT_LENGTH_COUNT = 7u,
+    EQUIPMENT_SOURCE_OFFSET = SORT_SOURCE_POINTER
 };
 
 typedef struct MenuSortCall {
@@ -61,7 +65,8 @@ static bool MenuSortChild(MenuSortCall *call, uint32_t site, uint32_t target,
 }
 
 static void GroupInventoryRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                 uint32_t masks, uint32_t counts, uint32_t groups) {
+                                 uint32_t masks, uint32_t counts, uint32_t groups,
+                                 bool inventory_offset) {
     OpAndValue(cpu, 0x00ffu);
     OpSta(memory, cpu, OpDp(cpu, SORT_OUTPUT_OFFSET));
     PushDataBank(memory, cpu);
@@ -90,7 +95,9 @@ static void GroupInventoryRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu
     cpu->carry = 0u;
     OpAdc(memory, cpu, OpDp(cpu, SORT_OUTPUT_OFFSET));
     OpTay(cpu);
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
+    OpLda(memory, cpu, inventory_offset
+        ? OpDp(cpu, EQUIPMENT_SOURCE_OFFSET)
+        : OpAbs(cpu, WRAM_ITEM_RECORD_ID));
     OpSta(memory, cpu, OpAbsY(cpu, 0u));
     PullDataBank(memory, cpu);
 }
@@ -161,7 +168,7 @@ Lufia2ExecutionResult Lufia2MenuSortInventory(const Lufia2Memory *memory,
             if (!MenuSortChild(&call, 0x82aa07u, 0x81f194u, 3u, 0u))
                 return call.result;
             GroupInventoryRecord(memory, cpu, SORT_ITEM_MASKS, SORT_COUNT_POINTERS,
-                                 SORT_GROUP_POINTERS);
+                                 SORT_GROUP_POINTERS, false);
         }
         OpPullY(memory, cpu);
         OpIny(cpu);
@@ -182,7 +189,7 @@ Lufia2ExecutionResult Lufia2MenuSortInventory(const Lufia2Memory *memory,
                 return call.result;
             OpLda(memory, cpu, OpAbs(cpu, WRAM_RECORD_BUFFER + 0x14u));
             GroupInventoryRecord(memory, cpu, SORT_EQUIPMENT_MASKS,
-                                 SORT_COUNT_POINTERS + 10u, SORT_GROUP_POINTERS + 10u);
+                                 SORT_COUNT_POINTERS + 10u, SORT_GROUP_POINTERS + 10u, false);
             OpPullX(memory, cpu);
             OpInx(cpu);
             OpInx(cpu);
@@ -361,4 +368,92 @@ Lufia2ExecutionResult Lufia2MenuSelectAdjacentSpellMember(const Lufia2Memory *me
         !MenuSortChild(&call, 0x82b678u, 0x82ac84u, 2u, 1u))
         return call.result;
     return ExecutionReturned(0x82b67bu);
+}
+
+static bool EquipmentGroupReady(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x82u && !cpu->index_is_8_bit &&
+        !cpu->direct_page && !cpu->decimal &&
+        cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2MenuGroupEquipmentOffset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!EquipmentGroupReady(cpu) || cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x82bd9bu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_RECORD_BUFFER + 0x14u));
+    GroupInventoryRecord(memory, cpu, SORT_EQUIPMENT_MASKS,
+        SORT_COUNT_POINTERS + 10u, SORT_GROUP_POINTERS + 10u, true);
+    return ExecutionReturned(0x82bddau);
+}
+
+Lufia2ExecutionResult Lufia2MenuFinishEquipmentGroups(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!EquipmentGroupReady(cpu))
+        return ExecutionHandoff(cpu, 0x82bddbu);
+    PushDataBank(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    OpRepWidths(cpu, 0x20u);
+    OpLdx(cpu, 0u);
+    do {
+        OpLda(memory, cpu, OpLongX(cpu, SORT_COUNT_POINTERS + 10u));
+        OpTay(cpu);
+        OpLda(memory, cpu, OpAbsY(cpu, 0u));
+        cpu->carry = 0u;
+        OpAdc(memory, cpu, OpLongX(cpu, SORT_GROUP_POINTERS + 10u));
+        OpTay(cpu);
+        OpLoadA(cpu, 0xffffu);
+        OpSta(memory, cpu, OpAbsY(cpu, 0u));
+        OpInx(cpu);
+        OpInx(cpu);
+        OpCpx(cpu, EQUIPMENT_GROUP_COUNT * 2u);
+    } while (!cpu->zero);
+    PullDataBank(memory, cpu);
+    return ExecutionReturned(0x82be03u);
+}
+
+Lufia2ExecutionResult Lufia2MenuBuildEquipmentGroups(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || cpu->program_bank != 0x82u || cpu->direct_page ||
+        cpu->decimal || cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x82bd48u);
+    MenuSortCall call = {memory, cpu, child, context, {0}};
+    Push8(memory, cpu, PackStatus(cpu));
+    OpRepWidths(cpu, 0x30u);
+    PushDataBank(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    OpRepWidths(cpu, 0x20u);
+    for (unsigned group = 0u; group < EQUIPMENT_LENGTH_COUNT; ++group)
+        OpStz(memory, cpu,
+            OpAbs(cpu, (uint16_t)(SORT_GROUP_LENGTHS + 10u + group * 2u)));
+    PullDataBank(memory, cpu);
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_MENU_ITEM_QUANTITY));
+    OpLdx(cpu, 0u);
+    do {
+        OpPushX(memory, cpu);
+        OpWriteX(memory, cpu, OpDp(cpu, EQUIPMENT_SOURCE_OFFSET), cpu->x);
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_INVENTORY_PACKED_ITEMS));
+        if (!cpu->zero) {
+            OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_ITEM_QUANTITY), 1);
+            OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
+            if (!MenuSortChild(&call, 0x82bd7eu, 0x81f194u, 3u, 0u))
+                return call.result;
+            OpAndValue(cpu, 2u);
+            if (!cpu->zero) {
+                if (!MenuSortChild(&call, 0x82bd87u, 0x81f1abu, 3u, 0u) ||
+                    !MenuSortChild(&call, 0x82bd8bu, 0x82bd9bu, 2u, 0u))
+                    return call.result;
+            }
+        }
+        OpPullX(memory, cpu);
+        OpInx(cpu);
+        OpInx(cpu);
+        OpCpx(cpu, SORT_INVENTORY_BYTES);
+    } while (!cpu->zero);
+    if (!MenuSortChild(&call, 0x82bd96u, 0x82bddbu, 2u, 0u))
+        return call.result;
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x82bd9au);
 }

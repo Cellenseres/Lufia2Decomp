@@ -15942,3 +15942,27 @@ source = "src/menu/menu_party_actions.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:BD48"
+name = "Lufia2MenuBuildEquipmentGroups"
+source = "src/menu/menu_list_sort.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "82:BD9B"
+name = "Lufia2MenuGroupEquipmentOffset"
+source = "src/menu/menu_list_sort.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:BDDB"
+name = "Lufia2MenuFinishEquipmentGroups"
+source = "src/menu/menu_list_sort.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
