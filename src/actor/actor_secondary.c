@@ -1,6 +1,10 @@
 /* Secondary actor script VM ($83:D508). */
 
+#include <stddef.h>
+
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
+#include "core/child_call.h"
 #include "lufia2/actor.h"
 #include "lufia2/field.h"
 #include "lufia2/system.h"
@@ -793,6 +797,11 @@ enum SecondaryOpcodeHandler {
     SECONDARY_OP_F0_WALK = 0x83dc45,                /* $F0 */
     SECONDARY_OP_F1 = 0x83dd54,                     /* $F1 */
     SECONDARY_OP_F2_SIGNED_OFFSET = 0x83dd6e,       /* $F2 */
+    SECONDARY_OP_F3_CLAIM_OBJECT = 0x83ddc6,
+    SECONDARY_OP_E7_REFRESH_OBJECT_ACTOR = 0x83ddd0,
+    SECONDARY_OP_D2_INITIALIZE_OBJECT_ACTOR = 0x83ddd9,
+    SECONDARY_OP_F4_PLACE_OBJECT = 0x83dde3,
+    SECONDARY_OP_E8_REBUILD_OBJECT = 0x83ddef,
     SECONDARY_OP_F5_CLEAR_OCCUPANCY = 0x83ddfb,     /* $F5 */
     SECONDARY_OP_F6_ORBIT = 0x83de11,               /* $F6 */
     SECONDARY_OP_F7_ORBIT = 0x83de29,               /* $F7 */
@@ -1734,9 +1743,75 @@ static SecondaryStep SecondaryExecuteHandler(
     }
 }
 
-Lufia2ExecutionResult Lufia2ActorSecondaryUpdate(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+typedef struct SecondaryObjectCommand {
+    uint32_t handler;
+    uint32_t site;
+    uint32_t child;
+    uint32_t probe_site;
+    uint8_t frame_size;
+} SecondaryObjectCommand;
+
+static const SecondaryObjectCommand secondary_object_commands[] = {
+    {SECONDARY_OP_D2_INITIALIZE_OBJECT_ACTOR, 0x83ddd9u, 0x83f5eau, 0u, 3u},
+    {SECONDARY_OP_E7_REFRESH_OBJECT_ACTOR, 0x83ddd0u, 0x83f5b9u, 0u, 2u},
+    {SECONDARY_OP_E8_REBUILD_OBJECT, 0x83ddf2u, 0x83f795u, 0x83ddefu, 2u},
+    {SECONDARY_OP_F3_CLAIM_OBJECT, 0x83ddc6u, 0x83f620u, 0u, 3u},
+    {SECONDARY_OP_F4_PLACE_OBJECT, 0x83dde6u, 0x83f7b1u, 0x83dde3u, 2u},
+};
+
+static const SecondaryObjectCommand *SecondaryObjectCommandAt(uint32_t handler) {
+    for (unsigned i = 0; i < sizeof secondary_object_commands /
+            sizeof secondary_object_commands[0]; ++i)
+        if (secondary_object_commands[i].handler == handler)
+            return secondary_object_commands + i;
+    return NULL;
+}
+
+static bool SecondaryObjectContext(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x83u && cpu->accumulator_is_8_bit &&
+        !cpu->index_is_8_bit && !cpu->direct_page && !cpu->decimal;
+}
+
+static Lufia2ExecutionResult SecondaryObjectChild(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context,
+    uint32_t site, uint32_t target, uint8_t frame_size) {
+    if (!CallChildWithFrame(memory, cpu, child, context,
+            site, target, frame_size, 0x83u)) {
+        Lufia2ExecutionResult result = ExecutionReturned(site);
+        result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        return result;
+    }
+    const uint32_t next = site + frame_size + 1u;
+    if (!SecondaryObjectContext(cpu))
+        return ExecutionHandoff(cpu, next);
+    return ExecutionReturned(next);
+}
+
+static Lufia2ExecutionResult SecondaryRunObjectCommand(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    const SecondaryObjectCommand *command,
+    Lufia2PushedChildCall child, void *context) {
+    if (command->probe_site) {
+        const Lufia2ExecutionResult probe = SecondaryObjectChild(
+            memory, cpu, child, context,
+            command->probe_site, 0x83d7a5u, 2u);
+        if (probe.flow != LUFIA2_EXECUTION_RETURNED)
+            return probe;
+    }
+    const Lufia2ExecutionResult action = SecondaryObjectChild(
+        memory, cpu, child, context,
+        command->site, command->child, command->frame_size);
+    if (action.flow != LUFIA2_EXECUTION_RETURNED)
+        return action;
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x2au)));
+    OpInx(cpu);
+    return ExecutionReturned(0x83d5c3u);
+}
+
+Lufia2ExecutionResult Lufia2ActorSecondaryUpdateWithChildren(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
     Lufia2ExecutionResult result;
     uint32_t handler;
     uint32_t steps;
@@ -1753,8 +1828,19 @@ Lufia2ExecutionResult Lufia2ActorSecondaryUpdate(
     result.dispatches = 1;
     /* A script that never yields spins the ROM forever. */
     for (steps = 0; steps < 0x10000u; ++steps) {
-        const SecondaryStep step =
-            SecondaryExecuteHandler(memory, cpu, handler);
+        SecondaryStep step;
+        const SecondaryObjectCommand *command = SecondaryObjectCommandAt(handler);
+        if (child && command && SecondaryObjectContext(cpu)) {
+            const Lufia2ExecutionResult action = SecondaryRunObjectCommand(
+                memory, cpu, command, child, context);
+            if (action.flow != LUFIA2_EXECUTION_RETURNED) {
+                result.flow = action.flow;
+                result.pc = action.pc;
+                return result;
+            }
+            step = SecondaryRedispatched(memory, cpu);
+        } else
+            step = SecondaryExecuteHandler(memory, cpu, handler);
 
         if (step.flow == SECONDARY_STEP_REDISPATCHED) {
             handler = step.handler_pc;
@@ -1774,6 +1860,11 @@ Lufia2ExecutionResult Lufia2ActorSecondaryUpdate(
     result.flow = LUFIA2_EXECUTION_BOUNDARY;
     result.pc = handler;
     return result;
+}
+
+Lufia2ExecutionResult Lufia2ActorSecondaryUpdate(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return Lufia2ActorSecondaryUpdateWithChildren(memory, cpu, NULL, NULL);
 }
 
 static bool SecondaryMovementContext(const Lufia2CpuState *cpu) {

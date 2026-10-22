@@ -82,6 +82,10 @@ Lufia2ExecutionResult Lufia2ActorSecondaryUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2ActorSecondaryUpdateWithChildren(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 /* $83:C7F8 through its RTS, or an exact boundary. */
 /* $84:8193: VRAM DMA of the queued sprite graphics. */
 Lufia2ExecutionResult Lufia2SpriteGraphicsUpload(
