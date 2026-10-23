@@ -1897,6 +1897,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:BE7A` | `Lufia2WorldMapPositionOffsetSceneGroup` | verified | `src/world/world_scene_resources.c` |
 | `$86:BEC4` | `Lufia2WorldMapOffsetSceneObject` | verified | `src/world/world_scene_layout.c` |
 | `$86:BEE6` | `Lufia2WorldMapStepTrailingSceneParticles` | verified | `src/world/world_scene_timed_motion.c` |
+| `$86:BF3B` | `Lufia2WorldMapSpawnTrailingSceneParticle` | verified | `src/world/world_scene_particle_commands.c` |
 | `$86:BF70` | `Lufia2WorldMapRunResourceScene0` | verified | `src/world/world_scene_resources.c` |
 | `$86:BF99` | `Lufia2WorldMapUploadSceneGraphics` | verified | `src/world/world_scene_resources.c` |
 | `$86:BFEB` | `Lufia2WorldMapStepResourceSceneTrails` | verified | `src/world/world_scene_timed_resources.c` |
@@ -1909,6 +1910,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:C04E` | `Lufia2WorldMapRunDualObjectScene` | verified | `src/world/world_scene_resources.c` |
 | `$86:C08C` | `Lufia2WorldMapLoadAlternateSceneBuffer` | verified | `src/world/world_scene_resources.c` |
 | `$86:C0AC` | `Lufia2WorldMapStepOrbitingSceneParticles` | verified | `src/world/world_scene_timed_motion.c` |
+| `$86:C1B4` | `Lufia2WorldMapFindOrbitSceneParticleSlot` | verified | `src/world/world_scene_particle_commands.c` |
 | `$86:C1CC` | `Lufia2WorldMapSetSceneSoundMode1` | verified | `src/world/world_scene_timed_motion.c` |
 | `$86:C1D2` | `Lufia2WorldMapRunSceneScript` | verified | `src/world/world_frame_script.c` |
 | `$86:C1E3` | `Lufia2WorldMapResumeSceneScript` | verified | `src/world/world_frame_script.c` |

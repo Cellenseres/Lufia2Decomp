@@ -16542,3 +16542,19 @@ source = "src/world/world_scene_timed_resources.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:BF3B"
+name = "Lufia2WorldMapSpawnTrailingSceneParticle"
+source = "src/world/world_scene_particle_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C1B4"
+name = "Lufia2WorldMapFindOrbitSceneParticleSlot"
+source = "src/world/world_scene_particle_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

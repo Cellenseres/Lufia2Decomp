@@ -557,6 +557,7 @@ add_library(lufia2_decomp STATIC
     src/world/world_scene_group_windows.c
     src/world/world_scene_timed_windows.c
     src/world/world_scene_timed_motion.c
+    src/world/world_scene_particle_commands.c
     src/world/world_scene_timed_resources.c
     src/world/world_scene_windows.c
     src/world/world_sloped_windows.c
