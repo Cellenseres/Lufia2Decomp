@@ -7,6 +7,14 @@
 extern "C" {
 #endif
 
+/* Consume a high-bit symbol's original control flag. */
+Lufia2ExecutionResult Lufia2DecompressFlagStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
+/* Advance a flagged symbol, preserving control-group rollover. */
+Lufia2ExecutionResult Lufia2DecompressAdvanceStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
 /* Original control group, preserving LoROM stream rollover. */
 Lufia2ExecutionResult Lufia2DecompressControlStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);

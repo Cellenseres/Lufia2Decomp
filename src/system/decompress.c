@@ -191,6 +191,35 @@ static uint32_t DecompressPhasePc(uint8_t bank, uint32_t first) {
     return first + (bank == 0x7fu ? 0xa4u : 0u);
 }
 
+static uint32_t StreamContinueFlagged(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t bank) {
+    if (StreamAtEnd(memory, cpu))
+        return DecompressPhasePc(bank, 0x808f21u);
+    StreamNext(memory, cpu);
+    DecrementDirect8(memory, cpu, FLAGS_LEFT);
+    return DecompressPhasePc(bank, cpu->zero ? 0x808eefu : 0x808efau);
+}
+
+Lufia2ExecutionResult Lufia2DecompressFlagStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    const uint8_t bank = DecompressPhaseBank(cpu, entry, 0x808f40u, 1u);
+    if (!bank)
+        return ExecutionHandoff(cpu, entry);
+    AslDirect8(memory, cpu, FLAGS);
+    if (cpu->carry)
+        return ExecutionHandoff(cpu, DecompressPhasePc(bank, 0x808f44u));
+    StreamLiteral(memory, cpu);
+    return ExecutionHandoff(cpu, StreamContinueFlagged(memory, cpu, bank));
+}
+
+Lufia2ExecutionResult Lufia2DecompressAdvanceStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    const uint8_t bank = DecompressPhaseBank(cpu, entry, 0x808f14u, 1u);
+    if (!bank)
+        return ExecutionHandoff(cpu, entry);
+    return ExecutionHandoff(cpu, StreamContinueFlagged(memory, cpu, bank));
+}
+
 Lufia2ExecutionResult Lufia2DecompressControlStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
     const uint8_t bank = DecompressPhaseBank(cpu, entry, 0x808eefu, 1u);
