@@ -16238,3 +16238,307 @@ source = "src/battle/battle_effect_flow.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "86:B0BA"
+name = "Lufia2WorldMapLoadGroupSceneWindow0"
+source = "src/world/world_scene_group_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B0C8"
+name = "Lufia2WorldMapLoadGroupSceneWindow1"
+source = "src/world/world_scene_group_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B0CF"
+name = "Lufia2WorldMapLoadGroupSceneWindow2"
+source = "src/world/world_scene_group_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B0D6"
+name = "Lufia2WorldMapLoadGroupSceneWindow3"
+source = "src/world/world_scene_group_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B0DD"
+name = "Lufia2WorldMapLoadGroupSceneWindow4"
+source = "src/world/world_scene_group_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B0E4"
+name = "Lufia2WorldMapLoadGroupSceneWindow5"
+source = "src/world/world_scene_group_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B0EB"
+name = "Lufia2WorldMapSetGroupSceneWindowShape"
+source = "src/world/world_scene_group_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B24C"
+name = "Lufia2WorldMapReduceSceneSparkEmission"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B250"
+name = "Lufia2WorldMapBeginSceneColorRise"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B259"
+name = "Lufia2WorldMapBeginSceneColorFall"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B264"
+name = "Lufia2WorldMapLoadSceneSlopedWindow0"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B272"
+name = "Lufia2WorldMapLoadSceneSlopedWindow1"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B277"
+name = "Lufia2WorldMapLoadSceneSlopedWindow2"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B27C"
+name = "Lufia2WorldMapLoadSceneMirroredWindows0"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B292"
+name = "Lufia2WorldMapLoadSceneMirroredWindows1"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B297"
+name = "Lufia2WorldMapLoadSceneMirroredWindows2"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B29C"
+name = "Lufia2WorldMapSubmitSceneSlopedWindow0"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B2B1"
+name = "Lufia2WorldMapSubmitSceneSlopedWindow1"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B2B6"
+name = "Lufia2WorldMapSubmitSceneSlopedWindow2"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B2BB"
+name = "Lufia2WorldMapStartSceneWindowCollapse"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B2F7"
+name = "Lufia2WorldMapInstallSceneWindowPalette"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B2E7"
+name = "Lufia2WorldMapPrepareSceneWindowCollapse"
+source = "src/world/world_scene_timed_windows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B5DF"
+name = "Lufia2WorldMapTrackRisingSceneActor"
+source = "src/world/world_scene_timed_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B60D"
+name = "Lufia2WorldMapStartRisingSceneActor"
+source = "src/world/world_scene_timed_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:B637"
+name = "Lufia2WorldMapStopTimedSceneSound"
+source = "src/world/world_scene_timed_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BD47"
+name = "Lufia2WorldMapStartPairedScenePulse"
+source = "src/world/world_scene_timed_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BD77"
+name = "Lufia2WorldMapSetPairedSceneAnimation27"
+source = "src/world/world_scene_timed_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BD7E"
+name = "Lufia2WorldMapSetPairedSceneAnimation26"
+source = "src/world/world_scene_timed_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BD85"
+name = "Lufia2WorldMapSetPairedSceneAnimation25"
+source = "src/world/world_scene_timed_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BE2A"
+name = "Lufia2WorldMapSetSceneSoundMode2"
+source = "src/world/world_scene_timed_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BEE6"
+name = "Lufia2WorldMapStepTrailingSceneParticles"
+source = "src/world/world_scene_timed_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C0AC"
+name = "Lufia2WorldMapStepOrbitingSceneParticles"
+source = "src/world/world_scene_timed_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C1CC"
+name = "Lufia2WorldMapSetSceneSoundMode1"
+source = "src/world/world_scene_timed_motion.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AF38"
+name = "Lufia2WorldMapIdleSceneScript"
+source = "src/world/world_scene_timed_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AFE2"
+name = "Lufia2WorldMapIdleGroupScene"
+source = "src/world/world_scene_timed_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:BFEB"
+name = "Lufia2WorldMapStepResourceSceneTrails"
+source = "src/world/world_scene_timed_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C02C"
+name = "Lufia2WorldMapStepFadingResourceSceneTrails"
+source = "src/world/world_scene_timed_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:C036"
+name = "Lufia2WorldMapBeginResourceSceneMusicFade"
+source = "src/world/world_scene_timed_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
