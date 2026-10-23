@@ -3,6 +3,7 @@
 #include "core/cpu_ops.h"
 #include "lufia2/resource_format.h"
 #include "lufia2/system.h"
+#include "lufia2/decompress_steps.h"
 #include "system/dp_scratch.h"
 
 enum {
@@ -32,39 +33,38 @@ static uint8_t StreamByte(
     return A8(cpu);
 }
 
-/* $80:8F5C: MVN $56 + 1 bytes from X + A. */
-static void StreamCopy(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t bank) {
-    unsigned count;
-
-    StoreXDirect16(memory, cpu, 0x5au);                        /* 8F5C */
+static void StreamBeginCopy(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    StoreXDirect16(memory, cpu, 0x5au);
     PushY(memory, cpu);
     LoadY16(cpu, cpu->x);
     cpu->carry = 0;
     Add16Value(cpu, Read16Direct(memory, cpu, 0x5au));
     TransferAToX(cpu);
     LoadADirect16(memory, cpu, COPY_COUNT);
-    count = (unsigned)cpu->accumulator + 1u;
-    while (count--) {                                          /* MVN */
-        Write8(memory, ((uint32_t)bank << 16) | cpu->y,
-            Read8(memory, ((uint32_t)bank << 16) | cpu->x));
-        cpu->x = (uint16_t)(cpu->x + 1u);
-        cpu->y = (uint16_t)(cpu->y + 1u);
-    }
-    cpu->accumulator = 0xffffu;
+}
+
+static void StreamMoveByte(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint8_t bank) {
     cpu->data_bank = bank;
-    LoadX16(cpu, cpu->y);                                      /* TYX */
+    const uint8_t value = Read8(memory, ((uint32_t)bank << 16) | cpu->x);
+    Write8(memory, ((uint32_t)bank << 16) | cpu->y, value);
+    cpu->accumulator = (uint16_t)(cpu->accumulator - 1u);
+    cpu->x = (uint16_t)(cpu->x + 1u);
+    cpu->y = (uint16_t)(cpu->y + 1u);
+}
+
+static void StreamFinishCopy(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    LoadX16(cpu, cpu->y);
     cpu->y = PullIndexValue(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
 }
 
 /* $80:8F40: short or long back reference. */
-static void StreamReference(
+static void StreamPrepareReference(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t bank) {
+    Lufia2CpuState *cpu) {
     StreamNext(memory, cpu);                                   /* 8F44 */
     ExchangeAccumulatorBytes(cpu);                             /* 8F47 */
     StreamByte(memory, cpu);
@@ -114,53 +114,117 @@ static void StreamReference(
         }
         cpu->x = PullIndexValue(memory, cpu);
     }
-    StreamCopy(memory, cpu, bank);
+    StreamBeginCopy(memory, cpu);
 }
 
-/* $80:8EEF/$80:8F93: literals below $80, else flag bit. */
-static void StreamDecode(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint8_t bank) {
+static void StreamReference(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint8_t bank) {
+    StreamPrepareReference(memory, cpu);
+    do {
+        StreamMoveByte(memory, cpu, bank);
+    } while (cpu->accumulator != 0xffffu);
+    StreamFinishCopy(memory, cpu);
+}
+
+static void StreamControl(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    StreamByte(memory, cpu);
+    StreamNext(memory, cpu);
+    StoreADirect8(memory, cpu, FLAGS);
+    LoadA8(cpu, 8u);
+    StoreADirect8(memory, cpu, FLAGS_LEFT);
+}
+
+static void StreamLiteral(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    StoreAAbsolute8(memory, cpu, 0u, cpu->x);
+    IncrementX16(cpu);
+}
+
+static bool StreamAtEnd(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    Compare16(cpu, cpu->x, Read16Direct(memory, cpu, DEST_END));
+    return cpu->zero != 0;
+}
+
+static void StreamDecode(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint8_t bank) {
     for (;;) {
-        StreamByte(memory, cpu);                               /* control */
-        StreamNext(memory, cpu);
-        StoreADirect8(memory, cpu, FLAGS);
-        LoadA8(cpu, 0x08u);
-        StoreADirect8(memory, cpu, FLAGS_LEFT);
+        StreamControl(memory, cpu);
         for (;;) {
-            StreamByte(memory, cpu);                           /* 8EFA */
+            StreamByte(memory, cpu);
             if (!cpu->negative) {
-                StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x);
-                IncrementX16(cpu);
-                Compare16(cpu, cpu->x, Read16Direct(memory, cpu, DEST_END));
-                if (cpu->zero)
+                StreamLiteral(memory, cpu);
+                if (StreamAtEnd(memory, cpu))
                     return;
                 StreamNext(memory, cpu);
                 continue;
             }
-            {
-                const uint8_t flags = DirectByte(memory, cpu, FLAGS);
-
-                cpu->carry = (flags & 0x80u) != 0;             /* ASL $65 */
-                Write8(memory, DirectAddress(cpu, FLAGS), (uint8_t)(flags << 1));
-                SetNz8(cpu, (uint8_t)(flags << 1));
-            }
-            if (!cpu->carry) {
-                StoreAAbsolute8(memory, cpu, 0x0000u, cpu->x); /* 8F10 */
-                IncrementX16(cpu);
-            } else {
+            AslDirect8(memory, cpu, FLAGS);
+            if (cpu->carry)
                 StreamReference(memory, cpu, bank);
-            }
-            Compare16(cpu, cpu->x, Read16Direct(memory, cpu, DEST_END)); /* 8F14 */
-            if (cpu->zero)
+            else
+                StreamLiteral(memory, cpu);
+            if (StreamAtEnd(memory, cpu))
                 return;
             StreamNext(memory, cpu);
-            DecrementDirect8(memory, cpu, FLAGS_LEFT);         /* 8F1B */
+            DecrementDirect8(memory, cpu, FLAGS_LEFT);
             if (cpu->zero)
                 break;
         }
     }
+}
+
+static uint8_t DecompressPhaseBank(const Lufia2CpuState *cpu,
+    uint32_t entry, uint32_t first, uint8_t accumulator_width) {
+    if (cpu->program_bank != 0x80u || cpu->direct_page || cpu->decimal ||
+        cpu->index_is_8_bit || cpu->accumulator_is_8_bit != accumulator_width)
+        return 0u;
+    if (cpu->data_bank == 0x7eu && entry == first)
+        return 0x7eu;
+    if (cpu->data_bank == 0x7fu && entry == first + 0xa4u)
+        return 0x7fu;
+    return 0u;
+}
+
+static uint32_t DecompressPhasePc(uint8_t bank, uint32_t first) {
+    return first + (bank == 0x7fu ? 0xa4u : 0u);
+}
+
+Lufia2ExecutionResult Lufia2DecompressControlStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    const uint8_t bank = DecompressPhaseBank(cpu, entry, 0x808eefu, 1u);
+    if (!bank)
+        return ExecutionHandoff(cpu, entry);
+    StreamControl(memory, cpu);
+    return ExecutionHandoff(cpu, DecompressPhasePc(bank, 0x808efau));
+}
+
+Lufia2ExecutionResult Lufia2DecompressSymbolStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    const uint8_t bank = DecompressPhaseBank(cpu, entry, 0x808efau, 1u);
+    if (!bank)
+        return ExecutionHandoff(cpu, entry);
+    StreamByte(memory, cpu);
+    if (cpu->negative)
+        return ExecutionHandoff(cpu, DecompressPhasePc(bank, 0x808f40u));
+    StreamLiteral(memory, cpu);
+    if (StreamAtEnd(memory, cpu))
+        return ExecutionHandoff(cpu, DecompressPhasePc(bank, 0x808f21u));
+    StreamNext(memory, cpu);
+    return ExecutionHandoff(cpu, entry);
+}
+
+Lufia2ExecutionResult Lufia2DecompressCopyByteStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    const uint8_t bank = DecompressPhaseBank(cpu, entry, 0x808f66u, 0u);
+    if (!bank)
+        return ExecutionHandoff(cpu, entry);
+    StreamMoveByte(memory, cpu, bank);
+    if (cpu->accumulator != 0xffffu)
+        return ExecutionHandoff(cpu, entry);
+    StreamFinishCopy(memory, cpu);
+    return ExecutionHandoff(cpu, DecompressPhasePc(bank, 0x808f14u));
 }
 
 /* $80:8E9D: resource $54 ($A7:8000) to $7E/$7F:[$60]. */
