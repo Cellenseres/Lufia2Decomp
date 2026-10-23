@@ -334,6 +334,7 @@ add_library(lufia2_decomp STATIC
     src/party/capsule_menu_assets.c
     src/menu/menu_shop_session.c
     src/menu/menu_shop_control.c
+    src/menu/menu_shop_dispatch.c
     src/menu/menu_shop_presentation.c
     src/menu/menu_party_animation_reset.c
     src/menu/menu_party_mask.c

@@ -16166,3 +16166,27 @@ source = "src/menu/menu_warp_selection.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:DBC9"
+name = "Lufia2MenuSelectShopOperation"
+source = "src/menu/menu_shop_dispatch.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:DFA5"
+name = "Lufia2MenuPurchaseShopSelection"
+source = "src/menu/menu_shop_dispatch.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:E290"
+name = "Lufia2MenuPayShopSelection"
+source = "src/menu/menu_shop_dispatch.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

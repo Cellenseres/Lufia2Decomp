@@ -1458,6 +1458,20 @@ Lufia2ExecutionResult Lufia2MenuRedrawWarpRows(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+/* $82:DBC9 selects the shop transaction. */
+Lufia2ExecutionResult Lufia2MenuSelectShopOperation(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* $82:DFA5 purchases items or exchange units. */
+Lufia2ExecutionResult Lufia2MenuPurchaseShopSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+/* $82:E290 selects gold or exchange payment. */
+Lufia2ExecutionResult Lufia2MenuPayShopSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
