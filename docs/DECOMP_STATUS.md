@@ -1,3 +1,47 @@
+# Resource and background decoding continuations - 2026-10-23
+
+The original resource decoder80:8E9D shares control-group, literal and MVN-byte
+operations with bounded continuation APIs. The observed battle caller enters
+M0X0/DB97 and previously retained original decoding after the whole-root guard.
+That guard stays unchanged. Original prefix, reference setup, repeated reads,
+LoROM stream rollover, overlap, bytewiseMVN, flags, stack, PLB/PLP/RTL and
+caller81:BA0C remain intact. No host decoder, bulk-copy or cache replaces them.
+
+Background81:B9C7 shares its original subtractive tilemap-delta operation with
+one bounded word step. The consumer executes at81:BA59 with the original
+accumulator chain, writes and loop termination; SEP/PLB remain original.
+Both capabilities are source-and-target scoped. The generated hook call
+requires11 remaining instructions for decoder phases and7 for the delta word,
+retaining19 for Transition. Ineligible states keep original interpretation.
+No new canonical algorithm, metadata entry, ordinary binding or WRAM field.
+Totals remain2050verified/0draft/1962bindings/805WRAM.
+
+One combined final-source checkpoint covers the subsequent atomic commits:
+- Decoder3072semantic cases/3072timing plans,4wholeM0/M1-bank combinations;
+ 49152actual-hook cases plus49152original next-op rejoins,8mixed original
+ return compositions and4repeated-overlap compositions;21+105guards.
+- Background65472actual-hook cases and original next-op rejoins,32guards.
+ CPU/fullWRAM/ordered fetch+data/openbus/flags/stack/opcode/master/refresh
+ match the original. Six in-memory original-ROM negative controls detected.
+- Actual generated hook block41472capacity cases; actual frame accounting
+ 418progress cases.33capability cases and actual source/target isolation PASS.
+- StrictMSVC actual-source proofs and isolated game, incrementalGCC/Clang
+ semantic libraries, metadata check PASS. Original timing requires X16
+ STAabsX6cycles and M0SBCabsX5pluspagecross; descriptors retain both rules.
+- One7260frame production-derived battle-command replay matches the accepted
+ control byte-for-byte for input/CPU/WRAM/pixels/PCM. Actual admissions:
+ control:160/230, symbol:2423/3328, copy:2314/3354, background:780/1023.
+ Suffix decoding125804->104804,
+ 21000fewer decoded instructions. Original decoder
+ tail, BA0C, BA67 and commandRTS remain observed. ROM/SRAM and158pinned inputs
+ unchanged. This bounded fixture does not establish whole-game or FPS claims.
+
+Private fixture build corrections preserve strict warnings. After the first
+timing failures, affected matrices were rerun once; only the capacity fixture
+needed a further Windows function-pointer correction. Passing matrices and
+unchanged compiler/library checks were reused. Full regression and unchanged
+resource CLI deferred; no new CLI acceptance claimed. Tests and ROM stay private.
+
 # Battle transition row integration - 2026-10-23
 
 The complete visual transition84:8BC7 shares its rim and HDMA row operations

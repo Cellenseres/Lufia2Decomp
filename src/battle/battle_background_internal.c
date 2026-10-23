@@ -1,4 +1,5 @@
 #include "battle/battle_lifecycle_internal.h"
+#include "lufia2/battle_background_steps.h"
 #include "core/snes_registers.h"
 #include "system/dp_scratch.h"
 
@@ -82,6 +83,25 @@ static bool LoadBackgroundPalettes(BattleContext *battle) {
     return BattleLoadPalette(battle, 0xba49u);
 }
 
+static void DecodeBackgroundTilemapWord(const Lufia2Memory *memory,
+                                        Lufia2CpuState *cpu) {
+    const uint32_t cell = OpAbsX(cpu, 0x2000u);
+    cpu->carry = 1u;
+    OpSbcValue(cpu, OpRead16(memory, cell));
+    OpSta(memory, cpu, cell);
+    cpu->x = (uint16_t)(cpu->x + 2u);
+    Compare16(cpu, cpu->x, 0x0800u);
+}
+
+Lufia2ExecutionResult Lufia2BattleDecodeBackgroundWordStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81ba59u);
+    DecodeBackgroundTilemapWord(memory, cpu);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x81ba67u : 0x81ba59u);
+}
+
 /* Undo the tilemap's difference coding at $7E:2000. */
 static void DecodeBackgroundTilemap(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
@@ -91,12 +111,7 @@ static void DecodeBackgroundTilemap(const Lufia2Memory *memory, Lufia2CpuState *
     OpLda(memory, cpu, OpAbs(cpu, 0x2000u));
     OpLdx(cpu, 2u);
     do {
-        cpu->carry = 1;
-        OpSbcValue(cpu, OpRead16(memory, OpAbsX(cpu, 0x2000u)));
-        OpSta(memory, cpu, OpAbsX(cpu, 0x2000u));
-        OpInx(cpu);
-        OpInx(cpu);
-        OpCpx(cpu, 0x0800u);
+        DecodeBackgroundTilemapWord(memory, cpu);
     } while (!cpu->zero);
 
     OpSepWidths(cpu, 0x20u);
