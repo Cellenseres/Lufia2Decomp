@@ -4,6 +4,7 @@
 #include "battle/status_cache_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "lufia2/battle_queue_steps.h"
 #include "battle/sprite_render_internal.h"
 #include "system/wram.h"
 
@@ -606,35 +607,56 @@ Lufia2ExecutionResult Lufia2BattleFrameUpkeep(
     return result;
 }
 
-/* $85:ECDB: Y = first free slot in the $1A8F VRAM queue. */
-Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    Lufia2ExecutionResult result;
+enum { BATTLE_QUEUE_ROW_BYTES = 6u };
 
-    result.flow = LUFIA2_EXECUTION_RETURNED;
-    result.pc = 0x85ecefu;
-    result.dispatches = 0;
-    /* X=1 decodes LDY #imm as two bytes. */
-    if (cpu->index_is_8_bit) {
-        result.flow = LUFIA2_EXECUTION_BOUNDARY;
-        result.pc = cpu->resume_pc = 0x85ecdbu;
-        return result;
-    }
-    LoadY16(cpu, 0x0000u);
-    for (;;) {
-        LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1a8fu, cpu->y));
-        if (cpu->zero)
-            return result;
-        LoadY16(cpu, (uint16_t)(cpu->y + 6u));
-        Compare16(cpu, cpu->y, 0x0060u);
-        if (cpu->zero)
-            break;
-    }
-    /* Queue full: BRK #$6B on LLE. */
-    result.flow = LUFIA2_EXECUTION_BOUNDARY;
-    result.pc = cpu->resume_pc = 0x85eceeu;
-    return result;
+static bool BattleQueueRowFree(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_BATTLE_VRAM_QUEUE, cpu->y));
+    return cpu->zero != 0u;
+}
+
+static bool BattleQueueNextRow(Lufia2CpuState *cpu) {
+    for (unsigned step = 0u; step < BATTLE_QUEUE_ROW_BYTES; ++step)
+        LoadY16(cpu, (uint16_t)(cpu->y + 1u));
+    Compare16(cpu, cpu->y, WRAM_BATTLE_VRAM_QUEUE_COUNT * BATTLE_QUEUE_ROW_BYTES);
+    return cpu->zero == 0u;
+}
+
+/* $85:ECDB: first free VRAM upload row. */
+Lufia2ExecutionResult Lufia2BattleVramQueueSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x85ecdbu);
+    LoadY16(cpu, 0u);
+    do {
+        if (BattleQueueRowFree(memory, cpu))
+            return ExecutionReturned(0x85ecefu);
+    } while (BattleQueueNextRow(cpu));
+    return ExecutionHandoff(cpu, 0x85eceeu);
+}
+
+static Lufia2ExecutionResult BattleQueueRowStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (BattleQueueRowFree(memory, cpu))
+        return ExecutionHandoff(cpu, 0x85ecefu);
+    return ExecutionHandoff(cpu,
+        BattleQueueNextRow(cpu) ? 0x85ecdeu : 0x85eceeu);
+}
+
+Lufia2ExecutionResult Lufia2BattleBeginVramQueueSearch(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x85ecdbu);
+    LoadY16(cpu, 0u);
+    return BattleQueueRowStep(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleContinueVramQueueSearch(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->index_is_8_bit ||
+        cpu->y >= WRAM_BATTLE_VRAM_QUEUE_COUNT * BATTLE_QUEUE_ROW_BYTES ||
+        cpu->y % BATTLE_QUEUE_ROW_BYTES)
+        return ExecutionHandoff(cpu, 0x85ecdeu);
+    return BattleQueueRowStep(memory, cpu);
 }
 
 /* DP 0, stack in $1F00..$1FFC. */
