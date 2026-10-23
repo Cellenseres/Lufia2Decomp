@@ -1,3 +1,33 @@
+# Menu member-string aliases - 2026-10-23
+
+The original80:8A81 string-target table has12entries. Commands10/11 jump
+directly to the existing member-name routine80:8B3F, without the extra JSR
+frame used by commands4..9. The C dispatcher now reuses that same routine
+and hands off exactly before originalRTS80:8B56. The unusual original stack
+pop remains literal; it is not replaced with a normal reload or return.
+Commands0..9 and unsupported12+ paths remain unchanged. No new function,
+ordinary binding, metadata entry or WRAM field;2050verified/0draft remain.
+
+Shared checkpoint:1024original-ROM/public-API cases and1024actual nextRTS
+rejoins,24unchanged-route comparisons,4nested handoffs,3in-memory original-ROM
+negative controls. The installed source is byte-identical to that candidate;
+the matrix was reused. Actual Recomp bridge8878 adds48alias/48originalRTS,
+6nested originalJMP rejoins and6decimal/emulation guards across legal0/2/3
+host return contexts. CPU/WRAM/ordered data and stack accesses agree.
+
+The unpaced whole bridge does not fetch original opcodes. Six nested8C0E
+boundaries therefore record raw latchAA(original) versus04(native), rather
+than claiming fetch-identical state. The actual next original JMP matches
+all five fetch/data reads, architectural CPU/WRAM/cycles and final latch;
+its first ROM fetch overwrites the prior latch before any target read.
+This is not physical-timing or interrupt acceptance for the unpaced bridge.
+
+StrictMSVC actual-source ABI proof and isolated game, incrementalGCC/Clang
+library and metadata check PASS. Private link/diagnostic fixture corrections
+did not change production. Full regression, unchanged CLI and another battle
+replay deferred; the prior battle acceptance belongs to its recorded revision.
+Tests, diagnostic programs and ROM remain private. No gameplay patch.
+
 # Resource and background decoding continuations - 2026-10-23
 
 The original resource decoder80:8E9D shares control-group, literal and MVN-byte

@@ -685,11 +685,18 @@ static int MenuOpString(MenuVm *vm) {
     SetAccumulatorWidth(cpu, 1);
     kind = cpu->x >> 1;
     vm->dispatches = MenuVisitCount(vm, 0x808a7eu);
-    if (kind > 9u) {
+    if (kind > 11u) {
         vm->handoff = 0x808a7eu;                               /* JMP ($8A81,x) */
         return MENU_HANDOFF;
     }
     (void)Read16Long(memory, ROM_MENU_STRING_TARGETS + cpu->x);
+    if (kind >= 10u) {
+        if (MenuMemberName(vm))
+            return MENU_HANDOFF;
+        vm->handoff = 0x808b56u;
+        vm->dispatches = 0u;
+        return MENU_HANDOFF;
+    }
     switch (kind) {
     case 0:                                                    /* 8A99 */
         SetAccumulatorWidth(cpu, 0);
