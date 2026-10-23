@@ -6,6 +6,7 @@
 #include "core/cpu_ops.h"
 #include "field/field_coordinates_internal.h"
 #include "lufia2/actor.h"
+#include "lufia2/object_script.h"
 
 #include "lufia2/system.h"
 #include "actor/actor_internal.h"
@@ -113,8 +114,10 @@ Lufia2ExecutionResult Lufia2ObjectSelectSpriteFrame(
 
 typedef enum ObjectFlow {
     OBJECT_FLOW_DISPATCH = 0,
-    OBJECT_FLOW_RETURN = 1,
+    OBJECT_FLOW_SAVED_CURSOR = 1,
     OBJECT_FLOW_BOUNDARY = 2,
+    OBJECT_FLOW_DEFERRED = 3,
+    OBJECT_FLOW_DESPAWNED = 4,
 } ObjectFlow;
 
 /* $83:E143: store the cursor, PLB, RTS. */
@@ -128,7 +131,7 @@ static ObjectFlow ObjectSaveAndReturn(
         cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     PullDataBank(memory, cpu);
-    return OBJECT_FLOW_RETURN;
+    return OBJECT_FLOW_SAVED_CURSOR;
 }
 
 /* $83:E11C: advance by A; yield on $064A bit 4. */
@@ -152,7 +155,7 @@ static ObjectFlow ObjectAdvance(
     LoadA8(cpu, 0x01u);                                        /* E135 */
     Write8(memory, LongIndexedAddress(WRAM_UNK_7FDFAE, cpu->x), A8(cpu));
     PullDataBank(memory, cpu);
-    return OBJECT_FLOW_RETURN;
+    return OBJECT_FLOW_DEFERRED;
 }
 
 /* $83:FB05: sign-extend nibble A; M=0 exit. */
@@ -268,7 +271,7 @@ static void ObjectTakeAnimation(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 }
 
 /* $83:ECDE: sprite slots and VRAM base for object $A7. */
-static void ObjectSpriteSetup(
+static bool ObjectSpriteSetup(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xecdbu);
@@ -281,6 +284,10 @@ static void ObjectSpriteSetup(
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SIZE, cpu->x)));
     TransferAToX(cpu);
     LoadA8(cpu, Read8(memory, LongIndexedAddress(OBJECT_SPRITE_SLOT_COUNTS, cpu->x)));
+    if (!A8(cpu)) {
+        cpu->resume_pc = 0x83ecf3u;
+        return false;
+    }
     Lufia2SpriteAllocSlots(memory, cpu, 0xecf6u);
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* ECF7 */
     Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SLOT_A, cpu->x), A8(cpu));
@@ -293,10 +300,11 @@ static void ObjectSpriteSetup(
                 cpu->accumulator);
     SetAccumulatorWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
+    return true;
 }
 
 /* $83:EC9C: animation A for object X. */
-static void ObjectAnimationSetup(
+static bool ObjectAnimationSetup(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
@@ -336,9 +344,11 @@ static void ObjectAnimationSetup(
     LsrA8(cpu);
     LsrA8(cpu);
     Write8(memory, LongIndexedAddress(WRAM_OBJECT_SPRITE_SIZE, cpu->x), A8(cpu));
-    ObjectSpriteSetup(memory, cpu);
+    if (!ObjectSpriteSetup(memory, cpu))
+        return false;
     cpu->y = PullIndexValue(memory, cpu);                      /* ECDC */
     SimulateRtsFrame(memory, cpu);
+    return true;
 }
 
 /* DP words: child offset, then its fine position. */
@@ -426,19 +436,6 @@ static void ObjectSpawnChild(
     }
     cpu->x = PullIndexValue(memory, cpu);                      /* E935 */
     SimulateRtsFrame(memory, cpu);
-}
-
-/* Size-0 sprites can spin $83:AB7C forever. */
-static uint8_t ObjectSpriteSizeZero(
-    const Lufia2Memory *memory,
-    const Lufia2CpuState *cpu,
-    uint8_t animation) {
-    const uint16_t index =
-        (uint16_t)(((cpu->direct_page & 0xff00u) | animation) << 2);
-    const uint8_t shape =
-        Read8(memory, LongIndexedAddress((OBJECT_ANIMATION_RECORDS + 3u), index));
-
-    return Read8(memory, OBJECT_SPRITE_SLOT_COUNTS + (uint32_t)(shape >> 4)) == 0;
 }
 
 static bool ObjectEventReturn(
@@ -1158,15 +1155,6 @@ static ObjectFlow ObjectOp198E(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t handler) {
-    const uint8_t animation =
-        handler == OBJECT_OP_19
-            ? Read8(memory, AbsoluteIndexedAddress(cpu, 0x00u, cpu->y))
-            : Read8(memory, WRAM_OBJECT_SPAWN_IDS);
-
-    if (ObjectSpriteSizeZero(memory, cpu, animation)) {
-        cpu->resume_pc = OBJECT_PROGRAM_BANK | handler;
-        return OBJECT_FLOW_BOUNDARY;
-    }
     if (handler == OBJECT_OP_19) {
         LoadAAbsolute8(memory, cpu, 0x00u, cpu->y);
         Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
@@ -1204,41 +1192,30 @@ static ObjectFlow ObjectOp198E(
     Write8(memory, LongIndexedAddress(WRAM_OBJECT_FLAGS, cpu->x), A8(cpu));
     TransferDirectToA(cpu);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
-    ObjectAnimationSetup(memory, cpu, 0xe47du);
+    if (!ObjectAnimationSetup(memory, cpu, 0xe47du))
+        return OBJECT_FLOW_BOUNDARY;
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $26: set up the animation id of $7F:DA4C[slot]. */
-static ObjectFlow ObjectSetAnimation(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                     uint16_t handler) {
-    if (ObjectSpriteSizeZero(
-            memory, cpu,
-            Read8(memory,
-                  LongIndexedAddress(WRAM_OBJECT_ANIMATION_REQUEST,
-                                     Read16Direct(memory, cpu, DP_ACTOR_SLOT))))) {
-        cpu->resume_pc = OBJECT_PROGRAM_BANK | handler;
-        return OBJECT_FLOW_BOUNDARY;
-    }
+static ObjectFlow ObjectSetAnimation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     TransferDirectToA(cpu);
     LoadA8(cpu,
            Read8(memory, LongIndexedAddress(WRAM_OBJECT_ANIMATION_REQUEST, cpu->x)));
-    ObjectAnimationSetup(memory, cpu, 0xeb08u);
+    if (!ObjectAnimationSetup(memory, cpu, 0xeb08u))
+        return OBJECT_FLOW_BOUNDARY;
     return OBJECT_FLOW_DISPATCH;
 }
 
 /* Object opcode $Ax: set up the animation named by the operand. */
 static ObjectFlow ObjectSetAnimationFromOperand(const Lufia2Memory *memory,
-                                                Lufia2CpuState *cpu, uint16_t handler) {
-    if (ObjectSpriteSizeZero(
-            memory, cpu, Read8(memory, AbsoluteIndexedAddress(cpu, 0x01u, cpu->y)))) {
-        cpu->resume_pc = OBJECT_PROGRAM_BANK | handler;
-        return OBJECT_FLOW_BOUNDARY;
-    }
+                                                Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
     TransferDirectToA(cpu);
     LoadAAbsolute8(memory, cpu, 0x01u, cpu->y);
-    ObjectAnimationSetup(memory, cpu, 0xec96u);
+    if (!ObjectAnimationSetup(memory, cpu, 0xec96u))
+        return OBJECT_FLOW_BOUNDARY;
     IncrementY16(cpu);
     IncrementY16(cpu);
     return OBJECT_FLOW_DISPATCH;
@@ -1348,7 +1325,7 @@ static ObjectFlow ObjectOpDespawn(
     if (!ObjectDespawn(memory, cpu))
         return OBJECT_FLOW_BOUNDARY;
     PullDataBank(memory, cpu);                             /* E141 */
-    return OBJECT_FLOW_RETURN;
+    return OBJECT_FLOW_DESPAWNED;
 }
 
 /* $83:E42D: high nibble of A as a signed step. */
@@ -2606,17 +2583,20 @@ static ObjectFlow ObjectSetCustomGraphics(
         cpu->resume_pc = 0x83e487u;
         return OBJECT_FLOW_BOUNDARY;
     }
-    if (Read8(memory, OpAbsY(cpu, 0u)) >= 4u ||
-        Read8(memory, OpAbsY(cpu, 1u)) >= 4u) {
-        cpu->resume_pc = 0x83e487u;
-        return OBJECT_FLOW_BOUNDARY;
-    }
     TransferDirectToA(cpu);
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
     OpLda(memory, cpu, OpAbsY(cpu, 0u));
+    if (A8(cpu) >= 4u) {
+        cpu->resume_pc = 0x83e48du;
+        return OBJECT_FLOW_BOUNDARY;
+    }
     OpOraValue(cpu, 0x80u);
     OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_ANIMATION_ID));
     OpLda(memory, cpu, OpAbsY(cpu, 1u));
+    if (A8(cpu) >= 4u) {
+        cpu->resume_pc = 0x83e496u;
+        return OBJECT_FLOW_BOUNDARY;
+    }
     OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_SPRITE_SIZE));
     PushY(memory, cpu);
     OpLda(memory, cpu, OpLongX(cpu, WRAM_OBJECT_ANIMATION_ID));
@@ -2930,9 +2910,9 @@ static ObjectFlow ObjectExecute(
     case OBJECT_OP_8E:
         return ObjectOp198E(memory, cpu, handler);
     case OBJECT_OP_SET_ANIMATION:
-        return ObjectSetAnimation(memory, cpu, handler);
+        return ObjectSetAnimation(memory, cpu);
     case OBJECT_OP_ANIMATION_FROM_OPERAND:
-        return ObjectSetAnimationFromOperand(memory, cpu, handler);
+        return ObjectSetAnimationFromOperand(memory, cpu);
     case OBJECT_OP_6X_SPAWN_CHILD:
         return ObjectOp6XSpawnChild(memory, cpu);
     case OBJECT_OP_SPAWN_CHILD_WITH_ANIMATION:
@@ -3003,30 +2983,49 @@ Lufia2ExecutionResult Lufia2ObjectBeginOpcodeDispatch(const Lufia2Memory *memory
     return ObjectDispatchOpcode(memory, cpu);
 }
 
-/* $83:E0FC: run object $A7's script until it yields. */
-
-static uint8_t ObjectRunScript(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t *dispatches) {
-    unsigned steps;
-
-    ObjectLoadScriptPointer(memory, cpu);
-    /* A script that never yields spins the ROM forever. */
-    for (steps = 0; steps < 0x10000u; ++steps) {
-        uint16_t handler;
-        ObjectFlow flow;
-
-        ++*dispatches;
-        handler = ObjectReadOpcodeTarget(memory, cpu);
-        flow = ObjectExecute(memory, cpu, handler);
-        if (flow == OBJECT_FLOW_RETURN)
-            return 1;
-        if (flow == OBJECT_FLOW_BOUNDARY)
-            return 0;
+static Lufia2ExecutionResult RunObjectScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, bool load_pointer) {
+    Lufia2ExecutionResult result = {LUFIA2_EXECUTION_RETURNED, 0u, 0u};
+    if (load_pointer)
+        ObjectLoadScriptPointer(memory, cpu);
+    for (unsigned steps = 0u; steps < 0x10000u; ++steps) {
+        ++result.dispatches;
+        const uint16_t handler = ObjectReadOpcodeTarget(memory, cpu);
+        switch (ObjectExecute(memory, cpu, handler)) {
+        case OBJECT_FLOW_SAVED_CURSOR:
+            result.pc = 0x83e14fu;
+            return result;
+        case OBJECT_FLOW_DEFERRED:
+            result.pc = 0x83e13cu;
+            return result;
+        case OBJECT_FLOW_DESPAWNED:
+            result.pc = 0x83e142u;
+            return result;
+        case OBJECT_FLOW_BOUNDARY:
+            result.flow = LUFIA2_EXECUTION_BOUNDARY;
+            result.pc = cpu->resume_pc;
+            return result;
+        case OBJECT_FLOW_DISPATCH:
+            break;
+        }
     }
-    cpu->resume_pc = 0x83e10fu;
-    return 0;
+    result.flow = LUFIA2_EXECUTION_BOUNDARY;
+    result.pc = cpu->resume_pc = 0x83e10fu;
+    return result;
+}
+
+Lufia2ExecutionResult Lufia2ObjectRunScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectOpcodeContext(cpu))
+        return ExecutionHandoff(cpu, 0x83e0fcu);
+    return RunObjectScript(memory, cpu, true);
+}
+
+Lufia2ExecutionResult Lufia2ObjectContinueScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ObjectOpcodeContext(cpu))
+        return ExecutionHandoff(cpu, 0x83e10fu);
+    return RunObjectScript(memory, cpu, false);
 }
 
 Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
@@ -3105,10 +3104,12 @@ Lufia2ExecutionResult Lufia2ObjectSlotsUpdate(
                     Lufia2ActorRecordOffsets(memory, cpu);
                     SimulateRtlFrame(memory, cpu);
                     SimulateJsrFrame(memory, cpu, 0xe0c2u);    /* E0C0 */
-                    if (!ObjectRunScript(
-                            memory, cpu, &result.dispatches)) {
-                        result.flow = LUFIA2_EXECUTION_BOUNDARY;
-                        result.pc = cpu->resume_pc;
+                    const Lufia2ExecutionResult script =
+                        RunObjectScript(memory, cpu, true);
+                    result.dispatches += script.dispatches;
+                    if (script.flow != LUFIA2_EXECUTION_RETURNED) {
+                        result.flow = script.flow;
+                        result.pc = script.pc;
                         return result;
                     }
                     if (!ObjectEventReturn(memory, cpu, 0xe0c2u, 2u)) {

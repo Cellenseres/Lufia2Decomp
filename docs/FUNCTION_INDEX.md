@@ -1271,8 +1271,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:E018` | `Lufia2FieldPlaceSpawnedActor` | verified | `src/field/field_event_actors.c` |
 | `$83:E033` | `Lufia2FieldSetObjectDrawFlags` | verified | `src/field/field_event_actors.c` |
 | `$83:E03E` | `Lufia2ObjectSlotsUpdate` | verified | `src/actor/object_vm.c` |
-| `$83:E0FC` | `Lufia2ObjectBeginOpcodeDispatch` | verified | `src/actor/object_vm.c` |
-| `$83:E10F` | `Lufia2ObjectDispatchOpcode` | verified | `src/actor/object_vm.c` |
+| `$83:E0FC` | `Lufia2ObjectRunScript` | verified | `src/actor/object_vm.c` |
+| `$83:E10F` | `Lufia2ObjectContinueScript` | verified | `src/actor/object_vm.c` |
 | `$83:E1AD` | `Lufia2ObjectAddDisplayOffsetX` | verified | `src/actor/object_vm.c` |
 | `$83:E1B9` | `Lufia2ObjectAddDisplayOffsetY` | verified | `src/actor/object_vm.c` |
 | `$83:E200` | `Lufia2ObjectSelectSpriteFrame` | verified | `src/actor/object_vm.c` |

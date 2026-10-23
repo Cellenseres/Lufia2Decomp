@@ -12763,19 +12763,19 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
-# Complete opcode prefix; handoff at the original indirect jump.
+# Complete object script owner.
 [[function]]
 address = "83:E0FC"
-name = "Lufia2ObjectBeginOpcodeDispatch"
+name = "Lufia2ObjectRunScript"
 source = "src/actor/object_vm.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
-# Complete opcode prefix; handoff at the original indirect jump.
+# Object script continuation with a saved data bank.
 [[function]]
 address = "83:E10F"
-name = "Lufia2ObjectDispatchOpcode"
+name = "Lufia2ObjectContinueScript"
 source = "src/actor/object_vm.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
