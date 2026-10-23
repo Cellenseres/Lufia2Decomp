@@ -503,13 +503,17 @@ static void BattleLongDivide(
     LoadX16(cpu, Read16Direct(memory, cpu, 0x63u));
     Write16Direct(memory, cpu, 0x64u, cpu->x);
     for (i = 0; i < 16u; ++i) {
+        const uint32_t low_address = DirectAddress(cpu, 0x63u);
         const uint16_t low = Read16Direct(memory, cpu, 0x63u);
+        const uint16_t low_shifted = (uint16_t)(low << 1);
+        Write8(memory, (uint16_t)(low_address + 1u), (uint8_t)(low_shifted >> 8));
+        Write8(memory, low_address, (uint8_t)low_shifted);
+        const uint32_t high_address = DirectAddress(cpu, 0x65u);
         const uint16_t high = Read16Direct(memory, cpu, 0x65u);
+        const uint16_t high_shifted = (uint16_t)((high << 1) | (low >> 15));
+        Write8(memory, (uint16_t)(high_address + 1u), (uint8_t)(high_shifted >> 8));
+        Write8(memory, high_address, (uint8_t)high_shifted);
         const uint16_t a = cpu->accumulator;
-
-        Write16Direct(memory, cpu, 0x63u, (uint16_t)(low << 1));
-        Write16Direct(memory, cpu, 0x65u,
-            (uint16_t)((high << 1) | (low >> 15)));
         LoadA16(cpu, (uint16_t)((a << 1) | (high >> 15)));
         cpu->carry = a >> 15;
         if (!cpu->carry) {
@@ -518,8 +522,10 @@ static void BattleLongDivide(
                 continue;
         }
         Add16Value(cpu, (uint16_t)~Read16Direct(memory, cpu, DP_SCRATCH_E));
-        Write16Direct(memory, cpu, 0x63u,
-            (uint16_t)(Read16Direct(memory, cpu, 0x63u) + 1u));
+        const uint16_t incremented = (uint16_t)(Read16Direct(memory, cpu, 0x63u) + 1u);
+        Write8(memory, (uint16_t)(low_address + 1u), (uint8_t)(incremented >> 8));
+        Write8(memory, low_address, (uint8_t)incremented);
+        SetNz16(cpu, incremented);
     }
     UnpackStatus(cpu, Pull8(memory, cpu));                     /* DC6D */
     SimulateRtlFrame(memory, cpu);
@@ -606,9 +612,9 @@ static void BattleActiveMask(
             bits = (uint16_t)((bits << 1) | cpu->carry);
             cpu->carry = out;
         }
-        Write8(memory, mask, (uint8_t)bits);
         Write8(memory, AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BITS, 0),
                (uint8_t)(bits >> 8));
+        Write8(memory, mask, (uint8_t)bits);
         SetNz16(cpu, bits);
         cpu->x = (uint16_t)(cpu->x - 2u);
         SetNz16(cpu, cpu->x);

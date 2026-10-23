@@ -1,3 +1,12 @@
+# Battle VM ordered bus corrections - 2026-10-23
+
+C117 ROL09FA now writes high then low. DB6D division performs low-word ASL
+writes before reading the high word and preserves high-before-low RMW writes.
+These correct native access order to the original ROM, not original gameplay.
+8192 isolated CPU/fullWRAM/ordered-bus/openbus comparisons pass as part of the
+combined battle VM checkpoint. The combined final source is validated; atomic
+intermediate commits were not separately tested. Tests and ROM stay private.
+
 # Battle script divide and scaling commands - 2026-10-23
 
 Original55/B71D unsigned division and57/BEF5 action-record scaling now run
