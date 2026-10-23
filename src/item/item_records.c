@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "core/child_call.h"
 #include "lufia2/item.h"
+#include "lufia2/item_record_steps.h"
 
 enum {
     ITEM = 0x0a06u,
@@ -222,16 +223,13 @@ Lufia2ExecutionResult Lufia2LoadSpellRecord(
     return ExecutionReturned(0x81f445u);
 }
 
-/* $81:F194: A = first record byte of item $0A06. */
-Lufia2ExecutionResult Lufia2ItemRecordByte(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static void BeginItemRecordRead(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Push8(memory, cpu, PackStatus(cpu));
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
-    SimulateJslFrame(memory, cpu, 0x81u, 0xf19cu);
-    ItemRecordAddress(memory, cpu);
-    SimulateRtlFrame(memory, cpu);
+}
+
+static void FinishItemRecordRead(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, ITEM_RECORD, 0));
     PushDataBank(memory, cpu);
     LoadA8(cpu, 0x96u);
@@ -240,7 +238,38 @@ Lufia2ExecutionResult Lufia2ItemRecordByte(
     LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2ItemRecordByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    BeginItemRecordRead(memory, cpu);
+    SimulateJslFrame(memory, cpu, 0x81u, 0xf19cu);
+    ItemRecordAddress(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    FinishItemRecordRead(memory, cpu);
     return ExecutionReturned(0x81f1aau);
+}
+
+static bool ItemRecordStepContext(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == 0x81u && !cpu->index_is_8_bit &&
+        !cpu->decimal && !cpu->direct_page &&
+        cpu->stack >= 0x1f10u && cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2ItemBeginRecordRead(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ItemRecordStepContext(cpu) || cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81f194u);
+    BeginItemRecordRead(memory, cpu);
+    return ExecutionHandoff(cpu, 0x81f199u);
+}
+
+Lufia2ExecutionResult Lufia2ItemFinishRecordRead(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!ItemRecordStepContext(cpu) || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81f19du);
+    FinishItemRecordRead(memory, cpu);
+    return ExecutionHandoff(cpu, 0x81f1aau);
 }
 
 static Lufia2ExecutionResult SpellRecordAt(const Lufia2Memory *memory,
