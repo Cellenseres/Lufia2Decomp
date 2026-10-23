@@ -22,6 +22,7 @@
 #define BATTLE_LEADER_ID 0x11e8u
 #define BATTLE_GLOBAL_VARIABLES 0x7ff40eu
 #define BATTLE_CONDITION 0x7ff42eu
+#define BATTLE_SCRIPT_RESULT_FLAGS (WRAM_BATTLE_ACTION_WORK + 0x82u)
 #define BATTLE_ACTION_CODE 0x7ff454u
 /* Script battler records: two battlers, then action arguments. */
 #define BATTLE_SCRIPT_RECORD 0x7ff44eu
@@ -670,7 +671,40 @@ enum BattleOpcodeHandler {
     BATTLE_OP_SET_TIMER = 0xbe22,                              /* $56 */
     BATTLE_OP_LIVING_MASK = 0xbe56,                            /* $4D */
     BATTLE_OP_F450_MASK = 0xbe68,                              /* $50 */
+    BATTLE_OP_NORMAL_RESULT_FLAG = 0xbe7d,                     /* $51 */
+    BATTLE_OP_RESULT_FLAG = 0xbe96,                            /* $52 */
+    BATTLE_OP_ACTION_9 = 0xbebf,                               /* $53 */
+    BATTLE_OP_ACTION_25 = 0xbeda,                              /* $54 */
+    BATTLE_OP_FADE_VALUE = 0xbfa5,                             /* $5A */
+    BATTLE_OP_CLEAR_F8A5 = 0xbfae,                             /* $5B */
+    BATTLE_OP_ALTERNATE_ACTION = 0xbfb6,                       /* $5C */
 };
+
+static void BattleOpSetResultFlag(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, bool only_normal) {
+    SetAccumulatorWidth(cpu, 0);
+    if (only_normal) {
+        LoadA16(cpu, Read16Long(memory, BATTLE_RECORD_F45A));
+        cpu->zero = (cpu->accumulator & 1u) == 0u;
+        if (!cpu->zero)
+            return;
+    }
+    LoadA16(cpu, only_normal ? 2u : 4u);
+    Or16(cpu, Read16Long(memory, BATTLE_SCRIPT_RESULT_FLAGS));
+    Write16Long(memory, BATTLE_SCRIPT_RESULT_FLAGS, cpu->accumulator);
+}
+
+static void BattleOpQueueAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t action) {
+    BattleScriptByte(memory, cpu, action == 9u ? 0xbec1u : 0xbedcu);
+    SetAccumulatorWidth(cpu, 0);
+    And16(cpu, 0xffu);
+    Write16Long(memory, BATTLE_ACTION_ARGUMENT, cpu->accumulator);
+    LoadA16(cpu, action);
+    Write16Long(memory, BATTLE_ACTION_CODE, cpu->accumulator);
+    TransferDirectToA(cpu);
+    Write16Long(memory, BATTLE_CONDITION, cpu->accumulator);
+}
 
 /* $05: jump when a random byte is below n. */
 static void BattleOpRandomJump(
@@ -1497,6 +1531,26 @@ Lufia2ExecutionResult Lufia2BattleScript(
             break;
         case BATTLE_OP_RETURN:
             BattleOpReturn(memory, cpu);
+            break;
+        case BATTLE_OP_NORMAL_RESULT_FLAG:
+        case BATTLE_OP_RESULT_FLAG:
+            BattleOpSetResultFlag(memory, cpu, handler == BATTLE_OP_NORMAL_RESULT_FLAG);
+            break;
+        case BATTLE_OP_ACTION_9:
+        case BATTLE_OP_ACTION_25:
+            BattleOpQueueAction(memory, cpu, handler == BATTLE_OP_ACTION_9 ? 9u : 25u);
+            break;
+        case BATTLE_OP_FADE_VALUE:
+            BattleScriptByte(memory, cpu, 0xbfa7u);
+            StoreAAbsolute8(memory, cpu, WRAM_PALETTE_FADE, 0u);
+            break;
+        case BATTLE_OP_CLEAR_F8A5:
+            TransferDirectToA(cpu);
+            Write8(memory, WRAM_BATTLE_SCRIPT_UNK_F8A5, A8(cpu));
+            break;
+        case BATTLE_OP_ALTERNATE_ACTION:
+            LoadA8(cpu, 0xffu);
+            Write8(memory, WRAM_BATTLE_ACTION_ALTERNATE, A8(cpu));
             break;
         default:
             result = ExecutionHandoff(cpu, 0x85b470u);

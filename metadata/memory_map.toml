@@ -1,4 +1,5 @@
 format = 1
+
 rom = "lufia2-usa"
 
 # Canonical catalog of named work-RAM locations.
@@ -6263,3 +6264,11 @@ width = 1
 count = 1
 owner = "menu"
 notes = "82:B7B2 clears this byte while opening equipment selection; adjacent14EE is the list marker row."
+
+[[location]]
+address = "7F:F8A5"
+name = "battle_script_unk_f8a5"
+width = 1
+count = 1
+owner = "battle"
+notes = "Script opcode5B stores the direct-page low byte here. Its precise purpose remains neutral."
