@@ -286,6 +286,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:958F` | `Lufia2BattleEffectChangeDisplay` | verified | `src/battle/battle_effect_display_transition.c` |
 | `$81:963A` | `Lufia2BattleEffectVideoRegister` | verified | `src/battle/battle_effect_video.c` |
 | `$81:9653` | `Lufia2BattleEffectBg3Map` | verified | `src/battle/battle_effect_video.c` |
+| `$81:9662` | `Lufia2BattleEffectReserved23` | verified | `src/battle/battle_effect_flow.c` |
 | `$81:9664` | `Lufia2BattleEffectLoadGraphicsResource` | verified | `src/battle/battle_effect_graphics_resource.c` |
 | `$81:968A` | `Lufia2BattleEffectRestorePaletteRange` | verified | `src/battle/battle_effect_palette_copy.c` |
 | `$81:96C6` | `Lufia2BattleEffectLoadPaletteRange` | verified | `src/battle/battle_effect_palette_load.c` |
@@ -298,6 +299,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:97D8` | `Lufia2BattleEffectCopyTileRectangle` | verified | `src/battle/battle_effect_tile_rectangle.c` |
 | `$81:9853` | `Lufia2BattleEffectSetPaletteBrightness` | verified | `src/battle/battle_effect_palette_brightness.c` |
 | `$81:986E` | `Lufia2BattleEffectCopyActorTiles` | verified | `src/battle/battle_effect_actor_tiles.c` |
+| `$81:9934` | `Lufia2BattleEffectReserved53` | verified | `src/battle/battle_effect_flow.c` |
 | `$81:9935` | `Lufia2BattleEffectAdjustPaletteBrightness` | verified | `src/battle/battle_effect_palette_brightness.c` |
 | `$81:9968` | `Lufia2BattleEffectRefreshTurnDisplay` | verified | `src/battle/battle_effect_turn_display.c` |
 | `$81:9976` | `Lufia2BattleEffectSpawnScriptWhenEnabled` | verified | `src/battle/battle_effect_conditional_script.c` |

@@ -1,6 +1,7 @@
 #include "core/cpu_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
+#include "lufia2/battle_effect_returns.h"
 #include "system/wram.h"
 
 enum {
@@ -181,4 +182,20 @@ Lufia2ExecutionResult Lufia2BattleEffectLoopNext3(
 Lufia2ExecutionResult Lufia2BattleEffectLoopNext4(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     return AdvanceCountedLoop(memory, cpu, 3u, 0x81957bu, 0x81958eu);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectReserved23(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (cpu->program_bank != 0x81u)
+        return ExecutionHandoff(cpu, 0x819662u);
+    return ExecutionReturned(0x819662u);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectReserved53(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (cpu->program_bank != 0x81u)
+        return ExecutionHandoff(cpu, 0x819934u);
+    return ExecutionReturned(0x819934u);
 }
