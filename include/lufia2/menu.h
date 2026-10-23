@@ -497,6 +497,10 @@ Lufia2ExecutionResult Lufia2MenuFadeDisplayOut(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+/* Continue after the display fade frame child. */
+Lufia2ExecutionResult Lufia2MenuContinueDisplayFade(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
 Lufia2ExecutionResult Lufia2MenuPrepareDisplayText(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

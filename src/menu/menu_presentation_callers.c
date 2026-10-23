@@ -22,6 +22,23 @@ enum {
     ROM_DISPLAY_TEXT_SOURCES = 0x8ee5a0u
 };
 
+static bool MenuFadeIsActive(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, MENU_FADE_CONTROL));
+    return !cpu->zero;
+}
+
+Lufia2ExecutionResult Lufia2MenuContinueDisplayFade(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x868b2bu && entry != 0x868b41u) ||
+            cpu->program_bank != 0x86u || !cpu->accumulator_is_8_bit ||
+            cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    if (MenuFadeIsActive(memory, cpu))
+        return ExecutionHandoff(cpu, entry - 4u);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionHandoff(cpu, entry + 6u);
+}
+
 static Lufia2ExecutionResult MenuFadeDisplay(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context, uint8_t request,
@@ -38,8 +55,7 @@ static Lufia2ExecutionResult MenuFadeDisplay(
             result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
             return result;
         }
-        OpLda(memory, cpu, OpAbs(cpu, MENU_FADE_CONTROL));
-    } while (!cpu->zero);
+    } while (MenuFadeIsActive(memory, cpu));
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(finish);
 }
