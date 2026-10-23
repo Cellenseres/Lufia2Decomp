@@ -16038,3 +16038,27 @@ source = "src/menu/menu_party_actions.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:8579"
+name = "Lufia2MenuRenderEquipmentListRows"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:859B"
+name = "Lufia2MenuRenderEquipmentListRow"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "82:9A14"
+name = "Lufia2MenuCycleEquipmentMember"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -599,6 +599,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:83EB` | `Lufia2MenuClearTileRectangle` | verified | `src/menu/menu_tile_clear.c` |
 | `$82:84D5` | `Lufia2MenuDrawInventoryRows` | verified | `src/menu/menu_screen.c` |
 | `$82:8526` | `Lufia2MenuDrawSpellRows` | verified | `src/menu/menu_screen.c` |
+| `$82:8579` | `Lufia2MenuRenderEquipmentListRows` | verified | `src/menu/menu_party_actions.c` |
+| `$82:859B` | `Lufia2MenuRenderEquipmentListRow` | verified | `src/menu/menu_party_actions.c` |
 | `$82:8636` | `Lufia2MenuDrawSpellShopRows` | verified | `src/menu/menu_spell_shop.c` |
 | `$82:8680` | `Lufia2MenuDrawPointerRows` | verified | `src/menu/menu_screen.c` |
 | `$82:86C4` | `Lufia2MenuDrawScenarioRows` | verified | `src/menu/menu_screen.c` |
@@ -677,6 +679,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:999B` | `Lufia2MenuInitializePartyPortraits` | verified | `src/menu/menu_display_callers.c` |
 | `$82:99BE` | `Lufia2MenuInitializePartyPortrait` | verified | `src/menu/menu_display_callers.c` |
 | `$82:99F3` | `Lufia2MenuResetPartyAnimations` | verified | `src/menu/menu_party_animation_reset.c` |
+| `$82:9A14` | `Lufia2MenuCycleEquipmentMember` | verified | `src/menu/menu_party_actions.c` |
 | `$82:9A4E` | `Lufia2MenuRunMainScreen` | verified | `src/menu/menu_main_screen.c` |
 | `$82:9AA3` | `Lufia2MenuResetSessionRecords` | verified | `src/menu/menu_context_services.c` |
 | `$82:9AE0` | `Lufia2MenuRefreshMainDisplay` | verified | `src/menu/menu_main_dispatch.c` |
