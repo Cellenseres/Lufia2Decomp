@@ -23,6 +23,18 @@ Lufia2ExecutionResult Lufia2MenuReadEquipmentInventoryEntry(
 Lufia2ExecutionResult Lufia2MenuAdvanceEquipmentInventoryIndex(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2MenuInspectEquipmentInventoryEntry(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2MenuSelectEquipmentInventoryRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2MenuClassifyEquipmentInventoryRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2MenuContinueEquipmentInventory(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

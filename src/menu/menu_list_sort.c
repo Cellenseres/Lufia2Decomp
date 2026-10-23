@@ -449,6 +449,50 @@ Lufia2ExecutionResult Lufia2MenuAdvanceEquipmentInventoryIndex(
     return ExecutionHandoff(cpu, 0x82bd94u);
 }
 
+static void SelectEquipmentInventoryRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_ITEM_QUANTITY), 1);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
+}
+
+static bool EquipmentRecordCanBeEquipped(Lufia2CpuState *cpu) {
+    OpAndValue(cpu, 2u);
+    return !cpu->zero;
+}
+
+Lufia2ExecutionResult Lufia2MenuInspectEquipmentInventoryEntry(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2ExecutionResult read = Lufia2MenuReadEquipmentInventoryEntry(memory, cpu);
+    if (read.pc != 0x82bd76u)
+        return read;
+    return ExecutionHandoff(cpu, cpu->zero ? 0x82bd8eu : 0x82bd78u);
+}
+
+Lufia2ExecutionResult Lufia2MenuSelectEquipmentInventoryRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!EquipmentInventoryStepReady(cpu))
+        return ExecutionHandoff(cpu, 0x82bd78u);
+    SelectEquipmentInventoryRecord(memory, cpu);
+    return ExecutionHandoff(cpu, 0x82bd7eu);
+}
+
+Lufia2ExecutionResult Lufia2MenuClassifyEquipmentInventoryRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (!EquipmentInventoryStepReady(cpu))
+        return ExecutionHandoff(cpu, 0x82bd82u);
+    return ExecutionHandoff(cpu, EquipmentRecordCanBeEquipped(cpu) ? 0x82bd87u : 0x82bd8eu);
+}
+
+Lufia2ExecutionResult Lufia2MenuContinueEquipmentInventory(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2ExecutionResult advance =
+        Lufia2MenuAdvanceEquipmentInventoryIndex(memory, cpu);
+    if (advance.pc != 0x82bd94u)
+        return advance;
+    return ExecutionHandoff(cpu, cpu->zero ? 0x82bd96u : 0x82bd70u);
+}
+
 Lufia2ExecutionResult Lufia2MenuBuildEquipmentGroups(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -471,12 +515,10 @@ Lufia2ExecutionResult Lufia2MenuBuildEquipmentGroups(
     do {
         ReadEquipmentInventoryEntry(memory, cpu);
         if (!cpu->zero) {
-            OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_ITEM_QUANTITY), 1);
-            OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
+            SelectEquipmentInventoryRecord(memory, cpu);
             if (!MenuSortChild(&call, 0x82bd7eu, 0x81f194u, 3u, 0u))
                 return call.result;
-            OpAndValue(cpu, 2u);
-            if (!cpu->zero) {
+            if (EquipmentRecordCanBeEquipped(cpu)) {
                 if (!MenuSortChild(&call, 0x82bd87u, 0x81f1abu, 3u, 0u) ||
                     !MenuSortChild(&call, 0x82bd8bu, 0x82bd9bu, 2u, 0u))
                     return call.result;
