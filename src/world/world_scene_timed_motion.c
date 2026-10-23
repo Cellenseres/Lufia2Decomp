@@ -1,8 +1,11 @@
+#include <stddef.h>
+
 #include "core/child_call.h"
 #include "lufia2/world_scene_timed_motion.h"
 #include "system/wram.h"
 #include "world/world_scene_internal.h"
 #include "world/world_scene_resources_internal.h"
+#include "world/world_fade_internal.h"
 
 enum {
     SCENE_FIRST_OBJECT = WRAM_WORLD_MAP_OBJECT_TABLE,
@@ -104,25 +107,39 @@ Lufia2ExecutionResult Lufia2WorldMapStartRisingSceneActor(
     return scene.result;
 }
 
-static Lufia2ExecutionResult TimedSound(const Lufia2Memory *memory,
-                                       Lufia2CpuState *cpu,
-                                       Lufia2PushedChildCall child, void *context,
-                                       uint32_t entry, uint32_t site,
-                                       uint32_t target, unsigned mode) {
-    if (!child || !WorldSceneResourceEntry(cpu))
+static bool FinishTimedChild(TimedScene *scene, uint16_t landing) {
+    const uint8_t low = Pull8(scene->memory, scene->cpu);
+    const uint8_t high = Pull8(scene->memory, scene->cpu);
+    const uint16_t target = (uint16_t)(((high << 8) | low) + 1u);
+    if (target == landing)
+        return true;
+    scene->result = ExecutionHandoff(scene->cpu, 0x860000u | target);
+    return false;
+}
+
+static Lufia2ExecutionResult TimedFade(const Lufia2Memory *memory,
+                                      Lufia2CpuState *cpu,
+                                      uint32_t entry, uint32_t site,
+                                      uint8_t rate, bool default_rate) {
+    if (!WorldSceneResourceEntry(cpu))
         return ExecutionHandoff(cpu, entry);
-    TimedScene scene = {memory, cpu, child, context, ExecutionReturned(site + 3u)};
-    if (target == 0x86d38eu)
-        OpLoadA(cpu, (uint16_t)mode);
-    CallTimedChild(&scene, site, target);
+    TimedScene scene = {memory, cpu, NULL, NULL, ExecutionReturned(site + 3u)};
+    if (!default_rate)
+        OpLoadA(cpu, rate);
+    SimulateJsrFrame(memory, cpu, (uint16_t)(site + 2u));
+    if (default_rate)
+        OpLoadA(cpu, rate);
+    WorldSceneStartFade(memory, cpu, 0xc0u);
+    FinishTimedChild(&scene, (uint16_t)(site + 3u));
     return scene.result;
 }
 
 Lufia2ExecutionResult Lufia2WorldMapStopTimedSceneSound(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    return TimedSound(memory, cpu, child, context, 0x86b637u,
-                      0x86b637u, 0x86d37du, 0u);
+    (void)child;
+    (void)context;
+    return TimedFade(memory, cpu, 0x86b637u, 0x86b637u, 0x10u, true);
 }
 
 static bool SetPairedAnimation(TimedScene *scene) {
@@ -147,7 +164,8 @@ Lufia2ExecutionResult Lufia2WorldMapStartPairedScenePulse(
     TimedScene scene = {memory, cpu, child, context, ExecutionReturned(0x86bd76u)};
     OpLoadA(cpu, 0x28u);
     OpLdy(cpu, 0x2cu);
-    if (!CallTimedChild(&scene, 0x86bd4cu, 0x86bd8au))
+    SimulateJsrFrame(memory, cpu, 0xbd4eu);
+    if (!SetPairedAnimation(&scene) || !FinishTimedChild(&scene, 0xbd4fu))
         return scene.result;
     OpLdy(cpu, 0u);
     OpWrite16(memory, OpAbs(cpu, SCENE_PULSE_POSITION), cpu->y);
@@ -200,15 +218,17 @@ Lufia2ExecutionResult Lufia2WorldMapSetPairedSceneAnimation25(
 Lufia2ExecutionResult Lufia2WorldMapSetSceneSoundMode2(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    return TimedSound(memory, cpu, child, context, 0x86be2au,
-                      0x86be2cu, 0x86d38eu, 2u);
+    (void)child;
+    (void)context;
+    return TimedFade(memory, cpu, 0x86be2au, 0x86be2cu, 2u, false);
 }
 
 Lufia2ExecutionResult Lufia2WorldMapSetSceneSoundMode1(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    return TimedSound(memory, cpu, child, context, 0x86c1ccu,
-                      0x86c1ceu, 0x86d38eu, 1u);
+    (void)child;
+    (void)context;
+    return TimedFade(memory, cpu, 0x86c1ccu, 0x86c1ceu, 1u, false);
 }
 
 Lufia2ExecutionResult Lufia2WorldMapStepTrailingSceneParticles(

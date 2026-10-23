@@ -3,6 +3,8 @@
 
 #include "lufia2/execution.h"
 
+/* Sound-named APIs control screen fading. */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

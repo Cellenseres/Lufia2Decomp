@@ -1,6 +1,7 @@
 #include "lufia2/world_map.h"
 #include "core/cpu_ops.h"
 #include "system/wram.h"
+#include "world/world_fade_internal.h"
 
 enum {
     DP_RECORD_OFFSET = 0x02,
@@ -153,19 +154,12 @@ Lufia2ExecutionResult Lufia2WorldMapCheckStoppedArrival(
     return CheckWorldArrival(memory, cpu);
 }
 
-static void StartWorldFade(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint8_t control) {
-    OpOraValue(cpu, control);
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
-    OpStz(memory, cpu, OpAbs(cpu, WRAM_FADE_LEVEL));
-}
-
 Lufia2ExecutionResult Lufia2WorldMapStartFadeOut(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!MotionWidths(cpu))
         return ExecutionHandoff(cpu, 0x86d37du);
     OpLoadA(cpu, 0x10u);
-    StartWorldFade(memory, cpu, 0xc0u);
+    WorldSceneStartFade(memory, cpu, 0xc0u);
     return ExecutionReturned(0x86d396u);
 }
 
@@ -174,7 +168,7 @@ Lufia2ExecutionResult Lufia2WorldMapStartFadeIn(
     if (!MotionWidths(cpu))
         return ExecutionHandoff(cpu, 0x86d381u);
     OpLoadA(cpu, 0x10u);
-    StartWorldFade(memory, cpu, 0x80u);
+    WorldSceneStartFade(memory, cpu, 0x80u);
     return ExecutionReturned(0x86d38du);
 }
 
@@ -182,6 +176,6 @@ Lufia2ExecutionResult Lufia2WorldMapApplyFadeIn(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!MotionWidths(cpu))
         return ExecutionHandoff(cpu, 0x86d385u);
-    StartWorldFade(memory, cpu, 0x80u);
+    WorldSceneStartFade(memory, cpu, 0x80u);
     return ExecutionReturned(0x86d38du);
 }
