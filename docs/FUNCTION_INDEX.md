@@ -746,6 +746,15 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:B67C` | `Lufia2MenuReorderParty` | verified | `src/menu/menu_party_actions.c` |
 | `$82:B6EF` | `Lufia2MenuSwapPartyMembers` | verified | `src/menu/menu_party_actions.c` |
 | `$82:B7B2` | `Lufia2MenuOpenEquipment` | verified | `src/menu/menu_party_actions.c` |
+| `$82:B7E5` | `Lufia2MenuRunEquipmentSelection` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BB6E` | `Lufia2MenuWeightEquipmentStats` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BB91` | `Lufia2MenuUnequipSelectedSlot` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BBE8` | `Lufia2MenuUnequipAllSlots` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BC46` | `Lufia2MenuDiscardSelectedSlot` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BC96` | `Lufia2MenuDrawEquipmentRows` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BCB6` | `Lufia2MenuDrawEquipmentRow` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BCC4` | `Lufia2MenuScrollEquipmentUp` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BD02` | `Lufia2MenuScrollEquipmentDown` | verified | `src/menu/menu_party_actions.c` |
 | `$82:BD48` | `Lufia2MenuBuildEquipmentGroups` | verified | `src/menu/menu_list_sort.c` |
 | `$82:BD9B` | `Lufia2MenuGroupEquipmentOffset` | verified | `src/menu/menu_list_sort.c` |
 | `$82:BDDB` | `Lufia2MenuFinishEquipmentGroups` | verified | `src/menu/menu_list_sort.c` |

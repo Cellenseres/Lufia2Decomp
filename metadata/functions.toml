@@ -15966,3 +15966,75 @@ source = "src/menu/menu_list_sort.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:B7E5"
+name = "Lufia2MenuRunEquipmentSelection"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:BB6E"
+name = "Lufia2MenuWeightEquipmentStats"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:BB91"
+name = "Lufia2MenuUnequipSelectedSlot"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:BBE8"
+name = "Lufia2MenuUnequipAllSlots"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:BC46"
+name = "Lufia2MenuDiscardSelectedSlot"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:BC96"
+name = "Lufia2MenuDrawEquipmentRows"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:BCB6"
+name = "Lufia2MenuDrawEquipmentRow"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:BCC4"
+name = "Lufia2MenuScrollEquipmentUp"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:BD02"
+name = "Lufia2MenuScrollEquipmentDown"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
