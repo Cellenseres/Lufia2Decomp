@@ -1335,7 +1335,7 @@ name = "menu_spell_window_state_2_alt"
 width = 1
 count = 1
 owner = "menu"
-notes = "82:D905 clears alternate window-state base14EB indexed by X2."
+notes = "82:D905 clears alternate window-state base14EB indexed by X2. Equipment selection also reads this byte at82:B8AF:2 removes,4 discards,other values open the item picker."
 
 [[location]]
 address = "7E:14F4"
@@ -3535,7 +3535,7 @@ name = "menu_equipment_cursor"
 width = 2
 count = 1
 owner = "menu"
-notes = "Original equipment cursor word; display initialization writes the 999 sentinel. Phase dependent."
+notes = "Original equipment cursor word; display initialization writes the999 sentinel. Phase dependent.82:B976 references this address throughDP E7 before string8E:C50C;no larger array extent is claimed."
 
 [[location]]
 address = "7E:0563"

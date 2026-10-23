@@ -16094,3 +16094,51 @@ source = "src/menu/menu_party_actions.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:B863"
+name = "Lufia2MenuRunEquipmentSlots"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B907"
+name = "Lufia2MenuChooseEquipmentItem"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:BA65"
+name = "Lufia2MenuEquipStrongestItems"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:9FFB"
+name = "Lufia2MenuConfigureEquipmentPicker"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:BA0C"
+name = "Lufia2MenuRefreshEquipmentPicker"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F864"
+name = "Lufia2MenuPrepareEquipmentPreview"
+source = "src/menu/menu_party_actions.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"

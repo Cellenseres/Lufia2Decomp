@@ -699,6 +699,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9F0C` | `Lufia2MenuPrepareEquipmentPortrait` | verified | `src/menu/menu_party_actions.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
 | `$82:9FB0` | `Lufia2MenuPresentEquipmentList` | verified | `src/menu/menu_party_actions.c` |
+| `$82:9FFB` | `Lufia2MenuConfigureEquipmentPicker` | verified | `src/menu/menu_party_actions.c` |
 | `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
 | `$82:A318` | `Lufia2MenuDrawStatus` | verified | `src/menu/menu_status.c` |
 | `$82:A432` | `Lufia2MenuRunMainInput` | verified | `src/menu/menu_main_dispatch.c` |
@@ -750,6 +751,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:B6EF` | `Lufia2MenuSwapPartyMembers` | verified | `src/menu/menu_party_actions.c` |
 | `$82:B7B2` | `Lufia2MenuOpenEquipment` | verified | `src/menu/menu_party_actions.c` |
 | `$82:B7E5` | `Lufia2MenuRunEquipmentSelection` | verified | `src/menu/menu_party_actions.c` |
+| `$82:B863` | `Lufia2MenuRunEquipmentSlots` | verified | `src/menu/menu_party_actions.c` |
+| `$82:B907` | `Lufia2MenuChooseEquipmentItem` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BA0C` | `Lufia2MenuRefreshEquipmentPicker` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BA65` | `Lufia2MenuEquipStrongestItems` | verified | `src/menu/menu_party_actions.c` |
 | `$82:BB6E` | `Lufia2MenuWeightEquipmentStats` | verified | `src/menu/menu_party_actions.c` |
 | `$82:BB91` | `Lufia2MenuUnequipSelectedSlot` | verified | `src/menu/menu_party_actions.c` |
 | `$82:BBE8` | `Lufia2MenuUnequipAllSlots` | verified | `src/menu/menu_party_actions.c` |
@@ -973,6 +978,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F7B4` | `Lufia2PartyAddEquipmentComparison` | verified | `src/party/party_equipment_comparison.c` |
 | `$82:F7FD` | `Lufia2PartySubtractEquipmentComparison` | verified | `src/party/party_equipment_comparison.c` |
 | `$82:F846` | `Lufia2PartyRebuildEquipmentModifiers` | verified | `src/party/party_equipment.c` |
+| `$82:F864` | `Lufia2MenuPrepareEquipmentPreview` | verified | `src/menu/menu_party_actions.c` |
 | `$82:F87D` | `Lufia2MenuCountFlaggedEquipment` | verified | `src/menu/menu_screen.c` |
 | `$82:F893` | `Lufia2MenuTestEquipmentItemFlag` | verified | `src/menu/menu_record_services.c` |
 | `$82:F8AF` | `Lufia2InventoryRemoveFlaggedEquipment` | verified | `src/item/inventory_equipment_transfer.c` |
