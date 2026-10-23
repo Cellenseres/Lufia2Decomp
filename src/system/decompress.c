@@ -61,59 +61,71 @@ static void StreamFinishCopy(const Lufia2Memory *memory,
     SetAccumulatorWidth(cpu, 1);
 }
 
-/* $80:8F40: short or long back reference. */
-static void StreamPrepareReference(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    StreamNext(memory, cpu);                                   /* 8F44 */
-    ExchangeAccumulatorBytes(cpu);                             /* 8F47 */
+static bool StreamReadReferenceHeader(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    StreamNext(memory, cpu);
+    ExchangeAccumulatorBytes(cpu);
     StreamByte(memory, cpu);
     And8(cpu, 0x0fu);
-    if (!cpu->zero) {
-        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        StoreADirect8(memory, cpu, COPY_COUNT);
-        StreamByte(memory, cpu);
-        SetAccumulatorWidth(cpu, 0);
-        LsrA16(cpu);
-        LsrA16(cpu);
-        LsrA16(cpu);
-        LsrA16(cpu);
-        Or16(cpu, 0xf000u);
-    } else {
-        StreamByte(memory, cpu);                               /* 8F6F */
-        PushIndex(memory, cpu);
-        TransferAToX(cpu);
-        StreamNext(memory, cpu);
-        StreamByte(memory, cpu);                               /* 8F76 */
-        StoreADirect8(memory, cpu, 0x5bu);
-        And8(cpu, 0x3fu);
-        LoadA8(cpu, (uint8_t)(A8(cpu) + 2u));
-        StoreADirect8(memory, cpu, COPY_COUNT);
-        SetAccumulatorWidth(cpu, 0);
-        TransferXToA(cpu);
-        LsrA16(cpu);
-        LsrA16(cpu);
-        LsrA16(cpu);
-        LsrA16(cpu);
-        Or16(cpu, 0xf000u);
-        {
-            unsigned i;
+    return cpu->zero != 0u;
+}
 
-            for (i = 0; i < 2u; ++i) {                         /* ASL $5A; ROL */
-                const uint16_t word = Read16Direct(memory, cpu, 0x5au);
+static void StreamShortReference(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+    StoreADirect8(memory, cpu, COPY_COUNT);
+    StreamByte(memory, cpu);
+    SetAccumulatorWidth(cpu, 0);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    Or16(cpu, 0xf000u);
+}
 
-                cpu->carry = (word & 0x8000u) != 0;
-                const uint16_t shifted = (uint16_t)(word << 1);
-                const uint32_t address = OpDp(cpu, 0x5au);
-                /* Original 16-bit ASL writes the high byte first. */
-                Write8(memory, OpNextByte(address), (uint8_t)(shifted >> 8));
-                Write8(memory, address, (uint8_t)shifted);
-                SetNz16(cpu, (uint16_t)(word << 1));
-                RolA16(cpu);
-            }
+static void StreamLongReference(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    StreamByte(memory, cpu);                               /* 8F6F */
+    PushIndex(memory, cpu);
+    TransferAToX(cpu);
+    StreamNext(memory, cpu);
+    StreamByte(memory, cpu);                               /* 8F76 */
+    StoreADirect8(memory, cpu, 0x5bu);
+    And8(cpu, 0x3fu);
+    LoadA8(cpu, (uint8_t)(A8(cpu) + 2u));
+    StoreADirect8(memory, cpu, COPY_COUNT);
+    SetAccumulatorWidth(cpu, 0);
+    TransferXToA(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    LsrA16(cpu);
+    Or16(cpu, 0xf000u);
+    {
+        unsigned i;
+
+        for (i = 0; i < 2u; ++i) {                         /* ASL $5A; ROL */
+            const uint16_t word = Read16Direct(memory, cpu, 0x5au);
+
+            cpu->carry = (word & 0x8000u) != 0;
+            const uint16_t shifted = (uint16_t)(word << 1);
+            const uint32_t address = OpDp(cpu, 0x5au);
+            /* Original 16-bit ASL writes the high byte first. */
+            Write8(memory, OpNextByte(address), (uint8_t)(shifted >> 8));
+            Write8(memory, address, (uint8_t)shifted);
+            SetNz16(cpu, (uint16_t)(word << 1));
+            RolA16(cpu);
         }
-        cpu->x = PullIndexValue(memory, cpu);
     }
+    cpu->x = PullIndexValue(memory, cpu);
+}
+
+static void StreamPrepareReference(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (StreamReadReferenceHeader(memory, cpu))
+        StreamLongReference(memory, cpu);
+    else
+        StreamShortReference(memory, cpu);
     StreamBeginCopy(memory, cpu);
 }
 
@@ -189,6 +201,35 @@ static uint8_t DecompressPhaseBank(const Lufia2CpuState *cpu,
 
 static uint32_t DecompressPhasePc(uint8_t bank, uint32_t first) {
     return first + (bank == 0x7fu ? 0xa4u : 0u);
+}
+
+Lufia2ExecutionResult Lufia2DecompressReferenceStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    const uint8_t bank = DecompressPhaseBank(cpu, entry, 0x808f44u, 1u);
+    if (!bank)
+        return ExecutionHandoff(cpu, entry);
+    if (StreamReadReferenceHeader(memory, cpu))
+        return ExecutionHandoff(cpu, DecompressPhasePc(bank, 0x808f6fu));
+    StreamShortReference(memory, cpu);
+    return ExecutionHandoff(cpu, DecompressPhasePc(bank, 0x808f5cu));
+}
+
+Lufia2ExecutionResult Lufia2DecompressLongReferenceStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    const uint8_t bank = DecompressPhaseBank(cpu, entry, 0x808f6fu, 1u);
+    if (!bank)
+        return ExecutionHandoff(cpu, entry);
+    StreamLongReference(memory, cpu);
+    return ExecutionHandoff(cpu, DecompressPhasePc(bank, 0x808f5cu));
+}
+
+Lufia2ExecutionResult Lufia2DecompressSetupCopyStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    const uint8_t bank = DecompressPhaseBank(cpu, entry, 0x808f5cu, 0u);
+    if (!bank)
+        return ExecutionHandoff(cpu, entry);
+    StreamBeginCopy(memory, cpu);
+    return ExecutionHandoff(cpu, DecompressPhasePc(bank, 0x808f66u));
 }
 
 static uint32_t StreamContinueFlagged(
