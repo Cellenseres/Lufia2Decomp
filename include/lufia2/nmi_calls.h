@@ -16,6 +16,9 @@ Lufia2ExecutionResult Lufia2NmiInvokeCallback(
 Lufia2ExecutionResult Lufia2NmiReturnCallback(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t pc);
 
+Lufia2ExecutionResult Lufia2NmiReturnEmptyInterrupt(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

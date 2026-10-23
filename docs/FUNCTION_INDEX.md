@@ -25,6 +25,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:8486` | `Lufia2CosineAngle` | verified | `src/system/math.c` |
 | `$80:862D` | `Lufia2NmiSaveInterruptFrame` | verified | `src/system/nmi.c` |
 | `$80:8638` | `Lufia2MainNmi` | verified | `src/system/nmi.c` |
+| `$80:86C0` | `Lufia2NmiReturnEmptyInterrupt` | verified | `src/system/nmi.c` |
 | `$80:86C1` | `Lufia2ScreenFade` | verified | `src/system/screen.c` |
 | `$80:8703` | `Lufia2NmiSpritesPaletteAndPads` | verified | `src/system/nmi_uploads.c` |
 | `$80:87A7` | `Lufia2NmiScrollAndUploads` | verified | `src/system/nmi_uploads.c` |
@@ -1718,6 +1719,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:9618` | `Lufia2WorldMapBrightenScenePalette` | verified | `src/world/world_scene_layout.c` |
 | `$86:966C` | `Lufia2WorldMapDarkenScenePalette` | verified | `src/world/world_scene_layout.c` |
 | `$86:96BC` | `Lufia2WorldMapHandleSceneInput` | verified | `src/world/world_scene.c` |
+| `$86:973C` | `Lufia2WorldMapModeZeroInput` | verified | `src/world/world_scene.c` |
+| `$86:973D` | `Lufia2WorldMapModeNonzeroInput` | verified | `src/world/world_scene.c` |
 | `$86:973E` | `Lufia2WorldMapDisableDisplay` | verified | `src/world/world_motion_services.c` |
 | `$86:9748` | `Lufia2WorldWaitFrames` | verified | `src/system/frame_wait.c` |
 | `$86:974F` | `Lufia2WorldWaitForNextFrame` | verified | `src/system/frame_wait.c` |
@@ -1762,6 +1765,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:A2E7` | `Lufia2WorldMapRunPairedObjectInput` | verified | `src/world/world_scene.c` |
 | `$86:A338` | `Lufia2WorldMapAnimatePairedObjects` | verified | `src/world/world_frame_callers.c` |
 | `$86:A357` | `Lufia2WorldMapPositionAnimatedObject` | verified | `src/world/world_frame_callers.c` |
+| `$86:A375` | `Lufia2WorldMapIdleSceneObject` | verified | `src/world/world_scene.c` |
 | `$86:A376` | `Lufia2WorldMapConfigurePrimaryView` | verified | `src/world/world_view_services.c` |
 | `$86:A38C` | `Lufia2WorldMapConfigureSecondaryView` | verified | `src/world/world_view_services.c` |
 | `$86:A3A2` | `Lufia2WorldMapSelectSecondaryView` | verified | `src/world/world_scene.c` |

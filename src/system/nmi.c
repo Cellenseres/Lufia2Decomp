@@ -314,3 +314,10 @@ Lufia2ExecutionResult Lufia2NmiSaveInterruptFrame(const Lufia2Memory *memory,
     cpu->program_bank = 0x80u;
     return ExecutionHandoff(cpu, 0x808638u);
 }
+
+Lufia2ExecutionResult Lufia2NmiReturnEmptyInterrupt(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u)
+        return ExecutionHandoff(cpu, 0x8086c0u);
+    return Lufia2NmiReturnInterrupt(memory, cpu);
+}

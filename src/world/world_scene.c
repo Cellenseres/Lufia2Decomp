@@ -2,6 +2,7 @@
 #include "core/cpu_ops.h"
 #include "core/joypad.h"
 #include "lufia2/world_map.h"
+#include "lufia2/world_scene_returns.h"
 #include "system/wram.h"
 
 enum {
@@ -2234,4 +2235,28 @@ Lufia2ExecutionResult Lufia2WorldMapSendSoundCommand(
         cpu->data_bank != data_bank)
         return ExecutionHandoff(cpu, 0x86d37cu);
     return ExecutionReturned(0x86d37cu);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapModeZeroInput(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (cpu->program_bank != 0x86u)
+        return ExecutionHandoff(cpu, 0x86973cu);
+    return ExecutionReturned(0x86973cu);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapModeNonzeroInput(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (cpu->program_bank != 0x86u)
+        return ExecutionHandoff(cpu, 0x86973du);
+    return ExecutionReturned(0x86973du);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapIdleSceneObject(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (cpu->program_bank != 0x86u)
+        return ExecutionHandoff(cpu, 0x86a375u);
+    return ExecutionReturned(0x86a375u);
 }
