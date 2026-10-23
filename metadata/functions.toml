@@ -620,7 +620,7 @@ entry_mx = "M1X1"
 exit_mx = "M1X1"
 status = "verified"
 
-# $85:B452 battle script VM; other opcodes stay LLE.
+# $85:B452 battle VM; explicit child/wait/trap boundaries.
 [[function]]
 address = "85:B452"
 name = "Lufia2BattleScript"

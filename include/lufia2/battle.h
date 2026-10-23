@@ -185,6 +185,11 @@ Lufia2ExecutionResult Lufia2BattleScript(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* Pushed children preserve scheduler and unwind ownership. */
+Lufia2ExecutionResult Lufia2BattleScriptWithChildren(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $85:8DC5 battle NMI uploads, timers, HDMA. */
 Lufia2ExecutionResult Lufia2BattleNmiUploads(
     const Lufia2Memory *memory,

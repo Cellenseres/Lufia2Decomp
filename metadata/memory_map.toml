@@ -3402,7 +3402,7 @@ name = "battle_message_window_columns"
 width = 1
 count = 1
 owner = "battle"
-notes = "Original action message window column count. 85CE6F reuses this byte as the current target bit."
+notes = "Original action message window column count. 85CE6F reuses this byte as the current target bit. Battle selection also reuses09F2 as a stat selector."
 
 [[location]]
 address = "7E:09F3"
@@ -3410,7 +3410,7 @@ name = "battle_message_window_rows"
 width = 1
 count = 1
 owner = "battle"
-notes = "Original action message window row count. 85CE6F reuses this byte as the six-bit target count."
+notes = "Original action message window row count. 85CE6F reuses this byte as the six-bit target count. Battle selection also reuses09F3 as a score modifier."
 
 [[location]]
 address = "7E:1B23"
@@ -5164,7 +5164,7 @@ name = "world_map_position_y"
 width = 2
 count = 1
 owner = "world"
-notes = "Original world object positioning and heading state."
+notes = "Original world object positioning and heading state. Battle selection reuses11EB..120E as twelve packed mask/score rows."
 
 [[location]]
 address = "7E:0B61"
@@ -5887,7 +5887,7 @@ name = "battle_action_work_byte"
 width = 1
 count = 1
 owner = "battle"
-notes = "Shared transient byte:81F114 quantity work;85CE21 action stage byte. Its original reuse is preserved."
+notes = "Shared transient byte:81F114 quantity work;85CE21 action stage byte. Its original reuse is preserved. Battle selection uses09F4/09F5 together as a temporary reference score."
 
 [[location]]
 address = "7E:09FC"
@@ -6280,3 +6280,19 @@ width = 2
 count = 3
 owner = "battle"
 notes = "Script group-stat helpers C1C7/C23F share value, stat offset and battler mask words. The index word becomes its ROM-resolved record offset."
+
+[[location]]
+address = "7E:0A4B"
+name = "battle_script_context_stack_index"
+width = 2
+count = 1
+owner = "battle"
+notes = "81A79E initializes this index to0100. C28F saves four context words and two bank bytes downward; C2C9 restores them. Original sixteen-bit index wrap remains."
+
+[[location]]
+address = "7F:F986"
+name = "battle_script_context_stack"
+width = 1
+count = 256
+owner = "battle"
+notes = "Normal context reserve F986..FA85 follows the0100 initialization at81A79E. This describes storage, not a runtime bound: original underflow and long-indexed bank carry remain possible."
