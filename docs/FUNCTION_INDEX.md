@@ -761,6 +761,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:BD48` | `Lufia2MenuBuildEquipmentGroups` | verified | `src/menu/menu_list_sort.c` |
 | `$82:BD9B` | `Lufia2MenuGroupEquipmentOffset` | verified | `src/menu/menu_list_sort.c` |
 | `$82:BDDB` | `Lufia2MenuFinishEquipmentGroups` | verified | `src/menu/menu_list_sort.c` |
+| `$82:BE04` | `Lufia2MenuPrepareEquipmentList` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BE71` | `Lufia2MenuLoadEquipmentSlotStats` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BED9` | `Lufia2MenuClassifyEquipmentListSelection` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BEF0` | `Lufia2MenuResolveEquipmentListSelection` | verified | `src/menu/menu_party_actions.c` |
 | `$82:C261` | `Lufia2CapsuleLoadStats` | verified | `src/party/capsule.c` |
 | `$82:C2AE` | `Lufia2CapsuleInitializeSavedRecords` | verified | `src/menu/menu_context_services.c` |
 | `$82:C2FD` | `Lufia2CapsuleReset` | verified | `src/party/capsule.c` |

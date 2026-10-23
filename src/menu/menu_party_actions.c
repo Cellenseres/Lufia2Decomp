@@ -39,7 +39,16 @@ enum {
     EQUIPMENT_ROW_LIST = 0xfcu,
     EQUIPMENT_STRING_BANK = 0x5fu,
     EQUIPMENT_ROW_ATTRIBUTES = 0x7e9cf0u,
-    EQUIPMENT_ROW_EMPTY = 0xffffu
+    EQUIPMENT_ROW_EMPTY = 0xffffu,
+    EQUIPMENT_GROUP_POINTERS = 0x8ee538u,
+    EQUIPMENT_MEMBER_MASK = 0x00u,
+    EQUIPMENT_GROUP_OFFSET = 0x04u,
+    EQUIPMENT_ITEM_MEMBER_MASK = WRAM_RECORD_BUFFER + 0x15u,
+    EQUIPMENT_RECORD_STATS = WRAM_RECORD_BUFFER + 0x1eu,
+    EQUIPMENT_CHARACTER_STATS = 0x37u,
+    EQUIPMENT_STAT_WORDS = 7u,
+    EQUIPMENT_ROW_AVAILABLE = 0x20u,
+    EQUIPMENT_ROW_UNAVAILABLE = 0x24u
 };
 
 typedef struct PartyMenuCall {
@@ -787,4 +796,148 @@ Lufia2ExecutionResult Lufia2MenuCycleEquipmentMember(
         !PartyMenuChild(&call, 0x829a4au, 0x829971u, 2u, 1u))
         return call.result;
     return ExecutionReturned(0x829a4du);
+}
+
+static bool EquipmentListReady(const Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child) {
+    return child && cpu->program_bank == 0x82u && !cpu->direct_page &&
+        !cpu->decimal && PartyMenuBankSupported(cpu->data_bank) &&
+        cpu->stack >= 0x1f00u && cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2MenuPrepareEquipmentList(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!EquipmentListReady(cpu, child))
+        return ExecutionHandoff(cpu, 0x82be04u);
+    PartyMenuCall call = {memory, cpu, child, context, {0}};
+    Push8(memory, cpu, PackStatus(cpu));
+    OpRepWidths(cpu, 0x30u);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, EQUIPMENT_GROUP_POINTERS));
+    OpSta(memory, cpu, OpDp(cpu, EQUIPMENT_ROW_LIST));
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpDp(cpu, EQUIPMENT_ROW_LIST + 2u));
+    OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, EQUIPMENT_MEMBER_SLOT)));
+    if (!PartyMenuChild(&call, 0x82be1au, 0x829302u, 2u, 1u))
+        return call.result;
+    OpSta(memory, cpu, OpDp(cpu, EQUIPMENT_MEMBER_MASK));
+    OpStz(memory, cpu, OpDp(cpu, EQUIPMENT_MEMBER_MASK + 1u));
+    OpRepWidths(cpu, 0x20u);
+    OpStz(memory, cpu, OpDp(cpu, EQUIPMENT_GROUP_OFFSET));
+    for (;;) {
+        OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, EQUIPMENT_GROUP_OFFSET)));
+        OpLda(memory, cpu, DirectLongIndirectY(memory, cpu, EQUIPMENT_ROW_LIST));
+        OpCmpValue(cpu, EQUIPMENT_ROW_EMPTY);
+        if (cpu->zero)
+            break;
+        OpTax(cpu);
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_INVENTORY_PACKED_ITEMS));
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
+        if (!PartyMenuChild(&call, 0x82be35u, 0x81f1abu, 3u, 0u))
+            return call.result;
+        OpLda(memory, cpu, OpAbs(cpu, EQUIPMENT_ITEM_MEMBER_MASK));
+        OpAndValue(cpu, OpReadM(memory, cpu, OpDp(cpu, EQUIPMENT_MEMBER_MASK)));
+        OpLoadA(cpu, cpu->zero ? EQUIPMENT_ROW_UNAVAILABLE : EQUIPMENT_ROW_AVAILABLE);
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, EQUIPMENT_GROUP_OFFSET)));
+        OpSta(memory, cpu, OpLongX(cpu, EQUIPMENT_ROW_ATTRIBUTES));
+        OpStepMem(memory, cpu, OpDp(cpu, EQUIPMENT_GROUP_OFFSET), 1);
+        OpStepMem(memory, cpu, OpDp(cpu, EQUIPMENT_GROUP_OFFSET), 1);
+    }
+    OpLda(memory, cpu, OpDp(cpu, EQUIPMENT_GROUP_OFFSET));
+    OpLsrA(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_COUNT));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_OVERFLOW));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, 5u);
+    if (cpu->carry)
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_OVERFLOW));
+    OpSepWidths(cpu, 0x20u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_COUNT)));
+    cpu->carry = 0u;
+    if (!PartyMenuChild(&call, 0x82be6cu, 0x828c85u, 2u, 1u))
+        return call.result;
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x82be70u);
+}
+
+Lufia2ExecutionResult Lufia2MenuLoadEquipmentSlotStats(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!EquipmentListReady(cpu, child))
+        return ExecutionHandoff(cpu, 0x82be71u);
+    PartyMenuCall call = {memory, cpu, child, context, {0}};
+    Push8(memory, cpu, PackStatus(cpu));
+    OpRepWidths(cpu, 0x30u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, EQUIPMENT_MEMBER_POINTER)));
+    for (unsigned stat = 0u; stat < EQUIPMENT_STAT_WORDS; ++stat)
+        OpStz(memory, cpu,
+            OpAbsX(cpu, (uint16_t)(EQUIPMENT_CHARACTER_STATS + stat * 2u)));
+    for (unsigned stat = 0u; stat < EQUIPMENT_STAT_WORDS; ++stat)
+        OpStz(memory, cpu,
+            OpAbs(cpu, (uint16_t)(EQUIPMENT_RECORD_STATS + stat * 2u)));
+    OpLda(memory, cpu, EquipmentSelectedAddress(memory, cpu));
+    if (!cpu->zero) {
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
+        if (!PartyMenuChild(&call, 0x82bea7u, 0x81f1c5u, 3u, 0u))
+            return call.result;
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, EQUIPMENT_MEMBER_POINTER)));
+        for (unsigned stat = 0u; stat < EQUIPMENT_STAT_WORDS; ++stat) {
+            OpLda(memory, cpu,
+                OpAbs(cpu, (uint16_t)(EQUIPMENT_RECORD_STATS + stat * 2u)));
+            OpSta(memory, cpu,
+                OpAbsX(cpu, (uint16_t)(EQUIPMENT_CHARACTER_STATS + stat * 2u)));
+        }
+    }
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    return ExecutionReturned(0x82bed8u);
+}
+
+Lufia2ExecutionResult Lufia2MenuResolveEquipmentListSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!EquipmentListReady(cpu, child) || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x82bef0u);
+    PartyMenuCall call = {memory, cpu, child, context, {0}};
+    OpTxy(cpu);
+    OpLda(memory, cpu, DirectLongIndirectY(memory, cpu, EQUIPMENT_ROW_LIST));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, EQUIPMENT_LIST_MARKER));
+    if (!PartyMenuChild(&call, 0x82bef7u, 0x82f703u, 2u, 0u))
+        return call.result;
+    return ExecutionReturned(0x82befau);
+}
+
+Lufia2ExecutionResult Lufia2MenuClassifyEquipmentListSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!PartyMenuReady(cpu, child))
+        return ExecutionHandoff(cpu, 0x82bed9u);
+    PartyMenuCall call = {memory, cpu, child, context, {0}};
+    OpRepWidths(cpu, 0x20u);
+    if (!PartyMenuChild(&call, 0x82bedbu, 0x82fbe5u, 2u, 0u))
+        return call.result;
+    OpTax(cpu);
+    OpLsrA(cpu);
+    OpCmp(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_COUNT));
+    unsigned status = 2u;
+    uint32_t return_pc = 0x82bf12u;
+    if (!cpu->carry) {
+        OpLda(memory, cpu, OpLongX(cpu, EQUIPMENT_ROW_ATTRIBUTES));
+        OpCmpValue(cpu, EQUIPMENT_ROW_AVAILABLE);
+        const bool available = cpu->zero;
+        if (!PartyMenuChild(&call, available ? 0x82befbu : 0x82bf04u,
+                0x82bef0u, 2u, 0u))
+            return call.result;
+        status = available ? 0u : 1u;
+        return_pc = available ? 0x82bf03u : 0x82bf0cu;
+    }
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, (uint16_t)status);
+    cpu->carry = status != 0u;
+    return ExecutionReturned(return_pc);
 }
