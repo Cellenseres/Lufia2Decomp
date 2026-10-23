@@ -269,14 +269,14 @@ Lufia2ExecutionResult Lufia2FieldClearObjectTileIds(
     SetAccumulatorWidth(cpu, 0);
     AslA16(cpu);
     WramWrite16(wram, DP_CLEAR_ROW_SKIP, cpu->accumulator);
-    rows_left = WramRead(wram, WRAM_FIELD_OBJECT_HEIGHT);
+    rows_left = WramRead16(wram, WRAM_FIELD_OBJECT_HEIGHT) & 0xffu;
     WramWrite16(wram, DP_CLEAR_ROWS_LEFT, rows_left);
 
     do {
         /* Clearing may overwrite the width; reread it per row. */
         bool row_start = true;
 
-        columns_left = WramRead(wram, WRAM_FIELD_OBJECT_WIDTH);
+        columns_left = WramRead16(wram, WRAM_FIELD_OBJECT_WIDTH) & 0xffu;
         WramWrite16(wram, DP_CLEAR_COLUMNS_LEFT, columns_left);
         do {
             if (cells_cleared == CLEAR_CELL_LIMIT)
