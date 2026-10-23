@@ -162,16 +162,18 @@ Lufia2ExecutionResult Lufia2BattleRippleRow(
         !DirectWorkByteAvailable(cpu, SCRATCH_COUNTER))
         return ExecutionHandoff(cpu, 0x85a736u);
     wram = EnterWaveBank(memory, cpu);
-    start = Sum8Mode((uint8_t)(WramRead(wram, RIPPLE_FINE_SCROLL) << 1),
-        WramRead(wram, RIPPLE_STEP), false, cpu->decimal);
+    const uint8_t fine_scroll = WramRead(wram, RIPPLE_FINE_SCROLL);
+    const uint8_t step = WramRead(wram, RIPPLE_STEP);
+    start = Sum8Mode((uint8_t)(fine_scroll << 1), step, false, cpu->decimal);
     /* TAY retains the direct page in the high byte. */
     pattern = (uint16_t)((cpu->direct_page & 0xff00u) |
         (start.value & RIPPLE_PHASE_MASK));
     PushStackWord(memory, cpu, cpu->x);
     WramWrite(wram, SCRATCH_COUNTER, RIPPLE_ROWS);
     do {
-        sum = Sum8Mode(WramReadAt(wram, RIPPLE_PATTERN, pattern),
-            WramRead(wram, RIPPLE_SCROLL), false, cpu->decimal);
+        const uint8_t pattern_value = WramReadAt(wram, RIPPLE_PATTERN, pattern);
+        const uint8_t scroll = WramRead(wram, RIPPLE_SCROLL);
+        sum = Sum8Mode(pattern_value, scroll, false, cpu->decimal);
         WramWriteAt(wram, RIPPLE_ROW_TABLE, row, sum.value);
         pattern = (uint16_t)(pattern + 1u);
         row = (uint16_t)(row + 1u);
