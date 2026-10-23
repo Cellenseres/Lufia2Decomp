@@ -1,3 +1,52 @@
+# Battle NMI callback-list caller — 2026-10-23
+
+The previously untranslated list at 85:8E79..8E95 now has a structured C
+loop within the existing 85:8DC5 owner. It reads eight selectors at two-byte
+spacing, stops on a negative byte, saves Y and calls the ROM-backed indirect
+target. The full accumulator shift precedes the low-byte mask. Program-bank
+table reads occur after PHY and before the original JSR frame writes.
+The original PLY, two increments, comparison, bank restore and RTL remain.
+
+The optional WithChildren API runs callback-list children through their
+already-pushed two-byte frames; the earlier timer handoffs stay unchanged.
+Children retain their DB, flags, stack changes and nonlocal unwinds. An
+unsupported returned width or program bank hands off before original PLY.
+Without a callback, the exact boundary is now original JSR at 85:8E8B,
+after PHY but before table reads. No callback target is silently normalized.
+
+The same ROM table address also supplies shake data. No valid nonnegative
+gameplay list was observed in the accepted workload. This reconstruction
+does not invent legal handler addresses or claim those data are code. Tests
+use synthetic RAM RTS children only to prove the original caller contract;
+arbitrary targets remain consumer boundaries. The sixteen initialization
+bytes and eight low-byte selectors are catalogued as one named WRAM field.
+
+The shared final-source checkpoint covers 3,128 caller cases, 62 whole NMI
+owner cases and 2,088 original indirect-call boundaries against the ROM.
+CPU, full WRAM and ordered table/stack/MMIO accesses agree. It includes all
+128 nonnegative selectors, negative sentinels, high accumulator bytes,
+all eight list positions, child clobbers, absent callbacks and nonlocal
+continuations. Three in-memory ROM mutation controls are detected.
+Private PB-export and repeated-PC fixture errors were corrected explicitly;
+the reference now distinguishes repeated calls by ordinal as well as PC.
+GCC/Clang found the source's missing standard NULL declaration; the required
+stddef include was added before final libraries and runtime inputs froze.
+
+Strict MSVC proofs, the final isolated Windows game, GCC/Clang C11 libraries
+and metadata validation pass. The unchanged complete timer helper/owner text
+retains its prior ROM proof; unchanged CLI, capacity/progress checks and full
+regression are deferred. One final 8,000-frame replay remains identical for
+input, CPU, WRAM, pixels and PCM; original actions, returns and 4,306 paired
+children remain. The decoder census and Timer admissions stay unchanged at
+253,918. This is newly reconstructed caller C, not a measured speedup. The
+legacy driver's raw exit6 and obsolete zero inline oracles remain explicit.
+ROM, SRAM and 158 pinned runtime inputs remain unchanged during that run.
+
+No new canonical function or ordinary binding is counted: 2,050 verified,
+zero drafts and 1,962 bindings remain. WRAM locations increase from 805 to
+806. No guard was widened, no new runtime hook was added and nothing was
+pushed. All tests, observers and synthetic RAM fixtures stay local.
+
 # Battle NMI timers — 2026-10-23
 
 The existing 85:8DC5 algorithm shares named timer-expiry and advancement

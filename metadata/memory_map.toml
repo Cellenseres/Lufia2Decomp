@@ -6296,3 +6296,12 @@ width = 1
 count = 256
 owner = "battle"
 notes = "Normal context reserve F986..FA85 follows the0100 initialization at81A79E. This describes storage, not a runtime bound: original underflow and long-indexed bank carry remain possible."
+
+[[location]]
+address = "7E:12E3"
+name = "battle_nmi_callback_selectors"
+width = 1
+count = 8
+stride = 2
+owner = "battle"
+notes = "85:8E7C reads low-byte selectors; negative ends the list. 81:8606 fills all16 bytes FF. No valid nonnegative gameplay entry observed."

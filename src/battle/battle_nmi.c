@@ -1,6 +1,9 @@
 /* Battle NMI uploads ($85:8DC5). */
 
+#include <stddef.h>
+
 #include "core/cpu_ops.h"
+#include "core/child_call.h"
 #include "lufia2/battle.h"
 #include "lufia2/battle_nmi_timer_steps.h"
 #include "primary_wave_internal.h"
@@ -176,10 +179,53 @@ static uint8_t BattleTimers(
     return 1;
 }
 
+enum {
+    BATTLE_CALLBACK_SELECTORS = WRAM_BATTLE_NMI_CALLBACK_SELECTORS,
+    BATTLE_CALLBACK_LIST_BYTES = 16u,
+    ROM_BATTLE_CALLBACK_TARGETS = 0x9e37u
+};
+
+static Lufia2ExecutionResult BattleRunCallbackList(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    LoadY16(cpu, 0u);
+    do {
+        LoadAAbsolute8(memory, cpu, BATTLE_CALLBACK_SELECTORS, cpu->y);
+        if (cpu->negative)
+            break;
+        SetAccumulatorWidth(cpu, 0u);
+        OpAslA(cpu);
+        OpAndValue(cpu, 0xffu);
+        TransferAToX(cpu);
+        SetAccumulatorWidth(cpu, 1u);
+        PushY(memory, cpu);
+        if (!child)
+            return ExecutionHandoff(cpu, 0x858e8bu);
+        const uint32_t target = 0x850000u | Read16ProgramIndexed(
+            memory, cpu, ROM_BATTLE_CALLBACK_TARGETS, cpu->x);
+        if (!CallChildWithFrame(memory, cpu, child, context, 0x858e8bu,
+                                target, 2u, 0x85u)) {
+            const Lufia2ExecutionResult result = {
+                LUFIA2_EXECUTION_CHILD_UNWOUND, cpu->resume_pc, 0u};
+            return result;
+        }
+        if (cpu->program_bank != 0x85u || cpu->accumulator_is_8_bit != 1u ||
+            cpu->index_is_8_bit != 0u)
+            return ExecutionHandoff(cpu,
+                ((uint32_t)cpu->program_bank << 16) | 0x8e8eu);
+        OpPullY(memory, cpu);
+        OpIny(cpu);
+        OpIny(cpu);
+        OpCpy(cpu, BATTLE_CALLBACK_LIST_BYTES);
+    } while (!cpu->zero);
+    PullDataBank(memory, cpu);
+    return ExecutionReturned(0x858e97u);
+}
+
 /* $85:8DC5: battle NMI work via the $00:0067 vector. */
-Lufia2ExecutionResult Lufia2BattleNmiUploads(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2BattleNmiUploadsWithChildren(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
     static const uint16_t scroll_regs[6] = {
         SNES_BG1HOFS, SNES_BG1VOFS, SNES_BG2HOFS, SNES_BG2VOFS, SNES_BG3HOFS, SNES_BG3VOFS};
     static const uint16_t window_regs[8] = {
@@ -235,16 +281,12 @@ Lufia2ExecutionResult Lufia2BattleNmiUploads(
         result.pc = cpu->resume_pc;
         return result;
     }
-    LoadY16(cpu, 0x0000u);                                     /* 8E79 */
-    LoadAAbsolute8(memory, cpu, 0x12e3u, cpu->y);
-    if (!cpu->negative) {
-        /* Queued tasks run through JSR ($9E37,x) on LLE. */
-        result.flow = LUFIA2_EXECUTION_BOUNDARY;
-        result.pc = cpu->resume_pc = 0x858e7fu;
-        return result;
-    }
-    PullDataBank(memory, cpu);                                 /* 8E96 */
-    return result;
+    return BattleRunCallbackList(memory, cpu, child, context);
+}
+
+Lufia2ExecutionResult Lufia2BattleNmiUploads(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return Lufia2BattleNmiUploadsWithChildren(memory, cpu, NULL, NULL);
 }
 
 Lufia2ExecutionResult Lufia2BattleUploadVramQueue(const Lufia2Memory *memory,
