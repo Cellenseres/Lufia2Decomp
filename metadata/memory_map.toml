@@ -4778,7 +4778,7 @@ name = "party_stat_member_index"
 width = 2
 count = 1
 owner = "system"
-notes = "Original member index for stat tables. 81FB1A reuses the low byte as enemy-record index and the high byte as item-drop threshold;85C168 reuses them as slot base and shifting actor bits."
+notes = "Original member index for stat tables. 81FB1A reuses the low byte as enemy-record index and the high byte as item-drop threshold;85C168 reuses them as slot base and shifting actor bits. Opcode57 also stores its scale factor word here after resolving the actor."
 
 [[location]]
 address = "7E:09FE"
@@ -5895,7 +5895,7 @@ name = "battle_action_bias"
 width = 1
 count = 1
 owner = "battle"
-notes = "85D025 forms an eight-bit action bias here before copying its zero-extended value intoF452. 81FB1A also uses this address and its next byte as a packed item-drop descriptor."
+notes = "85D025 forms an eight-bit action bias here before copying its zero-extended value intoF452. 81FB1A also uses this address and its next byte as a packed item-drop descriptor. Script opcode57 stores a word-sized actor-record match here."
 
 [[location]]
 address = "7E:13DB"

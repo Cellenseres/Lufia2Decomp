@@ -637,6 +637,8 @@ enum BattleOpcodeHandler {
     BATTLE_OP_ADD = 0xb67c,                                    /* $0D */
     BATTLE_OP_SUBTRACT = 0xb698,                               /* $0E */
     BATTLE_OP_MULTIPLY = 0xb6b7,                               /* $0F */
+    BATTLE_OP_UNSIGNED_DIVIDE = 0xb71d,                        /* $55 */
+    BATTLE_OP_SCALE_ACTION = 0xbef5,                           /* $57 */
     BATTLE_OP_DIVIDE = 0xb6d2,                                 /* $10 */
     BATTLE_OP_RANDOM_SCALE = 0xb73b,                           /* $11 */
     BATTLE_OP_LONG_DIVIDE = 0xb753,                            /* $12 */
@@ -1372,6 +1374,118 @@ static void BattleOpMultiply(
     BattleScriptWrite(memory, cpu, 0xb6ceu);
 }
 
+static void BattleOpUnsignedDivide(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    BattleScriptByte(memory, cpu, 0xb71fu);
+    BattleScriptRead(memory, cpu, 0xb722u);
+    PushAccumulator8(memory, cpu);
+    Write16Direct(memory, cpu, 0x5du, cpu->x);
+    BattleScriptValue(memory, cpu, 0xb728u);
+    TransferXToA(cpu);
+    StoreADirect8(memory, cpu, DP_SCRATCH_A);
+    Write8(memory, DirectAddress(cpu, 0x5fu), 0u);
+    BattleDivide(memory, cpu, 0xb731u);
+    LoadX16(cpu, Read16Direct(memory, cpu, 0x5du));
+    LoadA8(cpu, Pull8(memory, cpu));
+    BattleScriptWrite(memory, cpu, 0xb737u);
+}
+
+enum BattleScaleScratch {
+    BATTLE_SCALE_MULTIPLICAND = 0x4e,
+    BATTLE_SCALE_MULTIPLIER = 0x50,
+    BATTLE_SCALE_PRODUCT = 0x51,
+    BATTLE_SCALE_PRODUCT_MIDDLE = 0x52,
+    BATTLE_SCALE_PRODUCT_HIGH = 0x53,
+    BATTLE_SCALE_SIGNED_FIELD = 0x14,
+    BATTLE_SCALE_FIRST_LIMITED_FIELD = 0x30,
+    BATTLE_SCALE_SECOND_LIMITED_FIELD = 0x42
+};
+
+static void BattleScaleActionValue(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Write16Direct(memory, cpu, BATTLE_SCALE_MULTIPLICAND, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadAAbsolute8(memory, cpu, WRAM_PARTY_STAT_MEMBER_INDEX, 0u);
+    StoreADirect8(memory, cpu, BATTLE_SCALE_MULTIPLIER);
+    SimulateJslFrame(memory, cpu, 0x85u, 0xbf7fu);
+    const uint8_t caller_bank = cpu->program_bank;
+    cpu->program_bank = 0x80u;
+    (void)Lufia2Multiply16By8(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    cpu->program_bank = caller_bank;
+    LoadA8(cpu, DirectByte(memory, cpu, BATTLE_SCALE_PRODUCT));
+    ExchangeAccumulatorBytes(cpu);
+    SetAccumulatorWidth(cpu, 0);
+    for (unsigned shift = 0; shift < 2u; ++shift) {
+        AslA16(cpu);
+        const uint16_t middle = Read16Direct(memory, cpu, BATTLE_SCALE_PRODUCT_MIDDLE);
+        const uint16_t shifted = (uint16_t)((middle << 1) | cpu->carry);
+        cpu->carry = (middle & 0x8000u) != 0u;
+        Write8(memory, DirectAddress(cpu, BATTLE_SCALE_PRODUCT_HIGH), (uint8_t)(shifted >> 8));
+        Write8(memory, DirectAddress(cpu, BATTLE_SCALE_PRODUCT_MIDDLE), (uint8_t)shifted);
+        SetNz16(cpu, shifted);
+        if (cpu->carry)
+            break;
+    }
+    if (!cpu->carry) {
+        LoadA16(cpu, Read16Direct(memory, cpu, BATTLE_SCALE_PRODUCT_MIDDLE));
+        if (cpu->negative)
+            LoadA16(cpu, 0x7fffu);
+    } else
+        LoadA16(cpu, 0x7fffu);
+    SimulateRtsFrame(memory, cpu);
+}
+
+static void BattleOpScaleAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    BattleScriptWord(memory, cpu, 0xbef7u);
+    Write16Absolute(memory, cpu, WRAM_BATTLE_ACTION_BIAS, cpu->x);
+    LoadA8(cpu, Read8(memory, BATTLE_BATTLER_A));
+    if (!cpu->negative) {
+        BattleScriptSlot(memory, cpu, 0xbf03u);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x6eu, cpu->x));
+        And16(cpu, 0x1ffu);
+        Compare16(cpu, cpu->accumulator,
+                  Read16AbsoluteIndexed(memory, cpu, WRAM_BATTLE_ACTION_BIAS, 0u));
+        if (cpu->zero) {
+            BattleScriptByte(memory, cpu, 0xbf1bu);
+            Write16Absolute(memory, cpu, WRAM_PARTY_STAT_MEMBER_INDEX, cpu->accumulator);
+            SetAccumulatorWidth(cpu, 0);
+            LoadX16(cpu, BATTLE_SCALE_SIGNED_FIELD);
+            LoadA16(cpu, Read16Long(memory, LongIndexedAddress(BATTLE_SCRIPT_RECORD, cpu->x)));
+            if (!cpu->zero) {
+                const bool negative = cpu->negative;
+                if (negative) {
+                    LoadA16(cpu, (uint16_t)~cpu->accumulator);
+                    LoadA16(cpu, (uint16_t)(cpu->accumulator + 1u));
+                }
+                BattleScaleActionValue(memory, cpu, negative ? 0xbf37u : 0xbf2eu);
+                if (negative) {
+                    LoadA16(cpu, (uint16_t)~cpu->accumulator);
+                    LoadA16(cpu, (uint16_t)(cpu->accumulator + 1u));
+                }
+                Write16Long(memory, LongIndexedAddress(BATTLE_SCRIPT_RECORD, cpu->x), cpu->accumulator);
+            }
+            for (unsigned field = 0; field < 2u; ++field) {
+                LoadX16(cpu, field ? BATTLE_SCALE_SECOND_LIMITED_FIELD : BATTLE_SCALE_FIRST_LIMITED_FIELD);
+                LoadA16(cpu, Read16Long(memory, LongIndexedAddress(BATTLE_SCRIPT_RECORD, cpu->x)));
+                if (!cpu->zero) {
+                    BattleScaleActionValue(memory, cpu, field ? 0xbf63u : 0xbf4bu);
+                    Compare16(cpu, cpu->accumulator, 100u);
+                    if (cpu->carry)
+                        LoadA16(cpu, 100u);
+                    Write16Long(memory, LongIndexedAddress(BATTLE_SCRIPT_RECORD, cpu->x), cpu->accumulator);
+                }
+            }
+            return;
+        }
+    }
+    SetAccumulatorWidth(cpu, 1);
+    BattleScriptByte(memory, cpu, 0xbf15u);
+}
+
 /* $10: signed divide. */
 static void BattleOpDivide(
     const Lufia2Memory *memory,
@@ -1739,6 +1853,12 @@ Lufia2ExecutionResult Lufia2BattleScript(
             break;
         case BATTLE_OP_MULTIPLY:
             BattleOpMultiply(memory, cpu, handler);
+            break;
+        case BATTLE_OP_UNSIGNED_DIVIDE:
+            BattleOpUnsignedDivide(memory, cpu);
+            break;
+        case BATTLE_OP_SCALE_ACTION:
+            BattleOpScaleAction(memory, cpu);
             break;
         case BATTLE_OP_DIVIDE:
             BattleOpDivide(memory, cpu);
