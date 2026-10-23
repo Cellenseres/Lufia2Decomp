@@ -1,3 +1,48 @@
+# Battle NMI timers — 2026-10-23
+
+The existing 85:8DC5 algorithm shares named timer-expiry and advancement
+helpers with bounded entries at 85:8F1F and 85:8F3E. The original eight-slot
+loop, handler table, PEA/PHA/RTS and callback ownership remain. Expiry stops
+at 85:8F29 before handler selection; other outcomes stop at 85:8F1F/8F47.
+The active byte remains in A when DEC expires. Advancement uses the existing
+decimal-aware arithmetic primitive; the old binary-only addition differed
+from the ROM for synthetic D1 inputs. The consumer still admits D0 only.
+
+Paced integration requires the original M1X1 NMI context, aligned timer slot,
+85:8E78 caller frame, coherent clocks, selective interrupt ownership and no
+pending interrupt/DMA. It does not assume a positive normal deadline or that
+every original NMI work item runs within physical VBlank. Conservative clock
+reservations stop before the next NMI edge or frame wrap. Generated finite
+budgets reserve ten instructions for the header and six for advancement.
+Unsupported contexts interpret normally. The older M1X0 timer guards stay.
+
+One shared final-source checkpoint covers the semantic and consumer commits:
+
+- 1,920 actual-hook ROM states and 1,920 next-op/selector/RTS rejoins;
+  780 public states, 18 public guards, 72 consumer guards and 432 complete
+  eight-timer cases. CPU/WRAM, data ordering and per-opcode clocks are checked.
+  The reused primary-wave child compares CPU/WRAM in the whole-loop proof;
+  its full internal read ordering is outside this checkpoint's claim.
+- 38,016 actual generated capacity cases, 49,248 actual NMI-owner queries
+  across nine feature combinations, ten capability cases, both hooks with
+  NMI ownership unavailable, and three detected in-memory ROM mutants pass.
+  The unchanged 418 progress cases are reused; full/CLI reruns are deferred.
+- Strict MSVC proofs, final isolated Windows game, incremental GCC/Clang
+  semantic libraries and metadata check pass after the arithmetic correction.
+- All 8,000 replay frames match the pinned control for input, CPU, WRAM,
+  pixels and PCM. The battle-work census decreases from 263,670 to 253,918,
+  exactly 9,752 original instructions accounted by the two admitted phases.
+  This is scoped decoder work, not an FPS or whole-game coverage claim.
+  All 4,306 original paired children preserve frames, ownership and literal
+  nonnormal unwinds. The old driver's raw exit6 remains explicit because its
+  obsolete inline-entry observers miss native calls; independent original
+  action and return evidence remains. ROM, SRAM and 158 inputs stay unchanged.
+
+No new canonical ROM functions, ordinary bindings or WRAM fields are counted:
+2,050 verified, zero drafts, 1,962 bindings and 805 WRAM fields remain.
+All work in this checkpoint was completed independently after the owner
+stopped the subagents. Tests and observers remain local. Nothing is pushed.
+
 # Effect command preparation and cleanup — 2026-10-23
 
 The existing effect engine at 81:895E shares its command preparation with two

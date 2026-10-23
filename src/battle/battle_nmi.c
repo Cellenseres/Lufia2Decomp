@@ -1,7 +1,8 @@
 /* Battle NMI uploads ($85:8DC5). */
 
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "lufia2/battle_nmi_timer_steps.h"
 #include "primary_wave_internal.h"
 #include "system/wram.h"
 
@@ -97,6 +98,45 @@ static void BattleHdmaChannels(
 }
 
 /* $85:8F1B: eight battle timers; 0 = handler left to LLE. */
+enum {
+    BATTLE_TIMER_ACTIVE = WRAM_UNK_7E1B17,
+    BATTLE_TIMER_COUNTDOWN = WRAM_BATTLE_RIPPLE_ROW_DELAY,
+    BATTLE_TIMER_STRIDE = 0x08u,
+    BATTLE_TIMER_END = 0x40u
+};
+
+static bool BattleTimerExpired(const Lufia2Memory *memory,
+                               Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, BATTLE_TIMER_ACTIVE, cpu->x);
+    if (cpu->zero)
+        return false;
+    const uint32_t counter = AbsoluteIndexedAddress(cpu, BATTLE_TIMER_COUNTDOWN, cpu->x);
+    const uint8_t left = (uint8_t)(Read8(memory, counter) - 1u);
+    Write8(memory, counter, left);
+    SetNz8(cpu, left);
+    return cpu->zero;
+}
+
+static void BattleAdvanceTimer(Lufia2CpuState *cpu) {
+    LoadA8(cpu, (uint8_t)cpu->x);
+    cpu->carry = 0u;
+    OpAdcValue(cpu, BATTLE_TIMER_STRIDE);
+    TransferAToX(cpu);
+    Compare8(cpu, (uint8_t)cpu->x, BATTLE_TIMER_END);
+}
+
+Lufia2ExecutionResult Lufia2BattleTimerStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x858f1fu && entry != 0x858f3eu) ||
+        cpu->program_bank != 0x85u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit != 1u || cpu->x > 0xffu || cpu->y > 0xffu)
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x858f1fu && BattleTimerExpired(memory, cpu))
+        return ExecutionHandoff(cpu, 0x858f29u);
+    BattleAdvanceTimer(cpu);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x858f47u : 0x858f1fu);
+}
+
 static uint8_t BattleTimers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -104,45 +144,32 @@ static uint8_t BattleTimers(
     SetIndexWidth(cpu, 1);                                     /* 8F1B */
     LoadX8(cpu, 0x00u);
     do {
-        LoadAAbsolute8(memory, cpu, 0x1b17u, cpu->x);
-        if (!cpu->zero) {
-            const uint32_t counter =
-                AbsoluteIndexedAddress(cpu, 0x1b18u, cpu->x);
-            const uint8_t left = (uint8_t)(Read8(memory, counter) - 1u);
+        if (BattleTimerExpired(memory, cpu)) {
+            uint16_t handler;
 
-            Write8(memory, counter, left);
-            SetNz8(cpu, left);
-            if (cpu->zero) {
-                uint16_t handler;
-
-                LoadAAbsolute8(memory, cpu, 0x1b19u, cpu->x);  /* 8F29 */
-                AslA8(cpu);
-                TransferAToY(cpu);
-                SetAccumulatorWidth(cpu, 0);
-                LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x9e05u, cpu->y));
-                handler = cpu->accumulator;
-                Push8(memory, cpu, 0x8fu);                     /* PEA #$8F3B */
-                Push8(memory, cpu, 0x3bu);
-                PushAccumulator16(memory, cpu);
-                SetAccumulatorWidth(cpu, 1);
-                SetIndexWidth(cpu, 0);
-                (void)Pull8(memory, cpu);                      /* RTS */
-                (void)Pull8(memory, cpu);
-                if (handler != 0xa8e6u) {
-                    /* Other handlers run on LLE after RTS. */
-                    cpu->resume_pc = 0x850000u | (uint16_t)(handler + 1u);
-                    return 0;
-                }
-                (void)Lufia2BattleFillPrimaryWave(memory, cpu);
-                SimulateRtsFrame(memory, cpu);                 /* to 8F3C */
-                SetIndexWidth(cpu, 1);
+            LoadAAbsolute8(memory, cpu, 0x1b19u, cpu->x);  /* 8F29 */
+            AslA8(cpu);
+            TransferAToY(cpu);
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x9e05u, cpu->y));
+            handler = cpu->accumulator;
+            Push8(memory, cpu, 0x8fu);                     /* PEA #$8F3B */
+            Push8(memory, cpu, 0x3bu);
+            PushAccumulator16(memory, cpu);
+            SetAccumulatorWidth(cpu, 1);
+            SetIndexWidth(cpu, 0);
+            (void)Pull8(memory, cpu);                      /* RTS */
+            (void)Pull8(memory, cpu);
+            if (handler != 0xa8e6u) {
+                /* Other handlers run on LLE after RTS. */
+                cpu->resume_pc = 0x850000u | (uint16_t)(handler + 1u);
+                return 0;
             }
+            (void)Lufia2BattleFillPrimaryWave(memory, cpu);
+            SimulateRtsFrame(memory, cpu);                 /* to 8F3C */
+            SetIndexWidth(cpu, 1);
         }
-        LoadA8(cpu, (uint8_t)cpu->x);                          /* 8F3E */
-        cpu->carry = 0;
-        Adc8(cpu, 0x08u);
-        TransferAToX(cpu);
-        Compare8(cpu, (uint8_t)cpu->x, 0x40u);
+        BattleAdvanceTimer(cpu);
     } while (!cpu->zero);
     SetIndexWidth(cpu, 0);                                     /* 8F47 */
     SimulateRtsFrame(memory, cpu);
