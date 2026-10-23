@@ -8,6 +8,7 @@
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
+#include "lufia2/event_script.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
@@ -29,49 +30,6 @@ void Lufia2EventNextByte(
         LoadY16(cpu, EVENT_BANK_WINDOW);
     }
     SimulateRtsFrame(memory, cpu);
-}
-
-/* Read-only: script byte n past Y. */
-uint8_t Lufia2EventPeekByte(
-    const Lufia2Memory *memory,
-    const Lufia2CpuState *cpu,
-    unsigned n) {
-    uint8_t bank = cpu->data_bank;
-    uint8_t script_bank = Read8(memory, EVENT_SCRIPT_BANK);
-    uint16_t y = cpu->y;
-
-    for (;; --n) {
-        const uint8_t value = Read8(memory, ((uint32_t)bank << 16) | y);
-
-        if (!n)
-            return value;
-        if (++y < EVENT_BANK_WINDOW) {
-            bank = ++script_bank;
-            y = EVENT_BANK_WINDOW;
-        }
-    }
-}
-
-/* Read-only: a $FF within limit script bytes from Y. */
-uint8_t Lufia2EventListEnds(
-    const Lufia2Memory *memory,
-    const Lufia2CpuState *cpu,
-    unsigned limit) {
-    uint8_t bank = cpu->data_bank;
-    uint8_t script_bank = Read8(memory, EVENT_SCRIPT_BANK);
-    uint16_t y = cpu->y;
-
-    while (limit--) {
-        const uint8_t value = Read8(memory, ((uint32_t)bank << 16) | y);
-
-        if (++y < EVENT_BANK_WINDOW) {
-            bank = ++script_bank;
-            y = EVENT_BANK_WINDOW;
-        }
-        if (value == 0xffu)
-            return 1;
-    }
-    return 0;
 }
 
 /* $80:E8D0: step back one byte; below $8000 the bank steps down. */
@@ -277,7 +235,7 @@ static unsigned EventOpEnd(
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* CC42 */
     TransferDirectToA(cpu);
     Write8(memory, LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x), A8(cpu));
-    return EVENT_OPCODE_YIELD;
+    return EVENT_OPCODE_END;
 }
 
 /* $80:D31C: sleep A frames, the slot resumes at Y. */
@@ -750,15 +708,14 @@ static void EventFrameVariables(
     Lufia2CpuState *cpu,
     uint8_t save) {
     do {
-        const uint32_t variable = DirectLongIndirectY(memory, cpu, 0x5du);
         const uint32_t saved = LongIndexedAddress(EVENT_CALL_FRAME_VARIABLES, cpu->x);
 
         if (save) {
-            LoadA8(cpu, Read8(memory, variable));              /* D7F6 */
+            LoadA8(cpu, Read8(memory, DirectLongIndirectY(memory, cpu, 0x5du)));              /* D7F6 */
             Write8(memory, saved, A8(cpu));
         } else {
             LoadA8(cpu, Read8(memory, saved));                 /* D8AE */
-            Write8(memory, variable, A8(cpu));
+            Write8(memory, DirectLongIndirectY(memory, cpu, 0x5du), A8(cpu));
         }
         IncrementX16(cpu);
         SetAccumulatorWidth(cpu, 0);
@@ -1371,11 +1328,15 @@ static unsigned EventScriptOpcode(
 
 enum { EVENT_OPCODE_TABLE = 0xe5a4u };
 
-static uint16_t EventOpcodeHandler(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void PrepareEventOpcode(Lufia2CpuState *cpu) {
     const uint16_t table_offset = (uint16_t)(A8(cpu) * 2u);
     cpu->accumulator = table_offset;
     cpu->carry = 0;
     TransferAToX(cpu);
+}
+
+static uint16_t EventOpcodeHandler(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PrepareEventOpcode(cpu);
     return Read16Bank(memory, 0x80u, (uint16_t)(EVENT_OPCODE_TABLE + cpu->x));
 }
 
@@ -1399,33 +1360,59 @@ Lufia2ExecutionResult Lufia2FieldDispatchEventOpcode(const Lufia2Memory *memory,
     return result;
 }
 
-/* $80:CC35: run the script until it yields; 0 = handoff at CC3F. */
 static uint8_t EventRunScript(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     EventRun *run) {
     for (;;) {
-        uint16_t handler;
-        uint32_t handoff = EVENT_OPCODE_LIMIT_HANDOFF;
-
-        Lufia2EventNextByte(memory, cpu, 0xcc37u);                   /* CC35 */
-        handler = EventOpcodeHandler(memory, cpu);
-        switch (EventScriptOpcode(memory, cpu,
-                    run->total < EVENT_OPCODE_LIMIT ? handler : 0u, run,
-                    &handoff)) {
+        ++run->dispatches;
+        Lufia2EventNextByte(memory, cpu, 0xcc37u);
+        PrepareEventOpcode(cpu);
+        if (run->total >= EVENT_OPCODE_LIMIT) {
+            cpu->resume_pc = EVENT_OPCODE_LIMIT_HANDOFF;
+            return 0;
+        }
+        const uint16_t handler = Read16Bank(
+            memory, 0x80u, (uint16_t)(EVENT_OPCODE_TABLE + cpu->x));
+        uint32_t handoff = 0x800000u | handler;
+        const unsigned flow = EventScriptOpcode(memory, cpu, handler, run, &handoff);
+        switch (flow) {
         case EVENT_OPCODE_NEXT:
             ++run->total;
             ++run->passes[run->depth];
             continue;
+        case EVENT_OPCODE_END:
         case EVENT_OPCODE_YIELD:
             ++run->total;
             ++run->passes[run->depth];
+            run->return_pc = flow == EVENT_OPCODE_END ? 0x80cc49u : 0x80d335u;
             return 1;
-        default:                                               /* CC3F */
+        default:
             cpu->resume_pc = handoff;
             return 0;
         }
     }
+}
+
+Lufia2ExecutionResult Lufia2FieldRunEventScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x80cc35u);
+    EventRun run = {0};
+    run.child = child;
+    run.child_context = context;
+    const uint8_t returned = EventRunScript(memory, cpu, &run);
+    Lufia2ExecutionResult result = {
+        returned ? LUFIA2_EXECUTION_RETURNED
+                 : run.unwind_site ? LUFIA2_EXECUTION_CHILD_UNWOUND
+                                   : LUFIA2_EXECUTION_BOUNDARY,
+        returned ? run.return_pc
+                 : run.unwind_site ? run.unwind_site : cpu->resume_pc,
+        run.dispatches};
+    return result;
 }
 
 /* $80:CBCC: resume the due slot X through the script VM. */

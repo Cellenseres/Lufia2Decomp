@@ -324,87 +324,27 @@ static void EventObjectClearAttributes(
     SimulateRtlFrame(memory, cpu);
 }
 
-/* $83:8A6F: clear an object's tile block in layer A. */
-static void EventObjectClearTiles(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJslFrame(memory, cpu, 0x80u, return_address);
-    StoreADirect8(memory, cpu, DP_SCRATCH_A); /* 8A6F */
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0x00u);
-    LoadA8(cpu, Read8(memory, WRAM_FIELD_PENDING_OBJECT_X));
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Read8(memory, WRAM_FIELD_PENDING_OBJECT_Y));
-    SimulateJsrFrame(memory, cpu, 0x8a7eu);
-    Lufia2MapCellOffset(memory, cpu);                          /* $83:F9F7 */
-    SimulateRtsFrame(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, cpu->x);
-    LoadXDirect(memory, cpu, DP_SCRATCH_A);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_CELL_BASE,
-        cpu->x)));
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    TransferDirectToA(cpu);                                    /* 8A8C */
-    LoadAAbsolute8(memory, cpu, WRAM_FIELD_SECTION_WIDTH, 0);
-    cpu->carry = 1;
-    Sbc8(cpu, Read8(memory, WRAM_FIELD_OBJECT_WIDTH));
-    SetAccumulatorWidth(cpu, 0);
-    AslA16(cpu);
-    StoreADirect16(memory, cpu, DP_SCRATCH_A);
-    LoadA16(cpu, Read16Long(memory, WRAM_FIELD_OBJECT_HEIGHT));
-    And16(cpu, 0x00ffu);
-    StoreADirect16(memory, cpu, DP_SCRATCH_E);
-    do {
-        LoadA16(cpu, Read16Long(memory, WRAM_FIELD_OBJECT_WIDTH));           /* 8AA3 */
-        And16(cpu, 0x00ffu);
-        StoreADirect16(memory, cpu, DP_SCRATCH_C);
-        do {
-            const uint32_t tile = LongIndexedAddress(FIELD_BANK_7F, cpu->x);
-
-            LoadA16(cpu, Read16Long(memory, tile));
-            And16(cpu, FIELD_TILE_FLAGS_MASK);
-            Write16Long(memory, tile, cpu->accumulator);
-            IncrementX16(cpu);
-            IncrementX16(cpu);
-            Decrement16Direct(memory, cpu, DP_SCRATCH_C);
-        } while (!cpu->zero);
-        LoadA16(cpu, cpu->x);                                  /* 8ABD */
-        cpu->carry = 0;
-        Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
-        TransferAToX(cpu);
-        Decrement16Direct(memory, cpu, DP_SCRATCH_E);
-    } while (!cpu->zero);
-    SetAccumulatorWidth(cpu, 1);
-    SimulateRtlFrame(memory, cpu);
-}
-
-/* Whether $83:8A6F overwrites its own block size. */
-static uint8_t EventClearHitsSize(
-    const Lufia2Memory *memory,
-    const Lufia2CpuState *cpu,
-    unsigned width,
-    unsigned height) {
-    const uint8_t map_width = Read8(memory, WRAM_FIELD_SECTION_WIDTH);
-    const uint16_t cell = (uint16_t)(2u * ((uint16_t)(
-        Read8(memory, WRAM_FIELD_PENDING_OBJECT_Y) * map_width) + Read8(memory,
-            WRAM_FIELD_PENDING_OBJECT_X)));
-    const uint16_t skip = (uint16_t)(((cpu->direct_page & 0xff00u) |
-        (uint8_t)(Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_FIELD_SECTION_WIDTH,
-            0)) -
-                  width)) << 1);
-    uint16_t row = (uint16_t)(cell + Read16Long(memory, 0x7fd00au));
-    unsigned r;
-
-    for (r = 0; r < height; ++r) {
-        const uint16_t size = (uint16_t)(0xd04cu - row);
-
-        if (size < 2u * width || (uint16_t)(size + 1u) < 2u * width)
-            return 1;
-        row = (uint16_t)(row + 2u * width + skip);
+static bool EventRegionChild(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionResult (*child)(const Lufia2Memory *, Lufia2CpuState *),
+    uint8_t return_bank, uint16_t return_address, uint32_t *handoff) {
+    SimulateJslFrame(memory, cpu, return_bank, return_address);
+    cpu->program_bank = 0x83u;
+    const Lufia2ExecutionResult result = child(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED) {
+        *handoff = result.pc;
+        return false;
     }
-    return 0;
+    const uint8_t low = Pull8(memory, cpu);
+    const uint8_t high = Pull8(memory, cpu);
+    const uint8_t bank = Pull8(memory, cpu);
+    const uint16_t back = (uint16_t)(low | ((uint16_t)high << 8));
+    cpu->program_bank = bank;
+    if (back != return_address || bank != return_bank) {
+        *handoff = ((uint32_t)bank << 16) | (uint16_t)(back + 1u);
+        return false;
+    }
+    return true;
 }
 
 /* $83:F784: tile bits of cell X (DB) = A. */
@@ -501,14 +441,10 @@ static uint8_t EventObjectRedraw(
     TransferDirectToA(cpu);                                    /* D3C6 */
     LoadA8(cpu, Read8(memory, WRAM_FIELD_LAYER_TABLE_OFFSET));
     TransferAToX(cpu);
-    if (Lufia2FieldRegionCells(memory, cpu) > EVENT_OPCODE_LIMIT) {
-        run->visits = run->region_redraws[run->depth];
-        run->has_visits = 1;
-        *handoff = 0x80d3ccu;                                  /* JSL $83:8E85 */
+    (void)run;
+    if (!EventRegionChild(memory, cpu, Lufia2FieldRenderRegion,
+            0x80u, 0xd3cfu, handoff))
         return 0;
-    }
-    ++run->region_redraws[run->depth];
-    Lufia2FieldRedrawRegion(memory, cpu, 0x80u, 0xd3cfu);      /* $83:8E85 */
     LoadA8(cpu, 0x02u);
     redraw = AbsoluteIndexedAddress(cpu, WRAM_EVENT_REDRAW, 0); /* TSB */
     value = Read8(memory, redraw);
@@ -540,8 +476,6 @@ static uint8_t EventObjectTiles(
         IncrementX16(cpu);                                     /* D36A */
         Compare16(cpu, cpu->x, EVENT_OBJECT_RECORD_COUNT);
         if (cpu->zero) {
-            unsigned width, height;
-
             Lufia2EventCellValue(memory, cpu, 0x80u, 0xd373u);       /* D370 */
             BitImmediate8(cpu, 0xf0u);
             if (cpu->zero) {
@@ -556,17 +490,9 @@ static uint8_t EventObjectTiles(
             StoreADirect8(memory, cpu, DP_PROBE_Y);
             EventObjectClearAttributes(memory, cpu, 0xd388u);
             LoadA8(cpu, 0x02u);                                /* D389 */
-            width = Read8(memory, WRAM_FIELD_OBJECT_WIDTH);
-            height = Read8(memory, WRAM_FIELD_OBJECT_HEIGHT);
-            if (!width || !height || width * height > EVENT_OPCODE_LIMIT ||
-                EventClearHitsSize(memory, cpu, width, height)) {
-                run->visits = run->tile_clears[run->depth];
-                run->has_visits = 1;
-                *handoff = 0x80d38bu;                          /* JSL $83:8A6F */
+            if (!EventRegionChild(memory, cpu, Lufia2FieldClearObjectTileIds,
+                    0x80u, 0xd38eu, handoff))
                 return 0;
-            }
-            ++run->tile_clears[run->depth];
-            EventObjectClearTiles(memory, cpu, 0xd38eu);
             if (!EventObjectRedraw(memory, cpu, run, 0xd391u, handoff))
                 return 0;
             SimulateRtsFrame(memory, cpu);
@@ -897,17 +823,13 @@ static uint8_t EventRedrawLowLayers(
     EventRun *run,
     uint16_t return_address,
     uint32_t *handoff) {
+    (void)run;
     SimulateJslFrame(memory, cpu, 0x80u, return_address);
     cpu->program_bank = 0x83u;
     for (LoadX16(cpu, 0x0000u);;) {                            /* 8E76 */
-        if (Lufia2FieldRegionCells(memory, cpu) > 1024u) {
-            run->visits = run->layer_redraws[run->depth];
-            run->has_visits = 1;
-            *handoff = 0x838e79u;                              /* JSL $83:8E85 */
+        if (!EventRegionChild(memory, cpu, Lufia2FieldRenderRegion,
+                0x83u, 0x8e7cu, handoff))
             return 0;
-        }
-        ++run->layer_redraws[run->depth];
-        Lufia2FieldRedrawRegion(memory, cpu, 0x83u, 0x8e7cu);
         IncrementX16(cpu);                                     /* 8E7D */
         IncrementX16(cpu);
         Compare16(cpu, cpu->x, 0x0004u);
@@ -960,9 +882,8 @@ unsigned Lufia2EventOpPlaceObject(
         return EVENT_OPCODE_HANDOFF;
     {
         const uint32_t redraw = AbsoluteIndexedAddress(cpu, WRAM_EVENT_REDRAW, 0);
+        LoadA8(cpu, Read8(memory, WRAM_FIELD_OBJECT_FLAGS));
         const uint8_t value = Read8(memory, redraw);
-
-        LoadA8(cpu, Read8(memory, WRAM_FIELD_OBJECT_FLAGS));                 /* D40A */
         cpu->zero = (value & A8(cpu)) == 0;                    /* TSB */
         Write8(memory, redraw, (uint8_t)(value | A8(cpu)));
     }

@@ -89,7 +89,8 @@
 enum {
     EVENT_OPCODE_NEXT,
     EVENT_OPCODE_YIELD,
-    EVENT_OPCODE_HANDOFF
+    EVENT_OPCODE_HANDOFF,
+    EVENT_OPCODE_END
 };
 
 /* Handlers in the $80:E5A4 opcode table. */
@@ -307,6 +308,8 @@ typedef struct EventRun {
     Lufia2PushedChildCall child;
     void *child_context;
     uint32_t unwind_site;
+    unsigned dispatches;
+    uint32_t return_pc;
 } EventRun;
 
 /* Actor, position and point opcodes; others hand off. */
@@ -419,17 +422,6 @@ void Lufia2EventFlagBitFrom(
     uint8_t return_bank,
     uint16_t return_address);
 
-/* Read-only: script byte n past Y. */
-uint8_t Lufia2EventPeekByte(
-    const Lufia2Memory *memory,
-    const Lufia2CpuState *cpu,
-    unsigned n);
-
-/* Read-only: a $FF within limit script bytes from Y. */
-uint8_t Lufia2EventListEnds(
-    const Lufia2Memory *memory,
-    const Lufia2CpuState *cpu,
-    unsigned limit);
 
 /* $80:BF92: slot of actor id A in $05FA into $A7; carry = missing. */
 void Lufia2EventFindActorId(

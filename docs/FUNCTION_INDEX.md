@@ -157,7 +157,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C9C0` | `Lufia2TextExpandSceneString` | verified | `src/text/scene_text_resources.c` |
 | `$80:CBAE` | `Lufia2FieldEventTimerTickWithServices` | verified | `src/field/field_event_script.c` |
 | `$80:CC26` | `Lufia2FieldRequestTilemapUploads` | verified | `src/field/field_redraw_flags.c` |
-| `$80:CC35` | `Lufia2FieldDispatchEventOpcode` | verified | `src/field/field_event_script.c` |
+| `$80:CC35` | `Lufia2FieldRunEventScript` | verified | `src/field/field_event_script.c` |
 | `$80:CD88` | `Lufia2FieldFindObjectInArea` | verified | `src/field/field_event_conditions.c` |
 | `$80:CD8B` | `Lufia2FieldFindObjectInBox` | verified | `src/field/field_event_conditions.c` |
 | `$80:CE5C` | `Lufia2FieldReadObjectRegionDestination` | verified | `src/field/field_event_object_region.c` |

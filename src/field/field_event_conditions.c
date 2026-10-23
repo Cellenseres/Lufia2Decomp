@@ -2,6 +2,7 @@
 
 #include "actor/actor_internal.h"
 #include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "field/event_script_internal.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
@@ -733,12 +734,7 @@ static uint8_t EventSameTiles(
     Write16Direct(memory, cpu, 0x5du, 0x0000u);
     Write16Direct(memory, cpu, 0x5au, 0x0000u);
     do {
-        uint16_t mask = Read16Direct(memory, cpu, 0x60u);
-
-        cpu->carry = mask & 1u;                                /* E230 */
-        mask >>= 1;
-        Write16Direct(memory, cpu, 0x60u, mask);
-        SetNz16(cpu, mask);
+        OpLsrMem(memory, cpu, OpDp(cpu, 0x60u));
         if (cpu->carry) {
             LoadXDirect16(memory, cpu, 0x5au);
             LoadA16(cpu, Read16Long(memory,
@@ -766,11 +762,8 @@ static uint8_t EventSameTiles(
                 }
             }
         }
-        Write16Direct(memory, cpu, 0x5au,                      /* E266 */
-            (uint16_t)(Read16Direct(memory, cpu, 0x5au) + 1u));
-        Write16Direct(memory, cpu, 0x5au,
-            (uint16_t)(Read16Direct(memory, cpu, 0x5au) + 1u));
-        SetNz16(cpu, Read16Direct(memory, cpu, 0x5au));
+        OpStepMem(memory, cpu, OpDp(cpu, 0x5au), 1);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x5au), 1);
         LoadA16(cpu, Read16Direct(memory, cpu, 0x60u));
     } while (!cpu->zero);
     SetAccumulatorWidth(cpu, 1);                               /* E26E */
@@ -796,10 +789,12 @@ static unsigned EventOpSameTiles(
 }
 
 /* $80:E2ED: compare two tile blocks in layer X. */
-static void EventBlockDiffers(
+static bool EventBlockDiffers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
-    uint16_t return_address) {
+    uint16_t return_address,
+    uint32_t *handoff) {
+    unsigned comparisons = 0u;
     SimulateJsrFrame(memory, cpu, return_address);
     PushY(memory, cpu);                                        /* E2ED */
     LoadAAbsolute8(memory, cpu, 0xd04du, 0);
@@ -820,6 +815,10 @@ static void EventBlockDiffers(
         And16(cpu, 0x00ffu);
         StoreADirect16(memory, cpu, DP_SCRATCH_E);
         do {
+            if (comparisons++ == EVENT_OPCODE_LIMIT) {
+                *handoff = 0x80e30eu;
+                return false;
+            }
             LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0000u, cpu->x));
             And16(cpu, 0x03ffu);
             StoreADirect16(memory, cpu, DP_SCRATCH_A);
@@ -833,13 +832,13 @@ static void EventBlockDiffers(
                 Write8(memory, EVENT_CONDITION, A8(cpu));
                 cpu->y = PullIndexValue(memory, cpu);
                 SimulateRtsFrame(memory, cpu);
-                return;
+                return true;
             }
             IncrementX16(cpu);
             IncrementX16(cpu);
             IncrementY16(cpu);
             IncrementY16(cpu);
-            Decrement16Direct(memory, cpu, DP_SCRATCH_E);
+            OpStepMem(memory, cpu, OpDp(cpu, DP_SCRATCH_E), -1);
         } while (!cpu->zero);
         LoadA16(cpu, cpu->x);                                  /* E328 */
         cpu->carry = 0;
@@ -848,12 +847,13 @@ static void EventBlockDiffers(
         LoadA16(cpu, cpu->y);
         Add16Value(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
         TransferAToY(cpu);
-        Decrement16Direct(memory, cpu, 0x5au);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x5au), -1);
     } while (!cpu->zero);
     cpu->carry = 0;
     cpu->y = PullIndexValue(memory, cpu);                      /* E340 */
     SetAccumulatorWidth(cpu, 1);
     SimulateRtsFrame(memory, cpu);
+    return true;
 }
 
 /* $80:E28C: $FF unless tiles differ from object n. */
@@ -904,7 +904,8 @@ static uint8_t EventBlockMatches(
     BitImmediate8(cpu, 0x01u);
     if (!cpu->zero) {
         LoadX16(cpu, 0x0000u);
-        EventBlockDiffers(memory, cpu, 0xe2dau);
+        if (!EventBlockDiffers(memory, cpu, 0xe2dau, handoff))
+            return 0;
         if (cpu->carry) {
             PullDataBank(memory, cpu);
             SimulateRtsFrame(memory, cpu);
@@ -915,37 +916,12 @@ static uint8_t EventBlockMatches(
     BitImmediate8(cpu, 0x02u);                                 /* E2E1 */
     if (!cpu->zero) {
         LoadX16(cpu, 0x0002u);
-        EventBlockDiffers(memory, cpu, 0xe2eau);
+        if (!EventBlockDiffers(memory, cpu, 0xe2eau, handoff))
+            return 0;
     }
     PullDataBank(memory, cpu);                                 /* E2EB */
     SimulateRtsFrame(memory, cpu);
     return 1;
-}
-
-/* Worst-case $80:E2ED cost for $94-$96. */
-static uint64_t EventBlockCompares(
-    const Lufia2Memory *memory,
-    const Lufia2CpuState *cpu) {
-    const uint8_t key = Lufia2EventPeekByte(memory, cpu, 1u);
-    uint16_t x = Read16Long(memory, WRAM_FIELD_HEADER_OBJECT_RECORDS_OFFSET);
-    uint64_t width, height;
-    uint8_t layers;
-    unsigned steps;
-
-    for (steps = 0; steps < EVENT_SEARCH_LIMIT; ++steps) {
-        const uint8_t value = Read8(memory, 0x7ef000u + x);
-
-        if (value == key || value == 0xffu)
-            break;
-        x = (uint16_t)(x + 10u);
-    }
-    if (steps == EVENT_SEARCH_LIMIT)
-        return 0;
-    layers = Read8(memory, LongIndexedAddress(0x7ef001u, x));
-    width = Read8(memory, LongIndexedAddress(0x7ef004u, x));
-    height = Read8(memory, LongIndexedAddress(0x7ef005u, x));
-    return (uint64_t)((layers & 1u) + ((layers >> 1) & 1u)) *
-           (width ? width : 65536u) * (height ? height : 65536u);
 }
 
 /* $94 keeps, $95 gotos on, $96 gotos unless the block matches. */
@@ -954,9 +930,6 @@ static unsigned EventOpBlockMatches(
     Lufia2CpuState *cpu,
     uint16_t handler,
     uint32_t *handoff) {
-    /* Over 4096 tile pairs hand off before the opcode. */
-    if (EventBlockCompares(memory, cpu) > EVENT_OPCODE_LIMIT)
-        return EVENT_OPCODE_HANDOFF;
     if (!EventBlockMatches(memory, cpu, (uint16_t)(handler + 2u), handoff))
         return EVENT_OPCODE_HANDOFF;
     if (handler == EVENT_OP_KEEP_BLOCK_MATCH)
@@ -1000,16 +973,13 @@ static unsigned EventOpGotoUnlessActorsBit5(
     uint32_t *handoff) {
     unsigned listed = 0;
 
-    /* Over 64 ids (the table has 40) hands off before the opcode. */
-    if (!Lufia2EventListEnds(memory, cpu, 65u))
-        return EVENT_OPCODE_HANDOFF;
     LoadA8(cpu, DirectByte(memory, cpu, DP_ACTOR_SLOT));       /* E09D */
     PushAccumulator8(memory, cpu);
     LoadA8(cpu, 0xffu);
     Write8(memory, EVENT_CONDITION, A8(cpu));
     for (;;) {
         /* No $FF in any bank loops forever. */
-        if (listed++ >= 0x01000000u) {
+        if (listed++ >= 64u) {
             *handoff = 0x80e0a6u;
             return EVENT_OPCODE_HANDOFF;
         }

@@ -1364,22 +1364,6 @@ static unsigned EventOpPointArithmetic(
     uint32_t *handoff) {
     uint16_t operation;
 
-    /* Unused operations hand off before the opcode starts. */
-    {
-        uint8_t bank = cpu->data_bank;
-
-        if ((uint16_t)(cpu->y + 1u) < 0x8000u)
-            bank = (uint8_t)(Read8(memory, EVENT_SCRIPT_BANK) + 1u);
-        if (bank & 0x40u) {
-            const uint8_t remainder =
-                Read8(memory, ((uint32_t)bank << 16) | SNES_RDMPYL);
-
-            operation = Read16Bank(memory, 0x80u, (uint16_t)(0xda53u +
-                ((cpu->direct_page & 0xff00u) | (uint8_t)(remainder << 1))));
-            if (!EventPointOperation(operation))
-                return EVENT_OPCODE_HANDOFF;
-        }
-    }
     SetAccumulatorWidth(cpu, 0);                               /* D9FC */
     TransferXToA(cpu);
     Subtract16(cpu, 0x0082u);
@@ -1417,35 +1401,33 @@ static unsigned EventOpPointArithmetic(
     AslA8(cpu);
     TransferAToX(cpu);
     operation = Read16Bank(memory, 0x80u, (uint16_t)(0xda53u + cpu->x));
+    SimulateJsrFrame(memory, cpu, 0xda45u);
     if (!EventPointOperation(operation)) {
-        *handoff = 0x80da43u;                                  /* JSR ($DA53,x) */
+        *handoff = 0x800000u | operation;
         return EVENT_OPCODE_HANDOFF;
     }
-    SimulateJsrFrame(memory, cpu, 0xda45u);
     {
-        const uint32_t coordinate = DirectLongPointer(memory, cpu, 0x5du);
-
         switch (operation) {
         case 0xda5du:                                          /* set */
             Lufia2EventNextByte(memory, cpu, 0xda5fu);
             break;
         case 0xda63u:                                          /* add */
             Lufia2EventNextByte(memory, cpu, 0xda65u);
-            Adc8(cpu, Read8(memory, coordinate));
+            Adc8(cpu, Read8(memory, DirectLongPointer(memory, cpu, 0x5du)));
             break;
         case 0xda6bu:                                          /* subtract */
             Lufia2EventNextByte(memory, cpu, 0xda6du);
             LoadA8(cpu, (uint8_t)((A8(cpu) ^ 0xffu) + 1u));
-            Adc8(cpu, Read8(memory, coordinate));
+            Adc8(cpu, Read8(memory, DirectLongPointer(memory, cpu, 0x5du)));
             break;
         case 0xda76u:                                          /* +1 */
-            LoadA8(cpu, (uint8_t)(Read8(memory, coordinate) + 1u));
+            LoadA8(cpu, (uint8_t)(Read8(memory, DirectLongPointer(memory, cpu, 0x5du)) + 1u));
             break;
         default:                                               /* -1 */
-            LoadA8(cpu, (uint8_t)(Read8(memory, coordinate) - 1u));
+            LoadA8(cpu, (uint8_t)(Read8(memory, DirectLongPointer(memory, cpu, 0x5du)) - 1u));
             break;
         }
-        Write8(memory, coordinate, A8(cpu));
+        Write8(memory, DirectLongPointer(memory, cpu, 0x5du), A8(cpu));
     }
     SimulateRtsFrame(memory, cpu);
     return EVENT_OPCODE_NEXT;

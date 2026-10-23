@@ -12754,10 +12754,10 @@ entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
 
-# Complete opcode prefix; handoff at the original indirect jump.
+# Field event script owner.
 [[function]]
 address = "80:CC35"
-name = "Lufia2FieldDispatchEventOpcode"
+name = "Lufia2FieldRunEventScript"
 source = "src/field/field_event_script.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
