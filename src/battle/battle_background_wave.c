@@ -8,6 +8,7 @@
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
 #include "lufia2/battle_wave_fill_steps.h"
+#include "lufia2/battle_ripple_steps.h"
 
 /* Work RAM accessed through the routine's bank. */
 enum {
@@ -177,46 +178,92 @@ enum {
     RIPPLE_PHASE_MASK = 0x1fu
 };
 
+static void PrepareRippleRows(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = EnterWaveBank(memory, cpu);
+    const uint8_t fine_scroll = WramRead(wram, RIPPLE_FINE_SCROLL);
+    const uint8_t step = WramRead(wram, RIPPLE_STEP);
+    const Byte8Result start =
+        Sum8Mode((uint8_t)(fine_scroll << 1), step, false, cpu->decimal);
+
+    cpu->y = (uint16_t)((cpu->direct_page & 0xff00u) |
+        (start.value & RIPPLE_PHASE_MASK));
+    cpu->carry = start.carry;
+    cpu->overflow = start.overflow;
+    PushStackWord(memory, cpu, cpu->x);
+    cpu->x = 0;
+    cpu->accumulator = (uint16_t)((cpu->direct_page & 0xff00u) | RIPPLE_ROWS);
+    SetNz8(cpu, RIPPLE_ROWS);
+    WramWrite(wram, SCRATCH_COUNTER, RIPPLE_ROWS);
+}
+
+static bool WriteRippleRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint8_t pattern = WramReadAt(wram, RIPPLE_PATTERN, cpu->y);
+    const uint8_t scroll = WramRead(wram, RIPPLE_SCROLL);
+    const Byte8Result sum = Sum8Mode(pattern, scroll, false, cpu->decimal);
+
+    WramWriteAt(wram, RIPPLE_ROW_TABLE, cpu->x, sum.value);
+    ++cpu->y;
+    ++cpu->x;
+    const uint8_t remaining = WramStep8(wram, SCRATCH_COUNTER, -1);
+    cpu->carry = sum.carry;
+    cpu->overflow = sum.overflow;
+    LoadA8(cpu, sum.value);
+    SetNz8(cpu, remaining);
+    return remaining != 0u;
+}
+
+static void FinishRippleRows(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+
+    cpu->x = PullStackWord(memory, cpu);
+    (void)WramStep8(wram, RIPPLE_STEP, 1);
+    (void)WramStep8(wram, RIPPLE_STEP, 1);
+    LoadA8(cpu, RIPPLE_ROW_DELAY_VALUE);
+    WramWrite(wram, RIPPLE_ROW_DELAY, RIPPLE_ROW_DELAY_VALUE);
+    PullDataBank(memory, cpu);
+}
+
+static bool RippleStepReady(const Lufia2CpuState *cpu) {
+    return cpu->program_bank == WAVE_BANK && !cpu->direct_page &&
+        cpu->accumulator_is_8_bit == 1u && !cpu->index_is_8_bit;
+}
+
+Lufia2ExecutionResult Lufia2BattleRipplePrepareStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!RippleStepReady(cpu))
+        return ExecutionHandoff(cpu, 0x85a736u);
+    PrepareRippleRows(memory, cpu);
+    return ExecutionHandoff(cpu, 0x85a74fu);
+}
+
+Lufia2ExecutionResult Lufia2BattleRippleRowStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!RippleStepReady(cpu))
+        return ExecutionHandoff(cpu, 0x85a74fu);
+    const bool remaining = WriteRippleRow(memory, cpu);
+    return ExecutionHandoff(cpu, remaining ? 0x85a74fu : 0x85a760u);
+}
+
+Lufia2ExecutionResult Lufia2BattleRippleFinishStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!RippleStepReady(cpu))
+        return ExecutionHandoff(cpu, 0x85a760u);
+    FinishRippleRows(memory, cpu);
+    return ExecutionHandoff(cpu, 0x85a76du);
+}
+
 /* Build byte scroll offsets from the current ripple phase. */
 Lufia2ExecutionResult Lufia2BattleRippleRow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    Lufia2Wram wram;
-    Byte8Result start;
-    Byte8Result sum;
-    uint16_t row = 0;
-    uint16_t pattern;
-
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
         !DirectWorkByteAvailable(cpu, SCRATCH_COUNTER))
         return ExecutionHandoff(cpu, 0x85a736u);
-    wram = EnterWaveBank(memory, cpu);
-    const uint8_t fine_scroll = WramRead(wram, RIPPLE_FINE_SCROLL);
-    const uint8_t step = WramRead(wram, RIPPLE_STEP);
-    start = Sum8Mode((uint8_t)(fine_scroll << 1), step, false, cpu->decimal);
-    /* TAY retains the direct page in the high byte. */
-    pattern = (uint16_t)((cpu->direct_page & 0xff00u) |
-        (start.value & RIPPLE_PHASE_MASK));
-    PushStackWord(memory, cpu, cpu->x);
-    WramWrite(wram, SCRATCH_COUNTER, RIPPLE_ROWS);
-    do {
-        const uint8_t pattern_value = WramReadAt(wram, RIPPLE_PATTERN, pattern);
-        const uint8_t scroll = WramRead(wram, RIPPLE_SCROLL);
-        sum = Sum8Mode(pattern_value, scroll, false, cpu->decimal);
-        WramWriteAt(wram, RIPPLE_ROW_TABLE, row, sum.value);
-        pattern = (uint16_t)(pattern + 1u);
-        row = (uint16_t)(row + 1u);
-    } while (WramStep8(wram, SCRATCH_COUNTER, -1) != 0);
-    cpu->x = PullStackWord(memory, cpu);
-    (void)WramStep8(wram, RIPPLE_STEP, 1);
-    (void)WramStep8(wram, RIPPLE_STEP, 1);
-    WramWrite(wram, RIPPLE_ROW_DELAY, RIPPLE_ROW_DELAY_VALUE);
-    cpu->y = pattern;
-    cpu->carry = sum.carry;
-    cpu->overflow = sum.overflow;
-    cpu->accumulator = (uint16_t)(cpu->direct_page & 0xff00u);
-    LoadA8(cpu, RIPPLE_ROW_DELAY_VALUE);
-    PullDataBank(memory, cpu);
+    PrepareRippleRows(memory, cpu);
+    while (WriteRippleRow(memory, cpu)) {
+    }
+    FinishRippleRows(memory, cpu);
     return ExecutionReturned(0x85a76du);
 }
 
