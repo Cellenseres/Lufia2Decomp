@@ -1,3 +1,43 @@
+# Battle transition row integration - 2026-10-23
+
+The complete visual transition84:8BC7 shares its rim and HDMA row operations
+with bounded continuation APIs. Both use the original sine table, Mode7
+multiply-register accesses, latch behavior and row order. Rim product and
+center reads are explicitly sequenced, preserving the original bus order.
+The HDMA table retains its original E0 hole. No host multiply substitutes
+for hardware accesses and no original frame wait is shortened.
+
+The consumer clocks19 rim or18/19 HDMA instructions with conservative600
+master-clock fences. Stack-free rows preserve legal host return contexts
+0/2/3; invalid1 is rejected. A scoped generated gate reserves19 remaining
+instructions before either hook. Original wait84:8D4D, RTS8D53 and root
+RTL8D4C remain original. Older roots without the APIs keep their prior path.
+No new canonical algorithm, metadata entry, ordinary binding or WRAM field.
+Totals remain2050verified/0draft/1962bindings/805WRAM.
+
+Combined final-source checkpoint, shared by the subsequent atomic commits:
+-16384rim and114688HDMA ROM/hook states;32guards each,16384decimal semantic
+ cases, four original-ROM in-memory negative controls. CPU/fullWRAM/ordered
+ fetch+data/Mode7A+B+latch/openbus/opcode/master/refresh clocks agree.
+- Whole canonical owner96cases:72returns,24child unwinds,2892child edges.
+- Focused legal-host-context checks1536states plus original next-op rejoins,
+ six invalid-context guards; actual generated capacity predicate32256cases.
+- Twelve capability cases and source/target isolation, strictMSVC proofs,
+ isolatedWindows game, incrementalGCC/Clang library and metadata check PASS.
+- One activated7260frame production-derived battle-command replay matches
+ accepted control byte-for-byte for input/CPU/WRAM/pixels/PCM. Rim560/1024,
+ HDMA4019/7168 actual admissions; remaining rows retain original execution.
+ Actual suffix decoding208809->125804,83005fewer instructions. ROM/SRAM
+ and158 pinned inputs unchanged. This is a bounded fixture, not FPS or
+ whole-battle/whole-game acceptance. Full regression and unchanged CLI deferred.
+
+Unchanged full algorithm proofs were reused after the narrow host-context
+guard edit; focused checks, capacity build and activated replay cover that
+delta. An earlier zero-admission replay was rejected, then a read-only guard
+diagnostic identified the legal JSR context. Neither counts as activation
+acceptance. Private fixture reset-vector trace contamination was corrected
+without changing production semantics. Tests and ROM remain private.
+
 # Battle timer and graphics-queue integration - 2026-10-23
 
 The existing verified primary-wave and ripple-row algorithms now run through

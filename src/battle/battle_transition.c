@@ -1,6 +1,7 @@
 /* Battle transition. */
 
 #include "battle/battle_internal.h"
+#include "lufia2/battle_transition_steps.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
 
@@ -82,6 +83,74 @@ static void SeedMosaicTransition(const Lufia2Memory *memory, Lufia2CpuState *cpu
     LoadA8(cpu, FADE_CONTROL_MOSAIC);
 }
 
+static void BuildSwirlRimRow(const Lufia2Memory *memory,
+                             Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint8_t sine = Read8(memory,
+        LongIndexedAddress(SWIRL_SINE_TABLE, cpu->x));
+    LoadA8(cpu, sine);
+    Write8(memory, SNES_M7B, sine);
+    SetAccumulatorWidth(cpu, 0u);
+    const uint16_t product = Read16Long(memory, SNES_MPYM);
+    LoadA16(cpu, product);
+    cpu->carry = 0u;
+    const uint16_t center = Read16Long(memory, SWIRL_RIM_CENTER);
+    OpAdcValue(cpu, center);
+    And16(cpu, 0x03ffu);
+    Or16(cpu, 0x6000u);
+    WramWrite16At(wram, SWIRL_RIM_TABLE, cpu->y, cpu->accumulator);
+    LoadA16(cpu, cpu->x);
+    cpu->carry = 0u;
+    OpAdcValue(cpu, 8u);
+    And16(cpu, 0x00ffu);
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1u);
+    LoadY16(cpu, (uint16_t)(cpu->y + 1u));
+    LoadY16(cpu, (uint16_t)(cpu->y + 1u));
+    Compare16(cpu, cpu->y, SWIRL_RIM_BYTES);
+}
+
+Lufia2ExecutionResult Lufia2BattleSwirlRimRowStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x84u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x848c91u);
+    BuildSwirlRimRow(memory, cpu);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x848cbfu : 0x848c91u);
+}
+
+static void BuildSwirlHdmaRow(const Lufia2Memory *memory,
+                              Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint8_t sine = Read8(memory,
+        LongIndexedAddress(SWIRL_SINE_TABLE, cpu->x));
+    LoadA8(cpu, sine);
+    Write8(memory, SNES_M7B, sine);
+    SetAccumulatorWidth(cpu, 0u);
+    LoadA16(cpu, Read16Long(memory, SNES_MPYM));
+    cpu->carry = 0u;
+    const uint16_t center = Read16Long(memory, SWIRL_HDMA_CENTER);
+    OpAdcValue(cpu, center);
+    WramWrite16At(wram, SWIRL_HDMA_TABLE + 1u,
+                  cpu->y, cpu->accumulator);
+    LoadA16(cpu, (uint16_t)((cpu->x + 1u) & 0xffu));
+    cpu->x = cpu->accumulator;
+    SetAccumulatorWidth(cpu, 1u);
+    cpu->y = (uint16_t)(cpu->y + 2u);
+    if (cpu->y == SWIRL_HALF_BYTES)
+        ++cpu->y;
+    Compare16(cpu, cpu->y, SWIRL_HDMA_END);
+}
+
+Lufia2ExecutionResult Lufia2BattleSwirlHdmaRowStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x84u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x848cddu);
+    BuildSwirlHdmaRow(memory, cpu);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x848d08u : 0x848cddu);
+}
+
 /* Swirl rim and HDMA tables: sine times radius. */
 static void BuildSwirlTilemaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -89,7 +158,6 @@ static void BuildSwirlTilemaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     uint16_t angle = (uint16_t)((WramRead16(wram, TRANSITION_ANGLE) + 2u) & 0x00ffu);
     uint16_t radius;
     uint16_t phase;
-    uint16_t y;
 
     WramWrite16(wram, TRANSITION_ANGLE, angle);
     phase = (uint16_t)((angle + 0x50u) & 0x00ffu);
@@ -98,16 +166,11 @@ static void BuildSwirlTilemaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     WramWrite(ppu, SNES_M7A, (uint8_t)radius);
     WramWrite(ppu, SNES_M7A, 0);
 
-    for (y = 0; y != SWIRL_RIM_BYTES; y = (uint16_t)(y + 2u)) {
-        WramWrite(ppu, SNES_M7B,
-                  Read8(memory, LongIndexedAddress(SWIRL_SINE_TABLE, phase)));
-        WramWrite16At(wram, SWIRL_RIM_TABLE, y,
-                      (uint16_t)(((WramRead16(ppu, SNES_MPYM) +
-                                   WramRead16(ppu, SWIRL_RIM_CENTER)) &
-                                  0x03ffu) |
-                                 0x6000u));
-        phase = (uint16_t)((phase + 8u) & 0x00ffu);
-    }
+    cpu->x = phase;
+    cpu->y = 0u;
+    do {
+        BuildSwirlRimRow(memory, cpu);
+    } while (!cpu->zero);
 
     WramWrite(wram, SWIRL_HDMA_TABLE, SWIRL_HALF_LINES);
     WramWrite(wram, SWIRL_HDMA_TABLE + SWIRL_HALF_BYTES + 1u, SWIRL_HALF_LINES);
@@ -116,27 +179,14 @@ static void BuildSwirlTilemaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     WramWrite(ppu, SNES_M7A, WramRead(wram, TRANSITION_RADIUS));
     WramWrite(ppu, SNES_M7A, WramRead(wram, TRANSITION_RADIUS_HI));
     /* Phase starts from DP high byte and the angle. */
-    phase = (uint16_t)((cpu->direct_page & 0xff00u) | WramRead(wram, TRANSITION_ANGLE));
-    y = 0;
-    do {
-        WramWrite(ppu, SNES_M7B,
-                  Read8(memory, LongIndexedAddress(SWIRL_SINE_TABLE, phase)));
-        LoadA16(cpu, WramRead16(ppu, SNES_MPYM));
-        cpu->carry = 0;
-        Add16Value(cpu, WramRead16(ppu, SWIRL_HDMA_CENTER));
-        WramWrite16At(wram, SWIRL_HDMA_TABLE + 1u, y, cpu->accumulator);
-        phase = (uint16_t)((phase + 1u) & 0x00ffu);
-        y = (uint16_t)(y + 2u);
-        if (y == SWIRL_HALF_BYTES)
-            ++y;
-    } while (y != SWIRL_HDMA_END);
-
-    /* Registers as the last iteration left them. */
-    cpu->accumulator = phase;
+    phase = (uint16_t)((cpu->direct_page & 0xff00u) |
+        WramRead(wram, TRANSITION_ANGLE));
     cpu->x = phase;
-    cpu->y = y;
-    Compare16(cpu, cpu->y, SWIRL_HDMA_END);
-    SetAccumulatorWidth(cpu, 1);
+    cpu->y = 0u;
+    do {
+        BuildSwirlHdmaRow(memory, cpu);
+    } while (!cpu->zero);
+
 }
 
 /* HDMA channels 0 and 1 drive BG1/BG2 horizontal scroll. */
