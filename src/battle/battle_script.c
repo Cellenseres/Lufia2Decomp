@@ -42,6 +42,9 @@
 #define BATTLE_BASES_CONTEXT_SET 0x0a64u  /* variable bases per battler */
 #define BATTLE_BASES_CONTEXT_ZERO 0x0a80u /* when the script context is 0 */
 #define BATTLE_SLOT_BITS 0x09fbu          /* scratch of the battler lookup */
+#define BATTLE_STAT_TRANSFER_VALUE WRAM_BATTLE_STAT_TRANSFER
+#define BATTLE_STAT_TRANSFER_OFFSET (WRAM_BATTLE_STAT_TRANSFER + 2u)
+#define BATTLE_STAT_TRANSFER_MASK (WRAM_BATTLE_STAT_TRANSFER + 4u)
 #define BATTLE_SLOT_BASE 0x09fau
 
 /* $85:C168: battler byte A to its variable base in X. */
@@ -637,6 +640,10 @@ enum BattleOpcodeHandler {
     BATTLE_OP_DIVIDE = 0xb6d2,                                 /* $10 */
     BATTLE_OP_RANDOM_SCALE = 0xb73b,                           /* $11 */
     BATTLE_OP_LONG_DIVIDE = 0xb753,                            /* $12 */
+    BATTLE_OP_AVERAGE_TARGET_STAT = 0xb77b,                    /* $13 */
+    BATTLE_OP_WRITE_TARGET_STAT = 0xb7a8,                      /* $14 */
+    BATTLE_OP_AVERAGE_LOCAL_STAT = 0xb7cf,                     /* $15 */
+    BATTLE_OP_AVERAGE_ACTOR_STAT = 0xb81c,                     /* $4E */
     BATTLE_OP_AND = 0xb849,                                    /* $16 */
     BATTLE_OP_OR = 0xb864,                                     /* $17 */
     BATTLE_OP_XOR = 0xb87f,                                    /* $18 */
@@ -682,6 +689,149 @@ enum BattleOpcodeHandler {
     BATTLE_OP_CLEAR_F8A5 = 0xbfae,                             /* $5B */
     BATTLE_OP_ALTERNATE_ACTION = 0xbfb6,                       /* $5C */
 };
+
+enum BattleGroupScratch {
+    BATTLE_GROUP_SUM = 0,
+    BATTLE_GROUP_SUM_HIGH = 2,
+    BATTLE_GROUP_MASK = 4,
+    BATTLE_GROUP_SIDE = 5,
+    BATTLE_GROUP_BIT = 6,
+    BATTLE_GROUP_COUNT = 7,
+    BATTLE_GROUP_DIVISOR = 0x54,
+    BATTLE_GROUP_DIVIDEND = 0x5d,
+    BATTLE_GROUP_DIVIDEND_HIGH = 0x5f
+};
+
+static bool BattleScriptGroupStat(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address, bool write) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    LoadA8(cpu, Read8(memory, BATTLE_STAT_TRANSFER_OFFSET));
+    BattleStatOffset(memory, cpu, write ? 0xc245u : 0xc1cdu);
+    SetAccumulatorWidth(cpu, 0);
+    TransferXToA(cpu);
+    Write16Long(memory, BATTLE_STAT_TRANSFER_OFFSET, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, Read8(memory, BATTLE_STAT_TRANSFER_MASK));
+    StoreADirect8(memory, cpu, BATTLE_GROUP_MASK);
+    And8(cpu, 0x80u);
+    StoreADirect8(memory, cpu, BATTLE_GROUP_SIDE);
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, 0x20u);
+    Write16Direct(memory, cpu, BATTLE_GROUP_BIT, cpu->accumulator);
+    Write16Direct(memory, cpu, BATTLE_GROUP_SUM, 0u);
+    Write16Direct(memory, cpu, BATTLE_GROUP_SUM_HIGH, 0u);
+    SetAccumulatorWidth(cpu, 1);
+    do {
+        LoadA8(cpu, DirectByte(memory, cpu, BATTLE_GROUP_BIT));
+        And8(cpu, DirectByte(memory, cpu, BATTLE_GROUP_MASK));
+        if (!cpu->zero) {
+            Or8(cpu, DirectByte(memory, cpu, BATTLE_GROUP_SIDE));
+            BattleScriptSlot(memory, cpu, write ? 0xc270u : 0xc1f8u);
+            SetAccumulatorWidth(cpu, 0);
+            TransferXToA(cpu);
+            cpu->carry = 0u;
+            Add16Value(cpu, Read16Long(memory, BATTLE_STAT_TRANSFER_OFFSET));
+            TransferAToX(cpu);
+            if (write) {
+                LoadA16(cpu, Read16Long(memory, BATTLE_STAT_TRANSFER_VALUE));
+                Write16Long(memory, AbsoluteIndexedAddress(cpu, 0u, cpu->x), cpu->accumulator);
+            } else {
+                LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0u, cpu->x));
+                cpu->carry = 0u;
+                Add16Value(cpu, Read16Direct(memory, cpu, BATTLE_GROUP_SUM));
+                Write16Direct(memory, cpu, BATTLE_GROUP_SUM, cpu->accumulator);
+                TransferDirectToA(cpu);
+                Add16Value(cpu, Read16Direct(memory, cpu, BATTLE_GROUP_SUM_HIGH));
+                Write16Direct(memory, cpu, BATTLE_GROUP_SUM_HIGH, cpu->accumulator);
+            }
+            SetAccumulatorWidth(cpu, 1);
+            IncrementDirect8(memory, cpu, BATTLE_GROUP_COUNT);
+        }
+        const uint8_t bit = DirectByte(memory, cpu, BATTLE_GROUP_BIT);
+        cpu->carry = bit & 1u;
+        Write8(memory, DirectAddress(cpu, BATTLE_GROUP_BIT), (uint8_t)(bit >> 1));
+        SetNz8(cpu, (uint8_t)(bit >> 1));
+    } while (!cpu->carry);
+    LoadA8(cpu, DirectByte(memory, cpu, BATTLE_GROUP_COUNT));
+    if (cpu->zero) {
+        cpu->resume_pc = write ? 0x85c28eu : 0x85c23eu;
+        return false;
+    }
+    if (!write) {
+        Compare8(cpu, A8(cpu), 1u);
+        if (!cpu->zero) {
+            StoreADirect8(memory, cpu, BATTLE_GROUP_DIVISOR);
+            LoadA8(cpu, DirectByte(memory, cpu, BATTLE_GROUP_SUM_HIGH));
+            StoreADirect8(memory, cpu, BATTLE_GROUP_DIVIDEND_HIGH);
+            LoadX16(cpu, Read16Direct(memory, cpu, BATTLE_GROUP_SUM));
+            Write16Direct(memory, cpu, BATTLE_GROUP_DIVIDEND, cpu->x);
+            BattleDivide(memory, cpu, 0xc22cu);
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, Read16Direct(memory, cpu, BATTLE_GROUP_DIVIDEND));
+        } else {
+            SetAccumulatorWidth(cpu, 0);
+            LoadA16(cpu, Read16Direct(memory, cpu, BATTLE_GROUP_SUM));
+        }
+        Write16Long(memory, BATTLE_STAT_TRANSFER_VALUE, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+    }
+    SimulateRtsFrame(memory, cpu);
+    return true;
+}
+
+static bool BattleOpGroupStat(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t handler) {
+    BattleScriptByte(memory, cpu, (uint16_t)(handler + 2u));
+    if (handler == BATTLE_OP_WRITE_TARGET_STAT) {
+        BattleScriptRead(memory, cpu, 0xb7adu);
+        SetAccumulatorWidth(cpu, 0);
+        TransferXToA(cpu);
+        Write16Long(memory, BATTLE_STAT_TRANSFER_VALUE, cpu->accumulator);
+        LoadA16(cpu, Read16Long(memory, BATTLE_BATTLER_B));
+        Write16Long(memory, BATTLE_STAT_TRANSFER_MASK, cpu->accumulator);
+        BattleScriptByte(memory, cpu, 0xb7bfu);
+        And16(cpu, 0xffu);
+        Write16Long(memory, BATTLE_STAT_TRANSFER_OFFSET, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        return BattleScriptGroupStat(memory, cpu, 0xb7cbu, true);
+    }
+    PushAccumulator8(memory, cpu);
+    uint16_t operand_return, group_return, result_return;
+    uint32_t battler;
+    if (handler == BATTLE_OP_AVERAGE_LOCAL_STAT) {
+        LoadAAbsolute8(memory, cpu, BATTLE_LOCAL_SELECT, 0u);
+        const bool local_target = !cpu->zero;
+        operand_return = local_target ? 0xb7f5u : 0xb7dau;
+        group_return = local_target ? 0xb80bu : 0xb7f0u;
+        result_return = 0xb818u;
+        battler = local_target ? BATTLE_BATTLER_B : BATTLE_BATTLER_A;
+    } else {
+        const bool target = handler == BATTLE_OP_AVERAGE_TARGET_STAT;
+        if (target)
+            SetAccumulatorWidth(cpu, 0);
+        operand_return = target ? 0xb783u : 0xb822u;
+        group_return = target ? 0xb797u : 0xb838u;
+        result_return = target ? 0xb7a4u : 0xb845u;
+        battler = target ? BATTLE_BATTLER_B : BATTLE_BATTLER_A;
+    }
+    BattleScriptByte(memory, cpu, operand_return);
+    SetAccumulatorWidth(cpu, 0);
+    And16(cpu, 0xffu);
+    Write16Long(memory, BATTLE_STAT_TRANSFER_OFFSET, cpu->accumulator);
+    LoadA16(cpu, Read16Long(memory, battler));
+    Write16Long(memory, BATTLE_STAT_TRANSFER_MASK, cpu->accumulator);
+    SetAccumulatorWidth(cpu, 1);
+    if (!BattleScriptGroupStat(memory, cpu, group_return, false))
+        return false;
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16Long(memory, BATTLE_STAT_TRANSFER_VALUE));
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    LoadA8(cpu, Pull8(memory, cpu));
+    BattleScriptWrite(memory, cpu, result_return);
+    return true;
+}
 
 static bool BattleScriptPartyByteOffset(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t return_address) {
@@ -1617,6 +1767,15 @@ Lufia2ExecutionResult Lufia2BattleScript(
         case BATTLE_OP_RETURN:
             BattleOpReturn(memory, cpu);
             break;
+        case BATTLE_OP_AVERAGE_TARGET_STAT:
+        case BATTLE_OP_WRITE_TARGET_STAT:
+        case BATTLE_OP_AVERAGE_LOCAL_STAT:
+        case BATTLE_OP_AVERAGE_ACTOR_STAT:
+            if (BattleOpGroupStat(memory, cpu, handler))
+                break;
+            result = ExecutionHandoff(cpu, cpu->resume_pc);
+            result.dispatches = opcodes;
+            return result;
         case BATTLE_OP_WRITE_PARTY_BYTE:
         case BATTLE_OP_READ_PARTY_BYTE:
         case BATTLE_OP_JUMP_IF_PARTY_BYTE_ZERO:

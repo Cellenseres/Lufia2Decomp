@@ -6272,3 +6272,11 @@ width = 1
 count = 1
 owner = "battle"
 notes = "Script opcode5B stores the direct-page low byte here. Its precise purpose remains neutral."
+
+[[location]]
+address = "7F:FAA6"
+name = "battle_stat_transfer"
+width = 2
+count = 3
+owner = "battle"
+notes = "Script group-stat helpers C1C7/C23F share value, stat offset and battler mask words. The index word becomes its ROM-resolved record offset."
