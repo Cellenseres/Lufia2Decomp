@@ -2,6 +2,7 @@
 
 #include "battle/battle_internal.h"
 #include "lufia2/battle_transition_steps.h"
+#include "lufia2/battle_swirl_steps.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
 
@@ -83,19 +84,27 @@ static void SeedMosaicTransition(const Lufia2Memory *memory, Lufia2CpuState *cpu
     LoadA8(cpu, FADE_CONTROL_MOSAIC);
 }
 
-static void BuildSwirlRimRow(const Lufia2Memory *memory,
-                             Lufia2CpuState *cpu) {
-    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+static void BeginSwirlSample(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const uint8_t sine = Read8(memory,
         LongIndexedAddress(SWIRL_SINE_TABLE, cpu->x));
     LoadA8(cpu, sine);
     Write8(memory, SNES_M7B, sine);
     SetAccumulatorWidth(cpu, 0u);
-    const uint16_t product = Read16Long(memory, SNES_MPYM);
-    LoadA16(cpu, product);
+}
+
+static void ReadSwirlProduct(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint32_t center_address) {
+    LoadA16(cpu, Read16Long(memory, SNES_MPYM));
     cpu->carry = 0u;
-    const uint16_t center = Read16Long(memory, SWIRL_RIM_CENTER);
+    const uint16_t center = Read16Long(memory, center_address);
     OpAdcValue(cpu, center);
+}
+
+static void BuildSwirlRimRow(const Lufia2Memory *memory,
+                             Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    BeginSwirlSample(memory, cpu);
+    ReadSwirlProduct(memory, cpu, SWIRL_RIM_CENTER);
     And16(cpu, 0x03ffu);
     Or16(cpu, 0x6000u);
     WramWrite16At(wram, SWIRL_RIM_TABLE, cpu->y, cpu->accumulator);
@@ -119,20 +128,15 @@ Lufia2ExecutionResult Lufia2BattleSwirlRimRowStep(
     return ExecutionHandoff(cpu, cpu->zero ? 0x848cbfu : 0x848c91u);
 }
 
-static void BuildSwirlHdmaRow(const Lufia2Memory *memory,
-                              Lufia2CpuState *cpu) {
+static void StoreSwirlHdmaSample(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    const uint8_t sine = Read8(memory,
-        LongIndexedAddress(SWIRL_SINE_TABLE, cpu->x));
-    LoadA8(cpu, sine);
-    Write8(memory, SNES_M7B, sine);
-    SetAccumulatorWidth(cpu, 0u);
-    LoadA16(cpu, Read16Long(memory, SNES_MPYM));
-    cpu->carry = 0u;
-    const uint16_t center = Read16Long(memory, SWIRL_HDMA_CENTER);
-    OpAdcValue(cpu, center);
+    ReadSwirlProduct(memory, cpu, SWIRL_HDMA_CENTER);
     WramWrite16At(wram, SWIRL_HDMA_TABLE + 1u,
                   cpu->y, cpu->accumulator);
+}
+
+static void AdvanceSwirlHdmaRow(Lufia2CpuState *cpu) {
     LoadA16(cpu, (uint16_t)((cpu->x + 1u) & 0xffu));
     cpu->x = cpu->accumulator;
     SetAccumulatorWidth(cpu, 1u);
@@ -140,6 +144,43 @@ static void BuildSwirlHdmaRow(const Lufia2Memory *memory,
     if (cpu->y == SWIRL_HALF_BYTES)
         ++cpu->y;
     Compare16(cpu, cpu->y, SWIRL_HDMA_END);
+}
+
+static void BuildSwirlHdmaRow(const Lufia2Memory *memory,
+                              Lufia2CpuState *cpu) {
+    BeginSwirlSample(memory, cpu);
+    StoreSwirlHdmaSample(memory, cpu);
+    AdvanceSwirlHdmaRow(cpu);
+}
+
+static bool SwirlPartReady(const Lufia2CpuState *cpu, bool byte_accumulator) {
+    return cpu->program_bank == 0x84u && !cpu->index_is_8_bit &&
+        cpu->accumulator_is_8_bit == byte_accumulator;
+}
+
+Lufia2ExecutionResult Lufia2BattleSwirlHdmaPrepareStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!SwirlPartReady(cpu, true))
+        return ExecutionHandoff(cpu, 0x848cddu);
+    BeginSwirlSample(memory, cpu);
+    return ExecutionHandoff(cpu, 0x848ce7u);
+}
+
+Lufia2ExecutionResult Lufia2BattleSwirlHdmaStoreStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!SwirlPartReady(cpu, false))
+        return ExecutionHandoff(cpu, 0x848ce7u);
+    StoreSwirlHdmaSample(memory, cpu);
+    return ExecutionHandoff(cpu, 0x848cf3u);
+}
+
+Lufia2ExecutionResult Lufia2BattleSwirlHdmaAdvanceStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (!SwirlPartReady(cpu, false))
+        return ExecutionHandoff(cpu, 0x848cf3u);
+    AdvanceSwirlHdmaRow(cpu);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x848d08u : 0x848cddu);
 }
 
 Lufia2ExecutionResult Lufia2BattleSwirlHdmaRowStep(
