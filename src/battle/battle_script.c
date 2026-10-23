@@ -668,6 +668,9 @@ enum BattleOpcodeHandler {
     BATTLE_OP_ACTION_12 = 0xbd6e,                              /* $41 */
     BATTLE_OP_CALL = 0xbd77,                                   /* $42 */
     BATTLE_OP_RETURN = 0xbdb2,                                 /* $43 */
+    BATTLE_OP_WRITE_PARTY_BYTE = 0xbdcb,                        /* $44 */
+    BATTLE_OP_READ_PARTY_BYTE = 0xbdda,                         /* $45 */
+    BATTLE_OP_JUMP_IF_PARTY_BYTE_ZERO = 0xbdf3,                  /* $46 */
     BATTLE_OP_SET_TIMER = 0xbe22,                              /* $56 */
     BATTLE_OP_LIVING_MASK = 0xbe56,                            /* $4D */
     BATTLE_OP_F450_MASK = 0xbe68,                              /* $50 */
@@ -679,6 +682,88 @@ enum BattleOpcodeHandler {
     BATTLE_OP_CLEAR_F8A5 = 0xbfae,                             /* $5B */
     BATTLE_OP_ALTERNATE_ACTION = 0xbfb6,                       /* $5C */
 };
+
+static bool BattleScriptPartyByteOffset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 0);
+    PushAccumulator16(memory, cpu);
+    SetAccumulatorWidth(cpu, 1);
+    TransferDirectToA(cpu);
+    LoadAAbsolute8(memory, cpu, BATTLE_LOCAL_SELECT, 0u);
+    const bool first_battler = !cpu->zero;
+    LoadA8(cpu, Read8(memory, first_battler ? BATTLE_BATTLER_A : BATTLE_BATTLER_B));
+    BitImmediate8(cpu, 0x80u);
+    if (!cpu->zero) {
+        cpu->resume_pc = 0x85c0d8u;
+        return false;
+    }
+    TransferAToX(cpu);
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x97fe26u, cpu->x)));
+    Write8(memory, SNES_WRMPYA, A8(cpu));
+    LoadA8(cpu, 6u);
+    Write8(memory, SNES_WRMPYB, A8(cpu));
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, Read16Bank(memory, 0u, (uint16_t)(cpu->stack + 1u)));
+    And16(cpu, 0xffu);
+    cpu->carry = 0u;
+    Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));
+    TransferAToX(cpu);
+    PullAccumulator16(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    SimulateRtsFrame(memory, cpu);
+    return true;
+}
+
+static bool BattleScriptPartyByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t return_address, bool write) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    PushIndex(memory, cpu);
+    if (!BattleScriptPartyByteOffset(memory, cpu, write ? 0xc0b6u : 0xc0adu))
+        return false;
+    if (write) {
+        LoadA8(cpu, Read8(memory, (uint16_t)(cpu->stack + 1u)));
+        StoreAAbsolute8(memory, cpu, WRAM_UNK_7E14E6, cpu->x);
+    } else
+        LoadAAbsolute8(memory, cpu, WRAM_UNK_7E14E6, cpu->x);
+    cpu->x = PullIndexValue(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    return true;
+}
+
+static bool BattleOpPartyByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint16_t handler) {
+    BattleScriptByte(memory, cpu, (uint16_t)(handler + 2u));
+    if (handler != BATTLE_OP_JUMP_IF_PARTY_BYTE_ZERO) {
+        PushAccumulator8(memory, cpu);
+        BattleScriptByte(memory, cpu, (uint16_t)(handler + 6u));
+    }
+    if (handler == BATTLE_OP_WRITE_PARTY_BYTE) {
+        TransferAToX(cpu);
+        LoadA8(cpu, Pull8(memory, cpu));
+        return BattleScriptPartyByte(memory, cpu, 0xbdd6u, true);
+    }
+    if (!BattleScriptPartyByte(memory, cpu,
+                               handler == BATTLE_OP_READ_PARTY_BYTE ? 0xbde3u : 0xbdf8u, false))
+        return false;
+    if (handler == BATTLE_OP_READ_PARTY_BYTE) {
+        SetAccumulatorWidth(cpu, 0);
+        And16(cpu, 0xffu);
+        TransferAToX(cpu);
+        SetAccumulatorWidth(cpu, 1);
+        LoadA8(cpu, Pull8(memory, cpu));
+        BattleScriptWrite(memory, cpu, 0xbdefu);
+    } else {
+        BitImmediate8(cpu, 0xffu);
+        if (cpu->zero)
+            BattleScriptJump(memory, cpu);
+        else
+            BattleScriptWord(memory, cpu, 0xbe02u);
+    }
+    return true;
+}
 
 static void BattleOpSetResultFlag(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, bool only_normal) {
@@ -1532,6 +1617,14 @@ Lufia2ExecutionResult Lufia2BattleScript(
         case BATTLE_OP_RETURN:
             BattleOpReturn(memory, cpu);
             break;
+        case BATTLE_OP_WRITE_PARTY_BYTE:
+        case BATTLE_OP_READ_PARTY_BYTE:
+        case BATTLE_OP_JUMP_IF_PARTY_BYTE_ZERO:
+            if (BattleOpPartyByte(memory, cpu, handler))
+                break;
+            result = ExecutionHandoff(cpu, cpu->resume_pc);
+            result.dispatches = opcodes;
+            return result;
         case BATTLE_OP_NORMAL_RESULT_FLAG:
         case BATTLE_OP_RESULT_FLAG:
             BattleOpSetResultFlag(memory, cpu, handler == BATTLE_OP_NORMAL_RESULT_FLAG);
