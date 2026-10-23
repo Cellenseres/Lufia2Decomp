@@ -195,6 +195,7 @@ Lufia2ExecutionResult Lufia2BattleNmiUploads(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* PEA/RTS timer children retain their original return point. */
 Lufia2ExecutionResult Lufia2BattleNmiUploadsWithChildren(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

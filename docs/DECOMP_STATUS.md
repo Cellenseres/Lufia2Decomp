@@ -1,3 +1,46 @@
+# Battle NMI timer child returns - 2026-10-23
+
+The existing 85:8DC5 owner now forwards its optional child service through
+the eight-timer caller as well as the callback list. The original handler
+table, PEA return word, pushed destination and RTS transfer remain literal.
+The transfer uses the two bytes actually pulled from the original stack;
+it does not substitute a previously cached table value. Already-pushed
+children return to 85:8F3C, then original SEP10 and timer advancement run.
+The default API retains its primary-wave implementation and exact handoffs.
+
+Normal child returns preserve live registers and flags. Nonlocal unwinds
+propagate; unsupported returned bank or accumulator width hands off before
+the original SEP10. An eight-visit native cap hands off at original 8F1F
+if a child makes the iteration cyclic; no original work is skipped and no
+synthetic return replaces the loop. This is caller reconstruction under an
+existing function, not sixteen newly decompiled handler algorithms.
+
+The original root's normal exit contract is M1X0, correcting M1X1 metadata.
+REP10 establishes 16-bit indexes; PLB and RTL do not restore their width.
+Entry remains M1X1. Independent original-ROM whole-owner cases assert this
+normal exit; unsupported child returns retain explicit boundaries.
+
+One combined checkpoint passes 432 affected default-owner cases, 2,181 timer
+caller cases, 133 full NMI cases and 252 actual consumer pushed-call ABI
+cases. CPU, full WRAM and ordered bus checks cover every byte selector,
+all sixteen original-ROM handlers, child clobbers, unwinds and exact return
+landings. Three in-memory ROM mutation controls are detected. MSVC game,
+GCC/Clang C11 libraries, metadata validation and the resource CLI pass;
+the CLI decodes all 680 ROM resources. Unchanged helper-body proofs are
+reused; no unchanged full regression is repeated.
+
+One final 8,000-frame comparison preserves input, CPU, WRAM, pixels and PCM,
+4,306 original paired children, actions and returns. Decoder census remains
+244,893. Existing runtime admission is unchanged; the optional child API
+does not claim new production handler activation or an FPS improvement.
+The legacy driver's raw exit6 and obsolete zero inline oracles remain
+explicit; independent action/return and exact-frame checks pass. ROM, SRAM
+and 158 pinned runtime inputs remain unchanged during the comparison.
+
+No new canonical function or ordinary binding is counted: 2,050 verified,
+zero drafts, 1,962 native bindings and 806 WRAM records remain. Tests and
+ROM stay local. The consumer owns its PEA/RTS return-landing adjustment.
+
 # Battle NMI callback-list caller — 2026-10-23
 
 The previously untranslated list at 85:8E79..8E95 now has a structured C

@@ -100,10 +100,12 @@ static void BattleHdmaChannels(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $85:8F1B: eight battle timers; 0 = handler left to LLE. */
+/* Eight timers preserve their original child return frames. */
 enum {
     BATTLE_TIMER_ACTIVE = WRAM_UNK_7E1B17,
     BATTLE_TIMER_COUNTDOWN = WRAM_BATTLE_RIPPLE_ROW_DELAY,
+    BATTLE_TIMER_HANDLER = BATTLE_TIMER_COUNTDOWN + 1u,
+    ROM_BATTLE_TIMER_HANDLERS = 0x9e05u,
     BATTLE_TIMER_STRIDE = 0x08u,
     BATTLE_TIMER_END = 0x40u
 };
@@ -140,43 +142,56 @@ Lufia2ExecutionResult Lufia2BattleTimerStep(
     return ExecutionHandoff(cpu, cpu->zero ? 0x858f47u : 0x858f1fu);
 }
 
-static uint8_t BattleTimers(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static Lufia2ExecutionResult BattleRunTimers(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
     SimulateJsrFrame(memory, cpu, 0x8e78u);
-    SetIndexWidth(cpu, 1);                                     /* 8F1B */
-    LoadX8(cpu, 0x00u);
+    SetIndexWidth(cpu, 1u);
+    LoadX8(cpu, 0u);
+    unsigned visited = 0u;
     do {
         if (BattleTimerExpired(memory, cpu)) {
-            uint16_t handler;
-
-            LoadAAbsolute8(memory, cpu, 0x1b19u, cpu->x);  /* 8F29 */
+            LoadAAbsolute8(memory, cpu, BATTLE_TIMER_HANDLER, cpu->x);
             AslA8(cpu);
             TransferAToY(cpu);
-            SetAccumulatorWidth(cpu, 0);
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x9e05u, cpu->y));
-            handler = cpu->accumulator;
-            Push8(memory, cpu, 0x8fu);                     /* PEA #$8F3B */
+            SetAccumulatorWidth(cpu, 0u);
+            LoadA16(cpu, Read16AbsoluteIndexed(
+                memory, cpu, ROM_BATTLE_TIMER_HANDLERS, cpu->y));
+            Push8(memory, cpu, 0x8fu);
             Push8(memory, cpu, 0x3bu);
             PushAccumulator16(memory, cpu);
-            SetAccumulatorWidth(cpu, 1);
-            SetIndexWidth(cpu, 0);
-            (void)Pull8(memory, cpu);                      /* RTS */
-            (void)Pull8(memory, cpu);
-            if (handler != 0xa8e6u) {
-                /* Other handlers run on LLE after RTS. */
-                cpu->resume_pc = 0x850000u | (uint16_t)(handler + 1u);
-                return 0;
+            SetAccumulatorWidth(cpu, 1u);
+            SetIndexWidth(cpu, 0u);
+            const uint8_t low = Pull8(memory, cpu);
+            const uint16_t destination = (uint16_t)(low |
+                ((uint16_t)Pull8(memory, cpu) << 8));
+            const uint32_t target = ((uint32_t)cpu->program_bank << 16) |
+                (uint16_t)(destination + 1u);
+            if (child) {
+                if (!child(context, cpu, target, 0x858f3bu, 2u)) {
+                    const Lufia2ExecutionResult result = {
+                        LUFIA2_EXECUTION_CHILD_UNWOUND, 0x858f3bu, 0u};
+                    return result;
+                }
+                if (cpu->program_bank != 0x85u ||
+                    cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit > 1u)
+                    return ExecutionHandoff(cpu,
+                        ((uint32_t)cpu->program_bank << 16) | 0x8f3cu);
+            } else {
+                if (target != 0x85a8e7u)
+                    return ExecutionHandoff(cpu, target);
+                (void)Lufia2BattleFillPrimaryWave(memory, cpu);
+                SimulateRtsFrame(memory, cpu);
             }
-            (void)Lufia2BattleFillPrimaryWave(memory, cpu);
-            SimulateRtsFrame(memory, cpu);                 /* to 8F3C */
-            SetIndexWidth(cpu, 1);
+            SetIndexWidth(cpu, 1u);
         }
         BattleAdvanceTimer(cpu);
+        if (!cpu->zero && ++visited == BATTLE_TIMER_END / BATTLE_TIMER_STRIDE)
+            return ExecutionHandoff(cpu, 0x858f1fu);
     } while (!cpu->zero);
-    SetIndexWidth(cpu, 0);                                     /* 8F47 */
+    SetIndexWidth(cpu, 0u);
     SimulateRtsFrame(memory, cpu);
-    return 1;
+    return ExecutionReturned(0x858f49u);
 }
 
 enum {
@@ -276,10 +291,10 @@ Lufia2ExecutionResult Lufia2BattleNmiUploadsWithChildren(
     LoadAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
     StoreAAbsolute8(memory, cpu, SNES_INIDISP, 0);
     LoadA8(cpu, Read8(memory, DirectAddress(cpu, 0xdbu)));
-    if (!cpu->zero && !BattleTimers(memory, cpu)) {
-        result.flow = LUFIA2_EXECUTION_BOUNDARY;
-        result.pc = cpu->resume_pc;
-        return result;
+    if (!cpu->zero) {
+        result = BattleRunTimers(memory, cpu, child, context);
+        if (result.flow != LUFIA2_EXECUTION_RETURNED)
+            return result;
     }
     return BattleRunCallbackList(memory, cpu, child, context);
 }

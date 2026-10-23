@@ -509,7 +509,7 @@ address = "85:8DC5"
 name = "Lufia2BattleNmiUploads"
 source = "src/battle/battle_nmi.c"
 entry_mx = "M1X1"
-exit_mx = "M1X1"
+exit_mx = "M1X0"
 status = "verified"
 
 # Battle sprites; also JSL'd from many battle menus.
