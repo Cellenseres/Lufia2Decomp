@@ -1445,6 +1445,19 @@ Lufia2ExecutionResult Lufia2MenuCountOwnedItem(
 Lufia2ExecutionResult Lufia2MenuScaleShopPrice(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $82:831A draws consecutive tile numbers; M0X0. */
+Lufia2ExecutionResult Lufia2MenuDrawSequentialTileBlock(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $82:E319 records a shop list pointer; M1X0. */
+Lufia2ExecutionResult Lufia2MenuRegisterShopList(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $82:B052 redraws the six visible warp rows. */
+Lufia2ExecutionResult Lufia2MenuRedrawWarpRows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

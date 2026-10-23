@@ -1202,7 +1202,7 @@ name = "music_sample_cache"
 width = 1
 count = 32
 owner = "system"
-notes = "80:941A second sample path initializes FF bytes and deduplicates values from ROM9A59 before uploading. Overlays the layer-1 tilemap ring (2000-27FF) selected by ROM 83:8FF0 and written by 83:8E85."
+notes = "80:941A second sample path initializes FF bytes and deduplicates values from ROM9A59 before uploading. Overlays the layer-1 tilemap ring (2000-27FF) selected by ROM 83:8FF0 and written by 83:8E85. Menu831A also writes consecutive tile words from2000 with64byte row stride."
 
 [[location]]
 address = "7E:2020"
@@ -2067,7 +2067,7 @@ address = "7E:1542"
 name = "menu_shop_list_count"
 width = 1
 owner = "menu"
-notes = "Number of sale lists in the shop being shown; the shop title uses it minus one as an index."
+notes = "Number of sale lists in the shop being shown; the shop title uses it minus one as an index. E319 increments the live byte before storing DP08 as a pointer at93C0+X."
 
 [[location]]
 address = "7E:155C"

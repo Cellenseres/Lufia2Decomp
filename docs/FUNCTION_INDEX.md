@@ -592,6 +592,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:8230` | `Lufia2MenuDrawWindowSideEdge` | verified | `src/menu/menu_window.c` |
 | `$82:8259` | `Lufia2MenuDrawWindowThreeRowCorner` | verified | `src/menu/menu_window.c` |
 | `$82:82E2` | `Lufia2MenuDrawWindowDivider` | verified | `src/menu/menu_divider.c` |
+| `$82:831A` | `Lufia2MenuDrawSequentialTileBlock` | verified | `src/menu/menu_screen.c` |
 | `$82:8345` | `Lufia2MenuSaveTileLayers` | verified | `src/menu/menu_layer_backup.c` |
 | `$82:836A` | `Lufia2MenuRestoreTileLayers` | verified | `src/menu/menu_layer_backup.c` |
 | `$82:838F` | `Lufia2MenuClearLayers` | verified | `src/menu/menu_tilemap.c` |
@@ -729,6 +730,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:AF78` | `Lufia2MenuConfirmSpecialSpellUse` | verified | `src/menu/menu_special_effects.c` |
 | `$82:AF8E` | `Lufia2MenuSelectWarpDestination` | verified | `src/menu/menu_warp_selection.c` |
 | `$82:B03F` | `Lufia2MenuRestoreWarpScroll` | verified | `src/menu/menu_warp_selection.c` |
+| `$82:B052` | `Lufia2MenuRedrawWarpRows` | verified | `src/menu/menu_warp_selection.c` |
 | `$82:B072` | `Lufia2MenuDrawWarpScrollRow` | verified | `src/menu/menu_warp_selection.c` |
 | `$82:B080` | `Lufia2MenuScrollWarpDestinationsUp` | verified | `src/menu/menu_warp_selection.c` |
 | `$82:B0BE` | `Lufia2MenuScrollWarpDestinationsDown` | verified | `src/menu/menu_warp_selection.c` |
@@ -891,6 +893,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:E20C` | `Lufia2MenuShopComputeQuantityPrice` | verified | `src/menu/menu_shop_quantity.c` |
 | `$82:E22C` | `Lufia2MenuShopAdjustQuantity` | verified | `src/menu/menu_shop_quantity.c` |
 | `$82:E297` | `Lufia2MenuShopSetup` | verified | `src/menu/menu_screen.c` |
+| `$82:E319` | `Lufia2MenuRegisterShopList` | verified | `src/menu/menu_screen.c` |
 | `$82:E327` | `Lufia2MenuShopBuildSelectedList` | verified | `src/menu/menu_shop_control.c` |
 | `$82:E433` | `Lufia2MenuBuildOwnedItemList` | verified | `src/menu/menu_screen.c` |
 | `$82:E46B` | `Lufia2MenuCountShopWordList` | verified | `src/menu/menu_screen.c` |

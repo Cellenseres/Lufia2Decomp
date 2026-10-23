@@ -24,6 +24,12 @@ enum {
 enum {
     /* Shop flags: owned items, sale lists, extra list. */
     MENU_SHOP_FLAGS = 0x1540u,
+    MENU_SHOP_SOURCE_POINTER = 0x08u,
+    MENU_SHOP_LIST_POINTERS = WRAM_UNK_7E93C0,
+    MENU_TILEMAP_BUFFER = WRAM_MUSIC_SAMPLE_CACHE,
+    MENU_TILE_COLUMNS = DP_SCRATCH_C,
+    MENU_TILE_ROWS = DP_SCRATCH_E,
+    MENU_TILE_ROW_BYTES = 0x40u,
 };
 
 /* Menu cursors: origin + spacing * index per axis. */
@@ -467,39 +473,42 @@ static void MenuClearRect2(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PullDataBank(memory, cpu);
 }
 
-/* $82:831A: tile block at A, X = w << 8 | h; M0. */
-static void MenuTileBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+/* $82:831A writes consecutive tiles across a rectangle. */
+Lufia2ExecutionResult Lufia2MenuDrawSequentialTileBlock(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x82u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x82831au);
     PushAccumulator16(memory, cpu);
-    Write16Direct(memory, cpu, DP_SCRATCH_C, 0);
-    Write16Direct(memory, cpu, DP_SCRATCH_E, 0);
-    TransferXToA(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    StoreADirect8(memory, cpu, DP_SCRATCH_E);
+    OpStz(memory, cpu, OpDp(cpu, MENU_TILE_COLUMNS));
+    OpStz(memory, cpu, OpDp(cpu, MENU_TILE_ROWS));
+    OpTxa(cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpSta(memory, cpu, OpDp(cpu, MENU_TILE_ROWS));
     ExchangeAccumulatorBytes(cpu);
-    StoreADirect8(memory, cpu, DP_SCRATCH_C);
-    SetAccumulatorWidth(cpu, 0);
-    cpu->x = PullIndexValue(memory, cpu);
-    LoadA16(cpu, cpu->y);                                      /* TYA */
+    OpSta(memory, cpu, OpDp(cpu, MENU_TILE_COLUMNS));
+    OpRepWidths(cpu, 0x20u);
+    OpPullX(memory, cpu);
+    OpTya(cpu);
     do {
-        LoadY16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
-        PushIndex(memory, cpu);
+        OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, MENU_TILE_COLUMNS)));
+        OpPushX(memory, cpu);
         do {
-            Write16Long(memory, LongIndexedAddress(WRAM_MUSIC_SAMPLE_CACHE, cpu->x),
-                cpu->accumulator);
-            IncrementX16(cpu);
-            IncrementX16(cpu);
-            IncrementA16(cpu);
-            cpu->y = (uint16_t)(cpu->y - 1u);
-            SetNz16(cpu, cpu->y);
+            OpSta(memory, cpu, OpLongX(cpu, MENU_TILEMAP_BUFFER));
+            OpInx(cpu);
+            OpInx(cpu);
+            OpIncA(cpu);
+            OpDey(cpu);
         } while (!cpu->zero);
-        TransferAToY(cpu);
+        OpTay(cpu);
         PullAccumulator16(memory, cpu);
-        cpu->carry = 0;
-        Add16Value(cpu, 0x0040u);
-        TransferAToX(cpu);
-        LoadA16(cpu, cpu->y);
-        Decrement16Direct(memory, cpu, DP_SCRATCH_E);
+        cpu->carry = 0u;
+        OpAdcValue(cpu, MENU_TILE_ROW_BYTES);
+        OpTax(cpu);
+        OpTya(cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, MENU_TILE_ROWS), -1);
     } while (!cpu->zero);
+    return ExecutionReturned(0x828344u);
 }
 
 /* $82:91AB: A (max 999) into hundreds $00, tens $02, ones $04. */
@@ -701,7 +710,7 @@ static void CapsulePortraits(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         LoadX16(cpu, kBlocks[i][1]);
         LoadY16(cpu, kBlocks[i][2]);
         Jsr(memory, cpu, kBlocks[i][3]);
-        MenuTileBlock(memory, cpu);
+        (void)Lufia2MenuDrawSequentialTileBlock(memory, cpu);
         Rts(memory, cpu);
     }
     Write16Direct(memory, cpu, 0x04u, 0);
@@ -725,20 +734,20 @@ static void CapsulePortraits(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         LoadA16(cpu, (uint16_t)(step + 0x049cu));
         LoadX16(cpu, 0x0203u);
         Jsr(memory, cpu, 0xd1f9u);
-        MenuTileBlock(memory, cpu);
+        (void)Lufia2MenuDrawSequentialTileBlock(memory, cpu);
         Rts(memory, cpu);
         LoadX16(cpu, Read16Direct(memory, cpu, 0x02u));
         LoadY16(cpu, Read16Long(memory, LongIndexedAddress(0x82d23cu, cpu->x)));
         LoadA16(cpu, (uint16_t)(Read16Direct(memory, cpu, 0x04u) + 0x03dcu));
         LoadX16(cpu, 0x0203u);
         Jsr(memory, cpu, 0xd20cu);
-        MenuTileBlock(memory, cpu);
+        (void)Lufia2MenuDrawSequentialTileBlock(memory, cpu);
         Rts(memory, cpu);
         LoadY16(cpu, (uint16_t)(Read16Direct(memory, cpu, 0x00u) + 0x116cu));
         LoadA16(cpu, (uint16_t)(Read16Direct(memory, cpu, 0x04u) + 0x035cu));
         LoadX16(cpu, 0x0202u);
         Jsr(memory, cpu, 0xd21fu);
-        MenuTileBlock(memory, cpu);
+        (void)Lufia2MenuDrawSequentialTileBlock(memory, cpu);
         Rts(memory, cpu);
         LoadA16(cpu, (uint16_t)(Read16Direct(memory, cpu, 0x04u) + 0x0004u));
         StoreADirect16(memory, cpu, 0x04u);
@@ -1015,15 +1024,18 @@ static void ShopCount(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     SetAccumulatorWidth(cpu, 1);
 }
 
-/* $82:E319: list X starts at [$08]. */
-static void ShopList(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    const uint32_t lists = AbsoluteIndexedAddress(cpu, WRAM_MENU_SHOP_LIST_COUNT, 0);
-
-    Write8(memory, lists, (uint8_t)(Read8(memory, lists) + 1u));
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Direct(memory, cpu, 0x08u));
-    Write16Long(memory, LongIndexedAddress(0x7e93c0u, cpu->x), cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
+/* $82:E319 registers one shop list. */
+Lufia2ExecutionResult Lufia2MenuRegisterShopList(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x82u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x82e319u);
+    OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_SHOP_LIST_COUNT), 1);
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, MENU_SHOP_SOURCE_POINTER));
+    OpSta(memory, cpu, OpLongX(cpu, MENU_SHOP_LIST_POINTERS));
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x82e326u);
 }
 
 /* $82:FC7D: A = owned count nibble of item X ($7F:F080). */
@@ -1135,7 +1147,7 @@ Lufia2ExecutionResult Lufia2MenuShopSetup(
             continue;
         LoadX16(cpu, (uint16_t)(2u + 2u * i));
         Jsr(memory, cpu, i < 4u ? kReturns[i][0] : 0xe30au);
-        ShopList(memory, cpu);
+        (void)Lufia2MenuRegisterShopList(memory, cpu);
         Rts(memory, cpu);
         Jsr(memory, cpu, i < 4u ? kReturns[i][1] : 0xe30du);
         ShopCount(memory, cpu, i == 4u);

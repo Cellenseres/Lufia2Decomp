@@ -16142,3 +16142,27 @@ source = "src/menu/menu_party_actions.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "82:831A"
+name = "Lufia2MenuDrawSequentialTileBlock"
+source = "src/menu/menu_screen.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "82:E319"
+name = "Lufia2MenuRegisterShopList"
+source = "src/menu/menu_screen.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B052"
+name = "Lufia2MenuRedrawWarpRows"
+source = "src/menu/menu_warp_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

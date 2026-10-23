@@ -21,6 +21,9 @@ enum {
     DP_WARP_DRAW_ROWS = 0x15u,
     WARP_INCOMING_ROW_TILEMAP = 0x374eu,
     WARP_VISIBLE_ROWS = 6u,
+    WARP_VISIBLE_TILEMAP = 0x344eu,
+    WARP_CLEAR_TILEMAP = 0x040eu,
+    WARP_CLEAR_SIZE = 0x1410u,
     WARP_SCROLL_REQUEST = WRAM_MENU_DISPLAY_REQUESTS + 1u
 };
 
@@ -321,4 +324,27 @@ Lufia2ExecutionResult Lufia2MenuScrollWarpDestinationsDown(
     }
     OpSepWidths(cpu, 0x20u);
     return ExecutionReturned(0x82b103u);
+}
+
+Lufia2ExecutionResult Lufia2MenuRedrawWarpRows(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!MenuActionReady(cpu, child, 1u))
+        return ExecutionHandoff(cpu, 0x82b052u);
+    MenuActionCall call = {memory, cpu, child, context, {0}};
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, WARP_CLEAR_TILEMAP);
+    OpLdx(cpu, WARP_CLEAR_SIZE);
+    if (!MenuActionChild(&call, 0x82b05au, 0x8283ebu, 2u, 0u))
+        return call.result;
+    OpSepWidths(cpu, 0x20u);
+    OpLdx(cpu, WARP_VISIBLE_TILEMAP);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_WARP_DRAW_TILEMAP), cpu->x);
+    OpLdx(cpu, WARP_VISIBLE_ROWS);
+    OpWriteX(memory, cpu, OpDp(cpu, DP_WARP_DRAW_ROWS), cpu->x);
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_TOP_ROW)));
+    OpWriteX(memory, cpu, OpDp(cpu, DP_WARP_DRAW_INDEX), cpu->x);
+    if (!MenuActionChild(&call, 0x82b06eu, 0x828680u, 2u, 1u))
+        return call.result;
+    return ExecutionReturned(0x82b071u);
 }
