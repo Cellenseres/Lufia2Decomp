@@ -1,3 +1,59 @@
+# Effect slots and wave-table integration — 2026-10-23
+
+The verified effect engine at 81:895E now shares its timer and record-advance
+operations with four finite continuation APIs. Inactive records, timer wrap,
+expired-timer handoffs and both original strides remain literal. The consumer
+returns before the original PHB, VM dispatch and actor-motion hardware accesses;
+children, waits, stack frames and returns remain with their original owners.
+
+Wave fill at 85:AEEB shares one word operation with its existing Fill, Forward
+and Backward owners. Pattern and base reads have an explicit order. Original
+phase wrapping, overlapping reads, decimal arithmetic and final publication
+remain intact. Forward/Backward now read the stored phase before PHX, matching
+the original bus order. The effect dispatcher likewise reads its indirect
+target before pushing the JSR frame. Both were existing access-order defects,
+found by the affected whole-owner comparisons, not gameplay changes.
+
+Consumer admission preserves physical clock, beam, DMA and interrupt fences.
+Generated hooks require 15 remaining instructions for a wave word, 14 for a
+slot header and 8 for an advance. A separate selective NMI owner admits the
+wave word with its original timer frame at S+4/+5; existing NMI guards and
+primary/ripple reservations are unchanged. Unsupported states interpret normally.
+Capabilities are restricted to the actual source and consuming target.
+
+One combined final-source checkpoint covers the subsequent atomic commits:
+
+- Wave: 11,264 actual-hook ROM cases and original rejoins, including 64 final
+  original suffixes through timer return; 728 semantic cases, 288 affected
+  whole-owner cases, 44 guards and two detected in-memory ROM mutants.
+- Slots: 6,768 actual-hook ROM cases, 752 decimal cases, 140 guards and three
+  detected in-memory ROM mutants. All 48 complete affected script/actor loops
+  match CPU, WRAM, ordered stack, VM-table and hardware accesses after the
+  isolated dispatch-order correction. Unchanged passing phase checks are reused.
+- Actual generated hook code: 129,024 capacity cases. Actual NMI owner: 10,080
+  queries across three capability configurations. The 418 unchanged progress
+  checks are reused. 27 capability cases and source/target isolation pass.
+- Strict MSVC proofs and isolated Windows game, incremental GCC/Clang semantic
+  libraries and metadata check pass. Full regression and unchanged CLI checks
+  are deferred; no new CLI acceptance is claimed.
+- One final production-derived 8,000-frame formation-37 replay matches the
+  pinned original-input control byte-for-byte for CPU, WRAM, inputs, pixels
+  and PCM. All five new phases execute. Actual decoded instructions decrease
+  from 652,151 to 303,093; the 349,058 difference exactly equals the original
+  instructions accounted by admitted phases. This is not an FPS or whole-game
+  coverage measurement. ROM, SRAM and 158 pinned link inputs stay unchanged.
+
+The historical discovery driver still exits 6 because its old observers miss
+native inlined entries. That raw failure remains explicit. Separate evidence
+shows four original Attack returns, action/effect child calls, two effect
+returns and one main-loop return. No victory claim or repaired oracle is used
+to establish the frame comparison. An earlier source-drift diagnostic is kept;
+the corrected final semantic library was rebuilt and replayed independently.
+
+These are existing canonical algorithms with verified paced integration, not
+new ROM functions. Totals remain 2,050 verified, zero drafts, 1,962 ordinary
+bindings and 805 WRAM fields. No gameplay patch, public test or ROM data added.
+
 # Menu member-string aliases - 2026-10-23
 
 The original80:8A81 string-target table has12entries. Commands10/11 jump
