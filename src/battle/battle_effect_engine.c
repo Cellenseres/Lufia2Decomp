@@ -119,6 +119,34 @@ static Lufia2ExecutionResult EffectKnownCommand(
     }
 }
 
+static void EffectPrepareCommand(const Lufia2Memory *memory,
+                                 Lufia2CpuState *cpu, bool actor) {
+    if (actor)
+        TransferDirectToA(cpu);
+    OpLoadA(cpu, Read8(memory, DirectLongPointer(memory, cpu, EFFECT_STREAM)));
+    OpRepWidths(cpu, 0x20u);
+    if (!actor)
+        OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpTax(cpu);
+    OpStepMem(memory, cpu, OpDp(cpu, EFFECT_STREAM), 1);
+    OpSepWidths(cpu, 0x20u);
+    Push8(memory, cpu, cpu->program_bank);
+    PullDataBank(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectDispatchPrepareStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x818a95u && entry != 0x818b08u) ||
+        cpu->program_bank != 0x81u || cpu->direct_page != 0u ||
+        cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    const bool actor = entry == 0x818b08u;
+    EffectPrepareCommand(memory, cpu, actor);
+    return ExecutionHandoff(cpu, actor ? 0x818b15u : 0x818aa4u);
+}
+
 static bool EffectRunSlot(EffectEngine *effect, bool actor) {
     const Lufia2Memory *memory = effect->battle.memory;
     Lufia2CpuState *cpu = effect->battle.cpu;
@@ -137,18 +165,7 @@ static bool EffectRunSlot(EffectEngine *effect, bool actor) {
         bool known;
         Lufia2ExecutionResult command;
 
-        if (actor)
-            TransferDirectToA(cpu);
-        OpLoadA(cpu, Read8(memory, DirectLongPointer(memory, cpu, EFFECT_STREAM)));
-        OpRepWidths(cpu, 0x20u);
-        if (!actor)
-            OpAndValue(cpu, 0xffu);
-        OpAslA(cpu);
-        OpTax(cpu);
-        OpStepMem(memory, cpu, OpDp(cpu, EFFECT_STREAM), 1);
-        OpSepWidths(cpu, 0x20u);
-        Push8(memory, cpu, cpu->program_bank);
-        PullDataBank(memory, cpu);
+        EffectPrepareCommand(memory, cpu, actor);
         target = 0x810000u | Read16ProgramIndexed(
             memory, cpu, ROM_EFFECT_HANDLERS, cpu->x);
         SimulateJsrFrame(memory, cpu, (uint16_t)(dispatch + 2u));
@@ -367,6 +384,25 @@ static bool EffectUploadChanges(EffectEngine *effect) {
     return true;
 }
 
+static void EffectClearNextByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpStz(memory, cpu, OpAbs(cpu, SNES_WMDATA));
+    OpDex(cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectClearBytesStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x818bfbu);
+    unsigned bytes = 0u;
+    do {
+        EffectClearNextByte(memory, cpu);
+        ++bytes;
+    } while (!cpu->zero && bytes < 4u);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x818c01u : 0x818bfbu);
+}
+
 static bool EffectFinish(EffectEngine *effect) {
     const Lufia2Memory *memory = effect->battle.memory;
     Lufia2CpuState *cpu = effect->battle.cpu;
@@ -384,8 +420,7 @@ static bool EffectFinish(EffectEngine *effect) {
     OpStz(memory, cpu, OpAbs(cpu, SNES_WMADDH));
     OpLdx(cpu, 0x800u);
     do {
-        OpStz(memory, cpu, OpAbs(cpu, SNES_WMDATA));
-        OpDex(cpu);
+        EffectClearNextByte(memory, cpu);
     } while (!cpu->zero);
     OpStz(memory, cpu, OpAbs(cpu, BATTLE_FRAME_STATE));
     OpLoadA(cpu, 0xffu);

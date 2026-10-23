@@ -1,3 +1,57 @@
+# Effect command preparation and cleanup — 2026-10-23
+
+The existing effect engine at 81:895E shares its command preparation with two
+finite entry paths, ending before the original indirect JSR at 81:8AA4/8B15.
+The 16-bit stream-pointer increment retains its high-before-low write order.
+The original JSR still performs the table reads, stack writes and real paired
+native-child dispatch, including deadline and nonlocal-unwind ownership.
+No synthetic callback or replacement return framework takes over those calls.
+
+The original cleanup shares one literal WRAM-port clear operation with a
+bounded step of at most four bytes. Every STZ, DEX, branch and $2180 pointer
+increment remains. No memset or bulk store replaces the loop. Each write is
+progress even when the destination already contains zero, matching the real
+bridge epoch. Port state, ordered accesses and opcode-end clocks are covered;
+this is not a claim about subinstruction PPU timing. Physical fences, no DMA/
+IRQ and the original port invariant constrain consumer admission.
+
+One combined final-source checkpoint covers both following commits:
+
+- Command preparation: 9,240 actual-hook ROM cases and original-JSR child-entry
+  rejoins, 48 public cases, 84 guards, 48 complete affected slot loops and three
+  detected in-memory ROM mutants. Actual DB7E/81/95 contexts are covered.
+- Cleanup: 264 actual-hook ROM cases, 512 public cases including underflow,
+  decimal mode and 17-bit port wrapping, 20 guards, eight full 2,048-byte loops
+  and three detected in-memory ROM mutants.
+- Actual generated call-site gates: 43,776 new and affected cases. 24 capability
+  cases and source/target isolation pass. Unchanged NMI and 418 progress checks
+  are reused. Generated capacity requires nine instructions for preparation
+  and twelve for cleanup; unsupported states retain interpretation.
+- Strict MSVC proofs and final isolated game, incremental GCC/Clang libraries
+  and metadata check pass. A missing self-contained cleanup header was added
+  before its isolated proof; the final actor object was rebuilt afterward.
+- All 8,000 final replay frames match the pinned formation-37 control for
+  input, CPU, WRAM, pixels and PCM. The battle-work census decreases from
+  303,093 to 263,670 decoded instructions, exactly 39,423 accounted original
+  instructions from the three admitted paths. This census excludes the
+  unchanged 14,635-instruction pre-battle prefix; it is not an FPS measurement.
+- Real runtime markers record 4,306 original indirect JSRs and paired native
+  children with two-byte frames and owner/base restoration. There are 2,711
+  normal returns and 1,595 literal nonnormal unwinds, including existing END/
+  YIELD and ChangeDisplay paths. These are preserved, not normalized to RTS.
+  The earlier control did not record these host-only marker fields; original
+  ROM/ABI proofs and unchanged generated call machinery establish their scope.
+
+The historical driver's raw exit6 remains explicit because its obsolete
+inline-entry observers miss native calls. Independent action/return evidence
+and strict frame equality are retained. Sources, 158 link inputs, ROM and SRAM
+are unchanged during final replay. Full regression and unchanged CLI checks
+are deferred. Tests, observers and ROM remain private; nothing is pushed.
+
+No new ROM functions, ordinary bindings or WRAM fields: 2,050 verified,
+zero drafts, 1,962 ordinary bindings and 805 WRAM fields remain. These are
+existing algorithms with verified paced integration, not new function counts.
+
 # Effect slots and wave-table integration — 2026-10-23
 
 The verified effect engine at 81:895E now shares its timer and record-advance
