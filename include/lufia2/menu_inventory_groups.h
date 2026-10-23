@@ -17,6 +17,12 @@ Lufia2ExecutionResult Lufia2MenuGroupEquipmentOffset(
 Lufia2ExecutionResult Lufia2MenuFinishEquipmentGroups(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2MenuReadEquipmentInventoryEntry(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2MenuAdvanceEquipmentInventoryIndex(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

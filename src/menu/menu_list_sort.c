@@ -412,6 +412,43 @@ Lufia2ExecutionResult Lufia2MenuFinishEquipmentGroups(
     return ExecutionReturned(0x82be03u);
 }
 
+static void ReadEquipmentInventoryEntry(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpPushX(memory, cpu);
+    OpWriteX(memory, cpu, OpDp(cpu, EQUIPMENT_SOURCE_OFFSET), cpu->x);
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_INVENTORY_PACKED_ITEMS));
+}
+
+static void AdvanceEquipmentInventoryIndex(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpPullX(memory, cpu);
+    OpInx(cpu);
+    OpInx(cpu);
+    OpCpx(cpu, SORT_INVENTORY_BYTES);
+}
+
+static bool EquipmentInventoryStepReady(const Lufia2CpuState *cpu) {
+    const uint8_t bank = cpu->data_bank & 0x7fu;
+    return EquipmentGroupReady(cpu) && !cpu->accumulator_is_8_bit &&
+        cpu->stack >= 0x1f10u && (bank < 0x40u || cpu->data_bank == 0x7eu);
+}
+
+Lufia2ExecutionResult Lufia2MenuReadEquipmentInventoryEntry(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!EquipmentInventoryStepReady(cpu) || cpu->x >= SORT_INVENTORY_BYTES)
+        return ExecutionHandoff(cpu, 0x82bd70u);
+    ReadEquipmentInventoryEntry(memory, cpu);
+    return ExecutionHandoff(cpu, 0x82bd76u);
+}
+
+Lufia2ExecutionResult Lufia2MenuAdvanceEquipmentInventoryIndex(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!EquipmentInventoryStepReady(cpu))
+        return ExecutionHandoff(cpu, 0x82bd8eu);
+    AdvanceEquipmentInventoryIndex(memory, cpu);
+    return ExecutionHandoff(cpu, 0x82bd94u);
+}
+
 Lufia2ExecutionResult Lufia2MenuBuildEquipmentGroups(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -432,9 +469,7 @@ Lufia2ExecutionResult Lufia2MenuBuildEquipmentGroups(
     OpStz(memory, cpu, OpAbs(cpu, WRAM_MENU_ITEM_QUANTITY));
     OpLdx(cpu, 0u);
     do {
-        OpPushX(memory, cpu);
-        OpWriteX(memory, cpu, OpDp(cpu, EQUIPMENT_SOURCE_OFFSET), cpu->x);
-        OpLda(memory, cpu, OpAbsX(cpu, WRAM_INVENTORY_PACKED_ITEMS));
+        ReadEquipmentInventoryEntry(memory, cpu);
         if (!cpu->zero) {
             OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_ITEM_QUANTITY), 1);
             OpSta(memory, cpu, OpAbs(cpu, WRAM_ITEM_RECORD_ID));
@@ -447,10 +482,7 @@ Lufia2ExecutionResult Lufia2MenuBuildEquipmentGroups(
                     return call.result;
             }
         }
-        OpPullX(memory, cpu);
-        OpInx(cpu);
-        OpInx(cpu);
-        OpCpx(cpu, SORT_INVENTORY_BYTES);
+        AdvanceEquipmentInventoryIndex(memory, cpu);
     } while (!cpu->zero);
     if (!MenuSortChild(&call, 0x82bd96u, 0x82bddbu, 2u, 0u))
         return call.result;
