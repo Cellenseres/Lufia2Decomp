@@ -6361,3 +6361,91 @@ width = 2
 count = 1
 owner = "menu"
 notes = "B4A7 initializes this word to one; AEE1 formats it for display."
+
+[[location]]
+address = "7E:70E7"
+name = "card_game_hand_ranks"
+width = 2
+count = 4
+owner = "menu"
+notes = "A705 stores reference hand rank followed by three competing ranks."
+
+[[location]]
+address = "7E:7107"
+name = "card_game_hand_wins"
+width = 2
+count = 3
+owner = "menu"
+notes = "A705 clears and increments three hand comparison outcomes."
+
+[[location]]
+address = "7E:7133"
+name = "card_game_replay_cursor"
+width = 2
+count = 2
+owner = "menu"
+notes = "A705 supplies cursor origin and spacing; AB23 loads them."
+
+[[location]]
+address = "7E:6010"
+name = "special_menu_window_depth"
+width = 2
+count = 1
+owner = "menu"
+notes = "A2B3 adds a window record; A39B removes one. A705 clears the depth."
+
+[[location]]
+address = "7E:6012"
+name = "special_menu_window_state"
+width = 2
+count = 1
+owner = "menu"
+notes = "A705 initializes this word to zero before entering its round loop."
+
+[[location]]
+address = "7E:6016"
+name = "special_menu_window_parameters"
+width = 2
+count = 4
+owner = "menu"
+notes = "AAB5 and A705 set left, top, width and height for A2B3."
+
+[[location]]
+address = "7E:601E"
+name = "special_menu_window_style"
+width = 2
+count = 1
+owner = "menu"
+notes = "A2B3 copies this word into the indexed window record."
+
+[[location]]
+address = "7E:685E"
+name = "special_menu_cursor_depth"
+width = 2
+count = 1
+owner = "menu"
+notes = "A02A and A0DA push and pop the active cursor definition."
+
+[[location]]
+address = "7E:68D8"
+name = "special_menu_cursor_definition"
+width = 1
+count = 16
+owner = "menu"
+notes = "A000 copies this fixed header, followed by variable selection data. A705 writes header bytes at68E4/68E6."
+
+[[location]]
+address = "7E:689C"
+name = "special_menu_cursor_selections"
+width = 2
+count = 1
+owner = "menu"
+notes = "A02A clears the indexed selection. AB23 reads its low byte after cursor removal."
+
+[[location]]
+address = "7E:69D8"
+name = "special_menu_cursor_oam"
+width = 2
+count = 2
+owner = "menu"
+notes = "AB23 sets both words to01FC before creating its replay cursor."

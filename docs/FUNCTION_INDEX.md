@@ -1406,7 +1406,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:A5CA` | `Lufia2SpecialMenuFadeOut` | verified | `src/menu/special_menu.c` |
 | `$84:A5DF` | `Lufia2SpecialMenuMultiplyWords` | verified | `src/menu/special_menu.c` |
 | `$84:A689` | `Lufia2SpecialMenuRun` | verified | `src/menu/special_menu.c` |
+| `$84:A705` | `Lufia2CardGameRun` | verified | `src/menu/card_game_control.c` |
+| `$84:AAB5` | `Lufia2CardGameShowHandResult` | verified | `src/menu/card_game_control.c` |
+| `$84:AB01` | `Lufia2CardGamePrepareResultSprites` | verified | `src/menu/card_game_control.c` |
+| `$84:AB23` | `Lufia2CardGameChooseReplay` | verified | `src/menu/card_game_control.c` |
 | `$84:AB61` | `Lufia2CardGameRankHand` | verified | `src/menu/card_game.c` |
+| `$84:AD9D` | `Lufia2CardGamePreparePayout` | verified | `src/menu/card_game_control.c` |
 | `$84:AE5E` | `Lufia2CardGameScoreHand` | verified | `src/menu/card_game.c` |
 | `$84:AF1C` | `Lufia2CardGameDealCard` | verified | `src/menu/card_game.c` |
 | `$84:B4A7` | `Lufia2CardGameBuildDeck` | verified | `src/menu/card_game.c` |

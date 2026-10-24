@@ -16670,3 +16670,43 @@ source = "src/menu/card_game.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "84:A705"
+name = "Lufia2CardGameRun"
+source = "src/menu/card_game_control.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:AAB5"
+name = "Lufia2CardGameShowHandResult"
+source = "src/menu/card_game_control.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:AB01"
+name = "Lufia2CardGamePrepareResultSprites"
+source = "src/menu/card_game_control.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:AB23"
+name = "Lufia2CardGameChooseReplay"
+source = "src/menu/card_game_control.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:AD9D"
+name = "Lufia2CardGamePreparePayout"
+source = "src/menu/card_game_control.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
