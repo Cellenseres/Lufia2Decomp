@@ -16750,3 +16750,131 @@ source = "src/menu/card_game_actions.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "84:AFB8"
+name = "Lufia2CardGameAnimateOpeningCard"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:AFFC"
+name = "Lufia2CardGameShowOpeningCard"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B11E"
+name = "Lufia2CardGameRevealCard"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B13D"
+name = "Lufia2CardGameAnimateReposition"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B16D"
+name = "Lufia2CardGameSwapSpriteBlocks"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B22B"
+name = "Lufia2CardGameTurnCardSprites"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B274"
+name = "Lufia2CardGameHideCardSprites"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B295"
+name = "Lufia2CardGameLocateCardTilemap"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B2BC"
+name = "Lufia2CardGameBuildCardTiles"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:B387"
+name = "Lufia2CardGameDrawCardTilemap"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B3C9"
+name = "Lufia2CardGameEmitCardSprites"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:B429"
+name = "Lufia2CardGameEmitCardSprite"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B43B"
+name = "Lufia2CardGameMoveCardSprites"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:B45B"
+name = "Lufia2CardGameMoveCardSprite"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B472"
+name = "Lufia2CardGameRetileCardSprites"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:B49B"
+name = "Lufia2CardGameRetileCardSprite"
+source = "src/menu/card_game_animation.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

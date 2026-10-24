@@ -6482,3 +6482,11 @@ width = 2
 count = 1
 owner = "menu"
 notes = "B57F clears this word through an explicit7E long address after fade-in."
+
+[[location]]
+address = "7E:7006"
+name = "card_game_tile_buffer"
+width = 2
+count = 24
+owner = "menu"
+notes = "B2BC constructs the six-by-four card tile buffer; B387 copies it to tilemap and B429 emits its sprite tiles. Live DB addressing remains. Ends immediately before the deck. Treat OAM as shared field_oam_low_buffer storage."
