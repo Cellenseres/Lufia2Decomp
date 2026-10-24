@@ -1411,11 +1411,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:AB01` | `Lufia2CardGamePrepareResultSprites` | verified | `src/menu/card_game_control.c` |
 | `$84:AB23` | `Lufia2CardGameChooseReplay` | verified | `src/menu/card_game_control.c` |
 | `$84:AB61` | `Lufia2CardGameRankHand` | verified | `src/menu/card_game.c` |
+| `$84:AC66` | `Lufia2CardGameChooseStake` | verified | `src/menu/card_game_actions.c` |
 | `$84:AD9D` | `Lufia2CardGamePreparePayout` | verified | `src/menu/card_game_control.c` |
 | `$84:AE5E` | `Lufia2CardGameScoreHand` | verified | `src/menu/card_game.c` |
 | `$84:AF1C` | `Lufia2CardGameDealCard` | verified | `src/menu/card_game.c` |
+| `$84:AF4B` | `Lufia2CardGameDealOpeningHands` | verified | `src/menu/card_game_actions.c` |
+| `$84:B18E` | `Lufia2CardGameAnimateDeal` | verified | `src/menu/card_game_actions.c` |
 | `$84:B4A7` | `Lufia2CardGameBuildDeck` | verified | `src/menu/card_game.c` |
 | `$84:B4D9` | `Lufia2CardGameShuffleDeck` | verified | `src/menu/card_game.c` |
+| `$84:B57F` | `Lufia2CardGameInitializeScene` | verified | `src/menu/card_game_actions.c` |
+| `$84:C350` | `Lufia2CardGameReadStakeCommand` | verified | `src/menu/card_game_actions.c` |
 | `$85:8045` | `Lufia2FieldDiagnosticsRunMenu` | verified | `src/field/field_diagnostics_control.c` |
 | `$85:821C` | `Lufia2FieldDiagnosticsEditValue` | verified | `src/field/field_diagnostics.c` |
 | `$85:8267` | `Lufia2FieldDiagnosticsHideCursor` | verified | `src/field/field_diagnostics.c` |

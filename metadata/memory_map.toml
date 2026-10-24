@@ -6356,11 +6356,12 @@ notes = "AB61 copies and sorts five rank/suit words before special-hand classifi
 
 [[location]]
 address = "7E:69DC"
-name = "card_game_round"
+name = "card_game_stake"
+aliases = ["card_game_round"]
 width = 2
 count = 1
 owner = "menu"
-notes = "B4A7 initializes this word to one; AEE1 formats it for display."
+notes = "Selected stake: B4A7 initializes one, AC66 updates it and AD9D scales it for payout. Older round label was premature."
 
 [[location]]
 address = "7E:70E7"
@@ -6449,3 +6450,35 @@ width = 2
 count = 2
 owner = "menu"
 notes = "AB23 sets both words to01FC before creating its replay cursor."
+
+[[location]]
+address = "7E:69DE"
+name = "card_game_stake_limit"
+width = 2
+count = 1
+owner = "menu"
+notes = "AC66 sets the maximum99; C350 adjusts the pending stake using its low byte."
+
+[[location]]
+address = "7E:69E0"
+name = "card_game_reserved_stake"
+width = 2
+count = 1
+owner = "menu"
+notes = "AC66 tracks the previous pending stake while debiting or refunding the balance."
+
+[[location]]
+address = "7E:710F"
+name = "card_game_accepted_stake"
+width = 2
+count = 1
+owner = "menu"
+notes = "AC66 copies the confirmed stake here before closing the selection."
+
+[[location]]
+address = "7E:6002"
+name = "special_menu_scene_state"
+width = 2
+count = 1
+owner = "menu"
+notes = "B57F clears this word through an explicit7E long address after fade-in."

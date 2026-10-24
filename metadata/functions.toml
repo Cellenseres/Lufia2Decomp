@@ -16710,3 +16710,43 @@ source = "src/menu/card_game_control.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "84:B57F"
+name = "Lufia2CardGameInitializeScene"
+source = "src/menu/card_game_actions.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:AF4B"
+name = "Lufia2CardGameDealOpeningHands"
+source = "src/menu/card_game_actions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B18E"
+name = "Lufia2CardGameAnimateDeal"
+source = "src/menu/card_game_actions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:AC66"
+name = "Lufia2CardGameChooseStake"
+source = "src/menu/card_game_actions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C350"
+name = "Lufia2CardGameReadStakeCommand"
+source = "src/menu/card_game_actions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

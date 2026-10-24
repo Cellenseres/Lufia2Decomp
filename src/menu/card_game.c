@@ -10,7 +10,7 @@ enum {
     CARD_HAND_TOTALS = WRAM_CARD_GAME_HAND_TOTALS & 0xffffu,
     CARD_SCORE_WORK = WRAM_CARD_GAME_SCORE_WORK & 0xffffu,
     CARD_RANK_WORK = WRAM_CARD_GAME_RANK_WORK & 0xffffu,
-    CARD_GAME_ROUND = WRAM_CARD_GAME_ROUND & 0xffffu,
+    CARD_GAME_STAKE = WRAM_CARD_GAME_STAKE & 0xffffu,
     CARD_HAND_INDEX = 0x02u,
     CARD_DECK_POSITION = 0x15u,
     CARD_ACTIVE_HAND = 0x17u
@@ -51,7 +51,7 @@ Lufia2ExecutionResult Lufia2CardGameBuildDeck(
         OpStepMem(memory, cpu, OpDp(cpu, 0u), -1);
     } while (!cpu->negative);
     OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpAbs(cpu, CARD_GAME_ROUND));
+    OpSta(memory, cpu, OpAbs(cpu, CARD_GAME_STAKE));
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x84b4d8u);
 }

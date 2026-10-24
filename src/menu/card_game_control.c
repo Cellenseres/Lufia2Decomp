@@ -744,7 +744,7 @@ Lufia2ExecutionResult Lufia2CardGamePreparePayout(
     OpLoadA(cpu, 12u);
     OpSta(memory, cpu, OpAbs(cpu, CARD_WINDOW_WIDTH));
     OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, CARD_RANKS + 2u)));
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_CARD_GAME_ROUND & 0xffffu));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_CARD_GAME_STAKE & 0xffffu));
     do {
         cpu->carry = 0u;
         RolA16(cpu);
