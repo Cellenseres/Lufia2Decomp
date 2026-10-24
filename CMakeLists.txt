@@ -92,6 +92,7 @@ add_library(lufia2_decomp STATIC
     src/menu/card_game_scene.c
     src/menu/poker.c
     src/menu/poker_results.c
+    src/menu/poker_decisions.c
     src/menu/menu_graphics_setup.c
     src/menu/menu_select_control.c
     src/menu/menu_select_transitions.c

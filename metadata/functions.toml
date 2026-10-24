@@ -17094,3 +17094,59 @@ source = "src/menu/poker_results.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "84:BC78"
+name = "Lufia2PokerTakeOpponentTurn"
+source = "src/menu/poker_decisions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BF0B"
+name = "Lufia2PokerMatchOpponentStakes"
+source = "src/menu/poker_decisions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BDC2"
+name = "Lufia2PokerChooseOpponentAction"
+source = "src/menu/poker_decisions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BF67"
+name = "Lufia2PokerMatchOpponentStake"
+source = "src/menu/poker_decisions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BD83"
+name = "Lufia2PokerAcceptOpponentStake"
+source = "src/menu/poker_decisions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BD96"
+name = "Lufia2PokerDrawOpponentStake"
+source = "src/menu/poker_decisions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BEE4"
+name = "Lufia2PokerLocateStakeSprites"
+source = "src/menu/poker_decisions.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

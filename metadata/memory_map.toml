@@ -6519,9 +6519,9 @@ notes = "B827 initializes these three opponent words to50,40,30."
 address = "7E:7127"
 name = "poker_round_stake"
 width = 2
-count = 1
+count = 4
 owner = "menu"
-notes = "B827 clears this round accumulator before player actions and adds it to the current stake afterward."
+notes = "B827 clears the round accumulator. BD83/BF0B also address four per-seat words from this base; preserve overlapping original storage and live DB."
 
 [[location]]
 address = "7E:712F"
@@ -6594,3 +6594,11 @@ width = 2
 count = 4
 owner = "menu"
 notes = "BBF1 initializes seat indices0..3 and swaps them alongside rank/value arrays during destructive signed sorting."
+
+[[location]]
+address = "7E:7149"
+name = "poker_stake_sprite_origin"
+width = 2
+count = 1
+owner = "menu"
+notes = "BEE4 packs the original window origin into stake-sprite coordinates; BD96 reads it while drawing paired digits."

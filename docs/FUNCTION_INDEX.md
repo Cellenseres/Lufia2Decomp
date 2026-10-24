@@ -1452,6 +1452,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:BB2F` | `Lufia2PokerClassifyHand` | verified | `src/menu/poker_results.c` |
 | `$84:BBDA` | `Lufia2PokerLocateResultText` | verified | `src/menu/poker_results.c` |
 | `$84:BBF1` | `Lufia2PokerRankHands` | verified | `src/menu/poker_results.c` |
+| `$84:BC78` | `Lufia2PokerTakeOpponentTurn` | verified | `src/menu/poker_decisions.c` |
+| `$84:BD83` | `Lufia2PokerAcceptOpponentStake` | verified | `src/menu/poker_decisions.c` |
+| `$84:BD96` | `Lufia2PokerDrawOpponentStake` | verified | `src/menu/poker_decisions.c` |
+| `$84:BDC2` | `Lufia2PokerChooseOpponentAction` | verified | `src/menu/poker_decisions.c` |
+| `$84:BEE4` | `Lufia2PokerLocateStakeSprites` | verified | `src/menu/poker_decisions.c` |
+| `$84:BF0B` | `Lufia2PokerMatchOpponentStakes` | verified | `src/menu/poker_decisions.c` |
+| `$84:BF67` | `Lufia2PokerMatchOpponentStake` | verified | `src/menu/poker_decisions.c` |
 | `$84:C350` | `Lufia2CardGameReadStakeCommand` | verified | `src/menu/card_game_actions.c` |
 | `$84:C3B4` | `Lufia2PokerPrepareHandRanks` | verified | `src/menu/poker_results.c` |
 | `$84:C42A` | `Lufia2PokerMeasureHand` | verified | `src/menu/poker_results.c` |
