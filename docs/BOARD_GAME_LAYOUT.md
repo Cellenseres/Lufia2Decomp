@@ -78,3 +78,31 @@ the original addition, and writes four tiles in order. Rows advance 192 bytes.
 The counter retains the original signed subtraction even for malformed counts.
 The three tile leaves require M0X0; the other six entries preserve either M width.
 All nine are verified against the original ROM and remain runtime-unbound.
+
+## Stakes, payout and particles
+
+`board_game_results.c` reconstructs the stake chooser, its six-sprite digit
+helper, payout calculation, payout-step credit, cell-location rebuilding and
+particle update. Stake selection keeps balance reservation and refunds, all
+controls, twelve frames of twelve sprites and the final tile conversion.
+
+Line payout scans twelve totals at thresholds101/108, applies the original
+fivefold bonus and repeats the original shifts/additions. The payout step at
+69E4 starts at10000. Its A3FC child uses the original hardware division and eight
+NOP waits. A421 credits one step and keeps the original low-word cap behavior.
+69E2 is the bonus/multiplier word. These fields have canonical WRAM names.
+
+Particles use the ring index at70B4 and OAM origin at70B6. Both overlay card-hand
+storage, so their names remain local. Twenty-five positions move through packed
+byte arithmetic. The byte comparison before REP retains its N flag. Horizontal
+velocity reads use fixed bank7E while other workspace accesses use live DB.
+Two marker words at7204/7206 move their OAM positions alongside the particles.
+
+The normal payout caller uses DB7E. With DB7F, relative denomination stores and
+fixed-bank reads can disagree indefinitely. A malformed particle ring start can
+also fail to terminate. Reconstruction preserves both behaviors and provides
+exact original-PC handoffs at bounded child/iteration prefixes. These are
+continuation boundaries, not fixes to the original game.
+
+All six contracts are verified and remain runtime-unbound. The five PHP/PLP
+roots preserve either accumulator width; the digit helper requires M0X0.

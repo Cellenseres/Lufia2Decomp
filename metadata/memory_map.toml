@@ -6770,3 +6770,19 @@ width = 2
 count = 6
 owner = "menu"
 notes = "D0EF snapshots six cells before rotating them and updating the cell-location map."
+
+[[location]]
+address = "7E:69E2"
+name = "board_game_bonus_multiplier"
+width = 2
+count = 1
+owner = "menu"
+notes = "D456 counts qualified lines and scales the score fivefold when the prior bonus flag is set."
+
+[[location]]
+address = "7E:69E4"
+name = "special_menu_payout_step"
+width = 2
+count = 1
+owner = "menu"
+notes = "D456 initializes10000;original A3FC divides it by ten with hardware waits;A421 credits this step."

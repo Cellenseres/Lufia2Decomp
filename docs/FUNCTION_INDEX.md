@@ -1396,6 +1396,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:9CD4` | `Lufia2BattleUpdatePreviewBackground` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9D2C` | `Lufia2BattleBuildEnemyPreview` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9E1C` | `Lufia2FillWordBlock32` | verified | `src/system/block_move.c` |
+| `$84:A421` | `Lufia2BoardGameCreditPayoutStep` | verified | `src/menu/board_game_results.c` |
 | `$84:A455` | `Lufia2SpecialMenuInitializeVideo` | verified | `src/menu/special_menu_video.c` |
 | `$84:A4DD` | `Lufia2SpecialMenuClearTilemaps` | verified | `src/menu/special_menu.c` |
 | `$84:A4FD` | `Lufia2SpecialMenuHideSprites` | verified | `src/menu/special_menu.c` |
@@ -1494,6 +1495,11 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:D0CB` | `Lufia2BoardGamePlaceCellTiles` | verified | `src/menu/board_game_selection.c` |
 | `$84:D0EF` | `Lufia2BoardGameRotateSelectedGroup` | verified | `src/menu/board_game_selection.c` |
 | `$84:D17A` | `Lufia2BoardGameDrawCells` | verified | `src/menu/board_game_selection.c` |
+| `$84:D1EF` | `Lufia2BoardGameChooseStake` | verified | `src/menu/board_game_results.c` |
+| `$84:D414` | `Lufia2BoardGameDrawStakeDigitSprites` | verified | `src/menu/board_game_results.c` |
+| `$84:D456` | `Lufia2BoardGamePayCompletedLines` | verified | `src/menu/board_game_results.c` |
+| `$84:D538` | `Lufia2BoardGameRebuildCellLocations` | verified | `src/menu/board_game_results.c` |
+| `$84:D558` | `Lufia2BoardGameAnimateParticles` | verified | `src/menu/board_game_results.c` |
 | `$84:D684` | `Lufia2BoardGameResetRound` | verified | `src/menu/board_game.c` |
 | `$84:D70A` | `Lufia2BoardGameLoadTilemaps` | verified | `src/menu/board_game.c` |
 | `$84:D765` | `Lufia2BoardGameInitialize` | verified | `src/menu/board_game.c` |

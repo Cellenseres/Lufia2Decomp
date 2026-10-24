@@ -17374,3 +17374,51 @@ source = "src/menu/board_game_selection.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:D1EF"
+name = "Lufia2BoardGameChooseStake"
+source = "src/menu/board_game_results.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:D414"
+name = "Lufia2BoardGameDrawStakeDigitSprites"
+source = "src/menu/board_game_results.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:D456"
+name = "Lufia2BoardGamePayCompletedLines"
+source = "src/menu/board_game_results.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:D538"
+name = "Lufia2BoardGameRebuildCellLocations"
+source = "src/menu/board_game_results.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:D558"
+name = "Lufia2BoardGameAnimateParticles"
+source = "src/menu/board_game_results.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:A421"
+name = "Lufia2BoardGameCreditPayoutStep"
+source = "src/menu/board_game_results.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
