@@ -1,0 +1,30 @@
+#ifndef LUFIA2_SPECIAL_MENU_H
+#define LUFIA2_SPECIAL_MENU_H
+
+#include "lufia2/execution.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+Lufia2ExecutionResult Lufia2SpecialMenuClearTilemaps(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2SpecialMenuHideSprites(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2SpecialMenuMultiplyWords(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2SpecialMenuFadeIn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2SpecialMenuFadeOut(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2SpecialMenuRun(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

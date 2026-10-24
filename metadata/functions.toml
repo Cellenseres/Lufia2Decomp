@@ -16558,3 +16558,51 @@ source = "src/world/world_scene_particle_commands.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "84:A4DD"
+name = "Lufia2SpecialMenuClearTilemaps"
+source = "src/menu/special_menu.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:A4FD"
+name = "Lufia2SpecialMenuHideSprites"
+source = "src/menu/special_menu.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:A5DF"
+name = "Lufia2SpecialMenuMultiplyWords"
+source = "src/menu/special_menu.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:A5B5"
+name = "Lufia2SpecialMenuFadeIn"
+source = "src/menu/special_menu.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:A5CA"
+name = "Lufia2SpecialMenuFadeOut"
+source = "src/menu/special_menu.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:A689"
+name = "Lufia2SpecialMenuRun"
+source = "src/menu/special_menu.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
