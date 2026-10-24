@@ -17206,3 +17206,59 @@ source = "src/menu/card_game_stakes.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "84:D684"
+name = "Lufia2BoardGameResetRound"
+source = "src/menu/board_game.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:D70A"
+name = "Lufia2BoardGameLoadTilemaps"
+source = "src/menu/board_game.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:D765"
+name = "Lufia2BoardGameInitialize"
+source = "src/menu/board_game.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:D860"
+name = "Lufia2BoardGameShuffleCells"
+source = "src/menu/board_game.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:D892"
+name = "Lufia2BoardGameShuffleDrawOrder"
+source = "src/menu/board_game.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:CBE2"
+name = "Lufia2BoardGameCountCompletedLines"
+source = "src/menu/board_game.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:CBCD"
+name = "Lufia2BoardGameAdvanceFrame"
+source = "src/menu/board_game.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"

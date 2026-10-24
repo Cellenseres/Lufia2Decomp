@@ -1478,6 +1478,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:C73A` | `Lufia2PokerRevealOpponents` | verified | `src/menu/poker.c` |
 | `$84:C794` | `Lufia2PokerWaitForInput` | verified | `src/menu/poker.c` |
 | `$84:C819` | `Lufia2PokerDrawCarryover` | verified | `src/menu/poker.c` |
+| `$84:CBCD` | `Lufia2BoardGameAdvanceFrame` | verified | `src/menu/board_game.c` |
+| `$84:CBE2` | `Lufia2BoardGameCountCompletedLines` | verified | `src/menu/board_game.c` |
+| `$84:D684` | `Lufia2BoardGameResetRound` | verified | `src/menu/board_game.c` |
+| `$84:D70A` | `Lufia2BoardGameLoadTilemaps` | verified | `src/menu/board_game.c` |
+| `$84:D765` | `Lufia2BoardGameInitialize` | verified | `src/menu/board_game.c` |
+| `$84:D860` | `Lufia2BoardGameShuffleCells` | verified | `src/menu/board_game.c` |
+| `$84:D892` | `Lufia2BoardGameShuffleDrawOrder` | verified | `src/menu/board_game.c` |
 | `$85:8045` | `Lufia2FieldDiagnosticsRunMenu` | verified | `src/field/field_diagnostics_control.c` |
 | `$85:821C` | `Lufia2FieldDiagnosticsEditValue` | verified | `src/field/field_diagnostics.c` |
 | `$85:8267` | `Lufia2FieldDiagnosticsHideCursor` | verified | `src/field/field_diagnostics.c` |

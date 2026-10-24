@@ -6626,3 +6626,59 @@ width = 2
 count = 1
 owner = "menu"
 notes = "A5DF writes the low product word consumed by stake refund/charge operations."
+
+[[location]]
+address = "7E:71B2"
+name = "board_game_line_totals"
+width = 2
+count = 12
+owner = "menu"
+notes = "Twelve sums for five rows,five columns and two diagonals. D892 clears thirteen words,also touching the adjacent completed-line count."
+
+[[location]]
+address = "7E:71CA"
+name = "board_game_completed_lines"
+width = 2
+count = 1
+owner = "menu"
+notes = "CBE2 counts original line sums at least100 using the N flag."
+
+[[location]]
+address = "7E:71CC"
+name = "board_game_near_lines"
+width = 2
+count = 1
+owner = "menu"
+notes = "CBE2 counts original sums88..99 using N-bit comparisons."
+
+[[location]]
+address = "7E:71FA"
+name = "board_game_draws_remaining"
+width = 2
+count = 1
+owner = "menu"
+notes = "D684 sets thirteen draws;other original draw handlers decrement it."
+
+[[location]]
+address = "7E:71FE"
+name = "board_game_special_draws"
+width = 2
+count = 2
+owner = "menu"
+notes = "D892 stores two doubled RNG results,with original ranges30 and60."
+
+[[location]]
+address = "7E:7204"
+name = "board_game_first_position"
+width = 2
+count = 1
+owner = "menu"
+notes = "D684 initializes negative values from70B6 plus2."
+
+[[location]]
+address = "7E:7206"
+name = "board_game_second_position"
+width = 2
+count = 1
+owner = "menu"
+notes = "D684 initializes negative values from70B6 plus6."
