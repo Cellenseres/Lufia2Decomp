@@ -6682,3 +6682,75 @@ width = 2
 count = 1
 owner = "menu"
 notes = "D684 initializes negative values from70B6 plus6."
+
+[[location]]
+address = "7E:71CE"
+name = "board_game_selected_group"
+width = 2
+count = 1
+owner = "menu"
+notes = "C826 stores the decremented cell-group byte before CEE4 animation."
+
+[[location]]
+address = "7E:71EA"
+name = "board_game_draw_origin"
+width = 2
+count = 1
+owner = "menu"
+notes = "CCD3 initializes0200; CDA8 changes the packed origin during draw motion."
+
+[[location]]
+address = "7E:71EC"
+name = "board_game_draw_timer"
+width = 2
+count = 1
+owner = "menu"
+notes = "CCD3 initializes fourteen; CDA8 counts down separate motion phases."
+
+[[location]]
+address = "7E:71EE"
+name = "board_game_draw_angle"
+width = 2
+count = 1
+owner = "menu"
+notes = "CDA8 passes this word to original sine/cosine children and advances it."
+
+[[location]]
+address = "7E:71F0"
+name = "board_game_draw_phase"
+width = 2
+count = 1
+owner = "menu"
+notes = "CCD3 sets one; CDA8 decrements through zero and the negative completion phase."
+
+[[location]]
+address = "7E:71F2"
+name = "board_game_draw_fall_step"
+width = 2
+count = 1
+owner = "menu"
+notes = "CDA8 increments this word and applies its low byte to the origin Y coordinate."
+
+[[location]]
+address = "7E:71F4"
+name = "board_game_draw_confirmed"
+width = 2
+count = 1
+owner = "menu"
+notes = "C826 sets one on confirm; CDA8 shortens its timer in the40..49 angle window."
+
+[[location]]
+address = "7E:71F6"
+name = "board_game_draw_radius"
+width = 2
+count = 1
+owner = "menu"
+notes = "CDA8 initializes forty; CEB3 uses it in original hardware multiplication."
+
+[[location]]
+address = "7E:71F8"
+name = "board_game_draw_offset"
+width = 2
+count = 1
+owner = "menu"
+notes = "CCD3 stores the doubled current draw value; C826/CDA8 read the cell-location overlay through it."

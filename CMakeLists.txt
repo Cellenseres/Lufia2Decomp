@@ -90,6 +90,7 @@ add_library(lufia2_decomp STATIC
     src/menu/card_game_actions.c
     src/menu/card_game_stakes.c
     src/menu/board_game.c
+    src/menu/board_game_session.c
     src/menu/card_game_animation.c
     src/menu/card_game_scene.c
     src/menu/poker.c

@@ -36,3 +36,25 @@ All seven reconstructed entries preserve their incoming accumulator width
 through PHP/PLP; both M0X0 and M1X0 are verified. Their canonical metadata mode
 is M1X0, as used by the controller. DB remains live, DP must be zero and decimal
 arithmetic must be disabled. Runtime binding is a separate consumer decision.
+
+## Controller and draw animation
+
+`src/menu/board_game_session.c` reconstructs the complete `$84:C826` controller,
+the `$CAF1` replay selector, `$CB64` continuation, `$CCD3` cell draw and `$CDA8`
+animation update. The controller normalizes either incoming accumulator width
+to M1 and returns in M1; the other four routines preserve the caller's width.
+
+The controller retains palette transfers, both saved data-bank frames, initial
+shuffling, byte-based slowdown counters, grouped and ungrouped draws, result
+messages, optional continuation, replay and the empty-balance exit. The N flag
+from a word decrement survives the switch to byte mode before the group branch.
+
+The animation keeps original sine/cosine calls, packed byte coordinates, angle,
+radius, fall-step, phase and timer updates. Confirming a draw shortens the timer
+only in the original angle window. The `$84:CEB3` multiplication child remains
+original, including its four hardware-delay NOPs; no host multiplication or
+guessed timing replaces it.
+
+The replay selector uses OAM slot 127 at `$02FC`, with its tile word at `$02FE`.
+The separately named `card_game_replay_cursor` at `$7133` contains selection
+layout parameters for a different card-game routine and is not this OAM slot.

@@ -28,6 +28,22 @@ Lufia2ExecutionResult Lufia2BoardGameAdvanceFrame(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2BoardGameRun(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2BoardGameChooseReplay(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2BoardGameContinueRound(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2BoardGameDrawNextCell(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2BoardGameUpdateDrawAnimation(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

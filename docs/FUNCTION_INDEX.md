@@ -1478,8 +1478,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:C73A` | `Lufia2PokerRevealOpponents` | verified | `src/menu/poker.c` |
 | `$84:C794` | `Lufia2PokerWaitForInput` | verified | `src/menu/poker.c` |
 | `$84:C819` | `Lufia2PokerDrawCarryover` | verified | `src/menu/poker.c` |
+| `$84:C826` | `Lufia2BoardGameRun` | verified | `src/menu/board_game_session.c` |
+| `$84:CAF1` | `Lufia2BoardGameChooseReplay` | verified | `src/menu/board_game_session.c` |
+| `$84:CB64` | `Lufia2BoardGameContinueRound` | verified | `src/menu/board_game_session.c` |
 | `$84:CBCD` | `Lufia2BoardGameAdvanceFrame` | verified | `src/menu/board_game.c` |
 | `$84:CBE2` | `Lufia2BoardGameCountCompletedLines` | verified | `src/menu/board_game.c` |
+| `$84:CCD3` | `Lufia2BoardGameDrawNextCell` | verified | `src/menu/board_game_session.c` |
+| `$84:CDA8` | `Lufia2BoardGameUpdateDrawAnimation` | verified | `src/menu/board_game_session.c` |
 | `$84:D684` | `Lufia2BoardGameResetRound` | verified | `src/menu/board_game.c` |
 | `$84:D70A` | `Lufia2BoardGameLoadTilemaps` | verified | `src/menu/board_game.c` |
 | `$84:D765` | `Lufia2BoardGameInitialize` | verified | `src/menu/board_game.c` |

@@ -17262,3 +17262,43 @@ source = "src/menu/board_game.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:C826"
+name = "Lufia2BoardGameRun"
+source = "src/menu/board_game_session.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:CAF1"
+name = "Lufia2BoardGameChooseReplay"
+source = "src/menu/board_game_session.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:CB64"
+name = "Lufia2BoardGameContinueRound"
+source = "src/menu/board_game_session.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:CCD3"
+name = "Lufia2BoardGameDrawNextCell"
+source = "src/menu/board_game_session.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:CDA8"
+name = "Lufia2BoardGameUpdateDrawAnimation"
+source = "src/menu/board_game_session.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
