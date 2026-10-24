@@ -1,3 +1,20 @@
+# Share original card animation phases - 2026-10-24
+
+The verified 84:B13D repositioning loop and 84:B22B card-turn phases now
+provide exact post-wait continuation APIs. Entry and continuation paths share
+the same semantic C operations. Counter widths, flags, call-site addresses,
+child unwinds and original return boundaries remain observable. Unsupported
+continuations explicitly hand control to their original ROM PCs.
+
+The combined consumer checkpoint passes 12,288 original-ROM/timed ABI cases,
+360 child-context cases and 2,048 resumed cases with 13,824 resumptions.
+All 20 module entry/mode suites additionally pass 20,480 original-ROM cases,
+143 guards, 1,280 stack endpoints, 36 child-site/mode pairs, 36 unwinds and
+180 changed returns. Actual interpreter/NMI/device synthetic replays also
+compare complete frames. These APIs are parts of existing verified functions;
+metadata remains 2,158 verified entries, zero drafts and 866 WRAM fields.
+Tests and original-ROM evidence remain private in the consumer repository.
+
 # Resume stake sprite animation - 2026-10-24
 
 84:C243 retains its complete original 24-frame, twelve-sprite algorithm. The

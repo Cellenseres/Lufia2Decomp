@@ -170,6 +170,30 @@ Lufia2ExecutionResult Lufia2CardGameRevealCard(
     return ExecutionReturned(0x84b13cu);
 }
 
+static Lufia2ExecutionResult ContinueReposition(CardAnimation *animation,
+                                                 bool completed_frame) {
+    const Lufia2Memory *memory = animation->memory;
+    Lufia2CpuState *cpu = animation->cpu;
+    for (;;) {
+        if (completed_frame) {
+            OpStepMem(memory, cpu, OpDp(cpu, 4u), -1);
+            if (cpu->negative)
+                break;
+        }
+        if (!AnimationCall(animation, 0x84b157u, 0x84b43bu))
+            return animation->result;
+        OpLoadA(cpu, 0x80u);
+        OpSta(memory, cpu, OpDp(cpu, 0x72u));
+        if (!AnimationCall(animation, 0x84b15eu, 0x84a5a8u))
+            return animation->result;
+        completed_frame = true;
+    }
+    OpRepWidths(cpu, 0x20u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x0bu)));
+    AnimationCall(animation, 0x84b169u, 0x84b16du);
+    return animation->result;
+}
+
 Lufia2ExecutionResult Lufia2CardGameAnimateReposition(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -194,20 +218,17 @@ Lufia2ExecutionResult Lufia2CardGameAnimateReposition(
     OpLoadA(cpu, 0x20u);
     if (!AnimationCall(&animation, 0x84b154u, 0x84a607u))
         return animation.result;
-    do {
-        if (!AnimationCall(&animation, 0x84b157u, 0x84b43bu))
-            return animation.result;
-        OpLoadA(cpu, 0x80u);
-        OpSta(memory, cpu, OpDp(cpu, 0x72u));
-        if (!AnimationCall(&animation, 0x84b15eu, 0x84a5a8u))
-            return animation.result;
-        OpStepMem(memory, cpu, OpDp(cpu, 4u), -1);
-    } while (!cpu->negative);
-    OpRepWidths(cpu, 0x20u);
-    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, 0x0bu)));
-    if (!AnimationCall(&animation, 0x84b169u, 0x84b16du))
-        return animation.result;
-    return ExecutionReturned(0x84b16cu);
+    return ContinueReposition(&animation, false);
+}
+
+Lufia2ExecutionResult Lufia2CardGameResumeReposition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || !AnimationReady(cpu) || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x84b161u);
+    CardAnimation animation = {memory, cpu, child, context,
+                              ExecutionReturned(0x84b16cu), 0u};
+    return ContinueReposition(&animation, true);
 }
 
 Lufia2ExecutionResult Lufia2CardGameSwapSpriteBlocks(
@@ -233,6 +254,66 @@ Lufia2ExecutionResult Lufia2CardGameSwapSpriteBlocks(
     return ExecutionReturned(0x84b18du);
 }
 
+static Lufia2ExecutionResult ContinueCardTurn(CardAnimation *animation,
+                                               uint32_t landing) {
+    const Lufia2Memory *memory = animation->memory;
+    Lufia2CpuState *cpu = animation->cpu;
+    if (landing == 0x84b237u || landing == 0x84b241u) {
+        for (;;) {
+            if (landing == 0x84b241u) {
+                OpStepMem(memory, cpu, OpDp(cpu, 4u), -1);
+                if (cpu->zero)
+                    break;
+            }
+            if (!AnimationCall(animation, 0x84b237u, 0x84b43bu))
+                return animation->result;
+            OpLoadA(cpu, 0x80u);
+            OpSta(memory, cpu, OpDp(cpu, 0x72u));
+            if (!AnimationCall(animation, 0x84b23eu, 0x84a5a8u))
+                return animation->result;
+            landing = 0x84b241u;
+        }
+        OpLoadA(cpu, 0x20u);
+        if (!AnimationCall(animation, 0x84b247u, 0x84a607u))
+            return animation->result;
+        OpLdx(cpu, 0xb663u);
+        OpWriteX(memory, cpu, OpDp(cpu, 8u), cpu->x);
+        if (!AnimationCall(animation, 0x84b24fu, 0x84b472u))
+            return animation->result;
+        OpLoadA(cpu, 0x80u);
+        OpSta(memory, cpu, OpDp(cpu, 0x72u));
+        if (!AnimationCall(animation, 0x84b256u, 0x84a5a8u))
+            return animation->result;
+        landing = 0x84b259u;
+    }
+    if (landing == 0x84b259u) {
+        if (!AnimationCall(animation, 0x84b259u, 0x84a5a8u))
+            return animation->result;
+        landing = 0x84b25cu;
+    }
+    if (landing == 0x84b25cu) {
+        if (!AnimationCall(animation, 0x84b25cu, 0x84a5a8u))
+            return animation->result;
+        landing = 0x84b25fu;
+    }
+    if (landing == 0x84b25fu) {
+        OpLdx(cpu, 0xb693u);
+        OpWriteX(memory, cpu, OpDp(cpu, 8u), cpu->x);
+        if (!AnimationCall(animation, 0x84b264u, 0x84b472u))
+            return animation->result;
+        OpLoadA(cpu, 0x80u);
+        OpSta(memory, cpu, OpDp(cpu, 0x72u));
+        if (!AnimationCall(animation, 0x84b26bu, 0x84a5a8u))
+            return animation->result;
+        landing = 0x84b26eu;
+    }
+    if (landing == 0x84b26eu &&
+        !AnimationCall(animation, 0x84b26eu, 0x84a5a8u))
+        return animation->result;
+    OpRepWidths(cpu, 0x20u);
+    return animation->result;
+}
+
 Lufia2ExecutionResult Lufia2CardGameTurnCardSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -245,39 +326,24 @@ Lufia2ExecutionResult Lufia2CardGameTurnCardSprites(
     OpWriteX(memory, cpu, OpDp(cpu, 0u), cpu->x);
     OpLdx(cpu, 4u);
     OpWriteX(memory, cpu, OpDp(cpu, 4u), cpu->x);
-    do {
-        if (!AnimationCall(&animation, 0x84b237u, 0x84b43bu))
-            return animation.result;
-        OpLoadA(cpu, 0x80u);
-        OpSta(memory, cpu, OpDp(cpu, 0x72u));
-        if (!AnimationCall(&animation, 0x84b23eu, 0x84a5a8u))
-            return animation.result;
-        OpStepMem(memory, cpu, OpDp(cpu, 4u), -1);
-    } while (!cpu->zero);
-    OpLoadA(cpu, 0x20u);
-    if (!AnimationCall(&animation, 0x84b247u, 0x84a607u))
-        return animation.result;
-    OpLdx(cpu, 0xb663u);
-    OpWriteX(memory, cpu, OpDp(cpu, 8u), cpu->x);
-    if (!AnimationCall(&animation, 0x84b24fu, 0x84b472u))
-        return animation.result;
-    OpLoadA(cpu, 0x80u);
-    OpSta(memory, cpu, OpDp(cpu, 0x72u));
-    if (!AnimationCall(&animation, 0x84b256u, 0x84a5a8u) ||
-        !AnimationCall(&animation, 0x84b259u, 0x84a5a8u) ||
-        !AnimationCall(&animation, 0x84b25cu, 0x84a5a8u))
-        return animation.result;
-    OpLdx(cpu, 0xb693u);
-    OpWriteX(memory, cpu, OpDp(cpu, 8u), cpu->x);
-    if (!AnimationCall(&animation, 0x84b264u, 0x84b472u))
-        return animation.result;
-    OpLoadA(cpu, 0x80u);
-    OpSta(memory, cpu, OpDp(cpu, 0x72u));
-    if (!AnimationCall(&animation, 0x84b26bu, 0x84a5a8u) ||
-        !AnimationCall(&animation, 0x84b26eu, 0x84a5a8u))
-        return animation.result;
-    OpRepWidths(cpu, 0x20u);
-    return ExecutionReturned(0x84b273u);
+    return ContinueCardTurn(&animation, 0x84b237u);
+}
+
+Lufia2ExecutionResult Lufia2CardGameResumeCardTurn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, uint32_t landing) {
+    if (!child || !AnimationReady(cpu) || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, landing);
+    switch (landing) {
+    case 0x84b241u: case 0x84b259u: case 0x84b25cu:
+    case 0x84b25fu: case 0x84b26eu: case 0x84b271u:
+        break;
+    default:
+        return ExecutionHandoff(cpu, landing);
+    }
+    CardAnimation animation = {memory, cpu, child, context,
+                              ExecutionReturned(0x84b273u), 0u};
+    return ContinueCardTurn(&animation, landing);
 }
 
 Lufia2ExecutionResult Lufia2CardGameHideCardSprites(

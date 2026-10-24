@@ -58,6 +58,12 @@ Lufia2ExecutionResult Lufia2CardGameShowOpeningCard(
 Lufia2ExecutionResult Lufia2CardGameRevealCard(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2CardGameResumeReposition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2CardGameResumeCardTurn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, uint32_t landing);
 Lufia2ExecutionResult Lufia2CardGameAnimateReposition(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
