@@ -1,3 +1,13 @@
+# Empty interrupt bank mirrors - 2026-10-24
+
+The 80:86C0 empty interrupt API accepts physical 00:86C0 as well. Both
+original RTI bytes decode the same real native interrupt frame. The canonical
+80:86BF return API retains its guard; both share the unchanged frame decoder.
+32,768 ROM/timed consumer cases cover both interrupt entries, both mirrors,
+all widths and status restoration. A 5,100-frame actual interrupt-owner
+comparison preserves CPU/memory/video/PCM/exact clocks. Metadata counts stay
+2,158 verified, zero drafts and 866 WRAM. Private proofs remain uncommitted.
+
 # Preserve cursor-resume correction calls - 2026-10-24
 
 The standalone 82:8A9B/8AD6 APIs now expose their original correction JSRs

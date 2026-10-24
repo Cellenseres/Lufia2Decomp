@@ -267,15 +267,20 @@ Lufia2ExecutionResult Lufia2NmiBeginChild(
     return ExecutionHandoff(cpu, target);
 }
 
-Lufia2ExecutionResult Lufia2NmiReturnInterrupt(
+static Lufia2ExecutionResult ReturnInterruptFrame(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x80u)
-        return ExecutionHandoff(cpu, 0x8086bfu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     const uint16_t low = Pull8(memory, cpu);
     const uint16_t address = (uint16_t)(low | ((uint16_t)Pull8(memory, cpu) << 8));
     cpu->program_bank = Pull8(memory, cpu);
     return ExecutionHandoff(cpu, ((uint32_t)cpu->program_bank << 16) | address);
+}
+
+Lufia2ExecutionResult Lufia2NmiReturnInterrupt(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u)
+        return ExecutionHandoff(cpu, 0x8086bfu);
+    return ReturnInterruptFrame(memory, cpu);
 }
 
 Lufia2ExecutionResult Lufia2NmiInvokeCallback(
@@ -317,7 +322,7 @@ Lufia2ExecutionResult Lufia2NmiSaveInterruptFrame(const Lufia2Memory *memory,
 
 Lufia2ExecutionResult Lufia2NmiReturnEmptyInterrupt(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x80u)
+    if (cpu->program_bank != 0u && cpu->program_bank != 0x80u)
         return ExecutionHandoff(cpu, 0x8086c0u);
-    return Lufia2NmiReturnInterrupt(memory, cpu);
+    return ReturnInterruptFrame(memory, cpu);
 }
