@@ -58,3 +58,23 @@ guessed timing replaces it.
 The replay selector uses OAM slot 127 at `$02FC`, with its tile word at `$02FE`.
 The separately named `card_game_replay_cursor` at `$7133` contains selection
 layout parameters for a different card-game routine and is not this OAM slot.
+
+## Selection, movement and board tiles
+
+`src/menu/board_game_selection.c` implements the remaining-count digits, group
+border drawing and clearing, group movement, cell tile transfers, cell rotation
+and complete board rendering. Border clearing retains the original frame child.
+The ROM tables at D8ED/D8F9/D909, D911..D9E9, DA31 and DA69 remain bus reads.
+
+Movement performs three phases of six tile transfers. Each transfer saves and
+erases four tile words before restoring them elsewhere. The words at 71D2..71D8
+are named `board_game_saved_cell_tiles`. The adjacent six words at 71DA..71E4
+are `board_game_saved_group_cells`, used to snapshot a group before rotation.
+Rotation updates the cell-ID-to-location overlay at 70EA after each cell write.
+This overlay shares existing card/poker storage and has no duplicate map record.
+
+Board rendering reads each cell twice, combines its high-byte attributes using
+the original addition, and writes four tiles in order. Rows advance 192 bytes.
+The counter retains the original signed subtraction even for malformed counts.
+The three tile leaves require M0X0; the other six entries preserve either M width.
+All nine are verified against the original ROM and remain runtime-unbound.

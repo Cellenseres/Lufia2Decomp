@@ -6754,3 +6754,19 @@ width = 2
 count = 1
 owner = "menu"
 notes = "CCD3 stores the doubled current draw value; C826/CDA8 read the cell-location overlay through it."
+
+[[location]]
+address = "7E:71D2"
+name = "board_game_saved_cell_tiles"
+width = 2
+count = 4
+owner = "menu"
+notes = "D09B lifts four ordered tile words;D0CB restores them during group movement."
+
+[[location]]
+address = "7E:71DA"
+name = "board_game_saved_group_cells"
+width = 2
+count = 6
+owner = "menu"
+notes = "D0EF snapshots six cells before rotating them and updating the cell-location map."

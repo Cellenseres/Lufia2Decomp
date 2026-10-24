@@ -17302,3 +17302,75 @@ source = "src/menu/board_game_session.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:CD5F"
+name = "Lufia2BoardGameDrawRemainingCount"
+source = "src/menu/board_game_selection.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:CD95"
+name = "Lufia2BoardGameDrawDigitTiles"
+source = "src/menu/board_game_selection.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:CEE4"
+name = "Lufia2BoardGameDrawSelectionBorder"
+source = "src/menu/board_game_selection.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:CF91"
+name = "Lufia2BoardGameClearSelectionBorder"
+source = "src/menu/board_game_selection.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:D016"
+name = "Lufia2BoardGameMoveSelectedGroup"
+source = "src/menu/board_game_selection.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:D09B"
+name = "Lufia2BoardGameLiftCellTiles"
+source = "src/menu/board_game_selection.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:D0CB"
+name = "Lufia2BoardGamePlaceCellTiles"
+source = "src/menu/board_game_selection.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:D0EF"
+name = "Lufia2BoardGameRotateSelectedGroup"
+source = "src/menu/board_game_selection.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:D17A"
+name = "Lufia2BoardGameDrawCells"
+source = "src/menu/board_game_selection.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"

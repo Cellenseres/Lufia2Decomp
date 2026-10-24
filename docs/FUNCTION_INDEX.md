@@ -1484,7 +1484,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:CBCD` | `Lufia2BoardGameAdvanceFrame` | verified | `src/menu/board_game.c` |
 | `$84:CBE2` | `Lufia2BoardGameCountCompletedLines` | verified | `src/menu/board_game.c` |
 | `$84:CCD3` | `Lufia2BoardGameDrawNextCell` | verified | `src/menu/board_game_session.c` |
+| `$84:CD5F` | `Lufia2BoardGameDrawRemainingCount` | verified | `src/menu/board_game_selection.c` |
+| `$84:CD95` | `Lufia2BoardGameDrawDigitTiles` | verified | `src/menu/board_game_selection.c` |
 | `$84:CDA8` | `Lufia2BoardGameUpdateDrawAnimation` | verified | `src/menu/board_game_session.c` |
+| `$84:CEE4` | `Lufia2BoardGameDrawSelectionBorder` | verified | `src/menu/board_game_selection.c` |
+| `$84:CF91` | `Lufia2BoardGameClearSelectionBorder` | verified | `src/menu/board_game_selection.c` |
+| `$84:D016` | `Lufia2BoardGameMoveSelectedGroup` | verified | `src/menu/board_game_selection.c` |
+| `$84:D09B` | `Lufia2BoardGameLiftCellTiles` | verified | `src/menu/board_game_selection.c` |
+| `$84:D0CB` | `Lufia2BoardGamePlaceCellTiles` | verified | `src/menu/board_game_selection.c` |
+| `$84:D0EF` | `Lufia2BoardGameRotateSelectedGroup` | verified | `src/menu/board_game_selection.c` |
+| `$84:D17A` | `Lufia2BoardGameDrawCells` | verified | `src/menu/board_game_selection.c` |
 | `$84:D684` | `Lufia2BoardGameResetRound` | verified | `src/menu/board_game.c` |
 | `$84:D70A` | `Lufia2BoardGameLoadTilemaps` | verified | `src/menu/board_game.c` |
 | `$84:D765` | `Lufia2BoardGameInitialize` | verified | `src/menu/board_game.c` |
