@@ -1,3 +1,18 @@
+# Expose original event-handler reader calls - 2026-10-25
+
+The full 80:D5F2 conditional-object and 80:E50B area-transition service APIs
+now delegate their original E8B9 JSR through the supplied child callback.
+Their internal event-VM routes retain inline reading. Real return frames,
+status/width validation, child unwinds, DB/Y restoration and CC35 tails are
+preserved. Public signatures and original semantics are unchanged. The field
+header advertises this callback contract for compatible consumer selection.
+
+Shared original-ROM/timed validation covers 30,720 states plus 360 altered
+children at 20 sites, 30,720 actual reader compositions, 728 pure guards and
+12 feature gates. Controlled consumer replay runs both bodies twice with
+identical CPU/full WRAM/video/PCM/exact clocks across four frames. Counts
+remain 2,158 verified, zero drafts and 866 WRAM. Proofs stay private.
+
 # Empty interrupt bank mirrors - 2026-10-24
 
 The 80:86C0 empty interrupt API accepts physical 00:86C0 as well. Both

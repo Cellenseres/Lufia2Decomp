@@ -1541,6 +1541,8 @@ Lufia2ExecutionResult Lufia2FieldCenterEventLayers(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+#define LUFIA2_FIELD_EVENT_ACTOR_READER_CALLS 1
+
 Lufia2ExecutionResult Lufia2FieldUpdateConditionalObjectRegion(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
