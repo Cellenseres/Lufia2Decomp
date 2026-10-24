@@ -16878,3 +16878,67 @@ source = "src/menu/card_game_animation.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "84:B027"
+name = "Lufia2CardGameSelectOpeningCards"
+source = "src/menu/card_game_scene.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B523"
+name = "Lufia2CardGameLoadSceneTilemap"
+source = "src/menu/card_game_scene.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:B54F"
+name = "Lufia2CardGameDrawSceneLabels"
+source = "src/menu/card_game_scene.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:ADC0"
+name = "Lufia2CardGameDrawScoreFrame"
+source = "src/menu/card_game_scene.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:ADF3"
+name = "Lufia2CardGameDrawHandScore"
+source = "src/menu/card_game_scene.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:AE30"
+name = "Lufia2CardGameDrawScoreDigit"
+source = "src/menu/card_game_scene.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:AEE1"
+name = "Lufia2CardGameDrawRoundValues"
+source = "src/menu/card_game_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:AF11"
+name = "Lufia2CardGameDrawBalance"
+source = "src/menu/card_game_scene.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

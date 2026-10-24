@@ -1413,11 +1413,17 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:AB61` | `Lufia2CardGameRankHand` | verified | `src/menu/card_game.c` |
 | `$84:AC66` | `Lufia2CardGameChooseStake` | verified | `src/menu/card_game_actions.c` |
 | `$84:AD9D` | `Lufia2CardGamePreparePayout` | verified | `src/menu/card_game_control.c` |
+| `$84:ADC0` | `Lufia2CardGameDrawScoreFrame` | verified | `src/menu/card_game_scene.c` |
+| `$84:ADF3` | `Lufia2CardGameDrawHandScore` | verified | `src/menu/card_game_scene.c` |
+| `$84:AE30` | `Lufia2CardGameDrawScoreDigit` | verified | `src/menu/card_game_scene.c` |
 | `$84:AE5E` | `Lufia2CardGameScoreHand` | verified | `src/menu/card_game.c` |
+| `$84:AEE1` | `Lufia2CardGameDrawRoundValues` | verified | `src/menu/card_game_scene.c` |
+| `$84:AF11` | `Lufia2CardGameDrawBalance` | verified | `src/menu/card_game_scene.c` |
 | `$84:AF1C` | `Lufia2CardGameDealCard` | verified | `src/menu/card_game.c` |
 | `$84:AF4B` | `Lufia2CardGameDealOpeningHands` | verified | `src/menu/card_game_actions.c` |
 | `$84:AFB8` | `Lufia2CardGameAnimateOpeningCard` | verified | `src/menu/card_game_animation.c` |
 | `$84:AFFC` | `Lufia2CardGameShowOpeningCard` | verified | `src/menu/card_game_animation.c` |
+| `$84:B027` | `Lufia2CardGameSelectOpeningCards` | verified | `src/menu/card_game_scene.c` |
 | `$84:B11E` | `Lufia2CardGameRevealCard` | verified | `src/menu/card_game_animation.c` |
 | `$84:B13D` | `Lufia2CardGameAnimateReposition` | verified | `src/menu/card_game_animation.c` |
 | `$84:B16D` | `Lufia2CardGameSwapSpriteBlocks` | verified | `src/menu/card_game_animation.c` |
@@ -1435,6 +1441,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:B49B` | `Lufia2CardGameRetileCardSprite` | verified | `src/menu/card_game_animation.c` |
 | `$84:B4A7` | `Lufia2CardGameBuildDeck` | verified | `src/menu/card_game.c` |
 | `$84:B4D9` | `Lufia2CardGameShuffleDeck` | verified | `src/menu/card_game.c` |
+| `$84:B523` | `Lufia2CardGameLoadSceneTilemap` | verified | `src/menu/card_game_scene.c` |
+| `$84:B54F` | `Lufia2CardGameDrawSceneLabels` | verified | `src/menu/card_game_scene.c` |
 | `$84:B57F` | `Lufia2CardGameInitializeScene` | verified | `src/menu/card_game_actions.c` |
 | `$84:C350` | `Lufia2CardGameReadStakeCommand` | verified | `src/menu/card_game_actions.c` |
 | `$85:8045` | `Lufia2FieldDiagnosticsRunMenu` | verified | `src/field/field_diagnostics_control.c` |

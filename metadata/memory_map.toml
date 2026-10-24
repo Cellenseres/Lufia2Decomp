@@ -6490,3 +6490,11 @@ width = 2
 count = 24
 owner = "menu"
 notes = "B2BC constructs the six-by-four card tile buffer; B387 copies it to tilemap and B429 emits its sprite tiles. Live DB addressing remains. Ends immediately before the deck. Treat OAM as shared field_oam_low_buffer storage."
+
+[[location]]
+address = "7E:7000"
+name = "card_game_opening_choices"
+width = 2
+count = 3
+owner = "menu"
+notes = "B027 marks three opening cards available, clears the selected and randomly assigned entries, then consumes the last entry with a signed word decrement. Original searches remain unchecked and bank-relative."
