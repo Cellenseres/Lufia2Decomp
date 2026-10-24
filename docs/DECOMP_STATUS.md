@@ -1,3 +1,17 @@
+# Preserve cursor-resume correction calls - 2026-10-24
+
+The standalone 82:8A9B/8AD6 APIs now expose their original correction JSRs
+alongside the count child. Error subtraction leaves its original accumulator
+and flags visible at these calls. The complete 82:89FA slide retains inline
+corrections. Public signatures and metadata counts remain unchanged:
+2,158 verified, zero drafts and 866 WRAM locations.
+
+Consumer checkpoint: 36,864 ROM/timed cases, 90 altered-child cases over five
+sites, 24,576 actual count-child compositions, 288 guards, both 4,096-step
+boundaries and byte-zero wrap pass. The complete slide caller passes 1,472
+affected cases. Twelve actual cursor/wait/NMI/return scenarios preserve all
+41 compared CPU/device/audio frames and exact clocks. Evidence stays private.
+
 # Preserve layer-centering entry calls - 2026-10-24
 
 The standalone 80:DB9D API exposes both original operand-reader JSRs while

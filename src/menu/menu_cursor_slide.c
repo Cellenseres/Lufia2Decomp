@@ -185,8 +185,12 @@ static Byte8Result SubtractCursorError(
     return left;
 }
 
-static bool ErrorRunsOut(Lufia2Wram wram, bool decimal, uint32_t error, uint32_t other) {
-    return !SubtractCursorError(wram, decimal, error, other).carry;
+static bool ErrorRunsOut(Lufia2Wram wram, Lufia2CpuState *cpu,
+    uint32_t error, uint32_t other, bool expose_result) {
+    const Byte8Result remaining = SubtractCursorError(wram, cpu->decimal, error, other);
+    if (expose_result)
+        LeaveByteSum(cpu, remaining);
+    return !remaining.carry;
 }
 
 static bool SlideRegistersSupported(const Lufia2CpuState *cpu) {
@@ -265,16 +269,40 @@ Lufia2ExecutionResult Lufia2MenuAdvanceCursorSlide(
     return ExecutionHandoff(cpu, vertical ? 0x828a98u : 0x828ad3u);
 }
 
+static bool CorrectWithServices(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    bool vertical, uint16_t back, Lufia2ExecutionResult *result,
+    Lufia2PushedChildCall child, void *context) {
+    const uint32_t site = 0x820000u | (uint16_t)(back - 2u);
+    const uint8_t bank = cpu->data_bank;
+    if (!CallChildWithFrame(memory, cpu, child, context, site,
+            vertical ? 0x828ae9u : 0x828ad8u, 2u, 0x82u)) {
+        *result = (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, site, 0u};
+        cpu->resume_pc = site;
+        return true;
+    }
+    if (!SlideRegistersSupported(cpu) || cpu->data_bank != bank) {
+        *result = ExecutionHandoff(cpu, site + 3u);
+        return true;
+    }
+    return false;
+}
+
 static Lufia2ExecutionResult SlideVertically(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
+    Lufia2PushedChildCall child, void *context, bool call_corrections) {
     Lufia2ExecutionResult result;
     unsigned steps = 0;
     for (;;) {
         if (steps++ == STEP_BUDGET)
             return ExecutionHandoff(cpu, 0x828a75u);
-        if (ErrorRunsOut(WramViewOfCaller(memory, cpu), cpu->decimal, DELTA_Y, DELTA_X))
-            Correct(memory, cpu, false, 0x8a80u);
+        if (ErrorRunsOut(WramViewOfCaller(memory, cpu), cpu, DELTA_Y, DELTA_X, call_corrections)) {
+            if (call_corrections) {
+                if (CorrectWithServices(memory, cpu, false, 0x8a80u, &result, child, context))
+                    return result;
+            } else {
+                Correct(memory, cpu, false, 0x8a80u);
+            }
+        }
         if (AdvanceCursorVertically(memory, cpu))
             return ExecutionReturned(SLIDE_DONE);
         if (SlideStep(memory, cpu, cpu->overflow, 0x8a9au, &result, child, context))
@@ -284,14 +312,20 @@ static Lufia2ExecutionResult SlideVertically(
 
 static Lufia2ExecutionResult SlideHorizontally(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
+    Lufia2PushedChildCall child, void *context, bool call_corrections) {
     Lufia2ExecutionResult result;
     unsigned steps = 0;
     for (;;) {
         if (steps++ == STEP_BUDGET)
             return ExecutionHandoff(cpu, 0x828aa6u);
-        if (ErrorRunsOut(WramViewOfCaller(memory, cpu), cpu->decimal, DELTA_X, DELTA_Y))
-            Correct(memory, cpu, true, 0x8ab1u);
+        if (ErrorRunsOut(WramViewOfCaller(memory, cpu), cpu, DELTA_X, DELTA_Y, call_corrections)) {
+            if (call_corrections) {
+                if (CorrectWithServices(memory, cpu, true, 0x8ab1u, &result, child, context))
+                    return result;
+            } else {
+                Correct(memory, cpu, true, 0x8ab1u);
+            }
+        }
         if (AdvanceCursorHorizontally(memory, cpu))
             return ExecutionReturned(SLIDE_DONE);
         if (SlideStep(memory, cpu, cpu->overflow, 0x8ad5u, &result, child, context))
@@ -330,10 +364,10 @@ Lufia2ExecutionResult Lufia2MenuCursorSlide(
     Compare8(cpu, A8(cpu), WramRead(wram, DELTA_Y));
     if (!cpu->carry) {
         SlideSubtract(wram, cpu->decimal, slot, SLOT_Y, DIRECTION_Y);
-        return SlideVertically(memory, cpu, child, context);
+        return SlideVertically(memory, cpu, child, context, false);
     }
     SlideSubtract(wram, cpu->decimal, slot, SLOT_X, DIRECTION_X);
-    return SlideHorizontally(memory, cpu, child, context);
+    return SlideHorizontally(memory, cpu, child, context, false);
 }
 
 Lufia2ExecutionResult Lufia2MenuResumeHorizontalCursorSlide(
@@ -341,7 +375,7 @@ Lufia2ExecutionResult Lufia2MenuResumeHorizontalCursorSlide(
     Lufia2PushedChildCall child, void *context) {
     if (!SlideContext(cpu, child))
         return ExecutionHandoff(cpu, 0x828ad6u);
-    return SlideHorizontally(memory, cpu, child, context);
+    return SlideHorizontally(memory, cpu, child, context, true);
 }
 
 Lufia2ExecutionResult Lufia2MenuResumeVerticalCursorSlide(
@@ -349,5 +383,5 @@ Lufia2ExecutionResult Lufia2MenuResumeVerticalCursorSlide(
     Lufia2PushedChildCall child, void *context) {
     if (!SlideContext(cpu, child))
         return ExecutionHandoff(cpu, 0x828a9bu);
-    return SlideVertically(memory, cpu, child, context);
+    return SlideVertically(memory, cpu, child, context, true);
 }
