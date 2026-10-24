@@ -16606,3 +16606,27 @@ source = "src/menu/special_menu.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "84:A455"
+name = "Lufia2SpecialMenuInitializeVideo"
+source = "src/menu/special_menu_video.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:A529"
+name = "Lufia2SpecialMenuInitializePalettes"
+source = "src/menu/special_menu_video.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:A569"
+name = "Lufia2SpecialMenuUploadGraphics"
+source = "src/menu/special_menu_video.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
