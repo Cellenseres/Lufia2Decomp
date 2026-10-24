@@ -1160,8 +1160,45 @@ static void FinishCellTypeBranch(const Lufia2Memory *memory, Lufia2CpuState *cpu
         Lufia2EventGoto(memory, cpu);
 }
 
+static bool CallOperandReader(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              EventRun *run, uint32_t site, uint32_t target,
+                              bool word, uint32_t *handoff) {
+    if (!CallChildWithFrame(memory, cpu, run->child, run->child_context,
+                            site, target, 2u, 0x80u)) {
+        run->unwind_site = site;
+        *handoff = site;
+        return false;
+    }
+    if (cpu->program_bank != 0x80u || cpu->direct_page || cpu->decimal ||
+        cpu->index_is_8_bit || cpu->accumulator_is_8_bit != !word) {
+        cpu->resume_pc = *handoff = site + 3u;
+        return false;
+    }
+    return true;
+}
+
+static unsigned FinishCellBranchWithReaders(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t handler, EventRun *run, uint32_t *handoff) {
+    BitImmediate8(cpu, 0x01u);
+    if (cpu->zero == (handler == EVENT_OP_GOTO_IF_CELL_TYPE_BIT0)) {
+        return CallOperandReader(memory, cpu, run, 0x80d2b2u, 0x80e8b9u, false, handoff) &&
+               CallOperandReader(memory, cpu, run, 0x80d2b5u, 0x80e8b9u, false, handoff)
+                   ? EVENT_OPCODE_NEXT : EVENT_OPCODE_HANDOFF;
+    }
+    if (!CallOperandReader(memory, cpu, run, 0x80d2a2u, 0x80e8adu, true, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    cpu->carry = 0u;
+    Add16Value(cpu, Read16Long(memory, EVENT_SCRIPT_BASE));
+    if (!CallOperandReader(memory, cpu, run, 0x80d2aau, 0x80e8f4u, true, handoff))
+        return EVENT_OPCODE_HANDOFF;
+    SetAccumulatorWidth(cpu, 1u);
+    return EVENT_OPCODE_NEXT;
+}
+
 static unsigned BranchOnCellType(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                 uint16_t handler, EventRun *run, uint32_t *handoff) {
+                                 uint16_t handler, EventRun *run, uint32_t *handoff,
+                                 bool call_readers) {
     if (run) {
         if (!CallCellProbeChild(memory, cpu, run, 0x800000u | handler, 0x80d2fbu, 2u,
                                 handoff))
@@ -1172,6 +1209,8 @@ static unsigned BranchOnCellType(const Lufia2Memory *memory, Lufia2CpuState *cpu
             return EVENT_OPCODE_HANDOFF;
         SimulateRtsFrame(memory, cpu);
     }
+    if (call_readers)
+        return FinishCellBranchWithReaders(memory, cpu, handler, run, handoff);
     FinishCellTypeBranch(memory, cpu, handler);
     return EVENT_OPCODE_NEXT;
 }
@@ -1204,7 +1243,7 @@ static Lufia2ExecutionResult RunCellTypeBranch(const Lufia2Memory *memory,
     run.child = child;
     run.child_context = context;
     uint32_t handoff = 0x800000u | handler;
-    if (BranchOnCellType(memory, cpu, handler, &run, &handoff) == EVENT_OPCODE_NEXT)
+    if (BranchOnCellType(memory, cpu, handler, &run, &handoff, true) == EVENT_OPCODE_NEXT)
         return ExecutionHandoff(cpu, 0x80cc35u);
     if (run.unwind_site)
         return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, run.unwind_site,
@@ -1231,7 +1270,7 @@ Lufia2ExecutionResult Lufia2FieldBranchUnlessCellType(const Lufia2Memory *memory
 static unsigned EventOpCellType(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                 uint16_t handler, EventRun *run, uint32_t *handoff) {
     EventRun *services = run && run->child && CellProbeContext(cpu) ? run : NULL;
-    return BranchOnCellType(memory, cpu, handler, services, handoff);
+    return BranchOnCellType(memory, cpu, handler, services, handoff, false);
 }
 
 /* $A7: $7F:D133 = map cell value at a position. */
@@ -2001,9 +2040,16 @@ static Lufia2ExecutionResult SendLegacyEventSound(const Lufia2Memory *memory,
 }
 
 static unsigned EventOpImmediateSound(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                      EventRun *run, uint32_t *handoff) {
+                                      EventRun *run, uint32_t *handoff,
+                                      bool call_reader) {
     EventRun *services = run && run->child && CellProbeContext(cpu) ? run : NULL;
-    Lufia2EventNextByte(memory, cpu, 0xd2bdu);
+    if (call_reader) {
+        if (!services || !CallCellProbeChild(memory, cpu, services,
+                0x80d2bbu, 0x80e8b9u, 2u, handoff))
+            return EVENT_OPCODE_HANDOFF;
+    } else {
+        Lufia2EventNextByte(memory, cpu, 0xd2bdu);
+    }
     return EventActorCall(memory, cpu, SendLegacyEventSound, 0x848775u, 0x84u, 0xd2c1u,
                           3u, services, handoff)
                ? EVENT_OPCODE_NEXT
@@ -2129,7 +2175,7 @@ unsigned Lufia2EventActorOpcode(
     case EVENT_OP_CONDITIONAL_OBJECT_REGION:
         return EventOpConditionalObjectRegion(memory, cpu, run, handoff);
     case EVENT_OP_IMMEDIATE_SOUND:
-        return EventOpImmediateSound(memory, cpu, run, handoff);
+        return EventOpImmediateSound(memory, cpu, run, handoff, false);
     case EVENT_OP_APPLY_AREA_TRANSITION:
         return EventOpApplyAreaTransition(memory, cpu, run, handoff);
     case EVENT_OP_OFFSET_POINT_X:
@@ -2288,8 +2334,10 @@ static Lufia2ExecutionResult RunEventActorService(const Lufia2Memory *memory,
     run.child = child;
     run.child_context = context;
     uint32_t handoff = 0u;
-    if (Lufia2EventActorOpcode(memory, cpu, handler, &run, &handoff) ==
-        EVENT_OPCODE_NEXT)
+    const unsigned flow = handler == EVENT_OP_IMMEDIATE_SOUND
+        ? EventOpImmediateSound(memory, cpu, &run, &handoff, true)
+        : Lufia2EventActorOpcode(memory, cpu, handler, &run, &handoff);
+    if (flow == EVENT_OPCODE_NEXT)
         return ExecutionHandoff(cpu, 0x80cc35u);
     if (run.unwind_site)
         return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, run.unwind_site,

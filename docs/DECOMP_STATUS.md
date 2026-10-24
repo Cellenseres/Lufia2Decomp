@@ -1,3 +1,18 @@
+# Preserve event-entry operand-reader calls - 2026-10-24
+
+Standalone 80:D2BB/D2E1/D2EE entry APIs now expose the original operand-reader
+JSRs alongside probe/sound calls. Internal event-VM routes retain their
+existing inline readers. Both paths preserve the original script stack,
+widths, data-bank rollover and BRL continuation at 80:CC35. Public signatures
+and the EventRun layout are unchanged. Metadata remains 2,158 verified,
+zero drafts and 866 WRAM locations.
+
+The shared consumer checkpoint covers 73,728 ROM/timed cases, 144 altered
+child contexts, 18,432 original-reader compositions and 480 admission guards.
+The full event VM passes 1,596 original-ROM cases. Actual registry/device/audio
+probes preserve exact baseline clocks and all compared guest/device states.
+Evidence and verification programs remain private.
+
 # Share special-menu fade continuations - 2026-10-24
 
 The original 84:A5B5/A5CA fade algorithms now share their wait/check phases
