@@ -42,6 +42,10 @@ Lufia2ExecutionResult Lufia2MenuScrollEquipmentDown(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2MenuResumeEquipmentScrollDown(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t resume_pc,
+    Lufia2PushedChildCall child, void *context);
+
 Lufia2ExecutionResult Lufia2MenuRenderEquipmentListRows(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
@@ -88,6 +92,10 @@ Lufia2ExecutionResult Lufia2MenuRunEquipmentSlots(
 
 Lufia2ExecutionResult Lufia2MenuChooseEquipmentItem(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2MenuResumeEquipmentChoice(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t resume_pc,
     Lufia2PushedChildCall child, void *context);
 
 Lufia2ExecutionResult Lufia2MenuEquipStrongestItems(

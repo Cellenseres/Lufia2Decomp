@@ -609,12 +609,13 @@ Lufia2ExecutionResult Lufia2MenuDrawEquipmentRow(
     return ExecutionReturned(0x82bcc3u);
 }
 
-static bool EquipmentAnimateScroll(PartyMenuCall *call, bool down) {
+static bool EquipmentAnimateScrollFrom(
+    PartyMenuCall *call, bool down, unsigned first_frame) {
     static const uint32_t sites[2][3] = {
         {0x82bcdcu, 0x82bce5u, 0x82bceeu},
         {0x82bd22u, 0x82bd2bu, 0x82bd34u}
     };
-    for (unsigned frame = 0u; frame < 3u; ++frame) {
+    for (unsigned frame = first_frame; frame < 3u; ++frame) {
         OpLoadA(call->cpu, (uint16_t)((down ? 8u : 2u) * (frame ? 2u : 1u)));
         OpSta(call->memory, call->cpu, OpAbs(call->cpu, EQUIPMENT_SCROLL_REQUEST));
         if (!PartyMenuChild(call, sites[down ? 1u : 0u][frame], 0x868b55u, 3u, 1u))
@@ -623,15 +624,19 @@ static bool EquipmentAnimateScroll(PartyMenuCall *call, bool down) {
     return true;
 }
 
-static bool EquipmentFinishScroll(PartyMenuCall *call, bool down) {
-    if (!PartyMenuChild(call, down ? 0x82bd38u : 0x82bcf2u,
-            down ? 0x829009u : 0x828f5eu, 2u, 1u))
-        return false;
+static void FinishEquipmentScrollRow(PartyMenuCall *call, bool down) {
     OpLoadA(call->cpu, 1u);
     OpSta(call->memory, call->cpu, OpAbs(call->cpu, EQUIPMENT_SCROLL_REQUEST));
     OpRepWidths(call->cpu, 0x20u);
     OpStepMem(call->memory, call->cpu,
         OpAbs(call->cpu, WRAM_MENU_SCROLL_ROW), down ? 1 : -1);
+}
+
+static bool EquipmentFinishScroll(PartyMenuCall *call, bool down) {
+    if (!PartyMenuChild(call, down ? 0x82bd38u : 0x82bcf2u,
+            down ? 0x829009u : 0x828f5eu, 2u, 1u))
+        return false;
+    FinishEquipmentScrollRow(call, down);
     return true;
 }
 
@@ -647,7 +652,7 @@ Lufia2ExecutionResult Lufia2MenuScrollEquipmentUp(
         OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_TOP_ROW)));
         OpWriteX(memory, cpu, OpDp(cpu, EQUIPMENT_TEXT_INDEX), cpu->x);
         if (!PartyMenuChild(&call, 0x82bcd4u, 0x82bcb6u, 2u, 1u) ||
-            !EquipmentAnimateScroll(&call, false) ||
+            !EquipmentAnimateScrollFrom(&call, false, 0u) ||
             !EquipmentFinishScroll(&call, false))
             return call.result;
     }
@@ -672,9 +677,36 @@ Lufia2ExecutionResult Lufia2MenuScrollEquipmentDown(
         if (!PartyMenuChild(&call, 0x82bd17u, 0x82bcb6u, 2u, 1u))
             return call.result;
         OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_TOP_ROW), 1);
-        if (!EquipmentAnimateScroll(&call, true) ||
+        if (!EquipmentAnimateScrollFrom(&call, true, 0u) ||
             !EquipmentFinishScroll(&call, true))
             return call.result;
+    }
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x82bd47u);
+}
+
+Lufia2ExecutionResult Lufia2MenuResumeEquipmentScrollDown(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t resume_pc,
+    Lufia2PushedChildCall child, void *context) {
+    if (!PartyMenuReady(cpu, child))
+        return ExecutionHandoff(cpu, resume_pc);
+    unsigned first_frame;
+    switch (resume_pc) {
+    case 0x82bd1au: first_frame = 0u; break;
+    case 0x82bd26u: first_frame = 1u; break;
+    case 0x82bd2fu: first_frame = 2u; break;
+    case 0x82bd38u: first_frame = 3u; break;
+    case 0x82bd3bu: first_frame = 3u; break;
+    default: return ExecutionHandoff(cpu, resume_pc);
+    }
+    PartyMenuCall call = {memory, cpu, child, context, {0}};
+    if (resume_pc == 0x82bd1au)
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_MENU_LIST_TOP_ROW), 1);
+    if (resume_pc == 0x82bd3bu) {
+        FinishEquipmentScrollRow(&call, true);
+    } else if (!EquipmentAnimateScrollFrom(&call, true, first_frame) ||
+               !EquipmentFinishScroll(&call, true)) {
+        return call.result;
     }
     OpSepWidths(cpu, 0x20u);
     return ExecutionReturned(0x82bd47u);
@@ -1270,27 +1302,23 @@ static bool DescribeEquipmentChoice(PartyMenuCall *call) {
     return PartyMenuChild(call, 0x82ba46u, 0x82fd81u, 2u, 1u);
 }
 
-Lufia2ExecutionResult Lufia2MenuChooseEquipmentItem(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (!PartyMenuReady(cpu, child))
-        return ExecutionHandoff(cpu, 0x82b907u);
-    PartyMenuCall call = {memory, cpu, child, context, {0}};
-    OpLoadA(cpu, 2u);
-    if (!PartyMenuChild(&call, 0x82b909u, 0x80953bu, 3u, 1u) ||
-        !PartyMenuChild(&call, 0x82b90du, 0x829ffbu, 2u, 1u) ||
-        !PartyMenuChild(&call, 0x82b910u, 0x82f846u, 2u, 1u))
-        return call.result;
-    bool preview = true;
+static Lufia2ExecutionResult RunEquipmentChoiceInput(
+    PartyMenuCall *call, bool command_ready) {
+    const Lufia2Memory *memory = call->memory;
+    Lufia2CpuState *cpu = call->cpu;
+    bool preview = !command_ready;
     for (;;) {
-        if (preview) {
-            if (!PreviewEquipmentChoice(&call))
-                return call.result;
-            OpLoadA(cpu, 1u);
-            preview = false;
+        if (!command_ready) {
+            if (preview) {
+                if (!PreviewEquipmentChoice(call))
+                    return call->result;
+                OpLoadA(cpu, 1u);
+                preview = false;
+            }
+            if (!PartyMenuChild(call, 0x82b916u, 0x828b08u, 2u, 1u))
+                return call->result;
         }
-        if (!PartyMenuChild(&call, 0x82b916u, 0x828b08u, 2u, 1u))
-            return call.result;
+        command_ready = false;
         const uint16_t command = OpA(cpu);
         const bool known = command == EQUIPMENT_INPUT_MOVE ||
             command == EQUIPMENT_INPUT_ACCEPT || command == EQUIPMENT_INPUT_CANCEL ||
@@ -1305,39 +1333,39 @@ Lufia2ExecutionResult Lufia2MenuChooseEquipmentItem(
             break;
         case EQUIPMENT_INPUT_ACCEPT: {
             bool applied;
-            if (!ApplyEquipmentChoice(&call, &applied))
-                return call.result;
+            if (!ApplyEquipmentChoice(call, &applied))
+                return call->result;
             if (applied)
                 return ExecutionReturned(0x82b9f2u);
-            if (!PartyMenuChild(&call, 0x82b9f3u, 0x8297e3u, 2u, 1u))
-                return call.result;
+            if (!PartyMenuChild(call, 0x82b9f3u, 0x8297e3u, 2u, 1u))
+                return call->result;
             OpLoadA(cpu, 1u);
             break;
         }
         case EQUIPMENT_INPUT_CANCEL:
-            if (!CloseEquipmentPicker(&call))
-                return call.result;
+            if (!CloseEquipmentPicker(call))
+                return call->result;
             return ExecutionReturned(0x82ba0bu);
         case EQUIPMENT_INPUT_DESCRIPTION:
-            if (!DescribeEquipmentChoice(&call))
-                return call.result;
+            if (!DescribeEquipmentChoice(call))
+                return call->result;
             OpLoadA(cpu, 0u);
             break;
         case EQUIPMENT_INPUT_PREVIOUS_MEMBER:
         case EQUIPMENT_INPUT_NEXT_MEMBER:
-            if (!CycleEquipmentPickerMember(&call, 0x82ba4fu, 0x82ba54u) ||
-                !RefreshEquipmentSlotRows(&call, 0x82ba5au, 0x82ba5du))
-                return call.result;
+            if (!CycleEquipmentPickerMember(call, 0x82ba4fu, 0x82ba54u) ||
+                !RefreshEquipmentSlotRows(call, 0x82ba5au, 0x82ba5du))
+                return call->result;
             OpStz(memory, cpu, OpDp(cpu, EQUIPMENT_DISPLAY_REQUEST));
             preview = true;
             break;
         case EQUIPMENT_INPUT_SCROLL_UP:
         case EQUIPMENT_INPUT_SCROLL_DOWN: {
             const bool down = command == EQUIPMENT_INPUT_SCROLL_DOWN;
-            if (!PartyMenuChild(&call, down ? 0x82ba23u : 0x82ba1du,
+            if (!PartyMenuChild(call, down ? 0x82ba23u : 0x82ba1du,
                     down ? 0x82bd02u : 0x82bcc4u, 2u, 1u) ||
-                !PartyMenuChild(&call, 0x82ba26u, 0x828c43u, 2u, 1u))
-                return call.result;
+                !PartyMenuChild(call, 0x82ba26u, 0x828c43u, 2u, 1u))
+                return call->result;
             preview = true;
             break;
         }
@@ -1346,6 +1374,33 @@ Lufia2ExecutionResult Lufia2MenuChooseEquipmentItem(
             break;
         }
     }
+}
+
+Lufia2ExecutionResult Lufia2MenuChooseEquipmentItem(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!PartyMenuReady(cpu, child))
+        return ExecutionHandoff(cpu, 0x82b907u);
+    PartyMenuCall call = {memory, cpu, child, context, {0}};
+    OpLoadA(cpu, 2u);
+    if (!PartyMenuChild(&call, 0x82b909u, 0x80953bu, 3u, 1u) ||
+        !PartyMenuChild(&call, 0x82b90du, 0x829ffbu, 2u, 1u) ||
+        !PartyMenuChild(&call, 0x82b910u, 0x82f846u, 2u, 1u))
+        return call.result;
+    return RunEquipmentChoiceInput(&call, false);
+}
+
+Lufia2ExecutionResult Lufia2MenuResumeEquipmentChoice(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t resume_pc,
+    Lufia2PushedChildCall child, void *context) {
+    if (!PartyMenuReady(cpu, child) ||
+        (resume_pc != 0x82b910u && resume_pc != 0x82b919u))
+        return ExecutionHandoff(cpu, resume_pc);
+    PartyMenuCall call = {memory, cpu, child, context, {0}};
+    if (resume_pc == 0x82b910u &&
+        !PartyMenuChild(&call, 0x82b910u, 0x82f846u, 2u, 1u))
+        return call.result;
+    return RunEquipmentChoiceInput(&call, resume_pc == 0x82b919u);
 }
 
 static void UpdateStrongestEquipmentCandidate(PartyMenuCall *call, bool primary) {

@@ -1,3 +1,37 @@
+# Resume verified equipment menus - 2026-10-24
+
+The existing equipment picker and down-scroll functions now expose exact
+post-child continuation APIs. Picker boundaries are 82:B910 and B919;
+down-scroll boundaries are 82:BD1A, BD26, BD2F, BD38 and BD3B. They resume
+the shared original input and animation phases from the live CPU and memory.
+No host coroutine state or temporary game-state file is introduced. These
+seven boundaries are parts of two existing functions, not seven new routines.
+Unsupported PCs or CPU contracts return an explicit original-PC handoff.
+
+The consumer can bind 82:B907 and BD02 with original fetch/data clock
+schedules and resume them after child frame waits. Other unwind locations
+still have an interpreter continuation; a binding does not promise that
+every possible caller or hardware context executes exclusively in C.
+Metadata remains 2,158 verified entries, zero drafts and 866 WRAM fields.
+
+The shared checkpoint passes 19,262 original-parent ROM/timed-ABI cases:
+6,144 normal cases, 6,974 bank/child-context cases covering all 38 child
+sites, and 6,144 cases with 16,880 forced returns to native continuations.
+CPU, full WRAM, open bus, ordered fetch/data transfers and each opcode's
+clock phase agree. Opaque paired child services isolate parent contracts;
+this does not claim original child-body execution in every synthetic case.
+Another 588 admission cases check side-effect-free rejection and valid
+frame positions. The affected up-scroll sibling passes 888 focused ROM/ABI
+cases with live-field changes, child contexts and unwinds.
+
+Two private input-driven 7,200-frame comparisons agree on every sampled
+CPU/WRAM/pixel/raw-PCM/master/coproc/beam/H/V field. Picker interpretation
+drops from 1,884 opcodes to 39 and 34, respectively. Down-scroll retains six
+decoded opcodes in one conservative fallback and zero in the other tape.
+Direct calls from native parents are not counted by interpreter bounce
+hooks. These are scoped integration results, not a whole-game speed claim.
+Tests, harnesses, proof receipts, ROM and save data remain private.
+
 # Board stakes, payout and particle contracts verified - 2026-10-24
 
 Six complete original routines are reconstructed in `board_game_results.c`:
