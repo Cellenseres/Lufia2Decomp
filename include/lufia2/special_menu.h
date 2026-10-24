@@ -13,6 +13,9 @@ Lufia2ExecutionResult Lufia2SpecialMenuHideSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2SpecialMenuMultiplyWords(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2SpecialMenuResumeFade(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, uint32_t landing);
 Lufia2ExecutionResult Lufia2SpecialMenuFadeIn(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

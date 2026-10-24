@@ -118,19 +118,14 @@ Lufia2ExecutionResult Lufia2SpecialMenuMultiplyWords(
     return ExecutionReturned(0x84a606u);
 }
 
-static Lufia2ExecutionResult FadeSpecialMenu(
+static Lufia2ExecutionResult ContinueSpecialMenuFade(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context, uint32_t entry, uint8_t control) {
-    if (!child || !SpecialMenuReady(cpu))
-        return ExecutionHandoff(cpu, entry);
+    Lufia2PushedChildCall child, void *context, uint32_t entry,
+    bool completed_frame) {
     Lufia2ExecutionResult result = ExecutionReturned(entry + 20u);
-    Push8(memory, cpu, PackStatus(cpu));
-    OpSepWidths(cpu, 0x20u);
-    OpStz(memory, cpu, OpAbs(cpu, WRAM_FADE_LEVEL));
-    OpLoadA(cpu, control);
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
     for (unsigned frame = 0u; frame < SPECIAL_MENU_FRAME_LIMIT; ++frame) {
-        if (!SpecialMenuCall(memory, cpu, child, context, entry + 11u,
+        if (!completed_frame &&
+            !SpecialMenuCall(memory, cpu, child, context, entry + 11u,
                              0x84a5a8u, &result))
             return result;
         OpLda(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
@@ -138,8 +133,31 @@ static Lufia2ExecutionResult FadeSpecialMenu(
             UnpackStatus(cpu, Pull8(memory, cpu));
             return result;
         }
+        completed_frame = false;
     }
     return ExecutionHandoff(cpu, entry + 11u);
+}
+
+static Lufia2ExecutionResult FadeSpecialMenu(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, uint32_t entry, uint8_t control) {
+    if (!child || !SpecialMenuReady(cpu))
+        return ExecutionHandoff(cpu, entry);
+    Push8(memory, cpu, PackStatus(cpu));
+    OpSepWidths(cpu, 0x20u);
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_FADE_LEVEL));
+    OpLoadA(cpu, control);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_FADE_CONTROL));
+    return ContinueSpecialMenuFade(memory, cpu, child, context, entry, false);
+}
+
+Lufia2ExecutionResult Lufia2SpecialMenuResumeFade(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context, uint32_t landing) {
+    if (!child || !SpecialMenuReady(cpu) ||
+        (landing != 0x84a5c3u && landing != 0x84a5d8u))
+        return ExecutionHandoff(cpu, landing);
+    return ContinueSpecialMenuFade(memory, cpu, child, context, landing - 14u, true);
 }
 
 Lufia2ExecutionResult Lufia2SpecialMenuFadeIn(

@@ -1,3 +1,18 @@
+# Share special-menu fade continuations - 2026-10-24
+
+The original 84:A5B5/A5CA fade algorithms now share their wait/check phases
+with exact post-wait continuation APIs at 84:A5C3/A5D8. Original PHP/PLP,
+status widths, memory order and frame service boundaries remain unchanged.
+There are no new metadata functions: 2,158 verified entries, zero drafts and
+866 WRAM locations remain recorded.
+
+The consumer checkpoint passes 40,960 original-ROM/timed cases, 108 changed
+child contexts and 4,096 resumed cases with 36,760 resumptions. All 256 saved
+status values are covered in 1,024 cases. The affected module separately
+passes 27,648 ROM cases, 44 guards, 104 unwinds and 260 changed returns.
+Two production-context synthetic NMI/device/audio replays match 32 paired
+frames, including all 30 original fade waits. Evidence and tests stay private.
+
 # Share original card animation phases - 2026-10-24
 
 The verified 84:B13D repositioning loop and 84:B22B card-turn phases now
