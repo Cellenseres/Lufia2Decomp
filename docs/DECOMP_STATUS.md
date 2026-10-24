@@ -1,3 +1,21 @@
+# Resume stake sprite animation - 2026-10-24
+
+84:C243 retains its complete original 24-frame, twelve-sprite algorithm. The
+initial entry and exact post-wait continuation 84:C268 share one C frame loop
+and counter advance. The new continuation API starts from live CPU/WRAM and
+returns an explicit original-PC handoff for unsupported modes. It is part of
+the existing verified function, not another function entry. Metadata remains
+2,158 verified entries, zero drafts and 866 WRAM locations.
+
+Original entry and continuation pass the shared ROM/timed-consumer batch:
+4,096 normal cases, 54 child contexts,2,048 resumed cases with 49,152 forced
+resumptions. The seven affected semantic functions additionally pass 7,168
+direct original-ROM cases, 53 guards, 448 stack endpoints and all five child
+site/mode pairs including unwinds and changed returns. The consumer's actual
+interpreter/NMI/device replay matches 25 paired frames after an injected
+original JSR; this is scoped synthetic integration evidence. Tests, tools, ROM
+and replay artifacts remain private in the consumer.
+
 # Resume verified equipment menus - 2026-10-24
 
 The existing equipment picker and down-scroll functions now expose exact

@@ -125,6 +125,9 @@ Lufia2ExecutionResult Lufia2CardGameClearStakeSprites(
 Lufia2ExecutionResult Lufia2CardGameAnimateStakeSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2CardGameResumeStakeAnimation(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 Lufia2ExecutionResult Lufia2CardGameDrawAcceptedStake(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

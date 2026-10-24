@@ -120,15 +120,15 @@ Lufia2ExecutionResult Lufia2CardGameClearStakeSprites(
     return ExecutionReturned(0x84c242u);
 }
 
-Lufia2ExecutionResult Lufia2CardGameAnimateStakeSprites(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (!child || !StakeReady(cpu))
-        return ExecutionHandoff(cpu, 0x84c243u);
-    StakeDisplay display = {memory, cpu, child, context,
-                            ExecutionReturned(0x84c26eu), 0u};
-    OpLoadA(cpu, 23u);
-    OpSta(memory, cpu, OpDp(cpu, 0u));
+static bool AdvanceStakeFrame(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpStepMem(memory, cpu, OpDp(cpu, 0u), -1);
+    return !cpu->negative;
+}
+
+static Lufia2ExecutionResult AnimateStakeFrames(StakeDisplay *display) {
+    const Lufia2Memory *memory = display->memory;
+    Lufia2CpuState *cpu = display->cpu;
     do {
         OpLdx(cpu, 0u);
         OpLdy(cpu, 11u);
@@ -144,12 +144,34 @@ Lufia2ExecutionResult Lufia2CardGameAnimateStakeSprites(
         OpSepWidths(cpu, 0x20u);
         OpLoadA(cpu, 0x80u);
         OpSta(memory, cpu, OpDp(cpu, 0x72u));
-        if (!StakeCall(&display, 0x84c265u, 0x84a5a8u))
-            return display.result;
-        OpRepWidths(cpu, 0x20u);
-        OpStepMem(memory, cpu, OpDp(cpu, 0u), -1);
-    } while (!cpu->negative);
-    return display.result;
+        if (!StakeCall(display, 0x84c265u, 0x84a5a8u))
+            return display->result;
+    } while (AdvanceStakeFrame(memory, cpu));
+    return display->result;
+}
+
+Lufia2ExecutionResult Lufia2CardGameAnimateStakeSprites(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || !StakeReady(cpu))
+        return ExecutionHandoff(cpu, 0x84c243u);
+    StakeDisplay display = {memory, cpu, child, context,
+                            ExecutionReturned(0x84c26eu), 0u};
+    OpLoadA(cpu, 23u);
+    OpSta(memory, cpu, OpDp(cpu, 0u));
+    return AnimateStakeFrames(&display);
+}
+
+Lufia2ExecutionResult Lufia2CardGameResumeStakeAnimation(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || cpu->program_bank != 0x84u ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit ||
+        cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x84c268u);
+    StakeDisplay display = {memory, cpu, child, context,
+                            ExecutionReturned(0x84c26eu), 0u};
+    return AdvanceStakeFrame(memory, cpu) ? AnimateStakeFrames(&display) : display.result;
 }
 
 static void LocateStakeDigit(const Lufia2Memory *memory,
