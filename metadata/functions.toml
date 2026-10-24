@@ -16940,5 +16940,77 @@ address = "84:AF11"
 name = "Lufia2CardGameDrawBalance"
 source = "src/menu/card_game_scene.c"
 entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:B827"
+name = "Lufia2PokerRun"
+source = "src/menu/poker.c"
+entry_mx = "M1X0"
 exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "84:BA40"
+name = "Lufia2PokerSumStakes"
+source = "src/menu/poker.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C578"
+name = "Lufia2PokerDrawStakes"
+source = "src/menu/poker.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C5AF"
+name = "Lufia2PokerDealCard"
+source = "src/menu/poker.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:C64B"
+name = "Lufia2PokerWaitMessage"
+source = "src/menu/poker.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C69C"
+name = "Lufia2PokerResetRound"
+source = "src/menu/poker.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C73A"
+name = "Lufia2PokerRevealOpponents"
+source = "src/menu/poker.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C794"
+name = "Lufia2PokerWaitForInput"
+source = "src/menu/poker.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C819"
+name = "Lufia2PokerDrawCarryover"
+source = "src/menu/poker.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
 status = "verified"

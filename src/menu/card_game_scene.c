@@ -398,7 +398,7 @@ Lufia2ExecutionResult Lufia2CardGameDrawRoundValues(
 Lufia2ExecutionResult Lufia2CardGameDrawBalance(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    if (!child || !SceneReady(cpu) || !cpu->accumulator_is_8_bit)
+    if (!child || !SceneReady(cpu))
         return ExecutionHandoff(cpu, 0x84af11u);
     CardScene scene = {memory, cpu, child, context,
                        ExecutionReturned(0x84af1bu), 0u};

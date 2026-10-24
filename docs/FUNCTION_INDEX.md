@@ -1444,7 +1444,16 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:B523` | `Lufia2CardGameLoadSceneTilemap` | verified | `src/menu/card_game_scene.c` |
 | `$84:B54F` | `Lufia2CardGameDrawSceneLabels` | verified | `src/menu/card_game_scene.c` |
 | `$84:B57F` | `Lufia2CardGameInitializeScene` | verified | `src/menu/card_game_actions.c` |
+| `$84:B827` | `Lufia2PokerRun` | verified | `src/menu/poker.c` |
+| `$84:BA40` | `Lufia2PokerSumStakes` | verified | `src/menu/poker.c` |
 | `$84:C350` | `Lufia2CardGameReadStakeCommand` | verified | `src/menu/card_game_actions.c` |
+| `$84:C578` | `Lufia2PokerDrawStakes` | verified | `src/menu/poker.c` |
+| `$84:C5AF` | `Lufia2PokerDealCard` | verified | `src/menu/poker.c` |
+| `$84:C64B` | `Lufia2PokerWaitMessage` | verified | `src/menu/poker.c` |
+| `$84:C69C` | `Lufia2PokerResetRound` | verified | `src/menu/poker.c` |
+| `$84:C73A` | `Lufia2PokerRevealOpponents` | verified | `src/menu/poker.c` |
+| `$84:C794` | `Lufia2PokerWaitForInput` | verified | `src/menu/poker.c` |
+| `$84:C819` | `Lufia2PokerDrawCarryover` | verified | `src/menu/poker.c` |
 | `$85:8045` | `Lufia2FieldDiagnosticsRunMenu` | verified | `src/field/field_diagnostics_control.c` |
 | `$85:821C` | `Lufia2FieldDiagnosticsEditValue` | verified | `src/field/field_diagnostics.c` |
 | `$85:8267` | `Lufia2FieldDiagnosticsHideCursor` | verified | `src/field/field_diagnostics.c` |

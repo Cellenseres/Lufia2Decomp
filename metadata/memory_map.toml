@@ -6375,7 +6375,7 @@ notes = "A705 stores reference hand rank followed by three competing ranks."
 address = "7E:7107"
 name = "card_game_hand_wins"
 width = 2
-count = 3
+count = 4
 owner = "menu"
 notes = "A705 clears and increments three hand comparison outcomes."
 
@@ -6471,7 +6471,7 @@ notes = "AC66 tracks the previous pending stake while debiting or refunding the 
 address = "7E:710F"
 name = "card_game_accepted_stake"
 width = 2
-count = 1
+count = 4
 owner = "menu"
 notes = "AC66 copies the confirmed stake here before closing the selection."
 
@@ -6498,3 +6498,67 @@ width = 2
 count = 3
 owner = "menu"
 notes = "B027 marks three opening cards available, clears the selected and randomly assigned entries, then consumes the last entry with a signed word decrement. Original searches remain unchecked and bank-relative."
+
+[[location]]
+address = "7E:7119"
+name = "poker_opponent_indices"
+width = 2
+count = 3
+owner = "menu"
+notes = "B827 initializes the three opponent indices to0,1,2."
+
+[[location]]
+address = "7E:7121"
+name = "poker_opponent_values"
+width = 2
+count = 3
+owner = "menu"
+notes = "B827 initializes these three opponent words to50,40,30."
+
+[[location]]
+address = "7E:7127"
+name = "poker_round_stake"
+width = 2
+count = 1
+owner = "menu"
+notes = "B827 clears this round accumulator before player actions and adds it to the current stake afterward."
+
+[[location]]
+address = "7E:712F"
+name = "poker_action_state"
+width = 2
+count = 1
+owner = "menu"
+notes = "B827 clears this word before each betting round; child routines own further meaning."
+
+[[location]]
+address = "7E:7131"
+name = "poker_marker_timer"
+width = 2
+count = 1
+owner = "menu"
+notes = "C64B counts down from ten before advancing marker tiles3504..3507."
+
+[[location]]
+address = "7E:713D"
+name = "poker_rounds_remaining"
+width = 2
+count = 1
+owner = "menu"
+notes = "C69C initializes three; B827 decrements after each active-hand deal."
+
+[[location]]
+address = "7E:713F"
+name = "poker_round_status"
+width = 2
+count = 1
+owner = "menu"
+notes = "C69C clears this word; B827 skips remaining card rounds when it equals three."
+
+[[location]]
+address = "7E:714B"
+name = "poker_carryover"
+width = 2
+count = 1
+owner = "menu"
+notes = "B827 carries a tied pot forward, caps it at60000 and includes it in later payouts."
