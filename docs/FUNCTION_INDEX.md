@@ -1459,6 +1459,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:BEE4` | `Lufia2PokerLocateStakeSprites` | verified | `src/menu/poker_decisions.c` |
 | `$84:BF0B` | `Lufia2PokerMatchOpponentStakes` | verified | `src/menu/poker_decisions.c` |
 | `$84:BF67` | `Lufia2PokerMatchOpponentStake` | verified | `src/menu/poker_decisions.c` |
+| `$84:C1E8` | `Lufia2CardGameRefundStake` | verified | `src/menu/card_game_stakes.c` |
+| `$84:C20A` | `Lufia2CardGameChargeStake` | verified | `src/menu/card_game_stakes.c` |
+| `$84:C22C` | `Lufia2CardGameClearStakeSprites` | verified | `src/menu/card_game_stakes.c` |
+| `$84:C243` | `Lufia2CardGameAnimateStakeSprites` | verified | `src/menu/card_game_stakes.c` |
+| `$84:C26F` | `Lufia2CardGameDrawAcceptedStake` | verified | `src/menu/card_game_stakes.c` |
+| `$84:C299` | `Lufia2CardGameDrawStakeTiles` | verified | `src/menu/card_game_stakes.c` |
+| `$84:C2CE` | `Lufia2CardGameDrawStakeSprites` | verified | `src/menu/card_game_stakes.c` |
 | `$84:C350` | `Lufia2CardGameReadStakeCommand` | verified | `src/menu/card_game_actions.c` |
 | `$84:C3B4` | `Lufia2PokerPrepareHandRanks` | verified | `src/menu/poker_results.c` |
 | `$84:C42A` | `Lufia2PokerMeasureHand` | verified | `src/menu/poker_results.c` |

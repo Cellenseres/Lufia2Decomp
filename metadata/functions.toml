@@ -17150,3 +17150,59 @@ source = "src/menu/poker_decisions.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "84:C1E8"
+name = "Lufia2CardGameRefundStake"
+source = "src/menu/card_game_stakes.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C20A"
+name = "Lufia2CardGameChargeStake"
+source = "src/menu/card_game_stakes.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C22C"
+name = "Lufia2CardGameClearStakeSprites"
+source = "src/menu/card_game_stakes.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C243"
+name = "Lufia2CardGameAnimateStakeSprites"
+source = "src/menu/card_game_stakes.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C26F"
+name = "Lufia2CardGameDrawAcceptedStake"
+source = "src/menu/card_game_stakes.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C299"
+name = "Lufia2CardGameDrawStakeTiles"
+source = "src/menu/card_game_stakes.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C2CE"
+name = "Lufia2CardGameDrawStakeSprites"
+source = "src/menu/card_game_stakes.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

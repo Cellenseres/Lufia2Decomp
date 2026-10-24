@@ -6602,3 +6602,27 @@ width = 2
 count = 1
 owner = "menu"
 notes = "BEE4 packs the original window origin into stake-sprite coordinates; BD96 reads it while drawing paired digits."
+
+[[location]]
+address = "7E:6008"
+name = "special_menu_multiply_left"
+width = 2
+count = 1
+owner = "menu"
+notes = "A5DF reads this word for original unsigned multiplication; C1E8/C20A supply the changed stake."
+
+[[location]]
+address = "7E:600A"
+name = "special_menu_multiply_right"
+width = 2
+count = 1
+owner = "menu"
+notes = "A5DF reads this multiplier; stake accounting uses ten balance units per stake."
+
+[[location]]
+address = "7E:600C"
+name = "special_menu_multiply_result"
+width = 2
+count = 1
+owner = "menu"
+notes = "A5DF writes the low product word consumed by stake refund/charge operations."

@@ -114,6 +114,25 @@ Lufia2ExecutionResult Lufia2CardGameDrawBalance(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2CardGameRefundStake(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2CardGameChargeStake(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2CardGameClearStakeSprites(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2CardGameAnimateStakeSprites(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2CardGameDrawAcceptedStake(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2CardGameDrawStakeTiles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2CardGameDrawStakeSprites(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
