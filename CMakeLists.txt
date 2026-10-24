@@ -85,6 +85,7 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_image_load.c
     src/menu/special_menu.c
     src/menu/special_menu_video.c
+    src/menu/card_game.c
     src/menu/menu_graphics_setup.c
     src/menu/menu_select_control.c
     src/menu/menu_select_transitions.c

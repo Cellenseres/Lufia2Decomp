@@ -6305,3 +6305,59 @@ count = 8
 stride = 2
 owner = "battle"
 notes = "85:8E7C reads low-byte selectors; negative ends the list. 81:8606 fills all16 bytes FF. No valid nonnegative gameplay entry observed."
+
+[[location]]
+address = "7E:7036"
+name = "card_game_deck"
+width = 2
+count = 52
+owner = "menu"
+notes = "Four suits of thirteen rank/suit words. B4A7 fills these; B4D9 swaps entries."
+
+[[location]]
+address = "7E:709E"
+name = "card_game_hands"
+width = 2
+count = 20
+owner = "menu"
+notes = "Four five-card hands, ten bytes apart. Original shuffle clears eighty bytes across adjacent workspaces."
+
+[[location]]
+address = "7E:70C6"
+name = "card_game_hand_counts"
+width = 2
+count = 4
+owner = "menu"
+notes = "Number of cards dealt to each hand. Original indices are not clamped."
+
+[[location]]
+address = "7E:70CE"
+name = "card_game_hand_totals"
+width = 2
+count = 4
+owner = "menu"
+notes = "Controller stores AE5E point totals here before AB61 classification."
+
+[[location]]
+address = "7E:70D8"
+name = "card_game_score_work"
+width = 1
+count = 5
+owner = "menu"
+notes = "AE5E sorts capped rank bytes here and mutates them during ace scoring."
+
+[[location]]
+address = "7E:70DD"
+name = "card_game_rank_work"
+width = 2
+count = 5
+owner = "menu"
+notes = "AB61 copies and sorts five rank/suit words before special-hand classification."
+
+[[location]]
+address = "7E:69DC"
+name = "card_game_round"
+width = 2
+count = 1
+owner = "menu"
+notes = "B4A7 initializes this word to one; AEE1 formats it for display."

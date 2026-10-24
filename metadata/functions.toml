@@ -16630,3 +16630,43 @@ source = "src/menu/special_menu_video.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "84:B4A7"
+name = "Lufia2CardGameBuildDeck"
+source = "src/menu/card_game.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:AF1C"
+name = "Lufia2CardGameDealCard"
+source = "src/menu/card_game.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:AE5E"
+name = "Lufia2CardGameScoreHand"
+source = "src/menu/card_game.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:AB61"
+name = "Lufia2CardGameRankHand"
+source = "src/menu/card_game.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:B4D9"
+name = "Lufia2CardGameShuffleDeck"
+source = "src/menu/card_game.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
