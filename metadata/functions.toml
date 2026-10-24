@@ -17014,3 +17014,83 @@ source = "src/menu/poker.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "84:C3B4"
+name = "Lufia2PokerPrepareHandRanks"
+source = "src/menu/poker_results.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C42A"
+name = "Lufia2PokerMeasureHand"
+source = "src/menu/poker_results.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C55B"
+name = "Lufia2PokerCountCardMatches"
+source = "src/menu/poker_results.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BB2F"
+name = "Lufia2PokerClassifyHand"
+source = "src/menu/poker_results.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BBF1"
+name = "Lufia2PokerRankHands"
+source = "src/menu/poker_results.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BA53"
+name = "Lufia2PokerResolveShowdown"
+source = "src/menu/poker_results.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BA1F"
+name = "Lufia2PokerRefreshSeatSprites"
+source = "src/menu/poker_results.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C6E8"
+name = "Lufia2PokerDrawSeatResult"
+source = "src/menu/poker_results.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BAF1"
+name = "Lufia2PokerDrawHandResult"
+source = "src/menu/poker_results.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:BBDA"
+name = "Lufia2PokerLocateResultText"
+source = "src/menu/poker_results.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"

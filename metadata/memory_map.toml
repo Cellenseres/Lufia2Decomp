@@ -6562,3 +6562,35 @@ width = 2
 count = 1
 owner = "menu"
 notes = "B827 carries a tied pot forward, caps it at60000 and includes it in later payouts."
+
+[[location]]
+address = "7E:70EF"
+name = "poker_rank_values"
+width = 2
+count = 4
+owner = "menu"
+notes = "Rank comparison words. Original C521/C556 store and C54B read the FIRST word without X; keep this original cross-seat behavior."
+
+[[location]]
+address = "7E:70F7"
+name = "poker_rank_display_rows"
+width = 2
+count = 4
+owner = "menu"
+notes = "Repeated-card totals during measurement, then result-window row counts after BB2F classification."
+
+[[location]]
+address = "7E:70FF"
+name = "poker_visible_card_counts"
+width = 2
+count = 4
+owner = "menu"
+notes = "C3B4 stores dealt counts, optionally minus a hidden card selected by11/24 direct-page context."
+
+[[location]]
+address = "7E:7141"
+name = "poker_rank_order"
+width = 2
+count = 4
+owner = "menu"
+notes = "BBF1 initializes seat indices0..3 and swaps them alongside rank/value arrays during destructive signed sorting."
