@@ -107,15 +107,40 @@ static unsigned EventRefreshParty(const Lufia2Memory *memory, Lufia2CpuState *cp
     return EVENT_OPCODE_NEXT;
 }
 
+static bool EventRefreshReadOperand(const Lufia2Memory *memory,
+                                     Lufia2CpuState *cpu, EventRun *run,
+                                     uint32_t site, uint32_t *handoff) {
+    if (!CallChildWithFrame(memory, cpu, run->child, run->child_context,
+                            site, 0x80e8b9u, 2u, 0x80u)) {
+        run->unwind_site = *handoff = site;
+        return false;
+    }
+    if (!EventRefreshReady(cpu, 0u)) {
+        cpu->resume_pc = *handoff = site + 3u;
+        return false;
+    }
+    return true;
+}
+
 static unsigned EventCenterLayers(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                  EventRun *run, uint32_t *handoff) {
+                                  EventRun *run, uint32_t *handoff, bool call_readers) {
     TransferDirectToA(cpu);
-    Lufia2EventNextByte(memory, cpu, 0xdba0u);
+    if (call_readers) {
+        if (!EventRefreshReadOperand(memory, cpu, run, 0x80db9eu, handoff))
+            return EVENT_OPCODE_HANDOFF;
+    } else {
+        Lufia2EventNextByte(memory, cpu, 0xdba0u);
+    }
     cpu->carry = 0;
     OpAdc(memory, cpu, OpAbs(cpu, WRAM_ACTOR_TILE_X));
     OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_C));
     OpStz(memory, cpu, OpDp(cpu, DP_SCRATCH_C + 1u));
-    Lufia2EventNextByte(memory, cpu, 0xdbabu);
+    if (call_readers) {
+        if (!EventRefreshReadOperand(memory, cpu, run, 0x80dba9u, handoff))
+            return EVENT_OPCODE_HANDOFF;
+    } else {
+        Lufia2EventNextByte(memory, cpu, 0xdbabu);
+    }
     cpu->carry = 0;
     OpAdc(memory, cpu, OpAbs(cpu, WRAM_ACTOR_TILE_Y));
     OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_E));
@@ -125,7 +150,7 @@ static unsigned EventCenterLayers(const Lufia2Memory *memory, Lufia2CpuState *cp
     if (!EventRefreshCall(memory, cpu, Lufia2FieldSetupLayerScroll, 0xdbb9u, 0x838d42u,
                           run, 0u, handoff) ||
         !EventRefreshCall(memory, cpu, Lufia2FieldActorSprites, 0xdbbdu, 0x83a21au, run,
-                          0u, handoff))
+                          1u, handoff))
         return EVENT_OPCODE_HANDOFF;
     OpRepWidths(cpu, 0x10u);
     OpLoadA(cpu, 8u);
@@ -136,7 +161,8 @@ static unsigned EventCenterLayers(const Lufia2Memory *memory, Lufia2CpuState *cp
 }
 
 static unsigned RunRefreshOpcode(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                 uint16_t handler, EventRun *run, uint32_t *handoff) {
+                                 uint16_t handler, EventRun *run, uint32_t *handoff,
+                                 bool call_readers) {
     if (handler == EVENT_OP_REFRESH_PARTY_CLEAR_MODE) {
         OpLoadA(cpu, 1u);
         OpTestBits(memory, cpu, OpDp(cpu, 0x72u), 0);
@@ -145,21 +171,21 @@ static unsigned RunRefreshOpcode(const Lufia2Memory *memory, Lufia2CpuState *cpu
     if (handler == EVENT_OP_REFRESH_PARTY)
         return EventRefreshParty(memory, cpu, run, handoff);
     if (handler == EVENT_OP_CENTER_LAYERS)
-        return EventCenterLayers(memory, cpu, run, handoff);
+        return EventCenterLayers(memory, cpu, run, handoff, call_readers);
     *handoff = 0x800000u | handler;
     return EVENT_OPCODE_HANDOFF;
 }
 
 unsigned Lufia2EventRefreshOpcode(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                   uint16_t handler, uint32_t *handoff) {
-    return RunRefreshOpcode(memory, cpu, handler, NULL, handoff);
+    return RunRefreshOpcode(memory, cpu, handler, NULL, handoff, false);
 }
 
 unsigned Lufia2EventRefreshOpcodeWithServices(const Lufia2Memory *memory,
                                               Lufia2CpuState *cpu, uint16_t handler,
                                               EventRun *run, uint32_t *handoff) {
     EventRun *services = run && run->child && EventRefreshContext(cpu) ? run : NULL;
-    return RunRefreshOpcode(memory, cpu, handler, services, handoff);
+    return RunRefreshOpcode(memory, cpu, handler, services, handoff, false);
 }
 
 static Lufia2ExecutionResult RunRefreshEntry(const Lufia2Memory *memory,
@@ -172,7 +198,7 @@ static Lufia2ExecutionResult RunRefreshEntry(const Lufia2Memory *memory,
     run.child = child;
     run.child_context = context;
     uint32_t handoff = 0u;
-    if (RunRefreshOpcode(memory, cpu, handler, &run, &handoff) == EVENT_OPCODE_NEXT)
+    if (RunRefreshOpcode(memory, cpu, handler, &run, &handoff, true) == EVENT_OPCODE_NEXT)
         return ExecutionHandoff(cpu, 0x80cc35u);
     if (run.unwind_site)
         return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, run.unwind_site,

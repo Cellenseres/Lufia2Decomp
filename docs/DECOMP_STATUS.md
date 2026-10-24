@@ -1,3 +1,18 @@
+# Preserve layer-centering entry calls - 2026-10-24
+
+The standalone 80:DB9D API exposes both original operand-reader JSRs while
+internal VM routes keep inline readers. Its 83:A21A child returns M1X1;
+the original REP restores word indices before saved DB/Y are pulled.
+Party-refresh entries retain the original PHY/PHA frames and three JSLs.
+Public API signatures and EventRun layout stay unchanged. Metadata remains
+2,158 verified, zero drafts and 866 WRAM locations.
+
+The shared consumer checkpoint passes 147,456 ROM/timed cases, 270 altered
+child contexts over 15 sites, 36,864 original-reader compositions and 936
+admission checks across six related event entries. The full event VM passes
+1,596 ROM cases. Three actual-registry probes match CPU/device/audio state
+and exact clocks with interpreter baselines. Evidence remains private.
+
 # Preserve event-entry operand-reader calls - 2026-10-24
 
 Standalone 80:D2BB/D2E1/D2EE entry APIs now expose the original operand-reader
