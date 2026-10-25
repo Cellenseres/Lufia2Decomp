@@ -6878,7 +6878,7 @@ address = "7E:7184"
 name = "card_table_selection_active"
 width = 2
 owner = "menu"
-notes = "Zero exits the original card selection loop."
+notes = "Zero exits the original card selection loop; E6C8 chooses its scan window and E673 scans twice this count minus one."
 
 [[location]]
 address = "7E:7194"
@@ -6935,7 +6935,7 @@ name = "card_table_random_selection"
 width = 2
 count = 2
 owner = "menu"
-notes = "Random mode and parameter selected by EC4F."
+notes = "EC4F selects the desired symbol at716C and search-mode flags at716E; E6C8/E74F/E773 test the mode high byte."
 
 [[location]]
 address = "7E:7172"

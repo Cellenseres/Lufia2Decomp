@@ -17798,3 +17798,35 @@ source = "src/menu/card_table_symbols.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:E6C8"
+name = "Lufia2CardTableChoosePreferredSymbol"
+source = "src/menu/card_table_search.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E74F"
+name = "Lufia2CardTableChooseSingleMatch"
+source = "src/menu/card_table_search.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E773"
+name = "Lufia2CardTableChooseDoubleMatch"
+source = "src/menu/card_table_search.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E7EF"
+name = "Lufia2CardTableScanSeventhSymbol"
+source = "src/menu/card_table_search.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
