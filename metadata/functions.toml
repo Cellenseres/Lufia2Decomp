@@ -17734,3 +17734,67 @@ source = "src/menu/card_table_round.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:E5B5"
+name = "Lufia2CardTableStopColumn"
+source = "src/menu/card_table_symbols.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E640"
+name = "Lufia2CardTablePrepareColumnSymbols"
+source = "src/menu/card_table_symbols.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E673"
+name = "Lufia2CardTableFindMatchingSymbol"
+source = "src/menu/card_table_symbols.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E817"
+name = "Lufia2CardTableRememberRoundSymbol"
+source = "src/menu/card_table_symbols.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E829"
+name = "Lufia2CardTableBuildColumnMatches"
+source = "src/menu/card_table_matches.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E906"
+name = "Lufia2CardTableReadMatchColumn"
+source = "src/menu/card_table_matches.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E91B"
+name = "Lufia2CardTableAppendMatchSymbol"
+source = "src/menu/card_table_matches.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E92A"
+name = "Lufia2CardTableStartColumns"
+source = "src/menu/card_table_symbols.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"

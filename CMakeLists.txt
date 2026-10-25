@@ -94,6 +94,8 @@ add_library(lufia2_decomp STATIC
     src/menu/card_table_numbers.c
     src/menu/card_table_line_selection.c
     src/menu/card_table_round.c
+    src/menu/card_table_symbols.c
+    src/menu/card_table_matches.c
     src/menu/menu_command.c
     src/menu/card_table_hdma.c
     src/menu/card_table_graphics.c
