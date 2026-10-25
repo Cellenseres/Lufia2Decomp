@@ -1516,8 +1516,17 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:D892` | `Lufia2BoardGameShuffleDrawOrder` | verified | `src/menu/board_game.c` |
 | `$84:DA9B` | `Lufia2CardTableRunSession` | verified | `src/menu/card_table_sessions.c` |
 | `$84:E9B1` | `Lufia2CardTableWaitFrame` | verified | `src/menu/card_table_frame.c` |
+| `$84:E9E3` | `Lufia2CardTableAdvanceColumns` | verified | `src/menu/card_table_columns.c` |
+| `$84:EA4B` | `Lufia2CardTableRefreshColumns` | verified | `src/menu/card_table_columns.c` |
+| `$84:EAA5` | `Lufia2CardTableDrawColumn` | verified | `src/menu/card_table_columns.c` |
 | `$84:EC4F` | `Lufia2CardTableInitialize` | verified | `src/menu/card_table_initialization.c` |
+| `$84:ED9E` | `Lufia2CardTableResetRoundBuffers` | verified | `src/menu/card_table_attributes.c` |
+| `$84:EDCB` | `Lufia2CardTableRestoreLineAttributes` | verified | `src/menu/card_table_attributes.c` |
 | `$84:EDFA` | `Lufia2CardTableLoadGraphics` | verified | `src/menu/card_table_graphics.c` |
+| `$84:F034` | `Lufia2CardTableAnimatePanelAttributes` | verified | `src/menu/card_table_attributes.c` |
+| `$84:F09C` | `Lufia2CardTableAnimateLineAttributes` | verified | `src/menu/card_table_attributes.c` |
+| `$84:F0D4` | `Lufia2CardTableAnimateAccentAttributes` | verified | `src/menu/card_table_attributes.c` |
+| `$84:F105` | `Lufia2CardTablePaintTileAttributes` | verified | `src/menu/card_table_attributes.c` |
 | `$84:F12F` | `Lufia2CardTableUpdateHdma` | verified | `src/menu/card_table_hdma.c` |
 | `$84:F173` | `Lufia2CardTableBuildHdma` | verified | `src/menu/card_table_hdma.c` |
 | `$84:F38A` | `Lufia2CardTableRunAlternateSession` | verified | `src/menu/card_table_sessions.c` |

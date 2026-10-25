@@ -17566,3 +17566,75 @@ source = "src/menu/card_table_frame.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:E9E3"
+name = "Lufia2CardTableAdvanceColumns"
+source = "src/menu/card_table_columns.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:EA4B"
+name = "Lufia2CardTableRefreshColumns"
+source = "src/menu/card_table_columns.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:EAA5"
+name = "Lufia2CardTableDrawColumn"
+source = "src/menu/card_table_columns.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:ED9E"
+name = "Lufia2CardTableResetRoundBuffers"
+source = "src/menu/card_table_attributes.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:EDCB"
+name = "Lufia2CardTableRestoreLineAttributes"
+source = "src/menu/card_table_attributes.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F034"
+name = "Lufia2CardTableAnimatePanelAttributes"
+source = "src/menu/card_table_attributes.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F09C"
+name = "Lufia2CardTableAnimateLineAttributes"
+source = "src/menu/card_table_attributes.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F0D4"
+name = "Lufia2CardTableAnimateAccentAttributes"
+source = "src/menu/card_table_attributes.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F105"
+name = "Lufia2CardTablePaintTileAttributes"
+source = "src/menu/card_table_attributes.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"

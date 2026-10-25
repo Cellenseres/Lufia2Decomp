@@ -6966,3 +6966,18 @@ name = "card_table_state_71ac"
 width = 2
 owner = "menu"
 notes = "State word cleared by EC4F."
+
+[[location]]
+address = "7E:714D"
+name = "card_table_round_buffer_tail"
+width = 1
+count = 5
+owner = "menu"
+notes = "Uncovered tail of the six words cleared from7146; earlier bytes reuse poker workspace."
+
+[[location]]
+address = "7E:7192"
+name = "card_table_line_attribute_timer"
+width = 2
+owner = "menu"
+notes = "Thirty-frame countdown controlling active-line tile attribute updates."

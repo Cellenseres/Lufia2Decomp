@@ -89,6 +89,8 @@ add_library(lufia2_decomp STATIC
     src/menu/special_menu_sound.c
     src/menu/poker_player.c
     src/menu/card_table_sessions.c
+    src/menu/card_table_columns.c
+    src/menu/card_table_attributes.c
     src/menu/card_table_hdma.c
     src/menu/card_table_graphics.c
     src/menu/card_table_initialization.c
