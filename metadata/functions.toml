@@ -17702,3 +17702,35 @@ source = "src/menu/card_table_line_selection.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:9F1A"
+name = "Lufia2MenuConsumeCommand"
+source = "src/menu/menu_command.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:DC60"
+name = "Lufia2CardTableRefreshRoundNumber"
+source = "src/menu/card_table_round.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:DC87"
+name = "Lufia2CardTableAdvanceRound"
+source = "src/menu/card_table_round.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:DE6E"
+name = "Lufia2CardTableChooseRoundColumn"
+source = "src/menu/card_table_round.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"

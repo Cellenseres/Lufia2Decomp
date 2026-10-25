@@ -1396,6 +1396,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:9CD4` | `Lufia2BattleUpdatePreviewBackground` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9D2C` | `Lufia2BattleBuildEnemyPreview` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9E1C` | `Lufia2FillWordBlock32` | verified | `src/system/block_move.c` |
+| `$84:9F1A` | `Lufia2MenuConsumeCommand` | verified | `src/menu/menu_command.c` |
 | `$84:A2B3` | `Lufia2SpecialMenuPushWindow` | verified | `src/menu/special_menu_windows.c` |
 | `$84:A36A` | `Lufia2SpecialMenuDrawWindowRow` | verified | `src/menu/special_menu_windows.c` |
 | `$84:A39B` | `Lufia2SpecialMenuPopWindow` | verified | `src/menu/special_menu_windows.c` |
@@ -1516,6 +1517,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:D892` | `Lufia2BoardGameShuffleDrawOrder` | verified | `src/menu/board_game.c` |
 | `$84:DA9B` | `Lufia2CardTableRunSession` | verified | `src/menu/card_table_sessions.c` |
 | `$84:DC55` | `Lufia2CardTableReadCommand` | verified | `src/menu/card_table_line_selection.c` |
+| `$84:DC60` | `Lufia2CardTableRefreshRoundNumber` | verified | `src/menu/card_table_round.c` |
+| `$84:DC87` | `Lufia2CardTableAdvanceRound` | verified | `src/menu/card_table_round.c` |
+| `$84:DE6E` | `Lufia2CardTableChooseRoundColumn` | verified | `src/menu/card_table_round.c` |
 | `$84:E194` | `Lufia2CardTableChooseLines` | verified | `src/menu/card_table_line_selection.c` |
 | `$84:E2A8` | `Lufia2CardTableSpendCredit` | verified | `src/menu/card_table_line_selection.c` |
 | `$84:E30F` | `Lufia2CardTableMarkExtraLines` | verified | `src/menu/card_table_line_selection.c` |

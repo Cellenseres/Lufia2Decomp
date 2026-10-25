@@ -6545,7 +6545,7 @@ name = "poker_rounds_remaining"
 width = 2
 count = 1
 owner = "menu"
-notes = "C69C initializes three; B827 decrements after each active-hand deal."
+notes = "C69C initializes three; B827 decrements after each active-hand deal. Card-table DC87 reuses the preceding byte and this first byte as its713C layout word."
 
 [[location]]
 address = "7E:713F"
@@ -6593,7 +6593,7 @@ name = "poker_rank_order"
 width = 2
 count = 4
 owner = "menu"
-notes = "BBF1 initializes seat indices0..3 and swaps them alongside rank/value arrays during destructive signed sorting."
+notes = "BBF1 initializes seat indices0..3 and swaps them alongside rank/value arrays during destructive signed sorting. Card-table DC87 scans match types from7146 within this shared workspace."
 
 [[location]]
 address = "7E:7149"
@@ -7037,3 +7037,31 @@ name = "card_table_third_number_movement"
 width = 2
 owner = "menu"
 notes = "EC18 consumes this third digit-change mask; bit0 moves tens and bit1 moves units."
+
+[[location]]
+address = "7E:7162"
+name = "card_table_match_values"
+width = 2
+owner = "menu"
+notes = "Indexed values paired with the round match types; shared scratch workspace."
+
+[[location]]
+address = "7E:7176"
+name = "card_table_round_countdown"
+width = 2
+owner = "menu"
+notes = "Decremented by DC87 and reset on normal or special mode transitions."
+
+[[location]]
+address = "7E:717A"
+name = "card_table_round_total"
+width = 2
+owner = "menu"
+notes = "Ordinary-round counter decremented by DC87 and restored when special mode ends."
+
+[[location]]
+address = "7E:717C"
+name = "card_table_special_round_countdown"
+width = 2
+owner = "menu"
+notes = "Decremented when the ordinary countdown reaches zero; selects the special transition."
