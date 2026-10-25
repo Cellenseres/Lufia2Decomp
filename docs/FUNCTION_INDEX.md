@@ -1514,6 +1514,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:D765` | `Lufia2BoardGameInitialize` | verified | `src/menu/board_game.c` |
 | `$84:D860` | `Lufia2BoardGameShuffleCells` | verified | `src/menu/board_game.c` |
 | `$84:D892` | `Lufia2BoardGameShuffleDrawOrder` | verified | `src/menu/board_game.c` |
+| `$84:DA9B` | `Lufia2CardTableRunSession` | verified | `src/menu/card_table_sessions.c` |
+| `$84:F38A` | `Lufia2CardTableRunAlternateSession` | verified | `src/menu/card_table_sessions.c` |
 | `$85:8045` | `Lufia2FieldDiagnosticsRunMenu` | verified | `src/field/field_diagnostics_control.c` |
 | `$85:821C` | `Lufia2FieldDiagnosticsEditValue` | verified | `src/field/field_diagnostics.c` |
 | `$85:8267` | `Lufia2FieldDiagnosticsHideCursor` | verified | `src/field/field_diagnostics.c` |

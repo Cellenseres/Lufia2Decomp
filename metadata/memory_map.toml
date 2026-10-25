@@ -6553,7 +6553,7 @@ name = "poker_round_status"
 width = 2
 count = 1
 owner = "menu"
-notes = "C69C clears this word; B827 skips remaining card rounds when it equals three."
+notes = "C69C clears this word; B827 skips remaining card rounds when it equals three. Card-table sessions reuse three words at7140,including its high byte and the rank workspace."
 
 [[location]]
 address = "7E:714B"
@@ -6633,7 +6633,7 @@ name = "board_game_line_totals"
 width = 2
 count = 12
 owner = "menu"
-notes = "Twelve sums for five rows,five columns and two diagonals. D892 clears thirteen words,also touching the adjacent completed-line count."
+notes = "Twelve sums for five rows,five columns and two diagonals. D892 clears thirteen words,also touching the adjacent completed-line count. The alternate card-table session reuses the word at71B6 as its stake."
 
 [[location]]
 address = "7E:71CA"
@@ -6850,3 +6850,81 @@ width = 2
 count = 1024
 owner = "menu"
 notes = "Original tile words retained below the nested windows."
+
+[[location]]
+address = "7E:6000"
+name = "card_table_phase"
+width = 1
+owner = "menu"
+notes = "Phase selected for the card-table update service."
+
+[[location]]
+address = "7E:7170"
+name = "card_table_variant_flags"
+width = 2
+owner = "menu"
+notes = "Bits 1 and 2 select the original table variant."
+
+[[location]]
+address = "7E:717E"
+name = "card_table_previous_hand_words"
+width = 2
+count = 3
+owner = "menu"
+notes = "Three hand words retained before the round services."
+
+[[location]]
+address = "7E:7184"
+name = "card_table_selection_active"
+width = 2
+owner = "menu"
+notes = "Zero exits the original card selection loop."
+
+[[location]]
+address = "7E:7194"
+name = "card_table_payout_index"
+width = 2
+owner = "menu"
+notes = "Current repeated payout index."
+
+[[location]]
+address = "7E:7196"
+name = "card_table_payout_state"
+width = 2
+owner = "menu"
+notes = "Payout service state initialized to one."
+
+[[location]]
+address = "7E:7198"
+name = "card_table_payout_value"
+width = 2
+owner = "menu"
+notes = "Value produced by the payout service."
+
+[[location]]
+address = "7E:71A2"
+name = "card_table_payout_active"
+width = 2
+owner = "menu"
+notes = "Payout processing flag initialized to one."
+
+[[location]]
+address = "7E:71A8"
+name = "card_table_payout_copy"
+width = 2
+owner = "menu"
+notes = "Saved payout value before its animation service."
+
+[[location]]
+address = "7E:71AE"
+name = "card_table_payout_remaining"
+width = 2
+owner = "menu"
+notes = "Signed countdown used by the payout loop."
+
+[[location]]
+address = "7E:71B0"
+name = "card_table_session_mode"
+width = 2
+owner = "menu"
+notes = "One for the first session,zero for the alternate session."

@@ -17494,3 +17494,19 @@ source = "src/menu/special_menu_sound.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:DA9B"
+name = "Lufia2CardTableRunSession"
+source = "src/menu/card_table_sessions.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F38A"
+name = "Lufia2CardTableRunAlternateSession"
+source = "src/menu/card_table_sessions.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
