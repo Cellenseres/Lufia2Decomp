@@ -1515,7 +1515,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:D860` | `Lufia2BoardGameShuffleCells` | verified | `src/menu/board_game.c` |
 | `$84:D892` | `Lufia2BoardGameShuffleDrawOrder` | verified | `src/menu/board_game.c` |
 | `$84:DA9B` | `Lufia2CardTableRunSession` | verified | `src/menu/card_table_sessions.c` |
+| `$84:E9B1` | `Lufia2CardTableWaitFrame` | verified | `src/menu/card_table_frame.c` |
+| `$84:EC4F` | `Lufia2CardTableInitialize` | verified | `src/menu/card_table_initialization.c` |
+| `$84:EDFA` | `Lufia2CardTableLoadGraphics` | verified | `src/menu/card_table_graphics.c` |
+| `$84:F12F` | `Lufia2CardTableUpdateHdma` | verified | `src/menu/card_table_hdma.c` |
+| `$84:F173` | `Lufia2CardTableBuildHdma` | verified | `src/menu/card_table_hdma.c` |
 | `$84:F38A` | `Lufia2CardTableRunAlternateSession` | verified | `src/menu/card_table_sessions.c` |
+| `$84:F78F` | `Lufia2CardTableLoadAlternateTiles` | verified | `src/menu/card_table_graphics.c` |
+| `$84:F7D3` | `Lufia2CardTableLoadAlternateGraphics` | verified | `src/menu/card_table_graphics.c` |
 | `$85:8045` | `Lufia2FieldDiagnosticsRunMenu` | verified | `src/field/field_diagnostics_control.c` |
 | `$85:821C` | `Lufia2FieldDiagnosticsEditValue` | verified | `src/field/field_diagnostics.c` |
 | `$85:8267` | `Lufia2FieldDiagnosticsHideCursor` | verified | `src/field/field_diagnostics.c` |

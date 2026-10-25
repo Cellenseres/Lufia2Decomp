@@ -17510,3 +17510,59 @@ source = "src/menu/card_table_sessions.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:F12F"
+name = "Lufia2CardTableUpdateHdma"
+source = "src/menu/card_table_hdma.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F173"
+name = "Lufia2CardTableBuildHdma"
+source = "src/menu/card_table_hdma.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F78F"
+name = "Lufia2CardTableLoadAlternateTiles"
+source = "src/menu/card_table_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:EC4F"
+name = "Lufia2CardTableInitialize"
+source = "src/menu/card_table_initialization.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:EDFA"
+name = "Lufia2CardTableLoadGraphics"
+source = "src/menu/card_table_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F7D3"
+name = "Lufia2CardTableLoadAlternateGraphics"
+source = "src/menu/card_table_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E9B1"
+name = "Lufia2CardTableWaitFrame"
+source = "src/menu/card_table_frame.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"

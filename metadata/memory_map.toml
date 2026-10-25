@@ -1068,7 +1068,7 @@ name = "field_map_attributes"
 width = 1
 count = 1
 owner = "field"
-notes = "Base of the byte-per-cell attribute grid; extent follows the active map. Battle HDMA pattern builders alias this base as their sixteen/thirty-two-word upload table. Transition-HDMA patterns also alias this base as a 224-word upload table."
+notes = "Base of the byte-per-cell attribute grid; extent follows the active map. Battle HDMA pattern builders alias this base as their sixteen/thirty-two-word upload table. Transition-HDMA patterns also alias this base as a 224-word upload table. F173 copies the table color template here,including its terminating zero word;F12F configures HDMA channel4 for these bytes."
 
 [[location]]
 address = "7F:D020"
@@ -6489,7 +6489,7 @@ name = "card_game_tile_buffer"
 width = 2
 count = 24
 owner = "menu"
-notes = "B2BC constructs the six-by-four card tile buffer; B387 copies it to tilemap and B429 emits its sprite tiles. Live DB addressing remains. Ends immediately before the deck. Treat OAM as shared field_oam_low_buffer storage."
+notes = "B2BC constructs the six-by-four card tile buffer; B387 copies it to tilemap and B429 emits its sprite tiles. Live DB addressing remains. Ends immediately before the deck. Treat OAM as shared field_oam_low_buffer storage. EC4F and F78F reuse wider symbol lists through7123 and7103 respectively;this count describes the card context."
 
 [[location]]
 address = "7E:7000"
@@ -6928,3 +6928,41 @@ name = "card_table_session_mode"
 width = 2
 owner = "menu"
 notes = "One for the first session,zero for the alternate session."
+
+[[location]]
+address = "7E:716C"
+name = "card_table_random_selection"
+width = 2
+count = 2
+owner = "menu"
+notes = "Random mode and parameter selected by EC4F."
+
+[[location]]
+address = "7E:7172"
+name = "card_table_pending_words"
+width = 2
+count = 2
+owner = "menu"
+notes = "Two state words cleared by EC4F after variant selection."
+
+[[location]]
+address = "7E:7178"
+name = "card_table_state_7178"
+width = 2
+owner = "menu"
+notes = "State word cleared after the initial drawing service."
+
+[[location]]
+address = "7E:7188"
+name = "card_table_state_counters"
+width = 2
+count = 5
+owner = "menu"
+notes = "Five words cleared by the table initializer."
+
+[[location]]
+address = "7E:71AC"
+name = "card_table_state_71ac"
+width = 2
+owner = "menu"
+notes = "State word cleared by EC4F."
