@@ -17638,3 +17638,67 @@ source = "src/menu/card_table_attributes.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:E194"
+name = "Lufia2CardTableChooseLines"
+source = "src/menu/card_table_line_selection.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E2A8"
+name = "Lufia2CardTableSpendCredit"
+source = "src/menu/card_table_line_selection.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E30F"
+name = "Lufia2CardTableMarkExtraLines"
+source = "src/menu/card_table_line_selection.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:EB36"
+name = "Lufia2CardTableDrawNumber"
+source = "src/menu/card_table_numbers.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:EBC0"
+name = "Lufia2CardTableDivideNumberByTen"
+source = "src/menu/card_table_numbers.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:EBDB"
+name = "Lufia2CardTableAnimateNumbers"
+source = "src/menu/card_table_numbers.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:EC18"
+name = "Lufia2CardTableAdvanceNumberSprites"
+source = "src/menu/card_table_numbers.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:DC55"
+name = "Lufia2CardTableReadCommand"
+source = "src/menu/card_table_line_selection.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"

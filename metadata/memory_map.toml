@@ -6885,35 +6885,35 @@ address = "7E:7194"
 name = "card_table_payout_index"
 width = 2
 owner = "menu"
-notes = "Current repeated payout index."
+notes = "Current repeated payout index. EB36 also consumes this as the number to draw."
 
 [[location]]
 address = "7E:7196"
 name = "card_table_payout_state"
 width = 2
 owner = "menu"
-notes = "Payout service state initialized to one."
+notes = "Payout service state initialized to one. EB36 uses this as one of three number slots."
 
 [[location]]
 address = "7E:7198"
 name = "card_table_payout_value"
 width = 2
 owner = "menu"
-notes = "Value produced by the payout service."
+notes = "Value produced by the payout service. EB36 returns changed digit bits here,one for tens and two for units."
 
 [[location]]
 address = "7E:71A2"
 name = "card_table_payout_active"
 width = 2
 owner = "menu"
-notes = "Payout processing flag initialized to one."
+notes = "Payout processing flag initialized to one. EBDB reuses this as the middle pending-number flag."
 
 [[location]]
 address = "7E:71A8"
 name = "card_table_payout_copy"
 width = 2
 owner = "menu"
-notes = "Saved payout value before its animation service."
+notes = "Saved payout value before its animation service. EBDB reuses this as the middle digit-change mask."
 
 [[location]]
 address = "7E:71AE"
@@ -6981,3 +6981,59 @@ name = "card_table_line_attribute_timer"
 width = 2
 owner = "menu"
 notes = "Thirty-frame countdown controlling active-line tile attribute updates."
+
+[[location]]
+address = "7E:0B58"
+name = "card_table_currency_borrow_tail"
+width = 1
+owner = "menu"
+notes = "E2A8 borrows with a full word at0B57,including this adjacent byte; preserve the original access width."
+
+[[location]]
+address = "7E:719A"
+name = "card_table_number_sprite_offset"
+width = 2
+owner = "menu"
+notes = "EB36 selects OAM120 plus sixteen times the number slot."
+
+[[location]]
+address = "7E:719C"
+name = "card_table_number_coordinates"
+width = 2
+owner = "menu"
+notes = "EB36 retains the packed coordinate word for both decimal digit sprites."
+
+[[location]]
+address = "7E:719E"
+name = "card_table_number_quotient"
+width = 2
+owner = "menu"
+notes = "EB36 retains the hardware quotient and repeatedly subtracts ten to obtain the units."
+
+[[location]]
+address = "7E:71A0"
+name = "card_table_first_number_pending"
+width = 2
+owner = "menu"
+notes = "EBDB tests this flag before animating the first pair;71A2 and71A4 are its other two slots."
+
+[[location]]
+address = "7E:71A4"
+name = "card_table_third_number_pending"
+width = 2
+owner = "menu"
+notes = "EBDB tests and finally clears this third pending-number flag."
+
+[[location]]
+address = "7E:71A6"
+name = "card_table_first_number_movement"
+width = 2
+owner = "menu"
+notes = "EC18 consumes this first digit-change mask;71A8 and71AA are the other two masks."
+
+[[location]]
+address = "7E:71AA"
+name = "card_table_third_number_movement"
+width = 2
+owner = "menu"
+notes = "EC18 consumes this third digit-change mask; bit0 moves tens and bit1 moves units."
