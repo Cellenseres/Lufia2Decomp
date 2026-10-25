@@ -1,3 +1,36 @@
+# Reconstruct original special-menu arithmetic - 2026-10-25
+
+Four complete original routines are reconstructed: 84:A3FC payout-step
+division, AE43 score division, C31B stake tens preparation and CEB3 draw
+scaling. C31B is a newly inventoried original C028 child, reached at C12A.
+The three existing catalogue candidates and this discovered helper are all
+verified and immediately selected by the consumer.
+
+The C uses original SNES divider/multiplier registers and literal original
+wait checkpoints: eight NOPs per division and four per multiplication.
+The consumer fetches and accounts every NOP before reading results. It does
+not substitute host arithmetic or remove waits. C31B preserves the original
+low-quotient-byte multiplication; CEB3 retains bit80 handling, high-byte
+clearing on that branch, OR packing, DB save/restore and rotated result.
+A3FC restores incoming status, including either M/X width; DP/decimal state
+is retained wherever the original does not depend on it.
+
+One shared checkpoint passes 16,384 CPU/full-WRAM/ordered-bus/device cases
+with exact NOP-PC/CPU snapshots and 73,728 production-ABI/ROM/timing cases
+across register widths, decimal flags, banks and ROM speeds. 180 admission
+cases and 20 contract gates pass. Strict MSVC/GCC/Clang C11, feature-off,
+default no-draft selection and reserved Release pass. An unreachable-code
+warning in the private rejecting-child stub was fixed without disabling
+warnings or changing semantic sources; no unexpected child is accepted.
+
+Original D508, ADF8, C12A and CDEC JSR callers execute all four native bodies
+in 53 paired hardware frames. Immediate CPU/full-WRAM returns and subsequent
+video/audio/exact clocks are identical; decoded counts 20/15/27/29 become
+zero. Existing runtime arithmetic devices compute instantly; the proof also
+checks every original wait fetch/cycle rather than relying on that shortcut.
+No unchanged full regression or second natural startup replay is claimed.
+Counts: 2,165 verified, zero drafts, 874 WRAM records. Tests remain private.
+
 # Reconstruct nested special-menu windows - 2026-10-25
 
 Three complete bounded original routines now own the special-menu window stack:
@@ -11852,7 +11885,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2161 functions in `metadata/functions.toml`: 2161 verified, 0 draft, 0 identified, 0 disabled.
+2165 functions in `metadata/functions.toml`: 2165 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

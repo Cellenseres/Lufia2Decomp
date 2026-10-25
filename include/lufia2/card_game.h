@@ -142,6 +142,9 @@ Lufia2ExecutionResult Lufia2CardGameDrawStakeTiles(
 Lufia2ExecutionResult Lufia2CardGameDrawStakeSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2CardGameSplitStakeTens(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

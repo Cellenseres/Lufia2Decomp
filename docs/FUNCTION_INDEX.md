@@ -1399,6 +1399,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:A2B3` | `Lufia2SpecialMenuPushWindow` | verified | `src/menu/special_menu_windows.c` |
 | `$84:A36A` | `Lufia2SpecialMenuDrawWindowRow` | verified | `src/menu/special_menu_windows.c` |
 | `$84:A39B` | `Lufia2SpecialMenuPopWindow` | verified | `src/menu/special_menu_windows.c` |
+| `$84:A3FC` | `Lufia2SpecialMenuDividePayoutStep` | verified | `src/menu/special_menu_arithmetic.c` |
 | `$84:A421` | `Lufia2BoardGameCreditPayoutStep` | verified | `src/menu/board_game_results.c` |
 | `$84:A455` | `Lufia2SpecialMenuInitializeVideo` | verified | `src/menu/special_menu_video.c` |
 | `$84:A4DD` | `Lufia2SpecialMenuClearTilemaps` | verified | `src/menu/special_menu.c` |
@@ -1420,6 +1421,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:ADC0` | `Lufia2CardGameDrawScoreFrame` | verified | `src/menu/card_game_scene.c` |
 | `$84:ADF3` | `Lufia2CardGameDrawHandScore` | verified | `src/menu/card_game_scene.c` |
 | `$84:AE30` | `Lufia2CardGameDrawScoreDigit` | verified | `src/menu/card_game_scene.c` |
+| `$84:AE43` | `Lufia2SpecialMenuDivideScore` | verified | `src/menu/special_menu_arithmetic.c` |
 | `$84:AE5E` | `Lufia2CardGameScoreHand` | verified | `src/menu/card_game.c` |
 | `$84:AEE1` | `Lufia2CardGameDrawRoundValues` | verified | `src/menu/card_game_scene.c` |
 | `$84:AF11` | `Lufia2CardGameDrawBalance` | verified | `src/menu/card_game_scene.c` |
@@ -1470,6 +1472,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:C26F` | `Lufia2CardGameDrawAcceptedStake` | verified | `src/menu/card_game_stakes.c` |
 | `$84:C299` | `Lufia2CardGameDrawStakeTiles` | verified | `src/menu/card_game_stakes.c` |
 | `$84:C2CE` | `Lufia2CardGameDrawStakeSprites` | verified | `src/menu/card_game_stakes.c` |
+| `$84:C31B` | `Lufia2CardGameSplitStakeTens` | verified | `src/menu/special_menu_arithmetic.c` |
 | `$84:C350` | `Lufia2CardGameReadStakeCommand` | verified | `src/menu/card_game_actions.c` |
 | `$84:C3B4` | `Lufia2PokerPrepareHandRanks` | verified | `src/menu/poker_results.c` |
 | `$84:C42A` | `Lufia2PokerMeasureHand` | verified | `src/menu/poker_results.c` |
@@ -1491,6 +1494,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:CD5F` | `Lufia2BoardGameDrawRemainingCount` | verified | `src/menu/board_game_selection.c` |
 | `$84:CD95` | `Lufia2BoardGameDrawDigitTiles` | verified | `src/menu/board_game_selection.c` |
 | `$84:CDA8` | `Lufia2BoardGameUpdateDrawAnimation` | verified | `src/menu/board_game_session.c` |
+| `$84:CEB3` | `Lufia2BoardGameScaleDraw` | verified | `src/menu/special_menu_arithmetic.c` |
 | `$84:CEE4` | `Lufia2BoardGameDrawSelectionBorder` | verified | `src/menu/board_game_selection.c` |
 | `$84:CF91` | `Lufia2BoardGameClearSelectionBorder` | verified | `src/menu/board_game_selection.c` |
 | `$84:D016` | `Lufia2BoardGameMoveSelectedGroup` | verified | `src/menu/board_game_selection.c` |

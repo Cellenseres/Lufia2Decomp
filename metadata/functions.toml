@@ -17446,3 +17446,35 @@ source = "src/menu/special_menu_windows.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:A3FC"
+name = "Lufia2SpecialMenuDividePayoutStep"
+source = "src/menu/special_menu_arithmetic.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:AE43"
+name = "Lufia2SpecialMenuDivideScore"
+source = "src/menu/special_menu_arithmetic.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:C31B"
+name = "Lufia2CardGameSplitStakeTens"
+source = "src/menu/special_menu_arithmetic.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:CEB3"
+name = "Lufia2BoardGameScaleDraw"
+source = "src/menu/special_menu_arithmetic.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
