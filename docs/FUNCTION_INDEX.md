@@ -1410,6 +1410,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:A5B5` | `Lufia2SpecialMenuFadeIn` | verified | `src/menu/special_menu.c` |
 | `$84:A5CA` | `Lufia2SpecialMenuFadeOut` | verified | `src/menu/special_menu.c` |
 | `$84:A5DF` | `Lufia2SpecialMenuMultiplyWords` | verified | `src/menu/special_menu.c` |
+| `$84:A607` | `Lufia2SpecialMenuSendSound` | verified | `src/menu/special_menu_sound.c` |
 | `$84:A689` | `Lufia2SpecialMenuRun` | verified | `src/menu/special_menu.c` |
 | `$84:A705` | `Lufia2CardGameRun` | verified | `src/menu/card_game_control.c` |
 | `$84:AAB5` | `Lufia2CardGameShowHandResult` | verified | `src/menu/card_game_control.c` |
@@ -1465,6 +1466,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:BEE4` | `Lufia2PokerLocateStakeSprites` | verified | `src/menu/poker_decisions.c` |
 | `$84:BF0B` | `Lufia2PokerMatchOpponentStakes` | verified | `src/menu/poker_decisions.c` |
 | `$84:BF67` | `Lufia2PokerMatchOpponentStake` | verified | `src/menu/poker_decisions.c` |
+| `$84:C028` | `Lufia2PokerTakePlayerTurn` | verified | `src/menu/poker_player.c` |
 | `$84:C1E8` | `Lufia2CardGameRefundStake` | verified | `src/menu/card_game_stakes.c` |
 | `$84:C20A` | `Lufia2CardGameChargeStake` | verified | `src/menu/card_game_stakes.c` |
 | `$84:C22C` | `Lufia2CardGameClearStakeSprites` | verified | `src/menu/card_game_stakes.c` |

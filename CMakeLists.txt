@@ -86,6 +86,8 @@ add_library(lufia2_decomp STATIC
     src/menu/special_menu.c
     src/menu/special_menu_windows.c
     src/menu/special_menu_arithmetic.c
+    src/menu/special_menu_sound.c
+    src/menu/poker_player.c
     src/menu/special_menu_video.c
     src/menu/card_game.c
     src/menu/card_game_control.c

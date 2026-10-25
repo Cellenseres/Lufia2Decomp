@@ -17478,3 +17478,19 @@ source = "src/menu/special_menu_arithmetic.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "84:C028"
+name = "Lufia2PokerTakePlayerTurn"
+source = "src/menu/poker_player.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:A607"
+name = "Lufia2SpecialMenuSendSound"
+source = "src/menu/special_menu_sound.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"

@@ -4,6 +4,7 @@
 #include "lufia2/card_game.h"
 #include "lufia2/board_game.h"
 #include "system/wram.h"
+#include "menu/arithmetic_wait.h"
 
 enum {
     MATH_QUOTIENT = 0u,
@@ -11,12 +12,6 @@ enum {
     DRAW_SIGN = 0x22u,
     DRAW_PACKED_FACTOR = 0x26u
 };
-
-static void WaitForArithmetic(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                              uint32_t first_nop, unsigned count) {
-    for (unsigned step = 0u; step < count; ++step)
-        EmitExecutionCheckpoint(memory, cpu, first_nop + step);
-}
 
 static void DivideByTen(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                          uint32_t first_nop) {
