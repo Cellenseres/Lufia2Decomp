@@ -421,6 +421,10 @@ Lufia2ExecutionResult Lufia2ResetSoundResources(
 Lufia2ExecutionResult Lufia2UploadBootSoundBlocks(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Entry phase stops before the first acknowledgement. */
+Lufia2ExecutionResult Lufia2BeginBootSoundTransfer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2SystemInitializeVideoMemory(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

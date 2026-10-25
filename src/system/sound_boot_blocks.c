@@ -120,14 +120,26 @@ static uint8_t SendBootSoundBlock(const Lufia2Memory *memory, Lufia2CpuState *cp
     return 1u;
 }
 
-Lufia2ExecutionResult Lufia2UploadBootSoundBlocks(const Lufia2Memory *memory,
-                                                  Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x80u || cpu->decimal)
-        return ExecutionHandoff(cpu, 0x809c0fu);
+static void PrepareBootSoundTransfer(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Push8(memory, cpu, PackStatus(cpu));
     OpRepWidths(cpu, 0x30u);
     OpLdy(cpu, 0u);
     OpLoadA(cpu, 0xbbaau);
+}
+
+Lufia2ExecutionResult Lufia2BeginBootSoundTransfer(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x809c0fu);
+    PrepareBootSoundTransfer(memory, cpu);
+    return ExecutionHandoff(cpu, 0x809c18u);
+}
+
+Lufia2ExecutionResult Lufia2UploadBootSoundBlocks(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x809c0fu);
+    PrepareBootSoundTransfer(memory, cpu);
     if (!BootSoundAcknowledged(memory, cpu))
         return ExecutionHandoff(cpu, 0x809c18u);
     OpSepWidths(cpu, 0x20u);

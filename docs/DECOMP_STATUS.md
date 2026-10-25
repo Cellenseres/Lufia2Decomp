@@ -1,3 +1,19 @@
+# Expose the original boot-sound preparation phase - 2026-10-25
+
+Lufia2BeginBootSoundTransfer executes PHP, REP30, LDY0 and LDA BBAA,
+then yields at the original 80:9C18 acknowledgement boundary. The complete
+Lufia2UploadBootSoundBlocks API shares this preparation without changing its
+bounded polling, transfer loops or resume-PC behavior. Direct-page contents
+are irrelevant to this prefix and remain unrestricted.
+
+The shared final-entry checkpoint passes 40,960 original-ROM/timed prefix
+states across sound register widths, direct pages, ROM speeds and all 256
+object-dispatch opcode bytes. Consumer startup executes the sound body and
+preserves 5,100 paired frames, including exact clocks and PCM. This shares
+the scene-reader checkpoint; intermediate commits were not tested separately.
+Metadata remains 2,158 verified, zero drafts and 866 WRAM records. No tests
+or ROM are committed.
+
 # Preserve original scene operand call boundaries - 2026-10-25
 
 The complete 80:BA39 scene-operation service and six scene-display families
