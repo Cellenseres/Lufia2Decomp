@@ -17830,3 +17830,115 @@ source = "src/menu/card_table_search.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:A60C"
+name = "Lufia2SpecialMenuPlaySong"
+source = "src/menu/special_menu_sound.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:DEB9"
+name = "Lufia2CardTableRunSelectedRound"
+source = "src/menu/card_table_round.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:DEDC"
+name = "Lufia2CardTableChooseRoundMode"
+source = "src/menu/card_table_mode.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E334"
+name = "Lufia2CardTablePayRound"
+source = "src/menu/card_table_regular_outcome.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E3F6"
+name = "Lufia2CardTableMarkPairedLines"
+source = "src/menu/card_table_outcome.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E416"
+name = "Lufia2CardTableUpdateRoundOutcome"
+source = "src/menu/card_table_regular_outcome.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:E489"
+name = "Lufia2CardTableEvaluateMatches"
+source = "src/menu/card_table_regular_outcome.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F01A"
+name = "Lufia2CardTableRestoreTilemap"
+source = "src/menu/card_table_outcome.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F4C6"
+name = "Lufia2CardTableStopAlternateColumns"
+source = "src/menu/card_table_alternate_outcome.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F53C"
+name = "Lufia2CardTablePayAlternateRound"
+source = "src/menu/card_table_alternate_outcome.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F589"
+name = "Lufia2CardTableMarkAlternatePairedLines"
+source = "src/menu/card_table_outcome.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F5A5"
+name = "Lufia2CardTableCalculateAlternatePayout"
+source = "src/menu/card_table_alternate_outcome.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F648"
+name = "Lufia2CardTableChooseAlternateLines"
+source = "src/menu/card_table_alternate_outcome.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:F74E"
+name = "Lufia2CardTableTryPayStake"
+source = "src/menu/card_table_outcome.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"

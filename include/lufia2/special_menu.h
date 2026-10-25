@@ -53,6 +53,10 @@ Lufia2ExecutionResult Lufia2SpecialMenuDividePayoutStep(
 Lufia2ExecutionResult Lufia2SpecialMenuDivideScore(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2SpecialMenuPlaySong(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 #ifdef __cplusplus
 }
 #endif

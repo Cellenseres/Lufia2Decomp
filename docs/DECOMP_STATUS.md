@@ -1,3 +1,41 @@
+# Original card-table round outcomes - 2026-10-25
+
+Fourteen complete routines reconstruct selected-round dispatch, regular and
+alternate modes/payouts, paired-line counters, match evaluation, tilemap restore,
+alternate column stopping/line choice, stake payment and the song wrapper.
+E416/E489 share their original tail. F74E keeps both returns and the original
+word borrow across 0B57/0B58. Waits, MMIO, sound handshakes and bus reads remain.
+
+The earlier 57,344 matching cases lacked one mode-child witness. Another 4,928
+directed cases cover all 100 sites, 101 unwind boundaries and 505 changed
+returns. The 1,792 nested cases exercise 12,128 native child calls and 11,672
+exact NOP checkpoints. Strict MSVC, ARM GCC and Clang C11 checks pass.
+
+Consumer evidence covers 11,520 timed ROM/ABI cases, 900 changed contexts,
+504 pure admission guards and 49 contract gates. A focused 256-case/36-guard
+follow-up checks the copy budget: its complete 187,348-cycle bound includes RTS
+and refresh; 188,000 retains 652 spare cycles. Six timing records stream 1,024
+original word transfers. The standalone algorithm and device guards remain.
+
+All 224 fresh-process original-JSR pairs match CPU, full WRAM, serialized
+hardware and newly collected PCM. Every root executes natively in 16 contexts.
+Child yields and guarded fallbacks remain explicit. Certified wait batches
+remain active. The generated absolute APU caller invokes its idle seam; a
+relative-caller-only counter had missed this active absolute-time path.
+
+The shared cost checkpoint uses 224 alternating paired intervals plus focused
+follow-ups. Copy median falls from 2.784 to 0.983 ms in the measured desktop
+interval. Other results are smaller or inconclusive. Selected-round means vary
+across the retained initial, repeat and equal-table controls. A native binding
+is not a speed claim. No whole-game, ARM or 60 FPS acceptance is asserted.
+
+The reserved Windows Release, feature-off compilation, default no-draft
+selection and catalogue checks pass: 2,223 verified selected entries, zero
+drafts and 904 WRAM records. The parallel owner renderer commit is preserved;
+14 final owner-revision smoke pairs also match. Unchanged unrelated full
+regression is deferred. Tests, proof programs and ROM remain private. The
+combined revision is the tested checkpoint, not each intermediate commit.
+
 # Original card-table search choices - 2026-10-25
 
 Four complete original algorithms are reconstructed and bound: preferred-symbol
@@ -12272,7 +12310,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2197 functions in `metadata/functions.toml`: 2197 verified, 0 draft, 0 identified, 0 disabled.
+2223 functions in `metadata/functions.toml`: 2223 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

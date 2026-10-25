@@ -405,3 +405,36 @@ Lufia2ExecutionResult Lufia2CardTableChooseRoundColumn(
     OpSta(memory, cpu, OpAbs(cpu, ROUND_LAYOUT));
     return service.result;
 }
+
+Lufia2ExecutionResult Lufia2CardTableRunSelectedRound(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || !TableServiceReady(cpu, false) ||
+        cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x84deb9u);
+    TableService service = {memory, cpu, child, context,
+        ExecutionReturned(0x84dedbu), false};
+    for (;;) {
+        if (!TableServiceCall(&service, 0x84deb9u, 0x84de6eu, false))
+            return service.result;
+        OpLda(memory, cpu, OpAbs(cpu, (WRAM_POKER_ROUND_STATUS - 1u) & 0xffffu));
+        OpDecA(cpu);
+        if (cpu->negative) {
+            if (!TableServiceCall(&service, 0x84dec2u, 0x84e6c8u, false) ||
+                !TableServiceCall(&service, 0x84dec5u, 0x84e5b5u, false))
+                return service.result;
+            continue;
+        }
+        OpDecA(cpu);
+        if (cpu->negative) {
+            if (!TableServiceCall(&service, 0x84decdu, 0x84e74fu, false) ||
+                !TableServiceCall(&service, 0x84ded0u, 0x84e5b5u, false))
+                return service.result;
+            continue;
+        }
+        if (!TableServiceCall(&service, 0x84ded5u, 0x84e773u, false))
+            return service.result;
+        TableServiceCall(&service, 0x84ded8u, 0x84e5b5u, false);
+        return service.result;
+    }
+}
