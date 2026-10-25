@@ -1,3 +1,18 @@
+# Bounded card-column continuations - 2026-10-25
+
+Two exact internal boundaries extend the existing verified column algorithms:
+EA30 advances a sprite strip and EAB4 draws symbol rows. Both reuse the whole
+routines' C loops; no original subroutines or instruction adapters are counted
+as new algorithms. Original whole-entry behavior remains unbounded by host time.
+
+The shared checkpoint covers 51,712 original CPU/WRAM/bus prefixes, 20 input
+guards, 9,216 affected whole-entry cases, eight child unwinds, 40 changed returns
+and 2,304 nested cases. Consumer checks add 5,760 timed ROM/ABI cases, 85 pure
+admission guards, 9,358 registry/accounting checks and 224 hardware/PCM pairs.
+Strict MSVC, ARM GCC and Clang C11 checks and Windows Release integration pass.
+Unchanged unrelated full regression is deferred. See
+[CARD_TABLE_CONTINUATIONS.md](CARD_TABLE_CONTINUATIONS.md) for the boundary scope.
+
 # Original card-table round outcomes - 2026-10-25
 
 Fourteen complete routines reconstruct selected-round dispatch, regular and

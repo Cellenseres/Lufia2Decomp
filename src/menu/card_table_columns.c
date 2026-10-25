@@ -47,6 +47,19 @@ static bool AdvanceColumn(TableService *service) {
     return true;
 }
 
+static void AdvanceSpriteStrip(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    unsigned count) {
+    const bool bounded = count != 0u;
+    do {
+        OpLda(memory, cpu, OpAbsX(cpu, COLUMN_OAM));
+        cpu->carry = 0u;
+        OpAdc(memory, cpu, OpDp(cpu, COLUMN_STEP));
+        OpSta(memory, cpu, OpAbsX(cpu, COLUMN_OAM));
+        for (unsigned byte = 0u; byte < 4u; ++byte) OpInx(cpu);
+        OpDey(cpu);
+    } while (!cpu->zero && (!bounded || --count));
+}
+
 static void AdvanceColumnSprites(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdy(cpu, 24u);
     OpTxa(cpu);
@@ -60,14 +73,16 @@ static void AdvanceColumnSprites(const Lufia2Memory *memory, Lufia2CpuState *cpu
     cpu->carry = 0u;
     OpAdc(memory, cpu, OpDp(cpu, COLUMN_SPRITE_OFFSET));
     OpTax(cpu);
-    do {
-        OpLda(memory, cpu, OpAbsX(cpu, COLUMN_OAM));
-        cpu->carry = 0u;
-        OpAdc(memory, cpu, OpDp(cpu, COLUMN_STEP));
-        OpSta(memory, cpu, OpAbsX(cpu, COLUMN_OAM));
-        for (unsigned byte = 0u; byte < 4u; ++byte) OpInx(cpu);
-        OpDey(cpu);
-    } while (!cpu->zero);
+    AdvanceSpriteStrip(memory, cpu, 0u);
+}
+
+Lufia2ExecutionResult Lufia2CardTableContinueSpriteStrip(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned count) {
+    if (!TableServiceReady(cpu, true) || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || !count || count > 24u || !cpu->y || cpu->y > 24u)
+        return ExecutionHandoff(cpu, 0x84ea30u);
+    AdvanceSpriteStrip(memory, cpu, count);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x84ea40u : 0x84ea30u);
 }
 
 Lufia2ExecutionResult Lufia2CardTableAdvanceColumns(
@@ -180,6 +195,24 @@ static void DrawColumnSymbol(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSta(memory, cpu, OpDp(cpu, COLUMN_COORDINATE));
 }
 
+static void DrawColumnRows(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    unsigned count) {
+    const bool bounded = count != 0u;
+    do {
+        DrawColumnSymbol(memory, cpu);
+        OpStepMem(memory, cpu, OpDp(cpu, COLUMN_ROWS), -1);
+    } while (!cpu->zero && (!bounded || --count));
+}
+
+Lufia2ExecutionResult Lufia2CardTableContinueColumnDrawing(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned count) {
+    if (!TableServiceReady(cpu, true) || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || !count || count > 6u)
+        return ExecutionHandoff(cpu, 0x84eab4u);
+    DrawColumnRows(memory, cpu, count);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x84eb35u : 0x84eab4u);
+}
+
 Lufia2ExecutionResult Lufia2CardTableDrawColumn(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!TableServiceReady(cpu, true) || cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
@@ -190,9 +223,6 @@ Lufia2ExecutionResult Lufia2CardTableDrawColumn(
     OpWriteX(memory, cpu, OpDp(cpu, COLUMN_OAM_OFFSET), cpu->x);
     OpLoadA(cpu, 6u);
     OpSta(memory, cpu, OpDp(cpu, COLUMN_ROWS));
-    do {
-        DrawColumnSymbol(memory, cpu);
-        OpStepMem(memory, cpu, OpDp(cpu, COLUMN_ROWS), -1);
-    } while (!cpu->zero);
+    DrawColumnRows(memory, cpu, 0u);
     return ExecutionReturned(0x84eb35u);
 }

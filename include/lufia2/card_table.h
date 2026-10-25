@@ -3,6 +3,8 @@
 
 #include "lufia2/execution.h"
 
+#define LUFIA2_CARD_TABLE_COLUMN_SPANS 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,6 +43,12 @@ Lufia2ExecutionResult Lufia2CardTableRefreshColumns(
     Lufia2PushedChildCall child, void *context);
 Lufia2ExecutionResult Lufia2CardTableDrawColumn(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
+/* Resume EA30 for at most count complete sprites. */
+Lufia2ExecutionResult Lufia2CardTableContinueSpriteStrip(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned count);
+/* Resume EAB4 for at most count complete rows. */
+Lufia2ExecutionResult Lufia2CardTableContinueColumnDrawing(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned count);
 Lufia2ExecutionResult Lufia2CardTableResetRoundBuffers(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

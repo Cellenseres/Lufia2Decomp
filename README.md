@@ -5,6 +5,9 @@ Sinistrals* (SNES, USA), written as C for use by SNES recompilation and
 tooling. Its main consumer is
 [Lufia2SNESRecomp](https://github.com/Cellenseres/Lufia2SNESRecomp).
 
+Exact internal column-loop contracts are documented in
+[Card-column continuations](docs/CARD_TABLE_CONTINUATIONS.md).
+
 ## What this is not
 
 - Not a ROM repository: no ROM, extracted assets or other copyrighted game
