@@ -1,3 +1,18 @@
+# Preserve original scene operand call boundaries - 2026-10-25
+
+The complete 80:BA39 scene-operation service and six scene-display families
+now expose their original C0B7 child calls. Real guest return frames, child
+unwinds, changed return contexts and dynamic operation returns are retained.
+Internal text-VM routes keep their inline operand reads. The header declares
+this callback contract so consumers reject incompatible library revisions.
+
+The shared final-entry checkpoint covers 8,192 ROM/timed scene states and
+630 altered child contexts at all 35 call sites. Existing scene-owner,
+recovery/display and internal BA39 tests cover 8,192, 512 and 1,024 states.
+These changes share validation with the boot-sound preparation extraction;
+intermediate commits were not tested independently. Counts remain 2,158
+verified, zero drafts and 866 WRAM records. Proofs remain private.
+
 # Expose original event-handler reader calls - 2026-10-25
 
 The full 80:D5F2 conditional-object and 80:E50B area-transition service APIs

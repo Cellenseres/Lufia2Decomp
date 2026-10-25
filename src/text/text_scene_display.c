@@ -29,7 +29,8 @@ static void InvalidateSceneReload(const Lufia2Memory *memory, Lufia2CpuState *cp
 static bool RunSceneSequence(TextChildService *service) {
     const Lufia2Memory *memory = service->memory;
     Lufia2CpuState *cpu = service->cpu;
-    Lufia2TextNextByte(memory, cpu, 0xba6bu);
+    if (!TextCallChild(service, 0x80ba69u, 0x80c0b7u, 2u))
+        return false;
     PushDataBank(memory, cpu);
     PushY(memory, cpu);
     PushAccumulator8(memory, cpu);
@@ -56,7 +57,8 @@ static bool RunSceneSequence(TextChildService *service) {
 static bool RunAlternateScene(TextChildService *service) {
     const Lufia2Memory *memory = service->memory;
     Lufia2CpuState *cpu = service->cpu;
-    Lufia2TextNextByte(memory, cpu, 0xbacbu);
+    if (!TextCallChild(service, 0x80bac9u, 0x80c0b7u, 2u))
+        return false;
     PushY(memory, cpu);
     PushDataBank(memory, cpu);
     if (!TextCallChild(service, 0x80baceu, 0x8eb2eeu, 3u))
@@ -83,7 +85,8 @@ static bool RunWorldScene(TextChildService *service) {
         return false;
     PullDataBank(memory, cpu);
     OpPullY(memory, cpu);
-    Lufia2TextNextByte(memory, cpu, 0xbb9eu);
+    if (!TextCallChild(service, 0x80bb9cu, 0x80c0b7u, 2u))
+        return false;
     OpSta(memory, cpu, OpDp(cpu, DP_SCENE_SELECTOR));
     OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E09A9));
     OpStz(memory, cpu, OpDp(cpu, DP_HDMA_CHANNELS));
@@ -127,7 +130,8 @@ static bool RunWorldScene(TextChildService *service) {
 }
 
 static bool UploadSceneGraphics(TextChildService *service) {
-    Lufia2TextNextByte(service->memory, service->cpu, 0xba99u);
+    if (!TextCallChild(service, 0x80ba97u, 0x80c0b7u, 2u))
+        return false;
     return TextCallChild(service, 0x80ba9au, 0x8482e7u, 3u) &&
            TextCallChild(service, 0x80ba9eu, 0x80bf0bu, 2u);
 }
@@ -135,7 +139,8 @@ static bool UploadSceneGraphics(TextChildService *service) {
 static bool RestoreSceneGraphics(TextChildService *service) {
     const Lufia2Memory *memory = service->memory;
     Lufia2CpuState *cpu = service->cpu;
-    Lufia2TextNextByte(memory, cpu, 0xbaa4u);
+    if (!TextCallChild(service, 0x80baa2u, 0x80c0b7u, 2u))
+        return false;
     OpLoadA(cpu, 0x80u);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
     if (!TextCallChild(service, 0x80baaau, 0x80bf0bu, 2u))
@@ -156,7 +161,8 @@ static bool RestoreSceneGraphics(TextChildService *service) {
 static bool SetSceneHdma(TextChildService *service) {
     const Lufia2Memory *memory = service->memory;
     Lufia2CpuState *cpu = service->cpu;
-    Lufia2TextNextByte(memory, cpu, 0xbaf3u);
+    if (!TextCallChild(service, 0x80baf1u, 0x80c0b7u, 2u))
+        return false;
     OpOraValue(cpu, 0u);
     if (cpu->zero) {
         OpLoadA(cpu, 0x30u);

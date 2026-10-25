@@ -6,6 +6,7 @@
 #include "lufia2/ancient_cave.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
+#include "text/text_child_service.h"
 
 enum {
     TRANSITION_CAVE = 0xabd0u,
@@ -142,11 +143,13 @@ static uint32_t StartSceneChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return target;
 }
 
-static void SetSceneEffect(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void PrepareSceneEffect(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLoadA(cpu, 6u);
     OpSta(memory, cpu, SCENE_EFFECT_STEP_TIMER);
     OpStz(memory, cpu, OpAbs(cpu, SCENE_EFFECT_VALUE));
-    Lufia2TextNextByte(memory, cpu, 0xbb7bu);
+}
+
+static void FinishSceneEffect(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpOraValue(cpu, 0u);
     if (cpu->zero) {
         OpLoadA(cpu, 0xffu);
@@ -160,8 +163,13 @@ static void SetSceneEffect(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpTestBits(memory, cpu, OpAbs(cpu, SCENE_EFFECT_FLAGS), true);
 }
 
-static uint16_t ReadSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    Lufia2TextNextByte(memory, cpu, 0xba3bu);
+static void SetSceneEffect(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PrepareSceneEffect(memory, cpu);
+    Lufia2TextNextByte(memory, cpu, 0xbb7bu);
+    FinishSceneEffect(memory, cpu);
+}
+
+static uint16_t PrepareSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     ExchangeAccumulatorBytes(cpu);
     OpLoadA(cpu, 0u);
     ExchangeAccumulatorBytes(cpu);
@@ -171,6 +179,11 @@ static uint16_t ReadSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *c
         Read16Bank(memory, 0x80u, (uint16_t)(ROM_SCENE_OPERATIONS + cpu->x));
     SimulateJsrFrame(memory, cpu, 0xba44u);
     return target;
+}
+
+static uint16_t ReadSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2TextNextByte(memory, cpu, 0xba3bu);
+    return PrepareSceneOperation(memory, cpu);
 }
 
 static uint32_t ContinueSceneOperation(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -253,7 +266,21 @@ Lufia2ExecutionResult Lufia2TextRunSceneOperation(const Lufia2Memory *memory,
         cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
         cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu)
         return ExecutionHandoff(cpu, 0x80ba39u);
-    const uint16_t target = ReadSceneOperation(memory, cpu);
+    if (!CallChildWithFrame(memory, cpu, child, context, 0x80ba39u,
+                            0x80c0b7u, 2u, 0x80u))
+        return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, 0x80ba39u, 0u};
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, (uint32_t)cpu->program_bank << 16 | 0xba3cu);
+    const uint16_t target = PrepareSceneOperation(memory, cpu);
+    if (target == 0xbb70u) {
+        TextChildService service = {memory, cpu, child, context, ExecutionReturned(target)};
+        PrepareSceneEffect(memory, cpu);
+        if (!TextCallChild(&service, 0x80bb79u, 0x80c0b7u, 2u))
+            return service.result;
+        FinishSceneEffect(memory, cpu);
+        return SceneOperationResult(cpu, FinishSceneOperation(memory, cpu));
+    }
     if (target == 0xba69u || target == 0xba97u || target == 0xbaa2u ||
         target == 0xbac9u || target == 0xbaf1u || target == 0xbb94u) {
         const Lufia2ExecutionResult result =
@@ -262,7 +289,7 @@ Lufia2ExecutionResult Lufia2TextRunSceneOperation(const Lufia2Memory *memory,
             return result;
         return SceneOperationResult(cpu, FinishSceneOperation(memory, cpu));
     }
-    if (target == 0xbb70u || target == 0xbaedu || target == 0xba67u)
+    if (target == 0xbaedu || target == 0xba67u)
         return SceneOperationResult(cpu, StartSceneOperation(memory, cpu, target));
     if (!child(context, cpu, 0x800000u | target, 0x80ba42u, 2u)) {
         Lufia2ExecutionResult result = ExecutionReturned(0x80ba42u);
