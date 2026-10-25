@@ -1396,6 +1396,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:9CD4` | `Lufia2BattleUpdatePreviewBackground` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9D2C` | `Lufia2BattleBuildEnemyPreview` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9E1C` | `Lufia2FillWordBlock32` | verified | `src/system/block_move.c` |
+| `$84:A2B3` | `Lufia2SpecialMenuPushWindow` | verified | `src/menu/special_menu_windows.c` |
+| `$84:A36A` | `Lufia2SpecialMenuDrawWindowRow` | verified | `src/menu/special_menu_windows.c` |
+| `$84:A39B` | `Lufia2SpecialMenuPopWindow` | verified | `src/menu/special_menu_windows.c` |
 | `$84:A421` | `Lufia2BoardGameCreditPayoutStep` | verified | `src/menu/board_game_results.c` |
 | `$84:A455` | `Lufia2SpecialMenuInitializeVideo` | verified | `src/menu/special_menu_video.c` |
 | `$84:A4DD` | `Lufia2SpecialMenuClearTilemaps` | verified | `src/menu/special_menu.c` |

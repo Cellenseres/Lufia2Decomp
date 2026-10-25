@@ -17422,3 +17422,27 @@ source = "src/menu/board_game_results.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:A2B3"
+name = "Lufia2SpecialMenuPushWindow"
+source = "src/menu/special_menu_windows.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:A36A"
+name = "Lufia2SpecialMenuDrawWindowRow"
+source = "src/menu/special_menu_windows.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:A39B"
+name = "Lufia2SpecialMenuPopWindow"
+source = "src/menu/special_menu_windows.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"

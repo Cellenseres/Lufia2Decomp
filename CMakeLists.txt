@@ -84,6 +84,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_tile_blit.c
     src/menu/menu_image_load.c
     src/menu/special_menu.c
+    src/menu/special_menu_windows.c
     src/menu/special_menu_video.c
     src/menu/card_game.c
     src/menu/card_game_control.c

@@ -6401,7 +6401,7 @@ name = "special_menu_window_state"
 width = 2
 count = 1
 owner = "menu"
-notes = "A705 initializes this word to zero before entering its round loop."
+notes = "A705 clears the style selector. A2B3 selects ten border tiles per style."
 
 [[location]]
 address = "7E:6016"
@@ -6417,7 +6417,7 @@ name = "special_menu_window_style"
 width = 2
 count = 1
 owner = "menu"
-notes = "A2B3 copies this word into the indexed window record."
+notes = "Legacy name; A2B3 advances the saved-tile cursor and A39B restores it."
 
 [[location]]
 address = "7E:685E"
@@ -6786,3 +6786,67 @@ width = 2
 count = 1
 owner = "menu"
 notes = "D456 initializes10000;original A3FC divides it by ten with hardware waits;A421 credits this step."
+
+[[location]]
+address = "7E:6014"
+name = "special_menu_window_tile_offset"
+width = 2
+count = 1
+owner = "menu"
+notes = "Ten-tile style offset used by A2B3."
+
+[[location]]
+address = "7E:6020"
+name = "special_menu_window_saved_buffer"
+width = 2
+count = 5
+owner = "menu"
+notes = "Previous tile-buffer cursor for five nested windows."
+
+[[location]]
+address = "7E:602A"
+name = "special_menu_window_saved_left"
+width = 2
+count = 5
+owner = "menu"
+notes = "Saved window columns."
+
+[[location]]
+address = "7E:6034"
+name = "special_menu_window_saved_top"
+width = 2
+count = 5
+owner = "menu"
+notes = "Saved window rows."
+
+[[location]]
+address = "7E:603E"
+name = "special_menu_window_saved_width"
+width = 2
+count = 5
+owner = "menu"
+notes = "Saved widths in tiles."
+
+[[location]]
+address = "7E:6048"
+name = "special_menu_window_saved_height"
+width = 2
+count = 5
+owner = "menu"
+notes = "Saved heights in tiles."
+
+[[location]]
+address = "7E:6052"
+name = "special_menu_window_work"
+width = 2
+count = 6
+owner = "menu"
+notes = "Row offsets and remaining copy and border dimensions."
+
+[[location]]
+address = "7E:605E"
+name = "special_menu_window_saved_tiles"
+width = 2
+count = 1024
+owner = "menu"
+notes = "Original tile words retained below the nested windows."

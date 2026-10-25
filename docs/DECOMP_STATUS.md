@@ -1,3 +1,34 @@
+# Reconstruct nested special-menu windows - 2026-10-25
+
+Three complete bounded original routines now own the special-menu window stack:
+84:A2B3 PushWindow, A36A DrawWindowRow and A39B PopWindow. The row helper was
+an original callee missing from the prior catalogue. PHP/PLP owners preserve
+both incoming accumulator widths; the row requires M0. All require X16 and
+binary arithmetic. DP is unrestricted because these routines never use it.
+
+The C retains saved tile words, five geometry arrays, original border tiles,
+real child frames, relative data-bank accesses versus fixed 7E column reads,
+mutable scratch counters and status/stack behavior. Nonconvergent or malformed
+shapes yield at exact original loop boundaries after 4,096 operations; no wait
+or underflow is repaired. Eight additional WRAM locations name records, work
+words and the tile buffer. The legacy 601E style symbol actually denotes the
+saved-tile cursor; its compatibility name remains, with corrected evidence.
+
+One shared checkpoint passes 12,363 ROM semantic cases, including malformed
+shape prefixes and both data banks, 144 stack-edge cases, 10,240 production
+ABI/timing cases, 48 changed-child cases at all three call sites, 159 pure
+admission cases and 15 contract gates. CPU, full WRAM, ordered bus accesses
+and consumer opcode/master timing match. Initial prefix-test stop PCs were
+ambiguous within loops; final proofs disambiguate using complete bus progress.
+
+MSVC/GCC/Clang C11 strict checks pass. Final pop scratch names leave all MSVC
+code/read-only data sections identical, so the shared checkpoint remains valid.
+The consumer binds all three entries and exercises original push/pop callers:
+51 paired frames are identical with native body hits 1/7/1 and 2,223 decoded
+parent instructions removed. A separate natural 5,100-frame startup/field run
+is identical; it contains no window calls and is regression evidence only.
+Counts are 2,161 verified, zero drafts and 874 WRAM records. Tests stay private.
+
 # Expose the original boot-sound preparation phase - 2026-10-25
 
 Lufia2BeginBootSoundTransfer executes PHP, REP30, LDY0 and LDA BBAA,
@@ -11821,7 +11852,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2158 functions in `metadata/functions.toml`: 2158 verified, 0 draft, 0 identified, 0 disabled.
+2161 functions in `metadata/functions.toml`: 2161 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
