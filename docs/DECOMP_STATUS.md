@@ -1,3 +1,26 @@
+# Cursor setup and shared payout — semantic verification
+
+Four complete original contracts cover84:A000,A02A,A0DA andC7A6. Cursor
+headers and variable sprite data,parallel selection arrays,OAM creation/hiding
+and stepwise payout retain original bus order,widths,stack frames and waits.
+A000/A0DA preserve zero-counter underflow; A02A exposes an exact bounded
+continuation. Push increments cursor depth as a byte; pop decrements a word.
+
+The parent-ROM proof covers16,384 cases,14 child unwinds,70 changed returns
+and48 zero/overflow prefixes. Another2,048 composed payout cases execute
+31,303 native division/credit children. MSVC C11 passes. Consumer timing
+passes8,192 scoped ROM/ABI cases. Production proof adds64 distinct-arm
+pairs,168 admission guards and405 actual registry checks. Return CPU/WRAM,
+natural frame-end CPU/WRAM/hardware and fresh PCM match. A000 immediate-return
+APU aggregation differs until the normal synchronization boundary.
+
+All four entries are selected in the current no-draft production build. Their
+async child returns still use original continuations where the host boundary
+requires it. Consumer performance acceptance remains open: bounded desktop
+cost samples do not establish a robust payout speedup. No ARM or whole-frame
+speedup is claimed. Strict ARM GCC and Windows Clang C11, capability-off
+compilation and15 capability gates pass; unrelated full regression is deferred.
+
 # Bounded card-column continuations - 2026-10-25
 
 Two exact internal boundaries extend the existing verified column algorithms:
@@ -12325,7 +12348,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2223 functions in `metadata/functions.toml`: 2223 verified, 0 draft, 0 identified, 0 disabled.
+2227 functions in `metadata/functions.toml`: 2227 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

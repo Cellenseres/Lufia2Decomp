@@ -107,6 +107,8 @@ add_library(lufia2_decomp STATIC
     src/menu/card_table_initialization.c
     src/menu/card_table_frame.c
     src/menu/special_menu_video.c
+    src/menu/special_menu_cursor.c
+    src/menu/special_menu_payout.c
     src/menu/card_game.c
     src/menu/card_game_control.c
     src/menu/card_game_actions.c

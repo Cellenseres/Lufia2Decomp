@@ -17942,3 +17942,35 @@ source = "src/menu/card_table_outcome.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:A000"
+name = "Lufia2SpecialMenuLoadCursorDefinition"
+source = "src/menu/special_menu_cursor.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:A02A"
+name = "Lufia2SpecialMenuPushCursor"
+source = "src/menu/special_menu_cursor.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:A0DA"
+name = "Lufia2SpecialMenuPopCursor"
+source = "src/menu/special_menu_cursor.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:C7A6"
+name = "Lufia2SpecialMenuPayAward"
+source = "src/menu/special_menu_payout.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
