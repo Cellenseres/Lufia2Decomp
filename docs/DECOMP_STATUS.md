@@ -1,3 +1,25 @@
+# Cursor input and animation — semantic verification
+
+The complete original routine at 84:A112 handles input priority, signed cursor
+wrapping, OAM movement and sprite animation. It preserves both byte/word
+zero-counter underflows and the original record-index asymmetry. Its bounded
+4,096-frame continuation preserves the pending stack and status. Five internal
+phases share the same implementation and stop before child calls; they are
+not five additional reconstructed algorithms.
+
+The shared ROM checkpoint covers 4,096 parent cases, all nine child sites,
+nine child unwinds, 45 changed returns, 4,608 directed input/coordinate cases,
+16 zero-counter/animation cases and eight outer-frame boundaries. Separate
+2,048-case composition runs exercise 512 actual multiplication children and
+4,096 actual command/multiplication children. Another 20,480 ROM prefixes
+check the five phase contracts. CPU, full WRAM and ordered bus comparisons
+pass. Strict MSVC, ARM GCC and Clang C11 pass. An explicit standard NULL
+declaration leaves all 87 MSVC code sections identical to the tested object.
+Unchanged unrelated full regression is deferred.
+
+Consumer timing, admission, generated/linked callers and matched runtime costs
+remain pending. This checkpoint makes no runtime or performance claim.
+
 # Cursor setup and shared payout — semantic verification
 
 Four complete original contracts cover84:A000,A02A,A0DA andC7A6. Cursor
@@ -12348,7 +12370,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2227 functions in `metadata/functions.toml`: 2227 verified, 0 draft, 0 identified, 0 disabled.
+2228 functions in `metadata/functions.toml`: 2228 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

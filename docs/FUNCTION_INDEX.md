@@ -1400,6 +1400,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:A000` | `Lufia2SpecialMenuLoadCursorDefinition` | verified | `src/menu/special_menu_cursor.c` |
 | `$84:A02A` | `Lufia2SpecialMenuPushCursor` | verified | `src/menu/special_menu_cursor.c` |
 | `$84:A0DA` | `Lufia2SpecialMenuPopCursor` | verified | `src/menu/special_menu_cursor.c` |
+| `$84:A112` | `Lufia2SpecialMenuRunCursor` | verified | `src/menu/special_menu_cursor_input.c` |
 | `$84:A2B3` | `Lufia2SpecialMenuPushWindow` | verified | `src/menu/special_menu_windows.c` |
 | `$84:A36A` | `Lufia2SpecialMenuDrawWindowRow` | verified | `src/menu/special_menu_windows.c` |
 | `$84:A39B` | `Lufia2SpecialMenuPopWindow` | verified | `src/menu/special_menu_windows.c` |

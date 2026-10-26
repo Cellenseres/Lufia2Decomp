@@ -17974,3 +17974,11 @@ source = "src/menu/special_menu_payout.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:A112"
+name = "Lufia2SpecialMenuRunCursor"
+source = "src/menu/special_menu_cursor_input.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
