@@ -1,3 +1,27 @@
+# Input-panel dependency chain — semantic verification
+
+Six original entries cover the complete 84:EE4B panel controller, resource
+loading at EF4E, layer copies at EF60/EF74, command buffering at EF88 and
+sequence matching at EFC4. The two copy entries reuse the existing layer-copy
+algorithm; they are not two additional algorithms. Palette MVN transfers,
+frame waits, status/data-bank restoration and command-buffer bus accesses
+remain original. Input polling has an exact 4,096-frame continuation.
+
+The shared original-ROM checkpoint passes 3,072 parent/leaf cases, 1,536
+additional decimal-mode cases, all 30 child sites, 36 child unwinds and 180
+changed returns. Another 1,536 composed cases execute 4,352 actual native
+panel children; eight cases reach the 4,096-frame continuation. CPU, full WRAM,
+ordered data bus and child frames match interp816. Strict MSVC, ARM GCC and
+Clang C11 pass. Final catalogued address aliases leave all 134 tested MSVC
+code sections unchanged. Existing unrelated regression is not repeated.
+
+The return-width proof found a missing post-copy width check. Unexpected
+8-bit child returns now stop at their exact original continuation. The input
+buffer and flags reuse board-game WRAM allocations; no overlapping new memory
+regions are declared. Consumer timing, native admission, generated/linked
+callers, devices/PCM and matched costs remain pending. These six verified
+semantic entries are not yet runtime bindings or a performance claim.
+
 # Cursor input and animation — semantic verification
 
 The complete original routine at 84:A112 handles input priority, signed cursor
@@ -12377,7 +12401,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2228 functions in `metadata/functions.toml`: 2228 verified, 0 draft, 0 identified, 0 disabled.
+2234 functions in `metadata/functions.toml`: 2234 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

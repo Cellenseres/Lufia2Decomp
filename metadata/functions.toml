@@ -17982,3 +17982,51 @@ source = "src/menu/special_menu_cursor_input.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "84:EE4B"
+name = "Lufia2CardTableRunInputPanel"
+source = "src/menu/card_table_input_panel.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:EF4E"
+name = "Lufia2CardTableLoadPanelResource"
+source = "src/menu/card_table_input_panel.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "84:EF60"
+name = "Lufia2CardTableCopyPanelFirstLayer"
+source = "src/menu/card_table_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:EF74"
+name = "Lufia2CardTableCopyPanelSecondLayer"
+source = "src/menu/card_table_graphics.c"
+entry_mx = "M1X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:EF88"
+name = "Lufia2CardTableAppendPanelCommand"
+source = "src/menu/card_table_input_panel.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "84:EFC4"
+name = "Lufia2CardTableMatchPanelSequence"
+source = "src/menu/card_table_input_panel.c"
+entry_mx = "M0X0"
+exit_mx = "dynamic"
+status = "verified"

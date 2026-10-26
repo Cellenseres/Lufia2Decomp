@@ -27,6 +27,22 @@ static void CopyTableLayer(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     } while (!cpu->zero);
 }
 
+Lufia2ExecutionResult Lufia2CardTableCopyPanelFirstLayer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!TableServiceReady(cpu, false) || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x84ef60u);
+    CopyTableLayer(memory, cpu, 0xa000u, SYMBOL_FIRST_LAYER);
+    return ExecutionReturned(0x84ef73u);
+}
+
+Lufia2ExecutionResult Lufia2CardTableCopyPanelSecondLayer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!TableServiceReady(cpu, false) || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x84ef74u);
+    CopyTableLayer(memory, cpu, 0xa000u, SYMBOL_SECOND_LAYER);
+    return ExecutionReturned(0x84ef87u);
+}
+
 static Lufia2ExecutionResult LoadTableLayers(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context, bool alternate) {

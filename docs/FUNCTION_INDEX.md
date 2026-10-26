@@ -1559,6 +1559,12 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:ED9E` | `Lufia2CardTableResetRoundBuffers` | verified | `src/menu/card_table_attributes.c` |
 | `$84:EDCB` | `Lufia2CardTableRestoreLineAttributes` | verified | `src/menu/card_table_attributes.c` |
 | `$84:EDFA` | `Lufia2CardTableLoadGraphics` | verified | `src/menu/card_table_graphics.c` |
+| `$84:EE4B` | `Lufia2CardTableRunInputPanel` | verified | `src/menu/card_table_input_panel.c` |
+| `$84:EF4E` | `Lufia2CardTableLoadPanelResource` | verified | `src/menu/card_table_input_panel.c` |
+| `$84:EF60` | `Lufia2CardTableCopyPanelFirstLayer` | verified | `src/menu/card_table_graphics.c` |
+| `$84:EF74` | `Lufia2CardTableCopyPanelSecondLayer` | verified | `src/menu/card_table_graphics.c` |
+| `$84:EF88` | `Lufia2CardTableAppendPanelCommand` | verified | `src/menu/card_table_input_panel.c` |
+| `$84:EFC4` | `Lufia2CardTableMatchPanelSequence` | verified | `src/menu/card_table_input_panel.c` |
 | `$84:F01A` | `Lufia2CardTableRestoreTilemap` | verified | `src/menu/card_table_outcome.c` |
 | `$84:F034` | `Lufia2CardTableAnimatePanelAttributes` | verified | `src/menu/card_table_attributes.c` |
 | `$84:F09C` | `Lufia2CardTableAnimateLineAttributes` | verified | `src/menu/card_table_attributes.c` |

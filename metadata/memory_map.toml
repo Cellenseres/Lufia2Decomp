@@ -6633,7 +6633,7 @@ name = "board_game_line_totals"
 width = 2
 count = 12
 owner = "menu"
-notes = "Twelve sums for five rows,five columns and two diagonals. D892 clears thirteen words,also touching the adjacent completed-line count. The alternate card-table session reuses the word at71B6 as its stake."
+notes = "Twelve sums for five rows,five columns and two diagonals. D892 clears thirteen words,also touching the adjacent completed-line count. The alternate card-table session reuses the word at71B6 as its stake. EE4B/EF88 reuse71C0 as input byte offset and71C2..71DE as command words; full shifting reads the trailing word before overwriting the final slot."
 
 [[location]]
 address = "7E:71CA"
@@ -6769,7 +6769,7 @@ name = "board_game_saved_group_cells"
 width = 2
 count = 6
 owner = "menu"
-notes = "D0EF snapshots six cells before rotating them and updating the cell-location map."
+notes = "D0EF snapshots six cells before rotating them and updating the cell-location map. The input panel reuses71E0 as current command and71E2 as sequence4 match flag; EFC4 preserves those shared allocations."
 
 [[location]]
 address = "7E:69E2"

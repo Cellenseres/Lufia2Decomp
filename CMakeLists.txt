@@ -104,6 +104,7 @@ add_library(lufia2_decomp STATIC
     src/menu/menu_command.c
     src/menu/card_table_hdma.c
     src/menu/card_table_graphics.c
+    src/menu/card_table_input_panel.c
     src/menu/card_table_initialization.c
     src/menu/card_table_frame.c
     src/menu/special_menu_video.c
