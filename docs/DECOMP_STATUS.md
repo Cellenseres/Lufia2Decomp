@@ -17,8 +17,15 @@ pass. Strict MSVC, ARM GCC and Clang C11 pass. An explicit standard NULL
 declaration leaves all 87 MSVC code sections identical to the tested object.
 Unchanged unrelated full regression is deferred.
 
-Consumer timing, admission, generated/linked callers and matched runtime costs
-remain pending. This checkpoint makes no runtime or performance claim.
+The consumer checkpoint adds 10,240 scoped clocked ROM/ABI cases, 240
+admission cases, 432 actual hook-registry checks and 64 production-context
+reference/candidate pairs. Immediate and frame-end CPU/WRAM/hardware and
+fresh PCM match. Four shared phases execute natively; original child calls
+and waits keep their runtime ownership. Feature-off compilation, capability
+gates and Windows Release pass. Generated, compiled and linked APU callers
+are checked separately. Matched desktop costs remain noisy and do not prove
+general acceleration, ARM performance or hardware/60-FPS acceptance.
+See the consumer verification document for exact scope and wait-count deltas.
 
 # Cursor setup and shared payout — semantic verification
 
