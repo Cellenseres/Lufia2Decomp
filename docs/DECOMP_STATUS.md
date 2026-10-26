@@ -18,7 +18,13 @@ code sections unchanged. Existing unrelated regression is not repeated.
 The return-width proof found a missing post-copy width check. Unexpected
 8-bit child returns now stop at their exact original continuation. The input
 buffer and flags reuse board-game WRAM allocations; no overlapping new memory
-regions are declared. Consumer timing, native admission, generated/linked
+regions are declared. The shared copy API also exposes exact bounded EF60/EF68/EF74/EF7C prefixes.
+Another 2,048 prefix cases, 1,024 affected whole-copy cases and 1,536 composed
+cases pass after extracting the shared word operation. Strict MSVC, ARM GCC
+and Clang C11 pass for the final span sources. This API is not a new original
+routine or a runtime timing certificate.
+
+Consumer timing, native admission, generated/linked
 callers, devices/PCM and matched costs remain pending. These six verified
 semantic entries are not yet runtime bindings or a performance claim.
 

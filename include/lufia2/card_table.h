@@ -183,6 +183,9 @@ Lufia2ExecutionResult Lufia2CardTableCopyPanelFirstLayer(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2CardTableCopyPanelSecondLayer(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2CardTableCopyPanelSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint32_t entry, unsigned word_limit);
 Lufia2ExecutionResult Lufia2CardTableAppendPanelCommand(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2CardTableMatchPanelSequence(

@@ -13,17 +13,22 @@ enum {
     SYMBOL_SECOND_LAYER = WRAM_FIELD_LAYER0_TILEMAP & 0xffffu
 };
 
+static void CopyTableLayerWord(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t source, uint16_t destination) {
+    OpLda(memory, cpu, OpAbsX(cpu, source));
+    OpSta(memory, cpu, OpAbsX(cpu, destination));
+    OpInx(cpu);
+    OpInx(cpu);
+    OpDey(cpu);
+}
+
 static void CopyTableLayer(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                             uint16_t source, uint16_t destination) {
     OpRepWidths(cpu, 0x20u);
     OpLdx(cpu, 0u);
     OpLdy(cpu, 0x0400u);
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, source));
-        OpSta(memory, cpu, OpAbsX(cpu, destination));
-        OpInx(cpu);
-        OpInx(cpu);
-        OpDey(cpu);
+        CopyTableLayerWord(memory, cpu, source, destination);
     } while (!cpu->zero);
 }
 
@@ -41,6 +46,30 @@ Lufia2ExecutionResult Lufia2CardTableCopyPanelSecondLayer(
         return ExecutionHandoff(cpu, 0x84ef74u);
     CopyTableLayer(memory, cpu, 0xa000u, SYMBOL_SECOND_LAYER);
     return ExecutionReturned(0x84ef87u);
+}
+
+Lufia2ExecutionResult Lufia2CardTableCopyPanelSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint32_t entry, unsigned word_limit) {
+    const bool first = entry == 0x84ef60u || entry == 0x84ef68u;
+    const bool second = entry == 0x84ef74u || entry == 0x84ef7cu;
+    const bool initialize = entry == 0x84ef60u || entry == 0x84ef74u;
+    if ((!first && !second) || !word_limit ||
+        !TableServiceReady(cpu, false) || cpu->index_is_8_bit ||
+        (!initialize && cpu->accumulator_is_8_bit))
+        return ExecutionHandoff(cpu, entry);
+    if (initialize) {
+        OpRepWidths(cpu, 0x20u);
+        OpLdx(cpu, 0u);
+        OpLdy(cpu, 0x0400u);
+    }
+    do {
+        CopyTableLayerWord(memory, cpu, 0xa000u,
+            first ? SYMBOL_FIRST_LAYER : SYMBOL_SECOND_LAYER);
+        if (cpu->zero)
+            return ExecutionReturned(first ? 0x84ef73u : 0x84ef87u);
+    } while (--word_limit);
+    return ExecutionHandoff(cpu, first ? 0x84ef68u : 0x84ef7cu);
 }
 
 static Lufia2ExecutionResult LoadTableLayers(
