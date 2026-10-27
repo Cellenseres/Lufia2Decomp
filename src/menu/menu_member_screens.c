@@ -36,9 +36,34 @@ static bool MemberScreenChild(MenuActionCall *call, uint32_t site,
     return true;
 }
 
+static void SetMemberSelectionLimit(const Lufia2Memory *memory,
+                                      Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 3u);
+    OpSta(memory, cpu, OpAbs(cpu, MEMBER_SELECTION_LIMIT));
+}
+
+static bool InspectSpellMember(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbs(cpu, MEMBER_SELECTION));
+    OpAslA(cpu);
+    OpTay(cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, WRAM_MENU_PARTY_CHARACTER_OFFSET));
+    OpTay(cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpAbsY(cpu, MEMBER_SPELL_FLAGS));
+    OpBitValue(cpu, 4u);
+    return cpu->zero;
+}
+
+static void BindSpellMember(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, MEMBER_SELECTION)));
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_MENU_SPELL_MEMBER), cpu->x);
+    OpLda(memory, cpu, OpLongX(cpu, MEMBER_SPELL_TEXT_POSITIONS));
+    OpSta(memory, cpu, OpAbs(cpu, MEMBER_DISPLAY_TEXT));
+}
+
 static bool ChooseMember(MenuActionCall *call, uint32_t poll_site) {
-    OpLoadA(call->cpu, 3u);
-    OpSta(call->memory, call->cpu, OpAbs(call->cpu, MEMBER_SELECTION_LIMIT));
+    SetMemberSelectionLimit(call->memory, call->cpu);
     return MemberScreenChild(call, poll_site, 0x829246u, 2u, 1u);
 }
 
@@ -55,24 +80,12 @@ Lufia2ExecutionResult Lufia2MenuChooseSpellMember(
             return call.result;
         if (cpu->carry)
             return ExecutionReturned(0x82b3acu);
-        OpRepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbs(cpu, MEMBER_SELECTION));
-        OpAslA(cpu);
-        OpTay(cpu);
-        OpLda(memory, cpu, OpAbsY(cpu, WRAM_MENU_PARTY_CHARACTER_OFFSET));
-        OpTay(cpu);
-        OpSepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpAbsY(cpu, MEMBER_SPELL_FLAGS));
-        OpBitValue(cpu, 4u);
-        if (cpu->zero)
+        if (InspectSpellMember(memory, cpu))
             break;
         if (!MemberScreenChild(&call, 0x82b391u, 0x8297e3u, 2u, 1u))
             return call.result;
     }
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, MEMBER_SELECTION)));
-    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_MENU_SPELL_MEMBER), cpu->x);
-    OpLda(memory, cpu, OpLongX(cpu, MEMBER_SPELL_TEXT_POSITIONS));
-    OpSta(memory, cpu, OpAbs(cpu, MEMBER_DISPLAY_TEXT));
+    BindSpellMember(memory, cpu);
     if (!MemberScreenChild(&call, 0x82b3a3u, 0x82b5edu, 2u, 1u) ||
         !MemberScreenChild(&call, 0x82b3a6u, 0x829984u, 2u, 1u) ||
         !MemberScreenChild(&call, 0x82b3a9u, 0x82a658u, 2u, 1u))
@@ -167,6 +180,28 @@ Lufia2ExecutionResult Lufia2MenuRunMemberStatus(
     }
 }
 
+static void CopyStatusPortrait(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLdx(cpu, MEMBER_DISPLAY_SLOT);
+    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, MEMBER_SELECTION)));
+    static const uint16_t member_fields[] = {
+        MENU_SPRITE_LIST_LOW, MENU_SPRITE_LIST_HIGH, MENU_SPRITE_BANK};
+    for (unsigned field = 0u; field < 3u; ++field) {
+        OpLda(memory, cpu, OpAbsY(cpu, member_fields[field]));
+        OpSta(memory, cpu, OpAbsX(cpu, member_fields[field]));
+    }
+    static const uint16_t position_fields[] = {
+        MENU_SPRITE_X_LOW, MENU_SPRITE_X_HIGH,
+        MENU_SPRITE_Y_LOW, MENU_SPRITE_Y_HIGH};
+    for (unsigned field = 0u; field < 4u; ++field) {
+        OpLda(memory, cpu, OpAbs(cpu, position_fields[field]));
+        OpSta(memory, cpu, OpAbsX(cpu, position_fields[field]));
+    }
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbsX(cpu, MENU_SPRITE_ACTIVE));
+    OpStz(memory, cpu, OpAbsX(cpu, MENU_SPRITE_FRAME_INDEX));
+    OpLda(memory, cpu, OpAbsY(cpu, MENU_SPRITE_ANIMATION));
+}
+
 Lufia2ExecutionResult Lufia2MenuBuildMemberStatus(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -195,25 +230,7 @@ Lufia2ExecutionResult Lufia2MenuBuildMemberStatus(
     OpLoadA(cpu, MEMBER_STATUS_TEXT);
     if (!MemberScreenChild(&call, 0x829e94u, 0x82a318u, 2u, 1u))
         return call.result;
-    OpLdx(cpu, MEMBER_DISPLAY_SLOT);
-    OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, MEMBER_SELECTION)));
-    static const uint16_t member_fields[] = {
-        MENU_SPRITE_LIST_LOW, MENU_SPRITE_LIST_HIGH, MENU_SPRITE_BANK};
-    for (unsigned field = 0u; field < 3u; ++field) {
-        OpLda(memory, cpu, OpAbsY(cpu, member_fields[field]));
-        OpSta(memory, cpu, OpAbsX(cpu, member_fields[field]));
-    }
-    static const uint16_t position_fields[] = {
-        MENU_SPRITE_X_LOW, MENU_SPRITE_X_HIGH,
-        MENU_SPRITE_Y_LOW, MENU_SPRITE_Y_HIGH};
-    for (unsigned field = 0u; field < 4u; ++field) {
-        OpLda(memory, cpu, OpAbs(cpu, position_fields[field]));
-        OpSta(memory, cpu, OpAbsX(cpu, position_fields[field]));
-    }
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpAbsX(cpu, MENU_SPRITE_ACTIVE));
-    OpStz(memory, cpu, OpAbsX(cpu, MENU_SPRITE_FRAME_INDEX));
-    OpLda(memory, cpu, OpAbsY(cpu, MENU_SPRITE_ANIMATION));
+    CopyStatusPortrait(memory, cpu);
     if (!MemberScreenChild(&call, 0x829ed2u, 0x868cf5u, 3u, 1u))
         return call.result;
     OpLdx(cpu, 7u);
@@ -229,4 +246,140 @@ Lufia2ExecutionResult Lufia2MenuBuildMemberStatus(
         !MemberScreenChild(&call, 0x829eeeu, 0x828704u, 2u, 1u))
         return call.result;
     return ExecutionReturned(0x829ef1u);
+}
+
+Lufia2ExecutionResult Lufia2MenuRunMemberScreenPhase(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    const uint8_t byte_mode = entry != 0x829e7fu && entry != 0x829e88u;
+    if (cpu->program_bank != 0x82u || cpu->accumulator_is_8_bit != byte_mode ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, entry);
+    uint32_t next;
+    switch (entry) {
+    case 0x829e67u:
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_MENU_WINDOW_REFRESH));
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_MENU_CURSOR_ENABLED));
+        OpLdx(cpu, 0x006fu);
+        next = 0x829e70u;
+        break;
+    case 0x829e74u:
+        OpRepWidths(cpu, 0x20u);
+        OpLoadA(cpu, 0x05c2u);
+        OpLdx(cpu, 0x0a03u);
+        next = 0x829e7cu;
+        break;
+    case 0x829e7fu:
+        OpLoadA(cpu, 0x05d6u);
+        OpLdx(cpu, 0x1403u);
+        next = 0x829e85u;
+        break;
+    case 0x829e88u:
+        OpSepWidths(cpu, 0x20u);
+        OpLda(memory, cpu, OpAbs(cpu, MEMBER_SELECTION));
+        OpSta(memory, cpu, OpDp(cpu, MEMBER_SELECTED_ID));
+        next = 0x829e8fu;
+        break;
+    case 0x829e92u:
+        OpLoadA(cpu, MEMBER_STATUS_TEXT);
+        next = 0x829e94u;
+        break;
+    case 0x829e97u:
+        CopyStatusPortrait(memory, cpu);
+        next = 0x829ed2u;
+        break;
+    case 0x829ed6u:
+        OpLdx(cpu, 7u);
+        OpWriteX(memory, cpu, OpDp(cpu, MEMBER_CURSOR_FIRST), cpu->x);
+        OpLdx(cpu, 1u);
+        OpWriteX(memory, cpu, OpDp(cpu, MEMBER_CURSOR_COUNT), cpu->x);
+        OpLdx(cpu, 6u);
+        OpLdy(cpu, 7u);
+        next = 0x829ee6u;
+        break;
+    case 0x829ee9u:
+        OpLoadA(cpu, 1u);
+        next = 0x829eebu;
+        break;
+    case 0x82b301u:
+    case 0x82b373u:
+    case 0x82b394u:
+        SetMemberSelectionLimit(memory, cpu);
+        next = entry == 0x82b301u ? 0x82b306u : 0x82b378u;
+        break;
+    case 0x82b309u:
+        next = cpu->carry ? 0x82b33cu : 0x82b30bu;
+        break;
+    case 0x82b315u:
+        OpLoadA(cpu, 0u);
+        next = 0x82b317u;
+        break;
+    case 0x82b31au:
+        OpCmpValue(cpu, 2u);
+        if (cpu->zero) {
+            OpLoadA(cpu, 2u);
+            next = 0x82b33fu;
+            break;
+        }
+        OpCmpValue(cpu, 3u);
+        if (cpu->zero) {
+            next = 0x82b332u;
+            break;
+        }
+        OpCmpValue(cpu, 6u);
+        if (!cpu->zero)
+            OpCmpValue(cpu, 7u);
+        if (cpu->zero) {
+            OpLoadA(cpu, OpA(cpu) ^ 1u);
+            OpLsrA(cpu);
+            next = 0x82b361u;
+        } else {
+            OpLoadA(cpu, 0u);
+            next = 0x82b317u;
+        }
+        break;
+    case 0x82b343u:
+        OpLoadA(cpu, 5u);
+        OpLdx(cpu, 7u);
+        next = 0x82b348u;
+        break;
+    case 0x82b34fu:
+        OpLda(memory, cpu, OpAbs(cpu, MEMBER_SELECTION));
+        if (!cpu->zero) {
+            next = 0x82b332u;
+        } else {
+            OpLoadA(cpu, 3u);
+            OpLdx(cpu, 7u);
+            next = 0x82b359u;
+        }
+        break;
+    case 0x82b35cu:
+        OpLoadA(cpu, 1u);
+        OpLoadA(cpu, OpA(cpu) ^ 1u);
+        OpLsrA(cpu);
+        next = 0x82b361u;
+        break;
+    case 0x82b364u:
+        OpLoadA(cpu, MEMBER_STATUS_TEXT);
+        next = 0x82b366u;
+        break;
+    case 0x82b369u:
+        OpLoadA(cpu, 8u);
+        OpSta(memory, cpu, OpDp(cpu, MEMBER_REFRESH));
+        OpLoadA(cpu, 1u);
+        next = 0x82b317u;
+        break;
+    case 0x82b37bu:
+        if (cpu->carry) {
+            next = 0x82b3acu;
+        } else if (InspectSpellMember(memory, cpu)) {
+            BindSpellMember(memory, cpu);
+            next = 0x82b3a3u;
+        } else {
+            next = 0x82b391u;
+        }
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    return ExecutionHandoff(cpu, next);
 }

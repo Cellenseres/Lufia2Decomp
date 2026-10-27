@@ -1,3 +1,28 @@
+# Member-screen continuation prefixes — 2026-10-27
+
+The three member-screen routines also expose 20 bounded semantic prefixes for
+resuming after asynchronous children. These are continuations of the existing
+algorithms, not 20 additional reconstructed ROM functions. Spell inspection,
+member binding and status-portrait copying share their whole-routine helpers.
+Prefixes stop before original JSR/JSL or RTS instructions; the consumer retains
+child dispatch, stack frames and returns.
+
+The shared checkpoint retains the 1,536 whole-routine and 1,536 composed ROM
+cases after helper extraction. Prefix verification adds 9,490 admitted original
+CPU/WRAM/ordered timed-bus comparisons and 7,406 refusals. The actual consumer
+hook ABI adds 4,806 admitted cases and 314 refusals, including opcode totals,
+redirects and scheduler progress masks. ARM GCC and Clang remain warning-clean.
+Whole-routine timed ABI and changed-return proofs are recorded by the consumer.
+
+Production candidate replay executes all three algorithms through their entries
+or semantic prefixes. It replaces 45 original interpreter opcodes in the
+observed 600-frame menu traversal; unsafe spans retain original execution.
+All 600 frame-state hash records and fresh PCM bytes match. Five complete
+serialized hardware snapshots also match byte for byte. The consumer checks
+its 20 owned hooks and preserves all 252 other installed hooks. These are scoped
+integration results; neither complete-native execution nor general speed or
+hardware 60 FPS is claimed. Final consumer build and commit are tracked there.
+
 # Member status and spell selection — 2026-10-27
 
 Three original routines missing from the earlier static entry inventory are
