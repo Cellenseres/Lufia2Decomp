@@ -1,3 +1,28 @@
+# Member-screen consumer proof — 2026-10-27
+
+The consumer selects the three original member-menu routines and uses nineteen
+hooks for their twenty semantic prefix contracts. The redundant backwards
+branch remains original until its destination's prefix. The final registry
+passes 353 checks and preserves all 252 other hooks. No extra ROM functions
+are counted for these continuation contracts.
+
+Final actual bridge verification passes 2,304 whole-routine cases, 270 changed
+returns/unwinds and 4,806 admitted prefix cases with 314 refusals. Scheduler
+progress, redirects and timed bus accesses are included. Production replay
+matches all 600 frame-state hash records, 333,438 fresh PCM samples and five
+complete serialized hardware snapshots. PCM and snapshots are compared byte
+for byte. New C operations replace 45 interpreted opcodes in that traversal;
+66 unsafe opcodes retain original execution. The actual final Windows Release,
+capability-undefined bridge and thirteen capability gates pass. Compiled APU
+idle callers and normal-source linkage are checked separately. Earlier semantic
+proofs remain scoped as recorded below; no unrelated full regression was run.
+
+Three alternating fixed-affinity desktop pairs have reference/native replay
+median 5.052/5.113 seconds and mean 4.931/5.733 seconds. The sample is noisy and
+may include concurrent owner-build contention. This proves neither a speedup
+nor general, ARM or hardware 60-FPS acceptance. See the consuming project's
+verification and rendering/runtime documents for the bounded integration.
+
 # Member-screen continuation prefixes — 2026-10-27
 
 The three member-screen routines also expose 20 bounded semantic prefixes for
