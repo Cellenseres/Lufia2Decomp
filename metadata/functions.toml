@@ -18030,3 +18030,27 @@ source = "src/menu/card_table_input_panel.c"
 entry_mx = "M0X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "82:9E67"
+name = "Lufia2MenuBuildMemberStatus"
+source = "src/menu/menu_member_screens.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B2FE"
+name = "Lufia2MenuRunMemberStatus"
+source = "src/menu/menu_member_screens.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:B370"
+name = "Lufia2MenuChooseSpellMember"
+source = "src/menu/menu_member_screens.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

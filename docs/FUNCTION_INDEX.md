@@ -699,6 +699,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9E07` | `Lufia2MenuConfigurePendingItemTargetCursor` | verified | `src/menu/menu_list_cursor_setup.c` |
 | `$82:9E1B` | `Lufia2MenuConfigurePendingItemActionCursor` | verified | `src/menu/menu_list_cursor_setup.c` |
 | `$82:9E2F` | `Lufia2MenuUpdateItemCapacityHint` | verified | `src/menu/menu_effect_presentation.c` |
+| `$82:9E67` | `Lufia2MenuBuildMemberStatus` | verified | `src/menu/menu_member_screens.c` |
 | `$82:9EF2` | `Lufia2MenuBuildAlternateCursor` | verified | `src/menu/menu_display_callers.c` |
 | `$82:9F0C` | `Lufia2MenuPrepareEquipmentPortrait` | verified | `src/menu/menu_party_actions.c` |
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
@@ -743,6 +744,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:B1CE` | `Lufia2MenuCloseItemSelection` | verified | `src/menu/menu_pending_item.c` |
 | `$82:B1FE` | `Lufia2MenuUsePendingItem` | verified | `src/menu/menu_pending_item.c` |
 | `$82:B2C5` | `Lufia2MenuEquipUpgrade` | verified | `src/menu/menu_screen.c` |
+| `$82:B2FE` | `Lufia2MenuRunMemberStatus` | verified | `src/menu/menu_member_screens.c` |
+| `$82:B370` | `Lufia2MenuChooseSpellMember` | verified | `src/menu/menu_member_screens.c` |
 | `$82:B3AD` | `Lufia2MenuSortSpells` | verified | `src/menu/menu_list_sort.c` |
 | `$82:B42D` | `Lufia2MenuSwapSpellSelection` | verified | `src/menu/menu_list_actions.c` |
 | `$82:B45B` | `Lufia2MenuUseSelectedSpell` | verified | `src/menu/menu_list_actions.c` |

@@ -1,3 +1,29 @@
+# Member status and spell selection — 2026-10-27
+
+Three original routines missing from the earlier static entry inventory are
+reconstructed: 82:9E67 builds the member status screen, 82:B2FE controls its
+selection and paging, and 82:B370 selects a spell-list member. The main menu's
+original inline dispatch table references both controllers. Runtime observation
+found the spell controller outside the old instruction-ownership census;
+zero catalogue candidates had not established complete ROM coverage.
+
+The shared standalone checkpoint covers 1,536 original-ROM CPU, full-WRAM and
+ordered data-bus comparisons, all 30 child-call sites, 30 child unwinds and 150
+changed-return cases. Another 1,536 composed cases execute the reconstructed
+status builder inside its controller against the corresponding original code;
+other children are controlled. DB 83, 7E and 7F contexts are included. Short and
+long child frames, dynamic values, invalid spell-member feedback and status
+confirm/page decisions retain their original behavior. Changed program-bank
+returns hand off at the actual bank instead of assuming the caller's bank.
+Strict MSVC, ARM GCC and Clang compilation passes.
+
+Consumer candidates separately pass 2,304 actual timed bridge ABI cases and
+270 changed-return/unwind cases, covering all 30 call sites. Timing plans have
+8,448 original-prefix replay cases; this replay scope alone is not a semantic
+execution proof. Production caller/device/PCM and performance acceptance is
+still pending. No general speed or complete-native-menu claim is made here.
+Private tests and captures remain outside both repositories.
+
 # Input-panel consumer checkpoint — 2026-10-27
 
 The six original entries are now integrated by the consuming recompilation.
@@ -12435,7 +12461,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2234 functions in `metadata/functions.toml`: 2234 verified, 0 draft, 0 identified, 0 disabled.
+2237 functions in `metadata/functions.toml`: 2237 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
