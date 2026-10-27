@@ -1,3 +1,32 @@
+# Input-panel consumer checkpoint — 2026-10-27
+
+The six original entries are now integrated by the consuming recompilation.
+The two layer entries share the bounded copy body; they are not two new
+algorithms. The consumer keeps original waits, palette MVN transfers, child
+frames, bus ordering and the 4,096-frame continuation. Host timing and hook
+admission remain outside this semantic library.
+
+The combined consumer checkpoint covers 2,048 timed bridge cases, eight outer
+continuations, 384 pure admission cases, 482 real registry checks and 16
+capability gates. Another 3,712 timing-plan prefixes cover all 29 parent phase
+starts. Earlier copy/command/resource/parser timing proofs are recorded by the
+consumer. Standalone MSVC, ARM GCC and Clang results remain applicable to the
+unchanged semantic sources; no unrelated full regression was repeated.
+
+Forty-eight actual original-caller reference/candidate pairs preserve returned
+CPU/WRAM, non-APU devices, complete natural frame-end devices and fresh PCM.
+Sixteen pairs have transient immediate APU aggregation differences until normal
+synchronization. Immediate full-device equality is not claimed for those cases.
+Every candidate entry executes; reference native counts are zero. Wait attempts
+and admissions are identical in these fixtures. Compiled relative and absolute
+APU callers and the unmodified production link are checked separately.
+
+Matched desktop measurements demonstrate lower copy costs in the tested
+contexts. Short service costs are mixed, and whole-panel samples are noisy.
+There is no general acceleration, ARM, hardware or 60-FPS claim. See the
+consumer's rendering/runtime and verification documents for measured costs,
+fixture limits and remaining work. Tests and captures remain private.
+
 # Input-panel dependency chain — semantic verification
 
 Six original entries cover the complete 84:EE4B panel controller, resource
@@ -24,9 +53,8 @@ cases pass after extracting the shared word operation. Strict MSVC, ARM GCC
 and Clang C11 pass for the final span sources. This API is not a new original
 routine or a runtime timing certificate.
 
-Consumer timing, native admission, generated/linked
-callers, devices/PCM and matched costs remain pending. These six verified
-semantic entries are not yet runtime bindings or a performance claim.
+The consumer checkpoint above supersedes the original integration-pending
+state. Semantic verification alone is not a runtime performance claim.
 
 # Cursor input and animation — semantic verification
 
