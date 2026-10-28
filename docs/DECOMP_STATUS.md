@@ -1,3 +1,17 @@
+# Effect cleanup byte spans - 2026-10-28
+
+The original WMDATA clear shares its ordered byte operation with a bounded
+Lufia2BattleEffectClearByteSpan service. Its limit is32 original iterations;
+the existing four-byte service still delegates with4. The full parent loop
+retains all2048 port writes. X,flags,17-bit port wrapping and continuation PCs
+remain observable; no memset,omitted store or original delay is introduced.
+
+Original-ROM checks cover78336 public states and256 complete clears totaling
+1572864 original opcodes. Consumer checks cover1320 timed spans,3055360 event
+windows and55 refusal cases. Host admission,timing,hook ownership and measured
+runtime cost belong to the separate consumer. No new metadata/function count
+is claimed for this shared internal phase. Tests remain private.
+
 # Shared battle timer controller - 2026-10-28
 
 Original85:8F1B and handler-return85:8F3C reuse the timer-slot algorithm of

@@ -390,17 +390,23 @@ static void EffectClearNextByte(
     OpDex(cpu);
 }
 
-Lufia2ExecutionResult Lufia2BattleEffectClearBytesStep(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+Lufia2ExecutionResult Lufia2BattleEffectClearByteSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned max_bytes) {
     if (cpu->program_bank != 0x81u ||
-        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit)
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit ||
+        !max_bytes || max_bytes > LUFIA2_BATTLE_EFFECT_CLEAR_SPAN_MAX_BYTES)
         return ExecutionHandoff(cpu, 0x818bfbu);
     unsigned bytes = 0u;
     do {
         EffectClearNextByte(memory, cpu);
         ++bytes;
-    } while (!cpu->zero && bytes < 4u);
+    } while (!cpu->zero && bytes < max_bytes);
     return ExecutionHandoff(cpu, cpu->zero ? 0x818c01u : 0x818bfbu);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectClearBytesStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return Lufia2BattleEffectClearByteSpan(memory, cpu, 4u);
 }
 
 static bool EffectFinish(EffectEngine *effect) {
