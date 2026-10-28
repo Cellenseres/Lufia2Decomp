@@ -1,3 +1,18 @@
+# Shared battle timer controller - 2026-10-28
+
+Original85:8F1B and handler-return85:8F3C reuse the timer-slot algorithm of
+85:8DC5 through explicit portable entry/resume services. The parent retains
+its original simulated JSR/RTS frame. Selector reads,PEA/PHA/RTS dispatch,
+handler clobbers and unwinds remain literal. These services do not introduce
+a second algorithm or promote another metadata entry.
+
+Shared verification covers8192 opcode plans,8192 production-hook spans,
+2162 refusal/admission cases,864 null-service parent/entry cases and6676
+service cases across parent,entry,resume and fullNMI. CPU,WRAM,ordered bus,
+child frames and clocks are checked at their respective boundaries. Two
+independent timing/landing faults are detected. Tests remain consumer-private.
+Actual native admission,device/audio equivalence and cost belong to the consumer.
+
 # Target-name continuations - 2026-10-28
 
 The target selector shares its original name-buffer clearing algorithm with

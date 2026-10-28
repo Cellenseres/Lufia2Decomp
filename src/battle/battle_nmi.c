@@ -6,6 +6,7 @@
 #include "core/child_call.h"
 #include "lufia2/battle.h"
 #include "lufia2/battle_nmi_timer_steps.h"
+#include "lufia2/battle_timed_callbacks.h"
 #include "primary_wave_internal.h"
 #include "system/wram.h"
 
@@ -142,12 +143,19 @@ Lufia2ExecutionResult Lufia2BattleTimerStep(
     return ExecutionHandoff(cpu, cpu->zero ? 0x858f47u : 0x858f1fu);
 }
 
-static Lufia2ExecutionResult BattleRunTimers(
+static Lufia2ExecutionResult BattleRunTimerSlots(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    SimulateJsrFrame(memory, cpu, 0x8e78u);
+    Lufia2PushedChildCall child, void *context, bool resuming) {
     SetIndexWidth(cpu, 1u);
-    LoadX8(cpu, 0u);
+    if (resuming) {
+        BattleAdvanceTimer(cpu);
+        if (cpu->zero) {
+            SetIndexWidth(cpu, 0u);
+            return ExecutionReturned(0x858f49u);
+        }
+    } else {
+        LoadX8(cpu, 0u);
+    }
     unsigned visited = 0u;
     do {
         if (BattleTimerExpired(memory, cpu)) {
@@ -190,8 +198,36 @@ static Lufia2ExecutionResult BattleRunTimers(
             return ExecutionHandoff(cpu, 0x858f1fu);
     } while (!cpu->zero);
     SetIndexWidth(cpu, 0u);
-    SimulateRtsFrame(memory, cpu);
     return ExecutionReturned(0x858f49u);
+}
+
+Lufia2ExecutionResult Lufia2BattleRunTimedCallbacks(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x85u ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x858f1bu);
+    return BattleRunTimerSlots(memory, cpu, child, context, false);
+}
+
+Lufia2ExecutionResult Lufia2BattleResumeTimedCallbacks(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x85u ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x858f3cu);
+    return BattleRunTimerSlots(memory, cpu, child, context, true);
+}
+
+static Lufia2ExecutionResult BattleRunTimers(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    SimulateJsrFrame(memory, cpu, 0x8e78u);
+    const Lufia2ExecutionResult result =
+        BattleRunTimerSlots(memory, cpu, child, context, false);
+    if (result.flow == LUFIA2_EXECUTION_RETURNED)
+        SimulateRtsFrame(memory, cpu);
+    return result;
 }
 
 enum {
