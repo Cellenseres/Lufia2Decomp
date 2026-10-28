@@ -1,4 +1,5 @@
 #include "battle/battle_internal.h"
+#include "lufia2/battle_target_name_steps.h"
 
 enum {
     TARGET_DP_MODE = 0x24u,
@@ -104,13 +105,29 @@ static bool TargetBuildSelectionRecords(BattleContext *battle) {
     return TargetBuildEnemyRecords(battle);
 }
 
-static void TargetClearName(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLdy(cpu, 0x7fu);
-    TransferDirectToA(cpu);
+static void TargetClearNameSpan(const Lufia2Memory *memory,
+                                Lufia2CpuState *cpu, unsigned bytes) {
     do {
         OpSta(memory, cpu, OpAbsY(cpu, 0x3800u));
         OpDey(cpu);
-    } while (!cpu->negative);
+    } while (!cpu->negative && --bytes);
+}
+
+static void TargetClearName(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLdy(cpu, 0x7fu);
+    TransferDirectToA(cpu);
+    TargetClearNameSpan(memory, cpu, 128u);
+}
+
+Lufia2ExecutionResult Lufia2BattleClearTargetNameSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint32_t entry, unsigned bytes) {
+    if ((entry != 0x81d58du && entry != 0x81d7c5u && entry != 0x81d8ccu) ||
+        cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || cpu->y > 127u || !bytes || bytes > 8u)
+        return ExecutionHandoff(cpu, entry);
+    TargetClearNameSpan(memory, cpu, bytes);
+    return ExecutionHandoff(cpu, cpu->negative ? entry + 6u : entry);
 }
 
 static void TargetLoadCursorRecordOffset(const Lufia2Memory *memory,

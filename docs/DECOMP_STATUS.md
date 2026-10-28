@@ -1,3 +1,16 @@
+# Target-name continuations - 2026-10-28
+
+The target selector shares its original name-buffer clearing algorithm with
+bounded continuations at81:D58D,81:D7C5 and81:D8CC. Each span preserves the
+original indexed stores, register flags and branch boundary, stopping after
+up to eight bytes. The parent still clears all128 bytes. These are internal
+phases of verified81:D4E0, not three new standalone routines or metadata entries.
+
+Original-ROM and production-ABI checks cover18,432 spans and18,432 next-opcode
+rejoins, plus36 portable clamped spans and21 invalid API inputs. Consumer
+clock, callback, hardware and performance acceptance remains separate. No
+original waiting, MMIO or sound behavior is removed. Tests stay private.
+
 # Capsule selection reconstruction - 2026-10-28
 
 Five original routines now cover inventory backup, feeding panels and screen,
