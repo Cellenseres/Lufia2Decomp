@@ -709,6 +709,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:A07D` | `Lufia2MenuRefreshOptions` | verified | `src/menu/menu_options_screen.c` |
 | `$82:A0C7` | `Lufia2MenuSetOptionIndicators` | verified | `src/menu/menu_options_screen.c` |
 | `$82:A0E3` | `Lufia2MenuBuildCapsuleScreen` | verified | `src/menu/menu_capsule_screen.c` |
+| `$82:A1D8` | `Lufia2MenuBuildCapsuleFeedingScreen` | verified | `src/menu/menu_capsule_selection.c` |
+| `$82:A233` | `Lufia2MenuBuildCapsuleFeedingPanels` | verified | `src/menu/menu_capsule_selection.c` |
 | `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
 | `$82:A318` | `Lufia2MenuDrawStatus` | verified | `src/menu/menu_status.c` |
 | `$82:A432` | `Lufia2MenuRunMainInput` | verified | `src/menu/menu_main_dispatch.c` |
@@ -786,6 +788,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:BF13` | `Lufia2MenuRunOptionsScreen` | verified | `src/menu/menu_options_screen.c` |
 | `$82:BFC5` | `Lufia2MenuRunCapsuleScreen` | verified | `src/menu/menu_capsule_screen.c` |
 | `$82:C044` | `Lufia2MenuRunCapsuleAction` | verified | `src/menu/menu_capsule_screen.c` |
+| `$82:C0AC` | `Lufia2MenuRunCapsuleFeeding` | verified | `src/menu/menu_capsule_selection.c` |
+| `$82:C170` | `Lufia2MenuChooseCapsule` | verified | `src/menu/menu_capsule_selection.c` |
 | `$82:C261` | `Lufia2CapsuleLoadStats` | verified | `src/party/capsule.c` |
 | `$82:C2AE` | `Lufia2CapsuleInitializeSavedRecords` | verified | `src/menu/menu_context_services.c` |
 | `$82:C2FD` | `Lufia2CapsuleReset` | verified | `src/party/capsule.c` |
@@ -1021,6 +1025,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:FB1F` | `Lufia2ItemPossessionCount` | verified | `src/item/inventory.c` |
 | `$82:FB51` | `Lufia2ItemCheckPossessionBit` | verified | `src/item/inventory.c` |
 | `$82:FB94` | `Lufia2InventoryFindEmptySlot` | verified | `src/item/inventory_selection.c` |
+| `$82:FBA7` | `Lufia2MenuBackupInventory` | verified | `src/menu/menu_capsule_selection.c` |
 | `$82:FBE5` | `Lufia2MenuSelectedListOffset` | verified | `src/menu/menu_list_scroll.c` |
 | `$82:FBEE` | `Lufia2InventoryReadSelectedItem` | verified | `src/item/inventory_actions.c` |
 | `$82:FC08` | `Lufia2InventorySwapSelectedItems` | verified | `src/item/inventory_actions.c` |

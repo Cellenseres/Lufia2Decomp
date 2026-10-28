@@ -1,3 +1,19 @@
+# Capsule selection reconstruction - 2026-10-28
+
+Five original routines now cover inventory backup, feeding panels and screen,
+the capsule/form selector and the feeding controller. Their complete semantic
+contracts pass 2,560 direct and 2,560 composed original-ROM cases, all 65 child
+sites and unwinds, 325 changed returns and 35 unsupported entries. Another
+1,024 backup cases cover every data-bank value, four direct pages and status
+variations. Four injected errors are detected; strict MSVC, ARM GCC and Clang pass.
+
+The backup retains ordered word transfers and its final bank/flag restoration.
+The selector keeps unavailable-capsule scanning and original form constraints.
+The consumer now selects all five contracts. Two natural input sequences and
+a separate active-HDMA case match original execution, including fresh PCM.
+All five bodies execute across those natural sequences. No general performance
+gain is claimed; host timing and admission remain consumer responsibilities.
+
 # Main-menu reconstruction batch - 2026-10-27
 
 Nine original routines are reconstructed in options, capsule and scenario-item
@@ -12529,7 +12545,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2247 functions in `metadata/functions.toml`: 2247 verified, 0 draft, 0 identified, 0 disabled.
+2252 functions in `metadata/functions.toml`: 2252 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

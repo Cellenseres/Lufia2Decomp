@@ -18134,3 +18134,43 @@ source = "src/menu/menu_screen.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"
 status = "verified"
+
+[[function]]
+address = "82:FBA7"
+name = "Lufia2MenuBackupInventory"
+source = "src/menu/menu_capsule_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:A233"
+name = "Lufia2MenuBuildCapsuleFeedingPanels"
+source = "src/menu/menu_capsule_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:A1D8"
+name = "Lufia2MenuBuildCapsuleFeedingScreen"
+source = "src/menu/menu_capsule_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C170"
+name = "Lufia2MenuChooseCapsule"
+source = "src/menu/menu_capsule_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:C0AC"
+name = "Lufia2MenuRunCapsuleFeeding"
+source = "src/menu/menu_capsule_selection.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
