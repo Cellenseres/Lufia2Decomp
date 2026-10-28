@@ -4,6 +4,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+Lufia2ExecutionResult Lufia2BattleEffectSlotHeaderStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 Lufia2ExecutionResult Lufia2BattleEffectScriptSlotStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2BattleEffectActorSlotStep(

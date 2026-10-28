@@ -1,3 +1,17 @@
+# Effect slot timer headers - 2026-10-28
+
+The original active/timer check at81:8A7E and81:8AC1 is exposed as a bounded
+header service. It reuses EffectSlotTimerExpired; full script/actor slot
+updates,advances and parent scans retain their original bodies. Expiration
+continues at81:8A8C/8ACF; inactive/running headers continue at81:8AAA/8B1B.
+All register flags,widths and ordered reads/writes remain observable.
+
+Original-ROM and production-clock checks cover11280 full/header states,
+1128 decimal semantic states and763840 admission windows. Legacy-only
+checks cover6768 states and752 decimal states. These are shared internal
+phases of81:895E,not new canonical functions or independent bindings.
+Consumer ownership,device/audio equivalence and cost are separate evidence.
+
 # Effect cleanup byte spans - 2026-10-28
 
 The original WMDATA clear shares its ordered byte operation with a bounded

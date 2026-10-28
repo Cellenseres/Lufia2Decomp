@@ -270,6 +270,18 @@ static Lufia2ExecutionResult EffectSingleSlotStep(
     return EffectAdvanceSlotStep(memory, cpu, actors);
 }
 
+Lufia2ExecutionResult Lufia2BattleEffectSlotHeaderStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x818a7eu && entry != 0x818ac1u) ||
+        !EffectSlotStepContext(cpu))
+        return ExecutionHandoff(cpu, entry);
+    const bool actors = entry == 0x818ac1u;
+    const bool expired = EffectSlotTimerExpired(memory, cpu);
+    return ExecutionHandoff(cpu, expired
+        ? (actors ? 0x818acfu : 0x818a8cu)
+        : (actors ? 0x818b1bu : 0x818aaau));
+}
+
 Lufia2ExecutionResult Lufia2BattleEffectScriptSlotStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     return EffectSingleSlotStep(memory, cpu, false);
