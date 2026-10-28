@@ -705,6 +705,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
 | `$82:9FB0` | `Lufia2MenuPresentEquipmentList` | verified | `src/menu/menu_party_actions.c` |
 | `$82:9FFB` | `Lufia2MenuConfigureEquipmentPicker` | verified | `src/menu/menu_party_actions.c` |
+| `$82:A023` | `Lufia2MenuBuildOptionsScreen` | verified | `src/menu/menu_options_screen.c` |
+| `$82:A07D` | `Lufia2MenuRefreshOptions` | verified | `src/menu/menu_options_screen.c` |
+| `$82:A0C7` | `Lufia2MenuSetOptionIndicators` | verified | `src/menu/menu_options_screen.c` |
+| `$82:A0E3` | `Lufia2MenuBuildCapsuleScreen` | verified | `src/menu/menu_capsule_screen.c` |
 | `$82:A2E3` | `Lufia2MenuCapsuleScreen` | verified | `src/menu/menu_screen.c` |
 | `$82:A318` | `Lufia2MenuDrawStatus` | verified | `src/menu/menu_status.c` |
 | `$82:A432` | `Lufia2MenuRunMainInput` | verified | `src/menu/menu_main_dispatch.c` |
@@ -713,6 +717,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:A62D` | `Lufia2MenuRunAlternateSelection` | verified | `src/menu/menu_main_dispatch.c` |
 | `$82:A658` | `Lufia2MenuRunListInput` | verified | `src/menu/menu_list_controls.c` |
 | `$82:A711` | `Lufia2MenuRunListSelection` | verified | `src/menu/menu_list_controls.c` |
+| `$82:A88E` | `Lufia2MenuRunScenarioItems` | verified | `src/menu/menu_scenario_items.c` |
 | `$82:A918` | `Lufia2MenuListCursor` | verified | `src/menu/menu_screen.c` |
 | `$82:A9B5` | `Lufia2MenuSortInventory` | verified | `src/menu/menu_list_sort.c` |
 | `$82:AAFF` | `Lufia2MenuDispatchListAction` | verified | `src/menu/menu_list_actions.c` |
@@ -778,6 +783,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:BE71` | `Lufia2MenuLoadEquipmentSlotStats` | verified | `src/menu/menu_party_actions.c` |
 | `$82:BED9` | `Lufia2MenuClassifyEquipmentListSelection` | verified | `src/menu/menu_party_actions.c` |
 | `$82:BEF0` | `Lufia2MenuResolveEquipmentListSelection` | verified | `src/menu/menu_party_actions.c` |
+| `$82:BF13` | `Lufia2MenuRunOptionsScreen` | verified | `src/menu/menu_options_screen.c` |
+| `$82:BFC5` | `Lufia2MenuRunCapsuleScreen` | verified | `src/menu/menu_capsule_screen.c` |
+| `$82:C044` | `Lufia2MenuRunCapsuleAction` | verified | `src/menu/menu_capsule_screen.c` |
 | `$82:C261` | `Lufia2CapsuleLoadStats` | verified | `src/party/capsule.c` |
 | `$82:C2AE` | `Lufia2CapsuleInitializeSavedRecords` | verified | `src/menu/menu_context_services.c` |
 | `$82:C2FD` | `Lufia2CapsuleReset` | verified | `src/party/capsule.c` |
@@ -839,6 +847,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:CFFD` | `Lufia2CapsuleQueueSavedFormTiles` | verified | `src/party/capsule_graphics.c` |
 | `$82:D026` | `Lufia2CapsuleArrangeFormTiles` | verified | `src/party/capsule_graphics.c` |
 | `$82:D07B` | `Lufia2MenuCapsuleStatus` | verified | `src/menu/menu_screen.c` |
+| `$82:D121` | `Lufia2MenuDrawCapsuleExperience` | verified | `src/menu/menu_capsule_screen.c` |
 | `$82:D13A` | `Lufia2CapsuleRefreshFoodMeter` | verified | `src/party/capsule_food_display.c` |
 | `$82:D150` | `Lufia2CapsuleDrawFoodMeter` | verified | `src/party/capsule_food_display.c` |
 | `$82:D248` | `Lufia2CapsulePlaceSelectedSprite` | verified | `src/party/capsule_menu_assets.c` |
@@ -1016,6 +1025,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:FBEE` | `Lufia2InventoryReadSelectedItem` | verified | `src/item/inventory_actions.c` |
 | `$82:FC08` | `Lufia2InventorySwapSelectedItems` | verified | `src/item/inventory_actions.c` |
 | `$82:FC1F` | `Lufia2InventoryDiscardSelectedItem` | verified | `src/item/inventory_actions.c` |
+| `$82:FC3F` | `Lufia2MenuFindScenarioItem` | verified | `src/menu/menu_screen.c` |
 | `$82:FC7D` | `Lufia2MenuCountOwnedItem` | verified | `src/menu/menu_screen.c` |
 | `$82:FC97` | `Lufia2ItemIncrementPackedCount` | verified | `src/item/packed_item_counts.c` |
 | `$82:FCC7` | `Lufia2ItemDecrementPackedCount` | verified | `src/item/packed_item_counts.c` |

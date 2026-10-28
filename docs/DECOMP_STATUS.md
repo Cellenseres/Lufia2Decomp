@@ -1,3 +1,21 @@
+# Main-menu reconstruction batch - 2026-10-27
+
+Nine original routines are reconstructed in options, capsule and scenario-item
+menus. The FC3F scenario-item lookup reuses its existing implementation through
+an independent entry contract; it is not another reconstructed algorithm.
+The ten original boundary contracts are verified. Consumer acceptance covers
+1000 equal frame states, five hardware snapshots and552971 fresh PCM samples.
+Unsafe contexts retain original execution; no general speedup is claimed.
+
+The shared semantic batch passes 5120 direct and 5120 composed original-ROM
+comparisons, all90 child-call sites,90 unwinds,450 changed returns and76 entry
+refusals. Another512 cases cover every indicator selector with two accumulator
+high-byte patterns. Four injected errors are detected. CPU state, complete WRAM,
+ordered data/MMIO and child frames are checked. Strict MSVC, ARM GCC and Clang
+compile the final sources. No unrelated full regression or performance claim
+is made. Actual consumer ABI adds7680 cases and810 changed returns/unwinds;
+the shared inline dispatcher adds3072 timed original-ROM comparisons.
+
 # Member-screen consumer proof — 2026-10-27
 
 The consumer selects the three original member-menu routines and uses nineteen
@@ -12511,7 +12529,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2237 functions in `metadata/functions.toml`: 2237 verified, 0 draft, 0 identified, 0 disabled.
+2247 functions in `metadata/functions.toml`: 2247 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

@@ -4,6 +4,7 @@
 #include "core/wram_view.h"
 #include "lufia2/item.h"
 #include "lufia2/menu.h"
+#include "lufia2/menu_scenario_items.h"
 #include "lufia2/menu_values.h"
 #include "lufia2/party.h"
 #include "lufia2/system.h"
@@ -2081,6 +2082,15 @@ static void ScenarioItem(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         Compare16(cpu, cpu->y, 0x0008u);
     } while (!cpu->zero);
     cpu->carry = 1;
+}
+
+Lufia2ExecutionResult Lufia2MenuFindScenarioItem(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x82u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x82fc3fu);
+    ScenarioItem(memory, cpu);
+    return ExecutionReturned(cpu->carry ? 0x82fc70u : 0x82fc7cu);
 }
 
 /* $82:86E5: scenario item row at A for the Xth item. */
