@@ -2011,6 +2011,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:AF98` | `Lufia2WorldMapRunSceneTrack3` | verified | `src/world/world_scene_sequence.c` |
 | `$86:AFA0` | `Lufia2WorldMapRunSceneTrack4` | verified | `src/world/world_scene_sequence.c` |
 | `$86:AFA8` | `Lufia2WorldMapRunSceneTrack5` | verified | `src/world/world_scene_sequence.c` |
+| `$86:AFB0` | `Lufia2WorldMapIdleSceneSequence8` | verified | `src/world/world_scene_timed_resources.c` |
+| `$86:AFB1` | `Lufia2WorldMapIdleSceneSequence9` | verified | `src/world/world_scene_timed_resources.c` |
 | `$86:AFB2` | `Lufia2WorldMapRunGroupScene0` | verified | `src/world/world_scene_resources.c` |
 | `$86:AFE2` | `Lufia2WorldMapIdleGroupScene` | verified | `src/world/world_scene_timed_resources.c` |
 | `$86:AFE3` | `Lufia2WorldMapRunGroupScene1` | verified | `src/world/world_scene_resources.c` |

@@ -3,6 +3,8 @@
 
 #include "lufia2/execution.h"
 
+#define LUFIA2_WORLD_SCENE_IDLE_SEQUENCES_API 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,6 +13,12 @@ Lufia2ExecutionResult Lufia2WorldMapIdleSceneScript(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 Lufia2ExecutionResult Lufia2WorldMapIdleGroupScene(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2WorldMapIdleSceneSequence8(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2WorldMapIdleSceneSequence9(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 Lufia2ExecutionResult Lufia2WorldMapStepResourceSceneTrails(

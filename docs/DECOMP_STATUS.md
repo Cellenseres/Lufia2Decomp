@@ -1,3 +1,16 @@
+# Original idle scene sequence targets - 2026-11-02
+
+86:AFB0 and86:AFB1 are the original single-RTS destinations of scene
+selectors8 and9 in86:AF0A. Both complete empty functions are reconstructed;
+they preserve every CPU field before the return and touch no guest memory.
+Wrong-bank entry hands off at the original entry. These are two tiny original
+endpoints,not additional game algorithms or an expansion of scene behavior.
+
+The shared consumer proof covers36864 original-ROM/timed RTS states across
+all9 idle consumers,4608 portable immutability/bank checks and774 admission
+checks. Full CPU,WRAM,ordered fetch/data bus and timing agree. A deliberate
+CPU mutation fails. Consumer selection and performance evidence are separate.
+
 # Shared battle ripple word runs - 2026-11-02
 
 The complete85:AA3D routine and bounded85:AA61 word-row service share

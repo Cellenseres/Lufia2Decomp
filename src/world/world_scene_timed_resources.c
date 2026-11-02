@@ -24,6 +24,22 @@ Lufia2ExecutionResult Lufia2WorldMapIdleGroupScene(
     return ExecutionReturned(0x86afe2u);
 }
 
+Lufia2ExecutionResult Lufia2WorldMapIdleSceneSequence8(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (cpu->program_bank != 0x86u)
+        return ExecutionHandoff(cpu, 0x86afb0u);
+    return ExecutionReturned(0x86afb0u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapIdleSceneSequence9(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (cpu->program_bank != 0x86u)
+        return ExecutionHandoff(cpu, 0x86afb1u);
+    return ExecutionReturned(0x86afb1u);
+}
+
 static Lufia2ExecutionResult SceneResourceUnwound(uint32_t site) {
     Lufia2ExecutionResult result = ExecutionReturned(site);
     result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;

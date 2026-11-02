@@ -16520,6 +16520,22 @@ exit_mx = "M1X0"
 status = "verified"
 
 [[function]]
+address = "86:AFB0"
+name = "Lufia2WorldMapIdleSceneSequence8"
+source = "src/world/world_scene_timed_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "86:AFB1"
+name = "Lufia2WorldMapIdleSceneSequence9"
+source = "src/world/world_scene_timed_resources.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
 address = "86:BFEB"
 name = "Lufia2WorldMapStepResourceSceneTrails"
 source = "src/world/world_scene_timed_resources.c"
