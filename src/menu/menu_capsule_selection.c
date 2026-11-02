@@ -22,11 +22,16 @@ static bool CapsuleSelectionChild(MenuActionCall *call, uint32_t site,
     return MenuScreenChild(call, site, target, frame, width, 0u);
 }
 
-Lufia2ExecutionResult Lufia2MenuBackupInventory(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static Lufia2ExecutionResult CopyInventoryBackup(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, bool restore) {
+    const uint32_t entry = restore ? 0x82fbc6u : 0x82fba7u;
+    const uint16_t source = restore ? CAPSULE_INVENTORY_BACKUP :
+        WRAM_INVENTORY_PACKED_ITEMS;
+    const uint16_t destination = restore ? WRAM_INVENTORY_PACKED_ITEMS :
+        CAPSULE_INVENTORY_BACKUP;
     if (cpu->program_bank != 0x82u || !cpu->accumulator_is_8_bit ||
         cpu->index_is_8_bit)
-        return ExecutionHandoff(cpu, 0x82fba7u);
+        return ExecutionHandoff(cpu, entry);
     PushDataBank(memory, cpu);
     Push8(memory, cpu, PackStatus(cpu));
     OpRepWidths(cpu, 0x30u);
@@ -37,15 +42,25 @@ Lufia2ExecutionResult Lufia2MenuBackupInventory(
     OpRepWidths(cpu, 0x20u);
     OpLdx(cpu, 0u);
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, WRAM_INVENTORY_PACKED_ITEMS));
-        OpSta(memory, cpu, OpAbsX(cpu, CAPSULE_INVENTORY_BACKUP));
+        OpLda(memory, cpu, OpAbsX(cpu, source));
+        OpSta(memory, cpu, OpAbsX(cpu, destination));
         OpInx(cpu);
         OpInx(cpu);
         OpCpx(cpu, WRAM_INVENTORY_PACKED_ITEMS_COUNT * 2u);
     } while (!cpu->zero);
     UnpackStatus(cpu, Pull8(memory, cpu));
     PullDataBank(memory, cpu);
-    return ExecutionReturned(0x82fbc5u);
+    return ExecutionReturned(restore ? 0x82fbe4u : 0x82fbc5u);
+}
+
+Lufia2ExecutionResult Lufia2MenuBackupInventory(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return CopyInventoryBackup(memory, cpu, false);
+}
+
+Lufia2ExecutionResult Lufia2MenuRestoreInventory(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return CopyInventoryBackup(memory, cpu, true);
 }
 
 static void PlaceFeedingCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu,

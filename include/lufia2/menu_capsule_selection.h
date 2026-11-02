@@ -5,6 +5,11 @@
 
 Lufia2ExecutionResult Lufia2MenuBackupInventory(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+#define LUFIA2_MENU_INVENTORY_RESTORE_API 1
+
+Lufia2ExecutionResult Lufia2MenuRestoreInventory(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2MenuBuildCapsuleFeedingPanels(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

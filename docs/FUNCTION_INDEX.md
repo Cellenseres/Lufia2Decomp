@@ -1040,6 +1040,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:FB51` | `Lufia2ItemCheckPossessionBit` | verified | `src/item/inventory.c` |
 | `$82:FB94` | `Lufia2InventoryFindEmptySlot` | verified | `src/item/inventory_selection.c` |
 | `$82:FBA7` | `Lufia2MenuBackupInventory` | verified | `src/menu/menu_capsule_selection.c` |
+| `$82:FBC6` | `Lufia2MenuRestoreInventory` | verified | `src/menu/menu_capsule_selection.c` |
 | `$82:FBE5` | `Lufia2MenuSelectedListOffset` | verified | `src/menu/menu_list_scroll.c` |
 | `$82:FBEE` | `Lufia2InventoryReadSelectedItem` | verified | `src/item/inventory_actions.c` |
 | `$82:FC08` | `Lufia2InventorySwapSelectedItems` | verified | `src/item/inventory_actions.c` |

@@ -1,3 +1,24 @@
+# Inventory backup and restore - 2026-11-02
+
+The missing original 82:FBC6 restores 96 inventory words from $7E:8000.
+It shares the copy algorithm with the existing opposite 82:FBA7 operation.
+Data-bank and status stack accesses, ordered word transfers and final
+registers remain literal. The restore metadata has a dynamic exit: synthetic
+stack aliases can overwrite saved status. Normal consumer frames stay M1X0.
+One original inverse operation is added, not a second copy algorithm.
+
+A shared checkpoint passes 16384 portable original-ROM CPU/full-WRAM/bus
+cases, including all incoming data banks, decimal mode, nonzero direct
+pages and wrapped/aliased stacks, plus six no-access refusals. Both consumer
+directions pass 8192 exact timing/bus/open-bus/RTS calls and 50 admission
+refusals. The existing backup admission matches 8217 reference cases.
+
+Immutable consumer paths replace six mutable timing-record copies per
+call. A closed budget replaces scans of 17 timing records; equality holds
+for all 256 tested fetch speeds. Guest timing and all 192 copied bytes
+remain. No new hooks or per-opcode host dispatch. The restore has no proven
+ordinary original caller; host speedup and gameplay frequency are unmeasured.
+
 # Staged 24-bit gold arithmetic - 2026-11-02
 
 Original entries 81:F577 and 81:F59B add and subtract a staged 24-bit
@@ -12808,7 +12829,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2280 functions in `metadata/functions.toml`: 2280 verified, 0 draft, 0 identified, 0 disabled.
+2281 functions in `metadata/functions.toml`: 2281 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

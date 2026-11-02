@@ -18398,3 +18398,11 @@ source = "src/system/gold.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:FBC6"
+name = "Lufia2MenuRestoreInventory"
+source = "src/menu/menu_capsule_selection.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
