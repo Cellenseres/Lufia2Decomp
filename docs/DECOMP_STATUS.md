@@ -1,3 +1,23 @@
+# Staged 24-bit gold arithmetic - 2026-11-02
+
+Original entries 81:F577 and 81:F59B add and subtract a staged 24-bit
+amount. These complete bodies differ from the existing capped 16-bit API.
+No full-body ROM copies were found. Overflow writes FFFFFF; underflow
+retains the original full direct-page transfer and low-byte high-gold store.
+Decimal arithmetic and the ordered low-word/high-byte bus accesses remain.
+
+The shared checkpoint passes 65536 original-ROM CPU, full-WRAM and ordered
+bus cases, including decimal arithmetic and nonzero direct pages, plus six
+no-access refusals. The separate consumer passes 16384 timed calls and 44
+read-only admission refusals using the actual indexed range predicates.
+Four immutable paths reuse the existing clock and long-return services.
+No new opcode hooks, per-opcode host handoffs or whole-table scans.
+
+The consumer admits binary synchronized WRAM calls; portable decimal-mode
+semantics remain available. Six guarded WRAM bytes select a timing path;
+all original reads and writes still occur. Ordinary original callers and
+their frequency remain unproved. No gameplay speedup or FPS claim.
+
 # Target-table reset and original script copies - 2026-11-02
 
 The missing original 81:C586 routine clears twelve target records through
@@ -12788,7 +12808,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2278 functions in `metadata/functions.toml`: 2278 verified, 0 draft, 0 identified, 0 disabled.
+2280 functions in `metadata/functions.toml`: 2280 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

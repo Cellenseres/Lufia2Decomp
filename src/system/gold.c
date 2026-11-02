@@ -1,4 +1,4 @@
-#include "core/cpu_internal.h"
+#include "core/cpu_ops.h"
 #include "lufia2/system.h"
 #include "system/gold_internal.h"
 #include "system/wram.h"
@@ -80,4 +80,47 @@ Lufia2ExecutionResult Lufia2GoldAdd(const Lufia2Memory *memory, Lufia2CpuState *
 
 Lufia2ExecutionResult Lufia2GoldSpend(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     return ChangeGold(memory, cpu, false);
+}
+
+static Lufia2ExecutionResult ChangeStagedGold(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, bool add) {
+    enum { STAGED_GOLD_AMOUNT = 0x09f2u };
+    const uint32_t entry = add ? 0x81f577u : 0x81f59bu;
+
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+
+    SetAccumulatorWidth(cpu, 0);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_GOLD));
+    cpu->carry = add ? 0u : 1u;
+    AccumulatorArithmetic(cpu,
+        OpReadM(memory, cpu, OpAbs(cpu, STAGED_GOLD_AMOUNT)), !add);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_GOLD));
+    SetAccumulatorWidth(cpu, 1);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_GOLD + 2u));
+    AccumulatorArithmetic(cpu,
+        OpReadM(memory, cpu, OpAbs(cpu, STAGED_GOLD_AMOUNT + 2u)), !add);
+
+    if (add ? cpu->carry : !cpu->carry) {
+        SetAccumulatorWidth(cpu, 0);
+        if (add)
+            LoadA16(cpu, 0xffffu);
+        else
+            TransferDirectToA(cpu);
+        OpSta(memory, cpu, OpAbs(cpu, WRAM_GOLD));
+        SetAccumulatorWidth(cpu, 1);
+    }
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_GOLD + 2u));
+    return ExecutionReturned(add ? 0x81f59au : 0x81f5bcu);
+}
+
+Lufia2ExecutionResult Lufia2GoldAddStagedAmount(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return ChangeStagedGold(memory, cpu, true);
+}
+
+Lufia2ExecutionResult Lufia2GoldSubtractStagedAmount(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return ChangeStagedGold(memory, cpu, false);
 }

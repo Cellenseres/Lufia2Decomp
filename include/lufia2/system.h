@@ -19,6 +19,13 @@ Lufia2ExecutionResult Lufia2GoldAdd(
 Lufia2ExecutionResult Lufia2GoldSpend(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+#define LUFIA2_STAGED_GOLD_API 1
+
+Lufia2ExecutionResult Lufia2GoldAddStagedAmount(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2GoldSubtractStagedAmount(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* Frame polls retain their exact continuation when the clock stalls. */
 Lufia2ExecutionResult Lufia2FieldWaitForNextFrame(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);

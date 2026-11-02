@@ -563,6 +563,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F4D5` | `Lufia2PartyDerivedStats` | verified | `src/party/stats.c` |
 | `$81:F4E9` | `Lufia2PartyStatTotalsFar` | verified | `src/party/stats.c` |
 | `$81:F4ED` | `Lufia2PartyStatTotals` | verified | `src/party/stats.c` |
+| `$81:F577` | `Lufia2GoldAddStagedAmount` | verified | `src/system/gold.c` |
+| `$81:F59B` | `Lufia2GoldSubtractStagedAmount` | verified | `src/system/gold.c` |
 | `$81:F5BD` | `Lufia2PartyRestoreVitals` | verified | `src/party/party_records.c` |
 | `$81:F5ED` | `Lufia2PartyRestore11` | verified | `src/party/party_records.c` |
 | `$81:F60B` | `Lufia2PartyRestore13` | verified | `src/party/party_records.c` |
