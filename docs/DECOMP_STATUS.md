@@ -1,3 +1,32 @@
+# Random dissolve mask pixel checkpoint - 2026-11-02
+
+Original `$85:E85F` is complete, verified and bound. It selects a weighted
+mask row, locates a pixel using hardware division and multiplication, and
+clears the selected bit in both planes. Random retries, the empty-prefix
+scan, child frames and the original `BRK` boundary remain intact.
+This is one unique 137-byte operation. Its unfinished `$85:E7C5` caller
+and ordinary gameplay execution remain outside the completion claim.
+
+The shared checkpoint passes 33,792 original-ROM CPU, full-WRAM and ordered
+bus cases, 256 child-unwind contexts and eight no-access refusals. Optional
+budget stops match `$85:E85F`, `$85:E868`, `$85:E87C` and `$85:E882`.
+The production bridge passes 16,512 timed cases and 39 indexed admission
+refusals, covering RNG refills, page crossings, original faults, deadline
+handoffs and rewritten parent returns.
+
+Consumer budgets remain separate from standalone semantics. Certified
+windows are reused across rows. Actual bus results select immutable clock
+paths. All 55 RNG refill iterations remain; two six-opcode loop plans avoid
+repeating 352 timing records. Indexed page crossings retain their extra
+cycle without changing shared clock helpers. No opcode hooks, table scans
+or child host dispatches were added. No original wait or MMIO was removed.
+
+Strict MSVC/Clang C11, previous-header and frame-return-off gates, Windows
+Release integration and the generated/linked caller checks pass. Existing
+wait batching and the APU idle caller remain intact. Full regression was
+deferred for this scoped change; prior transition bodies are unchanged.
+Tests remain private. No production throughput or FPS improvement is claimed.
+
 # Free text-actor slot search - 2026-11-02
 
 Original 80:C1C3 finds the first FF sprite among 40 actor slots, prepares
@@ -12875,7 +12904,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2283 functions in `metadata/functions.toml`: 2283 verified, 0 draft, 0 identified, 0 disabled.
+2284 functions in `metadata/functions.toml`: 2284 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

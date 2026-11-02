@@ -2161,6 +2161,20 @@ Lufia2ExecutionResult Lufia2BattleBuildTargetEffectMasks(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+#define LUFIA2_BATTLE_DISSOLVE_PIXEL_API 1
+
+typedef uint8_t (*Lufia2BattleMaskPixelBudget)(
+    void *context, const Lufia2CpuState *cpu, uint32_t pc);
+
+Lufia2ExecutionResult Lufia2BattleClearRandomMaskPixel(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2BattleClearRandomMaskPixelWithBudget(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context,
+    Lufia2BattleMaskPixelBudget budget, void *budget_context);
+
 Lufia2ExecutionResult Lufia2BattleAddRequestedStatChange(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

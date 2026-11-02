@@ -18422,3 +18422,11 @@ source = "src/text/text_scene_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:E85F"
+name = "Lufia2BattleClearRandomMaskPixel"
+source = "src/battle/battle_transition_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
