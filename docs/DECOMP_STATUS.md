@@ -1,3 +1,24 @@
+# Alternate battle ripple setup - 2026-11-02
+
+Three previously missing original routines are reconstructed: the four-slot
+mode selector at 81:BACB, alternate initializer at 85:A76E and split-scroll
+table builder at 85:A7B1. The selector reads the original ROM table, preserves
+both idle returns and the two pushed initializer calls, and exposes unknown
+table targets as exact continuation boundaries.
+
+The alternate initializer copies its original 23 template bytes and builds
+the WRAM scroll table through its real child algorithm. Reads at 7E:210D
+remain WRAM accesses; carry from the final shift feeds the following add.
+Descriptor configuration is shared with the existing 85:A701 initializer.
+Original decimal behavior remains in the new portable rendering routines.
+
+21504 original-ROM cases cover the new routines and affected existing
+initializer, including composed children, opaque services and unwinds.
+27 refusal cases access no guest memory. Separate consumer checks cover
+32768 timed calls, 128 actual composed initializers, 18 changed child-return
+contexts and 376 read-only admission cases. Unknown selector targets remain
+original continuations, not invented implementations or entry fallbacks.
+
 # Field developer controls and Cave diagnostics - 2026-11-02
 
 Seven original routines are reconstructed: the developer controller, two
@@ -12704,7 +12725,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2270 functions in `metadata/functions.toml`: 2270 verified, 0 draft, 0 identified, 0 disabled.
+2273 functions in `metadata/functions.toml`: 2273 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

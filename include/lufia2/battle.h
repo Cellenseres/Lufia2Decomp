@@ -1370,6 +1370,15 @@ Lufia2ExecutionResult Lufia2BattleInitializeRipple(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+#define LUFIA2_BATTLE_SPLIT_RIPPLE_API 1
+Lufia2ExecutionResult Lufia2BattleSelectRippleMode(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2BattleInitializeSplitRipple(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleBuildSplitRippleTable(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2BattleEffectSpawnEnemyScripts(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

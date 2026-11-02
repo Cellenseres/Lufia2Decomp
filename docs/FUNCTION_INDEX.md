@@ -437,6 +437,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:B974` | `Lufia2BattleLoadPalette` | verified | `src/battle/battle_util.c` |
 | `$81:B9AF` | `Lufia2BattleCommitPalettes` | verified | `src/battle/battle_util.c` |
 | `$81:B9C7` | `Lufia2BattleBackgroundPrepare` | verified | `src/battle/battle_background.c` |
+| `$81:BACB` | `Lufia2BattleSelectRippleMode` | verified | `src/battle/battle_ripple_setup.c` |
 | `$81:BAE8` | `Lufia2BattlePortraits` | verified | `src/battle/battle_portrait.c` |
 | `$81:BAFB` | `Lufia2BattlePortrait` | verified | `src/battle/battle_portrait.c` |
 | `$81:BB75` | `Lufia2BattlePortraitUpload` | verified | `src/battle/battle_portrait.c` |
@@ -1725,6 +1726,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:9DD4` | `Lufia2BattleQueueTurnDisplay` | verified | `src/battle/battle_turn_display.c` |
 | `$85:A701` | `Lufia2BattleInitializeRipple` | verified | `src/battle/battle_ripple_setup.c` |
 | `$85:A736` | `Lufia2BattleRippleRow` | verified | `src/battle/battle_background_wave.c` |
+| `$85:A76E` | `Lufia2BattleInitializeSplitRipple` | verified | `src/battle/battle_ripple_setup.c` |
+| `$85:A7B1` | `Lufia2BattleBuildSplitRippleTable` | verified | `src/battle/battle_ripple_setup.c` |
 | `$85:A804` | `Lufia2BattleBeginPrimaryWave` | verified | `src/battle/battle_primary_wave.c` |
 | `$85:A8E7` | `Lufia2BattleBuildPrimaryWaveTable` | verified | `src/battle/battle_primary_wave.c` |
 | `$85:A972` | `Lufia2BattleConfigureResultHdma` | verified | `src/battle/battle_result_hdma.c` |
