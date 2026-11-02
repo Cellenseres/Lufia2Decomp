@@ -2,6 +2,7 @@
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
 #include "system/wram.h"
+#include "battle/effect_target_scripts.h"
 
 enum {
     SLOT_STREAM = 0xc3u,
@@ -229,72 +230,24 @@ Lufia2ExecutionResult Lufia2BattleEffectSpawnActorAt(
     return Lufia2BattleEffectSpawnActor(memory, cpu);
 }
 
+static uint8_t FindTargetScriptSlot(void *context, Lufia2CpuState *cpu,
+    uint32_t target, uint32_t site, uint8_t frame_size) {
+    const Lufia2Memory *memory = context;
+    (void)target; (void)site; (void)frame_size;
+    const Lufia2ExecutionResult result = Lufia2BattleEffectFindScriptSlot(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return 0u;
+    SimulateRtsFrame(memory, cpu);
+    return 1u;
+}
+
 Lufia2ExecutionResult Lufia2BattleEffectSpawnScriptsForTargets(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    const uint16_t targets = WRAM_BATTLE_EFFECT_TARGET_COUNT & 0xffffu;
-    const uint16_t target_stride = 0xbu;
-    Lufia2Wram wram;
-
     if (!SlotContext(cpu, true) || cpu->stack < 0x1f04u)
         return ExecutionHandoff(cpu, 0x81920fu);
-    OpSetDataBank(memory, cpu, 0x7eu);
-    SetAccumulatorWidth(cpu, 0);
-    wram = WramViewOfCaller(memory, cpu);
-    LoadA16(cpu, Read16Long(memory, DirectLongPointer(memory, cpu, SLOT_STREAM)));
-    WramWrite16(wram, 0u, cpu->accumulator);
-    (void)WramStep16(wram, SLOT_STREAM, 1);
-    (void)WramStep16(wram, SLOT_STREAM, 1);
-    LoadA16(cpu, WramRead16(wram, targets) & 0xffu);
-    if (cpu->zero) {
-        SetAccumulatorWidth(cpu, 1);
-        return ExecutionReturned(0x81929du);
-    }
-    WramWrite16(wram, 2u, cpu->accumulator);
-    for (uint16_t field = 0x13u; field <= 0x19u; field += 2u) {
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, field, cpu->y));
-        WramWrite16(wram, (uint16_t)(field - 2u), cpu->accumulator);
-    }
-    PushY(memory, cpu);
-    LoadY16(cpu, (uint16_t)(targets + 1u));
-    for (;;) {
-        Lufia2ExecutionResult result;
-
-        SetAccumulatorWidth(cpu, 1);
-        result = AllocateEffectSlot(memory, cpu, false, 0x9241u);
-        if (result.flow != LUFIA2_EXECUTION_RETURNED)
-            return result;
-        SetAccumulatorWidth(cpu, 0);
-        LoadA16(cpu, WramRead16(wram, 0u));
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 3u, cpu->x), cpu->accumulator);
-        for (uint16_t field = 0x13u; field <= 0x19u; field += 2u) {
-            LoadA16(cpu, WramRead16(wram, (uint16_t)(field - 2u)));
-            Write16Long(memory, AbsoluteIndexedAddress(cpu, field, cpu->x),
-                        cpu->accumulator);
-        }
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0u, cpu->y) & 0xffu);
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x1fu, cpu->x), cpu->accumulator);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 1u, cpu->y) & 0xffu);
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x21u, cpu->x), cpu->accumulator);
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x1bu, cpu->x), 0u);
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x1du, cpu->x), 0u);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 2u, cpu->y));
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x23u, cpu->x), cpu->accumulator);
-        LoadA16(cpu, 0x101u);
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0u, cpu->x), cpu->accumulator);
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 1u, cpu->x), cpu->accumulator);
-        LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xau, cpu->y));
-        OpDecA(cpu);
-        Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x25u, cpu->x), cpu->accumulator);
-        LoadA16(cpu, cpu->y);
-        cpu->carry = false;
-        Add16Value(cpu, target_stride);
-        LoadY16(cpu, cpu->accumulator);
-        SetNz16(cpu, WramStep16(wram, SLOT_ACTIVE_COUNT, 1));
-        SetNz16(cpu, WramStep16(wram, 2u, -1));
-        if (cpu->zero)
-            break;
-    }
-    cpu->y = PullIndexValue(memory, cpu);
-    SetAccumulatorWidth(cpu, 1);
-    return ExecutionReturned(0x81929du);
+    const Lufia2ExecutionResult result = BattleSpawnTargetScripts(
+        memory, cpu, FindTargetScriptSlot, (void *)memory, 0x81920fu);
+    if (result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
+        return ExecutionHandoff(cpu, cpu->resume_pc);
+    return result;
 }

@@ -2,6 +2,8 @@
 #include "core/cpu_ops.h"
 #include "system/wram.h"
 #include "lufia2/battle.h"
+#include "battle/effect_target_scripts.h"
+#include "core/snes_registers.h"
 
 enum {
     DP_EFFECT_STREAM = 0xc3u,
@@ -62,13 +64,14 @@ static void InitializeEnemyScript(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpAbsX(cpu, SCRIPT_TARGET));
 }
 
-Lufia2ExecutionResult Lufia2BattleEffectSpawnListedTargetScripts(
+Lufia2ExecutionResult BattleSpawnTargetScripts(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
+    Lufia2PushedChildCall child, void *context, uint32_t entry) {
+    const uint32_t slot_site = entry + 0x32u;
     if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
         cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
         cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu || !child)
-        return ExecutionHandoff(cpu, 0x819fabu);
+        return ExecutionHandoff(cpu, entry);
     OpSetDataBank(memory, cpu, 0x7eu);
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, DirectLongPointer(memory, cpu, DP_EFFECT_STREAM));
@@ -91,13 +94,13 @@ Lufia2ExecutionResult Lufia2BattleEffectSpawnListedTargetScripts(
             OpSepWidths(cpu, 0x20u);
             const uint16_t caller_stack = cpu->stack;
             if (!CallChildWithFrame(memory, cpu, child, context,
-                    0x819fddu, 0x818fabu, 2u, 0x81u))
-                return InterruptedEnemyCall(0x819fddu);
+                    slot_site, 0x818fabu, 2u, 0x81u))
+                return InterruptedEnemyCall(slot_site);
             if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
                 cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
                 cpu->stack != caller_stack)
                 return ExecutionHandoff(cpu,
-                    (uint32_t)cpu->program_bank << 16 | 0x9fe0u);
+                    (uint32_t)cpu->program_bank << 16 | (uint16_t)(slot_site + 3u));
             InitializeEnemyScript(memory, cpu, true);
             OpTya(cpu);
             cpu->carry = 0u;
@@ -109,7 +112,43 @@ Lufia2ExecutionResult Lufia2BattleEffectSpawnListedTargetScripts(
         cpu->y = PullIndexValue(memory, cpu);
     }
     OpSepWidths(cpu, 0x20u);
-    return ExecutionReturned(0x81a039u);
+    return ExecutionReturned(entry + 0x8eu);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectSpawnListedTargetScripts(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    return BattleSpawnTargetScripts(memory, cpu, child, context, 0x819fabu);
+}
+
+Lufia2ExecutionResult Lufia2BattleClearTargetRecords(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    enum { RECORD_COUNT = 12u, RECORD_DISABLED = 9u };
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x81c586u);
+    PushDataBank(memory, cpu);
+    OpPushX(memory, cpu);
+    Push8(memory, cpu, A8(cpu));
+    OpSetDataBank(memory, cpu, 0x97u);
+    OpLdx(cpu, FIRST_ENEMY);
+    OpWriteX(memory, cpu, OpAbs(cpu, SNES_WMADDL), cpu->x);
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WMADDH));
+    OpLdx(cpu, RECORD_COUNT * ENEMY_STRIDE);
+    do {
+        OpStz(memory, cpu, OpAbs(cpu, SNES_WMDATA));
+        OpDex(cpu);
+    } while (!cpu->zero);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    OpLoadA(cpu, 0xffu);
+    for (unsigned record = 0u; record < RECORD_COUNT; ++record)
+        OpSta(memory, cpu, OpAbs(cpu,
+            FIRST_ENEMY + RECORD_DISABLED + record * ENEMY_STRIDE));
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpPullX(memory, cpu);
+    PullDataBank(memory, cpu);
+    return ExecutionReturned(0x81c5ceu);
 }
 
 Lufia2ExecutionResult Lufia2BattleEffectSpawnEnemyScripts(

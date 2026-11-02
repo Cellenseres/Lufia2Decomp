@@ -1,3 +1,22 @@
+# Target-table reset and original script copies - 2026-11-02
+
+The missing original 81:C586 routine clears twelve target records through
+132 separate WRAM-port writes and then marks their twelve disabled bytes.
+It restores the accumulator, index and data bank; the final WRAM-port
+cursor is $4F8F. Decimal mode and arbitrary direct pages remain supported.
+
+ROM entries 81:920F and 81:9FAB contain exactly the same 143 bytes. Their
+distinct entry bindings are not two algorithms. Both now share one C body,
+with their own pushed return addresses and terminal PCs. The existing
+81:920F signature and slot-exhaustion boundary remain unchanged.
+
+A shared checkpoint covers 25088 portable ROM cases, including the new
+reset, both copied entries and affected 81:940E. The separate timed union
+contains 28439 calls and layouts. Twenty portable refusals, 576 callback-return
+contexts, 88 runtime
+admission refusals and the exact exhausted-slot/deadline boundaries pass.
+Original waits remain original continuations; no opcode hooks are added.
+
 # Listed effect target scripts - 2026-11-02
 
 Original commands 81:9D75 and 81:9FAB are reconstructed. The first reads
@@ -12769,7 +12788,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2277 functions in `metadata/functions.toml`: 2277 verified, 0 draft, 0 identified, 0 disabled.
+2278 functions in `metadata/functions.toml`: 2278 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

@@ -10,6 +10,11 @@ platform libraries. The consuming Lufia2SNESRecomp repository owns CPU-state
 adaptation, generated `hle_func` selection, differential CPU/bus tests,
 platform integration, and enhancements.
 
+Original ROM routines can have byte-identical copies at different entries.
+Such copies share one semantic C implementation with their actual call-site
+and return PCs. Their distinct canonical bindings do not represent additional
+algorithm coverage; verification includes the existing entry and its callers.
+
 Only functions whose metadata status is `verified` are eligible for native
 selection by a consumer. Consumers independently bind an address to a bridge;
 verification without a binding is informational and never activates code.

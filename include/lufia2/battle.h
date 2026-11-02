@@ -1389,6 +1389,9 @@ Lufia2ExecutionResult Lufia2BattleEffectSpawnEnemyScripts(
     Lufia2PushedChildCall child, void *context);
 
 #define LUFIA2_BATTLE_LISTED_TARGET_SCRIPTS_API 1
+#define LUFIA2_BATTLE_TARGET_RECORD_RESET_API 1
+Lufia2ExecutionResult Lufia2BattleClearTargetRecords(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2BattleEffectSpawnListedTargetScripts(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
