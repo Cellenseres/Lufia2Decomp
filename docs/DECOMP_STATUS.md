@@ -1,3 +1,15 @@
+# Poker stake window entry - 2026-11-02
+
+84:BEE0 Lufia2PokerPushStakeWindow preserves the original window-child JSR
+and returns before84:BEE3 RTS. It reuses the existing child-frame contract;
+window construction remains owned by84:A2B3. Changed child contexts hand off
+at the exact return boundary;nonlocal unwinds remain observable.
+
+256 original-ROM cases execute the actual window child and compare CPU,WRAM
+and ordered bus/MMIO. Seven refusal cases and one unwind case also pass.
+Strict MSVC/Clang C11 pass. This is a small original entry,not a new window
+algorithm. Consumer timing,selection and lookup evidence are separate.
+
 # Shared menu rectangle columns - 2026-11-02
 
 ClearRectangleCell preserves the original front/back tilemap write order in

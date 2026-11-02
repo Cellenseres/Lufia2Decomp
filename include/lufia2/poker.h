@@ -81,6 +81,9 @@ Lufia2ExecutionResult Lufia2PokerAcceptOpponentStake(
 Lufia2ExecutionResult Lufia2PokerDrawOpponentStake(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2PokerPushStakeWindow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 Lufia2ExecutionResult Lufia2PokerLocateStakeSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

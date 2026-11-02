@@ -270,6 +270,17 @@ Lufia2ExecutionResult Lufia2PokerAcceptOpponentStake(
     return ExecutionReturned(0x84bd95u);
 }
 
+Lufia2ExecutionResult Lufia2PokerPushStakeWindow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!OpponentReady(cpu) || !child)
+        return ExecutionHandoff(cpu, 0x84bee0u);
+    OpponentTurn turn = {memory, cpu, child, context,
+        ExecutionReturned(0x84bee3u), 0u};
+    OpponentCall(&turn, 0x84bee0u, 0x84a2b3u);
+    return turn.result;
+}
+
 Lufia2ExecutionResult Lufia2PokerLocateStakeSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!OpponentReady(cpu))
