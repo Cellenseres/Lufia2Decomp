@@ -14,11 +14,16 @@ Strict MSVC and Clang C11 each pass 2,068 differential caller cases and
 394,087 child-entry comparisons, real original message copying, child
 unwinds, changed child CPU modes, timer edits and all four bounded-loop exits.
 
-This proves portable semantics, not consumer timing or runtime acceleration.
-Consumer integration remains pending: the existing message child bridge does
-not establish timed execution of the whole parent. No untimed replacement or
-extra opcode hook is installed to inflate native coverage. No ordinary caller,
-whole-game performance gain or new production replay acceptance is claimed.
+The separate consumer now binds both entries with timed spans between child
+calls. Its MSVC/Clang proof covers 1,475 parent cases, 84 refusal guards,
+318,860 child entries, timer edits and all three 4,096-iteration boundaries.
+Eight paired production cases match CPU/WRAM/hardware and guest/master clocks.
+The real frame service yields normally; later original continuations remain
+in the interpreter after that unwind. No additional opcode hook is installed.
+The paired caller preserves its APU progress-flush context across native calls.
+Matched 600-menu, 600-field and 1,200-boot replays preserve hardware and PCM.
+These are integration checks, not additional decompiled algorithms or evidence
+of ordinary callers, a battle hit rate or whole-game acceleration.
 
 # Original initialization entries — 2026-11-02
 
