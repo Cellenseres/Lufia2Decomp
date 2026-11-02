@@ -15,6 +15,9 @@ Lufia2ExecutionResult Lufia2BattleRipplePrepareStep(
 Lufia2ExecutionResult Lufia2BattleRippleRowStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleRippleWordRowStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* Advance the phase and restore the caller. */
 Lufia2ExecutionResult Lufia2BattleRippleFinishStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);

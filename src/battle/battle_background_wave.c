@@ -279,6 +279,40 @@ enum {
     WORDS_BASE_OFFSET = 0x08u
 };
 
+typedef struct RippleWordRun {
+    uint16_t word;
+    uint8_t remaining, offset;
+    bool overflow;
+} RippleWordRun;
+
+static void WriteRippleWordRun(Lufia2Wram wram, RippleWordRun *run, bool decimal) {
+    WramWrite16At(wram, WORDS_TABLE, run->offset, run->word);
+    if (--run->remaining == 0u) {
+        const Word16Result next = Sum16Mode(run->word, WORDS_RUN_STEP, false, decimal);
+        run->remaining = WORDS_RUN;
+        run->word = next.value;
+        run->overflow = next.overflow;
+    }
+    run->offset = (uint8_t)(run->offset + 2u);
+}
+
+Lufia2ExecutionResult Lufia2BattleRippleWordRowStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != WAVE_BANK || cpu->accumulator_is_8_bit ||
+        !cpu->index_is_8_bit || cpu->x >= WORDS_END || (cpu->x & 1u) ||
+        !cpu->y || cpu->y > WORDS_RUN)
+        return ExecutionHandoff(cpu, 0x85aa61u);
+    RippleWordRun run = {cpu->accumulator, (uint8_t)cpu->y,
+        (uint8_t)cpu->x, cpu->overflow != 0u};
+    WriteRippleWordRun(WramViewOfCaller(memory, cpu), &run, cpu->decimal);
+    cpu->accumulator = run.word;
+    cpu->x = run.offset;
+    cpu->y = run.remaining;
+    cpu->overflow = run.overflow;
+    Compare8(cpu, run.offset, WORDS_END);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x85aa74u : 0x85aa61u);
+}
+
 /* Repeat each scroll word for its remaining scanlines. */
 Lufia2ExecutionResult Lufia2BattleRippleWords(
     const Lufia2Memory *memory,
@@ -305,19 +339,13 @@ Lufia2ExecutionResult Lufia2BattleRippleWords(
     base = Sum8Mode((uint8_t)(phase << 1), WORDS_BASE_OFFSET, false, cpu->decimal);
     source = base.value;
     word = Read16Long(memory, LongIndexedAddress(WORDS_SOURCE, source));
-    overflow = base.overflow;
+    RippleWordRun run = {word, run_left, index, base.overflow};
     do {
-        WramWrite16At(wram, WORDS_TABLE, index, word);
-        run_left = (uint8_t)(run_left - 1u);
-        if (run_left == 0) {
-            const Word16Result run = Sum16Mode(word, WORDS_RUN_STEP, false, cpu->decimal);
-
-            run_left = WORDS_RUN;
-            word = run.value;
-            overflow = run.overflow;
-        }
-        index = (uint8_t)(index + 2u);
-    } while (index != WORDS_END);
+        WriteRippleWordRun(wram, &run, cpu->decimal);
+    } while (run.offset != WORDS_END);
+    run_left = run.remaining;
+    word = run.word;
+    overflow = run.overflow;
     cpu->x = PullStackWord(memory, cpu);
     cpu->y = run_left;
     cpu->carry = true;

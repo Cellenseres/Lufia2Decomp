@@ -1,3 +1,15 @@
+# Shared battle ripple word runs - 2026-11-02
+
+The complete85:AA3D routine and bounded85:AA61 word-row service share
+WriteRippleWordRun. Original word stores,12-word run count,decimal/binary
+word increments and overflow remain visible. The bounded service preserves
+8-bit X/Y and stops at85:AA61 or85:AA74. Refusals access no guest memory.
+
+8192 row and2048 complete-parent original-ROM states compare CPU,WRAM and
+ordered bus/MMIO. Strict MSVC/Clang source checks pass. Consumer timing,
+admission and measured costs are separate. This shares an existing algorithm;
+it adds no canonical function or independent metadata/binding entry.
+
 # Poker stake window entry - 2026-11-02
 
 84:BEE0 Lufia2PokerPushStakeWindow preserves the original window-child JSR
