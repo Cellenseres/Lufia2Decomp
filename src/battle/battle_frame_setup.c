@@ -523,6 +523,30 @@ static void QueuePreviewBackgroundHalf(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE));
 }
 
+Lufia2ExecutionResult Lufia2BattleInitializePreviewBackground(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x84u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x849c9bu);
+    OpSepWidths(cpu, 0x20u);
+    OpRepWidths(cpu, 0x10u);
+    OpSetDataBank(memory, cpu, BANK_WORK);
+    OpLoadA(cpu, 0x80u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BRIGHTNESS));
+    static const uint16_t cleared_scroll_bytes[] = {0xd9u, 0xd8u, 0xdau, 0xdbu};
+    for (unsigned i = 0u; i < sizeof(cleared_scroll_bytes) / sizeof(uint16_t); ++i)
+        OpStz(memory, cpu, OpAbs(cpu, cleared_scroll_bytes[i]));
+    PreviewBuild preview = {memory, cpu, child, context, {0}};
+    if (!CallPreviewStep(&preview, 0x849cb4u, 0x81c2fbu, 3u))
+        return preview.result;
+    OpRepWidths(cpu, 0x20u);
+    for (unsigned offset = 0u; offset < 16u; offset += 2u)
+        OpStz(memory, cpu, OpAbs(cpu, WRAM_NMI_SCROLL_REGISTERS + offset));
+    OpSepWidths(cpu, 0x20u);
+    return Lufia2BattleUpdatePreviewBackground(memory, cpu, child, context);
+}
+
 Lufia2ExecutionResult Lufia2BattleUpdatePreviewBackground(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {

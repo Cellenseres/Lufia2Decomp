@@ -2222,6 +2222,41 @@ Lufia2ExecutionResult Lufia2WorldMapRunSession(
     return PrepareWorldMapFrames(memory, cpu, child, context);
 }
 
+Lufia2ExecutionResult Lufia2WorldMapRunFixedStartSession(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!WorldSceneEntry(cpu) || cpu->direct_page || !child)
+        return ExecutionHandoff(cpu, 0x86920eu);
+    Push8(memory, cpu, PackStatus(cpu));
+    PushDataBank(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpRepWidths(cpu, 0x10u);
+    OpSetDataBank(memory, cpu, 0x86u);
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_WORLD_MAP_RESOURCE_ID));
+    Lufia2ExecutionResult result;
+    if (!SceneChild(memory, cpu, child, context, 0x86921bu, 0x86cdf5u, &result))
+        return result;
+    OpLoadA(cpu, 2u);
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_PLAYER_POSE_FIELD));
+    enum { FIXED_START_X = 600u, FIXED_START_Y = 3272u };
+    OpLdx(cpu, FIXED_START_X);
+    OpWriteX(memory, cpu, OpAbs(cpu, WORLD_POSITION_X), cpu->x);
+    OpLdx(cpu, FIXED_START_Y);
+    OpWriteX(memory, cpu, OpAbs(cpu, WORLD_POSITION_Y), cpu->x);
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_MAP_MODE));
+    OpLoadA(cpu, 2u);
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_TARGET_MODE));
+    OpSta(memory, cpu, OpAbs(cpu, WORLD_TARGET_POSE));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E09E0));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E09E1));
+    OpLoadA(cpu, 0x20u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E09E3));
+    OpLoadA(cpu, 0xccu);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E09E4));
+    return PrepareWorldMapFrames(memory, cpu, child, context);
+}
+
 Lufia2ExecutionResult Lufia2WorldMapSendSoundCommand(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {

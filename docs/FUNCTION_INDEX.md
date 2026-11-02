@@ -1428,6 +1428,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:8D54` | `Lufia2FieldScaleScenePalette` | verified | `src/field/field_palette_scale.c` |
 | `$84:8E07` | `Lufia2FieldFadeScenePalette` | verified | `src/field/field_effects.c` |
 | `$84:9B3E` | `Lufia2BattleRunSpritePreviewWithExit` | verified | `src/battle/battle_frame_setup.c` |
+| `$84:9C9B` | `Lufia2BattleInitializePreviewBackground` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9CD4` | `Lufia2BattleUpdatePreviewBackground` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9D2C` | `Lufia2BattleBuildEnemyPreview` | verified | `src/battle/battle_frame_setup.c` |
 | `$84:9E1C` | `Lufia2FillWordBlock32` | verified | `src/system/block_move.c` |
@@ -1939,6 +1940,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:916C` | `Lufia2MenuLoadSelectionPalettes` | verified | `src/menu/menu_selection_palettes.c` |
 | `$86:919E` | `Lufia2WorldMapRunSession` | verified | `src/world/world_scene.c` |
 | `$86:91FE` | `Lufia2WorldMapCellCenter` | verified | `src/world/world_cell_center.c` |
+| `$86:920E` | `Lufia2WorldMapRunFixedStartSession` | verified | `src/world/world_scene.c` |
 | `$86:92A1` | `Lufia2WorldMapResetScene` | verified | `src/world/world_scene.c` |
 | `$86:92DF` | `Lufia2WorldMapRunAlternateScene` | verified | `src/world/world_alternate_scene.c` |
 | `$86:944E` | `Lufia2WorldMapCheckSceneCancellation` | verified | `src/world/world_alternate_scene.c` |
