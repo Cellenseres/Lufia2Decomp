@@ -5,6 +5,8 @@
 
 #include "lufia2/execution.h"
 
+#define LUFIA2_PARTY_MEMBER_CHANGES_API 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -70,6 +72,23 @@ Lufia2ExecutionResult Lufia2PartyRestore11(
     Lufia2CpuState *cpu);
 
 Lufia2ExecutionResult Lufia2PartyRestoreVitals(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2PartyAddMemberStatus(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2PartyClearMemberStatus(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2PartyAddRecordStatus(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2PartyClearRecordStatus(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2PartyAddMemberHp(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2PartySubtractMemberHp(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2PartyAddMemberMp(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2PartySubtractMemberMp(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 /* $81:F60B $13 = $27 in each active party record; M1X0. */

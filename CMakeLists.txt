@@ -500,6 +500,7 @@ add_library(lufia2_decomp STATIC
     src/party/level_up.c
     src/party/stat_growth.c
     src/party/party_records.c
+    src/party/party_member_changes.c
     src/party/stats.c
     src/party/party_equipment.c
     src/party/party_refresh.c

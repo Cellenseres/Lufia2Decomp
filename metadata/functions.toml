@@ -18198,3 +18198,67 @@ source = "src/menu/menu_capsule_selection.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:F639"
+name = "Lufia2PartyAddMemberStatus"
+source = "src/party/party_member_changes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F647"
+name = "Lufia2PartyClearMemberStatus"
+source = "src/party/party_member_changes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F655"
+name = "Lufia2PartyAddRecordStatus"
+source = "src/party/party_member_changes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F66A"
+name = "Lufia2PartyClearRecordStatus"
+source = "src/party/party_member_changes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F683"
+name = "Lufia2PartyAddMemberHp"
+source = "src/party/party_member_changes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F6A8"
+name = "Lufia2PartySubtractMemberHp"
+source = "src/party/party_member_changes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F6D7"
+name = "Lufia2PartyAddMemberMp"
+source = "src/party/party_member_changes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:F6FC"
+name = "Lufia2PartySubtractMemberMp"
+source = "src/party/party_member_changes.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -1,3 +1,22 @@
+# Party member status and vital changes — 2026-11-02
+
+Eight original routines at 81:F639, F647, F655, F66A, F683, F6A8, F6D7 and
+F6FC now have complete, verified C contracts. Shared helpers select the
+member record, apply status masks and change HP/MP. These functions were
+absent from the previous rooted catalogue; they are new reconstructions,
+not aliases for existing C bodies.
+
+Original quirks remain intact: the prologue truncates Y through X8 mode;
+addition keeps its lower-bound branch; subtraction has both RTS and RTL
+exits. The HP-zero path enters F655 in M0, consuming F004 as the BIT
+immediate before ASL. Counter updates and bus write order remain literal.
+
+The standalone batch passes 65536 original-ROM CPU, full WRAM, ordered bus
+and MMIO cases, plus 40 no-access guards. MSVC and Clang C11 checks pass.
+The separate consumer batch passes 32768 timed ABI cases and 784 read-only
+admission cases. Consumer timing and gameplay performance are separate
+properties; no active-game speedup or invocation frequency is claimed.
+
 # Original idle scene sequence targets - 2026-11-02
 
 86:AFB0 and86:AFB1 are the original single-RTS destinations of scene

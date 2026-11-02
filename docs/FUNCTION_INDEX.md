@@ -563,6 +563,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F5ED` | `Lufia2PartyRestore11` | verified | `src/party/party_records.c` |
 | `$81:F60B` | `Lufia2PartyRestore13` | verified | `src/party/party_records.c` |
 | `$81:F629` | `Lufia2PartyClearStatuses` | verified | `src/party/party_records.c` |
+| `$81:F639` | `Lufia2PartyAddMemberStatus` | verified | `src/party/party_member_changes.c` |
+| `$81:F647` | `Lufia2PartyClearMemberStatus` | verified | `src/party/party_member_changes.c` |
+| `$81:F655` | `Lufia2PartyAddRecordStatus` | verified | `src/party/party_member_changes.c` |
+| `$81:F66A` | `Lufia2PartyClearRecordStatus` | verified | `src/party/party_member_changes.c` |
+| `$81:F683` | `Lufia2PartyAddMemberHp` | verified | `src/party/party_member_changes.c` |
+| `$81:F6A8` | `Lufia2PartySubtractMemberHp` | verified | `src/party/party_member_changes.c` |
+| `$81:F6D7` | `Lufia2PartyAddMemberMp` | verified | `src/party/party_member_changes.c` |
+| `$81:F6FC` | `Lufia2PartySubtractMemberMp` | verified | `src/party/party_member_changes.c` |
 | `$81:F723` | `Lufia2PartyAddMenuMember` | verified | `src/party/party_records.c` |
 | `$81:F74F` | `Lufia2PartyRemoveMenuMember` | verified | `src/party/party_records.c` |
 | `$81:F789` | `Lufia2PartyPointersFar` | verified | `src/party/party_records.c` |
