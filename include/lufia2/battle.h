@@ -2097,6 +2097,11 @@ Lufia2ExecutionResult Lufia2BattleGrayPaletteToBuffer(
 Lufia2ExecutionResult Lufia2BattleGraySourcePalette(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+#define LUFIA2_BATTLE_GRAY_BUFFER_API 1
+
+Lufia2ExecutionResult Lufia2BattleWriteGrayPaletteBuffer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2BattleReorderEnemies(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2BattleInsertEnemy(

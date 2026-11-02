@@ -421,6 +421,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:B264` | `Lufia2BattleActiveMask` | verified | `src/battle/battle_util.c` |
 | `$81:B2B5` | `Lufia2BattleTargetRecord` | verified | `src/battle/battle_util.c` |
 | `$81:B2DB` | `Lufia2BattleTargetSlot` | verified | `src/battle/battle_util.c` |
+| `$81:B308` | `Lufia2BattleWriteGrayPaletteBuffer` | verified | `src/battle/battle_palette_fade.c` |
 | `$81:B336` | `Lufia2BattleGrayPaletteToBuffer` | verified | `src/battle/battle_palette_fade.c` |
 | `$81:B367` | `Lufia2BattleGraySourcePalette` | verified | `src/battle/battle_palette_fade.c` |
 | `$81:B396` | `Lufia2BattlePaletteBrightness` | verified | `src/battle/battle_palette_fade.c` |

@@ -155,10 +155,15 @@ Lufia2ExecutionResult Lufia2BattlePaletteBrightness(
     return ExecutionReturned(0x81b3f7u);
 }
 
+typedef enum GrayPaletteOutput {
+    GRAY_PALETTE_BUFFER, GRAY_PALETTE_BUFFER_INVERTED, GRAY_PALETTE_SOURCE
+} GrayPaletteOutput;
+
 static Lufia2ExecutionResult GrayPalette(const Lufia2Memory *memory,
-                                         Lufia2CpuState *cpu, bool source_palette) {
-    const uint32_t entry = source_palette ? 0x81b367u : 0x81b336u;
-    const uint16_t gray_site = source_palette ? 0xb382u : 0xb351u;
+                                         Lufia2CpuState *cpu, GrayPaletteOutput output) {
+    const uint32_t entry = output == GRAY_PALETTE_SOURCE ? 0x81b367u :
+        output == GRAY_PALETTE_BUFFER_INVERTED ? 0x81b336u : 0x81b308u;
+    const uint16_t gray_site = (uint16_t)(entry + 0x1bu);
     enum { DP_GRAY_REMAINING = 0x13u };
     if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
         cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
@@ -185,10 +190,11 @@ static Lufia2ExecutionResult GrayPalette(const Lufia2Memory *memory,
         (void)Lufia2ColorToGray(memory, cpu);
         SimulateRtsFrame(memory, cpu);
         OpLda(memory, cpu, OpDp(cpu, DP_COLOR));
-        if (source_palette) {
+        if (output == GRAY_PALETTE_SOURCE) {
             OpSta(memory, cpu, OpLongX(cpu, SOURCE_PALETTE));
         } else {
-            OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffffu));
+            if (output == GRAY_PALETTE_BUFFER_INVERTED)
+                OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffffu));
             OpSta(memory, cpu, OpAbsX(cpu, PALETTE_BUFFER));
         }
         OpSepWidths(cpu, 0x20u);
@@ -196,15 +202,21 @@ static Lufia2ExecutionResult GrayPalette(const Lufia2Memory *memory,
     } while (!cpu->zero);
     OpLoadA(cpu, PALETTE_UPLOAD);
     OpSta(memory, cpu, OpDp(cpu, DP_PALETTE_DIRTY));
-    return ExecutionReturned(source_palette ? 0x81b395u : 0x81b366u);
+    return ExecutionReturned(output == GRAY_PALETTE_SOURCE ? 0x81b395u :
+        output == GRAY_PALETTE_BUFFER_INVERTED ? 0x81b366u : 0x81b335u);
 }
 
 Lufia2ExecutionResult Lufia2BattleGrayPaletteToBuffer(const Lufia2Memory *memory,
                                                       Lufia2CpuState *cpu) {
-    return GrayPalette(memory, cpu, false);
+    return GrayPalette(memory, cpu, GRAY_PALETTE_BUFFER_INVERTED);
 }
 
 Lufia2ExecutionResult Lufia2BattleGraySourcePalette(const Lufia2Memory *memory,
                                                     Lufia2CpuState *cpu) {
-    return GrayPalette(memory, cpu, true);
+    return GrayPalette(memory, cpu, GRAY_PALETTE_SOURCE);
+}
+
+Lufia2ExecutionResult Lufia2BattleWriteGrayPaletteBuffer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return GrayPalette(memory, cpu, GRAY_PALETTE_BUFFER);
 }

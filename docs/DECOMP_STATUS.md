@@ -1,3 +1,25 @@
+# Original gray-palette output variants - 2026-11-02
+
+The missing 81:B308 writes plain gray colors to the palette buffer.
+Existing 81:B336 writes inverted gray; 81:B367 rewrites the source palette.
+All three share one GrayPalette operation and the original weighted-color
+child 81:B54A, with distinct call sites and terminal PCs. This adds one
+original output contract, not another independent grayscale algorithm.
+
+The shared checkpoint passes 24576 portable original-ROM CPU, full-WRAM,
+ordered bus/MMIO cases and 21 refusals. All palette indices and source-bank
+crossings are covered. The actual multiplier child runs in every case.
+The three consumer paths pass 12288 timing/fetch/data/open-bus/RTL cases
+and 78 read-only refusals using actual indexed range predicates.
+
+One immutable child timing plan serves all fifteen colors and all three
+variants. No nested host child dispatch or new opcode hooks. The new path
+requires synchronized binary DP0 hardware-mirror calls, normal return
+frames, palettes 0-15 and quiet parent/child ranges. Existing B336/B367
+retain their prior consumer fallback outside this timing admission.
+No original wait or MMIO is removed. Original B308 gameplay callers and
+host speedup remain unproved. Full regression is deferred for this scope.
+
 # Inventory backup and restore - 2026-11-02
 
 The missing original 82:FBC6 restores 96 inventory words from $7E:8000.
@@ -12829,7 +12851,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2281 functions in `metadata/functions.toml`: 2281 verified, 0 draft, 0 identified, 0 disabled.
+2282 functions in `metadata/functions.toml`: 2282 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

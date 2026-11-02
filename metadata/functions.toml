@@ -18406,3 +18406,11 @@ source = "src/menu/menu_capsule_selection.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "81:B308"
+name = "Lufia2BattleWriteGrayPaletteBuffer"
+source = "src/battle/battle_palette_fade.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
