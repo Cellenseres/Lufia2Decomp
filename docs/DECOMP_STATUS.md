@@ -1,3 +1,16 @@
+# Shared menu rectangle columns - 2026-11-02
+
+ClearRectangleCell preserves the original front/back tilemap write order in
+both complete rectangle routines. A bounded column service shares that body
+at82:83D2 and hands off before the next column or at82:83DD. It preserves
+16-bit X/Y, final NZ flags and ordered stores. Unsupported CPU/row contracts
+handoff without memory access. No canonical entry or separate binding added.
+
+Original-ROM evidence covers4096 semantic and2560 timed span states,12 public
+and29 consumer guards, plus8192 representative complete-parent states for
+82:83B5/83EB. Strict MSVC and Clang pass. Consumer clock, hook ownership,
+production execution and performance evidence are documented separately.
+
 # Shared effect record-pointer advance - 2026-11-02
 
 The script and actor advance loops share their original pointer calculation

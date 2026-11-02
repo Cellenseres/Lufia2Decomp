@@ -27,6 +27,12 @@ static bool RectangleSupported(const Lufia2CpuState *cpu) {
            cpu->accumulator / ROW_BYTES + rows <= ROW_TILES;
 }
 
+static void ClearRectangleCell(Lufia2Wram wram, uint16_t cell, bool both_layers) {
+    if (both_layers)
+        WramWrite16At(wram, FRONT_TILES, cell, 0);
+    WramWrite16At(wram, BACK_TILES, cell, 0);
+}
+
 static void ClearRectangle(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                            bool both_layers) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
@@ -45,9 +51,7 @@ static void ClearRectangle(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         uint16_t columns = WramRead16(wram, WORK_COLUMNS);
         cell = WramRead16(wram, WORK_POSITION);
         do {
-            if (both_layers)
-                WramWrite16At(wram, FRONT_TILES, cell, 0);
-            WramWrite16At(wram, BACK_TILES, cell, 0);
+            ClearRectangleCell(wram, cell, both_layers);
             cell = (uint16_t)(cell + 2u);
             columns = (uint16_t)(columns - 1u);
         } while (columns);
@@ -75,6 +79,26 @@ Lufia2ExecutionResult Lufia2MenuClearTileRectangle(
         return ExecutionHandoff(cpu, 0x8283ebu);
     ClearRectangle(memory, cpu, false);
     return ExecutionReturned(0x82841du);
+}
+
+Lufia2ExecutionResult Lufia2MenuClearLayerRectangleColumns(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned max_columns) {
+    if (cpu->program_bank != 0x82u || cpu->data_bank != 0x7eu ||
+        cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->direct_page || cpu->decimal || !max_columns ||
+        max_columns > LUFIA2_MENU_RECTANGLE_SPAN_MAX_COLUMNS ||
+        !cpu->y || cpu->y > ROW_TILES || (cpu->x & 1u) ||
+        (unsigned)cpu->x + 2u * cpu->y > TILEMAP_BYTES)
+        return ExecutionHandoff(cpu, 0x8283d2u);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    unsigned columns = max_columns < cpu->y ? max_columns : cpu->y;
+    do {
+        ClearRectangleCell(wram, cpu->x, true);
+        cpu->x = (uint16_t)(cpu->x + 2u);
+        cpu->y = (uint16_t)(cpu->y - 1u);
+        SetNz16(cpu, cpu->y);
+    } while (--columns);
+    return ExecutionHandoff(cpu, cpu->y ? 0x8283d2u : 0x8283ddu);
 }
 
 Lufia2ExecutionResult Lufia2MenuClearLayerRectangleStep(
