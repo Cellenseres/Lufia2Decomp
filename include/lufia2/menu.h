@@ -35,6 +35,14 @@ Lufia2ExecutionResult Lufia2MenuCursorBlink(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:8AF7: resolve a nested pointer and offset. */
+Lufia2ExecutionResult Lufia2MenuResolvePointerOffset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $82:F4D7: cycle the name-entry selection. */
+Lufia2ExecutionResult Lufia2MenuCycleNameEntrySelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $80:8878 menu string $5F:Y at $7E:X; any width. */
 Lufia2ExecutionResult Lufia2MenuDrawString(
     const Lufia2Memory *memory,

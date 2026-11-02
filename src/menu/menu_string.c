@@ -1262,3 +1262,28 @@ Lufia2ExecutionResult Lufia2MenuReadBranchOperands(const Lufia2Memory *memory,
     MenuOperands(&vm);
     return ExecutionReturned(0x808cfbu);
 }
+
+/* $80:8AF7: indirect pointer plus caller-supplied offset. */
+Lufia2ExecutionResult Lufia2MenuResolvePointerOffset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    enum {
+        POINTER_OFFSET = DP_SCRATCH_C,
+        POINTER_OPERAND = DP_SCRATCH_E,
+        POINTER_RESULT = 0x60u
+    };
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x808af7u);
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, DirectLongIndirectY(memory, cpu, STRING));
+    OpSta(memory, cpu, OpDp(cpu, POINTER_OPERAND));
+    OpIny(cpu);
+    OpIny(cpu);
+    const uint16_t pointer = Read16Direct(memory, cpu, POINTER_OPERAND);
+    OpLda(memory, cpu, OpAbs(cpu, pointer));
+    cpu->carry = 0u;
+    OpAdc(memory, cpu, OpDp(cpu, POINTER_OFFSET));
+    OpSta(memory, cpu, OpDp(cpu, POINTER_RESULT));
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x808b08u);
+}

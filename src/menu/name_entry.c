@@ -227,3 +227,27 @@ Lufia2ExecutionResult Lufia2MenuClearNameEntryRecord(
     } while (!cpu->carry);
     return ExecutionReturned(0x82f5b4u);
 }
+
+/* $82:F4D7: cycle the three-value name-entry selection. */
+Lufia2ExecutionResult Lufia2MenuCycleNameEntrySelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    enum { NAME_ENTRY_SELECTION = WRAM_MENU_NAME_ENTRY_SELECTION };
+    if (cpu->program_bank != 0x82u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x82f4d7u);
+    if (cpu->carry) {
+        OpStepMem(memory, cpu, OpAbs(cpu, NAME_ENTRY_SELECTION), -1);
+        if (cpu->negative) {
+            OpLoadA(cpu, 2u);
+            OpSta(memory, cpu, OpAbs(cpu, NAME_ENTRY_SELECTION));
+        }
+    } else {
+        OpStepMem(memory, cpu, OpAbs(cpu, NAME_ENTRY_SELECTION), 1);
+        OpLda(memory, cpu, OpAbs(cpu, NAME_ENTRY_SELECTION));
+        OpCmpValue(cpu, 3u);
+        if (cpu->zero)
+            OpStz(memory, cpu, OpAbs(cpu, NAME_ENTRY_SELECTION));
+    }
+    cpu->carry = 0u;
+    return ExecutionReturned(0x82f4f3u);
+}

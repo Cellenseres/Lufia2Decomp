@@ -1,3 +1,32 @@
+# Original menu pointer and selector helpers — 2026-11-03
+
+Two missing original bodies are reconstructed. `$80:8AF7..8B08` resolves a
+nested pointer from the long string source, advances Y twice, reads through
+the live data bank, adds the caller's offset and stores the resulting pointer.
+Its direct-page aliases, decimal arithmetic, bank wrapping and final flags
+remain observable. This eighteen-byte helper differs from the existing
+`$80:8BB2` operand reader.
+
+`$82:F4D7..F4F3` adjusts the name-entry area's three-value selector. Carry
+chooses decrement or increment. A negative decrement result resets to two;
+increment resets only when the subsequent read equals three. Invalid values,
+read-only memory behavior and accumulator/status results remain literal.
+The selector's meaning beyond this operation is intentionally not assumed.
+These are twenty-nine additional original bytes and a documented WRAM field.
+
+Strict MSVC/Clang C11 each pass 4,096 pointer and 6,144 selector cases plus
+six no-access guards, comparing CPU/full WRAM and ordered data transactions.
+Coverage includes live DB/DP, source aliases, read-only/MMIO inputs, decimal
+arithmetic, bank boundaries and every selector byte with both carry directions.
+
+Both verified entries are bound in the separate consumer. Its compiler pairs
+pass 8,192 exact timing cases and 110 refusals, including known, unknown and
+mismatched paired returns. Thirty-five real generated/linked caller pairs
+preserve complete CPU/WRAM/hardware/clocks. Matched 600-menu/600-field/1,200-boot
+replays preserve hardware, PCM and native idle work. Three 5,000-call samples
+have medians 38.706 to 28.864 ms and 33.015 to 26.407 ms respectively. These
+scoped costs do not establish organic call frequency or general FPS improvement.
+
 # Caller-supplied menu width — 2026-11-02
 
 `Lufia2MenuDrawStringWithWidth` reconstructs the missing `$80:8866..8877`

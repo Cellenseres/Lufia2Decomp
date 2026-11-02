@@ -18495,3 +18495,19 @@ source = "src/menu/menu_string.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "80:8AF7"
+name = "Lufia2MenuResolvePointerOffset"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F4D7"
+name = "Lufia2MenuCycleNameEntrySelection"
+source = "src/menu/name_entry.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
