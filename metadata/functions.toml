@@ -18358,3 +18358,19 @@ source = "src/battle/battle_hdma_commands.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:9D75"
+name = "Lufia2BattleEffectSetSpecialTargetDisplayOffsets"
+source = "src/battle/battle_effect_target_state.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:9FAB"
+name = "Lufia2BattleEffectSpawnListedTargetScripts"
+source = "src/battle/battle_effect_enemy_scripts.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

@@ -1,3 +1,27 @@
+# Listed effect target scripts - 2026-11-02
+
+Original commands 81:9D75 and 81:9FAB are reconstructed. The first reads
+packed target offsets and updates four special-target display records. Both
+axes retain the original horizontal base read. The second saves its parent
+parameters and creates a script for each listed target. Record initialization
+is shared with existing 81:940E without changing either counter-write order.
+
+The portable contracts pass 13824 original-ROM CPU, full-WRAM and ordered
+bus/MMIO cases, including actual slot allocation and the affected existing
+caller. Fifteen no-access refusals and 576 callback-return contexts pass.
+
+The separate consumer passes 16384 timed calls and 3863 additional layouts,
+61 admission refusals and 38 slot-exhaustion/deadline boundaries. It executes
+the actual slot-search C algorithm inside the caller, preserving every read
+and guest clock while avoiding an extra child dispatch for each target.
+Exhausted slots hand off at the original infinite wait; no wait is removed.
+
+Runtime admission checks indexed hook ranges, alias/page-cross restrictions
+and hardware deadlines. Original reads remain on the bus; guarded WRAM
+prediction only selects immutable timing plans. No opcode hook is added.
+Ordinary gameplay callers remain unproved; no game-frequency, host speedup
+or FPS claim follows from this semantic and bounded integration checkpoint.
+
 # Window HDMA setup - 2026-11-02
 
 Two missing original leaf bodies at 85:AA7F and 85:AAC3 are reconstructed.
@@ -12745,7 +12769,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2275 functions in `metadata/functions.toml`: 2275 verified, 0 draft, 0 identified, 0 disabled.
+2277 functions in `metadata/functions.toml`: 2277 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

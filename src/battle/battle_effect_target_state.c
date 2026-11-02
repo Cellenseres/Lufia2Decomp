@@ -21,6 +21,55 @@ enum {
     SPECIAL_TARGET_NUMBER = 4u
 };
 
+enum {
+    SPECIAL_TARGET_DISPLAY = 0x4910u,
+    SPECIAL_TARGET_TILE_SIZE = 16u
+};
+
+Lufia2ExecutionResult Lufia2BattleEffectSetSpecialTargetDisplayOffsets(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x819d75u);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    PushY(memory, cpu);
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, DirectLongPointer(memory, cpu, DP_TARGET_STREAM));
+    OpStepMem(memory, cpu, OpDp(cpu, DP_TARGET_STREAM), 1);
+    OpStepMem(memory, cpu, OpDp(cpu, DP_TARGET_STREAM), 1);
+    OpSepWidths(cpu, 0x20u);
+    OpSta(memory, cpu, OpAbs(cpu, TARGET_HORIZONTAL_OFFSET));
+    ExchangeAccumulatorBytes(cpu);
+    OpSta(memory, cpu, OpAbs(cpu, TARGET_VERTICAL_OFFSET));
+    OpStz(memory, cpu, OpAbs(cpu, TARGET_HORIZONTAL_OFFSET + 1u));
+    OpStz(memory, cpu, OpAbs(cpu, TARGET_VERTICAL_OFFSET + 1u));
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpAbsY(cpu, EFFECT_TARGET_NUMBER));
+    if (!cpu->negative) {
+        OpCmpValue(cpu, SPECIAL_TARGET_NUMBER);
+        if (cpu->zero) {
+            static const uint8_t corners[2][4] = {
+                {0u, 10u, 5u, 15u}, {1u, 6u, 11u, 16u}
+            };
+            for (unsigned axis = 0u; axis < 2u; ++axis) {
+                /* Both axes use the original horizontal coordinate. */
+                OpLda(memory, cpu, OpAbs(cpu, SPECIAL_TARGET_HORIZONTAL));
+                cpu->carry = 0u;
+                OpAdc(memory, cpu, OpAbs(cpu, TARGET_HORIZONTAL_OFFSET + axis * 2u));
+                OpSta(memory, cpu, OpAbs(cpu, SPECIAL_TARGET_DISPLAY + corners[axis][0]));
+                OpSta(memory, cpu, OpAbs(cpu, SPECIAL_TARGET_DISPLAY + corners[axis][1]));
+                cpu->carry = 0u;
+                OpAdcValue(cpu, SPECIAL_TARGET_TILE_SIZE);
+                OpSta(memory, cpu, OpAbs(cpu, SPECIAL_TARGET_DISPLAY + corners[axis][2]));
+                OpSta(memory, cpu, OpAbs(cpu, SPECIAL_TARGET_DISPLAY + corners[axis][3]));
+            }
+        }
+    }
+    cpu->y = PullIndexValue(memory, cpu);
+    return ExecutionReturned(0x819dc8u);
+}
+
 static uint8_t EffectTargetStateContext(const Lufia2CpuState *cpu) {
     return cpu->program_bank == 0x81u && cpu->accumulator_is_8_bit &&
         !cpu->index_is_8_bit && !cpu->decimal && cpu->direct_page == 0u &&

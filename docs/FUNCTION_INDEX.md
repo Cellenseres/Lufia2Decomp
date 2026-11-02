@@ -320,12 +320,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:9CCC` | `Lufia2BattleEffectSetPortraitPoseIfStatusClear` | verified | `src/battle/battle_effect_portrait_status.c` |
 | `$81:9D0B` | `Lufia2BattleEffectToggleSpecialTargetState` | verified | `src/battle/battle_effect_target_toggle_callers.c` |
 | `$81:9D1F` | `Lufia2BattleEffectMoveSpecialTarget` | verified | `src/battle/battle_effect_target_state.c` |
+| `$81:9D75` | `Lufia2BattleEffectSetSpecialTargetDisplayOffsets` | verified | `src/battle/battle_effect_target_state.c` |
 | `$81:9DC9` | `Lufia2BattleEffectRestorePortraitPose` | verified | `src/battle/battle_effect_portrait_restore.c` |
 | `$81:9DF6` | `Lufia2BattleEffectRebuildSprites` | verified | `src/battle/battle_effect_sprite_rebuild.c` |
 | `$81:9E13` | `Lufia2BattleEffectSendSoundCommand` | verified | `src/battle/battle_effect_sound_command.c` |
 | `$81:9E22` | `Lufia2BattleEffectSpawnTargetPopups` | verified | `src/battle/battle_effect_target_popups.c` |
 | `$81:9F39` | `Lufia2BattleEffectSpawnPopupActor` | verified | `src/battle/battle_effect_popup_actor.c` |
 | `$81:9F8B` | `Lufia2BattleEffectSendConditionalSound` | verified | `src/battle/battle_effect_conditional_sound.c` |
+| `$81:9FAB` | `Lufia2BattleEffectSpawnListedTargetScripts` | verified | `src/battle/battle_effect_enemy_scripts.c` |
 | `$81:A03A` | `Lufia2BattleEffectOffsetBaseAngle` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A04E` | `Lufia2BattleEffectRotateAngle` | verified | `src/battle/battle_effect_stream_fields.c` |
 | `$81:A062` | `Lufia2BattleEffectAimAtPoint` | verified | `src/battle/battle_effect_angle_motion.c` |

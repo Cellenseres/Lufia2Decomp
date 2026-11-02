@@ -24,6 +24,8 @@ enum {
     SCRIPT_TARGET = 0x25u
 };
 
+enum { DP_SAVED_PARAMETERS = 0x11u };
+
 static Lufia2ExecutionResult InterruptedEnemyCall(uint32_t site) {
     Lufia2ExecutionResult result = ExecutionReturned(site);
     result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
@@ -31,13 +33,15 @@ static Lufia2ExecutionResult InterruptedEnemyCall(uint32_t site) {
 }
 
 static void InitializeEnemyScript(const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+    Lufia2CpuState *cpu, bool saved_parameters) {
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpDp(cpu, DP_SCRIPT_ADDRESS));
     OpSta(memory, cpu, OpAbsX(cpu, SCRIPT_ADDRESS));
     for (uint16_t field = SCRIPT_FIRST_PARAMETER;
          field <= SCRIPT_LAST_PARAMETER; field += 2u) {
-        OpLda(memory, cpu, OpAbsY(cpu, field));
+        OpLda(memory, cpu, saved_parameters ?
+            OpDp(cpu, DP_SAVED_PARAMETERS + field - SCRIPT_FIRST_PARAMETER) :
+            OpAbsY(cpu, field));
         OpSta(memory, cpu, OpAbsX(cpu, field));
     }
     OpLda(memory, cpu, OpAbsY(cpu, 0u));
@@ -56,7 +60,56 @@ static void InitializeEnemyScript(const Lufia2Memory *memory,
     OpLda(memory, cpu, OpAbsY(cpu, ENEMY_TARGET));
     OpDecA(cpu);
     OpSta(memory, cpu, OpAbsX(cpu, SCRIPT_TARGET));
-    OpStepMem(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EFFECT_ACTIVE_COUNT), 1);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectSpawnListedTargetScripts(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu || !child)
+        return ExecutionHandoff(cpu, 0x819fabu);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, DirectLongPointer(memory, cpu, DP_EFFECT_STREAM));
+    OpSta(memory, cpu, OpDp(cpu, DP_SCRIPT_ADDRESS));
+    OpStepMem(memory, cpu, OpDp(cpu, DP_EFFECT_STREAM), 1);
+    OpStepMem(memory, cpu, OpDp(cpu, DP_EFFECT_STREAM), 1);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EFFECT_TARGET_COUNT & 0xffffu));
+    OpAndValue(cpu, 0xffu);
+    if (!cpu->zero) {
+        OpSta(memory, cpu, OpDp(cpu, DP_REMAINING_ENEMIES));
+        for (uint16_t field = SCRIPT_FIRST_PARAMETER;
+             field <= SCRIPT_LAST_PARAMETER; field += 2u) {
+            OpLda(memory, cpu, OpAbsY(cpu, field));
+            OpSta(memory, cpu, OpDp(cpu,
+                DP_SAVED_PARAMETERS + field - SCRIPT_FIRST_PARAMETER));
+        }
+        PushY(memory, cpu);
+        OpLdy(cpu, FIRST_ENEMY);
+        do {
+            OpSepWidths(cpu, 0x20u);
+            const uint16_t caller_stack = cpu->stack;
+            if (!CallChildWithFrame(memory, cpu, child, context,
+                    0x819fddu, 0x818fabu, 2u, 0x81u))
+                return InterruptedEnemyCall(0x819fddu);
+            if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+                cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
+                cpu->stack != caller_stack)
+                return ExecutionHandoff(cpu,
+                    (uint32_t)cpu->program_bank << 16 | 0x9fe0u);
+            InitializeEnemyScript(memory, cpu, true);
+            OpTya(cpu);
+            cpu->carry = 0u;
+            OpAdcValue(cpu, ENEMY_STRIDE);
+            OpTay(cpu);
+            OpStepMem(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EFFECT_ACTIVE_COUNT), 1);
+            OpStepMem(memory, cpu, OpDp(cpu, DP_REMAINING_ENEMIES), -1);
+        } while (!cpu->zero);
+        cpu->y = PullIndexValue(memory, cpu);
+    }
+    OpSepWidths(cpu, 0x20u);
+    return ExecutionReturned(0x81a039u);
 }
 
 Lufia2ExecutionResult Lufia2BattleEffectSpawnEnemyScripts(
@@ -109,7 +162,8 @@ Lufia2ExecutionResult Lufia2BattleEffectSpawnEnemyScripts(
                 if (!CallChildWithFrame(memory, cpu, child, context,
                         0x819466u, 0x818fabu, 2u, 0x81u))
                     return InterruptedEnemyCall(0x819466u);
-                InitializeEnemyScript(memory, cpu);
+                InitializeEnemyScript(memory, cpu, false);
+                OpStepMem(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EFFECT_ACTIVE_COUNT), 1);
             }
         }
         OpRepWidths(cpu, 0x20u);

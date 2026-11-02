@@ -1388,6 +1388,13 @@ Lufia2ExecutionResult Lufia2BattleEffectSpawnEnemyScripts(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+#define LUFIA2_BATTLE_LISTED_TARGET_SCRIPTS_API 1
+Lufia2ExecutionResult Lufia2BattleEffectSpawnListedTargetScripts(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2BattleEffectSetSpecialTargetDisplayOffsets(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2BattleEffectAimAtPoint(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
