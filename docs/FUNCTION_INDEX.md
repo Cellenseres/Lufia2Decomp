@@ -405,8 +405,10 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:AC72` | `Lufia2BattleAction07` | verified | `src/battle/battle_collective_actions.c` |
 | `$81:AD3B` | `Lufia2BattleCapsuleAction` | verified | `src/battle/battle_special_actions.c` |
 | `$81:AD8D` | `Lufia2BattleWaitAction` | verified | `src/battle/battle_action_followups.c` |
+| `$81:AD96` | `Lufia2BattleRepeatFixedMessage` | verified | `src/battle/battle_action_followups.c` |
 | `$81:AE0F` | `Lufia2BattleAlternateAttackAction` | verified | `src/battle/battle_special_actions.c` |
 | `$81:AEE1` | `Lufia2BattleWaitLongAction` | verified | `src/battle/battle_action_followups.c` |
+| `$81:AEEA` | `Lufia2BattleDisplayFixedMessage` | verified | `src/battle/battle_action_followups.c` |
 | `$81:AF37` | `Lufia2BattleFollowupAction` | verified | `src/battle/battle_action_followups.c` |
 | `$81:AF7A` | `Lufia2BattleBeginUncostedSpellAction` | verified | `src/battle/battle_action_followups.c` |
 | `$81:AF89` | `Lufia2BattleUncostedSpellAction` | verified | `src/battle/battle_action_followups.c` |

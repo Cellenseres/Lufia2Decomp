@@ -1109,6 +1109,14 @@ Lufia2ExecutionResult Lufia2BattleWaitAction(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);
 
+Lufia2ExecutionResult Lufia2BattleRepeatFixedMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
+Lufia2ExecutionResult Lufia2BattleDisplayFixedMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 Lufia2ExecutionResult Lufia2BattleWaitLongAction(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context);

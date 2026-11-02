@@ -1,3 +1,25 @@
+# Fixed battle message waits — 2026-11-02
+
+Two missing original paths are reconstructed: `$81:AD96` (40 bytes) and
+`$81:AEEA` (34 bytes). They display the original fixed message and retain
+their distinct countdowns, sprite rebuild requests and pushed child calls.
+The first path rejoins `$81:ADD5` after its first nonzero countdown, then
+shares the existing second-message tail. A zero first countdown returns
+immediately. The second path keeps its separate thirty-frame wait.
+
+Existing frame/countdown and repeated-message tails are shared. The affected
+`$81:AD8D` and `$81:AEE1` callers are included in the same verification batch.
+Strict MSVC and Clang C11 each pass 2,068 differential caller cases and
+18 no-access refusals. Coverage includes CPU/full WRAM, ordered data accesses,
+394,087 child-entry comparisons, real original message copying, child
+unwinds, changed child CPU modes, timer edits and all four bounded-loop exits.
+
+This proves portable semantics, not consumer timing or runtime acceleration.
+Consumer integration remains pending: the existing message child bridge does
+not establish timed execution of the whole parent. No untimed replacement or
+extra opcode hook is installed to inflate native coverage. No ordinary caller,
+whole-game performance gain or new production replay acceptance is claimed.
+
 # Original initialization entries — 2026-11-02
 
 Two missing original bodies are reconstructed: `$84:9C9B` (57 bytes before
@@ -12977,7 +12999,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2288 functions in `metadata/functions.toml`: 2288 verified, 0 draft, 0 identified, 0 disabled.
+2290 functions in `metadata/functions.toml`: 2290 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

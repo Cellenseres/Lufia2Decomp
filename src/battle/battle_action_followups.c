@@ -8,6 +8,7 @@ enum {
     FOLLOWUP_STATE = WRAM_BATTLE_ACTION_WORK + 10u,
     FOLLOWUP_EFFECT = WRAM_PALETTE_FADE & 0xffffu,
     FOLLOWUP_MESSAGE_COUNT = WRAM_BATTLE_MESSAGE_COUNT & 0xffffu,
+    FOLLOWUP_FIXED_MESSAGE = 0xf2b8u,
     FOLLOWUP_SPELL_ID = WRAM_MENU_SPELL_RECORD_ID & 0xffffu,
     FOLLOWUP_SPELL_NAME = WRAM_SPELL_RECORD_POINTER & 0xffffu,
     FOLLOWUP_MESSAGE_NAME = WRAM_BATTLE_MESSAGE_NAME_POINTER & 0xffffu,
@@ -58,26 +59,36 @@ static bool FollowupCall(ActionFollowup *action, uint16_t site,
     return true;
 }
 
-static bool FollowupWait(ActionFollowup *action, ActionWait wait) {
+static bool FollowupWaitFrame(ActionFollowup *action, ActionWait wait) {
     const Lufia2Memory *memory = action->battle.memory;
     Lufia2CpuState *cpu = action->battle.cpu;
 
-    LoadA8(cpu, wait.frames);
+    PushAccumulator8(memory, cpu);
+    if (!FollowupCall(action, wait.sprites, BATTLE_ROUTINE_SPRITES, 3u))
+        return false;
+    LoadA8(cpu, 0xffu);
+    Write8(memory, BATTLE_SPRITE_REBUILD_REQUEST, A8(cpu));
+    if (!FollowupCall(action, wait.input, BATTLE_ROUTINE_FRAME_INPUT, 3u))
+        return false;
+    LoadA8(cpu, Pull8(memory, cpu));
+    DecrementA8(cpu);
+    return true;
+}
+
+static bool FollowupWaitCountdown(ActionFollowup *action, ActionWait wait) {
     for (unsigned frame = 0u; frame < FOLLOWUP_WAIT_LIMIT; ++frame) {
-        PushAccumulator8(memory, cpu);
-        if (!FollowupCall(action, wait.sprites, BATTLE_ROUTINE_SPRITES, 3u))
+        if (!FollowupWaitFrame(action, wait))
             return false;
-        LoadA8(cpu, 0xffu);
-        Write8(memory, BATTLE_SPRITE_REBUILD_REQUEST, A8(cpu));
-        if (!FollowupCall(action, wait.input, BATTLE_ROUTINE_FRAME_INPUT, 3u))
-            return false;
-        LoadA8(cpu, Pull8(memory, cpu));
-        DecrementA8(cpu);
-        if (cpu->zero)
+        if (action->battle.cpu->zero)
             return true;
     }
-    action->result = ExecutionHandoff(cpu, 0x810000u | wait.start);
+    action->result = ExecutionHandoff(action->battle.cpu, 0x810000u | wait.start);
     return false;
+}
+
+static bool FollowupWait(ActionFollowup *action, ActionWait wait) {
+    LoadA8(action->battle.cpu, wait.frames);
+    return FollowupWaitCountdown(action, wait);
 }
 
 Lufia2ExecutionResult Lufia2BattleDefendAction(
@@ -220,6 +231,61 @@ Lufia2ExecutionResult Lufia2BattleFollowupAction(
     return ExecutionHandoff(cpu, 0x81a832u);
 }
 
+static Lufia2ExecutionResult FinishWaitMessage(ActionFollowup *action) {
+    const Lufia2Memory *memory = action->battle.memory;
+    Lufia2CpuState *cpu = action->battle.cpu;
+    LoadX16(cpu, FOLLOWUP_FIXED_MESSAGE);
+    if (!FollowupCall(action, 0xadebu, 0x8594e7u, 3u))
+        return action->result;
+    LoadX16(cpu, 1u);
+    Write16Absolute(memory, cpu, FOLLOWUP_MESSAGE_COUNT, cpu->x);
+    if (!FollowupCall(action, 0xadf5u, FOLLOWUP_DISPLAY_MESSAGE, 3u) ||
+        !FollowupWait(action, (ActionWait){30u, 0xadfbu, 0xadfcu, 0xae06u}))
+        return action->result;
+    return ExecutionReturned(0x81ae0eu);
+}
+
+Lufia2ExecutionResult Lufia2BattleRepeatFixedMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context) {
+    if (!FollowupContext(cpu) || !child)
+        return ExecutionHandoff(cpu, 0x81ad96u);
+    ActionFollowup action = {
+        BattleContextCreate(memory, cpu, child, child_context, 0x81u), {0}
+    };
+    LoadX16(cpu, FOLLOWUP_FIXED_MESSAGE);
+    if (!FollowupCall(&action, 0xad99u, 0x8594e7u, 3u))
+        return action.result;
+    LoadX16(cpu, 1u);
+    Write16Absolute(memory, cpu, FOLLOWUP_MESSAGE_COUNT, cpu->x);
+    if (!FollowupCall(&action, 0xada3u, FOLLOWUP_DISPLAY_MESSAGE, 3u))
+        return action.result;
+    LoadA8(cpu, 30u);
+    if (!FollowupWaitFrame(&action, (ActionWait){30u, 0xada9u, 0xadaau, 0xadb4u}))
+        return action.result;
+    if (cpu->zero)
+        return ExecutionReturned(0x81ae0eu);
+    if (!FollowupWaitCountdown(&action, (ActionWait){0u, 0xadd5u, 0xadd6u, 0xade0u}))
+        return action.result;
+    return FinishWaitMessage(&action);
+}
+
+Lufia2ExecutionResult Lufia2BattleDisplayFixedMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context) {
+    if (!FollowupContext(cpu) || !child)
+        return ExecutionHandoff(cpu, 0x81aeeau);
+    ActionFollowup action = {
+        BattleContextCreate(memory, cpu, child, child_context, 0x81u), {0}
+    };
+    LoadX16(cpu, FOLLOWUP_FIXED_MESSAGE);
+    if (!FollowupCall(&action, 0xaeedu, 0x8594e7u, 3u) ||
+        !FollowupCall(&action, 0xaef1u, FOLLOWUP_DISPLAY_MESSAGE, 3u) ||
+        !FollowupWait(&action, (ActionWait){30u, 0xaef7u, 0xaef8u, 0xaf02u}))
+        return action.result;
+    return ExecutionReturned(0x81af36u);
+}
+
 Lufia2ExecutionResult Lufia2BattleWaitAction(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context) {
@@ -241,15 +307,7 @@ Lufia2ExecutionResult Lufia2BattleWaitAction(
         !FollowupCall(&action, 0xadd0u, FOLLOWUP_PREPARE_EFFECT, 2u) ||
         !FollowupWait(&action, (ActionWait){30u, 0xadd5u, 0xadd6u, 0xade0u}))
         return action.result;
-    LoadX16(cpu, 0xf2b8u);
-    if (!FollowupCall(&action, 0xadebu, 0x8594e7u, 3u))
-        return action.result;
-    LoadX16(cpu, 1u);
-    Write16Absolute(memory, cpu, FOLLOWUP_MESSAGE_COUNT, cpu->x);
-    if (!FollowupCall(&action, 0xadf5u, FOLLOWUP_DISPLAY_MESSAGE, 3u) ||
-        !FollowupWait(&action, (ActionWait){30u, 0xadfbu, 0xadfcu, 0xae06u}))
-        return action.result;
-    return ExecutionReturned(0x81ae0eu);
+    return FinishWaitMessage(&action);
 }
 
 Lufia2ExecutionResult Lufia2BattleWaitLongAction(
