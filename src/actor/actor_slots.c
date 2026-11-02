@@ -4,6 +4,7 @@
 #include "lufia2/actor.h"
 
 #include "actor/actor_internal.h"
+#include "actor/record_offsets_internal.h"
 #include "actor/actor_slot_view.h"
 #include "system/wram.h"
 
@@ -11,16 +12,7 @@
 void Lufia2ActorRecordOffsets(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    /* $A9 = 2 * slot and $AB = 3 * slot, high bytes and $AD zero. */
-    Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT + 1u), 0x00u);  /* AB4F */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
-    AslA8(cpu);
-    Write8(memory, DirectAddress(cpu, DP_SLOT_WORD_OFFSET), A8(cpu));
-    Write8(memory, DirectAddress(cpu, DP_SLOT_WORD_OFFSET + 1u), 0x00u);
-    Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT)));
-    Write8(memory, DirectAddress(cpu, DP_SLOT_RECORD_OFFSET), A8(cpu));
-    Write8(memory, DirectAddress(cpu, DP_SLOT_RECORD_OFFSET + 1u), 0x00u);
-    Write8(memory, DirectAddress(cpu, 0xadu), 0x00u);
+    ActorPrepareRecordOffsets(memory, cpu);
 }
 
 /* $83:DFFD: script pointer from table $91:8EC7. */

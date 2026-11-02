@@ -1,3 +1,27 @@
+# Free text-actor slot search - 2026-11-02
+
+Original 80:C1C3 finds the first FF sprite among 40 actor slots, prepares
+record offsets and returns carry clear. A full table returns carry set.
+The slot remains unclaimed. The argument store, ordered scan, original
+child frame and actual rewritten child return PC are preserved.
+
+The child at 84:82D5 is byte-identical to 83:AB4F. Both now share one
+inline offset operation. Existing API signatures and guards remain.
+The original 83 helper retains identical 359-byte MSVC machine code.
+The 84 public API costs about 0.59 times its former median paired cost
+in a flat-WRAM desktop microbenchmark. This is not a gameplay speedup.
+
+A shared checkpoint passes 24576 portable original-ROM CPU/full-WRAM/bus
+cases, 512 modeled rewritten-child-return contexts and seven no-access
+refusals. The timed consumer passes 8200 cases covering every found slot,
+full tables and exact deadline admission, plus 27 indexed-range refusals.
+The maximum with conservative refresh tax is 5554 of 8192 reserved ticks.
+
+Native timing selects immutable paths from the original slot read, with
+no extra table scan or child host dispatch. Original bus accesses and
+guest timing remain. The new entry has no proven ordinary gameplay caller.
+Full regression and production gameplay profiling are deferred.
+
 # Original gray-palette output variants - 2026-11-02
 
 The missing 81:B308 writes plain gray colors to the palette buffer.
@@ -12851,7 +12875,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2282 functions in `metadata/functions.toml`: 2282 verified, 0 draft, 0 identified, 0 disabled.
+2283 functions in `metadata/functions.toml`: 2283 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

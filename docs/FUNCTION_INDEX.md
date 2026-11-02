@@ -139,6 +139,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:C12E` | `Lufia2SceneScriptFindRecord` | verified | `src/field/field_scene_records.c` |
 | `$80:C195` | `Lufia2FieldMarkObjectSlots` | verified | `src/field/field_object_flags.c` |
 | `$80:C1A7` | `Lufia2SceneApplyActorCell` | verified | `src/field/field_scene_actor_records.c` |
+| `$80:C1C3` | `Lufia2TextFindFreeActorSlot` | verified | `src/text/text_scene_setup.c` |
 | `$80:C1DF` | `Lufia2FieldSelectInteractionVariant` | verified | `src/field/field_interaction.c` |
 | `$80:C1FD` | `Lufia2TextCloseWindowWithServices` | verified | `src/text/text_engine.c` |
 | `$80:C21A` | `Lufia2FieldTextWindowTimer` | verified | `src/field/field_update.c` |

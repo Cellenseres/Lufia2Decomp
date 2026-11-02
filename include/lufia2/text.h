@@ -118,6 +118,11 @@ Lufia2ExecutionResult Lufia2RunAlternateDisplay(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+#define LUFIA2_TEXT_FREE_ACTOR_API 1
+
+Lufia2ExecutionResult Lufia2TextFindFreeActorSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,5 +1,6 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "lufia2/actor.h"
 #include "lufia2/text.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
@@ -15,6 +16,45 @@ static bool SceneSetupContext(const Lufia2CpuState *cpu) {
     return cpu->program_bank == 0x80u && cpu->accumulator_is_8_bit &&
            !cpu->index_is_8_bit && !cpu->direct_page && !cpu->decimal &&
            cpu->stack >= 0x1f10u && cpu->stack <= 0x1ffcu;
+}
+
+Lufia2ExecutionResult Lufia2TextFindFreeActorSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    enum { ACTOR_SEARCH_ARGUMENT = 0x54u,
+        ACTOR_SPRITE_TABLE = WRAM_UNK_7E05D2,
+        ACTOR_SLOT_COUNT = WRAM_UNK_7E05D2_COUNT,
+        ACTOR_UNUSED_SPRITE = 0xffu };
+    if (!SceneSetupContext(cpu))
+        return ExecutionHandoff(cpu, 0x80c1c3u);
+    OpSta(memory, cpu, OpDp(cpu, ACTOR_SEARCH_ARGUMENT));
+    OpLdx(cpu, 0u);
+    for (;;) {
+        OpLda(memory, cpu, OpAbsX(cpu, ACTOR_SPRITE_TABLE));
+        OpCmpValue(cpu, ACTOR_UNUSED_SPRITE);
+        if (cpu->zero)
+            break;
+        OpInx(cpu);
+        OpCpx(cpu, ACTOR_SLOT_COUNT);
+        if (cpu->zero) {
+            cpu->carry = 1u;
+            return ExecutionReturned(0x80c1d6u);
+        }
+    }
+    OpWriteX(memory, cpu, OpDp(cpu, SCENE_SETUP_ACTOR_SLOT), cpu->x);
+    SimulateJslFrame(memory, cpu, 0x80u, 0xc1dcu);
+    cpu->program_bank = 0x84u;
+    const Lufia2ExecutionResult prepared = Lufia2ActorPreparePartyOffsets(memory, cpu);
+    if (prepared.flow != LUFIA2_EXECUTION_RETURNED)
+        return prepared;
+    const uint16_t low = Pull8(memory, cpu);
+    const uint16_t high = Pull8(memory, cpu);
+    cpu->program_bank = Pull8(memory, cpu);
+    const uint32_t next = (uint32_t)cpu->program_bank << 16 |
+        (uint16_t)(((high << 8) | low) + 1u);
+    if (next != 0x80c1ddu)
+        return ExecutionHandoff(cpu, next);
+    cpu->carry = 0u;
+    return ExecutionReturned(0x80c1deu);
 }
 
 static bool SceneSetupChild(const Lufia2Memory *memory, Lufia2CpuState *cpu,

@@ -1,3 +1,4 @@
+#include "actor/record_offsets_internal.h"
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/actor.h"
@@ -6,8 +7,6 @@
 
 enum {
     PARTY_ACTOR_SLOT = 0xa7u,
-    PARTY_WORD_OFFSET = 0xa9u,
-    PARTY_RECORD_OFFSET = 0xabu,
     PARTY_SPRITE = 0x54u,
     PARTY_SPRITE_BANK = 0x55u,
     PARTY_IDS = WRAM_SCENE_PARTY_IDS,
@@ -26,15 +25,7 @@ Lufia2ExecutionResult Lufia2ActorPreparePartyOffsets(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (cpu->program_bank != 0x84u || !cpu->accumulator_is_8_bit || cpu->decimal)
         return ExecutionHandoff(cpu, 0x8482d5u);
-    OpStz(memory, cpu, OpDp(cpu, PARTY_ACTOR_SLOT + 1u));
-    OpLda(memory, cpu, OpDp(cpu, PARTY_ACTOR_SLOT));
-    OpAslA(cpu);
-    OpSta(memory, cpu, OpDp(cpu, PARTY_WORD_OFFSET));
-    OpStz(memory, cpu, OpDp(cpu, PARTY_WORD_OFFSET + 1u));
-    OpAdc(memory, cpu, OpDp(cpu, PARTY_ACTOR_SLOT));
-    OpSta(memory, cpu, OpDp(cpu, PARTY_RECORD_OFFSET));
-    OpStz(memory, cpu, OpDp(cpu, PARTY_RECORD_OFFSET + 1u));
-    OpStz(memory, cpu, OpDp(cpu, PARTY_RECORD_OFFSET + 2u));
+    ActorPrepareRecordOffsets(memory, cpu);
     return ExecutionReturned(0x8482e6u);
 }
 

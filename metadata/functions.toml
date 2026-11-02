@@ -18414,3 +18414,11 @@ source = "src/battle/battle_palette_fade.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "80:C1C3"
+name = "Lufia2TextFindFreeActorSlot"
+source = "src/text/text_scene_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
