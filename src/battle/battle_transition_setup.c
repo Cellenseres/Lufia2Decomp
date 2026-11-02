@@ -38,7 +38,12 @@ static Lufia2ExecutionResult TransitionChildUnwound(uint32_t site) {
 }
 
 enum {
+    DISSOLVE_ROWS_LEFT = 0x00u,
+    DISSOLVE_SOURCE_TILE = 0x02u,
+    DISSOLVE_MASK_TILE = 0x04u,
     DISSOLVE_COLUMNS = 0x11u,
+    DISSOLVE_HEIGHT = 0x12u,
+    DISSOLVE_ROW_STRIDE = 0x13u,
     DISSOLVE_ROW_COUNT = 0x15u,
     DISSOLVE_COUNTS = 0x19u,
     DISSOLVE_EMPTY_PREFIX = 0x1cu,
@@ -46,8 +51,178 @@ enum {
     DISSOLVE_PICK = 0x22u,
     DISSOLVE_ROW_BITS = 0x23u,
     DISSOLVE_COLUMN_OFFSET = 0x24u,
-    DISSOLVE_PIXEL_OFFSET = 0x28u
+    DISSOLVE_PIXEL_OFFSET = 0x28u,
+    DISSOLVE_ROWS_PER_TILE = 0x26u,
+    DISSOLVE_FIRST_ROW_WEIGHT = 0x27u,
+    DISSOLVE_COUNT_POINTER = 0x2au,
+    DISSOLVE_MASK_POINTER = 0x2du,
+    DISSOLVE_SOURCE_GRAPHICS = 0x6000u,
+    DISSOLVE_MASK_GRAPHICS = 0xdf00u,
+    DISSOLVE_ROW_WEIGHTS = 0xa000u
 };
+
+static void BeginDissolveTile(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    OpWriteX(memory, cpu, OpDp(cpu, DISSOLVE_SOURCE_TILE), cpu->x);
+    OpWriteX(memory, cpu, OpDp(cpu, DISSOLVE_MASK_TILE), cpu->y);
+    OpLoadA(cpu, 8u);
+    OpSta(memory, cpu, OpDp(cpu, DISSOLVE_ROWS_LEFT));
+}
+
+static void FoldDissolveRow(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbsX(cpu, DISSOLVE_SOURCE_GRAPHICS));
+    OpOra(memory, cpu, OpAbsX(cpu, DISSOLVE_SOURCE_GRAPHICS + 1u));
+    OpOra(memory, cpu, OpAbsX(cpu, DISSOLVE_SOURCE_GRAPHICS + 16u));
+    OpOra(memory, cpu, OpAbsX(cpu, DISSOLVE_SOURCE_GRAPHICS + 17u));
+    OpSta(memory, cpu, OpAbsY(cpu, DISSOLVE_MASK_GRAPHICS));
+    OpSta(memory, cpu, OpAbsY(cpu, DISSOLVE_MASK_GRAPHICS + 1u));
+    OpIny(cpu);
+    OpIny(cpu);
+    OpInx(cpu);
+    OpInx(cpu);
+    OpStepMem(memory, cpu, OpDp(cpu, DISSOLVE_ROWS_LEFT), -1);
+}
+
+static void AdvanceDissolveTile(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, DISSOLVE_MASK_TILE));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, 16u);
+    OpTay(cpu);
+    OpLda(memory, cpu, OpDp(cpu, DISSOLVE_SOURCE_TILE));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, 32u);
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+}
+
+Lufia2ExecutionResult Lufia2BattleContinueDissolveMask(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t pc,
+    Lufia2BattleMaskPixelBudget budget, void *context) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
+        (pc != 0x85e7d0u && pc != 0x85e7d8u && pc != 0x85e7f2u))
+        return ExecutionHandoff(cpu, pc);
+    for (;;) {
+        if (budget && !budget(context, cpu, pc))
+            return ExecutionHandoff(cpu, pc);
+        if (pc == 0x85e7d0u) {
+            BeginDissolveTile(memory, cpu);
+            pc = 0x85e7d8u;
+        } else if (pc == 0x85e7d8u) {
+            FoldDissolveRow(memory, cpu);
+            if (cpu->zero)
+                pc = 0x85e7f2u;
+        } else {
+            AdvanceDissolveTile(memory, cpu);
+            if (!cpu->carry)
+                return ExecutionHandoff(cpu, 0x85e806u);
+            pc = 0x85e7d0u;
+        }
+    }
+}
+
+static void SetDissolveDimensions(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    OpLdx(cpu, DISSOLVE_MASK_GRAPHICS);
+    OpWriteX(memory, cpu, OpDp(cpu, DISSOLVE_PIXELS), cpu->x);
+    OpLdx(cpu, DISSOLVE_ROW_WEIGHTS);
+    OpWriteX(memory, cpu, OpDp(cpu, DISSOLVE_COUNTS), cpu->x);
+    OpLoadA(cpu, 16u);
+    OpSta(memory, cpu, OpDp(cpu, DISSOLVE_COLUMNS));
+    OpLoadA(cpu, 15u);
+    OpSta(memory, cpu, OpDp(cpu, DISSOLVE_HEIGHT));
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, DISSOLVE_COLUMNS));
+    OpSta(memory, cpu, SNES_WRMPYA);
+    LoadA16(cpu, cpu->direct_page);
+    OpLda(memory, cpu, OpDp(cpu, DISSOLVE_COLUMNS));
+    /* Shift the packed dimensions, including height. */
+    for (unsigned shift = 0u; shift < 5u; ++shift)
+        OpAslA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, DISSOLVE_ROW_STRIDE));
+    OpLda(memory, cpu, SNES_RDMPYL);
+    for (unsigned shift = 0u; shift < 3u; ++shift)
+        OpAslA(cpu);
+    OpSta(memory, cpu, OpDp(cpu, DISSOLVE_ROW_COUNT));
+    OpSepWidths(cpu, 0x20u);
+}
+
+Lufia2ExecutionResult Lufia2BattleRunDissolveEffectWithBudget(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context,
+    Lufia2BattleMaskPixelBudget budget, void *budget_context) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
+        cpu->stack < 0x1f10u || cpu->stack > 0x1ffbu || !child)
+        return ExecutionHandoff(cpu, 0x85e7c5u);
+    if (budget && !budget(budget_context, cpu, 0x85e7c5u))
+        return ExecutionHandoff(cpu, 0x85e7c5u);
+    PushDataBank(memory, cpu);
+    OpSetDataBank(memory, cpu, 0x7eu);
+    OpLdx(cpu, 0x1fe0u);
+    OpLdy(cpu, 0x0ff0u);
+    const uint32_t caller_resume = cpu->resume_pc;
+    const Lufia2ExecutionResult folded = Lufia2BattleContinueDissolveMask(
+        memory, cpu, 0x85e7d0u, budget, budget_context);
+    if (folded.pc != 0x85e806u)
+        return folded;
+    cpu->resume_pc = caller_resume;
+    if (budget && !budget(budget_context, cpu, 0x85e806u))
+        return ExecutionHandoff(cpu, 0x85e806u);
+    SetDissolveDimensions(memory, cpu);
+    if (!CallChildWithFrame(memory, cpu, child, context,
+            0x85e835u, 0x85e8e8u, 2u, 0x85u))
+        return TransitionChildUnwound(0x85e835u);
+    if (budget && !budget(budget_context, cpu, 0x85e838u))
+        return ExecutionHandoff(cpu, 0x85e838u);
+    OpLdx(cpu, 0xffffu);
+    OpWriteX(memory, cpu, OpDp(cpu, DISSOLVE_EMPTY_PREFIX), cpu->x);
+    for (;;) {
+        if (budget && !budget(budget_context, cpu, 0x85e83du))
+            return ExecutionHandoff(cpu, 0x85e83du);
+        OpLoadA(cpu, 0x80u);
+        do {
+            if (budget && !budget(budget_context, cpu, 0x85e83fu))
+                return ExecutionHandoff(cpu, 0x85e83fu);
+            PushAccumulator8(memory, cpu);
+            if (!CallChildWithFrame(memory, cpu, child, context,
+                    0x85e840u, 0x85e85fu, 2u, 0x85u))
+                return TransitionChildUnwound(0x85e840u);
+            LoadA8(cpu, Pull8(memory, cpu));
+            if (cpu->carry) {
+                PullDataBank(memory, cpu);
+                return ExecutionReturned(0x85e85eu);
+            }
+            OpDecA(cpu);
+        } while (!cpu->zero);
+        if (budget && !budget(budget_context, cpu, 0x85e849u))
+            return ExecutionHandoff(cpu, 0x85e849u);
+        OpRepWidths(cpu, 0x20u);
+        if (!CallChildWithFrame(memory, cpu, child, context,
+                0x85e84bu, 0x859c4du, 3u, 0x85u))
+            return TransitionChildUnwound(0x85e84bu);
+        if (budget && !budget(budget_context, cpu, 0x85e84fu))
+            return ExecutionHandoff(cpu, 0x85e84fu);
+        OpSepWidths(cpu, 0x20u);
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, WRAM_BATTLE_EFFECT_FRAME_MARKER);
+        if (!CallChildWithFrame(memory, cpu, child, context,
+                0x85e857u, 0x85ec81u, 3u, 0x85u))
+            return TransitionChildUnwound(0x85e857u);
+        if (budget && !budget(budget_context, cpu, 0x85e85bu))
+            return ExecutionHandoff(cpu, 0x85e85bu);
+    }
+}
+
+Lufia2ExecutionResult Lufia2BattleRunDissolveEffect(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    return Lufia2BattleRunDissolveEffectWithBudget(
+        memory, cpu, child, context, NULL, NULL);
+}
 
 static uint32_t DissolveRowAddress(const Lufia2Memory *memory,
     const Lufia2CpuState *cpu, uint8_t pointer) {
@@ -311,16 +486,9 @@ static uint32_t AnimateTransitionPhase(const Lufia2Memory *memory,
     return 0u;
 }
 
-Lufia2ExecutionResult Lufia2BattlePlayTransition(
+static Lufia2ExecutionResult RunTransitionPhases(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
-        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
-        cpu->stack < 0x1f12u || cpu->stack > 0x1ffbu || !child)
-        return ExecutionHandoff(cpu, 0x85e7bcu);
-    OpLda(memory, cpu, OpAbs(cpu, TRANSITION_ENABLED));
-    if (cpu->zero)
-        return ExecutionReturned(0x85e7c4u);
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x85e91fu, 0x859671u, 3u, 0x85u))
         return TransitionChildUnwound(0x85e91fu);
@@ -378,4 +546,71 @@ Lufia2ExecutionResult Lufia2BattlePlayTransition(
     if (failed)
         return TransitionChildUnwound(failed);
     return ExecutionReturned(0x85eae3u);
+}
+
+Lufia2ExecutionResult Lufia2BattlePlayTransition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
+        cpu->stack < 0x1f12u || cpu->stack > 0x1ffbu || !child)
+        return ExecutionHandoff(cpu, 0x85e7bcu);
+    OpLda(memory, cpu, OpAbs(cpu, TRANSITION_ENABLED));
+    if (cpu->zero)
+        return ExecutionReturned(0x85e7c4u);
+    return RunTransitionPhases(memory, cpu, child, context);
+}
+
+Lufia2ExecutionResult Lufia2BattleRunDissolveTransitionWithBudget(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context,
+    Lufia2BattleMaskPixelBudget budget, void *budget_context) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
+        cpu->stack < 0x1f14u || cpu->stack > 0x1ffbu || !child)
+        return ExecutionHandoff(cpu, 0x85e8e8u);
+    if (budget && !budget(budget_context, cpu, 0x85e8e8u))
+        return ExecutionHandoff(cpu, 0x85e8e8u);
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, DISSOLVE_ROW_STRIDE));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, 16u);
+    OpSta(memory, cpu, OpDp(cpu, DISSOLVE_COLUMN_OFFSET));
+    OpSepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, DISSOLVE_HEIGHT));
+    OpSta(memory, cpu, OpDp(cpu, DISSOLVE_ROW_BITS));
+    OpLdx(cpu, Read16Direct(memory, cpu, DISSOLVE_COUNTS));
+    OpWriteX(memory, cpu, OpDp(cpu, DISSOLVE_COUNT_POINTER), cpu->x);
+    OpLdx(cpu, Read16Direct(memory, cpu, DISSOLVE_PIXELS));
+    OpWriteX(memory, cpu, OpDp(cpu, DISSOLVE_MASK_POINTER), cpu->x);
+    OpLoadA(cpu, 8u);
+    OpSta(memory, cpu, OpDp(cpu, DISSOLVE_ROWS_PER_TILE));
+    LoadA16(cpu, cpu->direct_page);
+    OpRepWidths(cpu, 0x20u);
+    OpSta(memory, cpu, OpAbs(cpu,
+        Read16Direct(memory, cpu, DISSOLVE_COUNT_POINTER)));
+    OpTay(cpu);
+    OpSepWidths(cpu, 0x20u);
+    PushY(memory, cpu);
+    OpLda(memory, cpu, OpDp(cpu, DISSOLVE_COLUMNS));
+    OpSta(memory, cpu, OpDp(cpu, DISSOLVE_PICK));
+    LoadA16(cpu, cpu->direct_page);
+    OpLda(memory, cpu, AbsoluteIndexedAddress(cpu,
+        Read16Direct(memory, cpu, DISSOLVE_MASK_POINTER), cpu->y));
+    OpTax(cpu);
+    OpRepWidths(cpu, 0x20u);
+    OpTya(cpu);
+    cpu->carry = 0u;
+    OpLda(memory, cpu, OpLongX(cpu, 0x97b418u));
+    OpSta(memory, cpu, OpDp(cpu, DISSOLVE_FIRST_ROW_WEIGHT));
+    if (budget && !budget(budget_context, cpu, 0x85e91fu))
+        return ExecutionHandoff(cpu, 0x85e91fu);
+    return RunTransitionPhases(memory, cpu, child, context);
+}
+
+Lufia2ExecutionResult Lufia2BattleRunDissolveTransition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    return Lufia2BattleRunDissolveTransitionWithBudget(
+        memory, cpu, child, context, NULL, NULL);
 }

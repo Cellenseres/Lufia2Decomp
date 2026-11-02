@@ -1,11 +1,45 @@
+# Dissolve controller and preparation checkpoint - 2026-11-02
+
+Original `$85:E7C5` and `$85:E8E8` are reconstructed, verified and selected by
+the consumer. They add 209 previously missing original bytes. Preparation
+shares the existing `$85:E7BC` transition body; it does not duplicate it.
+Packed dimensions, child widths, saved stack word and malformed return remain
+literal. No original delay, bus access or sound handshake was removed.
+
+The shared batch covers 256 mask prefixes, 4,096 continuation cases, 2,048
+preparation prefixes and eight refusals. Four complete paired runs use 14,301
+real original child calls and match CPU, WRAM and ordered data events. Another
+28 transition unwind sites, 32 modeled caller contracts and 16 parent unwind
+cases pass. Modeled returns do not establish a normal original return.
+
+Optional budgets retain exact mask phases. The consumer uses three certified
+hooks with indexed ownership and immutable clocks. Its current native path
+continues in the original runtime at `$85:E806` after folding and `$85:E91F`
+before the first transition child. The shared transition tail is not timed
+natively through this entry. Normal and older-library builds gate activation
+on both verified contracts and the required APIs.
+
+Of 16,384 timed inputs, 9,360 are admitted and 7,024 conservatively decline;
+80 context and hook guards pass. Four whole-mask runs match 28,422 original
+opcodes each, moving 20,459-20,497 into C spans. CPU, WRAM, ordered fetch/data,
+open bus, per-opcode clocks and last-write indices match. The affected pixel
+operation passes another 16,512 timed cases and 39 refusals.
+
+Strict MSVC/Clang C11, previous-header and feature-off compiler gates, seven
+CMake activation cases and Windows Release pass. Generated and linked callers,
+1024-opcode waits, the four-argument bool NMI owner and APU idle caller are
+checked. Shared clock and wait sources are unchanged. Full regression was
+deferred for this scoped batch. No ordinary gameplay frequency, host-time
+improvement, PCM acceptance or whole-game FPS claim follows from these tests.
+
 # Random dissolve mask pixel checkpoint - 2026-11-02
 
 Original `$85:E85F` is complete, verified and bound. It selects a weighted
 mask row, locates a pixel using hardware division and multiplication, and
 clears the selected bit in both planes. Random retries, the empty-prefix
 scan, child frames and the original `BRK` boundary remain intact.
-This is one unique 137-byte operation. Its unfinished `$85:E7C5` caller
-and ordinary gameplay execution remain outside the completion claim.
+This is one unique 137-byte operation. The later checkpoint above adds its `$85:E7C5` caller.
+Ordinary gameplay execution remains outside the completion claim.
 
 The shared checkpoint passes 33,792 original-ROM CPU, full-WRAM and ordered
 bus cases, 256 child-unwind contexts and eight no-access refusals. Optional
@@ -12904,7 +12938,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2284 functions in `metadata/functions.toml`: 2284 verified, 0 draft, 0 identified, 0 disabled.
+2286 functions in `metadata/functions.toml`: 2286 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

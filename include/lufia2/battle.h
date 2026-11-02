@@ -2162,9 +2162,32 @@ Lufia2ExecutionResult Lufia2BattleBuildTargetEffectMasks(
     Lufia2PushedChildCall child, void *context);
 
 #define LUFIA2_BATTLE_DISSOLVE_PIXEL_API 1
+#define LUFIA2_BATTLE_DISSOLVE_SETUP_API 1
+
+Lufia2ExecutionResult Lufia2BattleRunDissolveTransition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2BattleRunDissolveEffect(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
 
 typedef uint8_t (*Lufia2BattleMaskPixelBudget)(
     void *context, const Lufia2CpuState *cpu, uint32_t pc);
+
+Lufia2ExecutionResult Lufia2BattleRunDissolveTransitionWithBudget(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context,
+    Lufia2BattleMaskPixelBudget budget, void *budget_context);
+
+Lufia2ExecutionResult Lufia2BattleRunDissolveEffectWithBudget(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context,
+    Lufia2BattleMaskPixelBudget budget, void *budget_context);
+
+Lufia2ExecutionResult Lufia2BattleContinueDissolveMask(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t pc,
+    Lufia2BattleMaskPixelBudget budget, void *context);
 
 Lufia2ExecutionResult Lufia2BattleClearRandomMaskPixel(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

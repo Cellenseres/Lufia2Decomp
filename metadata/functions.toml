@@ -18430,3 +18430,19 @@ source = "src/battle/battle_transition_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:E7C5"
+name = "Lufia2BattleRunDissolveEffect"
+source = "src/battle/battle_transition_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:E8E8"
+name = "Lufia2BattleRunDissolveTransition"
+source = "src/battle/battle_transition_setup.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

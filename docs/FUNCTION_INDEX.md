@@ -1850,7 +1850,9 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:E4E5` | `Lufia2BattlePrepareEnemyInsertion` | verified | `src/battle/battle_followup.c` |
 | `$85:E5C2` | `Lufia2BattleFlashActionActor` | verified | `src/battle/battle_action_presentation.c` |
 | `$85:E7BC` | `Lufia2BattlePlayTransition` | verified | `src/battle/battle_transition_setup.c` |
+| `$85:E7C5` | `Lufia2BattleRunDissolveEffect` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:E85F` | `Lufia2BattleClearRandomMaskPixel` | verified | `src/battle/battle_transition_setup.c` |
+| `$85:E8E8` | `Lufia2BattleRunDissolveTransition` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAE4` | `Lufia2BattleAdvanceTransitionFrame` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAEF` | `Lufia2BattleFadeSpecialExit` | verified | `src/battle/battle_exit.c` |
 | `$85:EB91` | `Lufia2BattleLoadEnemyGraphicsGroups` | verified | `src/battle/battle_enemy_graphics.c` |
