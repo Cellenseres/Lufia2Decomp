@@ -40,6 +40,10 @@ Lufia2ExecutionResult Lufia2MenuDrawString(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $80:8866 menu string; line width from A low byte. */
+Lufia2ExecutionResult Lufia2MenuDrawStringWithWidth(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* Optional number checkpoints before PHY at $80:8922, including nested strings. */
 Lufia2ExecutionResult Lufia2MenuDrawStringWithCheckpoint(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

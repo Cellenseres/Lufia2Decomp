@@ -18487,3 +18487,11 @@ source = "src/battle/battle_message_parser.c"
 entry_mx = "M1X0"
 exit_mx = "dynamic"
 status = "verified"
+
+[[function]]
+address = "80:8866"
+name = "Lufia2MenuDrawStringWithWidth"
+source = "src/menu/menu_string.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"

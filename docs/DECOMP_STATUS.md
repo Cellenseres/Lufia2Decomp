@@ -1,3 +1,25 @@
+# Caller-supplied menu width — 2026-11-02
+
+`Lufia2MenuDrawStringWithWidth` reconstructs the missing `$80:8866..8877`
+alternative. Its incoming A low byte supplies the line width and remaining
+column count. The ordinary `$80:8878` entry still sets thirty-two. Both entries
+share the existing string VM and child frames; ordinary-entry number checkpoints
+remain unchanged.
+this is eighteen newly covered original bytes, not another text VM algorithm.
+
+Strict MSVC/Clang C11 each pass 1,024 new-entry and 1,024 affected ordinary-entry
+cases, comparing CPU/full WRAM/ordered data. Another 1,024 original caller cases
+exercise four operand families. These unchanged semantic proofs are reused at
+the shared consumer checkpoint. The original width/status/stack behavior remains.
+
+The separate consumer admits bounded plain text with exact fetch/data timing;
+complex controls, wrapping, extended glyphs and unsafe states retain the original
+route. MSVC/Clang each pass 4,096 timed cases and 55 no-access refusals. Sixteen
+linked original-interpreter pairs and five default-fallback pairs match complete
+state and clocks. The matched 600-menu/600-field/1,200-boot replays preserve PCM.
+Three 1,000-call samples have median 108.667 ms original-interpreted versus
+44.622 ms native. These are scoped results, not an organic frequency or FPS claim.
+
 # Battle resource formatter — 2026-11-02
 
 `$85:C5B5..C60D` is reconstructed as `Lufia2BattleFormatResourceMessage`.
@@ -18067,3 +18089,4 @@ Four interaction contracts add65,536 states perpath,131 original states,
 Nine child sites,ordered actor flags,scene records and facing ties are retained.
 An interaction variant is selected;an animation classification is unproven.
 Twenty-four grouped jobs, ONE full 1,416 and Windows Release pass.
+

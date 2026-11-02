@@ -1,4 +1,4 @@
-/* Menu string byte code ($80:8878). */
+/* Menu string byte code ($80:8866, $80:8878). */
 
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
@@ -1086,10 +1086,10 @@ static int MenuRun(MenuVm *vm) {
     }
 }
 
-/* $80:8878: 32 characters a line; any width. */
-Lufia2ExecutionResult Lufia2MenuDrawStringWithCheckpoint(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu, Lufia2ExecutionCheckpoint checkpoint, void *context) {
+/* Shared string VM; alternate entries preserve their widths. */
+static Lufia2ExecutionResult DrawMenuString(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionCheckpoint checkpoint, void *context, bool custom_width) {
     MenuVm vm;
 
     vm.checkpoint = checkpoint;
@@ -1099,14 +1099,15 @@ Lufia2ExecutionResult Lufia2MenuDrawStringWithCheckpoint(
     vm.handoff = 0;
     vm.dispatches = 0;
     vm.visit_count = 0;
-    Push8(memory, cpu, PackStatus(cpu));                       /* 8878 */
+    Push8(memory, cpu, PackStatus(cpu));                       /* 8866 / 8878 */
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
     PushY(memory, cpu);
-    LoadA8(cpu, 0x20u);
+    if (!custom_width)
+        LoadA8(cpu, 0x20u);
     StoreAAbsolute8(memory, cpu, WIDTH, 0);
     StoreAAbsolute8(memory, cpu, LEFT, 0);
-    Jsr(&vm, 0x8888u);
+    Jsr(&vm, custom_width ? 0x8874u : 0x8888u);
     if (MenuRun(&vm)) {
         Lufia2ExecutionResult result = ExecutionHandoff(cpu, vm.handoff);
 
@@ -1116,7 +1117,19 @@ Lufia2ExecutionResult Lufia2MenuDrawStringWithCheckpoint(
     Rts(&vm);
     cpu->y = PullIndexValue(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
-    return ExecutionReturned(0x80888bu);
+    return ExecutionReturned(custom_width ? 0x808877u : 0x80888bu);
+}
+
+Lufia2ExecutionResult Lufia2MenuDrawStringWithCheckpoint(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2ExecutionCheckpoint checkpoint, void *context) {
+    return DrawMenuString(memory, cpu, checkpoint, context, false);
+}
+
+/* $80:8866: line width from A low byte. */
+Lufia2ExecutionResult Lufia2MenuDrawStringWithWidth(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return DrawMenuString(memory, cpu, NULL, NULL, true);
 }
 
 Lufia2ExecutionResult Lufia2MenuDrawString(
