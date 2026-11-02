@@ -1302,6 +1302,10 @@ Lufia2ExecutionResult Lufia2BattleLoadStatusMessage(
 Lufia2ExecutionResult Lufia2BattleExpandActionMessage(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $85:C5B5 continuation; consumes saved Y/X/A/DB/P before RTL. */
+Lufia2ExecutionResult Lufia2BattleFormatResourceMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2BattleInsertTurn(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

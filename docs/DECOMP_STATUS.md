@@ -1,3 +1,27 @@
+# Battle resource formatter — 2026-11-02
+
+`$85:C5B5..C60D` is reconstructed as `Lufia2BattleFormatResourceMessage`.
+These 89 original bytes copy character/control pairs, pad newlines to eighteen
+columns and terminate after padding to thirty-six. The original byte-counter
+wrap and nonzero-DP `TDC` terminator remain observable. The continuation consumes
+an inherited eight-byte saved Y/X/A/DB/P frame before its original RTL.
+The existing action-message expander shares only its register-restoration helper.
+
+Strict MSVC/Clang C11 each pass 1,027 formatter comparisons and three entry
+refusals, including all three explicit bounded continuation exits. Another
+1,940 affected expander states cover 970 resource IDs and eight parser branches.
+CPU, full WRAM and ordered data accesses are compared against the original ROM.
+
+The separate consumer binds the verified continuation with exact timing and a
+nonlocal return through the existing unwind mechanism. Each compiler passes
+4,096 clocked cases and 47 admission refusals. Fourteen actual production pairs
+preserve CPU/WRAM/hardware/clocks; 600 menu, 600 field and 1,200 boot frames also
+preserve hardware and PCM. Three matched 1,000-call samples have median host
+cost 108.713 ms interpreted versus 42.373 ms native, with identical final state.
+Admission is deliberately limited to bounded, non-aliasing WRAM input in a
+quiet VBlank interval. Other states retain the original route. No ordinary
+caller frequency, whole-game acceleration or complete-ROM coverage is claimed.
+
 # Fixed battle message waits — 2026-11-02
 
 Two missing original paths are reconstructed: `$81:AD96` (40 bytes) and

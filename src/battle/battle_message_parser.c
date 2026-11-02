@@ -5,7 +5,12 @@ enum {
     MESSAGE_RESOURCE_TABLE = 0x978000u,
     MESSAGE_LONG_DICTIONARY = 0x8eea00u,
     MESSAGE_SHORT_DICTIONARY = 0x9eddccu,
-    MESSAGE_EXPANSION_BUFFER = WRAM_BATTLE_MESSAGE_RESOURCE_BUFFER & 0xffffu
+    MESSAGE_EXPANSION_BUFFER = WRAM_BATTLE_MESSAGE_RESOURCE_BUFFER & 0xffffu,
+    MESSAGE_LINE_COLUMNS = 18u,
+    MESSAGE_TOTAL_COLUMNS = 36u,
+    MESSAGE_PADDING = 0x10u,
+    MESSAGE_SYMBOL_LIMIT = 65536u,
+    MESSAGE_PADDING_LIMIT = 256u
 };
 
 static void MessageCopyDictionary(const Lufia2Memory *memory,
@@ -74,6 +79,16 @@ static void MessageExpandCommand(const Lufia2Memory *memory,
     }
 }
 
+static void MessageRestoreExpansionFrame(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x30u);
+    OpPullY(memory, cpu);
+    OpPullX(memory, cpu);
+    PullAccumulator16(memory, cpu);
+    PullDataBank(memory, cpu);
+    UnpackStatus(cpu, Pull8(memory, cpu));
+}
+
 Lufia2ExecutionResult Lufia2BattleExpandActionMessage(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (cpu->program_bank != 0x85u || cpu->direct_page)
@@ -114,11 +129,66 @@ Lufia2ExecutionResult Lufia2BattleExpandActionMessage(
         if (cpu->zero)
             break;
     }
-    OpRepWidths(cpu, 0x30u);
-    OpPullY(memory, cpu);
-    OpPullX(memory, cpu);
-    PullAccumulator16(memory, cpu);
-    PullDataBank(memory, cpu);
-    UnpackStatus(cpu, Pull8(memory, cpu));
+    MessageRestoreExpansionFrame(memory, cpu);
     return ExecutionReturned(0x85c5b4u);
+}
+
+static bool MessagePadColumns(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint8_t columns, Lufia2ExecutionResult *result) {
+    for (unsigned padding = 0u;; ++padding) {
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_MESSAGE_WINDOW_COLUMNS));
+        OpCmpValue(cpu, columns);
+        if (cpu->zero)
+            return true;
+        if (padding == MESSAGE_PADDING_LIMIT) {
+            *result = ExecutionHandoff(cpu,
+                columns == MESSAGE_LINE_COLUMNS ? 0x85c5dcu : 0x85c5f0u);
+            return false;
+        }
+        OpLoadA(cpu, MESSAGE_PADDING);
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_BATTLE_MESSAGE_RESOURCE_BUFFER));
+        OpInx(cpu);
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_BATTLE_MESSAGE_WINDOW_COLUMNS), 1);
+    }
+}
+
+/* $85:C5B5: format text; restore inherited expansion frame. */
+Lufia2ExecutionResult Lufia2BattleFormatResourceMessage(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x85c5b5u);
+    OpLdx(cpu, 0u);
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_MESSAGE_WINDOW_COLUMNS));
+    Lufia2ExecutionResult result;
+    for (unsigned symbols = 0u; symbols < MESSAGE_SYMBOL_LIMIT; ++symbols) {
+        OpLda(memory, cpu, OpAbsY(cpu, 0u));
+        if (cpu->zero) {
+            if (!MessagePadColumns(memory, cpu, MESSAGE_TOTAL_COLUMNS, &result))
+                return result;
+            TransferDirectToA(cpu);
+            OpSta(memory, cpu, OpLongX(cpu, WRAM_BATTLE_MESSAGE_RESOURCE_BUFFER));
+            MessageRestoreExpansionFrame(memory, cpu);
+            return ExecutionReturned(0x85c60du);
+        }
+        OpCmpValue(cpu, 0x0au);
+        if (cpu->zero) {
+            if (!MessagePadColumns(memory, cpu, MESSAGE_LINE_COLUMNS, &result))
+                return result;
+            OpIny(cpu);
+            continue;
+        }
+        OpCmpValue(cpu, 0x10u);
+        if (!cpu->carry) {
+            OpSta(memory, cpu, OpLongX(cpu, WRAM_BATTLE_MESSAGE_RESOURCE_BUFFER));
+            OpIny(cpu);
+            OpInx(cpu);
+            OpLda(memory, cpu, OpAbsY(cpu, 0u));
+        }
+        OpSta(memory, cpu, OpLongX(cpu, WRAM_BATTLE_MESSAGE_RESOURCE_BUFFER));
+        OpStepMem(memory, cpu, OpAbs(cpu, WRAM_BATTLE_MESSAGE_WINDOW_COLUMNS), 1);
+        OpIny(cpu);
+        OpInx(cpu);
+    }
+    return ExecutionHandoff(cpu, 0x85c5bbu);
 }

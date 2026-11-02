@@ -18478,3 +18478,12 @@ source = "src/battle/battle_action_followups.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+# Continuation consumes inherited saved Y/X/A/DB/P before RTL.
+[[function]]
+address = "85:C5B5"
+name = "Lufia2BattleFormatResourceMessage"
+source = "src/battle/battle_message_parser.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
