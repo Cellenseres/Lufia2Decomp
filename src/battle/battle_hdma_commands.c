@@ -16,6 +16,63 @@ enum {
     HDMA_REQUEST_BIT = 2
 };
 
+enum {
+    WINDOW_MAIN_LAYERS = 0x1245u,
+    WINDOW_SUB_LAYERS = 0x1246u,
+    WINDOW_COLOR_SELECTION = 0x1249u,
+    WINDOW_COLOR_ADDITION = 0x124au,
+    WINDOW_HDMA_DESCRIPTOR = 0xa06eu
+};
+
+static void SetWindowCompositing(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, WINDOW_SUB_LAYERS));
+    OpLoadA(cpu, 0x1fu);
+    OpSta(memory, cpu, OpAbs(cpu, WINDOW_MAIN_LAYERS));
+    OpLoadA(cpu, 0x10u);
+    OpSta(memory, cpu, OpAbs(cpu, WINDOW_COLOR_SELECTION));
+    OpLoadA(cpu, 0x41u);
+    OpSta(memory, cpu, OpAbs(cpu, WINDOW_COLOR_ADDITION));
+}
+
+Lufia2ExecutionResult Lufia2BattleInitializeWindowHdma(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x85aa7fu);
+    OpLoadA(cpu, 0x41u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_TRANSITION_HDMA_CONTROL));
+    OpLoadA(cpu, 0x28u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_TRANSITION_HDMA_REGISTER));
+    OpLdx(cpu, WINDOW_HDMA_DESCRIPTOR);
+    OpWriteX(memory, cpu, OpAbs(cpu, WRAM_BATTLE_TRANSITION_HDMA_SOURCE), cpu->x);
+    OpLoadA(cpu, 0x85u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_TRANSITION_HDMA_SOURCE_BANK));
+    OpLoadA(cpu, 0x7eu);
+    OpSta(memory, cpu, OpAbs(cpu, SNES_DASB(1u)));
+    TransferDirectToA(cpu);
+    for (unsigned edge = 0u; edge < 2u; ++edge) {
+        OpSta(memory, cpu, WRAM_BATTLE_TRANSITION_MASK + edge);
+        OpSta(memory, cpu, WRAM_BATTLE_TRANSITION_MASK + edge + 2u);
+    }
+    SetWindowCompositing(memory, cpu);
+    OpLoadA(cpu, HDMA_REQUEST_BIT);
+    OpTestBits(memory, cpu, OpDp(cpu, HDMA_REQUEST_ENABLE), 1u);
+    return ExecutionReturned(0x85aac2u);
+}
+
+Lufia2ExecutionResult Lufia2BattleRestoreWindowCompositing(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x85aac3u);
+    SetWindowCompositing(memory, cpu);
+    OpLoadA(cpu, HDMA_REQUEST_BIT);
+    OpTestBits(memory, cpu, OpDp(cpu, HDMA_REQUEST_DISABLE), 0u);
+    return ExecutionReturned(0x85aadbu);
+}
+
 static uint8_t HdmaWidths(const Lufia2CpuState *cpu) {
     return cpu->accumulator_is_8_bit && !cpu->index_is_8_bit;
 }

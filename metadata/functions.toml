@@ -18342,3 +18342,19 @@ source = "src/battle/battle_ripple_setup.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:AA7F"
+name = "Lufia2BattleInitializeWindowHdma"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:AAC3"
+name = "Lufia2BattleRestoreWindowCompositing"
+source = "src/battle/battle_hdma_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

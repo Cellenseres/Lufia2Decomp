@@ -1732,6 +1732,8 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:A8E7` | `Lufia2BattleBuildPrimaryWaveTable` | verified | `src/battle/battle_primary_wave.c` |
 | `$85:A972` | `Lufia2BattleConfigureResultHdma` | verified | `src/battle/battle_result_hdma.c` |
 | `$85:AA3D` | `Lufia2BattleRippleWords` | verified | `src/battle/battle_background_wave.c` |
+| `$85:AA7F` | `Lufia2BattleInitializeWindowHdma` | verified | `src/battle/battle_hdma_commands.c` |
+| `$85:AAC3` | `Lufia2BattleRestoreWindowCompositing` | verified | `src/battle/battle_hdma_commands.c` |
 | `$85:AADC` | `Lufia2BattleStartMessageEffect` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB28` | `Lufia2BattleTickMessageEffect` | verified | `src/battle/battle_message_effect.c` |
 | `$85:AB5B` | `Lufia2BattleQueueMessageCleanup` | verified | `src/battle/battle_message_effect.c` |

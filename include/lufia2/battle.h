@@ -1371,6 +1371,11 @@ Lufia2ExecutionResult Lufia2BattleInitializeRipple(
     Lufia2PushedChildCall child, void *context);
 
 #define LUFIA2_BATTLE_SPLIT_RIPPLE_API 1
+#define LUFIA2_BATTLE_WINDOW_HDMA_API 1
+Lufia2ExecutionResult Lufia2BattleInitializeWindowHdma(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleRestoreWindowCompositing(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2BattleSelectRippleMode(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

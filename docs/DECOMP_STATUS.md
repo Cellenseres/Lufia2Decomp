@@ -1,3 +1,23 @@
+# Window HDMA setup - 2026-11-02
+
+Two missing original leaf bodies at 85:AA7F and 85:AAC3 are reconstructed.
+They configure channel-one window HDMA and restore compositing controls.
+The shared compositing sequence retains its original byte-write order.
+The initializer retains full-width TDC and mask writes in order 0,2,1,3;
+both routines preserve original DP-relative TSB/TRB and decimal behavior.
+
+16384 original-ROM CPU/full-WRAM/ordered data/MMIO cases and six no-access
+refusals cover the portable M1X0 contract, including nonzero direct pages.
+16384 separate timed consumer cases compare every fetch/data phase, clocks,
+open bus and long return. Forty-four unsafe admission cases are rejected
+using actual bounded/indexed range predicates. No new opcode hooks are added.
+The two complete bodies share existing timing and RTL return infrastructure.
+
+No proven original caller was found: the only full-ROM far-byte pattern for
+AA7F crosses an unrelated ADC operand and TAX. Their declared original leaf
+contracts are verified; ordinary gameplay frequency and host speedup remain
+unmeasured. These are two genuine original bodies, not new adapter entries.
+
 # Alternate battle ripple setup - 2026-11-02
 
 Three previously missing original routines are reconstructed: the four-slot
@@ -12725,7 +12745,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2273 functions in `metadata/functions.toml`: 2273 verified, 0 draft, 0 identified, 0 disabled.
+2275 functions in `metadata/functions.toml`: 2275 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
