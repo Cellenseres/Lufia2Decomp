@@ -32,11 +32,13 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:87FC` | `Lufia2NmiTilemapUploads` | verified | `src/system/nmi_uploads.c` |
 | `$80:882E` | `Lufia2UploadTilemapBlock` | verified | `src/system/nmi_uploads.c` |
 | `$80:884F` | `Lufia2StartListedDma` | verified | `src/system/nmi_uploads.c` |
+| `$80:8866` | `Lufia2MenuDrawStringWithWidth` | verified | `src/menu/menu_string.c` |
 | `$80:8878` | `Lufia2MenuDrawString` | verified | `src/menu/menu_string.c` |
 | `$80:88C8` | `Lufia2MenuWriteRawControl` | verified | `src/menu/menu_character.c` |
 | `$80:88DA` | `Lufia2MenuWriteCharacter` | verified | `src/menu/menu_character.c` |
 | `$80:89AA` | `Lufia2MenuFormatNumberDigits` | verified | `src/menu/menu_string.c` |
 | `$80:89D0` | `Lufia2MenuAppendNumberDigit` | verified | `src/menu/menu_string.c` |
+| `$80:8AF7` | `Lufia2MenuResolvePointerOffset` | verified | `src/menu/menu_string.c` |
 | `$80:8BA7` | `Lufia2MenuReadPointerOperand` | verified | `src/menu/menu_string.c` |
 | `$80:8BB2` | `Lufia2MenuReadOffsetPointerOperand` | verified | `src/menu/menu_string.c` |
 | `$80:8C6C` | `Lufia2MenuLoadNumberBytes` | verified | `src/menu/menu_string.c` |
@@ -723,6 +725,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:9F6F` | `Lufia2MenuEquipCommands` | verified | `src/menu/menu_screen.c` |
 | `$82:9FB0` | `Lufia2MenuPresentEquipmentList` | verified | `src/menu/menu_party_actions.c` |
 | `$82:9FFB` | `Lufia2MenuConfigureEquipmentPicker` | verified | `src/menu/menu_party_actions.c` |
+| `$82:A00F` | `Lufia2MenuCreateFixedCursorPair` | verified | `src/menu/menu_cursor_callers.c` |
 | `$82:A023` | `Lufia2MenuBuildOptionsScreen` | verified | `src/menu/menu_options_screen.c` |
 | `$82:A07D` | `Lufia2MenuRefreshOptions` | verified | `src/menu/menu_options_screen.c` |
 | `$82:A0C7` | `Lufia2MenuSetOptionIndicators` | verified | `src/menu/menu_options_screen.c` |
@@ -1001,6 +1004,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F427` | `Lufia2SaveDrawPortraitLevels` | verified | `src/menu/save_menu_portraits.c` |
 | `$82:F481` | `Lufia2SaveRestoreMenuSelection` | verified | `src/menu/save_menu_build.c` |
 | `$82:F496` | `Lufia2MenuPrepareAlternateGraphics` | verified | `src/menu/menu_record_services.c` |
+| `$82:F4D7` | `Lufia2MenuCycleNameEntrySelection` | verified | `src/menu/name_entry.c` |
 | `$82:F4F4` | `Lufia2MenuPrepareNameEntryTilePointers` | verified | `src/menu/name_entry.c` |
 | `$82:F50A` | `Lufia2MenuDrawNameEntryRecord` | verified | `src/menu/name_entry.c` |
 | `$82:F523` | `Lufia2MenuInsertNameEntryCharacter` | verified | `src/menu/name_entry.c` |
@@ -1790,6 +1794,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
 | `$85:C168` | `Lufia2BattleResolveActorRecord` | verified | `src/battle/battle_script.c` |
 | `$85:C4F1` | `Lufia2BattleExpandActionMessage` | verified | `src/battle/battle_message_parser.c` |
+| `$85:C5B5` | `Lufia2BattleFormatResourceMessage` | verified | `src/battle/battle_message_parser.c` |
 | `$85:C60E` | `Lufia2SaveRestoreState` | verified | `src/system/save_state_restore.c` |
 | `$85:C754` | `Lufia2SaveUnpackPartyRecord` | verified | `src/system/save_party_unpack.c` |
 | `$85:C8CF` | `Lufia2SaveUnpackCapsuleRecord` | verified | `src/system/save_capsule_record.c` |

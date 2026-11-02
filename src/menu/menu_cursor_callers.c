@@ -27,7 +27,11 @@ enum {
     CURSOR_PAIR_ITEM = 0x63u,
     ROM_CURSOR_GRID = 0xf518u,
     ROM_CURSOR_STYLES = 0x82897du,
-    CURSOR_SPRITE_BASE = 5u
+    CURSOR_SPRITE_BASE = 5u,
+    FIXED_PAIR_GRID = 0x1cu,
+    FIXED_PAIR_STYLES = 0x0401u,
+    FIXED_PAIR_FIRST = 7u,
+    FIXED_PAIR_SECOND = 8u
 };
 
 static uint8_t CursorCallerReady(const Lufia2CpuState *cpu) {
@@ -194,6 +198,23 @@ Lufia2ExecutionResult Lufia2MenuBuildCursorPair(
             0x8289e8u, 0x82891eu, 2u))
         return CursorUnwound(0x8289e8u);
     return ExecutionReturned(0x8289ebu);
+}
+
+Lufia2ExecutionResult Lufia2MenuCreateFixedCursorPair(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!CursorCallerReady(cpu) || !child)
+        return ExecutionHandoff(cpu, 0x82a00fu);
+    OpLdx(cpu, FIXED_PAIR_GRID);
+    OpWriteX(memory, cpu, OpDp(cpu, CURSOR_PAIR_GRID), cpu->x);
+    OpLdx(cpu, FIXED_PAIR_STYLES);
+    OpWriteX(memory, cpu, OpDp(cpu, CURSOR_PAIR_STYLE), cpu->x);
+    OpLdx(cpu, FIXED_PAIR_FIRST);
+    OpLdy(cpu, FIXED_PAIR_SECOND);
+    if (!CursorCall(memory, cpu, child, context,
+            0x82a01fu, 0x8289c4u, 2u))
+        return CursorUnwound(0x82a01fu);
+    return ExecutionReturned(0x82a022u);
 }
 
 Lufia2ExecutionResult Lufia2MenuMoveCursorPair(
