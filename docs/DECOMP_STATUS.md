@@ -1,3 +1,17 @@
+# Shared effect record-pointer advance - 2026-11-02
+
+The script and actor advance loops share their original pointer calculation
+through EffectAdvanceSlotCursor. Full updates still perform the same following
+counter read/write and branch. An optional bounded service stops at81:8AB4 or
+81:8B25, before that counter access. Widths, flags, decimal arithmetic and
+16-bit wrapping remain observable. No original memory access is removed.
+This internal phase has no new canonical metadata entry or separate binding.
+
+Combined original-ROM checks cover21056 full/prefix timed states,1504 decimal
+states and262144 pointer/decimal cases spanning every16-bit Y value for both
+record strides. Consumer windows, actual execution, device/audio comparisons
+and cost evidence remain separate from portable semantic correctness.
+
 # Effect slot timer headers - 2026-10-28
 
 The original active/timer check at81:8A7E and81:8AC1 is exposed as a bounded
