@@ -5,9 +5,21 @@
 
 #include "lufia2/execution.h"
 
+#define LUFIA2_FIELD_DEVELOPER_CONTROLS_API 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+Lufia2ExecutionResult Lufia2FieldConsumeSecondPadHigh(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldConsumeSecondPadLow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldRunDeveloperControls(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2FieldDrawDiagnosticSpriteGrid(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 /* Actor lookup and visibility; M1/X16, binary, DP0. */
 Lufia2ExecutionResult Lufia2FieldFindWindowActor(const Lufia2Memory *memory,

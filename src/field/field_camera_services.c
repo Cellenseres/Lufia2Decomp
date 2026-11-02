@@ -24,7 +24,7 @@ static void ConsumePressed(const Lufia2Memory *memory,
 
 Lufia2ExecutionResult Lufia2FieldConsumePressedLow(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!CameraWidths(cpu))
+    if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x8eb142u);
     ConsumePressed(memory, cpu, PRESSED_LOW, PRESSED_LATCH_LOW);
     return ExecutionReturned(0x8eb148u);
@@ -32,10 +32,26 @@ Lufia2ExecutionResult Lufia2FieldConsumePressedLow(
 
 Lufia2ExecutionResult Lufia2FieldConsumePressedHigh(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!CameraWidths(cpu))
+    if (!cpu->accumulator_is_8_bit)
         return ExecutionHandoff(cpu, 0x8eb149u);
     ConsumePressed(memory, cpu, PRESSED_HIGH, PRESSED_LATCH_HIGH);
     return ExecutionReturned(0x8eb14fu);
+}
+
+Lufia2ExecutionResult Lufia2FieldConsumeSecondPadHigh(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x8eu || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x8eb134u);
+    ConsumePressed(memory, cpu, DP_BUTTONS_HELD + 3u, DP_BUTTONS_PRESSED + 3u);
+    return ExecutionReturned(0x8eb13au);
+}
+
+Lufia2ExecutionResult Lufia2FieldConsumeSecondPadLow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x8eu || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x8eb13bu);
+    ConsumePressed(memory, cpu, DP_BUTTONS_HELD + 2u, DP_BUTTONS_PRESSED + 2u);
+    return ExecutionReturned(0x8eb141u);
 }
 
 Lufia2ExecutionResult Lufia2FieldReadBankedStreamByte(

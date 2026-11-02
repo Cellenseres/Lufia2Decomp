@@ -1,3 +1,22 @@
+# Field developer controls and Cave diagnostics - 2026-11-02
+
+Seven original routines are reconstructed: the developer controller, two
+second-pad input consumers, the Ancient Cave diagnostic map, its hexadecimal
+value and coordinate-divider helpers, and the diagnostic sprite grid.
+The map preserves all 256 cells, stair marker, eight values and the bounded
+link count. The divider retains its register writes and both visits to its
+internal return instruction. Controller children retain pushed frames and
+exact continuation or unwind boundaries.
+
+Original-ROM comparisons cover CPU state, complete WRAM and ordered bus/MMIO
+accesses. Separate consumer checks cover instruction fetches, clocks, nested
+sprite rendering and guarded continuation after children. Consumer admission
+requires an observer-free, synchronized interval before hardware deadlines;
+unsupported contexts retain the original fallback. The standalone routines
+retain decimal behavior where supported; consumer timing currently admits
+binary arithmetic. These diagnostic routines have no measured gameplay
+frequency or whole-frame speedup claim.
+
 # Party member status and vital changes — 2026-11-02
 
 Eight original routines at 81:F639, F647, F655, F66A, F683, F6A8, F6D7 and
@@ -8113,6 +8132,7 @@ floor replay and in-game replay are deferred for this scoped helper batch.
 DMA payload pixels, NMI scheduling, current interpreter hit rate, whole-ROM
 completion and speedup are not claimed. No PPU/platform/owner-build changes.
 
+
 ## Original Cave placement and random entry contracts - 2026-10-17
 
 Nine original JSR entries are verified and natively bound:83:99C8 resolves
@@ -12684,7 +12704,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2252 functions in `metadata/functions.toml`: 2252 verified, 0 draft, 0 identified, 0 disabled.
+2270 functions in `metadata/functions.toml`: 2270 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

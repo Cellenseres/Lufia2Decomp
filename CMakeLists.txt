@@ -239,6 +239,7 @@ add_library(lufia2_decomp STATIC
     src/cave/cave_reset.c
     src/cave/cave_header.c
     src/cave/cave_grid.c
+    src/cave/cave_diagnostics.c
     src/cave/cave_objects.c
     src/cave/cave_random.c
     src/field/field_effects.c
@@ -463,6 +464,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_update.c
     src/field/field_diagnostics.c
     src/field/field_diagnostics_control.c
+    src/field/field_developer_controls.c
     src/field/field_camera_services.c
     src/field/field_radial_objects.c
     src/field/field_presentation_reset.c

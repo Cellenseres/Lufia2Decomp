@@ -5,9 +5,18 @@
 
 #include "lufia2/execution.h"
 
+#define LUFIA2_CAVE_DIAGNOSTICS_API 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+Lufia2ExecutionResult Lufia2CaveDrawDiagnostics(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2CaveDrawDiagnosticValue(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2CaveDivideDiagnosticCoordinate(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 /* $84:8AF4: append eligible blue equipment to WMDATA; PB84/M0X0. */
 Lufia2ExecutionResult Lufia2AncientCaveCarryBlueItem(

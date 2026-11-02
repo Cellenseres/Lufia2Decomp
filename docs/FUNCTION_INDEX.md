@@ -1495,6 +1495,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$84:BD83` | `Lufia2PokerAcceptOpponentStake` | verified | `src/menu/poker_decisions.c` |
 | `$84:BD96` | `Lufia2PokerDrawOpponentStake` | verified | `src/menu/poker_decisions.c` |
 | `$84:BDC2` | `Lufia2PokerChooseOpponentAction` | verified | `src/menu/poker_decisions.c` |
+| `$84:BEE0` | `Lufia2PokerPushStakeWindow` | verified | `src/menu/poker_decisions.c` |
 | `$84:BEE4` | `Lufia2PokerLocateStakeSprites` | verified | `src/menu/poker_decisions.c` |
 | `$84:BF0B` | `Lufia2PokerMatchOpponentStakes` | verified | `src/menu/poker_decisions.c` |
 | `$84:BF67` | `Lufia2PokerMatchOpponentStake` | verified | `src/menu/poker_decisions.c` |
@@ -1617,6 +1618,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:8322` | `Lufia2FieldDiagnosticsSaveMenu` | verified | `src/field/field_diagnostics_control.c` |
 | `$85:8415` | `Lufia2FieldDiagnosticsShowMessage` | verified | `src/field/field_diagnostics_control.c` |
 | `$85:84A9` | `Lufia2FieldDiagnosticsClearTilemap` | verified | `src/field/field_diagnostics.c` |
+| `$85:84C6` | `Lufia2FieldDrawDiagnosticSpriteGrid` | verified | `src/field/field_developer_controls.c` |
 | `$85:850E` | `Lufia2FieldDiagnosticsConsumeHighButtons` | verified | `src/field/field_diagnostics.c` |
 | `$85:8515` | `Lufia2FieldDiagnosticsConsumeLowButtons` | verified | `src/field/field_diagnostics.c` |
 | `$85:851C` | `Lufia2FieldDiagnosticsWaitFrame` | verified | `src/field/field_diagnostics_control.c` |
@@ -2220,8 +2222,14 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:EB52` | `Lufia2WorldMapEmitSmallSceneSprite` | verified | `src/world/world_scene_graphics.c` |
 | `$8E:B000` | `Lufia2FieldRunMenu` | verified | `src/field/field_menu.c` |
 | `$8E:B09C` | `Lufia2FieldPrepareCameraScroll` | verified | `src/field/field_camera.c` |
+| `$8E:B0D4` | `Lufia2FieldRunDeveloperControls` | verified | `src/field/field_developer_controls.c` |
+| `$8E:B134` | `Lufia2FieldConsumeSecondPadHigh` | verified | `src/field/field_camera_services.c` |
+| `$8E:B13B` | `Lufia2FieldConsumeSecondPadLow` | verified | `src/field/field_camera_services.c` |
 | `$8E:B142` | `Lufia2FieldConsumePressedLow` | verified | `src/field/field_camera_services.c` |
 | `$8E:B149` | `Lufia2FieldConsumePressedHigh` | verified | `src/field/field_camera_services.c` |
+| `$8E:B150` | `Lufia2CaveDrawDiagnostics` | verified | `src/cave/cave_diagnostics.c` |
+| `$8E:B23F` | `Lufia2CaveDrawDiagnosticValue` | verified | `src/cave/cave_diagnostics.c` |
+| `$8E:B275` | `Lufia2CaveDivideDiagnosticCoordinate` | verified | `src/cave/cave_diagnostics.c` |
 | `$8E:B288` | `Lufia2WaitForNextFrame` | verified | `src/system/frame_wait.c` |
 | `$8E:B28F` | `Lufia2FieldSwitchDisplayScene` | verified | `src/field/field_session_setup.c` |
 | `$8E:B2EE` | `Lufia2RunAlternateDisplay` | verified | `src/text/alternate_display.c` |

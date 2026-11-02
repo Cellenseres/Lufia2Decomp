@@ -18262,3 +18262,59 @@ source = "src/party/party_member_changes.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "8E:B0D4"
+name = "Lufia2FieldRunDeveloperControls"
+source = "src/field/field_developer_controls.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "8E:B134"
+name = "Lufia2FieldConsumeSecondPadHigh"
+source = "src/field/field_camera_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B13B"
+name = "Lufia2FieldConsumeSecondPadLow"
+source = "src/field/field_camera_services.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B150"
+name = "Lufia2CaveDrawDiagnostics"
+source = "src/cave/cave_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
+
+[[function]]
+address = "8E:B23F"
+name = "Lufia2CaveDrawDiagnosticValue"
+source = "src/cave/cave_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "8E:B275"
+name = "Lufia2CaveDivideDiagnosticCoordinate"
+source = "src/cave/cave_diagnostics.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "85:84C6"
+name = "Lufia2FieldDrawDiagnosticSpriteGrid"
+source = "src/field/field_developer_controls.c"
+entry_mx = "M1X0"
+exit_mx = "dynamic"
+status = "verified"
