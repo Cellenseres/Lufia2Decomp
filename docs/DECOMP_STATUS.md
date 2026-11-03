@@ -1,3 +1,26 @@
+# Staged-command consumer checkpoint — 2026-11-03
+
+The already verified `$81:D081` staged-command body now has a timed consumer
+binding. Its original `$D12E` stub, inherited-carry handoff to `$CC93`, status
+redraw and command window retain their original frames and clocks. Existing
+standalone window, digit, gauge, multiplication and division bodies are reused
+unchanged; clock models are consumer integration, not new game algorithms.
+
+The shared MSVC/Clang checkpoint covers 22,528 states, 594 refusal guards and
+48 return-read progress cases per compiler. Thirty-four actual generated/linked
+caller pairs include four party slots, unsupported contexts and mutating hooks;
+CPU, full WRAM, hardware and clocks match the original. Missing progress from
+earlier return-byte reads is accumulated, and the caller consumes already
+handled progress epochs. The former APU fractional mismatch is resolved exactly,
+without tolerances, skipped synchronization or changed guest time.
+
+Three 5,000-call samples with profiling off reduce median staged-command cost
+from 1,943.976 to 695.016 ms. These are controlled caller costs, not gameplay
+frequency or FPS. Matching 960 menu/field/boot frames preserve full state, PCM
+and certified native idle work. Windows Release, feature-off compilation,
+21 availability cases and six producer gates pass. Full decomp regression and
+fresh public CLI export are deferred; standalone semantic sources are unchanged.
+
 # Battle rectangle consumer accepted — 2026-11-03
 
 The verified `$81:E7A6` tile-clear body now has a timed consumer binding.
