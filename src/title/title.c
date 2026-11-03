@@ -179,7 +179,7 @@ static void IntroScrollRows(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, Read16Long(memory, INTRO_ROW_SOURCE));
     cpu->carry = 0;
-    Add16Value(cpu, INTRO_VRAM_ROWS);
+    OpAdcValue(cpu, INTRO_VRAM_ROWS);
     StoreWordAbsolute(memory, cpu, SNES_A1TL(6), cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, INTRO_ROW_COUNT));
     StoreWordAbsolute(memory, cpu, SNES_DASL(6), cpu->accumulator);
@@ -316,12 +316,12 @@ static void TitleParticleSprite(
     LoadYDirect16(memory, cpu, 0x06u);
     LoadAAbsolute8(memory, cpu, TITLE_SPRITE_X, cpu->x); /* OAM x */
     cpu->carry = 1;
-    Sbc8(cpu, DirectByte(memory, cpu, 0x05u));
+    OpSbcValue(cpu, DirectByte(memory, cpu, 0x05u));
     StoreAAbsolute8(memory, cpu, 0x0100u, cpu->y);
     IncrementY16(cpu);
     LoadAAbsolute8(memory, cpu, TITLE_SPRITE_Y, cpu->x); /* OAM y */
     cpu->carry = 1;
-    Sbc8(cpu, DirectByte(memory, cpu, 0x04u));
+    OpSbcValue(cpu, DirectByte(memory, cpu, 0x04u));
     StoreAAbsolute8(memory, cpu, 0x0100u, cpu->y);
     IncrementY16(cpu);
     StoreYDirect16(memory, cpu, 0x06u);
@@ -329,7 +329,7 @@ static void TitleParticleSprite(
     SetAccumulatorWidth(cpu, 0);                               /* 8921 */
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TITLE_PARTICLE_PALETTE, cpu->x));
     cpu->carry = 0;
-    Add16Value(cpu, Read16IndirectLongY(memory, cpu, 0x08u));  /* tile word */
+    OpAdcValue(cpu, Read16IndirectLongY(memory, cpu, 0x08u));  /* tile word */
     IncrementY16(cpu);
     IncrementY16(cpu);
     PushY(memory, cpu);
@@ -344,7 +344,7 @@ static void TitleParticleSprite(
     LsrA16(cpu);
     And16(cpu, 0x00feu);
     cpu->carry = 0;
-    Add16Value(cpu, 0x0200u);                                  /* high table */
+    OpAdcValue(cpu, 0x0200u);                                  /* high table */
     TransferAToY(cpu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0100u, cpu->y));
     StoreADirect16(memory, cpu, 0x11u);
@@ -358,20 +358,20 @@ static void TitleParticleSprite(
     if (cpu->zero) {
         LoadAAbsolute8(memory, cpu, TITLE_SPRITE_X, cpu->x); /* x - offset */
         cpu->carry = 1;
-        Sbc8(cpu, DirectByte(memory, cpu, 0x05u));
+        OpSbcValue(cpu, DirectByte(memory, cpu, 0x05u));
         LoadAAbsolute8(memory, cpu, (TITLE_SPRITE_X + 1u), cpu->x);
-        Sbc8(cpu, 0x00u);
+        OpSbcValue(cpu, 0x00u);
     } else {
         LoadA8(cpu, DirectByte(memory, cpu, 0x05u));           /* 8969 */
         LoadA8(cpu, (uint8_t)~A8(cpu));                        /* EOR #$FF */
         LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
         cpu->carry = 0;
-        Adc8(cpu, AbsoluteByte(memory, cpu, TITLE_SPRITE_X, cpu->x));
+        OpAdcValue(cpu, AbsoluteByte(memory, cpu, TITLE_SPRITE_X, cpu->x));
         LoadAAbsolute8(memory, cpu, (TITLE_SPRITE_X + 1u), cpu->x);
-        Adc8(cpu, 0x00u);
+        OpAdcValue(cpu, 0x00u);
     }
     cpu->carry = 0;
-    Adc8(cpu, 0xffu);                                          /* carry: x bit 8 */
+    OpAdcValue(cpu, 0xffu);                                          /* carry: x bit 8 */
     SetAccumulatorWidth(cpu, 0);                               /* 897A */
     RolA16(cpu);
     And16(cpu, 0x0001u);
@@ -380,12 +380,12 @@ static void TitleParticleSprite(
     RorA16(cpu);
     do {                                                       /* 8984 */
         RolA16(cpu);
-        Decrement16Direct(memory, cpu, 0x13u);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x13u), -1);
     } while (!cpu->zero);
     Or16(cpu, Read16Direct(memory, cpu, 0x11u));
     StoreAAbsolute16(memory, cpu, 0x0100u, cpu->y);
-    Increment16Direct(memory, cpu, 0x00u);
-    Increment16Direct(memory, cpu, 0x00u);
+    OpStepMem(memory, cpu, OpDp(cpu, 0x00u), 1);
+    OpStepMem(memory, cpu, OpDp(cpu, 0x00u), 1);
     SetAccumulatorWidth(cpu, 1);
     cpu->y = PullIndexValue(memory, cpu);                      /* 8994 */
 }
@@ -414,7 +414,7 @@ Lufia2ExecutionResult Lufia2TitleParticleSprites(
         SetAccumulatorWidth(cpu, 0);                           /* 88D6 */
         TransferXToA(cpu);
         cpu->carry = 0;
-        Add16Value(cpu, TITLE_PARTICLE_SIZE);
+        OpAdcValue(cpu, TITLE_PARTICLE_SIZE);
         TransferAToX(cpu);
         SetAccumulatorWidth(cpu, 1);
         DecrementDirect8(memory, cpu, 0x15u);
@@ -826,14 +826,14 @@ static void TitleLayerScroll(
     do {
         LoadAAbsolute8(memory, cpu, TITLE_SCROLL_FRACTION, cpu->y); /* 8700 */
         cpu->carry = 0;
-        Adc8(cpu, Read8(memory, LongIndexedAddress(TITLE_SCROLL_SPEEDS, cpu->x)));
+        OpAdcValue(cpu, Read8(memory, LongIndexedAddress(TITLE_SCROLL_SPEEDS, cpu->x)));
         StoreAAbsolute8(memory, cpu, TITLE_SCROLL_FRACTION, cpu->y);
         LoadAAbsolute8(memory, cpu, TITLE_SCROLL_LOW, cpu->y);
-        Adc8(cpu,
+        OpAdcValue(cpu,
              Read8(memory, LongIndexedAddress((TITLE_SCROLL_SPEEDS + 1u), cpu->x)));
         StoreAAbsolute8(memory, cpu, TITLE_SCROLL_LOW, cpu->y);
         LoadAAbsolute8(memory, cpu, TITLE_SCROLL_HIGH, cpu->y);
-        Adc8(cpu, 0x00u);
+        OpAdcValue(cpu, 0x00u);
         StoreAAbsolute8(memory, cpu, TITLE_SCROLL_HIGH, cpu->y);
         IncrementX16(cpu);
         IncrementX16(cpu);
@@ -877,7 +877,7 @@ static void TitleTileAnimation(
     And16(cpu, 0x00ffu);
     AslA16(cpu);
     cpu->carry = 0;
-    Add16Value(cpu, TITLE_ANIM_SOURCE);
+    OpAdcValue(cpu, TITLE_ANIM_SOURCE);
     StoreADirect16(memory, cpu, 0x19u);
     LoadA16(cpu, TITLE_ANIM_DESTINATION);
     StoreADirect16(memory, cpu, 0x11u);
@@ -886,11 +886,11 @@ static void TitleTileAnimation(
         LoadA16(cpu, Read16Long(memory, TitleDirectPointer(memory, cpu, 0x19u)));
         Write16Long(memory, TitleDirectPointer(memory, cpu, 0x11u),
             cpu->accumulator);
-        Increment16Direct(memory, cpu, 0x11u);
-        Increment16Direct(memory, cpu, 0x11u);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x11u), 1);
+        OpStepMem(memory, cpu, OpDp(cpu, 0x11u), 1);
         LoadADirect16(memory, cpu, 0x19u);
         cpu->carry = 0;
-        Add16Value(cpu, TITLE_ANIM_ROW_STRIDE);
+        OpAdcValue(cpu, TITLE_ANIM_ROW_STRIDE);
         StoreADirect16(memory, cpu, 0x19u);
         LoadY16(cpu, (uint16_t)(cpu->y - 1u));
     } while (!cpu->zero);
