@@ -25,6 +25,9 @@ Lufia2ExecutionResult Lufia2ItemRecordByte(
     Lufia2CpuState *cpu);
 
 /* $81:F3F4 A = spell record byte $0C; M1X0. */
+Lufia2ExecutionResult Lufia2SpellRecordByteA(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2SpellRecordByteC(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);

@@ -483,16 +483,20 @@ void Lufia2CaveQueueLink(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $83:9D46: Replace the upper tile index. */
-static uint32_t Lufia2CaveSetUpperTileBody(const Lufia2Memory *memory,
-                                           Lufia2CpuState *cpu) {
-    OpAndValue(cpu, 0x03ffu);                                /* 9D46 */
+static void ReplaceCaveTileIndex(const Lufia2Memory *memory,
+                                 Lufia2CpuState *cpu, uint16_t tile_address) {
+    OpAndValue(cpu, 0x03ffu);
     OpSta(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
-    OpLda(memory, cpu, OpAbsY(cpu, 0x3f0eu));
+    OpLda(memory, cpu, OpAbsY(cpu, tile_address));
     OpAndValue(cpu, 0xfc00u);
     OpOra(memory, cpu, OpDp(cpu, DP_SCRATCH_A));
-    OpSta(memory, cpu, OpAbsY(cpu, 0x3f0eu));
-    return 0x839d56u; /* 9D56 */
+    OpSta(memory, cpu, OpAbsY(cpu, tile_address));
+}
+
+static uint32_t Lufia2CaveSetUpperTileBody(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu) {
+    ReplaceCaveTileIndex(memory, cpu, 0x3f0eu);
+    return 0x839d56u;
 }
 
 void Lufia2CaveSetUpperTile(const Lufia2Memory *memory, Lufia2CpuState *cpu,
@@ -682,6 +686,15 @@ Lufia2ExecutionResult Lufia2CaveReplaceUpperTileIndex(const Lufia2Memory *memory
     if (!CaveGridEntryContext(cpu, 0u, 1u))
         return ExecutionHandoff(cpu, 0x839d46u);
     return ExecutionReturned(Lufia2CaveSetUpperTileBody(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2CaveReplaceLowerTileIndex(const Lufia2Memory *memory,
+                                                    Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x839d57u);
+    ReplaceCaveTileIndex(memory, cpu, 0x000au);
+    return ExecutionReturned(0x839d67u);
 }
 
 Lufia2ExecutionResult Lufia2CaveDrawTileBlock(const Lufia2Memory *memory,

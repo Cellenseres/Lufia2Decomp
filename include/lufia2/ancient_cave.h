@@ -83,6 +83,8 @@ Lufia2ExecutionResult Lufia2CavePickUnvisitedCell(const Lufia2Memory *,
 Lufia2ExecutionResult Lufia2CaveFindUnvisitedCell(const Lufia2Memory *,
                                                   Lufia2CpuState *);
 Lufia2ExecutionResult Lufia2CaveAppendRoomLink(const Lufia2Memory *, Lufia2CpuState *);
+Lufia2ExecutionResult Lufia2CaveReplaceLowerTileIndex(const Lufia2Memory *,
+                                                   Lufia2CpuState *);
 Lufia2ExecutionResult Lufia2CaveReplaceUpperTileIndex(const Lufia2Memory *,
                                                       Lufia2CpuState *);
 

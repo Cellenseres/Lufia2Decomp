@@ -1067,6 +1067,14 @@ exit_mx = "M1X0"
 status = "verified"
 
 [[function]]
+address = "81:F3E4"
+name = "Lufia2SpellRecordByteA"
+source = "src/item/item_records.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
 address = "81:F3F4"
 name = "Lufia2SpellRecordByteC"
 source = "src/item/item_records.c"
@@ -13240,6 +13248,14 @@ status = "verified"
 [[function]]
 address = "83:9D46"
 name = "Lufia2CaveReplaceUpperTileIndex"
+source = "src/cave/cave_grid.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "83:9D57"
+name = "Lufia2CaveReplaceLowerTileIndex"
 source = "src/cave/cave_grid.c"
 entry_mx = "M0X0"
 exit_mx = "M0X0"

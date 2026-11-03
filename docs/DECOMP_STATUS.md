@@ -1,3 +1,39 @@
+# Original tile and spell-field variants — 2026-11-03
+
+Two previously missing original entries now reuse the established operations:
+- `$83:9D57..9D67`: replace the tile index at live `DB:000A+Y`, retaining
+  attributes, direct-page scratch aliasing and absolute-indexed addressing.
+- `$81:F3E4..F3F3`: read spell record byte `$0A` through the original `$F446`
+  pointer routine, including its JSR frame and final restored-bank flags.
+
+These are two original variants, not two independent algorithms. The upper
+Cave variant and spell-byte `$08/$0C` accessors retain their contracts.
+Strict MSVC/Clang each pass 20,480 original-ROM cases across all five entries
+and nine no-access guards: CPU/full WRAM, ordered data and WRAM-port state.
+
+Consumer MSVC/Clang each check 8,192 timed states: 6,128 admitted, 2,064 declined,
+plus 110 refusals. Plain WRAM/ROM admission excludes unsupported contexts before
+bus access. Indexed page-cross costs, seven-cycle indexed word stores and all
+original child clocks are preserved. The new spell alone reserves 768 master
+clocks; existing 512-clock callers retain their admission. Child-range hooks
+block composition. No new opcode hooks, wait shortcuts or whole-table scans.
+
+The old generated spell caller reached an existing native `$F446` child that
+omitted 40 cycles (304 master clocks in the measured slow-ROM state). The new
+whole entry matches fully interpreted original execution. The original-control
+benchmark forces that old child to the interpreter; it does not claim equal
+guest clocks with the defective legacy default. Other legacy field readers
+are unchanged. Unsupported arrivals retain their prior fallback behavior.
+
+Thirty-one generated/linked caller pairs and a separate fully original mirror
+control preserve CPU/WRAM/hardware/clocks. Supported caller costs reduce raw
+opcodes 9->2 and 22->2. Three 5,000-call samples with profiling off yield median
+host costs 48.524->35.354 ms and 74.314->42.661 ms against original controls.
+These are scoped costs; ordinary caller frequency and whole-game speedup are
+unproven. Matched 180 menu/180 field/600 boot frames preserve CPU, WRAM,
+hardware, PCM and native APU-idle steps. Windows Release and feature-off/older
+API compilation pass. Full decomp-verify and CLI reruns are deferred.
+
 # Original post-return leaf batch — 2026-11-03
 
 Three previously missing original bodies are reconstructed:

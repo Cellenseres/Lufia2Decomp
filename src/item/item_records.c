@@ -288,6 +288,15 @@ static Lufia2ExecutionResult SpellRecordAt(const Lufia2Memory *memory,
     return ExecutionReturned(rtl);
 }
 
+Lufia2ExecutionResult Lufia2SpellRecordByteA(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->stack < 0x1f00u ||
+        cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x81f3e4u);
+    return SpellRecordAt(memory, cpu, 0xf3e6u, 0x000au, 0x81f3f3u);
+}
+
 /* $81:F3F4: A = spell record byte $0C. */
 Lufia2ExecutionResult Lufia2SpellRecordByteC(
     const Lufia2Memory *memory,
