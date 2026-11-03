@@ -7074,3 +7074,10 @@ name = "menu_name_entry_selection"
 width = 1
 owner = "menu"
 notes = "Name-entry selector adjusted by82:F4D7 through the live data bank. Carry chooses decrement/increment; nominal values0..2. Decrement resets on any negative result; increment resets only at3. Its UI interpretation remains unproven."
+
+[[location]]
+address = "7F:7BB3"
+name = "raster_edge_sample_base"
+width = 1
+owner = "field"
+notes = "Interpolation output base at83:FEC4, indexed by X with the live word stride at DP00. The surrounding caller fragment lacks a proven entry/prologue; gameplay usage is not established."

@@ -1,3 +1,42 @@
+# Raster edge interpolation — 2026-11-03
+
+`Lufia2RasterizeEdge` reconstructs the previously absent 109-byte original
+helper at `$83:FEC4..FF30`. It interpolates edge positions into `$7F:7BB3+X`,
+using the live word stride at DP `$00`, spans `$04/$05`, position `$09`,
+direction `$0C` and countdown `$22`. Hardware division through `$4204..4206`
+and quotient/remainder reads stays literal. DB changes to zero, then `$7F`.
+
+The standalone contract is PB `$83`, M1X0, DP zero, binary arithmetic and
+S `$1F00..1FFC`. MSVC/Clang each pass 4,096 original-ROM comparisons and seven
+no-access guards: CPU/full WRAM, ordered bus, divider operands/results, stack
+aliases and long-address wrapping. All four arithmetic branches execute;
+129,090 samples and 71,469 divisions are checked per compiler. The surrounding
+`FD0B..FEC3` fragment has no proven matching prologue; it is not claimed as a
+complete reconstructed parent. Ordinary gameplay caller frequency is unknown.
+
+Consumer timing reuses immutable opcode spans with ten arithmetic phases,
+without a per-PC interpreter or new opcode hooks. MSVC/Clang each check 4,096
+timed states: 2,635 admitted, 1,461 declined, plus 61 no-access refusals. All
+four arithmetic paths and up to 58 samples execute natively in this proof.
+The conservative bound is 37 base cycles plus 104 per sample, with recurring
+refresh reserve. Native admission proves a plain WRAM output range from the
+live signed stride/count and a sufficient quiet hardware/deadline window.
+Longer or unsupported arrivals retain original execution; no waits, MMIO,
+sound work or iterations are skipped. Certified wait/APU batching is unchanged.
+
+Thirty-one actual generated/linked caller pairs preserve CPU/full WRAM,
+hardware and clocks, including division by zero, reverse/stationary strides,
+observers and unsupported contexts. Timed cases cover paired/unpaired and
+unknown or mismatched return frames. At 58 samples, raw
+interpreted opcodes fall from 2,043 to 2. Three 5,000-call samples with sixteen
+samples per call and detail profiling off reduce median host cost from 977.411
+to 312.356 ms, with equal final state/clocks. These are bounded caller costs,
+not organic frequency or whole-game performance. Matched 180 menu/180 field/
+600 boot frames preserve CPU, WRAM, hardware, PCM and native APU-idle steps.
+Windows Release, older-feature/frame-off compilation, eleven availability
+checks, five producer checks and 4,096 context cases per compiler pass.
+Full decomp-verify and CLI reruns are deferred; no new pass is claimed for them.
+
 # Original tile and spell-field variants — 2026-11-03
 
 Two previously missing original entries now reuse the established operations:
