@@ -1,3 +1,22 @@
+# Display-transition poll boundaries - 2026-11-04
+
+The three original LDA/branch waits at `83:85AF`, `8E:B2BD` and `8E:B2E6`
+now expose one bounded semantic iteration. Each retains its absolute data-bank
+read, accumulator/NZ behavior, branch decision and exact continuation PCs.
+Checkpoints occur before both original instructions; a checkpoint mutation of
+NZ affects the branch. The existing whole-function polls are unchanged.
+This adds no canonical function or new gameplay algorithm.
+
+MSVC and Clang each pass 99,081 original-ROM/guard cases, including 768 states
+with a changed branch checkpoint. CPU, complete WRAM and ordered data accesses
+match; independent LDA-to-CMP controls fail at all three sites. Actual consumer
+objects retain full state, extended APU clocks, PCM and final picture in matched
+540-frame transition and 1,580-frame cave replays. Two loops retire 113,891 native
+iterations, replacing 227,782 interpreted opcodes. The third has no observed
+native hit in these scenes. Foreign/global observers retain every witness and
+disable the affected batch. Old-header compilation and public C++ linkage pass.
+The consumer owns bounded host dispatch; the decomp does not shorten waits.
+
 # Shared effect-slot counter boundary — 2026-11-03
 
 The existing effect-loop countdown is shared with a bounded continuation at

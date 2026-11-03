@@ -1158,6 +1158,31 @@ static uint8_t RunTransitionFade(
     return 0u;
 }
 
+Lufia2ExecutionResult Lufia2FieldTransitionPollIteration(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    uint16_t address = WRAM_FADE_CONTROL;
+    uint8_t wait_for_negative = 0u;
+
+    switch (entry) {
+    case 0x8385afu:
+    case 0x8eb2e6u:
+        break;
+    case 0x8eb2bdu:
+        address = WRAM_BRIGHTNESS;
+        wait_for_negative = 1u;
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    if (cpu->program_bank != entry >> 16 || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    EmitExecutionCheckpoint(memory, cpu, entry);
+    OpLda(memory, cpu, OpAbs(cpu, address));
+    EmitExecutionCheckpoint(memory, cpu, entry + 3u);
+    const uint8_t ready = wait_for_negative ? cpu->negative : cpu->zero;
+    return ExecutionHandoff(cpu, ready ? entry + 5u : entry);
+}
+
 static uint8_t PollTransitionDisplay(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t site,
     uint16_t address, uint8_t wait_for_negative,

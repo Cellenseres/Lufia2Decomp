@@ -6,6 +6,7 @@
 #include "lufia2/execution.h"
 
 #define LUFIA2_FIELD_DEVELOPER_CONTROLS_API 1
+#define LUFIA2_FIELD_TRANSITION_POLL_API 1
 
 #ifdef __cplusplus
 extern "C" {
@@ -1443,6 +1444,8 @@ Lufia2ExecutionResult Lufia2FieldResumeFrame(
 Lufia2ExecutionResult Lufia2FieldRunMapTransition(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
+Lufia2ExecutionResult Lufia2FieldTransitionPollIteration(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 Lufia2ExecutionResult Lufia2FieldSwitchDisplayScene(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
