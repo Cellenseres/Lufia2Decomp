@@ -1,3 +1,27 @@
+# Battle rectangle consumer accepted — 2026-11-03
+
+The verified `$81:E7A6` tile-clear body now has a timed consumer binding.
+Admission proves plain WRAM output without counter/row-pointer or stack
+aliasing, and sufficient quiet device/deadline time. Zero dimensions keep
+wrapped counts; unsupported rectangles retain original execution. No semantic
+loop cap, skipped writes, new opcode hooks or wait/APU changes are introduced.
+Five immutable loop phases account for every fetch, data access and opcode.
+
+Each MSVC/Clang timed batch checks 4,096 states (763 admitted, 3,333 declined)
+and 52 refusals. CPU/full WRAM, fetch/data order, opcode clocks, open bus and
+returns match. Twenty-one actual generated/linked caller pairs preserve full
+CPU, WRAM, hardware and clocks. A 16x4 rectangle reduces raw opcodes433->2.
+Three 5,000-call samples with profiling off reduce median caller time from
+956.053 to312.740 ms. This is a bounded caller result; ordinary gameplay
+frequency is unproven. Matched180 menu/180 field/600 boot frames preserve
+CPU, WRAM, hardware, PCM and native APU-idle steps. Windows Release, optional
+feature-off compilation,11 availability gates,5 producer gates and4,096
+context cases per compiler pass. Full regression and fresh public CLI export
+are deferred. The standalone semantic proof remains applicable unchanged.
+
+The newly reconstructed `$81:D081` staged-command body is still verified
+but unbound. Its child services and consumer timing require a separate proof.
+
 # Additional original battle bodies — 2026-11-03
 
 Two previously absent original bodies are reconstructed and verified:
