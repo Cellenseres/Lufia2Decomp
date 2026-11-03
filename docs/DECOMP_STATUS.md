@@ -1,3 +1,19 @@
+# Shared effect-slot counter boundary — 2026-11-03
+
+The existing effect-loop countdown is shared with a bounded continuation at
+`81:8AB4` and `81:8B25`. It preserves the original byte decrement, NZ flags,
+ordered read/write and taken/final branch. The optional counter-step API adds
+no new algorithm or canonical function. The complete parent keeps its existing
+operations; the original behavior is unchanged.
+
+MSVC and Clang each pass 6,428 combined ROM/ABI, guard, registry, existing-phase
+and device-window cases. Independent altered-ROM controls fail at both counters.
+Actual consumer objects preserve complete state, APU clocks, PCM and final
+picture in battle and Strong replays. They remove 8,492 and 6,900 interpreted
+opcodes in the respective profile segments. Foreign/global observers preserve
+every witness and disable this phase; the API-off consumer also compiles.
+This is measured adoption of existing decomp, not additional ROM coverage.
+
 # Shared name-entry control flow — 2026-11-03
 
 The original `82:EBF2` name-entry body now serves its canonical entry and both

@@ -264,15 +264,32 @@ static void EffectAdvanceSlotCursor(Lufia2CpuState *cpu, bool actors) {
     OpSepWidths(cpu, 0x20u);
 }
 
+static void EffectCountDownSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpStepMem(memory, cpu, OpAbs(cpu, EFFECT_SLOT_COUNTER), -1);
+}
+
 static void EffectAdvanceSlot(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, bool actors) {
     EffectAdvanceSlotCursor(cpu, actors);
-    OpStepMem(memory, cpu, OpAbs(cpu, EFFECT_SLOT_COUNTER), -1);
+    EffectCountDownSlot(memory, cpu);
 }
 
 static bool EffectSlotStepContext(const Lufia2CpuState *cpu) {
     return cpu->program_bank == 0x81u && cpu->accumulator_is_8_bit &&
         !cpu->index_is_8_bit;
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectSlotCounterStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x818ab4u && entry != 0x818b25u) ||
+        !EffectSlotStepContext(cpu))
+        return ExecutionHandoff(cpu, entry);
+    const bool actors = entry == 0x818b25u;
+    EffectCountDownSlot(memory, cpu);
+    return ExecutionHandoff(cpu, cpu->zero
+        ? (actors ? 0x818b2au : 0x818ab9u)
+        : (actors ? 0x818ac1u : 0x818a7eu));
 }
 
 Lufia2ExecutionResult Lufia2BattleEffectAdvanceCursorStep(

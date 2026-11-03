@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 #define LUFIA2_BATTLE_EFFECT_SLOT_BEGIN_API 1
+#define LUFIA2_BATTLE_EFFECT_SLOT_COUNTER_API 1
+Lufia2ExecutionResult Lufia2BattleEffectSlotCounterStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 Lufia2ExecutionResult Lufia2BattleEffectBeginSlotStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 Lufia2ExecutionResult Lufia2BattleEffectAdvanceCursorStep(
