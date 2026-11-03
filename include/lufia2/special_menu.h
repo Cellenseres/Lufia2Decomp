@@ -36,6 +36,8 @@ Lufia2ExecutionResult Lufia2SpecialMenuClearTilemaps(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2SpecialMenuHideSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2SpecialMenuClearStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 Lufia2ExecutionResult Lufia2SpecialMenuMultiplyWords(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2SpecialMenuResumeFade(

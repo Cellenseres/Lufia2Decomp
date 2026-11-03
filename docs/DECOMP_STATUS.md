@@ -1,3 +1,24 @@
+# Original menu-clear phases - 2026-11-03
+
+The existing tilemap and sprite clearing routines share semantic helpers with
+`Lufia2SpecialMenuClearStep`. Its eight continuation boundaries retain original
+status/DB saves, individual tilemap/OAM writes, counters and branch outcomes.
+The original RTS remains outside these phases. No additional ROM algorithm,
+function metadata entry or binding is claimed for this partial frontend.
+
+Strict MSVC and Clang each pass 512 complete calls and 512 composed calls,
+including 300,288 intermediate CPU/ordered-data boundaries and final full WRAM.
+The separate consumer clock proof covers 3,072 phase states, 282 hook/context
+cases and 6,912 independently derived ROM-cost windows per compiler.
+A deliberately short indexed-write clock model fails the original-opcode check.
+
+The consumer now executes admitted phases with exact CPU/master/refresh clocks,
+protecting observers, foreign hooks, DMA/IRQ/NMI, APU deadlines and beam bounds.
+Eight matched casino selector fixtures retain CPU/WRAM/hardware/PCM/native idle
+state. The untimed whole-routine width restriction remains intact. Private
+receipt: `.agent/decomp/runtime-frontier/menu-clear-phases/ACCEPTANCE.json` in
+the consumer. Scoped measurements are not whole-game/FPS acceptance.
+
 # Special-menu entry widths - 2026-11-03
 
 `$84:A4DD` and `$84:A4FD` preserve entry status while normalizing their own

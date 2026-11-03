@@ -36,10 +36,7 @@ static bool SpecialMenuCall(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return true;
 }
 
-Lufia2ExecutionResult Lufia2SpecialMenuClearTilemaps(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x84u || cpu->direct_page || cpu->decimal)
-        return ExecutionHandoff(cpu, 0x84a4ddu);
+static void BeginClearTilemaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Push8(memory, cpu, PackStatus(cpu));
     OpSepWidths(cpu, 0x20u);
     PushDataBank(memory, cpu);
@@ -48,14 +45,60 @@ Lufia2ExecutionResult Lufia2SpecialMenuClearTilemaps(
     PullDataBank(memory, cpu);
     OpRepWidths(cpu, 0x30u);
     OpLdx(cpu, 0x07feu);
-    do {
-        for (unsigned layer = 0u; layer < 4u; ++layer)
-            OpStz(memory, cpu, OpAbsX(cpu, (uint16_t)(0x2000u + layer * 0x800u)));
-        OpDex(cpu);
-        OpDex(cpu);
-    } while (!cpu->negative);
+}
+
+static void ClearTilemapRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    for (unsigned layer = 0u; layer < 4u; ++layer)
+        OpStz(memory, cpu, OpAbsX(cpu, (uint16_t)(0x2000u + layer * 0x800u)));
+    OpDex(cpu);
+    OpDex(cpu);
+}
+
+static void FinishClearTilemaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PullDataBank(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
+}
+
+static void BeginHideSprites(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Push8(memory, cpu, PackStatus(cpu));
+    OpRepWidths(cpu, 0x30u);
+    OpLdx(cpu, 128u);
+    OpLdy(cpu, 0u);
+}
+
+static void HideSpriteRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 0xf000u);
+    OpSta(memory, cpu, OpAbsY(cpu, 0x0100u));
+    OpIny(cpu);
+    OpIny(cpu);
+    OpLoadA(cpu, 0u);
+    OpSta(memory, cpu, OpAbsY(cpu, 0x0100u));
+    OpIny(cpu);
+    OpIny(cpu);
+    OpDex(cpu);
+}
+
+static void BeginSpriteHighTable(Lufia2CpuState *cpu) {
+    OpLdx(cpu, 16u);
+    OpLoadA(cpu, 0u);
+}
+
+static void ClearSpriteHighWord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpSta(memory, cpu, OpAbsY(cpu, 0x0100u));
+    OpIny(cpu);
+    OpIny(cpu);
+    OpDex(cpu);
+}
+
+Lufia2ExecutionResult Lufia2SpecialMenuClearTilemaps(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x84u || cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x84a4ddu);
+    BeginClearTilemaps(memory, cpu);
+    do {
+        ClearTilemapRow(memory, cpu);
+    } while (!cpu->negative);
+    FinishClearTilemaps(memory, cpu);
     return ExecutionReturned(0x84a4fcu);
 }
 
@@ -63,31 +106,53 @@ Lufia2ExecutionResult Lufia2SpecialMenuHideSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (cpu->program_bank != 0x84u || cpu->direct_page || cpu->decimal)
         return ExecutionHandoff(cpu, 0x84a4fdu);
-    Push8(memory, cpu, PackStatus(cpu));
-    OpRepWidths(cpu, 0x30u);
-    OpLdx(cpu, 128u);
-    OpLdy(cpu, 0u);
+    BeginHideSprites(memory, cpu);
     do {
-        OpLoadA(cpu, 0xf000u);
-        OpSta(memory, cpu, OpAbsY(cpu, 0x0100u));
-        OpIny(cpu);
-        OpIny(cpu);
-        OpLoadA(cpu, 0u);
-        OpSta(memory, cpu, OpAbsY(cpu, 0x0100u));
-        OpIny(cpu);
-        OpIny(cpu);
-        OpDex(cpu);
+        HideSpriteRow(memory, cpu);
     } while (!cpu->zero);
-    OpLdx(cpu, 16u);
-    OpLoadA(cpu, 0u);
+    BeginSpriteHighTable(cpu);
     do {
-        OpSta(memory, cpu, OpAbsY(cpu, 0x0100u));
-        OpIny(cpu);
-        OpIny(cpu);
-        OpDex(cpu);
+        ClearSpriteHighWord(memory, cpu);
     } while (!cpu->zero);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x84a528u);
+}
+
+Lufia2ExecutionResult Lufia2SpecialMenuClearStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x84u || cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, entry);
+    const bool header = entry == 0x84a4ddu || entry == 0x84a4fdu;
+    if (!header && (cpu->accumulator_is_8_bit || cpu->index_is_8_bit))
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x84a4ddu:
+        BeginClearTilemaps(memory, cpu);
+        return ExecutionHandoff(cpu, 0x84a4eau);
+    case 0x84a4eau:
+        ClearTilemapRow(memory, cpu);
+        return ExecutionHandoff(cpu, cpu->negative ? 0x84a4fau : entry);
+    case 0x84a4fau:
+        FinishClearTilemaps(memory, cpu);
+        return ExecutionHandoff(cpu, 0x84a4fcu);
+    case 0x84a4fdu:
+        BeginHideSprites(memory, cpu);
+        return ExecutionHandoff(cpu, 0x84a506u);
+    case 0x84a506u:
+        HideSpriteRow(memory, cpu);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x84a519u : entry);
+    case 0x84a519u:
+        BeginSpriteHighTable(cpu);
+        return ExecutionHandoff(cpu, 0x84a51fu);
+    case 0x84a51fu:
+        ClearSpriteHighWord(memory, cpu);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x84a527u : entry);
+    case 0x84a527u:
+        UnpackStatus(cpu, Pull8(memory, cpu));
+        return ExecutionHandoff(cpu, 0x84a528u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
 }
 
 Lufia2ExecutionResult Lufia2SpecialMenuMultiplyWords(
