@@ -1,3 +1,27 @@
+# Shared name-entry control flow — 2026-11-03
+
+The original `82:EBF2` name-entry body now serves its canonical entry and both
+save-menu callers. The complete duplicate in `save_menu_dispatch.c` is removed.
+The shared declaration stays private; original entry guards, child call sites,
+stack frames, cursor repeat state and unwind boundaries remain. This adds no
+algorithm, canonical entry, public API, binding or hook.
+
+MSVC and Clang each pass 8,255 original-ROM cases across the three entries,
+including 63 forced child unwinds, plus 12 no-effect entry guards. Save-menu
+cases also change the returned decimal flag before entering the shared body;
+an incorrect delegation through the public guard is rejected. An altered-ROM
+control also fails. The canonical body is retained verbatim. The isolated
+Windows Release build passes.
+
+A matched 2,820-frame empty-SRAM new-game replay preserves full guest/device
+state, extended APU clocks, PCM, raw execution profile and final picture.
+Only a live-validated host RAM pointer is normalized. Production COFF code
+sections in the two affected modules shrink by 3,718 bytes. Timings vary too
+widely to establish a speedup. The observed path enters the save-menu body
+once but never calls the shared body natively; a private bank-guard experiment
+does not change that. No consumer admission is widened. Proofs remain private;
+unaffected full regression and other platforms are deferred.
+
 # Ordered party and battle word reads — 2026-11-03
 
 Six existing word-read expressions now use the established ordered helpers.

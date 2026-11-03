@@ -2,6 +2,7 @@
 #include "core/cpu_ops.h"
 #include "system/wram.h"
 #include "lufia2/menu.h"
+#include "menu/name_entry_internal.h"
 
 static bool MenuDispatchSupported(const Lufia2CpuState *cpu) {
     return cpu->accumulator_is_8_bit && !cpu->index_is_8_bit && !cpu->decimal;
@@ -63,6 +64,12 @@ Lufia2ExecutionResult Lufia2MenuRunNameEntry(
     Lufia2PushedChildCall child, void *context) {
     if (!child || !MenuDispatchSupported(cpu))
         return ExecutionHandoff(cpu, 0x82ebf2u);
+    return Lufia2MenuNameEntryActions(memory, cpu, child, context);
+}
+
+Lufia2ExecutionResult Lufia2MenuNameEntryActions(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
     OpLoadA(cpu, 1u);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E155B));
     if (!CallChildWithFrame(memory, cpu, child, context,
