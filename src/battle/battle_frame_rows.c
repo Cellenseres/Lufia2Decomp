@@ -55,7 +55,7 @@ static void IncX2(Lufia2CpuState *cpu) {
 static void NextRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA16(cpu, Abs16(memory, cpu, FRAME_ROW));
     cpu->carry = 0;
-    Add16Value(cpu, 0x0040u);
+    OpAdcValue(cpu, 0x0040u);
     TransferAToY(cpu);
     StoreWordAbsolute(memory, cpu, FRAME_ROW, cpu->accumulator);
 }
@@ -64,8 +64,8 @@ static void NextRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 static void SkipWidth(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA16(cpu, cpu->y);
     cpu->carry = 0;
-    Add16Value(cpu, Abs16(memory, cpu, FRAME_WIDTH));
-    Add16Value(cpu, Abs16(memory, cpu, FRAME_WIDTH));
+    OpAdcValue(cpu, Abs16(memory, cpu, FRAME_WIDTH));
+    OpAdcValue(cpu, Abs16(memory, cpu, FRAME_WIDTH));
     TransferAToY(cpu);
 }
 
@@ -305,7 +305,7 @@ static Lufia2ExecutionResult FilledWindow(const Lufia2Memory *memory,
     SetAccumulatorWidth(cpu, 0);
     TransferXToA(cpu);
     cpu->carry = 0;
-    Add16Value(cpu, 0x0042u);
+    OpAdcValue(cpu, 0x0042u);
     TransferAToX(cpu);
     LoadA16(cpu, tile);
     StoreWordAbsolute(memory, cpu, 0x09f6u, cpu->accumulator);
@@ -320,6 +320,11 @@ static Lufia2ExecutionResult FilledWindow(const Lufia2Memory *memory,
     (void)Lufia2BattleWindow(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     return ExecutionReturned(0x810000u | (uint16_t)(entry + 0x1eu));
+}
+
+Lufia2ExecutionResult Lufia2BattleDrawBlankWindow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return FilledWindow(memory, cpu, 0x2150u, 0x87b7u, 0xe38fu);
 }
 
 /* $81:E3AE: window $87E3 at X, inside filled with $2154. */
@@ -445,7 +450,7 @@ Lufia2ExecutionResult Lufia2BattleFillRect(
         } while (!cpu->zero);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09f4u, 0));
         cpu->carry = 0;
-        Add16Value(cpu, 0x0040u);
+        OpAdcValue(cpu, 0x0040u);
         TransferAToX(cpu);
         StoreWordAbsolute(memory, cpu, 0x09f4u, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);

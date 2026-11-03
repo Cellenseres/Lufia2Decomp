@@ -624,6 +624,9 @@ Lufia2ExecutionResult Lufia2BattleTileBlockFar(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleDrawBlankWindow(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $81:E3AE filled window $87E3 at X; M1X0. */
 Lufia2ExecutionResult Lufia2BattleWindowE3AE(
     const Lufia2Memory *memory,
