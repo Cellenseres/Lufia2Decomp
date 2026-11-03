@@ -206,7 +206,8 @@ static Lufia2ExecutionResult ContinueSpecialMenuFade(
 static Lufia2ExecutionResult FadeSpecialMenu(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context, uint32_t entry, uint8_t control) {
-    if (!child || !SpecialMenuReady(cpu))
+    if (!child || cpu->program_bank != 0x84u || cpu->index_is_8_bit ||
+        cpu->direct_page || cpu->decimal)
         return ExecutionHandoff(cpu, entry);
     Push8(memory, cpu, PackStatus(cpu));
     OpSepWidths(cpu, 0x20u);

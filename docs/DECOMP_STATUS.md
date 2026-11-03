@@ -1,3 +1,19 @@
+# Special-menu fade entry widths - 2026-11-03
+
+Both original fade headers preserve P before SEP. Their existing C bodies now
+accept M0X0 as well as M1X0; child returns and saved-status continuations still
+require M1X0. PLP restores the entry width, so exit metadata is dynamic.
+No additional function, adapter API or binding is introduced.
+
+A shared MSVC checkpoint passes 1,024 semantic states, 14 guards, 160 changed
+child returns and 64 unwinds. The actual consumer passes 5,120 timed states,
+108 child contexts, 1,024 saved-status cases and 1,024 resumed cases containing
+9,184 child returns, plus 360 entry and 80 continuation admission cases.
+Two matched 480-frame menu replays retain CPU/WRAM/hardware/PCM/native APU idle.
+Each admits one formerly rejected M0 fade header, removing six raw opcodes.
+This is a verified contract completion, not a new algorithm or speedup claim.
+Private consumer receipt: runtime-frontier/special-fade-widths/ACCEPTANCE.json.
+
 # Original menu-clear phases - 2026-11-03
 
 The existing tilemap and sprite clearing routines share semantic helpers with

@@ -16628,7 +16628,7 @@ address = "84:A5B5"
 name = "Lufia2SpecialMenuFadeIn"
 source = "src/menu/special_menu.c"
 entry_mx = "M1X0"
-exit_mx = "M1X0"
+exit_mx = "dynamic"
 status = "verified"
 
 [[function]]
@@ -16636,7 +16636,7 @@ address = "84:A5CA"
 name = "Lufia2SpecialMenuFadeOut"
 source = "src/menu/special_menu.c"
 entry_mx = "M1X0"
-exit_mx = "M1X0"
+exit_mx = "dynamic"
 status = "verified"
 
 [[function]]
