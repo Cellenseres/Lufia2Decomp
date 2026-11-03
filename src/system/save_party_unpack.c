@@ -181,8 +181,6 @@ Lufia2ExecutionResult Lufia2SaveUnpackPartyRecord(
     static const uint16_t modifiers[4] = {0x7fu, 0x7du, 0x77u, 0x75u};
     static const uint16_t status[4] = {PARTY_STATUS, 0x85u, 0x83u, 0x81u};
 
-    if (cpu->decimal)
-        return ExecutionHandoff(cpu, 0x85c754u);
     RestorePartyVitals(memory, cpu);
     RestorePartySixBitFields(memory, cpu);
     RestorePartyStatBonuses(memory, cpu);

@@ -285,7 +285,7 @@ Lufia2ExecutionResult Lufia2SelectScreenNmi(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
-/* $82:9918 adjusts price X, preserving P and entry-width Y; binary mode. */
+/* $82:9918: adjust X; preserve status and entry-width Y. */
 Lufia2ExecutionResult Lufia2AdjustPurchasePrice(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

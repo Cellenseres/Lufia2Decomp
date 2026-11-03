@@ -19,8 +19,6 @@ enum {
 
 Lufia2ExecutionResult Lufia2AdjustPurchasePrice(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->decimal)
-        return ExecutionHandoff(cpu, 0x829918u);
     PushY(memory, cpu);
     Push8(memory, cpu, PackStatus(cpu));
     OpSepWidths(cpu, 0x20u);

@@ -1,3 +1,25 @@
+# Original decimal paths in existing routines - 2026-11-03
+
+Six existing routines now retain their original decimal-mode behavior:
+seed/refill 80:82E7/832D, checksum 85:DE6C, party unpack 85:C754,
+equipment-member selection 82:9971 and price adjustment 82:9918.
+Seed filling applies the original decimal ADC/SBC and binary threshold test,
+including invalid BCD digits. Its binary fast path remains ordinary C.
+The other bodies already use exact arithmetic or decimal-independent operations;
+their obsolete decimal-only handoffs are removed. No new function or binding.
+
+The shared checkpoint passes 9792 original-ROM states each with MSVC and Clang,
+including all seed bytes, four entry widths where normalized, checksum boundary
+quirks, record overlaps and discount paths. CPU/full WRAM/ordered data/stack
+match. MSVC combines its initial9760 cases with32 new decimal checksum edges.
+A deliberately binary seed policy fails the independent decimal reference.
+
+The actual current consumer ABI passes384 native calls and384 unchanged D1
+exclusions. Existing host timing admission is unchanged; standalone D1 support
+is not a claim of clocked D1 runtime admission. Matched600boot/960menu frames
+retain CPU/WRAM/hardware/PCM/native APU idle. No performance/FPS claim.
+Private consumer receipt:runtime-frontier/decimal-semantic-paths/ACCEPTANCE.json.
+
 # Special-menu fade entry widths - 2026-11-03
 
 Both original fade headers preserve P before SEP. Their existing C bodies now

@@ -86,8 +86,8 @@ Lufia2ExecutionResult Lufia2SaveFileChecksum(
 Lufia2ExecutionResult Lufia2ResolveSaveFileAddress(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
-/* $80:82E7 seed the random table from DB:$0558; any M/X, binary mode.
- * Restores P and DP scratch byte; X/Y and A retain original outputs. */
+/* $80:82E7: seed table.
+ * Restores status and DP scratch. */
 Lufia2ExecutionResult Lufia2SeedRandom(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
@@ -364,7 +364,7 @@ Lufia2ExecutionResult Lufia2RestoreSavedFieldState(
 Lufia2ExecutionResult Lufia2CaptureFieldSaveState(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
-/* Original alternating-byte save-record checksum; binary mode. */
+/* Original alternating-byte save-record checksum. */
 Lufia2ExecutionResult Lufia2SaveRecordChecksum(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

@@ -150,8 +150,21 @@ typedef struct SeedFillResult {
     uint8_t held;
 } SeedFillResult;
 
+static uint8_t AdvanceSeedIndex(uint8_t index, bool decimal) {
+    index = decimal
+        ? (uint8_t)ArithmeticValue(index, RANDOM_SEED_STRIDE,
+                                  false, true, false, 8u).value
+        : (uint8_t)(index + RANDOM_SEED_STRIDE);
+    if (index >= RANDOM_TABLE_SIZE)
+        index = decimal
+            ? (uint8_t)ArithmeticValue(index, RANDOM_TABLE_SIZE,
+                                      true, true, true, 8u).value
+            : (uint8_t)(index - RANDOM_TABLE_SIZE);
+    return index;
+}
+
 /* Subtractive fill from the seed byte, step 21 mod 55. */
-static SeedFillResult SeedFillTable(Lufia2Wram wram) {
+static SeedFillResult SeedFillTable(Lufia2Wram wram, bool decimal) {
     SeedFillResult result = {0u, 0u};
     uint8_t index = 0u;
     unsigned round;
@@ -163,12 +176,13 @@ static SeedFillResult SeedFillTable(Lufia2Wram wram) {
         uint8_t difference;
         uint8_t previous;
 
-        index = (uint8_t)(index + RANDOM_SEED_STRIDE);
-        if (index >= RANDOM_TABLE_SIZE)
-            index = (uint8_t)(index - RANDOM_TABLE_SIZE);
+        index = AdvanceSeedIndex(index, decimal);
         const uint8_t seed = WramRead(wram, WRAM_RANDOM_SEED_WORK);
         const uint8_t scratch = WramRead(wram, RANDOM_SEED_SCRATCH);
-        difference = (uint8_t)(seed - scratch);
+        difference = decimal
+            ? (uint8_t)ArithmeticValue(seed, scratch,
+                                      true, true, true, 8u).value
+            : (uint8_t)(seed - scratch);
         previous = WramRead(wram, RANDOM_SEED_SCRATCH);
         WramWrite(wram, WRAM_RANDOM_SEED_WORK, previous);
         WramWriteAt(wram, WRAM_RANDOM_TABLE, index, previous);
@@ -188,13 +202,11 @@ Lufia2ExecutionResult Lufia2SeedRandom(
     SeedFillResult fill;
     unsigned i;
 
-    if (cpu->decimal)
-        return ExecutionHandoff(cpu, 0x8082e7u);
     Push8(memory, cpu, PackStatus(cpu));
     OpSepWidths(cpu, 0x30u);
     LoadA8(cpu, WramRead(wram, RANDOM_SEED_SCRATCH));
     PushAccumulator8(memory, cpu);
-    fill = SeedFillTable(wram);
+    fill = SeedFillTable(wram, cpu->decimal != 0u);
     cpu->x = fill.last_index;
     cpu->y = 0u;
     cpu->accumulator = (uint16_t)((uint16_t)fill.held << 8);
@@ -214,7 +226,7 @@ Lufia2ExecutionResult Lufia2SeedRandom(
 Lufia2ExecutionResult Lufia2RefillRandomTable(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
-        !cpu->index_is_8_bit || cpu->decimal)
+        !cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x80832du);
     RandomRefill(memory, cpu);
     Compare8(cpu, (uint8_t)cpu->x, WRAM_RANDOM_TABLE_COUNT);
