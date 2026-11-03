@@ -9,6 +9,7 @@
 #include "lufia2/party.h"
 #include "lufia2/system.h"
 #include "menu/menu_sprite_slots.h"
+#include "menu/menu_tile_clear_internal.h"
 #include "party/party_internal.h"
 #include "system/dp_scratch.h"
 #include "system/system_internal.h"
@@ -100,41 +101,6 @@ static int DrawString(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     SimulateRtlFrame(memory, cpu);
     cpu->program_bank = 0x82u;
     return 0;
-}
-
-/* $82:83B5: clear both layers ($7E:2000/$7E:3000) in a rect; M0. */
-static void MenuClearRect(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreADirect16(memory, cpu, DP_SCRATCH_A);
-    Write16Direct(memory, cpu, DP_SCRATCH_C, 0);
-    Write16Direct(memory, cpu, DP_SCRATCH_E, 0);
-    TransferXToA(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    StoreADirect8(memory, cpu, DP_SCRATCH_E);
-    ExchangeAccumulatorBytes(cpu);
-    StoreADirect8(memory, cpu, DP_SCRATCH_C);
-    SetAccumulatorWidth(cpu, 0);
-    PushDataBank(memory, cpu);
-    SetAccumulatorWidth(cpu, 1);
-    SetBank(memory, cpu, 0x7eu);
-    SetAccumulatorWidth(cpu, 0);
-    do {
-        LoadY16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
-        LoadX16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
-        do {
-            Write16Absolute(memory, cpu, (uint16_t)(0x2000u + cpu->x), 0);
-            Write16Absolute(memory, cpu, (uint16_t)(0x3000u + cpu->x), 0);
-            IncrementX16(cpu);
-            IncrementX16(cpu);
-            cpu->y = (uint16_t)(cpu->y - 1u);
-            SetNz16(cpu, cpu->y);
-        } while (!cpu->zero);
-        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
-        cpu->carry = 0;
-        Add16Value(cpu, 0x0040u);
-        StoreADirect16(memory, cpu, DP_SCRATCH_A);
-        Decrement16Direct(memory, cpu, DP_SCRATCH_E);
-    } while (!cpu->zero);
-    PullDataBank(memory, cpu);
 }
 
 /* $82:88CB: cursor X sprite position, origin + spacing * index. */
@@ -257,7 +223,7 @@ Lufia2ExecutionResult Lufia2MenuEquipCommands(
     LoadA16(cpu, 0x0442u);
     LoadX16(cpu, 0x1e0bu);
     Jsr(memory, cpu, 0x9f79u);
-    MenuClearRect(memory, cpu);
+    ClearMenuTileRectangle(memory, cpu, true);
     Rts(memory, cpu);
     LoadA16(cpu, 0x045eu);
     LoadX16(cpu, 0x0f0au);
@@ -438,40 +404,6 @@ Lufia2ExecutionResult Lufia2MenuNameEntryWindows(
     LoadX16(cpu, 0x3162u);
     Write16Absolute(memory, cpu, 0x14adu, 0x3162u);
     return ExecutionReturned(0x82f0f5u);
-}
-
-/* $82:83EB: clear layer 2 ($7E:3000) in a rect; M0. */
-static void MenuClearRect2(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    StoreADirect16(memory, cpu, DP_SCRATCH_A);
-    Write16Direct(memory, cpu, DP_SCRATCH_C, 0);
-    Write16Direct(memory, cpu, DP_SCRATCH_E, 0);
-    TransferXToA(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    StoreADirect8(memory, cpu, DP_SCRATCH_E);
-    ExchangeAccumulatorBytes(cpu);
-    StoreADirect8(memory, cpu, DP_SCRATCH_C);
-    SetAccumulatorWidth(cpu, 0);
-    PushDataBank(memory, cpu);
-    SetAccumulatorWidth(cpu, 1);
-    SetBank(memory, cpu, 0x7eu);
-    SetAccumulatorWidth(cpu, 0);
-    do {
-        LoadY16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_C));
-        LoadX16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
-        do {
-            Write16Absolute(memory, cpu, (uint16_t)(0x3000u + cpu->x), 0);
-            IncrementX16(cpu);
-            IncrementX16(cpu);
-            cpu->y = (uint16_t)(cpu->y - 1u);
-            SetNz16(cpu, cpu->y);
-        } while (!cpu->zero);
-        LoadA16(cpu, Read16Direct(memory, cpu, DP_SCRATCH_A));
-        cpu->carry = 0;
-        Add16Value(cpu, 0x0040u);
-        StoreADirect16(memory, cpu, DP_SCRATCH_A);
-        Decrement16Direct(memory, cpu, DP_SCRATCH_E);
-    } while (!cpu->zero);
-    PullDataBank(memory, cpu);
 }
 
 /* $82:831A writes consecutive tiles across a rectangle. */
@@ -765,7 +697,7 @@ Lufia2ExecutionResult Lufia2MenuCapsuleScreen(
     LoadA16(cpu, 0x03d8u);
     LoadX16(cpu, 0x1209u);
     Jsr(memory, cpu, 0xa2edu);
-    MenuClearRect2(memory, cpu);
+    ClearMenuTileRectangle(memory, cpu, false);
     Rts(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     LoadA8(cpu, 0x05u);
@@ -931,7 +863,7 @@ Lufia2ExecutionResult Lufia2MenuCapsuleStatus(
     LoadA16(cpu, 0x0098u);
     LoadX16(cpu, 0x140eu);
     Jsr(memory, cpu, 0xd085u);
-    MenuClearRect2(memory, cpu);
+    ClearMenuTileRectangle(memory, cpu, false);
     Rts(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     StoreA8Absolute(memory, cpu, WRAM_MENU_DRAW_MODE, 0x3cu);
@@ -1772,7 +1704,7 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
     LoadA16(cpu, 0x0342u);
     LoadX16(cpu, 0x1e13u);
     Jsr(memory, cpu, 0x9cc8u);
-    MenuClearRect(memory, cpu);
+    ClearMenuTileRectangle(memory, cpu, true);
     Rts(memory, cpu);
     Window(memory, cpu, 0x0348u, 0x1b03u, 0x9cd1u);
     Window(memory, cpu, 0x0408u, 0x1b0bu, 0x9cdau);
@@ -1826,7 +1758,7 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
     LoadA16(cpu, 0x040eu);
     LoadX16(cpu, 0x1410u);
     Jsr(memory, cpu, 0xb05cu);
-    MenuClearRect2(memory, cpu);
+    ClearMenuTileRectangle(memory, cpu, false);
     Rts(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     LoadX16(cpu, 0x344eu);
@@ -2340,7 +2272,7 @@ static int MenuListPage(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     LoadA16(cpu, 0x0402u);
     LoadX16(cpu, 0x1e10u);
     Jsr(memory, cpu, 0xac8eu);
-    MenuClearRect2(memory, cpu);
+    ClearMenuTileRectangle(memory, cpu, false);
     Rts(memory, cpu);
     SetAccumulatorWidth(cpu, 1);
     LoadX16(cpu, 0x3448u);

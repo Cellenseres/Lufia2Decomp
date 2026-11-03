@@ -10,6 +10,12 @@ platform libraries. The consuming Lufia2SNESRecomp repository owns CPU-state
 adaptation, generated `hle_func` selection, differential CPU/bus tests,
 platform integration, and enhancements.
 
+Menu rectangle clearing has one private body, `ClearMenuTileRectangle`, shared
+by the original `$82:83B5`/`$82:83EB` entries and screen builders. Callers supply
+the original M0X0 context and retain their JSR/RTS frames. The body preserves
+DB/DP, decimal row arithmetic and ordered bus accesses. Keep the public entry
+guards separate; do not reintroduce legacy screen copies.
+
 Original ROM routines can have byte-identical copies at different entries.
 Such copies share one semantic C implementation with their actual call-site
 and return PCs. Their distinct canonical bindings do not represent additional

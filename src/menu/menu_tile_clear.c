@@ -3,6 +3,7 @@
 #include "core/wram_view.h"
 #include "lufia2/menu.h"
 #include "lufia2/menu_rectangle.h"
+#include "menu/menu_tile_clear_internal.h"
 
 enum {
     WORK_POSITION = 0x54u,
@@ -33,8 +34,8 @@ static void ClearRectangleCell(Lufia2Wram wram, uint16_t cell, bool both_layers)
     WramWrite16At(wram, BACK_TILES, cell, 0);
 }
 
-static void ClearRectangle(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                           bool both_layers) {
+void ClearMenuTileRectangle(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            bool both_layers) {
     const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
     uint16_t cell;
     Word16Result next_row;
@@ -55,7 +56,8 @@ static void ClearRectangle(const Lufia2Memory *memory, Lufia2CpuState *cpu,
             cell = (uint16_t)(cell + 2u);
             columns = (uint16_t)(columns - 1u);
         } while (columns);
-        next_row = Sum16(WramRead16(wram, WORK_POSITION), ROW_BYTES, false);
+        next_row = Sum16Mode(WramRead16(wram, WORK_POSITION), ROW_BYTES, false,
+                             cpu->decimal);
         WramWrite16(wram, WORK_POSITION, next_row.value);
     } while (WramStep16(wram, WORK_ROWS, -1));
     cpu->accumulator = next_row.value;
@@ -69,7 +71,7 @@ Lufia2ExecutionResult Lufia2MenuClearLayerRectangle(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!RectangleSupported(cpu))
         return ExecutionHandoff(cpu, 0x8283b5u);
-    ClearRectangle(memory, cpu, true);
+    ClearMenuTileRectangle(memory, cpu, true);
     return ExecutionReturned(0x8283eau);
 }
 
@@ -77,7 +79,7 @@ Lufia2ExecutionResult Lufia2MenuClearTileRectangle(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!RectangleSupported(cpu))
         return ExecutionHandoff(cpu, 0x8283ebu);
-    ClearRectangle(memory, cpu, false);
+    ClearMenuTileRectangle(memory, cpu, false);
     return ExecutionReturned(0x82841du);
 }
 
