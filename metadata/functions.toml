@@ -18567,3 +18567,19 @@ source = "src/battle/battle_exit.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "81:E7A6"
+name = "Lufia2BattleClearRect"
+source = "src/battle/battle_frame_rows.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "81:D081"
+name = "Lufia2BattleRefreshStagedCommand"
+source = "src/battle/battle_party_commands.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

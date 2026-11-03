@@ -8,10 +8,7 @@ enum {
     PARTY_SUBMENU_ENTRY_PARAMETER = 0xdf01u,
 };
 
-/* $81:CC2E descendants: redraw a member label through the original children. */
-static bool BattlePartyCommandLabel(BattleContext *battle, uint16_t record_site,
-                                    uint16_t text_site, uint16_t label,
-                                    bool leave_label_index_on_stack) {
+static bool ReadPartyCommandLabel(BattleContext *battle, uint16_t record_site) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
     OpRepWidths(cpu, 0x20u);
@@ -25,18 +22,58 @@ static bool BattlePartyCommandLabel(BattleContext *battle, uint16_t record_site,
     OpLda(memory, cpu, OpLongX(cpu, 0x818809u));
     OpTax(cpu);
     OpSepWidths(cpu, 0x20u);
-    OpPushX(memory, cpu);
+    return true;
+}
+
+static bool DrawPartyCommandLabel(BattleContext *battle, uint16_t text_site,
+                                 uint16_t label) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
     OpLoadA(cpu, 13u);
     OpSta(memory, cpu, OpAbs(cpu, 0x09f2u));
     OpLoadA(cpu, 4u);
     OpSta(memory, cpu, OpAbs(cpu, 0x09f3u));
     OpLdy(cpu, label);
     OpWriteX(memory, cpu, OpAbs(cpu, 0x09f4u), cpu->y);
-    if (!BattleCall(battle, text_site, 0x81e503u, 2u))
+    return BattleCall(battle, text_site, 0x81e503u, 2u);
+}
+
+static bool BattlePartyCommandLabel(BattleContext *battle, uint16_t record_site,
+                                    uint16_t text_site, uint16_t label,
+                                    bool leave_label_index_on_stack) {
+    if (!ReadPartyCommandLabel(battle, record_site))
+        return false;
+    OpPushX(battle->memory, battle->cpu);
+    if (!DrawPartyCommandLabel(battle, text_site, label))
         return false;
     if (!leave_label_index_on_stack)
-        OpPullX(memory, cpu);
+        OpPullX(battle->memory, battle->cpu);
     return true;
+}
+
+Lufia2ExecutionResult Lufia2BattleRefreshStagedCommand(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context) {
+    BattleContext battle =
+        BattleContextCreate(memory, cpu, child, child_context, 0x81u);
+    OpRepWidths(cpu, 0x20u);
+    TransferDirectToA(cpu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_STAGED_ACTION));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, 0x97fe26u));
+    OpTax(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_IDS));
+    OpTax(cpu);
+    OpSepWidths(cpu, 0x20u);
+    if (!BattleCall(&battle, 0xd093u, 0x81d12eu, 2u))
+        return BattleChildUnwound(&battle);
+    if (cpu->carry)
+        return ExecutionHandoff(cpu, 0x81cc93u);
+    if (!ReadPartyCommandLabel(&battle, 0xd0a5u) ||
+        !DrawPartyCommandLabel(&battle, 0xd0c1u, 0x87b7u))
+        return BattleChildUnwound(&battle);
+    TransferDirectToA(cpu);
+    return ExecutionReturned(0x81d0c5u);
 }
 
 static void BattlePartyCommandTextDimensions(const Lufia2Memory *memory,

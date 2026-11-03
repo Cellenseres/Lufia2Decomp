@@ -483,6 +483,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:C739` | `Lufia2BattleCollectCommands` | verified | `src/battle/battle_commands.c` |
 | `$81:CB77` | `Lufia2BattleChooseCommand` | verified | `src/battle/battle_command.c` |
 | `$81:CC2E` | `Lufia2BattleChoosePartyAction` | verified | `src/battle/battle_party_commands.c` |
+| `$81:D081` | `Lufia2BattleRefreshStagedCommand` | verified | `src/battle/battle_party_commands.c` |
 | `$81:D12F` | `Lufia2BattleActionSubmenuStart` | verified | `src/battle/battle_submenus.c` |
 | `$81:D19A` | `Lufia2BattleActionSubmenuResume` | verified | `src/battle/battle_submenus.c` |
 | `$81:D4E0` | `Lufia2BattleChooseTargets` | verified | `src/battle/battle_targets.c` |
@@ -524,6 +525,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:E645` | `Lufia2BattlePartyStatusRow` | verified | `src/battle/battle_turn_display.c` |
 | `$81:E73B` | `Lufia2BattleRenderMessage` | verified | `src/battle/battle_message_render.c` |
 | `$81:E792` | `Lufia2BattleLoadMessageGraphics` | verified | `src/battle/battle_message_render.c` |
+| `$81:E7A6` | `Lufia2BattleClearRect` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E7D2` | `Lufia2BattleFillRect` | verified | `src/battle/battle_frame_rows.c` |
 | `$81:E808` | `Lufia2DecimalDigits3` | verified | `src/system/math.c` |
 | `$81:E835` | `Lufia2BattleGlyph` | verified | `src/battle/battle_ip.c` |
@@ -558,6 +560,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$81:F2E7` | `Lufia2ApplyMenuSpell` | verified | `src/item/menu_application.c` |
 | `$81:F34D` | `Lufia2CheckMenuSpellTargets` | verified | `src/item/menu_application.c` |
 | `$81:F3BC` | `Lufia2ConsumeMenuSpellMp` | verified | `src/item/menu_application.c` |
+| `$81:F3E4` | `Lufia2SpellRecordByteA` | verified | `src/item/item_records.c` |
 | `$81:F3F4` | `Lufia2SpellRecordByteC` | verified | `src/item/item_records.c` |
 | `$81:F404` | `Lufia2SpellRecordByte8` | verified | `src/item/item_records.c` |
 | `$81:F414` | `Lufia2LoadSpellRecord` | verified | `src/item/item_records.c` |
@@ -1160,6 +1163,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:9D23` | `Lufia2CaveFindUnvisitedCell` | verified | `src/cave/cave_grid.c` |
 | `$83:9D39` | `Lufia2CaveAppendRoomLink` | verified | `src/cave/cave_grid.c` |
 | `$83:9D46` | `Lufia2CaveReplaceUpperTileIndex` | verified | `src/cave/cave_grid.c` |
+| `$83:9D57` | `Lufia2CaveReplaceLowerTileIndex` | verified | `src/cave/cave_grid.c` |
 | `$83:9D68` | `Lufia2CaveResolveWordTileOffset` | verified | `src/cave/cave_grid.c` |
 | `$83:9D88` | `Lufia2CaveDrawTileBlock` | verified | `src/cave/cave_grid.c` |
 | `$83:9DE4` | `Lufia2CaveDrawRandomMean` | verified | `src/cave/cave_random.c` |
@@ -1400,6 +1404,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$83:FC8B` | `Lufia2ObjectFinePositionToProbe` | verified | `src/field/field_coordinate_math.c` |
 | `$83:FCB4` | `Lufia2ObjectScaleFinePosition` | verified | `src/field/field_coordinate_math.c` |
 | `$83:FCD1` | `Lufia2ObjectQueueSceneSpriteUpload` | verified | `src/actor/actor_scene_resources.c` |
+| `$83:FEC4` | `Lufia2RasterizeEdge` | verified | `src/field/field_raster_edge.c` |
 | `$84:8000` | `Lufia2FieldUpdateScreenEffects` | verified | `src/field/field_effects.c` |
 | `$84:80C0` | `Lufia2FieldLowerFixedColor` | verified | `src/field/field_effects.c` |
 | `$84:80D3` | `Lufia2FieldRaiseFixedColor` | verified | `src/field/field_effects.c` |

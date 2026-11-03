@@ -1,3 +1,26 @@
+# Additional original battle bodies — 2026-11-03
+
+Two previously absent original bodies are reconstructed and verified:
+- `$81:E7A6..E7D1` clears a tile rectangle using two byte stores per word,
+  consumes the live row count and preserves Y. It is not the existing `$E7D2`
+  fill routine with a zero argument: that routine uses Y and a separate counter.
+- `$81:D081..D0C5` resolves the staged actor, calls the original `$D12E` stub,
+  then follows inherited carry to `$CC93` or redraws the command label.
+  Unlike the other command-label paths, it does not preserve X on the stack.
+
+Read/draw phases are shared with the existing party-command implementation;
+its original stack ownership and child boundaries remain unchanged.
+Each MSVC/Clang original-ROM differential batch passes 4,096 complete-body
+cases and 192 child-unwind cases, comparing CPU, full WRAM and ordered data.
+The existing `$CC2E` parent passes 4,151 cases covering all 55 child sites,
+55 unwinds and all six return types, plus 128 stack-relative operand probes.
+Zero dimensions retain their wrapped counts. Destructive counter aliases can
+make the original loop nonterminating; no synthetic escape is added.
+
+These bodies have no established ordinary direct callers. Consumer timing and
+binding are pending; this checkpoint does not claim runtime selection, fewer
+interpreted instructions or a gameplay speedup. Full regression is deferred.
+
 # Raster edge interpolation — 2026-11-03
 
 `Lufia2RasterizeEdge` reconstructs the previously absent 109-byte original
@@ -13204,7 +13227,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2298 functions in `metadata/functions.toml`: 2298 verified, 0 draft, 0 identified, 0 disabled.
+2303 functions in `metadata/functions.toml`: 2303 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

@@ -3412,7 +3412,7 @@ name = "battle_message_window_rows"
 width = 1
 count = 1
 owner = "battle"
-notes = "Original action message window row count. 85CE6F reuses this byte as the six-bit target count. Battle selection also reuses09F3 as a score modifier."
+notes = "Original action message window row count.81:E7A6 consumes it while clearing tiles;81:E7D2 preserves it using09F9. 85CE6F reuses this byte as the six-bit target count. Battle selection also reuses09F3 as a score modifier."
 
 [[location]]
 address = "7E:1B23"
@@ -5889,7 +5889,7 @@ name = "battle_action_work_byte"
 width = 1
 count = 1
 owner = "battle"
-notes = "Shared transient byte:81F114 quantity work;85CE21 action stage byte. Its original reuse is preserved. Battle selection uses09F4/09F5 together as a temporary reference score."
+notes = "Shared transient byte:81F114 quantity work;85CE21 action stage byte. Its original reuse is preserved. Battle selection uses09F4/09F5 together as a temporary reference score.81:E7A6/E7D2 reuse the word as a tilemap row pointer."
 
 [[location]]
 address = "7E:09FC"

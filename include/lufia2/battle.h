@@ -575,6 +575,15 @@ Lufia2ExecutionResult Lufia2CharacterSpritePointer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $81:E7A6 clears tiles, consuming the height; M1X0. */
+Lufia2ExecutionResult Lufia2BattleClearRect(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $81:D081 refreshes staged commands; X remains changed, M1X0. */
+Lufia2ExecutionResult Lufia2BattleRefreshStagedCommand(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *child_context);
+
 /* $81:E7D2 fill $09F2 x $09F3 words at $7E:X; M1X0. */
 Lufia2ExecutionResult Lufia2BattleFillRect(
     const Lufia2Memory *memory,

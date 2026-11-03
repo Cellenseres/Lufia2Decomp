@@ -3,6 +3,7 @@
 #include "core/cpu_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
+#include "system/wram.h"
 
 enum {
     FRAME_TILE = 0x09f4u,               /* first frame tile */
@@ -454,4 +455,36 @@ Lufia2ExecutionResult Lufia2BattleFillRect(
     } while (rows);
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x81e807u);
+}
+
+Lufia2ExecutionResult Lufia2BattleClearRect(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    enum {
+        RECT_WIDTH = WRAM_BATTLE_MESSAGE_WINDOW_COLUMNS,
+        RECT_HEIGHT = WRAM_BATTLE_MESSAGE_WINDOW_ROWS,
+        RECT_ROW = WRAM_BATTLE_ACTION_WORK_BYTE,
+        TILEMAP_ROW_BYTES = 0x0040u,
+    };
+    PushDataBank(memory, cpu);
+    SetBank7E(memory, cpu);
+    StoreWordAbsolute(memory, cpu, RECT_ROW, cpu->x);
+    do {
+        LoadAAbsolute8(memory, cpu, RECT_WIDTH, 0);
+        do {
+            Write8(memory, AbsoluteIndexedAddress(cpu, 0u, cpu->x), 0u);
+            Write8(memory, AbsoluteIndexedAddress(cpu, 1u, cpu->x), 0u);
+            IncX2(cpu);
+            LoadA8(cpu, (uint8_t)(A8(cpu) - 1u));
+        } while (!cpu->zero);
+        SetAccumulatorWidth(cpu, 0);
+        LoadA16(cpu, Abs16(memory, cpu, RECT_ROW));
+        cpu->carry = 0;
+        OpAdcValue(cpu, TILEMAP_ROW_BYTES);
+        TransferAToX(cpu);
+        StoreWordAbsolute(memory, cpu, RECT_ROW, cpu->accumulator);
+        SetAccumulatorWidth(cpu, 1);
+        OpStepMem(memory, cpu, OpAbs(cpu, RECT_HEIGHT), -1);
+    } while (!cpu->zero);
+    PullDataBank(memory, cpu);
+    return ExecutionReturned(0x81e7d1u);
 }
