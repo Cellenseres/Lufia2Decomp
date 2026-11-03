@@ -1,6 +1,7 @@
 /* Multiply ($82:8000), sine ($80:8450) and cosine ($80:8486). */
 
 #include "core/cpu_ops.h"
+#include "lufia2/menu.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
 
@@ -11,33 +12,25 @@ void Lufia2CallMultiply(
     uint8_t return_bank,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, return_bank, return_address);
-    PushIndex(memory, cpu);                                    /* 8000 */
-    Push8(memory, cpu, PackStatus(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    SetIndexWidth(cpu, 0);
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, WRAM_SYSTEM_MULTIPLY_PRODUCT, 0),
-                0x0000u);
-    Write16Long(memory,
-                AbsoluteIndexedAddress(cpu, (WRAM_SYSTEM_MULTIPLY_PRODUCT + 2u), 0),
-                0x0000u);
-    LoadX16(cpu, 0x0010u);
-    do {
-        RorAbsolute16(memory, cpu, 0x1572u);                   /* 800D */
-        if (cpu->carry) {
-            LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
-                                               (WRAM_SYSTEM_MULTIPLY_PRODUCT + 2u), 0));
-            cpu->carry = 0;
-            Add16Value(cpu,
-                       Read16AbsoluteIndexed(memory, cpu, WRAM_SYSTEM_MULTIPLY_A, 0));
-            StoreAAbsolute16(memory, cpu, (WRAM_SYSTEM_MULTIPLY_PRODUCT + 2u), 0);
-        }
-        RorAbsolute16(memory, cpu, 0x1576u);                   /* 801C */
-        RorAbsolute16(memory, cpu, 0x1574u);
-        LoadX16(cpu, (uint16_t)(cpu->x - 1u));
-    } while (!cpu->zero);
-    UnpackStatus(cpu, Pull8(memory, cpu));                     /* 8025 */
-    cpu->x = PullIndexValue(memory, cpu);
+    (void)Lufia2MenuMultiply(memory, cpu);
     SimulateRtlFrame(memory, cpu);
+}
+
+enum {
+    TRIG_QUARTER_TURN = 0x2d,
+    TRIG_HALF_TURN = 0x5a,
+    TRIG_THREE_QUARTER_TURN = 0x87,
+    TRIG_FULL_TURN = 0xb4
+};
+
+static uint8_t TrigTableOffset(
+    uint8_t angle, uint8_t origin, bool reverse, bool decimal) {
+    if (!decimal)
+        return reverse ? (uint8_t)(origin - angle) : (uint8_t)(angle - origin);
+    const uint8_t difference = (uint8_t)ArithmeticValue(
+        angle, origin, true, true, true, 8u).value;
+    /* Negation stays binary after decimal subtraction. */
+    return reverse ? (uint8_t)(0u - difference) : difference;
 }
 
 /* $80:84BF: sine of a quarter turn in 46 steps, $00-$7F. */
@@ -75,14 +68,17 @@ static void CalculateSine(
     uint8_t value;
 
     SaveTrigRegisters(memory, cpu);
-    if (angle < 0x2du)                                         /* 8455 */
+    if (angle < TRIG_QUARTER_TURN)
         value = QuarterSine(memory, angle);
-    else if (angle < 0x5au)
-        value = QuarterSine(memory, (uint8_t)(0x5au - angle));
-    else if (angle < 0x87u)
-        value = (uint8_t)(QuarterSine(memory, (uint8_t)(angle - 0x5au)) | 0x80u);
+    else if (angle < TRIG_HALF_TURN)
+        value = QuarterSine(memory, TrigTableOffset(
+            angle, TRIG_HALF_TURN, true, cpu->decimal));
+    else if (angle < TRIG_THREE_QUARTER_TURN)
+        value = (uint8_t)(QuarterSine(memory, TrigTableOffset(
+            angle, TRIG_HALF_TURN, false, cpu->decimal)) | 0x80u);
     else
-        value = (uint8_t)(QuarterSine(memory, (uint8_t)(0xb4u - angle)) | 0x80u);
+        value = (uint8_t)(QuarterSine(memory, TrigTableOffset(
+            angle, TRIG_FULL_TURN, true, cpu->decimal)) | 0x80u);
     RestoreTrigRegisters(memory, cpu, value);
 }
 
@@ -103,14 +99,18 @@ static void CalculateCosine(
     uint8_t value;
 
     SaveTrigRegisters(memory, cpu);
-    if (angle < 0x2du)                                         /* 848B */
-        value = QuarterSine(memory, (uint8_t)(0x2du - angle));
-    else if (angle < 0x5au)
-        value = (uint8_t)(QuarterSine(memory, (uint8_t)(angle - 0x2du)) | 0x80u);
-    else if (angle < 0x87u)
-        value = (uint8_t)(QuarterSine(memory, (uint8_t)(0x87u - angle)) | 0x80u);
+    if (angle < TRIG_QUARTER_TURN)
+        value = QuarterSine(memory, TrigTableOffset(
+            angle, TRIG_QUARTER_TURN, true, cpu->decimal));
+    else if (angle < TRIG_HALF_TURN)
+        value = (uint8_t)(QuarterSine(memory, TrigTableOffset(
+            angle, TRIG_QUARTER_TURN, false, cpu->decimal)) | 0x80u);
+    else if (angle < TRIG_THREE_QUARTER_TURN)
+        value = (uint8_t)(QuarterSine(memory, TrigTableOffset(
+            angle, TRIG_THREE_QUARTER_TURN, true, cpu->decimal)) | 0x80u);
     else
-        value = QuarterSine(memory, (uint8_t)(angle - 0x87u));
+        value = QuarterSine(memory, TrigTableOffset(
+            angle, TRIG_THREE_QUARTER_TURN, false, cpu->decimal));
     RestoreTrigRegisters(memory, cpu, value);
 }
 
@@ -193,7 +193,7 @@ Lufia2ExecutionResult Lufia2DecimalDigits3(
 }
 
 static bool TrigEntrySupported(const Lufia2CpuState *cpu) {
-    return cpu->program_bank == 0x80u && !cpu->direct_page && !cpu->decimal;
+    return cpu->program_bank == 0x80u && !cpu->direct_page;
 }
 
 Lufia2ExecutionResult Lufia2SineAngle(const Lufia2Memory *memory,

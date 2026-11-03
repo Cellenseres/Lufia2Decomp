@@ -15,6 +15,12 @@ Such copies share one semantic C implementation with their actual call-site
 and return PCs. Their distinct canonical bindings do not represent additional
 algorithm coverage; verification includes the existing entry and its callers.
 
+The original `$82:8000` multiply has one canonical semantic body,
+`Lufia2MenuMultiply`. `Lufia2CallMultiply` supplies each caller's original
+JSL/RTL frame and delegates to it. Keep that body complete; consumer admission
+belongs outside it. Preserve its incoming carry, decimal arithmetic, word
+rotates and callback order instead of introducing another multiply copy.
+
 Only functions whose metadata status is `verified` are eligible for native
 selection by a consumer. Consumers independently bind an address to a bridge;
 verification without a binding is informational and never activates code.

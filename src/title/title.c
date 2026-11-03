@@ -446,7 +446,7 @@ static void TitleAccumulate(
     uint16_t step) {
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, to, cpu->y));
     cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, step, cpu->y));
+    OpAdcValue(cpu, Read16AbsoluteIndexed(memory, cpu, step, cpu->y));
     StoreAAbsolute16(memory, cpu, to, cpu->y);
 }
 
@@ -464,10 +464,11 @@ static void TitleWrapAngle(
     if (!cpu->zero) {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, angle, cpu->y));
         cpu->carry = 0;
-        Add16Value(cpu, TITLE_ANGLE_WRAP);
+        OpAdcValue(cpu, TITLE_ANGLE_WRAP);
     } else {
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, angle, cpu->y));
-        Subtract16(cpu, TITLE_ANGLE_WRAP);
+        cpu->carry = 1;
+        OpSbcValue(cpu, TITLE_ANGLE_WRAP);
     }
     StoreAAbsolute16(memory, cpu, angle, cpu->y);
 }
@@ -526,7 +527,7 @@ static bool TitleObjectProject(
     TitleSignedProduct(memory, cpu, 0x845cu, 0x845fu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TITLE_OBJ_CENTER_X, cpu->y));
     cpu->carry = 0;
-    Add16Value(cpu, TitleWord(memory, cpu, TITLE_PRODUCT));    /* sprite x */
+    OpAdcValue(cpu, TitleWord(memory, cpu, TITLE_PRODUCT));    /* sprite x */
     StoreAAbsolute16(memory, cpu, TITLE_SPRITE_X, cpu->x);
     SetAccumulatorWidth(cpu, 1);                               /* 846A */
     LoadAAbsolute8(memory, cpu, TITLE_OBJ_ANGLE_X + 1u, cpu->y);
@@ -536,7 +537,8 @@ static bool TitleObjectProject(
     And16(cpu, 0x00ffu);
     TitleSignedProduct(memory, cpu, 0x848bu, 0x848eu);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, TITLE_OBJ_CENTER_Y, cpu->y));
-    Subtract16(cpu, TitleWord(memory, cpu, TITLE_PRODUCT));    /* sprite y */
+    cpu->carry = 1;
+    OpSbcValue(cpu, TitleWord(memory, cpu, TITLE_PRODUCT));    /* sprite y */
     StoreAAbsolute16(memory, cpu, TITLE_SPRITE_Y, cpu->x);
     TitleAccumulate(memory, cpu, TITLE_OBJ_ANGLE_Y, TITLE_OBJ_ANGLE_Y_STEP); /* 8499 */
     TitleWrapAngle(memory, cpu, TITLE_OBJ_ANGLE_Y, TITLE_FLAG_ANGLE_Y_BACK);
@@ -548,7 +550,7 @@ static bool TitleObjectProject(
     TitleSignedProduct(memory, cpu, 0x84e6u, 0x84e9u);
     LoadA16(cpu, TitleWord(memory, cpu, TITLE_PRODUCT));       /* 84EA */
     cpu->carry = 0;
-    Add16Value(cpu, 0x0064u);
+    OpAdcValue(cpu, 0x0064u);
     LoadX16(cpu, 0x0014u);
     for (;;) {                                                 /* 84F4 */
         if (depth_steps) {
@@ -658,7 +660,7 @@ static void TitleNextParticle(Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 0);
     LoadA16(cpu, cpu->y);
     cpu->carry = 0;
-    Add16Value(cpu, TITLE_PARTICLE_SIZE);
+    OpAdcValue(cpu, TITLE_PARTICLE_SIZE);
     TransferAToY(cpu);
     SetAccumulatorWidth(cpu, 1);
 }
@@ -692,7 +694,7 @@ static void TitleStartParticle(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     StoreAAbsolute8(memory, cpu, TITLE_PARTICLE_DELAY, cpu->y); /* frame delay */
     LoadA8(cpu, 0x18u);
     cpu->carry = 1;
-    Sbc8(cpu, 0x03u);
+    OpSbcValue(cpu, 0x03u);
     StoreAAbsolute8(memory, cpu, TITLE_PARTICLE_LIFETIME, cpu->y); /* lifetime */
 }
 
