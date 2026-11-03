@@ -170,7 +170,8 @@ Lufia2ExecutionResult Lufia2DecimalDigits3(
         for (;;) {
             SetAccumulatorWidth(cpu, 0);
             TransferXToA(cpu);
-            Subtract16(cpu, kSteps[i]);
+            cpu->carry = true;
+            OpSbcValue(cpu, kSteps[i]);
             if (!cpu->carry)
                 break;
             TransferAToX(cpu);

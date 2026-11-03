@@ -931,7 +931,7 @@ Lufia2ExecutionResult Lufia2TitlePaletteCycle(
         return ExecutionHandoff(cpu, 0x868996u);
     SetAccumulatorWidth(cpu, 0);                               /* 8996 */
     SetIndexWidth(cpu, 0);
-    StepAbsolute16(memory, cpu, TITLE_PALETTE_TIMER, -1);
+    OpStepMem(memory, cpu, OpAbs(cpu, TITLE_PALETTE_TIMER), -1);
     if (cpu->zero) {
         LoadA16(cpu, 0x0003u);
         StoreAAbsolute16(memory, cpu, WRAM_MENU_LIST_TOP_ROW, 0);
