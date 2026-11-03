@@ -38,7 +38,7 @@ static bool SpecialMenuCall(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 
 Lufia2ExecutionResult Lufia2SpecialMenuClearTilemaps(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!SpecialMenuReady(cpu))
+    if (cpu->program_bank != 0x84u || cpu->direct_page || cpu->decimal)
         return ExecutionHandoff(cpu, 0x84a4ddu);
     Push8(memory, cpu, PackStatus(cpu));
     OpSepWidths(cpu, 0x20u);
@@ -61,7 +61,7 @@ Lufia2ExecutionResult Lufia2SpecialMenuClearTilemaps(
 
 Lufia2ExecutionResult Lufia2SpecialMenuHideSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!SpecialMenuReady(cpu))
+    if (cpu->program_bank != 0x84u || cpu->direct_page || cpu->decimal)
         return ExecutionHandoff(cpu, 0x84a4fdu);
     Push8(memory, cpu, PackStatus(cpu));
     OpRepWidths(cpu, 0x30u);

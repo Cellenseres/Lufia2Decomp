@@ -1,3 +1,24 @@
+# Special-menu entry widths - 2026-11-03
+
+`$84:A4DD` and `$84:A4FD` preserve entry status while normalizing their own
+accumulator/index widths. Their existing C bodies now accept all four M/X
+combinations instead of rejecting the additional original entry modes.
+Canonical metadata entries remain M1X0; dynamic exits describe restored status.
+No new function, algorithm, public API or duplicate implementation is added.
+
+Strict MSVC and Clang each pass 512 original-ROM cases across all M/X modes,
+32 live status combinations and two DB/stack contexts, plus six untouched
+refusals. CPU, full WRAM, stack and ordered data accesses match. The old guard
+fails the first M0 case. The isolated Windows Release build also passes.
+
+The consumer retains its previous M1X0 admission. Broadening its untimed bridge
+changed hardware/PCM state in a matched casino replay and was rejected.
+With that consumer change removed, both affected 480-frame casino comparisons
+match CPU, WRAM, hardware, PCM and native APU idle state. Additional live modes
+need timed loop integration; standalone correctness does not certify host timing.
+Private evidence: `.agent/decomp/runtime-frontier/special-menu-widths/` in the
+consumer repository. No full regression or public CLI export was repeated.
+
 # Filled battle windows — 2026-11-03
 
 The missing original `$81:E38F..E3AD` draws the `$87B7` window with fill tile
