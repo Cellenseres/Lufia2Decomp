@@ -147,6 +147,53 @@ Lufia2ExecutionResult Lufia2BattleEffectDispatchPrepareStep(
     return ExecutionHandoff(cpu, actor ? 0x818b15u : 0x818aa4u);
 }
 
+static void EffectActorMotion(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbsY(cpu, EFFECT_ACTOR_MOTION_TARGET));
+    if (cpu->negative)
+        return;
+    OpSta(memory, cpu, SNES_WRMPYA);
+    OpLoadA(cpu, EFFECT_ACTOR_STRIDE);
+    OpSta(memory, cpu, SNES_WRMPYB);
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, EFFECT_ACTOR_SLOTS);
+    cpu->carry = false;
+    OpAdc(memory, cpu, SNES_RDMPYL);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, EFFECT_ACTOR_VELOCITY_X));
+    cpu->carry = false;
+    OpAdc(memory, cpu, OpAbsX(cpu, EFFECT_ACTOR_POSITION_X));
+    OpSta(memory, cpu, OpAbsY(cpu, EFFECT_ACTOR_POSITION_X));
+    OpLda(memory, cpu, OpAbsX(cpu, EFFECT_ACTOR_VELOCITY_Y));
+    cpu->carry = false;
+    OpAdc(memory, cpu, OpAbsX(cpu, EFFECT_ACTOR_POSITION_Y));
+    OpSta(memory, cpu, OpAbsY(cpu, EFFECT_ACTOR_POSITION_Y));
+    OpSepWidths(cpu, 0x20u);
+}
+
+
+static void EffectBeginSlot(const Lufia2Memory *memory,
+                            Lufia2CpuState *cpu, bool actor) {
+    PushDataBank(memory, cpu);
+    if (actor)
+        EffectActorMotion(memory, cpu);
+    OpLdx(cpu, Read16AbsoluteIndexed(memory, cpu, EFFECT_SLOT_STREAM, cpu->y));
+    OpWriteX(memory, cpu, OpDp(cpu, EFFECT_STREAM), cpu->x);
+    Push8(memory, cpu, actor ? 0x8bu : 0x8au);
+    Push8(memory, cpu, actor ? 0x19u : 0xa8u);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectBeginSlotStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x818a8cu && entry != 0x818acfu) ||
+        cpu->program_bank != 0x81u || cpu->data_bank != 0x7eu ||
+        cpu->direct_page || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    const bool actor = entry == 0x818acfu;
+    EffectBeginSlot(memory, cpu, actor);
+    return ExecutionHandoff(cpu, actor ? 0x818b08u : 0x818a95u);
+}
+
 static bool EffectRunSlot(EffectEngine *effect, bool actor) {
     const Lufia2Memory *memory = effect->battle.memory;
     Lufia2CpuState *cpu = effect->battle.cpu;
@@ -155,10 +202,7 @@ static bool EffectRunSlot(EffectEngine *effect, bool actor) {
     const uint32_t ordinary_return = 0x810000u | (uint16_t)(dispatch + 3u);
     const uint32_t yielded_return = actor ? 0x818b1au : 0x818aa9u;
 
-    OpLdx(cpu, Read16AbsoluteIndexed(memory, cpu, EFFECT_SLOT_STREAM, cpu->y));
-    OpWriteX(memory, cpu, OpDp(cpu, EFFECT_STREAM), cpu->x);
-    Push8(memory, cpu, actor ? 0x8bu : 0x8au);
-    Push8(memory, cpu, actor ? 0x19u : 0xa8u);
+    EffectBeginSlot(memory, cpu, actor);
     for (unsigned commands = 0; commands < EFFECT_DISPATCH_LIMIT; ++commands) {
         uint32_t target;
         uint32_t landing;
@@ -199,28 +243,6 @@ static bool EffectRunSlot(EffectEngine *effect, bool actor) {
     return false;
 }
 
-static void EffectActorMotion(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLda(memory, cpu, OpAbsY(cpu, EFFECT_ACTOR_MOTION_TARGET));
-    if (cpu->negative)
-        return;
-    OpSta(memory, cpu, SNES_WRMPYA);
-    OpLoadA(cpu, EFFECT_ACTOR_STRIDE);
-    OpSta(memory, cpu, SNES_WRMPYB);
-    OpRepWidths(cpu, 0x20u);
-    OpLoadA(cpu, EFFECT_ACTOR_SLOTS);
-    cpu->carry = false;
-    OpAdc(memory, cpu, SNES_RDMPYL);
-    OpTax(cpu);
-    OpLda(memory, cpu, OpAbsX(cpu, EFFECT_ACTOR_VELOCITY_X));
-    cpu->carry = false;
-    OpAdc(memory, cpu, OpAbsX(cpu, EFFECT_ACTOR_POSITION_X));
-    OpSta(memory, cpu, OpAbsY(cpu, EFFECT_ACTOR_POSITION_X));
-    OpLda(memory, cpu, OpAbsX(cpu, EFFECT_ACTOR_VELOCITY_Y));
-    cpu->carry = false;
-    OpAdc(memory, cpu, OpAbsX(cpu, EFFECT_ACTOR_POSITION_Y));
-    OpSta(memory, cpu, OpAbsY(cpu, EFFECT_ACTOR_POSITION_Y));
-    OpSepWidths(cpu, 0x20u);
-}
 
 static bool EffectSlotTimerExpired(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -325,9 +347,6 @@ static bool EffectRunSlots(EffectEngine *effect, bool actors) {
     OpLdy(cpu, actors ? EFFECT_ACTOR_SLOTS : EFFECT_SCRIPT_SLOTS);
     do {
         if (EffectSlotTimerExpired(memory, cpu)) {
-            PushDataBank(memory, cpu);
-            if (actors)
-                EffectActorMotion(memory, cpu);
             if (!EffectRunSlot(effect, actors))
                 return false;
         }

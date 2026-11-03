@@ -1,3 +1,20 @@
+# Effect slot-start continuation checkpoint — 2026-11-03
+
+The existing effect engine shares `EffectBeginSlot` between its complete caller
+and `Lufia2BattleEffectBeginSlotStep`. The phase saves DB, optionally updates
+actor position through the original hardware multiply, loads the stream, and
+pushes the original command-loop return. No duplicate motion algorithm or new
+canonical ROM function is introduced. Metadata retains its 2,305 verified entries.
+
+The explicit boundaries are `81:8A8C -> 81:8A95` and `81:8ACF -> 81:8B08`,
+with M1X0, DB7E and DP0. CPU flags, decimal arithmetic, stack bytes and ordered
+bus accesses remain original. MSVC and Clang each pass 4,608 original-ROM timed
+production-ABI comparisons, 768 direct semantic cases including decimal mode,
+21 public guards, 111 consumer refusals, 10,200 window decisions and 516 modeled
+hook decisions. Six altered-ROM controls are detected. Consumer runtime and
+performance acceptance are separate; see the superproject verification note.
+Private tests remain local and are excluded from public commits.
+
 # Menu OAM-piece fidelity - 2026-11-03
 
 The existing86:8C1F piece builder now retains decimal ADC/SBC and high-first
