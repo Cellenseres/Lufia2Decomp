@@ -165,9 +165,8 @@ static uint16_t BattleScriptLocal(
     {
         const uint8_t base = cpu->zero ? BATTLE_DP_LOCALS_F44E : BATTLE_DP_LOCALS_F450;
 
-        LoadA16(cpu, (uint16_t)(
-            Read8(memory, (uint16_t)(cpu->stack + 1u)) |
-            (Read8(memory, (uint16_t)(cpu->stack + 2u)) << 8)));
+        LoadA16(cpu, Read16Pair(memory,
+            (uint16_t)(cpu->stack + 1u), (uint16_t)(cpu->stack + 2u)));
         And16(cpu, 0x007fu);
         AslA16(cpu);
         Add16Value(cpu, Read16Direct(memory, cpu, base));
@@ -616,10 +615,8 @@ static void BattleActiveMaskBody(
             cpu->zero = (cpu->accumulator & 0x0004u) == 0;
             cpu->carry = cpu->zero;
         }
-        bits =
-            (uint16_t)(Read8(memory, mask) |
-                       (Read8(memory, AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BITS, 0))
-                        << 8));
+        bits = Read16Pair(memory, mask,
+            AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BITS, 0));
         {
             const uint8_t out = (uint8_t)(bits >> 15);
 
@@ -1143,7 +1140,7 @@ static void BattlePresentMask(const Lufia2Memory *memory,
         cpu->carry = !cpu->zero;
         const uint32_t low = AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BASE, 0u);
         const uint32_t high = AbsoluteIndexedAddress(cpu, BATTLE_SLOT_BITS, 0u);
-        const uint16_t value = (uint16_t)(Read8(memory, low) | (Read8(memory, high) << 8));
+        const uint16_t value = Read16Pair(memory, low, high);
         const uint16_t shifted = (uint16_t)((value << 1) | cpu->carry);
         cpu->carry = value >> 15;
         Write8(memory, high, (uint8_t)(shifted >> 8));
@@ -2389,9 +2386,8 @@ static void BattleOpJumpBack(
         BattleStat(memory, cpu, 0xbd13u);
         LoadA16(cpu, cpu->x);
         cpu->carry = 0;
-        Add16Value(cpu, (uint16_t)(
-            Read8(memory, (uint16_t)(cpu->stack + 1u)) |
-            (Read8(memory, (uint16_t)(cpu->stack + 2u)) << 8)));
+        Add16Value(cpu, Read16Pair(memory,
+            (uint16_t)(cpu->stack + 1u), (uint16_t)(cpu->stack + 2u)));
         LoadA16(cpu, (uint16_t)(0u - cpu->accumulator));
         Write16Long(memory, BATTLE_RECORD_F462, cpu->accumulator);
         PullAccumulator16(memory, cpu);

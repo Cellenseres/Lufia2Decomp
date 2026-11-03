@@ -312,8 +312,8 @@ static void BattleEntry(const Lufia2Memory *memory, Lufia2CpuState *cpu,
         if (kind == 1u) {                                      /* * 24 */
             PushAccumulator16(memory, cpu);
             AslA16(cpu);
-            Add16Value(cpu, (uint16_t)(Read8(memory, (uint16_t)(cpu->stack + 1u)) |
-                (Read8(memory, (uint16_t)(cpu->stack + 2u)) << 8)));
+            Add16Value(cpu, Read16Pair(memory,
+                (uint16_t)(cpu->stack + 1u), (uint16_t)(cpu->stack + 2u)));
             TransferAToX(cpu);
             PullAccumulator16(memory, cpu);
         } else {

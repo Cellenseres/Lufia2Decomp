@@ -77,8 +77,7 @@ static void Put16(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
 static uint16_t Get16(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     const uint32_t at = DirectLongIndirectY(memory, cpu, 0xb2u);
 
-    return (uint16_t)(Read8(memory, at) |
-        (Read8(memory, (at + 1u) & 0x00ffffffu) << 8));
+    return Read16Long(memory, at);
 }
 
 /* Copy words from $96:X to [$B2] + Y until Y reaches end. */

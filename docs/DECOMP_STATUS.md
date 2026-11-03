@@ -1,3 +1,21 @@
+# Ordered party and battle word reads — 2026-11-03
+
+Six existing word-read expressions now use the established ordered helpers.
+They cover character initialization, spell-entry indexing, script locals,
+battler masks and backward-jump accumulation. Stack addresses still wrap in
+16 bits; long-pointer reads still wrap in 24 bits. Mask writes retain their
+original high-byte-first order. This removes C's unspecified operand order;
+it adds no function, algorithm, binding, hook or timing optimization.
+
+MSVC and Clang each pass 11,264 original-ROM instruction comparisons at eleven
+sites, including 5,632 cases with reactive bus callbacks. Checks cover CPU,
+full WRAM, ordered reads/writes, address wrapping and supported decimal modes.
+Stack ADC cases retain the existing binary-mode contract. An intentionally
+reversed callback order fails. The complete character-initialization parent
+also passes 2,048 ROM cases. The isolated consumer Windows Release build passes.
+Unchanged parent logic and consumer admission remain outside this narrow fix;
+no new full-suite or performance result is claimed. Proofs remain private.
+
 # Effect slot-start continuation checkpoint — 2026-11-03
 
 The existing effect engine shares `EffectBeginSlot` between its complete caller
