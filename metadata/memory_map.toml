@@ -4819,21 +4819,21 @@ address = "7E:09C0"
 name = "unk_7E09C0"
 width = 1
 owner = "title"
-notes = "Original title selection work field; meaning remains neutral."
+notes = "Saved cursor row:82:F46C copies14EB,X here;82:F481 restores it."
 
 [[location]]
 address = "7E:09C1"
 name = "unk_7E09C1"
 width = 1
 owner = "title"
-notes = "Original title selection work field; meaning remains neutral."
+notes = "Saved cursor column:82:F46C copies14D9,X here;82:F481 restores it."
 
 [[location]]
 address = "7E:09C2"
 name = "unk_7E09C2"
 width = 2
 owner = "title"
-notes = "Original title selection work field; meaning remains neutral."
+notes = "Saved cursor slot word:82:F46C storesX before subtracting the five-slot base;82:F481 reloads it."
 
 [[location]]
 address = "7E:11DF"

@@ -1,3 +1,31 @@
+# Original post-return leaf batch — 2026-11-03
+
+Three previously missing original bodies are reconstructed:
+- `$82:F46C..F480`: save the cursor slot, column and row before subtracting the
+  five-slot cursor base; preserve X wrapping and live data-bank addressing.
+- `$82:F6BC..F6D3`: clear seven base-stat words at record offsets `$37..43`,
+  reusing the existing exact record-clear operation with an M0X0 contract.
+- `$85:EB5F..EB90`: store and compare the direct-page scratch byte, followed by
+  the original repeated immediate comparisons. X changes, but the comparisons
+  remain unindexed. The apparent unfinished logic is deliberately preserved.
+
+Strict MSVC/Clang C11 each pass 12,288 original-ROM differential cases and nine
+no-access guards. Every scratch-byte return path is covered, including delayed
+matches, both sentinel outcomes and full misses through read-only/WRAM-port
+states. CPU/full WRAM, ordered data and port-address state match the interpreter.
+
+Consumer MSVC/Clang each pass 12,288 timed cases and 155 refusals, including
+paired/unpaired RTS and RTL, unknown/mismatched returns and cleared return
+frames. Backup timing retains separate page-cross costs. The interpreter's
+indexed-word-store clocks are retained; the 59-cycle bound fits the existing
+512-master-clock quiet-span reservation. No original waits or MMIO are removed.
+
+Forty-three actual generated/linked caller pairs preserve complete CPU/WRAM,
+hardware and clocks. Accepted paths reduce raw interpreted opcodes13/11/8 to2.
+Three 5,000-call samples per entry, with detail profiling off, improve medians
+63.335->45.762ms,63.727->51.283ms and46.989->39.093ms respectively. Ordinary
+original caller frequency remains unproven; these are scoped caller costs.
+
 # Fixed cursor-pair preset — 2026-11-03
 
 `Lufia2MenuCreateFixedCursorPair` reconstructs the previously missing twenty-byte
@@ -13101,7 +13129,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2295 functions in `metadata/functions.toml`: 2295 verified, 0 draft, 0 identified, 0 disabled.
+2298 functions in `metadata/functions.toml`: 2298 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).

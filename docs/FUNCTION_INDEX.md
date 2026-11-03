@@ -1002,6 +1002,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F3DD` | `Lufia2SaveUnhighlightPortraits` | verified | `src/menu/save_menu_portraits.c` |
 | `$82:F3FC` | `Lufia2SaveHighlightSlotPortraits` | verified | `src/menu/save_menu_portraits.c` |
 | `$82:F427` | `Lufia2SaveDrawPortraitLevels` | verified | `src/menu/save_menu_portraits.c` |
+| `$82:F46C` | `Lufia2SaveBackupMenuSelection` | verified | `src/menu/save_menu_build.c` |
 | `$82:F481` | `Lufia2SaveRestoreMenuSelection` | verified | `src/menu/save_menu_build.c` |
 | `$82:F496` | `Lufia2MenuPrepareAlternateGraphics` | verified | `src/menu/menu_record_services.c` |
 | `$82:F4D7` | `Lufia2MenuCycleNameEntrySelection` | verified | `src/menu/name_entry.c` |
@@ -1016,6 +1017,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$82:F660` | `Lufia2MenuSaveFieldBuffers` | verified | `src/menu/menu_context_services.c` |
 | `$82:F682` | `Lufia2MenuRestoreSavedFieldBuffers` | verified | `src/menu/menu_record_services.c` |
 | `$82:F6A4` | `Lufia2PartyClearSecondaryModifiers` | verified | `src/party/capsule_stat_callers.c` |
+| `$82:F6BC` | `Lufia2PartyClearBaseStats` | verified | `src/party/capsule_stat_callers.c` |
 | `$82:F6D4` | `Lufia2PartyClearPrimaryModifiers` | verified | `src/party/capsule_stat_callers.c` |
 | `$82:F6F2` | `Lufia2ItemFindEquipmentKind` | verified | `src/item/item_equipment_kind.c` |
 | `$82:F703` | `Lufia2PartySelectEquipmentSlot` | verified | `src/party/party_equipment.c` |
@@ -1863,6 +1865,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:E8E8` | `Lufia2BattleRunDissolveTransition` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAE4` | `Lufia2BattleAdvanceTransitionFrame` | verified | `src/battle/battle_transition_setup.c` |
 | `$85:EAEF` | `Lufia2BattleFadeSpecialExit` | verified | `src/battle/battle_exit.c` |
+| `$85:EB5F` | `Lufia2BattleCheckScratchByte` | verified | `src/battle/battle_exit.c` |
 | `$85:EB91` | `Lufia2BattleLoadEnemyGraphicsGroups` | verified | `src/battle/battle_enemy_graphics.c` |
 | `$85:EBE0` | `Lufia2BattleAllocateEnemyTiles` | verified | `src/battle/battle_enemy_graphics.c` |
 | `$85:EC4D` | `Lufia2BattleAllocateEnemyPalette` | verified | `src/battle/battle_enemy_graphics.c` |

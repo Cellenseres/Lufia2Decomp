@@ -193,6 +193,9 @@ Lufia2ExecutionResult Lufia2CapsuleRebuildStatBlock(
 Lufia2ExecutionResult Lufia2PartyClearSecondaryModifiers(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2PartyClearBaseStats(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2PartyClearPrimaryModifiers(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

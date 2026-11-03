@@ -6,6 +6,8 @@
 enum {
     DP_MODIFIER_RECORD = 0x2au,
     PRIMARY_MODIFIERS = 0x74u,
+    BASE_STATS = 0x37u,
+    BASE_STAT_COUNT = 7u,
     PRIMARY_MODIFIER_COUNT = 9u,
     SECONDARY_MODIFIERS = 0x86u,
     SECONDARY_MODIFIER_COUNT = 7u
@@ -27,6 +29,15 @@ Lufia2ExecutionResult Lufia2PartyClearSecondaryModifiers(
     ClearRecordModifiers(memory, cpu, SECONDARY_MODIFIERS,
         SECONDARY_MODIFIER_COUNT);
     return ExecutionReturned(0x82f6bbu);
+}
+
+Lufia2ExecutionResult Lufia2PartyClearBaseStats(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x82u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x82f6bcu);
+    ClearRecordModifiers(memory, cpu, BASE_STATS, BASE_STAT_COUNT);
+    return ExecutionReturned(0x82f6d3u);
 }
 
 Lufia2ExecutionResult Lufia2PartyClearPrimaryModifiers(

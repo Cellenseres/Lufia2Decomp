@@ -18519,3 +18519,27 @@ source = "src/menu/menu_cursor_callers.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "82:F46C"
+name = "Lufia2SaveBackupMenuSelection"
+source = "src/menu/save_menu_build.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"
+
+[[function]]
+address = "82:F6BC"
+name = "Lufia2PartyClearBaseStats"
+source = "src/party/capsule_stat_callers.c"
+entry_mx = "M0X0"
+exit_mx = "M0X0"
+status = "verified"
+
+[[function]]
+address = "85:EB5F"
+name = "Lufia2BattleCheckScratchByte"
+source = "src/battle/battle_exit.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

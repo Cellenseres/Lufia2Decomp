@@ -128,6 +128,27 @@ Lufia2ExecutionResult Lufia2SaveBuildMenuSlots(
     return ExecutionReturned(0x82f22au);
 }
 
+Lufia2ExecutionResult Lufia2SaveBackupMenuSelection(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    enum {
+        SAVED_ROW = WRAM_UNK_7E09C0,
+        SAVED_COLUMN = WRAM_UNK_7E09C1,
+        SAVED_CURSOR = WRAM_UNK_7E09C2,
+        CURSOR_SLOT_BASE = 5u
+    };
+    if (cpu->program_bank != 0x82u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x82f46cu);
+    OpWriteX(memory, cpu, OpAbs(cpu, SAVED_CURSOR), cpu->x);
+    for (unsigned step = 0u; step < CURSOR_SLOT_BASE; ++step)
+        OpDex(cpu);
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_MENU_ITEM_COLUMN));
+    OpSta(memory, cpu, OpAbs(cpu, SAVED_COLUMN));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_MENU_ITEM_ROW));
+    OpSta(memory, cpu, OpAbs(cpu, SAVED_ROW));
+    return ExecutionReturned(0x82f480u);
+}
+
 Lufia2ExecutionResult Lufia2SaveRestoreMenuSelection(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal)

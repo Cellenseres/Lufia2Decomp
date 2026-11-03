@@ -164,3 +164,39 @@ Lufia2ExecutionResult Lufia2BattleFadeSpecialExit(
         return result;
     return ExecutionReturned(0x85eb5eu);
 }
+
+Lufia2ExecutionResult Lufia2BattleCheckScratchByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    enum { CHECKED_BYTE = 0u, INDEX_LIMIT = 6u };
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x85eb5fu);
+    OpSta(memory, cpu, OpDp(cpu, CHECKED_BYTE));
+    OpLdx(cpu, 0u);
+    do {
+        OpCmp(memory, cpu, OpDp(cpu, CHECKED_BYTE));
+        if (cpu->zero) {
+            cpu->carry = 0u;
+            return ExecutionReturned(0x85eb8eu);
+        }
+        OpInx(cpu);
+        OpInx(cpu);
+        OpCpx(cpu, INDEX_LIMIT);
+    } while (!cpu->zero);
+    static const uint8_t sentinels[] = {0xffu, 0u};
+    for (unsigned pass = 0u; pass < sizeof sentinels; ++pass) {
+        OpLdx(cpu, 0u);
+        do {
+            OpCmpValue(cpu, sentinels[pass]);
+            if (cpu->zero) {
+                cpu->carry = 1u;
+                return ExecutionReturned(0x85eb90u);
+            }
+            OpInx(cpu);
+            OpInx(cpu);
+            OpCpx(cpu, INDEX_LIMIT);
+        } while (!cpu->zero);
+    }
+    cpu->carry = 1u;
+    return ExecutionReturned(0x85eb8cu);
+}
