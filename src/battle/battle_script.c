@@ -554,30 +554,42 @@ static void BattleStatOffset(
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $85:C05F: X = stat A of battler ($BE); bytes at $0E/$BC. */
-static void BattleStat(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJsrFrame(memory, cpu, return_address);
-    Push8(memory, cpu, PackStatus(cpu));                       /* C05F */
+static void ReadBattlerStat(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            uint8_t locals, uint16_t offset_return) {
+    Push8(memory, cpu, PackStatus(cpu));
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
     PushAccumulator16(memory, cpu);
     PushY(memory, cpu);
-    BattleStatOffset(memory, cpu, 0xc066u);
+    BattleStatOffset(memory, cpu, offset_return);
     LoadY16(cpu, cpu->x);
     LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu,
-        Read16Direct(memory, cpu, BATTLE_DP_LOCALS_F44E), cpu->y));
-    if (cpu->y == 0x00bcu || cpu->y == 0x000eu)
-        And16(cpu, 0x00ffu);
-    else
+        Read16Direct(memory, cpu, locals), cpu->y));
+    Compare16(cpu, cpu->y, 0x00bcu);
+    if (!cpu->zero)
         Compare16(cpu, cpu->y, 0x000eu);
+    if (cpu->zero)
+        And16(cpu, 0x00ffu);
     TransferAToX(cpu);
     cpu->y = PullIndexValue(memory, cpu);
     PullAccumulator16(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
+}
+
+static void BattleStat(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                       uint16_t return_address) {
+    SimulateJsrFrame(memory, cpu, return_address);
+    ReadBattlerStat(memory, cpu, BATTLE_DP_LOCALS_F44E, 0xc066u);
     SimulateRtsFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleReadSecondBattlerStat(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x85c07cu);
+    ReadBattlerStat(memory, cpu, BATTLE_DP_LOCALS_F450, 0xc083u);
+    return ExecutionReturned(0x85c098u);
 }
 
 /* $85:C117: mask of battlers without status bit 2. */

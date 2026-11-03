@@ -1799,6 +1799,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$85:B208` | `Lufia2BattleCircleWindow` | verified | `src/battle/battle_circle_window.c` |
 | `$85:B26D` | `Lufia2BattleCircleWidths` | verified | `src/battle/battle_circle_window.c` |
 | `$85:B452` | `Lufia2BattleScript` | verified | `src/battle/battle_script.c` |
+| `$85:C07C` | `Lufia2BattleReadSecondBattlerStat` | verified | `src/battle/battle_script.c` |
 | `$85:C168` | `Lufia2BattleResolveActorRecord` | verified | `src/battle/battle_script.c` |
 | `$85:C4F1` | `Lufia2BattleExpandActionMessage` | verified | `src/battle/battle_message_parser.c` |
 | `$85:C5B5` | `Lufia2BattleFormatResourceMessage` | verified | `src/battle/battle_message_parser.c` |

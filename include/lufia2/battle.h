@@ -180,6 +180,9 @@ Lufia2ExecutionResult Lufia2BattleGlyph(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleReadSecondBattlerStat(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $85:B452 battle script VM. */
 Lufia2ExecutionResult Lufia2BattleScript(
     const Lufia2Memory *memory,

@@ -18583,3 +18583,11 @@ source = "src/battle/battle_party_commands.c"
 entry_mx = "M1X0"
 exit_mx = "M1X0"
 status = "verified"
+
+[[function]]
+address = "85:C07C"
+name = "Lufia2BattleReadSecondBattlerStat"
+source = "src/battle/battle_script.c"
+entry_mx = "M1X0"
+exit_mx = "M1X0"
+status = "verified"

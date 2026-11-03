@@ -1,3 +1,28 @@
+# Second-battler stat reader — 2026-11-03
+
+The previously missing original `$85:C07C..C098` reader follows the second
+battler pointer at DP `$C1`. It shares the existing first-battler stat body,
+including byte fields `$0E/$BC`, full word reads and original child frames.
+This adds an original entry, not an independent new algorithm.
+
+MSVC and Clang each pass 8,448 original-ROM semantic cases plus six no-access
+guards, covering both readers and the existing first-reader JSR caller.
+Each compiler also passes 4,096 native timing cases and 26 refusal guards.
+CPU, full WRAM, ordered bus accesses and per-opcode clocks match exactly.
+
+Sixteen current generated/linked caller pairs preserve full CPU, WRAM,
+hardware and clocks. Accepted calls reduce interpreted opcodes from 28–30
+to 2; unsafe banks, DP, decimal mode, mirrors, hooks and deadlines retain
+original execution. Three 5,000-call samples with profiling off reduce the
+median constructed caller cost from 63.960 to 36.468 ms. Ordinary gameplay
+frequency remains unproven; this is not a whole-game performance claim.
+
+Matching 180 menu, 180 field and 600 boot frames preserve full state, nonempty
+PCM and native APU-idle work. Windows Release, eleven availability gates,
+six producer gates and two optional compilation modes pass. Existing semantic
+and timed cases share this checkpoint; no new full regression is claimed.
+Tests and detailed proof receipts remain local.
+
 # Staged-command consumer checkpoint — 2026-11-03
 
 The already verified `$81:D081` staged-command body now has a timed consumer
@@ -13274,7 +13299,7 @@ Generated from `metadata/functions.toml` by `scripts/metadata_index.py`; edit
 the metadata, not these counts.
 
 <!-- metadata-counts:begin (scripts/metadata_index.py) -->
-2303 functions in `metadata/functions.toml`: 2303 verified, 0 draft, 0 identified, 0 disabled.
+2304 functions in `metadata/functions.toml`: 2304 verified, 0 draft, 0 identified, 0 disabled.
 <!-- metadata-counts:end -->
 
 The complete function list is in [FUNCTION_INDEX.md](FUNCTION_INDEX.md).
