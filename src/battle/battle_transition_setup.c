@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "core/snes_registers.h"

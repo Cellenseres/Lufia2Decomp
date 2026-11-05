@@ -1,5 +1,7 @@
 /* Menu string byte code ($80:8866, $80:8878). */
 
+#include <stddef.h>
+
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "system/wram.h"
