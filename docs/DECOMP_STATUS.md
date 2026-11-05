@@ -1,3 +1,11 @@
+# Additional ROM-bank provenance review - 2026-11-05
+
+A bounded search outside the canonical code banks found five call/prologue
+byte patterns. Four belong to encoded resources; the fifth is associated
+with map scene records. No new native function, binding or verification status
+is claimed. Existing semantic code is unchanged. See
+[fragment provenance](UNREFERENCED_FRAGMENTS.md#resource-bank-provenance-review).
+
 # Scoped Windows archive replay - 2026-11-05
 
 The current semantic archive links with the existing Windows production

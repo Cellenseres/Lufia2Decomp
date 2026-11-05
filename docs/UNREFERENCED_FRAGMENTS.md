@@ -153,3 +153,33 @@ that the unused new fragment entries are admitted, measure organic button/DMA
 call frequency, or establish a game-wide performance result. Semantic boundary
 proofs and runtime replay evidence remain distinct. No hooks or source-selection
 rules changed, and the owner's Windows build directory was not used.
+
+
+## Resource-bank provenance review
+
+The next search examined 2,359,296 bytes in the 72 ROM banks outside the
+current canonical code banks. It found three byte patterns resembling long
+calls to known functions and two status/data-bank prologue patterns. These
+patterns are hypotheses, not function entries or execution evidence.
+
+The existing resource decoder places four hits inside encoded streams:
+`AB:B544` belongs to resource 104, `B5:A8B9` to resource 286,
+`A9:A545` to resource 71 and `B7:89CE` to resource 313. The actual standalone
+resource CLI successfully decodes all 680 resources while measuring their
+consumed stream lengths. No decoded data or ROM bytes were exported. Raw
+compressed tokens do not establish native instruction boundaries; this does
+not prove that every possible decoded payload is non-executable.
+
+The remaining pattern at `87:B22F` lies between the original map-2 and map-3
+record bases, `87:AF89` and `87:B3F2`. These pointers come from the eight-byte
+scene records at `87:8010`, as read by `Lufia2FieldSelectSceneRecordBase`.
+That is a data association, not a complete per-byte script classification or
+an original native caller. No new C function or binding follows from it.
+
+Two older tail hypotheses remain unresolved. `81:FD04..FFFF` contains no
+literal RTS, RTL or RTI byte, so the preceding call-shaped prefix does not
+establish an ordinary returning function. Dynamic execution is not excluded
+by that observation. The `8E:E7C0` tail includes known script data beginning
+at `8E:EA00`, referenced by the existing text engine. It must not be described
+as one padding block or one missing native function. The seven scoped fragment
+contracts above remain unchanged; no additional verification status is claimed.
