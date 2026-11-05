@@ -6,6 +6,7 @@
 #include "core/child_call.h"
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
+#include "field/actor_contact_internal.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "system/dp_scratch.h"
@@ -25,65 +26,6 @@ static void FieldEdgeTest(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_FIELD_MAP_ATTRIBUTES, cpu->x)));
     BitImmediate8(cpu, (slot == 0 || slot == 2) ? 0x10u : 0x20u);
     SimulateRtsFrame(memory, cpu);
-}
-
-/* $83:B8DF-$83:B93A: does actor X touch the leader? */
-static bool FieldTouchOverlaps(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    uint8_t hit = 0;
-
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x); /* B8DF */
-    BitImmediate8(cpu, 0x04u);
-    if (!cpu->zero)
-        return false;
-    BitImmediate8(cpu, 0x80u);
-    if (!cpu->zero)
-        return false;
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_FLAGS, cpu->x);
-    BitImmediate8(cpu, 0x14u);
-    if (!cpu->zero)
-        return false;
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_ID, cpu->x);
-    Compare8(cpu, A8(cpu), 0xfdu);
-    if (cpu->zero)
-        return false;
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
-    And8(cpu, 0x02u);
-    LsrA8(cpu);
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x); /* B901 */
-    Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
-    if (!cpu->zero) {
-        LoadA8(cpu, (uint8_t)(A8(cpu) - 2u)); /* B908 */
-        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
-        if (cpu->carry)
-            return false;
-        LoadA8(cpu, (uint8_t)(A8(cpu) + 3u)); /* B90E */
-        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
-        if (!cpu->carry)
-            return false;
-        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x); /* B915 */
-        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
-        if (cpu->zero) {
-            hit = 1;
-        } else {
-            cpu->carry = 0;
-            Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_B)));
-            Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
-            hit = cpu->zero;
-        }
-    } else {
-        LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x); /* B925 */
-        LoadA8(cpu, (uint8_t)(A8(cpu) - 2u));
-        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
-        if (cpu->carry)
-            return false;
-        LoadA8(cpu, (uint8_t)(A8(cpu) + 3u)); /* B92E */
-        cpu->carry = 0;
-        Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_B)));
-        Compare8(cpu, A8(cpu), Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
-        hit = cpu->carry;
-    }
-    return hit != 0;
 }
 
 /* $83:B8BF: actor 8..39 touching the leader; 0 = handoff. */
@@ -106,7 +48,7 @@ static uint8_t FieldTouchScanBody(const Lufia2Memory *memory, Lufia2CpuState *cp
     Write8(memory, DirectAddress(cpu, DP_SCRATCH_C), A8(cpu));
     LoadX16(cpu, 0x0008u);
     for (;;) {
-        if (FieldTouchOverlaps(memory, cpu)) {
+        if (Lufia2FieldActorOverlapsPlayer(memory, cpu)) {
             uint8_t side;
 
             StoreXDirect16(memory, cpu, 0x65u); /* B942 */

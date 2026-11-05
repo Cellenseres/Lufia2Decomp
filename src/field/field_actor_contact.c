@@ -1,5 +1,6 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "field/actor_contact_internal.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
 
@@ -26,26 +27,23 @@ static Lufia2ExecutionResult ContactUnwound(uint32_t site) {
     return result;
 }
 
-static uint8_t ContactActorAvailable(const Lufia2Memory *memory,
+bool Lufia2FieldActorOverlapsPlayer(const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
     OpBitValue(cpu, 4u);
     if (!cpu->zero)
-        return 0u;
+        return false;
     OpBitValue(cpu, 0x80u);
     if (!cpu->zero)
-        return 0u;
+        return false;
     OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FLAGS));
     OpBitValue(cpu, 0x14u);
     if (!cpu->zero)
-        return 0u;
+        return false;
     OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_ID));
     OpCmpValue(cpu, 0xfdu);
-    return !cpu->zero;
-}
-
-static uint8_t ContactActorOverlaps(const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+    if (cpu->zero)
+        return false;
     OpLda(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE216));
     OpAndValue(cpu, 2u);
     OpLsrA(cpu);
@@ -57,17 +55,17 @@ static uint8_t ContactActorOverlaps(const Lufia2Memory *memory,
         OpDecA(cpu);
         OpCmp(memory, cpu, OpDp(cpu, DP_CONTACT_Y));
         if (cpu->carry)
-            return 0u;
+            return false;
         OpIncA(cpu);
         OpIncA(cpu);
         OpIncA(cpu);
         OpCmp(memory, cpu, OpDp(cpu, DP_CONTACT_Y));
         if (!cpu->carry)
-            return 0u;
+            return false;
         OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_X));
         OpCmp(memory, cpu, OpDp(cpu, DP_CONTACT_X));
         if (cpu->zero)
-            return 1u;
+            return true;
         cpu->carry = 0u;
         OpAdcValue(cpu, Read8(memory, DirectAddress(cpu, DP_CONTACT_WIDTH)));
         OpCmp(memory, cpu, OpDp(cpu, DP_CONTACT_X));
@@ -78,7 +76,7 @@ static uint8_t ContactActorOverlaps(const Lufia2Memory *memory,
     OpDecA(cpu);
     OpCmp(memory, cpu, OpDp(cpu, DP_CONTACT_X));
     if (cpu->carry)
-        return 0u;
+        return false;
     OpIncA(cpu);
     OpIncA(cpu);
     OpIncA(cpu);
@@ -190,7 +188,7 @@ Lufia2ExecutionResult Lufia2FieldProbeActorContact(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpDp(cpu, DP_CONTACT_HEIGHT));
     LoadX16(cpu, ACTOR_FIRST_CONTACT_SLOT);
     do {
-        if (ContactActorAvailable(memory, cpu) && ContactActorOverlaps(memory, cpu)) {
+        if (Lufia2FieldActorOverlapsPlayer(memory, cpu)) {
             Write16Direct(memory, cpu, DP_CONTACT_ACTOR, cpu->x);
             uint8_t blocked = 0u;
             if (ContactProbeDirection(memory, cpu)) {

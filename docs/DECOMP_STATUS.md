@@ -1,3 +1,20 @@
+# Shared actor contact geometry - 2026-11-05
+
+The original `83:B8DF` overlap test now has one private semantic body shared
+by legacy trigger scanning and the complete actor-contact routine. The duplicate
+implementation is removed. Existing entry guards, child calls, guest stack and
+return boundaries are unchanged; no public API, binding or original algorithm
+is added.
+
+MSVC and Clang each pass 65,536 original-fragment comparisons, including 32,768
+binary states also compared with the previous legacy body. CPU, full WRAM and
+ordered data accesses match. An independent in-memory opcode mutation fails.
+Actual producer objects preserve full state, extended APU clocks, PCM, native
+idle counts, raw contexts and final picture in field and cave replays. The cave
+exercises 12,710 calls from the complete contact routine; legacy calls are zero
+in these scenes. The two modules contain 1,600 fewer COFF code bytes. Controlled
+same-core timings vary both ways, so no runtime speedup or console FPS is claimed.
+
 # Display-transition poll boundaries - 2026-11-04
 
 The three original LDA/branch waits at `83:85AF`, `8E:B2BD` and `8E:B2E6`
