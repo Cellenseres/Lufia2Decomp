@@ -1,3 +1,10 @@
+# Unrooted record direction family - 2026-11-05
+
+Four bank85 entry variants now share one reconstructed direction algorithm.
+Scoped original-ROM verification passes386048 cases per MSVC/Clang,36 guards
+and two altered-ROM controls. Original callers remain unproved; no canonical
+metadata or runtime binding is invented. See UNREFERENCED_FRAGMENTS.md.
+
 # Boot NMI wait continuation - 2026-11-05
 
 The original `80:8084/8086` wait now has a ROM-verified scoped continuation,

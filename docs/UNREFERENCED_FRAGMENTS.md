@@ -183,3 +183,34 @@ by that observation. The `8E:E7C0` tail includes known script data beginning
 at `8E:EA00`, referenced by the existing text engine. It must not be described
 as one padding block or one missing native function. The seven scoped fragment
 contracts above remain unchanged; no additional verification status is claimed.
+
+## Unrooted record direction family
+
+Four original entry variants at `85:FCD2`, `85:FCEA`, `85:FD00` and `85:FD16`
+share the direction body at `85:FD2A..FE23`. `Lufia2LegacyResolveRecordDirection`
+reconstructs record-to-record, point-to-record, record-to-point and the selected
+mode variant. This is one additional shared algorithm, not four duplicated
+algorithms. Original incoming callers and gameplay purpose remain unresolved;
+no canonical metadata entries or runtime bindings are added.
+
+The scoped contract is PB85, DB7F, M1X0, DP zero, binary arithmetic and stack
+`1F04..1FF8`. Four entry PCs are accepted. The returned boundary is the original
+RTS at `85:FE23`, before executing that return. Saved X/Y, stack writes, the
+accumulator high byte, scratch deltas, index output and table reads are retained.
+The original direction compares the subtraction's N flag, not a corrected
+signed or magnitude comparison. Its destructive absolute-value scratch writes
+and mode-specific tie behavior remain literal. This layer supplies no timing.
+
+MSVC and Clang each pass 386,048 original-ROM comparisons: all 65,536 delta
+pairs with rotating modes for each entry, plus all 256 mode bytes against an
+11-by-11 matrix of extreme deltas. Full CPU, WRAM and ordered data accesses
+agree, including saved-register accesses and varied status/high accumulator.
+Each compiler also passes 36 no-access guards; two altered-ROM controls detect
+branch/output-operand changes. Those tests validate the stated entry contract,
+not organic execution, native admission or game-wide performance.
+
+Strict current Windows, GCC and Clang standalone library builds pass; both
+Unix archives export the new scoped API once. C++17 header and metadata checks
+pass. The CLI binaries remain byte-identical, so the earlier resource CLI
+checks are reused. No consumer hooks, admission, clocks or batching changed.
+Unrelated full regression was deferred at this shared checkpoint.
