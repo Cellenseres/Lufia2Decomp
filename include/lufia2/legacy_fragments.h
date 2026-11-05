@@ -25,6 +25,13 @@ Lufia2ExecutionResult Lufia2BattleBuildLegacyPopup(
 Lufia2ExecutionResult Lufia2WorldClearLegacyBackground(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldSpawnLegacyHeaderActor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2BattleSaveLegacyWorkArea(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2LegacyLoadRecordValue(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

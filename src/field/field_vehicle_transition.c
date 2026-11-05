@@ -1,6 +1,7 @@
 #include "field/vehicle_transition_internal.h"
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "lufia2/legacy_fragments.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
@@ -197,4 +198,16 @@ Lufia2ExecutionResult Lufia2FieldSpawnHeaderActor(
             0x83c45bu, 0x83ab4fu, &result))
         return result;
     return ExecutionReturned(0x83c45fu);
+}
+
+Lufia2ExecutionResult Lufia2FieldSpawnLegacyHeaderActor(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x83c442u);
+    ExchangeAccumulatorBytes(cpu);
+    OpLoadA(cpu, 0x0au);
+    ExchangeAccumulatorBytes(cpu);
+    return Lufia2FieldSpawnHeaderActor(memory, cpu, child, context);
 }

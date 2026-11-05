@@ -1,3 +1,10 @@
+# Header-actor and work-area prefixes - 2026-11-05
+
+Original83:C442 and85:969C now share existingC446/96A2 algorithms while
+preserving their register/read prefixes. PerMSVC/Clang:1024actor+192unwind
+and4096work-area ROM cases,12guards and4controls PASS. Incomingcallersunproved;
+no canonicalmetadata/bindings ornewalgorithmcount. See UNREFERENCED_FRAGMENTS.md.
+
 # Conditional actor-state fragment - 2026-11-05
 
 Original83:DB3A now has scoped conditional state-clearing/index-advance C,

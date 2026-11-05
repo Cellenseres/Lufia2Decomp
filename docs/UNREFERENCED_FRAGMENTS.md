@@ -1,3 +1,40 @@
+## Unrooted header-actor and work-area prefixes
+
+`Lufia2FieldSpawnLegacyHeaderActor` reconstructs the `83:C442` prefix and
+shares the existing `83:C446` header-actor body through its `83:C45F` RTS.
+The original XBA/load/XBA sequence sets accumulator high byte `0A` while
+retaining its low byte. It keeps the original header search, actor setup and
+sprite update at call sites C449/C454/C45B. PB83, M1X0, DP0, binary mode and
+a nonnull child callback are required; DB retains the caller's value.
+Unsupported contexts hand off before modifying registers or memory.
+
+`Lufia2BattleSaveLegacyWorkArea` reconstructs `85:969C..96AF`. Its two
+bank-relative loads at offsets 1262/1263 precede the existing 192-step work-area
+copy. Those reads remain ordered and visible even though their register values
+are overwritten. Both accumulator widths are supported. The original M0
+copy performs overlapping word writes as the word index decreases by one.
+PB85 and X0 are required. X1 changes the original immediate-instruction
+boundary and is rejected. DB, DP, decimal mode and stack are preserved.
+
+At one shared checkpoint each MSVC/Clang passes 1,024 original-ROM actor cases
+(512 existing C446 and 512 new C442), eight no-access guards, 192 child-unwind
+boundary cases and two altered-ROM controls. The normal cases execute the
+original children without stubs, including 6,144 recursive child returns and
+comparison of every top-level child input. Each compiler also passes 4,096
+original-ROM work-area cases (2,048 existing 96A2 and 2,048 new 969C), four
+guards and two controls. That matrix covers all data banks, both M widths and
+all carry/overflow pairs. CPU, full WRAM and ordered data accesses match.
+
+The strict Windows/GCC/Clang libraries, C++ headers, actual archive exports,
+metadata and catalogue checks pass together. Resource CLI binaries remain
+identical; prior CLI behavior proof is reused. Full unrelated regression and
+game builds are deferred because consumer integration did not change.
+
+Both are additional original entry variants sharing existing algorithms.
+Neither incoming original caller is established. No canonical metadata or
+runtime binding is invented; callback proofs are not production admission or
+performance proofs. The tests remain private in the consumer repository.
+
 ## Unrooted conditional actor-state branch
 
 `Lufia2ActorContinueLegacyWindowBranch` reconstructs `83:DB3A..DB53`.

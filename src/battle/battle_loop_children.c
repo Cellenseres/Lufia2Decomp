@@ -1,4 +1,5 @@
 #include "battle/battle_internal.h"
+#include "lufia2/legacy_fragments.h"
 
 enum { PARTY_RECORD_STATUS = 0x0f, PARTY_RECORD_BLOCKED = 0x34 };
 
@@ -73,6 +74,16 @@ Lufia2ExecutionResult Lufia2BattleSaveWorkArea(
         OpDex(cpu);
     } while (!cpu->negative);
     return ExecutionReturned(0x8596afu);
+}
+
+Lufia2ExecutionResult Lufia2BattleSaveLegacyWorkArea(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x85969cu);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_PALETTE_FADE + 1u));
+    return Lufia2BattleSaveWorkArea(memory, cpu);
 }
 
 Lufia2ExecutionResult Lufia2BattleRestoreWorkArea(
