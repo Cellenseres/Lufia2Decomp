@@ -1,3 +1,10 @@
+# Popup and background-clear fragments - 2026-11-05
+
+Original81:C467 kind0F reuses the existing popup builder;86:C5F4 clears its
+bank-relative background field. Shared batch perMSVC/Clang:8704popup and
+16384clear cases,12guards and4altered-ROM controls PASS. Incoming callers
+unproved;no canonical metadata or bindings. See UNREFERENCED_FRAGMENTS.md.
+
 # Alternate battle frame fragment - 2026-11-05
 
 Original81:E40A selects tile10F6 and shares the existing E405 frame algorithm.

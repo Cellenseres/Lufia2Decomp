@@ -1,3 +1,36 @@
+## Unrooted popup and background-clear fragments
+
+`Lufia2BattleBuildLegacyPopup` reconstructs `81:C467..C476`. It sets popup
+kind `0F`, then calls the existing popup builder through the original `C473`
+JSR frame. The inherited kind behavior is preserved, including the absence
+of the digit/glyph write used by other kinds. The algorithm is shared with
+`Lufia2BattleBuildPopupRecord`; this is an additional entry variant.
+Its scoped contract is PB81/DB7E, M1X0, DP0, binary arithmetic and stack
+1F00..1FFC. Unsupported contexts hand off without access.
+
+`Lufia2WorldClearLegacyBackground` reconstructs `86:C5F4..C5F7`: the original
+absolute `STZ` at offset `11E1`, followed by the RTS boundary. Both accumulator
+and index widths are accepted. The data bank controls the destination, and
+M controls its write width. DP, decimal mode, stack, registers and flags are
+preserved; no entry frame is invented. Its guards reject a different program
+bank or invalid width flags. This is a small original leaf, not a new subsystem.
+
+At one shared checkpoint each MSVC/Clang passes 8,704 original-ROM popup cases
+(4,352 existing-builder plus 4,352 new-entry cases), nine no-access guards and
+two altered-ROM controls; and 16,384 clear-leaf cases, three guards and two
+controls. The clear matrix covers every data bank, both M/X widths and all
+sixteen carry/zero/negative/overflow combinations. CPU, complete WRAM and
+ordered data accesses match. Popup children execute without stubs.
+
+Neither original incoming caller is established. No canonical function
+metadata or runtime binding is added. Scoped fragment evidence does not
+establish organic reachability, hardware timing or improved performance.
+Tests remain private in the consumer. The combined sources pass strict
+Windows/GCC/Clang library, C++ header, actual archive-export and metadata checks.
+The CLI binaries remain byte-identical; prior CLI behavior proof is reused.
+Full unrelated regression, game builds and consumer admission/cost tests are
+deferred because consumer integration did not change.
+
 ## Unrooted alternate battle frame
 
 `Lufia2BattleDrawLegacyTileFrame` reconstructs original `81:E40A` through

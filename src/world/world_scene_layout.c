@@ -1,5 +1,6 @@
 #include "core/snes_registers.h"
 #include "lufia2/world_map.h"
+#include "lufia2/legacy_fragments.h"
 #include "system/wram.h"
 #include "world/world_scene_resources_internal.h"
 #include "world/world_scene_internal.h"
@@ -129,6 +130,15 @@ Lufia2ExecutionResult Lufia2WorldMapPrepareSceneWindowTables(const Lufia2Memory 
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_BACKGROUND_ID));
     return ExecutionReturned(0x86c5f3u);
+}
+
+Lufia2ExecutionResult Lufia2WorldClearLegacyBackground(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x86u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x86c5f4u);
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_BACKGROUND_ID));
+    return ExecutionReturned(0x86c5f7u);
 }
 
 static uint32_t ScenePaletteColor(const Lufia2CpuState *cpu, uint8_t offset) {

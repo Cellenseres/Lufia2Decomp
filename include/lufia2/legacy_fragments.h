@@ -19,6 +19,12 @@ Lufia2ExecutionResult Lufia2FieldLegacyComputeRecordOffset(
 Lufia2ExecutionResult Lufia2BattleDrawLegacyTileFrame(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleBuildLegacyPopup(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2WorldClearLegacyBackground(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2LegacyLoadRecordValue(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

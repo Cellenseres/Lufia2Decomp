@@ -3,6 +3,7 @@
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "lufia2/legacy_fragments.h"
 #include "battle/sprite_render_internal.h"
 #include "system/wram.h"
 
@@ -395,4 +396,17 @@ Lufia2ExecutionResult Lufia2BattleBuildPopupRecord(const Lufia2Memory *memory,
         return ExecutionHandoff(cpu, 0x81c477u);
     BuildPopup(memory, cpu);
     return ExecutionReturned(0x81c585u);
+}
+
+Lufia2ExecutionResult Lufia2BattleBuildLegacyPopup(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu) {
+    if (!PopupRecordContext(cpu) || cpu->accumulator_is_8_bit != 1u)
+        return ExecutionHandoff(cpu, 0x81c467u);
+    LoadA8(cpu, 0x0fu);
+    StoreADirect8(memory, cpu, 0x13u);
+    SetAccumulatorWidth(cpu, 1);
+    SimulateJsrFrame(memory, cpu, 0xc475u);
+    BuildPopup(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    return ExecutionReturned(0x81c476u);
 }
