@@ -1,3 +1,12 @@
+# Unrooted selection controller - 2026-11-05
+
+The original85:FAB6..FBC0 selection/action/wait body now has shared scoped C,
+including its85:FB2A/FBB6 continuations. Per MSVC/Clang:40517 cases,43 no-access
+guards and four altered-ROM controls pass. All ten original child-input frames
+and wait exhaustion/resumption are checked. Unknown children/callers remain
+unproved;no canonical metadata or runtime binding is added. See
+[selection contract](UNREFERENCED_FRAGMENTS.md#unrooted-selection-controller).
+
 # Unrooted record math and probes - 2026-11-05
 
 Five original leaves and two parents with explicit unknown-child services

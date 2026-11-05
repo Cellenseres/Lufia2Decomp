@@ -569,6 +569,7 @@ add_library(lufia2_decomp STATIC
     src/system/boot.c
     src/system/legacy_direction.c
     src/system/legacy_record_math.c
+    src/system/legacy_selection.c
     src/system/screen.c
     src/system/sound.c
     src/text/alternate_display.c

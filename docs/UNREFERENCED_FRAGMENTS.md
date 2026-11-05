@@ -275,3 +275,52 @@ so their previous checks are reused. No hooks, waits, source selection or clocks
 changed in the consumer. Full unrelated regression is deferred. No runtime
 admission, organic frequency, performance improvement or game-wide completion
 is claimed for these unrooted routines.
+
+## Unrooted selection controller
+
+`Lufia2LegacyRunSelection` reconstructs `85:FAB6..FBC0` as selection setup,
+record/action branches and an interrupt-counter wait. It accepts four scoped
+PCs: the prepared entry hypotheses `85:FAB6`/`85:FAC8`, the common phase at
+`85:FB2A`, and the wait continuation at `85:FBB6`. Entry requires PB85, DB7F,
+M1X0, DP zero, binary arithmetic and stack `1F04..1FF8`. The original incoming
+caller remains unproved. No canonical function metadata or binding is added.
+
+The implementation shares the common refresh, action and finish phases.
+Original TSB behavior, byte/word stores, the long-address shared byte, TDC's
+full accumulator result, record selection and all ten child frames remain
+explicit. The JSR at `85:FB9C` targets `85:81CF`; it does not dispatch through
+the neighboring `85:FBC1` table. That table has eleven nominal words, but its
+selector bounds and caller are not established. No handler adapters or guessed
+table dispatch were introduced. Data-associated child targets are not repaired
+into more plausible functions, and the original `82:D037` BRK target remains.
+
+Unknown children are explicit callback boundaries. Nonlocal exits preserve
+the real child-input frame and CPU state. Compatible returns run the original
+suffix; changed bank or M/X state hands off at the exact return continuation.
+Controlled test services verify these parent contracts and do not claim to
+reconstruct the original child routines or establish organic execution.
+
+After incrementing DP `5E`, the original controller repeatedly loads it until
+zero. The C keeps those reads and exposes the load/branch checkpoints at
+`85:FBB6` and `85:FBB8`. After 4,096 unsuccessful reads it hands off at
+`85:FBB6` without finishing the operation. Resuming repeats the original wait;
+it does not increment the counter again. No wait is removed or fast-forwarded.
+These are portable semantics, not guest clock or NMI scheduler integration.
+
+MSVC and Clang each pass 40,517 CPU/full-WRAM/ordered-access cases: 32,768
+entry states, 1,920 unwind scenarios, 5,760 changed-context scenarios
+and 69 wait-boundary cases. The scenarios force 1,348 actual unwinds and
+4,044 actual incompatible returns; others verify an unreached child is untouched. Every original child site has executed, unwound
+and rejected an incompatible return context. Original JSR/JSL frame inputs
+and actual RTS/RTL returns are compared independently. Wait checkpoints compare
+CPU state and data-access position, including explicit parent-counter wrap,
+selected release edges from read 1 to 4,097, exhaustion at 4,096 and a second
+continuation call. Three added targeted wrap cases leave the existing main
+proof unchanged; no full repeat was needed. Forty-three
+no-access guards and four altered-ROM controls pass per compiler.
+
+Strict Windows/GCC/Clang library builds, actual Unix archive exports, C++17
+header and metadata checks pass. Resource CLI binaries remain byte-identical;
+the earlier CLI checks are reused. No consumer hooks, clocks, admission or
+batching rules changed. Unrelated full regression is deferred. This adds one
+shared control-flow body, not four canonical functions or a runtime speed claim.
