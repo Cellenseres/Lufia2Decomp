@@ -1655,7 +1655,8 @@ static void BattleOpShowPopups(
 }
 
 static void BattleOpSetResultFlag(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu, bool only_normal) {
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint16_t flags, bool only_normal) {
     SetAccumulatorWidth(cpu, 0);
     if (only_normal) {
         LoadA16(cpu, Read16Long(memory, BATTLE_RECORD_F45A));
@@ -1663,9 +1664,19 @@ static void BattleOpSetResultFlag(
         if (!cpu->zero)
             return;
     }
-    LoadA16(cpu, only_normal ? 2u : 4u);
+    LoadA16(cpu, flags);
     Or16(cpu, Read16Long(memory, BATTLE_SCRIPT_RESULT_FLAGS));
     Write16Long(memory, BATTLE_SCRIPT_RESULT_FLAGS, cpu->accumulator);
+}
+
+Lufia2ExecutionResult Lufia2BattleSetLegacyResultFlag(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x85bea6u);
+
+    BattleOpSetResultFlag(memory, cpu, 0x20u, true);
+    return ExecutionHandoff(cpu, 0x85b45eu);
 }
 
 static void BattleOpQueueAction(
@@ -2796,7 +2807,9 @@ Lufia2ExecutionResult Lufia2BattleScriptWithChildren(
             break;
         case BATTLE_OP_NORMAL_RESULT_FLAG:
         case BATTLE_OP_RESULT_FLAG:
-            BattleOpSetResultFlag(memory, cpu, handler == BATTLE_OP_NORMAL_RESULT_FLAG);
+            BattleOpSetResultFlag(memory, cpu,
+                handler == BATTLE_OP_NORMAL_RESULT_FLAG ? 2u : 4u,
+                handler == BATTLE_OP_NORMAL_RESULT_FLAG);
             break;
         case BATTLE_OP_ACTION_9:
         case BATTLE_OP_ACTION_25:

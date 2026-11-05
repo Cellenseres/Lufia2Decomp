@@ -84,6 +84,9 @@ Lufia2ExecutionResult Lufia2ActorContinueLegacyWindowBranch(
 Lufia2ExecutionResult Lufia2FieldTakeLegacyHighButtons(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleSetLegacyResultFlag(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2BattleConfigureLegacyLayerColorDma(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
