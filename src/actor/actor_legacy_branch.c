@@ -14,6 +14,19 @@ static bool LegacyCollisionContext(const Lufia2CpuState *cpu) {
         !cpu->index_is_8_bit && !cpu->direct_page && !cpu->decimal;
 }
 
+Lufia2ExecutionResult Lufia2ObjectStoreLegacySlotValue(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x83f192u);
+
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+    OpLda(memory, cpu, OpAbsY(cpu, 0u));
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FD9CC));
+    OpIny(cpu);
+    return ExecutionHandoff(cpu, 0x83e10fu);
+}
+
 Lufia2ExecutionResult Lufia2ActorContinueLegacyWindowBranch(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit != 1u ||
