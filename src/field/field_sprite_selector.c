@@ -1,6 +1,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/field.h"
+#include "lufia2/legacy_fragments.h"
 #include "system/wram.h"
 
 enum {
@@ -33,6 +34,15 @@ static uint8_t SpriteSelectionCall(
         0x8e0000u | site, target, frame, 0x8eu);
 }
 
+/* Expand locally to preserve existing entry code. */
+#define TAKE_SELECTION_BUTTONS(joypad_byte) do { \
+    OpAndValue(cpu, OpReadM(memory, cpu, \
+        OpDp(cpu, (uint8_t)(HELD_BUTTONS + (joypad_byte))))); \
+    if (!cpu->zero) \
+        OpTestBits(memory, cpu, \
+            OpDp(cpu, (uint8_t)(PRESSED_BUTTONS + (joypad_byte))), 0u); \
+} while (0)
+
 Lufia2ExecutionResult Lufia2FieldTakeSpriteSelectionButtons(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -40,11 +50,19 @@ Lufia2ExecutionResult Lufia2FieldTakeSpriteSelectionButtons(
     (void)context;
     if (!SpriteSelectionReady(cpu))
         return ExecutionHandoff(cpu, 0x8ebba8u);
-    OpAndValue(cpu, OpReadM(memory, cpu, OpDp(cpu, HELD_BUTTONS)));
-    if (!cpu->zero)
-        OpTestBits(memory, cpu, OpDp(cpu, PRESSED_BUTTONS), 0u);
+    TAKE_SELECTION_BUTTONS(0u);
     return ExecutionReturned(0x8ebbaeu);
 }
+
+Lufia2ExecutionResult Lufia2FieldTakeLegacyHighButtons(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!SpriteSelectionReady(cpu))
+        return ExecutionHandoff(cpu, 0x8ebba1u);
+    TAKE_SELECTION_BUTTONS(1u);
+    return ExecutionReturned(0x8ebba7u);
+}
+
+#undef TAKE_SELECTION_BUTTONS
 
 static uint32_t ReloadSelectedSprite(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

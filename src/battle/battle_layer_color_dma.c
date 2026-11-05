@@ -2,6 +2,7 @@
 #include "system/wram.h"
 #include "core/snes_registers.h"
 #include "lufia2/battle.h"
+#include "lufia2/legacy_fragments.h"
 
 enum {
     DP_REQUESTED_HDMA_CHANNELS = 0xdau,
@@ -52,4 +53,19 @@ Lufia2ExecutionResult Lufia2BattleConfigureLayerColorDma(
     LoadA8(cpu, LAYER_COLOR_CHANNEL_MASK);
     OpTestBits(memory, cpu, OpDp(cpu, DP_REQUESTED_HDMA_CHANNELS), 1u);
     return ExecutionReturned(0x85abdeu);
+}
+
+Lufia2ExecutionResult Lufia2BattleConfigureLegacyLayerColorDma(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page ||
+        cpu->stack < 0x1f04u || cpu->stack > 0x1ff8u)
+        return ExecutionHandoff(cpu, 0x85abdfu);
+    SimulateJslFrame(memory, cpu, 0x85u, 0xabe2u);
+    const Lufia2ExecutionResult result =
+        Lufia2BattleConfigureLayerColorDma(memory, cpu);
+    if (result.flow != LUFIA2_EXECUTION_RETURNED)
+        return result;
+    SimulateRtlFrame(memory, cpu);
+    return ExecutionReturned(0x85abe3u);
 }

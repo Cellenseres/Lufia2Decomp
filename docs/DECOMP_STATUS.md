@@ -1,3 +1,16 @@
+# Remaining input and DMA-call fragments - 2026-11-05
+
+Two additional unreferenced boundaries now share existing C algorithms:
+`8E:BBA1` consumes the high joypad byte and `85:ABDF` preserves an original
+JSL/RTL call to layer/color DMA setup. The original low-byte entry and DMA
+body remain shared. This adds two scoped boundaries, not two algorithms or
+native bindings. Original incoming routes remain unresolved.
+
+MSVC and Clang each pass 155,648 ROM comparisons, 18 no-access guards and
+four altered-ROM controls across both new boundaries and their existing
+canonical siblings. CPU, full WRAM, stack and ordered data/MMIO agree.
+See [fragment contracts](UNREFERENCED_FRAGMENTS.md).
+
 # Unreferenced branch continuations - 2026-11-05
 
 The equipment cursor fragment `82:B830` and secondary collision branch
