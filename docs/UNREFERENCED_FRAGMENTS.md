@@ -1,3 +1,42 @@
+## Unrooted diagnostic save-menu prefix
+
+`Lufia2FieldDiagnosticsLegacySaveMenu` reconstructs the `85:831F` entry.
+Its original JSR calls `85:84A9` with return frame `8321`, then shares the
+existing `85:8322` diagnostic save-menu body. That body calls the same clear
+routine again at `8326`. Both clears remain: identical final memory does not
+justify removing the original writes or child calls.
+
+The scoped entry accepts PB/DB85, M1, either index width, DP0, binary mode and
+a nonnull callback. The first clear restores the original X width. The existing
+parent performs the original REP10 at 8324; the prefix must not require X0
+before reaching it. A stopped child keeps its original frame and consumer
+state. Returned unsupported contexts hand off at the existing 8322 guard.
+
+Each MSVC/Clang proof compares 1,800 cases across both old/new entries and
+original/native child compositions: 1,280 returns, 512 loaded-tail transitions
+and eight exact 1,024-pass boundaries. Clear, graphics/display and save-flag
+children execute original ROM or existing native C. Buttons, frame polling and
+save services are explicitly controlled. CPU, complete WRAM, synthetic SRAM,
+ordered data/MMIO accesses and child inputs agree. No real save file is used.
+
+An additional 896 controlled callback-boundary cases check stopping before or
+after the actual clear and changed M/DB/DP/decimal/PB contexts before 8322.
+These combine the original prefix/clear with explicitly controlled external
+states; they do not claim those mutations occur in the original ROM. Eight
+no-access guards and two altered-ROM controls also pass each. Both controls
+remove the first clear's writes; the comparison rejects them even when final
+CPU and memory agree. This tests the original access contract directly.
+
+Strict Windows/GCC/Clang libraries, C++ header, actual archive export, metadata
+and catalogue checks pass together. Resource CLI binaries remain identical;
+prior CLI behavior proof is reused. Full unrelated regression and game builds
+are deferred because consumer integration did not change.
+
+This is another original entry variant sharing an existing menu algorithm.
+Its incoming caller remains unproved. No canonical metadata or runtime binding
+is invented; callback proofs are not production admission or performance proof.
+The tests remain private in the consumer repository.
+
 ## Unrooted header-actor and work-area prefixes
 
 `Lufia2FieldSpawnLegacyHeaderActor` reconstructs the `83:C442` prefix and

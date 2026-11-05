@@ -1,5 +1,6 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "lufia2/legacy_fragments.h"
 #include "core/snes_registers.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
@@ -220,6 +221,20 @@ Lufia2ExecutionResult Lufia2FieldDiagnosticsSaveMenu(const Lufia2Memory *memory,
     }
     cpu->carry = 0u;
     return ExecutionReturned(0x858414u);
+}
+
+Lufia2ExecutionResult Lufia2FieldDiagnosticsLegacySaveMenu(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x85u || cpu->data_bank != 0x85u ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit > 1u ||
+        cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x85831fu);
+    if (!CallChildWithFrame(memory, cpu, child, context,
+            0x85831fu, ROM_DIAGNOSTICS_CLEAR, 2u, 0x85u))
+        return (Lufia2ExecutionResult){
+            LUFIA2_EXECUTION_CHILD_UNWOUND, 0x85831fu, 0u};
+    return Lufia2FieldDiagnosticsSaveMenu(memory, cpu, child, context);
 }
 
 enum {

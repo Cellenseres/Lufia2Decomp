@@ -1,3 +1,10 @@
+# Diagnostic save-menu prefix - 2026-11-05
+
+Original85:831F now preserves its extra clear beforetheexisting8322 body.
+PerMSVC/Clang:1800parent ROM cases+896controlledprefix boundarycases,8guards
+and2altered-ROM controls PASS. BothXwidths andoriginaldoubleclear retained.
+No originalcaller,binding ornewalgorithmcount;see UNREFERENCED_FRAGMENTS.md.
+
 # Header-actor and work-area prefixes - 2026-11-05
 
 Original83:C442 and85:969C now share existingC446/96A2 algorithms while
