@@ -1,4 +1,5 @@
 #include "battle/battle_internal.h"
+#include "lufia2/legacy_fragments.h"
 #include "core/snes_registers.h"
 #include "system/dp_scratch.h"
 
@@ -56,6 +57,40 @@ static bool BattleDrawSubmenuTitle(BattleContext *battle) {
     }
     PullDataBank(memory, cpu);
     return true;
+}
+
+Lufia2ExecutionResult Lufia2BattleDrawLegacyEntryCount(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x81d1e0u);
+
+    OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_KIND));
+    OpCmpValue(cpu, 2u);
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpDp(cpu, SUBMENU_DP_ENTRY_COUNT));
+        OpSta(memory, cpu, SNES_WRDIVL);
+        OpLoadA(cpu, 0u);
+        OpSta(memory, cpu, SNES_WRDIVH);
+        OpLoadA(cpu, 10u);
+        OpSta(memory, cpu, SNES_WRDIVB);
+        OpLoadA(cpu, 0x20u);
+        OpSta(memory, cpu, OpAbsY(cpu, 0x41u));
+        OpSta(memory, cpu, OpAbsY(cpu, 0x43u));
+        OpLda(memory, cpu, SNES_RDDIVL);
+        if (!cpu->zero) {
+            cpu->carry = false;
+            OpAdcValue(cpu, 0x20u);
+        }
+        OpSta(memory, cpu, OpAbsY(cpu, 0x40u));
+        OpLda(memory, cpu, SNES_RDMPYL);
+        cpu->carry = false;
+        OpAdcValue(cpu, 0x20u);
+        OpSta(memory, cpu, OpAbsY(cpu, 0x42u));
+    }
+    PullDataBank(memory, cpu);
+    OpRepWidths(cpu, 0x20u);
+    return ExecutionHandoff(cpu, 0x81d21bu);
 }
 
 /* What the menu does after a pad press. */
