@@ -132,3 +132,29 @@ LEdit contains substantial research on:
 These sources can accelerate naming and hypothesis generation, but any
 German-ROM absolute address must be translated or rediscovered for the
 supported US ROM before becoming project metadata.
+
+## Terror Wave: US scene tables
+
+The [Terror Wave table list](https://github.com/abyssonym/terrorwave/blob/master/tables/tables_list.txt)
+and [map-event schema](https://github.com/abyssonym/terrorwave/blob/master/tables/struct_map_event.txt)
+describe 242 eight-byte records at PC offset `0x38010`, and 242 three-byte map
+header pointers at `0x27FCBC`. Reviewed Git blob IDs are
+`faca5ef36b81997cde42f79601157d6c4dac8c04` and
+`19964f2b650484a4f1f1da59fa2a2207100f5704`, respectively.
+The project's [README](https://github.com/abyssonym/terrorwave/blob/master/README)
+lists the same original NA-ROM MD5 as the supported headerless US ROM:
+`6efc477d6203ed2b3b9133c1cd9e9c5d`. No randomizer or patch was executed.
+
+Independent reads of the supported ROM confirm:
+
+- `87:8010` fields 0..2 give 242 distinct scene roots, from `87:AF4E` to
+  `8E:A5FA`, using the existing `83:B5AD` reader's address conversion.
+- Fields 3..5 give 242 distinct NPC-script roots, all in bank 87, from
+  `87:914E` to `87:AE3E`. `Lufia2SceneRunMapText` reads these separate fields.
+- The corresponding `CF:FCBC` header pointers select banks 91..94.
+- The first table therefore supplies no bank-86 root through either pointer
+  field in this scope; it does not explain the raw origin `86:F416`.
+
+This is a data-format cross-check, not new semantic-function verification or
+proof that all script bodies execute natively. Existing C, guards and table
+index behavior are unchanged; no new selector clamp or runtime binding follows.

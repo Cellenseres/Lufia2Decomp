@@ -1,3 +1,11 @@
+## US scene table provenance
+
+The US-ROM scene and NPC-script tables are independently cross-checked against
+external format research: 242 distinct roots in each field, with separate
+pointer layouts and the original bank conversion. See `EXTERNAL_RESEARCH.md`.
+This identifies table scope, not another semantic function or native binding.
+The raw bank-86 origin `86:F416` remains unassigned; code and guards are unchanged.
+
 ## Legacy battle condition assignment
 
 `Lufia2BattleSetLegacyCondition` reconstructs `85:BB3A` through `85:B45E`.
