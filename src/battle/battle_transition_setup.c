@@ -3,6 +3,7 @@
 #include "core/snes_registers.h"
 #include "system/wram.h"
 #include "lufia2/battle.h"
+#include <stddef.h>
 
 enum {
     TRANSITION_ENABLED = WRAM_BATTLE_EFFECT_SPECIAL_PARTY & 0xffffu,

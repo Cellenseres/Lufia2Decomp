@@ -6,6 +6,7 @@
 #include "lufia2/item.h"
 #include "lufia2/menu.h"
 #include "system/dp_scratch.h"
+#include <stddef.h>
 
 enum {
     ROM_MENU_CONTROL_TARGETS = 0x808e7cu,
