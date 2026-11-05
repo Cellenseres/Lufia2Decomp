@@ -5,6 +5,7 @@
 #include "battle/battle_internal.h"
 #include "lufia2/system.h"
 #include "lufia2/item.h"
+#include "lufia2/legacy_fragments.h"
 #include "core/child_call.h"
 #include "system/dp_scratch.h"
 #include "system/system_internal.h"
@@ -270,6 +271,25 @@ static void BattleScriptJump(
     cpu->carry = 0;
     Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, BATTLE_SCRIPT_BASE, 0));
     Write16Direct(memory, cpu, BATTLE_DP_SCRIPT_POINTER, cpu->accumulator);
+}
+
+Lufia2ExecutionResult Lufia2BattleLegacyCompareConditionByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || cpu->data_bank != 0x85u ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit != 0u ||
+        cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f08u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x85b56eu);
+
+    BattleScriptByte(memory, cpu, 0xb570u);
+    SetAccumulatorWidth(cpu, 0);
+    And16(cpu, 0x00ffu);
+    Compare16(cpu, cpu->accumulator, Read16Long(memory, BATTLE_CONDITION));
+    if (cpu->zero)
+        BattleScriptJump(memory, cpu);
+    else
+        BattleScriptWord(memory, cpu, 0xb57eu);
+    return ExecutionHandoff(cpu, 0x85b45eu);
 }
 
 /* Operand fetch shared by the compare and math opcodes. */

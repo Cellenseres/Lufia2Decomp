@@ -1,3 +1,10 @@
+# Unrooted condition-byte branch - 2026-11-05
+
+Original85:B56E now has scoped C through85:B45E,sharing existing operand readers
+and script jump. Per MSVC/Clang:77824 CPU/full-WRAM/ordered-bus cases,9 guards
+and3 altered-ROM controls PASS. Original incoming caller is unproved;no canonical
+metadata promotion or binding. See UNREFERENCED_FRAGMENTS.md for the contract.
+
 # Original code-origin provenance review - 2026-11-05
 
 No semantic or consumer code changed. A review of 22 prefixes identifies 16

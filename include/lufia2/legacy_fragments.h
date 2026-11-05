@@ -10,6 +10,9 @@ extern "C" {
 Lufia2ExecutionResult Lufia2LegacyResolveRecordDirection(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 
+Lufia2ExecutionResult Lufia2BattleLegacyCompareConditionByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2LegacyLoadRecordValue(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

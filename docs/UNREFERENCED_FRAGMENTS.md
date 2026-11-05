@@ -1,3 +1,26 @@
+## Unrooted battle condition-byte branch
+
+`Lufia2BattleLegacyCompareConditionByte` reconstructs original `85:B56E` to
+`85:B45E`. It reads one script byte, compares it with the full 16-bit battle
+condition, and either takes the existing script jump or consumes its word.
+The existing operand readers and jump tail retain their original stack frames,
+flags, pointer wrap and ordered bus accesses. No duplicate reader is added.
+
+The scoped entry requires PB/DB85, M1X0, DP0, binary arithmetic and stack
+1F08..1FFC. Unsupported contexts hand off at the original entry without access.
+MSVC and Clang each pass 77,824 original-ROM CPU/full-WRAM/ordered-bus cases,
+nine no-access guards and three altered-ROM controls. The comparison matrix
+covers all byte pairs; additional cases cover equality, cursor/base wrap and
+nonzero condition high bytes. This is boundary verification, not a canonical
+function promotion or runtime performance proof. No nominal battle opcode or
+original incoming call is established, so no consumer binding is invented.
+
+Six other apparent calls belong to IP record headers selected through original
+84:8F10 pointers: 84:9084/946B/949D/94CB/94E5/9502. Six isolated native reader
+cases reach their header bytes; controlled services stop before action execution.
+This data evidence is separate from original-ROM differential verification and
+does not prove organic selectors or rule out hypothetical overlapping code.
+
 # Unreferenced ROM fragments
 
 The three scoped boundaries have original-ROM differential evidence. They
