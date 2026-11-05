@@ -1,3 +1,12 @@
+# Scoped Windows archive replay - 2026-11-05
+
+The current semantic archive links with the existing Windows production
+host/generated objects. Three paired field replays preserve complete state,
+APU clocks, PCM, native APU idle counts, picture and recorded fallback counters
+over 1,149 frames per version. This is bounded composition evidence, not new
+unreferenced-entry admission or whole-game performance proof. See
+[fragment verification scope](UNREFERENCED_FRAGMENTS.md).
+
 # Remaining input and DMA-call fragments - 2026-11-05
 
 Two additional unreferenced boundaries now share existing C algorithms:

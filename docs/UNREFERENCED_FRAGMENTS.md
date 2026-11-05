@@ -137,3 +137,19 @@ Final strict standalone GCC/Clang library builds pass with both new symbols
 in each actual archive. Metadata and C++17 header checks pass. Unchanged CLI
 resource-format sources reuse the earlier paired CLI result. New fragment
 entry contracts remain separate from canonical-function verification status.
+
+## Bounded Windows consumer replay
+
+The current Windows archive links with the existing production host/generated
+objects. The link map resolves both canonical button and layer/color DMA
+symbols from that archive. Three paired field replays cover 1,149 frames per
+version across the accepted puzzle, shrine and castle warm states. Full saved
+state, extended APU clocks, nonempty PCM, native APU idle counts, final picture
+and recorded raw/continuation counters agree. Only a live-validated eight-byte
+host RAM pointer is normalized. Original warm inputs remain unchanged.
+
+These replays check the linked composition in those scenes. They do not prove
+that the unused new fragment entries are admitted, measure organic button/DMA
+call frequency, or establish a game-wide performance result. Semantic boundary
+proofs and runtime replay evidence remain distinct. No hooks or source-selection
+rules changed, and the owner's Windows build directory was not used.
