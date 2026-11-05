@@ -1,3 +1,17 @@
+# Unreferenced bank 83 reconstruction - 2026-11-05
+
+Three original fragments now have structured C bodies: the prepared triangle
+continuation `83:FD0B..FEC3`, the register/stack preservation stub `83:FF31`,
+and the legacy initializer `83:FF3E`. The triangle shares the existing edge
+rasterizer. The legacy JSL-to-RTS nonlocal transfer is preserved literally.
+See [boundary contracts and evidence](UNREFERENCED_FRAGMENTS.md).
+
+MSVC and Clang each pass 14,256 original-ROM comparisons, 17 no-access guards
+and four altered-ROM controls. CPU, full WRAM, ordered accesses and child
+frames agree. No original caller is proven; no metadata status, canonical
+entry, runtime binding or performance claim is added. The triangle contract
+starts with the existing saved DB/status pair, not an invented prologue.
+
 # Shared world-session continuation - 2026-11-05
 
 The complete original `86:925C` frame loop is shared with the existing session

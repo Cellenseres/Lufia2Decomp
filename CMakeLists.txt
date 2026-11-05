@@ -271,6 +271,8 @@ add_library(lufia2_decomp STATIC
     src/field/field_pending_initialization.c
     src/field/field_coordinate_math.c
     src/field/field_raster_edge.c
+    src/field/field_raster_triangle.c
+    src/field/field_legacy_fragments.c
     src/field/field_object_motion.c
     src/field/field_probe_records.c
     src/field/field_probe_collision.c
