@@ -67,6 +67,9 @@ Lufia2ExecutionResult Lufia2ActorContinueLegacyCollisionBranch(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2ActorContinueLegacyWindowBranch(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2FieldTakeLegacyHighButtons(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

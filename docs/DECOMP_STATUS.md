@@ -1,3 +1,10 @@
+# Conditional actor-state fragment - 2026-11-05
+
+Original83:DB3A now has scoped conditional state-clearing/index-advance C,
+continuing atD60D orD5C3. PerMSVC/Clang:135168 CPU/WRAM/ordered-bus cases,
+4guards and2altered-ROM controls PASS. Bothindexwidths andbank/DPedge contexts
+covered. No inventedopcode/caller/binding;see UNREFERENCED_FRAGMENTS.md.
+
 # Popup and background-clear fragments - 2026-11-05
 
 Original81:C467 kind0F reuses the existing popup builder;86:C5F4 clears its

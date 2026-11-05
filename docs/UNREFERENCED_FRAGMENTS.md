@@ -1,3 +1,33 @@
+## Unrooted conditional actor-state branch
+
+`Lufia2ActorContinueLegacyWindowBranch` reconstructs `83:DB3A..DB53`.
+It tests bit 0 of the bank-relative window mode at `09A7`. When clear,
+it loads the actor index from DP `A7`, clears bit 7 of the actor state
+at `0622 + index`, and continues at `83:D60D`. Otherwise it loads the
+script position from DP `2A`, increments that index at the original width,
+and continues at `83:D5C3`. Original reads, flags and bank carries remain.
+
+The scoped contract requires PB83 and M1, accepting both index widths.
+DB, DP, decimal mode and stack are unrestricted; they retain their original
+addressing and state. No caller frame is manufactured. Unsupported program
+banks or invalid width flags hand off at DB3A before accessing memory.
+The fragment has no child calls and one exact 26-byte region in the ROM.
+
+Each MSVC/Clang proof compares 135,168 original-ROM CPU/full-WRAM/ordered-bus
+cases: all 65,536 mode/state byte pairs for each index width, plus 4,096
+bank/direct-page/index edge samples. Input flags vary independently of the
+mode byte. Both continuation PCs, index wrap, bank carry and direct-page wrap
+are covered. Four no-access guards and two altered-ROM controls pass each.
+Strict Windows/GCC/Clang libraries, C++ header, actual archive export and
+metadata checks pass at the shared checkpoint. CLI binaries remain identical;
+prior CLI behavior proof is reused. Full unrelated regression and game builds
+are deferred because consumer integration did not change.
+
+This is additional original conditional logic, not another adapter around an
+existing actor algorithm. The original incoming caller and nominal VM opcode
+remain unproved. No canonical metadata or runtime binding is invented, and
+scoped verification establishes neither organic reachability nor performance.
+
 ## Unrooted popup and background-clear fragments
 
 `Lufia2BattleBuildLegacyPopup` reconstructs `81:C467..C476`. It sets popup

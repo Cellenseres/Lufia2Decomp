@@ -14,6 +14,25 @@ static bool LegacyCollisionContext(const Lufia2CpuState *cpu) {
         !cpu->index_is_8_bit && !cpu->direct_page && !cpu->decimal;
 }
 
+Lufia2ExecutionResult Lufia2ActorContinueLegacyWindowBranch(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x83db3au);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WINDOW_MODE));
+    OpBitValue(cpu, 1u);
+    if (cpu->zero) {
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
+        OpAndValue(cpu, 0x7fu);
+        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
+        return ExecutionHandoff(cpu, 0x83d60du);
+    }
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, LEGACY_SCRIPT_POSITION)));
+    OpInx(cpu);
+    return ExecutionHandoff(cpu, 0x83d5c3u);
+}
+
 Lufia2ExecutionResult Lufia2ActorContinueLegacyCollisionBranch(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
