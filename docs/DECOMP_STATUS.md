@@ -1,3 +1,11 @@
+# Boot NMI wait continuation - 2026-11-05
+
+The original `80:8084/8086` wait now has a ROM-verified scoped continuation,
+sharing its NMI-bank read with the full boot controller. This adds no canonical
+entry, algorithm or binding count. MSVC/Clang step, affected full boot and
+consumer timing/ownership checks pass. See
+[boot continuation scope](BOOT_CONTINUATIONS.md). Host batching remains separate.
+
 # Additional ROM-bank provenance review - 2026-11-05
 
 A bounded search outside the canonical code banks found five call/prologue

@@ -141,6 +141,25 @@ static uint8_t BootSaveMemoryResponds(const Lufia2Memory *memory, Lufia2CpuState
     return cpu->zero;
 }
 
+static bool BootNmiBankPending(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, DP_BOOT_NMI_BANK));
+    return !cpu->zero;
+}
+
+Lufia2ExecutionResult Lufia2BootNmiWaitStep(const Lufia2Memory *memory,
+                                         Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u ||
+        (entry != ROM_BOOT_NMI_WAIT && entry != ROM_BOOT_NMI_WAIT + 2u))
+        return ExecutionHandoff(cpu, entry);
+    EmitExecutionCheckpoint(memory, cpu, entry);
+    if (entry == ROM_BOOT_NMI_WAIT) {
+        (void)BootNmiBankPending(memory, cpu);
+        return ExecutionHandoff(cpu, entry + 2u);
+    }
+    return ExecutionHandoff(cpu, cpu->zero ? entry + 2u : ROM_BOOT_NMI_WAIT);
+}
+
 Lufia2ExecutionResult Lufia2RunBootSequence(const Lufia2Memory *memory,
                                             Lufia2CpuState *cpu,
                                             Lufia2PushedChildCall child,
@@ -201,8 +220,7 @@ Lufia2ExecutionResult Lufia2RunBootSequence(const Lufia2Memory *memory,
     }
     unsigned reads = 0u;
     do {
-        OpLda(memory, cpu, OpDp(cpu, DP_BOOT_NMI_BANK));
-        if (cpu->zero)
+        if (!BootNmiBankPending(memory, cpu))
             break;
         if (++reads == BOOT_WAIT_READ_BUDGET)
             return ExecutionHandoff(cpu, ROM_BOOT_NMI_WAIT);

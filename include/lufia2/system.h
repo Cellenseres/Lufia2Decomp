@@ -471,6 +471,10 @@ Lufia2ExecutionResult Lufia2RunBootSequence(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+/* Original boot NMI-bank load or branch, with checkpoints. */
+Lufia2ExecutionResult Lufia2BootNmiWaitStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
 Lufia2ExecutionResult Lufia2SineAngle(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
