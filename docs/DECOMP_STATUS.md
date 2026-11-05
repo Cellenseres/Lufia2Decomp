@@ -1,3 +1,10 @@
+# Alternate battle frame fragment - 2026-11-05
+
+Original81:E40A selects tile10F6 and shares the existing E405 frame algorithm.
+Both entries pass2248 original-ROM CPU/WRAM/ordered-bus cases perMSVC/Clang,
+8 guards and2 altered-ROM controls each. No new algorithm,canonical metadata
+or binding;original caller unproved. See UNREFERENCED_FRAGMENTS.md.
+
 # Unrooted slot-offset calculation - 2026-11-05
 
 Original80:D835..D848 now has scoped C,including original carries,scratch writes

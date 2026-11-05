@@ -1,3 +1,25 @@
+## Unrooted alternate battle frame
+
+`Lufia2BattleDrawLegacyTileFrame` reconstructs original `81:E40A` through
+its `81:E478` RTS boundary. It selects first tile `10F6`, then shares the
+existing frame algorithm with `Lufia2BattleTileFrame` at `81:E405` (tile `10F1`).
+The original bank save/restore, scratch writes, row loops and child JSR frames
+remain intact. This adds an original entry variant, not another frame algorithm.
+
+The scoped alternate entry accepts PB81, M1X0, DP0, binary arithmetic and
+stack 1F08..1FFC. DB is preserved. Unsupported contexts hand off at E40A
+without access; no incoming call frame is invented. Each MSVC/Clang proof
+compares 2,248 original-ROM CPU/full-WRAM/ordered-bus cases across both entries,
+eight no-access guards and two altered-ROM controls. Dimensions include every
+0..31 pair and the cross-product of 0/1/2/3/31/32/127/128/254/255.
+No child is stubbed. Strict Windows/GCC/Clang libraries, C++ header, actual
+archive exports and metadata checks pass. The resource CLI binaries are
+byte-identical, so their prior behavior proof is reused. Full unrelated tests
+and game builds are deferred; no consumer code changed.
+
+The original incoming caller remains unproved. No canonical metadata or
+runtime binding is added, and no gameplay or performance improvement is claimed.
+
 ## Unrooted slot-offset calculation
 
 `Lufia2FieldLegacyComputeRecordOffset` reconstructs `80:D835` through the

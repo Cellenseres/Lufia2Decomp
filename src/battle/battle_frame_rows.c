@@ -3,6 +3,7 @@
 #include "core/cpu_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
+#include "lufia2/legacy_fragments.h"
 #include "system/wram.h"
 
 enum {
@@ -363,11 +364,10 @@ static void FrameCall(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     SimulateRtsFrame(memory, cpu);
 }
 
-/* $81:E405: tile-set frame $10F1 at X + $8C0, $09F2 x $09F3. */
-Lufia2ExecutionResult Lufia2BattleTileFrame(
+static Lufia2ExecutionResult DrawTileFrame(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    LoadY16(cpu, 0x10f1u);
+    Lufia2CpuState *cpu, uint16_t first_tile) {
+    LoadY16(cpu, first_tile);
     PushDataBank(memory, cpu);
     SetBank7E(memory, cpu);
     SetAccumulatorWidth(cpu, 0);
@@ -405,6 +405,20 @@ Lufia2ExecutionResult Lufia2BattleTileFrame(
     SetAccumulatorWidth(cpu, 1);
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x81e478u);
+}
+
+Lufia2ExecutionResult Lufia2BattleTileFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return DrawTileFrame(memory, cpu, 0x10f1u);
+}
+
+Lufia2ExecutionResult Lufia2BattleDrawLegacyTileFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
+        cpu->stack < 0x1f08u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x81e40au);
+    return DrawTileFrame(memory, cpu, 0x10f6u);
 }
 
 /* $81:E3EC: inside X + $902 filled with $10F0, then $81:E405. */
