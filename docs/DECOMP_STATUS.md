@@ -1,3 +1,14 @@
+# Unreferenced branch continuations - 2026-11-05
+
+The equipment cursor fragment `82:B830` and secondary collision branch
+`83:D858` now have C bodies ending at the existing menu-close and redispatch
+boundaries. They preserve original children and share their established exits.
+MSVC and Clang each pass 13,152 ROM boundary comparisons, 17 no-access guards
+and two altered-ROM controls, including child input CPU states and bus order.
+The original incoming routes remain unresolved. No metadata status, canonical
+entry, native binding or performance claim is added. See
+[fragment contracts](UNREFERENCED_FRAGMENTS.md).
+
 # Unreferenced bank 83 reconstruction - 2026-11-05
 
 Three original fragments now have structured C bodies: the prepared triangle

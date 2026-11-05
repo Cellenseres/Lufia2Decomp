@@ -29,6 +29,7 @@ add_library(lufia2_decomp STATIC
     src/actor/actor_primary.c
     src/actor/actor_primary_scene.c
     src/actor/actor_secondary.c
+    src/actor/actor_legacy_branch.c
     src/actor/actor_state_mark.c
     src/actor/actor_slots.c
     src/actor/actor_scene_slot.c
@@ -273,6 +274,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_raster_edge.c
     src/field/field_raster_triangle.c
     src/field/field_legacy_fragments.c
+    src/menu/menu_legacy_cursor.c
     src/field/field_object_motion.c
     src/field/field_probe_records.c
     src/field/field_probe_collision.c

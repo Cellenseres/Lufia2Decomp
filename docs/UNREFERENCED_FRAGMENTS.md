@@ -1,4 +1,4 @@
-# Unreferenced bank 83 fragments
+# Unreferenced ROM fragments
 
 The three scoped boundaries have original-ROM differential evidence. They
 have no function metadata or runtime selection: their presence does not prove
@@ -70,3 +70,33 @@ The public headers also compile as C++17. Two existing missing `<stddef.h>`
 includes were corrected in transition setup and menu-string code. No shared
 semantic helper or consumer source changed, so unrelated full regression and
 runtime performance replays were deferred.
+
+## Equipment cursor and secondary collision branches
+
+`Lufia2MenuContinueLegacyEquipmentCursor` reconstructs `$82:B830..B845`.
+It selects style 5 for cursor slot 7, calls the original sprite-frame child,
+and selects style 3. The original three JSR/JSL frames and input CPU states
+are preserved. Execution hands off at `$82:B846`, before the existing common
+menu close sequence. The five known inline command targets do not enter this
+fragment; it is not a sixth inferred command or a new menu entry.
+
+`Lufia2ActorContinueLegacyCollisionBranch` reconstructs `$83:D858..D87C`.
+It reads the actor-state flags through the original DB/Y address, optionally
+calls the existing collision probe, then either advances the script position
+by three or reads its branch operand and adds `$8000`. Both paths hand off at
+`$83:D5C3`, before the existing redispatch. No script-dispatch body is copied.
+Incompatible child contexts hand off before the original continuation branch.
+
+The two branches pass 13,152 original-ROM boundary comparisons and 17 no-access
+guards with each of MSVC and Clang. This includes 12,288 regular cases, 128
+child unwinds and 736 changed-child contexts. CPU, full WRAM, ordered accesses,
+original stack frames and child input CPU states agree. Two altered-ROM
+controls per compiler fail as expected. Controlled returning child services
+test these parent contracts; they do not reverify child internals or establish
+an original caller. Neither fragment adds function metadata or a runtime hook.
+
+The shared standalone GCC/Clang library builds also pass for these two
+branches, with both symbols present in each actual archive. C++17 header
+compilation and metadata consistency checks pass. Unchanged CLI source and
+resource-format dependencies reuse the preceding paired CLI check. No full
+regression or runtime performance replay was repeated for unused fragments.
