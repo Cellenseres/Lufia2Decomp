@@ -13,6 +13,9 @@ Lufia2ExecutionResult Lufia2LegacyResolveRecordDirection(
 Lufia2ExecutionResult Lufia2BattleLegacyCompareConditionByte(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2FieldLegacyComputeRecordOffset(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2LegacyLoadRecordValue(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

@@ -253,6 +253,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_event_actors.c
     src/field/field_event_conditions.c
     src/field/field_event_objects.c
+    src/field/legacy_record_offset.c
     src/field/field_animation_queue.c
     src/field/field_item_regions.c
     src/field/field_object_rewards.c

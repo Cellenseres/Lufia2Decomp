@@ -1,3 +1,26 @@
+## Unrooted slot-offset calculation
+
+`Lufia2FieldLegacyComputeRecordOffset` reconstructs `80:D835` through the
+`80:D848` RTS boundary. It doubles the input byte, adds the indexed byte at
+`7F:D4E6`, then combines that result with scaled DP slot `A7` through scratch
+bytes `54/55`. Original carries participate in the arithmetic; the calculation
+must not be replaced by an ordinary multiplication formula. The accumulator's
+high byte and the final index width remain observable.
+
+The scoped contract accepts PB80, M1X0 or M1X1, DP0 and binary arithmetic.
+DB is unused. It invents no entry frame and returns before the original RTS.
+Other contexts hand off at D835 without memory access. Each MSVC/Clang proof
+compares 135,168 original-ROM CPU/full-WRAM/ordered-bus cases, six no-access
+guards and two altered-ROM controls. The matrices cover all input/source-byte
+pairs for both index widths, plus 4,096 wide-index samples.
+
+A bounded search after known terminal instructions identified this region.
+Its 20 bytes have no identical second ROM region. No incoming caller or
+original entry width is established; this is new scoped calculation coverage,
+without canonical function metadata or a consumer binding. It makes no runtime
+speed or gameplay-reachability claim. Existing canonical algorithms are reused
+when original copies are found; unrelated table bytes are not promoted to code.
+
 ## Unrooted battle condition-byte branch
 
 `Lufia2BattleLegacyCompareConditionByte` reconstructs original `85:B56E` to

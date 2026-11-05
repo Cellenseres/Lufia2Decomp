@@ -1,3 +1,10 @@
+# Unrooted slot-offset calculation - 2026-11-05
+
+Original80:D835..D848 now has scoped C,including original carries,scratch writes
+and both index widths. Per MSVC/Clang:135168 CPU/full-WRAM/ordered-bus cases,
+6 no-access guards and2 altered-ROM controls PASS. Original caller unproved;
+no canonical metadata or runtime binding. See UNREFERENCED_FRAGMENTS.md.
+
 # Unrooted condition-byte branch - 2026-11-05
 
 Original85:B56E now has scoped C through85:B45E,sharing existing operand readers
