@@ -93,6 +93,9 @@ Lufia2ExecutionResult Lufia2BattleDrawLegacyEntryCount(
 Lufia2ExecutionResult Lufia2ObjectStoreLegacySlotValue(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleSetLegacyCondition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2BattleConfigureLegacyLayerColorDma(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

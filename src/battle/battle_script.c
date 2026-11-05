@@ -292,6 +292,18 @@ Lufia2ExecutionResult Lufia2BattleLegacyCompareConditionByte(
     return ExecutionHandoff(cpu, 0x85b45eu);
 }
 
+Lufia2ExecutionResult Lufia2BattleSetLegacyCondition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x85bb3au);
+
+    OpRepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 2u);
+    OpSta(memory, cpu, BATTLE_CONDITION);
+    return ExecutionHandoff(cpu, 0x85b45eu);
+}
+
 /* Operand fetch shared by the compare and math opcodes. */
 static void BattleScriptOperands(
     const Lufia2Memory *memory,
