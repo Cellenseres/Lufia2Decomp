@@ -1,3 +1,19 @@
+# Shared world-session continuation - 2026-11-05
+
+The complete original `86:925C` frame loop is shared with the existing session
+entry through an optional continuation API. The loop body is unchanged. The
+continuation preserves the existing stack and every original child call; it
+does not repeat setup or invent an entry frame. PB/DB, DP, widths, binary mode,
+stack bounds and a required child service are checked before bus access.
+
+MSVC and Clang each pass 4,100 original-ROM comparisons plus nine public guard
+cases. CPU, complete WRAM, ordered data accesses, child targets and parent
+CPU/master clocks agree. Coverage includes repeated frames, four complete
+4,096-frame boundaries and the upper accepted stack edge. Children use controlled
+RTS/unwind seams; their internals and the host scheduler are separate proofs.
+An independent changed-ROM branch fails with both compilers. No new canonical
+function, algorithm, metadata promotion or wait removal is claimed.
+
 # Shared actor contact geometry - 2026-11-05
 
 The original `83:B8DF` overlap test now has one private semantic body shared

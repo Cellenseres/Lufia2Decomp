@@ -31,6 +31,13 @@ Only functions whose metadata status is `verified` are eligible for native
 selection by a consumer. Consumers independently bind an address to a bridge;
 verification without a binding is informational and never activates code.
 
+`Lufia2WorldMapContinueSession` shares the complete `86:925C` frame loop with
+the existing `86:919E` session entry. It resumes with the existing guest stack,
+without repeating initialization or pushing an invented entry frame. Its
+original child frames, nonlocal exits and bounded continuation remain intact.
+The optional `LUFIA2_WORLD_FRAME_LOOP_API` capability does not add a canonical
+ROM function or another algorithm. Consumers own scheduler admission and clocks.
+
 Function metadata keeps entry M/X widths fixed. An `exit_mx` value of
 `dynamic` means the original function restores runtime status instead of
 guaranteeing one exit width. Its documented return boundaries define the

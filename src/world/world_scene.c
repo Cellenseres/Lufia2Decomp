@@ -2143,6 +2143,15 @@ static Lufia2ExecutionResult RunWorldMapFrames(
     return ExecutionHandoff(cpu, 0x86925cu);
 }
 
+Lufia2ExecutionResult Lufia2WorldMapContinueSession(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!WorldSceneEntry(cpu) || cpu->data_bank != 0x86u || cpu->direct_page ||
+        cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu || !child)
+        return ExecutionHandoff(cpu, 0x86925cu);
+    return RunWorldMapFrames(memory, cpu, child, context);
+}
+
 static Lufia2ExecutionResult PrepareWorldMapFrames(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
