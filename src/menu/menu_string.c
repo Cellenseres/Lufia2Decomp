@@ -4,10 +4,11 @@
 
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
-#include "system/wram.h"
 #include "lufia2/item.h"
 #include "lufia2/menu.h"
 #include "system/dp_scratch.h"
+#include "system/wram.h"
+#include <stddef.h>
 
 enum {
     ROM_MENU_CONTROL_TARGETS = 0x808e7cu,
