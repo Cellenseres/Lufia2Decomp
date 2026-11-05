@@ -10,6 +10,29 @@ extern "C" {
 Lufia2ExecutionResult Lufia2LegacyResolveRecordDirection(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 
+Lufia2ExecutionResult Lufia2LegacyLoadRecordValue(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2LegacyAccumulateRecordValue(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2LegacyClampRecordDelta(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2LegacyCheckRecordSeparation(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2LegacyCopyRecordDeltas(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2LegacyPrepareScaledRecordDelta(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
+Lufia2ExecutionResult Lufia2LegacyProbeNearbyRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context);
+
 Lufia2ExecutionResult Lufia2LegacyPreserveRegisters(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

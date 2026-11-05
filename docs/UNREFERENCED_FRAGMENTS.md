@@ -214,3 +214,64 @@ Unix archives export the new scoped API once. C++17 header and metadata checks
 pass. The CLI binaries remain byte-identical, so the earlier resource CLI
 checks are reused. No consumer hooks, admission, clocks or batching changed.
 Unrelated full regression was deferred at this shared checkpoint.
+
+## Unrooted record math and probes
+
+Seven neighboring original regions now have scoped C in
+`src/system/legacy_record_math.c`. Existing callers and gameplay use remain
+unresolved. The entry contract is PB85, DB7F, M1X0, DP zero and binary
+arithmetic. Routines that push registers or call a child additionally require
+stack `1F04..1FF8`. No canonical function metadata or consumer binding is added.
+
+| Entry | Original return boundary | Operation |
+| --- | --- | --- |
+| `85:FBE3` | `85:FC3F` | Prepare multiplier operands, call the original child, constrain the returned delta |
+| `85:FC40` | `85:FC60` | Constrain a record-derived delta using the original status branch |
+| `85:FC61` | `85:FC83` | Initialize or accumulate the record-derived scratch value |
+| `85:FC84` | `85:FC97` | Load that scratch value through the shared record reader |
+| `85:FC98` | `85:FCD1` | Test record separation, retaining the repeated component read |
+| `85:FE28` | `85:FE7E` | Prepare the original child, then conditionally collect nearby-record data |
+| `85:FE7F` | `85:FEB0` | Write four record-component differences |
+
+The boundaries identify the original RTS before it executes. The value-reader
+pair shares one implementation of the word load, four shifts and indexed table
+read. The separation probe deliberately tests `5BEE` twice after its `5BED`
+probe; ordered reads, scratch INC and N-flag comparisons remain unchanged.
+The nearby probe retains the original carry propagation between its two ADCs.
+
+The two parent bodies retain exact JSL frames at `85:FC1D` and `85:FE35`.
+Their child targets are `80:E32B` and `82:E2BD`; neither child is reconstructed
+by this batch. In particular, `80:E32B` overlaps an operand in the current
+original program and must not be substituted with an assumed divide service.
+The callback can hand off or unwind at the real child boundary. A compatible
+normal return runs the original parent suffix; incompatible bank/width state
+hands off at its exact continuation. These are explicit service contracts,
+not proof that the old calls return normally in the released game.
+
+The multiplier-settling NOP is exposed by consecutive `85:FC0E`/`85:FC0F`
+checkpoints. Its CPU states and data-access positions match the original
+before and after that instruction. This portable layer supplies no cycle
+scheduler: future integration must preserve the NOP interval and device timing.
+The synchronous synthetic multiplier bus proves operand/access semantics,
+not hardware settling time or a native runtime timing contract.
+
+MSVC and Clang each pass 352,256 CPU/full-WRAM/ordered-access cases, including
+multiplier state, saved registers, child-entry state and both NOP checkpoints.
+Each of the five leaves has 65,536 cases. Parent prefixes and compatible
+return/unwind services cover 8,192 and 16,384 states. The original unknown
+children are not replaced by a fabricated semantic implementation: controlled
+services are explicitly distinguished from original execution. Fifty-seven
+no-access guards and seven altered-ROM controls pass per compiler.
+
+A negative-control seed initially missed its mutated branch. Another mutated
+child target escaped the intended stop. Corrected control selection and an
+unexpected-child boundary check detect both changes. The affected accumulator
+and two parent suites were rerun together (90,112 cases/compiler); unchanged
+leaf comparisons were reused. Production source did not change during that fix.
+
+Strict Windows/GCC/Clang library builds, actual Unix archive exports, C++17
+header and metadata checks pass. Both resource CLI binaries remain byte-identical,
+so their previous checks are reused. No hooks, waits, source selection or clocks
+changed in the consumer. Full unrelated regression is deferred. No runtime
+admission, organic frequency, performance improvement or game-wide completion
+is claimed for these unrooted routines.

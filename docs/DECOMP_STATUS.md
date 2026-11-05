@@ -1,3 +1,12 @@
+# Unrooted record math and probes - 2026-11-05
+
+Five original leaves and two parents with explicit unknown-child services
+now have scoped C. Shared MSVC/Clang proof covers352256 cases,57 no-access
+guards and seven altered-ROM controls per compiler. Unknown child execution,
+canonical metadata and runtime admission are not promoted. Original repeated
+reads, carry behavior and multiplier NOP boundaries remain explicit. See
+[unrooted record contracts](UNREFERENCED_FRAGMENTS.md#unrooted-record-math-and-probes).
+
 # Unrooted record direction family - 2026-11-05
 
 Four bank85 entry variants now share one reconstructed direction algorithm.
