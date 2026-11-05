@@ -324,3 +324,39 @@ header and metadata checks pass. Resource CLI binaries remain byte-identical;
 the earlier CLI checks are reused. No consumer hooks, clocks, admission or
 batching rules changed. Unrelated full regression is deferred. This adds one
 shared control-flow body, not four canonical functions or a runtime speed claim.
+
+## Code-origin and prologue review
+
+A follow-up examines 370 call-shaped origins to owned but noncanonical targets.
+These are discovery hypotheses,not370 missing functions. 188 origins associate
+with original scene records, 18 have nearby C literals, and 164 need more context.
+Source/data association does not by itself exclude deliberately overlapping code.
+
+Six stack/status prefixes produce 22 hypotheses after reconstructed regions
+are excluded. 16 correspond to existing C bodies/phases, four have data evidence,
+and two at 8E:AAA5/AD0F remain untyped. No new game algorithm is established.
+
+| Apparent prefix | Original association |
+| --- | --- |
+|80:8A98|Last byte of the 12-word menu-string table 80:8A81..8A98, before handler 8A99|
+|86:D3F8|Reciprocal-table word at 86:D3F7, used by world perspective rows|
+|8E:E02F|Menu sprite frame 8E:E028..E032, with two OAM pieces|
+|8E:EAD1|Dictionary pointer table 8E:EA00..EEFF|
+
+The actual native sprite-table,animation and OAM routines read 8E:E02F for
+nominal list 4, animations 6 and 13. Both isolated reader cases pass. A structural
+walk follows 9 nominal list roots, 71 animation lists and 107 unique normal frames.
+It exports no graphic payload and clamps no original selector. This is data-reader
+exploration, not fresh interp816, organic execution, timing or admission proof.
+The AA-rich untyped prefix regions are not declared padding or proven noncode.
+
+Five missing catalogue records now identify existing battle-script sections;
+the source path for 85:C05F is restored. No API, canonical metadata, binding or
+algorithm is added. Original 85:C3AF branches to 85:C332, entering the party loop.
+BattleBuildSelectionRows intentionally retains this with `enemy_first = false`.
+Changing that statement would change the original program.
+
+Semantic and consumer source bytes remain unchanged. The small reader probe
+uses the current Windows library with warnings as errors. Prior proofs are
+reused only for unchanged inputs;no full suite, CLI or platform rebuild repeats.
+This bounded review does not establish whole-ROM code/data completeness.

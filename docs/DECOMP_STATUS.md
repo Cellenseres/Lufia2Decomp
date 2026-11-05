@@ -1,3 +1,12 @@
+# Original code-origin provenance review - 2026-11-05
+
+No semantic or consumer code changed. A review of 22 prefixes identifies 16
+existing C bodies or phases, four data associations and two untyped hypotheses.
+Two isolated native sprite-reader cases confirm 8E:E02F is consumed from a
+two-piece frame. Five existing sections are reconciled in the private catalogue;
+no algorithms, canonical functions or bindings are added. The original row
+branch is retained. See UNREFERENCED_FRAGMENTS.md#code-origin-and-prologue-review.
+
 # Unrooted selection controller - 2026-11-05
 
 The original85:FAB6..FBC0 selection/action/wait body now has shared scoped C,
