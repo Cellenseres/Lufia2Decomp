@@ -1,3 +1,24 @@
+## Optional world-arrival boundaries — 2026-11-06
+
+The existing moving/stopped arrival checks (`86:9AB1`, `86:9AB8`) share one
+ROM-faithful implementation. An optional callback exposes the eight original
+block-entry PCs and may stop before any of them. Existing public entry points
+use no observer and retain their original behavior. Host clocks remain outside
+this library; this adds no canonical function or gameplay algorithm.
+
+The combined checkpoint passed 102,400 original-ROM differential cases and
+384 invalid-entry/width guards. CPU, WRAM and ordered bus accesses agree at
+boundaries and exits; two deliberate ROM mutations fail. Consumer checks cover
+472 paired ABI/deadline contexts, eight profiler pairs and matched boot/battle
+replays. Moving-entry gameplay intake is not established by these fixtures.
+
+Strict MSVC/GCC/Clang library and resource-CLI builds pass; all three CLIs decode
+680 resources. Twelve existing narrowing warnings in five other source files
+were resolved by explicit guest-width conversions without changing operations.
+The production world object stayed identical across that conversion cleanup.
+Validation covers the combined working tree, not separate intermediate commits.
+The full decomp suite was not repeated. Tests and proof artifacts remain local.
+
 ## US scene table provenance
 
 The US-ROM scene and NPC-script tables are independently cross-checked against

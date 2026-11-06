@@ -2,6 +2,7 @@
 #include "core/cpu_ops.h"
 #include "system/wram.h"
 #include "world/world_fade_internal.h"
+#include <stddef.h>
 
 enum {
     DP_RECORD_OFFSET = 0x02,
@@ -106,29 +107,43 @@ Lufia2ExecutionResult Lufia2WorldMapRememberTilePosition(
     return ExecutionReturned(0x869a50u);
 }
 
+static uint8_t ArrivalReady(Lufia2CpuState *cpu,
+    Lufia2WorldArrivalBoundary boundary, void *context, uint32_t pc) {
+    return !boundary || boundary(context, cpu, pc);
+}
+
+static Lufia2ExecutionResult NoWorldArrival(Lufia2CpuState *cpu,
+    Lufia2WorldArrivalBoundary boundary, void *context) {
+    if (!ArrivalReady(cpu, boundary, context, 0x869ad9u))
+        return ExecutionHandoff(cpu, 0x869ad9u);
+    cpu->carry = 0u;
+    return ExecutionReturned(0x869adau);
+}
+
 static Lufia2ExecutionResult CheckWorldArrival(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!cpu->zero) {
-        cpu->carry = 0u;
-        return ExecutionReturned(0x869adau);
-    }
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2WorldArrivalBoundary boundary, void *context) {
+    if (!cpu->zero)
+        return NoWorldArrival(cpu, boundary, context);
+    if (!ArrivalReady(cpu, boundary, context, 0x869abdu))
+        return ExecutionHandoff(cpu, 0x869abdu);
     OpLda(memory, cpu, OpAbs(cpu, MOTION_STATE));
-    if (!cpu->zero) {
-        cpu->carry = 0u;
-        return ExecutionReturned(0x869adau);
-    }
+    if (!cpu->zero)
+        return NoWorldArrival(cpu, boundary, context);
+    if (!ArrivalReady(cpu, boundary, context, 0x869ac2u))
+        return ExecutionHandoff(cpu, 0x869ac2u);
     OpLda(memory, cpu, OpDp(cpu, DP_TARGET_X));
     OpCmp(memory, cpu, OpAbs(cpu, ARRIVAL_X));
-    if (!cpu->zero) {
-        cpu->carry = 0u;
-        return ExecutionReturned(0x869adau);
-    }
+    if (!cpu->zero)
+        return NoWorldArrival(cpu, boundary, context);
+    if (!ArrivalReady(cpu, boundary, context, 0x869ac9u))
+        return ExecutionHandoff(cpu, 0x869ac9u);
     OpLda(memory, cpu, OpDp(cpu, DP_TARGET_Y));
     OpCmp(memory, cpu, OpAbs(cpu, ARRIVAL_Y));
-    if (!cpu->zero) {
-        cpu->carry = 0u;
-        return ExecutionReturned(0x869adau);
-    }
+    if (!cpu->zero)
+        return NoWorldArrival(cpu, boundary, context);
+    if (!ArrivalReady(cpu, boundary, context, 0x869ad0u))
+        return ExecutionHandoff(cpu, 0x869ad0u);
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, OpAbs(cpu, ARRIVAL_FLAG));
     OpStz(memory, cpu, OpDp(cpu, 0u));
@@ -138,20 +153,31 @@ static Lufia2ExecutionResult CheckWorldArrival(
 
 Lufia2ExecutionResult Lufia2WorldMapCheckMovingArrival(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!MotionWidths(cpu))
-        return ExecutionHandoff(cpu, 0x869ab1u);
-    OpLda(memory, cpu, OpAbs(cpu, MOTION_MODE));
-    OpDecA(cpu);
-    OpDecA(cpu);
-    return CheckWorldArrival(memory, cpu);
+    return Lufia2WorldMapCheckArrivalWithBoundaries(
+        memory, cpu, 0x869ab1u, NULL, NULL);
 }
 
 Lufia2ExecutionResult Lufia2WorldMapCheckStoppedArrival(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!MotionWidths(cpu))
-        return ExecutionHandoff(cpu, 0x869ab8u);
+    return Lufia2WorldMapCheckArrivalWithBoundaries(
+        memory, cpu, 0x869ab8u, NULL, NULL);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapCheckArrivalWithBoundaries(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
+    Lufia2WorldArrivalBoundary boundary, void *context) {
+    if ((entry != 0x869ab1u && entry != 0x869ab8u) || !MotionWidths(cpu))
+        return ExecutionHandoff(cpu, entry);
+    if (!ArrivalReady(cpu, boundary, context, entry))
+        return ExecutionHandoff(cpu, entry);
     OpLda(memory, cpu, OpAbs(cpu, MOTION_MODE));
-    return CheckWorldArrival(memory, cpu);
+    if (entry == 0x869ab1u) {
+        OpDecA(cpu);
+        OpDecA(cpu);
+        if (!ArrivalReady(cpu, boundary, context, 0x869abbu))
+            return ExecutionHandoff(cpu, 0x869abbu);
+    }
+    return CheckWorldArrival(memory, cpu, boundary, context);
 }
 
 Lufia2ExecutionResult Lufia2WorldMapStartFadeOut(

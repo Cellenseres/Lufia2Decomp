@@ -316,6 +316,16 @@ Lufia2ExecutionResult Lufia2WorldMapCheckMovingArrival(
 Lufia2ExecutionResult Lufia2WorldMapCheckStoppedArrival(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+#define LUFIA2_WORLD_ARRIVAL_BOUNDARY_API 1
+
+/* Zero stops before the named ROM instruction. */
+typedef uint8_t (*Lufia2WorldArrivalBoundary)(
+    void *context, Lufia2CpuState *cpu, uint32_t pc);
+
+Lufia2ExecutionResult Lufia2WorldMapCheckArrivalWithBoundaries(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
+    Lufia2WorldArrivalBoundary boundary, void *context);
+
 Lufia2ExecutionResult Lufia2WorldMapStartFadeOut(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
