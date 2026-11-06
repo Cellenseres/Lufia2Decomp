@@ -42,7 +42,7 @@ static void InitializeEnemyScript(const Lufia2Memory *memory,
     for (uint16_t field = SCRIPT_FIRST_PARAMETER;
          field <= SCRIPT_LAST_PARAMETER; field += 2u) {
         OpLda(memory, cpu, saved_parameters ?
-            OpDp(cpu, DP_SAVED_PARAMETERS + field - SCRIPT_FIRST_PARAMETER) :
+            OpDp(cpu, (uint8_t)(DP_SAVED_PARAMETERS + field - SCRIPT_FIRST_PARAMETER)) :
             OpAbsY(cpu, field));
         OpSta(memory, cpu, OpAbsX(cpu, field));
     }
@@ -86,7 +86,7 @@ Lufia2ExecutionResult BattleSpawnTargetScripts(
              field <= SCRIPT_LAST_PARAMETER; field += 2u) {
             OpLda(memory, cpu, OpAbsY(cpu, field));
             OpSta(memory, cpu, OpDp(cpu,
-                DP_SAVED_PARAMETERS + field - SCRIPT_FIRST_PARAMETER));
+                (uint8_t)(DP_SAVED_PARAMETERS + field - SCRIPT_FIRST_PARAMETER)));
         }
         PushY(memory, cpu);
         OpLdy(cpu, FIRST_ENEMY);
@@ -144,7 +144,7 @@ Lufia2ExecutionResult Lufia2BattleClearTargetRecords(
     OpLoadA(cpu, 0xffu);
     for (unsigned record = 0u; record < RECORD_COUNT; ++record)
         OpSta(memory, cpu, OpAbs(cpu,
-            FIRST_ENEMY + RECORD_DISABLED + record * ENEMY_STRIDE));
+            (uint16_t)(FIRST_ENEMY + RECORD_DISABLED + record * ENEMY_STRIDE)));
     LoadA8(cpu, Pull8(memory, cpu));
     OpPullX(memory, cpu);
     PullDataBank(memory, cpu);

@@ -542,7 +542,7 @@ Lufia2ExecutionResult Lufia2BattleInitializePreviewBackground(
         return preview.result;
     OpRepWidths(cpu, 0x20u);
     for (unsigned offset = 0u; offset < 16u; offset += 2u)
-        OpStz(memory, cpu, OpAbs(cpu, WRAM_NMI_SCROLL_REGISTERS + offset));
+        OpStz(memory, cpu, OpAbs(cpu, (uint16_t)(WRAM_NMI_SCROLL_REGISTERS + offset)));
     OpSepWidths(cpu, 0x20u);
     return Lufia2BattleUpdatePreviewBackground(memory, cpu, child, context);
 }

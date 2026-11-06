@@ -31,11 +31,11 @@ Lufia2ExecutionResult Lufia2MenuSetOptionIndicators(
     Push8(memory, cpu, A8(cpu));
     OpLoadA(cpu, 1u);
     for (unsigned indicator = 0u; indicator < 3u; ++indicator)
-        OpSta(memory, cpu, OpDp(cpu, OPTION_FIRST_INDICATOR + indicator));
+        OpSta(memory, cpu, OpDp(cpu, (uint8_t)(OPTION_FIRST_INDICATOR + indicator)));
     OpLoadA(cpu, Pull8(memory, cpu));
     const uint32_t previous_resume = cpu->resume_pc;
     const uint32_t target = DispatchOption(memory, cpu, 0x82a0d1u);
-    uint16_t indicator;
+    uint8_t indicator;
     uint32_t finish;
     if (target == 0x82a0dau) {
         indicator = 0u;

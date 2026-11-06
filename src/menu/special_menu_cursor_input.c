@@ -57,8 +57,8 @@ static bool WrapCursor(TableService *service, CursorDirection direction) {
     Lufia2CpuState *cpu = service->cpu;
     const bool vertical = direction == CURSOR_UP || direction == CURSOR_DOWN;
     const bool backwards = direction == CURSOR_UP || direction == CURSOR_LEFT;
-    const unsigned position = vertical ? CURSOR_ROWS : CURSOR_COLUMNS;
-    const unsigned count = vertical ? CURSOR_ROW_COUNT : CURSOR_COLUMN_COUNT;
+    const uint16_t position = vertical ? CURSOR_ROWS : CURSOR_COLUMNS;
+    const uint16_t count = vertical ? CURSOR_ROW_COUNT : CURSOR_COLUMN_COUNT;
     static const uint32_t sites[] = {
         0x84a157u, 0x84a189u, 0x84a1c1u, 0x84a1f6u
     };
@@ -84,7 +84,7 @@ static bool MoveCursorSelection(TableService *service, CursorDirection direction
     Lufia2CpuState *cpu = service->cpu;
     const bool vertical = direction == CURSOR_UP || direction == CURSOR_DOWN;
     const bool backwards = direction == CURSOR_UP || direction == CURSOR_LEFT;
-    const unsigned position = vertical ? CURSOR_ROWS : CURSOR_COLUMNS;
+    const uint16_t position = vertical ? CURSOR_ROWS : CURSOR_COLUMNS;
     OpLda(memory, cpu, OpAbsX(cpu, position));
     if (backwards) {
         OpDecA(cpu);

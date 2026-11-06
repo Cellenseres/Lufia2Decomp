@@ -56,7 +56,7 @@ Lufia2ExecutionResult Lufia2BattleEffectSetSpecialTargetDisplayOffsets(
                 /* Both axes use the original horizontal coordinate. */
                 OpLda(memory, cpu, OpAbs(cpu, SPECIAL_TARGET_HORIZONTAL));
                 cpu->carry = 0u;
-                OpAdc(memory, cpu, OpAbs(cpu, TARGET_HORIZONTAL_OFFSET + axis * 2u));
+                OpAdc(memory, cpu, OpAbs(cpu, (uint16_t)(TARGET_HORIZONTAL_OFFSET + axis * 2u)));
                 OpSta(memory, cpu, OpAbs(cpu, SPECIAL_TARGET_DISPLAY + corners[axis][0]));
                 OpSta(memory, cpu, OpAbs(cpu, SPECIAL_TARGET_DISPLAY + corners[axis][1]));
                 cpu->carry = 0u;
