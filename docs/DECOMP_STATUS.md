@@ -1,3 +1,20 @@
+## NMI restore index-width contract — 2026-11-11
+
+The existing `Lufia2NmiRestoreInterruptFrame` API now accepts M0X0 and M0X1
+at `80:869B`, retaining PB80/DB80, DP0, non-decimal and stack limits. The actual
+battle NMI caller uses M0X0. `LUFIA2_NMI_RESTORE_INDEX_WIDTHS` advertises both
+accepted widths; the display/clock API remains M1X1. Both paths share the
+unchanged original restore body, including overlapping word increments,
+reset detection, width-dependent RDNMI read, original pulls and pre-RTI stop.
+
+The shared checkpoint compares 262,144 original-ROM restore states across
+both index widths/reset branches, full CPU/WRAM/ordered bus, 245,760 original
+per-opcode costs, 4,096 unchanged display cases and 2,048 original RTI rejoins.
+Strict MSVC/GCC/Clang C11 translation passes. Consumer timing and admission
+remain separate; no canonical function, new algorithm or host optimization
+is added to the standalone library. Full regression was deferred. Private
+consumer evidence is `nmi-restore-clock-current/ACCEPTANCE.json` in the parent.
+
 ## Bounded target-marker records — 2026-11-11
 
 `Lufia2BattleVisitTargetMarkerSpan` shares the original record-read and

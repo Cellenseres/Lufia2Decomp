@@ -211,14 +211,14 @@ Lufia2ExecutionResult Lufia2MainNmiResume(const Lufia2Memory *memory,
 
 static bool NmiFrameSliceSupported(const Lufia2CpuState *cpu, bool byte_mode) {
     return cpu->program_bank == 0x80u && cpu->data_bank == 0x80u && !cpu->decimal &&
-           !cpu->direct_page && cpu->index_is_8_bit == 1u &&
+           !cpu->direct_page && cpu->index_is_8_bit <= 1u &&
            cpu->accumulator_is_8_bit == byte_mode && cpu->stack >= 0x1f00u &&
            cpu->stack <= 0x1ff3u;
 }
 
 Lufia2ExecutionResult Lufia2NmiDisplayAndClock(const Lufia2Memory *memory,
                                                Lufia2CpuState *cpu) {
-    if (!NmiFrameSliceSupported(cpu, true))
+    if (!NmiFrameSliceSupported(cpu, true) || !cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x808664u);
     DisplayNmiAndTickPlayTime(memory, cpu);
     return ExecutionHandoff(cpu, 0x808699u);
