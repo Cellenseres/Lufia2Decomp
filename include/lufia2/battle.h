@@ -538,6 +538,13 @@ Lufia2ExecutionResult Lufia2BattleFrameRow(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+#define LUFIA2_BATTLE_ROW_SPAN_API 1
+
+/* WRAM frame cells; M0X0, at most six. */
+Lufia2ExecutionResult Lufia2BattleFillFrameRowSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint32_t entry, unsigned cells);
+
 /* $81:E570 frame row ends from template $01:X; M0X0. */
 Lufia2ExecutionResult Lufia2BattleFrameEnds(
     const Lufia2Memory *memory,

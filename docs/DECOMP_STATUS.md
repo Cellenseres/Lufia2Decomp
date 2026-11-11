@@ -1,3 +1,19 @@
+## Bounded battle-frame row cells — 2026-11-11
+
+`Lufia2BattleFillFrameRowSpan` exposes the original `81:E553` fill loop for
+one to six cells, returning at `81:E553` or `81:E55D`. Its contract requires
+native M0X0, PB81 and WRAM DB7E/7F. It preserves ordered bus accesses, guest
+registers and flags; it consumes no return frame. The complete `81:E542`
+row shares this loop with no artificial limit. Host clocks remain separate.
+This is an internal execution boundary, not another algorithm or canonical entry.
+
+The combined ROM checkpoint passed 92,160 span cases, 10,752 affected complete
+rows, 2,592 whole-window parents and 256 no-access guards: 105,760 cases.
+CPU, complete WRAM, ordered accesses and continuation PCs agree. Coverage
+includes decimal mode, direct-page variants, signed counter boundaries,
+WRAM aliasing and word wrap. Strict MSVC/GCC/Clang and C++ API checks pass.
+The full decomp suite was not repeated. Tests remain private.
+
 ## Optional world-arrival boundaries — 2026-11-06
 
 The existing moving/stopped arrival checks (`86:9AB1`, `86:9AB8`) share one

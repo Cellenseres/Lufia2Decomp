@@ -106,6 +106,31 @@ Lufia2ExecutionResult Lufia2BattleFrameSides(
     return ExecutionReturned(0x81e4d0u);
 }
 
+/* Zero fills the complete row. */
+static bool FillFrameRowCells(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, unsigned limit) {
+    unsigned cells = 0u;
+    do {
+        Store16Y(memory, cpu, 0x0002u);
+        IncY2(cpu);
+        if (DecAbs16(memory, cpu, FRAME_COUNT) & 0x8000u)
+            return true;
+    } while (!limit || ++cells < limit);
+    return false;
+}
+
+Lufia2ExecutionResult Lufia2BattleFillFrameRowSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint32_t entry, unsigned cells) {
+    if (entry != 0x81e553u || cpu->program_bank != 0x81u ||
+        (cpu->data_bank != 0x7eu && cpu->data_bank != 0x7fu) ||
+        cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || !cells || cells > 6u)
+        return ExecutionHandoff(cpu, entry);
+    const bool complete = FillFrameRowCells(memory, cpu, cells);
+    return ExecutionHandoff(cpu, complete ? 0x81e55du : entry);
+}
+
 /* $81:E542: row from template $01:X (left, fill, right); M0X0. */
 Lufia2ExecutionResult Lufia2BattleFrameRow(
     const Lufia2Memory *memory,
@@ -115,10 +140,7 @@ Lufia2ExecutionResult Lufia2BattleFrameRow(
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x010000u, cpu->x)));
     Store16Y(memory, cpu, 0x0000u);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x010002u, cpu->x)));
-    do {
-        Store16Y(memory, cpu, 0x0002u);
-        IncY2(cpu);
-    } while (!(DecAbs16(memory, cpu, FRAME_COUNT) & 0x8000u));
+    (void)FillFrameRowCells(memory, cpu, 0u);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x010004u, cpu->x)));
     Store16Y(memory, cpu, 0x0002u);
     NextRow(memory, cpu);
