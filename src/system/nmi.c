@@ -201,9 +201,12 @@ Lufia2ExecutionResult Lufia2MainNmiResume(const Lufia2Memory *memory,
                                           void *context) {
     const NmiPhase phase = NmiPhaseAt(entry);
     const bool byte_mode = phase != NMI_PREPARE;
+    const bool callback_phase = phase == NMI_SECONDARY_CALLBACK || phase == NMI_SCROLL_UPLOADS;
+    const bool index_supported = cpu->index_is_8_bit == byte_mode ||
+        (callback_phase && !cpu->index_is_8_bit);
     if (phase == NMI_INVALID_PHASE || cpu->program_bank != 0x80u || cpu->decimal ||
         cpu->direct_page || cpu->accumulator_is_8_bit != byte_mode ||
-        cpu->index_is_8_bit != byte_mode || cpu->stack < 0x1f00u ||
+        !index_supported || cpu->stack < 0x1f00u ||
         cpu->stack > 0x1ff3u)
         return ExecutionHandoff(cpu, entry);
     return RunNmiPhases(memory, cpu, phase, NULL, checkpoint, context);

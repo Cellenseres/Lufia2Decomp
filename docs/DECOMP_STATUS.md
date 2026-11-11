@@ -1,3 +1,21 @@
+## NMI callback resume index widths — 2026-11-12
+
+The existing `Lufia2MainNmiResume` secondary and scroll phases at `80:8653`
+and `80:865A` now accept M1X0 and M1X1. Other phase contracts are unchanged.
+`LUFIA2_NMI_CALLBACK_INDEX_WIDTHS` advertises this extension. Both phases
+reuse the original C worker, preserving DP flag reads, accumulator/status,
+registers, stack and exact pre-JSR boundaries. No new body or algorithm.
+
+The shared original-ROM matrix passes 524,288 cases across both index widths,
+all DB bytes, conditional flags and stack edges, full CPU/WRAM/ordered bus,
+and source-derived original opcode/cycle bounds. The consumer's later ROM
+fetch refinement changes neither this semantic source nor the timing tables
+or matrix executable. Windows actual library/application and strict GCC/Clang
+semantic/consumer translation pass. Full regression and CLI were deferred.
+Consumer ownership, timing, observer, real APU-idle intake and inconclusive
+cost evidence are separate in the parent's private
+`nmi-callback-clocks-current/ACCEPTANCE.json`. No canonical count increase.
+
 ## NMI restore index-width contract — 2026-11-11
 
 The existing `Lufia2NmiRestoreInterruptFrame` API now accepts M0X0 and M0X1
