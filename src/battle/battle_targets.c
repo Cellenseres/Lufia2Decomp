@@ -1,5 +1,6 @@
 #include "battle/battle_internal.h"
 #include "lufia2/battle_target_name_steps.h"
+#include "lufia2/battle_target_marker_steps.h"
 
 enum {
     TARGET_DP_MODE = 0x24u,
@@ -235,6 +236,41 @@ static bool TargetPlaceCursor(BattleContext *battle) {
     return true;
 }
 
+static bool TargetRecordNeedsMarker(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbsY(cpu, TARGET_PARTY_UNAVAILABLE));
+    if (!cpu->zero)
+        return false;
+    OpLda(memory, cpu, OpAbsY(cpu, TARGET_PARTY_SELECTED));
+    return !cpu->zero;
+}
+
+static void TargetAdvanceMarkerRecord(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    OpIny(cpu);
+    OpIny(cpu);
+    OpIny(cpu);
+    OpIny(cpu);
+    OpStepMem(memory, cpu, OpDp(cpu, TARGET_DP_RECORDS_LEFT), -1);
+}
+
+Lufia2ExecutionResult Lufia2BattleVisitTargetMarkerSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint32_t entry, unsigned records) {
+    if (entry != 0x81d60eu || cpu->program_bank != 0x81u ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        !records || records > 3u)
+        return ExecutionHandoff(cpu, entry);
+    do {
+        if (TargetRecordNeedsMarker(memory, cpu))
+            return ExecutionHandoff(cpu, 0x81d618u);
+        TargetAdvanceMarkerRecord(memory, cpu);
+        if (cpu->zero)
+            return ExecutionHandoff(cpu, 0x81d623u);
+    } while (--records);
+    return ExecutionHandoff(cpu, entry);
+}
+
 /* On the visible phase, mark every selected record. */
 static bool TargetDrawMarkers(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
@@ -245,17 +281,10 @@ static bool TargetDrawMarkers(BattleContext *battle) {
         OpLoadA(cpu, BATTLE_PARTY_TARGET_COUNT + 1u + BATTLE_ENEMY_COUNT);
         OpSta(memory, cpu, OpDp(cpu, TARGET_DP_RECORDS_LEFT));
         do {
-            OpLda(memory, cpu, OpAbsY(cpu, TARGET_PARTY_UNAVAILABLE));
-            if (cpu->zero) {
-                OpLda(memory, cpu, OpAbsY(cpu, TARGET_PARTY_SELECTED));
-                if (!cpu->zero && !BattleCall(battle, 0xd618u, 0x81d948u, 2u))
-                    return false;
-            }
-            OpIny(cpu);
-            OpIny(cpu);
-            OpIny(cpu);
-            OpIny(cpu);
-            OpStepMem(memory, cpu, OpDp(cpu, TARGET_DP_RECORDS_LEFT), -1);
+            if (TargetRecordNeedsMarker(memory, cpu) &&
+                !BattleCall(battle, 0xd618u, 0x81d948u, 2u))
+                return false;
+            TargetAdvanceMarkerRecord(memory, cpu);
         } while (!cpu->zero);
     }
     return true;

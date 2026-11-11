@@ -1,3 +1,20 @@
+## Bounded target-marker records — 2026-11-11
+
+`Lufia2BattleVisitTargetMarkerSpan` shares the original record-read and
+record-advance operations with `TargetDrawMarkers`. It visits one to three
+records from `81:D60E`, stopping before the selected-marker JSR at `81:D618`,
+at loop completion `81:D623`, or at `81:D60E` when its budget expires.
+M1X0/PB81 is required; original DB, DP, counter and index behavior remains.
+The complete parent keeps its original loop and child-call behavior.
+No canonical entry or new gameplay algorithm is added; host timing is separate.
+
+The combined checkpoint passes 109,152 span cases, 6,144 affected full marker
+parents with child returns/unwinds, 1,152 unchanged name spans and 224 guards:
+116,672 original-ROM/guard cases. CPU, complete WRAM, ordered accesses and
+boundary PCs agree. A 9,888-case subset checks original instruction cycles.
+Strict MSVC/GCC/Clang and C++ public-API checks pass. Tests remain private;
+the full decomp suite was deferred under the shared-checkpoint cadence.
+
 ## Bounded battle-frame row cells — 2026-11-11
 
 `Lufia2BattleFillFrameRowSpan` exposes the original `81:E553` fill loop for
