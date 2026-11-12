@@ -1,3 +1,17 @@
+## NMI display/play-clock index contract — 2026-11-12
+
+`Lufia2NmiDisplayAndClock` at `80:8664` accepts M1X0 and M1X1, advertised
+by `LUFIA2_NMI_DISPLAY_INDEX_WIDTHS`. The same original C worker preserves
+brightness MMIO, all play-clock branches, byte wrap, flags and boundary8699.
+Other resume/API contracts remain unchanged. No new body or algorithm.
+
+263,168 original-ROM cases cover both index widths, flags, stack/brightness,
+tick, seconds/minutes and all-hour wrap, full CPU/WRAM/ordered MMIO and exact
+source-table cycles. Actual Windows application/library and strict GCC/Clang
+C11 translations pass. Consumer owner/hooks/MMIO/rare-path/APU checks are
+separate in the parent's private `nmi-display-clock-current/ACCEPTANCE.json`.
+Performance evidence is inconclusive; full regression/CLI were deferred.
+
 ## NMI callback resume index widths — 2026-11-12
 
 The existing `Lufia2MainNmiResume` secondary and scroll phases at `80:8653`

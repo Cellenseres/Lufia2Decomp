@@ -4,6 +4,7 @@
 #include "lufia2/execution.h"
 
 #define LUFIA2_NMI_RESTORE_INDEX_WIDTHS 2
+#define LUFIA2_NMI_DISPLAY_INDEX_WIDTHS 2
 
 #ifdef __cplusplus
 extern "C" {

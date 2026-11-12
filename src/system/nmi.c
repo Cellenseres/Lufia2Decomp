@@ -221,7 +221,7 @@ static bool NmiFrameSliceSupported(const Lufia2CpuState *cpu, bool byte_mode) {
 
 Lufia2ExecutionResult Lufia2NmiDisplayAndClock(const Lufia2Memory *memory,
                                                Lufia2CpuState *cpu) {
-    if (!NmiFrameSliceSupported(cpu, true) || !cpu->index_is_8_bit)
+    if (!NmiFrameSliceSupported(cpu, true))
         return ExecutionHandoff(cpu, 0x808664u);
     DisplayNmiAndTickPlayTime(memory, cpu);
     return ExecutionHandoff(cpu, 0x808699u);
