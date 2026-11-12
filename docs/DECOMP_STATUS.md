@@ -1,3 +1,29 @@
+## Highlighted command tile boundary - 2026-11-12
+
+`Lufia2BattlePrepareSelectedCommandTile` exposes the existing `81:CBB8`
+selection setup through `81:CBDD`, before its original renderer JSR. The
+parent shares the same selection helper, while selected and ordinary tiles
+share one ordered three-field copy. The first selected field retains the
+original SEC/SBC, including decimal-mode behavior. SEP10 clears the original
+index high bytes; REP10 and the two-byte DP26 selector store remain explicit.
+No renderer, sound service, frame-input wait or original child is bypassed.
+The API accepts M1 with either valid index width and ends in M1X0.
+
+One combined checkpoint passes 262,656 new original-ROM selected-phase cases,
+18,432 affected ordinary-record cases,1,280 C-before/C-after parent comparisons
+and two no-access guards:282,370 total. It covers all direction bytes in
+writable direct pages, all C/N/Z/V/I combinations, both decimal modes and index
+widths, four DB values, unaligned/direct-ROM pages and original data-access
+order. Decimal-zero source cycles are53 plus five for an unaligned direct
+page. Parent comparisons cover ten child-unwind positions and four selections;
+they are not a new complete original-ROM parent proof.
+
+Windows production compile/link, strict GCC/Clang C11 and C++17-to-C linkage
+pass. Consumer admission, clocks, observer ownership, generated caller budgets
+and APU work are separately proved in the superproject's private checkpoint.
+This adds an internal boundary, not a new canonical function or algorithm.
+Full regression, all-platform and CLI runs were deferred at this focused batch.
+
 ## Battle command tile boundary - 2026-11-12
 
 `Lufia2BattlePrepareCommandTile` exposes the existing `81:CB99` record
