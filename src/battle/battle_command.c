@@ -1,4 +1,24 @@
 #include "battle/battle_internal.h"
+#include "lufia2/battle_command_tiles.h"
+
+static void PrepareCommandTile(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    static const uint8_t tile_parameters[] = {0u, 8u, 9u};
+    for (unsigned field = 0u; field < sizeof tile_parameters; ++field) {
+        OpLda(memory, cpu, OpLongX(cpu, 0x97b55eu + field));
+        OpSta(memory, cpu, OpDp(cpu, tile_parameters[field]));
+    }
+    OpLdx(cpu, (uint16_t)(cpu->x + sizeof tile_parameters));
+    OpPushX(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattlePrepareCommandTile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81cb99u);
+    PrepareCommandTile(memory, cpu);
+    return ExecutionHandoff(cpu, 0x81cbafu);
+}
 
 /* $81:CB77: draw and poll the four-way Battle command selection. */
 Lufia2ExecutionResult Lufia2BattleChooseCommand(
@@ -23,14 +43,7 @@ Lufia2ExecutionResult Lufia2BattleChooseCommand(
     for (;;) {
         OpLdx(cpu, 0u);
         do {
-            OpLda(memory, cpu, OpLongX(cpu, 0x97b55eu));
-            OpSta(memory, cpu, OpDp(cpu, 0u));
-            OpLda(memory, cpu, OpLongX(cpu, 0x97b55fu));
-            OpSta(memory, cpu, OpDp(cpu, 8u));
-            OpLda(memory, cpu, OpLongX(cpu, 0x97b560u));
-            OpSta(memory, cpu, OpDp(cpu, 9u));
-            OpInx(cpu); OpInx(cpu); OpInx(cpu);
-            OpPushX(memory, cpu);
+            PrepareCommandTile(memory, cpu);
             if (!BattleCall(&battle, 0xcbafu, BATTLE_ROUTINE_TILE_BLOCK, 2u))
                 return BattleChildUnwound(&battle);
             OpPullX(memory, cpu);

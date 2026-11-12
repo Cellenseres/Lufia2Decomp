@@ -1,3 +1,27 @@
+## Battle command tile boundary - 2026-11-12
+
+`Lufia2BattlePrepareCommandTile` exposes the existing `81:CB99` record
+preparation through the exact `81:CBAF` boundary before the tile renderer.
+The complete `Lufia2BattleChooseCommand` parent shares the same helper.
+Three ordered ROM reads populate DP0/8/9, advance X by three and preserve
+the original PHX16 frame. No renderer, input wait or original child is skipped.
+This is an internal boundary, not another canonical function or algorithm.
+
+18,432 original-ROM comparisons cover all C/N/Z/V/I combinations, both
+decimal states, four DB values, aligned/unaligned DP, long-index bank crossings,
+X wrap and stack wrap. CPU/full WRAM/ordered data accesses and exact boundary
+match; the original cost is 34 CPU cycles plus three for unaligned DP.
+192 before/after parent comparisons preserve initial child unwinds and all
+three tile records; three no-access guard checks pass. These parent comparisons
+are C-before/C-after, not a new complete original-ROM parent verification.
+
+Windows production compile/link and strict GCC/Clang C11 translation pass.
+C++17 callers link to both actual C objects. The consumer separately proves
+live admission, opcode budget, registered observer ownership, clocks and APU
+work; its private receipt lives in the superproject. Native counts alone do
+not establish improved runtime performance. Full regression/CLI runs were
+deferred at this focused checkpoint.
+
 ## NMI display/play-clock index contract — 2026-11-12
 
 `Lufia2NmiDisplayAndClock` at `80:8664` accepts M1X0 and M1X1, advertised
