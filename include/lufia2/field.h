@@ -151,6 +151,14 @@ Lufia2ExecutionResult Lufia2FieldEventTimerTickWithServices(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+/* $83:823B, $83:826B and $83:8285, before region service calls. */
+Lufia2ExecutionResult Lufia2FieldPrepareRegionProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldSelectRegionScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldSelectRegionScene(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $83:81C6 field trigger checks; exact LLE boundaries. */
 Lufia2ExecutionResult Lufia2FieldTriggerUpdate(
     const Lufia2Memory *memory,

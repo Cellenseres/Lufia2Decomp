@@ -237,61 +237,119 @@ static uint8_t RunPendingFieldEvent(const Lufia2Memory *memory, Lufia2CpuState *
                              result);
 }
 
-static uint8_t ProbeFieldRegions(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                 Lufia2PushedChildCall child, void *context,
-                                 Lufia2ExecutionResult *result) {
+static uint32_t SelectFieldRegionProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS));
     OpBitValue(cpu, 0x10u);
     if (cpu->zero)
-        return 1u;
+        return 0x83829eu;
     OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE));
     OpBitValue(cpu, 0x80u);
     if (!cpu->zero)
-        return 1u;
+        return 0x83829eu;
     OpLda(memory, cpu, WRAM_FIELD_CONTROL_FLAGS);
     OpBitValue(cpu, 8u);
-    if (!cpu->zero)
-        return 1u;
-    if (child == LegacyTriggerChild) {
-        *result = ExecutionHandoff(cpu, 0x838251u);
-        return 0u;
-    }
+    return cpu->zero ? 0x838251u : 0x83829eu;
+}
+
+static void PrepareFieldRegionProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLoadA(cpu, 0x10u);
     OpTestBits(memory, cpu, OpAbs(cpu, WRAM_FIELD_FLAGS), 0u);
     ReadTriggerPosition(memory, cpu);
     PushDataBank(memory, cpu);
     UseTriggerWramBank(memory, cpu);
+}
+
+static bool FieldRegionNeedsScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE));
+    OpBitValue(cpu, 1u);
+    if (!cpu->zero)
+        return false;
+    OpLda(memory, cpu, WRAM_FIELD_CONTROL_FLAGS);
+    OpBitValue(cpu, 4u);
+    return cpu->zero;
+}
+
+static uint32_t SelectFieldRegionScene(Lufia2CpuState *cpu) {
+    OpCmpValue(cpu, 0x0bu);
+    if (cpu->zero)
+        return 0x838289u;
+    OpCmpValue(cpu, 0x0cu);
+    if (cpu->zero)
+        return 0x838292u;
+    OpCmpValue(cpu, 0x0du);
+    return cpu->zero ? 0x83829bu : 0x83829eu;
+}
+
+Lufia2ExecutionResult Lufia2FieldPrepareRegionProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->data_bank != 0x83u || cpu->direct_page ||
+        cpu->decimal || !cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83823bu);
+    const uint32_t selected = SelectFieldRegionProbe(memory, cpu);
+    if (selected != 0x838251u)
+        return ExecutionHandoff(cpu, selected);
+    PrepareFieldRegionProbe(memory, cpu);
+    return ExecutionHandoff(cpu, 0x838265u);
+}
+
+Lufia2ExecutionResult Lufia2FieldSelectRegionScript(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->data_bank != 0x7eu || cpu->direct_page ||
+        cpu->decimal || !cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83826bu);
+    return ExecutionHandoff(cpu, FieldRegionNeedsScript(memory, cpu) ? 0x83827au : 0x83827du);
+}
+
+Lufia2ExecutionResult Lufia2FieldSelectRegionScene(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (cpu->program_bank != 0x83u || cpu->data_bank != 0x83u || cpu->direct_page ||
+        cpu->decimal || !cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x838285u);
+    return ExecutionHandoff(cpu, SelectFieldRegionScene(cpu));
+}
+
+static uint8_t ProbeFieldRegions(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 Lufia2PushedChildCall child, void *context,
+                                 Lufia2ExecutionResult *result) {
+    if (SelectFieldRegionProbe(memory, cpu) != 0x838251u)
+        return 1u;
+    if (child == LegacyTriggerChild) {
+        *result = ExecutionHandoff(cpu, 0x838251u);
+        return 0u;
+    }
+    PrepareFieldRegionProbe(memory, cpu);
     if (!FieldTriggerChild(memory, cpu, child, context, 0x838265u, 0x83b66eu, 2u, 0u,
                            result) ||
         !FieldTriggerChild(memory, cpu, child, context, 0x838268u, 0x83b747u, 2u, 0u,
                            result))
         return 0u;
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE));
-    OpBitValue(cpu, 1u);
-    if (cpu->zero) {
-        OpLda(memory, cpu, WRAM_FIELD_CONTROL_FLAGS);
-        OpBitValue(cpu, 4u);
-        if (cpu->zero && !FieldTriggerChild(memory, cpu, child, context, 0x83827au,
-                                            0x83b711u, 2u, 0u, result))
-            return 0u;
-    }
+    if (FieldRegionNeedsScript(memory, cpu) &&
+        !FieldTriggerChild(memory, cpu, child, context, 0x83827au, 0x83b711u, 2u, 0u,
+                           result))
+        return 0u;
     PullDataBank(memory, cpu);
     if (!FieldTriggerChild(memory, cpu, child, context, 0x83827eu, 0x83c0efu, 2u, 0u,
                            result) ||
         !FieldTriggerChild(memory, cpu, child, context, 0x838281u, 0x83fb71u, 3u, 0u,
                            result))
         return 0u;
-    OpCmpValue(cpu, 0x0bu);
-    if (cpu->zero)
-        return FieldTriggerChild(memory, cpu, child, context, 0x838289u, 0x83816du, 2u,
-                                 0u, result);
-    OpCmpValue(cpu, 0x0cu);
-    if (cpu->zero)
-        return FieldTriggerChild(memory, cpu, child, context, 0x838292u, 0x83813bu, 2u,
-                                 0u, result);
-    OpCmpValue(cpu, 0x0du);
-    return !cpu->zero || FieldTriggerChild(memory, cpu, child, context, 0x83829bu,
-                                           0x838386u, 2u, 0u, result);
+    switch (SelectFieldRegionScene(cpu)) {
+    case 0x838289u:
+        return FieldTriggerChild(memory, cpu, child, context, 0x838289u, 0x83816du,
+                                 2u, 0u, result);
+    case 0x838292u:
+        return FieldTriggerChild(memory, cpu, child, context, 0x838292u, 0x83813bu,
+                                 2u, 0u, result);
+    case 0x83829bu:
+        return FieldTriggerChild(memory, cpu, child, context, 0x83829bu, 0x838386u,
+                                 2u, 0u, result);
+    default:
+        return 1u;
+    }
 }
 
 static Lufia2ExecutionResult RunFieldTriggers(const Lufia2Memory *memory,
