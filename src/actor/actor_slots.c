@@ -100,6 +100,68 @@ void Lufia2ActorSpawn(
     PullDataBank(memory, cpu);                                 /* DFA3 */
 }
 
+static uint32_t SelectActorSlotUpdate(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Lufia2ActorSlotView slot;
+    if (cpu->index_is_8_bit) {                             /* BBA5 */
+        cpu->y = Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT));
+        SetNz8(cpu, (uint8_t)cpu->y);
+    } else {
+        LoadYDirect16(memory, cpu, DP_ACTOR_SLOT);
+    }
+    slot = Lufia2ActorSlotAt(memory, cpu, cpu->y);
+    LoadA8(cpu, Lufia2ActorSlotState(&slot));              /* BBA7 */
+    BitImmediate8(cpu, 0x04u);
+    if (cpu->zero) {
+        uint32_t primary = 0;
+        uint8_t gate = 0;
+
+        BitImmediate8(cpu, 0x18u);                         /* BBAE */
+        if (!cpu->zero) {
+            gate = 1;
+        } else {
+            BitImmediate8(cpu, 0x01u);
+            if (cpu->zero) {
+                TransferYToA8(cpu);                        /* BBB6 */
+                if (cpu->zero)
+                    primary = 0x83bbf3u;
+                else
+                    gate = 1;
+            }
+        }
+        if (gate) {
+            LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));   /* BBBE */
+            BitImmediate8(cpu, 0x2cu);
+            if (!cpu->zero)
+                TransferYToA8(cpu);
+            if (cpu->zero)
+                primary = 0x83c7f8u;
+        }
+        return primary == 0x83bbf3u ? 0x83bbb9u
+            : primary == 0x83c7f8u ? 0x83bbc9u : 0x83bbccu;
+    }
+    return 0x83bbd1u;
+}
+
+static uint32_t AdvanceActorSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT))); /* BBD1 */
+    LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+    Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), A8(cpu));
+    Compare8(cpu, A8(cpu), ACTOR_SLOT_COUNT);
+    return cpu->zero ? 0x83bbdau : 0x83bba1u;
+}
+
+Lufia2ExecutionResult Lufia2ActorSelectSlotUpdate(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return ExecutionHandoff(cpu, SelectActorSlotUpdate(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2ActorAdvanceSlot(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return ExecutionHandoff(cpu, AdvanceActorSlot(memory, cpu));
+}
+
 Lufia2ExecutionResult Lufia2UpdateActorSlots(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -118,8 +180,6 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
     }
     Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), 0x00u);  /* BB9F */
     for (;;) {
-        Lufia2ActorSlotView slot;
-
         ++result.dispatches;
         /* A child left D set: AB4F's ADC goes BCD. */
         if (cpu->decimal) {
@@ -131,40 +191,10 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
         SimulateJslFrame(memory, cpu, 0x83u, 0xbba4u);         /* BBA1 */
         Lufia2ActorRecordOffsets(memory, cpu);
         SimulateRtlFrame(memory, cpu);
-        if (cpu->index_is_8_bit) {                             /* BBA5 */
-            cpu->y = Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT));
-            SetNz8(cpu, (uint8_t)cpu->y);
-        } else {
-            LoadYDirect16(memory, cpu, DP_ACTOR_SLOT);
-        }
-        slot = Lufia2ActorSlotAt(memory, cpu, cpu->y);
-        LoadA8(cpu, Lufia2ActorSlotState(&slot));              /* BBA7 */
-        BitImmediate8(cpu, 0x04u);
-        if (cpu->zero) {
-            uint32_t primary = 0;
-            uint8_t gate = 0;
-
-            BitImmediate8(cpu, 0x18u);                         /* BBAE */
-            if (!cpu->zero) {
-                gate = 1;
-            } else {
-                BitImmediate8(cpu, 0x01u);
-                if (cpu->zero) {
-                    TransferYToA8(cpu);                        /* BBB6 */
-                    if (cpu->zero)
-                        primary = 0x83bbf3u;
-                    else
-                        gate = 1;
-                }
-            }
-            if (gate) {
-                LoadA8(cpu, Read8(memory, WRAM_FIELD_CONTROL_FLAGS));   /* BBBE */
-                BitImmediate8(cpu, 0x2cu);
-                if (!cpu->zero)
-                    TransferYToA8(cpu);
-                if (cpu->zero)
-                    primary = 0x83c7f8u;
-            }
+        const uint32_t selected = SelectActorSlotUpdate(memory, cpu);
+        if (selected != 0x83bbd1u) {
+            const uint32_t primary = selected == 0x83bbb9u ? 0x83bbf3u
+                : selected == 0x83bbc9u ? 0x83c7f8u : 0u;
             if (primary != 0) {
                 if (!child(child_context, cpu, primary,
                         primary == 0x83bbf3u ? 0x83bbb9u : 0x83bbc9u)) {
@@ -179,11 +209,8 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
             SetAccumulatorWidth(cpu, 1);                       /* BBCF */
             SetIndexWidth(cpu, 1);
         }
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_ACTOR_SLOT))); /* BBD1 */
-        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), A8(cpu));
-        Compare8(cpu, A8(cpu), ACTOR_SLOT_COUNT);
-        if (cpu->zero)
+        const uint32_t next = AdvanceActorSlot(memory, cpu);
+        if (next == 0x83bbdau)
             break;
     }
     LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0FE));               /* BBDA */
