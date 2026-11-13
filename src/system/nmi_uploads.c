@@ -253,6 +253,29 @@ Lufia2ExecutionResult Lufia2NmiTilemapUploads(
     return ExecutionReturned(0x80882du);
 }
 
+static uint8_t WriteScrollRegisterPair(
+    Lufia2Wram wram, uint16_t reg, uint16_t offset) {
+    WramWriteAt(wram, 0, reg,
+        WramReadAt(wram, WRAM_NMI_SCROLL_REGISTERS, offset));
+    const uint8_t high = WramReadAt(wram, WRAM_NMI_SCROLL_REGISTERS + 1u, offset);
+    WramWriteAt(wram, 0, reg, high);
+    return high;
+}
+
+Lufia2ExecutionResult Lufia2NmiWriteScrollPair(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->data_bank != 0x80u || cpu->direct_page ||
+        cpu->decimal || !cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->x < SNES_BG1HOFS || cpu->x >= SNES_BG1HOFS + SCROLL_REGISTER_COUNT ||
+        cpu->y != 2u * (cpu->x - SNES_BG1HOFS))
+        return ExecutionHandoff(cpu, 0x8087b2u);
+    LoadA8(cpu, WriteScrollRegisterPair(WramViewOfCaller(memory, cpu), cpu->x, cpu->y));
+    LoadX16(cpu, (uint16_t)(cpu->x + 1u));
+    LoadY16(cpu, (uint16_t)(cpu->y + 2u));
+    Compare16(cpu, cpu->y, 2u * SCROLL_REGISTER_COUNT);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x8087c4u : 0x8087b2u);
+}
+
 /* $80:87A7: updates scroll registers, queued DMA, tilemaps and HDMA.
  * Saves and restores P; either accumulator and index width may enter. */
 Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
@@ -267,13 +290,9 @@ Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
     Push8(memory, cpu, PackStatus(cpu));
     SetAccumulatorWidth(cpu, 1);
     SetIndexWidth(cpu, 0);
-    for (i = 0; i < SCROLL_REGISTER_COUNT; ++i) {
-        /* Each scroll register takes its low byte, then its high byte. */
-        WramWriteAt(wram, 0, (uint16_t)(SNES_BG1HOFS + i),
-            WramReadAt(wram, WRAM_NMI_SCROLL_REGISTERS, (uint16_t)(2u * i)));
-        WramWriteAt(wram, 0, (uint16_t)(SNES_BG1HOFS + i),
-            WramReadAt(wram, WRAM_NMI_SCROLL_REGISTERS + 1u, (uint16_t)(2u * i)));
-    }
+    for (i = 0; i < SCROLL_REGISTER_COUNT; ++i)
+        (void)WriteScrollRegisterPair(wram, (uint16_t)(SNES_BG1HOFS + i),
+            (uint16_t)(2u * i));
     cpu->x = SNES_BG1HOFS + SCROLL_REGISTER_COUNT;
     cpu->y = 2u * SCROLL_REGISTER_COUNT;
     cpu->carry = true;
