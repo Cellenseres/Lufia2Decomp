@@ -1739,6 +1739,26 @@ static Lufia2FieldFrameAction FieldLoopSelectAction(
     return cpu->zero ? LUFIA2_FIELD_FRAME_UPDATE : LUFIA2_FIELD_FRAME_CHANGE_SCENE;
 }
 
+Lufia2ExecutionResult Lufia2FieldPrepareFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->data_bank != 0x83u ||
+        cpu->direct_page || cpu->decimal || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x838007u);
+    const Lufia2FieldFrameAction action = FieldLoopSelectAction(memory, cpu);
+    switch (action) {
+    case LUFIA2_FIELD_FRAME_WAIT:
+        return ExecutionHandoff(cpu, 0x838004u);
+    case LUFIA2_FIELD_FRAME_TRANSITION:
+        return ExecutionHandoff(cpu, 0x838031u);
+    case LUFIA2_FIELD_FRAME_CHANGE_MAP:
+        return ExecutionHandoff(cpu, 0x83803du);
+    case LUFIA2_FIELD_FRAME_CHANGE_SCENE:
+        return ExecutionHandoff(cpu, 0x838069u);
+    default:
+        return ExecutionHandoff(cpu, 0x838070u);
+    }
+}
+
 static Lufia2ExecutionResult FieldLoopChangeMap(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {

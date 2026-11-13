@@ -1437,6 +1437,11 @@ Lufia2ExecutionResult Lufia2FieldWrapLayerScroll(
 Lufia2ExecutionResult Lufia2FieldRunLoop(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
+
+/* $83:8007, stopping before the selected frame service. */
+Lufia2ExecutionResult Lufia2FieldPrepareFrame(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2FieldResumeFrame(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
