@@ -1,4 +1,5 @@
 #include "battle/battle_internal.h"
+#include "lufia2/battle_command_tiles.h"
 #include "core/snes_registers.h"
 
 enum {
@@ -86,26 +87,22 @@ static void BattlePartyCommandTextDimensions(const Lufia2Memory *memory,
     OpSta(memory, cpu, OpAbs(cpu, 0x09f6u));
 }
 
-static bool BattlePartyCommandDraw(BattleContext *battle) {
-    const Lufia2Memory *memory = battle->memory;
-    Lufia2CpuState *cpu = battle->cpu;
-    OpLdx(cpu, 0u);
-    do {
-        OpLda(memory, cpu, OpLongX(cpu, 0x97b567u));
-        OpSta(memory, cpu, OpDp(cpu, 0u));
-        OpLda(memory, cpu, OpLongX(cpu, 0x97b568u));
-        OpSta(memory, cpu, OpDp(cpu, 8u));
-        OpLda(memory, cpu, OpLongX(cpu, 0x97b569u));
-        OpSta(memory, cpu, OpDp(cpu, 9u));
-        OpInx(cpu);
-        OpInx(cpu);
-        OpInx(cpu);
-        OpPushX(memory, cpu);
-        if (!BattleCall(battle, 0xccacu, BATTLE_ROUTINE_TILE_BLOCK, 2u))
-            return false;
-        OpPullX(memory, cpu);
-        OpCpx(cpu, 15u);
-    } while (!cpu->zero);
+static void PreparePartyCommandTile(const Lufia2Memory *memory,
+                                     Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpLongX(cpu, 0x97b567u));
+    OpSta(memory, cpu, OpDp(cpu, 0u));
+    OpLda(memory, cpu, OpLongX(cpu, 0x97b568u));
+    OpSta(memory, cpu, OpDp(cpu, 8u));
+    OpLda(memory, cpu, OpLongX(cpu, 0x97b569u));
+    OpSta(memory, cpu, OpDp(cpu, 9u));
+    OpInx(cpu);
+    OpInx(cpu);
+    OpInx(cpu);
+    OpPushX(memory, cpu);
+}
+
+static void PrepareSelectedPartyCommandTile(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu) {
     OpSepWidths(cpu, 0x10u);
     OpLda(memory, cpu, OpDp(cpu, 0x47u));
     OpAndValue(cpu, 15u);
@@ -121,6 +118,45 @@ static bool BattlePartyCommandDraw(BattleContext *battle) {
     OpSta(memory, cpu, OpDp(cpu, 8u));
     OpLda(memory, cpu, OpLongX(cpu, 0x97b569u));
     OpSta(memory, cpu, OpDp(cpu, 9u));
+}
+
+Lufia2ExecutionResult Lufia2BattlePreparePartyCommandTile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81cc93u);
+    OpLdx(cpu, 0u);
+    PreparePartyCommandTile(memory, cpu);
+    return ExecutionHandoff(cpu, 0x81ccacu);
+}
+
+Lufia2ExecutionResult Lufia2BattleContinuePartyCommandTiles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81ccafu);
+    OpPullX(memory, cpu);
+    OpCpx(cpu, 15u);
+    if (!cpu->zero) {
+        PreparePartyCommandTile(memory, cpu);
+        return ExecutionHandoff(cpu, 0x81ccacu);
+    }
+    PrepareSelectedPartyCommandTile(memory, cpu);
+    return ExecutionHandoff(cpu, 0x81ccd8u);
+}
+
+static bool BattlePartyCommandDraw(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpLdx(cpu, 0u);
+    do {
+        PreparePartyCommandTile(memory, cpu);
+        if (!BattleCall(battle, 0xccacu, BATTLE_ROUTINE_TILE_BLOCK, 2u))
+            return false;
+        OpPullX(memory, cpu);
+        OpCpx(cpu, 15u);
+    } while (!cpu->zero);
+    PrepareSelectedPartyCommandTile(memory, cpu);
     return BattleCall(battle, 0xccd8u, BATTLE_ROUTINE_TILE_BLOCK, 2u) &&
            BattleCall(battle, 0xccdbu, 0x859dd4u, 3u) &&
            BattleCall(battle, 0xccdfu, 0x81d9d0u, 2u);

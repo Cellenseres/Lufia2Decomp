@@ -5,6 +5,7 @@
 
 #define LUFIA2_BATTLE_COMMAND_TILE_API 1
 #define LUFIA2_BATTLE_SELECTED_COMMAND_TILE_API 1
+#define LUFIA2_BATTLE_PARTY_COMMAND_TILE_API 1
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,6 +17,14 @@ Lufia2ExecutionResult Lufia2BattlePrepareCommandTile(
 
 /* $81:CBB8: prepare the highlighted tile before its renderer. */
 Lufia2ExecutionResult Lufia2BattlePrepareSelectedCommandTile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $81:CC93: begin the member command tiles, before the renderer. */
+Lufia2ExecutionResult Lufia2BattlePreparePartyCommandTile(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* $81:CCAF: restore the tile index, then prepare the next or highlighted tile. */
+Lufia2ExecutionResult Lufia2BattleContinuePartyCommandTiles(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
 #ifdef __cplusplus
