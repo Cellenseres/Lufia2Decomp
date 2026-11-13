@@ -151,6 +151,16 @@ Lufia2ExecutionResult Lufia2FieldEventTimerTickWithServices(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+/* $83:81C6, $83:81CF, $83:81DB and $83:81FA, before trigger services. */
+Lufia2ExecutionResult Lufia2FieldPrepareTriggerChecks(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldSelectContact(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldPrepareContactScan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2FieldPreparePendingEvent(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $83:823B, $83:826B and $83:8285, before region service calls. */
 Lufia2ExecutionResult Lufia2FieldPrepareRegionProbe(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
