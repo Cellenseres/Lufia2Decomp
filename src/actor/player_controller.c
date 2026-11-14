@@ -20,12 +20,17 @@ typedef struct PlayerControl {
     Lufia2CpuState *cpu;
     Lufia2PushedChildCall child;
     void *context;
+    uint8_t defer_world_calls;
 } PlayerControl;
 
 static uint8_t PlayerControlChild(
     const PlayerControl *control, uint32_t site, uint32_t target,
     uint8_t frame, uint8_t index_width, Lufia2ExecutionResult *result) {
     Lufia2CpuState *cpu = control->cpu;
+    if (control->defer_world_calls && (target == 0x8ebbafu || target == 0x8eb63bu)) {
+        *result = ExecutionHandoff(cpu, site);
+        return 0u;
+    }
     if (!CallChildWithFrame(control->memory, cpu, control->child,
             control->context, site, target, frame, 0x83u)) {
         *result = (Lufia2ExecutionResult){
@@ -106,14 +111,12 @@ static uint8_t TurnPlayerAtObstacle(
     return 1u;
 }
 
-static uint8_t ProbePlayerStep(
+static uint8_t ProbePlayerStepAfterLeader(
     const PlayerControl *control, uint8_t *walk,
     Lufia2ExecutionResult *result) {
     const Lufia2Memory *memory = control->memory;
     Lufia2CpuState *cpu = control->cpu;
-    OpRepWidths(cpu, 0x10u);
-    if (!PlayerControlChild(control, 0x83c1efu, 0x83c0efu, 2u, 0u, result) ||
-        !PlayerControlChild(control, 0x83c1f2u, 0x83c246u, 2u, 0u, result) ||
+    if (!PlayerControlChild(control, 0x83c1f2u, 0x83c246u, 2u, 0u, result) ||
         !PlayerControlChild(control, 0x83c1f5u, 0x83fbbdu,
             2u, ANY_INDEX_WIDTH, result))
         return 0u;
@@ -147,6 +150,15 @@ static uint8_t ProbePlayerStep(
     return 1u;
 }
 
+static uint8_t ProbePlayerStep(
+    const PlayerControl *control, uint8_t *walk,
+    Lufia2ExecutionResult *result) {
+    OpRepWidths(control->cpu, 0x10u);
+    if (!PlayerControlChild(control, 0x83c1efu, 0x83c0efu, 2u, 0u, result))
+        return 0u;
+    return ProbePlayerStepAfterLeader(control, walk, result);
+}
+
 static uint8_t StartPlayerWalk(
     const PlayerControl *control, Lufia2ExecutionResult *result) {
     const Lufia2Memory *memory = control->memory;
@@ -165,6 +177,15 @@ static uint8_t StartPlayerWalk(
     return 1u;
 }
 
+static Lufia2ExecutionResult CompletePlayerStep(
+    const PlayerControl *control, uint8_t walk) {
+    Lufia2ExecutionResult result;
+    if (walk && !StartPlayerWalk(control, &result))
+        return result;
+    OpSepWidths(control->cpu, 0x10u);
+    return ExecutionReturned(0x83c245u);
+}
+
 Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdateWithServices(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -174,7 +195,7 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdateWithServices(
     OpLda(memory, cpu, OpAbs(cpu, WRAM_TEXT_STATE));
     if (cpu->negative)
         return ExecutionReturned(0x83c1e2u);
-    const PlayerControl control = {memory, cpu, child, context};
+    const PlayerControl control = {memory, cpu, child, context, 0u};
     Lufia2ExecutionResult result;
     uint8_t handled = 0u;
     if (!TryPlayerInteraction(&control, &handled, &result) || handled)
@@ -190,10 +211,7 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdateWithServices(
     uint8_t walk = 1u;
     if (!cpu->carry && !ProbePlayerStep(&control, &walk, &result))
         return result;
-    if (walk && !StartPlayerWalk(&control, &result))
-        return result;
-    OpSepWidths(cpu, 0x10u);
-    return ExecutionReturned(0x83c245u);
+    return CompletePlayerStep(&control, walk);
 }
 
 static uint8_t PlayerNativeService(
@@ -348,6 +366,22 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Lufia2ExecutionResult result = Lufia2PlayerSlotStandardUpdateWithServices(
         memory, cpu, PlayerNativeService, (void *)memory);
+    if (result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
+        return ExecutionHandoff(cpu, cpu->resume_pc);
+    return result;
+}
+
+Lufia2ExecutionResult Lufia2PlayerSlotResumeStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit || cpu->decimal ||
+        cpu->direct_page || cpu->program_bank != 0x83u || cpu->data_bank != 0x83u ||
+        cpu->stack < 0x1f20u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x83c1f2u);
+    const PlayerControl control = {memory, cpu, PlayerNativeService, (void *)memory, 1u};
+    Lufia2ExecutionResult result;
+    uint8_t walk = 1u;
+    if (ProbePlayerStepAfterLeader(&control, &walk, &result))
+        result = CompletePlayerStep(&control, walk);
     if (result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
         return ExecutionHandoff(cpu, cpu->resume_pc);
     return result;

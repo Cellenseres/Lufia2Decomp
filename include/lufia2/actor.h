@@ -85,6 +85,10 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+/* $83:C1F2, until return or the next world-service call. */
+Lufia2ExecutionResult Lufia2PlayerSlotResumeStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $83:D508 through its RTS, or an exact boundary. */
 Lufia2ExecutionResult Lufia2ActorSecondaryUpdate(
     const Lufia2Memory *memory,
