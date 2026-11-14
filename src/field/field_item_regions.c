@@ -64,15 +64,17 @@ static uint8_t ItemRegionContains(
     return !cpu->carry;
 }
 
-static void FindItemRegion(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, REGION_LIST_OFFSET)));
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, OpDp(cpu, REGION_ITEM));
+static uint8_t FindItemRegion(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint32_t record_limit, uint8_t bounded) {
+    uint32_t inspected = 0u;
     for (;;) {
+        if (bounded && inspected == record_limit)
+            return 0u;
         OpLda(memory, cpu, OpAbsX(cpu, REGION_LIST));
         OpCmpValue(cpu, 0xffu);
         if (cpu->zero)
-            return;
+            return 1u;
         uint8_t found = ItemRegionContains(memory, cpu, REGION_LIST + 5u);
         if (!found) {
             OpLda(memory, cpu, OpAbsX(cpu, REGION_LIST + 9u));
@@ -83,7 +85,7 @@ static void FindItemRegion(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         if (found) {
             OpLda(memory, cpu, OpAbsX(cpu, REGION_LIST + 13u));
             OpSta(memory, cpu, OpDp(cpu, REGION_ITEM));
-            return;
+            return 1u;
         }
         OpRepWidths(cpu, 0x20u);
         OpLoadA(cpu, cpu->x);
@@ -91,6 +93,8 @@ static void FindItemRegion(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
         OpAdcValue(cpu, 15u);
         OpLdx(cpu, cpu->accumulator);
         OpSepWidths(cpu, 0x20u);
+        if (bounded)
+            ++inspected;
     }
 }
 
@@ -100,22 +104,25 @@ static Lufia2ExecutionResult ReturnItemRegion(
     return ExecutionReturned(0x8eb739u);
 }
 
-Lufia2ExecutionResult Lufia2FieldTryItemRegion(
+static Lufia2ExecutionResult ProbeItemRegion(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (!cpu->accumulator_is_8_bit || !child || cpu->decimal ||
-            cpu->program_bank != 0x8eu)
-        return ExecutionHandoff(cpu, 0x8eb63bu);
-    Push8(memory, cpu, cpu->data_bank);
-    OpLda(memory, cpu, OpAbs(cpu, PLAYER_X));
-    OpSta(memory, cpu, OpDp(cpu, REGION_X));
-    OpLda(memory, cpu, OpAbs(cpu, PLAYER_Y));
-    OpSta(memory, cpu, OpDp(cpu, REGION_Y));
-    OpLoadA(cpu, 0x7eu);
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
-    OpRepWidths(cpu, 0x10u);
-    FindItemRegion(memory, cpu);
+    uint32_t entry, uint32_t record_limit, uint8_t bounded) {
+    if (entry == 0x8eb63bu) {
+        Push8(memory, cpu, cpu->data_bank);
+        OpLda(memory, cpu, OpAbs(cpu, PLAYER_X));
+        OpSta(memory, cpu, OpDp(cpu, REGION_X));
+        OpLda(memory, cpu, OpAbs(cpu, PLAYER_Y));
+        OpSta(memory, cpu, OpDp(cpu, REGION_Y));
+        OpLoadA(cpu, 0x7eu);
+        PushAccumulator8(memory, cpu);
+        PullDataBank(memory, cpu);
+        OpRepWidths(cpu, 0x10u);
+        OpLdx(cpu, OpReadX(memory, cpu, OpAbs(cpu, REGION_LIST_OFFSET)));
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, OpDp(cpu, REGION_ITEM));
+    }
+    if (!FindItemRegion(memory, cpu, record_limit, bounded))
+        return (Lufia2ExecutionResult){LUFIA2_EXECUTION_BOUNDARY, 0x8eb653u, 0u};
     OpLda(memory, cpu, OpDp(cpu, REGION_ITEM));
     OpCmpValue(cpu, 0xffu);
     cpu->carry = 0u;
@@ -141,7 +148,29 @@ Lufia2ExecutionResult Lufia2FieldTryItemRegion(
     OpSta(memory, cpu, OBJECT_OPERAND);
     OpLoadA(cpu, 3u);
     OpLdx(cpu, 2u);
-    Lufia2ExecutionResult result;
+    return (Lufia2ExecutionResult){LUFIA2_EXECUTION_BOUNDARY, 0x8eb6e0u, 0u};
+}
+
+Lufia2ExecutionResult Lufia2FieldItemRegionProbeStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint32_t entry, uint32_t record_limit) {
+    if (cpu->program_bank != 0x8eu || !cpu->accumulator_is_8_bit ||
+        cpu->decimal || cpu->direct_page ||
+        (entry != 0x8eb63bu && entry != 0x8eb653u) ||
+        (entry == 0x8eb653u && (cpu->data_bank != 0x7eu || cpu->index_is_8_bit)))
+        return ExecutionHandoff(cpu, entry);
+    return ProbeItemRegion(memory, cpu, entry, record_limit, 1u);
+}
+
+Lufia2ExecutionResult Lufia2FieldTryItemRegion(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!cpu->accumulator_is_8_bit || !child || cpu->decimal ||
+            cpu->program_bank != 0x8eu)
+        return ExecutionHandoff(cpu, 0x8eb63bu);
+    Lufia2ExecutionResult result = ProbeItemRegion(memory, cpu, 0x8eb63bu, 0u, 0u);
+    if (result.flow != LUFIA2_EXECUTION_BOUNDARY || result.pc != 0x8eb6e0u)
+        return result;
     if (!ItemRegionChild(memory, cpu, child, context,
             0x8eb6e0u, 0x80c12eu, 3u, 0u, &result))
         return result;

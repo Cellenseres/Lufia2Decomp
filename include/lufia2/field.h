@@ -1208,6 +1208,10 @@ Lufia2ExecutionResult Lufia2FieldRequestObjectAnimation(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2FieldItemRegionProbeStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    uint32_t entry, uint32_t record_limit);
+
 Lufia2ExecutionResult Lufia2FieldTryItemRegion(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
