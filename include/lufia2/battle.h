@@ -841,6 +841,12 @@ Lufia2ExecutionResult Lufia2BattleFrameInputUpkeep(
 Lufia2ExecutionResult Lufia2BattleAppendOamSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* $81:B680 position overlays, with the same context as the sprite builder.
+ * Stops before $B700 or the original conditional RTS at $B69F.
+ */
+Lufia2ExecutionResult Lufia2BattleApplySpritePositionOverlays(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $81:B5C4 builds battle sprite groups and applies position overlays.
  * M1X0, PB $81, DP zero, native binary mode and DB mapping low WRAM.
  * Child JSR frames remain explicit. Returns before RTL $B704; if the bus

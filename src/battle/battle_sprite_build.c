@@ -271,6 +271,17 @@ static bool BattleApplySpritePositionOverlays(const Lufia2Memory *memory,
     return true;
 }
 
+Lufia2ExecutionResult Lufia2BattleApplySpritePositionOverlays(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
+        !((cpu->data_bank & 0x7fu) < 0x40u || cpu->data_bank == 0x7eu))
+        return ExecutionHandoff(cpu, 0x81b680u);
+    if (!BattleApplySpritePositionOverlays(memory, cpu))
+        return ExecutionReturned(0x81b69fu);
+    return ExecutionHandoff(cpu, 0x81b700u);
+}
+
 /* $81:B5C4: build the battle OAM groups and apply the final position overlays. */
 Lufia2ExecutionResult Lufia2BattleBuildSprites(const Lufia2Memory *memory,
                                                Lufia2CpuState *cpu,
