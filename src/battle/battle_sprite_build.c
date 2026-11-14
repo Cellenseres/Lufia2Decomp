@@ -44,9 +44,9 @@ static uint8_t OamPackFourAttributes(const Lufia2Memory *memory, Lufia2CpuState 
 }
 
 /* Replace one 2-bit attribute in a high OAM byte. */
-static uint8_t OamMergeAttribute(uint8_t old, unsigned slot, uint8_t attribute) {
+static uint8_t OamMergeAttribute(uint8_t old, unsigned slot, uint8_t shifted_attribute) {
     const unsigned shift = slot * 2u;
-    return (uint8_t)((old & ~(3u << shift)) | ((unsigned)(attribute & 3u) << shift));
+    return (uint8_t)((old & ~(3u << shift)) | (unsigned)shifted_attribute);
 }
 
 /* Append four records; OAM count must be a multiple. */
@@ -90,21 +90,21 @@ static void OamAppendOne(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1);
     const uint8_t attribute =
         (uint8_t)(Read8(memory, OpAbsX(cpu, OAM_SOURCE_ATTRIBUTE)) & 3u);
-    const unsigned slot = Read8(memory, OpDp(cpu, SPRITE_DP_OAM_COUNT)) & 3u;
     Write8(memory, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES), attribute);
+    const unsigned slot = Read8(memory, OpDp(cpu, SPRITE_DP_OAM_COUNT)) & 3u;
     Write8(memory, OpDp(cpu, SPRITE_DP_ATTRIBUTE_SHIFT), (uint8_t)slot);
-    /* The ROM shifts the scratch byte per slot; keep it. */
-    for (unsigned done = 0; done < slot; ++done) {
-        Write8(memory, OpDp(cpu, SPRITE_DP_ATTRIBUTE_SHIFT),
-               (uint8_t)(slot - 1u - done));
-        Write8(memory, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES),
-               (uint8_t)(attribute << (2u * done + 1u)));
-        Write8(memory, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES),
-               (uint8_t)(attribute << (2u * done + 2u)));
+    for (;;) {
+        OpStepMem(memory, cpu, OpDp(cpu, SPRITE_DP_ATTRIBUTE_SHIFT), -1);
+        if (cpu->negative)
+            break;
+        cpu->carry = 0u;
+        OpRolMem8(memory, cpu, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES));
+        cpu->carry = 0u;
+        OpRolMem8(memory, cpu, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES));
     }
-    Write8(memory, OpDp(cpu, SPRITE_DP_ATTRIBUTE_SHIFT), 0xffu);
-    const uint8_t merged =
-        OamMergeAttribute(Read8(memory, OpAbsY(cpu, OAM_HIGH_TABLE)), slot, attribute);
+    const uint8_t old = Read8(memory, OpAbsY(cpu, OAM_HIGH_TABLE));
+    const uint8_t shifted_attribute = Read8(memory, OpDp(cpu, SPRITE_DP_HIGH_ATTRIBUTES));
+    const uint8_t merged = OamMergeAttribute(old, slot, shifted_attribute);
     LoadA8(cpu, merged);
     OpSta(memory, cpu, OpAbsY(cpu, OAM_HIGH_TABLE));
     OpPullX(memory, cpu);
