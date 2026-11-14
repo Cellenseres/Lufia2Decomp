@@ -159,6 +159,25 @@ static uint32_t AdvanceActorSlotAfterChildren(
     return AdvanceActorSlot(memory, cpu);
 }
 
+static uint32_t ActorSlotServiceTarget(uint32_t call_site) {
+    switch (call_site) {
+    case 0x83bbb9u: return 0x83bbf3u;
+    case 0x83bbc9u: return 0x83c7f8u;
+    case 0x83bbccu: return 0x83d508u;
+    default: return 0u;
+    }
+}
+
+Lufia2ExecutionResult Lufia2ActorCallSlotService(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t call_site) {
+    const uint32_t target = ActorSlotServiceTarget(call_site);
+    if (target == 0u || cpu->program_bank != 0x83u ||
+        cpu->accumulator_is_8_bit > 1u || cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, call_site);
+    SimulateJsrFrame(memory, cpu, (uint16_t)(call_site + 2u));
+    return ExecutionHandoff(cpu, target);
+}
+
 Lufia2ExecutionResult Lufia2ActorAdvanceSlotAfterChildren(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit > 1u ||
@@ -228,8 +247,8 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
         SimulateRtlFrame(memory, cpu);
         const uint32_t selected = SelectActorSlotUpdate(memory, cpu);
         if (selected != 0x83bbd1u) {
-            const uint32_t primary = selected == 0x83bbb9u ? 0x83bbf3u
-                : selected == 0x83bbc9u ? 0x83c7f8u : 0u;
+            const uint32_t primary = selected == 0x83bbccu
+                ? 0u : ActorSlotServiceTarget(selected);
             if (primary != 0) {
                 if (!child(child_context, cpu, primary,
                         primary == 0x83bbf3u ? 0x83bbb9u : 0x83bbc9u)) {
