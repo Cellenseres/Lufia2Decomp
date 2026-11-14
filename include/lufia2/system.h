@@ -496,6 +496,9 @@ Lufia2ExecutionResult Lufia2BootSoundTransferStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 
 /* Transfer phases stop before original polls and bank calls. */
+Lufia2ExecutionResult Lufia2SoundBeginPayloadStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
 Lufia2ExecutionResult Lufia2SoundUploadStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 

@@ -301,6 +301,35 @@ static bool SoundUploadWait(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return child(context, cpu, 0x809a0au, site, 2u) != 0u;
 }
 
+static void BeginSoundPayload(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, SOUND_UPLOAD_REPLY_PORT);
+}
+
+static bool PrepareSoundPayload(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint32_t poll_limit) {
+    for (uint32_t poll = 0u; poll < poll_limit; ++poll) {
+        OpCmp(memory, cpu, SOUND_UPLOAD_REPLY_PORT);
+        if (cpu->zero) {
+            OpStz(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE));
+            return true;
+        }
+    }
+    return false;
+}
+
+Lufia2ExecutionResult Lufia2SoundBeginPayloadStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || cpu->decimal ||
+        (entry != 0x809945u && entry != 0x80994bu))
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x809945u)
+        BeginSoundPayload(memory, cpu);
+    return ExecutionHandoff(cpu,
+        PrepareSoundPayload(memory, cpu, 1u) ? 0x809953u : 0x80994bu);
+}
+
 Lufia2ExecutionResult Lufia2SendSoundPayload(const Lufia2Memory *memory,
                                              Lufia2CpuState *cpu,
                                              Lufia2PushedChildCall child,
@@ -308,11 +337,9 @@ Lufia2ExecutionResult Lufia2SendSoundPayload(const Lufia2Memory *memory,
     if (!child || cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
         cpu->index_is_8_bit || cpu->decimal)
         return ExecutionHandoff(cpu, 0x809945u);
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, SOUND_UPLOAD_REPLY_PORT);
-    if (!SoundUploadMatches(memory, cpu, SOUND_UPLOAD_REPLY_PORT))
+    BeginSoundPayload(memory, cpu);
+    if (!PrepareSoundPayload(memory, cpu, SOUND_UPLOAD_POLL_LIMIT))
         return ExecutionHandoff(cpu, 0x80994bu);
-    OpStz(memory, cpu, OpDp(cpu, SOUND_UPLOAD_SEQUENCE));
     SoundUploadReadPair(memory, cpu, 0x80995bu, 0x809966u, false);
     do {
         SoundUploadSendPair(memory, cpu, false);
