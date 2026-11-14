@@ -59,6 +59,10 @@ Lufia2ExecutionResult Lufia2LegacyProbeNearbyRecord(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
 
+Lufia2ExecutionResult Lufia2LegacyRunSelectionLeaf(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
+    Lufia2PushedChildCall child, void *context);
+
 Lufia2ExecutionResult Lufia2LegacyRunSelection(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
     Lufia2PushedChildCall child, void *context);

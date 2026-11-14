@@ -225,3 +225,25 @@ Lufia2ExecutionResult Lufia2LegacyRunSelection(
     }
     return LegacySelectionRefresh(&selection);
 }
+
+Lufia2ExecutionResult Lufia2LegacyRunSelectionLeaf(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
+    Lufia2PushedChildCall child, void *context) {
+    const bool calls_child = entry == 0x85fbd8u || entry == 0x85fbddu;
+    if (cpu->program_bank != 0x85u ||
+        cpu->accumulator_is_8_bit > 1u || cpu->index_is_8_bit > 1u ||
+        cpu->stack < 0x1f04u || cpu->stack > 0x1ff8u ||
+        (!calls_child && entry != 0x85fbd7u && entry != 0x85fbe2u) ||
+        (calls_child && !child))
+        return ExecutionHandoff(cpu, entry);
+    if (!calls_child)
+        return ExecutionReturned(entry);
+    const uint32_t target = entry == 0x85fbd8u ? 0x8d989au : 0x8d98c0u;
+    if (!CallChildWithFrame(memory, cpu, child, context, entry, target, 3u, 0x85u))
+        return (Lufia2ExecutionResult){LUFIA2_EXECUTION_CHILD_UNWOUND, entry, 0u};
+    const uint32_t continuation = ((uint32_t)cpu->program_bank << 16) |
+        (uint16_t)(entry + 4u);
+    if (cpu->program_bank != 0x85u)
+        return ExecutionHandoff(cpu, continuation);
+    return ExecutionReturned(continuation);
+}
