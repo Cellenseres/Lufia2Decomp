@@ -162,6 +162,26 @@ Lufia2ExecutionResult Lufia2ActorAdvanceSlot(
     return ExecutionHandoff(cpu, AdvanceActorSlot(memory, cpu));
 }
 
+Lufia2ExecutionResult Lufia2ActorResumeSlotTraversal(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned maximum_slots) {
+    if (!cpu->accumulator_is_8_bit || !cpu->index_is_8_bit || cpu->decimal ||
+        cpu->direct_page || cpu->program_bank != 0x83u || cpu->data_bank != 0x83u ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu || maximum_slots > ACTOR_SLOT_COUNT)
+        return ExecutionHandoff(cpu, 0x83bba1u);
+    for (unsigned traversed = 0u; traversed < maximum_slots; ++traversed) {
+        SimulateJslFrame(memory, cpu, 0x83u, 0xbba4u);
+        ActorPrepareRecordOffsets(memory, cpu);
+        SimulateRtlFrame(memory, cpu);
+        const uint32_t selected = SelectActorSlotUpdate(memory, cpu);
+        if (selected != 0x83bbd1u)
+            return ExecutionHandoff(cpu, selected);
+        const uint32_t next = AdvanceActorSlot(memory, cpu);
+        if (next == 0x83bbdau)
+            return ExecutionHandoff(cpu, next);
+    }
+    return ExecutionHandoff(cpu, 0x83bba1u);
+}
+
 Lufia2ExecutionResult Lufia2UpdateActorSlots(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
