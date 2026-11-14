@@ -152,6 +152,21 @@ static uint32_t AdvanceActorSlot(
     return cpu->zero ? 0x83bbdau : 0x83bba1u;
 }
 
+static uint32_t AdvanceActorSlotAfterChildren(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 1);
+    return AdvanceActorSlot(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2ActorAdvanceSlotAfterChildren(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x83bbcfu);
+    return ExecutionHandoff(cpu, AdvanceActorSlotAfterChildren(memory, cpu));
+}
+
 Lufia2ExecutionResult Lufia2ActorSelectSlotUpdate(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     return ExecutionHandoff(cpu, SelectActorSlotUpdate(memory, cpu));
@@ -226,10 +241,10 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
                 result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
                 return result;
             }
-            SetAccumulatorWidth(cpu, 1);                       /* BBCF */
-            SetIndexWidth(cpu, 1);
         }
-        const uint32_t next = AdvanceActorSlot(memory, cpu);
+        const uint32_t next = selected != 0x83bbd1u
+            ? AdvanceActorSlotAfterChildren(memory, cpu)
+            : AdvanceActorSlot(memory, cpu);
         if (next == 0x83bbdau)
             break;
     }

@@ -59,6 +59,8 @@ typedef uint8_t (*Lufia2ActorSlotChild)(
 /* $83:BBA5 and $83:BBD1, stopping before calls or the next slot. */
 Lufia2ExecutionResult Lufia2ActorSelectSlotUpdate(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2ActorAdvanceSlotAfterChildren(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2ActorAdvanceSlot(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2ActorResumeSlotTraversal(
