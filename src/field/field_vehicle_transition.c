@@ -1,4 +1,4 @@
-#include "field/vehicle_transition_internal.h"
+#include "lufia2/field.h"
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/legacy_fragments.h"
@@ -116,9 +116,12 @@ static Lufia2ExecutionResult RestoreVehicleActor(
     return ExecutionReturned(0x8ebc98u);
 }
 
-Lufia2ExecutionResult Lufia2FieldProbeVehicleTerrainBody(
+Lufia2ExecutionResult Lufia2FieldProbeVehicleTerrain(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x8eu || !cpu->accumulator_is_8_bit ||
+            cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
+        return ExecutionHandoff(cpu, 0x8ebbafu);
     OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_TILE_X));
     OpSta(memory, cpu, OpDp(cpu, DP_PROBE_X));
     OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_TILE_Y));
@@ -149,7 +152,7 @@ Lufia2ExecutionResult Lufia2FieldTryVehicleTransition(
     if (cpu->program_bank != 0x8eu || !cpu->accumulator_is_8_bit ||
             cpu->index_is_8_bit || cpu->direct_page || cpu->decimal || !child)
         return ExecutionHandoff(cpu, 0x8ebbafu);
-    Lufia2ExecutionResult result = Lufia2FieldProbeVehicleTerrainBody(
+    Lufia2ExecutionResult result = Lufia2FieldProbeVehicleTerrain(
         memory, cpu, child, context);
     if (result.flow != LUFIA2_EXECUTION_BOUNDARY || result.pc != 0x8ebbd1u)
         return result;
