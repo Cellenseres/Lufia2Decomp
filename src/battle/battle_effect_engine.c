@@ -194,11 +194,49 @@ Lufia2ExecutionResult Lufia2BattleEffectBeginSlotStep(
     return ExecutionHandoff(cpu, actor ? 0x818b08u : 0x818a95u);
 }
 
+static uint32_t EffectCallCommand(const Lufia2Memory *memory,
+                                  Lufia2CpuState *cpu, uint16_t dispatch) {
+    const uint32_t target = 0x810000u | Read16ProgramIndexed(
+        memory, cpu, ROM_EFFECT_HANDLERS, cpu->x);
+    SimulateJsrFrame(memory, cpu, (uint16_t)(dispatch + 2u));
+    return target;
+}
+
+static uint32_t EffectResumeCommand(const Lufia2Memory *memory,
+                                    Lufia2CpuState *cpu, bool actor, bool yielded) {
+    if (yielded) {
+        PullDataBank(memory, cpu);
+        return actor ? 0x818b1bu : 0x818aaau;
+    }
+    return actor ? 0x818b08u : 0x818a95u;
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectCallCommandStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x818aa4u && entry != 0x818b15u) ||
+        cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    return ExecutionHandoff(cpu, EffectCallCommand(memory, cpu, (uint16_t)entry));
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectResumeCommandStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x818aa7u && entry != 0x818aa9u &&
+         entry != 0x818b18u && entry != 0x818b1au) ||
+        cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    const bool actor = entry == 0x818b18u || entry == 0x818b1au;
+    const bool yielded = entry == 0x818aa9u || entry == 0x818b1au;
+    return ExecutionHandoff(cpu, EffectResumeCommand(memory, cpu, actor, yielded));
+}
+
 static bool EffectRunSlot(EffectEngine *effect, bool actor) {
     const Lufia2Memory *memory = effect->battle.memory;
     Lufia2CpuState *cpu = effect->battle.cpu;
     const uint16_t dispatch = actor ? 0x8b15u : 0x8aa4u;
-    const uint16_t stream_step = actor ? 0x8b08u : 0x8a95u;
+    const uint16_t stream_step = (uint16_t)EffectResumeCommand(memory, cpu, actor, false);
     const uint32_t ordinary_return = 0x810000u | (uint16_t)(dispatch + 3u);
     const uint32_t yielded_return = actor ? 0x818b1au : 0x818aa9u;
 
@@ -210,9 +248,7 @@ static bool EffectRunSlot(EffectEngine *effect, bool actor) {
         Lufia2ExecutionResult command;
 
         EffectPrepareCommand(memory, cpu, actor);
-        target = 0x810000u | Read16ProgramIndexed(
-            memory, cpu, ROM_EFFECT_HANDLERS, cpu->x);
-        SimulateJsrFrame(memory, cpu, (uint16_t)(dispatch + 2u));
+        target = EffectCallCommand(memory, cpu, dispatch);
         command = EffectKnownCommand(effect, target, &known);
         if (known) {
             if (command.flow != LUFIA2_EXECUTION_RETURNED) {
@@ -230,7 +266,7 @@ static bool EffectRunSlot(EffectEngine *effect, bool actor) {
             landing = ordinary_return;
         }
         if (landing == yielded_return) {
-            PullDataBank(memory, cpu);
+            (void)EffectResumeCommand(memory, cpu, actor, true);
             return true;
         }
         if (landing != ordinary_return || cpu->direct_page != 0u ||

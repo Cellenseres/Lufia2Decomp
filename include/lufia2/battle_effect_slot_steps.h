@@ -22,6 +22,10 @@ Lufia2ExecutionResult Lufia2BattleEffectScriptAdvanceStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 Lufia2ExecutionResult Lufia2BattleEffectActorAdvanceStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2BattleEffectCallCommandStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+Lufia2ExecutionResult Lufia2BattleEffectResumeCommandStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 Lufia2ExecutionResult Lufia2BattleEffectDispatchPrepareStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 enum { LUFIA2_BATTLE_EFFECT_CLEAR_SPAN_MAX_BYTES = 32u };
