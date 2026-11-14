@@ -69,6 +69,11 @@ Lufia2ExecutionResult Lufia2ActorAdvanceSlot(
 Lufia2ExecutionResult Lufia2ActorResumeSlotTraversal(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned maximum_slots);
 
+Lufia2ExecutionResult Lufia2ActorBeginSlotUpdates(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+Lufia2ExecutionResult Lufia2ActorFinishSlotUpdates(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $83:BB93 40-slot traversal; children through the callback. */
 Lufia2ExecutionResult Lufia2UpdateActorSlots(
     const Lufia2Memory *memory,

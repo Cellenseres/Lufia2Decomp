@@ -216,6 +216,47 @@ Lufia2ExecutionResult Lufia2ActorResumeSlotTraversal(
     return ExecutionHandoff(cpu, 0x83bba1u);
 }
 
+static void BeginActorSlotUpdates(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0FE));               /* BB93 */
+    if (!cpu->zero) {
+        LoadA8(cpu, 0x01u);
+        Write8(memory, WRAM_UNK_7FE216, A8(cpu));
+    }
+    Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), 0x00u);  /* BB9F */
+}
+
+static void FinishActorSlotUpdates(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0FE));               /* BBDA */
+    if (!cpu->zero) {
+        LoadA8(cpu, 0x03u);
+        Write8(memory, WRAM_UNK_7FE216, A8(cpu));
+    }
+    LoadAAbsolute8(memory, cpu, WRAM_FOLLOW_SLOTS, 0);         /* BBE6 */
+    Compare8(cpu, A8(cpu), 0xffu);
+    if (!cpu->zero) {
+        LoadA8(cpu, 0x80u);
+        TestBitsAbsolute8(memory, cpu, WRAM_FOLLOW_SLOTS, 0);
+    }
+}
+
+Lufia2ExecutionResult Lufia2ActorBeginSlotUpdates(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x83bb93u);
+    BeginActorSlotUpdates(memory, cpu);
+    return ExecutionHandoff(cpu, 0x83bba1u);
+}
+
+Lufia2ExecutionResult Lufia2ActorFinishSlotUpdates(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x83bbdau);
+    FinishActorSlotUpdates(memory, cpu);
+    return ExecutionHandoff(cpu, 0x83bbf2u);
+}
+
 Lufia2ExecutionResult Lufia2UpdateActorSlots(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
@@ -227,12 +268,7 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
     result.pc = 0x83bbf2u;
     result.dispatches = 0;
 
-    LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0FE));               /* BB93 */
-    if (!cpu->zero) {
-        LoadA8(cpu, 0x01u);
-        Write8(memory, WRAM_UNK_7FE216, A8(cpu));
-    }
-    Write8(memory, DirectAddress(cpu, DP_ACTOR_SLOT), 0x00u);  /* BB9F */
+    BeginActorSlotUpdates(memory, cpu);
     for (;;) {
         ++result.dispatches;
         /* A child left D set: AB4F's ADC goes BCD. */
@@ -267,17 +303,7 @@ Lufia2ExecutionResult Lufia2UpdateActorSlots(
         if (next == 0x83bbdau)
             break;
     }
-    LoadA8(cpu, Read8(memory, WRAM_UNK_7FD0FE));               /* BBDA */
-    if (!cpu->zero) {
-        LoadA8(cpu, 0x03u);
-        Write8(memory, WRAM_UNK_7FE216, A8(cpu));
-    }
-    LoadAAbsolute8(memory, cpu, WRAM_FOLLOW_SLOTS, 0);         /* BBE6 */
-    Compare8(cpu, A8(cpu), 0xffu);
-    if (!cpu->zero) {
-        LoadA8(cpu, 0x80u);
-        TestBitsAbsolute8(memory, cpu, WRAM_FOLLOW_SLOTS, 0);
-    }
+    FinishActorSlotUpdates(memory, cpu);
     return result;
 }
 
