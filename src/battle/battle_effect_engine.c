@@ -391,13 +391,69 @@ Lufia2ExecutionResult Lufia2BattleEffectActorAdvanceStep(
     return EffectAdvanceSlotStep(memory, cpu, true);
 }
 
+static void EffectPrepareSlotLoop(const Lufia2Memory *memory,
+                                  Lufia2CpuState *cpu, bool actors) {
+    OpLoadA(cpu, actors ? EFFECT_ACTOR_COUNT : EFFECT_SCRIPT_COUNT);
+    OpSta(memory, cpu, OpAbs(cpu, EFFECT_SLOT_COUNTER));
+    OpLdy(cpu, actors ? EFFECT_ACTOR_SLOTS : EFFECT_SCRIPT_SLOTS);
+}
+
+static void EffectTakeUploadRequest(const Lufia2Memory *memory,
+                                    Lufia2CpuState *cpu, uint32_t address) {
+    OpLoadA(cpu, 0xffu);
+    EffectClearRequest(memory, cpu, OpAbs(cpu, address));
+}
+
+static void EffectRequestSpriteRebuild(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+}
+
+static void EffectCompleteFrame(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpStepMem(memory, cpu, OpAbs(cpu, EFFECT_FRAME_COUNTER), 1);
+    OpLda(memory, cpu, OpAbs(cpu, EFFECT_ACTIVE_COUNT));
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectFrameStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x81u || cpu->data_bank != 0x7eu ||
+        cpu->direct_page || cpu->decimal ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x818a76u:
+    case 0x818ab9u:
+        EffectPrepareSlotLoop(memory, cpu, entry == 0x818ab9u);
+        return ExecutionHandoff(cpu, entry + 8u);
+    case 0x818b2du:
+    case 0x818b3cu:
+    case 0x818b4bu:
+    case 0x818b5au: {
+        static const uint16_t requests[] = {
+            EFFECT_REQUEST_STATUS, EFFECT_REQUEST_BG1,
+            EFFECT_REQUEST_BG2, EFFECT_REQUEST_BG3
+        };
+        const unsigned layer = (entry - 0x818b2du) / 15u;
+        EffectTakeUploadRequest(memory, cpu, requests[layer]);
+        return ExecutionHandoff(cpu, entry + (cpu->zero ? 15u : 7u));
+    }
+    case 0x818bc1u:
+        EffectRequestSpriteRebuild(memory, cpu);
+        return ExecutionHandoff(cpu, 0x818bc7u);
+    case 0x818bcbu:
+        EffectCompleteFrame(memory, cpu);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x818bd6u : 0x818a76u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+}
+
 static bool EffectRunSlots(EffectEngine *effect, bool actors) {
     const Lufia2Memory *memory = effect->battle.memory;
     Lufia2CpuState *cpu = effect->battle.cpu;
 
-    OpLoadA(cpu, actors ? EFFECT_ACTOR_COUNT : EFFECT_SCRIPT_COUNT);
-    OpSta(memory, cpu, OpAbs(cpu, EFFECT_SLOT_COUNTER));
-    OpLdy(cpu, actors ? EFFECT_ACTOR_SLOTS : EFFECT_SCRIPT_SLOTS);
+    EffectPrepareSlotLoop(memory, cpu, actors);
     do {
         if (EffectSlotTimerExpired(memory, cpu)) {
             if (!EffectRunSlot(effect, actors))
@@ -421,8 +477,7 @@ static bool EffectUploadChanges(EffectEngine *effect) {
     if (!EffectCall(effect, 0x8b2au, 0x818e92u, 2u, false))
         return false;
     for (unsigned layer = 0; layer < 4u; ++layer) {
-        OpLoadA(cpu, 0xffu);
-        EffectClearRequest(memory, cpu, OpAbs(cpu, requests[layer]));
+        EffectTakeUploadRequest(memory, cpu, requests[layer]);
         if (!cpu->zero) {
             OpRepWidths(cpu, 0x20u);
             if (!EffectCall(effect, sites[layer], uploaders[layer], 3u, true))
@@ -473,12 +528,10 @@ static bool EffectUploadChanges(EffectEngine *effect) {
     }
     if (!EffectCall(effect, 0x8bbdu, BATTLE_ROUTINE_SPRITES, 3u, false))
         return false;
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    EffectRequestSpriteRebuild(memory, cpu);
     if (!EffectCall(effect, 0x8bc7u, BATTLE_ROUTINE_FRAME_INPUT, 3u, false))
         return false;
-    OpStepMem(memory, cpu, OpAbs(cpu, EFFECT_FRAME_COUNTER), 1);
-    OpLda(memory, cpu, OpAbs(cpu, EFFECT_ACTIVE_COUNT));
+    EffectCompleteFrame(memory, cpu);
     return true;
 }
 
