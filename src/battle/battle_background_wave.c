@@ -313,45 +313,80 @@ Lufia2ExecutionResult Lufia2BattleRippleWordRowStep(
     return ExecutionHandoff(cpu, cpu->zero ? 0x85aa74u : 0x85aa61u);
 }
 
+typedef struct RippleWordStart {
+    RippleWordRun run;
+    bool carry;
+} RippleWordStart;
+
+static RippleWordStart PrepareRippleWordRun(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    const uint8_t phase = WramRead(wram, WORDS_PHASE);
+    PushStackWord(memory, cpu, cpu->x);
+    WramWrite(wram, SCRATCH_COUNTER, phase & 3u);
+    uint8_t remaining = Difference8Mode(
+        4u, WramRead(wram, SCRATCH_COUNTER), cpu->decimal).value;
+    WramWrite(wram, SCRATCH_COUNTER, remaining);
+    remaining = Sum8Mode((uint8_t)(remaining << 1),
+        WramRead(wram, SCRATCH_COUNTER), (remaining & 0x80u) != 0,
+        cpu->decimal).value;
+    const Byte8Result base = Sum8Mode(
+        (uint8_t)(phase << 1), WORDS_BASE_OFFSET, false, cpu->decimal);
+    const uint16_t word = Read16Long(
+        memory, LongIndexedAddress(WORDS_SOURCE, base.value));
+    const RippleWordStart start = {
+        {word, remaining, 0u, base.overflow}, base.carry};
+    return start;
+}
+
+static void FinishRippleWordRun(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SetAccumulatorWidth(cpu, 1u);
+    SetIndexWidth(cpu, 0u);
+    cpu->x = PullStackWord(memory, cpu);
+    LoadA8(cpu, 1u);
+    WramWrite(WramViewOfCaller(memory, cpu), WORDS_READY, 1u);
+}
+
+Lufia2ExecutionResult Lufia2BattleRippleWordPrepareStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != WAVE_BANK ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit != 0u)
+        return ExecutionHandoff(cpu, 0x85aa3du);
+    const RippleWordStart start = PrepareRippleWordRun(memory, cpu);
+    SetAccumulatorWidth(cpu, 0u);
+    SetIndexWidth(cpu, 1u);
+    cpu->accumulator = start.run.word;
+    cpu->y = start.run.remaining;
+    cpu->carry = start.carry;
+    cpu->overflow = start.run.overflow;
+    LoadX8(cpu, 0u);
+    return ExecutionHandoff(cpu, 0x85aa61u);
+}
+
+Lufia2ExecutionResult Lufia2BattleRippleWordFinishStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != WAVE_BANK ||
+        cpu->accumulator_is_8_bit != 0u || cpu->index_is_8_bit != 1u)
+        return ExecutionHandoff(cpu, 0x85aa74u);
+    FinishRippleWordRun(memory, cpu);
+    return ExecutionHandoff(cpu, 0x85aa7eu);
+}
+
 /* Repeat each scroll word for its remaining scanlines. */
 Lufia2ExecutionResult Lufia2BattleRippleWords(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
-    Byte8Result base;
-    uint8_t phase;
-    uint8_t run_left;
-    uint8_t source;
-    uint8_t index = 0;
-    uint16_t word;
-    bool overflow;
-
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, 0x85aa3du);
-    phase = WramRead(wram, WORDS_PHASE);
-    PushStackWord(memory, cpu, cpu->x);
-    /* The inner loop uses eight-bit index registers. */
-    WramWrite(wram, SCRATCH_COUNTER, phase & 3u);
-    run_left = Difference8Mode(4u, WramRead(wram, SCRATCH_COUNTER), cpu->decimal).value;
-    WramWrite(wram, SCRATCH_COUNTER, run_left);
-    run_left = Sum8Mode((uint8_t)(run_left << 1),
-        WramRead(wram, SCRATCH_COUNTER), (run_left & 0x80u) != 0, cpu->decimal).value;
-    base = Sum8Mode((uint8_t)(phase << 1), WORDS_BASE_OFFSET, false, cpu->decimal);
-    source = base.value;
-    word = Read16Long(memory, LongIndexedAddress(WORDS_SOURCE, source));
-    RippleWordRun run = {word, run_left, index, base.overflow};
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    RippleWordRun run = PrepareRippleWordRun(memory, cpu).run;
     do {
         WriteRippleWordRun(wram, &run, cpu->decimal);
     } while (run.offset != WORDS_END);
-    run_left = run.remaining;
-    word = run.word;
-    overflow = run.overflow;
-    cpu->x = PullStackWord(memory, cpu);
-    cpu->y = run_left;
+    cpu->y = run.remaining;
     cpu->carry = true;
-    cpu->overflow = overflow;
-    cpu->accumulator = word;
-    LoadA8(cpu, 1u);
-    WramWrite(wram, WORDS_READY, 1u);
+    cpu->overflow = run.overflow;
+    cpu->accumulator = run.word;
+    FinishRippleWordRun(memory, cpu);
     return ExecutionReturned(0x85aa7eu);
 }
