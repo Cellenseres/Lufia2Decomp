@@ -260,7 +260,7 @@ Lufia2ExecutionResult Lufia2SoundUploadStep(const Lufia2Memory *memory,
         SoundUploadSendPair(memory, cpu, true);
         return ExecutionHandoff(cpu, 0x80997du);
     case 0x80999du:
-        if (SoundUploadNextPair(memory, cpu, true))
+        if (SoundUploadNextPair(memory, cpu, memory->checkpoint != 0))
             return ExecutionHandoff(cpu, 0x809969u);
         EmitExecutionCheckpoint(memory, cpu, 0x8099a8u);
         OpLoadA(cpu, 0xffu);
