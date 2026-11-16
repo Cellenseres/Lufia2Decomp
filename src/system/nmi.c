@@ -260,6 +260,9 @@ Lufia2ExecutionResult Lufia2NmiBeginChild(
     case 0x80865eu:
         target = 0x8087a7u;
         break;
+    case 0x8087f0u:
+        target = 0x8087fcu;
+        break;
     case 0x808661u:
         target = 0x8086c1u;
         break;
@@ -268,6 +271,15 @@ Lufia2ExecutionResult Lufia2NmiBeginChild(
     }
     SimulateJsrFrame(memory, cpu, (uint16_t)(pc + 2u));
     return ExecutionHandoff(cpu, target);
+}
+
+Lufia2ExecutionResult Lufia2NmiReturnChild(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t pc) {
+    if (cpu->program_bank != 0x80u || (pc != 0x808702u && pc != 0x80882du))
+        return ExecutionHandoff(cpu, pc);
+    const uint16_t low = Pull8(memory, cpu);
+    const uint16_t address = (uint16_t)(low | ((uint16_t)Pull8(memory, cpu) << 8));
+    return ExecutionHandoff(cpu, 0x800000u | (uint16_t)(address + 1u));
 }
 
 static Lufia2ExecutionResult ReturnInterruptFrame(

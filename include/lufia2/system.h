@@ -139,6 +139,9 @@ void Lufia2QueueDeferredSound(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2ScreenFadeCheckRequest(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $80:86C1 screen fade into the $0583 brightness. */
 Lufia2ExecutionResult Lufia2ScreenFade(
     const Lufia2Memory *memory,

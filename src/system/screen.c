@@ -9,6 +9,15 @@
 #include "system/system_internal.h"
 #include "system/wram.h"
 
+Lufia2ExecutionResult Lufia2ScreenFadeCheckRequest(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->data_bank != 0x80u ||
+        !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x8086c1u);
+    LoadAAbsolute8(memory, cpu, WRAM_FADE_CONTROL, 0u);
+    return ExecutionHandoff(cpu, cpu->negative ? 0x8086c6u : 0x808702u);
+}
+
 /* $80:86C1: screen fade from $0581 into the $0583 brightness. */
 Lufia2ExecutionResult Lufia2ScreenFade(
     const Lufia2Memory *memory,
