@@ -11,6 +11,9 @@ Lufia2ExecutionResult Lufia2BattleClearTargetNameSpan(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     uint32_t entry, unsigned bytes);
 
+Lufia2ExecutionResult Lufia2BattleTargetCursorStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
 #ifdef __cplusplus
 }
 #endif

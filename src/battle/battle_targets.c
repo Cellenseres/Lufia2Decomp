@@ -189,12 +189,7 @@ static void TargetPublishSelectionMask(const Lufia2Memory *memory, Lufia2CpuStat
     OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
 }
 
-/* Single target cursor: name buffer and pointer position. */
-static bool TargetPlaceCursor(BattleContext *battle) {
-    const Lufia2Memory *memory = battle->memory;
-    Lufia2CpuState *cpu = battle->cpu;
-    if (!BattleCall(battle, 0xd5b4u, 0x81d920u, 2u))
-        return false;
+static void TargetPrepareCursorName(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpPushX(memory, cpu);
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
     OpAslA(cpu);
@@ -217,8 +212,9 @@ static bool TargetPlaceCursor(BattleContext *battle) {
     OpSta(memory, cpu, OpDp(cpu, 0x5fu));
     OpLoadA(cpu, 0x20u);
     OpSta(memory, cpu, OpAbs(cpu, WRAM_MENU_DRAW_MODE));
-    if (!BattleCall(battle, 0xd5e3u, 0x808878u, 3u))
-        return false;
+}
+
+static void TargetFinishCursor(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbs(cpu, TARGET_CURSOR_SPRITE_X));
     OpCmpValue(cpu, 0x98u);
     if (cpu->carry)
@@ -233,6 +229,18 @@ static bool TargetPlaceCursor(BattleContext *battle) {
     OpIncA(cpu);
     OpSta(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
     OpPullX(memory, cpu);
+}
+
+/* Single target cursor: name buffer and pointer position. */
+static bool TargetPlaceCursor(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    if (!BattleCall(battle, 0xd5b4u, 0x81d920u, 2u))
+        return false;
+    TargetPrepareCursorName(memory, cpu);
+    if (!BattleCall(battle, 0xd5e3u, 0x808878u, 3u))
+        return false;
+    TargetFinishCursor(memory, cpu);
     return true;
 }
 
@@ -271,15 +279,42 @@ Lufia2ExecutionResult Lufia2BattleVisitTargetMarkerSpan(
     return ExecutionHandoff(cpu, entry);
 }
 
+static bool TargetBeginMarkerScan(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
+    if (!cpu->zero)
+        return false;
+    OpLdy(cpu, 0u);
+    OpLoadA(cpu, BATTLE_PARTY_TARGET_COUNT + 1u + BATTLE_ENEMY_COUNT);
+    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_RECORDS_LEFT));
+    return true;
+}
+
+Lufia2ExecutionResult Lufia2BattleTargetCursorStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x81u || cpu->data_bank != 0x7eu ||
+        cpu->direct_page || cpu->decimal || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x81d5b7u:
+        TargetPrepareCursorName(memory, cpu);
+        return ExecutionHandoff(cpu, 0x81d5e3u);
+    case 0x81d5e7u:
+        TargetFinishCursor(memory, cpu);
+        return ExecutionHandoff(cpu, 0x81d603u);
+    case 0x81d603u:
+        return ExecutionHandoff(cpu,
+            TargetBeginMarkerScan(memory, cpu) ? 0x81d60eu : 0x81d623u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+}
+
 /* On the visible phase, mark every selected record. */
 static bool TargetDrawMarkers(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
-    if (cpu->zero) {
-        OpLdy(cpu, 0u);
-        OpLoadA(cpu, BATTLE_PARTY_TARGET_COUNT + 1u + BATTLE_ENEMY_COUNT);
-        OpSta(memory, cpu, OpDp(cpu, TARGET_DP_RECORDS_LEFT));
+    if (TargetBeginMarkerScan(memory, cpu)) {
         do {
             if (TargetRecordNeedsMarker(memory, cpu) &&
                 !BattleCall(battle, 0xd618u, 0x81d948u, 2u))
