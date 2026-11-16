@@ -3,6 +3,8 @@
 
 #include "lufia2/execution.h"
 
+#define LUFIA2_BATTLE_TARGET_SELECTION_PHASES 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif

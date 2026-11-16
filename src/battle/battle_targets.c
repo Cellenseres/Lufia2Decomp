@@ -289,6 +289,37 @@ static bool TargetBeginMarkerScan(const Lufia2Memory *memory, Lufia2CpuState *cp
     return true;
 }
 
+static bool TargetPrepareSelectionDrawing(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLdx(cpu, 0u);
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
+    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpAslA(cpu);
+    OpTay(cpu);
+    OpSepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
+    const bool party = cpu->zero;
+    if (party) {
+        OpStz(memory, cpu, OpAbs(cpu, SNES_WRIO));
+        OpStz(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+    }
+    return party;
+}
+
+static void TargetFinishSelectionDrawing(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
+    OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffu));
+    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+}
+
 Lufia2ExecutionResult Lufia2BattleTargetCursorStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
     if (cpu->program_bank != 0x81u || cpu->data_bank != 0x7eu ||
@@ -296,6 +327,15 @@ Lufia2ExecutionResult Lufia2BattleTargetCursorStep(
         cpu->index_is_8_bit)
         return ExecutionHandoff(cpu, entry);
     switch (entry) {
+    case 0x81d593u:
+        return ExecutionHandoff(cpu,
+            TargetPrepareSelectionDrawing(memory, cpu) ? 0x81d5afu : 0x81d5b4u);
+    case 0x81d5b2u:
+        return ExecutionHandoff(cpu,
+            TargetBeginMarkerScan(memory, cpu) ? 0x81d60eu : 0x81d623u);
+    case 0x81d623u:
+        TargetFinishSelectionDrawing(memory, cpu);
+        return ExecutionHandoff(cpu, 0x81d635u);
     case 0x81d5b7u:
         TargetPrepareCursorName(memory, cpu);
         return ExecutionHandoff(cpu, 0x81d5e3u);
@@ -330,19 +370,7 @@ static bool TargetDrawSelection(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
     TargetClearName(memory, cpu);
-    OpLdx(cpu, 0u);
-    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_CURSOR));
-    OpRepWidths(cpu, 0x20u);
-    OpAndValue(cpu, 0xffu);
-    OpAslA(cpu);
-    OpAslA(cpu);
-    OpTay(cpu);
-    OpSepWidths(cpu, 0x20u);
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_SIDE_OR_MASK));
-    if (cpu->zero) {
-        OpStz(memory, cpu, OpAbs(cpu, SNES_WRIO));
-        OpStz(memory, cpu, OpAbs(cpu, SNES_WRMPYB));
+    if (TargetPrepareSelectionDrawing(memory, cpu)) {
         if (!BattleCall(battle, 0xd5afu, 0x81d92cu, 2u))
             return false;
     } else {
@@ -351,13 +379,7 @@ static bool TargetDrawSelection(BattleContext *battle) {
     }
     if (!TargetDrawMarkers(battle))
         return false;
-    OpLda(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
-    OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffu));
-    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_BLINK_PHASE));
-    OpLda(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_COUNT));
-    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_CURSOR_ENABLED));
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    TargetFinishSelectionDrawing(memory, cpu);
     return true;
 }
 
