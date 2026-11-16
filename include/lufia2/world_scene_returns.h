@@ -18,6 +18,10 @@ Lufia2ExecutionResult Lufia2WorldMapModeNonzeroInput(
 Lufia2ExecutionResult Lufia2WorldMapIdleSceneObject(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2WorldMapContinueFrameTail(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
+    Lufia2PushedChildCall child, void *context);
+
 /* Continue with the existing guest stack. */
 Lufia2ExecutionResult Lufia2WorldMapContinueSession(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,

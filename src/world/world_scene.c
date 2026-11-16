@@ -2336,3 +2336,56 @@ Lufia2ExecutionResult Lufia2WorldMapCheckFramePlaneState(
     OpOra(memory, cpu, OpAbs(cpu, WRAM_UNK_7E1711));
     return ExecutionHandoff(cpu, cpu->zero ? 0x869290u : 0x869293u);
 }
+
+Lufia2ExecutionResult Lufia2WorldMapContinueFrameTail(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
+    Lufia2PushedChildCall child, void *context) {
+    static const uint16_t frame_update_calls[][2] = {
+        {0x9276u, 0x9e4fu}, {0x9279u, 0x9c71u}, {0x927cu, 0x9adbu},
+        {0x927fu, 0x9758u}, {0x9282u, 0xe11fu}, {0x9285u, 0x99bfu}
+    };
+    static const uint16_t presentation_calls[][2] = {
+        {0x9293u, 0xa791u}, {0x9296u, 0xe1b9u},
+        {0x9299u, 0x973eu}, {0x929cu, 0x974fu}
+    };
+    if (!SceneCallerEntry(cpu, child) || cpu->stack < 0x1f20u ||
+        cpu->stack > 0x1ffcu || (entry >> 16) != 0x86u)
+        return ExecutionHandoff(cpu, entry);
+    const unsigned before_count = sizeof frame_update_calls /
+        sizeof frame_update_calls[0];
+    const unsigned after_count = sizeof presentation_calls / sizeof presentation_calls[0];
+    unsigned before = before_count, after = after_count;
+    for (unsigned index = 0u; index < before_count; ++index)
+        if ((uint16_t)entry == frame_update_calls[index][0])
+            before = index;
+    for (unsigned index = 0u; index < after_count; ++index)
+        if ((uint16_t)entry == presentation_calls[index][0])
+            after = index;
+    if (before == before_count && after == after_count && entry != 0x869290u)
+        return ExecutionHandoff(cpu, entry);
+    Lufia2ExecutionResult result;
+    if (before < before_count) {
+        for (; before < before_count; ++before)
+            if (!SceneChild(memory, cpu, child, context,
+                    0x860000u | frame_update_calls[before][0],
+                    0x860000u | frame_update_calls[before][1], &result))
+                return result;
+        OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E1710));
+        OpOra(memory, cpu, OpAbs(cpu, WRAM_UNK_7E1711));
+        if (cpu->zero && !SceneChild(memory, cpu, child, context,
+                0x869290u, 0x86a7ceu, &result))
+            return result;
+        after = 0u;
+    } else if (entry == 0x869290u) {
+        if (!SceneChild(memory, cpu, child, context,
+                0x869290u, 0x86a7ceu, &result))
+            return result;
+        after = 0u;
+    }
+    for (; after < after_count; ++after)
+        if (!SceneChild(memory, cpu, child, context,
+                0x860000u | presentation_calls[after][0],
+                0x860000u | presentation_calls[after][1], &result))
+            return result;
+    return RunWorldMapFrames(memory, cpu, child, context);
+}
