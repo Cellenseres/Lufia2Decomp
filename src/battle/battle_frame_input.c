@@ -127,3 +127,20 @@ Lufia2ExecutionResult Lufia2BattleFrameInput(
     BattleFilterInput(memory, cpu);
     return ExecutionReturned(0x85ecdau);
 }
+
+Lufia2ExecutionResult Lufia2BattleCheckSpriteRequest(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!BattleInputStepReady(cpu))
+        return ExecutionHandoff(cpu, 0x85ec85u);
+    OpLda(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x85ec94u : 0x85ec8bu);
+}
+
+Lufia2ExecutionResult Lufia2BattleClearSpriteRequest(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!BattleInputStepReady(cpu))
+        return ExecutionHandoff(cpu, 0x85ec8fu);
+    TransferDirectToA(cpu);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    return ExecutionHandoff(cpu, 0x85ec94u);
+}

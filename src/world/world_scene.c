@@ -2304,3 +2304,35 @@ Lufia2ExecutionResult Lufia2WorldMapIdleSceneObject(
         return ExecutionHandoff(cpu, 0x86a375u);
     return ExecutionReturned(0x86a375u);
 }
+
+Lufia2ExecutionResult Lufia2WorldMapCheckFrameMovement(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!WorldSceneEntry(cpu))
+        return ExecutionHandoff(cpu, 0x86925cu);
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_MOVEMENT_ENABLED));
+    return ExecutionHandoff(cpu, cpu->zero ? 0x869264u : 0x869261u);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapCheckFramePosition(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!WorldSceneEntry(cpu))
+        return ExecutionHandoff(cpu, 0x869264u);
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_POSITION_X));
+    OpAndValue(cpu, WORLD_CELL_OFFSET_MASK);
+    OpCmpValue(cpu, WORLD_CELL_CENTER_OFFSET);
+    if (!cpu->zero)
+        return ExecutionHandoff(cpu, 0x86927fu);
+    OpLda(memory, cpu, OpAbs(cpu, WORLD_POSITION_Y));
+    OpAndValue(cpu, WORLD_CELL_OFFSET_MASK);
+    OpCmpValue(cpu, WORLD_CELL_CENTER_OFFSET);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x869276u : 0x86927fu);
+}
+
+Lufia2ExecutionResult Lufia2WorldMapCheckFramePlaneState(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!WorldSceneEntry(cpu))
+        return ExecutionHandoff(cpu, 0x869288u);
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_UNK_7E1710));
+    OpOra(memory, cpu, OpAbs(cpu, WRAM_UNK_7E1711));
+    return ExecutionHandoff(cpu, cpu->zero ? 0x869290u : 0x869293u);
+}

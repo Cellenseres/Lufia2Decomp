@@ -15,6 +15,12 @@ Lufia2ExecutionResult Lufia2BattleInputAfterWait(
 Lufia2ExecutionResult Lufia2BattlePauseAfterWait(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2BattleCheckSpriteRequest(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+Lufia2ExecutionResult Lufia2BattleClearSpriteRequest(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #ifdef __cplusplus
 }
 #endif
