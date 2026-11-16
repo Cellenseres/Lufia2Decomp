@@ -168,6 +168,10 @@ Lufia2ExecutionResult Lufia2NmiPrepareScrollWrites(
 Lufia2ExecutionResult Lufia2NmiSelectListedDma(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
 
+/* $80:87F3, M8/X16, PB80/DB80/DP0. Consumes saved P and the RTS frame. */
+Lufia2ExecutionResult Lufia2NmiFinishScrollAndReturn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $80:87B2: one scroll-register pair, M8/X16, DB=$80, DP=0.
  * X=$210D..$2114 and Y=2*(X-$210D); stops at the loop or DMA requests. */
 Lufia2ExecutionResult Lufia2NmiWriteScrollPair(

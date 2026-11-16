@@ -307,6 +307,22 @@ Lufia2ExecutionResult Lufia2NmiWriteScrollPair(
     return ExecutionHandoff(cpu, cpu->zero ? 0x8087c4u : 0x8087b2u);
 }
 
+Lufia2ExecutionResult Lufia2NmiFinishScrollAndReturn(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->data_bank != 0x80u ||
+        cpu->direct_page || cpu->decimal ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x8087f3u);
+    Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    LoadA8(cpu, WramRead(wram, HDMA_CHANNELS));
+    if (!cpu->zero)
+        WramWrite(wram, SNES_HDMAEN, A8(cpu));
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    uint16_t return_address = Pull8(memory, cpu);
+    return_address |= (uint16_t)Pull8(memory, cpu) << 8;
+    return ExecutionHandoff(cpu, 0x800000u | (uint16_t)(return_address + 1u));
+}
+
 /* $80:87A7: updates scroll registers, queued DMA, tilemaps and HDMA.
  * Saves and restores P; either accumulator and index width may enter. */
 Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
