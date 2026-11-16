@@ -236,20 +236,55 @@ enum {
     ROM_BATTLE_CALLBACK_TARGETS = 0x9e37u
 };
 
+static bool BattlePrepareCallback(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadAAbsolute8(memory, cpu, BATTLE_CALLBACK_SELECTORS, cpu->y);
+    if (cpu->negative)
+        return false;
+    SetAccumulatorWidth(cpu, 0u);
+    OpAslA(cpu);
+    OpAndValue(cpu, 0xffu);
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1u);
+    PushY(memory, cpu);
+    return true;
+}
+
+static bool BattleAdvanceCallback(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpPullY(memory, cpu);
+    OpIny(cpu);
+    OpIny(cpu);
+    OpCpy(cpu, BATTLE_CALLBACK_LIST_BYTES);
+    return !cpu->zero;
+}
+
+Lufia2ExecutionResult Lufia2BattleNmiCallbackStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x85u || cpu->data_bank != 0x85u ||
+        cpu->direct_page || cpu->decimal || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x858e8eu) {
+        if (BattleAdvanceCallback(memory, cpu))
+            return ExecutionHandoff(cpu, 0x858e7cu);
+    } else if (entry == 0x858e79u || entry == 0x858e7cu) {
+        if (entry == 0x858e79u)
+            LoadY16(cpu, 0u);
+        if (BattlePrepareCallback(memory, cpu))
+            return ExecutionHandoff(cpu, 0x858e8bu);
+    } else {
+        return ExecutionHandoff(cpu, entry);
+    }
+    PullDataBank(memory, cpu);
+    return ExecutionHandoff(cpu, 0x858e97u);
+}
+
 static Lufia2ExecutionResult BattleRunCallbackList(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
     LoadY16(cpu, 0u);
     do {
-        LoadAAbsolute8(memory, cpu, BATTLE_CALLBACK_SELECTORS, cpu->y);
-        if (cpu->negative)
+        if (!BattlePrepareCallback(memory, cpu))
             break;
-        SetAccumulatorWidth(cpu, 0u);
-        OpAslA(cpu);
-        OpAndValue(cpu, 0xffu);
-        TransferAToX(cpu);
-        SetAccumulatorWidth(cpu, 1u);
-        PushY(memory, cpu);
         if (!child)
             return ExecutionHandoff(cpu, 0x858e8bu);
         const uint32_t target = 0x850000u | Read16ProgramIndexed(
@@ -264,11 +299,7 @@ static Lufia2ExecutionResult BattleRunCallbackList(
             cpu->index_is_8_bit != 0u)
             return ExecutionHandoff(cpu,
                 ((uint32_t)cpu->program_bank << 16) | 0x8e8eu);
-        OpPullY(memory, cpu);
-        OpIny(cpu);
-        OpIny(cpu);
-        OpCpy(cpu, BATTLE_CALLBACK_LIST_BYTES);
-    } while (!cpu->zero);
+    } while (BattleAdvanceCallback(memory, cpu));
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x858e97u);
 }
