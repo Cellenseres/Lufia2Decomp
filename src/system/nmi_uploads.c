@@ -307,6 +307,44 @@ Lufia2ExecutionResult Lufia2NmiWriteScrollPair(
     return ExecutionHandoff(cpu, cpu->zero ? 0x8087c4u : 0x8087b2u);
 }
 
+Lufia2ExecutionResult Lufia2NmiStepTilemapRequests(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->data_bank != 0x80u ||
+        cpu->direct_page || cpu->decimal ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    uint8_t mask;
+    uint32_t skipped;
+    switch (entry) {
+    case 0x8087fcu:
+        LoadA8(cpu, WramRead(wram, VRAM_UPLOAD_FLAGS));
+        mask = 0xc0u;
+        skipped = 0x80880du;
+        break;
+    case 0x80880du:
+        mask = 0x30u;
+        skipped = 0x80881cu;
+        break;
+    case 0x80881cu:
+        mask = 0x0cu;
+        skipped = 0x808829u;
+        break;
+    case 0x808829u: {
+        LoadA8(cpu, 0xaau);
+        const uint8_t requests = WramRead(wram, VRAM_UPLOAD_FLAGS);
+        cpu->zero = (requests & A8(cpu)) == 0u;
+        WramWrite(wram, VRAM_UPLOAD_FLAGS, (uint8_t)(requests & ~A8(cpu)));
+        return ExecutionHandoff(cpu, 0x80882du);
+    }
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    OpBitValue(cpu, mask);
+    return ExecutionHandoff(cpu, cpu->zero ? skipped :
+        entry + (entry == 0x8087fcu ? 6u : 4u));
+}
+
 Lufia2ExecutionResult Lufia2NmiFinishScrollAndReturn(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (cpu->program_bank != 0x80u || cpu->data_bank != 0x80u ||
