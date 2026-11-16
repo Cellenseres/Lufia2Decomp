@@ -262,6 +262,37 @@ static uint8_t WriteScrollRegisterPair(
     return high;
 }
 
+Lufia2ExecutionResult Lufia2NmiPrepareScrollWrites(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->data_bank != 0x80u ||
+        cpu->direct_page || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x8087a7u);
+    Push8(memory, cpu, PackStatus(cpu));
+    SetAccumulatorWidth(cpu, 1);
+    SetIndexWidth(cpu, 0);
+    LoadX16(cpu, SNES_BG1HOFS);
+    LoadY16(cpu, 0u);
+    return ExecutionHandoff(cpu, 0x8087b2u);
+}
+
+Lufia2ExecutionResult Lufia2NmiSelectListedDma(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    unsigned request;
+    switch (entry) {
+    case 0x8087c4u: request = 0u; break;
+    case 0x8087cfu: request = 1u; break;
+    case 0x8087dau: request = 2u; break;
+    case 0x8087e5u: request = 3u; break;
+    default: return ExecutionHandoff(cpu, entry);
+    }
+    if (cpu->program_bank != 0x80u || cpu->data_bank != 0x80u ||
+        cpu->direct_page || cpu->decimal ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    LoadA8(cpu, WramRead(WramViewOfCaller(memory, cpu), DMA_LIST_FLAGS + request));
+    return ExecutionHandoff(cpu, entry + (cpu->zero ? 11u : 4u));
+}
+
 Lufia2ExecutionResult Lufia2NmiWriteScrollPair(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (cpu->program_bank != 0x80u || cpu->data_bank != 0x80u || cpu->direct_page ||
