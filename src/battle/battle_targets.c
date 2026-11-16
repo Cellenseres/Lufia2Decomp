@@ -701,42 +701,85 @@ static TargetOutcome TargetCancel(BattleContext *battle, uint32_t *return_pc) {
     return TARGET_DONE;
 }
 
-/* Read the pad: confirm, select all, cancel, direction. */
-static TargetOutcome TargetHandleInput(BattleContext *battle, uint32_t *return_pc) {
-    const Lufia2Memory *memory = battle->memory;
-    Lufia2CpuState *cpu = battle->cpu;
-
+static uint32_t TargetSelectInputAction(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
     OpBitValue(cpu, 0xa0u);
     if (!cpu->zero)
-        return TargetAccept(battle, return_pc);
+        return 0x81d7bbu;
     OpBitValue(cpu, 0x30u);
     if (!cpu->zero) {
         OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
         OpAndValue(cpu, 3u);
         OpCmpValue(cpu, 1u);
-        if (cpu->zero) {
-            TargetToggleAll(memory, cpu);
-            return TARGET_REDRAW;
-        }
+        if (cpu->zero)
+            return 0x81d6d0u;
     }
     OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED_HIGH));
     if (cpu->negative)
-        return TargetCancel(battle, return_pc);
+        return 0x81d8c2u;
     OpRepWidths(cpu, 0x20u);
     OpAndValue(cpu, 15u);
     OpTax(cpu);
     OpSepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpLongX(cpu, 0x97b5aau));
     if (cpu->zero)
-        return TARGET_REDRAW;
+        return 0x81d589u;
     OpBitValue(cpu, 1u);
-    if (cpu->zero) {
+    return cpu->zero ? 0x81d70bu : 0x81d685u;
+}
+
+static void TargetPrepareInputUpload(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    OpRepWidths(cpu, 0x20u);
+}
+
+Lufia2ExecutionResult Lufia2BattleTargetInputStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    const uint8_t narrow = entry != 0x81d648u;
+    if (cpu->program_bank != 0x81u || cpu->data_bank != 0x7eu ||
+        cpu->direct_page || cpu->decimal || cpu->index_is_8_bit ||
+        cpu->accumulator_is_8_bit != narrow)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x81d638u:
+        TargetPrepareInputUpload(memory, cpu);
+        return ExecutionHandoff(cpu, 0x81d640u);
+    case 0x81d648u:
+        OpSepWidths(cpu, 0x20u);
+        return ExecutionHandoff(cpu, 0x81d64au);
+    case 0x81d64eu:
+        return ExecutionHandoff(cpu, TargetSelectInputAction(memory, cpu));
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+}
+
+/* Read the pad: confirm, select all, cancel, direction. */
+static TargetOutcome TargetHandleInput(BattleContext *battle, uint32_t *return_pc) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+
+    switch (TargetSelectInputAction(memory, cpu)) {
+    case 0x81d7bbu:
+        return TargetAccept(battle, return_pc);
+    case 0x81d6d0u:
+        TargetToggleAll(memory, cpu);
+        break;
+    case 0x81d8c2u:
+        return TargetCancel(battle, return_pc);
+    case 0x81d70bu:
         OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
         TargetMoveVertical(memory, cpu);
-    } else {
+        break;
+    case 0x81d685u:
         OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MOVE_DELTA));
         TargetMoveAcross(memory, cpu);
+        break;
+    default:
+        break;
     }
     return TARGET_REDRAW;
 }
@@ -777,9 +820,7 @@ Lufia2ExecutionResult Lufia2BattleChooseTargets(const Lufia2Memory *memory,
             return BattleChildUnwound(&battle);
         if (!BattleCall(&battle, 0xd635u, 0x81d9d0u, 2u))
             return BattleChildUnwound(&battle);
-        OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
-        OpRepWidths(cpu, 0x20u);
+        TargetPrepareInputUpload(memory, cpu);
         if (!BattleCall(&battle, 0xd640u, 0x859cc0u, 3u) ||
             !BattleCall(&battle, 0xd644u, 0x859c64u, 3u))
             return BattleChildUnwound(&battle);
