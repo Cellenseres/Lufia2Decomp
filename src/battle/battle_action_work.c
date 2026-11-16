@@ -165,3 +165,21 @@ Lufia2ExecutionResult Lufia2BattleLoadActionRecord(const Lufia2Memory *memory,
                                                    void *child_context) {
     return LoadActionRecord(memory, cpu, child, child_context, true);
 }
+
+Lufia2ExecutionResult Lufia2BattleClearActionWordStep(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint32_t entry) {
+    enum {
+        ACTION_CLEAR_HEADER_SIZE = 4u,
+        ACTION_CLEAR_LAST_WORD = WRAM_BATTLE_ACTION_WORK_COUNT - ACTION_CLEAR_HEADER_SIZE - 2u
+    };
+    if ((entry != 0x85ccd7u && entry != 0x85ccecu) || cpu->program_bank != 0x85u ||
+        cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
+        cpu->x > ACTION_CLEAR_LAST_WORD || (cpu->x & 1u))
+        return ExecutionHandoff(cpu, entry);
+    const uint32_t base = (entry == 0x85ccd7u ? WRAM_BATTLE_ACTION_WORK
+        : WRAM_BATTLE_ACTION_SAVED_TARGET_WORD) + ACTION_CLEAR_HEADER_SIZE;
+    OpSta(memory, cpu, OpLongX(cpu, base));
+    OpDex(cpu);
+    OpDex(cpu);
+    return ExecutionHandoff(cpu, cpu->negative ? entry + 8u : entry);
+}

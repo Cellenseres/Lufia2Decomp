@@ -867,6 +867,10 @@ Lufia2ExecutionResult Lufia2BattleClearSavedActionWork(
 Lufia2ExecutionResult Lufia2BattleClearActionRecords(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* One word-fill iteration at $85:CCD7/$CCEC, M0X0, PB $85, even X <= $82. */
+Lufia2ExecutionResult Lufia2BattleClearActionWordStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry);
+
 /* $85:CD8C/$CD9B copy the complete 136-byte action work record, including
  * its header, in descending order. M1X0, PB $85; DB and DP are preserved.
  */
