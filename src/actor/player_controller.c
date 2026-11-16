@@ -91,13 +91,18 @@ static uint8_t TryPlayerInteraction(
     return 1u;
 }
 
+static void PreparePlayerTurnRequest(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, PLAYER_DIRECTION));
+    OpSta(memory, cpu, PLAYER_STEP_DIRECTION);
+    cpu->carry = 0u;
+}
+
 static uint8_t TurnPlayerAtObstacle(
     const PlayerControl *control, Lufia2ExecutionResult *result) {
     const Lufia2Memory *memory = control->memory;
     Lufia2CpuState *cpu = control->cpu;
-    OpLda(memory, cpu, OpDp(cpu, PLAYER_DIRECTION));
-    OpSta(memory, cpu, PLAYER_STEP_DIRECTION);
-    cpu->carry = 0u;
+    PreparePlayerTurnRequest(memory, cpu);
     if (cpu->decimal) {
         *result = ExecutionHandoff(cpu, 0x83c20du);
         return 0u;
@@ -369,6 +374,33 @@ Lufia2ExecutionResult Lufia2PlayerSlotStandardUpdate(
     if (result.flow == LUFIA2_EXECUTION_CHILD_UNWOUND)
         return ExecutionHandoff(cpu, cpu->resume_pc);
     return result;
+}
+
+Lufia2ExecutionResult Lufia2PlayerSlotContinueStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x83u || cpu->data_bank != 0x83u ||
+        !cpu->accumulator_is_8_bit || cpu->index_is_8_bit > 1u ||
+        cpu->decimal || cpu->direct_page)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x83c202u:
+        OpSepWidths(cpu, 0x10u);
+        if (!cpu->carry)
+            break;
+        OpSepWidths(cpu, 0x10u);
+        return ExecutionHandoff(cpu, 0x83c245u);
+    case 0x83c206u:
+        break;
+    case 0x83c217u:
+    case 0x83c243u:
+        OpSepWidths(cpu, 0x10u);
+        return ExecutionHandoff(cpu, 0x83c245u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    PreparePlayerTurnRequest(memory, cpu);
+    OpAdcValue(cpu, TURN_ACTION_BASE);
+    return ExecutionHandoff(cpu, 0x83c20fu);
 }
 
 Lufia2ExecutionResult Lufia2PlayerSlotResumeStep(
