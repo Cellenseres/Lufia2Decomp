@@ -8,6 +8,7 @@
 #include "lufia2/system.h"
 #include "lufia2/nmi_tilemap_steps.h"
 #include "lufia2/nmi_pad_steps.h"
+#include "lufia2/nmi_control_steps.h"
 #include "system/wram.h"
 
 /* Direct-page request flags. Bit 7 is the one the NMI clears. */
@@ -132,6 +133,45 @@ Lufia2ExecutionResult Lufia2NmiReadPadStep(
     cpu->x = (uint16_t)(cpu->x - 2u);
     SetNz16(cpu, cpu->x);
     return ExecutionHandoff(cpu, cpu->x == 0xfffeu ? 0x8087a5u : 0x808770u);
+}
+
+Lufia2ExecutionResult Lufia2NmiControlStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != entry >> 16 || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x808703u:
+        Push8(memory, cpu, PackStatus(cpu));
+        return ExecutionHandoff(cpu, 0x808704u);
+    case 0x808704u:
+        SetIndexWidth(cpu, 0u);
+        return ExecutionHandoff(cpu, 0x808706u);
+    case 0x80876bu:
+        SetAccumulatorWidth(cpu, 0u);
+        /* REP clears the high index bytes when X stays narrow. */
+        SetIndexWidth(cpu, cpu->index_is_8_bit);
+        return ExecutionHandoff(cpu, 0x80876du);
+    case 0x80876du:
+        if (cpu->index_is_8_bit)
+            return ExecutionHandoff(cpu, entry);
+        LoadX16(cpu, 2u);
+        return ExecutionHandoff(cpu, 0x808770u);
+    case 0x8087a5u:
+        UnpackStatus(cpu, Pull8(memory, cpu));
+        return ExecutionHandoff(cpu, 0x8087a6u);
+    case 0x8087a6u: {
+        const uint16_t low = Pull8(memory, cpu);
+        const uint16_t address = (uint16_t)(low | ((uint16_t)Pull8(memory, cpu) << 8));
+        return ExecutionHandoff(cpu, ((uint32_t)cpu->program_bank << 16) |
+            (uint16_t)(address + 1u));
+    }
+    case 0x808826u:
+        SimulateJsrFrame(memory, cpu, 0x8828u);
+        return ExecutionHandoff(cpu, 0x80882eu);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
 }
 
 /* Upload requested OAM/palette buffers, then read both pads after auto-read.
