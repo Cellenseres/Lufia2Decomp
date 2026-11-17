@@ -1,6 +1,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/actor.h"
+#include "lufia2/actor_scene_reset_steps.h"
 #include "system/wram.h"
 
 enum {
@@ -31,6 +32,28 @@ static Lufia2ExecutionResult ActorSceneUnwound(uint32_t site) {
     return result;
 }
 
+static void ResetSceneActorStatus(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E1471));
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E05D2));
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_ID));
+    OpStz(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E070A));
+    OpStz(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E066A));
+    OpStz(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FLAGS));
+}
+
+static void ResetSceneActorRuntime(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 0x20u);
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE316));
+    LoadA16(cpu, cpu->direct_page);
+    const uint32_t arrays[] = {WRAM_ACTOR_SCENE_MOTION_OFFSET, WRAM_UNK_7FE25E, WRAM_UNK_7FE2A6};
+    for (unsigned field = 0u; field < 3u; ++field)
+        OpSta(memory, cpu, OpLongX(cpu, arrays[field]));
+    OpStz(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FACING));
+    OpLoadA(cpu, 4u);
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
+}
+
 Lufia2ExecutionResult Lufia2ActorResetSceneSlots(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -46,22 +69,8 @@ Lufia2ExecutionResult Lufia2ActorResetSceneSlots(
         if (!CallChildWithFrame(memory, cpu, child, context,
                 0x83a68eu, 0x83ab4fu, 3u, 0x83u))
             return ActorSceneUnwound(0x83a68eu);
-        OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E1471));
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E05D2));
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_ID));
-        OpStz(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E070A));
-        OpStz(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E066A));
-        OpStz(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FLAGS));
-        OpLoadA(cpu, 0x20u);
-        OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE316));
-        LoadA16(cpu, cpu->direct_page);
-        const uint32_t arrays[] = {WRAM_ACTOR_SCENE_MOTION_OFFSET, WRAM_UNK_7FE25E, WRAM_UNK_7FE2A6};
-        for (unsigned field = 0u; field < 3u; ++field)
-            OpSta(memory, cpu, OpLongX(cpu, arrays[field]));
-        OpStz(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FACING));
-        OpLoadA(cpu, 4u);
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
+        ResetSceneActorStatus(memory, cpu);
+        ResetSceneActorRuntime(memory, cpu);
         if (!CallChildWithFrame(memory, cpu, child, context,
                 0x83a6c1u, 0x83a6dfu, 2u, 0x83u))
             return ActorSceneUnwound(0x83a6c1u);
@@ -79,6 +88,20 @@ Lufia2ExecutionResult Lufia2ActorResetSceneSlots(
     UnpackStatus(cpu, Pull8(memory, cpu));
     OpPullX(memory, cpu);
     return ExecutionReturned(0x83a6deu);
+}
+
+Lufia2ExecutionResult Lufia2ActorResetSceneSlotStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x83a692u && entry != 0x83a6a6u) || cpu->program_bank != 0x83u ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit != 1u || cpu->decimal ||
+        cpu->x >= WRAM_ACTOR_ID_COUNT)
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x83a692u) {
+        ResetSceneActorStatus(memory, cpu);
+        return ExecutionHandoff(cpu, 0x83a6a6u);
+    }
+    ResetSceneActorRuntime(memory, cpu);
+    return ExecutionHandoff(cpu, 0x83a6c1u);
 }
 
 Lufia2ExecutionResult Lufia2ActorQueueSceneSpriteUpload(
