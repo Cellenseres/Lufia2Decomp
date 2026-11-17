@@ -1,5 +1,12 @@
 #include "battle/battle_lifecycle_internal.h"
 #include "core/snes_registers.h"
+#include "lufia2/battle_tilemap_steps.h"
+
+static void ClearBattleTilemapCell(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpStz(memory, cpu, OpAbs(cpu, SNES_WMDATA));
+    OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
+    OpDex(cpu);
+}
 
 void BattleSaveLoopStack(BattleContext *battle) {
     Lufia2CpuState *cpu = battle->cpu;
@@ -78,9 +85,7 @@ void BattleClearTilemap(BattleContext *battle) {
     OpLdx(cpu, 0x0280u);
     LoadA8(cpu, 0x21u);
     do {
-        OpStz(memory, cpu, OpAbs(cpu, SNES_WMDATA));
-        OpSta(memory, cpu, OpAbs(cpu, SNES_WMDATA));
-        OpDex(cpu);
+        ClearBattleTilemapCell(memory, cpu);
     } while (!cpu->zero);
 }
 
@@ -101,4 +106,18 @@ bool BattleFinishMainLoop(BattleContext *battle) {
         return false;
 
     return BattleCall(battle, 0x8904u, 0x81d9e1u, 2u);
+}
+
+Lufia2ExecutionResult Lufia2BattleClearTilemapCells(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, unsigned max_cells) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || !cpu->x || cpu->x > 0x0280u ||
+        !max_cells || max_cells > LUFIA2_BATTLE_TILEMAP_SPAN_MAX_CELLS)
+        return ExecutionHandoff(cpu, 0x8188e9u);
+    unsigned cells = 0u;
+    do {
+        ClearBattleTilemapCell(memory, cpu);
+        ++cells;
+    } while (!cpu->zero && cells < max_cells);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x8188f2u : 0x8188e9u);
 }
