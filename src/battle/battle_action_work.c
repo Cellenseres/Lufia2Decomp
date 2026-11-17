@@ -1,4 +1,5 @@
 #include "battle/battle_internal.h"
+#include "lufia2/battle_action_work_steps.h"
 
 /* Fill an action work area with the DP value. */
 static Lufia2ExecutionResult ClearActionWork(const Lufia2Memory *memory,
@@ -45,14 +46,22 @@ Lufia2ExecutionResult Lufia2BattleClearActionRecords(const Lufia2Memory *memory,
     return ClearActionWork(memory, cpu, 0x7ff60cu, 0x149u, true, 0x85cd0fu);
 }
 
-/* Copy the action work area to its save, or back. */
+static void CopyActionWorkByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    bool restore) {
+    const uint32_t source = restore ? WRAM_BATTLE_ACTION_SAVED_TARGET_WORD
+        : WRAM_BATTLE_ACTION_WORK;
+    const uint32_t target = restore ? WRAM_BATTLE_ACTION_WORK
+        : WRAM_BATTLE_ACTION_SAVED_TARGET_WORD;
+    OpLda(memory, cpu, OpLongX(cpu, source));
+    OpSta(memory, cpu, OpLongX(cpu, target));
+    OpDex(cpu);
+}
+
 static Lufia2ExecutionResult CopyActionWork(const Lufia2Memory *memory,
-                                            Lufia2CpuState *cpu, bool restore) {
-    OpLdx(cpu, 0x87u);
+    Lufia2CpuState *cpu, bool restore) {
+    OpLdx(cpu, WRAM_BATTLE_ACTION_WORK_COUNT - 1u);
     do {
-        OpLda(memory, cpu, OpLongX(cpu, restore ? 0x7ff4d6u : 0x7ff44eu));
-        OpSta(memory, cpu, OpLongX(cpu, restore ? 0x7ff44eu : 0x7ff4d6u));
-        OpDex(cpu);
+        CopyActionWorkByte(memory, cpu, restore);
     } while (!cpu->negative);
     return ExecutionReturned(restore ? 0x85cda9u : 0x85cd9au);
 }
@@ -182,4 +191,19 @@ Lufia2ExecutionResult Lufia2BattleClearActionWordStep(const Lufia2Memory *memory
     OpDex(cpu);
     OpDex(cpu);
     return ExecutionHandoff(cpu, cpu->negative ? entry + 8u : entry);
+}
+
+Lufia2ExecutionResult Lufia2BattleCopyActionWorkSpan(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint32_t entry, unsigned max_bytes) {
+    if ((entry != 0x85cd8fu && entry != 0x85cd9eu) ||
+        cpu->program_bank != 0x85u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || cpu->x >= WRAM_BATTLE_ACTION_WORK_COUNT ||
+        !max_bytes || max_bytes > LUFIA2_BATTLE_ACTION_COPY_SPAN_MAX_BYTES)
+        return ExecutionHandoff(cpu, entry);
+    unsigned bytes = 0u;
+    do {
+        CopyActionWorkByte(memory, cpu, entry == 0x85cd9eu);
+        ++bytes;
+    } while (!cpu->negative && bytes < max_bytes);
+    return ExecutionHandoff(cpu, cpu->negative ? entry + 11u : entry);
 }
