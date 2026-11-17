@@ -9,6 +9,7 @@
 #include "field/actor_contact_internal.h"
 #include "field/field_internal.h"
 #include "lufia2/field.h"
+#include "lufia2/field_region_continuations.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
@@ -377,9 +378,93 @@ Lufia2ExecutionResult Lufia2FieldSelectRegionScene(
     return ExecutionHandoff(cpu, SelectFieldRegionScene(cpu));
 }
 
+static uint8_t ContinueFieldRegionProbe(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint32_t entry, Lufia2PushedChildCall child,
+    void *context, Lufia2ExecutionResult *result) {
+    for (;;) {
+        uint32_t target;
+        switch (entry) {
+        case 0x838265u:
+            if (!FieldTriggerChild(memory, cpu, child, context,
+                    entry, 0x83b66eu, 2u, 0u, result))
+                return 0u;
+            entry = 0x838268u;
+            break;
+        case 0x838268u:
+            if (!FieldTriggerChild(memory, cpu, child, context,
+                    entry, 0x83b747u, 2u, 0u, result))
+                return 0u;
+            entry = 0x83826bu;
+            break;
+        case 0x83826bu:
+            entry = FieldRegionNeedsScript(memory, cpu) ? 0x83827au : 0x83827du;
+            break;
+        case 0x83827au:
+            if (!FieldTriggerChild(memory, cpu, child, context,
+                    entry, 0x83b711u, 2u, 0u, result))
+                return 0u;
+            entry = 0x83827du;
+            break;
+        case 0x83827du:
+            PullDataBank(memory, cpu);
+            entry = 0x83827eu;
+            break;
+        case 0x83827eu:
+            if (!FieldTriggerChild(memory, cpu, child, context,
+                    entry, 0x83c0efu, 2u, 0u, result))
+                return 0u;
+            entry = 0x838281u;
+            break;
+        case 0x838281u:
+            if (!FieldTriggerChild(memory, cpu, child, context,
+                    entry, 0x83fb71u, 3u, 0u, result))
+                return 0u;
+            entry = 0x838285u;
+            break;
+        case 0x838285u:
+            entry = SelectFieldRegionScene(cpu);
+            break;
+        case 0x838289u: case 0x838292u: case 0x83829bu:
+            target = entry == 0x838289u ? 0x83816du
+                : entry == 0x838292u ? 0x83813bu : 0x838386u;
+            return FieldTriggerChild(memory, cpu, child, context,
+                entry, target, 2u, 0u, result);
+        case 0x83829eu:
+            return 1u;
+        default:
+            *result = ExecutionHandoff(cpu, entry);
+            return 0u;
+        }
+    }
+}
+
+Lufia2ExecutionResult Lufia2FieldContinueRegionProbe(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
+    Lufia2PushedChildCall child, void *context) {
+    uint8_t bank;
+    switch (entry) {
+    case 0x838265u: case 0x838268u: case 0x83826bu:
+    case 0x83827au: case 0x83827du:
+        bank = 0x7eu;
+        break;
+    case 0x83827eu: case 0x838281u: case 0x838285u:
+    case 0x838289u: case 0x838292u: case 0x83829bu:
+        bank = 0x83u;
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    if (cpu->program_bank != 0x83u || cpu->data_bank != bank || cpu->direct_page ||
+        cpu->decimal || cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit || !child)
+        return ExecutionHandoff(cpu, entry);
+    Lufia2ExecutionResult result = {0};
+    if (!ContinueFieldRegionProbe(memory, cpu, entry, child, context, &result))
+        return result;
+    return ExecutionHandoff(cpu, 0x83829eu);
+}
+
 static uint8_t ProbeFieldRegions(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                 Lufia2PushedChildCall child, void *context,
-                                 Lufia2ExecutionResult *result) {
+    Lufia2PushedChildCall child, void *context, Lufia2ExecutionResult *result) {
     if (SelectFieldRegionProbe(memory, cpu) != 0x838251u)
         return 1u;
     if (child == LegacyTriggerChild) {
@@ -387,34 +472,7 @@ static uint8_t ProbeFieldRegions(const Lufia2Memory *memory, Lufia2CpuState *cpu
         return 0u;
     }
     PrepareFieldRegionProbe(memory, cpu);
-    if (!FieldTriggerChild(memory, cpu, child, context, 0x838265u, 0x83b66eu, 2u, 0u,
-                           result) ||
-        !FieldTriggerChild(memory, cpu, child, context, 0x838268u, 0x83b747u, 2u, 0u,
-                           result))
-        return 0u;
-    if (FieldRegionNeedsScript(memory, cpu) &&
-        !FieldTriggerChild(memory, cpu, child, context, 0x83827au, 0x83b711u, 2u, 0u,
-                           result))
-        return 0u;
-    PullDataBank(memory, cpu);
-    if (!FieldTriggerChild(memory, cpu, child, context, 0x83827eu, 0x83c0efu, 2u, 0u,
-                           result) ||
-        !FieldTriggerChild(memory, cpu, child, context, 0x838281u, 0x83fb71u, 3u, 0u,
-                           result))
-        return 0u;
-    switch (SelectFieldRegionScene(cpu)) {
-    case 0x838289u:
-        return FieldTriggerChild(memory, cpu, child, context, 0x838289u, 0x83816du,
-                                 2u, 0u, result);
-    case 0x838292u:
-        return FieldTriggerChild(memory, cpu, child, context, 0x838292u, 0x83813bu,
-                                 2u, 0u, result);
-    case 0x83829bu:
-        return FieldTriggerChild(memory, cpu, child, context, 0x83829bu, 0x838386u,
-                                 2u, 0u, result);
-    default:
-        return 1u;
-    }
+    return ContinueFieldRegionProbe(memory, cpu, 0x838265u, child, context, result);
 }
 
 static Lufia2ExecutionResult RunFieldTriggers(const Lufia2Memory *memory,
