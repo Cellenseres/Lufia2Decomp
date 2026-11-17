@@ -7,6 +7,7 @@
 #include "core/wram_view.h"
 #include "lufia2/system.h"
 #include "lufia2/nmi_tilemap_steps.h"
+#include "lufia2/nmi_pad_steps.h"
 #include "system/wram.h"
 
 /* Direct-page request flags. Bit 7 is the one the NMI clears. */
@@ -82,38 +83,55 @@ static uint16_t StepWordAt(
     return value;
 }
 
-/* Pad 2 then pad 1: held buttons into the DP words, plus presses (and
- * releases, as the inverted mask) with a key repeat. Returns the last A. */
-static uint16_t ReadPads(Lufia2Wram wram) {
-    uint16_t a = 0;
-    int pad;
+typedef struct PadReadResult {
+    uint16_t accumulator;
+    bool carry;
+} PadReadResult;
 
-    for (pad = 2; pad >= 0; pad -= 2) {
-        const uint16_t index = (uint16_t)pad;
-        const uint16_t buttons = WramRead16At(wram, SNES_JOY1L, index);
-
-        WramWrite16At(wram, DP_BUTTONS_HELD, index, buttons);
-        a = buttons;
-        if (buttons == WramRead16At(wram, PAD_LAST_BUTTONS, index)) {
-            if (StepWordAt(wram, PAD_REPEAT_COUNTDOWN, index, -1) != 0)
-                continue;
-            const uint16_t previous = WramRead16At(wram, PAD_LAST_BUTTONS, index);
-            const uint16_t repeat_mask = WramRead16(wram, PAD_REPEAT_MASK);
-
-            a = (uint16_t)(previous & repeat_mask);
-            a |= WramRead16At(wram, DP_BUTTONS_PRESSED, index);
-            WramWrite16At(wram, DP_BUTTONS_PRESSED, index, a);
-            a = PAD_REPEAT_NEXT;
-            WramWrite16At(wram, PAD_REPEAT_COUNTDOWN, index, a);
-        } else {
-            WramWrite16At(wram, PAD_LAST_BUTTONS, index, buttons);
-            a = (uint16_t)(~buttons | WramRead16At(wram, DP_BUTTONS_PRESSED, index));
-            WramWrite16At(wram, DP_BUTTONS_PRESSED, index, a);
-            a = PAD_REPEAT_FIRST;
-            WramWrite16At(wram, PAD_REPEAT_COUNTDOWN, index, a);
-        }
+static PadReadResult ReadPad(Lufia2Wram wram, uint16_t index) {
+    const uint16_t buttons = WramRead16At(wram, SNES_JOY1L, index);
+    WramWrite16At(wram, DP_BUTTONS_HELD, index, buttons);
+    const uint16_t previous = WramRead16At(wram, PAD_LAST_BUTTONS, index);
+    PadReadResult result = {buttons, buttons >= previous};
+    if (buttons == previous) {
+        if (StepWordAt(wram, PAD_REPEAT_COUNTDOWN, index, -1) != 0)
+            return result;
+        const uint16_t held = WramRead16At(wram, PAD_LAST_BUTTONS, index);
+        const uint16_t repeat_mask = WramRead16(wram, PAD_REPEAT_MASK);
+        result.accumulator = (uint16_t)(held & repeat_mask);
+        result.accumulator |= WramRead16At(wram, DP_BUTTONS_PRESSED, index);
+        WramWrite16At(wram, DP_BUTTONS_PRESSED, index, result.accumulator);
+        result.accumulator = PAD_REPEAT_NEXT;
+    } else {
+        WramWrite16At(wram, PAD_LAST_BUTTONS, index, buttons);
+        result.accumulator =
+            (uint16_t)(~buttons | WramRead16At(wram, DP_BUTTONS_PRESSED, index));
+        WramWrite16At(wram, DP_BUTTONS_PRESSED, index, result.accumulator);
+        result.accumulator = PAD_REPEAT_FIRST;
     }
-    return a;
+    WramWrite16At(wram, PAD_REPEAT_COUNTDOWN, index, result.accumulator);
+    return result;
+}
+
+static uint16_t ReadPads(Lufia2Wram wram) {
+    (void)ReadPad(wram, 2u);
+    return ReadPad(wram, 0u).accumulator;
+}
+
+Lufia2ExecutionResult Lufia2NmiReadPadStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit != 0u ||
+        cpu->index_is_8_bit != 0u || cpu->direct_page != 0u ||
+        (cpu->x != 0u && cpu->x != 2u) ||
+        !(cpu->data_bank < 0x40u ||
+          (cpu->data_bank >= 0x80u && cpu->data_bank < 0xc0u)))
+        return ExecutionHandoff(cpu, 0x808770u);
+    const PadReadResult result = ReadPad(WramViewOfCaller(memory, cpu), cpu->x);
+    cpu->accumulator = result.accumulator;
+    cpu->carry = result.carry;
+    cpu->x = (uint16_t)(cpu->x - 2u);
+    SetNz16(cpu, cpu->x);
+    return ExecutionHandoff(cpu, cpu->x == 0xfffeu ? 0x8087a5u : 0x808770u);
 }
 
 /* Upload requested OAM/palette buffers, then read both pads after auto-read.
