@@ -1,5 +1,6 @@
 #include "core/cpu_internal.h"
 #include "lufia2/field_control_steps.h"
+#include "lufia2/field_region_control_steps.h"
 
 Lufia2ExecutionResult Lufia2FieldControlStep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
@@ -26,5 +27,60 @@ Lufia2ExecutionResult Lufia2FieldControlStep(
     }
     SimulateJslFrame(memory, cpu, cpu->program_bank, (uint16_t)(entry + 3u));
     cpu->program_bank = (uint8_t)(target >> 16);
+    return ExecutionHandoff(cpu, target);
+}
+
+Lufia2ExecutionResult Lufia2FieldRegionControlStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    uint32_t target;
+    uint8_t frame_size;
+    switch (entry) {
+    case 0x83827du:
+        PullDataBank(memory, cpu);
+        return ExecutionHandoff(cpu, 0x83827eu);
+    case 0x838265u:
+        target = 0x83b66eu;
+        frame_size = 2u;
+        break;
+    case 0x838268u:
+        target = 0x83b747u;
+        frame_size = 2u;
+        break;
+    case 0x83827au:
+        target = 0x83b711u;
+        frame_size = 2u;
+        break;
+    case 0x83827eu:
+        target = 0x83c0efu;
+        frame_size = 2u;
+        break;
+    case 0x838281u:
+        target = 0x83fb71u;
+        frame_size = 3u;
+        break;
+    case 0x838289u:
+        target = 0x83816du;
+        frame_size = 2u;
+        break;
+    case 0x838292u:
+        target = 0x83813bu;
+        frame_size = 2u;
+        break;
+    case 0x83829bu:
+        target = 0x838386u;
+        frame_size = 2u;
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    if (frame_size == 3u) {
+        SimulateJslFrame(memory, cpu, cpu->program_bank, (uint16_t)(entry + 3u));
+        cpu->program_bank = (uint8_t)(target >> 16);
+    } else {
+        SimulateJsrFrame(memory, cpu, (uint16_t)(entry + 2u));
+    }
     return ExecutionHandoff(cpu, target);
 }
