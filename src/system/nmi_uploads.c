@@ -9,6 +9,7 @@
 #include "lufia2/nmi_tilemap_steps.h"
 #include "lufia2/nmi_pad_steps.h"
 #include "lufia2/nmi_control_steps.h"
+#include "lufia2/nmi_upload_checks.h"
 #include "system/wram.h"
 
 /* Direct-page request flags. Bit 7 is the one the NMI clears. */
@@ -82,6 +83,10 @@ static uint16_t StepWordAt(
     Write8(wram.memory, WramNextAddress(location, low), (uint8_t)(value >> 8));
     Write8(wram.memory, low, (uint8_t)value);
     return value;
+}
+
+static uint8_t ReadUploadRequest(Lufia2Wram wram, uint32_t flags) {
+    return (uint8_t)(WramRead(wram, flags) & UPLOAD_PENDING_MASK);
 }
 
 typedef struct PadReadResult {
@@ -174,6 +179,26 @@ Lufia2ExecutionResult Lufia2NmiControlStep(
     }
 }
 
+Lufia2ExecutionResult Lufia2NmiCheckUploadRequest(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit != 0u || cpu->direct_page != 0u)
+        return ExecutionHandoff(cpu, entry);
+    uint32_t flags, skipped;
+    if (entry == 0x808706u) {
+        flags = OAM_UPLOAD_FLAGS;
+        skipped = 0x808736u;
+    } else if (entry == 0x808736u) {
+        flags = PALETTE_UPLOAD_FLAGS;
+        skipped = 0x808765u;
+    } else {
+        return ExecutionHandoff(cpu, entry);
+    }
+    const uint8_t request = ReadUploadRequest(WramViewOfCaller(memory, cpu), flags);
+    LoadA8(cpu, request);
+    return ExecutionHandoff(cpu, request ? entry + 6u : skipped);
+}
+
 /* Upload requested OAM/palette buffers, then read both pads after auto-read.
  * The memory service must advance the automatic-read timer while polling. */
 Lufia2ExecutionResult Lufia2NmiSpritesPaletteAndPads(
@@ -190,13 +215,13 @@ Lufia2ExecutionResult Lufia2NmiSpritesPaletteAndPads(
     wram = WramViewOfCaller(memory, cpu);
     Push8(memory, cpu, PackStatus(cpu));
     SetIndexWidth(cpu, 0);
-    if (WramRead(wram, OAM_UPLOAD_FLAGS) & UPLOAD_PENDING_MASK) {
+    if (ReadUploadRequest(wram, OAM_UPLOAD_FLAGS)) {
         AcknowledgeUpload(wram, OAM_UPLOAD_FLAGS);
         WramWrite16(wram, SNES_OAMADDL, 0);
         RunUploadDma(wram, DMA_ONE_REGISTER, OAM_DATA_PORT, OAM_BUFFER, 0,
             OAM_BUFFER_SIZE);
     }
-    if (WramRead(wram, PALETTE_UPLOAD_FLAGS) & UPLOAD_PENDING_MASK) {
+    if (ReadUploadRequest(wram, PALETTE_UPLOAD_FLAGS)) {
         AcknowledgeUpload(wram, PALETTE_UPLOAD_FLAGS);
         WramWrite(wram, SNES_CGADD, 0);
         RunUploadDma(wram, DMA_ONE_REGISTER, CGRAM_DATA_PORT, PALETTE_BUFFER,
