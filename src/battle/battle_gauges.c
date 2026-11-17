@@ -2,6 +2,7 @@
 
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "lufia2/battle_gauge_steps.h"
 #include "lufia2/system.h"
 
 /* Direct page cells of the gauge and digit routines. */
@@ -18,17 +19,52 @@ enum {
     GAUGE_DP_HUNDREDS = 0xb4
 };
 
-/* Shared $81:E308 tail, including the original DB changes and carry chains. */
-static void GaugeFill(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void BeginGaugeFill(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpDp(cpu, GAUGE_DP_VALUE));
     OpSta(memory, cpu, OpDp(cpu, GAUGE_DP_REMAINING));
+}
+
+static void PrepareGaugeScale(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpSepWidths(cpu, 0x20u);
+    OpLoadA(cpu, 0x1au);
+    OpSta(memory, cpu, OpDp(cpu, GAUGE_DP_MULTIPLIER));
+    Push8(memory, cpu, cpu->program_bank);
+    PullDataBank(memory, cpu);
+}
+
+static void BeginGaugeParts(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpSepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpDp(cpu, GAUGE_DP_REMAINING));
+}
+
+static void FillGaugePart(const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned part) {
+    const uint8_t cap = part == 0u || part == 3u ? 5u : 8u;
+    OpCmpValue(cpu, (uint8_t)(cap + 1u));
+    if (cpu->carry)
+        OpLoadA(cpu, cap);
+    if (part < 3u)
+        OpSta(memory, cpu, OpDp(cpu, GAUGE_DP_LABEL_TILE));
+    cpu->carry = 0;
+    OpAdc(memory, cpu, OpDp(cpu, GAUGE_DP_TILE_BASE));
+    if (part == 1u || part == 2u)
+        OpAdcValue(cpu, 6u);
+    else if (part == 3u)
+        OpAdcValue(cpu, 0x0fu);
+    OpSta(memory, cpu, OpAbsY(cpu, (uint16_t)(0x0au + 2u * part)));
+    if (part < 3u) {
+        OpLda(memory, cpu, OpDp(cpu, GAUGE_DP_REMAINING));
+        cpu->carry = 1;
+        OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, GAUGE_DP_LABEL_TILE)));
+        OpSta(memory, cpu, OpDp(cpu, GAUGE_DP_REMAINING));
+    }
+}
+
+/* Shared $81:E308 tail, including the original DB changes and carry chains. */
+static void GaugeFill(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    BeginGaugeFill(memory, cpu);
     if (!cpu->zero) {
-        OpSepWidths(cpu, 0x20u);
-        OpLoadA(cpu, 0x1au);
-        OpSta(memory, cpu, OpDp(cpu, GAUGE_DP_MULTIPLIER));
-        Push8(memory, cpu, cpu->program_bank);
-        PullDataBank(memory, cpu);
+        PrepareGaugeScale(memory, cpu);
         SimulateJslFrame(memory, cpu, 0x81u, 0xe31bu);
         (void)Lufia2Multiply16By8(memory, cpu);
         SimulateRtlFrame(memory, cpu);
@@ -48,30 +84,48 @@ static void GaugeFill(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
                 OpStepMem(memory, cpu, OpDp(cpu, GAUGE_DP_REMAINING), 1);
         }
     }
-    OpSepWidths(cpu, 0x20u);
-    for (unsigned part = 0; part < 4u; ++part) {
-        const uint8_t cap = part == 0u || part == 3u ? 5u : 8u;
-        if (part == 0u)
-            OpLda(memory, cpu, OpDp(cpu, GAUGE_DP_REMAINING));
-        OpCmpValue(cpu, (uint8_t)(cap + 1u));
-        if (cpu->carry)
-            OpLoadA(cpu, cap);
-        if (part < 3u)
-            OpSta(memory, cpu, OpDp(cpu, GAUGE_DP_LABEL_TILE));
-        cpu->carry = 0;
-        OpAdc(memory, cpu, OpDp(cpu, GAUGE_DP_TILE_BASE));
-        if (part == 1u || part == 2u)
-            OpAdcValue(cpu, 6u);
-        else if (part == 3u)
-            OpAdcValue(cpu, 0x0fu);
-        OpSta(memory, cpu, OpAbsY(cpu, (uint16_t)(0x0au + 2u * part)));
-        if (part < 3u) {
-            OpLda(memory, cpu, OpDp(cpu, GAUGE_DP_REMAINING));
-            cpu->carry = 1;
-            OpSbcValue(cpu, OpReadM(memory, cpu, OpDp(cpu, GAUGE_DP_LABEL_TILE)));
-            OpSta(memory, cpu, OpDp(cpu, GAUGE_DP_REMAINING));
-        }
+    BeginGaugeParts(memory, cpu);
+    for (unsigned part = 0u; part < 4u; ++part)
+        FillGaugePart(memory, cpu, part);
+}
+
+Lufia2ExecutionResult Lufia2BattleBeginGaugeStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u || (entry != 0x81e308u && entry != 0x81e339u))
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x81e308u) {
+        BeginGaugeFill(memory, cpu);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x81e339u : 0x81e310u);
     }
+    BeginGaugeParts(memory, cpu);
+    return ExecutionHandoff(cpu, 0x81e33du);
+}
+
+Lufia2ExecutionResult Lufia2BattlePrepareGaugeScaleStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x81e310u);
+    PrepareGaugeScale(memory, cpu);
+    return ExecutionHandoff(cpu, 0x81e318u);
+}
+
+Lufia2ExecutionResult Lufia2BattleGaugePartStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    unsigned part;
+    switch (entry) {
+    case 0x81e33du: part = 0u; break;
+    case 0x81e352u: part = 1u; break;
+    case 0x81e369u: part = 2u; break;
+    case 0x81e380u: part = 3u; break;
+    default: return ExecutionHandoff(cpu, entry);
+    }
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    FillGaugePart(memory, cpu, part);
+    static const uint32_t next[] = {0x81e352u, 0x81e369u, 0x81e380u, 0x81e38eu};
+    return ExecutionHandoff(cpu, next[part]);
 }
 
 /* $81:E2AF: two label tiles and the four-part proportional gauge. */
