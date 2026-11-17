@@ -659,6 +659,30 @@ Lufia2ExecutionResult Lufia2BattleContinueVramQueueSearch(
     return BattleQueueRowStep(memory, cpu);
 }
 
+Lufia2ExecutionResult Lufia2BattleReadVramQueueRowStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    const bool begin = entry == 0x85ecdbu;
+    if ((!begin && entry != 0x85ecdeu) || cpu->program_bank != 0x85u ||
+        cpu->accumulator_is_8_bit > 1u || cpu->index_is_8_bit ||
+        (!begin && (cpu->y >= WRAM_BATTLE_VRAM_QUEUE_COUNT * BATTLE_QUEUE_ROW_BYTES ||
+                    cpu->y % BATTLE_QUEUE_ROW_BYTES)))
+        return ExecutionHandoff(cpu, entry);
+    if (begin)
+        LoadY16(cpu, 0u);
+    return ExecutionHandoff(cpu, BattleQueueRowFree(memory, cpu) ? 0x85ecefu : 0x85ece3u);
+}
+
+Lufia2ExecutionResult Lufia2BattleAdvanceVramQueueRowStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (cpu->program_bank != 0x85u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit ||
+        cpu->y >= WRAM_BATTLE_VRAM_QUEUE_COUNT * BATTLE_QUEUE_ROW_BYTES ||
+        cpu->y % BATTLE_QUEUE_ROW_BYTES)
+        return ExecutionHandoff(cpu, 0x85ece3u);
+    return ExecutionHandoff(cpu, BattleQueueNextRow(cpu) ? 0x85ecdeu : 0x85eceeu);
+}
+
 /* DP 0, stack in $1F00..$1FFC. */
 static bool BattleFrameContext(const Lufia2CpuState *cpu) {
     return cpu->direct_page == 0 && cpu->stack >= 0x1f00u &&
