@@ -6,6 +6,7 @@
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
 #include "lufia2/system.h"
+#include "lufia2/nmi_tilemap_steps.h"
 #include "system/wram.h"
 
 /* Direct-page request flags. Bit 7 is the one the NMI clears. */
@@ -202,20 +203,44 @@ Lufia2ExecutionResult Lufia2UploadTilemapBlock(
     return ExecutionReturned(0x80884eu);
 }
 
+typedef struct NmiTilemapBlock {
+    uint8_t mask;
+    uint16_t source;
+    uint16_t vram;
+    uint16_t return_address;
+} NmiTilemapBlock;
+
+static const NmiTilemapBlock tilemap_blocks[3] = {
+    {0xc0u, 0x2000u, 0x0000u, 0x880au},
+    {0x30u, 0x2800u, 0x0400u, 0x8819u},
+    {0x0cu, 0x3000u, 0x0800u, 0x8828u},
+};
+
+static void SelectTilemapBlock(Lufia2CpuState *cpu, const NmiTilemapBlock *block) {
+    OpLdx(cpu, block->source);
+    OpLdy(cpu, block->vram);
+}
+
+Lufia2ExecutionResult Lufia2NmiPrepareTilemapBlock(Lufia2CpuState *cpu,
+    uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    unsigned block;
+    switch (entry) {
+    case 0x808802u: block = 0u; break;
+    case 0x808811u: block = 1u; break;
+    case 0x808820u: block = 2u; break;
+    default: return ExecutionHandoff(cpu, entry);
+    }
+    SelectTilemapBlock(cpu, &tilemap_blocks[block]);
+    return ExecutionHandoff(cpu, entry + 6u);
+}
+
 /* $80:87FC: tilemap blocks requested in $74 (bit pairs), then clears the
  * requests. Leaves A = $AA and Z from the clear. */
 static void UploadRequestedTilemaps(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, Lufia2Wram wram) {
-    static const struct {
-        uint8_t mask;
-        uint16_t source;
-        uint16_t vram;
-        uint16_t return_address;
-    } blocks[3] = {
-        {0xc0u, 0x2000u, 0x0000u, 0x880au},
-        {0x30u, 0x2800u, 0x0400u, 0x8819u},
-        {0x0cu, 0x3000u, 0x0800u, 0x8828u},
-    };
     uint8_t requests;
     unsigned i;
     uint8_t current;
@@ -223,16 +248,17 @@ static void UploadRequestedTilemaps(
     requests = WramRead(wram, VRAM_UPLOAD_FLAGS);
     LoadA8(cpu, requests);
     for (i = 0; i < 3u; ++i) {
-        if (!(requests & blocks[i].mask))
+        if (!(requests & tilemap_blocks[i].mask))
             continue;
-        cpu->x = blocks[i].source;
-        cpu->y = blocks[i].vram;
-        SimulateJsrFrame(memory, cpu, blocks[i].return_address);
+        SelectTilemapBlock(cpu, &tilemap_blocks[i]);
+        SimulateJsrFrame(memory, cpu, tilemap_blocks[i].return_address);
         (void)Lufia2UploadTilemapBlock(memory, cpu);
         SimulateRtsFrame(memory, cpu);
         cpu->x = TILEMAP_SIZE;
-        requests = WramRead(wram, VRAM_UPLOAD_FLAGS);
-        LoadA8(cpu, requests);
+        if (i + 1u < 3u) {
+            requests = WramRead(wram, VRAM_UPLOAD_FLAGS);
+            LoadA8(cpu, requests);
+        }
     }
     LoadA8(cpu, 0xaau);
     current = WramRead(wram, VRAM_UPLOAD_FLAGS);
