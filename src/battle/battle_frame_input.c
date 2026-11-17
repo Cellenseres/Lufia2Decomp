@@ -1,5 +1,6 @@
 #include "battle/battle_internal.h"
 #include "lufia2/battle_input_steps.h"
+#include "lufia2/battle_upkeep_steps.h"
 
 enum {
     INPUT_PAUSE_ENABLED = 0x057cu,
@@ -87,25 +88,49 @@ static void WaitForBattleFrame(const Lufia2Memory *memory, Lufia2CpuState *cpu) 
     } while (cpu->zero);
 }
 
+static bool BattleSpriteRebuildRequested(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    return !cpu->zero;
+}
+
+static void ClearBattleSpriteRebuildRequest(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TransferDirectToA(cpu);
+    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+}
+
+static Lufia2ExecutionResult ContinueBattleFrameUpkeep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
+    Lufia2PushedChildCall child, void *context) {
+    BattleContext battle = BattleContextCreate(memory, cpu, child, context, 0x85u);
+    if (entry == 0x85ec81u && !BattleCall(&battle, 0xec81u, 0x85919cu, 3u))
+        return BattleChildUnwound(&battle);
+    if (entry != 0x85ec8fu) {
+        if (entry != 0x85ec8bu && !BattleSpriteRebuildRequested(memory, cpu))
+            return ExecutionHandoff(cpu, 0x85ec94u);
+        if (!BattleCall(&battle, 0xec8bu, BATTLE_ROUTINE_BUILD_SPRITES, 3u))
+            return BattleChildUnwound(&battle);
+    }
+    ClearBattleSpriteRebuildRequest(memory, cpu);
+    return ExecutionHandoff(cpu, 0x85ec94u);
+}
+
 /* Leave the frame wait to the consumer. */
 Lufia2ExecutionResult Lufia2BattleFrameInputUpkeep(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *child_context) {
-    BattleContext battle =
-        BattleContextCreate(memory, cpu, child, child_context, 0x85u);
-    if (!BattleCall(&battle, 0xec81u, 0x85919cu, 3u))
-        return BattleChildUnwound(&battle);
-    OpLda(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
-    if (!cpu->zero) {
-        if (!BattleCall(&battle, 0xec8bu, BATTLE_ROUTINE_BUILD_SPRITES, 3u))
-            return BattleChildUnwound(&battle);
-        TransferDirectToA(cpu);
-        OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
-    }
-    Lufia2ExecutionResult result = ExecutionReturned(0x85ec94u);
-    result.flow = LUFIA2_EXECUTION_BOUNDARY;
-    cpu->resume_pc = result.pc;
-    return result;
+    return ContinueBattleFrameUpkeep(memory, cpu, 0x85ec81u, child, child_context);
+}
+
+Lufia2ExecutionResult Lufia2BattleContinueFrameUpkeep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
+    Lufia2PushedChildCall child, void *context) {
+    if (!BattleInputStepReady(cpu) || cpu->decimal || !child ||
+        (entry != 0x85ec81u && entry != 0x85ec85u &&
+         entry != 0x85ec8bu && entry != 0x85ec8fu))
+        return ExecutionHandoff(cpu, entry);
+    return ContinueBattleFrameUpkeep(memory, cpu, entry, child, context);
 }
 
 /* Battle upkeep, frame waits and pause input. */
@@ -132,15 +157,14 @@ Lufia2ExecutionResult Lufia2BattleCheckSpriteRequest(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!BattleInputStepReady(cpu))
         return ExecutionHandoff(cpu, 0x85ec85u);
-    OpLda(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
-    return ExecutionHandoff(cpu, cpu->zero ? 0x85ec94u : 0x85ec8bu);
+    return ExecutionHandoff(cpu, BattleSpriteRebuildRequested(memory, cpu)
+        ? 0x85ec8bu : 0x85ec94u);
 }
 
 Lufia2ExecutionResult Lufia2BattleClearSpriteRequest(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!BattleInputStepReady(cpu))
         return ExecutionHandoff(cpu, 0x85ec8fu);
-    TransferDirectToA(cpu);
-    OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
+    ClearBattleSpriteRebuildRequest(memory, cpu);
     return ExecutionHandoff(cpu, 0x85ec94u);
 }
