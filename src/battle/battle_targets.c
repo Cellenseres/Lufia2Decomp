@@ -1,3 +1,4 @@
+#include "lufia2/battle_target_name_setup.h"
 #include "battle/battle_internal.h"
 #include "lufia2/battle_target_name_steps.h"
 #include "lufia2/battle_target_marker_steps.h"
@@ -114,10 +115,36 @@ static void TargetClearNameSpan(const Lufia2Memory *memory,
     } while (!cpu->negative && --bytes);
 }
 
-static void TargetClearName(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void TargetPrepareNameIndex(Lufia2CpuState *cpu) {
     OpLdy(cpu, 0x7fu);
+}
+
+static void TargetPrepareNameValue(Lufia2CpuState *cpu) {
     TransferDirectToA(cpu);
+}
+
+static void TargetClearName(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TargetPrepareNameIndex(cpu);
+    TargetPrepareNameValue(cpu);
     TargetClearNameSpan(memory, cpu, 128u);
+}
+
+Lufia2ExecutionResult Lufia2BattleTargetNameSetupStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    (void)memory;
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x81d589u: case 0x81d7c1u: case 0x81d8c8u:
+        TargetPrepareNameIndex(cpu);
+        return ExecutionHandoff(cpu, entry + 2u + !cpu->index_is_8_bit);
+    case 0x81d58cu: case 0x81d7c4u: case 0x81d8cbu:
+        TargetPrepareNameValue(cpu);
+        return ExecutionHandoff(cpu, entry + 1u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
 }
 
 Lufia2ExecutionResult Lufia2BattleClearTargetNameSpan(
