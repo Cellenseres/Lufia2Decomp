@@ -1,5 +1,6 @@
 #include "battle/battle_internal.h"
 #include "lufia2/battle_command_tiles.h"
+#include "lufia2/battle_command_steps.h"
 
 static void CopyCommandTileParameters(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, bool highlighted) {
@@ -51,6 +52,56 @@ Lufia2ExecutionResult Lufia2BattlePrepareSelectedCommandTile(
     return ExecutionHandoff(cpu, 0x81cbddu);
 }
 
+static bool NextCommandTile(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpPullX(memory, cpu);
+    OpCpx(cpu, 9u);
+    return !cpu->zero;
+}
+
+Lufia2ExecutionResult Lufia2BattleContinueCommandTiles(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81cbb2u);
+    return ExecutionHandoff(cpu, NextCommandTile(memory, cpu) ? 0x81cb99u : 0x81cbb8u);
+}
+
+Lufia2ExecutionResult Lufia2BattleCommandCallStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    uint32_t target;
+    uint8_t frame_size;
+    switch (entry) {
+    case 0x81cbafu: case 0x81cbddu:
+        target = BATTLE_ROUTINE_TILE_BLOCK;
+        frame_size = 2u;
+        break;
+    case 0x81cbe0u:
+        target = 0x859dd4u;
+        frame_size = 3u;
+        break;
+    case 0x81cbe4u:
+        target = 0x81d9d0u;
+        frame_size = 2u;
+        break;
+    case 0x81cbedu:
+        target = BATTLE_ROUTINE_FRAME_INPUT;
+        frame_size = 3u;
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    if (frame_size == 3u) {
+        SimulateJslFrame(memory, cpu, cpu->program_bank, (uint16_t)(entry + 3u));
+        cpu->program_bank = (uint8_t)(target >> 16);
+    } else {
+        SimulateJsrFrame(memory, cpu, (uint16_t)(entry + 2u));
+    }
+    return ExecutionHandoff(cpu, target);
+}
+
 /* $81:CB77: draw and poll the four-way Battle command selection. */
 Lufia2ExecutionResult Lufia2BattleChooseCommand(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
@@ -77,9 +128,7 @@ Lufia2ExecutionResult Lufia2BattleChooseCommand(
             PrepareCommandTile(memory, cpu);
             if (!BattleCall(&battle, 0xcbafu, BATTLE_ROUTINE_TILE_BLOCK, 2u))
                 return BattleChildUnwound(&battle);
-            OpPullX(memory, cpu);
-            OpCpx(cpu, 9u);
-        } while (!cpu->zero);
+        } while (NextCommandTile(memory, cpu));
         PrepareSelectedCommandTile(memory, cpu);
         if (!BattleCall(&battle, 0xcbddu, BATTLE_ROUTINE_TILE_BLOCK, 2u) ||
             !BattleCall(&battle, 0xcbe0u, 0x859dd4u, 3u) ||
