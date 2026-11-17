@@ -2,6 +2,7 @@
 
 #include "core/cpu_ops.h"
 #include "lufia2/menu.h"
+#include "lufia2/math_steps.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
 
@@ -123,6 +124,26 @@ void Lufia2CallCosine(const Lufia2Memory *memory, Lufia2CpuState *cpu,
 }
 
 
+static void DivideNextBit(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const uint16_t quotient = Read16Direct(memory, cpu, 0x4eu);
+
+    cpu->carry = (quotient & 0x8000u) != 0;                /* ASL $4E */
+    const uint16_t shifted = (uint16_t)(quotient << 1);
+    const uint32_t address = OpDp(cpu, 0x4eu);
+    /* Original 16-bit ASL writes the high byte first. */
+    Write8(memory, OpNextByte(address), (uint8_t)(shifted >> 8));
+    Write8(memory, address, (uint8_t)shifted);
+    SetNz16(cpu, shifted);
+    RolA16(cpu);
+    if (!cpu->carry) {
+        Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x51u));
+        if (!cpu->carry)
+            return;
+    }
+    OpSbcValue(cpu, Read16Direct(memory, cpu, 0x51u));
+    OpStepMem(memory, cpu, OpDp(cpu, 0x4eu), 1);
+}
+
 /* $80:8378: $4E = $4E / $51, A = remainder; 16 shift-subtract steps. */
 Lufia2ExecutionResult Lufia2Divide16(
     const Lufia2Memory *memory,
@@ -133,27 +154,27 @@ Lufia2ExecutionResult Lufia2Divide16(
     SetAccumulatorWidth(cpu, 0);
     SetIndexWidth(cpu, 0);
     LoadA16(cpu, 0x0000u);
-    for (i = 0; i < 16u; ++i) {
-        const uint16_t quotient = Read16Direct(memory, cpu, 0x4eu);
-
-        cpu->carry = (quotient & 0x8000u) != 0;                /* ASL $4E */
-        const uint16_t shifted = (uint16_t)(quotient << 1);
-        const uint32_t address = OpDp(cpu, 0x4eu);
-        /* Original 16-bit ASL writes the high byte first. */
-        Write8(memory, OpNextByte(address), (uint8_t)(shifted >> 8));
-        Write8(memory, address, (uint8_t)shifted);
-        SetNz16(cpu, shifted);
-        RolA16(cpu);
-        if (!cpu->carry) {
-            Compare16(cpu, cpu->accumulator, Read16Direct(memory, cpu, 0x51u));
-            if (!cpu->carry)
-                continue;
-        }
-        OpSbcValue(cpu, Read16Direct(memory, cpu, 0x51u));
-        OpStepMem(memory, cpu, OpDp(cpu, 0x4eu), 1);
-    }
+    for (i = 0; i < 16u; ++i)
+        DivideNextBit(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x80844fu);
+}
+
+Lufia2ExecutionResult Lufia2DivideBitSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry, unsigned max_bits) {
+    const uint32_t offset = entry - 0x80837eu;
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit ||
+        offset >= 16u * 13u || offset % 13u || !max_bits ||
+        max_bits > LUFIA2_DIVIDE_SPAN_MAX_BITS)
+        return ExecutionHandoff(cpu, entry);
+    unsigned bit = offset / 13u;
+    unsigned count = 0u;
+    do {
+        DivideNextBit(memory, cpu);
+        ++bit;
+        ++count;
+    } while (bit < 16u && count < max_bits);
+    return ExecutionHandoff(cpu, 0x80837eu + bit * 13u);
 }
 
 /* $81:E808: X to decimal digits $B4 (hundreds), $B3, $B2. */
