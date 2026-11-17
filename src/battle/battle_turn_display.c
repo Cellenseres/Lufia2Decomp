@@ -1,4 +1,6 @@
 #include "battle/battle_internal.h"
+#include "battle/battle_display_queue_internal.h"
+#include "lufia2/battle_turn_display_steps.h"
 
 /* $81:DEE9: refresh the panel and four party status rows. */
 Lufia2ExecutionResult Lufia2BattleRefreshTurnDisplay(const Lufia2Memory *memory,
@@ -181,6 +183,24 @@ Lufia2ExecutionResult Lufia2BattlePartyStatusRow(const Lufia2Memory *memory,
     return ExecutionReturned(0x81e73au);
 }
 
+Lufia2ExecutionResult Lufia2BattleWriteTurnDisplayRegion(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x85u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x859ddau:
+        WriteBattleDisplayBlock(memory, cpu, 0x2c00u, 0x5e00u, 0x300u);
+        return ExecutionHandoff(cpu, 0x859decu);
+    case 0x859df0u:
+        WriteBattleDisplayBlock(memory, cpu, 0x3400u, 0xa00u, 0x400u);
+        OpSepWidths(cpu, 0x20u);
+        return ExecutionHandoff(cpu, 0x859e04u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+}
+
 /* $85:9DD4: queue the two turn-display regions. */
 Lufia2ExecutionResult Lufia2BattleQueueTurnDisplay(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu,
@@ -190,20 +210,10 @@ Lufia2ExecutionResult Lufia2BattleQueueTurnDisplay(const Lufia2Memory *memory,
     OpRepWidths(cpu, 0x20u);
     if (!BattleCall(&battle, 0x9dd6u, 0x85ecdbu, 3u))
         return BattleChildUnwound(&battle);
-    OpLoadA(cpu, 0x2c00u);
-    OpSta(memory, cpu, OpAbsY(cpu, 0x1a91u));
-    OpLoadA(cpu, 0x5e00u);
-    OpSta(memory, cpu, OpAbsY(cpu, 0x1a93u));
-    OpLoadA(cpu, 0x300u);
-    OpSta(memory, cpu, OpAbsY(cpu, 0x1a8fu));
+    WriteBattleDisplayBlock(memory, cpu, 0x2c00u, 0x5e00u, 0x300u);
     if (!BattleCall(&battle, 0x9decu, 0x85ecdbu, 3u))
         return BattleChildUnwound(&battle);
-    OpLoadA(cpu, 0x3400u);
-    OpSta(memory, cpu, OpAbsY(cpu, 0x1a91u));
-    OpLoadA(cpu, 0xa00u);
-    OpSta(memory, cpu, OpAbsY(cpu, 0x1a93u));
-    OpLoadA(cpu, 0x400u);
-    OpSta(memory, cpu, OpAbsY(cpu, 0x1a8fu));
+    WriteBattleDisplayBlock(memory, cpu, 0x3400u, 0xa00u, 0x400u);
     OpSepWidths(cpu, 0x20u);
     return ExecutionReturned(0x859e04u);
 }

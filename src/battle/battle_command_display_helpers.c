@@ -1,3 +1,4 @@
+#include "battle/battle_display_queue_internal.h"
 #include "battle/battle_internal.h"
 #include "lufia2/battle_display_steps.h"
 
@@ -37,16 +38,6 @@ Lufia2ExecutionResult Lufia2BattlePartyName(const Lufia2Memory *memory,
     } while (!cpu->zero);
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x81e502u);
-}
-
-static void WriteBattleDisplayBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                   uint16_t source, uint16_t destination, uint16_t size) {
-    OpLoadA(cpu, source);
-    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE + 2u));
-    OpLoadA(cpu, destination);
-    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE + 4u));
-    OpLoadA(cpu, size);
-    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE));
 }
 
 Lufia2ExecutionResult Lufia2BattleFinishDisplayBlock(
