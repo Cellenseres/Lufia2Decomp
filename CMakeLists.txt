@@ -298,6 +298,7 @@ add_library(lufia2_decomp STATIC
     src/field/field_event_triggers.c
     src/field/field_event_object_region.c
     src/field/field_actor_event_helpers.c
+    src/field/field_control_steps.c
     src/field/field_object_release.c
     src/field/field_object_motion_resources.c
     src/field/field_actor_probe.c
