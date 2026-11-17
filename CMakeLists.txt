@@ -438,6 +438,7 @@ add_library(lufia2_decomp STATIC
     src/world/world_stream.c
     src/battle/battle_effect_scroll.c
     src/world/world_scene.c
+    src/world/world_frame_control.c
     src/party/capsule_stat_growth.c
     src/field/field_contact_edges.c
     src/field/field_actor_contact.c
