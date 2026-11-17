@@ -211,6 +211,7 @@ add_library(lufia2_decomp STATIC
     src/battle/battle_action_message.c
     src/battle/battle_message_parser.c
     src/battle/battle_result_window.c
+    src/battle/battle_control_steps.c
     src/battle/battle_result_hdma.c
     src/battle/battle_results.c
     src/battle/battle_turn_display.c
