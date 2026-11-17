@@ -1,6 +1,7 @@
 #include "battle/battle_internal.h"
 #include "core/snes_registers.h"
 #include "lufia2/battle_effect_slot_steps.h"
+#include "lufia2/battle_effect_background_steps.h"
 
 enum {
     EFFECT_STREAM = 0xc3u,
@@ -464,6 +465,54 @@ static bool EffectRunSlots(EffectEngine *effect, bool actors) {
     return true;
 }
 
+static bool EffectHasBackgroundUpload(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, EFFECT_BACKGROUND_REQUEST));
+    return !cpu->negative;
+}
+
+static bool EffectHasBackgroundHold(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, EFFECT_BACKGROUND_HOLD));
+    return !cpu->zero;
+}
+
+static void EffectPrepareBackgroundDestination(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpAndValue(cpu, 0xffu);
+    OpAslA(cpu);
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, ROM_EFFECT_BACKGROUND_DESTINATIONS));
+    PushAccumulator16(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectBackgroundStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x818b69u:
+        return ExecutionHandoff(cpu,
+            EffectHasBackgroundUpload(memory, cpu) ? 0x818b6eu : 0x818b95u);
+    case 0x818b95u:
+        return ExecutionHandoff(cpu,
+            EffectHasBackgroundHold(memory, cpu) ? 0x818b9au : 0x818bbdu);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+}
+
+Lufia2ExecutionResult Lufia2BattleEffectPrepareBackgroundDestination(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit > 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x818b6eu);
+    EffectPrepareBackgroundDestination(memory, cpu);
+    return ExecutionHandoff(cpu, 0x818b7au);
+}
+
 static bool EffectUploadChanges(EffectEngine *effect) {
     const Lufia2Memory *memory = effect->battle.memory;
     Lufia2CpuState *cpu = effect->battle.cpu;
@@ -485,14 +534,8 @@ static bool EffectUploadChanges(EffectEngine *effect) {
             OpSepWidths(cpu, 0x20u);
         }
     }
-    OpLda(memory, cpu, OpAbs(cpu, EFFECT_BACKGROUND_REQUEST));
-    if (!cpu->negative) {
-        OpRepWidths(cpu, 0x20u);
-        OpAndValue(cpu, 0xffu);
-        OpAslA(cpu);
-        OpTax(cpu);
-        OpLda(memory, cpu, OpLongX(cpu, ROM_EFFECT_BACKGROUND_DESTINATIONS));
-        PushAccumulator16(memory, cpu);
+    if (EffectHasBackgroundUpload(memory, cpu)) {
+        EffectPrepareBackgroundDestination(memory, cpu);
         if (!EffectCall(effect, 0x8b7au, 0x85ecdbu, 3u, true))
             return false;
         OpLoadA(cpu, 0x3800u);
@@ -505,8 +548,7 @@ static bool EffectUploadChanges(EffectEngine *effect) {
         OpLoadA(cpu, 0xffu);
         OpSta(memory, cpu, OpAbs(cpu, EFFECT_BACKGROUND_REQUEST));
     }
-    OpLda(memory, cpu, OpAbs(cpu, EFFECT_BACKGROUND_HOLD));
-    if (!cpu->zero) {
+    if (EffectHasBackgroundHold(memory, cpu)) {
         OpStz(memory, cpu, OpAbs(cpu, EFFECT_BACKGROUND_HOLD));
         if (cpu->negative) {
             OpLoadA(cpu, 1u);
