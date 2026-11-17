@@ -10,6 +10,7 @@
 #include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "lufia2/field_region_continuations.h"
+#include "lufia2/field_trigger_continuations.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
@@ -194,23 +195,6 @@ static uint32_t PrepareFieldContactScan(const Lufia2Memory *memory, Lufia2CpuSta
     return 0x8381f6u;
 }
 
-static uint8_t ProbeFieldContact(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                 Lufia2PushedChildCall child, void *context,
-                                 Lufia2ExecutionResult *result) {
-    if (SelectFieldContact(memory, cpu) != 0x8381d8u)
-        return 1u;
-    if (!FieldTriggerChild(memory, cpu, child, context, 0x8381d8u, 0x8380cdu, 2u, 1u,
-                           result))
-        return 0u;
-    if (PrepareFieldContactScan(memory, cpu) != 0x8381f6u)
-        return 1u;
-    if (!FieldTriggerChild(memory, cpu, child, context, 0x8381f6u, 0x83b8bfu, 2u, 0u,
-                           result))
-        return 0u;
-    PullDataBank(memory, cpu);
-    return 1u;
-}
-
 static uint32_t SelectPendingFieldEvent(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLda(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE));
     OpBitValue(cpu, 0x40u);
@@ -243,27 +227,6 @@ static uint32_t SelectPendingFieldEvent(const Lufia2Memory *memory, Lufia2CpuSta
 static void PreparePendingFieldEvent(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLoadA(cpu, 0x40u);
     OpTestBits(memory, cpu, OpAbs(cpu, WRAM_ACTOR_STATE), 0u);
-}
-
-static uint8_t RunPendingFieldEvent(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-                                    Lufia2PushedChildCall child, void *context,
-                                    Lufia2ExecutionResult *result) {
-    if (SelectPendingFieldEvent(memory, cpu) != 0x838225u)
-        return 1u;
-    if (child == LegacyTriggerChild) {
-        *result = ExecutionHandoff(cpu, 0x838225u);
-        return 0u;
-    }
-    PreparePendingFieldEvent(memory, cpu);
-    if (!FieldTriggerChild(memory, cpu, child, context, 0x83822au, 0x83c0efu, 2u, 0u,
-                           result))
-        return 0u;
-    OpLdx(cpu, 0u);
-    OpLdy(cpu, 0u);
-    return FieldTriggerChild(memory, cpu, child, context, 0x838233u, 0x80e722u, 3u, 0u,
-                             result) &&
-           FieldTriggerChild(memory, cpu, child, context, 0x838237u, 0x80cbaeu, 3u, 0u,
-                             result);
 }
 
 Lufia2ExecutionResult Lufia2FieldPrepareTriggerChecks(
@@ -475,16 +438,107 @@ static uint8_t ProbeFieldRegions(const Lufia2Memory *memory, Lufia2CpuState *cpu
     return ContinueFieldRegionProbe(memory, cpu, 0x838265u, child, context, result);
 }
 
+static uint8_t ContinueFieldTriggerChecks(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint32_t entry, Lufia2PushedChildCall child,
+    void *context, Lufia2ExecutionResult *result) {
+    switch (entry) {
+    case 0x8381cbu: goto update_event_timers;
+    case 0x8381cfu: goto select_contact;
+    case 0x8381d8u: goto update_contact;
+    case 0x8381dbu: goto prepare_contact_scan;
+    case 0x8381f6u: goto scan_contact;
+    case 0x8381f9u: goto restore_contact_bank;
+    case 0x8381fau: goto select_pending_event;
+    case 0x838225u: goto prepare_pending_event;
+    case 0x83822au: goto start_pending_event;
+    case 0x83822du: goto reset_event_position;
+    case 0x838233u: goto set_event_position;
+    case 0x838237u: goto resume_event_timers;
+    default:
+        *result = ExecutionHandoff(cpu, entry);
+        return 0u;
+    }
+
+update_event_timers:
+    if (!FieldTriggerChild(memory, cpu, child, context,
+            0x8381cbu, 0x80cbaeu, 3u, 0u, result))
+        return 0u;
+select_contact:
+    if (SelectFieldContact(memory, cpu) != 0x8381d8u)
+        goto select_pending_event;
+update_contact:
+    if (!FieldTriggerChild(memory, cpu, child, context,
+            0x8381d8u, 0x8380cdu, 2u, 1u, result))
+        return 0u;
+prepare_contact_scan:
+    if (PrepareFieldContactScan(memory, cpu) != 0x8381f6u)
+        goto select_pending_event;
+scan_contact:
+    if (!FieldTriggerChild(memory, cpu, child, context,
+            0x8381f6u, 0x83b8bfu, 2u, 0u, result))
+        return 0u;
+restore_contact_bank:
+    PullDataBank(memory, cpu);
+select_pending_event:
+    if (SelectPendingFieldEvent(memory, cpu) != 0x838225u)
+        return 1u;
+prepare_pending_event:
+    if (child == LegacyTriggerChild) {
+        *result = ExecutionHandoff(cpu, 0x838225u);
+        return 0u;
+    }
+    PreparePendingFieldEvent(memory, cpu);
+start_pending_event:
+    if (!FieldTriggerChild(memory, cpu, child, context,
+            0x83822au, 0x83c0efu, 2u, 0u, result))
+        return 0u;
+reset_event_position:
+    OpLdx(cpu, 0u);
+    OpLdy(cpu, 0u);
+set_event_position:
+    if (!FieldTriggerChild(memory, cpu, child, context,
+            0x838233u, 0x80e722u, 3u, 0u, result))
+        return 0u;
+resume_event_timers:
+    return FieldTriggerChild(memory, cpu, child, context,
+        0x838237u, 0x80cbaeu, 3u, 0u, result);
+}
+
+Lufia2ExecutionResult Lufia2FieldContinueTriggerChecks(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry,
+    Lufia2PushedChildCall child, void *context) {
+    uint8_t bank = 0x83u;
+    uint8_t index_width = 0u;
+    switch (entry) {
+    case 0x8381cbu: case 0x8381cfu: case 0x8381fau: case 0x838225u:
+    case 0x83822au: case 0x83822du: case 0x838233u: case 0x838237u:
+        break;
+    case 0x8381d8u: case 0x8381dbu:
+        index_width = 1u;
+        break;
+    case 0x8381f6u: case 0x8381f9u:
+        bank = 0x7eu;
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    if (cpu->program_bank != 0x83u || cpu->data_bank != bank || cpu->direct_page ||
+        cpu->decimal || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit != index_width || !child)
+        return ExecutionHandoff(cpu, entry);
+    Lufia2ExecutionResult result = {0};
+    if (!ContinueFieldTriggerChecks(memory, cpu, entry, child, context, &result))
+        return result;
+    return ExecutionHandoff(cpu, 0x83823bu);
+}
+
 static Lufia2ExecutionResult RunFieldTriggers(const Lufia2Memory *memory,
                                               Lufia2CpuState *cpu,
                                               Lufia2PushedChildCall child,
                                               void *context) {
     Lufia2ExecutionResult result = {0};
     PrepareFieldTriggerChecks(memory, cpu);
-    if (!FieldTriggerChild(memory, cpu, child, context, 0x8381cbu, 0x80cbaeu, 3u, 0u,
-                           &result) ||
-        !ProbeFieldContact(memory, cpu, child, context, &result) ||
-        !RunPendingFieldEvent(memory, cpu, child, context, &result) ||
+    if (!ContinueFieldTriggerChecks(memory, cpu, 0x8381cbu, child, context, &result) ||
         !ProbeFieldRegions(memory, cpu, child, context, &result))
         return result;
     UnpackStatus(cpu, Pull8(memory, cpu));
