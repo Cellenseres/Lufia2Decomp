@@ -10,6 +10,7 @@
 #include "lufia2/nmi_pad_steps.h"
 #include "lufia2/nmi_control_steps.h"
 #include "lufia2/nmi_upload_checks.h"
+#include "lufia2/nmi_dma_setup.h"
 #include "system/wram.h"
 
 /* Direct-page request flags. Bit 7 is the one the NMI clears. */
@@ -58,7 +59,7 @@ enum {
     JOYPAD_BUSY = 0x01u
 };
 
-static void RunUploadDma(
+static void ConfigureUploadDma(
     Lufia2Wram wram, uint8_t mode, uint8_t port, uint16_t source,
     uint8_t source_bank, uint16_t size) {
     WramWrite(wram, SNES_DMAP(UPLOAD_CHANNEL), mode);
@@ -66,13 +67,47 @@ static void RunUploadDma(
     WramWrite(wram, SNES_A1B(UPLOAD_CHANNEL), source_bank);
     WramWrite(wram, SNES_BBAD(UPLOAD_CHANNEL), port);
     WramWrite16(wram, SNES_DASL(UPLOAD_CHANNEL), size);
-    WramWrite(wram, SNES_MDMAEN, UPLOAD_ENABLE);
 }
 
 /* Clears bit 7 of a request byte (a read-modify-write). */
 static void AcknowledgeUpload(Lufia2Wram wram, uint32_t flags) {
     WramWrite(wram, flags,
         (uint8_t)(WramRead(wram, flags) & ~UPLOAD_PENDING_BIT));
+}
+
+static void PrepareOamUpload(Lufia2Wram wram) {
+    AcknowledgeUpload(wram, OAM_UPLOAD_FLAGS);
+    WramWrite16(wram, SNES_OAMADDL, 0);
+    ConfigureUploadDma(wram, DMA_ONE_REGISTER, OAM_DATA_PORT, OAM_BUFFER, 0,
+        OAM_BUFFER_SIZE);
+}
+
+static void PreparePaletteUpload(Lufia2Wram wram) {
+    AcknowledgeUpload(wram, PALETTE_UPLOAD_FLAGS);
+    WramWrite(wram, SNES_CGADD, 0);
+    ConfigureUploadDma(wram, DMA_ONE_REGISTER, CGRAM_DATA_PORT, PALETTE_BUFFER,
+        0, PALETTE_BUFFER_SIZE);
+}
+
+Lufia2ExecutionResult Lufia2NmiPrepareUploadDma(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit != 0u || cpu->direct_page != 0u)
+        return ExecutionHandoff(cpu, entry);
+    const Lufia2Wram wram = WramViewOfCaller(memory, cpu);
+    if (entry == 0x80870cu) {
+        PrepareOamUpload(wram);
+        LoadA8(cpu, OAM_DATA_PORT);
+        LoadX16(cpu, OAM_BUFFER_SIZE);
+        return ExecutionHandoff(cpu, 0x808731u);
+    }
+    if (entry == 0x80873cu) {
+        PreparePaletteUpload(wram);
+        LoadA8(cpu, CGRAM_DATA_PORT);
+        LoadX16(cpu, PALETTE_BUFFER_SIZE);
+        return ExecutionHandoff(cpu, 0x808760u);
+    }
+    return ExecutionHandoff(cpu, entry);
 }
 
 static uint16_t StepWordAt(
@@ -216,16 +251,12 @@ Lufia2ExecutionResult Lufia2NmiSpritesPaletteAndPads(
     Push8(memory, cpu, PackStatus(cpu));
     SetIndexWidth(cpu, 0);
     if (ReadUploadRequest(wram, OAM_UPLOAD_FLAGS)) {
-        AcknowledgeUpload(wram, OAM_UPLOAD_FLAGS);
-        WramWrite16(wram, SNES_OAMADDL, 0);
-        RunUploadDma(wram, DMA_ONE_REGISTER, OAM_DATA_PORT, OAM_BUFFER, 0,
-            OAM_BUFFER_SIZE);
+        PrepareOamUpload(wram);
+        WramWrite(wram, SNES_MDMAEN, UPLOAD_ENABLE);
     }
     if (ReadUploadRequest(wram, PALETTE_UPLOAD_FLAGS)) {
-        AcknowledgeUpload(wram, PALETTE_UPLOAD_FLAGS);
-        WramWrite(wram, SNES_CGADD, 0);
-        RunUploadDma(wram, DMA_ONE_REGISTER, CGRAM_DATA_PORT, PALETTE_BUFFER,
-            0, PALETTE_BUFFER_SIZE);
+        PreparePaletteUpload(wram);
+        WramWrite(wram, SNES_MDMAEN, UPLOAD_ENABLE);
     }
     while (WramRead(wram, SNES_HVBJOY) & JOYPAD_BUSY)
         ;
