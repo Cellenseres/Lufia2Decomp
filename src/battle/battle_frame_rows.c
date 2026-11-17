@@ -3,6 +3,7 @@
 #include "core/cpu_ops.h"
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
+#include "lufia2/battle_fill_steps.h"
 #include "lufia2/legacy_fragments.h"
 #include "system/wram.h"
 
@@ -462,6 +463,24 @@ Lufia2ExecutionResult Lufia2BattleTileWindow(
     return ExecutionReturned(0x81e404u);
 }
 
+static void FillBattleCell(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    StoreAAbsolute16(memory, cpu, 0x0000u, cpu->x);
+    IncrementX16(cpu);
+    IncrementX16(cpu);
+    LoadY16(cpu, (uint16_t)(cpu->y - 1u));
+}
+
+Lufia2ExecutionResult Lufia2BattleFillCellsSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned cells) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || !cells || cells > LUFIA2_BATTLE_FILL_MAX_CELLS)
+        return ExecutionHandoff(cpu, 0x81e7ecu);
+    do {
+        FillBattleCell(memory, cpu);
+    } while (--cells && !cpu->zero);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x81e7f4u : 0x81e7ecu);
+}
+
 /* $81:E7D2: fill $09F2 x $09F3 words of $09F6 at $7E:X. */
 Lufia2ExecutionResult Lufia2BattleFillRect(
     const Lufia2Memory *memory,
@@ -479,10 +498,7 @@ Lufia2ExecutionResult Lufia2BattleFillRect(
         TransferAToY(cpu);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09f6u, 0));
         do {
-            StoreAAbsolute16(memory, cpu, 0x0000u, cpu->x);
-            IncrementX16(cpu);
-            IncrementX16(cpu);
-            LoadY16(cpu, (uint16_t)(cpu->y - 1u));
+            FillBattleCell(memory, cpu);
         } while (!cpu->zero);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x09f4u, 0));
         cpu->carry = 0;
