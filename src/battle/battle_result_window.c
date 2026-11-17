@@ -1,4 +1,15 @@
 #include "battle/battle_internal.h"
+#include "lufia2/battle_result_steps.h"
+
+static void ResultScrollDelay(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_BATTLE_MESSAGE_SCROLL_INCREMENT));
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_RESULT_SCROLL_PHASE));
+}
+
+static void ResultConfirmInput(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
+    OpBitValue(cpu, 0xa0u);
+}
 
 /* $81:DD7F: prepare the battle-result window. */
 Lufia2ExecutionResult Lufia2BattleResultWindowPrepare(const Lufia2Memory *memory,
@@ -142,8 +153,7 @@ Lufia2ExecutionResult Lufia2BattleResultWindowScroll(const Lufia2Memory *memory,
     OpSepWidths(cpu, 0x20u);
     OpLoadA(cpu, 0xfdu);
     for (;;) {
-        OpStz(memory, cpu, OpAbs(cpu, 0x1b23u));
-        OpSta(memory, cpu, OpAbs(cpu, 0x1b22u));
+        ResultScrollDelay(memory, cpu);
         if (cpu->zero)
             break;
         PushAccumulator8(memory, cpu);
@@ -166,8 +176,31 @@ Lufia2ExecutionResult Lufia2BattleResultWindowWait(const Lufia2Memory *memory,
     do {
         if (!BattleCall(&battle, 0xde9eu, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return BattleChildUnwound(&battle);
-        OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
-        OpBitValue(cpu, 0xa0u);
+        ResultConfirmInput(memory, cpu);
     } while (cpu->zero);
     return ExecutionReturned(0x81dea8u);
+}
+
+Lufia2ExecutionResult Lufia2BattleResultStep(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint32_t entry) {
+    switch (entry) {
+    case 0x81de88u:
+        OpSepWidths(cpu, 0x20u);
+        OpLoadA(cpu, 0xfdu);
+        ResultScrollDelay(memory, cpu);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x81de9du : 0x81de8eu);
+    case 0x81de93u:
+        LoadA8(cpu, Pull8(memory, cpu));
+        OpIncA(cpu);
+        ResultScrollDelay(memory, cpu);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x81de9du : 0x81de8eu);
+    case 0x81de95u:
+        ResultScrollDelay(memory, cpu);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x81de9du : 0x81de8eu);
+    case 0x81dea2u:
+        ResultConfirmInput(memory, cpu);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x81de9eu : 0x81dea8u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
 }
