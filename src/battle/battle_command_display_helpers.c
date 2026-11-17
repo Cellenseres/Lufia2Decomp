@@ -1,4 +1,5 @@
 #include "battle/battle_internal.h"
+#include "lufia2/battle_display_steps.h"
 
 /* $81:E4D1: five-character name above a party window. */
 Lufia2ExecutionResult Lufia2BattlePartyName(const Lufia2Memory *memory,
@@ -38,6 +39,34 @@ Lufia2ExecutionResult Lufia2BattlePartyName(const Lufia2Memory *memory,
     return ExecutionReturned(0x81e502u);
 }
 
+static void WriteBattleDisplayBlock(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                   uint16_t source, uint16_t destination, uint16_t size) {
+    OpLoadA(cpu, source);
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE + 2u));
+    OpLoadA(cpu, destination);
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE + 4u));
+    OpLoadA(cpu, size);
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE));
+}
+
+Lufia2ExecutionResult Lufia2BattleFinishDisplayBlock(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x85u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x859c68u:
+        WriteBattleDisplayBlock(memory, cpu, 0x8c00u, 0x4400u, 0x0400u);
+        break;
+    case 0x859cc4u:
+        WriteBattleDisplayBlock(memory, cpu, 0x3800u, 0x0c00u, 0x0080u);
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    return ExecutionHandoff(cpu, entry + 18u);
+}
+
 static Lufia2ExecutionResult QueueBattleDisplayBlock(BattleContext *battle, uint16_t site,
                                                 uint16_t source, uint16_t destination,
                                                 uint16_t size, uint32_t exit) {
@@ -46,12 +75,7 @@ static Lufia2ExecutionResult QueueBattleDisplayBlock(BattleContext *battle, uint
 
     if (!BattleCall(battle, site, 0x85ecdbu, 3u))
         return BattleChildUnwound(battle);
-    OpLoadA(cpu, source);
-    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE + 2u));
-    OpLoadA(cpu, destination);
-    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE + 4u));
-    OpLoadA(cpu, size);
-    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_VRAM_QUEUE));
+    WriteBattleDisplayBlock(memory, cpu, source, destination, size);
     return ExecutionReturned(exit);
 }
 
