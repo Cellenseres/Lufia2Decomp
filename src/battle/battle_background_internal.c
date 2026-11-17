@@ -102,6 +102,17 @@ Lufia2ExecutionResult Lufia2BattleDecodeBackgroundWordStep(
     return ExecutionHandoff(cpu, cpu->zero ? 0x81ba67u : 0x81ba59u);
 }
 
+Lufia2ExecutionResult Lufia2BattleDecodeBackgroundWordsSpan(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, unsigned words) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || !words || words > LUFIA2_BACKGROUND_SPAN_MAX_WORDS)
+        return ExecutionHandoff(cpu, 0x81ba59u);
+    do {
+        DecodeBackgroundTilemapWord(memory, cpu);
+    } while (--words && !cpu->zero);
+    return ExecutionHandoff(cpu, cpu->zero ? 0x81ba67u : 0x81ba59u);
+}
+
 /* Undo the tilemap's difference coding at $7E:2000. */
 static void DecodeBackgroundTilemap(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
