@@ -11,6 +11,8 @@
 #include "lufia2/nmi_control_steps.h"
 #include "lufia2/nmi_upload_checks.h"
 #include "lufia2/nmi_dma_setup.h"
+#include "lufia2/nmi_upload_control_steps.h"
+#include "lufia2/nmi_joypad_gate.h"
 #include "system/wram.h"
 
 /* Direct-page request flags. Bit 7 is the one the NMI clears. */
@@ -67,6 +69,14 @@ static void ConfigureUploadDma(
     WramWrite(wram, SNES_A1B(UPLOAD_CHANNEL), source_bank);
     WramWrite(wram, SNES_BBAD(UPLOAD_CHANNEL), port);
     WramWrite16(wram, SNES_DASL(UPLOAD_CHANNEL), size);
+}
+
+static void StartUploadDma(Lufia2Wram wram, uint8_t channels) {
+    WramWrite(wram, SNES_MDMAEN, channels);
+}
+
+static uint8_t ReadJoypadStatus(Lufia2Wram wram) {
+    return WramRead(wram, SNES_HVBJOY);
 }
 
 /* Clears bit 7 of a request byte (a read-modify-write). */
@@ -252,13 +262,13 @@ Lufia2ExecutionResult Lufia2NmiSpritesPaletteAndPads(
     SetIndexWidth(cpu, 0);
     if (ReadUploadRequest(wram, OAM_UPLOAD_FLAGS)) {
         PrepareOamUpload(wram);
-        WramWrite(wram, SNES_MDMAEN, UPLOAD_ENABLE);
+        StartUploadDma(wram, UPLOAD_ENABLE);
     }
     if (ReadUploadRequest(wram, PALETTE_UPLOAD_FLAGS)) {
         PreparePaletteUpload(wram);
-        WramWrite(wram, SNES_MDMAEN, UPLOAD_ENABLE);
+        StartUploadDma(wram, UPLOAD_ENABLE);
     }
-    while (WramRead(wram, SNES_HVBJOY) & JOYPAD_BUSY)
+    while (ReadJoypadStatus(wram) & JOYPAD_BUSY)
         ;
     cpu->accumulator = ReadPads(wram);
     cpu->x = 0xfffeu;
@@ -542,4 +552,31 @@ Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
         WramWrite(wram, SNES_HDMAEN, A8(cpu));
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x8087fbu);
+}
+
+Lufia2ExecutionResult Lufia2NmiUploadControlStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x808731u: case 0x808760u:
+        LoadA8(cpu, UPLOAD_ENABLE);
+        return ExecutionHandoff(cpu, entry + 2u);
+    case 0x808733u: case 0x808762u:
+        StartUploadDma(WramViewOfCaller(memory, cpu), (uint8_t)cpu->accumulator);
+        return ExecutionHandoff(cpu, entry + 3u);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+}
+
+Lufia2ExecutionResult Lufia2NmiPollJoypadReady(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, 0x808765u);
+    LoadA8(cpu, ReadJoypadStatus(WramViewOfCaller(memory, cpu)));
+    OpLsrA(cpu);
+    return ExecutionHandoff(cpu, cpu->carry ? 0x808765u : 0x80876bu);
 }
