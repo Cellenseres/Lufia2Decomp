@@ -1,8 +1,9 @@
 /* Multiply ($82:8000), sine ($80:8450) and cosine ($80:8486). */
 
 #include "core/cpu_ops.h"
-#include "lufia2/menu.h"
+#include "lufia2/decimal_digits_steps.h"
 #include "lufia2/math_steps.h"
+#include "lufia2/menu.h"
 #include "system/system_internal.h"
 #include "system/wram.h"
 
@@ -177,40 +178,74 @@ Lufia2ExecutionResult Lufia2DivideBitSpan(
     return ExecutionHandoff(cpu, 0x80837eu + bit * 13u);
 }
 
-/* $81:E808: X to decimal digits $B4 (hundreds), $B3, $B2. */
-Lufia2ExecutionResult Lufia2DecimalDigits3(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    static const uint16_t kSteps[2] = {0x0064u, 0x000au};
-    unsigned i;
+static void InitializeDecimalDigits(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    Write8(memory, (uint16_t)(cpu->direct_page + 0xb4u), 0u);
+    Write8(memory, (uint16_t)(cpu->direct_page + 0xb3u), 0u);
+    Write8(memory, (uint16_t)(cpu->direct_page + 0xb2u), 0u);
+}
 
-    Write8(memory, (uint16_t)(cpu->direct_page + 0xb4u), 0x00u);
-    Write8(memory, (uint16_t)(cpu->direct_page + 0xb3u), 0x00u);
-    Write8(memory, (uint16_t)(cpu->direct_page + 0xb2u), 0x00u);
-    for (i = 0; i < 2u; ++i) {
-        for (;;) {
-            SetAccumulatorWidth(cpu, 0);
-            TransferXToA(cpu);
-            cpu->carry = true;
-            OpSbcValue(cpu, kSteps[i]);
-            if (!cpu->carry)
-                break;
-            TransferAToX(cpu);
-            SetAccumulatorWidth(cpu, 1);
-            if (i == 0) {
-                const uint32_t at = AbsoluteIndexedAddress(cpu, 0x00b4u, 0);
-                const uint8_t value = (uint8_t)(Read8(memory, at) + 1u);
-
-                Write8(memory, at, value);
-                SetNz8(cpu, value);
-            } else {
-                IncrementDirect8(memory, cpu, 0xb3u);
-            }
-        }
+static bool CountDecimalPlace(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              unsigned place) {
+    static const uint16_t steps[] = {100u, 10u};
+    SetAccumulatorWidth(cpu, 0);
+    TransferXToA(cpu);
+    cpu->carry = true;
+    OpSbcValue(cpu, steps[place]);
+    if (!cpu->carry)
+        return false;
+    TransferAToX(cpu);
+    SetAccumulatorWidth(cpu, 1);
+    if (!place) {
+        const uint32_t address = AbsoluteIndexedAddress(cpu, 0x00b4u, 0);
+        const uint8_t value = (uint8_t)(Read8(memory, address) + 1u);
+        Write8(memory, address, value);
+        SetNz8(cpu, value);
+    } else {
+        IncrementDirect8(memory, cpu, 0xb3u);
+        SetAccumulatorWidth(cpu, 0);
     }
+    return true;
+}
+
+static void StoreRemainingDecimalDigit(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
     TransferXToA(cpu);
     SetAccumulatorWidth(cpu, 1);
     StoreADirect8(memory, cpu, 0xb2u);
+}
+
+Lufia2ExecutionResult Lufia2DecimalDigitsStep(const Lufia2Memory *memory,
+                                              Lufia2CpuState *cpu, uint32_t entry) {
+    const bool byte_accumulator = entry == 0x81e808u || entry == 0x81e80eu;
+    if ((entry != 0x81e808u && entry != 0x81e80eu && entry != 0x81e81fu &&
+         entry != 0x81e82fu) ||
+        cpu->program_bank != 0x81u || cpu->decimal || cpu->index_is_8_bit ||
+        cpu->accumulator_is_8_bit != byte_accumulator)
+        return ExecutionHandoff(cpu, entry);
+    uint32_t next;
+    if (entry == 0x81e808u) {
+        InitializeDecimalDigits(memory, cpu);
+        next = 0x81e80eu;
+    } else if (entry == 0x81e80eu) {
+        next = CountDecimalPlace(memory, cpu, 0u) ? 0x81e80eu : 0x81e81fu;
+    } else if (entry == 0x81e81fu) {
+        next = CountDecimalPlace(memory, cpu, 1u) ? 0x81e81fu : 0x81e82fu;
+    } else {
+        StoreRemainingDecimalDigit(memory, cpu);
+        next = 0x81e834u;
+    }
+    return ExecutionHandoff(cpu, next);
+}
+
+/* $81:E808: X to decimal digits $B4 (hundreds), $B3, $B2. */
+Lufia2ExecutionResult Lufia2DecimalDigits3(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu) {
+    InitializeDecimalDigits(memory, cpu);
+    while (CountDecimalPlace(memory, cpu, 0u)) {
+    }
+    while (CountDecimalPlace(memory, cpu, 1u)) {
+    }
+    StoreRemainingDecimalDigit(memory, cpu);
     return ExecutionReturned(0x81e834u);
 }
 
