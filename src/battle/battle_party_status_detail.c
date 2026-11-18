@@ -42,7 +42,7 @@ static void DrawStatusSymbol(BattleContext *battle) {
     OpStepMem(memory, cpu, OpDp(cpu, DP_SYMBOL_COUNT), -1);
 }
 
-static void DrawStatusSymbolRow(BattleContext *battle) {
+static void PrepareStatusSymbolRow(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
     OpRepWidths(cpu, 0x20u);
@@ -53,6 +53,11 @@ static void DrawStatusSymbolRow(BattleContext *battle) {
     OpSepWidths(cpu, 0x20u);
     OpLoadA(cpu, STATUS_SYMBOLS);
     OpSta(memory, cpu, OpDp(cpu, DP_SYMBOL_COUNT));
+}
+
+static void DrawStatusSymbolRow(BattleContext *battle) {
+    PrepareStatusSymbolRow(battle);
+    Lufia2CpuState *cpu = battle->cpu;
     do {
         DrawStatusSymbol(battle);
     } while (!cpu->zero);
@@ -69,11 +74,9 @@ static void PreparePartyLevel(BattleContext *battle) {
     OpSepWidths(cpu, 0x20u);
 }
 
-static bool DrawPartyLevel(BattleContext *battle) {
+static void DrawPartyLevelDigits(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
-    PreparePartyLevel(battle);
-    if (!BattleCall(battle, 0xe1f8u, 0x81e808u, 2u)) return false;
     OpLoadA(cpu, 0x60u);
     OpSta(memory, cpu, OpAbsY(cpu, 0x0au));
     OpIncA(cpu);
@@ -89,6 +92,13 @@ static bool DrawPartyLevel(BattleContext *battle) {
     OpAdcValue(cpu, STATUS_DIGIT_TILE_BASE);
     OpSta(memory, cpu, OpAbsY(cpu, 0x10u));
     OpPullX(memory, cpu);
+}
+
+static bool DrawPartyLevel(BattleContext *battle) {
+    PreparePartyLevel(battle);
+    if (!BattleCall(battle, 0xe1f8u, 0x81e808u, 2u))
+        return false;
+    DrawPartyLevelDigits(battle);
     return true;
 }
 
@@ -100,9 +110,8 @@ static void AdvancePartyStatusRow(Lufia2CpuState *cpu) {
     OpTay(cpu);
 }
 
-static bool DrawPartyResource(BattleContext *battle, uint16_t current,
-    uint16_t maximum, uint8_t label, uint8_t tile,
-    uint16_t digits_site, uint16_t gauge_site) {
+static void PreparePartyResource(BattleContext *battle, uint16_t current,
+                                 uint16_t maximum, uint8_t label, uint8_t tile) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
     AdvancePartyStatusRow(cpu);
@@ -117,6 +126,14 @@ static bool DrawPartyResource(BattleContext *battle, uint16_t current,
     OpSta(memory, cpu, OpDp(cpu, DP_GAUGE_TILE_BASE));
     OpPushX(memory, cpu);
     PushY(memory, cpu);
+}
+
+static bool DrawPartyResource(BattleContext *battle, uint16_t current, uint16_t maximum,
+                              uint8_t label, uint8_t tile, uint16_t digits_site,
+                              uint16_t gauge_site) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    PreparePartyResource(battle, current, maximum, label, tile);
     if (!BattleCall(battle, digits_site, 0x81e2c8u, 2u) ||
         !BattleCall(battle, gauge_site, 0x81e308u, 2u)) return false;
     OpPullY(memory, cpu);
@@ -124,7 +141,7 @@ static bool DrawPartyResource(BattleContext *battle, uint16_t current,
     return true;
 }
 
-static bool DrawPartyIp(BattleContext *battle) {
+static void PreparePartyIp(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
     AdvancePartyStatusRow(cpu);
@@ -145,6 +162,11 @@ static bool DrawPartyIp(BattleContext *battle) {
     OpStz(memory, cpu, OpDp(cpu, DP_GAUGE_MAXIMUM + 1u));
     OpLoadA(cpu, 0x2bu);
     OpSta(memory, cpu, OpDp(cpu, DP_GAUGE_TILE_BASE));
+}
+
+static void DrawPartyStatusIcon(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
     OpRepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpStack(cpu, 1u));
     OpTax(cpu);
@@ -156,46 +178,17 @@ static bool DrawPartyIp(BattleContext *battle) {
     OpTax(cpu);
     OpLda(memory, cpu, OpLongX(cpu, ROM_STATUS_ICON_TILES));
     OpSta(memory, cpu, OpAbsY(cpu, 4u));
+}
+
+static bool DrawPartyIp(BattleContext *battle) {
+    PreparePartyIp(battle);
+    DrawPartyStatusIcon(battle);
     return BattleCall(battle, 0xe2a9u, 0x81e308u, 2u);
 }
 
-static void RestorePartyStatusCaller(BattleContext *battle) {
-    OpPullX(battle->memory, battle->cpu);
-    PullDataBank(battle->memory, battle->cpu);
-}
-
-Lufia2ExecutionResult Lufia2BattleStatusStep(const Lufia2Memory *memory,
-                                             Lufia2CpuState *cpu, uint32_t entry,
-                                             unsigned max_symbols) {
-    if ((entry != 0x81e1dau && entry != 0x81e1eau && entry != 0x81e2acu) ||
-        cpu->program_bank != 0x81u || cpu->data_bank != 0x7eu || cpu->direct_page ||
-        cpu->decimal || cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit ||
-        (entry == 0x81e1dau &&
-         (!max_symbols || max_symbols > LUFIA2_BATTLE_STATUS_MAX_SYMBOLS)))
-        return ExecutionHandoff(cpu, entry);
-    BattleContext battle = BattleContextCreate(memory, cpu, NULL, NULL, 0x81u);
-    if (entry == 0x81e1dau) {
-        do {
-            DrawStatusSymbol(&battle);
-        } while (!cpu->zero && --max_symbols);
-        return ExecutionHandoff(cpu, cpu->zero ? 0x81e1eau : entry);
-    }
-    if (entry == 0x81e1eau) {
-        OpPullY(memory, cpu);
-        OpPullX(memory, cpu);
-        PreparePartyLevel(&battle);
-        return ExecutionHandoff(cpu, 0x81e1f8u);
-    }
-    RestorePartyStatusCaller(&battle);
-    return ExecutionHandoff(cpu, 0x81e2aeu);
-}
-
-Lufia2ExecutionResult Lufia2BattleDrawPartyStatusDetail(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (!child || !cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
-        return ExecutionHandoff(cpu, 0x81e1b5u);
-    BattleContext battle = BattleContextCreate(memory, cpu, child, context, 0x81u);
+static void PreparePartyStatus(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
     PushDataBank(memory, cpu);
     OpPushX(memory, cpu);
     OpRepWidths(cpu, 0x20u);
@@ -210,6 +203,78 @@ Lufia2ExecutionResult Lufia2BattleDrawPartyStatusDetail(
     OpLoadA(cpu, 0x7eu);
     PushAccumulator8(memory, cpu);
     PullDataBank(memory, cpu);
+}
+
+static void RestorePartyStatusCaller(BattleContext *battle) {
+    OpPullX(battle->memory, battle->cpu);
+    PullDataBank(battle->memory, battle->cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleStatusStep(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu, uint32_t entry,
+                                             unsigned max_symbols) {
+    const bool prologue = entry == 0x81e1b5u;
+    if ((!prologue && entry != 0x81e1dau && entry != 0x81e1eau && entry != 0x81e1fbu &&
+         entry != 0x81e23bu && entry != 0x81e261u && entry != 0x81e290u &&
+         entry != 0x81e2acu) ||
+        cpu->program_bank != 0x81u || cpu->direct_page || cpu->decimal ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit ||
+        (prologue ? ((cpu->data_bank & 0x7fu) >= 0x40u && cpu->data_bank != 0x7eu &&
+                     cpu->data_bank != 0x7fu) ||
+                        cpu->x > 6u || (cpu->x & 1u)
+                  : cpu->data_bank != 0x7eu) ||
+        (entry == 0x81e1dau &&
+         (!max_symbols || max_symbols > LUFIA2_BATTLE_STATUS_MAX_SYMBOLS)))
+        return ExecutionHandoff(cpu, entry);
+    BattleContext battle = BattleContextCreate(memory, cpu, NULL, NULL, 0x81u);
+    if (prologue) {
+        PreparePartyStatus(&battle);
+        PrepareStatusSymbolRow(&battle);
+        return ExecutionHandoff(cpu, 0x81e1dau);
+    }
+    if (entry == 0x81e1dau) {
+        do {
+            DrawStatusSymbol(&battle);
+        } while (!cpu->zero && --max_symbols);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x81e1eau : entry);
+    }
+    if (entry == 0x81e1eau) {
+        OpPullY(memory, cpu);
+        OpPullX(memory, cpu);
+        PreparePartyLevel(&battle);
+        return ExecutionHandoff(cpu, 0x81e1f8u);
+    }
+    if (entry == 0x81e1fbu) {
+        DrawPartyLevelDigits(&battle);
+        PreparePartyResource(&battle, PARTY_CURRENT_HP, PARTY_MAXIMUM_HP, 0x4au, 1u);
+        return ExecutionHandoff(cpu, 0x81e235u);
+    }
+    if (entry == 0x81e23bu || entry == 0x81e261u) {
+        OpPullY(memory, cpu);
+        OpPullX(memory, cpu);
+        if (entry == 0x81e23bu) {
+            PreparePartyResource(&battle, PARTY_CURRENT_MP, PARTY_MAXIMUM_MP, 0x4cu,
+                                 0x16u);
+            return ExecutionHandoff(cpu, 0x81e25bu);
+        }
+        PreparePartyIp(&battle);
+        return ExecutionHandoff(cpu, 0x81e290u);
+    }
+    if (entry == 0x81e290u) {
+        DrawPartyStatusIcon(&battle);
+        return ExecutionHandoff(cpu, 0x81e2a9u);
+    }
+    RestorePartyStatusCaller(&battle);
+    return ExecutionHandoff(cpu, 0x81e2aeu);
+}
+
+Lufia2ExecutionResult Lufia2BattleDrawPartyStatusDetail(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!child || !cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81e1b5u);
+    BattleContext battle = BattleContextCreate(memory, cpu, child, context, 0x81u);
+    PreparePartyStatus(&battle);
     DrawStatusSymbolRow(&battle);
     OpPullY(memory, cpu);
     OpPullX(memory, cpu);
