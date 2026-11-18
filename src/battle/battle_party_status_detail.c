@@ -1,5 +1,8 @@
 #include "battle/battle_internal.h"
 #include "lufia2/battle.h"
+#include "lufia2/battle_status_steps.h"
+
+#include <stddef.h>
 
 enum {
     ROM_PARTY_STATUS_TILE_CURSORS = 0x818811u,
@@ -26,6 +29,19 @@ enum {
     STATUS_DIGIT_TILE_BASE = 0x40u
 };
 
+static void DrawStatusSymbol(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    OpTxa(cpu);
+    OpSta(memory, cpu, OpAbsY(cpu, 0u));
+    OpLoadA(cpu, STATUS_TILE_ATTRIBUTE);
+    OpSta(memory, cpu, OpAbsY(cpu, 1u));
+    OpInx(cpu);
+    OpIny(cpu);
+    OpIny(cpu);
+    OpStepMem(memory, cpu, OpDp(cpu, DP_SYMBOL_COUNT), -1);
+}
+
 static void DrawStatusSymbolRow(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
@@ -38,18 +54,11 @@ static void DrawStatusSymbolRow(BattleContext *battle) {
     OpLoadA(cpu, STATUS_SYMBOLS);
     OpSta(memory, cpu, OpDp(cpu, DP_SYMBOL_COUNT));
     do {
-        OpTxa(cpu);
-        OpSta(memory, cpu, OpAbsY(cpu, 0u));
-        OpLoadA(cpu, STATUS_TILE_ATTRIBUTE);
-        OpSta(memory, cpu, OpAbsY(cpu, 1u));
-        OpInx(cpu);
-        OpIny(cpu);
-        OpIny(cpu);
-        OpStepMem(memory, cpu, OpDp(cpu, DP_SYMBOL_COUNT), -1);
+        DrawStatusSymbol(battle);
     } while (!cpu->zero);
 }
 
-static bool DrawPartyLevel(BattleContext *battle) {
+static void PreparePartyLevel(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
     OpLda(memory, cpu, OpAbsX(cpu, PARTY_LEVEL));
@@ -58,6 +67,12 @@ static bool DrawPartyLevel(BattleContext *battle) {
     OpAndValue(cpu, 0xffu);
     OpTax(cpu);
     OpSepWidths(cpu, 0x20u);
+}
+
+static bool DrawPartyLevel(BattleContext *battle) {
+    const Lufia2Memory *memory = battle->memory;
+    Lufia2CpuState *cpu = battle->cpu;
+    PreparePartyLevel(battle);
     if (!BattleCall(battle, 0xe1f8u, 0x81e808u, 2u)) return false;
     OpLoadA(cpu, 0x60u);
     OpSta(memory, cpu, OpAbsY(cpu, 0x0au));
@@ -144,6 +159,37 @@ static bool DrawPartyIp(BattleContext *battle) {
     return BattleCall(battle, 0xe2a9u, 0x81e308u, 2u);
 }
 
+static void RestorePartyStatusCaller(BattleContext *battle) {
+    OpPullX(battle->memory, battle->cpu);
+    PullDataBank(battle->memory, battle->cpu);
+}
+
+Lufia2ExecutionResult Lufia2BattleStatusStep(const Lufia2Memory *memory,
+                                             Lufia2CpuState *cpu, uint32_t entry,
+                                             unsigned max_symbols) {
+    if ((entry != 0x81e1dau && entry != 0x81e1eau && entry != 0x81e2acu) ||
+        cpu->program_bank != 0x81u || cpu->data_bank != 0x7eu || cpu->direct_page ||
+        cpu->decimal || cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit ||
+        (entry == 0x81e1dau &&
+         (!max_symbols || max_symbols > LUFIA2_BATTLE_STATUS_MAX_SYMBOLS)))
+        return ExecutionHandoff(cpu, entry);
+    BattleContext battle = BattleContextCreate(memory, cpu, NULL, NULL, 0x81u);
+    if (entry == 0x81e1dau) {
+        do {
+            DrawStatusSymbol(&battle);
+        } while (!cpu->zero && --max_symbols);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x81e1eau : entry);
+    }
+    if (entry == 0x81e1eau) {
+        OpPullY(memory, cpu);
+        OpPullX(memory, cpu);
+        PreparePartyLevel(&battle);
+        return ExecutionHandoff(cpu, 0x81e1f8u);
+    }
+    RestorePartyStatusCaller(&battle);
+    return ExecutionHandoff(cpu, 0x81e2aeu);
+}
+
 Lufia2ExecutionResult Lufia2BattleDrawPartyStatusDetail(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -173,7 +219,6 @@ Lufia2ExecutionResult Lufia2BattleDrawPartyStatusDetail(
         !DrawPartyResource(&battle, PARTY_CURRENT_MP, PARTY_MAXIMUM_MP,
             0x4cu, 0x16u, 0xe25bu, 0xe25eu) || !DrawPartyIp(&battle))
         return BattleChildUnwound(&battle);
-    OpPullX(memory, cpu);
-    PullDataBank(memory, cpu);
+    RestorePartyStatusCaller(&battle);
     return ExecutionReturned(0x81e2aeu);
 }
