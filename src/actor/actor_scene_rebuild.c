@@ -2,6 +2,7 @@
 #include "core/cpu_ops.h"
 #include "lufia2/actor.h"
 #include "lufia2/actor_scene_presentation_steps.h"
+#include "lufia2/actor_scene_value_steps.h"
 #include "lufia2/scene_rebuild.h"
 #include "system/wram.h"
 
@@ -194,6 +195,58 @@ static void RestoreSceneActorSlot(const Lufia2Memory *memory, Lufia2CpuState *cp
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
 }
 
+typedef enum SceneValueAction {
+    SCENE_VALUE_SKIP,
+    SCENE_VALUE_STORE,
+    SCENE_VALUE_READ_RECORD
+} SceneValueAction;
+
+static SceneValueAction PrepareSceneActorValue(const Lufia2Memory *memory,
+                                               Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, SCENE_OPTIONS));
+    OpBitValue(cpu, 1u);
+    bool forced = false;
+    if (!cpu->zero) {
+        OpLda(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_SPRITE));
+        OpCmpValue(cpu, 0xfdu);
+        if (cpu->zero)
+            return SCENE_VALUE_SKIP;
+        OpCmpValue(cpu, 0x80u);
+        if (!cpu->carry) {
+            OpCmpValue(cpu, 0x0au);
+            forced = cpu->carry;
+        }
+    }
+    if (forced) {
+        OpLoadA(cpu, 9u);
+        return SCENE_VALUE_STORE;
+    }
+    OpLda(memory, cpu, SCENE_ACTOR_ATTRIBUTES + 4u);
+    if (!cpu->zero)
+        return SCENE_VALUE_STORE;
+    LoadA16(cpu, cpu->direct_page);
+    OpLda(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_SPRITE));
+    cpu->carry = 1u;
+    OpSbcValue(cpu, 0x80u);
+    if (!cpu->carry)
+        return SCENE_VALUE_READ_RECORD;
+    OpTax(cpu);
+    OpLda(memory, cpu, OpLongX(cpu, SCENE_SPRITE_ATTRIBUTES));
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
+    return SCENE_VALUE_STORE;
+}
+
+static void ResolveSceneActorValue(Lufia2CpuState *cpu) {
+    if (cpu->carry)
+        OpLoadA(cpu, 9u);
+    else
+        LoadA16(cpu, cpu->direct_page);
+}
+
+static void StoreSceneActorValue(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpSta(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_PRESENTATION));
+}
+
 Lufia2ExecutionResult Lufia2ActorRebuildSceneState(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -241,48 +294,16 @@ Lufia2ExecutionResult Lufia2ActorRebuildSceneState(
                 ActorSceneCopyAttributes(memory, cpu);
             }
             if (apply_presentation) {
-                OpLda(memory, cpu, OpAbs(cpu, SCENE_OPTIONS));
-                OpBitValue(cpu, 1u);
-                bool store = true;
-                bool forced = false;
-                if (!cpu->zero) {
-                    OpLda(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_SPRITE));
-                    OpCmpValue(cpu, 0xfdu);
-                    store = !cpu->zero;
-                    if (store) {
-                        OpCmpValue(cpu, 0x80u);
-                        if (!cpu->carry) {
-                            OpCmpValue(cpu, 0x0au);
-                            forced = cpu->carry;
-                        }
-                    }
+                SceneValueAction action = PrepareSceneActorValue(memory, cpu);
+                if (action == SCENE_VALUE_READ_RECORD) {
+                    if (!CallChildWithFrame(memory, cpu, child, context, 0x83a95eu,
+                                            0x83a97eu, 2u, 0x83u))
+                        return ActorSceneOwnerUnwound(0x83a95eu);
+                    ResolveSceneActorValue(cpu);
+                    action = SCENE_VALUE_STORE;
                 }
-                if (store) {
-                    if (forced) {
-                        OpLoadA(cpu, 9u);
-                    } else {
-                        OpLda(memory, cpu, SCENE_ACTOR_ATTRIBUTES + 4u);
-                        if (cpu->zero) {
-                            LoadA16(cpu, cpu->direct_page);
-                            OpLda(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_SPRITE));
-                            cpu->carry = 1u;
-                            OpSbcValue(cpu, 0x80u);
-                            if (cpu->carry) {
-                                OpTax(cpu);
-                                OpLda(memory, cpu, OpLongX(cpu, SCENE_SPRITE_ATTRIBUTES));
-                                OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
-                            } else {
-                                if (!CallChildWithFrame(memory, cpu, child, context, 0x83a95eu, 0x83a97eu, 2u, 0x83u))
-                                    return ActorSceneOwnerUnwound(0x83a95eu);
-                                if (cpu->carry)
-                                    OpLoadA(cpu, 9u);
-                                else
-                                    LoadA16(cpu, cpu->direct_page);
-                            }
-                        }
-                    }
-                    OpSta(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_PRESENTATION));
-                }
+                if (action == SCENE_VALUE_STORE)
+                    StoreSceneActorValue(memory, cpu);
             }
             if (!CallChildWithFrame(memory, cpu, child, context, 0x83a96bu, 0x83d416u, 3u, 0x83u))
                 return ActorSceneOwnerUnwound(0x83a96bu);
@@ -331,4 +352,22 @@ Lufia2ExecutionResult Lufia2ActorScenePresentationStep(const Lufia2Memory *memor
     RestoreSceneActorSlot(memory, cpu);
     OpDex(cpu);
     return ExecutionHandoff(cpu, cpu->negative ? 0x83a979u : 0x83a83bu);
+}
+
+Lufia2ExecutionResult Lufia2ActorSceneValueStep(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x83a92cu && entry != 0x83a961u) || !ActorSceneOwnerContext(cpu) ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x83a92cu) {
+        const SceneValueAction action = PrepareSceneActorValue(memory, cpu);
+        if (action == SCENE_VALUE_SKIP)
+            return ExecutionHandoff(cpu, 0x83a96bu);
+        if (action == SCENE_VALUE_READ_RECORD)
+            return ExecutionHandoff(cpu, 0x83a95eu);
+    } else {
+        ResolveSceneActorValue(cpu);
+    }
+    StoreSceneActorValue(memory, cpu);
+    return ExecutionHandoff(cpu, 0x83a96bu);
 }
