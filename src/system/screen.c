@@ -4,6 +4,7 @@
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "core/snes_registers.h"
+#include "lufia2/screen_fade_steps.h"
 #include "lufia2/system.h"
 #include "system/dp_scratch.h"
 #include "system/system_internal.h"
@@ -18,18 +19,12 @@ Lufia2ExecutionResult Lufia2ScreenFadeCheckRequest(
     return ExecutionHandoff(cpu, cpu->negative ? 0x8086c6u : 0x808702u);
 }
 
-/* $80:86C1: screen fade from $0581 into the $0583 brightness. */
-Lufia2ExecutionResult Lufia2ScreenFade(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    if (!cpu->accumulator_is_8_bit)
-        return ExecutionHandoff(cpu, 0x8086c1u);
-    LoadAAbsolute8(memory, cpu, WRAM_FADE_CONTROL, 0);         /* 86C1 */
-    if (!cpu->negative)
-        return ExecutionReturned(0x808702u);
+enum { FADE_RATE_MASK = 0x3fu, FADE_DIRECTION_MASK = 0x40u };
+
+static void AccumulateScreenFadeLevel(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     ExchangeAccumulatorBytes(cpu);
     LoadAAbsolute8(memory, cpu, WRAM_FADE_CONTROL, 0);
-    And8(cpu, 0x3fu);
+    And8(cpu, FADE_RATE_MASK);
     cpu->carry = 0;
     Adc8(cpu, AbsoluteByte(memory, cpu, WRAM_FADE_LEVEL, 0));
     StoreAAbsolute8(memory, cpu, WRAM_FADE_LEVEL, 0);
@@ -37,27 +32,63 @@ Lufia2ExecutionResult Lufia2ScreenFade(
     LsrA8(cpu);
     LsrA8(cpu);
     ExchangeAccumulatorBytes(cpu);
-    BitImmediate8(cpu, 0x40u);
-    if (!cpu->zero) {
-        ExchangeAccumulatorBytes(cpu);                         /* 86DB */
-        cpu->carry = 1;
-        Sbc8(cpu, 0x0fu);
-        LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0xffu));
-        LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-        StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
-        DecrementA8(cpu);
-        if (!cpu->negative)
-            return ExecutionReturned(0x808702u);
-        StoreZeroAbsolute8(memory, cpu, WRAM_FADE_CONTROL, 0);
-        StoreAImmediate8(memory, cpu, BRIGHTNESS_FORCED_BLANK, WRAM_BRIGHTNESS);
-    } else {
-        ExchangeAccumulatorBytes(cpu);                         /* 86F2 */
-        StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
-        Compare8(cpu, A8(cpu), 0x0fu);
-        if (!cpu->carry)
-            return ExecutionReturned(0x808702u);
-        StoreZeroAbsolute8(memory, cpu, WRAM_FADE_CONTROL, 0);
-        StoreAImmediate8(memory, cpu, BRIGHTNESS_FULL, WRAM_BRIGHTNESS);
+    BitImmediate8(cpu, FADE_DIRECTION_MASK);
+}
+
+static void FadeScreenOut(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    ExchangeAccumulatorBytes(cpu);
+    cpu->carry = 1;
+    Sbc8(cpu, BRIGHTNESS_FULL);
+    LoadA8(cpu, (uint8_t)(A8(cpu) ^ 0xffu));
+    LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
+    StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
+    DecrementA8(cpu);
+    if (!cpu->negative)
+        return;
+    StoreZeroAbsolute8(memory, cpu, WRAM_FADE_CONTROL, 0);
+    StoreAImmediate8(memory, cpu, BRIGHTNESS_FORCED_BLANK, WRAM_BRIGHTNESS);
+}
+
+static void FadeScreenIn(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    ExchangeAccumulatorBytes(cpu);
+    StoreAAbsolute8(memory, cpu, WRAM_BRIGHTNESS, 0);
+    Compare8(cpu, A8(cpu), BRIGHTNESS_FULL);
+    if (!cpu->carry)
+        return;
+    StoreZeroAbsolute8(memory, cpu, WRAM_FADE_CONTROL, 0);
+    StoreAImmediate8(memory, cpu, BRIGHTNESS_FULL, WRAM_BRIGHTNESS);
+}
+
+Lufia2ExecutionResult Lufia2ScreenFadeStep(const Lufia2Memory *memory,
+                                           Lufia2CpuState *cpu, uint32_t entry) {
+    if (entry != 0x8086c6u && entry != 0x8086dbu && entry != 0x8086f2u)
+        return ExecutionHandoff(cpu, entry);
+    if (cpu->program_bank != 0x80u || cpu->data_bank != 0x80u || cpu->direct_page ||
+        cpu->decimal || cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit > 1u)
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x8086c6u) {
+        AccumulateScreenFadeLevel(memory, cpu);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x8086f2u : 0x8086dbu);
+    }
+    if (entry == 0x8086dbu)
+        FadeScreenOut(memory, cpu);
+    else
+        FadeScreenIn(memory, cpu);
+    return ExecutionHandoff(cpu, 0x808702u);
+}
+
+/* $80:86C1: screen fade from $0581 into the $0583 brightness. */
+Lufia2ExecutionResult Lufia2ScreenFade(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
+    if (!cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x8086c1u);
+    LoadAAbsolute8(memory, cpu, WRAM_FADE_CONTROL, 0u);
+    if (cpu->negative) {
+        AccumulateScreenFadeLevel(memory, cpu);
+        if (cpu->zero)
+            FadeScreenIn(memory, cpu);
+        else
+            FadeScreenOut(memory, cpu);
     }
     return ExecutionReturned(0x808702u);
 }
