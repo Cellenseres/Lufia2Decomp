@@ -1,6 +1,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/actor.h"
+#include "lufia2/actor_scene_claim_steps.h"
 #include "lufia2/actor_scene_reset_steps.h"
 #include "system/wram.h"
 
@@ -54,6 +55,19 @@ static void ResetSceneActorRuntime(const Lufia2Memory *memory, Lufia2CpuState *c
     OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
 }
 
+static void PrepareSceneActorClaims(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, WRAM_FIELD_CLAIMED_ACTOR_IDS);
+    OpSta(memory, cpu, WRAM_FIELD_CLAIMED_ACTOR_IDS + 1u);
+    OpLdx(cpu, 7u);
+    OpLoadA(cpu, 0xffu);
+}
+
+static void ClearSceneActorClaim(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FD0A6));
+    OpDex(cpu);
+}
+
 Lufia2ExecutionResult Lufia2ActorResetSceneSlots(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -76,18 +90,30 @@ Lufia2ExecutionResult Lufia2ActorResetSceneSlots(
             return ActorSceneUnwound(0x83a6c1u);
         OpDex(cpu);
     } while (!cpu->negative);
-    OpLoadA(cpu, 0xffu);
-    OpSta(memory, cpu, WRAM_FIELD_CLAIMED_ACTOR_IDS);
-    OpSta(memory, cpu, WRAM_FIELD_CLAIMED_ACTOR_IDS + 1u);
-    OpLdx(cpu, 7u);
-    OpLoadA(cpu, 0xffu);
+    PrepareSceneActorClaims(memory, cpu);
     do {
-        OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FD0A6));
-        OpDex(cpu);
+        ClearSceneActorClaim(memory, cpu);
     } while (!cpu->negative);
     UnpackStatus(cpu, Pull8(memory, cpu));
     OpPullX(memory, cpu);
     return ExecutionReturned(0x83a6deu);
+}
+
+Lufia2ExecutionResult Lufia2ActorClearSceneClaimStep(const Lufia2Memory *memory,
+                                                     Lufia2CpuState *cpu,
+                                                     uint32_t entry) {
+    if ((entry != 0x83a6c7u && entry != 0x83a6d5u) || cpu->program_bank != 0x83u ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit != 1u ||
+        cpu->direct_page || cpu->decimal || (entry == 0x83a6d5u && cpu->x > 7u))
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x83a6c7u)
+        PrepareSceneActorClaims(memory, cpu);
+    for (unsigned slot = 0u; slot < 2u; ++slot) {
+        ClearSceneActorClaim(memory, cpu);
+        if (cpu->negative)
+            return ExecutionHandoff(cpu, 0x83a6dcu);
+    }
+    return ExecutionHandoff(cpu, 0x83a6d5u);
 }
 
 Lufia2ExecutionResult Lufia2ActorResetSceneSlotStep(
