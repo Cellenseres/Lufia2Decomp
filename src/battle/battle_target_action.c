@@ -1,6 +1,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "lufia2/battle_action_parameter_steps.h"
 #include "lufia2/battle_status_roll_steps.h"
 #include "system/wram.h"
 
@@ -265,6 +266,18 @@ static Lufia2ExecutionResult ScaleMagicPointChange(const Lufia2Memory *memory,
     return ExecutionReturned(0u);
 }
 
+static void AdvanceActionAttribute(Lufia2CpuState *cpu) {
+    OpInx(cpu);
+    OpInx(cpu);
+    for (unsigned step = 0u; step < 6u; ++step)
+        OpIny(cpu);
+}
+
+static void FinishAttributeScaling(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpPullX(memory, cpu);
+    OpSepWidths(cpu, 0x20u);
+}
+
 static Lufia2ExecutionResult ScaleAttributeChanges(const Lufia2Memory *memory,
                                                    Lufia2CpuState *cpu,
                                                    Lufia2PushedChildCall child,
@@ -347,16 +360,21 @@ static Lufia2ExecutionResult ScaleAttributeChanges(const Lufia2Memory *memory,
             OpSta(memory, cpu, ActionField(memory, cpu));
             OpPullY(memory, cpu);
         }
-        OpInx(cpu);
-        OpInx(cpu);
-        for (unsigned step = 0u; step < 6u; ++step)
-            OpIny(cpu);
+        AdvanceActionAttribute(cpu);
         OpCpy(cpu, 0x5au);
     } while (!cpu->zero);
-    OpPullX(memory, cpu);
-    OpSepWidths(cpu, 0x20u);
+    FinishAttributeScaling(memory, cpu);
     return ExecutionReturned(0u);
 }
+
+static void PrepareStatusRoll(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                              uint8_t adding) {
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpDp(cpu, STATUS_MASK));
+    OpLdy(cpu, adding ? 0x78u : 0x7au);
+}
+
+static void LoadStatusRandomLimit(Lufia2CpuState *cpu) { OpLoadA(cpu, 100u); }
 
 static void ResolveStatusChance(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     cpu->carry = 1u;
@@ -382,8 +400,9 @@ static void MergeRolledStatuses(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     OpSta(memory, cpu, OpAbsX(cpu, ACTOR_STATUS));
 }
 
-Lufia2ExecutionResult Lufia2BattleStatusRollStep(const Lufia2Memory *memory,
-                                                 Lufia2CpuState *cpu, uint32_t entry) {
+static Lufia2ExecutionResult StepStatusRoll(const Lufia2Memory *memory,
+                                            Lufia2CpuState *cpu, uint32_t entry,
+                                            bool next_limit) {
     const uint8_t bank = cpu->data_bank;
     if ((entry != 0x85d40du && entry != 0x85d43fu) || cpu->program_bank != 0x85u ||
         cpu->direct_page || cpu->decimal || cpu->accumulator_is_8_bit != 1u ||
@@ -391,22 +410,36 @@ Lufia2ExecutionResult Lufia2BattleStatusRollStep(const Lufia2Memory *memory,
         return ExecutionHandoff(cpu, entry);
     const uint8_t adding = entry == 0x85d43fu;
     ResolveStatusChance(memory, cpu);
-    if (!cpu->carry)
+    if (!cpu->carry) {
+        if (next_limit) {
+            LoadStatusRandomLimit(cpu);
+            return ExecutionHandoff(cpu, adding ? 0x85d43bu : 0x85d409u);
+        }
         return ExecutionHandoff(cpu, adding ? 0x85d439u : 0x85d407u);
+    }
     MergeRolledStatuses(memory, cpu, adding);
     return ExecutionHandoff(cpu, adding ? 0x85d45au : 0x85d428u);
+}
+
+Lufia2ExecutionResult Lufia2BattleStatusRollStep(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu, uint32_t entry) {
+    return StepStatusRoll(memory, cpu, entry, false);
+}
+
+Lufia2ExecutionResult Lufia2BattleStatusRollContinueStep(const Lufia2Memory *memory,
+                                                         Lufia2CpuState *cpu,
+                                                         uint32_t entry) {
+    return StepStatusRoll(memory, cpu, entry, true);
 }
 
 static Lufia2ExecutionResult RollStatusMask(const Lufia2Memory *memory,
                                             Lufia2CpuState *cpu,
                                             Lufia2PushedChildCall child, void *context,
                                             uint8_t adding) {
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpDp(cpu, STATUS_MASK));
-    OpLdy(cpu, adding ? 0x78u : 0x7au);
+    PrepareStatusRoll(memory, cpu, adding);
     const uint32_t site = adding ? 0x85d43bu : 0x85d409u;
     do {
-        OpLoadA(cpu, 100u);
+        LoadStatusRandomLimit(cpu);
         if (!ActionCall(memory, cpu, child, context, site, 0x808299u, 3u))
             return ActionUnwound(site);
         ResolveStatusChance(memory, cpu);
@@ -639,6 +672,16 @@ static void ApplyMagicPointChange(const Lufia2Memory *memory, Lufia2CpuState *cp
     OpSta(memory, cpu, OpAbsX(cpu, ACTOR_MP));
 }
 
+static void ApplyActionAttribute(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint16_t actor_field) {
+    OpLda(memory, cpu, ActionField(memory, cpu));
+    cpu->carry = 0u;
+    OpAdcValue(cpu, OpReadM(memory, cpu, OpAbsX(cpu, actor_field)));
+    OpSta(memory, cpu, OpAbsX(cpu, actor_field));
+    AdvanceActionAttribute(cpu);
+    OpCpy(cpu, 0x56u);
+}
+
 static void ApplyAttributeChanges(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSepWidths(cpu, 0x20u);
     OpLda(memory, cpu, OpAbs(cpu, SCRIPT_CONTEXT));
@@ -662,27 +705,48 @@ static void ApplyAttributeChanges(const Lufia2Memory *memory, Lufia2CpuState *cp
             cpu->carry = 0u;
             OpAdcValue(cpu, OpReadM(memory, cpu, OpAbsX(cpu, 0x74u)));
             OpSta(memory, cpu, OpAbsX(cpu, 0x74u));
-            OpInx(cpu);
-            OpInx(cpu);
-            for (unsigned step = 0u; step < 6u; ++step)
-                OpIny(cpu);
+            AdvanceActionAttribute(cpu);
             OpCpy(cpu, 0x2cu);
         } while (!cpu->zero);
     }
     do {
-        OpLda(memory, cpu, ActionField(memory, cpu));
-        cpu->carry = 0u;
-        OpAdcValue(cpu, OpReadM(memory, cpu,
-                                OpAbsX(cpu, scripted ? ACTOR_STAT_CHANGE : 0x74u)));
-        OpSta(memory, cpu, OpAbsX(cpu, scripted ? ACTOR_STAT_CHANGE : 0x74u));
-        OpInx(cpu);
-        OpInx(cpu);
-        for (unsigned step = 0u; step < 6u; ++step)
-            OpIny(cpu);
-        OpCpy(cpu, 0x56u);
+        ApplyActionAttribute(memory, cpu, scripted ? ACTOR_STAT_CHANGE : 0x74u);
     } while (!cpu->zero);
     OpPullX(memory, cpu);
     OpSepWidths(cpu, 0x20u);
+}
+
+Lufia2ExecutionResult Lufia2BattleActionParameterStep(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu,
+                                                      uint32_t entry) {
+    const bool wide = entry == 0x85d3edu || entry == 0x85d3fdu || entry == 0x85d63au;
+    const uint8_t bank = cpu->data_bank;
+    if (cpu->program_bank != 0x85u || cpu->direct_page || cpu->decimal ||
+        cpu->index_is_8_bit || cpu->accumulator_is_8_bit != !wide ||
+        !(bank < 0x40u || (bank >= 0x7eu && bank < 0xc0u)) ||
+        (entry == 0x85d3edu &&
+         (cpu->y < 0x30u || cpu->y > 0x54u || (cpu->y - 0x30u) % 6u)) ||
+        (entry == 0x85d63au &&
+         (cpu->y < 0x2cu || cpu->y > 0x50u || (cpu->y - 0x2cu) % 6u)))
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x85d3edu) {
+        AdvanceActionAttribute(cpu);
+        OpCpy(cpu, 0x5au);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x85d3fdu : 0x85d33du);
+    }
+    if (entry == 0x85d63au) {
+        ApplyActionAttribute(memory, cpu, ACTOR_STAT_CHANGE);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x85d650u : 0x85d63au);
+    }
+    if (entry == 0x85d3fdu || entry == 0x85d400u || entry == 0x85d432u) {
+        if (entry == 0x85d3fdu)
+            FinishAttributeScaling(memory, cpu);
+        const uint8_t adding = entry == 0x85d432u;
+        PrepareStatusRoll(memory, cpu, adding);
+        LoadStatusRandomLimit(cpu);
+        return ExecutionHandoff(cpu, adding ? 0x85d43bu : 0x85d409u);
+    }
+    return ExecutionHandoff(cpu, entry);
 }
 
 static Lufia2ExecutionResult DefeatTarget(const Lufia2Memory *memory,
