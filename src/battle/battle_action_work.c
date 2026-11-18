@@ -1,6 +1,13 @@
 #include "battle/battle_internal.h"
 #include "lufia2/battle_action_work_steps.h"
 
+static void ClearActionWorkWord(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint32_t base) {
+    OpSta(memory, cpu, OpLongX(cpu, base));
+    OpDex(cpu);
+    OpDex(cpu);
+}
+
 /* Fill an action work area with the DP value. */
 static Lufia2ExecutionResult ClearActionWork(const Lufia2Memory *memory,
                                              Lufia2CpuState *cpu, uint32_t base,
@@ -15,10 +22,12 @@ static Lufia2ExecutionResult ClearActionWork(const Lufia2Memory *memory,
     OpLdx(cpu, last);
     TransferDirectToA(cpu);
     do {
-        OpSta(memory, cpu, OpLongX(cpu, base));
-        OpDex(cpu);
-        if (!bytes)
+        if (bytes) {
+            OpSta(memory, cpu, OpLongX(cpu, base));
             OpDex(cpu);
+        } else {
+            ClearActionWorkWord(memory, cpu, base);
+        }
     } while (!cpu->negative);
     if (bytes)
         SetAccumulatorWidth(cpu, 0);
@@ -206,22 +215,33 @@ Lufia2ExecutionResult Lufia2BattleLoadActionRecord(const Lufia2Memory *memory,
     return LoadActionRecord(memory, cpu, child, child_context, true);
 }
 
-Lufia2ExecutionResult Lufia2BattleClearActionWordStep(const Lufia2Memory *memory,
-    Lufia2CpuState *cpu, uint32_t entry) {
+Lufia2ExecutionResult Lufia2BattleClearActionWordSpan(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu,
+                                                      uint32_t entry,
+                                                      unsigned max_words) {
     enum {
         ACTION_CLEAR_HEADER_SIZE = 4u,
         ACTION_CLEAR_LAST_WORD = WRAM_BATTLE_ACTION_WORK_COUNT - ACTION_CLEAR_HEADER_SIZE - 2u
     };
     if ((entry != 0x85ccd7u && entry != 0x85ccecu) || cpu->program_bank != 0x85u ||
         cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
-        cpu->x > ACTION_CLEAR_LAST_WORD || (cpu->x & 1u))
+        cpu->x > ACTION_CLEAR_LAST_WORD || (cpu->x & 1u) || !max_words ||
+        max_words > LUFIA2_BATTLE_ACTION_CLEAR_MAX_WORDS)
         return ExecutionHandoff(cpu, entry);
     const uint32_t base = (entry == 0x85ccd7u ? WRAM_BATTLE_ACTION_WORK
         : WRAM_BATTLE_ACTION_SAVED_TARGET_WORD) + ACTION_CLEAR_HEADER_SIZE;
-    OpSta(memory, cpu, OpLongX(cpu, base));
-    OpDex(cpu);
-    OpDex(cpu);
+    unsigned words = 0u;
+    do {
+        ClearActionWorkWord(memory, cpu, base);
+        ++words;
+    } while (!cpu->negative && words < max_words);
     return ExecutionHandoff(cpu, cpu->negative ? entry + 8u : entry);
+}
+
+Lufia2ExecutionResult Lufia2BattleClearActionWordStep(const Lufia2Memory *memory,
+                                                      Lufia2CpuState *cpu,
+                                                      uint32_t entry) {
+    return Lufia2BattleClearActionWordSpan(memory, cpu, entry, 1u);
 }
 
 Lufia2ExecutionResult Lufia2BattleCopyActionWorkSpan(const Lufia2Memory *memory,
