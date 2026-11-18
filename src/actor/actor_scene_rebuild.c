@@ -1,6 +1,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/actor.h"
+#include "lufia2/actor_scene_presentation_steps.h"
 #include "lufia2/scene_rebuild.h"
 #include "system/wram.h"
 
@@ -129,6 +130,70 @@ Lufia2ExecutionResult Lufia2ActorRebuildScenePhase(
     return ExecutionReturned(0x83a8deu);
 }
 
+static bool PrepareSceneActorDelay(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
+    OpCpx(cpu, 5u);
+    if (!cpu->carry) {
+        OpTxa(cpu);
+        OpSta(memory, cpu, OpLongX(cpu, SCENE_ACTOR_ORDER));
+        LoadA16(cpu, cpu->direct_page);
+        return false;
+    }
+    OpLda(memory, cpu, OpAbs(cpu, SCENE_OPTIONS));
+    OpBitValue(cpu, 1u);
+    if (!cpu->zero) {
+        LoadA16(cpu, cpu->direct_page);
+        return false;
+    }
+    OpLoadA(cpu, 60u);
+    return true;
+}
+
+static void StoreSceneActorDelay(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpIncA(cpu);
+    OpSta(memory, cpu, OpLongX(cpu, SCENE_ACTOR_DELAY));
+}
+
+typedef enum ScenePresentation {
+    SCENE_PRESENTATION_SKIP,
+    SCENE_PRESENTATION_READY,
+    SCENE_PRESENTATION_ATTRIBUTES
+} ScenePresentation;
+
+static ScenePresentation PrepareSceneActorPresentation(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu) {
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
+    LoadA16(cpu, cpu->direct_page);
+    OpLda(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_RECORD_ID));
+    OpCmpValue(cpu, 0x70u);
+    if (cpu->carry)
+        return SCENE_PRESENTATION_READY;
+    OpCmpValue(cpu, 0x10u);
+    if (!cpu->carry)
+        return SCENE_PRESENTATION_SKIP;
+    OpCmpValue(cpu, 0x50u);
+    if (!cpu->carry) {
+        cpu->carry = 1u;
+        OpSbcValue(cpu, 0x10u);
+        OpTax(cpu);
+        OpLda(memory, cpu, OpAbsX(cpu, SCENE_SAVED_MAP_IDS));
+        OpCmpValue(cpu, OpReadM(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));
+        if (!cpu->zero)
+            return SCENE_PRESENTATION_SKIP;
+        OpLda(memory, cpu, OpAbsX(cpu, SCENE_SAVED_RECORD_IDS));
+    } else {
+        cpu->carry = 1u;
+        OpSbcValue(cpu, 0x4fu);
+    }
+    SetIndexWidth(cpu, 0u);
+    return SCENE_PRESENTATION_ATTRIBUTES;
+}
+
+static void RestoreSceneActorSlot(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpSepWidths(cpu, 0x10u);
+    OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
+}
+
 Lufia2ExecutionResult Lufia2ActorRebuildSceneState(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -158,58 +223,22 @@ Lufia2ExecutionResult Lufia2ActorRebuildSceneState(
                 return ActorSceneOwnerUnwound(0x83a874u);
             if (!CallChildWithFrame(memory, cpu, child, context, 0x83a878u, 0x83aa30u, 3u, 0x83u))
                 return ActorSceneOwnerUnwound(0x83a878u);
-            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
-            OpCpx(cpu, 5u);
-            if (!cpu->carry) {
-                OpTxa(cpu);
-                OpSta(memory, cpu, OpLongX(cpu, SCENE_ACTOR_ORDER));
-                LoadA16(cpu, cpu->direct_page);
-            } else {
-                OpLda(memory, cpu, OpAbs(cpu, SCENE_OPTIONS));
-                OpBitValue(cpu, 1u);
-                if (!cpu->zero) {
-                    LoadA16(cpu, cpu->direct_page);
-                } else {
-                    OpLoadA(cpu, 60u);
-                    if (!CallChildWithFrame(memory, cpu, child, context, 0x83a896u, 0x808299u, 3u, 0x83u))
-                        return ActorSceneOwnerUnwound(0x83a896u);
-                }
-            }
-            OpIncA(cpu);
-            OpSta(memory, cpu, OpLongX(cpu, SCENE_ACTOR_DELAY));
+            if (PrepareSceneActorDelay(memory, cpu) &&
+                !CallChildWithFrame(memory, cpu, child, context, 0x83a896u, 0x808299u,
+                                    3u, 0x83u))
+                return ActorSceneOwnerUnwound(0x83a896u);
+            StoreSceneActorDelay(memory, cpu);
             if (!CallChildWithFrame(memory, cpu, child, context, 0x83a89fu, 0x83a97eu, 2u, 0x83u))
                 return ActorSceneOwnerUnwound(0x83a89fu);
             ActorSceneSetPartyOffsets(memory, cpu);
-            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
-            LoadA16(cpu, cpu->direct_page);
-            OpLda(memory, cpu, OpAbsX(cpu, SCENE_ACTOR_RECORD_ID));
-            OpCmpValue(cpu, 0x70u);
-            bool apply_presentation = cpu->carry;
-            if (!apply_presentation) {
-                OpCmpValue(cpu, 0x10u);
-                if (cpu->carry) {
-                    OpCmpValue(cpu, 0x50u);
-                    if (!cpu->carry) {
-                        cpu->carry = 1u;
-                        OpSbcValue(cpu, 0x10u);
-                        OpTax(cpu);
-                        OpLda(memory, cpu, OpAbsX(cpu, SCENE_SAVED_MAP_IDS));
-                        OpCmpValue(cpu, OpReadM(memory, cpu, OpAbs(cpu, WRAM_FIELD_MAP_ID)));
-                        apply_presentation = cpu->zero;
-                        if (apply_presentation)
-                            OpLda(memory, cpu, OpAbsX(cpu, SCENE_SAVED_RECORD_IDS));
-                    } else {
-                        cpu->carry = 1u;
-                        OpSbcValue(cpu, 0x4fu);
-                        apply_presentation = true;
-                    }
-                    if (apply_presentation) {
-                        SetIndexWidth(cpu, 0u);
-                        if (!CallChildWithFrame(memory, cpu, child, context, 0x83a906u, 0x80c01du, 3u, 0x83u))
-                            return ActorSceneOwnerUnwound(0x83a906u);
-                        ActorSceneCopyAttributes(memory, cpu);
-                    }
-                }
+            const ScenePresentation presentation =
+                PrepareSceneActorPresentation(memory, cpu);
+            const bool apply_presentation = presentation != SCENE_PRESENTATION_SKIP;
+            if (presentation == SCENE_PRESENTATION_ATTRIBUTES) {
+                if (!CallChildWithFrame(memory, cpu, child, context, 0x83a906u,
+                                        0x80c01du, 3u, 0x83u))
+                    return ActorSceneOwnerUnwound(0x83a906u);
+                ActorSceneCopyAttributes(memory, cpu);
             }
             if (apply_presentation) {
                 OpLda(memory, cpu, OpAbs(cpu, SCENE_OPTIONS));
@@ -257,8 +286,7 @@ Lufia2ExecutionResult Lufia2ActorRebuildSceneState(
             }
             if (!CallChildWithFrame(memory, cpu, child, context, 0x83a96bu, 0x83d416u, 3u, 0x83u))
                 return ActorSceneOwnerUnwound(0x83a96bu);
-            SetIndexWidth(cpu, 1u);
-            OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
+            RestoreSceneActorSlot(memory, cpu);
         }
         OpDex(cpu);
     } while (!cpu->negative);
@@ -266,4 +294,41 @@ Lufia2ExecutionResult Lufia2ActorRebuildSceneState(
         return ActorSceneOwnerUnwound(0x83a979u);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x83a97du);
+}
+
+Lufia2ExecutionResult Lufia2ActorScenePresentationStep(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu,
+                                                       uint32_t entry) {
+    const bool copying = entry == 0x83a90au;
+    const bool restoring = entry == 0x83a96fu;
+    if ((entry != 0x83a87cu && entry != 0x83a89au && entry != 0x83a8deu && !copying &&
+         !restoring) ||
+        !ActorSceneOwnerContext(cpu) || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit > 1u || (!restoring && cpu->index_is_8_bit != !copying))
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x83a87cu) {
+        if (PrepareSceneActorDelay(memory, cpu))
+            return ExecutionHandoff(cpu, 0x83a896u);
+        StoreSceneActorDelay(memory, cpu);
+        return ExecutionHandoff(cpu, 0x83a89fu);
+    }
+    if (entry == 0x83a89au) {
+        StoreSceneActorDelay(memory, cpu);
+        return ExecutionHandoff(cpu, 0x83a89fu);
+    }
+    if (entry == 0x83a8deu) {
+        const ScenePresentation presentation =
+            PrepareSceneActorPresentation(memory, cpu);
+        return ExecutionHandoff(cpu, presentation == SCENE_PRESENTATION_SKIP ? 0x83a96bu
+                                     : presentation == SCENE_PRESENTATION_ATTRIBUTES
+                                         ? 0x83a906u
+                                         : 0x83a92cu);
+    }
+    if (copying) {
+        ActorSceneCopyAttributes(memory, cpu);
+        return ExecutionHandoff(cpu, 0x83a92cu);
+    }
+    RestoreSceneActorSlot(memory, cpu);
+    OpDex(cpu);
+    return ExecutionHandoff(cpu, cpu->negative ? 0x83a979u : 0x83a83bu);
 }
