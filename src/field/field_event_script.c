@@ -1,14 +1,15 @@
 /* Field event script slots, their wait timers and the script VM. */
 
 #include "actor/actor_internal.h"
-#include "core/cpu_internal.h"
 #include "core/child_call.h"
-#include "core/snes_registers.h"
+#include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
+#include "core/snes_registers.h"
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
-#include "lufia2/field.h"
 #include "lufia2/event_script.h"
+#include "lufia2/event_timer_steps.h"
+#include "lufia2/field.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
@@ -1445,68 +1446,117 @@ static uint8_t EventResumeSlot(
     return 1;
 }
 
+static void PrepareEventTimers(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushDataBank(memory, cpu);
+    Push8(memory, cpu, PackStatus(cpu));
+    SetIndexWidth(cpu, 0);
+    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_EVENT_REDRAW, 0), 0u);
+    LoadA8(cpu, FIELD_FLAG_EVENT_ARMED);
+    TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 0);
+    LoadX16(cpu, 0u);
+}
+
+static uint8_t EventTimerSlotDue(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const uint32_t timer = LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x);
+    LoadA8(cpu, Read8(memory, timer));
+    if (!cpu->negative)
+        return 0u;
+    /* An armed $80 wraps to $7F and disarms. */
+    DecrementA8(cpu);
+    Write8(memory, timer, A8(cpu));
+    And8(cpu, 0x7fu);
+    return cpu->zero;
+}
+
+static void AdvanceEventTimerSlot(Lufia2CpuState *cpu) {
+    IncrementX16(cpu);
+    Compare16(cpu, cpu->x, EVENT_SLOT_COUNT);
+}
+
+static uint8_t ScanEventTimerSlot(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x)));
+    if (cpu->negative) {
+        LoadA8(cpu, FIELD_FLAG_EVENT_ARMED);
+        TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
+        return 1u;
+    }
+    LoadX16(cpu, (uint16_t)(cpu->x - 1u));
+    return cpu->negative;
+}
+
+static uint8_t FinishEventTimers(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    /* The last resumed script may have changed DB. */
+    LoadAAbsolute8(memory, cpu, WRAM_EVENT_REDRAW, 0);
+    if (!cpu->zero)
+        return 0u;
+    UnpackStatus(cpu, Pull8(memory, cpu));
+    PullDataBank(memory, cpu);
+    return 1u;
+}
+
 /* $80:CBAE: count down the slot timers; 0 = handoff. */
 static uint8_t RunEventTimerBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
                                  EventRun *run, unsigned *passes) {
-
     *passes = 0;
     cpu->program_bank = 0x80u;
-    PushDataBank(memory, cpu); /* CBAE */
-    Push8(memory, cpu, PackStatus(cpu));
-    SetIndexWidth(cpu, 0);
-    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_EVENT_REDRAW, 0), 0x00u);
-    LoadA8(cpu, FIELD_FLAG_EVENT_ARMED);
-    TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 0);
-    LoadX16(cpu, 0x0000u);
+    PrepareEventTimers(memory, cpu);
     do {
-        const uint32_t timer = LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x);
-
-        LoadA8(cpu, Read8(memory, timer)); /* CBBD */
-        if (cpu->negative) {
-            /* An armed $80 wraps to $7F and disarms. */
-            DecrementA8(cpu);
-            Write8(memory, timer, A8(cpu));
-            And8(cpu, 0x7fu);
-            if (cpu->zero) {
-                /* The VM's ADCs are binary only. */
-                if (cpu->decimal) {
-                    cpu->resume_pc = 0x80cbccu;
-                    return 0;
-                }
-                if (!EventResumeSlot(memory, cpu, run)) {
-                    /* Visits before the handoff pc at its depth. */
-                    *passes = run->has_visits ? run->visits
-                              : cpu->resume_pc == EVENT_OPCODE_LIMIT_HANDOFF
-                                  ? run->passes[run->depth]
-                                  : 0;
-                    return 0;
-                }
+        if (EventTimerSlotDue(memory, cpu)) {
+            if (cpu->decimal) {
+                cpu->resume_pc = 0x80cbccu;
+                return 0;
+            }
+            if (!EventResumeSlot(memory, cpu, run)) {
+                *passes = run->has_visits ? run->visits
+                          : cpu->resume_pc == EVENT_OPCODE_LIMIT_HANDOFF
+                              ? run->passes[run->depth]
+                              : 0;
+                return 0;
             }
         }
-        IncrementX16(cpu); /* CBF0 */
-        Compare16(cpu, cpu->x, EVENT_SLOT_COUNT);
+        AdvanceEventTimerSlot(cpu);
     } while (!cpu->carry);
-    LoadX16(cpu, 0x0007u); /* CBF6 */
-    for (;;) {
-        LoadA8(cpu, Read8(memory, LongIndexedAddress(EVENT_SLOT_TIMERS, cpu->x)));
-        if (cpu->negative) {
-            LoadA8(cpu, FIELD_FLAG_EVENT_ARMED); /* CBFF */
-            TestBitsAbsolute8(memory, cpu, WRAM_FIELD_FLAGS, 1);
+    LoadX16(cpu, 7u);
+    for (;;)
+        if (ScanEventTimerSlot(memory, cpu))
             break;
-        }
-        LoadX16(cpu, (uint16_t)(cpu->x - 1u)); /* CC06 */
-        if (cpu->negative)
-            break;
-    }
-    /* Read with the last script bank as DB. */
-    LoadAAbsolute8(memory, cpu, WRAM_EVENT_REDRAW, 0); /* CC09 */
-    if (!cpu->zero) {
+    if (!FinishEventTimers(memory, cpu)) {
         cpu->resume_pc = 0x80cc0eu;
         return 0;
     }
-    UnpackStatus(cpu, Pull8(memory, cpu)); /* CC23 */
-    PullDataBank(memory, cpu);
     return 1;
+}
+
+Lufia2ExecutionResult Lufia2FieldEventTimerStep(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu, uint32_t entry) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || cpu->direct_page || cpu->decimal ||
+        (entry != 0x80cbaeu && entry != 0x80cbbdu && entry != 0x80cbf6u &&
+         entry != 0x80cbf9u && entry != 0x80cc09u) ||
+        ((entry == 0x80cbbdu || entry == 0x80cbf9u) && cpu->x >= EVENT_SLOT_COUNT))
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x80cbaeu || entry == 0x80cbbdu) {
+        if (entry == 0x80cbaeu)
+            PrepareEventTimers(memory, cpu);
+        for (unsigned slot = 0u; slot < 2u; ++slot) {
+            if (EventTimerSlotDue(memory, cpu))
+                return ExecutionHandoff(cpu, 0x80cbccu);
+            AdvanceEventTimerSlot(cpu);
+            if (cpu->carry)
+                return ExecutionHandoff(cpu, 0x80cbf6u);
+        }
+        return ExecutionHandoff(cpu, 0x80cbbdu);
+    }
+    if (entry == 0x80cbf6u || entry == 0x80cbf9u) {
+        if (entry == 0x80cbf6u)
+            LoadX16(cpu, 7u);
+        for (unsigned slot = 0u; slot < 2u; ++slot)
+            if (ScanEventTimerSlot(memory, cpu))
+                return ExecutionHandoff(cpu, 0x80cc09u);
+        return ExecutionHandoff(cpu, 0x80cbf9u);
+    }
+    return ExecutionHandoff(cpu,
+                            FinishEventTimers(memory, cpu) ? 0x80cc25u : 0x80cc0eu);
 }
 
 uint8_t Lufia2FieldEventTimerBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
