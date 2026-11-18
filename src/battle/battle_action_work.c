@@ -130,6 +130,45 @@ static void RestoreActionRegisters(const Lufia2Memory *memory, Lufia2CpuState *c
     UnpackStatus(cpu, Pull8(memory, cpu));
 }
 
+enum {
+    ACTION_RECORD_BYTES = 0x0cu,
+    TURN_RECORD_POINTER = 0xb5u,
+    ACTION_RECORD_POINTER = 0xb8u
+};
+
+static void CopyActionRecordByte(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                 uint8_t pointer) {
+    OpLda(memory, cpu, OpLongX(cpu, 0x7f0000u));
+    // The destination can overwrite its own direct-page pointer.
+    const uint8_t low = Read8(memory, OpDp(cpu, pointer));
+    const uint8_t high = Read8(memory, OpDp(cpu, (uint8_t)(pointer + 1u)));
+    const uint8_t bank = Read8(memory, OpDp(cpu, (uint8_t)(pointer + 2u)));
+    const uint32_t address = low | ((uint32_t)high << 8) | ((uint32_t)bank << 16);
+    OpSta(memory, cpu, LongIndexedAddress(address, cpu->y));
+    OpInx(cpu);
+    OpIny(cpu);
+    OpCpy(cpu, ACTION_RECORD_BYTES);
+}
+
+Lufia2ExecutionResult Lufia2BattleCopyActionRecordSpan(const Lufia2Memory *memory,
+                                                       Lufia2CpuState *cpu,
+                                                       uint32_t entry,
+                                                       unsigned max_bytes) {
+    if ((entry != 0x85cdbbu && entry != 0x85cde5u) || cpu->program_bank != 0x85u ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit ||
+        cpu->y >= ACTION_RECORD_BYTES || !max_bytes ||
+        max_bytes > LUFIA2_BATTLE_ACTION_RECORD_COPY_MAX_BYTES)
+        return ExecutionHandoff(cpu, entry);
+    const uint8_t pointer =
+        entry == 0x85cdbbu ? TURN_RECORD_POINTER : ACTION_RECORD_POINTER;
+    unsigned bytes = 0u;
+    do {
+        CopyActionRecordByte(memory, cpu, pointer);
+        ++bytes;
+    } while (!cpu->zero && bytes < max_bytes);
+    return ExecutionHandoff(cpu, cpu->zero ? entry + 13u : entry);
+}
+
 /* Copy 12 bytes from $7F:0000+X into the named record. */
 static Lufia2ExecutionResult LoadActionRecord(const Lufia2Memory *memory,
                                               Lufia2CpuState *cpu,
@@ -144,16 +183,8 @@ static Lufia2ExecutionResult LoadActionRecord(const Lufia2Memory *memory,
         return BattleChildUnwound(&battle);
     OpLdy(cpu, 0u);
     do {
-        OpLda(memory, cpu, OpLongX(cpu, 0x7f0000u));
-        const uint8_t pointer = action ? 0xb8u : 0xb5u;
-        const uint8_t low = Read8(memory, OpDp(cpu, pointer));
-        const uint8_t high = Read8(memory, OpDp(cpu, (uint8_t)(pointer + 1u)));
-        const uint8_t bank = Read8(memory, OpDp(cpu, (uint8_t)(pointer + 2u)));
-        const uint32_t address = low | ((uint32_t)high << 8) | ((uint32_t)bank << 16);
-        OpSta(memory, cpu, LongIndexedAddress(address, cpu->y));
-        OpInx(cpu);
-        OpIny(cpu);
-        OpCpy(cpu, 0x0cu);
+        CopyActionRecordByte(memory, cpu,
+                             action ? ACTION_RECORD_POINTER : TURN_RECORD_POINTER);
     } while (!cpu->zero);
     RestoreActionRegisters(memory, cpu);
     return ExecutionReturned(action ? 0x85cdf9u : 0x85cdcfu);

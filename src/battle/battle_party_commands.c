@@ -1,6 +1,7 @@
 #include "battle/battle_internal.h"
-#include "lufia2/battle_command_tiles.h"
 #include "core/snes_registers.h"
+#include "lufia2/battle_command_tiles.h"
+#include "lufia2/battle_party_input_steps.h"
 
 enum {
     PARTY_DP_PICKED_ENTRY = 0x12u,
@@ -511,12 +512,36 @@ static PartyStep PartyDefend(BattleContext *battle, uint32_t *pc) {
     return PARTY_DONE;
 }
 
+typedef enum { PARTY_INPUT_REPEAT, PARTY_INPUT_CANCEL, PARTY_INPUT_ACCEPT } PartyInput;
+
+static PartyInput ReadPartyCommandInput(const Lufia2Memory *memory,
+                                        Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
+    OpBitValue(cpu, 0xa0u);
+    if (cpu->zero) {
+        OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED_HIGH));
+        return cpu->negative ? PARTY_INPUT_CANCEL : PARTY_INPUT_REPEAT;
+    }
+    OpLoadA(cpu, 2u);
+    return PARTY_INPUT_ACCEPT;
+}
+
+Lufia2ExecutionResult Lufia2BattlePartyInputStep(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x81u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81ccecu);
+    const PartyInput input = ReadPartyCommandInput(memory, cpu);
+    return ExecutionHandoff(cpu, input == PARTY_INPUT_REPEAT   ? 0x81cc93u
+                                 : input == PARTY_INPUT_CANCEL ? 0x81ccf6u
+                                                               : 0x81cd3bu);
+}
+
 /* Run the confirmed command's part. */
 static PartyStep PartyAccepted(BattleContext *battle, uint32_t *pc) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
 
-    OpLoadA(cpu, 2u);
     if (!BattleCall(battle, 0xcd3bu, 0x80953bu, 3u))
         return PARTY_UNWOUND;
     OpLda(memory, cpu, OpDp(cpu, PARTY_DP_COMMAND));
@@ -591,12 +616,10 @@ Lufia2ExecutionResult Lufia2BattleChoosePartyAction(const Lufia2Memory *memory,
         OpSta(memory, cpu, BATTLE_SPRITE_REBUILD_REQUEST);
         if (!BattleCall(&battle, 0xcce8u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
             return BattleChildUnwound(&battle);
-        OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED));
-        OpBitValue(cpu, 0xa0u);
-        if (cpu->zero) {
-            OpLda(memory, cpu, OpDp(cpu, BATTLE_DP_PAD_FILTERED_HIGH));
-            if (!cpu->negative)
-                continue;
+        const PartyInput input = ReadPartyCommandInput(memory, cpu);
+        if (input == PARTY_INPUT_REPEAT)
+            continue;
+        if (input == PARTY_INPUT_CANCEL) {
             if (!BattlePartyCommandLabel(&battle, 0xcd00u, 0xcd1du, 0x87b7u, false))
                 return BattleChildUnwound(&battle);
             BattlePartyCommandTextDimensions(memory, cpu);
