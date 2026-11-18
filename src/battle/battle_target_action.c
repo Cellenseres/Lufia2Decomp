@@ -1,6 +1,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/battle.h"
+#include "lufia2/battle_status_roll_steps.h"
 #include "system/wram.h"
 
 enum {
@@ -357,24 +358,16 @@ static Lufia2ExecutionResult ScaleAttributeChanges(const Lufia2Memory *memory,
     return ExecutionReturned(0u);
 }
 
-static Lufia2ExecutionResult RollStatusMask(const Lufia2Memory *memory,
-                                            Lufia2CpuState *cpu,
-                                            Lufia2PushedChildCall child, void *context,
-                                            uint8_t adding) {
-    OpLoadA(cpu, 1u);
-    OpSta(memory, cpu, OpDp(cpu, STATUS_MASK));
-    OpLdy(cpu, adding ? 0x78u : 0x7au);
-    const uint32_t site = adding ? 0x85d43bu : 0x85d409u;
-    do {
-        OpLoadA(cpu, 100u);
-        if (!ActionCall(memory, cpu, child, context, site, 0x808299u, 3u))
-            return ActionUnwound(site);
-        cpu->carry = 1u;
-        OpSbcValue(cpu, OpReadM(memory, cpu, ActionField(memory, cpu)));
-        for (unsigned step = 0u; step < 4u; ++step)
-            OpDey(cpu);
-        OpRolMem8(memory, cpu, OpDp(cpu, STATUS_MASK));
-    } while (!cpu->carry);
+static void ResolveStatusChance(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    cpu->carry = 1u;
+    OpSbcValue(cpu, OpReadM(memory, cpu, ActionField(memory, cpu)));
+    for (unsigned step = 0u; step < 4u; ++step)
+        OpDey(cpu);
+    OpRolMem8(memory, cpu, OpDp(cpu, STATUS_MASK));
+}
+
+static void MergeRolledStatuses(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                                uint8_t adding) {
     OpLda(memory, cpu, OpDp(cpu, STATUS_MASK));
     if (adding) {
         OpOraValue(cpu, OpReadM(memory, cpu, OpAbsX(cpu, ACTOR_STATUS)));
@@ -387,6 +380,38 @@ static Lufia2ExecutionResult RollStatusMask(const Lufia2Memory *memory,
     OpLoadA(cpu,
             (uint16_t)(OpA(cpu) ^ (OpReadM(memory, cpu, OpAbsX(cpu, ACTOR_STATUS)))));
     OpSta(memory, cpu, OpAbsX(cpu, ACTOR_STATUS));
+}
+
+Lufia2ExecutionResult Lufia2BattleStatusRollStep(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu, uint32_t entry) {
+    const uint8_t bank = cpu->data_bank;
+    if ((entry != 0x85d40du && entry != 0x85d43fu) || cpu->program_bank != 0x85u ||
+        cpu->direct_page || cpu->decimal || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit || !(bank < 0x40u || (bank >= 0x7eu && bank < 0xc0u)))
+        return ExecutionHandoff(cpu, entry);
+    const uint8_t adding = entry == 0x85d43fu;
+    ResolveStatusChance(memory, cpu);
+    if (!cpu->carry)
+        return ExecutionHandoff(cpu, adding ? 0x85d439u : 0x85d407u);
+    MergeRolledStatuses(memory, cpu, adding);
+    return ExecutionHandoff(cpu, adding ? 0x85d45au : 0x85d428u);
+}
+
+static Lufia2ExecutionResult RollStatusMask(const Lufia2Memory *memory,
+                                            Lufia2CpuState *cpu,
+                                            Lufia2PushedChildCall child, void *context,
+                                            uint8_t adding) {
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpDp(cpu, STATUS_MASK));
+    OpLdy(cpu, adding ? 0x78u : 0x7au);
+    const uint32_t site = adding ? 0x85d43bu : 0x85d409u;
+    do {
+        OpLoadA(cpu, 100u);
+        if (!ActionCall(memory, cpu, child, context, site, 0x808299u, 3u))
+            return ActionUnwound(site);
+        ResolveStatusChance(memory, cpu);
+    } while (!cpu->carry);
+    MergeRolledStatuses(memory, cpu, adding);
     return ExecutionReturned(0u);
 }
 
