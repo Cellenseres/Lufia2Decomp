@@ -4,6 +4,7 @@
 #include "core/wram_view.h"
 #include "lufia2/battle.h"
 #include "lufia2/battle_fill_steps.h"
+#include "lufia2/battle_window_steps.h"
 #include "lufia2/legacy_fragments.h"
 #include "system/wram.h"
 
@@ -132,19 +133,27 @@ Lufia2ExecutionResult Lufia2BattleFillFrameRowSpan(
     return ExecutionHandoff(cpu, complete ? 0x81e55du : entry);
 }
 
-/* $81:E542: row from template $01:X (left, fill, right); M0X0. */
-Lufia2ExecutionResult Lufia2BattleFrameRow(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static void BeginFrameRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA16(cpu, Abs16(memory, cpu, FRAME_WIDTH));
     StoreWordAbsolute(memory, cpu, FRAME_COUNT, cpu->accumulator);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x010000u, cpu->x)));
     Store16Y(memory, cpu, 0x0000u);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x010002u, cpu->x)));
-    (void)FillFrameRowCells(memory, cpu, 0u);
+}
+
+static void FinishFrameRow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x010004u, cpu->x)));
     Store16Y(memory, cpu, 0x0002u);
     NextRow(memory, cpu);
+}
+
+/* $81:E542: row from template $01:X (left, fill, right); M0X0. */
+Lufia2ExecutionResult Lufia2BattleFrameRow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    BeginFrameRow(memory, cpu);
+    (void)FillFrameRowCells(memory, cpu, 0u);
+    FinishFrameRow(memory, cpu);
     return ExecutionReturned(0x81e56fu);
 }
 
@@ -255,10 +264,16 @@ static void IncX(Lufia2CpuState *cpu, unsigned count) {
         IncrementX16(cpu);
 }
 
-/* $81:E503: window $09F2 x $09F3 at $7E:X from template $01:$09F4. */
-Lufia2ExecutionResult Lufia2BattleWindow(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+static bool BattleWindowHasMoreRows(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    return !(DecAbs16(memory, cpu, 0x09feu) & 0x8000u);
+}
+
+static bool AdvanceBattleWindowTop(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    IncX(cpu, 6u);
+    return BattleWindowHasMoreRows(memory, cpu);
+}
+
+static void BeginBattleWindow(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     SetBank7E(memory, cpu);
     LoadAAbsolute8(memory, cpu, 0x09f2u, 0);
@@ -272,14 +287,22 @@ Lufia2ExecutionResult Lufia2BattleWindow(
     LoadY16(cpu, cpu->x);
     LoadX16(cpu, Abs16(memory, cpu, 0x09f4u));
     SetAccumulatorWidth(cpu, 0);
+}
+
+/* $81:E503: window $09F2 x $09F3 at $7E:X from template $01:$09F4. */
+Lufia2ExecutionResult Lufia2BattleWindow(
+    const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    BeginBattleWindow(memory, cpu);
     SimulateJsrFrame(memory, cpu, 0xe526u);
     (void)Lufia2BattleFrameRow(memory, cpu);
     SimulateRtsFrame(memory, cpu);
-    IncX(cpu, 6u);
-    while (!(DecAbs16(memory, cpu, 0x09feu) & 0x8000u)) {
+    bool more_rows = AdvanceBattleWindowTop(memory, cpu);
+    while (more_rows) {
         SimulateJsrFrame(memory, cpu, 0xe534u);
         (void)Lufia2BattleFrameEnds(memory, cpu);
         SimulateRtsFrame(memory, cpu);
+        more_rows = BattleWindowHasMoreRows(memory, cpu);
     }
     IncX(cpu, 4u);
     SimulateJsrFrame(memory, cpu, 0xe53du);
@@ -544,4 +567,28 @@ Lufia2ExecutionResult Lufia2BattleClearRect(
     } while (!cpu->zero);
     PullDataBank(memory, cpu);
     return ExecutionReturned(0x81e7d1u);
+}
+
+Lufia2ExecutionResult Lufia2BattleWindowStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x81e503u && entry != 0x81e527u && entry != 0x81e52du &&
+         entry != 0x81e542u && entry != 0x81e55du) || cpu->program_bank != 0x81u ||
+        cpu->accumulator_is_8_bit != (entry == 0x81e503u) ||
+        cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x81e503u) {
+        BeginBattleWindow(memory, cpu);
+        return ExecutionHandoff(cpu, 0x81e524u);
+    }
+    if (entry == 0x81e542u) {
+        BeginFrameRow(memory, cpu);
+        return ExecutionHandoff(cpu, 0x81e553u);
+    }
+    if (entry == 0x81e55du) {
+        FinishFrameRow(memory, cpu);
+        return ExecutionHandoff(cpu, 0x81e56fu);
+    }
+    const bool more_rows = entry == 0x81e527u
+        ? AdvanceBattleWindowTop(memory, cpu) : BattleWindowHasMoreRows(memory, cpu);
+    return ExecutionHandoff(cpu, more_rows ? 0x81e532u : 0x81e537u);
 }
