@@ -5,14 +5,15 @@
 #include "core/plain_ops.h"
 #include "core/snes_registers.h"
 #include "core/wram_view.h"
-#include "lufia2/system.h"
-#include "lufia2/nmi_tilemap_steps.h"
-#include "lufia2/nmi_pad_steps.h"
 #include "lufia2/nmi_control_steps.h"
-#include "lufia2/nmi_upload_checks.h"
 #include "lufia2/nmi_dma_setup.h"
-#include "lufia2/nmi_upload_control_steps.h"
 #include "lufia2/nmi_joypad_gate.h"
+#include "lufia2/nmi_listed_dma_steps.h"
+#include "lufia2/nmi_pad_steps.h"
+#include "lufia2/nmi_tilemap_steps.h"
+#include "lufia2/nmi_upload_checks.h"
+#include "lufia2/nmi_upload_control_steps.h"
+#include "lufia2/system.h"
 #include "system/wram.h"
 
 /* Direct-page request flags. Bit 7 is the one the NMI clears. */
@@ -425,6 +426,38 @@ Lufia2ExecutionResult Lufia2NmiPrepareScrollWrites(
     return ExecutionHandoff(cpu, 0x8087b2u);
 }
 
+static void PrepareListedDmaDestination(Lufia2Wram wram, Lufia2CpuState *cpu,
+                                        unsigned request) {
+    WramWrite(wram, DMA_LIST_FLAGS + request, 0u);
+    LoadX16(cpu, WramRead16(wram, DMA_LIST_ADDRESS + 2u * request));
+}
+
+Lufia2ExecutionResult Lufia2NmiPrepareListedDma(const Lufia2Memory *memory,
+                                                Lufia2CpuState *cpu, uint32_t entry) {
+    unsigned request;
+    switch (entry) {
+    case 0x8087c8u:
+        request = 0u;
+        break;
+    case 0x8087d3u:
+        request = 1u;
+        break;
+    case 0x8087deu:
+        request = 2u;
+        break;
+    case 0x8087e9u:
+        request = 3u;
+        break;
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
+    if (cpu->program_bank != 0x80u || cpu->data_bank != 0x80u || cpu->direct_page ||
+        cpu->decimal || cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, entry);
+    PrepareListedDmaDestination(WramViewOfCaller(memory, cpu), cpu, request);
+    return ExecutionHandoff(cpu, entry + 4u);
+}
+
 Lufia2ExecutionResult Lufia2NmiSelectListedDma(
     const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
     unsigned request;
@@ -537,8 +570,7 @@ Lufia2ExecutionResult Lufia2NmiScrollAndUploads(
         LoadA8(cpu, request);
         if (!request)
             continue;
-        WramWrite(wram, DMA_LIST_FLAGS + i, 0);
-        LoadX16(cpu, WramRead16(wram, DMA_LIST_ADDRESS + 2u * i));
+        PrepareListedDmaDestination(wram, cpu, i);
         SimulateJsrFrame(memory, cpu, site_return[i]);
         (void)Lufia2StartListedDma(memory, cpu);
         if (!ReturnFromListedDma(memory, cpu, site_return[i], &result))
