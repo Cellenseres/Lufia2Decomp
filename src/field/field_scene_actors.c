@@ -2,6 +2,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/field.h"
+#include "lufia2/field_scene_steps.h"
 #include "system/wram.h"
 
 enum {
@@ -97,6 +98,23 @@ static Lufia2ExecutionResult RebuildActors(
     return ExecutionReturned(0x83a7c5u);
 }
 
+static bool PrepareSceneObject(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 0xffu);
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E1559));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_OBJECT_STATE));
+    OpBitValue(cpu, 0x80u);
+    if (cpu->zero)
+        return false;
+    OpLda(memory, cpu, OpLongX(cpu, WRAM_OBJECT_ANIMATION_ID));
+    OpCmpValue(cpu, 0xffu);
+    if (cpu->zero)
+        return false;
+    OpPushX(memory, cpu);
+    OpTxa(cpu);
+    OpSta(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+    return true;
+}
+
 static Lufia2ExecutionResult RebuildObjects(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -106,77 +124,70 @@ static Lufia2ExecutionResult RebuildObjects(
     do {
         if (iterations++ == FIELD_SCENE_LOOP_LIMIT)
             return ExecutionHandoff(cpu, 0x83a7cau);
-        OpLoadA(cpu, 0xffu);
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E1559));
-        OpLda(memory, cpu, OpAbsX(cpu, WRAM_OBJECT_STATE));
-        OpBitValue(cpu, 0x80u);
-        if (!cpu->zero) {
-            OpLda(memory, cpu, OpLongX(cpu, WRAM_OBJECT_ANIMATION_ID));
-            OpCmpValue(cpu, 0xffu);
-            if (!cpu->zero) {
-                OpPushX(memory, cpu);
-                OpTxa(cpu);
-                OpSta(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
-                Lufia2ExecutionResult result = SceneActorChild(
-                    memory, cpu, child, context, 0x83a7e2u, 0x83ab4fu, 3u);
-                if (result.flow != LUFIA2_EXECUTION_RETURNED)
-                    return result;
-                result = SceneActorChild(
-                    memory, cpu, child, context, 0x83a7e6u, 0x83ecdeu, 2u);
-                if (result.flow != LUFIA2_EXECUTION_RETURNED)
-                    return result;
-                if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
-                    return ExecutionHandoff(cpu, 0x83a7e9u);
-                OpLda(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
-                cpu->carry = 0u;
-                OpAdcValue(cpu, FIELD_ACTOR_OBJECT_OFFSET);
-                OpSta(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
-                result = SceneActorChild(
-                    memory, cpu, child, context, 0x83a7f0u, 0x83ab4fu, 3u);
-                if (result.flow != LUFIA2_EXECUTION_RETURNED)
-                    return result;
-                result = SceneActorChild(
-                    memory, cpu, child, context, 0x83a7f4u, 0x83fcd1u, 2u);
-                if (result.flow != LUFIA2_EXECUTION_RETURNED)
-                    return result;
-                result = SceneActorChild(
-                    memory, cpu, child, context, 0x83a7f7u, 0x848193u, 3u);
-                if (result.flow != LUFIA2_EXECUTION_RETURNED)
-                    return result;
-                if (!cpu->accumulator_is_8_bit)
-                    return ExecutionHandoff(cpu, 0x83a7fbu);
-                OpRepWidths(cpu, 0x10u);
-                OpPullX(memory, cpu);
-            }
+        if (PrepareSceneObject(memory, cpu)) {
+            Lufia2ExecutionResult result = SceneActorChild(
+                memory, cpu, child, context, 0x83a7e2u, 0x83ab4fu, 3u);
+            if (result.flow != LUFIA2_EXECUTION_RETURNED)
+                return result;
+            result = SceneActorChild(
+                memory, cpu, child, context, 0x83a7e6u, 0x83ecdeu, 2u);
+            if (result.flow != LUFIA2_EXECUTION_RETURNED)
+                return result;
+            if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+                return ExecutionHandoff(cpu, 0x83a7e9u);
+            OpLda(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+            cpu->carry = 0u;
+            OpAdcValue(cpu, FIELD_ACTOR_OBJECT_OFFSET);
+            OpSta(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT));
+            result = SceneActorChild(
+                memory, cpu, child, context, 0x83a7f0u, 0x83ab4fu, 3u);
+            if (result.flow != LUFIA2_EXECUTION_RETURNED)
+                return result;
+            result = SceneActorChild(
+                memory, cpu, child, context, 0x83a7f4u, 0x83fcd1u, 2u);
+            if (result.flow != LUFIA2_EXECUTION_RETURNED)
+                return result;
+            result = SceneActorChild(
+                memory, cpu, child, context, 0x83a7f7u, 0x848193u, 3u);
+            if (result.flow != LUFIA2_EXECUTION_RETURNED)
+                return result;
+            if (!cpu->accumulator_is_8_bit)
+                return ExecutionHandoff(cpu, 0x83a7fbu);
+            OpRepWidths(cpu, 0x10u);
+            OpPullX(memory, cpu);
         }
         OpDex(cpu);
     } while (!cpu->negative);
     return ExecutionReturned(0x83a801u);
 }
 
+static void CopySharedObjectSprite(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_OBJECT_STATE));
+    OpBitValue(cpu, 0x80u);
+    if (!cpu->zero) {
+        /* The original high byte contributes to the source index. */
+        TransferDirectToA(cpu);
+        OpLda(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE3A6));
+        OpCmpValue(cpu, 0xffu);
+        if (!cpu->zero) {
+            OpPushX(memory, cpu);
+            OpTax(cpu);
+            OpLda(memory, cpu, OpLongX(cpu, WRAM_OBJECT_SPRITE_SLOT_B));
+            ExchangeAccumulatorBytes(cpu);
+            OpLda(memory, cpu, OpLongX(cpu, WRAM_OBJECT_SPRITE_SLOT_A));
+            OpPullX(memory, cpu);
+            OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_SPRITE_SLOT_A));
+            ExchangeAccumulatorBytes(cpu);
+            OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_SPRITE_SLOT_B));
+        }
+    }
+}
+
 static void CopySharedObjectSprites(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, WRAM_OBJECT_STATE_COUNT - 1u);
     do {
-        OpLda(memory, cpu, OpAbsX(cpu, WRAM_OBJECT_STATE));
-        OpBitValue(cpu, 0x80u);
-        if (!cpu->zero) {
-            /* The original high byte contributes to the source index. */
-            TransferDirectToA(cpu);
-            OpLda(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE3A6));
-            OpCmpValue(cpu, 0xffu);
-            if (!cpu->zero) {
-                OpPushX(memory, cpu);
-                OpTax(cpu);
-                OpLda(memory, cpu, OpLongX(cpu, WRAM_OBJECT_SPRITE_SLOT_B));
-                ExchangeAccumulatorBytes(cpu);
-                OpLda(memory, cpu, OpLongX(cpu, WRAM_OBJECT_SPRITE_SLOT_A));
-                OpPullX(memory, cpu);
-                OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_SPRITE_SLOT_A));
-                ExchangeAccumulatorBytes(cpu);
-                OpSta(memory, cpu, OpLongX(cpu, WRAM_OBJECT_SPRITE_SLOT_B));
-            }
-        }
+        CopySharedObjectSprite(memory, cpu);
         OpDex(cpu);
     } while (!cpu->negative);
 }
@@ -204,4 +215,21 @@ Lufia2ExecutionResult Lufia2FieldRebuildSceneActors(
     CopySharedObjectSprites(memory, cpu);
     UnpackStatus(cpu, Pull8(memory, cpu));
     return ExecutionReturned(0x83a82du);
+}
+
+Lufia2ExecutionResult Lufia2FieldSceneObjectStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x83a7cau && entry != 0x83a804u) || cpu->program_bank != 0x83u ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit || cpu->decimal ||
+        cpu->x >= WRAM_OBJECT_STATE_COUNT)
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x83a7cau) {
+        if (PrepareSceneObject(memory, cpu))
+            return ExecutionHandoff(cpu, 0x83a7e2u);
+        OpDex(cpu);
+        return ExecutionHandoff(cpu, cpu->negative ? 0x83a801u : entry);
+    }
+    CopySharedObjectSprite(memory, cpu);
+    OpDex(cpu);
+    return ExecutionHandoff(cpu, cpu->negative ? 0x83a82cu : entry);
 }
