@@ -2,6 +2,7 @@
 #include "core/cpu_ops.h"
 #include "system/wram.h"
 #include "lufia2/menu.h"
+#include "lufia2/save_action_steps.h"
 #include "menu/name_entry_internal.h"
 
 enum {
@@ -13,6 +14,49 @@ static Lufia2ExecutionResult SaveDispatchChildUnwound(uint32_t site) {
     Lufia2ExecutionResult result = ExecutionReturned(site);
     result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
     return result;
+}
+
+typedef enum SaveInputAction {
+    SAVE_INPUT_WAIT,
+    SAVE_INPUT_CONFIRM,
+    SAVE_INPUT_CANCEL
+} SaveInputAction;
+
+static SaveInputAction ClassifySaveInput(Lufia2CpuState *cpu) {
+    OpCmpValue(cpu, 8u);
+    if (cpu->zero)
+        return SAVE_INPUT_CONFIRM;
+    OpCmpValue(cpu, 2u);
+    if (cpu->zero)
+        return SAVE_INPUT_CONFIRM;
+    OpCmpValue(cpu, 1u);
+    return cpu->zero ? SAVE_INPUT_CANCEL : SAVE_INPUT_WAIT;
+}
+
+static bool SaveMenuBackRequested(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_MENU_PRESSED_B));
+    OpBitValue(cpu, 4u);
+    return !cpu->zero;
+}
+
+static bool PrepareSlotCancel(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_MENU_PRESSED_B));
+    OpBitValue(cpu, 8u);
+    if (cpu->zero)
+        return false;
+    OpLdx(cpu, 2u);
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_MENU_ITEM_ROW));
+    if (cpu->zero)
+        return false;
+    OpStz(memory, cpu, OpAbsX(cpu, WRAM_MENU_ITEM_ROW));
+    return true;
+}
+
+static void FinishSlotCancel(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLoadA(cpu, 1u);
+    OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EFFECT_SPECIAL_PARTY));
+    OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E11DF));
+    cpu->carry = true;
 }
 
 Lufia2ExecutionResult Lufia2SaveRunMenuActions(
@@ -36,13 +80,8 @@ Lufia2ExecutionResult Lufia2SaveRunMenuActions(
         if (!CallChildWithFrame(memory, cpu, child, context,
                 0x82e9dfu, 0x828b08u, 2u, cpu->program_bank))
             return SaveDispatchChildUnwound(0x82e9dfu);
-        OpCmpValue(cpu, 8u);
-        bool selected = cpu->zero;
-        if (!selected) {
-            OpCmpValue(cpu, 2u);
-            selected = cpu->zero;
-        }
-        if (selected) {
+        const SaveInputAction action = ClassifySaveInput(cpu);
+        if (action == SAVE_INPUT_CONFIRM) {
             OpLoadA(cpu, 2u);
             if (!CallChildWithFrame(memory, cpu, child, context,
                     0x82e9f8u, 0x80953bu, 3u, cpu->program_bank))
@@ -69,12 +108,7 @@ Lufia2ExecutionResult Lufia2SaveRunMenuActions(
             OpSta(memory, cpu, OpAbs(cpu, WRAM_UNK_7E0B51));
             return Lufia2MenuNameEntryActions(memory, cpu, child, context);
         }
-        OpCmpValue(cpu, 1u);
-        if (!cpu->zero)
-            continue;
-        OpLda(memory, cpu, OpAbs(cpu, WRAM_MENU_PRESSED_B));
-        OpBitValue(cpu, 4u);
-        if (cpu->zero)
+        if (action != SAVE_INPUT_CANCEL || !SaveMenuBackRequested(memory, cpu))
             continue;
         if (!CallChildWithFrame(memory, cpu, child, context,
                 0x82ea29u, 0x82efb5u, 2u, cpu->program_bank))
@@ -100,34 +134,19 @@ Lufia2ExecutionResult Lufia2SaveRunSlotActions(
         if (!CallChildWithFrame(memory, cpu, child, context,
                 0x82ea3du, 0x828b08u, 2u, cpu->program_bank))
             return SaveDispatchChildUnwound(0x82ea3du);
-        OpCmpValue(cpu, 8u);
-        bool selected = cpu->zero;
-        if (!selected) {
-            OpCmpValue(cpu, 2u);
-            selected = cpu->zero;
-        }
-        if (!selected) {
-            OpCmpValue(cpu, 1u);
-            if (!cpu->zero)
+        const SaveInputAction action = ClassifySaveInput(cpu);
+        if (action != SAVE_INPUT_CONFIRM) {
+            if (action != SAVE_INPUT_CANCEL)
                 continue;
             if (!CallChildWithFrame(memory, cpu, child, context,
                     0x82ea54u, 0x82f3ddu, 2u, cpu->program_bank))
                 return SaveDispatchChildUnwound(0x82ea54u);
-            OpLda(memory, cpu, OpAbs(cpu, WRAM_MENU_PRESSED_B));
-            OpBitValue(cpu, 8u);
-            bool change = !cpu->zero;
-            if (change) {
-                OpLdx(cpu, 2u);
-                OpLda(memory, cpu, OpAbsX(cpu, WRAM_MENU_ITEM_ROW));
-                change = !cpu->zero;
-            }
-            if (!change) {
+            if (!PrepareSlotCancel(memory, cpu)) {
                 if (!CallChildWithFrame(memory, cpu, child, context,
                         0x82ea7eu, 0x82f3fcu, 2u, cpu->program_bank))
                     return SaveDispatchChildUnwound(0x82ea7eu);
                 continue;
             }
-            OpStz(memory, cpu, OpAbsX(cpu, WRAM_MENU_ITEM_ROW));
             if (!CallChildWithFrame(memory, cpu, child, context,
                     0x82ea69u, 0x8288cbu, 2u, cpu->program_bank))
                 return SaveDispatchChildUnwound(0x82ea69u);
@@ -136,10 +155,7 @@ Lufia2ExecutionResult Lufia2SaveRunSlotActions(
             if (!CallChildWithFrame(memory, cpu, child, context,
                     0x82ea71u, 0x82895bu, 2u, cpu->program_bank))
                 return SaveDispatchChildUnwound(0x82ea71u);
-            OpLoadA(cpu, 1u);
-            OpSta(memory, cpu, OpAbs(cpu, WRAM_BATTLE_EFFECT_SPECIAL_PARTY));
-            OpStz(memory, cpu, OpAbs(cpu, WRAM_UNK_7E11DF));
-            cpu->carry = true;
+            FinishSlotCancel(memory, cpu);
             return ExecutionReturned(0x82ea7du);
         }
         OpLoadA(cpu, 2u);
@@ -214,4 +230,31 @@ Lufia2ExecutionResult Lufia2SaveRunSlotActions(
         cpu->carry = false;
         return ExecutionReturned(0x82eaf3u);
     }
+}
+
+Lufia2ExecutionResult Lufia2SaveActionStep(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x82e9e2u && entry != 0x82ea40u && entry != 0x82ea57u &&
+         entry != 0x82ea74u) || cpu->program_bank != 0x82u ||
+        cpu->accumulator_is_8_bit != 1u || cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x82ea57u)
+        return ExecutionHandoff(cpu, PrepareSlotCancel(memory, cpu) ? 0x82ea69u : 0x82ea7eu);
+    if (entry == 0x82ea74u) {
+        FinishSlotCancel(memory, cpu);
+        return ExecutionHandoff(cpu, 0x82ea7du);
+    }
+    const SaveInputAction action = ClassifySaveInput(cpu);
+    if (action == SAVE_INPUT_CONFIRM) {
+        OpLoadA(cpu, 2u);
+        return ExecutionHandoff(cpu, entry == 0x82e9e2u ? 0x82e9f8u : 0x82ea99u);
+    }
+    if (action == SAVE_INPUT_CANCEL) {
+        if (entry == 0x82ea40u)
+            return ExecutionHandoff(cpu, 0x82ea54u);
+        if (SaveMenuBackRequested(memory, cpu))
+            return ExecutionHandoff(cpu, 0x82ea29u);
+    }
+    OpLoadA(cpu, 0u);
+    return ExecutionHandoff(cpu, entry == 0x82e9e2u ? 0x82e9dfu : 0x82ea3du);
 }
