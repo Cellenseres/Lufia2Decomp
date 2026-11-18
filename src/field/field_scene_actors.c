@@ -2,6 +2,7 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
 #include "lufia2/field.h"
+#include "lufia2/field_actor_rebuild_steps.h"
 #include "lufia2/field_scene_steps.h"
 #include "system/wram.h"
 
@@ -23,6 +24,49 @@ static Lufia2ExecutionResult SceneActorChild(
     return ExecutionReturned(site + frame + 1u);
 }
 
+static bool PrepareSceneActorSlot(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    const Lufia2ActorSlotView slot = Lufia2ActorSlotAt(memory, cpu, cpu->x);
+    LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_UNK_7E05D2));
+    OpCmpValue(cpu, 0xfeu);
+    if (!cpu->zero) {
+        OpCmpValue(cpu, 0xffu);
+        if (cpu->zero)
+            return false;
+    }
+    OpWriteX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT), cpu->x);
+    return true;
+}
+
+static bool AdvanceSceneActorSlot(Lufia2CpuState *cpu) {
+    OpDex(cpu);
+    return !cpu->negative;
+}
+
+static bool PrepareSceneActorSprite(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E05D2));
+    OpCmpValue(cpu, 0xfeu);
+    if (!cpu->zero)
+        return false;
+    OpRepWidths(cpu, 0x10u);
+    return true;
+}
+
+static void PrepareSceneActorGraphics(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpLda(memory, cpu, OpAbs(cpu, WRAM_WINDOW_MODE));
+    OpBitValue(cpu, 1u);
+    if (cpu->zero) {
+        OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
+        OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
+        OpBitValue(cpu, 0x20u);
+        if (cpu->zero) {
+            OpLoadA(cpu, 4u);
+            OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE4DE));
+        }
+    }
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E066A));
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E1471));
+}
+
 static Lufia2ExecutionResult RebuildActors(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
@@ -31,28 +75,15 @@ static Lufia2ExecutionResult RebuildActors(
     do {
         if (iterations++ == FIELD_SCENE_LOOP_LIMIT)
             return ExecutionHandoff(cpu, 0x83a776u);
-        const Lufia2ActorSlotView slot =
-            Lufia2ActorSlotAt(memory, cpu, cpu->x);
-        LoadA8(cpu, Lufia2ActorSlotReadMirrored(&slot, WRAM_UNK_7E05D2));
-        OpCmpValue(cpu, 0xfeu);
-        if (!cpu->zero) {
-            OpCmpValue(cpu, 0xffu);
-            if (cpu->zero) {
-                OpDex(cpu);
-                continue;
-            }
-        }
-        OpWriteX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT), cpu->x);
+        if (!PrepareSceneActorSlot(memory, cpu))
+            continue;
         Lufia2ExecutionResult result = SceneActorChild(
             memory, cpu, child, context, 0x83a783u, 0x83ab4fu, 3u);
         if (result.flow != LUFIA2_EXECUTION_RETURNED)
             return result;
         if (!cpu->accumulator_is_8_bit)
             return ExecutionHandoff(cpu, 0x83a787u);
-        OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E05D2));
-        OpCmpValue(cpu, 0xfeu);
-        if (cpu->zero) {
-            OpRepWidths(cpu, 0x10u);
+        if (PrepareSceneActorSprite(memory, cpu)) {
             result = SceneActorChild(
                 memory, cpu, child, context, 0x83a7bbu, 0x83f6cau, 2u);
             if (result.flow != LUFIA2_EXECUTION_RETURNED)
@@ -67,19 +98,7 @@ static Lufia2ExecutionResult RebuildActors(
                 return result;
             if (!cpu->accumulator_is_8_bit)
                 return ExecutionHandoff(cpu, 0x83a792u);
-            OpLda(memory, cpu, OpAbs(cpu, WRAM_WINDOW_MODE));
-            OpBitValue(cpu, 1u);
-            if (cpu->zero) {
-                OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
-                OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
-                OpBitValue(cpu, 0x20u);
-                if (cpu->zero) {
-                    OpLoadA(cpu, 4u);
-                    OpSta(memory, cpu, OpLongX(cpu, WRAM_UNK_7FE4DE));
-                }
-            }
-            OpLda(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E066A));
-            OpSta(memory, cpu, OpAbsX(cpu, WRAM_UNK_7E1471));
+            PrepareSceneActorGraphics(memory, cpu);
             result = SceneActorChild(
                 memory, cpu, child, context, 0x83a7aeu, 0x83aae5u, 2u);
             if (result.flow != LUFIA2_EXECUTION_RETURNED)
@@ -93,9 +112,34 @@ static Lufia2ExecutionResult RebuildActors(
             OpSepWidths(cpu, 0x10u);
         }
         OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, DP_ACTOR_SLOT)));
-        OpDex(cpu);
-    } while (!cpu->negative);
+    } while (AdvanceSceneActorSlot(cpu));
     return ExecutionReturned(0x83a7c5u);
+}
+
+Lufia2ExecutionResult Lufia2FieldRebuildActorStep(const Lufia2Memory *memory,
+                                                  Lufia2CpuState *cpu, uint32_t entry) {
+    if ((entry != 0x83a776u && entry != 0x83a787u && entry != 0x83a792u &&
+         entry != 0x83a7c2u) ||
+        cpu->program_bank != 0x83u || cpu->accumulator_is_8_bit != 1u ||
+        cpu->index_is_8_bit != 1u || cpu->direct_page || cpu->decimal ||
+        cpu->x >= WRAM_ACTOR_STATE_COUNT)
+        return ExecutionHandoff(cpu, entry);
+    if (entry == 0x83a787u)
+        return ExecutionHandoff(cpu, PrepareSceneActorSprite(memory, cpu) ? 0x83a7bbu
+                                                                          : 0x83a78eu);
+    if (entry == 0x83a792u) {
+        PrepareSceneActorGraphics(memory, cpu);
+        return ExecutionHandoff(cpu, 0x83a7aeu);
+    }
+    if (entry == 0x83a7c2u && !AdvanceSceneActorSlot(cpu))
+        return ExecutionHandoff(cpu, 0x83a7c5u);
+    for (unsigned slot = 0u; slot < 2u; ++slot) {
+        if (PrepareSceneActorSlot(memory, cpu))
+            return ExecutionHandoff(cpu, 0x83a783u);
+        if (!AdvanceSceneActorSlot(cpu))
+            return ExecutionHandoff(cpu, 0x83a7c5u);
+    }
+    return ExecutionHandoff(cpu, 0x83a776u);
 }
 
 static bool PrepareSceneObject(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
