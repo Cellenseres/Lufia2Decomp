@@ -1,7 +1,8 @@
-#include "lufia2/battle_target_name_setup.h"
 #include "battle/battle_internal.h"
-#include "lufia2/battle_target_name_steps.h"
 #include "lufia2/battle_target_marker_steps.h"
+#include "lufia2/battle_target_name_setup.h"
+#include "lufia2/battle_target_name_steps.h"
+#include "lufia2/battle_target_record_steps.h"
 
 enum {
     TARGET_DP_MODE = 0x24u,
@@ -32,74 +33,162 @@ enum {
                                (BATTLE_ENEMY_COUNT - 2u) * BATTLE_TARGET_RECORD_SIZE,
 };
 
-/* Clear selections, fill party records, capsule unavailable. */
-static void TargetBuildPartyRecords(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+static void TargetSaveSelectionRequest(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpPushX(memory, cpu);
+    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
+    PushDataBank(memory, cpu);
+}
+
+static void TargetPrepareRecordClear(Lufia2CpuState *cpu) {
     OpRepWidths(cpu, 0x20u);
     OpLdx(cpu, 0u);
     OpLoadA(cpu, BATTLE_PARTY_TARGET_COUNT + 1u + BATTLE_ENEMY_COUNT);
-    do {
-        OpStz(memory, cpu, OpAbsX(cpu, TARGET_PARTY_UNAVAILABLE));
-        OpInx(cpu);
-        OpInx(cpu);
-        OpInx(cpu);
-        OpInx(cpu);
-        OpDecA(cpu);
-    } while (!cpu->zero);
+}
+
+static void TargetClearSelectionRecord(const Lufia2Memory *memory,
+                                       Lufia2CpuState *cpu) {
+    OpStz(memory, cpu, OpAbsX(cpu, TARGET_PARTY_UNAVAILABLE));
+    OpInx(cpu);
+    OpInx(cpu);
+    OpInx(cpu);
+    OpInx(cpu);
+    OpDecA(cpu);
+}
+
+static void TargetBeginRecordList(Lufia2CpuState *cpu) {
     OpLdx(cpu, 0u);
     OpTxy(cpu);
-    do {
-        OpRepWidths(cpu, 0x20u);
-        OpLda(memory, cpu, OpLongX(cpu, 0x97b5c9u));
-        OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_TARGETS));
-        OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_RECORDS));
-        if (cpu->zero) {
-            OpLoadA(cpu, 0xffu);
-            OpSta(memory, cpu, OpAbsY(cpu, TARGET_PARTY_UNAVAILABLE));
-        }
-        OpSepWidths(cpu, 0x20u);
-        OpIny(cpu);
-        OpIny(cpu);
-        OpIny(cpu);
-        OpIny(cpu);
-        OpInx(cpu);
-        OpInx(cpu);
-        OpCpx(cpu, BATTLE_PARTY_SIZE * BATTLE_POINTER_SIZE);
-    } while (!cpu->zero);
+}
+
+static void TargetFillPartyRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpRepWidths(cpu, 0x20u);
+    OpLda(memory, cpu, OpLongX(cpu, 0x97b5c9u));
+    OpSta(memory, cpu, OpAbsY(cpu, WRAM_BATTLE_PARTY_TARGETS));
+    OpLda(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_PARTY_RECORDS));
+    if (cpu->zero) {
+        OpLoadA(cpu, 0xffu);
+        OpSta(memory, cpu, OpAbsY(cpu, TARGET_PARTY_UNAVAILABLE));
+    }
+    OpSepWidths(cpu, 0x20u);
+    OpIny(cpu);
+    OpIny(cpu);
+    OpIny(cpu);
+    OpIny(cpu);
+    OpInx(cpu);
+    OpInx(cpu);
+    OpCpx(cpu, BATTLE_PARTY_SIZE * BATTLE_POINTER_SIZE);
+}
+
+static void TargetFinishPartyRecords(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLoadA(cpu, 0xffu);
     OpSta(memory, cpu, OpAbs(cpu, TARGET_CAPSULE_UNAVAILABLE));
     TransferDirectToA(cpu);
+}
+
+/* Clear selections, fill party records, capsule unavailable. */
+static void TargetBuildPartyRecords(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    TargetPrepareRecordClear(cpu);
+    do {
+        TargetClearSelectionRecord(memory, cpu);
+    } while (!cpu->zero);
+    TargetBeginRecordList(cpu);
+    do {
+        TargetFillPartyRecord(memory, cpu);
+    } while (!cpu->zero);
+    TargetFinishPartyRecords(memory, cpu);
+}
+
+static void TargetSaveEnemyRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    PushAccumulator8(memory, cpu);
+    OpPushX(memory, cpu);
+    PushY(memory, cpu);
+}
+
+static void TargetFinishEnemyRecord(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    OpPullY(memory, cpu);
+    OpPullX(memory, cpu);
+    OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffu));
+    OpSta(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_UNAVAILABLE));
+    OpLda(memory, cpu, OpDp(cpu, 0x22u));
+    OpSta(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_ENEMY_TARGETS));
+    OpLda(memory, cpu, OpDp(cpu, 0x23u));
+    OpSta(memory, cpu, OpAbsX(cpu, (WRAM_BATTLE_ENEMY_TARGETS + 1u)));
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpIny(cpu);
+    OpInx(cpu);
+    OpInx(cpu);
+    OpInx(cpu);
+    OpInx(cpu);
+    OpIncA(cpu);
+    OpCmpValue(cpu, BATTLE_ENEMY_COUNT);
 }
 
 /* Fill enemy records from the child's results. */
 static bool TargetBuildEnemyRecords(BattleContext *battle) {
     const Lufia2Memory *memory = battle->memory;
     Lufia2CpuState *cpu = battle->cpu;
-    OpLdx(cpu, 0u);
-    OpTxy(cpu);
+    TargetBeginRecordList(cpu);
     do {
-        PushAccumulator8(memory, cpu);
-        OpPushX(memory, cpu);
-        PushY(memory, cpu);
+        TargetSaveEnemyRecord(memory, cpu);
         if (!BattleCall(battle, 0xd52eu, 0x81b8b1u, 2u))
             return false;
-        OpPullY(memory, cpu);
-        OpPullX(memory, cpu);
-        OpLoadA(cpu, (uint16_t)(OpA(cpu) ^ 0xffu));
-        OpSta(memory, cpu, OpAbsX(cpu, TARGET_ENEMY_UNAVAILABLE));
-        OpLda(memory, cpu, OpDp(cpu, 0x22u));
-        OpSta(memory, cpu, OpAbsX(cpu, WRAM_BATTLE_ENEMY_TARGETS));
-        OpLda(memory, cpu, OpDp(cpu, 0x23u));
-        OpSta(memory, cpu, OpAbsX(cpu, (WRAM_BATTLE_ENEMY_TARGETS + 1u)));
-        LoadA8(cpu, Pull8(memory, cpu));
-        OpIny(cpu);
-        OpInx(cpu);
-        OpInx(cpu);
-        OpInx(cpu);
-        OpInx(cpu);
-        OpIncA(cpu);
-        OpCmpValue(cpu, BATTLE_ENEMY_COUNT);
+        TargetFinishEnemyRecord(memory, cpu);
     } while (!cpu->zero);
     return true;
+}
+
+Lufia2ExecutionResult Lufia2BattleTargetRecordStep(const Lufia2Memory *memory,
+                                                   Lufia2CpuState *cpu,
+                                                   uint32_t entry) {
+    const bool wide = entry == 0x81d4f2u || entry == 0x81d4fcu;
+    const unsigned clear_count = BATTLE_PARTY_TARGET_COUNT + 1u + BATTLE_ENEMY_COUNT;
+    if (cpu->program_bank != 0x81u || cpu->direct_page || cpu->decimal ||
+        cpu->index_is_8_bit || cpu->accumulator_is_8_bit > 1u ||
+        (entry != 0x81d500u && cpu->accumulator_is_8_bit != !wide) ||
+        (entry == 0x81d4f2u &&
+         (!cpu->accumulator || cpu->accumulator > clear_count ||
+          cpu->x % BATTLE_TARGET_RECORD_SIZE ||
+          cpu->x / BATTLE_TARGET_RECORD_SIZE + cpu->accumulator != clear_count)) ||
+        (entry == 0x81d500u && (cpu->x >= BATTLE_PARTY_SIZE * BATTLE_POINTER_SIZE ||
+                                cpu->x % BATTLE_POINTER_SIZE || cpu->y != cpu->x * 2u)))
+        return ExecutionHandoff(cpu, entry);
+    switch (entry) {
+    case 0x81d4e5u:
+        TargetSaveSelectionRequest(memory, cpu);
+        TargetPrepareRecordClear(cpu);
+        /* Fall through to two bounded clear iterations. */
+    case 0x81d4f2u:
+        for (unsigned record = 0u; record < 2u; ++record) {
+            TargetClearSelectionRecord(memory, cpu);
+            if (cpu->zero)
+                return ExecutionHandoff(cpu, 0x81d4fcu);
+        }
+        return ExecutionHandoff(cpu, 0x81d4f2u);
+    case 0x81d4fcu:
+        TargetBeginRecordList(cpu);
+        /* Fall through to the first party record. */
+    case 0x81d500u:
+        TargetFillPartyRecord(memory, cpu);
+        return ExecutionHandoff(cpu, cpu->zero ? 0x81d521u : 0x81d500u);
+    case 0x81d521u:
+        TargetFinishPartyRecords(memory, cpu);
+        TargetBeginRecordList(cpu);
+        TargetSaveEnemyRecord(memory, cpu);
+        return ExecutionHandoff(cpu, 0x81d52eu);
+    case 0x81d52bu:
+        TargetSaveEnemyRecord(memory, cpu);
+        return ExecutionHandoff(cpu, 0x81d52eu);
+    case 0x81d531u:
+        TargetFinishEnemyRecord(memory, cpu);
+        if (cpu->zero)
+            return ExecutionHandoff(cpu, 0x81d54du);
+        TargetSaveEnemyRecord(memory, cpu);
+        return ExecutionHandoff(cpu, 0x81d52eu);
+    default:
+        return ExecutionHandoff(cpu, entry);
+    }
 }
 
 static bool TargetBuildSelectionRecords(BattleContext *battle) {
@@ -822,10 +911,7 @@ Lufia2ExecutionResult Lufia2BattleChooseTargets(const Lufia2Memory *memory,
     PushAccumulator8(memory, cpu);
     if (!BattleCall(&battle, 0xd4e1u, BATTLE_ROUTINE_FRAME_INPUT, 3u))
         return BattleChildUnwound(&battle);
-    LoadA8(cpu, Pull8(memory, cpu));
-    OpPushX(memory, cpu);
-    OpSta(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
-    PushDataBank(memory, cpu);
+    TargetSaveSelectionRequest(memory, cpu);
     if (!TargetBuildSelectionRecords(&battle))
         return BattleChildUnwound(&battle);
     OpLda(memory, cpu, OpDp(cpu, TARGET_DP_MODE));
