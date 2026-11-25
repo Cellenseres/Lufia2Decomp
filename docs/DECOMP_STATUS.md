@@ -159,27 +159,13 @@ pointer layouts and the original bank conversion. See `EXTERNAL_RESEARCH.md`.
 This identifies table scope, not another semantic function or native binding.
 The raw bank-86 origin `86:F416` remains unassigned; code and guards are unchanged.
 
-## Legacy battle condition assignment
+## Summon fallback condition
 
-`Lufia2BattleSetLegacyCondition` reconstructs `85:BB3A` through `85:B45E`.
-It switches to a 16-bit accumulator and writes condition value two to `7F:F42E`.
-The original block lies between the summon handler and action-13 handler,
-but is not an entry in the nominal `00..5C` opcode table. Its incoming caller
-and opcode remain unproved; no canonical metadata or runtime binding is added.
-
-MSVC and Clang each pass 32,768 original-ROM CPU/full-WRAM/ordered-write cases,
-three no-access guards and two altered-ROM controls. The matrix crosses both
-M/X widths, sixteen C/N/Z/V combinations, all DB values and both decimal modes.
-DP, stack, A, I and previous condition vary. REP20 normalizes M; X and the other
-unaffected state remain intact. Strict Windows/GCC/Clang libraries, C++ header,
-archive export and metadata checks pass. Resource CLI binaries are identical.
-
-Existing source equals its previous revision after removing only the added
-function and prototype. All other 564 canonical source hashes and 17 CFG input
-hashes match, so the prior CFG inventory and unchanged-function proofs are
-reused. Source metrics and the VM-source hash are refreshed incrementally.
-No fresh whole-parent, runtime admission or performance claim follows. Full
-unrelated regression and game builds are deferred; tests remain private.
+`85:BB3A` has an original caller. Battle script opcode `2D` (`85:BB15`,
+entry 45 of the table at `85:B483`) branches there with `BCS` at `85:BB1E`
+when the summon is unavailable. The block writes condition value two to
+`7F:F42E` and continues at `85:B45E`. `BattleOpSummonEnemy` already implements
+this branch, so the former standalone `Lufia2BattleSetLegacyCondition` was removed.
 
 ## Legacy object slot-value branch
 
