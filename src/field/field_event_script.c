@@ -19,17 +19,7 @@ void Lufia2EventNextByte(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    LoadScriptByteY(memory, cpu);                              /* E8B9 */
-    IncrementY16(cpu);
-    if (!cpu->negative) {
-        PushAccumulator8(memory, cpu);                         /* E8BF */
-        LoadA8(cpu, (uint8_t)(Read8(memory, EVENT_SCRIPT_BANK) + 1u));
-        Write8(memory, EVENT_SCRIPT_BANK, A8(cpu));
-        PushAccumulator8(memory, cpu);
-        PullDataBank(memory, cpu);
-        LoadA8(cpu, Pull8(memory, cpu));
-        LoadY16(cpu, EVENT_BANK_WINDOW);
-    }
+    Lufia2EventReadByteBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -39,15 +29,7 @@ void Lufia2EventPrevByte(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    cpu->y = (uint16_t)(cpu->y - 1u);                          /* E8D0 */
-    SetNz16(cpu, cpu->y);
-    if (!cpu->negative) {
-        LoadA8(cpu, (uint8_t)(Read8(memory, EVENT_SCRIPT_BANK) - 1u));
-        Write8(memory, EVENT_SCRIPT_BANK, A8(cpu));
-        PushAccumulator8(memory, cpu);
-        PullDataBank(memory, cpu);
-        LoadY16(cpu, 0xffffu);
-    }
+    Lufia2EventRewindByteBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -57,12 +39,7 @@ void Lufia2EventNextWord(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    Lufia2EventNextByte(memory, cpu, 0xe8afu);                       /* E8AD */
-    PushAccumulator8(memory, cpu);
-    Lufia2EventNextByte(memory, cpu, 0xe8b3u);
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Pull8(memory, cpu));
-    SetAccumulatorWidth(cpu, 0);
+    (void)Lufia2EventReadWordBody(memory, cpu, Lufia2EventReaderChild, (void *)memory);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -117,33 +94,7 @@ void Lufia2EventVariable(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    Compare8(cpu, A8(cpu), 0xfbu);                             /* E9BC */
-    if (cpu->carry) {
-        cpu->carry = 1;
-        Sbc8(cpu, 0xfbu);
-        /* DB-relative: only the script bank reaches the multiplier. */
-        StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
-        StoreAImmediate8(memory, cpu, 0x08u, SNES_WRMPYB);
-        LoadA8(cpu, 0x7fu);
-        StoreADirect8(memory, cpu, 0x5fu);
-        SetAccumulatorWidth(cpu, 0);                           /* E9CF */
-        cpu->carry = 0;
-        LoadADirect16(memory, cpu, DP_ACTOR_SLOT);
-        Add16Value(cpu, EVENT_SLOT_VARIABLES_LOW);
-        Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDMPYL, 0));
-        StoreADirect16(memory, cpu, 0x5du);
-        SetAccumulatorWidth(cpu, 1);
-        TransferDirectToA(cpu);                                /* E9DE */
-        LoadA8(cpu, Read8(memory, DirectLongPointer(memory, cpu, 0x5du)));
-        Compare8(cpu, A8(cpu), 0xe0u);
-        if (!cpu->carry) {
-            Compare8(cpu, A8(cpu), 0xc0u);
-            if (cpu->carry) {
-                cpu->carry = 1;
-                Sbc8(cpu, 0xc0u);
-            }
-        }
-    }
+    Lufia2EventVariableBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -153,25 +104,7 @@ void Lufia2EventValue(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    Compare8(cpu, A8(cpu), 0xfbu);                             /* E9ED */
-    if (!cpu->zero) {
-        Lufia2EventVariable(memory, cpu, 0xe9f3u);
-        Compare8(cpu, A8(cpu), 0xc0u);
-        if (!cpu->carry) {
-            Compare8(cpu, A8(cpu), 0xa0u);
-            if (cpu->carry) {
-                PushIndex(memory, cpu);                        /* E9FC */
-                ExchangeAccumulatorBytes(cpu);
-                LoadA8(cpu, 0x00u);
-                ExchangeAccumulatorBytes(cpu);
-                TransferAToX(cpu);
-                TransferDirectToA(cpu);
-                LoadA8(cpu, Read8(memory,
-                    LongIndexedAddress(EVENT_VARIABLES, cpu->x)));
-                cpu->x = PullIndexValue(memory, cpu);
-            }
-        }
-    }
+    (void)Lufia2EventValueBody(memory, cpu, Lufia2EventReaderChild, (void *)memory);
     SimulateRtsFrame(memory, cpu);
 }
 

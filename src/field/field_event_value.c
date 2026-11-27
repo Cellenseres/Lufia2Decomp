@@ -19,13 +19,7 @@ static uint8_t EventValueReady(const Lufia2CpuState *cpu) {
         !cpu->index_is_8_bit && !cpu->decimal;
 }
 
-Lufia2ExecutionResult Lufia2FieldResolveEventVariable(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    (void)child;
-    (void)context;
-    if (!EventValueReady(cpu))
-        return ExecutionHandoff(cpu, 0x80e9bcu);
+void Lufia2EventVariableBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpCmpValue(cpu, VALUE_SLOT_FIRST);
     if (cpu->carry) {
         cpu->carry = 1u;
@@ -53,21 +47,25 @@ Lufia2ExecutionResult Lufia2FieldResolveEventVariable(
             }
         }
     }
+}
+
+Lufia2ExecutionResult Lufia2FieldResolveEventVariable(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    (void)child;
+    (void)context;
+    if (!EventValueReady(cpu))
+        return ExecutionHandoff(cpu, 0x80e9bcu);
+    Lufia2EventVariableBody(memory, cpu);
     return ExecutionReturned(0x80e9ecu);
 }
 
-Lufia2ExecutionResult Lufia2FieldResolveEventValue(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+uint32_t Lufia2EventValueBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context) {
-    if (!EventValueReady(cpu) || !child)
-        return ExecutionHandoff(cpu, 0x80e9edu);
     OpCmpValue(cpu, VALUE_SLOT_FIRST);
     if (!cpu->zero) {
-        if (!CallChildWithFrame(memory, cpu, child, context, 0x80e9f1u, 0x80e9bcu, 2u, 0x80u)) {
-            Lufia2ExecutionResult result = ExecutionReturned(0x80e9f1u);
-            result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
-            return result;
-        }
+        if (!CallChildWithFrame(memory, cpu, child, context, 0x80e9f1u, 0x80e9bcu, 2u, 0x80u))
+            return 0x80e9f1u;
         OpCmpValue(cpu, VALUE_LOCAL_FIRST);
         if (!cpu->carry) {
             OpCmpValue(cpu, VALUE_GLOBAL_FIRST);
@@ -82,6 +80,19 @@ Lufia2ExecutionResult Lufia2FieldResolveEventValue(
                 cpu->x = PullIndexValue(memory, cpu);
             }
         }
+    }
+    return 0u;
+}
+
+Lufia2ExecutionResult Lufia2FieldResolveEventValue(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!EventValueReady(cpu) || !child)
+        return ExecutionHandoff(cpu, 0x80e9edu);
+    if (Lufia2EventValueBody(memory, cpu, child, context)) {
+        Lufia2ExecutionResult result = ExecutionReturned(0x80e9f1u);
+        result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        return result;
     }
     return ExecutionReturned(0x80ea08u);
 }

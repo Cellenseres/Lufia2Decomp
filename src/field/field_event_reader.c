@@ -7,13 +7,7 @@ static uint8_t EventReaderReady(const Lufia2CpuState *cpu) {
     return cpu->program_bank == 0x80u && !cpu->index_is_8_bit && !cpu->decimal;
 }
 
-Lufia2ExecutionResult Lufia2FieldRewindEventByte(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    (void)child;
-    (void)context;
-    if (!EventReaderReady(cpu) || !cpu->accumulator_is_8_bit)
-        return ExecutionHandoff(cpu, 0x80e8d0u);
+void Lufia2EventRewindByteBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpDey(cpu);
     if (!cpu->negative) {
         OpLda(memory, cpu, EVENT_SCRIPT_BANK);
@@ -23,7 +17,32 @@ Lufia2ExecutionResult Lufia2FieldRewindEventByte(
         PullDataBank(memory, cpu);
         OpLdy(cpu, 0xffffu);
     }
+}
+
+Lufia2ExecutionResult Lufia2FieldRewindEventByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    (void)child;
+    (void)context;
+    if (!EventReaderReady(cpu) || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x80e8d0u);
+    Lufia2EventRewindByteBody(memory, cpu);
     return ExecutionReturned(0x80e8e1u);
+}
+
+uint32_t Lufia2EventReadWordBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    const uint32_t sites[] = {0x80e8adu, 0x80e8b1u};
+    for (unsigned byte = 0u; byte < 2u; ++byte) {
+        if (!CallChildWithFrame(memory, cpu, child, context, sites[byte], 0x80e8b9u, 2u, 0x80u))
+            return sites[byte];
+        if (!byte)
+            PushAccumulator8(memory, cpu);
+    }
+    ExchangeAccumulatorBytes(cpu);
+    LoadA8(cpu, Pull8(memory, cpu));
+    OpRepWidths(cpu, 0x20u);
+    return 0u;
 }
 
 Lufia2ExecutionResult Lufia2FieldReadEventWord(
@@ -31,20 +50,29 @@ Lufia2ExecutionResult Lufia2FieldReadEventWord(
     Lufia2PushedChildCall child, void *context) {
     if (!EventReaderReady(cpu) || !cpu->accumulator_is_8_bit || !child)
         return ExecutionHandoff(cpu, 0x80e8adu);
-    const uint32_t sites[] = {0x80e8adu, 0x80e8b1u};
-    for (unsigned byte = 0u; byte < 2u; ++byte) {
-        if (!CallChildWithFrame(memory, cpu, child, context, sites[byte], 0x80e8b9u, 2u, 0x80u)) {
-            Lufia2ExecutionResult result = ExecutionReturned(sites[byte]);
-            result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
-            return result;
-        }
-        if (!byte)
-            PushAccumulator8(memory, cpu);
+    const uint32_t unwound = Lufia2EventReadWordBody(memory, cpu, child, context);
+    if (unwound) {
+        Lufia2ExecutionResult result = ExecutionReturned(unwound);
+        result.flow = LUFIA2_EXECUTION_CHILD_UNWOUND;
+        return result;
     }
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Pull8(memory, cpu));
-    OpRepWidths(cpu, 0x20u);
     return ExecutionReturned(0x80e8b8u);
+}
+
+uint8_t Lufia2EventReaderChild(void *context, Lufia2CpuState *cpu,
+    uint32_t target, uint32_t site, uint8_t frame) {
+    const Lufia2Memory *memory = context;
+    (void)site;
+    if (frame != 2u || (target != 0x80e8b9u && target != 0x80e9bcu)) {
+        cpu->resume_pc = target;
+        return 0u;
+    }
+    if (target == 0x80e8b9u)
+        Lufia2EventReadByteBody(memory, cpu);
+    else
+        Lufia2EventVariableBody(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    return 1u;
 }
 
 Lufia2ExecutionResult Lufia2FieldSetEventPointer(
