@@ -1061,11 +1061,15 @@ static unsigned EventOpCameraLayers(
 /* $10: redraw all layers ($83:8E66), then set redraw bits 0-1. */
 static unsigned EventOpRedrawLayers(
     const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
+    Lufia2CpuState *cpu,
+    uint32_t *handoff) {
     uint32_t redraw;
     uint8_t value;
 
-    Lufia2FieldRedrawLayers(memory, cpu, 0xd310u);             /* D30D */
+    if (!Lufia2FieldRedrawLayers(memory, cpu, 0xd310u)) {      /* D30D */
+        *handoff = cpu->resume_pc;
+        return EVENT_OPCODE_HANDOFF;
+    }
     LoadA8(cpu, 0x03u);
     redraw = AbsoluteIndexedAddress(cpu, WRAM_EVENT_REDRAW, 0);  /* TSB */
     value = Read8(memory, redraw);
@@ -1247,7 +1251,7 @@ static unsigned EventScriptOpcode(
     /* Heavy opcodes count more toward the per-tick cap. */
     if (handler == EVENT_OP_REDRAW_LAYERS) {
         run->total += 255u;
-        return EventOpRedrawLayers(memory, cpu);
+        return EventOpRedrawLayers(memory, cpu, handoff);
     }
     if (handler == EVENT_OP_SCROLL) {
         run->total += 63u;

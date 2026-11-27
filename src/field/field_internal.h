@@ -40,8 +40,8 @@ void Lufia2FieldRedrawRegion(
     uint8_t return_bank,
     uint16_t return_address);
 
-/* $83:8E66: redraw all four BG layers. */
-void Lufia2FieldRedrawLayers(
+/* $83:8E66: redraw all four BG layers; 0 on handoff. */
+uint8_t Lufia2FieldRedrawLayers(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address);
