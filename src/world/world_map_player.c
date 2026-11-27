@@ -140,6 +140,15 @@ Lufia2ExecutionResult Lufia2WorldMapRestorePlayerObject(
     return ExecutionReturned(0x86a217u);
 }
 
+Lufia2ExecutionResult Lufia2WorldMapRejectPlayerMove(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    (void)memory;
+    if (cpu->program_bank != 0x86u)
+        return ExecutionHandoff(cpu, 0x869929u);
+    cpu->carry = 1u;
+    return ExecutionReturned(0x86992au);
+}
+
 static Lufia2ExecutionResult AcceptPlayerMove(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, Lufia2PushedChildCall child, void *context) {
     Lufia2ExecutionResult result;
@@ -204,8 +213,7 @@ static Lufia2ExecutionResult CheckPlayerMove(const Lufia2Memory *memory,
     if (!PlayerChild(memory, cpu, child, context,
             0x869926u, 0x86992bu, 2u, &result))
         return result;
-    cpu->carry = 1u;
-    return ExecutionReturned(0x86992au);
+    return Lufia2WorldMapRejectPlayerMove(memory, cpu);
 }
 
 static Lufia2ExecutionResult MovePlayerTile(const Lufia2Memory *memory,
