@@ -814,35 +814,14 @@ Lufia2ExecutionResult Lufia2WorldMapStreamEdges(
 }
 
 enum {
-    REGION_INDEX = 0x09ebu,
     REGION_POINT_X = 0x58u,
     REGION_POINT_Y = 0x5au,
-    REGION_BANK_SCRATCH = 0x10u,
     REGION_ENTRY_SIZE = 9u,
     REGION_ENTRY_MIN_X = 1u,
     REGION_ENTRY_MIN_Y = 2u,
     REGION_ENTRY_MAX_X = 3u,
     REGION_ENTRY_MAX_Y = 4u,
 };
-
-/* DB at the map region list, X at entry one. */
-static void WorldMapRegionList(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    SetAccumulatorWidth(cpu, 0);
-    LoadY16(cpu, Read16AbsoluteIndexed(memory, cpu, REGION_INDEX, 0));
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0xce36u, cpu->y));
-    AslA16(cpu);
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0xce36u, cpu->y));
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0xcffcbeu, cpu->x)));
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
-    StoreADirect8(memory, cpu, REGION_BANK_SCRATCH);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0xcffcbcu, cpu->x)));
-    TransferAToX(cpu);
-    cpu->carry = 0;
-}
 
 /* Is point ($58, $5A) inside region X? */
 static bool WorldMapRegionContains(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
@@ -870,7 +849,9 @@ Lufia2ExecutionResult Lufia2WorldMapRegionSearch(const Lufia2Memory *memory,
         return ExecutionHandoff(cpu, 0x869eddu);
     PushDataBank(memory, cpu); /* 9EDD */
     SimulateJsrFrame(memory, cpu, 0x9ee0u);
-    WorldMapRegionList(memory, cpu); /* 9F35 */
+    const Lufia2ExecutionResult list = Lufia2WorldMapResolveResourcePointer(memory, cpu);
+    if (list.flow != LUFIA2_EXECUTION_RETURNED)
+        return list;
     SimulateRtsFrame(memory, cpu);
     Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x0006u, cpu->x));
     TransferAToX(cpu);                                         /* 9EE4 */
