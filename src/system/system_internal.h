@@ -39,4 +39,7 @@ void Lufia2CallCosine(
     uint8_t return_bank,
     uint16_t return_address);
 
+/* Body shared with the bound Lufia2SystemDivide24ByByte. */
+void Lufia2SystemDivide24ByByteBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #endif

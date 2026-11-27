@@ -44,6 +44,13 @@ void Lufia2FieldRedrawRegion(
 uint32_t Lufia2FieldSelectActorByIdBody(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, Lufia2PushedChildCall child, void *context);
 
+/* Bodies of $83:AAE5 and $83:FCD1 shared with their bound entries. */
+void Lufia2ActorQueueSceneSpriteUploadBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+void Lufia2ObjectQueueSceneSpriteUploadBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Body of $80:BFAA; 0 when its scan limit hands off at $80:BFBC. */
+uint8_t Lufia2FieldFindHeaderRecordBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* $83:8E66: redraw all four BG layers; 0 on handoff. */
 uint8_t Lufia2FieldRedrawLayers(
     const Lufia2Memory *memory,

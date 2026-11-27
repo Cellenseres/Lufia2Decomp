@@ -1,5 +1,6 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "field/field_internal.h"
 #include "lufia2/actor.h"
 #include "lufia2/actor_scene_claim_steps.h"
 #include "lufia2/actor_scene_reset_steps.h"
@@ -130,10 +131,7 @@ Lufia2ExecutionResult Lufia2ActorResetSceneSlotStep(
     return ExecutionHandoff(cpu, 0x83a6c1u);
 }
 
-Lufia2ExecutionResult Lufia2ActorQueueSceneSpriteUpload(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x83u || cpu->decimal)
-        return ExecutionHandoff(cpu, 0x83aae5u);
+void Lufia2ActorQueueSceneSpriteUploadBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     SetAccumulatorWidth(cpu, 1u);
     SetIndexWidth(cpu, 1u);
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
@@ -182,13 +180,17 @@ Lufia2ExecutionResult Lufia2ActorQueueSceneSpriteUpload(
     OpIny(cpu);
     OpIny(cpu);
     Write8(memory, OpAbs(cpu, SPRITE_UPLOAD_CURSOR), (uint8_t)cpu->y);
+}
+
+Lufia2ExecutionResult Lufia2ActorQueueSceneSpriteUpload(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83aae5u);
+    Lufia2ActorQueueSceneSpriteUploadBody(memory, cpu);
     return ExecutionReturned(0x83ab4eu);
 }
 
-Lufia2ExecutionResult Lufia2ObjectQueueSceneSpriteUpload(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit)
-        return ExecutionHandoff(cpu, 0x83fcd1u);
+void Lufia2ObjectQueueSceneSpriteUploadBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdy(cpu, OpReadX(memory, cpu, OpAbs(cpu, SPRITE_UPLOAD_CURSOR)));
     LoadA16(cpu, cpu->direct_page);
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
@@ -215,5 +217,12 @@ Lufia2ExecutionResult Lufia2ObjectQueueSceneSpriteUpload(
         Write8(memory, OpAbs(cpu, SPRITE_UPLOAD_CURSOR), (uint8_t)cpu->y);
     else
         OpWrite16(memory, OpAbs(cpu, SPRITE_UPLOAD_CURSOR), cpu->y);
+}
+
+Lufia2ExecutionResult Lufia2ObjectQueueSceneSpriteUpload(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83fcd1u);
+    Lufia2ObjectQueueSceneSpriteUploadBody(memory, cpu);
     return ExecutionReturned(0x83fd0au);
 }

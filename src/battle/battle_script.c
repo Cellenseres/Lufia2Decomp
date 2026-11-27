@@ -418,34 +418,7 @@ static void BattleDivide(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x85u, return_address);
-    PushDataBank(memory, cpu);                                 /* DC6F */
-    Push8(memory, cpu, 0x85u);
-    PullDataBank(memory, cpu);
-    LoadX16(cpu, Read16Direct(memory, cpu, 0x5eu));
-    StoreWordAbsolute(memory, cpu, SNES_WRDIVL, cpu->x);
-    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
-    StoreAAbsolute8(memory, cpu, SNES_WRDIVB, 0);
-    PushIndex(memory, cpu);
-    cpu->x = PullIndexValue(memory, cpu);
-    LoadA8(cpu, DirectByte(memory, cpu, 0x5du));
-    ExchangeAccumulatorBytes(cpu);
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDDIVL, 0));
-    LoadAAbsolute8(memory, cpu, SNES_RDMPYL, 0);
-    ExchangeAccumulatorBytes(cpu);
-    LoadY16(cpu, cpu->accumulator);
-    StoreWordAbsolute(memory, cpu, SNES_WRDIVL, cpu->y);
-    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
-    StoreAAbsolute8(memory, cpu, SNES_WRDIVB, 0);
-    LoadA8(cpu, (uint8_t)cpu->x);
-    ExchangeAccumulatorBytes(cpu);
-    StoreADirect8(memory, cpu, 0x5fu);
-    LoadA8(cpu, 0x00u);
-    SetAccumulatorWidth(cpu, 0);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, SNES_RDDIVL, 0));
-    Write16Direct(memory, cpu, 0x5du, cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
-    PullDataBank(memory, cpu);
+    Lufia2SystemDivide24ByByteBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 

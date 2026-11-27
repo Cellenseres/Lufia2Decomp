@@ -285,24 +285,6 @@ static int Text8E(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return DrawString(memory, cpu, return_address, out);
 }
 
-/* $82:9214 / $82:922D: clear flag bytes for set bits of X. */
-static void MenuClearSlots(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t table) {
-    Push8(memory, cpu, PackStatus(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    SetIndexWidth(cpu, 0);
-    TransferXToA(cpu);
-    LoadX16(cpu, 0x0000u);
-    do {
-        LsrA16(cpu);
-        if (cpu->carry)
-            Write8(memory, AbsoluteIndexedAddress(cpu, table, cpu->x), 0);
-        IncrementX16(cpu);
-        Compare16(cpu, cpu->x, 0x0010u);
-    } while (!cpu->zero);
-    UnpackStatus(cpu, Pull8(memory, cpu));
-}
-
 /* $82:D721: shop windows; the first only with $1540 bit 1. */
 Lufia2ExecutionResult Lufia2MenuShopWindows(
     const Lufia2Memory *memory,
@@ -376,11 +358,11 @@ Lufia2ExecutionResult Lufia2MenuNameEntryWindows(
     SetAccumulatorWidth(cpu, 0);
     LoadX16(cpu, 0xffffu);
     SimulateJslFrame(memory, cpu, 0x82u, 0xf0aau);
-    MenuClearSlots(memory, cpu, MENU_SPRITE_ACTIVE);
+    Lufia2MenuClearMaskedSpriteFlags(memory, cpu, MENU_SPRITE_ACTIVE);
     SimulateRtlFrame(memory, cpu);
     LoadX16(cpu, 0xffffu);
     SimulateJslFrame(memory, cpu, 0x82u, 0xf0b1u);
-    MenuClearSlots(memory, cpu, 0x11e8u);
+    Lufia2MenuClearMaskedSpriteFlags(memory, cpu, MENU_SPRITE_ACTIVE + 16u);
     SimulateRtlFrame(memory, cpu);
     Window(memory, cpu, 0x0108u, 0x0803u, 0xf0bau);
     Window(memory, cpu, 0x0118u, 0x1003u, 0xf0c3u);
@@ -593,7 +575,7 @@ Lufia2ExecutionResult Lufia2MenuShopParty(
 
     LoadX16(cpu, 0xf7f0u);
     SimulateJslFrame(memory, cpu, 0x82u, 0xd74fu);
-    MenuClearSlots(memory, cpu, MENU_SPRITE_ACTIVE);
+    Lufia2MenuClearMaskedSpriteFlags(memory, cpu, MENU_SPRITE_ACTIVE);
     SimulateRtlFrame(memory, cpu);
     if (Text8E(memory, cpu, 0xccfdu, 0xd75fu, &text))
         return text;
@@ -1697,7 +1679,7 @@ Lufia2ExecutionResult Lufia2MenuWarpList(
 
     LoadX16(cpu, 0xffb0u);
     SimulateJslFrame(memory, cpu, 0x82u, 0x9cb8u);
-    MenuClearSlots(memory, cpu, MENU_SPRITE_ACTIVE);
+    Lufia2MenuClearMaskedSpriteFlags(memory, cpu, MENU_SPRITE_ACTIVE);
     SimulateRtlFrame(memory, cpu);
     StoreA8Absolute(memory, cpu, 0x153fu, 0x01u);
     SetAccumulatorWidth(cpu, 0);

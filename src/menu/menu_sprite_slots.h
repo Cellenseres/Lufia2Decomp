@@ -1,6 +1,8 @@
 #ifndef LUFIA2_MENU_SPRITE_SLOTS_H
 #define LUFIA2_MENU_SPRITE_SLOTS_H
 
+#include "lufia2/execution.h"
+
 /* Menu sprite slots: 48 byte arrays in bank $7E. */
 enum {
     MENU_SPRITE_SLOTS = 0x30u,
@@ -20,5 +22,9 @@ enum {
     MENU_SPRITE_FRAME_INDEX = 0x1448u, /* frame within the animation */
     MENU_SPRITE_TIMER = 0x1478u,       /* frames left on the current frame */
 };
+
+/* $82:9214 body: clear the flag byte at base + n for each set bit n of X. */
+void Lufia2MenuClearMaskedSpriteFlags(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, uint16_t flags_base);
 
 #endif

@@ -248,29 +248,7 @@ static void FieldObjectSpriteUpload(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
     SimulateJsrFrame(memory, cpu, 0xa4a0u);
-    LoadY8(cpu, AbsoluteByte(memory, cpu, 0x0732u, 0));        /* FCD1 */
-    TransferDirectToA(cpu);
-    LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
-    AslA8(cpu);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x83abfcu, cpu->x)));
-    StoreAAbsolute16(memory, cpu, 0x11f9u, cpu->y);
-    LoadXDirect8(memory, cpu, DP_SLOT_WORD_OFFSET);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fe05eu, cpu->x)));
-    StoreAAbsolute16(memory, cpu, 0x11e9u, cpu->y);
-    SetAccumulatorWidth(cpu, 1);
-    LoadXDirect8(memory, cpu, DP_SLOT_RECORD_OFFSET);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fd896u, cpu->x)));
-    StoreAAbsolute8(memory, cpu, 0x11d9u, cpu->y);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x7fd894u, cpu->x)));
-    StoreAAbsolute16(memory, cpu, 0x05c2u, cpu->y);
-    SetAccumulatorWidth(cpu, 1);
-    LoadY8(cpu, (uint8_t)(cpu->y + 1u));
-    LoadY8(cpu, (uint8_t)(cpu->y + 1u));
-    Write8(memory, AbsoluteIndexedAddress(cpu, 0x0732u, 0), (uint8_t)cpu->y);
+    Lufia2ObjectQueueSceneSpriteUploadBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -294,59 +272,8 @@ static void FieldObjectReload(
 static void FieldActorFrameUpload(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    uint32_t pointer;
-
     SimulateJsrFrame(memory, cpu, 0xa3d2u);
-    SetAccumulatorWidth(cpu, 1);                               /* AAE5 */
-    SetIndexWidth(cpu, 1);
-    LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
-    TransferDirectToA(cpu);
-    LoadAAbsolute8(memory, cpu, WRAM_UNK_7E066A, cpu->x);
-    cpu->carry = 0;
-    Adc8(cpu, Read8(memory, LongIndexedAddress(0x7fe2eeu, cpu->x)));
-    SetAccumulatorWidth(cpu, 0);
-    LoadYDirect8(memory, cpu, DP_SLOT_WORD_OFFSET);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x13d1u, cpu->y));
-    StoreADirect16(memory, cpu, DP_SCRATCH_A);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, 0x83u);
-    StoreADirect8(memory, cpu, DP_SCRATCH_C);
-    LoadXDirect8(memory, cpu, DP_ACTOR_SLOT);
-    pointer = Read16Direct(memory, cpu, DP_SCRATCH_A) |
-              ((uint32_t)DirectByte(memory, cpu, DP_SCRATCH_C) << 16);
-    LoadA8(cpu, Read8(memory, pointer));                       /* LDA [$54] */
-    And8(cpu, 0x7fu);
-    StoreAAbsolute8(memory, cpu, SNES_WRMPYA, 0);
-    TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
-    TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83abf8u, cpu->x)));
-    StoreAAbsolute8(memory, cpu, SNES_WRMPYB, 0);
-    LoadYDirect8(memory, cpu, DP_SLOT_RECORD_OFFSET);
-    LoadAAbsolute8(memory, cpu, 0x12bbu, cpu->y);
-    StoreADirect8(memory, cpu, DP_SCRATCH_A);
-    LoadAAbsolute8(memory, cpu, SNES_RDMPYL, 0);
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, 0x00u);
-    SetAccumulatorWidth(cpu, 0);
-    LsrA16(cpu);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16AbsoluteIndexed(memory, cpu, 0x12b9u, cpu->y));
-    StoreADirect16(memory, cpu, DP_SCRATCH_C);
-    LoadY8(cpu, AbsoluteByte(memory, cpu, 0x0732u, 0));
-    LoadXDirect8(memory, cpu, DP_SLOT_WORD_OFFSET);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1381u, cpu->x));
-    StoreAAbsolute16(memory, cpu, 0x11f9u, cpu->y);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, 0x1331u, cpu->x));
-    StoreAAbsolute16(memory, cpu, 0x11e9u, cpu->y);
-    LoadADirect16(memory, cpu, DP_SCRATCH_A);
-    StoreAAbsolute16(memory, cpu, 0x11d9u, cpu->y);
-    LoadADirect16(memory, cpu, DP_SCRATCH_C);
-    StoreAAbsolute16(memory, cpu, 0x05c2u, cpu->y);
-    LoadY8(cpu, (uint8_t)(cpu->y + 1u));
-    LoadY8(cpu, (uint8_t)(cpu->y + 1u));
-    Write8(memory, AbsoluteIndexedAddress(cpu, 0x0732u, 0), (uint8_t)cpu->y);
+    Lufia2ActorQueueSceneSpriteUploadBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 

@@ -9,12 +9,7 @@ enum {
     DP_QUOTIENT_HIGH = 0x5fu
 };
 
-Lufia2ExecutionResult Lufia2SystemDivide24ByByte(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
-        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
-        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
-        return ExecutionHandoff(cpu, 0x85dc6fu);
+void Lufia2SystemDivide24ByByteBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     Push8(memory, cpu, cpu->program_bank);
     PullDataBank(memory, cpu);
@@ -43,5 +38,14 @@ Lufia2ExecutionResult Lufia2SystemDivide24ByByte(
     OpSta(memory, cpu, OpDp(cpu, DP_DIVIDEND_LOW));
     OpSepWidths(cpu, 0x20u);
     PullDataBank(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2SystemDivide24ByByte(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x85u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal || cpu->direct_page != 0u ||
+        cpu->stack < 0x1f00u || cpu->stack > 0x1ffcu)
+        return ExecutionHandoff(cpu, 0x85dc6fu);
+    Lufia2SystemDivide24ByByteBody(memory, cpu);
     return ExecutionReturned(0x85dca2u);
 }

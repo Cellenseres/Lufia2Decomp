@@ -142,48 +142,11 @@ uint8_t Lufia2FieldListSearch(
     Lufia2CpuState *cpu,
     uint8_t return_bank,
     uint16_t return_address) {
-    unsigned steps;
-
     SimulateJslFrame(memory, cpu, return_bank, return_address);
-    PushDataBank(memory, cpu);                                 /* BFAA */
-    StoreADirect8(memory, cpu, DP_SCRATCH_A);
-    ExchangeAccumulatorBytes(cpu);
-    StoreADirect8(memory, cpu, 0x5au);
-    LoadA8(cpu, 0x7eu);
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, EVENT_LIST_OFFSET, cpu->x));
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    for (steps = 0; steps < EVENT_SEARCH_LIMIT; ++steps) {
-        LoadAAbsolute8(memory, cpu, EVENT_LIST_OFFSET, cpu->x); /* BFBC */
-        Compare8(cpu, A8(cpu), DirectByte(memory, cpu, DP_SCRATCH_A));
-        if (cpu->zero) {
-            PullDataBank(memory, cpu);                         /* BFD3 */
-            cpu->carry = 0;
-            SimulateRtlFrame(memory, cpu);
-            return 1;
-        }
-        Compare8(cpu, A8(cpu), 0xffu);
-        if (cpu->zero) {
-            PullDataBank(memory, cpu);                         /* BFD6 */
-            cpu->carry = 1;
-            SimulateRtlFrame(memory, cpu);
-            return 1;
-        }
-        /* TXA with M=1 keeps B, which carries the high byte. */
-        LoadA8(cpu, (uint8_t)cpu->x);                          /* BFC7 */
-        cpu->carry = 0;
-        Adc8(cpu, DirectByte(memory, cpu, 0x5au));
-        if (cpu->carry) {
-            ExchangeAccumulatorBytes(cpu);
-            LoadA8(cpu, (uint8_t)(A8(cpu) + 1u));
-            ExchangeAccumulatorBytes(cpu);
-        }
-        TransferAToX(cpu);
-    }
-    return 0;
+    if (!Lufia2FieldFindHeaderRecordBody(memory, cpu))
+        return 0;
+    SimulateRtlFrame(memory, cpu);
+    return 1;
 }
 
 /* $80:E912: actor A in the map's actor list. */

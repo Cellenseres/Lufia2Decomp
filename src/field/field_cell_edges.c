@@ -6,6 +6,7 @@
 #include "core/cpu_ops.h"
 #include "core/plain_ops.h"
 #include "core/snes_registers.h"
+#include "lufia2/actor.h"
 #include "lufia2/field.h"
 
 enum {
@@ -806,34 +807,11 @@ Lufia2ExecutionResult Lufia2FieldTraceCellEdges(
 Lufia2ExecutionResult Lufia2FieldCellPointer(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    uint8_t column;
-    uint8_t row;
-    uint16_t relative;
-    uint16_t map_slot;
-    Word16Result address;
-
     if (!cpu->accumulator_is_8_bit || cpu->index_is_8_bit ||
         cpu->stack < CELL_POINTER_STACK_MIN || cpu->stack > CELL_POINTER_STACK_MAX)
         return ExecutionHandoff(cpu, 0x83f9d0u);
     SimulateJsrFrame(memory, cpu, 0xf9d2u);
-    column = DirectByte(memory, cpu, DP_COLUMN);
-    row = DirectByte(memory, cpu, DP_ROW);
-    SimulateJsrFrame(memory, cpu, 0xf9dbu);
-    Write8(memory, SNES_WRMPYA, row);
-    Write8(memory, SNES_WRMPYB, Read8(memory, MAP_WIDTH));
-    address = Sum16Mode(column, Read16Long(memory, SNES_RDMPYL), false,
-        cpu->decimal);
-    relative = (uint16_t)(address.value << 1);
-    SimulateRtsFrame(memory, cpu);
-
-    /* The original saves the relative offset while selecting the map. */
-    PushStackWord(memory, cpu, relative);
-    map_slot = Read16Long(memory, MAP_SLOT);
-    relative = PullStackWord(memory, cpu);
-    address = Sum16Mode(relative, Read16Long(memory, CELL_BASE + map_slot),
-        false, cpu->decimal);
-    cpu->x = address.value;
-    LeaveSum(cpu, address);
+    Lufia2ActorResolveMapCellOffset(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     return ExecutionReturned(0x83f9d3u);
 }

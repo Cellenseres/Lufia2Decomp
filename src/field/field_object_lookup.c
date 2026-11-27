@@ -1,6 +1,7 @@
 /* Object header lookup, pending-slot search and map attribute addressing. */
 
 #include "core/cpu_ops.h"
+#include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
 
@@ -10,8 +11,8 @@ enum {
     HEADER_SCAN_LIMIT = 65536,
 };
 
-Lufia2ExecutionResult Lufia2FieldFindHeaderRecord(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+/* $80:BFAA body; 0 when the scan limit stops it at $80:BFBC. */
+uint8_t Lufia2FieldFindHeaderRecordBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushDataBank(memory, cpu);
     OpSta(memory, cpu, OpDp(cpu, HEADER_RECORD_ID));
     ExchangeAccumulatorBytes(cpu);
@@ -28,13 +29,13 @@ Lufia2ExecutionResult Lufia2FieldFindHeaderRecord(
         if (cpu->zero) {
             PullDataBank(memory, cpu);
             cpu->carry = 0;
-            return ExecutionReturned(0x80bfd5u);
+            return 1u;
         }
         OpCmpValue(cpu, 0x00ffu);
         if (cpu->zero) {
             PullDataBank(memory, cpu);
             cpu->carry = 1;
-            return ExecutionReturned(0x80bfd8u);
+            return 1u;
         }
         OpTxa(cpu);
         cpu->carry = 0;
@@ -46,7 +47,14 @@ Lufia2ExecutionResult Lufia2FieldFindHeaderRecord(
         }
         OpTax(cpu);
     }
-    return ExecutionHandoff(cpu, 0x80bfbcu);
+    return 0u;
+}
+
+Lufia2ExecutionResult Lufia2FieldFindHeaderRecord(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!Lufia2FieldFindHeaderRecordBody(memory, cpu))
+        return ExecutionHandoff(cpu, 0x80bfbcu);
+    return ExecutionReturned(cpu->carry ? 0x80bfd8u : 0x80bfd5u);
 }
 
 Lufia2ExecutionResult Lufia2FieldFindPendingObject(

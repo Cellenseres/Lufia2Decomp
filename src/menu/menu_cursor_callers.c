@@ -52,7 +52,7 @@ static Lufia2ExecutionResult CursorUnwound(uint32_t site) {
     return result;
 }
 
-static void ClearMaskedSpriteFlags(const Lufia2Memory *memory,
+void Lufia2MenuClearMaskedSpriteFlags(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, uint16_t flags_base) {
     Push8(memory, cpu, PackStatus(cpu));
     OpRepWidths(cpu, 0x30u);
@@ -78,7 +78,7 @@ Lufia2ExecutionResult Lufia2MenuClearSpriteMask(
     (void)context;
     if (!CursorCallerReady(cpu))
         return ExecutionHandoff(cpu, 0x829214u);
-    ClearMaskedSpriteFlags(memory, cpu, MENU_SPRITE_ACTIVE);
+    Lufia2MenuClearMaskedSpriteFlags(memory, cpu, MENU_SPRITE_ACTIVE);
     return ExecutionReturned(0x82922cu);
 }
 
@@ -89,7 +89,7 @@ Lufia2ExecutionResult Lufia2MenuClearSecondarySpriteMask(
     (void)context;
     if (!CursorCallerReady(cpu))
         return ExecutionHandoff(cpu, 0x82922du);
-    ClearMaskedSpriteFlags(memory, cpu, MENU_SPRITE_ACTIVE + 16u);
+    Lufia2MenuClearMaskedSpriteFlags(memory, cpu, MENU_SPRITE_ACTIVE + 16u);
     return ExecutionReturned(0x829245u);
 }
 
