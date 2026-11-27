@@ -140,14 +140,11 @@ static inline void And16(Lufia2CpuState *cpu, uint16_t value) {
 
 static inline void Add16Value(
     Lufia2CpuState *cpu, uint16_t value) {
-    const uint16_t old = cpu->accumulator;
-    const uint32_t sum =
-        (uint32_t)old + value + (cpu->carry ? 1u : 0u);
-    cpu->accumulator = (uint16_t)sum;
-    cpu->carry = sum > 0xffffu;
-    cpu->overflow =
-        ((~(old ^ value) & (old ^ (uint16_t)sum)) & 0x8000u) != 0;
-    SetNz16(cpu, cpu->accumulator);
+    const Word16Result sum = ArithmeticValue(
+        cpu->accumulator, value, cpu->carry, cpu->decimal, false, 16);
+    cpu->carry = sum.carry;
+    cpu->overflow = sum.overflow;
+    LoadA16(cpu, sum.value);
 }
 
 static inline void Push8(
@@ -332,18 +329,20 @@ static inline void DecrementA8(Lufia2CpuState *cpu) {
 }
 
 /* Binary mode only; the game never sets D. */
+static inline void ArithmeticA8(Lufia2CpuState *cpu, uint8_t value, bool subtract) {
+    const Word16Result sum = ArithmeticValue(
+        A8(cpu), value, cpu->carry, cpu->decimal, subtract, 8);
+    cpu->carry = sum.carry;
+    cpu->overflow = sum.overflow;
+    LoadA8(cpu, (uint8_t)sum.value);
+}
+
 static inline void Adc8(Lufia2CpuState *cpu, uint8_t value) {
-    const uint8_t old = A8(cpu);
-    const uint16_t sum =
-        (uint16_t)old + value + (cpu->carry ? 1u : 0u);
-    cpu->carry = sum > 0xffu;
-    cpu->overflow =
-        ((~(old ^ value) & (old ^ (uint8_t)sum)) & 0x80u) != 0;
-    LoadA8(cpu, (uint8_t)sum);
+    ArithmeticA8(cpu, value, false);
 }
 
 static inline void Sbc8(Lufia2CpuState *cpu, uint8_t value) {
-    Adc8(cpu, (uint8_t)~value);
+    ArithmeticA8(cpu, value, true);
 }
 
 static inline void SimulateJsrFrame(
@@ -604,8 +603,11 @@ static inline void StoreA8Absolute(
 
 /* A = base - value, 16-bit SBC after SEC. */
 static inline void Subtract16(Lufia2CpuState *cpu, uint16_t value) {
-    cpu->carry = 1;
-    Add16Value(cpu, (uint16_t)~value);
+    const Word16Result difference = ArithmeticValue(
+        cpu->accumulator, value, true, cpu->decimal, true, 16);
+    cpu->carry = difference.carry;
+    cpu->overflow = difference.overflow;
+    LoadA16(cpu, difference.value);
 }
 
 static inline void Decrement16Direct(
