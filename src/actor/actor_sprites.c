@@ -14,13 +14,7 @@ void Lufia2SpriteVramBase(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
-    ExchangeAccumulatorBytes(cpu);                             /* ABE9 */
-    SetAccumulatorWidth(cpu, 0);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    AslA16(cpu);
-    Add16Immediate(cpu, 0x2000u);
+    Lufia2SpriteVramBaseBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
@@ -69,31 +63,7 @@ void Lufia2ActorSpriteTables(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
-    Push8(memory, cpu, PackStatus(cpu));                       /* AA7D */
-    SetAccumulatorWidth(cpu, 1);
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
-    AslA8(cpu);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x83abfcu, cpu->x)));
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x1381u, cpu->y),
-        cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);                               /* AA91 */
-    LoadYDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadA8(cpu, 0xffu);
-    StoreAAbsolute8(memory, cpu, 0x1471u, cpu->y);
-    LoadAAbsolute8(memory, cpu, WRAM_UNK_7E1291, cpu->y);
-    And8(cpu, 0x18u);
-    LsrA8(cpu);
-    LsrA8(cpu);
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, Read16Long(memory, LongIndexedAddress(0x83ac14u, cpu->x)));
-    LoadYDirect(memory, cpu, DP_SLOT_WORD_OFFSET);
-    Write16Long(memory, AbsoluteIndexedAddress(cpu, 0x13d1u, cpu->y),
-        cpu->accumulator);
-    UnpackStatus(cpu, Pull8(memory, cpu));
+    Lufia2ActorSpriteTablesBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 
@@ -267,31 +237,7 @@ void Lufia2SpriteFreeSlots(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
-    ExchangeAccumulatorBytes(cpu);                             /* ABCC */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_B)));
-    LsrA8(cpu);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
-    {
-        const uint8_t carry = cpu->carry;                      /* ROR */
-
-        cpu->carry = (A8(cpu) & 0x01u) != 0;
-        LoadA8(cpu, (uint8_t)((A8(cpu) >> 1) | (carry ? 0x80u : 0u)));
-    }
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
-    And8(cpu, 0xf0u);
-    TrbDirect8(memory, cpu, DP_SCRATCH_A);
-    LsrA8(cpu);
-    Adc8(cpu, Read8(memory, DirectAddress(cpu, DP_SCRATCH_A)));
-    TransferAToX(cpu);
-    ExchangeAccumulatorBytes(cpu);
-    TransferAToY(cpu);
-    TransferDirectToA(cpu);
-    do {
-        Write8(memory, LongIndexedAddress(WRAM_SPRITE_ALLOCATION_FLAGS, cpu->x),
-            A8(cpu));
-        LoadX8(cpu, (uint8_t)(cpu->x + 1u));
-        LoadY8(cpu, (uint8_t)(cpu->y - 1u));
-    } while (!cpu->zero);
+    Lufia2SpriteFreeSlotsBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
 }
 

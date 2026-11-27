@@ -22,10 +22,7 @@ Lufia2ExecutionResult Lufia2ActorSetRecordOffsets(
     return ExecutionReturned(0x83ab60u);
 }
 
-Lufia2ExecutionResult Lufia2SpriteReleaseAllocation(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!SpriteResourceContext(cpu))
-        return ExecutionHandoff(cpu, 0x83abccu);
+void Lufia2SpriteFreeSlotsBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     ExchangeAccumulatorBytes(cpu);
     OpLda(memory, cpu, OpDp(cpu, DP_SCRATCH_B));
     OpLsrA(cpu);
@@ -45,18 +42,29 @@ Lufia2ExecutionResult Lufia2SpriteReleaseAllocation(
         OpInx(cpu);
         OpDey(cpu);
     } while (!cpu->zero);
+}
+
+Lufia2ExecutionResult Lufia2SpriteReleaseAllocation(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!SpriteResourceContext(cpu))
+        return ExecutionHandoff(cpu, 0x83abccu);
+    Lufia2SpriteFreeSlotsBody(memory, cpu);
     return ExecutionReturned(0x83abe8u);
 }
 
-Lufia2ExecutionResult Lufia2SpriteComputeVramBase(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!SpriteResourceContext(cpu))
-        return ExecutionHandoff(cpu, 0x83abe9u);
+void Lufia2SpriteVramBaseBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     (void)memory;
     ExchangeAccumulatorBytes(cpu);
     OpRepWidths(cpu, 0x20u);
     for (unsigned bit = 0; bit < 4u; ++bit)
         OpAslA(cpu);
     OpAdcValue(cpu, SPRITE_VRAM_START);
+}
+
+Lufia2ExecutionResult Lufia2SpriteComputeVramBase(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!SpriteResourceContext(cpu))
+        return ExecutionHandoff(cpu, 0x83abe9u);
+    Lufia2SpriteVramBaseBody(memory, cpu);
     return ExecutionReturned(0x83abf3u);
 }

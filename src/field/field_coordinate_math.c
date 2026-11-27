@@ -100,7 +100,7 @@ Lufia2ExecutionResult Lufia2MapProbeTileHeight(
     return ExecutionReturned(0x83f9a4u);
 }
 
-static void PackedAttributeCell(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+void Lufia2MapPackedAttributeCellBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSta(memory, cpu, 0x004202u);
     OpLda(memory, cpu, WRAM_FIELD_SECTION_WIDTH);
     OpSta(memory, cpu, 0x004203u);
@@ -117,7 +117,7 @@ Lufia2ExecutionResult Lufia2MapPackedAttributeCell(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     if (!CoordinateContext(cpu))
         return ExecutionHandoff(cpu, 0x83f9b6u);
-    PackedAttributeCell(memory, cpu);
+    Lufia2MapPackedAttributeCellBody(memory, cpu);
     return ExecutionReturned(0x83f9cfu);
 }
 
@@ -146,7 +146,7 @@ Lufia2ExecutionResult Lufia2MapPackedAttributeCellLong(
     if (!CoordinateContext(cpu))
         return ExecutionHandoff(cpu, 0x83f9a9u);
     SimulateJsrFrame(memory, cpu, 0xf9abu);
-    PackedAttributeCell(memory, cpu);
+    Lufia2MapPackedAttributeCellBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     return ExecutionReturned(0x83f9acu);
 }

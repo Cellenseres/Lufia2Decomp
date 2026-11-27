@@ -5,6 +5,7 @@
 
 void Lufia2ObjectRoundedProbe(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 void Lufia2MapProbeHeightBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+void Lufia2MapPackedAttributeCellBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 void Lufia2ObjectInterpolateCoordinateBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 void Lufia2ObjectApproachCoordinateBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

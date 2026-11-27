@@ -168,10 +168,7 @@ Lufia2ExecutionResult Lufia2ActorReadSpriteDescriptor(
     return ExecutionReturned(0x83aa2fu);
 }
 
-Lufia2ExecutionResult Lufia2ActorSelectSpriteTables(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x83u)
-        return ExecutionHandoff(cpu, 0x83aa7du);
+void Lufia2ActorSpriteTablesBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     Push8(memory, cpu, PackStatus(cpu));
     SetAccumulatorWidth(cpu, 1u);
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, ACTOR_SLOT)));
@@ -195,6 +192,13 @@ Lufia2ExecutionResult Lufia2ActorSelectSpriteTables(
     OpLdy(cpu, OpReadX(memory, cpu, OpDp(cpu, ACTOR_WORD)));
     OpSta(memory, cpu, OpAbsY(cpu, WRAM_ACTOR_SPRITE_MOTION_TABLE));
     UnpackStatus(cpu, Pull8(memory, cpu));
+}
+
+Lufia2ExecutionResult Lufia2ActorSelectSpriteTables(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x83u)
+        return ExecutionHandoff(cpu, 0x83aa7du);
+    Lufia2ActorSpriteTablesBody(memory, cpu);
     return ExecutionReturned(0x83aaaeu);
 }
 

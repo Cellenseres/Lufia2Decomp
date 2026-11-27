@@ -6,13 +6,12 @@
 #include "core/wram_view.h"
 #include "lufia2/actor.h"
 #include "lufia2/field.h"
+#include "field/field_coordinates_internal.h"
 #include "field/indexed_probe_internal.h"
 #include "system/wram.h"
 
 /* Probe column and row: tile in the low byte. */
 enum {
-    PROBE_X_HIGH = DP_PROBE_X + 1,
-    PROBE_Y_HIGH = DP_PROBE_Y + 1,
     CELL_TILE_MASK = 0x03ff /* low ten bits: metatile number */
 };
 
@@ -25,23 +24,10 @@ void Lufia2MapCellIndex(
     uint16_t return_address,
     uint8_t from_probe) {
     SimulateJsrFrame(memory, cpu, return_address);
-    if (from_probe) {
-        Write8(memory, DirectAddress(cpu, PROBE_X_HIGH), 0x00u);      /* F9AD */
-        Write8(memory, DirectAddress(cpu, PROBE_Y_HIGH), 0x00u);
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X)));
-        ExchangeAccumulatorBytes(cpu);
-        LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
-    }
-    Write8(memory, SNES_WRMPYA, A8(cpu));                      /* F9B6 */
-    LoadA8(cpu, Read8(memory, WRAM_FIELD_SECTION_WIDTH));
-    Write8(memory, SNES_WRMPYB, A8(cpu));
-    LoadA8(cpu, 0x00u);
-    ExchangeAccumulatorBytes(cpu);
-    SetAccumulatorWidth(cpu, 0);
-    cpu->carry = 0;
-    Add16Value(cpu, Read16Long(memory, SNES_RDMPYL));
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
+    if (from_probe)
+        (void)Lufia2FieldObjectAttributeCell(memory, cpu);
+    else
+        Lufia2MapPackedAttributeCellBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -51,26 +37,7 @@ void Lufia2MapTileHeight(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    SimulateJsrFrame(memory, cpu, 0xf98au);                    /* F988 */
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_X))); /* F9F2 */
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, Read8(memory, DirectAddress(cpu, DP_PROBE_Y)));
-    Lufia2MapCellOffset(memory, cpu);             /* F9F7 */
-    SimulateRtsFrame(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);                               /* F98B */
-    LoadX16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_TABLE_OFFSET, 0));
-    cpu->carry = 0;
-    Add16Value(
-        cpu, Read16Long(memory, LongIndexedAddress(WRAM_FIELD_LAYER_CELL_BASE,
-            cpu->x)));
-    TransferAToX(cpu);
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(MAP_LAYER_CELLS + 1u, cpu->x)));
-    AslA8(cpu);                                                /* F99C */
-    Adc8(cpu, 0x00u);
-    AslA8(cpu);
-    Adc8(cpu, 0x00u);
-    And8(cpu, 0x03u);                                          /* F9A2 */
+    Lufia2MapProbeHeightBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -394,31 +361,22 @@ void Lufia2ActorReadMapCellValue(
             memory, LongIndexedAddress(MAP_LAYER_CELLS, cpu->x)));   /* FB86 */
 }
 
-static void ClearCellBit0(
-    const Lufia2Memory *memory,
-    Lufia2CpuState *cpu,
-    uint32_t base) {
-    const uint32_t address = LongIndexedAddress(base, cpu->x);
-    LoadA8(cpu, Read8(memory, address));
-    And8(cpu, 0xfeu);
-    Write8(memory, address, A8(cpu));
+static uint8_t CellIndexChild(void *context, Lufia2CpuState *cpu,
+    uint32_t target, uint32_t site, uint8_t frame) {
+    const Lufia2Memory *memory = context;
+    (void)site;
+    if (target != 0x83f9b6u || frame != 2u) {
+        cpu->resume_pc = target;
+        return 0u;
+    }
+    Lufia2MapPackedAttributeCellBody(memory, cpu);
+    SimulateRtsFrame(memory, cpu);
+    return 1u;
 }
 
 /* $83:FA12: clear occupancy bit 0 under the actor. */
 void Lufia2ActorClearMapOccupancy(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* FA12 */
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);
-    ExchangeAccumulatorBytes(cpu);
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
-    Lufia2MapCellIndex(memory, cpu, 0xfa1du, 0);               /* F9B6 */
-    ClearCellBit0(memory, cpu, WRAM_FIELD_MAP_ATTRIBUTES); /* FA1E */
-    PushIndex(memory, cpu);
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
-    Compare8(cpu, A8(cpu), 0x02u);
-    cpu->x = PullIndexValue(memory, cpu);                      /* FA31 */
-    if (cpu->carry)
-        ClearCellBit0(memory, cpu, 0x7e4001u);                 /* FA34 */
+    (void)Lufia2ActorClearSceneOccupancyBody(memory, cpu, CellIndexChild, (void *)memory);
 }

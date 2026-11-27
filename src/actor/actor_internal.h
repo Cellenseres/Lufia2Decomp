@@ -152,4 +152,17 @@ void Lufia2ActorReadSpriteDescriptorBody(
 
 void Lufia2ObjectLoadSecondaryScript(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Body shared with the bound Lufia2ActorSelectSpriteTables. */
+void Lufia2ActorSpriteTablesBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Body shared with the bound Lufia2SpriteReleaseAllocation. */
+void Lufia2SpriteFreeSlotsBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Body shared with the bound Lufia2SpriteComputeVramBase. */
+void Lufia2SpriteVramBaseBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
+/* Body of $83:FA12 shared with the bound Lufia2ActorClearSceneOccupancy. */
+uint8_t Lufia2ActorClearSceneOccupancyBody(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, Lufia2PushedChildCall child, void *context);
+
 #endif

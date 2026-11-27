@@ -1,3 +1,4 @@
+#include "actor/actor_internal.h"
 #include "actor/record_offsets_internal.h"
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
@@ -29,18 +30,16 @@ Lufia2ExecutionResult Lufia2ActorPreparePartyOffsets(
     return ExecutionReturned(0x8482e6u);
 }
 
-Lufia2ExecutionResult Lufia2ActorClearSceneOccupancy(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
-        return ExecutionHandoff(cpu, 0x83fa12u);
+/* 0 when the $83:F9B6 child unwound. */
+uint8_t Lufia2ActorClearSceneOccupancyBody(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, Lufia2PushedChildCall child, void *context) {
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, PARTY_ACTOR_SLOT)));
     OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_X));
     ExchangeAccumulatorBytes(cpu);
     OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_Y));
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x83fa1bu, 0x83f9b6u, 2u, 0x83u))
-        return PartySceneUnwound(0x83fa1bu);
+        return 0u;
     OpLda(memory, cpu, OpLongX(cpu, 0x7e4000u));
     OpAndValue(cpu, 0xfeu);
     OpSta(memory, cpu, OpLongX(cpu, 0x7e4000u));
@@ -54,6 +53,16 @@ Lufia2ExecutionResult Lufia2ActorClearSceneOccupancy(
         OpAndValue(cpu, 0xfeu);
         OpSta(memory, cpu, OpLongX(cpu, 0x7e4001u));
     }
+    return 1u;
+}
+
+Lufia2ExecutionResult Lufia2ActorClearSceneOccupancy(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x83u || !cpu->accumulator_is_8_bit || cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x83fa12u);
+    if (!Lufia2ActorClearSceneOccupancyBody(memory, cpu, child, context))
+        return PartySceneUnwound(0x83fa1bu);
     return ExecutionReturned(0x83fa3eu);
 }
 
