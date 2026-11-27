@@ -1,13 +1,11 @@
 #include "core/cpu_ops.h"
+#include "field/event_script_internal.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
 
 enum { EVENT_RUNNING_POINTER = WRAM_FIELD_EVENT_RUNNING_POINTER };
 
-Lufia2ExecutionResult Lufia2FieldPublishEventPointer(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit || cpu->decimal)
-        return ExecutionHandoff(cpu, 0x80e8e2u);
+void Lufia2EventPublishPointerBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushAccumulator16(memory, cpu);
     OpTya(cpu);
     OpSta(memory, cpu, EVENT_RUNNING_POINTER);
@@ -17,5 +15,12 @@ Lufia2ExecutionResult Lufia2FieldPublishEventPointer(
     OpSta(memory, cpu, WRAM_FIELD_EVENT_RUNNING_BANK);
     OpRepWidths(cpu, 0x20u);
     PullAccumulator16(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2FieldPublishEventPointer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || cpu->accumulator_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x80e8e2u);
+    Lufia2EventPublishPointerBody(memory, cpu);
     return ExecutionReturned(0x80e8f3u);
 }

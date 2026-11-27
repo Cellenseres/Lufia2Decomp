@@ -259,7 +259,7 @@ enum EventOpcodeHandler {
     EVENT_OP_PUSH_OBJECT_LEFT = 0xdcbb                         /* $5D */
 };
 
-/* Shared bodies of $80:E8B9, E8D0, E8AD, E9BC and E9ED; the bound entries
+/* Shared bodies of $80:E8B9, E8D0, E8AD, E9BC, E9ED, E8E2 and E8F4; the bound entries
  * add their guards. The word and value bodies return the unwound call site. */
 void Lufia2EventReadByteBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 void Lufia2EventRewindByteBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
@@ -268,6 +268,8 @@ uint32_t Lufia2EventReadWordBody(const Lufia2Memory *memory, Lufia2CpuState *cpu
 void Lufia2EventVariableBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 uint32_t Lufia2EventValueBody(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);
+void Lufia2EventPublishPointerBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+void Lufia2EventSetPointerBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 /* Runs $80:E8B9 and E9BC directly; context is the Lufia2Memory. */
 uint8_t Lufia2EventReaderChild(void *context, Lufia2CpuState *cpu,
     uint32_t target, uint32_t site, uint8_t frame);

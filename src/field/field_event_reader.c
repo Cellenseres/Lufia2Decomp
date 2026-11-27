@@ -75,13 +75,7 @@ uint8_t Lufia2EventReaderChild(void *context, Lufia2CpuState *cpu,
     return 1u;
 }
 
-Lufia2ExecutionResult Lufia2FieldSetEventPointer(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    (void)child;
-    (void)context;
-    if (!EventReaderReady(cpu))
-        return ExecutionHandoff(cpu, 0x80e8f4u);
+void Lufia2EventSetPointerBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpTay(cpu);
     OpSepWidths(cpu, 0x20u);
     OpLda(memory, cpu, EVENT_SCRIPT_BASE_BANK);
@@ -99,5 +93,15 @@ Lufia2ExecutionResult Lufia2FieldSetEventPointer(
         PullDataBank(memory, cpu);
         OpRepWidths(cpu, 0x20u);
     }
+}
+
+Lufia2ExecutionResult Lufia2FieldSetEventPointer(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    (void)child;
+    (void)context;
+    if (!EventReaderReady(cpu))
+        return ExecutionHandoff(cpu, 0x80e8f4u);
+    Lufia2EventSetPointerBody(memory, cpu);
     return ExecutionReturned(0x80e911u);
 }

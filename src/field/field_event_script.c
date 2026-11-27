@@ -49,23 +49,7 @@ void Lufia2EventSetPointer(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    TransferAToY(cpu);                                         /* E8F4 */
-    SetAccumulatorWidth(cpu, 1);
-    LoadA8(cpu, Read8(memory, EVENT_SCRIPT_BASE_BANK));
-    PushAccumulator8(memory, cpu);
-    PullDataBank(memory, cpu);
-    SetAccumulatorWidth(cpu, 0);
-    LoadA16(cpu, cpu->y);
-    if (!cpu->negative) {
-        LoadA16(cpu, (uint16_t)(cpu->accumulator | EVENT_BANK_WINDOW)); /* E902 */
-        TransferAToY(cpu);
-        SetAccumulatorWidth(cpu, 1);
-        LoadA8(cpu,
-            (uint8_t)(Read8(memory, EVENT_SCRIPT_BASE_BANK) + 1u));
-        PushAccumulator8(memory, cpu);
-        PullDataBank(memory, cpu);
-        SetAccumulatorWidth(cpu, 0);
-    }
+    Lufia2EventSetPointerBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 

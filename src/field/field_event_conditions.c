@@ -4,6 +4,7 @@
 #include "core/cpu_internal.h"
 #include "core/cpu_ops.h"
 #include "field/event_script_internal.h"
+#include "field/field_internal.h"
 #include "system/dp_scratch.h"
 #include "system/wram.h"
 
@@ -302,15 +303,7 @@ static void EventStorePointer(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    PushAccumulator16(memory, cpu);                            /* E8E2 */
-    LoadA16(cpu, cpu->y);
-    Write16Long(memory, EVENT_SCRIPT_POINTER, cpu->accumulator);
-    SetAccumulatorWidth(cpu, 1);
-    PushDataBank(memory, cpu);
-    LoadA8(cpu, Pull8(memory, cpu));
-    Write8(memory, EVENT_SCRIPT_BANK, A8(cpu));
-    SetAccumulatorWidth(cpu, 0);
-    PullAccumulator16(memory, cpu);
+    Lufia2EventPublishPointerBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -940,29 +933,25 @@ static unsigned EventOpBlockMatches(
 }
 
 /* $80:BF92: slot of actor id A into $A7. */
+static uint8_t FindActorIdChild(void *context, Lufia2CpuState *cpu,
+    uint32_t target, uint32_t site, uint8_t frame) {
+    const Lufia2Memory *memory = context;
+    (void)site;
+    if (target != 0x8482d5u || frame != 3u) {
+        cpu->resume_pc = target;
+        return 0u;
+    }
+    Lufia2ActorRecordOffsets(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    return 1u;
+}
+
 void Lufia2EventFindActorId(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x80u, return_address);
-    for (LoadX16(cpu, 0x0000u);;) {                            /* BF92 */
-        Compare8(cpu, A8(cpu),
-                 Read8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_ID, cpu->x)));
-        if (cpu->zero) {
-            StoreXDirect16(memory, cpu, DP_ACTOR_SLOT);        /* BFA2 */
-            SimulateJslFrame(memory, cpu, 0x80u, 0xbfa7u);
-            Lufia2ActorRecordOffsets(memory, cpu);             /* $84:82D5 */
-            SimulateRtlFrame(memory, cpu);
-            cpu->carry = 0;
-            break;
-        }
-        IncrementX16(cpu);
-        Compare16(cpu, cpu->x, 0x0028u);
-        if (cpu->zero) {
-            cpu->carry = 1;
-            break;
-        }
-    }
+    (void)Lufia2FieldSelectActorByIdBody(memory, cpu, FindActorIdChild, (void *)memory);
     SimulateRtlFrame(memory, cpu);
 }
 
