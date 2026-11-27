@@ -48,6 +48,11 @@ uint32_t Lufia2FieldSelectActorByIdBody(const Lufia2Memory *memory,
 void Lufia2ActorQueueSceneSpriteUploadBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 void Lufia2ObjectQueueSceneSpriteUploadBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Bodies of $80:C01D (returns the unwound call site) and $80:C1A7. */
+uint32_t Lufia2SceneReadActorAttributesBody(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, Lufia2PushedChildCall child, void *context);
+void Lufia2SceneApplyActorCellBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 /* Body of $80:BFAA; 0 when its scan limit hands off at $80:BFBC. */
 uint8_t Lufia2FieldFindHeaderRecordBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 

@@ -165,4 +165,8 @@ void Lufia2SpriteVramBaseBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 uint8_t Lufia2ActorClearSceneOccupancyBody(const Lufia2Memory *memory,
     Lufia2CpuState *cpu, Lufia2PushedChildCall child, void *context);
 
+/* Body of $83:AAAF shared with the bound Lufia2ActorReleaseSceneSprite. */
+uint32_t Lufia2ActorReleaseSceneSpriteBody(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, Lufia2PushedChildCall child, void *context);
+
 #endif

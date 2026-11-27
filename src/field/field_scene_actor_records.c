@@ -1,5 +1,6 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "field/field_internal.h"
 #include "lufia2/field.h"
 #include "system/wram.h"
 
@@ -24,18 +25,15 @@ static bool SceneRecordByteContext(const Lufia2CpuState *cpu, bool wide_index) {
         !cpu->decimal && (!wide_index || !cpu->index_is_8_bit);
 }
 
-Lufia2ExecutionResult Lufia2SceneReadActorAttributes(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (!SceneRecordByteContext(cpu, true))
-        return ExecutionHandoff(cpu, 0x80c01du);
+uint32_t Lufia2SceneReadActorAttributesBody(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, Lufia2PushedChildCall child, void *context) {
     OpLdx(cpu, 0x10u);
     ExchangeAccumulatorBytes(cpu);
     OpLoadA(cpu, 8u);
     ExchangeAccumulatorBytes(cpu);
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x80c024u, 0x80bfaau, 3u, 0x80u))
-        return SceneRecordUnwound(0x80c024u);
+        return 0x80c024u;
     if (cpu->carry) {
         OpStz(memory, cpu, OpAbs(cpu, SCENE_POSITION_X));
         OpStz(memory, cpu, OpAbs(cpu, SCENE_POSITION_Y));
@@ -55,6 +53,16 @@ Lufia2ExecutionResult Lufia2SceneReadActorAttributes(
         OpSta(memory, cpu, SCENE_ACTOR_PRESENTATION);
         cpu->carry = 0u;
     }
+    return 0u;
+}
+
+Lufia2ExecutionResult Lufia2SceneReadActorAttributes(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (!SceneRecordByteContext(cpu, true))
+        return ExecutionHandoff(cpu, 0x80c01du);
+    if (Lufia2SceneReadActorAttributesBody(memory, cpu, child, context))
+        return SceneRecordUnwound(0x80c024u);
     return ExecutionReturned(0x80c05bu);
 }
 
@@ -118,10 +126,7 @@ Lufia2ExecutionResult Lufia2SceneReadActorPair(
     return ExecutionReturned(0x80c0b6u);
 }
 
-Lufia2ExecutionResult Lufia2SceneApplyActorCell(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
-    if (!SceneRecordByteContext(cpu, false))
-        return ExecutionHandoff(cpu, 0x80c1a7u);
+void Lufia2SceneApplyActorCellBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, SCENE_ACTOR_SLOT)));
     OpStz(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_FLAGS));
     OpLda(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_STATE));
@@ -132,5 +137,12 @@ Lufia2ExecutionResult Lufia2SceneApplyActorCell(
     OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_X));
     OpLda(memory, cpu, OpAbs(cpu, SCENE_POSITION_Y));
     OpSta(memory, cpu, OpAbsX(cpu, WRAM_ACTOR_TILE_Y));
+}
+
+Lufia2ExecutionResult Lufia2SceneApplyActorCell(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (!SceneRecordByteContext(cpu, false))
+        return ExecutionHandoff(cpu, 0x80c1a7u);
+    Lufia2SceneApplyActorCellBody(memory, cpu);
     return ExecutionReturned(0x80c1c2u);
 }

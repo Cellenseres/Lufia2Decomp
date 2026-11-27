@@ -18,33 +18,29 @@ void Lufia2SpriteVramBase(
     SimulateRtlFrame(memory, cpu);
 }
 
+static uint8_t ReleaseSpriteChild(void *context, Lufia2CpuState *cpu,
+    uint32_t target, uint32_t site, uint8_t frame) {
+    const Lufia2Memory *memory = context;
+    (void)site;
+    if (frame != 3u || (target != 0x83abccu && target != 0x83fa12u)) {
+        cpu->resume_pc = target;
+        return 0u;
+    }
+    if (target == 0x83abccu)
+        Lufia2SpriteFreeSlotsBody(memory, cpu);
+    else
+        Lufia2ActorClearMapOccupancy(memory, cpu);
+    SimulateRtlFrame(memory, cpu);
+    return 1u;
+}
+
 /* $83:AAAF: free the actor's sprite, clear occupancy. */
 static void ActorReleaseSprite(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x83u, return_address);
-    SetAccumulatorWidth(cpu, 1);                               /* AAAF */
-    SetIndexWidth(cpu, 1);
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-    Or8(cpu, 0x04u);
-    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-    LoadA8(cpu, 0xffu);
-    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E05D2, cpu->x);
-    TransferDirectToA(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe25eu, cpu->x)));
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_A), A8(cpu));
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x7fe2a6u, cpu->x)));
-    Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), A8(cpu));
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE216, cpu->x)));
-    TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x83abf4u, cpu->x)));
-    Lufia2SpriteFreeSlots(memory, cpu, 0xaad9u);
-    SetIndexWidth(cpu, 0);                                     /* AADA */
-    SimulateJslFrame(memory, cpu, 0x83u, 0xaadfu);
-    Lufia2ActorClearMapOccupancy(memory, cpu);
-    SimulateRtlFrame(memory, cpu);
+    (void)Lufia2ActorReleaseSceneSpriteBody(memory, cpu, ReleaseSpriteChild, (void *)memory);
     SimulateRtlFrame(memory, cpu);
 }
 

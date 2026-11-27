@@ -1,5 +1,6 @@
 #include "core/child_call.h"
 #include "core/cpu_ops.h"
+#include "system/system_internal.h"
 #include "system/wram.h"
 #include "lufia2/system.h"
 
@@ -20,10 +21,7 @@ static Lufia2ExecutionResult EventFlagUnwound(uint32_t site) {
     return result;
 }
 
-Lufia2ExecutionResult Lufia2SystemResolveEventFlagBit(const Lufia2Memory *memory,
-    Lufia2CpuState *cpu) {
-    if (!EventFlagEntry(cpu))
-        return ExecutionHandoff(cpu, 0x80be30u);
+void Lufia2SystemEventFlagBitBody(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     OpSepWidths(cpu, 0x30u);
     OpSta(memory, cpu, OpDp(cpu, DP_EVENT_FLAG));
     for (unsigned shift = 0; shift < 3u; ++shift)
@@ -34,6 +32,13 @@ Lufia2ExecutionResult Lufia2SystemResolveEventFlagBit(const Lufia2Memory *memory
     OpTax(cpu);
     OpLda(memory, cpu, OpLongX(cpu, ROM_EVENT_FLAG_MASKS));
     OpSta(memory, cpu, OpDp(cpu, DP_EVENT_FLAG_MASK));
+}
+
+Lufia2ExecutionResult Lufia2SystemResolveEventFlagBit(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu) {
+    if (!EventFlagEntry(cpu))
+        return ExecutionHandoff(cpu, 0x80be30u);
+    Lufia2SystemEventFlagBitBody(memory, cpu);
     return ExecutionReturned(0x80be44u);
 }
 

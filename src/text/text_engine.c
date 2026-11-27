@@ -11,9 +11,11 @@
 #include "core/wram_view.h"
 #include "field/event_script_internal.h"
 #include "field/field_internal.h"
+#include "lufia2/system.h"
 #include "lufia2/text.h"
 #include "system/dp_scratch.h"
 #include "system/gold_internal.h"
+#include "system/system_internal.h"
 #include "system/wram.h"
 #include "text/text_internal.h"
 #include "text/text_child_service.h"
@@ -39,12 +41,6 @@ enum {
     TEXT_FADE_COLOR_FIRST = 0x1286u,
     TEXT_FADE_COLOR_SECOND = 0x1287u,
     TEXT_FADE_STEP = 0x1288u, /* word: the division result of the fade setup */
-    TEXT_ENTITY_X = 0x120au,  /* position found by the entity search */
-    TEXT_ENTITY_Y = 0x120bu,
-    TEXT_ENTITY_UNK_120C = 0x120cu,
-    TEXT_ENTITY_WORD_120E = 0x120eu,
-    TEXT_ENTITY_WORD_1210 = 0x1210u,
-    TEXT_ENTITY_BYTE_1212 = 0x001212u,
     TEXT_BG3_HOFS_SHADOW = 0x059cu, /* BG3 scroll pair at $059C/$059E */
     TEXT_FONT = 0x9af970u,          /* 16 bytes per glyph from glyph $20 */
     TEXT_ATTRIBUTE_TABLE = 0x80c815u,
@@ -330,18 +326,7 @@ static void TextFlagBit(
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJsrFrame(memory, cpu, return_address);
-    SetAccumulatorWidth(cpu, 1);                               /* BE30 */
-    SetIndexWidth(cpu, 1);
-    StoreADirect8(memory, cpu, DP_SCRATCH_A);
-    LsrA8(cpu);
-    LsrA8(cpu);
-    LsrA8(cpu);
-    StoreADirect8(memory, cpu, DP_SCRATCH_C);
-    LoadA8(cpu, DirectByte(memory, cpu, DP_SCRATCH_A));
-    And8(cpu, 0x07u);
-    TransferAToX(cpu);
-    LoadA8(cpu, Read8(memory, LongIndexedAddress(0x80be45u, cpu->x)));
-    StoreADirect8(memory, cpu, DP_SCRATCH_D);
+    Lufia2SystemEventFlagBitBody(memory, cpu);
     SimulateRtsFrame(memory, cpu);
 }
 
@@ -870,41 +855,30 @@ static unsigned TextOpEnd(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     return TEXT_OPCODE_RELOAD;
 }
 
+static uint8_t TextListSearchChild(void *context, Lufia2CpuState *cpu,
+    uint32_t target, uint32_t site, uint8_t frame) {
+    const Lufia2Memory *memory = context;
+    (void)site;
+    if (target != 0x80bfaau || frame != 3u) {
+        cpu->resume_pc = target;
+        return 0u;
+    }
+    if (!Lufia2FieldFindHeaderRecordBody(memory, cpu)) {
+        cpu->resume_pc = 0x80bfbcu;
+        return 0u;
+    }
+    SimulateRtlFrame(memory, cpu);
+    return 1u;
+}
+
 /* $80:C01D: position of map entity A; carry when none. */
 static uint8_t TextEntityPosition(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu,
     uint16_t return_address) {
     SimulateJslFrame(memory, cpu, 0x80u, return_address);
-    LoadX16(cpu, 0x0010u);                                     /* C01D */
-    ExchangeAccumulatorBytes(cpu);
-    LoadA8(cpu, 0x08u);
-    ExchangeAccumulatorBytes(cpu);
-    if (!Lufia2FieldListSearch(memory, cpu, 0x80u, 0xc027u))
+    if (Lufia2SceneReadActorAttributesBody(memory, cpu, TextListSearchChild, (void *)memory))
         return 0;
-    if (cpu->carry) {
-        Write8(memory, AbsoluteIndexedAddress(cpu, TEXT_ENTITY_X, 0), 0x00u);
-        Write8(memory, AbsoluteIndexedAddress(cpu, TEXT_ENTITY_Y, 0), 0x00u);
-        Write8(memory, AbsoluteIndexedAddress(cpu, TEXT_ENTITY_Y, 0), 0x00u);
-        Write8(memory, AbsoluteIndexedAddress(cpu, TEXT_ENTITY_UNK_120C, 0), 0x00u);
-        cpu->carry = 1;
-    } else {
-        SetAccumulatorWidth(cpu, 0);                           /* C039 */
-        LoadA16(cpu, Read16Long(memory,
-                                LongIndexedAddress((EVENT_LIST_RECORD + 1u), cpu->x)));
-        Write16Absolute(memory, cpu, TEXT_ENTITY_X, cpu->accumulator);
-        LoadA16(cpu, Read16Long(memory,
-                                LongIndexedAddress((EVENT_LIST_RECORD + 3u), cpu->x)));
-        Write16Absolute(memory, cpu, TEXT_ENTITY_WORD_120E, cpu->accumulator);
-        LoadA16(cpu, Read16Long(memory,
-                                LongIndexedAddress((EVENT_LIST_RECORD + 5u), cpu->x)));
-        Write16Absolute(memory, cpu, TEXT_ENTITY_WORD_1210, cpu->accumulator);
-        SetAccumulatorWidth(cpu, 1);
-        LoadA8(cpu,
-               Read8(memory, LongIndexedAddress((EVENT_LIST_RECORD + 7u), cpu->x)));
-        Write8(memory, TEXT_ENTITY_BYTE_1212, A8(cpu));
-        cpu->carry = 0;
-    }
     SimulateRtlFrame(memory, cpu);
     return 1;
 }
@@ -929,16 +903,7 @@ uint8_t Lufia2TextPlaceActor(
     if (!TextEntityPosition(memory, cpu, 0xbcb6u))
         return 0;
     SimulateJslFrame(memory, cpu, 0x80u, 0xbcbau);
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);                   /* C1A7 */
-    Write8(memory, AbsoluteIndexedAddress(cpu, WRAM_ACTOR_FLAGS, cpu->x), 0x00u);
-    LoadAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-    And8(cpu, 0xfbu);
-    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
-    LoadXDirect(memory, cpu, DP_ACTOR_SLOT);
-    LoadAAbsolute8(memory, cpu, TEXT_ENTITY_X, 0);
-    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_X, cpu->x);
-    LoadAAbsolute8(memory, cpu, TEXT_ENTITY_Y, 0);
-    StoreAAbsolute8(memory, cpu, WRAM_ACTOR_TILE_Y, cpu->x);
+    Lufia2SceneApplyActorCellBody(memory, cpu);
     SimulateRtlFrame(memory, cpu);
     SimulateRtsFrame(memory, cpu);
     return 1;
@@ -2352,13 +2317,7 @@ static void TextStepTypingSound(const Lufia2Memory *memory, Lufia2CpuState *cpu)
                 if (!cpu->zero) {
                     LoadAAbsolute8(memory, cpu, TEXT_TYPING_SOUND, 0);
                     SimulateJslFrame(memory, cpu, 0x80u, 0xbd34u);
-                    ExchangeAccumulatorBytes(cpu); /* $84:8766 */
-                    LoadA8(cpu, Read8(memory, WRAM_FIELD_MAP_FLAGS));
-                    BitImmediate8(cpu, 0x02u);
-                    if (cpu->zero) {
-                        ExchangeAccumulatorBytes(cpu);
-                        Write8(memory, WRAM_SOUND_COMMAND, A8(cpu));
-                    }
+                    Lufia2QueueDeferredSound(memory, cpu);     /* $84:8766 */
                     SimulateRtlFrame(memory, cpu);
                 }
             }

@@ -42,4 +42,7 @@ void Lufia2CallCosine(
 /* Body shared with the bound Lufia2SystemDivide24ByByte. */
 void Lufia2SystemDivide24ByByteBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+/* Body shared with the bound Lufia2SystemResolveEventFlagBit. */
+void Lufia2SystemEventFlagBitBody(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 #endif

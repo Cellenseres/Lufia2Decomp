@@ -66,11 +66,9 @@ Lufia2ExecutionResult Lufia2ActorClearSceneOccupancy(
     return ExecutionReturned(0x83fa3eu);
 }
 
-Lufia2ExecutionResult Lufia2ActorReleaseSceneSprite(
-    const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    Lufia2PushedChildCall child, void *context) {
-    if (cpu->program_bank != 0x83u || cpu->decimal)
-        return ExecutionHandoff(cpu, 0x83aaafu);
+/* $83:AAAF body; returns the unwound call site, 0 when done. */
+uint32_t Lufia2ActorReleaseSceneSpriteBody(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, Lufia2PushedChildCall child, void *context) {
     SetAccumulatorWidth(cpu, 1u);
     SetIndexWidth(cpu, 1u);
     OpLdx(cpu, OpReadX(memory, cpu, OpDp(cpu, PARTY_ACTOR_SLOT)));
@@ -89,11 +87,22 @@ Lufia2ExecutionResult Lufia2ActorReleaseSceneSprite(
     OpLda(memory, cpu, OpLongX(cpu, 0x83abf4u));
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x83aad6u, 0x83abccu, 3u, 0x83u))
-        return PartySceneUnwound(0x83aad6u);
+        return 0x83aad6u;
     SetIndexWidth(cpu, 0u);
     if (!CallChildWithFrame(memory, cpu, child, context,
             0x83aadcu, 0x83fa12u, 3u, 0x83u))
-        return PartySceneUnwound(0x83aadcu);
+        return 0x83aadcu;
+    return 0u;
+}
+
+Lufia2ExecutionResult Lufia2ActorReleaseSceneSprite(
+    const Lufia2Memory *memory, Lufia2CpuState *cpu,
+    Lufia2PushedChildCall child, void *context) {
+    if (cpu->program_bank != 0x83u || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x83aaafu);
+    const uint32_t unwound = Lufia2ActorReleaseSceneSpriteBody(memory, cpu, child, context);
+    if (unwound)
+        return PartySceneUnwound(unwound);
     return ExecutionReturned(0x83aae0u);
 }
 
