@@ -101,62 +101,20 @@ static void ScaleBy(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     SimulateRtsFrame(memory, cpu);
 }
 
-/* The sign extension byte of a negated word: $FF unless it came out zero. */
-static uint8_t SignByte(uint16_t negated) {
-    return negated == 0 ? 0u : 0xffu;
-}
-
-/* A nonzero negative word leaves $FF in the accumulator low byte. */
-static void LeaveNegation(Lufia2CpuState *cpu, uint16_t negated) {
-    cpu->accumulator = negated;
-    if (negated != 0)
-        LoadA8(cpu, 0xffu);
-    else
-        SetNz16(cpu, 0);
-}
-
-/* The four quadrant handlers selected through the table at $A46B. */
-static void QuadrantOffsets(Lufia2CpuState *cpu, Lufia2Wram wram,
-    unsigned quadrant) {
-    uint16_t negated;
-
+static Lufia2ExecutionResult QuadrantHandler(const Lufia2Memory *memory,
+    Lufia2CpuState *cpu, unsigned quadrant) {
     switch (quadrant) {
     case 0:
-        negated = (uint16_t)(0u - WramRead16(wram, SAVED_SCALE));
-        WramWrite16(wram, STEP_X_LOW, negated);
-        WramWrite(wram, STEP_X_HIGH, SignByte(negated));
-        negated = (uint16_t)(0u - WramRead16(wram, PRODUCT_MIDDLE));
-        WramWrite16(wram, STEP_Y_LOW, negated);
-        WramWrite(wram, STEP_Y_HIGH, SignByte(negated));
-        LeaveNegation(cpu, negated);
-        break;
+        return Lufia2WorldMapPolarQuadrant0(memory, cpu);
     case 1:
-        WramWrite16(wram, STEP_Y_LOW, WramRead16(wram, SAVED_SCALE));
-        negated = (uint16_t)(0u - WramRead16(wram, PRODUCT_MIDDLE));
-        WramWrite16(wram, STEP_X_LOW, negated);
-        WramWrite(wram, STEP_X_HIGH, SignByte(negated));
-        WramWrite(wram, STEP_Y_HIGH, 0);
-        LeaveNegation(cpu, negated);
-        break;
+        return Lufia2WorldMapPolarQuadrant1(memory, cpu);
     case 2:
-        WramWrite16(wram, STEP_X_LOW, WramRead16(wram, SAVED_SCALE));
-        WramWrite16(wram, STEP_Y_LOW, WramRead16(wram, PRODUCT_MIDDLE));
-        WramWrite(wram, STEP_X_HIGH, 0);
-        WramWrite(wram, STEP_Y_HIGH, 0);
-        LeaveWord(cpu, WramRead16(wram, PRODUCT_MIDDLE));
-        break;
+        return Lufia2WorldMapPolarQuadrant2(memory, cpu);
     default:
-        WramWrite16(wram, STEP_X_LOW, WramRead16(wram, PRODUCT_MIDDLE));
-        negated = (uint16_t)(0u - WramRead16(wram, SAVED_SCALE));
-        WramWrite16(wram, STEP_Y_LOW, negated);
-        WramWrite(wram, STEP_Y_HIGH, SignByte(negated));
-        WramWrite(wram, STEP_X_HIGH, 0);
-        LeaveNegation(cpu, negated);
-        break;
+        return Lufia2WorldMapPolarQuadrant3(memory, cpu);
     }
 }
 
-/* $86:A417: signed step offsets from direction and distance; M1X0. */
 Lufia2ExecutionResult Lufia2WorldStepOffsets(
     const Lufia2Memory *memory,
     Lufia2CpuState *cpu) {
@@ -188,11 +146,15 @@ Lufia2ExecutionResult Lufia2WorldStepOffsets(
     }
     quadrant = WramRead(wram, QUADRANT);
     index = (unsigned)((quadrant << 1) & 0x06u);
-    SimulateJsrFrame(memory, cpu, 0xa460u);
-    QuadrantOffsets(cpu, wram, index >> 1);
-    SimulateRtsFrame(memory, cpu);
-    cpu->x = (uint16_t)index;
+    SetAccumulatorWidth(cpu, 0);
+    LoadA16(cpu, (uint16_t)index);
     cpu->carry = (quadrant & 0x80u) != 0;
+    TransferAToX(cpu);
+    SimulateJsrFrame(memory, cpu, 0xa460u);                   /* JSR ($A46B,X) */
+    const Lufia2ExecutionResult handler = QuadrantHandler(memory, cpu, index >> 1);
+    if (handler.flow != LUFIA2_EXECUTION_RETURNED)
+        return handler;
+    SimulateRtsFrame(memory, cpu);
     return ExecutionReturned(0x86a461u);
 }
 
