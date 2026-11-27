@@ -629,16 +629,16 @@ static uint8_t RedrawLayerBody(
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x));
         cpu->carry = 0;
         Add16Value(cpu, SCROLL_REGISTER_BIAS);
-        Write16Absolute(memory, cpu, (uint16_t)(SCROLL_REGISTER_X + cpu->y),
-                        cpu->accumulator);
+        Write16AbsoluteIndexed(memory, cpu, SCROLL_REGISTER_X, cpu->y,
+                               cpu->accumulator);
         And16(cpu, 0xfff0u);
         Write16Direct(memory, cpu, REDRAW_X, cpu->accumulator);
         LoadA16(cpu,
                 Read16Long(memory, LongIndexedAddress(REDRAW_Y_SLOT_TABLE, cpu->x)));
         TransferAToY(cpu);
         LoadA16(cpu, Read16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_Y, cpu->x));
-        Write16Absolute(memory, cpu, (uint16_t)(SCROLL_REGISTER_Y + cpu->y),
-                        cpu->accumulator);
+        Write16AbsoluteIndexed(memory, cpu, SCROLL_REGISTER_Y, cpu->y,
+                               cpu->accumulator);
         And16(cpu, 0xfff0u);
         Write16Direct(memory, cpu, REDRAW_Y, cpu->accumulator);
         SetAccumulatorWidth(cpu, 1);                           /* F4AF */
@@ -1486,8 +1486,8 @@ static uint8_t ScrollStreamColumns(const Lufia2Memory *memory, Lufia2CpuState *c
 static void ScrollPublishX(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, STREAM_LAYER); /* BDFF */
     LoadA16(cpu, Read16Direct(memory, cpu, SCROLL_TARGET_X));
-    Write16Absolute(memory, cpu, (uint16_t)(WRAM_FIELD_LAYER_SCROLL_X + cpu->x),
-                    cpu->accumulator);
+    Write16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_X, cpu->x,
+                           cpu->accumulator);
     cpu->carry = 0;
     Add16Value(cpu, SCROLL_REGISTER_BIAS);
     PushAccumulator16(memory, cpu);
@@ -1496,8 +1496,8 @@ static void ScrollPublishX(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PullAccumulator16(memory, cpu);
     cpu->carry = 0;
     Add16Value(cpu, Read16Long(memory, FIELD_SCREEN_OFFSET_X));
-    Write16Absolute(memory, cpu, (uint16_t)(SCROLL_REGISTER_X + cpu->y),
-                    cpu->accumulator);
+    Write16AbsoluteIndexed(memory, cpu, SCROLL_REGISTER_X, cpu->y,
+                           cpu->accumulator);
 }
 
 /* Stream a row after a vertical cell crossing. */
@@ -1541,16 +1541,16 @@ static uint8_t ScrollStreamRows(const Lufia2Memory *memory, Lufia2CpuState *cpu)
 static void ScrollPublishY(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect(memory, cpu, STREAM_LAYER); /* BE4B */
     LoadA16(cpu, Read16Direct(memory, cpu, SCROLL_TARGET_Y));
-    Write16Absolute(memory, cpu, (uint16_t)(WRAM_FIELD_LAYER_SCROLL_Y + cpu->x),
-                    cpu->accumulator);
+    Write16AbsoluteIndexed(memory, cpu, WRAM_FIELD_LAYER_SCROLL_Y, cpu->x,
+                           cpu->accumulator);
     PushAccumulator16(memory, cpu);
     LoadA16(cpu, Read16Long(memory, LongIndexedAddress(REDRAW_Y_SLOT_TABLE, cpu->x)));
     TransferAToY(cpu);
     PullAccumulator16(memory, cpu);
     cpu->carry = 0;
     Add16Value(cpu, Read16Long(memory, FIELD_SCREEN_OFFSET_Y));
-    Write16Absolute(memory, cpu, (uint16_t)(SCROLL_REGISTER_Y + cpu->y),
-                    cpu->accumulator);
+    Write16AbsoluteIndexed(memory, cpu, SCROLL_REGISTER_Y, cpu->y,
+                           cpu->accumulator);
 }
 
 /* $8E:BD77: per-frame field scroll and edge streaming. */

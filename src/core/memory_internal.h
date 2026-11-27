@@ -123,6 +123,17 @@ static inline uint32_t DirectLongPointer(
     return low | ((uint32_t)bank << 16);
 }
 
+static inline void Write16AbsoluteIndexed(
+    const Lufia2Memory *memory,
+    const Lufia2CpuState *cpu,
+    uint16_t address,
+    uint16_t index,
+    uint16_t value) {
+    const uint32_t low = AbsoluteIndexedAddress(cpu, address, index);
+    Write8(memory, low, (uint8_t)value);
+    Write8(memory, (low + 1u) & 0x00ffffffu, (uint8_t)(value >> 8));
+}
+
 static inline void Write16Absolute(
     const Lufia2Memory *memory,
     const Lufia2CpuState *cpu,

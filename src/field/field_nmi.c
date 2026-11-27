@@ -59,7 +59,7 @@ static void NmiTileBlock(
     LoadA16(cpu, entry);
     if (cpu->zero)
         return;
-    Write16Absolute(memory, cpu, (uint16_t)(list + cpu->x), 0x0000u);
+    Write16AbsoluteIndexed(memory, cpu, list, cpu->x, 0x0000u);
     LoadY8(cpu, vmain);
     StoreYIndex(memory, cpu, SNES_VMAIN);
     And16(cpu, 0x1fffu);
