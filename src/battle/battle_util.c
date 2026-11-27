@@ -274,8 +274,8 @@ Lufia2ExecutionResult Lufia2BattleLoadPalette(
     do {
         LoadAAbsolute8(memory, cpu, 0x0000u, cpu->y);
         Write8(memory, LongIndexedAddress(WRAM_UNK_7FF1DB, cpu->x), A8(cpu));
-        IncrementX16(cpu);
-        IncrementY16(cpu);
+        OpInx(cpu);
+        OpIny(cpu);
         count = (uint8_t)(DirectByte(memory, cpu, 0x25u) - 1u);
         Write8(memory, (uint16_t)(cpu->direct_page + 0x25u), count);
         SetNz8(cpu, count);
@@ -409,6 +409,8 @@ Lufia2ExecutionResult Lufia2BattleTileBlock(
 /* $81:BD4B: $02 x $03 sprites; A = count. */
 Lufia2ExecutionResult Lufia2BattleSpriteBlock(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81bd4bu);
     return Lufia2BattleDrawSpriteGrid(memory, cpu, false);
 }
 
@@ -638,6 +640,8 @@ Lufia2ExecutionResult Lufia2BattlePaletteSplit(
 /* $81:BD47: far entry of Lufia2BattleSpriteBlock. */
 Lufia2ExecutionResult Lufia2BattleSpriteBlockFar(
     const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    if (cpu->index_is_8_bit)
+        return ExecutionHandoff(cpu, 0x81bd47u);
     SimulateJsrFrame(memory, cpu, 0xbd49u);
     (void)Lufia2BattleSpriteBlock(memory, cpu);
     SimulateRtsFrame(memory, cpu);
