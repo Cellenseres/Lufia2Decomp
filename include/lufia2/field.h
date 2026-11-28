@@ -849,6 +849,13 @@ Lufia2ExecutionResult Lufia2FieldResumeSceneSong(
 Lufia2ExecutionResult Lufia2EventGetFlagMask(
     const Lufia2Memory *memory, Lufia2CpuState *cpu);
 
+Lufia2ExecutionResult Lufia2EventMoveActorToCell(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu);
+void Lufia2EventMoveActorCellPrepare(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+void Lufia2EventMoveActorCellMark(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+void Lufia2EventMoveActorCellScript(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+void Lufia2EventMoveActorCellFinish(const Lufia2Memory *memory, Lufia2CpuState *cpu);
+
 Lufia2ExecutionResult Lufia2FieldRebuildPartyActors(
     const Lufia2Memory *memory, Lufia2CpuState *cpu,
     Lufia2PushedChildCall child, void *context);

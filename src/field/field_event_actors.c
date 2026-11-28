@@ -1663,14 +1663,7 @@ static void EventSetActorPosition(
     SimulateRtlFrame(memory, cpu);
 }
 
-void Lufia2EventMoveActorTo(const Lufia2Memory *memory, Lufia2CpuState *cpu,
-    uint16_t return_address) {
-    SimulateJslFrame(memory, cpu, 0x80u, return_address);
-    SimulateJslFrame(memory, cpu, 0x80u, 0xa750u);             /* A74D */
-    cpu->program_bank = 0x83u;
-    Lufia2ActorClearMapOccupancy(memory, cpu);                 /* $83:FA12 */
-    cpu->program_bank = 0x80u;
-    SimulateRtlFrame(memory, cpu);
+void Lufia2EventMoveActorCellPrepare(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     PushY(memory, cpu);                                        /* A751 */
     TransferDirectToA(cpu);
     Write8(memory, DirectAddress(cpu, DP_SCRATCH_B), 0x00u);
@@ -1687,7 +1680,9 @@ void Lufia2EventMoveActorTo(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     AslA16(cpu);
     AslA16(cpu);
     SetAccumulatorWidth(cpu, 1);
-    EventSetActorPosition(memory, cpu, 0xa769u);
+}
+
+void Lufia2EventMoveActorCellMark(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
     LoadXDirect16(memory, cpu, DP_ACTOR_SLOT);                 /* A76A */
     LoadA8(cpu, Read8(memory, LongIndexedAddress(WRAM_UNK_7FE316, cpu->x)));
     And8(cpu, 0x7fu);
@@ -1697,21 +1692,55 @@ void Lufia2EventMoveActorTo(const Lufia2Memory *memory, Lufia2CpuState *cpu,
     And8(cpu, 0x7fu);
     StoreAAbsolute8(memory, cpu, WRAM_ACTOR_STATE, cpu->x);
     Compare16(cpu, cpu->x, 0x0008u);
+}
+
+void Lufia2EventMoveActorCellScript(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    LoadA8(cpu, 0x09u); /* A785 */
+    StoreAAbsolute8(memory, cpu, WRAM_UNK_7E070A, cpu->x);
+}
+
+void Lufia2EventMoveActorCellFinish(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    cpu->y = PullIndexValue(memory, cpu); /* A78E */
+}
+
+static void EventMoveActorToCell(const Lufia2Memory *memory, Lufia2CpuState *cpu) {
+    SimulateJslFrame(memory, cpu, 0x80u, 0xa750u); /* A74D */
+    cpu->program_bank = 0x83u;
+    Lufia2ActorClearMapOccupancy(memory, cpu); /* $83:FA12 */
+    cpu->program_bank = 0x80u;
+    SimulateRtlFrame(memory, cpu);
+    Lufia2EventMoveActorCellPrepare(memory, cpu);
+    EventSetActorPosition(memory, cpu, 0xa769u);
+    Lufia2EventMoveActorCellMark(memory, cpu);
     if (cpu->carry) {
-        LoadA8(cpu, 0x09u);                                    /* A785 */
-        StoreAAbsolute8(memory, cpu, WRAM_UNK_7E070A, cpu->x);
+        Lufia2EventMoveActorCellScript(memory, cpu);
         SimulateJslFrame(memory, cpu, 0x80u, 0xa78du);
         cpu->program_bank = 0x83u;
         Lufia2ActorLoadPrimaryScript(memory, cpu);             /* $83:D416 */
         cpu->program_bank = 0x80u;
         SimulateRtlFrame(memory, cpu);
     }
-    cpu->y = PullIndexValue(memory, cpu);                      /* A78E */
+    Lufia2EventMoveActorCellFinish(memory, cpu);
     SimulateJslFrame(memory, cpu, 0x80u, 0xa792u);
     cpu->program_bank = 0x83u;
     Lufia2ActorMarkMapOccupancy(memory, cpu);                  /* $83:FA3F */
     cpu->program_bank = 0x80u;
     SimulateRtlFrame(memory, cpu);
+}
+
+Lufia2ExecutionResult Lufia2EventMoveActorToCell(const Lufia2Memory *memory,
+                                                 Lufia2CpuState *cpu) {
+    if (cpu->program_bank != 0x80u || !cpu->accumulator_is_8_bit ||
+        cpu->index_is_8_bit || cpu->decimal)
+        return ExecutionHandoff(cpu, 0x80a74du);
+    EventMoveActorToCell(memory, cpu);
+    return ExecutionReturned(0x80a793u);
+}
+
+void Lufia2EventMoveActorTo(const Lufia2Memory *memory, Lufia2CpuState *cpu,
+                            uint16_t return_address) {
+    SimulateJslFrame(memory, cpu, 0x80u, return_address);
+    EventMoveActorToCell(memory, cpu);
     SimulateRtlFrame(memory, cpu);                             /* A793 */
 }
 

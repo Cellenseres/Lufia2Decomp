@@ -110,6 +110,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$80:9D3E` | `Lufia2TextOpenWindowWithServices` | verified | `src/text/text_engine.c` |
 | `$80:A350` | `Lufia2SceneReloadAndFadeIn` | verified | `src/field/scene_bootstrap.c` |
 | `$80:A368` | `Lufia2SceneResetTextState` | verified | `src/field/scene_bootstrap.c` |
+| `$80:A74D` | `Lufia2EventMoveActorToCell` | verified | `src/field/field_event_actors.c` |
 | `$80:AD39` | `Lufia2FieldFaceActorGroupTowardActor` | verified | `src/field/field_interaction.c` |
 | `$80:AD57` | `Lufia2FieldFaceActorTowardActor` | verified | `src/field/field_interaction.c` |
 | `$80:B404` | `Lufia2FieldQueueMenuActorUpdates` | verified | `src/field/menu_actor_updates.c` |
