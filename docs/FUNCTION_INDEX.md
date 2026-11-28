@@ -1979,6 +1979,7 @@ Generated from `metadata/functions.toml`; update it with
 | `$86:98CD` | `Lufia2WorldMapMovePlayerWest` | verified | `src/world/world_map_player.c` |
 | `$86:98D4` | `Lufia2WorldMapMovePlayerSouth` | verified | `src/world/world_map_player.c` |
 | `$86:98DB` | `Lufia2WorldMapMovePlayerEast` | verified | `src/world/world_map_player.c` |
+| `$86:9929` | `Lufia2WorldMapRejectPlayerMove` | verified | `src/world/world_map_player.c` |
 | `$86:992B` | `Lufia2WorldMapUpdateObjectHeading` | verified | `src/world/world_frame_callers.c` |
 | `$86:9934` | `Lufia2WorldMapRefreshObjectPose` | verified | `src/world/world_frame_callers.c` |
 | `$86:994C` | `Lufia2WorldMapSumMotionTerms` | verified | `src/world/world_motion_services.c` |
