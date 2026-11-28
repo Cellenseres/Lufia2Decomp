@@ -158,7 +158,7 @@ Lufia2ExecutionResult Lufia2BattleTargetRecordStep(const Lufia2Memory *memory,
     case 0x81d4e5u:
         TargetSaveSelectionRequest(memory, cpu);
         TargetPrepareRecordClear(cpu);
-        /* Fall through to two bounded clear iterations. */
+        /* fall through */
     case 0x81d4f2u:
         for (unsigned record = 0u; record < 2u; ++record) {
             TargetClearSelectionRecord(memory, cpu);
@@ -168,7 +168,7 @@ Lufia2ExecutionResult Lufia2BattleTargetRecordStep(const Lufia2Memory *memory,
         return ExecutionHandoff(cpu, 0x81d4f2u);
     case 0x81d4fcu:
         TargetBeginRecordList(cpu);
-        /* Fall through to the first party record. */
+        /* fall through */
     case 0x81d500u:
         TargetFillPartyRecord(memory, cpu);
         return ExecutionHandoff(cpu, cpu->zero ? 0x81d521u : 0x81d500u);
